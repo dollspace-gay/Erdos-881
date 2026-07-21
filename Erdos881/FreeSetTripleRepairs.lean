@@ -8843,10 +8843,181 @@ theorem minimalCorePairCertificate_forces_pointwise_boundedPairFamilies
   exact hsupportCardI.trans (hIcardU.trans hUcard)
 
 set_option maxHeartbeats 5000000 in
+/-- Core occupancy sharpens the pointwise minimal-certificate bound.  For a
+support `E` of the private target, the covered `k`-point core lies in
+`E ∪ U`, where `E` has at most two points and `U` is the union of one pair
+support for every other target.  Hence that core contains at least `k - 2`
+points of `U`.  Assigned cores are distinct and disjoint, giving
+`(k - 2) * |R₂(q)| ≤ 2 * |Q.erase q|`. -/
+theorem minimalCorePairCertificate_forces_scaledPointwiseBound
+    {A : Set ℕ} {F cell : ℕ → Finset ℕ} {Q : Finset ℕ} {k : ℕ}
+    (P : IsFiniteBlockPartition A F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellLower : ∀ i, k ≤ (cell i).card)
+    (hk : 3 ≤ k)
+    (hcert : ∀ sel : BlockSelector F,
+      (∀ i, (sel i).1 ∈ cell i) →
+      ∃ q ∈ Q,
+        DestroysAt (additiveSupportFamily A 2)
+          (selectedSet sel) q)
+    (hlocalized : ∀ q ∈ Q, ∃ sel : BlockSelector F,
+      (∀ i, (sel i).1 ∈ cell i) ∧
+      DestroysAt (additiveSupportFamily A 2)
+        (selectedSet sel) q ∧
+      ∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt (additiveSupportFamily A 2)
+          (selectedSet sel) q') :
+    ∀ q ∈ Q,
+      (k - 2) * (additiveSupportFamily A 2 q).card ≤
+        2 * (Q.erase q).card := by
+  classical
+  intro q hqQ
+  obtain ⟨sel, hselCore, _hqDestroy, hprivate⟩ :=
+    hlocalized q hqQ
+  let Q' : Finset ℕ := Q.erase q
+  have hsurvive : ∀ r : {n // n ∈ Q'},
+      ∃ E ∈ additiveSupportFamily A 2 r.1,
+        Disjoint (E : Set ℕ) (selectedSet sel) := by
+    intro r
+    have hr := Finset.mem_erase.mp r.2
+    exact not_destroysAt_iff.mp
+      (hprivate r.1 hr.2 hr.1)
+  choose chosen hchosenMem hchosenDisjoint using hsurvive
+  let cOther : FiniteSupportChoice
+      (additiveSupportFamily A 2) Q' := fun r =>
+    ⟨chosen r, hchosenMem r⟩
+  let U : Finset ℕ := finiteSupportChoiceUnion cOther
+  have hUDisjoint : Disjoint (U : Set ℕ) (selectedSet sel) := by
+    rw [Set.disjoint_left]
+    intro x hxU hxSelected
+    obtain ⟨r, _hrAttach, hxSupport⟩ :=
+      Finset.mem_biUnion.mp (Finset.mem_coe.mp hxU)
+    exact Set.disjoint_left.mp (hchosenDisjoint r)
+      (Finset.mem_coe.mpr hxSupport) hxSelected
+  let I : Finset ℕ := U.image (blockIndex P)
+  have hassign : ∀ E : {E // E ∈ additiveSupportFamily A 2 q},
+      ∃ i, i ∈ I ∧ (sel i).1 ∈ E.1 ∧
+        cell i ⊆ E.1 ∪ U := by
+    intro E
+    let cFull : FiniteSupportChoice
+        (additiveSupportFamily A 2) Q := fun r =>
+      if hrq : r.1 = q then
+        ⟨E.1, by simpa [hrq] using E.2⟩
+      else
+        let r' : {n // n ∈ Q'} :=
+          ⟨r.1, Finset.mem_erase.mpr ⟨hrq, r.2⟩⟩
+        ⟨(cOther r').1, (cOther r').2⟩
+    have hfullCases : ∀ x,
+        x ∈ finiteSupportChoiceUnion cFull → x ∈ E.1 ∨ x ∈ U := by
+      intro x hx
+      obtain ⟨r, _hrAttach, hxr⟩ := Finset.mem_biUnion.mp hx
+      by_cases hrq : r.1 = q
+      · left
+        simpa [cFull, hrq] using hxr
+      · right
+        let r' : {n // n ∈ Q'} :=
+          ⟨r.1, Finset.mem_erase.mpr ⟨hrq, r.2⟩⟩
+        apply finiteSupportChoice_subset_union cOther r'
+        simpa [cFull, hrq, r'] using hxr
+    obtain ⟨i, hiCover⟩ :=
+      exists_coveredCell_of_coreSelectorCertificate_and_supportChoice
+        hcore hcert cFull
+    have hcellUE : cell i ⊆ E.1 ∪ U := by
+      intro x hxCell
+      exact Finset.mem_union.mpr (hfullCases x (hiCover hxCell))
+    have hselE : (sel i).1 ∈ E.1 := by
+      rcases Finset.mem_union.mp (hcellUE (hselCore i)) with hselE | hselU
+      · exact hselE
+      · exact (Set.disjoint_left.mp hUDisjoint
+          (Finset.mem_coe.mpr hselU) ⟨i, rfl⟩).elim
+    have hcellHitsU : ¬ Disjoint (cell i) U := by
+      intro hdisjoint
+      have hcellE : cell i ⊆ E.1 := by
+        intro x hxCell
+        rcases Finset.mem_union.mp (hcellUE hxCell) with hxE | hxU
+        · exact hxE
+        · exact (Finset.disjoint_left.mp hdisjoint hxCell hxU).elim
+      have hcardLe := Finset.card_le_card hcellE
+      have hEcard :=
+        additiveSupportFamily_cardAtMost A 2 q E.1 E.2
+      have hcellCard := hcellLower i
+      omega
+    obtain ⟨v, hvCell, hvU⟩ :=
+      Finset.not_disjoint_iff.mp hcellHitsU
+    have hvIndex : blockIndex P v = i :=
+      P.blockIndex_eq_of_mem (hcore i hvCell)
+    have hiI : i ∈ I :=
+      Finset.mem_image.mpr ⟨v, hvU, hvIndex⟩
+    exact ⟨i, hiI, hselE, hcellUE⟩
+  choose assigned hassignedI hselectedMem hcellCover using hassign
+  have hassignInj : Function.Injective assigned := by
+    intro E E' hindex
+    apply Subtype.ext
+    by_contra hEE'
+    have hxE := hselectedMem E
+    have hxE' : (sel (assigned E)).1 ∈ E'.1 := by
+      rw [hindex]
+      exact hselectedMem E'
+    exact Finset.disjoint_left.mp
+      (additiveSupportFamily_two_isMatching A q E.2 E'.2 hEE')
+      hxE hxE'
+  let J : Finset ℕ :=
+    (additiveSupportFamily A 2 q).attach.image assigned
+  have hJcard : J.card =
+      (additiveSupportFamily A 2 q).card := by
+    dsimp only [J]
+    rw [Finset.card_image_iff.mpr hassignInj.injOn]
+    simp
+  have hoccupancy : ∀ i ∈ J, k - 2 ≤ (cell i ∩ U).card := by
+    intro i hiJ
+    obtain ⟨E, _hEattach, hEi⟩ := Finset.mem_image.mp hiJ
+    have hcover : cell i ⊆ E.1 ∪ U := by
+      simpa [hEi] using hcellCover E
+    have hdiffSub : cell i \ U ⊆ E.1 := by
+      intro x hxDiff
+      have hx := Finset.mem_sdiff.mp hxDiff
+      rcases Finset.mem_union.mp (hcover hx.1) with hxE | hxU
+      · exact hxE
+      · exact (hx.2 hxU).elim
+    have hdiffCard : (cell i \ U).card ≤ 2 :=
+      (Finset.card_le_card hdiffSub).trans
+        (additiveSupportFamily_cardAtMost A 2 q E.1 E.2)
+    have hdecomp := Finset.card_sdiff_add_card_inter (cell i) U
+    have hcellCard := hcellLower i
+    omega
+  let V : Finset ℕ := J.biUnion fun i => cell i ∩ U
+  have hpairwise : (J : Set ℕ).PairwiseDisjoint
+      (fun i => cell i ∩ U) := by
+    intro i hi j hj hij
+    exact ((P.disjoint hij).mono (hcore i) (hcore j)).mono
+      Finset.inter_subset_left Finset.inter_subset_left
+  have hVLower : (k - 2) * J.card ≤ V.card := by
+    dsimp only [V]
+    rw [Finset.card_biUnion hpairwise]
+    calc
+      (k - 2) * J.card = ∑ i ∈ J, (k - 2) := by
+        simp [Nat.mul_comm]
+      _ ≤ ∑ i ∈ J, (cell i ∩ U).card := by
+        apply Finset.sum_le_sum
+        intro i hi
+        exact hoccupancy i hi
+  have hVsub : V ⊆ U := by
+    intro x hxV
+    obtain ⟨i, _hiJ, hxInter⟩ := Finset.mem_biUnion.mp hxV
+    exact (Finset.mem_inter.mp hxInter).2
+  have hVUpper : V.card ≤ U.card := Finset.card_le_card hVsub
+  have hUcard : U.card ≤ 2 * Q'.card :=
+    finiteSupportChoiceUnion_card_le
+      (additiveSupportFamily_cardAtMost A 2) cOther
+  rw [hJcard] at hVLower
+  exact hVLower.trans (hVUpper.trans hUcard)
+
+set_option maxHeartbeats 5000000 in
 /-- Minimal order-two form of the five-option residual.  Minimalization
 retains the five-core lower bound, so at least three external targets remain;
-every remaining target has a private core selector and at most
-`2 * (Q.erase q).card` pair supports. -/
+every remaining target has a private core selector and satisfies the sharper
+occupancy bound `3 * |R₂(q)| ≤ 2 * |Q.erase q|`.  In particular, a
+three-target certificate would give every target a unique pair support. -/
 theorem counterexample_forces_minimalFiveOptionExternalCorePairCertificate
     {A : Set ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -8873,9 +9044,11 @@ theorem counterexample_forces_minimalFiveOptionExternalCorePairCertificate
           ∀ q' ∈ Q, q' ≠ q →
             ¬ DestroysAt (additiveSupportFamily A 2)
               (selectedSet sel) q') ∧
-        ∀ q ∈ Q,
-          (additiveSupportFamily A 2 q).card ≤
-            2 * (Q.erase q).card := by
+        (∀ q ∈ Q,
+          3 * (additiveSupportFamily A 2 q).card ≤
+            2 * (Q.erase q).card) ∧
+        (Q.card = 3 → ∀ q ∈ Q,
+          (additiveSupportFamily A 2 q).card = 1) := by
   classical
   obtain ⟨F, cell, P, hcore, hcellZero, hcellCard, hresidual⟩ :=
     counterexample_forces_fiveOptionExternalCoreCertificate
@@ -8922,17 +9095,25 @@ theorem counterexample_forces_minimalFiveOptionExternalCorePairCertificate
     coreSelectorPairCertificate_forces_targetCard_lower
       hcore hcellLowerFive hrepresented hcert₀
   have hQ₀card : 3 ≤ Q₀.card := by omega
-  have hcellLowerThree : ∀ i, 3 ≤ (cell i).card := by
-    intro i
-    rw [hcellCard i]
-    omega
-  have hpointwise : ∀ q ∈ Q₀,
-      (additiveSupportFamily A 2 q).card ≤
+  have hscaled : ∀ q ∈ Q₀,
+      3 * (additiveSupportFamily A 2 q).card ≤
         2 * (Q₀.erase q).card :=
-    minimalCorePairCertificate_forces_pointwise_boundedPairFamilies
-      P hcore hcellLowerThree hcert₀ hlocalized
+    by
+      simpa using
+        (minimalCorePairCertificate_forces_scaledPointwiseBound
+          P hcore hcellLowerFive (by omega) hcert₀ hlocalized)
+  have huniqueIfThree : Q₀.card = 3 → ∀ q ∈ Q₀,
+      (additiveSupportFamily A 2 q).card = 1 := by
+    intro hQcard q hqQ₀
+    have heraseCard : (Q₀.erase q).card = 2 := by
+      rw [Finset.card_erase_of_mem hqQ₀, hQcard]
+    have hpos : 0 < (additiveSupportFamily A 2 q).card :=
+      Finset.card_pos.mpr (hrepresented q hqQ₀)
+    have hbound := hscaled q hqQ₀
+    rw [heraseCard] at hbound
+    omega
   exact ⟨Q₀, hQ₀card, hQ₀late, hcert₀,
-    hlocalized, hpointwise⟩
+    hlocalized, hscaled, huniqueIfThree⟩
 
 set_option maxHeartbeats 5000000 in
 /-- Pointwise pair-support bound retaining genuine order-three target
