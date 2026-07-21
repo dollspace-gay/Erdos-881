@@ -9787,8 +9787,11 @@ theorem sixCoreThreeUniquePairCertificate_forces_exactSupportCover
       ∃ i,
         cell i = finiteSupportChoiceUnion c ∧
         (finiteSupportChoiceUnion c).card = 6 ∧
-        ∀ q : {n // n ∈ Q}, ∀ E,
-          E ∈ additiveSupportFamily A 2 q.1 → E = (c q).1 := by
+        (∀ q : {n // n ∈ Q}, ∀ E,
+          E ∈ additiveSupportFamily A 2 q.1 → E = (c q).1) ∧
+        (∀ q : {n // n ∈ Q}, (c q).1.card = 2) ∧
+        ∀ q r : {n // n ∈ Q}, q ≠ r →
+          Disjoint (c q).1 (c r).1 := by
   classical
   have hrepresented : ∀ q ∈ Q,
       (additiveSupportFamily A 2 q).Nonempty := by
@@ -9815,15 +9818,107 @@ theorem sixCoreThreeUniquePairCertificate_forces_exactSupportCover
   have hcellEq : cell i = finiteSupportChoiceUnion c :=
     Finset.eq_of_subset_of_card_le hiCover (by
       rw [hUcard, hcellCard i])
-  refine ⟨c, i, hcellEq, hUcard, ?_⟩
-  intro q E hER
-  obtain ⟨S, hfamily⟩ :=
-    Finset.card_eq_one.mp (hunique q.1 q.2)
-  have hES : E = S := by
-    simpa [hfamily] using hER
-  have hcS : (c q).1 = S := by
-    simpa [hfamily] using (c q).2
-  exact hES.trans hcS.symm
+  have hchosenUnique : ∀ q : {n // n ∈ Q}, ∀ E,
+      E ∈ additiveSupportFamily A 2 q.1 → E = (c q).1 := by
+    intro q E hER
+    obtain ⟨S, hfamily⟩ :=
+      Finset.card_eq_one.mp (hunique q.1 q.2)
+    have hES : E = S := by
+      simpa [hfamily] using hER
+    have hcS : (c q).1 = S := by
+      simpa [hfamily] using (c q).2
+    exact hES.trans hcS.symm
+  have hsupportCard : ∀ q : {n // n ∈ Q},
+      (c q).1.card = 2 := by
+    intro q
+    let Q' : Finset ℕ := Q.erase q.1
+    let cOther : FiniteSupportChoice
+        (additiveSupportFamily A 2) Q' := fun r =>
+      c ⟨r.1, Finset.mem_of_mem_erase r.2⟩
+    let U' : Finset ℕ := finiteSupportChoiceUnion cOther
+    have hcases : ∀ x, x ∈ finiteSupportChoiceUnion c →
+        x ∈ (c q).1 ∨ x ∈ U' := by
+      intro x hx
+      obtain ⟨r, _hrAttach, hxr⟩ := Finset.mem_biUnion.mp hx
+      by_cases hrq : r.1 = q.1
+      · left
+        have hrEq : r = q := Subtype.ext hrq
+        exact hrEq ▸ hxr
+      · right
+        let r' : {n // n ∈ Q'} :=
+          ⟨r.1, Finset.mem_erase.mpr ⟨hrq, r.2⟩⟩
+        apply finiteSupportChoice_subset_union cOther r'
+        simpa [cOther, r'] using hxr
+    have hUsub : finiteSupportChoiceUnion c ⊆ (c q).1 ∪ U' := by
+      intro x hx
+      exact Finset.mem_union.mpr (hcases x hx)
+    have hU'card : U'.card ≤ 4 := by
+      calc
+        U'.card ≤ 2 * Q'.card :=
+          finiteSupportChoiceUnion_card_le
+            (additiveSupportFamily_cardAtMost A 2) cOther
+        _ = 4 := by
+          rw [Finset.card_erase_of_mem q.2, hQcard]
+    have hchosenCard : (c q).1.card ≤ 2 :=
+      additiveSupportFamily_cardAtMost A 2 q.1 (c q).1 (c q).2
+    have hcardSub := Finset.card_le_card hUsub
+    have hunionCard := Finset.card_union_le (c q).1 U'
+    rw [hUcard] at hcardSub
+    omega
+  have hsupportDisjoint : ∀ q r : {n // n ∈ Q}, q ≠ r →
+      Disjoint (c q).1 (c r).1 := by
+    intro q r hqr
+    let Q' : Finset ℕ := Q.erase q.1
+    have hrqVal : r.1 ≠ q.1 := by
+      intro hEq
+      exact hqr (Subtype.ext hEq.symm)
+    have hrQ' : r.1 ∈ Q' :=
+      Finset.mem_erase.mpr ⟨hrqVal, r.2⟩
+    let cOther : FiniteSupportChoice
+        (additiveSupportFamily A 2) Q' := fun t =>
+      c ⟨t.1, Finset.mem_of_mem_erase t.2⟩
+    let U' : Finset ℕ := finiteSupportChoiceUnion cOther
+    have hcases : ∀ x, x ∈ finiteSupportChoiceUnion c →
+        x ∈ (c q).1 ∨ x ∈ U' := by
+      intro x hx
+      obtain ⟨t, _htAttach, hxt⟩ := Finset.mem_biUnion.mp hx
+      by_cases htq : t.1 = q.1
+      · left
+        have htEq : t = q := Subtype.ext htq
+        exact htEq ▸ hxt
+      · right
+        let t' : {n // n ∈ Q'} :=
+          ⟨t.1, Finset.mem_erase.mpr ⟨htq, t.2⟩⟩
+        apply finiteSupportChoice_subset_union cOther t'
+        simpa [cOther, t'] using hxt
+    have hUsub : finiteSupportChoiceUnion c ⊆ (c q).1 ∪ U' := by
+      intro x hx
+      exact Finset.mem_union.mpr (hcases x hx)
+    have hrSub : (c r).1 ⊆ U' := by
+      let r' : {n // n ∈ Q'} := ⟨r.1, hrQ'⟩
+      intro x hxr
+      apply finiteSupportChoice_subset_union cOther r'
+      simpa [cOther, r'] using hxr
+    rw [Finset.disjoint_left]
+    intro x hxq hxr
+    have hxU' : x ∈ U' := hrSub hxr
+    have hinterPos : 0 < ((c q).1 ∩ U').card :=
+      Finset.card_pos.mpr ⟨x, Finset.mem_inter.mpr ⟨hxq, hxU'⟩⟩
+    have hU'card : U'.card ≤ 4 := by
+      calc
+        U'.card ≤ 2 * Q'.card :=
+          finiteSupportChoiceUnion_card_le
+            (additiveSupportFamily_cardAtMost A 2) cOther
+        _ = 4 := by
+          rw [Finset.card_erase_of_mem q.2, hQcard]
+    have hcardSub := Finset.card_le_card hUsub
+    have hunionInter :=
+      Finset.card_union_add_card_inter (c q).1 U'
+    rw [hUcard] at hcardSub
+    have hqCard := hsupportCard q
+    omega
+  exact ⟨c, i, hcellEq, hUcard, hchosenUnique,
+    hsupportCard, hsupportDisjoint⟩
 
 set_option maxHeartbeats 5000000 in
 /- Six-option minimal residual.  At the smallest permitted certificate size
