@@ -4336,6 +4336,212 @@ theorem finiteCrossingEndpointCertificates_targetCard_lower
       (fun sel _hsel => hcert sel)
   exact ⟨Q, hQcard, hQlate, hcert⟩
 
+/-- Endpoint-containment duality.  After choosing one endpoint from every
+certificate target, their chosen points must cover an entire core; otherwise
+select outside their union in every block, contradicting the certificate. -/
+theorem exists_coveredCell_of_crossingEndpointCertificate
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ}
+    (hcore : ∀ i, cell i ⊆ F i)
+    (point : {q // q ∈ Q} → ℕ)
+    (hpoint : ∀ q, point q ∈ crossingAtomEndpoints A B₀ q.1)
+    (hcert : ∀ sel : BlockSelector F,
+      (∀ i, (sel i).1 ∈ cell i) →
+      ∃ q ∈ Q,
+        (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+          selectedSet sel) :
+    ∃ i, cell i ⊆ Q.attach.image point := by
+  classical
+  let H : Finset ℕ := Q.attach.image point
+  by_contra hnot
+  push Not at hnot
+  have houtside : ∀ i, ∃ x, x ∈ cell i ∧ x ∉ H := by
+    intro i
+    exact Finset.not_subset.mp (hnot i)
+  choose selected hselectedCell hselectedH using houtside
+  let sel : BlockSelector F := fun i =>
+    ⟨selected i, hcore i (hselectedCell i)⟩
+  have hselCore : ∀ i, (sel i).1 ∈ cell i := by
+    intro i
+    exact hselectedCell i
+  obtain ⟨q, hqQ, hqSub⟩ := hcert sel hselCore
+  let qQ : {q // q ∈ Q} := ⟨q, hqQ⟩
+  have hpSelected : point qQ ∈ selectedSet sel :=
+    hqSub (Finset.mem_coe.mpr (hpoint qQ))
+  obtain ⟨i, hi⟩ := hpSelected
+  have hpH : point qQ ∈ H := Finset.mem_image.mpr
+    ⟨qQ, Finset.mem_attach Q qQ, rfl⟩
+  have hselectedEq : selected i = point qQ := hi
+  exact hselectedH i (hselectedEq ▸ hpH)
+
+set_option maxHeartbeats 2000000 in
+/- Sharp classification of the new lower bound.  If a `k`-point core is
+covered by exactly `k` targets, choosing one endpoint from each target
+fills one whole core bijectively.  Forcing the chosen endpoint of `q` in
+that block and varying every other coordinate shows that `q` can have no
+second endpoint.  Hence every sharp target has a singleton crossing set,
+and the singleton endpoints partition one core. -/
+theorem sharpCrossingEndpointCertificate_forces_singletons
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {k : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 2 ≤ k)
+    (hQcard : Q.card = k)
+    (hendpoint : ∀ q ∈ Q,
+      (crossingAtomEndpoints A B₀ q).Nonempty)
+    (hcert : ∀ sel : BlockSelector F,
+      (∀ i, (sel i).1 ∈ cell i) →
+      ∃ q ∈ Q,
+        (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+          selectedSet sel) :
+    ∃ point : {q // q ∈ Q} → ℕ, ∃ i,
+      cell i = Q.attach.image point ∧
+      Function.Injective point ∧
+      ∀ q, crossingAtomEndpoints A B₀ q.1 = {point q} := by
+  classical
+  have hchoose : ∀ q : {q // q ∈ Q}, ∃ b,
+      b ∈ crossingAtomEndpoints A B₀ q.1 := by
+    intro q
+    exact hendpoint q.1 q.2
+  choose point hpoint using hchoose
+  obtain ⟨i, hcellH⟩ :=
+    exists_coveredCell_of_crossingEndpointCertificate
+      hcore point hpoint hcert
+  let H : Finset ℕ := Q.attach.image point
+  have hHcardUpper : H.card ≤ Q.card := by
+    exact (Finset.card_image_le.trans_eq (by simp))
+  have hcellEq : cell i = H := by
+    apply Finset.eq_of_subset_of_card_le hcellH
+    rw [hcellCard i, ← hQcard]
+    exact hHcardUpper
+  have hHcard : H.card = Q.attach.card := by
+    calc
+      H.card = (cell i).card := congrArg Finset.card hcellEq.symm
+      _ = k := hcellCard i
+      _ = Q.card := hQcard.symm
+      _ = Q.attach.card := by simp
+  have hpointInjOn : Set.InjOn point (Q.attach : Set {q // q ∈ Q}) :=
+    Finset.card_image_iff.mp (by simpa [H] using hHcard)
+  have hpointInj : Function.Injective point := by
+    intro q r hqr
+    exact hpointInjOn (Finset.mem_attach Q q)
+      (Finset.mem_attach Q r) hqr
+  refine ⟨point, i, ?_, hpointInj, ?_⟩
+  · exact hcellEq
+  · intro q
+    apply Finset.Subset.antisymm
+    · intro x hxEndpoint
+      have hpH : point q ∈ H := Finset.mem_image.mpr
+        ⟨q, Finset.mem_attach Q q, rfl⟩
+      have hpCell : point q ∈ cell i := by
+        rw [hcellEq]
+        exact hpH
+      by_contra hxSingleton
+      have hxp : x ≠ point q := by simpa using hxSingleton
+      have houtside : ∀ j, ∃ y, y ∈ cell j ∧ y ≠ x := by
+        intro j
+        have hnsub : ¬ cell j ⊆ ({x} : Finset ℕ) := by
+          intro hsub
+          have hcard := Finset.card_le_card hsub
+          have hjcard := hcellCard j
+          simp only [Finset.card_singleton] at hcard
+          omega
+        obtain ⟨y, hyCell, hy⟩ := Finset.not_subset.mp hnsub
+        exact ⟨y, hyCell, by simpa using hy⟩
+      choose other hotherCell hotherNe using houtside
+      let value : ℕ → ℕ := fun j =>
+        if hj : j = i then point q else other j
+      have hvalueCell : ∀ j, value j ∈ cell j := by
+        intro j
+        by_cases hj : j = i
+        · subst j
+          simpa [value] using hpCell
+        · simpa [value, hj] using hotherCell j
+      have hvalueNe : ∀ j, value j ≠ x := by
+        intro j
+        by_cases hj : j = i
+        · subst j
+          simpa [value] using hxp.symm
+        · simpa [value, hj] using hotherNe j
+      let sel : BlockSelector F := fun j =>
+        ⟨value j, hcore j (hvalueCell j)⟩
+      have hselCore : ∀ j, (sel j).1 ∈ cell j := by
+        intro j
+        exact hvalueCell j
+      have hselI : (sel i).1 = point q := by simp [sel, value]
+      have hxNotSelected : x ∉ selectedSet sel := by
+        rintro ⟨j, hj⟩
+        exact hvalueNe j hj
+      obtain ⟨r, hrQ, hrSub⟩ := hcert sel hselCore
+      let rQ : {r // r ∈ Q} := ⟨r, hrQ⟩
+      have hprSelected : point rQ ∈ selectedSet sel :=
+        hrSub (Finset.mem_coe.mpr (hpoint rQ))
+      have hprH : point rQ ∈ H := Finset.mem_image.mpr
+        ⟨rQ, Finset.mem_attach Q rQ, rfl⟩
+      have hprCell : point rQ ∈ cell i := by
+        rw [hcellEq]
+        exact hprH
+      obtain ⟨j, hj⟩ := hprSelected
+      have hji : j = i := by
+        by_contra hji
+        have hprFj : point rQ ∈ F j := by
+          rw [← hj]
+          exact (sel j).2
+        exact Finset.disjoint_left.mp
+          (P.disjoint (fun hij => hji hij.symm))
+          (hcore i hprCell) hprFj
+      have hprEq : point rQ = point q := by
+        subst j
+        exact hj.symm.trans hselI
+      have hrq : rQ = q := hpointInj hprEq
+      have hrVal : r = q.1 := congrArg Subtype.val hrq
+      have hxSelected : x ∈ selectedSet sel := by
+        apply hrSub
+        simpa [hrVal] using hxEndpoint
+      exact hxNotSelected hxSelected
+    · intro x hx
+      have hxEq : x = point q := by simpa using hx
+      exact hxEq ▸ hpoint q
+
+/-- At an all-crossing target, a singleton endpoint set is equivalent to a
+unique canonical pair support. -/
+theorem pairSupports_eq_singleton_of_crossingEndpoint_eq_singleton
+    {A B₀ : Set ℕ} {q b : ℕ}
+    (hB₀A : B₀ ⊆ A)
+    (hcross : ∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) B₀ ∧ ¬ (E : Set ℕ) ⊆ B₀)
+    (hsingle : crossingAtomEndpoints A B₀ q = {b}) :
+    additiveSupportFamily A 2 q = {pairSupport q b} := by
+  rw [pairSupports_eq_image_crossingAtomEndpoints hB₀A hcross,
+    hsingle]
+  simp
+
+/-- The same singleton endpoint is an honest rigid pair sum with its
+complementary endpoint `q - b`.  Thus equality in the new `|Q| ≥ k` bound
+lands exactly in the rigid obstruction language used by the reservation
+construction. -/
+theorem rigidPairSum_of_crossingEndpoint_eq_singleton
+    {A B₀ : Set ℕ} {q b : ℕ}
+    (hB₀A : B₀ ⊆ A)
+    (hcross : ∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) B₀ ∧ ¬ (E : Set ℕ) ⊆ B₀)
+    (hsingle : crossingAtomEndpoints A B₀ q = {b}) :
+    IsRigidPairSum A b (q - b) := by
+  have hbEndpoint : b ∈ crossingAtomEndpoints A B₀ q := by
+    rw [hsingle]
+    simp
+  have hsum : b + (q - b) = q :=
+    crossingAtomEndpoint_sum hbEndpoint
+  have hfamily :=
+    pairSupports_eq_singleton_of_crossingEndpoint_eq_singleton
+      hB₀A hcross hsingle
+  intro E hER
+  rw [hsum] at hER ⊢
+  rw [hfamily] at hER
+  simpa using hER
+
 /-- The certificate targets destroyed by a fixed deletion set. -/
 noncomputable def destroyedCertificateTargets
     (A B : Set ℕ) (Q : Finset ℕ) : Finset ℕ := by
