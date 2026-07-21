@@ -5723,6 +5723,97 @@ theorem exists_infinite_selfRepairedThirdOptions
   intro d hd
   exact (havoidP b hbL₁).2 d (hLL₁ hd)
 
+/-- An injective family of targets with self-avoiding three-term repair
+supports has an infinite thinning with an injective chosen repair point
+strictly below its target.  Apply the infinite delta-system theorem to the
+repair supports.  Empty petals can occur only at bounded targets, hence only
+finitely often by target injectivity; points chosen from the remaining
+pairwise-disjoint petals are automatically injective. -/
+theorem exists_infinite_injectiveRepairPoint
+    {A B : Set ℕ} (hB : B.Infinite)
+    (t : ℕ → ℕ) (htInj : Set.InjOn t B)
+    (h : ℕ → Finset ℕ)
+    (hhR : ∀ b ∈ B,
+      h b ∈ additiveSupportFamily A 3 (t b))
+    (htNotH : ∀ b ∈ B, t b ∉ h b) :
+    ∃ L, L ⊆ B ∧ L.Infinite ∧
+      ∃ s : ℕ → ℕ, Set.InjOn s L ∧
+        ∀ b ∈ L, s b ∈ h b ∧ 0 < s b ∧ s b < t b := by
+  classical
+  have hhCard : ∀ b ∈ B, (h b).card ≤ 3 := by
+    intro b hb
+    exact additiveSupportFamily_cardAtMost A 3
+      (t b) (h b) (hhR b hb)
+  obtain ⟨L₀, hL₀B, hL₀, S₀, hdelta⟩ :=
+    exists_infinite_deltaSystem_of_bounded_pointMap
+      hB h 3 hhCard
+  let S : Finset ℕ := insert 0 S₀
+  let EmptyPetal : Set ℕ :=
+    {b | b ∈ L₀ ∧ h b \ S = ∅}
+  have hEmptyFinite : EmptyPetal.Finite := by
+    apply Set.Finite.of_finite_image (f := t)
+    · apply (Set.finite_Iic (3 * S.sum id)).subset
+      rintro y ⟨b, hbEmpty, rfl⟩
+      have hbB : b ∈ B := hL₀B hbEmpty.1
+      have hsub : h b ⊆ S :=
+        Finset.sdiff_eq_empty_iff_subset.mp hbEmpty.2
+      obtain ⟨v, _hvA, hvsum, hvSupport⟩ :=
+        mem_additiveSupportFamily_iff.mp (hhR b hbB)
+      have hvle : ∀ i, (v i).1 ≤ S.sum id := by
+        intro i
+        apply Finset.single_le_sum (s := S) (f := id)
+          (fun _ _ => Nat.zero_le _)
+        apply hsub
+        rw [← hvSupport]
+        exact mem_tupleSupport_iff.mpr ⟨i, rfl⟩
+      have hsumle :
+          ∑ i, (v i).1 ≤ ∑ _i : Fin 3, S.sum id := by
+        apply Finset.sum_le_sum
+        intro i _hi
+        exact hvle i
+      rw [hvsum] at hsumle
+      simpa using hsumle
+    · exact htInj.mono (fun _ hb => hL₀B hb.1)
+  let L : Set ℕ := L₀ \ EmptyPetal
+  have hLL₀ : L ⊆ L₀ := Set.diff_subset
+  have hL : L.Infinite := hL₀.diff hEmptyFinite
+  have hpetal : ∀ b : L, (h b.1 \ S).Nonempty := by
+    intro b
+    apply Finset.nonempty_iff_ne_empty.mpr
+    intro hempty
+    exact b.2.2 ⟨hLL₀ b.2, hempty⟩
+  let s : ℕ → ℕ := fun b =>
+    if hb : b ∈ L then Classical.choose (hpetal ⟨b, hb⟩) else 0
+  have hsPetal : ∀ b ∈ L, s b ∈ h b \ S := by
+    intro b hb
+    simpa [s, hb] using Classical.choose_spec (hpetal ⟨b, hb⟩)
+  have hsInj : Set.InjOn s L := by
+    intro b hb d hd hsd
+    by_contra hbd
+    have hsInter : s b ∈ h b ∩ h d :=
+      Finset.mem_inter.mpr
+        ⟨(Finset.mem_sdiff.mp (hsPetal b hb)).1,
+          hsd ▸ (Finset.mem_sdiff.mp (hsPetal d hd)).1⟩
+    have hsRoot₀ : s b ∈ S₀ := by
+      rw [← hdelta b (hLL₀ hb) d (hLL₀ hd) hbd]
+      exact hsInter
+    exact (Finset.mem_sdiff.mp (hsPetal b hb)).2
+      (Finset.mem_insert_of_mem hsRoot₀)
+  refine ⟨L, hLL₀.trans hL₀B, hL, s, hsInj, ?_⟩
+  intro b hb
+  have hsH := (Finset.mem_sdiff.mp (hsPetal b hb)).1
+  have hsle := additiveSupportFamily_supportsBounded A 3
+    (t b) (h b) (hhR b ((hLL₀.trans hL₀B) hb)) (s b) hsH
+  have hsne : s b ≠ t b := by
+    intro hEq
+    exact htNotH b ((hLL₀.trans hL₀B) hb) (hEq ▸ hsH)
+  have hsZero : s b ≠ 0 := by
+    intro hEq
+    exact (Finset.mem_sdiff.mp (hsPetal b hb)).2
+      (hEq ▸ Finset.mem_insert_self 0 S₀)
+  exact ⟨hsH, Nat.pos_of_ne_zero hsZero,
+    lt_of_le_of_ne hsle hsne⟩
+
 /-- Joint sunflower refinement of the clique supports `f b` and the
 self-repair supports `g b`.  After thinning, the distinguished petal `p b`
 still lies in the clique petal, while the self-repair support has a nonempty
@@ -6256,6 +6347,278 @@ theorem counterexample_forces_triplySelfRepairedOptionReservoir
       hgb.2.2.1.mono_right hBB₁,
       fun d hd => hgb.2.2.2 d (hBB₁ hd)⟩
   · exact hh
+
+/-- A fourth coherent selector option can be added to the triply repaired
+counterexample reservoir.  Choose `s b` injectively from the repair support
+of `r b`, thin so all old repair supports avoid fourth options belonging to
+other blocks, and then construct a self-repair `j b` for `s b` avoiding all
+four option images. -/
+theorem counterexample_forces_quadruplySelfRepairedOptionReservoir
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ D, D ⊆ A → D.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ D) 3) :
+    ∃ B, B ⊆ A ∧ B.Infinite ∧
+      ∃ S : Finset ℕ, ∃ f : ℕ → Finset ℕ,
+      ∃ p r s : ℕ → ℕ, ∃ g h j : ℕ → Finset ℕ,
+        0 ∈ S ∧
+        (∀ b ∈ B, ∃ w : ExternalFourCliqueWitness A b,
+          f b = w.vertices) ∧
+        (∀ b ∈ B, Disjoint (f b : Set ℕ) B) ∧
+        (∀ b ∈ B, p b ∈ f b \ S ∧ p b < b) ∧
+        (∀ b ∈ B, r b ∈ g b \ S ∧ r b < p b) ∧
+        (∀ b ∈ B, s b ∈ h b ∧ 0 < s b ∧ s b < r b) ∧
+        (∀ b ∈ B, ∀ d ∈ B, b ≠ d →
+          Disjoint ((f b ∪ g b) \ S) ((f d ∪ g d) \ S)) ∧
+        (∀ b ∈ B,
+          g b ∈ additiveSupportFamily A 3 (p b) ∧
+          p b ∉ g b ∧ Disjoint (g b : Set ℕ) B ∧
+          ∀ d ∈ B, p d ∉ g b) ∧
+        (∀ b ∈ B,
+          h b ∈ additiveSupportFamily A 3 (r b) ∧
+          r b ∉ h b ∧ Disjoint (h b : Set ℕ) B ∧
+          (∀ d ∈ B, p d ∉ h b) ∧
+          ∀ d ∈ B, r d ∉ h b) ∧
+        (∀ b ∈ B, ∀ d ∈ B, b ≠ d →
+          s d ∉ (f b ∪ g b) ∪ h b) ∧
+        ∀ b ∈ B,
+          j b ∈ additiveSupportFamily A 3 (s b) ∧
+          s b ∉ j b ∧ Disjoint (j b : Set ℕ) B ∧
+          (∀ d ∈ B, p d ∉ j b) ∧
+          (∀ d ∈ B, r d ∉ j b) ∧
+          ∀ d ∈ B, s d ∉ j b := by
+  classical
+  obtain ⟨B₀, hB₀A, hB₀, S, f, p, r, g, h,
+      hzeroS, hwitness₀, hAvoid₀, hp₀, hr₀,
+      hjoint₀, hg₀, hh₀⟩ :=
+    counterexample_forces_triplySelfRepairedOptionReservoir
+      hbasis hzeroA hcounter
+  have hpInj : Set.InjOn p B₀ := by
+    intro b hb d hd hpd
+    by_contra hbd
+    exact Finset.disjoint_left.mp
+      (hjoint₀ b hb d hd hbd)
+      (Finset.mem_sdiff.mpr
+        ⟨Finset.mem_union_left _
+          (Finset.mem_sdiff.mp (hp₀ b hb).1).1,
+          (Finset.mem_sdiff.mp (hp₀ b hb).1).2⟩)
+      (hpd ▸ Finset.mem_sdiff.mpr
+        ⟨Finset.mem_union_left _
+          (Finset.mem_sdiff.mp (hp₀ d hd).1).1,
+          (Finset.mem_sdiff.mp (hp₀ d hd).1).2⟩)
+  have hrInj : Set.InjOn r B₀ := by
+    intro b hb d hd hrd
+    by_contra hbd
+    exact Finset.disjoint_left.mp
+      (hjoint₀ b hb d hd hbd)
+      (Finset.mem_sdiff.mpr
+        ⟨Finset.mem_union_right _
+          (Finset.mem_sdiff.mp (hr₀ b hb).1).1,
+          (Finset.mem_sdiff.mp (hr₀ b hb).1).2⟩)
+      (hrd ▸ Finset.mem_sdiff.mpr
+        ⟨Finset.mem_union_right _
+          (Finset.mem_sdiff.mp (hr₀ d hd).1).1,
+          (Finset.mem_sdiff.mp (hr₀ d hd).1).2⟩)
+  obtain ⟨L, hLB₀, hL, s, hsInj, hsData⟩ :=
+    exists_infinite_injectiveRepairPoint hB₀ r hrInj h
+      (fun b hb => (hh₀ b hb).1)
+      (fun b hb => (hh₀ b hb).2.1)
+  let oldSupports : ℕ → Finset ℕ := fun b =>
+    (f b ∪ g b) ∪ h b
+  let oldSupportsErased : ℕ → Finset ℕ := fun b =>
+    (oldSupports b).erase (s b)
+  have holdCard : ∀ b ∈ L, (oldSupportsErased b).card ≤ 10 := by
+    intro b hb
+    have hbB₀ := hLB₀ hb
+    obtain ⟨w, hfw⟩ := hwitness₀ b hbB₀
+    have hfCard : (f b).card ≤ 4 := by
+      rw [hfw]
+      exact w.vertices_card_le_four
+    have hgCard : (g b).card ≤ 3 :=
+      additiveSupportFamily_cardAtMost A 3
+        (p b) (g b) (hg₀ b hbB₀).1
+    have hhCard : (h b).card ≤ 3 :=
+      additiveSupportFamily_cardAtMost A 3
+        (r b) (h b) (hh₀ b hbB₀).1
+    have hunion : (oldSupports b).card ≤ 10 := by
+      dsimp only [oldSupports]
+      calc
+        ((f b ∪ g b) ∪ h b).card ≤
+            (f b ∪ g b).card + (h b).card :=
+          Finset.card_union_le (f b ∪ g b) (h b)
+        _ ≤ ((f b).card + (g b).card) + (h b).card :=
+          Nat.add_le_add_right
+            (Finset.card_union_le (f b) (g b)) (h b).card
+        _ ≤ 10 := by omega
+    exact (Finset.card_erase_le).trans hunion
+  have hbNotOldErased : ∀ b ∈ L, b ∉ oldSupportsErased b := by
+    intro b hb hbOld
+    have hbB₀ := hLB₀ hb
+    have hbUnion := (Finset.mem_erase.mp hbOld).2
+    rcases Finset.mem_union.mp hbUnion with hbFG | hbH
+    · rcases Finset.mem_union.mp hbFG with hbF | hbG
+      · exact Set.disjoint_left.mp (hAvoid₀ b hbB₀)
+          (Finset.mem_coe.mpr hbF) hbB₀
+      · exact Set.disjoint_left.mp (hg₀ b hbB₀).2.2.1
+          (Finset.mem_coe.mpr hbG) hbB₀
+    · exact Set.disjoint_left.mp (hh₀ b hbB₀).2.2.1
+        (Finset.mem_coe.mpr hbH) hbB₀
+  have hsNotOldErased : ∀ b ∈ L, s b ∉ oldSupportsErased b := by
+    intro b hb
+    simp [oldSupportsErased]
+  obtain ⟨L₁, hL₁L, hL₁, havoidS⟩ :=
+    exists_infinite_freeSet_avoiding_injectiveImage
+      hL s hsInj oldSupportsErased 10 holdCard
+        hbNotOldErased hsNotOldErased
+  have hcrossS : ∀ b ∈ L₁, ∀ d ∈ L₁, b ≠ d →
+      s d ∉ oldSupports b := by
+    intro b hb d hd hbd hsdOld
+    have hsdne : s d ≠ s b := by
+      intro hEq
+      exact hbd (hsInj (hL₁L hb) (hL₁L hd) hEq.symm)
+    have hsdErase : s d ∈ oldSupportsErased b :=
+      Finset.mem_erase.mpr ⟨hsdne, hsdOld⟩
+    exact (havoidS b hb).2 d hd hsdErase
+  have hsr : ∀ b ∈ L₁, s b < r b := by
+    intro b hb
+    exact (hsData b (hL₁L hb)).2.2
+  have hsb : ∀ b ∈ L₁, s b < b := by
+    intro b hb
+    exact (hsr b hb).trans
+      ((hr₀ b (hLB₀ (hL₁L hb))).2.trans
+        (hp₀ b (hLB₀ (hL₁L hb))).2)
+  obtain ⟨L₂, hL₂L₁, hL₂, j, hj₀⟩ :=
+    exists_infinite_selfRepairedThirdOptions
+      hbasis hL₁ r s
+        (hrInj.mono (hL₁L.trans hLB₀))
+        (hsInj.mono hL₁L) hsr hsb
+  have hpNotJ : ∀ b ∈ L₂, p b ∉ j b := by
+    intro b hb hpbJ
+    have hpLe : p b ≤ s b :=
+      additiveSupportFamily_supportsBounded A 3
+        (s b) (j b) (hj₀ b hb).1 (p b) hpbJ
+    have hsLessP : s b < p b :=
+      (hsr b (hL₂L₁ hb)).trans
+        (hr₀ b (hLB₀ (hL₁L (hL₂L₁ hb)))).2
+    omega
+  have hjCard : ∀ b ∈ L₂, (j b).card ≤ 3 := by
+    intro b hb
+    exact additiveSupportFamily_cardAtMost A 3
+      (s b) (j b) (hj₀ b hb).1
+  have hbNotJ : ∀ b ∈ L₂, b ∉ j b := by
+    intro b hb hbJ
+    exact Set.disjoint_left.mp (hj₀ b hb).2.2.1
+      (Finset.mem_coe.mpr hbJ) hb
+  obtain ⟨B, hBL₂, hB, havoidP⟩ :=
+    exists_infinite_freeSet_avoiding_injectiveImage
+      hL₂ p (hpInj.mono
+        (hL₂L₁.trans (hL₁L.trans hLB₀)))
+      j 3 hjCard hbNotJ hpNotJ
+  have hBB₀ : B ⊆ B₀ :=
+    hBL₂.trans (hL₂L₁.trans (hL₁L.trans hLB₀))
+  refine ⟨B, hBB₀.trans hB₀A, hB, S, f, p, r, s, g, h, j,
+    hzeroS, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · intro b hb
+    exact hwitness₀ b (hBB₀ hb)
+  · intro b hb
+    exact (hAvoid₀ b (hBB₀ hb)).mono_right hBB₀
+  · intro b hb
+    exact hp₀ b (hBB₀ hb)
+  · intro b hb
+    exact hr₀ b (hBB₀ hb)
+  · intro b hb
+    exact hsData b (hL₁L (hL₂L₁ (hBL₂ hb)))
+  · intro b hb d hd hbd
+    exact hjoint₀ b (hBB₀ hb) d (hBB₀ hd) hbd
+  · intro b hb
+    have hgb := hg₀ b (hBB₀ hb)
+    exact ⟨hgb.1, hgb.2.1, hgb.2.2.1.mono_right hBB₀,
+      fun d hd => hgb.2.2.2 d (hBB₀ hd)⟩
+  · intro b hb
+    have hhb := hh₀ b (hBB₀ hb)
+    exact ⟨hhb.1, hhb.2.1, hhb.2.2.1.mono_right hBB₀,
+      fun d hd => hhb.2.2.2.1 d (hBB₀ hd),
+      fun d hd => hhb.2.2.2.2 d (hBB₀ hd)⟩
+  · intro b hb d hd hbd
+    exact hcrossS b (hL₂L₁ (hBL₂ hb))
+      d (hL₂L₁ (hBL₂ hd)) hbd
+  · intro b hb
+    have hjb := hj₀ b (hBL₂ hb)
+    refine ⟨hjb.1, hjb.2.1, (havoidP b hb).1,
+      (havoidP b hb).2, ?_, ?_⟩
+    · intro d hd
+      exact hjb.2.2.2.1 d (hBL₂ hd)
+    · intro d hd
+      exact hjb.2.2.2.2 d (hBL₂ hd)
+
+/-- Generic internal-survival lemma for a finite (or arbitrary indexed)
+menu of repaired options in each block.  A selected internal target uses its
+assigned repair.  An unselected target uses the zero-padded canonical pair.
+The only same-block selected value is the target itself, while repairs are
+assumed to avoid every option belonging to a different block. -/
+theorem internalTarget_survives_repairedOptionSelector
+    {A : Set ℕ} {F : ℕ → Finset ℕ} {ι : Type*}
+    (hzeroA : 0 ∈ A)
+    (option : ℕ → ι → ℕ)
+    (repair : ℕ → ι → Finset ℕ)
+    (hoptionZero : ∀ i a, option i a ≠ 0)
+    (hrepair : ∀ i a,
+      repair i a ∈ additiveSupportFamily A 3 (option i a))
+    (hrepairSelf : ∀ i a, option i a ∉ repair i a)
+    (hrepairCross : ∀ i j, i ≠ j → ∀ a b,
+      option j b ∉ repair i a)
+    (s : BlockSelector F)
+    (hsOption : ∀ i, ∃ a, (s i).1 = option i a) :
+    ∀ q ∈ A, ∃ G ∈ additiveSupportFamily A 3 q,
+      Disjoint (G : Set ℕ) (selectedSet s) := by
+  classical
+  have hzeroSelected : 0 ∉ selectedSet s := by
+    rintro ⟨i, hi⟩
+    obtain ⟨a, hsa⟩ := hsOption i
+    have hzeroOption : option i a = 0 := by
+      exact hsa.symm.trans hi
+    exact hoptionZero i a hzeroOption
+  have htrivial : ∀ q, q ∈ A → q ∉ selectedSet s →
+      ∃ G ∈ additiveSupportFamily A 3 q,
+        Disjoint (G : Set ℕ) (selectedSet s) := by
+    intro q hqA hqNotSelected
+    have hpair : pairSupport q 0 ∈
+        additiveSupportFamily A 2 q := by
+      apply pairSupport_mem_additiveSupportFamily
+        (Nat.zero_le q) hzeroA
+      simpa using hqA
+    let G : Finset ℕ := insert 0 (pairSupport q 0)
+    have hGR : G ∈ additiveSupportFamily A 3 q := by
+      simpa [G] using
+        (insert_mem_additiveSupportFamily_succ hzeroA hpair)
+    refine ⟨G, hGR, ?_⟩
+    rw [Set.disjoint_left]
+    intro x hxG hxSelected
+    have hx : x = 0 ∨ x = q := by
+      simpa [G, pairSupport] using (Finset.mem_coe.mp hxG)
+    rcases hx with rfl | rfl
+    · exact hzeroSelected hxSelected
+    · exact hqNotSelected hxSelected
+  intro q hqA
+  by_cases hqSelected : q ∈ selectedSet s
+  · obtain ⟨i, hiq⟩ := hqSelected
+    obtain ⟨a, hsa⟩ := hsOption i
+    have hqOption : q = option i a := hiq.symm.trans hsa
+    refine ⟨repair i a, hqOption ▸ hrepair i a, ?_⟩
+    rw [Set.disjoint_left]
+    intro x hxRepair hxSelected
+    obtain ⟨j, hjx⟩ := hxSelected
+    obtain ⟨b, hsb⟩ := hsOption j
+    by_cases hij : i = j
+    · subst j
+      have hxOption : x = option i a := hjx.symm.trans hsa
+      exact hrepairSelf i a
+        (Finset.mem_coe.mp (hxOption ▸ hxRepair))
+    · have hxOther : x = option j b := hjx.symm.trans hsb
+      exact hrepairCross i j hij a b
+        (Finset.mem_coe.mp (hxOther ▸ hxRepair))
+  · exact htrivial q hqA hqSelected
 
 /-- Every selector restricted to the coherent three-option cells preserves
 an order-three support for every internal target `q ∈ A`.  Selected atoms use
@@ -6945,6 +7308,38 @@ theorem coreSelectorCertificate_forces_boundedPairFamily_sharp
     exists_coveredCell_of_coreSelectorCertificate_and_pairChoice
       hzeroA hcellZero hcore hcert c
   exact hcAvoid i hiCover
+
+/-- Large dedicated cores force large finite target certificates.  Choosing
+one pair support for each represented target yields a union of at most
+`2 * Q.card` points, while the selector certificate forces that union to
+cover one whole zero-free core. -/
+theorem coreSelectorCertificate_forces_targetCard_lower
+    {A : Set ℕ} {F cell : ℕ → Finset ℕ} {Q : Finset ℕ} {k : ℕ}
+    (hzeroA : 0 ∈ A)
+    (hcellZero : ∀ i, 0 ∉ cell i)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellLower : ∀ i, k ≤ (cell i).card)
+    (hrepresented : ∀ q ∈ Q,
+      (additiveSupportFamily A 2 q).Nonempty)
+    (hcert : ∀ s : BlockSelector F,
+      (∀ i, (s i).1 ∈ cell i) →
+      ∃ q ∈ Q,
+        DestroysAt (additiveSupportFamily A 3) (selectedSet s) q) :
+    k ≤ 2 * Q.card := by
+  classical
+  let c : FiniteSupportChoice (additiveSupportFamily A 2) Q := fun q =>
+    ⟨(hrepresented q.1 q.2).choose,
+      (hrepresented q.1 q.2).choose_spec⟩
+  obtain ⟨i, hiCover⟩ :=
+    exists_coveredCell_of_coreSelectorCertificate_and_pairChoice
+      hzeroA hcellZero hcore hcert c
+  have hcellUnion : (cell i).card ≤
+      (finiteSupportChoiceUnion c).card :=
+    Finset.card_le_card hiCover
+  have hunionCard : (finiteSupportChoiceUnion c).card ≤ 2 * Q.card :=
+    finiteSupportChoiceUnion_card_le
+      (additiveSupportFamily_cardAtMost A 2) c
+  exact (hcellLower i).trans (hcellUnion.trans hunionCard)
 
 set_option maxHeartbeats 5000000 in
 /-- Pointwise bound from a target-localized order-two core certificate.  For
