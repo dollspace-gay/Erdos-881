@@ -5287,6 +5287,25 @@ theorem diagonalTarget_destroyer_descends_to_petal
     · exact hbD hxD
     · exact hEdisjoint hxE hxD
 
+/-- If zero is retained, every order-three destroyer of a target is already
+an order-two destroyer of that same target.  Indeed, any surviving pair
+support could be padded by zero to give a surviving triple support. -/
+theorem orderThree_destroyer_descends_to_orderTwo_of_zero_retained
+    {A D : Set ℕ} {q : ℕ}
+    (hzeroA : 0 ∈ A) (hzeroD : 0 ∉ D)
+    (hdestroy : DestroysAt
+      (additiveSupportFamily A 3) D q) :
+    DestroysAt (additiveSupportFamily A 2) D q := by
+  intro E hER hEdisjoint
+  apply hdestroy (insert 0 E)
+  · simpa using insert_mem_additiveSupportFamily_succ hzeroA hER
+  · rw [Set.disjoint_left] at hEdisjoint ⊢
+    intro x hxInsert hxD
+    have hx : x = 0 ∨ x ∈ E := by simpa using hxInsert
+    rcases hx with rfl | hxE
+    · exact hzeroD hxD
+    · exact hEdisjoint hxE hxD
+
 /-- For a canonical zero-atom `p`, order-two destruction is exactly deletion
 of `p` or deletion of zero. -/
 theorem zeroAtom_destroysAt_two_iff_mem_or_zero
@@ -6556,6 +6575,151 @@ theorem exists_pairSupportChoice_avoiding_threePointCells_of_large
           (Finset.mem_coe.mpr (hcellT hxCell))).elim
       · exact hxU
 
+set_option maxHeartbeats 5000000 in
+/-- Sharp greedy form for three-point cells.  A previously touched cell can
+forbid at most one new pair support: two distinct supports completing that
+same cell would share any point of the cell still missing from the old
+union, contradicting the matching property of order-two supports.  Thus the
+factor given by the cell size is unnecessary. -/
+theorem exists_pairSupportChoice_avoiding_threePointCells_of_large_sharp
+    {A : Set ℕ} {F cell : ℕ → Finset ℕ} {Q : Finset ℕ}
+    (P : IsFiniteBlockPartition A F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellLower : ∀ i, 3 ≤ (cell i).card)
+    (hlarge : ∀ q ∈ Q,
+      2 * Q.card < (additiveSupportFamily A 2 q).card) :
+    ∃ c : FiniteSupportChoice (additiveSupportFamily A 2) Q,
+      ∀ i, ¬ cell i ⊆ finiteSupportChoiceUnion c := by
+  classical
+  revert hlarge
+  induction Q using Finset.induction_on with
+  | empty =>
+      intro _hlarge
+      let c : FiniteSupportChoice
+          (additiveSupportFamily A 2) ∅ := fun q => isEmptyElim q
+      refine ⟨c, ?_⟩
+      intro i hcovered
+      have hnonempty : (cell i).Nonempty :=
+        Finset.card_pos.mp
+          (lt_of_lt_of_le (by norm_num : 0 < 3) (hcellLower i))
+      obtain ⟨x, hxCell⟩ := hnonempty
+      have hxUnion := hcovered hxCell
+      simpa [finiteSupportChoiceUnion] using hxUnion
+  | @insert q Q hqQ ih =>
+      intro hlarge
+      have hlargeQ : ∀ r ∈ Q,
+          2 * Q.card < (additiveSupportFamily A 2 r).card := by
+        intro r hrQ
+        have hrLarge := hlarge r (Finset.mem_insert_of_mem hrQ)
+        have hcardInsert : (insert q Q).card = Q.card + 1 := by
+          simp [Finset.card_insert_of_notMem hqQ]
+        rw [hcardInsert] at hrLarge
+        omega
+      obtain ⟨cQ, hcQ⟩ := ih hlargeQ
+      let U : Finset ℕ := finiteSupportChoiceUnion cQ
+      let I : Finset ℕ := U.image (blockIndex P)
+      let Bad : Finset (Finset ℕ) :=
+        (additiveSupportFamily A 2 q).filter fun E =>
+          ∃ i ∈ I, cell i ⊆ U ∪ E
+      have hbadWitness : ∀ E : {E // E ∈ Bad},
+          ∃ i, i ∈ I ∧ cell i ⊆ U ∪ E.1 := by
+        intro E
+        exact (Finset.mem_filter.mp E.2).2
+      choose badIndex hbadIndexMem hbadCover using hbadWitness
+      let badIndexSub : {E // E ∈ Bad} → {i // i ∈ I} := fun E =>
+        ⟨badIndex E, hbadIndexMem E⟩
+      have hbadIndexInj : Function.Injective badIndexSub := by
+        intro E E' hindex
+        apply Subtype.ext
+        by_contra hEE'
+        have hindexVal : badIndex E = badIndex E' :=
+          congrArg Subtype.val hindex
+        have hnotCovered := hcQ (badIndex E)
+        obtain ⟨x, hxCell, hxU⟩ :=
+          Finset.not_subset.mp hnotCovered
+        have hxE : x ∈ E.1 := by
+          rcases Finset.mem_union.mp (hbadCover E hxCell) with hxU' | hxE
+          · exact (hxU hxU').elim
+          · exact hxE
+        have hxCell' : x ∈ cell (badIndex E') := by
+          simpa [hindexVal] using hxCell
+        have hxE' : x ∈ E'.1 := by
+          rcases Finset.mem_union.mp (hbadCover E' hxCell') with hxU' | hxE'
+          · exact (hxU hxU').elim
+          · exact hxE'
+        have hER : E.1 ∈ additiveSupportFamily A 2 q :=
+          (Finset.mem_filter.mp E.2).1
+        have hE'R : E'.1 ∈ additiveSupportFamily A 2 q :=
+          (Finset.mem_filter.mp E'.2).1
+        exact Finset.disjoint_left.mp
+          (additiveSupportFamily_two_isMatching A q hER hE'R hEE')
+          hxE hxE'
+      have hbadCardI : Bad.card ≤ I.card := by
+        simpa only [Fintype.card_coe] using
+          Fintype.card_le_of_injective badIndexSub hbadIndexInj
+      have hIcardU : I.card ≤ U.card := by
+        exact Finset.card_image_le
+      have hUcard : U.card ≤ 2 * Q.card :=
+        finiteSupportChoiceUnion_card_le
+          (additiveSupportFamily_cardAtMost A 2) cQ
+      have hbadCard : Bad.card ≤ 2 * Q.card :=
+        hbadCardI.trans (hIcardU.trans hUcard)
+      have hbadLt : Bad.card <
+          (additiveSupportFamily A 2 q).card := by
+        have hqLarge := hlarge q (Finset.mem_insert_self q Q)
+        have hcardInsert : (insert q Q).card = Q.card + 1 := by
+          simp [Finset.card_insert_of_notMem hqQ]
+        rw [hcardInsert] at hqLarge
+        omega
+      obtain ⟨E, hER, hENotBad⟩ :=
+        Finset.exists_mem_notMem_of_card_lt_card hbadLt
+      let c : FiniteSupportChoice
+          (additiveSupportFamily A 2) (insert q Q) := fun t =>
+        if ht : t.1 = q then
+          ⟨E, by simpa [ht] using hER⟩
+        else
+          let tQ : {n // n ∈ Q} :=
+            ⟨t.1, (Finset.mem_insert.mp t.2).resolve_left ht⟩
+          ⟨(cQ tQ).1, (cQ tQ).2⟩
+      have hcCases : ∀ x,
+          x ∈ finiteSupportChoiceUnion c → x ∈ E ∨ x ∈ U := by
+        intro x hx
+        obtain ⟨t, _htAttach, hxt⟩ := Finset.mem_biUnion.mp hx
+        by_cases ht : t.1 = q
+        · left
+          simpa [c, ht] using hxt
+        · right
+          let tQ : {n // n ∈ Q} :=
+            ⟨t.1, (Finset.mem_insert.mp t.2).resolve_left ht⟩
+          apply finiteSupportChoice_subset_union cQ tQ
+          simpa [c, ht, tQ] using hxt
+      refine ⟨c, ?_⟩
+      intro i hcovered
+      have hcellUE : cell i ⊆ U ∪ E := by
+        intro x hxCell
+        rcases hcCases x (hcovered hxCell) with hxE | hxU
+        · exact Finset.mem_union_right U hxE
+        · exact Finset.mem_union_left E hxU
+      have hcellNotE : ¬ cell i ⊆ E := by
+        intro hcellE
+        have hcardLe := Finset.card_le_card hcellE
+        have hEcard :=
+          additiveSupportFamily_cardAtMost A 2 q E hER
+        have hcellCard := hcellLower i
+        omega
+      obtain ⟨u, huCell, huE⟩ := Finset.not_subset.mp hcellNotE
+      have huU : u ∈ U := by
+        rcases Finset.mem_union.mp (hcellUE huCell) with huU | huE'
+        · exact huU
+        · exact (huE huE').elim
+      have huIndex : blockIndex P u = i :=
+        P.blockIndex_eq_of_mem (hcore i huCell)
+      have hiI : i ∈ I := by
+        apply Finset.mem_image.mpr
+        exact ⟨u, huU, huIndex⟩
+      apply hENotBad
+      exact Finset.mem_filter.mpr ⟨hER, i, hiI, hcellUE⟩
+
 /-- Pair-support padding transfers a triple selector certificate to coverage
 of any zero-free dedicated cell in the partition. -/
 theorem exists_coveredCell_of_tripleCertificate_and_pairChoice
@@ -6710,11 +6874,45 @@ theorem coreSelectorCertificate_forces_boundedPairFamily_of_threePointCells
   exact hcAvoid i hiCover
 
 set_option maxHeartbeats 5000000 in
+/-- Sharp certificate bound for cells of size at least three.  The refined
+greedy argument counts touched cells rather than every vertex in those
+cells, so neither an upper cell-size bound nor the corresponding factor is
+needed. -/
+theorem coreSelectorCertificate_forces_boundedPairFamily_sharp
+    {A : Set ℕ} {F cell : ℕ → Finset ℕ} {Q : Finset ℕ}
+    (P : IsFiniteBlockPartition A F)
+    (hzeroA : 0 ∈ A)
+    (hcellZero : ∀ i, 0 ∉ cell i)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellLower : ∀ i, 3 ≤ (cell i).card)
+    (hcert : ∀ s : BlockSelector F,
+      (∀ i, (s i).1 ∈ cell i) →
+      ∃ q ∈ Q,
+        DestroysAt (additiveSupportFamily A 3) (selectedSet s) q) :
+    ∃ q ∈ Q,
+      (additiveSupportFamily A 2 q).card ≤ 2 * Q.card := by
+  classical
+  by_contra hsmall
+  have hlarge : ∀ q ∈ Q,
+      2 * Q.card < (additiveSupportFamily A 2 q).card := by
+    intro q hqQ
+    apply Nat.lt_of_not_ge
+    intro hle
+    exact hsmall ⟨q, hqQ, hle⟩
+  obtain ⟨c, hcAvoid⟩ :=
+    exists_pairSupportChoice_avoiding_threePointCells_of_large_sharp
+      P hcore hcellLower hlarge
+  obtain ⟨i, hiCover⟩ :=
+    exists_coveredCell_of_coreSelectorCertificate_and_pairChoice
+      hzeroA hcellZero hcore hcert c
+  exact hcAvoid i hiCover
+
+set_option maxHeartbeats 5000000 in
 /-- Global three-option-cell residual.  A zero-normalized counterexample
 forces an infinite deletion reservoir and one fixed finite-block partition
 with zero-free dedicated three-point cells.  Every late cardinal-minimal
 selector certificate on this partition contains a target with at most
-`6 * Q.card` order-two supports.  In particular, the former
+`2 * Q.card` order-two supports.  In particular, the former
 diagonal atom-petal branch has been eliminated rather than merely renamed. -/
 theorem counterexample_forces_minimalEnrichedCell_boundedPairCertificate
     {A : Set ℕ}
@@ -6742,7 +6940,7 @@ theorem counterexample_forces_minimalEnrichedCell_boundedPairCertificate
                 ¬ DestroysAt (additiveSupportFamily A 3)
                   (selectedSet s) q') ∧
           ∃ q ∈ Q,
-            (additiveSupportFamily A 2 q).card ≤ 6 * Q.card := by
+            (additiveSupportFamily A 2 q).card ≤ 2 * Q.card := by
   classical
   obtain ⟨B₀, hB₀A, hB₀, R, f, p, g,
       _hnormalAtom, _hnormalPetal, _hrepairs,
@@ -6849,8 +7047,8 @@ theorem counterexample_forces_minimalEnrichedCell_boundedPairCertificate
     intro q hqQ
     exact hQ₁N q (hQQ₁ hqQ)
   obtain ⟨q, hqQ, hqBound⟩ :=
-    tripleCertificate_forces_boundedPairFamily_of_threePointCells
-      P hzeroA hcellZero hcore hcellLower hcellUpper hcert
+    coreSelectorCertificate_forces_boundedPairFamily_sharp
+      P hzeroA hcellZero hcore hcellLower (fun s _hs => hcert s)
   refine ⟨Q, hQ, hQN, hcert, hlocalized, q, hqQ, ?_⟩
   simpa using hqBound
 
@@ -6859,7 +7057,7 @@ set_option maxHeartbeats 5000000 in
 zero-normalized counterexample supplies one fixed partition into dedicated
 three-point cores such that, at every late threshold, a finite set of targets
 outside `A` certifies every selector restricted to those cores.  One of those
-external targets has at most `6 * Q.card` order-two supports. -/
+external targets has at most `2 * Q.card` order-two supports. -/
 theorem counterexample_forces_externalCoreCertificate_boundedPairFamily
     {A : Set ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -6881,7 +7079,7 @@ theorem counterexample_forces_externalCoreCertificate_boundedPairFamily
               DestroysAt (additiveSupportFamily A 3)
                 (selectedSet s) q) ∧
           ∃ q ∈ Q,
-            (additiveSupportFamily A 2 q).card ≤ 6 * Q.card := by
+            (additiveSupportFamily A 2 q).card ≤ 2 * Q.card := by
   classical
   obtain ⟨B, hBA, hB, S, f, p, r, g, h,
       hzeroS, hwitness, hAvoid, hpData, hrData,
@@ -6997,13 +7195,104 @@ theorem counterexample_forces_externalCoreCertificate_boundedPairFamily
   have hcellLower : ∀ i, 3 ≤ (cell i).card := by
     intro i
     rw [hcellCard i]
-  have hcellUpper : ∀ i, (cell i).card ≤ 3 := by
+  obtain ⟨q, hqQ, hqBound⟩ :=
+    coreSelectorCertificate_forces_boundedPairFamily_sharp
+      P hzeroA hcellZero hcore hcellLower hcert
+  refine ⟨Q, hQ, hQN, hcert, q, hqQ, ?_⟩
+  simpa using hqBound
+
+set_option maxHeartbeats 5000000 in
+/-- Minimal external-core residual.  In addition to excluding every target
+in `A`, shrink the restricted three-option certificate until every remaining
+external target has a private core selector: that selector destroys the
+chosen target and no other target in the same certificate.  The sharp
+`2 * Q.card` pair-support bound is retained after shrinking. -/
+theorem counterexample_forces_minimalExternalCoreCertificate
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ D, D ⊆ A → D.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ D) 3) :
+    ∃ B, B ⊆ A ∧ B.Infinite ∧
+      ∃ F cell : ℕ → Finset ℕ,
+        IsFiniteBlockPartition A F ∧
+        (∀ i, cell i ⊆ F i) ∧
+        (∀ i, 0 ∉ cell i) ∧
+        (∀ i, (cell i).card = 3) ∧
+        ∀ N, ∃ Q : Finset ℕ,
+          Q.Nonempty ∧
+          (∀ q ∈ Q, N ≤ q ∧ q ∉ A) ∧
+          (∀ s : BlockSelector F,
+            (∀ i, (s i).1 ∈ cell i) →
+            ∃ q ∈ Q,
+              DestroysAt (additiveSupportFamily A 3)
+                (selectedSet s) q) ∧
+          (∀ q ∈ Q, ∃ s : BlockSelector F,
+            (∀ i, (s i).1 ∈ cell i) ∧
+            DestroysAt (additiveSupportFamily A 3)
+              (selectedSet s) q ∧
+            DestroysAt (additiveSupportFamily A 2)
+              (selectedSet s) q ∧
+            ∀ q' ∈ Q, q' ≠ q →
+              ¬ DestroysAt (additiveSupportFamily A 3)
+                (selectedSet s) q') ∧
+          ∃ q ∈ Q,
+            (additiveSupportFamily A 2 q).card ≤ 2 * Q.card := by
+  classical
+  obtain ⟨B, hBA, hB, F, cell, P, hcore, hcellZero,
+      hcellCard, hresidual⟩ :=
+    counterexample_forces_externalCoreCertificate_boundedPairFamily
+      hbasis hzeroA hcounter
+  refine ⟨B, hBA, hB, F, cell, P, hcore, hcellZero,
+    hcellCard, ?_⟩
+  intro N
+  obtain ⟨Q, _hQ, hQN, hcert, _hqBound⟩ := hresidual N
+  let Good : BlockSelector F → Prop := fun s =>
+    ∀ i, (s i).1 ∈ cell i
+  obtain ⟨Q₀, hQ₀Q, hcert₀, hlocalized⟩ :=
+    exists_minimal_targetLocalized_subcertificate_on Good hcert
+  have hcellNonempty : ∀ i, (cell i).Nonempty := by
+    intro i
+    exact Finset.card_pos.mp (by rw [hcellCard i]; omega)
+  let coreSelector : BlockSelector F := fun i =>
+    ⟨(hcellNonempty i).choose,
+      hcore i (hcellNonempty i).choose_spec⟩
+  have hcoreSelector : Good coreSelector := by
+    intro i
+    exact (hcellNonempty i).choose_spec
+  obtain ⟨q₀, hq₀Q₀, _hq₀Destroy⟩ :=
+    hcert₀ coreSelector hcoreSelector
+  have hQ₀ : Q₀.Nonempty := ⟨q₀, hq₀Q₀⟩
+  have hQ₀N : ∀ q ∈ Q₀, N ≤ q ∧ q ∉ A := by
+    intro q hqQ₀
+    exact hQN q (hQ₀Q hqQ₀)
+  have hcellLower : ∀ i, 3 ≤ (cell i).card := by
     intro i
     rw [hcellCard i]
-  obtain ⟨q, hqQ, hqBound⟩ :=
-    coreSelectorCertificate_forces_boundedPairFamily_of_threePointCells
-      P hzeroA hcellZero hcore hcellLower hcellUpper hcert
-  refine ⟨Q, hQ, hQN, hcert, q, hqQ, ?_⟩
+  obtain ⟨q, hqQ₀, hqBound⟩ :=
+    coreSelectorCertificate_forces_boundedPairFamily_sharp
+      P hzeroA hcellZero hcore hcellLower hcert₀
+  have hlocalized₂ : ∀ q ∈ Q₀, ∃ s : BlockSelector F,
+      (∀ i, (s i).1 ∈ cell i) ∧
+      DestroysAt (additiveSupportFamily A 3) (selectedSet s) q ∧
+      DestroysAt (additiveSupportFamily A 2) (selectedSet s) q ∧
+      ∀ q' ∈ Q₀, q' ≠ q →
+        ¬ DestroysAt (additiveSupportFamily A 3)
+          (selectedSet s) q' := by
+    intro q hqQ₀
+    obtain ⟨s, hsCore, hqDestroy, hprivate⟩ :=
+      hlocalized q hqQ₀
+    have hzeroSelected : 0 ∉ selectedSet s := by
+      rintro ⟨i, hi⟩
+      apply hcellZero i
+      rw [← hi]
+      exact hsCore i
+    exact ⟨s, hsCore, hqDestroy,
+      orderThree_destroyer_descends_to_orderTwo_of_zero_retained
+        hzeroA hzeroSelected hqDestroy,
+      hprivate⟩
+  refine ⟨Q₀, hQ₀, hQ₀N, hcert₀, hlocalized₂,
+    q, hqQ₀, ?_⟩
   simpa using hqBound
 
 set_option maxHeartbeats 5000000 in

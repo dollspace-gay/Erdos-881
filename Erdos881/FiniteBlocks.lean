@@ -133,6 +133,65 @@ theorem exists_minimal_targetLocalized_subcertificate
   intro q' hq'Q₀ hq'q
   exact hs q' (Finset.mem_erase.mpr ⟨hq'q, hq'Q₀⟩)
 
+/-- A finite selector certificate remains target-localizable when it is only
+required on a prescribed class of selectors.  This is the form needed when
+each block has a smaller dedicated core and the argument only permits
+selectors whose values lie in those cores. -/
+theorem exists_minimal_targetLocalized_subcertificate_on
+    {R : SupportFamily} {F : ℕ → Finset ℕ} {Q : Finset ℕ}
+    (Good : BlockSelector F → Prop)
+    (hcert : ∀ s : BlockSelector F, Good s →
+      ∃ q ∈ Q, DestroysAt R (selectedSet s) q) :
+    ∃ Q₀ : Finset ℕ, Q₀ ⊆ Q ∧
+      (∀ s : BlockSelector F, Good s →
+        ∃ q ∈ Q₀, DestroysAt R (selectedSet s) q) ∧
+      ∀ q ∈ Q₀, ∃ s : BlockSelector F,
+        Good s ∧
+        DestroysAt R (selectedSet s) q ∧
+        ∀ q' ∈ Q₀, q' ≠ q →
+          ¬ DestroysAt R (selectedSet s) q' := by
+  classical
+  let Cert : Finset ℕ → Prop := fun S =>
+    ∀ s : BlockSelector F, Good s →
+      ∃ q ∈ S, DestroysAt R (selectedSet s) q
+  let candidates : Finset (Finset ℕ) := Q.powerset.filter Cert
+  have hQcandidates : Q ∈ candidates := by
+    exact Finset.mem_filter.mpr
+      ⟨Finset.mem_powerset.mpr Finset.Subset.rfl, hcert⟩
+  have hcandidates : candidates.Nonempty := ⟨Q, hQcandidates⟩
+  obtain ⟨Q₀, hQ₀candidates, hminimalCard⟩ :=
+    Finset.exists_min_image candidates Finset.card hcandidates
+  have hQ₀Q : Q₀ ⊆ Q :=
+    Finset.mem_powerset.mp (Finset.mem_filter.mp hQ₀candidates).1
+  have hQ₀cert : Cert Q₀ :=
+    (Finset.mem_filter.mp hQ₀candidates).2
+  have heraseNotCert : ∀ q ∈ Q₀, ¬ Cert (Q₀.erase q) := by
+    intro q hqQ₀ herase
+    have heraseQ : Q₀.erase q ⊆ Q :=
+      (Finset.erase_subset q Q₀).trans hQ₀Q
+    have heraseCandidate : Q₀.erase q ∈ candidates :=
+      Finset.mem_filter.mpr
+        ⟨Finset.mem_powerset.mpr heraseQ, herase⟩
+    have hcardle := hminimalCard (Q₀.erase q) heraseCandidate
+    have hcardlt : (Q₀.erase q).card < Q₀.card :=
+      Finset.card_lt_card (Finset.erase_ssubset hqQ₀)
+    exact (not_le_of_gt hcardlt) hcardle
+  refine ⟨Q₀, hQ₀Q, hQ₀cert, ?_⟩
+  intro q hqQ₀
+  have hfail := heraseNotCert q hqQ₀
+  change ¬ ∀ s : BlockSelector F, Good s →
+    ∃ q' ∈ Q₀.erase q, DestroysAt R (selectedSet s) q' at hfail
+  push Not at hfail
+  obtain ⟨s, hsGood, hs⟩ := hfail
+  obtain ⟨r, hrQ₀, hrdestroy⟩ := hQ₀cert s hsGood
+  have hrq : r = q := by
+    by_contra hrq
+    exact hs r (Finset.mem_erase.mpr ⟨hrq, hrQ₀⟩) hrdestroy
+  subst r
+  refine ⟨s, hsGood, hrdestroy, ?_⟩
+  intro q' hq'Q₀ hq'q
+  exact hs q' (Finset.mem_erase.mpr ⟨hq'q, hq'Q₀⟩)
+
 /-- The finite-certificate property quantified over every finite-block
 partition and every lower threshold. -/
 def FiniteBlockCertificateProperty
