@@ -5267,6 +5267,73 @@ theorem tripleCertificate_forces_smallPairFamily_or_diagonalPetalSupport
         hzeroA hwitness hp hcore hcert c
     exact hcAvoid b hbB ⟨hbU, hpU⟩
 
+/-- Destruction of a diagonal target `b + p` descends to destruction of the
+petal target `p`, provided that the anchor `b` itself was not deleted.  Any
+order-two support of `p` avoiding the deletion would lift, by adjoining `b`,
+to an order-three support of `b + p` avoiding the same deletion. -/
+theorem diagonalTarget_destroyer_descends_to_petal
+    {A D : Set ℕ} {b p : ℕ}
+    (hbA : b ∈ A) (hbD : b ∉ D)
+    (hdestroy : DestroysAt
+      (additiveSupportFamily A 3) D (b + p)) :
+    DestroysAt (additiveSupportFamily A 2) D p := by
+  intro E hER hEdisjoint
+  apply hdestroy (insert b E)
+  · simpa using insert_mem_additiveSupportFamily_succ hbA hER
+  · rw [Set.disjoint_left] at hEdisjoint ⊢
+    intro x hxInsert hxD
+    have hx : x = b ∨ x ∈ E := by simpa using hxInsert
+    rcases hx with rfl | hxE
+    · exact hbD hxD
+    · exact hEdisjoint hxE hxD
+
+/-- For a canonical zero-atom `p`, order-two destruction is exactly deletion
+of `p` or deletion of zero. -/
+theorem zeroAtom_destroysAt_two_iff_mem_or_zero
+    {A D : Set ℕ} {p : ℕ}
+    (hzeroA : 0 ∈ A) (hpA : p ∈ A)
+    (hnormal : ∀ E ∈ additiveSupportFamily A 2 p,
+      E = {p, 0}) :
+    DestroysAt (additiveSupportFamily A 2) D p ↔
+      p ∈ D ∨ 0 ∈ D := by
+  constructor
+  · intro hdestroy
+    have hcanonical : pairSupport p p ∈
+        additiveSupportFamily A 2 p := by
+      apply pairSupport_mem_additiveSupportFamily (Nat.le_refl p) hpA
+      simpa using hzeroA
+    obtain ⟨x, hxSupport, hxD⟩ :=
+      Set.not_disjoint_iff.mp (hdestroy (pairSupport p p) hcanonical)
+    have hx : x = p ∨ x = 0 := by
+      simpa [pairSupport] using (Finset.mem_coe.mp hxSupport)
+    exact hx.elim (fun h => Or.inl (h ▸ hxD))
+      (fun h => Or.inr (h ▸ hxD))
+  · intro hdeleted E hER hdisjoint
+    rw [Set.disjoint_left] at hdisjoint
+    rw [hnormal E hER] at hdisjoint
+    rcases hdeleted with hpD | hzeroD
+    · exact hdisjoint (by simp) hpD
+    · exact hdisjoint (by simp) hzeroD
+
+/-- Exact selector consequence of diagonal descent at a zero-atomic petal:
+if neither zero nor the anchor is deleted, then destruction of `b + p`
+forces the petal `p` itself to be deleted. -/
+theorem diagonalTarget_destroyer_forces_petal_mem
+    {A D : Set ℕ} {b p : ℕ}
+    (hzeroA : 0 ∈ A) (hbA : b ∈ A) (hpA : p ∈ A)
+    (hnormal : ∀ E ∈ additiveSupportFamily A 2 p,
+      E = {p, 0})
+    (hzeroD : 0 ∉ D) (hbD : b ∉ D)
+    (hdestroy : DestroysAt
+      (additiveSupportFamily A 3) D (b + p)) :
+    p ∈ D := by
+  have hpetalDestroy :=
+    diagonalTarget_destroyer_descends_to_petal hbA hbD hdestroy
+  rcases (zeroAtom_destroysAt_two_iff_mem_or_zero
+      hzeroA hpA hnormal).mp hpetalDestroy with hpD | hzeroD'
+  · exact hpD
+  · exact (hzeroD hzeroD').elim
+
 /-- A pair support containing an atom and its (external) petal is exactly the
 diagonal atom-petal pair, and its represented target is their sum. -/
 theorem pairSupport_eq_atomPetal_of_both_mem
@@ -5468,6 +5535,886 @@ theorem counterexample_forces_doublyAtomicSelfRepairedPetalReservoir
     exact ⟨hgb.1, hgb.2.1,
       hgb.2.2.1.mono_right hBB₀,
       fun d hd => hgb.2.2.2 d (hBB₀ hd)⟩
+
+/-- A bounded point-map can be thinned so that it avoids both the retained
+indices and the image of any injective marked-point map.  The auxiliary
+collision map pulls every marked point occurring in `h b` back to its unique
+owner, after which the ordinary bounded free-set theorem handles both kinds
+of collision simultaneously. -/
+theorem exists_infinite_freeSet_avoiding_injectiveImage
+    {K : Set ℕ} (hK : K.Infinite)
+    (u : ℕ → ℕ) (huInj : Set.InjOn u K)
+    (h : ℕ → Finset ℕ) (r : ℕ)
+    (hcard : ∀ b ∈ K, (h b).card ≤ r)
+    (hbNotH : ∀ b ∈ K, b ∉ h b)
+    (huNotH : ∀ b ∈ K, u b ∉ h b) :
+    ∃ L, L ⊆ K ∧ L.Infinite ∧
+      ∀ b ∈ L,
+        Disjoint (h b : Set ℕ) L ∧
+        ∀ d ∈ L, u d ∉ h b := by
+  classical
+  let HasOwner : ℕ → Prop := fun x => ∃ d ∈ K, u d = x
+  let owner : ℕ → ℕ := fun x =>
+    if hx : HasOwner x then Classical.choose hx else 0
+  have hownerSpec : ∀ x, HasOwner x →
+      owner x ∈ K ∧ u (owner x) = x := by
+    intro x hx
+    simp only [owner, dif_pos hx]
+    exact Classical.choose_spec hx
+  let collision : ℕ → Finset ℕ := fun b =>
+    ((h b).filter HasOwner).image owner
+  have hcollisionCard : ∀ b ∈ K, (collision b).card ≤ r := by
+    intro b hb
+    calc
+      (collision b).card ≤ ((h b).filter HasOwner).card :=
+        Finset.card_image_le
+      _ ≤ (h b).card := Finset.card_filter_le _ _
+      _ ≤ r := hcard b hb
+  have hcollisionMem : ∀ b, ∀ d ∈ K, u d ∈ h b →
+      d ∈ collision b := by
+    intro b d hd hudH
+    have howned : HasOwner (u d) := ⟨d, hd, rfl⟩
+    apply Finset.mem_image.mpr
+    refine ⟨u d, Finset.mem_filter.mpr ⟨hudH, howned⟩, ?_⟩
+    have hspec := hownerSpec (u d) howned
+    exact huInj hspec.1 hd hspec.2
+  have hbNotCollision : ∀ b ∈ K, b ∉ collision b := by
+    intro b hb hbCollision
+    obtain ⟨x, hxFilter, hownerb⟩ :=
+      Finset.mem_image.mp hbCollision
+    have hxH := (Finset.mem_filter.mp hxFilter).1
+    have hxOwned := (Finset.mem_filter.mp hxFilter).2
+    have hspec := hownerSpec x hxOwned
+    have hubx : u b = x := by
+      rw [← hownerb]
+      exact hspec.2
+    exact huNotH b hb (hubx ▸ hxH)
+  let avoidMap : ℕ → Finset ℕ := fun b => h b ∪ collision b
+  have hAvoidCard : ∀ b ∈ K, (avoidMap b).card ≤ 2 * r := by
+    intro b hb
+    calc
+      (avoidMap b).card ≤ (h b).card + (collision b).card := by
+        simpa [avoidMap] using
+          (Finset.card_union_le (h b) (collision b))
+      _ ≤ r + r := Nat.add_le_add (hcard b hb)
+        (hcollisionCard b hb)
+      _ = 2 * r := by omega
+  have hbNotAvoid : ∀ b ∈ K, b ∉ avoidMap b := by
+    intro b hb hbAvoid
+    rcases Finset.mem_union.mp hbAvoid with hbH | hbCollision
+    · exact hbNotH b hb hbH
+    · exact hbNotCollision b hb hbCollision
+  obtain ⟨L, hLK, hL, hAvoidFree⟩ :=
+    exists_infinite_freeSet_of_bounded_pointMap
+      hK avoidMap (2 * r) hAvoidCard hbNotAvoid
+  refine ⟨L, hLK, hL, ?_⟩
+  intro b hb
+  have hHFree : Disjoint (h b : Set ℕ) L := by
+    apply (hAvoidFree b hb).mono_left
+    intro x hxH
+    exact Finset.mem_union_left _ (Finset.mem_coe.mp hxH)
+  refine ⟨hHFree, ?_⟩
+  intro d hd hudH
+  exact Set.disjoint_left.mp (hAvoidFree b hb)
+    (Finset.mem_coe.mpr (Finset.mem_union_right _
+      (hcollisionMem b d (hLK hd) hudH))) hd
+
+/-- Any injective third-option map strictly below both its atom and the first
+petal has an infinite thinning with simultaneous self-repairs.  Two uses of
+`exists_infinite_freeSet_avoiding_injectiveImage` make the chosen repairs
+avoid the retained atoms, every first petal, and every third option. -/
+theorem exists_infinite_selfRepairedThirdOptions
+    {A B : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hB : B.Infinite)
+    (p r : ℕ → ℕ)
+    (hpInj : Set.InjOn p B)
+    (hrInj : Set.InjOn r B)
+    (hrp : ∀ b ∈ B, r b < p b)
+    (hrb : ∀ b ∈ B, r b < b) :
+    ∃ L, L ⊆ B ∧ L.Infinite ∧
+      ∃ h : ℕ → Finset ℕ, ∀ b ∈ L,
+        h b ∈ additiveSupportFamily A 3 (r b) ∧
+        r b ∉ h b ∧
+        Disjoint (h b : Set ℕ) L ∧
+        (∀ d ∈ L, p d ∉ h b) ∧
+        ∀ d ∈ L, r d ∉ h b := by
+  classical
+  obtain ⟨T, hselfAvoid⟩ :=
+    eventually_selfAvoidingTripleSupport_of_orderTwoBasis hbasis
+  let Low : Set ℕ := {b | b ∈ B ∧ r b < T}
+  have hLowFinite : Low.Finite := by
+    apply Set.Finite.of_finite_image (f := r)
+    · apply (Set.finite_Iio T).subset
+      rintro y ⟨b, hbLow, rfl⟩
+      exact hbLow.2
+    · exact hrInj.mono (fun _ hb => hb.1)
+  let K : Set ℕ := B \ Low
+  have hK : K.Infinite := hB.diff hLowFinite
+  have hKB : K ⊆ B := Set.diff_subset
+  have hrLarge : ∀ b ∈ K, T ≤ r b := by
+    intro b hb
+    by_contra hnot
+    exact hb.2 ⟨hb.1, Nat.lt_of_not_ge hnot⟩
+  have hhExists : ∀ b : K, ∃ H,
+      H ∈ additiveSupportFamily A 3 (r b.1) ∧ r b.1 ∉ H := by
+    intro b
+    exact hselfAvoid (r b.1) (hrLarge b.1 b.2)
+  choose repair hrepairR hrepairSelf using hhExists
+  let h : ℕ → Finset ℕ := fun b =>
+    if hb : b ∈ K then repair ⟨b, hb⟩ else ∅
+  have hhR : ∀ b ∈ K,
+      h b ∈ additiveSupportFamily A 3 (r b) := by
+    intro b hb
+    simpa [h, hb] using hrepairR ⟨b, hb⟩
+  have hhSelf : ∀ b ∈ K, r b ∉ h b := by
+    intro b hb
+    simpa [h, hb] using hrepairSelf ⟨b, hb⟩
+  have hhCard : ∀ b ∈ K, (h b).card ≤ 3 := by
+    intro b hb
+    exact additiveSupportFamily_cardAtMost A 3
+      (r b) (h b) (hhR b hb)
+  have hbNotH : ∀ b ∈ K, b ∉ h b := by
+    intro b hb hbH
+    have hble : b ≤ r b :=
+      additiveSupportFamily_supportsBounded A 3
+        (r b) (h b) (hhR b hb) b hbH
+    exact (not_le_of_gt (hrb b (hKB hb))) hble
+  have hpNotH : ∀ b ∈ K, p b ∉ h b := by
+    intro b hb hpH
+    have hple : p b ≤ r b :=
+      additiveSupportFamily_supportsBounded A 3
+        (r b) (h b) (hhR b hb) (p b) hpH
+    exact (not_le_of_gt (hrp b (hKB hb))) hple
+  obtain ⟨L₁, hL₁K, hL₁, havoidP⟩ :=
+    exists_infinite_freeSet_avoiding_injectiveImage
+      hK p (hpInj.mono hKB) h 3 hhCard hbNotH hpNotH
+  obtain ⟨L, hLL₁, hL, havoidR⟩ :=
+    exists_infinite_freeSet_avoiding_injectiveImage
+      hL₁ r (hrInj.mono (hL₁K.trans hKB)) h 3
+        (fun b hb => hhCard b (hL₁K hb))
+        (fun b hb => hbNotH b (hL₁K hb))
+        (fun b hb => hhSelf b (hL₁K hb))
+  refine ⟨L, hLL₁.trans (hL₁K.trans hKB), hL, h, ?_⟩
+  intro b hb
+  have hbL₁ := hLL₁ hb
+  have hbK := hL₁K hbL₁
+  refine ⟨hhR b hbK, hhSelf b hbK,
+    (havoidR b hb).1, ?_, (havoidR b hb).2⟩
+  intro d hd
+  exact (havoidP b hbL₁).2 d (hLL₁ hd)
+
+/-- Joint sunflower refinement of the clique supports `f b` and the
+self-repair supports `g b`.  After thinning, the distinguished petal `p b`
+still lies in the clique petal, while the self-repair support has a nonempty
+petal outside the same root.  Thus every surviving atom has a third private
+selector option, separate from both the atom and every distinguished petal. -/
+theorem exists_infinite_jointCliqueSelfRepairSunflower
+    {A B : Set ℕ}
+    (hB : B.Infinite)
+    {R : Finset ℕ} {f : ℕ → Finset ℕ}
+    {p : ℕ → ℕ} {g : ℕ → Finset ℕ}
+    (hwitness : ∀ b ∈ B, ∃ w : ExternalFourCliqueWitness A b,
+      f b = w.vertices)
+    (hpetalDisjoint : ∀ b ∈ B, ∀ d ∈ B, b ≠ d →
+      Disjoint (f b \ R) (f d \ R))
+    (hp : ∀ b ∈ B, p b ∈ f b \ R)
+    (hg : ∀ b ∈ B,
+      g b ∈ additiveSupportFamily A 3 (p b) ∧
+      Disjoint (g b : Set ℕ) B ∧
+      ∀ d ∈ B, p d ∉ g b) :
+    ∃ L, L ⊆ B ∧ L.Infinite ∧
+      ∃ S : Finset ℕ,
+        0 ∈ S ∧
+        (∀ b ∈ L, p b ∈ f b \ S) ∧
+        (∀ b ∈ L, (g b \ S).Nonempty) ∧
+        ∀ b ∈ L, ∀ d ∈ L, b ≠ d →
+          Disjoint ((f b ∪ g b) \ S) ((f d ∪ g d) \ S) := by
+  classical
+  let h : ℕ → Finset ℕ := fun b => f b ∪ g b
+  have hcard : ∀ b ∈ B, (h b).card ≤ 7 := by
+    intro b hb
+    obtain ⟨w, hfw⟩ := hwitness b hb
+    have hfCard : (f b).card ≤ 4 := by
+      rw [hfw]
+      exact w.vertices_card_le_four
+    have hgCard : (g b).card ≤ 3 :=
+      additiveSupportFamily_cardAtMost A 3
+        (p b) (g b) (hg b hb).1
+    exact (Finset.card_union_le (f b) (g b)).trans (by omega)
+  obtain ⟨L₀, hL₀B, hL₀, S₀, hdelta⟩ :=
+    exists_infinite_deltaSystem_of_bounded_pointMap
+      hB h 7 hcard
+  let S : Finset ℕ := insert 0 S₀
+  have hpInj : Set.InjOn p B :=
+    repairPetalMap_injOn hpetalDisjoint hp
+  let EmptyRepairPetal : Set ℕ :=
+    {b | b ∈ L₀ ∧ g b \ S = ∅}
+  have hEmptyFinite : EmptyRepairPetal.Finite := by
+    apply Set.Finite.of_finite_image (f := p)
+    · apply (Set.finite_Iic (3 * S.sum id)).subset
+      rintro y ⟨b, hbEmpty, rfl⟩
+      have hbB : b ∈ B := hL₀B hbEmpty.1
+      have hsub : g b ⊆ S :=
+        Finset.sdiff_eq_empty_iff_subset.mp hbEmpty.2
+      obtain ⟨v, _hvA, hvsum, hvSupport⟩ :=
+        mem_additiveSupportFamily_iff.mp (hg b hbB).1
+      have hvle : ∀ i, (v i).1 ≤ S.sum id := by
+        intro i
+        apply Finset.single_le_sum (s := S) (f := id)
+          (fun _ _ => Nat.zero_le _)
+        apply hsub
+        rw [← hvSupport]
+        exact mem_tupleSupport_iff.mpr ⟨i, rfl⟩
+      have hsumle :
+          ∑ i, (v i).1 ≤ ∑ _i : Fin 3, S.sum id := by
+        apply Finset.sum_le_sum
+        intro i _hi
+        exact hvle i
+      rw [hvsum] at hsumle
+      simpa using hsumle
+    · exact hpInj.mono (fun _ hb => hL₀B hb.1)
+  let L : Set ℕ := L₀ \ EmptyRepairPetal
+  have hLL₀ : L ⊆ L₀ := Set.diff_subset
+  have hL : L.Infinite := hL₀.diff hEmptyFinite
+  refine ⟨L, hLL₀.trans hL₀B, hL, S, Finset.mem_insert_self _ _,
+    ?_, ?_, ?_⟩
+  · intro b hbL
+    have hbL₀ : b ∈ L₀ := hLL₀ hbL
+    have hbB : b ∈ B := hL₀B hbL₀
+    have hpbOld := hp b hbB
+    apply Finset.mem_sdiff.mpr
+    refine ⟨(Finset.mem_sdiff.mp hpbOld).1, ?_⟩
+    intro hpbS
+    rcases Finset.mem_insert.mp hpbS with hpbZero | hpbRoot
+    · obtain ⟨w, hfw⟩ := hwitness b hbB
+      apply w.zero_not_mem_vertices
+      rw [← hpbZero, ← hfw]
+      exact (Finset.mem_sdiff.mp hpbOld).1
+    · obtain ⟨d, hdL₀, hbd⟩ := hL₀.exists_gt b
+      have hbdNe : b ≠ d := Nat.ne_of_lt hbd
+      have hpbInter : p b ∈ h b ∩ h d := by
+        rw [hdelta b hbL₀ d hdL₀ hbdNe]
+        exact hpbRoot
+      have hpbHd : p b ∈ h d := (Finset.mem_inter.mp hpbInter).2
+      rcases Finset.mem_union.mp hpbHd with hpfd | hpgd
+      · have hpbOtherPetal : p b ∈ f d \ R :=
+          Finset.mem_sdiff.mpr
+            ⟨hpfd, (Finset.mem_sdiff.mp hpbOld).2⟩
+        exact Finset.disjoint_left.mp
+          (hpetalDisjoint b hbB d (hL₀B hdL₀) hbdNe)
+          hpbOld hpbOtherPetal
+      · exact (hg d (hL₀B hdL₀)).2.2 b hbB hpgd
+  · intro b hbL
+    apply Finset.nonempty_iff_ne_empty.mpr
+    intro hempty
+    exact hbL.2 ⟨hLL₀ hbL, hempty⟩
+  · intro b hbL d hdL hbd
+    rw [Finset.disjoint_left]
+    intro x hxb hxd
+    have hxInter : x ∈ h b ∩ h d := by
+      exact Finset.mem_inter.mpr
+        ⟨(Finset.mem_sdiff.mp hxb).1,
+          (Finset.mem_sdiff.mp hxd).1⟩
+    have hxRoot : x ∈ S₀ := by
+      rw [← hdelta b (hLL₀ hbL) d (hLL₀ hdL) hbd]
+      exact hxInter
+    exact (Finset.mem_sdiff.mp hxb).2
+      (Finset.mem_insert_of_mem hxRoot)
+
+/-- Add one chosen self-repair petal to the old atom/clique cell. -/
+def enrichedExternalCliqueCell
+    (S : Finset ℕ) (f r : ℕ → Finset ℕ) (b : ℕ) : Finset ℕ :=
+  r b ∪ externalCliqueCell S f b
+
+/-- The exact three-option subcell: the atom, its distinguished clique
+petal, and the singleton chosen from its self-repair petal. -/
+def atomPetalRepairCell
+    (p : ℕ → ℕ) (r : ℕ → Finset ℕ) (b : ℕ) : Finset ℕ :=
+  insert b (insert (p b) (r b))
+
+/-- Point-valued form of the same exact three-option cell. -/
+def atomPetalRepairPointCell
+    (p r : ℕ → ℕ) (b : ℕ) : Finset ℕ :=
+  insert b {p b, r b}
+
+/-- Pairwise-disjoint atom/first-petal/third-option triples extend to a
+finite-block partition. -/
+theorem exists_finiteBlockPartition_for_atomPetalRepairPointCells
+    {A B : Set ℕ}
+    (hBA : B ⊆ A) (hB : B.Infinite)
+    (p r : ℕ → ℕ)
+    (hpA : ∀ b ∈ B, p b ∈ A)
+    (hrA : ∀ b ∈ B, r b ∈ A)
+    (hpOut : ∀ b ∈ B, p b ∉ B)
+    (hrOut : ∀ b ∈ B, r b ∉ B)
+    (hpr : ∀ b ∈ B, p b ≠ r b)
+    (hoptionsDisjoint : ∀ b ∈ B, ∀ d ∈ B, b ≠ d →
+      Disjoint ({p b, r b} : Finset ℕ) {p d, r d}) :
+    ∃ e : ℕ ≃ B, ∃ F : ℕ → Finset ℕ,
+      IsFiniteBlockPartition A F ∧
+      (∀ i, atomPetalRepairPointCell p r (e i).1 ⊆ F i) ∧
+      ∀ i, (atomPetalRepairPointCell p r (e i).1).card = 3 := by
+  classical
+  letI : Infinite B := hB.to_subtype
+  letI : Denumerable B := Denumerable.ofEncodableOfInfinite B
+  let e : ℕ ≃ B := (Denumerable.eqv B).symm
+  let cell : ℕ → Finset ℕ := fun i =>
+    atomPetalRepairPointCell p r (e i).1
+  have hcellA : ∀ i, (cell i : Set ℕ) ⊆ A := by
+    intro i x hx
+    rcases Finset.mem_insert.mp hx with hxb | hxOption
+    · exact hxb ▸ hBA (e i).2
+    · simp only [Finset.mem_insert, Finset.mem_singleton] at hxOption
+      rcases hxOption with hxp | hxr
+      · exact hxp ▸ hpA (e i).1 (e i).2
+      · exact hxr ▸ hrA (e i).1 (e i).2
+  have hcellNonempty : ∀ i, (cell i).Nonempty := by
+    intro i
+    exact ⟨(e i).1, Finset.mem_insert_self _ _⟩
+  have hcellDisjoint : Pairwise fun i j =>
+      Disjoint (cell i) (cell j) := by
+    intro i j hij
+    have hbij : (e i).1 ≠ (e j).1 := by
+      intro h
+      apply hij
+      apply e.injective
+      exact Subtype.ext h
+    rw [Finset.disjoint_left]
+    intro x hxi hxj
+    rcases Finset.mem_insert.mp hxi with hxiAtom | hxiOption <;>
+      rcases Finset.mem_insert.mp hxj with hxjAtom | hxjOption
+    · exact hbij (hxiAtom.symm.trans hxjAtom)
+    · subst x
+      simp only [Finset.mem_insert, Finset.mem_singleton] at hxjOption
+      rcases hxjOption with hxp | hxr
+      · exact hpOut (e j).1 (e j).2 (hxp ▸ (e i).2)
+      · exact hrOut (e j).1 (e j).2 (hxr ▸ (e i).2)
+    · subst x
+      simp only [Finset.mem_insert, Finset.mem_singleton] at hxiOption
+      rcases hxiOption with hxp | hxr
+      · exact hpOut (e i).1 (e i).2 (hxp ▸ (e j).2)
+      · exact hrOut (e i).1 (e i).2 (hxr ▸ (e j).2)
+    · exact Finset.disjoint_left.mp
+        (hoptionsDisjoint (e i).1 (e i).2
+          (e j).1 (e j).2 hbij)
+        hxiOption hxjOption
+  obtain ⟨F, P, hcore⟩ :=
+    exists_finiteBlockPartition_extending_disjointCells
+      hcellA hcellNonempty hcellDisjoint
+  refine ⟨e, F, P, hcore, ?_⟩
+  intro i
+  let b := (e i).1
+  have hbp : b ≠ p b := by
+    intro hEq
+    exact hpOut b (e i).2 (hEq ▸ (e i).2)
+  have hbr : b ≠ r b := by
+    intro hEq
+    exact hrOut b (e i).2 (hEq ▸ (e i).2)
+  change (insert b ({p b, r b} : Finset ℕ)).card = 3
+  rw [Finset.card_insert_of_notMem (by simpa [hbp, hbr])]
+  rw [Finset.card_insert_of_notMem
+    (by simpa using hpr b (e i).2)]
+  simp
+
+/-- The joint sunflower gives a finite-block partition with three dedicated
+and pairwise distinct options in every atom block: `b`, `p b`, and a chosen
+point from the self-repair petal. -/
+theorem exists_finiteBlockPartition_for_enrichedCliqueSunflower
+    {A B : Set ℕ}
+    (hBA : B ⊆ A) (hB : B.Infinite)
+    {S : Finset ℕ} {f : ℕ → Finset ℕ}
+    {p : ℕ → ℕ} {g : ℕ → Finset ℕ}
+    (hwitness : ∀ b ∈ B, ∃ w : ExternalFourCliqueWitness A b,
+      f b = w.vertices)
+    (havoid : ∀ b ∈ B, Disjoint (f b : Set ℕ) B)
+    (hp : ∀ b ∈ B, p b ∈ f b \ S)
+    (hg : ∀ b ∈ B,
+      g b ∈ additiveSupportFamily A 3 (p b) ∧
+      p b ∉ g b ∧ Disjoint (g b : Set ℕ) B)
+    (hrepairPetal : ∀ b ∈ B, (g b \ S).Nonempty)
+    (hjointDisjoint : ∀ b ∈ B, ∀ d ∈ B, b ≠ d →
+      Disjoint ((f b ∪ g b) \ S) ((f d ∪ g d) \ S)) :
+    ∃ r : ℕ → Finset ℕ,
+      (∀ b ∈ B, r b ⊆ g b \ S ∧ (r b).card = 1) ∧
+      ∃ e : ℕ ≃ B, ∃ F : ℕ → Finset ℕ,
+        IsFiniteBlockPartition A F ∧
+        (∀ i, enrichedExternalCliqueCell S f r (e i).1 ⊆ F i) ∧
+        ∀ i, 3 ≤ (enrichedExternalCliqueCell S f r (e i).1).card := by
+  classical
+  let r : ℕ → Finset ℕ := fun b =>
+    if hb : b ∈ B then
+      {Classical.choose (hrepairPetal b hb)}
+    else ∅
+  have hr : ∀ b ∈ B, r b ⊆ g b \ S ∧ (r b).card = 1 := by
+    intro b hb
+    constructor
+    · intro x hx
+      have hxEq : x = Classical.choose (hrepairPetal b hb) := by
+        simpa [r, hb] using hx
+      rw [hxEq]
+      exact Classical.choose_spec (hrepairPetal b hb)
+    · simp [r, hb]
+  letI : Infinite B := hB.to_subtype
+  letI : Denumerable B := Denumerable.ofEncodableOfInfinite B
+  let e : ℕ ≃ B := (Denumerable.eqv B).symm
+  let cell : ℕ → Finset ℕ := fun i =>
+    enrichedExternalCliqueCell S f r (e i).1
+  have hjointAvoid : ∀ b ∈ B,
+      Disjoint ((f b ∪ g b : Finset ℕ) : Set ℕ) B := by
+    intro b hb
+    rw [Set.disjoint_left]
+    intro x hxUnion hxB
+    rcases Finset.mem_union.mp (Finset.mem_coe.mp hxUnion) with hxf | hxg
+    · exact Set.disjoint_left.mp (havoid b hb)
+        (Finset.mem_coe.mpr hxf) hxB
+    · exact Set.disjoint_left.mp (hg b hb).2.2
+        (Finset.mem_coe.mpr hxg) hxB
+  have hcellCases : ∀ b ∈ B, ∀ x ∈ enrichedExternalCliqueCell S f r b,
+      x = b ∨ x ∈ (f b ∪ g b) \ S := by
+    intro b hb x hxCell
+    rcases Finset.mem_union.mp hxCell with hxr | hxExternal
+    · right
+      have hxrPetal := (hr b hb).1 hxr
+      apply Finset.mem_sdiff.mpr
+      exact ⟨Finset.mem_union_right _
+        (Finset.mem_sdiff.mp hxrPetal).1,
+        (Finset.mem_sdiff.mp hxrPetal).2⟩
+    · rcases Finset.mem_insert.mp hxExternal with hxb | hxf
+      · exact Or.inl hxb
+      · right
+        exact Finset.mem_sdiff.mpr
+          ⟨Finset.mem_union_left _ (Finset.mem_sdiff.mp hxf).1,
+            (Finset.mem_sdiff.mp hxf).2⟩
+  have hcellA : ∀ i, (cell i : Set ℕ) ⊆ A := by
+    intro i x hxCell
+    rcases Finset.mem_union.mp (Finset.mem_coe.mp hxCell) with hxr | hxExternal
+    · have hxrPetal := (hr (e i).1 (e i).2).1 hxr
+      exact additiveSupportFamily_supportsIn A 3 (p (e i).1)
+        (g (e i).1) (hg (e i).1 (e i).2).1 x
+        (Finset.mem_sdiff.mp hxrPetal).1
+    · rcases Finset.mem_insert.mp hxExternal with hxb | hxf
+      · exact hxb ▸ hBA (e i).2
+      · obtain ⟨w, hfw⟩ := hwitness (e i).1 (e i).2
+        apply w.vertices_subset
+        rw [← hfw]
+        exact Finset.sdiff_subset hxf
+  have hcellNonempty : ∀ i, (cell i).Nonempty := by
+    intro i
+    exact ⟨(e i).1, Finset.mem_union_right _
+      (Finset.mem_insert_self _ _)⟩
+  have hcellDisjoint : Pairwise fun i j =>
+      Disjoint (cell i) (cell j) := by
+    intro i j hij
+    have hbij : (e i).1 ≠ (e j).1 := by
+      intro h
+      apply hij
+      apply e.injective
+      exact Subtype.ext h
+    rw [Finset.disjoint_left]
+    intro x hxi hxj
+    rcases hcellCases (e i).1 (e i).2 x hxi with hxiAtom | hxiPetal <;>
+      rcases hcellCases (e j).1 (e j).2 x hxj with hxjAtom | hxjPetal
+    · exact hbij (hxiAtom.symm.trans hxjAtom)
+    · subst x
+      exact Set.disjoint_left.mp
+        (hjointAvoid (e j).1 (e j).2)
+        (Finset.mem_coe.mpr (Finset.sdiff_subset hxjPetal)) (e i).2
+    · subst x
+      exact Set.disjoint_left.mp
+        (hjointAvoid (e i).1 (e i).2)
+        (Finset.mem_coe.mpr (Finset.sdiff_subset hxiPetal)) (e j).2
+    · exact Finset.disjoint_left.mp
+        (hjointDisjoint (e i).1 (e i).2
+          (e j).1 (e j).2 hbij)
+        hxiPetal hxjPetal
+  obtain ⟨F, P, hcore⟩ :=
+    exists_finiteBlockPartition_extending_disjointCells
+      hcellA hcellNonempty hcellDisjoint
+  refine ⟨r, hr, e, F, P, hcore, ?_⟩
+  intro i
+  let b := (e i).1
+  have hrNonempty : (r b).Nonempty := by
+    rw [Finset.nonempty_iff_ne_empty]
+    intro hrEmpty
+    have hcardZero : (r b).card = 0 := Finset.card_eq_zero.mpr hrEmpty
+    rw [(hr b (e i).2).2] at hcardZero
+    omega
+  let rb := Classical.choose hrNonempty
+  have hrbMem : rb ∈ r b := Classical.choose_spec hrNonempty
+  have hpbMem : p b ∈ externalCliqueCell S f b := by
+    rw [externalCliqueCell]
+    exact Finset.mem_insert_of_mem (hp b (e i).2)
+  have hbMem : b ∈ externalCliqueCell S f b :=
+    Finset.mem_insert_self _ _
+  have hbp : b ≠ p b := by
+    intro hEq
+    exact Set.disjoint_left.mp (havoid b (e i).2)
+      (Finset.mem_coe.mpr (Finset.sdiff_subset (hp b (e i).2)))
+      (hEq ▸ (e i).2)
+  have hbr : b ≠ rb := by
+    intro hEq
+    have hrbG : rb ∈ g b :=
+      (Finset.mem_sdiff.mp ((hr b (e i).2).1 hrbMem)).1
+    exact Set.disjoint_left.mp (hg b (e i).2).2.2
+      (Finset.mem_coe.mpr hrbG) (hEq ▸ (e i).2)
+  have hpr : p b ≠ rb := by
+    intro hEq
+    apply (hg b (e i).2).2.1
+    rw [hEq]
+    exact (Finset.mem_sdiff.mp ((hr b (e i).2).1 hrbMem)).1
+  have hthreeSubset : ({b, p b, rb} : Finset ℕ) ⊆
+      enrichedExternalCliqueCell S f r b := by
+    intro x hx
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hx
+    rcases hx with rfl | rfl | rfl
+    · exact Finset.mem_union_right _ hbMem
+    · exact Finset.mem_union_right _ hpbMem
+    · exact Finset.mem_union_left _ hrbMem
+  have hthreeCard : ({b, p b, rb} : Finset ℕ).card = 3 := by
+    simp [hbp, hbr, hpr]
+  have hcardle := Finset.card_le_card hthreeSubset
+  rw [hthreeCard] at hcardle
+  exact hcardle
+
+set_option maxHeartbeats 5000000 in
+/-- Greedily choose one order-two support at every finite target while never
+covering an entire cell of size at least three.  At a new target, forbid all
+cells touched by the old support union.  Their union has size at most
+`k * |U|`; a large matching of pair supports contains one support disjoint
+from that forbidden union.  Since a pair support has at most two vertices,
+it cannot cover a previously untouched three-point cell by itself. -/
+theorem exists_pairSupportChoice_avoiding_threePointCells_of_large
+    {A : Set ℕ} {F cell : ℕ → Finset ℕ} {Q : Finset ℕ} {k : ℕ}
+    (P : IsFiniteBlockPartition A F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellLower : ∀ i, 3 ≤ (cell i).card)
+    (hcellUpper : ∀ i, (cell i).card ≤ k)
+    (hlarge : ∀ q ∈ Q,
+      2 * k * Q.card < (additiveSupportFamily A 2 q).card) :
+    ∃ c : FiniteSupportChoice (additiveSupportFamily A 2) Q,
+      ∀ i, ¬ cell i ⊆ finiteSupportChoiceUnion c := by
+  classical
+  revert hlarge
+  induction Q using Finset.induction_on with
+  | empty =>
+      intro _hlarge
+      let c : FiniteSupportChoice
+          (additiveSupportFamily A 2) ∅ := fun q => isEmptyElim q
+      refine ⟨c, ?_⟩
+      intro i hcovered
+      have hnonempty : (cell i).Nonempty :=
+        Finset.card_pos.mp
+          (lt_of_lt_of_le (by norm_num : 0 < 3) (hcellLower i))
+      obtain ⟨x, hxCell⟩ := hnonempty
+      have hxUnion := hcovered hxCell
+      simpa [finiteSupportChoiceUnion] using hxUnion
+  | @insert q Q hqQ ih =>
+      intro hlarge
+      have hlargeQ : ∀ r ∈ Q,
+          2 * k * Q.card < (additiveSupportFamily A 2 r).card := by
+        intro r hrQ
+        have hrLarge := hlarge r (Finset.mem_insert_of_mem hrQ)
+        have hcardLt : Q.card < (insert q Q).card := by
+          simp [Finset.card_insert_of_notMem hqQ]
+        have hkpos : 0 < 2 * k := by
+          have hlower := hcellLower 0
+          have hupper := hcellUpper 0
+          omega
+        exact (Nat.mul_lt_mul_of_pos_left hcardLt hkpos).trans hrLarge
+      obtain ⟨cQ, hcQ⟩ := ih hlargeQ
+      let U : Finset ℕ := finiteSupportChoiceUnion cQ
+      let T : Finset ℕ :=
+        U.biUnion fun x => cell (blockIndex P x)
+      have hUcard : U.card ≤ 2 * Q.card :=
+        finiteSupportChoiceUnion_card_le
+          (additiveSupportFamily_cardAtMost A 2) cQ
+      have hTcard : T.card ≤ 2 * k * (insert q Q).card := by
+        calc
+          T.card ≤ ∑ x ∈ U, (cell (blockIndex P x)).card :=
+            Finset.card_biUnion_le
+          _ ≤ ∑ _x ∈ U, k := by
+            apply Finset.sum_le_sum
+            intro x _hx
+            exact hcellUpper (blockIndex P x)
+          _ = U.card * k := by simp
+          _ ≤ (2 * Q.card) * k := Nat.mul_le_mul_right k hUcard
+          _ = (2 * k) * Q.card := by
+            simp [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm]
+          _ ≤ (2 * k) * (insert q Q).card :=
+            Nat.mul_le_mul_left (2 * k)
+              (Finset.card_le_card (Finset.subset_insert q Q))
+      have hqNotDestroy : ¬ DestroysAt
+          (additiveSupportFamily A 2) (T : Set ℕ) q := by
+        intro hqDestroy
+        have hsupportLe :=
+          card_supports_le_card_of_matching_of_destroysAt
+            (fun E hER =>
+              additiveSupportFamily_supportsNonempty A (by omega)
+                q E hER)
+            (additiveSupportFamily_two_isMatching A q)
+            hqDestroy
+        have hqLarge := hlarge q (Finset.mem_insert_self q Q)
+        omega
+      obtain ⟨E, hER, hET⟩ :=
+        not_destroysAt_iff.mp hqNotDestroy
+      let c : FiniteSupportChoice
+          (additiveSupportFamily A 2) (insert q Q) := fun t =>
+        if ht : t.1 = q then
+          ⟨E, by simpa [ht] using hER⟩
+        else
+          let tQ : {n // n ∈ Q} :=
+            ⟨t.1, (Finset.mem_insert.mp t.2).resolve_left ht⟩
+          ⟨(cQ tQ).1, (cQ tQ).2⟩
+      have hcCases : ∀ x,
+          x ∈ finiteSupportChoiceUnion c → x ∈ E ∨ x ∈ U := by
+        intro x hx
+        obtain ⟨t, _htAttach, hxt⟩ := Finset.mem_biUnion.mp hx
+        by_cases ht : t.1 = q
+        · left
+          simpa [c, ht] using hxt
+        · right
+          let tQ : {n // n ∈ Q} :=
+            ⟨t.1, (Finset.mem_insert.mp t.2).resolve_left ht⟩
+          apply finiteSupportChoice_subset_union cQ tQ
+          simpa [c, ht, tQ] using hxt
+      refine ⟨c, ?_⟩
+      intro i hcovered
+      have hhitU : ¬ Disjoint (cell i) U := by
+        intro hdisjoint
+        have hcellE : cell i ⊆ E := by
+          intro x hxCell
+          rcases hcCases x (hcovered hxCell) with hxE | hxU
+          · exact hxE
+          · exact (Finset.disjoint_left.mp hdisjoint hxCell hxU).elim
+        have hcellCardLe : (cell i).card ≤ E.card :=
+          Finset.card_le_card hcellE
+        have hEcard : E.card ≤ 2 :=
+          additiveSupportFamily_cardAtMost A 2 q E hER
+        have hcellCard := hcellLower i
+        omega
+      obtain ⟨u, huCell, huU⟩ :=
+        Finset.not_disjoint_iff.mp hhitU
+      have huIndex : blockIndex P u = i :=
+        P.blockIndex_eq_of_mem (hcore i huCell)
+      have hcellT : cell i ⊆ T := by
+        intro x hxCell
+        apply Finset.mem_biUnion.mpr
+        refine ⟨u, huU, ?_⟩
+        simpa [huIndex] using hxCell
+      apply hcQ i
+      intro x hxCell
+      rcases hcCases x (hcovered hxCell) with hxE | hxU
+      · exact (Set.disjoint_left.mp hET
+          (Finset.mem_coe.mpr hxE)
+          (Finset.mem_coe.mpr (hcellT hxCell))).elim
+      · exact hxU
+
+/-- Pair-support padding transfers a triple selector certificate to coverage
+of any zero-free dedicated cell in the partition. -/
+theorem exists_coveredCell_of_tripleCertificate_and_pairChoice
+    {A : Set ℕ} {F cell : ℕ → Finset ℕ} {Q : Finset ℕ}
+    (hzeroA : 0 ∈ A)
+    (hcellZero : ∀ i, 0 ∉ cell i)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcert : ∀ s : BlockSelector F, ∃ q ∈ Q,
+      DestroysAt (additiveSupportFamily A 3) (selectedSet s) q)
+    (c : FiniteSupportChoice (additiveSupportFamily A 2) Q) :
+    ∃ i, cell i ⊆ finiteSupportChoiceUnion c := by
+  let c₃ : FiniteSupportChoice (additiveSupportFamily A 3) Q :=
+    fun q =>
+      ⟨insert 0 (c q).1, by simpa using
+        (insert_mem_additiveSupportFamily_succ hzeroA (c q).2)⟩
+  obtain ⟨i, hiCover⟩ :=
+    exists_block_subset_supportChoiceUnion_of_certificate hcert c₃
+  refine ⟨i, ?_⟩
+  intro x hxCell
+  have hxU₃ := hiCover (hcore i hxCell)
+  obtain ⟨q, _hqAttach, hxSupport⟩ :=
+    Finset.mem_biUnion.mp hxU₃
+  change x ∈ insert 0 (c q).1 at hxSupport
+  rcases Finset.mem_insert.mp hxSupport with hx0 | hxPair
+  · subst x
+    exact (hcellZero i hxCell).elim
+  · exact finiteSupportChoice_subset_union c q hxPair
+
+set_option maxHeartbeats 5000000 in
+/-- A selector certificate on uniformly bounded cells of size at least three
+forces a target with bounded order-two multiplicity.  The former diagonal
+atom-petal escape is impossible because one pair support cannot cover three
+distinct dedicated choices. -/
+theorem tripleCertificate_forces_boundedPairFamily_of_threePointCells
+    {A : Set ℕ} {F cell : ℕ → Finset ℕ} {Q : Finset ℕ} {k : ℕ}
+    (P : IsFiniteBlockPartition A F)
+    (hzeroA : 0 ∈ A)
+    (hcellZero : ∀ i, 0 ∉ cell i)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellLower : ∀ i, 3 ≤ (cell i).card)
+    (hcellUpper : ∀ i, (cell i).card ≤ k)
+    (hcert : ∀ s : BlockSelector F, ∃ q ∈ Q,
+      DestroysAt (additiveSupportFamily A 3) (selectedSet s) q) :
+    ∃ q ∈ Q,
+      (additiveSupportFamily A 2 q).card ≤ 2 * k * Q.card := by
+  classical
+  by_contra hsmall
+  have hlarge : ∀ q ∈ Q,
+      2 * k * Q.card < (additiveSupportFamily A 2 q).card := by
+    intro q hqQ
+    apply Nat.lt_of_not_ge
+    intro hle
+    exact hsmall ⟨q, hqQ, hle⟩
+  obtain ⟨c, hcAvoid⟩ :=
+    exists_pairSupportChoice_avoiding_threePointCells_of_large
+      P hcore hcellLower hcellUpper hlarge
+  obtain ⟨i, hiCover⟩ :=
+    exists_coveredCell_of_tripleCertificate_and_pairChoice
+      hzeroA hcellZero hcore hcert c
+  exact hcAvoid i hiCover
+
+set_option maxHeartbeats 5000000 in
+/-- Global three-option-cell residual.  A zero-normalized counterexample
+forces an infinite deletion reservoir and one fixed finite-block partition
+with zero-free dedicated three-point cells.  Every late cardinal-minimal
+selector certificate on this partition contains a target with at most
+`6 * Q.card` order-two supports.  In particular, the former
+diagonal atom-petal branch has been eliminated rather than merely renamed. -/
+theorem counterexample_forces_minimalEnrichedCell_boundedPairCertificate
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ D, D ⊆ A → D.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ D) 3) :
+    ∃ B, B ⊆ A ∧ B.Infinite ∧
+      ∃ F cell : ℕ → Finset ℕ,
+        IsFiniteBlockPartition A F ∧
+        (∀ i, cell i ⊆ F i) ∧
+        (∀ i, 0 ∉ cell i) ∧
+        (∀ i, 3 ≤ (cell i).card) ∧
+        (∀ i, (cell i).card ≤ 6) ∧
+        ∀ N, ∃ Q : Finset ℕ,
+          Q.Nonempty ∧
+          (∀ q ∈ Q, N ≤ q) ∧
+          (∀ s : BlockSelector F, ∃ q ∈ Q,
+            DestroysAt (additiveSupportFamily A 3)
+              (selectedSet s) q) ∧
+          (∀ q ∈ Q, ∃ s : BlockSelector F,
+            DestroysAt (additiveSupportFamily A 3)
+                (selectedSet s) q ∧
+              ∀ q' ∈ Q, q' ≠ q →
+                ¬ DestroysAt (additiveSupportFamily A 3)
+                  (selectedSet s) q') ∧
+          ∃ q ∈ Q,
+            (additiveSupportFamily A 2 q).card ≤ 6 * Q.card := by
+  classical
+  obtain ⟨B₀, hB₀A, hB₀, R, f, p, g,
+      _hnormalAtom, _hnormalPetal, _hrepairs,
+      hwitness₀, hAvoid₀, _hpetal₀, hpetalDisjoint₀, hp₀, hg₀⟩ :=
+    counterexample_forces_doublyAtomicSelfRepairedPetalReservoir
+      hbasis hzeroA hcounter
+  obtain ⟨B, hBB₀, hB, S, hzeroS, hpS,
+      hrepairPetal, hjointDisjoint⟩ :=
+    exists_infinite_jointCliqueSelfRepairSunflower
+      hB₀ hwitness₀ hpetalDisjoint₀
+        (fun b hb => (hp₀ b hb).1)
+        (fun b hb => ⟨(hg₀ b hb).1,
+          (hg₀ b hb).2.2.1,
+          (hg₀ b hb).2.2.2⟩)
+  have hBA : B ⊆ A := hBB₀.trans hB₀A
+  have hwitness : ∀ b ∈ B, ∃ w : ExternalFourCliqueWitness A b,
+      f b = w.vertices := fun b hb => hwitness₀ b (hBB₀ hb)
+  have hAvoid : ∀ b ∈ B, Disjoint (f b : Set ℕ) B := by
+    intro b hb
+    exact (hAvoid₀ b (hBB₀ hb)).mono_right hBB₀
+  have hg : ∀ b ∈ B,
+      g b ∈ additiveSupportFamily A 3 (p b) ∧
+      p b ∉ g b ∧ Disjoint (g b : Set ℕ) B := by
+    intro b hb
+    have hgb := hg₀ b (hBB₀ hb)
+    exact ⟨hgb.1, hgb.2.1, hgb.2.2.1.mono_right hBB₀⟩
+  obtain ⟨r, hr, e, F, P, hEnrichedCore, _hEnrichedLower⟩ :=
+    exists_finiteBlockPartition_for_enrichedCliqueSunflower
+      hBA hB hwitness hAvoid hpS hg hrepairPetal hjointDisjoint
+  let cell : ℕ → Finset ℕ := fun i =>
+    atomPetalRepairCell p r (e i).1
+  have hcellEnriched : ∀ i, cell i ⊆
+      enrichedExternalCliqueCell S f r (e i).1 := by
+    intro i x hxCell
+    simp only [cell, atomPetalRepairCell, Finset.mem_insert] at hxCell
+    rcases hxCell with hxb | hxp | hxr
+    · exact Finset.mem_union_right _ (hxb ▸ Finset.mem_insert_self _ _)
+    · apply Finset.mem_union_right
+      rw [externalCliqueCell]
+      exact Finset.mem_insert_of_mem (hxp ▸ hpS (e i).1 (e i).2)
+    · exact Finset.mem_union_left _ hxr
+  have hcore : ∀ i, cell i ⊆ F i := fun i =>
+    (hcellEnriched i).trans (hEnrichedCore i)
+  have hEnrichedZero : ∀ i,
+      0 ∉ enrichedExternalCliqueCell S f r (e i).1 := by
+    intro i hzeroCell
+    let b := (e i).1
+    rcases Finset.mem_union.mp hzeroCell with hzeroR | hzeroExternal
+    · have hzeroPetal := (hr b (e i).2).1 hzeroR
+      exact (Finset.mem_sdiff.mp hzeroPetal).2 hzeroS
+    · rcases Finset.mem_insert.mp hzeroExternal with hzeroB | hzeroF
+      · obtain ⟨w, _hfw⟩ := hwitness b (e i).2
+        have hbpos := w.atom_pos
+        omega
+      · obtain ⟨w, hfw⟩ := hwitness b (e i).2
+        apply w.zero_not_mem_vertices
+        rw [← hfw]
+        exact Finset.sdiff_subset hzeroF
+  have hcellZero : ∀ i, 0 ∉ cell i := by
+    intro i hzeroCell
+    exact hEnrichedZero i (hcellEnriched i hzeroCell)
+  have hcellCard : ∀ i, (cell i).card = 3 := by
+    intro i
+    let b := (e i).1
+    have hpb : b ≠ p b := by
+      intro hEq
+      exact Set.disjoint_left.mp (hAvoid b (e i).2)
+        (Finset.mem_coe.mpr (Finset.sdiff_subset (hpS b (e i).2)))
+        (hEq ▸ (e i).2)
+    have hpNotR : p b ∉ r b := by
+      intro hpr
+      apply (hg b (e i).2).2.1
+      exact (Finset.mem_sdiff.mp ((hr b (e i).2).1 hpr)).1
+    have hbNotR : b ∉ r b := by
+      intro hbr
+      have hbG := (Finset.mem_sdiff.mp ((hr b (e i).2).1 hbr)).1
+      exact Set.disjoint_left.mp (hg b (e i).2).2.2
+        (Finset.mem_coe.mpr hbG) (e i).2
+    change (atomPetalRepairCell p r b).card = 3
+    rw [atomPetalRepairCell,
+      Finset.card_insert_of_notMem (by simpa [hpb] using hbNotR),
+      Finset.card_insert_of_notMem hpNotR,
+      (hr b (e i).2).2]
+  have hcellLower : ∀ i, 3 ≤ (cell i).card := by
+    intro i
+    rw [hcellCard i]
+  have hcellUpper : ∀ i, (cell i).card ≤ 3 := by
+    intro i
+    rw [hcellCard i]
+  refine ⟨B, hBA, hB, F, cell, P, hcore,
+    hcellZero, hcellLower,
+    (fun i => (hcellUpper i).trans (by omega)), ?_⟩
+  intro N
+  obtain ⟨Q₁, hQ₁N, hcert₁⟩ :=
+    finiteBlockCertificates_of_strongInfiniteDeletion
+      (strongOrderThreeDeletion_of_counterexample hcounter) F P N
+  obtain ⟨Q, hQQ₁, hcert, hlocalized⟩ :=
+    exists_minimal_targetLocalized_subcertificate hcert₁
+  let arbitrarySelector : BlockSelector F := fun i =>
+    ⟨(P.nonempty i).choose, (P.nonempty i).choose_spec⟩
+  obtain ⟨q₀, hq₀Q, _hq₀Destroy⟩ := hcert arbitrarySelector
+  have hQ : Q.Nonempty := ⟨q₀, hq₀Q⟩
+  have hQN : ∀ q ∈ Q, N ≤ q := by
+    intro q hqQ
+    exact hQ₁N q (hQQ₁ hqQ)
+  obtain ⟨q, hqQ, hqBound⟩ :=
+    tripleCertificate_forces_boundedPairFamily_of_threePointCells
+      P hzeroA hcellZero hcore hcellLower hcellUpper hcert
+  refine ⟨Q, hQ, hQN, hcert, hlocalized, q, hqQ, ?_⟩
+  simpa using hqBound
 
 set_option maxHeartbeats 5000000 in
 /-- Same-certificate arithmetic fork.  The amplified target set `Q`
