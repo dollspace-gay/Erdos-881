@@ -3948,6 +3948,394 @@ theorem card_pairSupports_eq_card_crossingAtomEndpoints
   exact Finset.card_image_iff.mpr
     pairSupport_injOn_crossingAtomEndpoints
 
+/-! ## The crossing-endpoint thinning bridge -/
+
+/-- A thinning `B ⊆ B₀` eventually omits a crossing endpoint at every
+target whose entire order-two support family crosses the old reservoir
+`B₀`.  This is the exact finite-edge independence condition left after
+direct triple repairs have been installed on `B₀`: an omitted old-red
+endpoint turns its crossing pair into a wholly retained pair for `B`. -/
+def HasEventuallyOmittedCrossingEndpoint
+    (A B₀ B : Set ℕ) : Prop :=
+  ∃ N, ∀ q, N ≤ q →
+    (∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) B₀ ∧ ¬ (E : Set ℕ) ⊆ B₀) →
+    ¬ (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆ B
+
+/-- Exact completion theorem for the crossing-endpoint formulation.  Pair
+supports which are blue relative to `B₀` remain blue after thinning;
+supports wholly inside `B₀` use the already installed direct triple
+repair; and at an all-crossing target the omitted endpoint supplied by
+`HasEventuallyOmittedCrossingEndpoint` gives a blue pair for the thinning.
+
+Thus constructing an infinite `B ⊆ B₀` with the omitted-endpoint
+property is sufficient for the desired infinite deletion. -/
+theorem exactThreeBasis_of_omittedCrossingEndpoint_thinning
+    {A B₀ B : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hBB₀ : B ⊆ B₀)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (homit : HasEventuallyOmittedCrossingEndpoint A B₀ B) :
+    IsExactTupleAsymptoticBasis (A \ B) 3 := by
+  apply hasEventuallySurvivingSupport_additive_iff.mp
+  obtain ⟨N₂, hN₂⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  obtain ⟨Nₒ, hNₒ⟩ := homit
+  refine ⟨max N₂ Nₒ, ?_⟩
+  intro q hq
+  have hqN₂ : N₂ ≤ q := (le_max_left N₂ Nₒ).trans hq
+  have hqNₒ : Nₒ ≤ q := (le_max_right N₂ Nₒ).trans hq
+  by_cases hcross : ∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) B₀ ∧ ¬ (E : Set ℕ) ⊆ B₀
+  · have hnsub := hNₒ q hqNₒ hcross
+    obtain ⟨b, hbEndpoint, hbB⟩ := Set.not_subset.mp hnsub
+    have hbData := mem_crossingAtomEndpoints_iff.mp
+      (Finset.mem_coe.mp hbEndpoint)
+    let E : Finset ℕ := pairSupport q b
+    have hER : E ∈ additiveSupportFamily A 2 q := by
+      exact pairSupport_mem_additiveSupportFamily hbData.1
+        (hB₀A hbData.2.1) hbData.2.2.1
+    have hEB : Disjoint (E : Set ℕ) B := by
+      rw [Set.disjoint_left]
+      intro x hxE hxB
+      have hxCases : x = b ∨ x = q - b := by
+        simpa [E, pairSupport] using hxE
+      rcases hxCases with rfl | rfl
+      · exact hbB hxB
+      · exact hbData.2.2.2 (hBB₀ hxB)
+    let G : Finset ℕ := insert 0 E
+    have hGR : G ∈ additiveSupportFamily A 3 q := by
+      simpa [G] using
+        (insert_mem_additiveSupportFamily_succ hzeroA hER)
+    have hGB : Disjoint (G : Set ℕ) B := by
+      rw [Set.disjoint_left]
+      intro x hxG hxB
+      rcases Finset.mem_insert.mp (Finset.mem_coe.mp hxG) with rfl | hxE
+      · exact hzeroB₀ (hBB₀ hxB)
+      · exact Set.disjoint_left.mp hEB
+          (Finset.mem_coe.mpr hxE) hxB
+    exact ⟨G, hGR, hGB⟩
+  · push Not at hcross
+    obtain ⟨E, hER, hnotCross⟩ := hcross
+    by_cases hblue₀ : Disjoint (E : Set ℕ) B₀
+    · let G : Finset ℕ := insert 0 E
+      have hGR : G ∈ additiveSupportFamily A 3 q := by
+        simpa [G] using
+          (insert_mem_additiveSupportFamily_succ hzeroA hER)
+      have hGB : Disjoint (G : Set ℕ) B := by
+        rw [Set.disjoint_left]
+        intro x hxG hxB
+        rcases Finset.mem_insert.mp (Finset.mem_coe.mp hxG) with rfl | hxE
+        · exact hzeroB₀ (hBB₀ hxB)
+        · exact Set.disjoint_left.mp hblue₀
+            (Finset.mem_coe.mpr hxE) (hBB₀ hxB)
+      exact ⟨G, hGR, hGB⟩
+    · have hred₀ : (E : Set ℕ) ⊆ B₀ := hnotCross hblue₀
+      obtain ⟨v, _hvA, hvsum, rfl⟩ :=
+        mem_additiveSupportFamily_iff.mp hER
+      have hv0B₀ : (v 0).1 ∈ B₀ :=
+        hred₀ (mem_tupleSupport_iff.mpr ⟨0, rfl⟩)
+      have hv1B₀ : (v 1).1 ∈ B₀ :=
+        hred₀ (mem_tupleSupport_iff.mpr ⟨1, rfl⟩)
+      have hsum : (v 0).1 + (v 1).1 = q := by
+        simpa [Fin.sum_univ_two] using hvsum
+      obtain ⟨G, hGR, hGB₀⟩ :=
+        hrepairs (v 0).1 hv0B₀ (v 1).1 hv1B₀
+      rw [hsum] at hGR
+      exact ⟨G, hGR, hGB₀.mono_right hBB₀⟩
+
+/-- Existence wrapper in the form used by the deletion problem. -/
+theorem exists_infiniteDeletion_threeBasis_of_omittedCrossingEndpoints
+    {A B₀ : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hselection : ∃ B, B ⊆ B₀ ∧ B.Infinite ∧
+      HasEventuallyOmittedCrossingEndpoint A B₀ B) :
+    ∃ B, B ⊆ A ∧ B.Infinite ∧
+      IsExactTupleAsymptoticBasis (A \ B) 3 := by
+  obtain ⟨B, hBB₀, hB, homit⟩ := hselection
+  exact ⟨B, hBB₀.trans hB₀A, hB,
+    exactThreeBasis_of_omittedCrossingEndpoint_thinning
+      hbasis hzeroA hzeroB₀ hB₀A hBB₀ hrepairs homit⟩
+
+/-- A support hypergraph encoding the crossing-endpoint obstruction.  At an
+all-crossing target it consists of the singleton old-red endpoints.  At
+every other target it contains the empty support, making destruction
+impossible.  Consequently destruction by `B` says exactly that the target
+is all-crossing relative to `B₀` and every one of its old-red endpoints
+has been retained in `B`. -/
+noncomputable def crossingEndpointObstructionFamily
+    (A B₀ : Set ℕ) : SupportFamily := by
+  classical
+  intro q
+  exact if ∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) B₀ ∧ ¬ (E : Set ℕ) ⊆ B₀ then
+    (crossingAtomEndpoints A B₀ q).image fun b => {b}
+  else
+    {∅}
+
+set_option maxHeartbeats 2000000 in
+theorem destroysAt_crossingEndpointObstructionFamily_iff
+    {A B₀ B : Set ℕ} {q : ℕ} :
+    DestroysAt (crossingEndpointObstructionFamily A B₀) B q ↔
+      (∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧ ¬ (E : Set ℕ) ⊆ B₀) ∧
+      (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆ B := by
+  classical
+  by_cases hcross : ∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) B₀ ∧ ¬ (E : Set ℕ) ⊆ B₀
+  · constructor
+    · intro hdestroy
+      refine ⟨hcross, ?_⟩
+      intro b hbEndpoint
+      by_contra hbB
+      have hsingleton : ({b} : Finset ℕ) ∈
+          crossingEndpointObstructionFamily A B₀ q := by
+        simp only [crossingEndpointObstructionFamily, if_pos hcross]
+        exact Finset.mem_image.mpr
+          ⟨b, Finset.mem_coe.mp hbEndpoint, rfl⟩
+      apply hdestroy ({b} : Finset ℕ) hsingleton
+      rw [Set.disjoint_left]
+      intro x hxSingleton hxB
+      have hxb : x = b := by simpa using hxSingleton
+      exact hbB (hxb ▸ hxB)
+    · rintro ⟨_hcross, hsub⟩ E hE hdisjoint
+      simp only [crossingEndpointObstructionFamily, if_pos hcross] at hE
+      obtain ⟨b, hbEndpoint, rfl⟩ := Finset.mem_image.mp hE
+      exact Set.disjoint_left.mp hdisjoint (by simp)
+        (hsub (Finset.mem_coe.mpr hbEndpoint))
+  · constructor
+    · intro hdestroy
+      have hempty : (∅ : Finset ℕ) ∈
+          crossingEndpointObstructionFamily A B₀ q := by
+        simp [crossingEndpointObstructionFamily, hcross]
+      exact (hdestroy ∅ hempty (by simp)).elim
+    · rintro ⟨h, _hsub⟩
+      exact (hcross h).elim
+
+/-- Negating the omitted-endpoint completion theorem gives a strong
+hypergraph obstruction on every infinite thinning of `B₀`.  This is the
+precise strong-deletion statement whose compact finite certificates must be
+defeated to construct the desired `B`. -/
+theorem strongCrossingEndpointObstruction_of_counterexample
+    {A B₀ : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3) :
+    StrongInfiniteDeletion
+      (crossingEndpointObstructionFamily A B₀) B₀ := by
+  intro B hBB₀ hB N
+  by_contra hnot
+  push Not at hnot
+  have homit : HasEventuallyOmittedCrossingEndpoint A B₀ B := by
+    refine ⟨N, ?_⟩
+    intro q hNq hcross
+    intro hsub
+    exact hnot q hNq
+      (destroysAt_crossingEndpointObstructionFamily_iff.mpr
+        ⟨hcross, hsub⟩)
+  have hthree : IsExactTupleAsymptoticBasis (A \ B) 3 :=
+    exactThreeBasis_of_omittedCrossingEndpoint_thinning
+      hbasis hzeroA hzeroB₀ hB₀A hBB₀ hrepairs homit
+  exact hcounter B (hBB₀.trans hB₀A) hB hthree
+
+/-- Counterexample-level package of the new reduction.  The previously
+constructed infinite zero-atomic reservoir carries direct repairs for every
+old-red pair, and the only way all of its infinite thinnings can fail is the
+strong crossing-endpoint obstruction above. -/
+theorem counterexample_forces_strongCrossingEndpointReservoir
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ B₀, B₀ ⊆ A ∧ B₀.Infinite ∧ 0 ∉ B₀ ∧
+      (∀ x ∈ B₀, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A B₀ ∧
+      StrongInfiniteDeletion
+        (crossingEndpointObstructionFamily A B₀) B₀ := by
+  obtain ⟨B₀, hB₀A, hB₀, hzeroB₀, hnormal,
+      hrepairs, _hselfRepairs, _hlate⟩ :=
+    counterexample_forces_repairedCrossingReservoir
+      hbasis hzeroA hcounter
+  have hstrong : StrongInfiniteDeletion
+      (crossingEndpointObstructionFamily A B₀) B₀ :=
+    strongCrossingEndpointObstruction_of_counterexample
+      hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+  exact ⟨B₀, hB₀A, hB₀, hzeroB₀,
+    hnormal, hrepairs, hstrong⟩
+
+/-- Compactness now produces the exact finite certificate `Q` for the new
+bridge.  Every block selector entirely contains the crossing-endpoint set
+of one late target in `Q`; each certified target is genuinely all-crossing
+relative to the old repaired reservoir. -/
+theorem finiteCrossingEndpointCertificates_of_counterexample
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (P : IsFiniteBlockPartition B₀ F) :
+    ∀ N, ∃ Q : Finset ℕ,
+      (∀ q ∈ Q, N ≤ q ∧
+        ∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B₀ ∧ ¬ (E : Set ℕ) ⊆ B₀) ∧
+      ∀ sel : BlockSelector F, ∃ q ∈ Q,
+        (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+          selectedSet sel := by
+  classical
+  intro N
+  have hstrong := strongCrossingEndpointObstruction_of_counterexample
+    hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+  obtain ⟨Q₀, hQ₀late, hcert₀⟩ :=
+    finiteBlockCertificates_of_strongInfiniteDeletion hstrong F P N
+  let Cross : ℕ → Prop := fun q =>
+    ∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) B₀ ∧ ¬ (E : Set ℕ) ⊆ B₀
+  let Q : Finset ℕ := Q₀.filter Cross
+  have hQdata : ∀ q ∈ Q, N ≤ q ∧ Cross q := by
+    intro q hqQ
+    have hq := Finset.mem_filter.mp hqQ
+    exact ⟨hQ₀late q hq.1, hq.2⟩
+  refine ⟨Q, ?_, ?_⟩
+  · simpa [Cross] using hQdata
+  · intro sel
+    obtain ⟨q, hqQ₀, hqDestroy⟩ := hcert₀ sel
+    have hqData :=
+      destroysAt_crossingEndpointObstructionFamily_iff.mp hqDestroy
+    have hqQ : q ∈ Q := Finset.mem_filter.mpr ⟨hqQ₀, hqData.1⟩
+    exact ⟨q, hqQ, hqData.2⟩
+
+/-- A finite family of nonempty endpoint sets cannot cover selectors of
+`k`-point cores by containment unless it has at least `k` targets.  Choose
+one endpoint from each target.  If there were fewer than `k`, every core
+would contain a point outside the finite set of chosen endpoints, producing
+a selector which contains none of the endpoint sets. -/
+theorem crossingEndpointCertificate_forces_targetCard_lower
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {k : ℕ}
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellLower : ∀ i, k ≤ (cell i).card)
+    (hendpoint : ∀ q ∈ Q,
+      (crossingAtomEndpoints A B₀ q).Nonempty)
+    (hcert : ∀ sel : BlockSelector F,
+      (∀ i, (sel i).1 ∈ cell i) →
+      ∃ q ∈ Q,
+        (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+          selectedSet sel) :
+    k ≤ Q.card := by
+  classical
+  by_contra hnot
+  have hQlt : Q.card < k := Nat.lt_of_not_ge hnot
+  have hchoose : ∀ q : {q // q ∈ Q}, ∃ b,
+      b ∈ crossingAtomEndpoints A B₀ q.1 := by
+    intro q
+    exact hendpoint q.1 q.2
+  choose point hpoint using hchoose
+  let H : Finset ℕ := Q.attach.image point
+  have hHcard : H.card ≤ Q.card := by
+    exact (Finset.card_image_le.trans_eq (by simp))
+  have houtside : ∀ i, ∃ x, x ∈ cell i ∧ x ∉ H := by
+    intro i
+    have hnsub : ¬ cell i ⊆ H := by
+      intro hsub
+      have hcard := Finset.card_le_card hsub
+      have hki := hcellLower i
+      omega
+    exact Finset.not_subset.mp hnsub
+  choose selected hselectedCell hselectedH using houtside
+  let sel : BlockSelector F := fun i =>
+    ⟨selected i, hcore i (hselectedCell i)⟩
+  have hselCore : ∀ i, (sel i).1 ∈ cell i := by
+    intro i
+    exact hselectedCell i
+  have hselH : Disjoint (H : Set ℕ) (selectedSet sel) := by
+    rw [Set.disjoint_left]
+    intro x hxH hxSelected
+    obtain ⟨i, hi⟩ := hxSelected
+    apply hselectedH i
+    have : selected i = x := hi
+    exact this ▸ Finset.mem_coe.mp hxH
+  obtain ⟨q, hqQ, hqSub⟩ := hcert sel hselCore
+  let qQ : {q // q ∈ Q} := ⟨q, hqQ⟩
+  have hpH : point qQ ∈ H := by
+    exact Finset.mem_image.mpr
+      ⟨qQ, Finset.mem_attach Q qQ, rfl⟩
+  have hpSelected : point qQ ∈ selectedSet sel := by
+    exact hqSub (Finset.mem_coe.mpr (hpoint qQ))
+  exact Set.disjoint_left.mp hselH
+    (Finset.mem_coe.mpr hpH) hpSelected
+
+/-- Quantitative form of the compact crossing-endpoint certificate.  On a
+partition whose blocks have at least `k` points, the late certificate `Q`
+has at least `k` targets.  This improves the earlier pair-support coverage
+bounds because the new obstruction requires containment of a whole endpoint
+set rather than merely one intersection. -/
+theorem finiteCrossingEndpointCertificates_targetCard_lower
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (P : IsFiniteBlockPartition B₀ F)
+    (hblockLower : ∀ i, k ≤ (F i).card) :
+    ∀ N, ∃ Q : Finset ℕ,
+      k ≤ Q.card ∧
+      (∀ q ∈ Q, N ≤ q ∧
+        ∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B₀ ∧ ¬ (E : Set ℕ) ⊆ B₀) ∧
+      ∀ sel : BlockSelector F, ∃ q ∈ Q,
+        (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+          selectedSet sel := by
+  obtain ⟨N₂, hN₂⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  intro N
+  obtain ⟨Q, hQdata, hcert⟩ :=
+    finiteCrossingEndpointCertificates_of_counterexample
+      hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter P (max N N₂)
+  have hQlate : ∀ q ∈ Q, N ≤ q ∧
+      ∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧ ¬ (E : Set ℕ) ⊆ B₀ := by
+    intro q hqQ
+    exact ⟨(le_max_left N N₂).trans (hQdata q hqQ).1,
+      (hQdata q hqQ).2⟩
+  have hendpoint : ∀ q ∈ Q,
+      (crossingAtomEndpoints A B₀ q).Nonempty := by
+    intro q hqQ
+    obtain ⟨E, hER, _hEempty⟩ :=
+      hN₂ q ((le_max_right N N₂).trans (hQdata q hqQ).1)
+    obtain ⟨b, hbB₀, c, hcC, hbc, _hEeq⟩ :=
+      exists_endpoints_of_crossingPairSupport hER
+        ((hQdata q hqQ).2 E hER).1
+        ((hQdata q hqQ).2 E hER).2
+    have hbLe : b ≤ q := by omega
+    have hsub : q - b = c := by omega
+    exact ⟨b, mem_crossingAtomEndpoints_iff.mpr
+      ⟨hbLe, hbB₀, hsub ▸ hcC⟩⟩
+  have hQcard : k ≤ Q.card :=
+    crossingEndpointCertificate_forces_targetCard_lower
+      (A := A) (B₀ := B₀) (cell := F)
+      (fun _ => Finset.Subset.rfl) hblockLower hendpoint
+      (fun sel _hsel => hcert sel)
+  exact ⟨Q, hQcard, hQlate, hcert⟩
+
 /-- The certificate targets destroyed by a fixed deletion set. -/
 noncomputable def destroyedCertificateTargets
     (A B : Set ℕ) (Q : Finset ℕ) : Finset ℕ := by
