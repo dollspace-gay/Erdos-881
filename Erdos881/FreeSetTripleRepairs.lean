@@ -4119,6 +4119,220 @@ theorem destroysAt_crossingEndpointObstructionFamily_iff
     · rintro ⟨h, _hsub⟩
       exact (hcross h).elim
 
+/-- Strengthened obstruction family retaining the genuine order-three
+failure.  At an all-crossing target it contains both every order-three
+support and every singleton crossing endpoint.  Destruction therefore says
+simultaneously that the target is all-crossing relative to `B₀`, that `B`
+destroys its order-three support family, and that every old-red crossing
+endpoint belongs to `B`. -/
+noncomputable def crossingEndpointTripleObstructionFamily
+    (A B₀ : Set ℕ) : SupportFamily := by
+  classical
+  intro q
+  exact if ∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) B₀ ∧ ¬ (E : Set ℕ) ⊆ B₀ then
+    additiveSupportFamily A 3 q ∪
+      (crossingAtomEndpoints A B₀ q).image fun b => {b}
+  else
+    {∅}
+
+set_option maxHeartbeats 2000000 in
+theorem destroysAt_crossingEndpointTripleObstructionFamily_iff
+    {A B₀ B : Set ℕ} {q : ℕ} :
+    DestroysAt
+        (crossingEndpointTripleObstructionFamily A B₀) B q ↔
+      (∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧ ¬ (E : Set ℕ) ⊆ B₀) ∧
+      DestroysAt (additiveSupportFamily A 3) B q ∧
+      (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆ B := by
+  classical
+  by_cases hcross : ∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) B₀ ∧ ¬ (E : Set ℕ) ⊆ B₀
+  · constructor
+    · intro hdestroy
+      refine ⟨hcross, ?_, ?_⟩
+      · intro G hGR
+        exact hdestroy G (by
+          simp only [crossingEndpointTripleObstructionFamily,
+            if_pos hcross]
+          exact Finset.mem_union_left _ hGR)
+      · intro b hbEndpoint
+        by_contra hbB
+        have hsingleton : ({b} : Finset ℕ) ∈
+            crossingEndpointTripleObstructionFamily A B₀ q := by
+          simp only [crossingEndpointTripleObstructionFamily,
+            if_pos hcross]
+          apply Finset.mem_union_right
+          exact Finset.mem_image.mpr
+            ⟨b, Finset.mem_coe.mp hbEndpoint, rfl⟩
+        apply hdestroy ({b} : Finset ℕ) hsingleton
+        rw [Set.disjoint_left]
+        intro x hxSingleton hxB
+        have hxb : x = b := by simpa using hxSingleton
+        exact hbB (hxb ▸ hxB)
+    · rintro ⟨_hcross, htriple, hsub⟩ G hG hdisjoint
+      simp only [crossingEndpointTripleObstructionFamily,
+        if_pos hcross] at hG
+      rcases Finset.mem_union.mp hG with hGR | hsingleton
+      · exact htriple G hGR hdisjoint
+      · obtain ⟨b, hbEndpoint, rfl⟩ :=
+          Finset.mem_image.mp hsingleton
+        exact Set.disjoint_left.mp hdisjoint (by simp)
+          (hsub (Finset.mem_coe.mpr hbEndpoint))
+  · constructor
+    · intro hdestroy
+      have hempty : (∅ : Finset ℕ) ∈
+          crossingEndpointTripleObstructionFamily A B₀ q := by
+        simp [crossingEndpointTripleObstructionFamily, hcross]
+      exact (hdestroy ∅ hempty (by simp)).elim
+    · rintro ⟨h, _htriple, _hsub⟩
+      exact (hcross h).elim
+
+/-- A genuine order-three destroyer on a thinning `B ⊆ B₀` must satisfy
+the two additional crossing-endpoint conditions.  A pair support disjoint
+from `B₀` could be zero-padded; one contained in `B₀` could use the direct
+repair installed on the old reservoir; and a crossing support whose old-red
+endpoint was omitted from `B` would again be wholly retained after thinning. -/
+theorem crossingEndpointTripleObstruction_of_orderThreeDestroyer
+    {A B₀ B : Set ℕ} {q : ℕ}
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hBB₀ : B ⊆ B₀)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hdestroy : DestroysAt (additiveSupportFamily A 3) B q) :
+    DestroysAt
+      (crossingEndpointTripleObstructionFamily A B₀) B q := by
+  have hzeroB : 0 ∉ B := fun hzero => hzeroB₀ (hBB₀ hzero)
+  have hcross : ∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) B₀ ∧ ¬ (E : Set ℕ) ⊆ B₀ := by
+    intro E hER
+    constructor
+    · intro hblue₀
+      let G : Finset ℕ := insert 0 E
+      have hGR : G ∈ additiveSupportFamily A 3 q := by
+        simpa [G] using
+          (insert_mem_additiveSupportFamily_succ hzeroA hER)
+      have hGB : Disjoint (G : Set ℕ) B := by
+        rw [Set.disjoint_left]
+        intro x hxG hxB
+        rcases Finset.mem_insert.mp (Finset.mem_coe.mp hxG) with rfl | hxE
+        · exact hzeroB hxB
+        · exact Set.disjoint_left.mp hblue₀
+            (Finset.mem_coe.mpr hxE) (hBB₀ hxB)
+      exact (hdestroy G hGR) hGB
+    · intro hred₀
+      obtain ⟨v, _hvA, hvsum, rfl⟩ :=
+        mem_additiveSupportFamily_iff.mp hER
+      have hv0B₀ : (v 0).1 ∈ B₀ :=
+        hred₀ (mem_tupleSupport_iff.mpr ⟨0, rfl⟩)
+      have hv1B₀ : (v 1).1 ∈ B₀ :=
+        hred₀ (mem_tupleSupport_iff.mpr ⟨1, rfl⟩)
+      have hsum : (v 0).1 + (v 1).1 = q := by
+        simpa [Fin.sum_univ_two] using hvsum
+      obtain ⟨G, hGR, hGB₀⟩ :=
+        hrepairs (v 0).1 hv0B₀ (v 1).1 hv1B₀
+      rw [hsum] at hGR
+      exact (hdestroy G hGR) (hGB₀.mono_right hBB₀)
+  have hendpointSub :
+      (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆ B := by
+    intro b hbEndpoint
+    by_contra hbB
+    have hbData := mem_crossingAtomEndpoints_iff.mp
+      (Finset.mem_coe.mp hbEndpoint)
+    let E : Finset ℕ := pairSupport q b
+    have hER : E ∈ additiveSupportFamily A 2 q :=
+      pairSupport_mem_additiveSupportFamily hbData.1
+        (hB₀A hbData.2.1) hbData.2.2.1
+    have hEB : Disjoint (E : Set ℕ) B := by
+      rw [Set.disjoint_left]
+      intro x hxE hxB
+      have hxCases : x = b ∨ x = q - b := by
+        simpa [E, pairSupport] using hxE
+      rcases hxCases with rfl | rfl
+      · exact hbB hxB
+      · exact hbData.2.2.2 (hBB₀ hxB)
+    let G : Finset ℕ := insert 0 E
+    have hGR : G ∈ additiveSupportFamily A 3 q := by
+      simpa [G] using
+        (insert_mem_additiveSupportFamily_succ hzeroA hER)
+    have hGB : Disjoint (G : Set ℕ) B := by
+      rw [Set.disjoint_left]
+      intro x hxG hxB
+      rcases Finset.mem_insert.mp (Finset.mem_coe.mp hxG) with rfl | hxE
+      · exact hzeroB hxB
+      · exact Set.disjoint_left.mp hEB
+          (Finset.mem_coe.mpr hxE) hxB
+    exact (hdestroy G hGR) hGB
+  exact destroysAt_crossingEndpointTripleObstructionFamily_iff.mpr
+    ⟨hcross, hdestroy, hendpointSub⟩
+
+/-- Under the counterexample assumption, the strengthened endpoint/triple
+family is strongly deleting on the repaired reservoir. -/
+theorem strongCrossingEndpointTripleObstruction_of_counterexample
+    {A B₀ : Set ℕ}
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3) :
+    StrongInfiniteDeletion
+      (crossingEndpointTripleObstructionFamily A B₀) B₀ := by
+  intro B hBB₀ hB N
+  obtain ⟨q, hNq, hqDestroy⟩ :=
+    strongOrderThreeDeletion_of_counterexample hcounter
+      B (hBB₀.trans hB₀A) hB N
+  exact ⟨q, hNq,
+    crossingEndpointTripleObstruction_of_orderThreeDestroyer
+      hzeroA hzeroB₀ hB₀A hBB₀ hrepairs hqDestroy⟩
+
+/-- Compact finite certificates for the strengthened obstruction.  Every
+selector genuinely destroys an order-three target in `Q` and simultaneously
+contains that target's entire crossing-endpoint set. -/
+theorem finiteCrossingEndpointTripleCertificates_of_counterexample
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ}
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (P : IsFiniteBlockPartition B₀ F) :
+    ∀ N, ∃ Q : Finset ℕ,
+      (∀ q ∈ Q, N ≤ q ∧
+        ∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B₀ ∧ ¬ (E : Set ℕ) ⊆ B₀) ∧
+      ∀ sel : BlockSelector F, ∃ q ∈ Q,
+        DestroysAt (additiveSupportFamily A 3)
+          (selectedSet sel) q ∧
+        (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+          selectedSet sel := by
+  classical
+  intro N
+  have hstrong :=
+    strongCrossingEndpointTripleObstruction_of_counterexample
+      hzeroA hzeroB₀ hB₀A hrepairs hcounter
+  obtain ⟨Q₀, hQ₀late, hcert₀⟩ :=
+    finiteBlockCertificates_of_strongInfiniteDeletion hstrong F P N
+  let Cross : ℕ → Prop := fun q =>
+    ∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) B₀ ∧ ¬ (E : Set ℕ) ⊆ B₀
+  let Q : Finset ℕ := Q₀.filter Cross
+  have hQdata : ∀ q ∈ Q, N ≤ q ∧ Cross q := by
+    intro q hqQ
+    have hq := Finset.mem_filter.mp hqQ
+    exact ⟨hQ₀late q hq.1, hq.2⟩
+  refine ⟨Q, ?_, ?_⟩
+  · simpa [Cross] using hQdata
+  · intro sel
+    obtain ⟨q, hqQ₀, hqDestroy⟩ := hcert₀ sel
+    have hqData :=
+      destroysAt_crossingEndpointTripleObstructionFamily_iff.mp
+        hqDestroy
+    have hqQ : q ∈ Q := Finset.mem_filter.mpr ⟨hqQ₀, hqData.1⟩
+    exact ⟨q, hqQ, hqData.2.1, hqData.2.2⟩
+
 /-- Negating the omitted-endpoint completion theorem gives a strong
 hypergraph obstruction on every infinite thinning of `B₀`.  This is the
 precise strong-deletion statement whose compact finite certificates must be
@@ -4173,6 +4387,31 @@ theorem counterexample_forces_strongCrossingEndpointReservoir
       (crossingEndpointObstructionFamily A B₀) B₀ :=
     strongCrossingEndpointObstruction_of_counterexample
       hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+  exact ⟨B₀, hB₀A, hB₀, hzeroB₀,
+    hnormal, hrepairs, hstrong⟩
+
+/-- Stronger counterexample package retaining genuine order-three
+destruction in the crossing-endpoint obstruction. -/
+theorem counterexample_forces_strongCrossingEndpointTripleReservoir
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ B₀, B₀ ⊆ A ∧ B₀.Infinite ∧ 0 ∉ B₀ ∧
+      (∀ x ∈ B₀, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A B₀ ∧
+      StrongInfiniteDeletion
+        (crossingEndpointTripleObstructionFamily A B₀) B₀ := by
+  obtain ⟨B₀, hB₀A, hB₀, hzeroB₀, hnormal,
+      hrepairs, _hselfRepairs, _hlate⟩ :=
+    counterexample_forces_repairedCrossingReservoir
+      hbasis hzeroA hcounter
+  have hstrong : StrongInfiniteDeletion
+      (crossingEndpointTripleObstructionFamily A B₀) B₀ :=
+    strongCrossingEndpointTripleObstruction_of_counterexample
+      hzeroA hzeroB₀ hB₀A hrepairs hcounter
   exact ⟨B₀, hB₀A, hB₀, hzeroB₀,
     hnormal, hrepairs, hstrong⟩
 
@@ -4334,6 +4573,68 @@ theorem finiteCrossingEndpointCertificates_targetCard_lower
       (A := A) (B₀ := B₀) (cell := F)
       (fun _ => Finset.Subset.rfl) hblockLower hendpoint
       (fun sel _hsel => hcert sel)
+  exact ⟨Q, hQcard, hQlate, hcert⟩
+
+/-- The strengthened compact certificate obeys the same linear lower bound
+while retaining genuine order-three destruction at its selected target. -/
+theorem finiteCrossingEndpointTripleCertificates_targetCard_lower
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (P : IsFiniteBlockPartition B₀ F)
+    (hblockLower : ∀ i, k ≤ (F i).card) :
+    ∀ N, ∃ Q : Finset ℕ,
+      k ≤ Q.card ∧
+      (∀ q ∈ Q, N ≤ q ∧
+        ∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B₀ ∧ ¬ (E : Set ℕ) ⊆ B₀) ∧
+      ∀ sel : BlockSelector F, ∃ q ∈ Q,
+        DestroysAt (additiveSupportFamily A 3)
+          (selectedSet sel) q ∧
+        (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+          selectedSet sel := by
+  obtain ⟨N₂, hN₂⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  intro N
+  obtain ⟨Q, hQdata, hcert⟩ :=
+    finiteCrossingEndpointTripleCertificates_of_counterexample
+      hzeroA hzeroB₀ hB₀A hrepairs hcounter P (max N N₂)
+  have hQlate : ∀ q ∈ Q, N ≤ q ∧
+      ∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧ ¬ (E : Set ℕ) ⊆ B₀ := by
+    intro q hqQ
+    exact ⟨(le_max_left N N₂).trans (hQdata q hqQ).1,
+      (hQdata q hqQ).2⟩
+  have hendpoint : ∀ q ∈ Q,
+      (crossingAtomEndpoints A B₀ q).Nonempty := by
+    intro q hqQ
+    obtain ⟨E, hER, _hEempty⟩ :=
+      hN₂ q ((le_max_right N N₂).trans (hQdata q hqQ).1)
+    obtain ⟨b, hbB₀, c, hcC, hbc, _hEeq⟩ :=
+      exists_endpoints_of_crossingPairSupport hER
+        ((hQdata q hqQ).2 E hER).1
+        ((hQdata q hqQ).2 E hER).2
+    have hbLe : b ≤ q := by omega
+    have hsub : q - b = c := by omega
+    exact ⟨b, mem_crossingAtomEndpoints_iff.mpr
+      ⟨hbLe, hbB₀, hsub ▸ hcC⟩⟩
+  have hcontain : ∀ sel : BlockSelector F,
+      (∀ i, (sel i).1 ∈ F i) →
+      ∃ q ∈ Q,
+        (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+          selectedSet sel := by
+    intro sel _hsel
+    obtain ⟨q, hqQ, _hqDestroy, hqSub⟩ := hcert sel
+    exact ⟨q, hqQ, hqSub⟩
+  have hQcard : k ≤ Q.card :=
+    crossingEndpointCertificate_forces_targetCard_lower
+      (A := A) (B₀ := B₀) (cell := F)
+      (fun _ => Finset.Subset.rfl) hblockLower hendpoint hcontain
   exact ⟨Q, hQcard, hQlate, hcert⟩
 
 /-- Endpoint-containment duality.  After choosing one endpoint from every
@@ -4504,6 +4805,129 @@ theorem sharpCrossingEndpointCertificate_forces_singletons
     · intro x hx
       have hxEq : x = point q := by simpa using hx
       exact hxEq ▸ hpoint q
+
+set_option maxHeartbeats 3000000 in
+/- Sharp classification for the strengthened certificate.  In addition to
+the singleton endpoint conclusion, every order-three support of the matched
+target contains that singleton.  Otherwise force its endpoint in the common
+core while avoiding the proposed support everywhere; the endpoint
+classification makes every other target ineligible, so the certificate must
+destroy the same target with a disjoint selector. -/
+theorem sharpCrossingEndpointTripleCertificate_forces_singletonDestroyers
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {k : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 4 ≤ k)
+    (hQcard : Q.card = k)
+    (hendpoint : ∀ q ∈ Q,
+      (crossingAtomEndpoints A B₀ q).Nonempty)
+    (hcert : ∀ sel : BlockSelector F,
+      (∀ i, (sel i).1 ∈ cell i) →
+      ∃ q ∈ Q,
+        DestroysAt (additiveSupportFamily A 3)
+          (selectedSet sel) q ∧
+        (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+          selectedSet sel) :
+    ∃ point : {q // q ∈ Q} → ℕ, ∃ i,
+      cell i = Q.attach.image point ∧
+      Function.Injective point ∧
+      ∀ q,
+        crossingAtomEndpoints A B₀ q.1 = {point q} ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ({point q} : Set ℕ) q.1 := by
+  classical
+  have hcontain : ∀ sel : BlockSelector F,
+      (∀ i, (sel i).1 ∈ cell i) →
+      ∃ q ∈ Q,
+        (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+          selectedSet sel := by
+    intro sel hsel
+    obtain ⟨q, hqQ, _hqDestroy, hqSub⟩ := hcert sel hsel
+    exact ⟨q, hqQ, hqSub⟩
+  obtain ⟨point, i, hcellEq, hpointInj, hsingle⟩ :=
+    sharpCrossingEndpointCertificate_forces_singletons
+      P hcore hcellCard (by omega) hQcard hendpoint hcontain
+  refine ⟨point, i, hcellEq, hpointInj, ?_⟩
+  intro q
+  refine ⟨hsingle q, ?_⟩
+  intro G hGR hGsingleton
+  have hpNotG : point q ∉ G := by
+    intro hpG
+    exact Set.disjoint_left.mp hGsingleton
+      (Finset.mem_coe.mpr hpG) (by simp)
+  have hpCell : point q ∈ cell i := by
+    rw [hcellEq]
+    exact Finset.mem_image.mpr
+      ⟨q, Finset.mem_attach Q q, rfl⟩
+  have hGcard : G.card ≤ 3 :=
+    additiveSupportFamily_cardAtMost A 3 q.1 G hGR
+  have houtside : ∀ j, ∃ y, y ∈ cell j ∧ y ∉ G := by
+    intro j
+    have hnsub : ¬ cell j ⊆ G := by
+      intro hsub
+      have hcard := Finset.card_le_card hsub
+      have hjcard := hcellCard j
+      omega
+    exact Finset.not_subset.mp hnsub
+  choose other hotherCell hotherG using houtside
+  let value : ℕ → ℕ := fun j =>
+    if hj : j = i then point q else other j
+  have hvalueCell : ∀ j, value j ∈ cell j := by
+    intro j
+    by_cases hj : j = i
+    · subst j
+      simpa [value] using hpCell
+    · simpa [value, hj] using hotherCell j
+  have hvalueG : ∀ j, value j ∉ G := by
+    intro j
+    by_cases hj : j = i
+    · subst j
+      simpa [value] using hpNotG
+    · simpa [value, hj] using hotherG j
+  let sel : BlockSelector F := fun j =>
+    ⟨value j, hcore j (hvalueCell j)⟩
+  have hselCore : ∀ j, (sel j).1 ∈ cell j := by
+    intro j
+    exact hvalueCell j
+  have hselI : (sel i).1 = point q := by simp [sel, value]
+  have hGselected : Disjoint (G : Set ℕ) (selectedSet sel) := by
+    rw [Set.disjoint_left]
+    intro x hxG hxSelected
+    obtain ⟨j, hj⟩ := hxSelected
+    apply hvalueG j
+    have : value j = x := hj
+    exact this ▸ Finset.mem_coe.mp hxG
+  obtain ⟨r, hrQ, hrDestroy, hrSub⟩ := hcert sel hselCore
+  let rQ : {r // r ∈ Q} := ⟨r, hrQ⟩
+  have hprEndpoint : point rQ ∈ crossingAtomEndpoints A B₀ r := by
+    rw [hsingle rQ]
+    simp
+  have hprSelected : point rQ ∈ selectedSet sel :=
+    hrSub (Finset.mem_coe.mpr hprEndpoint)
+  have hprCell : point rQ ∈ cell i := by
+    rw [hcellEq]
+    exact Finset.mem_image.mpr
+      ⟨rQ, Finset.mem_attach Q rQ, rfl⟩
+  obtain ⟨j, hj⟩ := hprSelected
+  have hji : j = i := by
+    by_contra hji
+    have hprFj : point rQ ∈ F j := by
+      rw [← hj]
+      exact (sel j).2
+    exact Finset.disjoint_left.mp
+      (P.disjoint (fun hij => hji hij.symm))
+      (hcore i hprCell) hprFj
+  have hprEq : point rQ = point q := by
+    subst j
+    exact hj.symm.trans hselI
+  have hrq : rQ = q := hpointInj hprEq
+  have hrVal : r = q.1 := congrArg Subtype.val hrq
+  have hqDestroy : DestroysAt (additiveSupportFamily A 3)
+      (selectedSet sel) q.1 := by
+    simpa [hrVal] using hrDestroy
+  exact (hqDestroy G hGR) hGselected
 
 /-- At an all-crossing target, a singleton endpoint set is equivalent to a
 unique canonical pair support. -/
