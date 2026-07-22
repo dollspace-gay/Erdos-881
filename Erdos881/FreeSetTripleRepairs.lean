@@ -27589,6 +27589,51 @@ theorem HasMigratedBinaryCertificateFamily.mono_index
   exact ⟨J, hJL.trans hLI, hJ, K', pairCell,
     hK'A, hK', P, hpairCard, hQ⟩
 
+/-- Every migrated binary certificate can be made target-minimal.  Besides
+remaining late and disjoint from the marked target stream, the minimized
+certificate gives each of its targets a private selector: that selector
+destroys this target and no other target in the same finite certificate. -/
+theorem HasMigratedBinaryCertificateFamily.has_targetLocalizedCertificates
+    {A I : Set ℕ} {q : ℕ → ℕ}
+    (h : HasMigratedBinaryCertificateFamily A q I) :
+    ∃ J, J ⊆ I ∧ J.Infinite ∧
+      ∃ K' : Set ℕ, ∃ pairCell : ℕ → Finset ℕ,
+        K' ⊆ A ∧ K'.Infinite ∧
+        IsFiniteBlockPartition K' pairCell ∧
+        (∀ i, (pairCell i).card = 2) ∧
+        ∀ N, ∃ Q : Finset ℕ,
+          Q.Nonempty ∧
+          (∀ t ∈ Q, N ≤ t) ∧
+          Disjoint (Q : Set ℕ) (q '' J) ∧
+          (∀ sel : BlockSelector pairCell, ∃ t ∈ Q,
+            DestroysAt (additiveSupportFamily A 3)
+              (selectedSet sel) t) ∧
+          ∀ t ∈ Q, ∃ sel : BlockSelector pairCell,
+            DestroysAt (additiveSupportFamily A 3)
+                (selectedSet sel) t ∧
+              ∀ u ∈ Q, u ≠ t →
+                ¬ DestroysAt (additiveSupportFamily A 3)
+                  (selectedSet sel) u := by
+  classical
+  obtain ⟨J, hJI, hJ, K', pairCell, hK'A, hK', P,
+      hpairCard, hcertificates⟩ := h
+  refine ⟨J, hJI, hJ, K', pairCell, hK'A, hK', P,
+    hpairCard, ?_⟩
+  intro N
+  obtain ⟨Q₀, hQ₀late, hQ₀disjoint, hQ₀cert⟩ := hcertificates N
+  obtain ⟨Q, hQQ₀, hcert, hlocalized⟩ :=
+    exists_minimal_targetLocalized_subcertificate hQ₀cert
+  let sel₀ : BlockSelector pairCell := fun i =>
+    ⟨(P.nonempty i).choose, (P.nonempty i).choose_spec⟩
+  obtain ⟨t₀, ht₀Q, _ht₀Destroy⟩ := hcert sel₀
+  have hQ : Q.Nonempty := ⟨t₀, ht₀Q⟩
+  have hQlate : ∀ t ∈ Q, N ≤ t := by
+    intro t htQ
+    exact hQ₀late t (hQQ₀ htQ)
+  have hQdisjoint : Disjoint (Q : Set ℕ) (q '' J) :=
+    hQ₀disjoint.mono_left (fun t ht => hQQ₀ (Finset.mem_coe.mp ht))
+  exact ⟨Q, hQ, hQlate, hQdisjoint, hcert, hlocalized⟩
+
 /-- Exact terminal pattern left by the synchronized singleton trace after
 all currently available binary migrations.  Every moving core petal is the
 marked singleton, the certificate is the fixed root plus one injective
