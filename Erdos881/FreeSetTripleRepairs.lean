@@ -6959,6 +6959,46 @@ def HasCriticalBalancedAdditivePairAt
       ∃ u' ∈ A, ∃ v' ∈ A,
         x + u + v = q ∧ y + u' + v' = q
 
+/-- Enlarging the reservoir preserves a critical wide witness. -/
+theorem HasCriticalWideReservoirSupportAt.mono_reservoir
+    {A C K L : Set ℕ} {D : Finset ℕ} {q : ℕ}
+    (hKL : K ⊆ L)
+    (h : HasCriticalWideReservoirSupportAt A C K D q) :
+    HasCriticalWideReservoirSupportAt A C L D q := by
+  obtain ⟨G, hGR, x, hx, hxCritical,
+      y, hy, hxy, hyCritical⟩ := h
+  exact ⟨G, hGR, x, ⟨hx.1, hKL hx.2⟩, hxCritical,
+    y, ⟨hy.1, hKL hy.2⟩, hxy, hyCritical⟩
+
+/-- Enlarging the reservoir preserves a critical balanced pair. -/
+theorem HasCriticalBalancedAdditivePairAt.mono_reservoir
+    {A C K L : Set ℕ} {D : Finset ℕ} {q : ℕ}
+    (hKL : K ⊆ L)
+    (h : HasCriticalBalancedAdditivePairAt A C K D q) :
+    HasCriticalBalancedAdditivePairAt A C L D q := by
+  obtain ⟨x, hxK, y, hyK, hxy, hxCritical, hyCritical,
+      u, huA, v, hvA, u', hu'A, v', hv'A, hxsum, hysum⟩ := h
+  exact ⟨x, hKL hxK, y, hKL hyK, hxy,
+    hxCritical, hyCritical, u, huA, v, hvA,
+    u', hu'A, v', hv'A, hxsum, hysum⟩
+
+/-- Block tails are antitone in their starting index. -/
+theorem binaryBlockTail_antitone
+    {cell : ℕ → Finset ℕ} {start₀ start₁ : ℕ}
+    (hstart : start₀ ≤ start₁) :
+    {x | ∃ i, x ∈ cell (start₁ + i)} ⊆
+      {x | ∃ i, x ∈ cell (start₀ + i)} := by
+  rintro x ⟨i, hxi⟩
+  refine ⟨(start₁ - start₀) + i, ?_⟩
+  have hindex : start₀ + ((start₁ - start₀) + i) =
+      start₁ + i := by
+    calc
+      start₀ + ((start₁ - start₀) + i) =
+          (start₀ + (start₁ - start₀)) + i := by omega
+      _ = start₁ + i := by rw [Nat.add_sub_of_le hstart]
+  rw [hindex]
+  exact hxi
+
 /-- Pointwise criticality upgrades an ordinary wide support to the critical
 wide arithmetic witness. -/
 theorem wideReservoirSupport_has_criticalWideReservoirSupport
@@ -8147,6 +8187,49 @@ theorem strongDeletion_eventuallyGoodPrefix_forces_spatialTailCriticalWide_or_ba
     exact ⟨w.target.1, hQlate w.target.1 w.target.2,
       Or.inr (w.hasCriticalBalancedAdditivePair Ptail)⟩
 
+/-- Monotone cofinal dichotomy for the certificate-free spatial residual.
+Either critical wide supports occur beyond every block and target threshold,
+or critical balanced pairs do.  A single failure of the wide alternative
+rules it out on all later, smaller tails and forces the balanced branch. -/
+theorem cofinalSpatialCriticalWide_or_balancedAdditivePair_dichotomy
+    {A C : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hresidual : ∀ start N, ∃ q, N ≤ q ∧
+      (HasCriticalWideReservoirSupportAt A C
+          {x | ∃ i, x ∈ cell (start + i)} D q ∨
+        HasCriticalBalancedAdditivePairAt A C
+          {x | ∃ i, x ∈ cell (start + i)} D q)) :
+    (∀ start N, ∃ q, N ≤ q ∧
+      HasCriticalWideReservoirSupportAt A C
+        {x | ∃ i, x ∈ cell (start + i)} D q) ∨
+    (∀ start N, ∃ q, N ≤ q ∧
+      HasCriticalBalancedAdditivePairAt A C
+        {x | ∃ i, x ∈ cell (start + i)} D q) := by
+  classical
+  by_cases hwide : ∀ start N, ∃ q, N ≤ q ∧
+      HasCriticalWideReservoirSupportAt A C
+        {x | ∃ i, x ∈ cell (start + i)} D q
+  · exact Or.inl hwide
+  · right
+    push Not at hwide
+    obtain ⟨start₀, N₀, hnoWide⟩ := hwide
+    intro start N
+    obtain ⟨q, hqLate, hqWide | hqBalanced⟩ :=
+      hresidual (max start start₀) (max N N₀)
+    · have htailToStart₀ :
+          {x | ∃ i, x ∈ cell (max start start₀ + i)} ⊆
+            {x | ∃ i, x ∈ cell (start₀ + i)} :=
+        binaryBlockTail_antitone (le_max_right start start₀)
+      have hwide₀ := hqWide.mono_reservoir htailToStart₀
+      exact (hnoWide q
+        ((le_max_right N N₀).trans hqLate) hwide₀).elim
+    · have htailToStart :
+          {x | ∃ i, x ∈ cell (max start start₀ + i)} ⊆
+            {x | ∃ i, x ∈ cell (start + i)} :=
+        binaryBlockTail_antitone (le_max_left start start₀)
+      exact ⟨q, (le_max_left N N₀).trans hqLate,
+        hqBalanced.mono_reservoir htailToStart⟩
+
 /-- If the universally safe targets of one infinite partition contain a
 tail, any block selector is the desired infinite deletion. -/
 theorem exists_infiniteDeletion_threeBasis_of_eventuallyCommonSurvivalTargets
@@ -8786,6 +8869,45 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_spatialTailCriti
     strongDeletion_eventuallyGoodPrefix_forces_spatialTailCriticalWide_or_balancedAdditivePair
       (strongOrderThreeDeletion_of_counterexample hcounter)
         (hKC.trans hCA) hKC P hcellCard hgood hcriticalK
+
+/-- Pure two-branch spatial normal form.  The mixed finite-certificate
+dichotomy stabilizes: a counterexample has either cofinally many critical
+wide supports in every block tail or cofinally many critical balanced pairs
+in every block tail. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_cofinalSpatialCriticalArithmeticDichotomy
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ D : Finset ℕ, ∃ K : Set ℕ,
+      ∃ cell : ℕ → Finset ℕ,
+        (D : Set ℕ) ⊆ C ∧
+        HasEventuallyTwoRepairsAtPrefixAlong
+          (additiveSupportFamily A 3) C Set.univ D ∧
+        K ⊆ C ∧ K.Infinite ∧ Disjoint K (D : Set ℕ) ∧
+        IsFiniteBlockPartition K cell ∧
+        (∀ i, (cell i).card = 2) ∧
+        (∀ b ∈ K,
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        ((∀ start N, ∃ q, N ≤ q ∧
+            HasCriticalWideReservoirSupportAt A C
+              {x | ∃ i, x ∈ cell (start + i)} D q) ∨
+          ∀ start N, ∃ q, N ≤ q ∧
+            HasCriticalBalancedAdditivePairAt A C
+              {x | ∃ i, x ∈ cell (start + i)} D q) := by
+  obtain ⟨D, K, cell, hDC, hgood, hKC, hK, hKD,
+      P, hcellCard, hcriticalK, hresidual⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_counterexample_forces_spatialTailCriticalWide_or_balancedAdditivePair
+      hCA hC hrec hD₀ hminimal hcounter
+  exact ⟨D, K, cell, hDC, hgood, hKC, hK, hKD,
+    P, hcellCard, hcriticalK,
+    cofinalSpatialCriticalWide_or_balancedAdditivePair_dichotomy
+      hresidual⟩
 
 /-- Arithmetic version of the critical cofinal normal form.  The remaining
 counterexample must exhibit, at arbitrarily late targets, either a
