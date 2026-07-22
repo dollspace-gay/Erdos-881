@@ -10605,9 +10605,35 @@ def HasInfinitePrivateSingletonCrossingEndpoints
     (A B₀ : Set ℕ) : Prop :=
   ∃ L, L ⊆ B₀ ∧ L.Infinite ∧
     ∀ x ∈ L, ∃ q,
+      (∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧
+        ¬ (E : Set ℕ) ⊆ B₀) ∧
       crossingAtomEndpoints A B₀ q = {x} ∧
       DestroysAt (additiveSupportFamily A 3)
         ({x} : Set ℕ) q
+
+/-- Singleton crossing endpoints in the common infinite output are rigid
+pair targets. -/
+theorem HasInfinitePrivateSingletonCrossingEndpoints.with_rigidPairs
+    {A B₀ : Set ℕ}
+    (hB₀A : B₀ ⊆ A)
+    (h : HasInfinitePrivateSingletonCrossingEndpoints A B₀) :
+    ∃ L, L ⊆ B₀ ∧ L.Infinite ∧
+      ∀ x ∈ L, ∃ q,
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B₀ ∧
+          ¬ (E : Set ℕ) ⊆ B₀) ∧
+        crossingAtomEndpoints A B₀ q = {x} ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ({x} : Set ℕ) q ∧
+        IsRigidPairSum A x (q - x) := by
+  obtain ⟨L, hLB₀, hL, hdata⟩ := h
+  refine ⟨L, hLB₀, hL, ?_⟩
+  intro x hxL
+  obtain ⟨q, hcross, hendpoint, hdestroy⟩ := hdata x hxL
+  exact ⟨q, hcross, hendpoint, hdestroy,
+    rigidPairSum_of_crossingEndpoint_eq_singleton
+      hB₀A hcross hendpoint⟩
 
 /-- Compact current endpoint reduction.  Under the counterexample
 hypothesis, either minimal certificates of almost twice the core size recur
@@ -10647,34 +10673,34 @@ theorem minimalCrossingEndpointCertificates_huge_or_infiniteEndpointObstructions
       left
       refine ⟨L, hLB₀, hL, ?_⟩
       intro x hxL
-      obtain ⟨N, Q, t, _hcert, _hQcard, _htQ,
+      obtain ⟨N, Q, t, hcert, _hQcard, htQ,
         hendpoint, hdestroy⟩ := hdata x hxL
-      exact ⟨t, hendpoint, hdestroy⟩
+      exact ⟨t, (hcert.2.1 t htQ).2, hendpoint, hdestroy⟩
   · right
     left
     obtain ⟨L, hLB₀, hL, hdata⟩ := hdense
     refine ⟨L, hLB₀, hL, ?_⟩
     intro x hxL
-    obtain ⟨N, Q, q, t, base, _hdense, _htQ, _htNeq,
+    obtain ⟨N, Q, q, t, base, hdenseCert, htQ, _htNeq,
       hendpoint, hdestroy⟩ := hdata x hxL
-    exact ⟨t, hendpoint, hdestroy⟩
+    exact ⟨t, (hdenseCert.1.2.1 t htQ).2, hendpoint, hdestroy⟩
   · exact Or.inr (Or.inr hthree)
   · right
     left
     obtain ⟨L, hLB₀, hL, hdata⟩ := hsingle
     refine ⟨L, hLB₀, hL, ?_⟩
     intro x hxL
-    obtain ⟨N, Q, q, _hcert, _hQcard, _hqQ,
+    obtain ⟨N, Q, q, hcert, _hQcard, hqQ,
       hendpoint, hdestroy⟩ := hdata x hxL
-    exact ⟨q, hendpoint, hdestroy⟩
+    exact ⟨q, (hcert.2.1 q hqQ).2, hendpoint, hdestroy⟩
   · right
     left
     obtain ⟨N₀, L, hLB₀, hL, hdata⟩ := hrigid
     refine ⟨L, hLB₀, hL, ?_⟩
     intro x hxL
-    obtain ⟨q, _hqLate, _hcross, hendpoint, hdestroy,
+    obtain ⟨q, _hqLate, hcross, hendpoint, hdestroy,
       _hrigid⟩ := hdata x hxL
-    exact ⟨q, hendpoint, hdestroy⟩
+    exact ⟨q, hcross, hendpoint, hdestroy⟩
 
 /-- Endpoint-set form of the global migration dichotomy.  If the strict
 certificate branch is not cofinal, the sharp branch yields an infinite
@@ -10903,6 +10929,62 @@ theorem exists_movingRigidEndpointParametrization
   intro b hbLarge
   exact hK b.1 b.2 hbLarge (target b)
     (htarget b).2.2.1 (htarget b).2.2.2.1
+
+/-- The common infinite private-singleton output admits the same functional
+rigid parametrization as the earlier sharp branch.  Moreover its set of
+reflection centers is infinite. -/
+theorem HasInfinitePrivateSingletonCrossingEndpoints.exists_rigidParametrization
+    {A B₀ : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hB₀A : B₀ ⊆ A)
+    (h : HasInfinitePrivateSingletonCrossingEndpoints A B₀) :
+    ∃ L, L ⊆ B₀ ∧ L.Infinite ∧
+      ∃ target : L → ℕ,
+        (∀ b,
+          (∀ E ∈ additiveSupportFamily A 2 (target b),
+            ¬ Disjoint (E : Set ℕ) B₀ ∧
+            ¬ (E : Set ℕ) ⊆ B₀) ∧
+          crossingAtomEndpoints A B₀ (target b) = {b.1} ∧
+          DestroysAt (additiveSupportFamily A 3)
+            ({b.1} : Set ℕ) (target b) ∧
+          IsRigidPairSum A b.1 (target b - b.1)) ∧
+        (∀ T, ∃ K, ∀ b : L, K ≤ b.1 →
+          T ≤ target b - b.1) ∧
+        (Set.range fun b : L => target b - b.1).Infinite := by
+  classical
+  obtain ⟨L, hLB₀, hL, hdata⟩ := h.with_rigidPairs hB₀A
+  have hdata₀ : ∀ b ∈ L, ∃ q,
+      0 ≤ q ∧
+      (∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧
+        ¬ (E : Set ℕ) ⊆ B₀) ∧
+      crossingAtomEndpoints A B₀ q = {b} ∧
+      DestroysAt (additiveSupportFamily A 3)
+        ({b} : Set ℕ) q ∧
+      IsRigidPairSum A b (q - b) := by
+    intro b hbL
+    obtain ⟨q, hcross, hendpoint, hdestroy, hrigid⟩ := hdata b hbL
+    exact ⟨q, Nat.zero_le q, hcross, hendpoint, hdestroy, hrigid⟩
+  obtain ⟨target, htarget, hgrow⟩ :=
+    exists_movingRigidEndpointParametrization
+      (N₀ := 0) hbasis hdata₀
+  have hcenterInfinite :
+      (Set.range fun b : L => target b - b.1).Infinite := by
+    apply Set.not_finite.mp
+    intro hfinite
+    obtain ⟨U, hU⟩ := hfinite.bddAbove
+    obtain ⟨K, hK⟩ := hgrow (U + 1)
+    obtain ⟨b, hbL, hbLarge⟩ := hL.exists_gt K
+    let bL : L := ⟨b, hbL⟩
+    have hcenterLarge : U + 1 ≤ target bL - bL.1 :=
+      hK bL (Nat.le_of_lt hbLarge)
+    have hcenterUpper : target bL - bL.1 ≤ U :=
+      hU (Set.mem_range_self bL)
+    omega
+  refine ⟨L, hLB₀, hL, target, ?_, hgrow, hcenterInfinite⟩
+  intro b
+  exact ⟨(htarget b).2.1, (htarget b).2.2.1,
+    (htarget b).2.2.2.1, (htarget b).2.2.2.2⟩
 
 /-- Lacunarity forced on any parametrized moving rigid-endpoint system.
 Take three sufficiently separated endpoints `u < v < w`.  Reflections at
