@@ -10847,6 +10847,89 @@ theorem infinite_coreHits_thin_root_or_petals
     intro hhitR
     exact hnNotRoot ⟨hnI, hhitR⟩
 
+/-- Intrinsic version of the root/petal split, independent of a chosen hit.
+Either infinitely many repairs genuinely meet their moving core petals, or
+after thinning every repair is disjoint from its petal and its nonempty core
+trace is therefore contained in the fixed root. -/
+theorem infinite_coreIncidences_thin_rootOnly_or_petals
+    {I : Set ℕ} (hI : I.Infinite) (R : Finset ℕ)
+    (repair core : ℕ → Finset ℕ)
+    (hhit : ∀ n ∈ I,
+      ((repair n : Set ℕ) ∩ (core n : Set ℕ)).Nonempty) :
+    (∃ L, L ⊆ I ∧ L.Infinite ∧
+      ∀ n ∈ L,
+        Disjoint (repair n) (core n \ R) ∧
+        (repair n ∩ core n).Nonempty ∧
+        repair n ∩ core n ⊆ R) ∨
+      ∃ L, L ⊆ I ∧ L.Infinite ∧
+        ∀ n ∈ L, ∃ x,
+          x ∈ repair n ∧ x ∈ core n \ R := by
+  classical
+  let PetalIndex : Set ℕ :=
+    {n | n ∈ I ∧ ¬ Disjoint (repair n) (core n \ R)}
+  by_cases hPetal : PetalIndex.Infinite
+  · right
+    refine ⟨PetalIndex, (fun n hn => hn.1), hPetal, ?_⟩
+    intro n hn
+    exact Finset.not_disjoint_iff.mp hn.2
+  · left
+    have hPetalFinite : PetalIndex.Finite :=
+      Set.not_infinite.mp hPetal
+    let L : Set ℕ := I \ PetalIndex
+    have hL : L.Infinite := hI.diff hPetalFinite
+    refine ⟨L, Set.diff_subset, hL, ?_⟩
+    intro n hn
+    have hnI : n ∈ I := hn.1
+    have hdisjoint : Disjoint (repair n) (core n \ R) := by
+      by_contra hnot
+      exact hn.2 ⟨hnI, hnot⟩
+    have htraceNonempty : (repair n ∩ core n).Nonempty := by
+      obtain ⟨x, hxRepair, hxCore⟩ := hhit n hnI
+      exact ⟨x, Finset.mem_inter.mpr
+        ⟨Finset.mem_coe.mp hxRepair, Finset.mem_coe.mp hxCore⟩⟩
+    refine ⟨hdisjoint, htraceNonempty, ?_⟩
+    intro x hxTrace
+    by_contra hxR
+    exact Finset.disjoint_left.mp hdisjoint
+      (Finset.mem_inter.mp hxTrace).1
+      (Finset.mem_sdiff.mpr
+        ⟨(Finset.mem_inter.mp hxTrace).2, hxR⟩)
+
+/-- Hits chosen from pairwise-disjoint marked core petals are automatically
+injective.  The marked atoms identify the petals, and equality of two chosen
+hits would put one point in two disjoint petals. -/
+theorem exists_injective_markedCorePetalHit
+    {I K : Set ℕ} {R : Finset ℕ}
+    (atom : ℕ → ℕ) (hatomK : ∀ n ∈ I, atom n ∈ K)
+    (hatomInj : Set.InjOn atom I)
+    (repair core : ℕ → Finset ℕ)
+    (hpetalDisjoint : ∀ b ∈ K, ∀ d ∈ K, b ≠ d →
+      Disjoint (core b \ R) (core d \ R))
+    (hhit : ∀ n ∈ I, ∃ x,
+      x ∈ repair n ∧ x ∈ core (atom n) \ R ∧ x ≠ atom n) :
+    ∃ petalHit : ℕ → ℕ, Set.InjOn petalHit I ∧
+      ∀ n ∈ I, petalHit n ∈ repair n ∧
+        petalHit n ∈ core (atom n) \ R ∧
+        petalHit n ≠ atom n := by
+  classical
+  let petalHit : ℕ → ℕ := fun n =>
+    if hn : n ∈ I then Classical.choose (hhit n hn) else 0
+  have hpetalHit : ∀ n ∈ I, petalHit n ∈ repair n ∧
+      petalHit n ∈ core (atom n) \ R ∧
+      petalHit n ≠ atom n := by
+    intro n hn
+    simpa only [petalHit, dif_pos hn] using
+      Classical.choose_spec (hhit n hn)
+  refine ⟨petalHit, ?_, hpetalHit⟩
+  intro n hn m hm hnm
+  by_contra hne
+  have hatomNe : atom n ≠ atom m := fun hEq =>
+    hne (hatomInj hn hm hEq)
+  have hdisjoint := hpetalDisjoint
+    (atom n) (hatomK n hn) (atom m) (hatomK m hm) hatomNe
+  exact Finset.disjoint_left.mp hdisjoint
+    (hpetalHit n hn).2.1 (hnm ▸ (hpetalHit m hm).2.1)
+
 /-- Refine a synchronized certificate/marked-target family into the exact
 three geometric branches needed for the finite-certificate endgame.  Either
 the two target ranges migrate apart, or they agree pointwise and the forced
@@ -24242,6 +24325,80 @@ theorem exists_infinite_crossAvoiding_injectiveImage
     (Finset.mem_coe.mpr
       (hcollisionMem b d (hLK hd) hudErased)) hd
 
+/-- An injective family of designated points, one in each bounded repair,
+can be thinned so that each retained repair meets the entire designated
+image at exactly its own point.  This converts moving petal incidences into
+an infinite private-hit system. -/
+theorem exists_infinite_privateHitTrace_of_injectiveRepairPoints
+    {I : Set ℕ} (hI : I.Infinite)
+    (point : ℕ → ℕ) (hpointInj : Set.InjOn point I)
+    (repair : ℕ → Finset ℕ) (r : ℕ)
+    (hcard : ∀ n ∈ I, (repair n).card ≤ r)
+    (hpointRepair : ∀ n ∈ I, point n ∈ repair n) :
+    ∃ L, L ⊆ I ∧ L.Infinite ∧ (point '' L).Infinite ∧
+      ∀ n ∈ L,
+        ((repair n : Set ℕ) ∩ (point '' L)) = {point n} := by
+  obtain ⟨L, hLI, hL, hcross⟩ :=
+    exists_infinite_crossAvoiding_injectiveImage
+      hI point hpointInj repair r hcard
+  have hpointImage : (point '' L).Infinite :=
+    (Set.infinite_image_iff (hpointInj.mono hLI)).mpr hL
+  refine ⟨L, hLI, hL, hpointImage, ?_⟩
+  intro n hn
+  apply Set.Subset.antisymm
+  · rintro x ⟨hxRepair, m, hm, rfl⟩
+    by_cases hnm : n = m
+    · subst m
+      simp
+    · exact (hcross n hn m hm hnm
+        (Finset.mem_coe.mp hxRepair)).elim
+  · intro x hx
+    have hxEq : x = point n := by simpa using hx
+    subst x
+    exact ⟨Finset.mem_coe.mpr
+      (hpointRepair n (hLI hn)), ⟨n, hn, rfl⟩⟩
+
+/-- The moving-petal branch of synchronized certificate/core incidence
+therefore contains an infinite private-hit repair system.  Sunflower
+disjointness makes the chosen petal hits injective, and bounded support
+avoidance removes every cross-index hit. -/
+theorem movingMarkedCorePetalIncidence_gives_infinitePrivateHitRepairs
+    {A I K : Set ℕ} {R : Finset ℕ}
+    (atom target : ℕ → ℕ)
+    (hatomK : ∀ n ∈ I, atom n ∈ K)
+    (hatomInj : Set.InjOn atom I)
+    (repair : ℕ → Finset ℕ) (core : ℕ → Finset ℕ)
+    (hI : I.Infinite)
+    (hrepairR : ∀ n ∈ I,
+      repair n ∈ additiveSupportFamily A 3 (target n))
+    (hpetalDisjoint : ∀ b ∈ K, ∀ d ∈ K, b ≠ d →
+      Disjoint (core b \ R) (core d \ R))
+    (hhit : ∀ n ∈ I, ∃ x,
+      x ∈ repair n ∧ x ∈ core (atom n) \ R ∧ x ≠ atom n) :
+    ∃ L, L ⊆ I ∧ L.Infinite ∧
+      ∃ petalHit : ℕ → ℕ,
+        Set.InjOn petalHit L ∧ (petalHit '' L).Infinite ∧
+        (∀ n ∈ L, petalHit n ∈ core (atom n) \ R ∧
+          petalHit n ≠ atom n) ∧
+        ∀ n ∈ L,
+          ((repair n : Set ℕ) ∩ (petalHit '' L)) =
+            {petalHit n} := by
+  obtain ⟨petalHit, hpetalHitInj, hpetalHit⟩ :=
+    exists_injective_markedCorePetalHit
+      atom hatomK hatomInj repair core hpetalDisjoint hhit
+  have hrepairCard : ∀ n ∈ I, (repair n).card ≤ 3 := by
+    intro n hn
+    exact additiveSupportFamily_cardAtMost A 3
+      (target n) (repair n) (hrepairR n hn)
+  obtain ⟨L, hLI, hL, hpetalImage, hprivate⟩ :=
+    exists_infinite_privateHitTrace_of_injectiveRepairPoints
+      hI petalHit hpetalHitInj repair 3 hrepairCard
+        (fun n hn => (hpetalHit n hn).1)
+  exact ⟨L, hLI, hL, petalHit, hpetalHitInj.mono hLI,
+    hpetalImage,
+    (fun n hn => ⟨(hpetalHit n (hLI hn)).2.1,
+      (hpetalHit n (hLI hn)).2.2⟩), hprivate⟩
+
 /-- Compare an arbitrary target map with an injective target map on an
 infinite index set.  Either the two targets agree at infinitely many
 indices, or they can be thinned to an infinite set on which their image
@@ -25296,6 +25453,376 @@ theorem exists_infinite_matching_twoSidedCrossAvoidance
   constructor
   · simpa [endpoint] using havoid 0 n hn m hm hnm
   · simpa [endpoint] using havoid 1 n hn m hm hnm
+
+/-- Generic binary-orientation survival lemma for additive order-three
+repairs.  Each block `{x n, y n}` has one repair avoiding `x n` and another
+avoiding `y n`; after bounded cross-avoidance, every orientation of all
+blocks leaves a repair at every retained indexed target. -/
+theorem exists_infinite_binaryChoice_commonSurvival
+    {A I : Set ℕ} (hI : I.Infinite)
+    (q x y : ℕ → ℕ)
+    (hmatching : ∀ n ∈ I, ∀ m ∈ I, n ≠ m →
+      Disjoint ({x n, y n} : Finset ℕ)
+        ({x m, y m} : Finset ℕ))
+    (E F : ℕ → Finset ℕ)
+    (hER : ∀ n ∈ I,
+      E n ∈ additiveSupportFamily A 3 (q n))
+    (hFR : ∀ n ∈ I,
+      F n ∈ additiveSupportFamily A 3 (q n))
+    (hyNotE : ∀ n ∈ I, y n ∉ E n)
+    (hxNotF : ∀ n ∈ I, x n ∉ F n) :
+    ∃ J, J ⊆ I ∧ J.Infinite ∧
+      ∀ s : ℕ → ℕ,
+        (∀ n ∈ J, s n = x n ∨ s n = y n) →
+        ∀ n ∈ J, ∃ G ∈ additiveSupportFamily A 3 (q n),
+          Disjoint (G : Set ℕ) (s '' J) := by
+  have hunionCard : ∀ n ∈ I, (E n ∪ F n).card ≤ 6 := by
+    intro n hn
+    have hEcard : (E n).card ≤ 3 :=
+      additiveSupportFamily_cardAtMost A 3 (q n) (E n) (hER n hn)
+    have hFcard : (F n).card ≤ 3 :=
+      additiveSupportFamily_cardAtMost A 3 (q n) (F n) (hFR n hn)
+    exact (Finset.card_union_le (E n) (F n)).trans (by omega)
+  obtain ⟨J, hJI, hJ, hcross⟩ :=
+    exists_infinite_matching_twoSidedCrossAvoidance
+      hI x y hmatching E F 6 hunionCard
+  refine ⟨J, hJI, hJ, ?_⟩
+  intro s hs n hn
+  rcases hs n hn with hsnx | hsny
+  · refine ⟨F n, hFR n (hJI hn), ?_⟩
+    rw [Set.disjoint_left]
+    intro z hzF hzSelected
+    obtain ⟨m, hm, rfl⟩ := hzSelected
+    by_cases hnm : n = m
+    · subst m
+      exact hxNotF n (hJI hn) (Finset.mem_coe.mp (hsnx ▸ hzF))
+    · rcases hs m hm with hsmx | hsmy
+      · exact (hcross n hn m hm hnm).1
+          (Finset.mem_union_right _
+            (Finset.mem_coe.mp (hsmx ▸ hzF)))
+      · exact (hcross n hn m hm hnm).2
+          (Finset.mem_union_right _
+            (Finset.mem_coe.mp (hsmy ▸ hzF)))
+  · refine ⟨E n, hER n (hJI hn), ?_⟩
+    rw [Set.disjoint_left]
+    intro z hzE hzSelected
+    obtain ⟨m, hm, rfl⟩ := hzSelected
+    by_cases hnm : n = m
+    · subst m
+      exact hyNotE n (hJI hn) (Finset.mem_coe.mp (hsny ▸ hzE))
+    · rcases hs m hm with hsmx | hsmy
+      · exact (hcross n hn m hm hnm).1
+          (Finset.mem_union_left _
+            (Finset.mem_coe.mp (hsmx ▸ hzE)))
+      · exact (hcross n hn m hm hnm).2
+          (Finset.mem_union_left _
+            (Finset.mem_coe.mp (hsmy ▸ hzE)))
+
+/-- A coincident moving-petal certificate/core branch produces binary
+sunflower blocks `{atom n, petalHit n}` which survive every orientation at
+all retained marked targets.  The certificate repair avoids the atom and
+contains the petal; the private repair of the marked core at its atom avoids
+the petal. -/
+theorem coincidentMovingCorePetals_give_binaryChoice_commonSurvival
+    {A C K I : Set ℕ} {D R : Finset ℕ}
+    (target atom petalHit : ℕ → ℕ)
+    (moving core certificateRepair : ℕ → Finset ℕ)
+    (hI : I.Infinite)
+    (hatomK : ∀ n ∈ I, atom n ∈ K)
+    (hatomInj : Set.InjOn atom I)
+    (hdata : ∀ b ∈ K,
+      IsCriticalMarkedMinimalDestroyerData
+        A C D b (target b) (moving b) (core b))
+    (hmarked : ∀ b ∈ K, b ∈ core b \ R)
+    (hpetalDisjoint : ∀ b ∈ K, ∀ d ∈ K, b ≠ d →
+      Disjoint (core b \ R) (core d \ R))
+    (hcertificateR : ∀ n ∈ I,
+      certificateRepair n ∈
+        additiveSupportFamily A 3 (target (atom n)))
+    (hcertificateK : ∀ n ∈ I,
+      Disjoint (certificateRepair n : Set ℕ) K)
+    (hpetalHit : ∀ n ∈ I,
+      petalHit n ∈ certificateRepair n ∧
+      petalHit n ∈ core (atom n) \ R ∧
+      petalHit n ≠ atom n) :
+    ∃ J, J ⊆ I ∧ J.Infinite ∧
+      (∀ n ∈ J, atom n ≠ petalHit n) ∧
+      (∀ n ∈ J, ∀ m ∈ J, n ≠ m →
+        Disjoint ({atom n, petalHit n} : Finset ℕ)
+          ({atom m, petalHit m} : Finset ℕ)) ∧
+      ∀ s : ℕ → ℕ,
+        (∀ n ∈ J,
+          s n = atom n ∨ s n = petalHit n) →
+        ∀ n ∈ J, ∃ G ∈
+          additiveSupportFamily A 3 (target (atom n)),
+          Disjoint (G : Set ℕ) (s '' J) := by
+  classical
+  have hprivateExists : ∀ n ∈ I, ∃ U,
+      U ∈ additiveSupportFamily A 3 (target (atom n)) ∧
+      U ∩ core (atom n) = {atom n} := by
+    intro n hn
+    obtain ⟨_hbound, _hno, _hmovingC, _hmovingDisjoint,
+        _hmovingNonempty, _hmovingCard, _hdestroy,
+        _hcoreSub, hatomCore, hminimal, _htype⟩ :=
+      hdata (atom n) (hatomK n hn)
+    exact hminimal.exists_uniqueHitSupport hatomCore
+  let privateRepair : ℕ → Finset ℕ := fun n =>
+    if hn : n ∈ I then Classical.choose (hprivateExists n hn) else ∅
+  have hprivateR : ∀ n ∈ I,
+      privateRepair n ∈
+        additiveSupportFamily A 3 (target (atom n)) := by
+    intro n hn
+    simpa only [privateRepair, dif_pos hn] using
+      (Classical.choose_spec (hprivateExists n hn)).1
+  have hprivateHit : ∀ n ∈ I,
+      privateRepair n ∩ core (atom n) = {atom n} := by
+    intro n hn
+    simpa only [privateRepair, dif_pos hn] using
+      (Classical.choose_spec (hprivateExists n hn)).2
+  have hpetalNotPrivate : ∀ n ∈ I,
+      petalHit n ∉ privateRepair n := by
+    intro n hn hpPrivate
+    have hpInter : petalHit n ∈
+        privateRepair n ∩ core (atom n) :=
+      Finset.mem_inter.mpr ⟨hpPrivate,
+        (Finset.mem_sdiff.mp (hpetalHit n hn).2.1).1⟩
+    rw [hprivateHit n hn] at hpInter
+    exact (hpetalHit n hn).2.2 (by simpa using hpInter)
+  have hatomNotCertificate : ∀ n ∈ I,
+      atom n ∉ certificateRepair n := by
+    intro n hn hatomRepair
+    exact Set.disjoint_left.mp (hcertificateK n hn)
+      (Finset.mem_coe.mpr hatomRepair) (hatomK n hn)
+  have hmatching : ∀ n ∈ I, ∀ m ∈ I, n ≠ m →
+      Disjoint ({atom n, petalHit n} : Finset ℕ)
+        ({atom m, petalHit m} : Finset ℕ) := by
+    intro n hn m hm hnm
+    have hatomNe : atom n ≠ atom m := fun hEq =>
+      hnm (hatomInj hn hm hEq)
+    have hdisjoint := hpetalDisjoint
+      (atom n) (hatomK n hn) (atom m) (hatomK m hm) hatomNe
+    rw [Finset.disjoint_left]
+    intro z hzn hzm
+    have hznPetal : z ∈ core (atom n) \ R := by
+      rcases Finset.mem_insert.mp hzn with rfl | hz
+      · exact hmarked (atom n) (hatomK n hn)
+      · have hzEq : z = petalHit n := by simpa using hz
+        exact hzEq ▸ (hpetalHit n hn).2.1
+    have hzmPetal : z ∈ core (atom m) \ R := by
+      rcases Finset.mem_insert.mp hzm with rfl | hz
+      · exact hmarked (atom m) (hatomK m hm)
+      · have hzEq : z = petalHit m := by simpa using hz
+        exact hzEq ▸ (hpetalHit m hm).2.1
+    exact Finset.disjoint_left.mp hdisjoint hznPetal hzmPetal
+  obtain ⟨J, hJI, hJ, hcommon⟩ :=
+    exists_infinite_binaryChoice_commonSurvival
+      hI (fun n => target (atom n)) atom petalHit hmatching
+        privateRepair certificateRepair hprivateR hcertificateR
+          hpetalNotPrivate hatomNotCertificate
+  exact ⟨J, hJI, hJ,
+    (fun n hn => (hpetalHit n (hJI hn)).2.2.symm),
+    (fun n hn m hm hnm =>
+      hmatching n (hJI hn) m (hJI hm) hnm), hcommon⟩
+
+/-- Exact finite-certificate consequence of binary common survival.  Reindex
+the infinite matching as a two-point block partition.  Strong deletion gives
+a finite selector certificate on that partition, while common survival says
+that no target in the marked image can destroy any selector.  Filtering the
+certificate therefore leaves a certificate whose entire target set has
+migrated outside the marked range. -/
+theorem strongDeletion_binaryCommonSurvival_forces_migratedCertificate
+    {A B I : Set ℕ}
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) B)
+    (hI : I.Infinite) (q x y : ℕ → ℕ)
+    (hxyB : ∀ n ∈ I, x n ∈ B ∧ y n ∈ B)
+    (hxyNe : ∀ n ∈ I, x n ≠ y n)
+    (hmatching : ∀ n ∈ I, ∀ m ∈ I, n ≠ m →
+      Disjoint ({x n, y n} : Finset ℕ)
+        ({x m, y m} : Finset ℕ))
+    (hcommon : ∀ s : ℕ → ℕ,
+      (∀ n ∈ I, s n = x n ∨ s n = y n) →
+      ∀ n ∈ I, ∃ G ∈ additiveSupportFamily A 3 (q n),
+        Disjoint (G : Set ℕ) (s '' I)) :
+    ∃ K' : Set ℕ, ∃ pairCell : ℕ → Finset ℕ,
+      K' ⊆ B ∧ K'.Infinite ∧
+      IsFiniteBlockPartition K' pairCell ∧
+      (∀ i, (pairCell i).card = 2) ∧
+      ∀ N, ∃ Q : Finset ℕ,
+        (∀ t ∈ Q, N ≤ t) ∧
+        Disjoint (Q : Set ℕ) (q '' I) ∧
+        ∀ sel : BlockSelector pairCell, ∃ t ∈ Q,
+          DestroysAt (additiveSupportFamily A 3)
+            (selectedSet sel) t := by
+  classical
+  letI : Infinite I := hI.to_subtype
+  let e : ℕ ≃ I := Classical.choice (inferInstance : Nonempty (ℕ ≃ I))
+  let index : ℕ → ℕ := fun n => (e n).1
+  have hindexI : ∀ n, index n ∈ I := fun n => (e n).2
+  have hindexInj : Function.Injective index := by
+    intro n m hnm
+    apply e.injective
+    exact Subtype.ext hnm
+  let pairCell : ℕ → Finset ℕ := fun n =>
+    {x (index n), y (index n)}
+  let K' : Set ℕ := {z | ∃ n, z ∈ pairCell n}
+  have P : IsFiniteBlockPartition K' pairCell := by
+    refine ⟨?_, ?_, ?_⟩
+    · intro n
+      exact ⟨x (index n), by simp [pairCell]⟩
+    · intro n m hnm
+      exact hmatching (index n) (hindexI n)
+        (index m) (hindexI m) (fun hEq => hnm (hindexInj hEq))
+    · intro z
+      simp only [K', Set.mem_setOf_eq]
+  have hK'B : K' ⊆ B := by
+    rintro z ⟨n, hzn⟩
+    have hzCases : z = x (index n) ∨ z = y (index n) := by
+      simpa [pairCell] using hzn
+    rcases hzCases with rfl | rfl
+    · exact (hxyB (index n) (hindexI n)).1
+    · exact (hxyB (index n) (hindexI n)).2
+  have hxIndexInj : Function.Injective (fun n => x (index n)) := by
+    intro n m hxm
+    change x (index n) = x (index m) at hxm
+    by_contra hnm
+    have hdisj := hmatching (index n) (hindexI n)
+      (index m) (hindexI m) (fun hEq => hnm (hindexInj hEq))
+    have hleft : x (index n) ∈
+        ({x (index n), y (index n)} : Finset ℕ) := by simp
+    have hright : x (index n) ∈
+        ({x (index m), y (index m)} : Finset ℕ) := by
+      rw [hxm]
+      simp
+    exact Finset.disjoint_left.mp hdisj hleft hright
+  have hK' : K'.Infinite := by
+    apply (Set.infinite_range_of_injective hxIndexInj).mono
+    rintro z ⟨n, rfl⟩
+    exact ⟨n, by simp [pairCell]⟩
+  have hpairCard : ∀ n, (pairCell n).card = 2 := by
+    intro n
+    simp [pairCell, hxyNe (index n) (hindexI n)]
+  have hstrongK' : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) K' := by
+    intro X hXK' hX N
+    exact hstrong X (hXK'.trans hK'B) hX N
+  refine ⟨K', pairCell, hK'B, hK', P, hpairCard, ?_⟩
+  intro N
+  obtain ⟨Q₀, hQ₀late, hcert₀⟩ :=
+    finiteBlockCertificates_of_strongInfiniteDeletion
+      hstrongK' pairCell P N
+  let MarkedTargets : Set ℕ := q '' I
+  let Q : Finset ℕ := Q₀.filter fun t => t ∉ MarkedTargets
+  have hQlate : ∀ t ∈ Q, N ≤ t := by
+    intro t htQ
+    exact hQ₀late t (Finset.mem_filter.mp htQ).1
+  have hQdisjoint : Disjoint (Q : Set ℕ) MarkedTargets := by
+    rw [Set.disjoint_left]
+    intro t htQ htMarked
+    exact (Finset.mem_filter.mp (Finset.mem_coe.mp htQ)).2 htMarked
+  have hcert : ∀ sel : BlockSelector pairCell, ∃ t ∈ Q,
+      DestroysAt (additiveSupportFamily A 3)
+        (selectedSet sel) t := by
+    intro sel
+    let orient : ℕ → ℕ := fun j =>
+      if hj : j ∈ I then (sel (e.symm ⟨j, hj⟩)).1 else x j
+    have horient : ∀ j ∈ I,
+        orient j = x j ∨ orient j = y j := by
+      intro j hj
+      have hindexEq : index (e.symm ⟨j, hj⟩) = j := by
+        exact congrArg Subtype.val (e.apply_symm_apply ⟨j, hj⟩)
+      have hmem := (sel (e.symm ⟨j, hj⟩)).2
+      have hcases : (sel (e.symm ⟨j, hj⟩)).1 = x j ∨
+          (sel (e.symm ⟨j, hj⟩)).1 = y j := by
+        simpa [pairCell, hindexEq] using hmem
+      simpa [orient, hj] using hcases
+    have hselectedSub : selectedSet sel ⊆ orient '' I := by
+      intro z hzSelected
+      obtain ⟨n, hsn⟩ := hzSelected
+      refine ⟨index n, hindexI n, ?_⟩
+      have hsubtype : (⟨index n, hindexI n⟩ : I) = e n := by
+        apply Subtype.ext
+        rfl
+      have hsymm : e.symm ⟨index n, hindexI n⟩ = n := by
+        rw [hsubtype]
+        exact e.symm_apply_apply n
+      calc
+        orient (index n) =
+            (sel (e.symm ⟨index n, hindexI n⟩)).1 := by
+          simp [orient, hindexI n]
+        _ = (sel n).1 := by rw [hsymm]
+        _ = z := hsn
+    obtain ⟨t, htQ₀, htdestroy⟩ := hcert₀ sel
+    have htNotMarked : t ∉ MarkedTargets := by
+      rintro ⟨n, hn, rfl⟩
+      obtain ⟨G, hGR, hGorient⟩ :=
+        hcommon orient horient n hn
+      exact htdestroy G hGR (hGorient.mono_right hselectedSub)
+    exact ⟨t, Finset.mem_filter.mpr ⟨htQ₀, htNotMarked⟩,
+      htdestroy⟩
+  exact ⟨Q, hQlate, by simpa [MarkedTargets] using hQdisjoint, hcert⟩
+
+/-- Counterexample-level closure of the moving-petal coincidence branch.
+The binary common-survival subsystem is fed directly to strong order-three
+deletion.  The resulting finite certificates are forced completely away
+from the infinite marked-target image. -/
+theorem counterexample_coincidentMovingCorePetals_forces_migratedCertificates
+    {A C K I : Set ℕ} {D R : Finset ℕ}
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3)
+    (hKA : K ⊆ A)
+    (target atom petalHit : ℕ → ℕ)
+    (moving core certificateRepair : ℕ → Finset ℕ)
+    (hI : I.Infinite)
+    (hatomK : ∀ n ∈ I, atom n ∈ K)
+    (hatomInj : Set.InjOn atom I)
+    (hdata : ∀ b ∈ K,
+      IsCriticalMarkedMinimalDestroyerData
+        A C D b (target b) (moving b) (core b))
+    (hcoreA : ∀ b ∈ K, (core b : Set ℕ) ⊆ A)
+    (hmarked : ∀ b ∈ K, b ∈ core b \ R)
+    (hpetalDisjoint : ∀ b ∈ K, ∀ d ∈ K, b ≠ d →
+      Disjoint (core b \ R) (core d \ R))
+    (hcertificateR : ∀ n ∈ I,
+      certificateRepair n ∈
+        additiveSupportFamily A 3 (target (atom n)))
+    (hcertificateK : ∀ n ∈ I,
+      Disjoint (certificateRepair n : Set ℕ) K)
+    (hpetalHit : ∀ n ∈ I,
+      petalHit n ∈ certificateRepair n ∧
+      petalHit n ∈ core (atom n) \ R ∧
+      petalHit n ≠ atom n) :
+    ∃ J, J ⊆ I ∧ J.Infinite ∧
+      ∃ K' : Set ℕ, ∃ pairCell : ℕ → Finset ℕ,
+        K' ⊆ A ∧ K'.Infinite ∧
+        IsFiniteBlockPartition K' pairCell ∧
+        (∀ i, (pairCell i).card = 2) ∧
+        ∀ N, ∃ Q : Finset ℕ,
+          (∀ t ∈ Q, N ≤ t) ∧
+          Disjoint (Q : Set ℕ)
+            ((fun n => target (atom n)) '' J) ∧
+          ∀ sel : BlockSelector pairCell, ∃ t ∈ Q,
+            DestroysAt (additiveSupportFamily A 3)
+              (selectedSet sel) t := by
+  obtain ⟨J, hJI, hJ, hne, hmatching, hcommon⟩ :=
+    coincidentMovingCorePetals_give_binaryChoice_commonSurvival
+      target atom petalHit moving core certificateRepair hI
+        hatomK hatomInj hdata hmarked hpetalDisjoint
+          hcertificateR hcertificateK hpetalHit
+  have hxyA : ∀ n ∈ J, atom n ∈ A ∧ petalHit n ∈ A := by
+    intro n hn
+    have hnI := hJI hn
+    have hatomK' := hatomK n hnI
+    exact ⟨hKA hatomK', hcoreA (atom n) hatomK'
+      (Finset.mem_coe.mpr
+        (Finset.mem_sdiff.mp (hpetalHit n hnI).2.1).1)⟩
+  obtain ⟨K', pairCell, hK'A, hK', P, hcard, hmigrate⟩ :=
+    strongDeletion_binaryCommonSurvival_forces_migratedCertificate
+      (strongOrderThreeDeletion_of_counterexample hcounter)
+        hJ (fun n => target (atom n)) atom petalHit
+          hxyA hne hmatching hcommon
+  exact ⟨J, hJI, hJ, K', pairCell,
+    hK'A, hK', P, hcard, hmigrate⟩
 
 /-- The balanced repaired matching contains an infinite submatching whose
 targets survive every orientation of that submatching.  If an orientation
