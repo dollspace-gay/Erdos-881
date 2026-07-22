@@ -5419,14 +5419,14 @@ theorem HasTwoRepairTraceObstructionAlongAt.toTraceObstruction
   intro z hzE hzF
   exact hEFC ⟨hzE.1, hKC hzE.2⟩ ⟨hzF.1, hKC hzF.2⟩
 
-/-- The localized-certificate construction in fact supplies the stronger
-global trace obstruction: its input repairs were disjoint on all of `C`.
-Keeping that fact explicit prevents a later spatial-tail restriction from
-discarding information needed to choose one global deletion. -/
-theorem targetLocalizedCertificate_has_twoRepairTraceObstructionAlong
+/-- The localized-certificate construction supplies a trace obstruction even
+when the binary block reservoir is not contained in the reservoir `C` on
+which the two repairs are disjoint.  Both repairs must still meet the block
+reservoir, while their traces on `C` remain disjoint.  This asymmetric form is
+needed after a certificate migration introduces external block endpoints. -/
+theorem targetLocalizedCertificate_has_twoRepairTraceObstructionAlong_external
     {R : SupportFamily} {C K : Set ℕ} {D Q : Finset ℕ}
     {cell : ℕ → Finset ℕ}
-    (hKC : K ⊆ C)
     (P : IsFiniteBlockPartition K cell)
     (hlocalized : ∀ q ∈ Q, ∃ s : BlockSelector cell,
       DestroysAt R (selectedSet s) q ∧
@@ -5459,6 +5459,26 @@ theorem targetLocalizedCertificate_has_twoRepairTraceObstructionAlong
       (hFK.mono_right (P.selectedSet_subset s))
   exact ⟨hnoOppositeAt, E, hER, hED, hEhit,
     F, hFR, hFD, hFhit, hEFC⟩
+
+/-- The original reservoir-contained specialization of the external trace
+obstruction. -/
+theorem targetLocalizedCertificate_has_twoRepairTraceObstructionAlong
+    {R : SupportFamily} {C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (_hKC : K ⊆ C)
+    (P : IsFiniteBlockPartition K cell)
+    (hlocalized : ∀ q ∈ Q, ∃ s : BlockSelector cell,
+      DestroysAt R (selectedSet s) q ∧
+      ∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt R (selectedSet s) q')
+    (hrepairs : ∀ q ∈ Q,
+      ∃ E ∈ R q, Disjoint E D ∧
+        ∃ F ∈ R q, Disjoint F D ∧
+          Disjoint ((E : Set ℕ) ∩ C) ((F : Set ℕ) ∩ C)) :
+    ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAlongAt R C K D cell q :=
+  targetLocalizedCertificate_has_twoRepairTraceObstructionAlong_external
+    P hlocalized hrepairs
 
 /-- Wide branch of the binary trace obstruction: one of the two disjoint
 repairs uses at least two points of the reservoir. -/
@@ -5667,6 +5687,104 @@ theorem twoRepairTraceObstructionAlong_wide_or_separated
       E, hER, hEtrace, F, hFR, hFtrace⟩
   exact Or.inr ⟨E, hER, hED, F, hFR, hFD, hEFC,
     i, j, x, y, hij, hxi, hyj, hEtrace, hFtrace⟩
+
+/-- New narrow trace shape permitted only when the migrated block reservoir
+has points outside `C`: both repairs meet the block reservoir at the same
+single external endpoint. -/
+def HasCommonExternalSingletonTwoRepairTracesAlongAt
+    (R : SupportFamily) (C K : Set ℕ) (D : Finset ℕ)
+    (cell : ℕ → Finset ℕ) (q : ℕ) : Prop :=
+  ∃ E ∈ R q, Disjoint E D ∧
+    ∃ F ∈ R q, Disjoint F D ∧
+      Disjoint ((E : Set ℕ) ∩ C) ((F : Set ℕ) ∩ C) ∧
+      ∃ i x, x ∈ cell i ∧ x ∉ C ∧
+        ((E : Set ℕ) ∩ K) = {x} ∧
+        ((F : Set ℕ) ∩ K) = {x}
+
+/-- Exact trace classification after migration introduces external block
+endpoints.  The usual wide and separated branches remain; the only new
+narrow possibility is a common singleton trace, and global `C`-disjointness
+forces that common endpoint to lie outside `C`. -/
+theorem twoRepairTraceObstructionAlong_external_wide_or_separated_or_common
+    {R : SupportFamily} {C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hobs : HasTwoRepairTraceObstructionAlongAt R C K D cell q) :
+    HasWideTwoRepairTraceAlongAt R C K D q ∨
+      HasSeparatedSingletonTwoRepairTracesAlongAt
+        R C K D cell q ∨
+      HasCommonExternalSingletonTwoRepairTracesAlongAt
+        R C K D cell q := by
+  classical
+  obtain ⟨hnoOpposite, E, hER, hED, hEhit,
+      F, hFR, hFD, hFhit, hEFC⟩ := hobs
+  obtain ⟨x, hxE, hxK⟩ := Set.not_disjoint_iff.mp hEhit
+  obtain ⟨y, hyF, hyK⟩ := Set.not_disjoint_iff.mp hFhit
+  let Etrace : Set ℕ := (E : Set ℕ) ∩ K
+  let Ftrace : Set ℕ := (F : Set ℕ) ∩ K
+  have hxTrace : x ∈ Etrace := ⟨hxE, hxK⟩
+  have hyTrace : y ∈ Ftrace := ⟨hyF, hyK⟩
+  by_cases hEwide : ∃ z, z ∈ Etrace ∧ x ≠ z
+  · obtain ⟨z, hzTrace, hxz⟩ := hEwide
+    exact Or.inl ⟨E, hER, hED, F, hFR, hFD, hEFC,
+      Or.inl ⟨x, hxTrace, z, hzTrace, hxz⟩⟩
+  by_cases hFwide : ∃ z, z ∈ Ftrace ∧ y ≠ z
+  · obtain ⟨z, hzTrace, hyz⟩ := hFwide
+    exact Or.inl ⟨E, hER, hED, F, hFR, hFD, hEFC,
+      Or.inr ⟨y, hyTrace, z, hzTrace, hyz⟩⟩
+  have hEtrace : Etrace = {x} := by
+    ext z
+    constructor
+    · intro hz
+      have hzx : z = x := by
+        by_contra hne
+        exact hEwide ⟨z, hz, Ne.symm hne⟩
+      simpa [hzx]
+    · intro hz
+      have hzx : z = x := by simpa using hz
+      simpa [hzx] using hxTrace
+  have hFtrace : Ftrace = {y} := by
+    ext z
+    constructor
+    · intro hz
+      have hzy : z = y := by
+        by_contra hne
+        exact hFwide ⟨z, hz, Ne.symm hne⟩
+      simpa [hzy]
+    · intro hz
+      have hzy : z = y := by simpa using hz
+      simpa [hzy] using hyTrace
+  by_cases hxy : x = y
+  · subst y
+    obtain ⟨i, hxi⟩ := (P.mem_iff x).mp hxK
+    have hxNotC : x ∉ C := by
+      intro hxC
+      exact Set.disjoint_left.mp hEFC
+        ⟨hxE, hxC⟩ ⟨hyF, hxC⟩
+    exact Or.inr (Or.inr
+      ⟨E, hER, hED, F, hFR, hFD, hEFC,
+        i, x, hxi, hxNotC, hEtrace, hFtrace⟩)
+  · obtain ⟨i, hxi⟩ := (P.mem_iff x).mp hxK
+    obtain ⟨j, hyj⟩ := (P.mem_iff y).mp hyK
+    have hij : i ≠ j := by
+      intro hij
+      subst j
+      have hpairSub : ({x, y} : Finset ℕ) ⊆ cell i := by
+        intro z hz
+        rcases Finset.mem_insert.mp hz with rfl | hz
+        · exact hxi
+        · have hzy : z = y := by simpa using hz
+          simpa [hzy] using hyj
+      have hcellEq : cell i = {x, y} := by
+        exact (Finset.eq_of_subset_of_card_le hpairSub (by
+          simp [hcellCard i, hxy])).symm
+      apply hnoOpposite
+      exact ⟨i, x, y, hxy, hcellEq,
+        E, hER, hEtrace, F, hFR, hFtrace⟩
+    exact Or.inr (Or.inl
+      ⟨E, hER, hED, F, hFR, hFD, hEFC,
+        i, j, x, y, hij, hxi, hyj, hEtrace, hFtrace⟩)
 
 /-- If finite certificates carrying binary trace obstructions occur
 arbitrarily late, then one of the two residual shapes itself occurs
@@ -27723,6 +27841,76 @@ theorem HasMigratedBinaryCertificateFamily.has_infinite_unsafeTargets
   exact ⟨J, hJI, hJ, K', pairCell, hK'A, hK', P,
     hpairCard, hsafe, T, hT, hTmarked, hTunsafe⟩
 
+/-- Strengthened migrated-certificate package retaining the two repairs
+available on an ambient reservoir `C`.  The binary partition itself need not
+lie in `C`: this is exactly the external-endpoint case left by migration. -/
+def HasMigratedBinaryTwoRepairTraceCertificateFamily
+    (A C : Set ℕ) (D : Finset ℕ) (q : ℕ → ℕ) (I : Set ℕ) : Prop :=
+  ∃ J, J ⊆ I ∧ J.Infinite ∧
+    ∃ K' : Set ℕ, ∃ pairCell : ℕ → Finset ℕ,
+      K' ⊆ A ∧ K'.Infinite ∧
+      IsFiniteBlockPartition K' pairCell ∧
+      (∀ i, (pairCell i).card = 2) ∧
+      (∀ n ∈ J, q n ∈
+        commonSurvivalTargets (additiveSupportFamily A 3) pairCell) ∧
+      ∀ N, ∃ Q : Finset ℕ,
+        Q.Nonempty ∧
+        (∀ t ∈ Q, N ≤ t) ∧
+        Disjoint (Q : Set ℕ) (q '' J) ∧
+        (∀ sel : BlockSelector pairCell, ∃ t ∈ Q,
+          DestroysAt (additiveSupportFamily A 3)
+            (selectedSet sel) t) ∧
+        (∀ t ∈ Q, ∃ sel : BlockSelector pairCell,
+          DestroysAt (additiveSupportFamily A 3)
+              (selectedSet sel) t ∧
+            ∀ u ∈ Q, u ≠ t →
+              ¬ DestroysAt (additiveSupportFamily A 3)
+                (selectedSet sel) u) ∧
+        Disjoint (Q : Set ℕ)
+          (commonSurvivalTargets
+            (additiveSupportFamily A 3) pairCell) ∧
+        ∀ t ∈ Q,
+          HasTwoRepairTraceObstructionAlongAt
+            (additiveSupportFamily A 3) C K' D pairCell t
+
+/-- The eventually-good prefix upgrades every migrated finite certificate to
+the external two-repair trace obstruction.  This is the direct meeting point
+of the original repair reservoir and the new migrated selector space. -/
+theorem HasMigratedBinaryCertificateFamily.with_twoRepairTraceObstructions
+    {A C I : Set ℕ} {D : Finset ℕ} {q : ℕ → ℕ}
+    (h : HasMigratedBinaryCertificateFamily A q I)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D) :
+    HasMigratedBinaryTwoRepairTraceCertificateFamily A C D q I := by
+  classical
+  obtain ⟨threshold, hrepairs⟩ := hgood
+  obtain ⟨J, hJI, hJ, K', pairCell, hK'A, hK', P,
+      hpairCard, hsafe, hcertificates⟩ :=
+    h.has_targetLocalizedCertificates
+  refine ⟨J, hJI, hJ, K', pairCell, hK'A, hK', P,
+    hpairCard, hsafe, ?_⟩
+  intro N
+  obtain ⟨Q, hQ, hQlate, hQmarked, hcert,
+      hlocalized, hQsafe⟩ := hcertificates (max N threshold)
+  have hQlateN : ∀ t ∈ Q, N ≤ t := by
+    intro t htQ
+    exact (Nat.le_max_left N threshold).trans (hQlate t htQ)
+  have hQrepairs : ∀ t ∈ Q,
+      ∃ E ∈ additiveSupportFamily A 3 t, Disjoint E D ∧
+        ∃ F ∈ additiveSupportFamily A 3 t, Disjoint F D ∧
+          Disjoint ((E : Set ℕ) ∩ C) ((F : Set ℕ) ∩ C) := by
+    intro t htQ
+    exact hrepairs t
+      ((Nat.le_max_right N threshold).trans (hQlate t htQ))
+      (Set.mem_univ t)
+  have htrace : ∀ t ∈ Q,
+      HasTwoRepairTraceObstructionAlongAt
+        (additiveSupportFamily A 3) C K' D pairCell t :=
+    targetLocalizedCertificate_has_twoRepairTraceObstructionAlong_external
+      P hlocalized hQrepairs
+  exact ⟨Q, hQ, hQlateN, hQmarked, hcert,
+    hlocalized, hQsafe, htrace⟩
+
 /-- Exact terminal pattern left by the synchronized singleton trace after
 all currently available binary migrations.  Every moving core petal is the
 marked singleton, the certificate is the fixed root plus one injective
@@ -29024,6 +29212,64 @@ theorem counterexample_forces_disjointTargetStreams_or_migratedBinaryCertificate
           hdisjoint⟩⟩
   · exact ⟨I, fun n => target (atom n), hI, hmarkedInj,
       Or.inr hmigrate⟩
+
+/-- Repair-preserving global migration frontier.  In the finite-migration
+branch, every late target-localized certificate now carries the two repairs
+from the original eventually-good prefix, with their disjointness on `C`
+retained even though the migrated binary partition may have external
+endpoints. -/
+theorem counterexample_forces_disjointTargetStreams_or_migratedTwoRepairTraces
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C : Set ℕ, ∃ D : Finset ℕ,
+      ∃ I : Set ℕ, ∃ markedTarget : ℕ → ℕ,
+        C ⊆ A ∧
+        HasEventuallyTwoRepairsAtPrefixAlong
+          (additiveSupportFamily A 3) C Set.univ D ∧
+        I.Infinite ∧ Set.InjOn markedTarget I ∧
+        ((∃ certificateTarget : ℕ → ℕ,
+            Set.InjOn certificateTarget I ∧
+            Disjoint (certificateTarget '' I) (markedTarget '' I)) ∨
+          HasMigratedBinaryTwoRepairTraceCertificateFamily
+            A C D markedTarget I) := by
+  obtain ⟨C, K, hCA, _hC, _hzeroC, _hnormalC,
+      _hrepairsC, _hselfC, hKC, _hK, D, R, target,
+      moving, core, _hDC, hgood, hdata, hcoreC,
+      _hcrossCore, _hcoreK, _htargetExternal, _hsingletonFinite,
+      _hpairBound, _hcoreBound, _htargetK, _htargetInj,
+      hmarked, hdelta, htype, J, certificateTarget, atom,
+      certificateRepair, _hJ, _hKimage, _hatomInj,
+      hcertificate, I, hIJ, hI, hcertificateInj,
+      hmarkedInj, hsync⟩ :=
+    counterexample_forces_uniformFullyZeroAtomicMarkedMinimalDestroyerSunflower
+      hbasis hzeroA hcounter
+  have hcertificate' : ∀ n ∈ J,
+      atom n ∈ K ∧
+      certificateRepair n ∈
+        additiveSupportFamily A 3 (certificateTarget n) ∧
+      Disjoint (certificateRepair n : Set ℕ) K := by
+    intro n hn
+    obtain ⟨hatomK, _hcritical, _hnTarget, hrepair,
+      _hrepairD, hrepairK⟩ := hcertificate n hn
+    exact ⟨hatomK, hrepair, hrepairK⟩
+  obtain hmigrateRange | hmigrate :=
+    counterexample_synchronizedCertificateFamily_forces_rangeMigration_or_finiteMigration
+      hbasis hcounter (hKC.trans hCA) target atom certificateTarget
+        moving core certificateRepair hIJ hI hcertificateInj
+        hmarkedInj hsync hdata
+        (fun b hb => (hcoreC b hb).trans hCA)
+        hmarked hdelta htype hcertificate'
+  · obtain ⟨L, hLI, hL, hdisjoint⟩ := hmigrateRange
+    exact ⟨C, D, L, fun n => target (atom n), hCA, hgood,
+      hL, hmarkedInj.mono hLI, Or.inl
+        ⟨certificateTarget, hcertificateInj.mono hLI,
+          hdisjoint⟩⟩
+  · exact ⟨C, D, I, fun n => target (atom n), hCA, hgood,
+      hI, hmarkedInj, Or.inr
+        (hmigrate.with_twoRepairTraceObstructions hgood)⟩
 
 /-- On the common-anchor part of the terminal affine pattern, either an
 infinite subfamily has a unique-hit repair avoiding the moving certificate
