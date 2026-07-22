@@ -5187,6 +5187,207 @@ theorem privateConflictClique_has_binaryCommonSurvivalPartition
     hsurvive (fun j => (s j).1) (fun j => (s j).2) i
   exact ⟨G, hGR, by simpa [selectedSet] using hG⟩
 
+/-- A target is universally safe for one block partition when every block
+selector leaves at least one of its supports untouched. -/
+def IsCommonSurvivalTarget
+    (R : SupportFamily) (cell : ℕ → Finset ℕ) (q : ℕ) : Prop :=
+  ∀ s : BlockSelector cell, ∃ G ∈ R q,
+    Disjoint (G : Set ℕ) (selectedSet s)
+
+/-- Set of all targets universally safe for a fixed selector space. -/
+def commonSurvivalTargets
+    (R : SupportFamily) (cell : ℕ → Finset ℕ) : Set ℕ :=
+  {q | IsCommonSurvivalTarget R cell q}
+
+/-- Concrete sufficient witness for universal safety on a binary
+partition: one cell has two opposite endpoints, and the target has one
+support whose reservoir trace is exactly each endpoint. -/
+def HasOppositePrivateCellRepairsAt
+    (R : SupportFamily) (K : Set ℕ)
+    (cell : ℕ → Finset ℕ) (q : ℕ) : Prop :=
+  ∃ i x y, x ≠ y ∧ cell i = {x, y} ∧
+    ∃ E ∈ R q, ((E : Set ℕ) ∩ K) = {x} ∧
+      ∃ F ∈ R q, ((F : Set ℕ) ∩ K) = {y}
+
+/-- Opposite private repairs on one binary cell make the target survive
+every selector of the whole partition. -/
+theorem commonSurvivalTarget_of_oppositePrivateCellRepairs
+    {R : SupportFamily} {K : Set ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hrepair : HasOppositePrivateCellRepairsAt R K cell q) :
+    IsCommonSurvivalTarget R cell q := by
+  classical
+  obtain ⟨i, x, y, hxy, hcell,
+      E, hER, hEK, F, hFR, hFK⟩ := hrepair
+  intro s
+  have hsi : (s i).1 = x ∨ (s i).1 = y := by
+    have hmem : (s i).1 ∈ ({x, y} : Finset ℕ) := by
+      rw [← hcell]
+      exact (s i).2
+    simpa using hmem
+  rcases hsi with hsi | hsi
+  · refine ⟨F, hFR, ?_⟩
+    rw [Set.disjoint_left]
+    rintro z hzF ⟨j, hj⟩
+    change (s j).1 = z at hj
+    have hzK : z ∈ K :=
+      P.selectedSet_subset s ⟨j, hj⟩
+    have hzEq : z = y := by
+      have hzTrace : z ∈ (F : Set ℕ) ∩ K := ⟨hzF, hzK⟩
+      rw [hFK] at hzTrace
+      simpa using hzTrace
+    by_cases hji : j = i
+    · subst j
+      exact hxy (hsi.symm.trans (hj.trans hzEq))
+    · have hzCellJ : z ∈ cell j := by
+        rw [← hj]
+        exact (s j).2
+      have hzCellI : z ∈ cell i := by
+        rw [hcell, hzEq]
+        simp
+      exact Finset.disjoint_left.mp (P.disjoint hji)
+        hzCellJ hzCellI
+  · refine ⟨E, hER, ?_⟩
+    rw [Set.disjoint_left]
+    rintro z hzE ⟨j, hj⟩
+    change (s j).1 = z at hj
+    have hzK : z ∈ K :=
+      P.selectedSet_subset s ⟨j, hj⟩
+    have hzEq : z = x := by
+      have hzTrace : z ∈ (E : Set ℕ) ∩ K := ⟨hzE, hzK⟩
+      rw [hEK] at hzTrace
+      simpa using hzTrace
+    by_cases hji : j = i
+    · subst j
+      exact hxy (hzEq.symm.trans (hj.symm.trans hsi))
+    · have hzCellJ : z ∈ cell j := by
+        rw [← hj]
+        exact (s j).2
+      have hzCellI : z ∈ cell i := by
+        rw [hcell, hzEq]
+        simp
+      exact Finset.disjoint_left.mp (P.disjoint hji)
+        hzCellJ hzCellI
+
+/-- A target-localized certificate contains no universally safe target.
+Localization supplies a selector destroying each certificate target, while
+universal safety supplies a support surviving that same selector. -/
+theorem targetLocalizedCertificate_disjoint_commonSurvivalTargets
+    {R : SupportFamily} {cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ}
+    (hlocalized : ∀ q ∈ Q, ∃ s : BlockSelector cell,
+      DestroysAt R (selectedSet s) q ∧
+      ∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt R (selectedSet s) q') :
+    Disjoint (Q : Set ℕ)
+      (commonSurvivalTargets R cell) := by
+  rw [Set.disjoint_left]
+  intro q hqQ hqSafe
+  obtain ⟨s, hqDestroy, _hprivate⟩ :=
+    hlocalized q (Finset.mem_coe.mp hqQ)
+  obtain ⟨G, hGR, hGsurvive⟩ := hqSafe s
+  exact (hqDestroy G hGR) hGsurvive
+
+/-- Consequently every target of a localized certificate on a binary
+partition lacks opposite private repairs in every block. -/
+theorem targetLocalizedCertificate_disjoint_oppositePrivateCellRepairs
+    {R : SupportFamily} {K : Set ℕ}
+    {cell : ℕ → Finset ℕ} {Q : Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hlocalized : ∀ q ∈ Q, ∃ s : BlockSelector cell,
+      DestroysAt R (selectedSet s) q ∧
+      ∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt R (selectedSet s) q') :
+    Disjoint (Q : Set ℕ)
+      {q | HasOppositePrivateCellRepairsAt R K cell q} := by
+  exact
+    (targetLocalizedCertificate_disjoint_commonSurvivalTargets
+      hlocalized).mono_right <| by
+        intro q hq
+        exact commonSurvivalTarget_of_oppositePrivateCellRepairs P hq
+
+/-- Strong deletion therefore produces arbitrarily late cardinal-minimal
+certificates lying wholly in the complement of the universally safe target
+set of any infinite deletion-reservoir partition. -/
+theorem strongDeletion_certificate_avoids_allCommonSurvivalTargets
+    {A K : Set ℕ} {R : SupportFamily}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion R A)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell) :
+    ∀ N, ∃ Q : Finset ℕ,
+      Q.Nonempty ∧
+      (∀ q ∈ Q, N ≤ q) ∧
+      (∀ s : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt R (selectedSet s) q) ∧
+      (∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt R (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt R (selectedSet s) q') ∧
+      Disjoint (Q : Set ℕ)
+        (commonSurvivalTargets R cell) := by
+  classical
+  intro N
+  obtain ⟨Q₀, hQ₀late, hQ₀cert⟩ :=
+    finiteBlockCertificates_on_subset_of_strongInfiniteDeletion
+      hstrong hKA cell P N
+  obtain ⟨Q, hQQ₀, hcert, hlocalized⟩ :=
+    exists_minimal_targetLocalized_subcertificate hQ₀cert
+  let s₀ : BlockSelector cell := fun i =>
+    ⟨(P.nonempty i).choose, (P.nonempty i).choose_spec⟩
+  obtain ⟨q₀, hq₀Q, _hq₀Destroy⟩ := hcert s₀
+  have hQ : Q.Nonempty := ⟨q₀, hq₀Q⟩
+  have hQlate : ∀ q ∈ Q, N ≤ q := by
+    intro q hqQ
+    exact hQ₀late q (hQQ₀ hqQ)
+  exact ⟨Q, hQ, hQlate, hcert, hlocalized,
+    targetLocalizedCertificate_disjoint_commonSurvivalTargets
+      hlocalized⟩
+
+/-- If the universally safe targets of one infinite partition contain a
+tail, any block selector is the desired infinite deletion. -/
+theorem exists_infiniteDeletion_threeBasis_of_eventuallyCommonSurvivalTargets
+    {A K : Set ℕ} {cell : ℕ → Finset ℕ}
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hsafe : ∃ N, ∀ q, N ≤ q →
+      IsCommonSurvivalTarget
+        (additiveSupportFamily A 3) cell q) :
+    ∃ B, B ⊆ K ∧ B ⊆ A ∧ B.Infinite ∧
+      IsExactTupleAsymptoticBasis (A \ B) 3 := by
+  classical
+  let s : BlockSelector cell := fun i =>
+    ⟨(P.nonempty i).choose, (P.nonempty i).choose_spec⟩
+  let B : Set ℕ := selectedSet s
+  have hBK : B ⊆ K := P.selectedSet_subset s
+  refine ⟨B, hBK, hBK.trans hKA,
+    P.selectedSet_infinite s, ?_⟩
+  apply hasEventuallySurvivingSupport_additive_iff.mp
+  obtain ⟨N, hN⟩ := hsafe
+  refine ⟨N, ?_⟩
+  intro q hqN
+  exact hN q hqN s
+
+/-- Certificate form of the same closure criterion: a cofinal tail of
+universally safe targets is incompatible with strong deletion. -/
+theorem not_strongInfiniteDeletion_of_eventuallyCommonSurvivalTargets
+    {A K : Set ℕ} {R : SupportFamily}
+    {cell : ℕ → Finset ℕ}
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hsafe : ∃ N, ∀ q, N ≤ q →
+      IsCommonSurvivalTarget R cell q) :
+    ¬ StrongInfiniteDeletion R A := by
+  intro hstrong
+  obtain ⟨N, hN⟩ := hsafe
+  obtain ⟨Q, hQ, hQlate, _hcert, _hlocalized, hdisjoint⟩ :=
+    strongDeletion_certificate_avoids_allCommonSurvivalTargets
+      hstrong hKA P N
+  obtain ⟨q, hqQ⟩ := hQ
+  exact Set.disjoint_left.mp hdisjoint
+    (Finset.mem_coe.mpr hqQ) (hN q (hQlate q hqQ))
+
 /-- Exact finite-certificate consequence of an unbounded target family
 which survives every selector of one infinite block partition.  Strong
 deletion gives a late finite certificate; after target-minimizing it, every
@@ -5212,30 +5413,16 @@ theorem strongDeletion_certificate_avoids_unboundedCommonSurvivalTargets
         ∀ q' ∈ Q, q' ≠ q →
           ¬ DestroysAt R (selectedSet s) q') ∧
       Disjoint (Q : Set ℕ) (Set.range target) := by
-  classical
   intro N
-  obtain ⟨Q₀, hQ₀late, hQ₀cert⟩ :=
-    finiteBlockCertificates_on_subset_of_strongInfiniteDeletion
-      hstrong hKA cell P N
-  obtain ⟨Q, hQQ₀, hcert, hlocalized⟩ :=
-    exists_minimal_targetLocalized_subcertificate hQ₀cert
-  let s₀ : BlockSelector cell := fun i =>
-    ⟨(P.nonempty i).choose, (P.nonempty i).choose_spec⟩
-  obtain ⟨q₀, hq₀Q, _hq₀Destroy⟩ := hcert s₀
-  have hQ : Q.Nonempty := ⟨q₀, hq₀Q⟩
-  have hQlate : ∀ q ∈ Q, N ≤ q := by
-    intro q hqQ
-    exact hQ₀late q (hQQ₀ hqQ)
-  have hdisjoint : Disjoint (Q : Set ℕ)
-      (Set.range target) := by
-    rw [Set.disjoint_left]
-    intro q hqQ hqTarget
-    obtain ⟨i, rfl⟩ := hqTarget
-    obtain ⟨s, hdestroy, _hprivate⟩ :=
-      hlocalized (target i) (Finset.mem_coe.mp hqQ)
-    obtain ⟨G, hGR, hGsurvive⟩ := hsurvive s i
-    exact (hdestroy G hGR) hGsurvive
-  exact ⟨Q, hQ, hQlate, hcert, hlocalized, hdisjoint⟩
+  obtain ⟨Q, hQ, hQlate, hcert, hlocalized, hdisjointSafe⟩ :=
+    strongDeletion_certificate_avoids_allCommonSurvivalTargets
+      hstrong hKA P N
+  have hRangeSafe : Set.range target ⊆
+      commonSurvivalTargets R cell := by
+    rintro q ⟨i, rfl⟩ s
+    exact hsurvive s i
+  exact ⟨Q, hQ, hQlate, hcert, hlocalized,
+    hdisjointSafe.mono_right hRangeSafe⟩
 
 /-- The certificate-migration package exposed by a private conflict clique:
 an infinite binary block reservoir, an unbounded target family surviving
