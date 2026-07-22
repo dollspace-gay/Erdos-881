@@ -11467,6 +11467,196 @@ def HasInfiniteAmbientThreeEndpointSelectorLayer
         selectedSet sel ∧
       x ∈ crossingAtomEndpoints A B₀ q
 
+/-- Two distinct crossing endpoints give a three-term representation avoiding
+either one of them: use the other crossing pair and append zero.  Thus no
+single endpoint can destroy an order-three target once the crossing endpoint
+set has at least two members. -/
+theorem not_destroysAt_singleton_of_distinct_crossingEndpoints
+    {A B₀ : Set ℕ} {q x y : ℕ}
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hx : x ∈ crossingAtomEndpoints A B₀ q)
+    (hy : y ∈ crossingAtomEndpoints A B₀ q)
+    (hxy : x ≠ y) :
+    ¬ DestroysAt (additiveSupportFamily A 3)
+      ({x} : Set ℕ) q := by
+  intro hdestroy
+  have hxData := mem_crossingAtomEndpoints_iff.mp hx
+  have hyData := mem_crossingAtomEndpoints_iff.mp hy
+  have hyA : y ∈ A := hB₀A hyData.2.1
+  have hyNeX : y ≠ x := hxy.symm
+  have hcompNeX : q - y ≠ x := by
+    intro heq
+    exact hyData.2.2.2 (heq ▸ hxData.2.1)
+  have hzeroNeX : 0 ≠ x := by
+    intro heq
+    exact hzeroB₀ (heq ▸ hxData.2.1)
+  have hnotuple :=
+    destroysAt_additiveSupportFamily_iff.mp hdestroy
+  apply hnotuple
+  refine ⟨![y, q - y, 0], ?_, ?_⟩
+  · intro i
+    fin_cases i <;>
+      simp [hyA, hyData.2.2.1,
+        hzeroA, hyNeX, hcompNeX, hzeroNeX]
+  · simp [Fin.sum_univ_succ]
+    omega
+
+/-- A genuine three-endpoint layer can be thinned so that every chosen
+point's associated target has an order-three support avoiding the entire
+thinned layer.  The alternative support is first obtained from a different
+crossing endpoint and zero, then a bounded point-map free-set argument makes
+all chosen supports simultaneously disjoint. -/
+theorem HasInfiniteAmbientThreeEndpointSelectorLayer.exists_infinite_neutralizedSublayer
+    {A B₀ B₁ : Set ℕ} {F : ℕ → Finset ℕ}
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (h : HasInfiniteAmbientThreeEndpointSelectorLayer
+      A B₀ B₁ F) :
+    ∃ B, B ⊆ B₁ ∧ B.Infinite ∧
+      ∀ x ∈ B, ∃ q, ∃ sel : BlockSelector F, ∃ G : Finset ℕ,
+        selectedSet sel ⊆ B₁ ∧
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B₀ ∧
+          ¬ (E : Set ℕ) ⊆ B₀) ∧
+        DestroysAt (additiveSupportFamily A 3)
+          (selectedSet sel) q ∧
+        (crossingAtomEndpoints A B₀ q).card = 3 ∧
+        (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+          selectedSet sel ∧
+        x ∈ crossingAtomEndpoints A B₀ q ∧
+        G ∈ additiveSupportFamily A 3 q ∧
+        Disjoint (G : Set ℕ) B := by
+  classical
+  obtain ⟨L, hLB₁, hL, hdata⟩ := h
+  have hchoice : ∀ x : L, ∃ q, ∃ sel : BlockSelector F,
+      selectedSet sel ⊆ B₁ ∧
+      (∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧
+        ¬ (E : Set ℕ) ⊆ B₀) ∧
+      DestroysAt (additiveSupportFamily A 3)
+        (selectedSet sel) q ∧
+      (crossingAtomEndpoints A B₀ q).card = 3 ∧
+      (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+        selectedSet sel ∧
+      x.1 ∈ crossingAtomEndpoints A B₀ q := by
+    intro x
+    exact hdata x.1 x.2
+  choose target sel htarget using hchoice
+  have hrepairExists : ∀ x : L, ∃ G,
+      G ∈ additiveSupportFamily A 3 (target x) ∧
+      Disjoint (G : Set ℕ) ({x.1} : Set ℕ) := by
+    intro x
+    obtain ⟨_hselB₁, _hcross, _hdestroy, hcard,
+      _hendpointSub, hxEndpoint⟩ := htarget x
+    let X : Finset ℕ :=
+      crossingAtomEndpoints A B₀ (target x)
+    have hnotSub : ¬ X ⊆ {x.1} := by
+      intro hsub
+      have hcardLe := Finset.card_le_card hsub
+      dsimp only [X] at hcardLe
+      simp only [Finset.card_singleton] at hcardLe
+      omega
+    obtain ⟨y, hyX, hyNotSingleton⟩ :=
+      Finset.not_subset.mp hnotSub
+    have hyEndpoint :
+        y ∈ crossingAtomEndpoints A B₀ (target x) := hyX
+    have hxy : x.1 ≠ y := by
+      intro hxy
+      apply hyNotSingleton
+      simp [hxy]
+    exact not_destroysAt_iff.mp
+      (not_destroysAt_singleton_of_distinct_crossingEndpoints
+        hzeroA hzeroB₀ hB₀A hxEndpoint hyEndpoint hxy)
+  choose repair hrepairMem hrepairSelf using hrepairExists
+  let f : ℕ → Finset ℕ := fun x =>
+    if hx : x ∈ L then repair ⟨x, hx⟩ else ∅
+  have hfCard : ∀ x ∈ L, (f x).card ≤ 3 := by
+    intro x hxL
+    simp only [f, dif_pos hxL]
+    exact additiveSupportFamily_cardAtMost A 3 (target ⟨x, hxL⟩)
+      (repair ⟨x, hxL⟩) (hrepairMem ⟨x, hxL⟩)
+  have hfAvoid : ∀ x ∈ L, x ∉ f x := by
+    intro x hxL hxRepair
+    have hdisjoint := hrepairSelf ⟨x, hxL⟩
+    exact Set.disjoint_left.mp hdisjoint
+      (by simpa [f, hxL] using hxRepair) (by simp)
+  obtain ⟨B, hBL, hB, hfree⟩ :=
+    exists_infinite_freeSet_of_bounded_pointMap
+      hL f 3 hfCard hfAvoid
+  refine ⟨B, hBL.trans hLB₁, hB, ?_⟩
+  intro x hxB
+  let xL : L := ⟨x, hBL hxB⟩
+  have hrepairB : Disjoint (repair xL : Set ℕ) B := by
+    simpa [f, xL, hBL hxB] using hfree x hxB
+  obtain ⟨hselB₁, hcross, hdestroy, hcard,
+    hendpointSub, hxEndpoint⟩ := htarget xL
+  exact ⟨target xL, sel xL, repair xL,
+    hselB₁, hcross, hdestroy, hcard, hendpointSub,
+    hxEndpoint, hrepairMem xL, hrepairB⟩
+
+/-- The neutralized targets are necessarily unbounded.  Each target has
+exactly three ambient endpoints, so the target map has finite fibers on the
+infinite thinned layer. -/
+theorem HasInfiniteAmbientThreeEndpointSelectorLayer.exists_infiniteDeletion_with_arbitrarilyLateNeutralizedTargets
+    {A B₀ B₁ : Set ℕ} {F : ℕ → Finset ℕ}
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (h : HasInfiniteAmbientThreeEndpointSelectorLayer
+      A B₀ B₁ F) :
+    ∃ B, B ⊆ B₁ ∧ B.Infinite ∧
+      ∀ N, ∃ q, N ≤ q ∧
+        (crossingAtomEndpoints A B₀ q).card = 3 ∧
+        ∃ G ∈ additiveSupportFamily A 3 q,
+          Disjoint (G : Set ℕ) B := by
+  classical
+  obtain ⟨B, hBB₁, hB, hdata⟩ :=
+    h.exists_infinite_neutralizedSublayer
+      hzeroA hzeroB₀ hB₀A
+  have hchoice : ∀ x : B, ∃ q, ∃ G : Finset ℕ,
+      (crossingAtomEndpoints A B₀ q).card = 3 ∧
+      x.1 ∈ crossingAtomEndpoints A B₀ q ∧
+      G ∈ additiveSupportFamily A 3 q ∧
+      Disjoint (G : Set ℕ) B := by
+    intro x
+    obtain ⟨q, sel, G, _hselB₁, _hcross, _hdestroy,
+      hcard, _hendpointSub, hxEndpoint, hGR, hGB⟩ :=
+      hdata x.1 x.2
+    exact ⟨q, G, hcard, hxEndpoint, hGR, hGB⟩
+  choose target repair htarget using hchoice
+  let targetOn : ℕ → ℕ := fun x =>
+    if hx : x ∈ B then target ⟨x, hx⟩ else 0
+  have htargetImage : (targetOn '' B).Infinite := by
+    by_contra hnot
+    apply hB
+    apply Set.Finite.of_finite_fibers targetOn
+      (Set.not_infinite.mp hnot)
+    intro q _hqImage
+    apply (crossingAtomEndpoints A B₀ q).finite_toSet.subset
+    rintro x ⟨hxB, htargetEq⟩
+    let xB : B := ⟨x, hxB⟩
+    have htargetEq' : target xB = q := by
+      simpa [targetOn, xB, hxB] using htargetEq
+    rw [← htargetEq']
+    exact (htarget xB).2.1
+  refine ⟨B, hBB₁, hB, ?_⟩
+  intro N
+  obtain ⟨q, hqImage, hNq⟩ := htargetImage.exists_gt N
+  obtain ⟨x, hxB, htargetOnEq⟩ := hqImage
+  let xB : B := ⟨x, hxB⟩
+  have htargetEq : target xB = q := by
+    simpa [targetOn, xB, hxB] using htargetOnEq
+  obtain ⟨hcard, _hxEndpoint, hrepairMem, hrepairB⟩ :=
+    htarget xB
+  refine ⟨q, Nat.le_of_lt hNq, ?_, repair xB, ?_, hrepairB⟩
+  · rw [← htargetEq]
+    exact hcard
+  · rw [← htargetEq]
+    exact hrepairMem
+
 /-- Sharp hereditary trichotomy.  Every residual exact-core partition has
 either huge certificates, an ambient private-singleton system (which now
 feeds the complement-center route), or an infinite layer of genuine
