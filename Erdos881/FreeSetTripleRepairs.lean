@@ -6059,6 +6059,153 @@ theorem small_targetLocalized_twoRepairCertificate_has_wideReservoirSupport
     · obtain ⟨q', hq'Q, _hq'q, hq'Wide⟩ := hwide
       exact ⟨q', hq'Q, hq'Wide⟩
 
+/-- Chosen clause data for one separated target.  Destruction of the target
+forces a selector to choose `leftPoint` and `rightPoint` simultaneously in
+two distinct binary cells. -/
+structure SeparatedTraceClauseData
+    (R : SupportFamily) (K : Set ℕ) (D : Finset ℕ)
+    (cell : ℕ → Finset ℕ) (q : ℕ) where
+  leftSupport : Finset ℕ
+  left_mem : leftSupport ∈ R q
+  left_disjoint : Disjoint leftSupport D
+  rightSupport : Finset ℕ
+  right_mem : rightSupport ∈ R q
+  right_disjoint : Disjoint rightSupport D
+  traces_disjoint : Disjoint
+    ((leftSupport : Set ℕ) ∩ K)
+    ((rightSupport : Set ℕ) ∩ K)
+  leftCell : ℕ
+  rightCell : ℕ
+  leftPoint : ℕ
+  rightPoint : ℕ
+  cells_ne : leftCell ≠ rightCell
+  leftPoint_mem : leftPoint ∈ cell leftCell
+  rightPoint_mem : rightPoint ∈ cell rightCell
+  left_trace : ((leftSupport : Set ℕ) ∩ K) = {leftPoint}
+  right_trace : ((rightSupport : Set ℕ) ∩ K) = {rightPoint}
+
+/-- The existential separated-trace predicate supplies chosen clause data. -/
+theorem separatedTraceClauseData_nonempty
+    {R : SupportFamily} {K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (hsep : HasSeparatedSingletonTwoRepairTracesAt
+      R K D cell q) :
+    Nonempty (SeparatedTraceClauseData R K D cell q) := by
+  change ∃ E ∈ R q, Disjoint E D ∧
+    ∃ F ∈ R q, Disjoint F D ∧
+      Disjoint ((E : Set ℕ) ∩ K) ((F : Set ℕ) ∩ K) ∧
+      ∃ i j x y, i ≠ j ∧ x ∈ cell i ∧ y ∈ cell j ∧
+        ((E : Set ℕ) ∩ K) = {x} ∧
+        ((F : Set ℕ) ∩ K) = {y} at hsep
+  obtain ⟨E, hER, hED, F, hFR, hFD, hEF,
+      i, j, x, y, hij, hxi, hyj, hEtrace, hFtrace⟩ := hsep
+  exact ⟨⟨E, hER, hED, F, hFR, hFD, hEF,
+    i, j, x, y, hij, hxi, hyj, hEtrace, hFtrace⟩⟩
+
+/-- A point of a partition block can occur in a global selector only as the
+choice made at that block's unique index. -/
+theorem blockSelector_value_eq_of_point_mem_selectedSet
+    {K : Set ℕ} {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    {s : BlockSelector cell} {i x : ℕ}
+    (hxi : x ∈ cell i)
+    (hxSelected : x ∈ selectedSet s) :
+    (s i).1 = x := by
+  obtain ⟨j, hj⟩ := hxSelected
+  change (s j).1 = x at hj
+  have hji : j = i := by
+    by_contra hne
+    exact Finset.disjoint_left.mp (P.disjoint hne)
+      (s j).2 (by simpa [← hj] using hxi)
+  subst j
+  exact hj
+
+/-- Pure finite clause-cover statement extracted from a separated repair
+certificate.  For each target choose its two marked cells and endpoints.
+Every selector must realize at least one of those forbidden endpoint pairs;
+otherwise the corresponding singleton-trace repair would survive every
+certified target.  This is exactly an unsatisfiable binary 2-CNF instance. -/
+theorem separatedTrace_certificate_has_binaryPairPatternCover
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (hsep : ∀ q ∈ Q,
+      HasSeparatedSingletonTwoRepairTracesAt R K D cell q) :
+    ∃ data : ∀ q : {q // q ∈ Q},
+        SeparatedTraceClauseData R K D cell q.1,
+      ∀ s : BlockSelector cell, ∃ q : {q // q ∈ Q},
+        (s (data q).leftCell).1 = (data q).leftPoint ∧
+        (s (data q).rightCell).1 = (data q).rightPoint := by
+  classical
+  let data : ∀ q : {q // q ∈ Q},
+      SeparatedTraceClauseData R K D cell q.1 := fun q =>
+    Classical.choice (separatedTraceClauseData_nonempty
+      (hsep q.1 q.2))
+  refine ⟨data, ?_⟩
+  intro s
+  obtain ⟨q, hqQ, hqDestroy⟩ := hcert s
+  let qsub : {q // q ∈ Q} := ⟨q, hqQ⟩
+  let d := data qsub
+  have hleftSelected : d.leftPoint ∈ selectedSet s := by
+    obtain ⟨w, hwLeft, hwSelected⟩ :=
+      Set.not_disjoint_iff.mp
+        (hqDestroy d.leftSupport d.left_mem)
+    have hwK : w ∈ K := P.selectedSet_subset s hwSelected
+    have hwEq : w = d.leftPoint := by
+      have hwTrace : w ∈
+          ((d.leftSupport : Set ℕ) ∩ K) := ⟨hwLeft, hwK⟩
+      rw [d.left_trace] at hwTrace
+      simpa using hwTrace
+    simpa [hwEq] using hwSelected
+  have hrightSelected : d.rightPoint ∈ selectedSet s := by
+    obtain ⟨w, hwRight, hwSelected⟩ :=
+      Set.not_disjoint_iff.mp
+        (hqDestroy d.rightSupport d.right_mem)
+    have hwK : w ∈ K := P.selectedSet_subset s hwSelected
+    have hwEq : w = d.rightPoint := by
+      have hwTrace : w ∈
+          ((d.rightSupport : Set ℕ) ∩ K) := ⟨hwRight, hwK⟩
+      rw [d.right_trace] at hwTrace
+      simpa using hwTrace
+    simpa [hwEq] using hwSelected
+  exact ⟨qsub,
+    blockSelector_value_eq_of_point_mem_selectedSet
+      P d.leftPoint_mem hleftSelected,
+    blockSelector_value_eq_of_point_mem_selectedSet
+      P d.rightPoint_mem hrightSelected⟩
+
+/-- If a binary two-repair certificate has no wide support at any target,
+its trace classification is wholly separated and hence yields the explicit
+unsatisfiable pair-pattern cover above. -/
+theorem targetLocalized_twoRepairCertificate_noWide_has_binaryPairPatternCover
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAt R K D cell q)
+    (hnoWide : ∀ q ∈ Q,
+      ¬ HasWideReservoirSupportAt R K q) :
+    ∃ data : ∀ q : {q // q ∈ Q},
+        SeparatedTraceClauseData R K D cell q.1,
+      ∀ s : BlockSelector cell, ∃ q : {q // q ∈ Q},
+        (s (data q).leftCell).1 = (data q).leftPoint ∧
+        (s (data q).rightCell).1 = (data q).rightPoint := by
+  have hsep : ∀ q ∈ Q,
+      HasSeparatedSingletonTwoRepairTracesAt R K D cell q := by
+    intro q hqQ
+    rcases twoRepairTraceObstruction_wide_or_separated
+        P hcellCard (htrace q hqQ) with hwide | hsep
+    · exact (hnoWide q hqQ
+        (wideTwoRepairTrace_has_wideReservoirSupport hwide)).elim
+    · exact hsep
+  exact separatedTrace_certificate_has_binaryPairPatternCover
+    P hcert hsep
+
 /-- Strong deletion therefore produces arbitrarily late cardinal-minimal
 certificates lying wholly in the complement of the universally safe target
 set of any infinite deletion-reservoir partition. -/
