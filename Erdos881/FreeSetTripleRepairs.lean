@@ -5906,6 +5906,83 @@ theorem fullAlignedThree_card_le_internal_add_notSubset
     Finset.card_union_le Internal Outside
   simpa [Full, Internal, Outside] using hcardSub.trans hunionCard
 
+/-- Every finite indexed set family has a pairwise-disjoint subfamily whose
+discarded-index count is at most the incidence defect
+`sum(card) - card(union)`.  The subtraction-free displayed inequality is
+stable over natural numbers and is the form used below. -/
+theorem exists_pairwiseDisjoint_subfamily_with_card_union_bound
+    {ι α : Type*} [DecidableEq ι] [DecidableEq α]
+    (I : Finset ι) (f : ι → Finset α) :
+    ∃ G : Finset ι,
+      G ⊆ I ∧
+      (G : Set ι).PairwiseDisjoint f ∧
+      I.card + (I.biUnion f).card ≤
+        G.card + ∑ i ∈ I, (f i).card := by
+  classical
+  induction I using Finset.induction_on with
+  | empty =>
+      exact ⟨∅, Finset.Subset.rfl, by simp, by simp⟩
+  | @insert a S haS ih =>
+      obtain ⟨G, hGS, hpair, hbound⟩ := ih
+      let U : Finset α := S.biUnion f
+      change S.card + U.card ≤
+        G.card + ∑ i ∈ S, (f i).card at hbound
+      have hbiUnion : (insert a S).biUnion f = f a ∪ U := by
+        simp [U]
+      by_cases hdisjoint : Disjoint (f a) U
+      · have haG : a ∉ G := by
+          intro haG
+          exact haS (hGS haG)
+        have hpairInsert :
+            ((insert a G : Finset ι) : Set ι).PairwiseDisjoint f := by
+          rw [Finset.coe_insert, Set.pairwiseDisjoint_insert]
+          refine ⟨hpair, ?_⟩
+          intro g hgG _hga
+          apply hdisjoint.mono_right
+          intro x hxg
+          apply Finset.mem_biUnion.mpr
+          exact ⟨g, hGS hgG, hxg⟩
+        refine ⟨insert a G, ?_, hpairInsert, ?_⟩
+        · intro g hg
+          rcases Finset.mem_insert.mp hg with rfl | hgG
+          · exact Finset.mem_insert_self _ S
+          · exact Finset.mem_insert_of_mem (hGS hgG)
+        · rw [Finset.card_insert_of_notMem haS,
+            Finset.card_insert_of_notMem haG, hbiUnion,
+            Finset.sum_insert haS]
+          have hUnionCard : (f a ∪ U).card = (f a).card + U.card :=
+            Finset.card_union_of_disjoint hdisjoint
+          omega
+      · refine ⟨G, ?_, hpair, ?_⟩
+        · intro g hgG
+          exact Finset.mem_insert_of_mem (hGS hgG)
+        · rw [Finset.card_insert_of_notMem haS, hbiUnion,
+            Finset.sum_insert haS]
+          have hinterNonempty : (f a ∩ U).Nonempty := by
+            obtain ⟨x, hxfa, hxU⟩ :=
+              Finset.not_disjoint_iff.mp hdisjoint
+            exact ⟨x, Finset.mem_inter.mpr ⟨hxfa, hxU⟩⟩
+          have hinterPos : 0 < (f a ∩ U).card :=
+            Finset.card_pos.mpr hinterNonempty
+          have hUnionInter :=
+            Finset.card_union_add_card_inter (f a) U
+          omega
+
+/-- Support-choice specialization of the preceding near-disjointness
+lemma. -/
+theorem finiteSupportChoice_exists_pairwiseDisjoint_subfamily
+    {R : SupportFamily} {Q : Finset ℕ}
+    (c : FiniteSupportChoice R Q) :
+    ∃ G : Finset {n // n ∈ Q},
+      G ⊆ Q.attach ∧
+      (G : Set {n // n ∈ Q}).PairwiseDisjoint
+        (fun t => (c t).1) ∧
+      Q.card + (finiteSupportChoiceUnion c).card ≤
+        G.card + ∑ t ∈ Q.attach, (c t).1.card := by
+  simpa [finiteSupportChoiceUnion] using
+    exists_pairwiseDisjoint_subfamily_with_card_union_bound
+      Q.attach (fun t => (c t).1)
+
 /-- Union bound for a support choice in which ordinary indices cost one
 point and a distinguished subfamily may cost three. -/
 theorem finiteSupportChoiceUnion_card_le_one_plus_two_aligned
@@ -6714,6 +6791,450 @@ theorem minimalCrossingEndpointTripleCertificate_threeEndpoint_forces_trappedTri
     exact ⟨ht.1, htriple, ht.2.1, hsum,
       ht.2.2, hdisjoint t⟩
   exact ⟨base, cOther, T, hqDestroy, hprivate, hTlower, hTdata⟩
+
+set_option maxHeartbeats 5000000 in
+/-- Near-equality also forces an almost-complete matching: after losing at
+most the three incidence-defect indices and the exceptional trapped-support
+indices, at least `k - 9` genuine three-point supports remain pairwise
+disjoint inside the same three block remainders. -/
+theorem minimalCrossingEndpointTripleCertificate_threeEndpoint_forces_disjointTrappedTripleSupports
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {q k : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hblockLower : ∀ i, k ≤ (F i).card)
+    (hQcross : ∀ t ∈ Q,
+      ∀ E ∈ additiveSupportFamily A 2 t,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧
+        ¬ (E : Set ℕ) ⊆ B₀)
+    (hcert : ∀ sel : BlockSelector F, ∃ t ∈ Q,
+      DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet sel) t)
+    (hlocalized : ∀ t ∈ Q, ∃ sel : BlockSelector F,
+      DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet sel) t ∧
+      ∀ t' ∈ Q, t' ≠ t →
+        ¬ DestroysAt
+          (crossingEndpointTripleObstructionFamily A B₀)
+          (selectedSet sel) t')
+    (hk : 2 ≤ k)
+    (hqQ : q ∈ Q)
+    (hQcard : Q.card = k + 1)
+    (hendpointCard :
+      (crossingAtomEndpoints A B₀ q).card = 3) :
+    ∃ base : BlockSelector F,
+      ∃ cOther : FiniteSupportChoice
+          (crossingEndpointTripleObstructionFamily A B₀) (Q.erase q),
+        ∃ T : Finset {n // n ∈ Q.erase q},
+          DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+            (selectedSet base) q ∧
+          (∀ t ∈ Q, t ≠ q →
+            ¬ DestroysAt
+              (crossingEndpointTripleObstructionFamily A B₀)
+              (selectedSet base) t) ∧
+          k - 9 ≤ T.card ∧
+          (T : Set {n // n ∈ Q.erase q}).PairwiseDisjoint
+            (fun t => (cOther t).1) ∧
+          (selectedBlockRemainderUnion P
+              (crossingAtomEndpoints A B₀ q) \
+            T.biUnion fun t => (cOther t).1).card ≤ 27 ∧
+          ∀ t ∈ T,
+            t.1 ∈ crossingEndpointAlignedTargets A B₀ Q base q ∧
+            (cOther t).1 ∈ additiveSupportFamily A 3 t.1 ∧
+            (cOther t).1.card = 3 ∧
+            (cOther t).1.sum id = t.1 ∧
+            (cOther t).1 ⊆ selectedBlockRemainderUnion P
+              (crossingAtomEndpoints A B₀ q) ∧
+            Disjoint ((cOther t).1 : Set ℕ) (selectedSet base) := by
+  classical
+  obtain ⟨base, cOther, hqDestroy, hprivate, hdisjoint,
+      hcard, hkind, hVsubRaw, hcases⟩ :=
+    minimalCrossingEndpointTripleCertificate_threeEndpoint_nearCover
+      P hblockLower hQcross hcert hlocalized hk hqQ hQcard hendpointCard
+  let Aligned : Finset ℕ :=
+    crossingEndpointAlignedTargets A B₀ Q base q
+  let V : Finset ℕ := selectedBlockRemainderUnion P
+    (crossingAtomEndpoints A B₀ q)
+  let U : Finset ℕ := finiteSupportChoiceUnion cOther
+  let Internal : Finset {n // n ∈ Q.erase q} :=
+    (Q.erase q).attach.filter fun t =>
+      t.1 ∈ Aligned ∧ (cOther t).1.card = 3 ∧ (cOther t).1 ⊆ V
+  have hVsub : V ⊆ U := by
+    simpa [V, U] using hVsubRaw
+  have hendpointSelected :
+      (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆ selectedSet base :=
+    (destroysAt_crossingEndpointTripleObstructionFamily_iff.mp
+      hqDestroy).2.2
+  have hVlower : 3 * (k - 1) ≤ V.card := by
+    have hlower := selectedBlockRemainderUnion_card_lower
+      P hblockLower base hendpointSelected
+    rw [hendpointCard] at hlower
+    simpa [V, Nat.mul_comm] using hlower
+  have hULower : 3 * (k - 1) ≤ U.card :=
+    hVlower.trans (Finset.card_le_card hVsub)
+  have heraseCard : (Q.erase q).card = k := by
+    rw [Finset.card_erase_of_mem hqQ, hQcard]
+    omega
+  obtain ⟨Good, hGoodSub, hGoodPair, hGoodBound⟩ :=
+    finiteSupportChoice_exists_pairwiseDisjoint_subfamily cOther
+  change (Q.erase q).card + U.card ≤
+    Good.card + ∑ t ∈ (Q.erase q).attach, (cOther t).1.card at hGoodBound
+  have hcaseBounds :
+      (k - 1 ≤ Good.card ∧ k - 3 ≤ Internal.card) ∨
+      (k - 3 ≤ Good.card ∧ k - 6 ≤ Internal.card) := by
+    rcases hcases with
+        ⟨haligned, _hslack, _hshort, _hfull,
+          _houtside, hinternal⟩ |
+        ⟨haligned, _hslack, _hshort, _hfull,
+          _houtside, hinternal⟩
+    · left
+      have hcapacitySum :
+          (∑ t ∈ (Q.erase q).attach,
+            if t.1 ∈ Aligned then 3 else 1) = 3 * k - 2 := by
+        calc
+          (∑ t ∈ (Q.erase q).attach,
+              if t.1 ∈ Aligned then 3 else 1) =
+              (Q.erase q).card + 2 * Aligned.card :=
+            sum_attach_ite_three_one_eq_card_add_twice
+              (by simpa [Aligned] using
+                crossingEndpointAlignedTargets_subset A B₀ Q base q)
+          _ = 3 * k - 2 := by
+            rw [heraseCard]
+            have haligned' : Aligned.card = k - 1 := by
+              simpa [Aligned] using haligned
+            rw [haligned']
+            omega
+      have hsumUpper :
+          (∑ t ∈ (Q.erase q).attach, (cOther t).1.card) ≤
+            3 * k - 2 := by
+        calc
+          (∑ t ∈ (Q.erase q).attach, (cOther t).1.card) ≤
+              ∑ t ∈ (Q.erase q).attach,
+                if t.1 ∈ Aligned then 3 else 1 := by
+            apply Finset.sum_le_sum
+            intro t _ht
+            simpa [Aligned] using hcard t
+          _ = 3 * k - 2 := hcapacitySum
+      have hGoodLower : k - 1 ≤ Good.card := by
+        rw [heraseCard] at hGoodBound
+        omega
+      exact ⟨hGoodLower, by simpa [Internal, Aligned, V] using hinternal⟩
+    · right
+      have hcapacitySum :
+          (∑ t ∈ (Q.erase q).attach,
+            if t.1 ∈ Aligned then 3 else 1) = 3 * k := by
+        calc
+          (∑ t ∈ (Q.erase q).attach,
+              if t.1 ∈ Aligned then 3 else 1) =
+              (Q.erase q).card + 2 * Aligned.card :=
+            sum_attach_ite_three_one_eq_card_add_twice
+              (by simpa [Aligned] using
+                crossingEndpointAlignedTargets_subset A B₀ Q base q)
+          _ = 3 * k := by
+            rw [heraseCard]
+            have haligned' : Aligned.card = k := by
+              simpa [Aligned] using haligned
+            rw [haligned']
+            omega
+      have hsumUpper :
+          (∑ t ∈ (Q.erase q).attach, (cOther t).1.card) ≤
+            3 * k := by
+        calc
+          (∑ t ∈ (Q.erase q).attach, (cOther t).1.card) ≤
+              ∑ t ∈ (Q.erase q).attach,
+                if t.1 ∈ Aligned then 3 else 1 := by
+            apply Finset.sum_le_sum
+            intro t _ht
+            simpa [Aligned] using hcard t
+          _ = 3 * k := hcapacitySum
+      have hGoodLower : k - 3 ≤ Good.card := by
+        rw [heraseCard] at hGoodBound
+        omega
+      exact ⟨hGoodLower, by simpa [Internal, Aligned, V] using hinternal⟩
+  let T : Finset {n // n ∈ Q.erase q} := Good ∩ Internal
+  have hUnionSub : Good ∪ Internal ⊆ (Q.erase q).attach := by
+    exact Finset.union_subset hGoodSub (Finset.filter_subset _ _)
+  have hUnionCard : (Good ∪ Internal).card ≤ k := by
+    have := Finset.card_le_card hUnionSub
+    simpa [heraseCard] using this
+  have hcardIdentity := Finset.card_union_add_card_inter Good Internal
+  have hTlower : k - 9 ≤ T.card := by
+    rcases hcaseBounds with hcase | hcase
+    · by_cases hkNine : 9 ≤ k
+      · have hkOne : k - 1 = (k - 9) + 8 := by omega
+        have hkThree : k - 3 = (k - 9) + 6 := by omega
+        rw [hkOne] at hcase
+        rw [hkThree] at hcase
+        dsimp only [T]
+        omega
+      · omega
+    · by_cases hkNine : 9 ≤ k
+      · have hkThree : k - 3 = (k - 9) + 6 := by omega
+        have hkSix : k - 6 = (k - 9) + 3 := by omega
+        rw [hkThree] at hcase
+        rw [hkSix] at hcase
+        dsimp only [T]
+        omega
+      · omega
+  have hTpair :
+      (T : Set {n // n ∈ Q.erase q}).PairwiseDisjoint
+        (fun t => (cOther t).1) := by
+    intro t htT r hrT htr
+    have htGood := (Finset.mem_inter.mp (Finset.mem_coe.mp htT)).1
+    have hrGood := (Finset.mem_inter.mp (Finset.mem_coe.mp hrT)).1
+    exact hGoodPair (Finset.mem_coe.mpr htGood)
+      (Finset.mem_coe.mpr hrGood) htr
+  have hTdata : ∀ t ∈ T,
+      t.1 ∈ crossingEndpointAlignedTargets A B₀ Q base q ∧
+      (cOther t).1 ∈ additiveSupportFamily A 3 t.1 ∧
+      (cOther t).1.card = 3 ∧
+      (cOther t).1.sum id = t.1 ∧
+      (cOther t).1 ⊆ selectedBlockRemainderUnion P
+        (crossingAtomEndpoints A B₀ q) ∧
+      Disjoint ((cOther t).1 : Set ℕ) (selectedSet base) := by
+    intro t htT
+    have htInternal :=
+      (Finset.mem_inter.mp htT).2
+    have ht := (Finset.mem_filter.mp htInternal).2
+    have htriple : (cOther t).1 ∈ additiveSupportFamily A 3 t.1 := by
+      simpa [Aligned, ht.1] using hkind t
+    have hsum : (cOther t).1.sum id = t.1 :=
+      additiveSupportFamily_three_sum_eq_of_card_eq_three
+        htriple ht.2.1
+    exact ⟨by simpa [Aligned] using ht.1, htriple, ht.2.1,
+      hsum, by simpa [V] using ht.2.2, hdisjoint t⟩
+  let W : Finset ℕ := T.biUnion fun t => (cOther t).1
+  have hWcard : W.card = 3 * T.card := by
+    dsimp only [W]
+    rw [Finset.card_biUnion hTpair]
+    calc
+      (∑ t ∈ T, (cOther t).1.card) = ∑ _t ∈ T, 3 := by
+        apply Finset.sum_congr rfl
+        intro t htT
+        exact (hTdata t htT).2.2.1
+      _ = 3 * T.card := by simp [Nat.mul_comm]
+  have hWsub : W ⊆ V := by
+    intro x hxW
+    obtain ⟨t, htT, hxt⟩ := Finset.mem_biUnion.mp hxW
+    exact (hTdata t htT).2.2.2.2.1 hxt
+  have hUupper : U.card ≤ 3 * k := by
+    have hraw := finiteSupportChoiceUnion_card_le
+      (crossingEndpointTripleObstructionFamily_cardAtMost
+        (A := A) (B₀ := B₀)) cOther
+    simpa [U, heraseCard] using hraw
+  have hVupper : V.card ≤ 3 * k :=
+    (Finset.card_le_card hVsub).trans hUupper
+  have hcoverage : (V \ W).card ≤ 27 := by
+    have hdiff : (V \ W).card = V.card - W.card :=
+      Finset.card_sdiff_of_subset hWsub
+    rw [hdiff]
+    by_cases hkNine : 9 ≤ k
+    · have hkPred : k = (k - 9) + 9 := by omega
+      rw [hkPred] at hVupper
+      omega
+    · omega
+  exact ⟨base, cOther, T, hqDestroy, hprivate,
+    hTlower, hTpair, by simpa [V, W] using hcoverage, hTdata⟩
+
+/-- The three anchor blocks of a late near-sharp certificate must migrate.
+If all three endpoint blocks belonged to a prescribed finite index set `J`,
+the trapped-support theorem would express a late target as a sum of points
+from the fixed finite union of those blocks. -/
+theorem minimalCrossingEndpointTripleCertificate_threeEndpoint_forces_freshAnchorBlock
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {q k : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hblockLower : ∀ i, k ≤ (F i).card)
+    (hQcross : ∀ t ∈ Q,
+      ∀ E ∈ additiveSupportFamily A 2 t,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧
+        ¬ (E : Set ℕ) ⊆ B₀)
+    (hcert : ∀ sel : BlockSelector F, ∃ t ∈ Q,
+      DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet sel) t)
+    (hlocalized : ∀ t ∈ Q, ∃ sel : BlockSelector F,
+      DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet sel) t ∧
+      ∀ t' ∈ Q, t' ≠ t →
+        ¬ DestroysAt
+          (crossingEndpointTripleObstructionFamily A B₀)
+          (selectedSet sel) t')
+    (hk : 10 ≤ k)
+    (hqQ : q ∈ Q)
+    (hQcard : Q.card = k + 1)
+    (hendpointCard :
+      (crossingAtomEndpoints A B₀ q).card = 3)
+    (J : Finset ℕ)
+    (hQlate : ∀ t ∈ Q, (J.biUnion F).sum id + 1 ≤ t) :
+    ∃ x ∈ crossingAtomEndpoints A B₀ q,
+      blockIndex P x ∉ J := by
+  classical
+  by_contra hnone
+  have hindexJ : ∀ x ∈ crossingAtomEndpoints A B₀ q,
+      blockIndex P x ∈ J := by
+    intro x hxEndpoint
+    by_contra hxJ
+    exact hnone ⟨x, hxEndpoint, hxJ⟩
+  obtain ⟨base, cOther, T, _hqDestroy, _hprivate,
+      hTlower, _hTpair, _hcoverage, hTdata⟩ :=
+    minimalCrossingEndpointTripleCertificate_threeEndpoint_forces_disjointTrappedTripleSupports
+      P hblockLower hQcross hcert hlocalized (by omega)
+        hqQ hQcard hendpointCard
+  have hTnonempty : T.Nonempty := by
+    apply Finset.card_pos.mp
+    have : 1 ≤ k - 9 := by omega
+    exact this.trans hTlower
+  obtain ⟨t, htT⟩ := hTnonempty
+  let Core : Finset ℕ := J.biUnion F
+  have hVCore : selectedBlockRemainderUnion P
+      (crossingAtomEndpoints A B₀ q) ⊆ Core := by
+    intro y hyV
+    dsimp only [selectedBlockRemainderUnion] at hyV
+    obtain ⟨x, hxEndpoint, hyPiece⟩ := Finset.mem_biUnion.mp hyV
+    apply Finset.mem_biUnion.mpr
+    exact ⟨blockIndex P x, hindexJ x hxEndpoint,
+      (Finset.mem_sdiff.mp hyPiece).1⟩
+  have htData := hTdata t htT
+  have hsupportCore : (cOther t).1 ⊆ Core :=
+    htData.2.2.2.2.1.trans hVCore
+  have hsumLe : (cOther t).1.sum id ≤ Core.sum id :=
+    Finset.sum_le_sum_of_subset hsupportCore
+  have htLate : Core.sum id + 1 ≤ t.1 := by
+    simpa [Core] using hQlate t.1 (Finset.mem_of_mem_erase t.2)
+  have hsumEq : (cOther t).1.sum id = t.1 :=
+    htData.2.2.2.1
+  omega
+
+/-- Named package for the exact first-strict-size, three-endpoint branch. -/
+def IsMinimalNearSharpThreeEndpointCertificate
+    (A B₀ : Set ℕ) (F : ℕ → Finset ℕ)
+    (k N : ℕ) (Q : Finset ℕ) (q : ℕ) : Prop :=
+  q ∈ Q ∧
+  Q.card = k + 1 ∧
+  (∀ t ∈ Q, N ≤ t ∧
+    ∀ E ∈ additiveSupportFamily A 2 t,
+      ¬ Disjoint (E : Set ℕ) B₀ ∧
+      ¬ (E : Set ℕ) ⊆ B₀) ∧
+  (crossingAtomEndpoints A B₀ q).card = 3 ∧
+  (∀ sel : BlockSelector F, ∃ t ∈ Q,
+    DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+      (selectedSet sel) t) ∧
+  ∀ t ∈ Q, ∃ sel : BlockSelector F,
+    DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+      (selectedSet sel) t ∧
+    ∀ t' ∈ Q, t' ≠ t →
+      ¬ DestroysAt
+        (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet sel) t'
+
+/-- A block index which occurs as one of the three anchors in some late
+near-sharp certificate. -/
+noncomputable def IsNearSharpThreeAnchorBlockIndex
+    (A B₀ : Set ℕ) {F : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition B₀ F) (k i : ℕ) : Prop :=
+  ∃ N Q q x,
+    IsMinimalNearSharpThreeEndpointCertificate A B₀ F k N Q q ∧
+    x ∈ crossingAtomEndpoints A B₀ q ∧
+    blockIndex P x = i
+
+/-- If exact `k + 1` minimal certificates with a three-endpoint target occur
+beyond every threshold, their anchor blocks form an infinite set. -/
+theorem cofinalMinimalNearSharpThreeEndpointCertificates_force_infiniteAnchorBlocks
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ} {k : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hblockLower : ∀ i, k ≤ (F i).card)
+    (hk : 10 ≤ k)
+    (hcofinal : ∀ N, ∃ Q q,
+      IsMinimalNearSharpThreeEndpointCertificate A B₀ F k N Q q) :
+    {i | IsNearSharpThreeAnchorBlockIndex A B₀ P k i}.Infinite := by
+  classical
+  let Moving : Set ℕ :=
+    {i | IsNearSharpThreeAnchorBlockIndex A B₀ P k i}
+  change Moving.Infinite
+  apply Set.not_finite.mp
+  intro hMovingFinite
+  let J : Finset ℕ := hMovingFinite.toFinset
+  let N : ℕ := (J.biUnion F).sum id + 1
+  obtain ⟨Q, q, hnear⟩ := hcofinal N
+  obtain ⟨hqQ, hQcard, hQdata, hendpointCard,
+      hcert, hlocalized⟩ := hnear
+  have hQcross : ∀ t ∈ Q,
+      ∀ E ∈ additiveSupportFamily A 2 t,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧
+        ¬ (E : Set ℕ) ⊆ B₀ := by
+    intro t htQ
+    exact (hQdata t htQ).2
+  have hQlate : ∀ t ∈ Q, (J.biUnion F).sum id + 1 ≤ t := by
+    intro t htQ
+    simpa [N] using (hQdata t htQ).1
+  obtain ⟨x, hxEndpoint, hxFresh⟩ :=
+    minimalCrossingEndpointTripleCertificate_threeEndpoint_forces_freshAnchorBlock
+      P hblockLower hQcross hcert hlocalized hk hqQ hQcard
+        hendpointCard J hQlate
+  let i : ℕ := blockIndex P x
+  have hiMoving : i ∈ Moving := by
+    change IsNearSharpThreeAnchorBlockIndex A B₀ P k i
+    exact ⟨N, Q, q, x,
+      ⟨hqQ, hQcard, hQdata, hendpointCard, hcert, hlocalized⟩,
+      hxEndpoint, rfl⟩
+  have hiJ : i ∈ J := hMovingFinite.mem_toFinset.mpr hiMoving
+  exact hxFresh hiJ
+
+/-- Infinitely many migrating near-sharp anchor blocks lift to an actual
+infinite subset of `B₀`, choosing the endpoint witness carried by each block.
+Distinct block indices force the chosen endpoints to be distinct. -/
+theorem infiniteNearSharpThreeAnchorBlocks_give_infiniteEndpointSet
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ} {k : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hMoving :
+      {i | IsNearSharpThreeAnchorBlockIndex A B₀ P k i}.Infinite) :
+    ∃ L, L ⊆ B₀ ∧ L.Infinite ∧
+      ∀ x ∈ L, ∃ N Q q,
+        IsMinimalNearSharpThreeEndpointCertificate
+          A B₀ F k N Q q ∧
+        x ∈ crossingAtomEndpoints A B₀ q := by
+  classical
+  let Moving : Set ℕ :=
+    {i | IsNearSharpThreeAnchorBlockIndex A B₀ P k i}
+  have hMoving' : Moving.Infinite := by
+    simpa [Moving] using hMoving
+  have hwitness : ∀ i, i ∈ Moving → ∃ x N Q q,
+      x ∈ B₀ ∧
+      blockIndex P x = i ∧
+      IsMinimalNearSharpThreeEndpointCertificate
+        A B₀ F k N Q q ∧
+      x ∈ crossingAtomEndpoints A B₀ q := by
+    intro i hiMoving
+    change IsNearSharpThreeAnchorBlockIndex A B₀ P k i at hiMoving
+    obtain ⟨N, Q, q, x, hnear, hxEndpoint, hindex⟩ := hiMoving
+    have hxB₀ : x ∈ B₀ :=
+      (mem_crossingAtomEndpoints_iff.mp hxEndpoint).2.1
+    exact ⟨x, N, Q, q, hxB₀, hindex, hnear, hxEndpoint⟩
+  choose point N Q q hpointB₀ hpointIndex hnear hpointEndpoint using
+    hwitness
+  let pick : ℕ → ℕ := fun i =>
+    if hi : i ∈ Moving then point i hi else 0
+  have hpickB₀ : ∀ i ∈ Moving, pick i ∈ B₀ := by
+    intro i hi
+    simpa [pick, hi] using hpointB₀ i hi
+  have hpickIndex : ∀ i ∈ Moving, blockIndex P (pick i) = i := by
+    intro i hi
+    simpa [pick, hi] using hpointIndex i hi
+  have hpickInj : Set.InjOn pick Moving := by
+    intro i hi j hj hpickEq
+    calc
+      i = blockIndex P (pick i) := (hpickIndex i hi).symm
+      _ = blockIndex P (pick j) := by rw [hpickEq]
+      _ = j := hpickIndex j hj
+  let L : Set ℕ := pick '' Moving
+  have hL : L.Infinite := hMoving'.image hpickInj
+  have hLB₀ : L ⊆ B₀ := by
+    rintro x ⟨i, hiMoving, rfl⟩
+    exact hpickB₀ i hiMoving
+  refine ⟨L, hLB₀, hL, ?_⟩
+  rintro x ⟨i, hiMoving, rfl⟩
+  refine ⟨N i hiMoving, Q i hiMoving, q i hiMoving,
+    hnear i hiMoving, ?_⟩
+  simpa [pick, hiMoving] using hpointEndpoint i hiMoving
 
 /-- The analogous two-endpoint consequence: at least half of the available
 `k - 2` occupancy must be paid for by aligned other targets. -/
