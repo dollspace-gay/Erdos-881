@@ -4901,6 +4901,262 @@ theorem criticalGoodPrefix_has_late_markedMinimalDestroyers
   exact ⟨q, hqN, hno, T, S, hTC, hTP, hTnonempty,
     hTcard, hdestroy, hSsub, hbS, hSminimal, htri⟩
 
+/-- Packaged data carried by one marked critical minimal destroyer. -/
+def IsCriticalMarkedMinimalDestroyerData
+    (A C : Set ℕ) (D : Finset ℕ)
+    (b q : ℕ) (T S : Finset ℕ) : Prop :=
+  b ≤ q ∧
+  NoTwoRepairsOnDeletionReservoirAt A C (insert b D) q ∧
+  (∀ x ∈ T, x ∈ C) ∧
+  Disjoint T (insert b D) ∧
+  T.Nonempty ∧ T.card ≤ 3 ∧
+  DestroysAt (additiveSupportFamily A 3)
+    (((((insert b D) ∪ T : Finset ℕ) : Set ℕ))) q ∧
+  S ⊆ (insert b D) ∪ T ∧ b ∈ S ∧
+  IsInclusionMinimalDestroyer
+    (additiveSupportFamily A 3) S q ∧
+  (S.card ≤ 3 ∨
+    HasTwoDisjointUniqueHitRepairs
+      (additiveSupportFamily A 3) S q ∨
+    (4 ≤ S.card ∧ HasCommonAnchorOrderThreeRepairs A S q))
+
+/-- Choose one packaged marked minimal destroyer above any prescribed lower
+bound. -/
+theorem criticalGoodPrefix_exists_markedMinimalDestroyerData
+    {A C : Set ℕ} {D : Finset ℕ} {b N : ℕ}
+    (hDC : (D : Set ℕ) ⊆ C)
+    (hbC : b ∈ C) (hbD : b ∉ D)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D)
+    (hbad : IsRecurrentNoTwoRepairPrefix A C (insert b D)) :
+    ∃ q T S, N ≤ q ∧
+      IsCriticalMarkedMinimalDestroyerData A C D b q T S := by
+  obtain ⟨q, hqN, hno, T, S, hTC, hTP, hTnonempty,
+      hTcard, hdestroy, hSsub, hbS, hSminimal, htri⟩ :=
+    criticalGoodPrefix_has_late_markedMinimalDestroyers
+      hDC hbC hbD hgood hbad (max N b)
+  refine ⟨q, T, S, (le_max_left N b).trans hqN, ?_⟩
+  exact ⟨(le_max_right N b).trans hqN, hno, hTC, hTP,
+    hTnonempty, hTcard, hdestroy, hSsub, hbS, hSminimal, htri⟩
+
+/-- Sunflower normal form of the critical marked family.  After discarding
+the fixed prefix and a finite initial segment, choose one late marked minimal
+destroyer for every remaining reservoir point.  Uniform boundedness by
+`D.card + 4` gives an infinite delta-system thinning.  Removing the finite
+root from the index set ensures that every marked point lies in its own
+nonempty petal, and the petals are pairwise disjoint. -/
+theorem criticalGoodPrefix_has_infiniteMarkedMinimalDestroyerSunflower
+    {A C : Set ℕ} {D : Finset ℕ} {T₀ : ℕ}
+    (hC : C.Infinite)
+    (hDC : (D : Set ℕ) ⊆ C)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D)
+    (hcritical : ∀ b, b ∈ C → b ∉ D → T₀ ≤ b →
+      IsRecurrentNoTwoRepairPrefix A C (insert b D)) :
+    ∃ L, L ⊆ C ∧ L.Infinite ∧
+      ∃ R : Finset ℕ, ∃ target : ℕ → ℕ,
+      ∃ moving core : ℕ → Finset ℕ,
+        (∀ b ∈ L,
+          IsCriticalMarkedMinimalDestroyerData
+            A C D b (target b) (moving b) (core b)) ∧
+        (target '' L).Infinite ∧
+        Set.InjOn target L ∧
+        (∀ b ∈ L, b ∈ core b \ R) ∧
+        ∀ b ∈ L, ∀ d ∈ L, b ≠ d →
+          core b ∩ core d = R ∧
+          Disjoint (core b \ R) (core d \ R) := by
+  classical
+  let excluded : Set ℕ := (D : Set ℕ) ∪ Set.Iio T₀
+  have hexcluded : excluded.Finite :=
+    D.finite_toSet.union (Set.finite_Iio T₀)
+  let K : Set ℕ := C \ excluded
+  have hK : K.Infinite := hC.diff hexcluded
+  have hKC : K ⊆ C := Set.diff_subset
+  have hchoice : ∀ b : K, ∃ q T S,
+      IsCriticalMarkedMinimalDestroyerData
+        A C D b.1 q T S := by
+    intro b
+    have hbExcluded : b.1 ∉ excluded := b.2.2
+    have hbD : b.1 ∉ D := fun hbD =>
+      hbExcluded (Or.inl (Finset.mem_coe.mpr hbD))
+    have hbT₀ : T₀ ≤ b.1 := by
+      exact Nat.le_of_not_gt fun hbLt => hbExcluded (Or.inr hbLt)
+    obtain ⟨q, T, S, _hqZero, hdata⟩ :=
+      criticalGoodPrefix_exists_markedMinimalDestroyerData
+        hDC (hKC b.2) hbD hgood
+          (hcritical b.1 (hKC b.2) hbD hbT₀)
+          (N := 0)
+    exact ⟨q, T, S, hdata⟩
+  choose chosenTarget chosenMoving chosenCore hchosen using hchoice
+  let target : ℕ → ℕ := fun b =>
+    if hb : b ∈ K then chosenTarget ⟨b, hb⟩ else 0
+  let moving : ℕ → Finset ℕ := fun b =>
+    if hb : b ∈ K then chosenMoving ⟨b, hb⟩ else ∅
+  let core : ℕ → Finset ℕ := fun b =>
+    if hb : b ∈ K then chosenCore ⟨b, hb⟩ else ∅
+  have hdataK : ∀ b ∈ K,
+      IsCriticalMarkedMinimalDestroyerData
+        A C D b (target b) (moving b) (core b) := by
+    intro b hbK
+    simpa [target, moving, core, hbK] using hchosen ⟨b, hbK⟩
+  have hcoreCard : ∀ b ∈ K, (core b).card ≤ D.card + 4 := by
+    intro b hbK
+    rcases hdataK b hbK with ⟨_hbTarget, _hno, _hmovingC,
+      _hmovingDisjoint, _hmovingNonempty, hmovingCard,
+      _hprefixDestroy, hcoreSub, _hbCore, _hminimal, _htri⟩
+    calc
+      (core b).card ≤ ((insert b D) ∪ moving b).card :=
+        Finset.card_le_card hcoreSub
+      _ ≤ (insert b D).card + (moving b).card :=
+        Finset.card_union_le _ _
+      _ ≤ (D.card + 1) + 3 :=
+        Nat.add_le_add (Finset.card_insert_le b D) hmovingCard
+      _ = D.card + 4 := by omega
+  obtain ⟨L₀, hL₀K, hL₀, R, hdelta⟩ :=
+    exists_infinite_deltaSystem_of_bounded_pointMap
+      hK core (D.card + 4) hcoreCard
+  let L : Set ℕ := L₀ \ (R : Set ℕ)
+  have hLL₀ : L ⊆ L₀ := Set.diff_subset
+  have hL : L.Infinite := hL₀.diff R.finite_toSet
+  have hLC : L ⊆ C := hLL₀.trans (hL₀K.trans hKC)
+  have hdataL : ∀ b ∈ L,
+      IsCriticalMarkedMinimalDestroyerData
+        A C D b (target b) (moving b) (core b) := by
+    intro b hbL
+    exact hdataK b (hL₀K (hLL₀ hbL))
+  have hmarkedPetal : ∀ b ∈ L, b ∈ core b \ R := by
+    intro b hbL
+    have hbCore := (hdataL b hbL).2.2.2.2.2.2.2.2.1
+    exact Finset.mem_sdiff.mpr
+      ⟨hbCore, by simpa using hbL.2⟩
+  have htargetInfinite : (target '' L).Infinite := by
+    apply Set.not_finite.mp
+    intro hfinite
+    obtain ⟨U, hU⟩ := hfinite.bddAbove
+    apply hL
+    apply (Set.finite_Iic U).subset
+    intro b hbL
+    have hbTarget : b ≤ target b := (hdataL b hbL).1
+    exact hbTarget.trans (hU ⟨b, hbL, rfl⟩)
+  obtain ⟨J, hJL, htargetBij⟩ :=
+    Set.exists_subset_bijOn L target
+  have hJ : J.Infinite := by
+    intro hJfinite
+    apply htargetInfinite
+    rw [← htargetBij.image_eq]
+    exact hJfinite.image target
+  have hJC : J ⊆ C := hJL.trans hLC
+  have hdataJ : ∀ b ∈ J,
+      IsCriticalMarkedMinimalDestroyerData
+        A C D b (target b) (moving b) (core b) :=
+    fun b hb => hdataL b (hJL hb)
+  have htargetJ : (target '' J).Infinite := by
+    rw [htargetBij.image_eq]
+    exact htargetInfinite
+  have hmarkedJ : ∀ b ∈ J, b ∈ core b \ R :=
+    fun b hb => hmarkedPetal b (hJL hb)
+  refine ⟨J, hJC, hJ, R, target, moving, core,
+    hdataJ, htargetJ, htargetBij.injOn, hmarkedJ, ?_⟩
+  intro b hbJ d hdJ hbd
+  have hinter : core b ∩ core d = R :=
+    hdelta b (hLL₀ (hJL hbJ)) d (hLL₀ (hJL hdJ)) hbd
+  refine ⟨hinter, ?_⟩
+  rw [Finset.disjoint_left]
+  intro x hxb hxd
+  have hxInter : x ∈ core b ∩ core d :=
+    Finset.mem_inter.mpr
+      ⟨(Finset.mem_sdiff.mp hxb).1,
+        (Finset.mem_sdiff.mp hxd).1⟩
+  rw [hinter] at hxInter
+  exact (Finset.mem_sdiff.mp hxb).2 hxInter
+
+/-- The three alternatives in a marked minimal-destroyer family can be made
+uniform on an infinite subfamily. -/
+theorem exists_infinite_uniformCriticalMarkedDestroyerType
+    {A C L : Set ℕ} {D : Finset ℕ}
+    {target : ℕ → ℕ} {moving core : ℕ → Finset ℕ}
+    (hL : L.Infinite)
+    (hdata : ∀ b ∈ L,
+      IsCriticalMarkedMinimalDestroyerData
+        A C D b (target b) (moving b) (core b)) :
+    (∃ K, K ⊆ L ∧ K.Infinite ∧
+      ∀ b ∈ K, (core b).card ≤ 3) ∨
+    (∃ K, K ⊆ L ∧ K.Infinite ∧
+      ∀ b ∈ K,
+        HasTwoDisjointUniqueHitRepairs
+          (additiveSupportFamily A 3) (core b) (target b)) ∨
+    ∃ K, K ⊆ L ∧ K.Infinite ∧
+      ∀ b ∈ K, 4 ≤ (core b).card ∧
+        HasCommonAnchorOrderThreeRepairs
+          A (core b) (target b) := by
+  let Small : Set ℕ := {b | b ∈ L ∧ (core b).card ≤ 3}
+  let DisjointRepair : Set ℕ := {b | b ∈ L ∧
+    HasTwoDisjointUniqueHitRepairs
+      (additiveSupportFamily A 3) (core b) (target b)}
+  let CommonAnchor : Set ℕ := {b | b ∈ L ∧
+    4 ≤ (core b).card ∧
+      HasCommonAnchorOrderThreeRepairs
+        A (core b) (target b)}
+  by_cases hSmall : Small.Infinite
+  · left
+    exact ⟨Small, fun _ hb => hb.1, hSmall, fun _ hb => hb.2⟩
+  · right
+    by_cases hDisjoint : DisjointRepair.Infinite
+    · left
+      exact ⟨DisjointRepair, fun _ hb => hb.1, hDisjoint,
+        fun _ hb => hb.2⟩
+    · right
+      by_cases hAnchor : CommonAnchor.Infinite
+      · exact ⟨CommonAnchor, fun _ hb => hb.1, hAnchor,
+          fun _ hb => hb.2⟩
+      · exfalso
+        have hfinite :
+            (Small ∪ DisjointRepair ∪ CommonAnchor).Finite :=
+          ((Set.not_infinite.mp hSmall).union
+            (Set.not_infinite.mp hDisjoint)).union
+              (Set.not_infinite.mp hAnchor)
+        apply hL
+        apply hfinite.subset
+        intro b hbL
+        obtain hsmall | hdisjoint | hanchor :=
+          (hdata b hbL).2.2.2.2.2.2.2.2.2.2
+        · exact Or.inl (Or.inl ⟨hbL, hsmall⟩)
+        · exact Or.inl (Or.inr ⟨hbL, hdisjoint⟩)
+        · exact Or.inr ⟨hbL, hanchor⟩
+
+/-- In the uniform small branch of a marked delta system, the fixed root has
+at most two vertices.  Every core contains the root and also its own marked
+point outside the root, while the whole core has size at most three. -/
+theorem markedSmallCoreDeltaSystem_root_card_le_two
+    {L : Set ℕ} {R : Finset ℕ} {core : ℕ → Finset ℕ}
+    (hL : L.Infinite)
+    (hmarked : ∀ b ∈ L, b ∈ core b \ R)
+    (hdelta : ∀ b ∈ L, ∀ d ∈ L, b ≠ d →
+      core b ∩ core d = R)
+    (hsmall : ∀ b ∈ L, (core b).card ≤ 3) :
+    R.card ≤ 2 := by
+  classical
+  obtain ⟨b, hbL⟩ := hL.nonempty
+  obtain ⟨d, hdL, hbd⟩ := hL.exists_gt b
+  have hbdNe : b ≠ d := Nat.ne_of_lt hbd
+  have hRsub : R ⊆ core b := by
+    intro x hxR
+    rw [← hdelta b hbL d hdL hbdNe] at hxR
+    exact (Finset.mem_inter.mp hxR).1
+  have hinsertSub : insert b R ⊆ core b := by
+    intro x hx
+    rcases Finset.mem_insert.mp hx with hxb | hxR
+    · subst x
+      exact (Finset.mem_sdiff.mp (hmarked b hbL)).1
+    · exact hRsub hxR
+  have hcard : (insert b R).card ≤ (core b).card :=
+    Finset.card_le_card hinsertSub
+  have hbR : b ∉ R :=
+    (Finset.mem_sdiff.mp (hmarked b hbL)).2
+  rw [Finset.card_insert_of_notMem hbR] at hcard
+  have hcoreSmall := hsmall b hbL
+  omega
+
 /-- Every point of a minimal no-two-repair prefix lies in a genuine minimal
 destroyer obtained by adjoining at most three fresh reservoir vertices.  The
 unique-hit support at `d` avoids the moving trace paired with it, so any
