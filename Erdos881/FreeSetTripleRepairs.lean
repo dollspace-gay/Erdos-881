@@ -4495,7 +4495,15 @@ theorem repairedZeroAtomReservoir_counterexample_forces_freshAlmostCoveredEndpoi
         (∀ E ∈ additiveSupportFamily A 2 q,
           ¬ Disjoint (E : Set ℕ) B ∧
             ¬ (E : Set ℕ) ⊆ B) ∧
-        ((crossingAtomEndpoints A B q) \ D).card ≤ 1 := by
+        (crossingAtomEndpoints A B q : Set ℕ) ⊆
+          B \ (F : Set ℕ) ∧
+        ((crossingAtomEndpoints A B q) \ D).card ≤ 1 ∧
+        (((crossingAtomEndpoints A B q : Finset ℕ) : Set ℕ) ⊆
+            (D : Set ℕ) ∨
+          ∃ b, b ∈ crossingAtomEndpoints A B q ∧ b ∉ D ∧
+            crossingAtomEndpoints A B q \ D = {b} ∧
+            DestroysAt (additiveSupportFamily A 3)
+              (((insert b D : Finset ℕ) : Set ℕ)) q) := by
   classical
   intro F
   let C : Set ℕ := B \ (F : Set ℕ)
@@ -4530,11 +4538,181 @@ theorem repairedZeroAtomReservoir_counterexample_forces_freshAlmostCoveredEndpoi
     crossingEndpointsOutsidePrefix_card_le_one_of_no_twoRepairs
       hzeroA (fun hzeroC => hzeroB (hCB hzeroC))
         hCA hDC hno
+  have hshape :=
+    crossingEndpoints_subset_prefix_or_uniqueDestroyerExtension
+      hzeroA (fun hzeroC => hzeroB (hCB hzeroC))
+        hCA hDC hno
   rw [hendpointEq] at hcard
-  refine ⟨q, hqN, ?_, hcard⟩
+  rw [hendpointEq] at hshape
+  have hendpointC :
+      (crossingAtomEndpoints A B q : Set ℕ) ⊆ C := by
+    intro b hb
+    rw [← hendpointEq] at hb
+    exact (mem_crossingAtomEndpoints_iff.mp
+      (Finset.mem_coe.mp hb)).2.1
+  refine ⟨q, hqN, ?_, hendpointC, hcard, hshape⟩
   intro E hER
   have hE := hstrict E hER
   exact ⟨fun hEB => hE.1 (hEB.mono_right hCB), hE.2⟩
+
+/-- After retaining the finite exceptional set of possible recurrent
+singleton order-three destroyers, the hereditary obstruction above has a
+nonempty fresh core.  If the core were empty, every late bad target would
+have one crossing endpoint and that endpoint alone would destroy the target.
+An infinite endpoint range is the private-singleton branch already ruled out
+by the cross-center theorem; a finite range gives one recurrent singleton
+destroyer outside the retained exceptional set. -/
+theorem repairedZeroAtomReservoir_counterexample_forces_nonemptyFreshCore_of_privateEndpointClosure
+    {A B : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A) (hzeroB : 0 ∉ B)
+    (hBA : B ⊆ A) (hB : B.Infinite)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B)
+    (hprivateDone : ∀ L, L ⊆ B → L.Infinite →
+      (∀ x ∈ L, ∃ q,
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B ∧
+            ¬ (E : Set ℕ) ⊆ B) ∧
+        crossingAtomEndpoints A B q = {x} ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ({x} : Set ℕ) q) →
+      ∃ X, X ⊆ A ∧ X.Infinite ∧
+        IsExactTupleAsymptoticBasis (A \ X) 3)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ F D : Finset ℕ,
+      (D : Set ℕ) ⊆ B \ (F : Set ℕ) ∧ D.Nonempty ∧
+      ∀ N, ∃ q, N ≤ q ∧
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B ∧
+            ¬ (E : Set ℕ) ⊆ B) ∧
+        (crossingAtomEndpoints A B q : Set ℕ) ⊆
+          B \ (F : Set ℕ) ∧
+        ((crossingAtomEndpoints A B q) \ D).card ≤ 1 ∧
+        (((crossingAtomEndpoints A B q : Finset ℕ) : Set ℕ) ⊆
+            (D : Set ℕ) ∨
+          ∃ b, b ∈ crossingAtomEndpoints A B q ∧ b ∉ D ∧
+            crossingAtomEndpoints A B q \ D = {b} ∧
+            DestroysAt (additiveSupportFamily A 3)
+              (((insert b D : Finset ℕ) : Set ℕ)) q) := by
+  classical
+  let Bad : Set ℕ := {a | a ∈ A ∧ ∀ N, ∃ n, N ≤ n ∧
+    DestroysAt (additiveSupportFamily A 3) ({a} : Set ℕ) n}
+  have hBad : Bad.Finite := by
+    simpa [Bad] using
+      finite_arbitrarilyLateSingletonDestruction_orderThree hbasis
+  let F : Finset ℕ := hBad.toFinset
+  obtain ⟨D, hDfresh, hrec⟩ :=
+    repairedZeroAtomReservoir_counterexample_forces_freshAlmostCoveredEndpoints
+      hzeroA hzeroB hBA hB hrepairs hcounter F
+  refine ⟨F, D, hDfresh, ?_, hrec⟩
+  by_contra hD
+  rw [Finset.not_nonempty_iff_eq_empty] at hD
+  subst D
+  obtain ⟨N₂, hN₂⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  let Good : ℕ → Prop := fun q =>
+    (∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) B ∧
+        ¬ (E : Set ℕ) ⊆ B) ∧
+    (crossingAtomEndpoints A B q : Set ℕ) ⊆
+      B \ (F : Set ℕ) ∧
+    ((crossingAtomEndpoints A B q) \ ∅).card ≤ 1 ∧
+    (((crossingAtomEndpoints A B q : Finset ℕ) : Set ℕ) ⊆
+        ((∅ : Finset ℕ) : Set ℕ) ∨
+      ∃ b, b ∈ crossingAtomEndpoints A B q ∧ b ∉ (∅ : Finset ℕ) ∧
+        crossingAtomEndpoints A B q \ ∅ = {b} ∧
+        DestroysAt (additiveSupportFamily A 3)
+          (((insert b ∅ : Finset ℕ) : Set ℕ)) q)
+  let T : Set ℕ := {q | N₂ ≤ q ∧ Good q}
+  have hT : T.Infinite := by
+    apply Set.infinite_of_forall_exists_gt
+    intro n
+    obtain ⟨q, hq, hcross, hqFresh, hcard, hshape⟩ :=
+      hrec (max N₂ (n + 1))
+    refine ⟨q, ?_, by omega⟩
+    exact ⟨(le_max_left N₂ (n + 1)).trans hq,
+      hcross, hqFresh, hcard, hshape⟩
+  have hchoice : ∀ q : T, ∃ b,
+      b ∈ B ∧ b ∉ F ∧
+      crossingAtomEndpoints A B q.1 = {b} ∧
+      DestroysAt (additiveSupportFamily A 3)
+        ({b} : Set ℕ) q.1 := by
+    intro q
+    have hgood : Good q.1 := q.2.2
+    obtain ⟨E, hER, _hEempty⟩ := hN₂ q.1 q.2.1
+    obtain ⟨b₀, hb₀B, c₀, hc₀C, hb₀c₀, _hEeq⟩ :=
+      exists_endpoints_of_crossingPairSupport hER
+        (hgood.1 E hER).1 (hgood.1 E hER).2
+    have hb₀le : b₀ ≤ q.1 := by omega
+    have hsub : q.1 - b₀ = c₀ := by omega
+    have hb₀Endpoint : b₀ ∈ crossingAtomEndpoints A B q.1 :=
+      mem_crossingAtomEndpoints_iff.mpr
+        ⟨hb₀le, hb₀B, hsub ▸ hc₀C⟩
+    obtain hcontained | ⟨b, hbEndpoint, _hbEmpty,
+        hendpointEq, hdestroy⟩ := hgood.2.2.2
+    · exfalso
+      simpa using hcontained (Finset.mem_coe.mpr hb₀Endpoint)
+    · have hbFresh := hgood.2.1 (Finset.mem_coe.mpr hbEndpoint)
+      refine ⟨b, hbFresh.1, hbFresh.2, ?_, ?_⟩
+      · simpa using hendpointEq
+      · simpa using hdestroy
+  choose endpoint hendpoint using hchoice
+  let L : Set ℕ := Set.range endpoint
+  by_cases hL : L.Infinite
+  · have hLB : L ⊆ B := by
+      rintro b ⟨q, rfl⟩
+      exact (hendpoint q).1
+    have hprivate : ∀ b ∈ L, ∃ q,
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B ∧
+            ¬ (E : Set ℕ) ⊆ B) ∧
+        crossingAtomEndpoints A B q = {b} ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ({b} : Set ℕ) q := by
+      intro b hbL
+      obtain ⟨q, rfl⟩ := hbL
+      exact ⟨q.1, (q.2.2).1, (hendpoint q).2.2.1,
+        (hendpoint q).2.2.2⟩
+    obtain ⟨X, hXA, hX, hthree⟩ :=
+      hprivateDone L hLB hL hprivate
+    exact (hcounter X hXA hX hthree).elim
+  · have hLfinite : L.Finite := Set.not_infinite.mp hL
+    letI : Infinite T := hT.to_subtype
+    have hinfiniteFiber : ∃ b,
+        {q : T | endpoint q = b}.Infinite := by
+      by_contra hnoFiber
+      have hallFinite : ∀ b,
+          {q : T | endpoint q = b}.Finite := by
+        intro b
+        apply Set.not_infinite.mp
+        intro hbInfinite
+        exact hnoFiber ⟨b, hbInfinite⟩
+      have hunivFinite : (Set.univ : Set T).Finite := by
+        apply Set.Finite.of_finite_fibers endpoint
+          (by simpa [L] using hLfinite)
+        intro b _hbRange
+        simpa using hallFinite b
+      exact Set.infinite_univ hunivFinite
+    obtain ⟨b, hbFiber⟩ := hinfiniteFiber
+    obtain ⟨q₀, hq₀Fiber⟩ := hbFiber.nonempty
+    have hq₀Eq : endpoint q₀ = b := by simpa using hq₀Fiber
+    have hbB : b ∈ B := hq₀Eq ▸ (hendpoint q₀).1
+    have hbF : b ∉ F := hq₀Eq ▸ (hendpoint q₀).2.1
+    have hvalueInfinite :
+        (Subtype.val '' {q : T | endpoint q = b}).Infinite := by
+      apply (Set.infinite_image_iff
+        (Set.injOn_of_injective Subtype.val_injective)).mpr
+      exact hbFiber
+    have hbBad : b ∈ Bad := by
+      refine ⟨hBA hbB, ?_⟩
+      intro N
+      obtain ⟨q, hqValue, hqLarge⟩ := hvalueInfinite.exists_gt N
+      obtain ⟨qT, hqFiber, rfl⟩ := hqValue
+      have hqEq : endpoint qT = b := by simpa using hqFiber
+      refine ⟨qT.1, Nat.le_of_lt hqLarge, ?_⟩
+      simpa [hqEq] using (hendpoint qT).2.2.2
+    exact hbF (hBad.mem_toFinset.mpr hbBad)
 
 /-! ## The crossing-endpoint thinning bridge -/
 
@@ -14498,6 +14676,44 @@ theorem HasInfinitePrivateSingletonCrossingEndpoints.exists_infiniteDeletion_thr
       subst x
       exact hGpair hxG (by simp)
     exact (((htarget bL).2.2.1 G hGR) hGsingle).elim
+
+/-- Concrete nonempty-core consequence of the hereditary two-repair
+obstruction.  The abstract private-endpoint closure hypothesis used earlier
+is discharged by the aligned-center deletion theorem above. -/
+theorem repairedZeroAtomReservoir_counterexample_forces_nonemptyFreshCore
+    {A B : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A) (hzeroB : 0 ∉ B)
+    (hBA : B ⊆ A) (hB : B.Infinite)
+    (hnormal : ∀ x ∈ B,
+      ∀ E ∈ additiveSupportFamily A 2 x, E = {x, 0})
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ F D : Finset ℕ,
+      (D : Set ℕ) ⊆ B \ (F : Set ℕ) ∧ D.Nonempty ∧
+      ∀ N, ∃ q, N ≤ q ∧
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B ∧
+            ¬ (E : Set ℕ) ⊆ B) ∧
+        (crossingAtomEndpoints A B q : Set ℕ) ⊆
+          B \ (F : Set ℕ) ∧
+        ((crossingAtomEndpoints A B q) \ D).card ≤ 1 ∧
+        (((crossingAtomEndpoints A B q : Finset ℕ) : Set ℕ) ⊆
+            (D : Set ℕ) ∨
+          ∃ b, b ∈ crossingAtomEndpoints A B q ∧ b ∉ D ∧
+            crossingAtomEndpoints A B q \ D = {b} ∧
+            DestroysAt (additiveSupportFamily A 3)
+              (((insert b D : Finset ℕ) : Set ℕ)) q) := by
+  apply
+    repairedZeroAtomReservoir_counterexample_forces_nonemptyFreshCore_of_privateEndpointClosure
+      hbasis hzeroA hzeroB hBA hB hrepairs
+  · intro L hLB hL hdata
+    let hprivate : HasInfinitePrivateSingletonCrossingEndpoints A B :=
+      ⟨L, hLB, hL, hdata⟩
+    exact hprivate.exists_infiniteDeletion_threeBasis
+      hbasis hzeroA hBA hnormal
+  · exact hcounter
 
 /-- Feed the fresh complement-center reservoir back into the original
 splittable-deletion dichotomy.  Thus the private-singleton branch either
