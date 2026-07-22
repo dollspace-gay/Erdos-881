@@ -12396,6 +12396,145 @@ theorem HasInfinitePrivateSingletonCrossingEndpoints.exists_rigidParametrization
   exact ⟨(htarget b).2.1, (htarget b).2.2.1,
     (htarget b).2.2.2.1, (htarget b).2.2.2.2⟩
 
+/-- The reflection centers of an infinite private-singleton endpoint system
+form a fresh infinite reservoir in the opposite color: every center belongs
+to `A \ B₀`. -/
+theorem HasInfinitePrivateSingletonCrossingEndpoints.exists_infiniteComplementCenterSet
+    {A B₀ : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hB₀A : B₀ ⊆ A)
+    (h : HasInfinitePrivateSingletonCrossingEndpoints A B₀) :
+    ∃ K, K ⊆ A \ B₀ ∧ K.Infinite := by
+  obtain ⟨L, _hLB₀, _hL, target, htarget,
+      _hgrow, hcenterInfinite⟩ :=
+    h.exists_rigidParametrization hbasis hB₀A
+  let K : Set ℕ :=
+    Set.range fun b : L => target b - b.1
+  have hKComplement : K ⊆ A \ B₀ := by
+    rintro c ⟨b, rfl⟩
+    have hbEndpoint :
+        b.1 ∈ crossingAtomEndpoints A B₀ (target b) := by
+      rw [(htarget b).2.1]
+      simp
+    exact (mem_crossingAtomEndpoints_iff.mp hbEndpoint).2.2
+  exact ⟨K, hKComplement, hcenterInfinite⟩
+
+/-- Feed the fresh complement-center reservoir back into the original
+splittable-deletion dichotomy.  Thus the private-singleton branch either
+already produces an infinite set of centers whose elements split outside
+the deletion, or it forces a second infinite zero-atomic reservoir disjoint
+from the first one. -/
+theorem HasInfinitePrivateSingletonCrossingEndpoints.complementCenters_split_or_zeroAtoms
+    {A B₀ : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hB₀A : B₀ ⊆ A)
+    (h : HasInfinitePrivateSingletonCrossingEndpoints A B₀) :
+    (∃ B, B ⊆ A \ B₀ ∧ B.Infinite ∧
+      DeletionSplitsIntoComplement A B) ∨
+    ∃ K, K ⊆ A \ B₀ ∧ K.Infinite ∧ 0 ∈ A ∧
+      ∀ a ∈ K, ∀ E ∈ additiveSupportFamily A 2 a,
+        E = {a, 0} := by
+  obtain ⟨K, hKComplement, hK⟩ :=
+    h.exists_infiniteComplementCenterSet hbasis hB₀A
+  obtain hsplittable | hatomic :=
+    infiniteDeletionSplits_or_infiniteZeroAtoms hbasis hK
+  · left
+    obtain ⟨B, hBK, hB, hsplit⟩ := hsplittable
+    exact ⟨B, hBK.trans hKComplement, hB, hsplit⟩
+  · right
+    obtain ⟨L, hLK, hL, hzeroA, hnormal⟩ := hatomic
+    exact ⟨L, hLK.trans hKComplement, hL, hzeroA, hnormal⟩
+
+/-- Constructive continuation of the center path.  In the splittable-center
+branch, remove zero and obtain a genuine self-basis deletion reservoir;
+the existing Ramsey bridge then either gives the desired order-three
+deletion or one of its two explicit rigid obstructions.  The only other
+outcome is a new zero-atomic reservoir disjoint from `B₀`. -/
+theorem HasInfinitePrivateSingletonCrossingEndpoints.complementCenters_give_deletion_or_rigid_or_disjointZeroAtoms
+    {A B₀ : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hB₀A : B₀ ⊆ A)
+    (h : HasInfinitePrivateSingletonCrossingEndpoints A B₀) :
+    (∃ D, D ⊆ A ∧ D.Infinite ∧
+      IsExactTupleAsymptoticBasis (A \ D) 3) ∨
+    (∃ B, B ⊆ A \ B₀ ∧ B.Infinite ∧
+      IsExactTupleAsymptoticBasisAlong (A \ B) 2 A ∧
+      ((rigidDoubleSet A B).Infinite ∨
+        ∃ K, K ⊆ B ∧ K.Infinite ∧
+          HasNoRigidDoubles A K ∧ IsPairwiseRigidSet A K)) ∨
+    ∃ K, K ⊆ A \ B₀ ∧ K.Infinite ∧
+      (∀ a ∈ K, ∀ E ∈ additiveSupportFamily A 2 a,
+        E = {a, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A K := by
+  obtain hsplittable | hatomic :=
+    h.complementCenters_split_or_zeroAtoms hbasis hB₀A
+  · obtain ⟨B, hBComplement, hB, hsplit⟩ := hsplittable
+    let B' : Set ℕ := B \ {0}
+    have hB'B : B' ⊆ B := Set.diff_subset
+    have hB' : B'.Infinite :=
+      hB.diff (Set.finite_singleton 0)
+    have hB'Complement : B' ⊆ A \ B₀ :=
+      hB'B.trans hBComplement
+    have hzeroB' : 0 ∉ B' := by
+      intro hzero
+      exact hzero.2 (by simp)
+    have hsplit' : DeletionSplitsIntoComplement A B' :=
+      hsplit.mono hB'B
+    have hself :
+        IsExactTupleAsymptoticBasisAlong (A \ B') 2 A :=
+      exactTwoBasisAlong_self_of_zero_and_deletedSplits
+        hzeroA hzeroB' hsplit'
+    obtain hdone | hdiag | hclique :=
+      infiniteDeletion_or_rigidObstruction_of_selfBasisReservoir
+        hbasis (fun x hx => (hB'Complement hx).1) hB' hself
+    · left
+      obtain ⟨D, hDB', hD, hthree⟩ := hdone
+      exact ⟨D, fun x hx => (hB'Complement (hDB' hx)).1,
+        hD, hthree⟩
+    · right; left
+      exact ⟨B', hB'Complement, hB', hself, Or.inl hdiag⟩
+    · right; left
+      obtain ⟨K, hKB', hK, hnoDoubles, hrigid⟩ := hclique
+      exact ⟨B', hB'Complement, hB', hself,
+        Or.inr ⟨K, hKB', hK, hnoDoubles, hrigid⟩⟩
+  · right; right
+    obtain ⟨K, hKComplement, hK, _hzero, hnormal⟩ := hatomic
+    obtain ⟨L, hLK, hL, hrepairs⟩ :=
+      exists_infinite_directRepairs_of_zeroAtoms hbasis hK hnormal
+    exact ⟨L, hLK.trans hKComplement, hL,
+      fun a ha E hER => hnormal a (hLK ha) E hER,
+      hrepairs⟩
+
+/-- Under the standing counterexample hypothesis, the successful center
+deletion is impossible.  Hence a private-singleton endpoint system forces
+either a rigid obstruction inside a splittable self-basis reservoir on the
+opposite side, or a disjoint repaired zero-atomic reservoir. -/
+theorem HasInfinitePrivateSingletonCrossingEndpoints.counterexample_forces_complementRigid_or_disjointRepairedZeroAtoms
+    {A B₀ : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hB₀A : B₀ ⊆ A)
+    (hcounter : ∀ D, D ⊆ A → D.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ D) 3)
+    (h : HasInfinitePrivateSingletonCrossingEndpoints A B₀) :
+    (∃ B, B ⊆ A \ B₀ ∧ B.Infinite ∧
+      IsExactTupleAsymptoticBasisAlong (A \ B) 2 A ∧
+      ((rigidDoubleSet A B).Infinite ∨
+        ∃ K, K ⊆ B ∧ K.Infinite ∧
+          HasNoRigidDoubles A K ∧ IsPairwiseRigidSet A K)) ∨
+    ∃ K, K ⊆ A \ B₀ ∧ K.Infinite ∧
+      (∀ a ∈ K, ∀ E ∈ additiveSupportFamily A 2 a,
+        E = {a, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A K := by
+  obtain hdone | hrigid | hatomic :=
+    h.complementCenters_give_deletion_or_rigid_or_disjointZeroAtoms
+      hbasis hzeroA hB₀A
+  · obtain ⟨D, hDA, hD, hthree⟩ := hdone
+    exact (hcounter D hDA hD hthree).elim
+  · exact Or.inl hrigid
+  · exact Or.inr hatomic
+
 /-- Lacunarity forced on any parametrized moving rigid-endpoint system.
 Take three sufficiently separated endpoints `u < v < w`.  Reflections at
 the targets of `v` and `w` translate both `0` and `u` by their positive
