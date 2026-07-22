@@ -8558,20 +8558,18 @@ theorem nearSharp_twoEndpointTripleCertificate_forces_almostCoreDestroyers
   exact (htargetDestroy G hGR) hGselected
 
 set_option maxHeartbeats 3000000 in
-/-- Exact `k + 2` certificates have only two units of target slack.  Choose
-one endpoint per target and match a covered core to `k` of them.  The two
-unmatched targets account for at most two exceptional endpoint positions;
-every other core point has a unique target, hence a singleton endpoint, and
-the strengthened selector argument makes it a singleton order-three
-destroyer. -/
-theorem exactTwoExcessCrossingEndpointTripleCertificate_forces_almostCoreDestroyers
+/-- An exact `k + d` certificate has `d` units of target slack.  If
+`d + 4 ≤ k`, matching a covered core to `k` targets leaves at most `d`
+exceptional endpoint positions.  Every other core point has a unique target,
+hence a singleton endpoint and a singleton order-three destroyer. -/
+theorem exactExcessCrossingEndpointTripleCertificate_forces_almostCoreDestroyers
     {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ}
-    {Q : Finset ℕ} {k : ℕ}
+    {Q : Finset ℕ} {k d : ℕ}
     (P : IsFiniteBlockPartition B₀ F)
     (hcore : ∀ i, cell i ⊆ F i)
     (hcellCard : ∀ i, (cell i).card = k)
-    (hk : 6 ≤ k)
-    (hQcard : Q.card = k + 2)
+    (hd : d + 4 ≤ k)
+    (hQcard : Q.card = k + d)
     (hendpoint : ∀ t ∈ Q,
       (crossingAtomEndpoints A B₀ t).Nonempty)
     (hcert : ∀ sel : BlockSelector F,
@@ -8583,7 +8581,7 @@ theorem exactTwoExcessCrossingEndpointTripleCertificate_forces_almostCoreDestroy
           selectedSet sel) :
     ∃ (Good : Finset ℕ) (target : ℕ → ℕ) (i : ℕ),
       Good ⊆ cell i ∧
-      k - 2 ≤ Good.card ∧
+      k - d ≤ Good.card ∧
       ∀ x ∈ Good,
         target x ∈ Q ∧
         crossingAtomEndpoints A B₀ (target x) = {x} ∧
@@ -8642,24 +8640,24 @@ theorem exactTwoExcessCrossingEndpointTripleCertificate_forces_almostCoreDestroy
       _ = k := hcellCard i
   have hUnusedIdentity : (Q \ Used).card + Used.card = Q.card :=
     Finset.card_sdiff_add_card_eq_card hUsedSub
-  have hUnusedCard : (Q \ Used).card = 2 := by
+  have hUnusedCard : (Q \ Used).card = d := by
     rw [hUsedCard, hQcard] at hUnusedIdentity
     omega
   let extraPoint : {t // t ∈ Q \ Used} → ℕ := fun t =>
     point ⟨t.1, (Finset.mem_sdiff.mp t.2).1⟩
   let Extra : Finset ℕ := (Q \ Used).attach.image extraPoint
-  have hExtraCard : Extra.card ≤ 2 := by
+  have hExtraCard : Extra.card ≤ d := by
     calc
       Extra.card ≤ (Q \ Used).attach.card := Finset.card_image_le
       _ = (Q \ Used).card := by simp
-      _ = 2 := hUnusedCard
+      _ = d := hUnusedCard
   let Good : Finset ℕ := cell i \ Extra
   have hGoodSub : Good ⊆ cell i := Finset.sdiff_subset
-  have hGoodCard : k - 2 ≤ Good.card := by
+  have hGoodCard : k - d ≤ Good.card := by
     have hbound := Finset.card_le_card_sdiff_add_card
       (s := cell i) (t := Extra)
     rw [hcellCard i] at hbound
-    change k - 2 ≤ (cell i \ Extra).card
+    change k - d ≤ (cell i \ Extra).card
     omega
   have hunique : ∀ x, x ∈ Good → ∀ r, ∀ hrQ : r ∈ Q,
       point ⟨r, hrQ⟩ = x → r = target x := by
@@ -8744,7 +8742,7 @@ theorem exactTwoExcessCrossingEndpointTripleCertificate_forces_almostCoreDestroy
   have hGcard : G.card ≤ 3 :=
     additiveSupportFamily_cardAtMost A 3 (target x) G hGR
   let Forbidden : Finset ℕ := G ∪ Extra
-  have hForbiddenCard : Forbidden.card ≤ 5 := by
+  have hForbiddenCard : Forbidden.card ≤ d + 3 := by
     have hunion := Finset.card_union_le G Extra
     dsimp only [Forbidden]
     omega
@@ -8846,6 +8844,35 @@ theorem exactTwoExcessCrossingEndpointTripleCertificate_forces_almostCoreDestroy
       (selectedSet sel) (target x) := by
     simpa [hrTarget] using hrDestroy
   exact (htargetDestroy G hGR) hGselected
+
+/-- Two-excess specialization of the general exact-excess theorem. -/
+theorem exactTwoExcessCrossingEndpointTripleCertificate_forces_almostCoreDestroyers
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {k : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 6 ≤ k)
+    (hQcard : Q.card = k + 2)
+    (hendpoint : ∀ t ∈ Q,
+      (crossingAtomEndpoints A B₀ t).Nonempty)
+    (hcert : ∀ sel : BlockSelector F,
+      (∀ i, (sel i).1 ∈ cell i) →
+      ∃ t ∈ Q,
+        DestroysAt (additiveSupportFamily A 3)
+          (selectedSet sel) t ∧
+        (crossingAtomEndpoints A B₀ t : Set ℕ) ⊆
+          selectedSet sel) :
+    ∃ (Good : Finset ℕ) (target : ℕ → ℕ) (i : ℕ),
+      Good ⊆ cell i ∧
+      k - 2 ≤ Good.card ∧
+      ∀ x ∈ Good,
+        target x ∈ Q ∧
+        crossingAtomEndpoints A B₀ (target x) = {x} ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ({x} : Set ℕ) (target x) := by
+  exact exactExcessCrossingEndpointTripleCertificate_forces_almostCoreDestroyers
+    P hcore hcellCard (d := 2) (by omega) hQcard hendpoint hcert
 
 set_option maxHeartbeats 3000000 in
 /-- The one-defect core cover still forces almost a whole core of genuine
@@ -9591,6 +9618,322 @@ theorem cofinalMinimalNearSharpDenseTwoCertificates_give_infiniteEndpointSet
   exact infiniteNearSharpDenseTwoCores_give_infiniteEndpointSet
     P hcore hk hMoving
 
+/-- Core-indexed package for an exact `k + d` minimal certificate. -/
+def IsExactExcessAlmostCoreCertificate
+    (A B₀ : Set ℕ) (F cell : ℕ → Finset ℕ)
+    (k d N i : ℕ) : Prop :=
+  ∃ Q Good : Finset ℕ, ∃ target : ℕ → ℕ,
+    IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+    Q.card = k + d ∧
+    Good ⊆ cell i ∧
+    k - d ≤ Good.card ∧
+    ∀ x ∈ Good,
+      target x ∈ Q ∧
+      crossingAtomEndpoints A B₀ (target x) = {x} ∧
+      DestroysAt (additiveSupportFamily A 3)
+        ({x} : Set ℕ) (target x)
+
+/-- Exact `k + d` data with nonempty endpoints gives the named almost-core
+package whenever `d + 4 ≤ k`. -/
+theorem exactExcessMinimalCertificate_gives_almostCoreCertificate
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {k d N : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hd : d + 4 ≤ k)
+    (hdata : IsMinimalStrictCrossingEndpointCertificateData
+      A B₀ F k N Q)
+    (hQcard : Q.card = k + d)
+    (hendpoint : ∀ t ∈ Q,
+      (crossingAtomEndpoints A B₀ t).Nonempty) :
+    ∃ i, IsExactExcessAlmostCoreCertificate
+      A B₀ F cell k d N i := by
+  rcases hdata with ⟨hstrict, hQdata, hcert, hlocalized,
+    hscaled, hrefined⟩
+  obtain ⟨Good, target, i, hGoodSub, hGoodCard, hGoodData⟩ :=
+    exactExcessCrossingEndpointTripleCertificate_forces_almostCoreDestroyers
+      P hcore hcellCard hd hQcard hendpoint
+        (fun sel _hsel => hcert sel)
+  refine ⟨i, Q, Good, target, ?_, hQcard, hGoodSub,
+    hGoodCard, hGoodData⟩
+  exact ⟨hstrict, hQdata, hcert, hlocalized, hscaled, hrefined⟩
+
+/-- Cofinal exact `k + d` certificates migrate through infinitely many
+cores whenever `d + 4 ≤ k`. -/
+theorem cofinalExactExcessMinimalCertificates_force_infiniteCores
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ} {k d : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hB₀A : B₀ ⊆ A)
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hd : d + 4 ≤ k)
+    (hcofinal : ∀ N, ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+      Q.card = k + d) :
+    {i | ∃ N, IsExactExcessAlmostCoreCertificate
+      A B₀ F cell k d N i}.Infinite := by
+  classical
+  obtain ⟨Nbasis, hNbasis⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  let Moving : Set ℕ := {i | ∃ N,
+    IsExactExcessAlmostCoreCertificate A B₀ F cell k d N i}
+  change Moving.Infinite
+  apply Set.not_finite.mp
+  intro hMovingFinite
+  let J : Finset ℕ := hMovingFinite.toFinset
+  have hcutoffExists : ∀ i, ∃ Ni, ∀ {Q Good : Finset ℕ}
+      (target : ℕ → ℕ),
+      (∀ t ∈ Q, Ni ≤ t) →
+      Good ⊆ cell i →
+      4 ≤ Good.card →
+      (∀ x ∈ Good,
+        target x ∈ Q ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ({x} : Set ℕ) (target x)) → False := by
+    intro i
+    exact eventually_no_nearSharpSingletonAlmostCoreDestroyers_on_fixedCore
+      hbasis hB₀A P hcore
+  choose cutoff hcutoff using hcutoffExists
+  let T : ℕ := J.sup cutoff
+  let N : ℕ := max Nbasis T
+  obtain ⟨Q, hdata, hQcard⟩ := hcofinal N
+  have hendpoint : ∀ t ∈ Q,
+      (crossingAtomEndpoints A B₀ t).Nonempty := by
+    intro t htQ
+    obtain ⟨E, hER, _hEempty⟩ :=
+      hNbasis t ((le_max_left Nbasis T).trans
+        (hdata.2.1 t htQ).1)
+    obtain ⟨b, hbB₀, c, hcC, hbc, _hEeq⟩ :=
+      exists_endpoints_of_crossingPairSupport hER
+        ((hdata.2.1 t htQ).2 E hER).1
+        ((hdata.2.1 t htQ).2 E hER).2
+    have hbLe : b ≤ t := by omega
+    have hsub : t - b = c := by omega
+    exact ⟨b, mem_crossingAtomEndpoints_iff.mpr
+      ⟨hbLe, hbB₀, hsub ▸ hcC⟩⟩
+  obtain ⟨i, hcoreCert⟩ :=
+    exactExcessMinimalCertificate_gives_almostCoreCertificate
+      P hcore hcellCard hd hdata hQcard hendpoint
+  have hiMoving : i ∈ Moving := ⟨N, hcoreCert⟩
+  have hiJ : i ∈ J := hMovingFinite.mem_toFinset.mpr hiMoving
+  have hcutoffT : cutoff i ≤ T := Finset.le_sup (f := cutoff) hiJ
+  obtain ⟨Q', Good, target, hdata', _hQcard', hGoodSub,
+    hGoodCard, hGoodData⟩ := hcoreCert
+  apply hcutoff i target
+  · intro t htQ
+    exact hcutoffT.trans ((le_max_right Nbasis T).trans
+      (hdata'.2.1 t htQ).1)
+  · exact hGoodSub
+  · omega
+  · intro x hxGood
+    exact ⟨(hGoodData x hxGood).1, (hGoodData x hxGood).2.2⟩
+
+/-- Migrating exact-excess cores lift to an actual infinite endpoint set. -/
+theorem infiniteExactExcessCores_give_infiniteEndpointSet
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ} {k d : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hd : d + 4 ≤ k)
+    (hMoving : {i | ∃ N,
+      IsExactExcessAlmostCoreCertificate
+        A B₀ F cell k d N i}.Infinite) :
+    ∃ L, L ⊆ B₀ ∧ L.Infinite ∧
+      ∀ x ∈ L, ∃ N Q t,
+        IsMinimalStrictCrossingEndpointCertificateData
+          A B₀ F k N Q ∧
+        Q.card = k + d ∧
+        t ∈ Q ∧
+        crossingAtomEndpoints A B₀ t = {x} ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ({x} : Set ℕ) t := by
+  classical
+  let Moving : Set ℕ := {i | ∃ N,
+    IsExactExcessAlmostCoreCertificate A B₀ F cell k d N i}
+  have hMoving' : Moving.Infinite := by
+    simpa [Moving] using hMoving
+  have hwitness : ∀ i, i ∈ Moving → ∃ x N Q t,
+      x ∈ B₀ ∧ blockIndex P x = i ∧
+      IsMinimalStrictCrossingEndpointCertificateData
+        A B₀ F k N Q ∧
+      Q.card = k + d ∧
+      t ∈ Q ∧
+      crossingAtomEndpoints A B₀ t = {x} ∧
+      DestroysAt (additiveSupportFamily A 3)
+        ({x} : Set ℕ) t := by
+    intro i hiMoving
+    change ∃ N, IsExactExcessAlmostCoreCertificate
+      A B₀ F cell k d N i at hiMoving
+    obtain ⟨N, Q, Good, target, hdata, hQcard,
+      hGoodSub, hGoodCard, hGoodData⟩ := hiMoving
+    have hGoodNonempty : Good.Nonempty := by
+      apply Finset.card_pos.mp
+      have : 1 ≤ k - d := by omega
+      exact this.trans hGoodCard
+    obtain ⟨x, hxGood⟩ := hGoodNonempty
+    have hxCell : x ∈ cell i := hGoodSub hxGood
+    have hxF : x ∈ F i := hcore i hxCell
+    have hxB₀ : x ∈ B₀ := (P.mem_iff x).2 ⟨i, hxF⟩
+    have hxIndex : blockIndex P x = i := P.blockIndex_eq_of_mem hxF
+    exact ⟨x, N, Q, target x, hxB₀, hxIndex, hdata, hQcard,
+      (hGoodData x hxGood).1, (hGoodData x hxGood).2.1,
+      (hGoodData x hxGood).2.2⟩
+  choose point N Q t hpointB₀ hpointIndex hdata hQcard htQ
+    hendpoint hdestroy using hwitness
+  let pick : ℕ → ℕ := fun i =>
+    if hi : i ∈ Moving then point i hi else 0
+  have hpickB₀ : ∀ i ∈ Moving, pick i ∈ B₀ := by
+    intro i hi
+    simpa [pick, hi] using hpointB₀ i hi
+  have hpickIndex : ∀ i ∈ Moving, blockIndex P (pick i) = i := by
+    intro i hi
+    simpa [pick, hi] using hpointIndex i hi
+  have hpickInj : Set.InjOn pick Moving := by
+    intro i hi j hj hpickEq
+    calc
+      i = blockIndex P (pick i) := (hpickIndex i hi).symm
+      _ = blockIndex P (pick j) := by rw [hpickEq]
+      _ = j := hpickIndex j hj
+  let L : Set ℕ := pick '' Moving
+  have hL : L.Infinite := hMoving'.image hpickInj
+  have hLB₀ : L ⊆ B₀ := by
+    rintro x ⟨i, hiMoving, rfl⟩
+    exact hpickB₀ i hiMoving
+  refine ⟨L, hLB₀, hL, ?_⟩
+  rintro x ⟨i, hiMoving, rfl⟩
+  refine ⟨N i hiMoving, Q i hiMoving, t i hiMoving,
+    hdata i hiMoving, hQcard i hiMoving, htQ i hiMoving, ?_, ?_⟩
+  · simpa [pick, hiMoving] using hendpoint i hiMoving
+  · simpa [pick, hiMoving] using hdestroy i hiMoving
+
+/-- Cofinal exact `k + d` certificates yield an actual infinite endpoint
+set whenever `d + 4 ≤ k`. -/
+theorem cofinalExactExcessMinimalCertificates_give_infiniteEndpointSet
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ} {k d : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hB₀A : B₀ ⊆ A)
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hd : d + 4 ≤ k)
+    (hcofinal : ∀ N, ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+      Q.card = k + d) :
+    ∃ L, L ⊆ B₀ ∧ L.Infinite ∧
+      ∀ x ∈ L, ∃ N Q t,
+        IsMinimalStrictCrossingEndpointCertificateData
+          A B₀ F k N Q ∧
+        Q.card = k + d ∧
+        t ∈ Q ∧
+        crossingAtomEndpoints A B₀ t = {x} ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ({x} : Set ℕ) t := by
+  have hMoving :=
+    cofinalExactExcessMinimalCertificates_force_infiniteCores
+      hbasis hB₀A P hcore hcellCard hd hcofinal
+  exact infiniteExactExcessCores_give_infiniteEndpointSet
+    P hcore hd hMoving
+
+/-- A cofinal oversized family either has one fixed moderate excess
+`2 ≤ d ≤ k - 4` recurring cofinally, or certificates of size at least
+`2k - 3` are themselves cofinal. -/
+theorem cofinalOversizedMinimalCertificates_fixedModerateExcess_or_huge
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ} {k : ℕ}
+    (hlarge : ∀ N, ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+      k + 2 ≤ Q.card) :
+    (∃ d, 2 ≤ d ∧ d + 4 ≤ k ∧
+      ∀ N, ∃ Q,
+        IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+        Q.card = k + d) ∨
+    ∀ N, ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+      2 * k - 3 ≤ Q.card := by
+  classical
+  let ExactAt : ℕ → ℕ → Prop := fun d N => ∃ Q,
+    IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+    Q.card = k + d
+  by_cases hfixed : ∃ d, 2 ≤ d ∧ d + 4 ≤ k ∧
+      ∀ N, ExactAt d N
+  · left
+    simpa [ExactAt] using hfixed
+  · right
+    have hcutoffExists : ∀ d, ∃ Nd,
+        (2 ≤ d ∧ d + 4 ≤ k) → ¬ ExactAt d Nd := by
+      intro d
+      by_cases hd : 2 ≤ d ∧ d + 4 ≤ k
+      · by_contra hnoCutoff
+        push Not at hnoCutoff
+        exact hfixed ⟨d, hd.1, hd.2, fun N => (hnoCutoff N).2⟩
+      · exact ⟨0, fun hdrange => (hd hdrange).elim⟩
+    choose cutoff hcutoff using hcutoffExists
+    let D : Finset ℕ := Finset.Icc 2 (k - 4)
+    let T : ℕ := D.sup cutoff
+    intro N
+    let M : ℕ := max N T
+    obtain ⟨Q, hdata, hQlower⟩ := hlarge M
+    have hdataN : IsMinimalStrictCrossingEndpointCertificateData
+        A B₀ F k N Q :=
+      hdata.mono_threshold (le_max_left N T)
+    refine ⟨Q, hdataN, ?_⟩
+    by_contra hnotHuge
+    have hQupper : Q.card ≤ 2 * k - 4 := by omega
+    let d : ℕ := Q.card - k
+    have hdLower : 2 ≤ d := by
+      dsimp only [d]
+      omega
+    have hdUpper : d ≤ k - 4 := by
+      dsimp only [d]
+      omega
+    have hdRange : 2 ≤ d ∧ d + 4 ≤ k := by omega
+    have hdD : d ∈ D := by
+      exact Finset.mem_Icc.mpr ⟨hdLower, hdUpper⟩
+    have hcutoffT : cutoff d ≤ T := Finset.le_sup (f := cutoff) hdD
+    have hcutoffM : cutoff d ≤ M :=
+      hcutoffT.trans (le_max_right N T)
+    have hdataCutoff : IsMinimalStrictCrossingEndpointCertificateData
+        A B₀ F k (cutoff d) Q :=
+      hdata.mono_threshold hcutoffM
+    have hQexact : Q.card = k + d := by
+      dsimp only [d]
+      omega
+    exact hcutoff d hdRange ⟨Q, hdataCutoff, hQexact⟩
+
+/-- Combining the moderate-excess split with the parameterized migration
+theorem leaves only the huge-cardinality finite branch. -/
+theorem cofinalOversizedMinimalCertificates_huge_or_infiniteEndpoints
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hB₀A : B₀ ⊆ A)
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hlarge : ∀ N, ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+      k + 2 ≤ Q.card) :
+    (∀ N, ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+      2 * k - 3 ≤ Q.card) ∨
+    ∃ d, 2 ≤ d ∧ d + 4 ≤ k ∧
+      ∃ L, L ⊆ B₀ ∧ L.Infinite ∧
+        ∀ x ∈ L, ∃ N Q t,
+          IsMinimalStrictCrossingEndpointCertificateData
+            A B₀ F k N Q ∧
+          Q.card = k + d ∧
+          t ∈ Q ∧
+          crossingAtomEndpoints A B₀ t = {x} ∧
+          DestroysAt (additiveSupportFamily A 3)
+            ({x} : Set ℕ) t := by
+  obtain ⟨d, hdLower, hd, hexact⟩ | hhuge :=
+    cofinalOversizedMinimalCertificates_fixedModerateExcess_or_huge
+      hlarge
+  · right
+    refine ⟨d, hdLower, hd, ?_⟩
+    exact cofinalExactExcessMinimalCertificates_give_infiniteEndpointSet
+      hbasis hB₀A P hcore hcellCard hd hexact
+  · exact Or.inl hhuge
+
 /-- Core-indexed package for an exact `k + 2` minimal certificate. -/
 def IsExactTwoExcessAlmostCoreCertificate
     (A B₀ : Set ℕ) (F cell : ℕ → Finset ℕ)
@@ -10254,6 +10597,84 @@ theorem minimalCrossingEndpointCertificates_large_or_infiniteEndpointObstruction
   · exact Or.inr (Or.inr (Or.inl hthree))
   · exact Or.inr (Or.inr (Or.inr (Or.inl hsingle)))
   · exact Or.inr (Or.inr (Or.inr (Or.inr hrigid)))
+
+/-- An infinite set of endpoints which individually destroy a private
+crossing target.  Several formerly separate migration branches have this
+common output. -/
+def HasInfinitePrivateSingletonCrossingEndpoints
+    (A B₀ : Set ℕ) : Prop :=
+  ∃ L, L ⊆ B₀ ∧ L.Infinite ∧
+    ∀ x ∈ L, ∃ q,
+      crossingAtomEndpoints A B₀ q = {x} ∧
+      DestroysAt (additiveSupportFamily A 3)
+        ({x} : Set ℕ) q
+
+/-- Compact current endpoint reduction.  Under the counterexample
+hypothesis, either minimal certificates of almost twice the core size recur
+cofinally, an infinite private-singleton endpoint set already exists, or the
+near-sharp three-endpoint migration set exists. -/
+theorem minimalCrossingEndpointCertificates_huge_or_infiniteEndpointObstructions
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 10 ≤ k) :
+    (∀ N, ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+      2 * k - 3 ≤ Q.card) ∨
+    HasInfinitePrivateSingletonCrossingEndpoints A B₀ ∨
+    ∃ L, L ⊆ B₀ ∧ L.Infinite ∧
+      ∀ x ∈ L, ∃ N Q q,
+        IsMinimalNearSharpThreeEndpointCertificate
+          A B₀ F k N Q q ∧
+        x ∈ crossingAtomEndpoints A B₀ q := by
+  obtain hlarge | hdense | hthree | hsingle | hrigid :=
+    minimalCrossingEndpointCertificates_large_or_infiniteEndpointObstructions
+      hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+        P hcore hcellCard hk
+  · obtain hhuge | ⟨d, _hdLower, _hd, L, hLB₀, hL, hdata⟩ :=
+      cofinalOversizedMinimalCertificates_huge_or_infiniteEndpoints
+        hbasis hB₀A P hcore hcellCard hlarge
+    · exact Or.inl hhuge
+    · right
+      left
+      refine ⟨L, hLB₀, hL, ?_⟩
+      intro x hxL
+      obtain ⟨N, Q, t, _hcert, _hQcard, _htQ,
+        hendpoint, hdestroy⟩ := hdata x hxL
+      exact ⟨t, hendpoint, hdestroy⟩
+  · right
+    left
+    obtain ⟨L, hLB₀, hL, hdata⟩ := hdense
+    refine ⟨L, hLB₀, hL, ?_⟩
+    intro x hxL
+    obtain ⟨N, Q, q, t, base, _hdense, _htQ, _htNeq,
+      hendpoint, hdestroy⟩ := hdata x hxL
+    exact ⟨t, hendpoint, hdestroy⟩
+  · exact Or.inr (Or.inr hthree)
+  · right
+    left
+    obtain ⟨L, hLB₀, hL, hdata⟩ := hsingle
+    refine ⟨L, hLB₀, hL, ?_⟩
+    intro x hxL
+    obtain ⟨N, Q, q, _hcert, _hQcard, _hqQ,
+      hendpoint, hdestroy⟩ := hdata x hxL
+    exact ⟨q, hendpoint, hdestroy⟩
+  · right
+    left
+    obtain ⟨N₀, L, hLB₀, hL, hdata⟩ := hrigid
+    refine ⟨L, hLB₀, hL, ?_⟩
+    intro x hxL
+    obtain ⟨q, _hqLate, _hcross, hendpoint, hdestroy,
+      _hrigid⟩ := hdata x hxL
+    exact ⟨q, hendpoint, hdestroy⟩
 
 /-- Endpoint-set form of the global migration dichotomy.  If the strict
 certificate branch is not cofinal, the sharp branch yields an infinite
