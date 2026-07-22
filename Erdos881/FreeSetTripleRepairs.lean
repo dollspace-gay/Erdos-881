@@ -6627,6 +6627,19 @@ theorem wideTwoRepairTrace_has_wideReservoirSupport
   · obtain ⟨x, hx, y, hy, hxy⟩ := hFwide
     exact ⟨F, hFR, x, hx, y, hy, hxy⟩
 
+/-- The external-reservoir version of a wide two-repair trace still contains
+an ordinary wide support on the binary block reservoir. -/
+theorem wideTwoRepairTraceAlong_has_wideReservoirSupport
+    {R : SupportFamily} {C K : Set ℕ} {D : Finset ℕ} {q : ℕ}
+    (hwide : HasWideTwoRepairTraceAlongAt R C K D q) :
+    HasWideReservoirSupportAt R K q := by
+  obtain ⟨E, hER, _hED, F, hFR, _hFD, _hEFC,
+      hEwide | hFwide⟩ := hwide
+  · obtain ⟨x, hx, y, hy, hxy⟩ := hEwide
+    exact ⟨E, hER, x, hx, y, hy, hxy⟩
+  · obtain ⟨x, hx, y, hy, hxy⟩ := hFwide
+    exact ⟨F, hFR, x, hx, y, hy, hxy⟩
+
 /-- A target-localized binary certificate of size at most two cannot consist
 only of narrow separated targets.  A separated target has two exits; with
 fewer than three targets those exits collide, and the collision creates a
@@ -7182,6 +7195,23 @@ def SeparatedTraceClauseData.rightLiteral
     {R : SupportFamily} {K : Set ℕ} {D : Finset ℕ}
     {cell : ℕ → Finset ℕ} {q : ℕ}
     (d : SeparatedTraceClauseData R K D cell q) :
+    BinaryCellLiteral cell :=
+  ⟨d.rightCell, ⟨d.rightPoint, d.rightPoint_mem⟩⟩
+
+/-- Left endpoint of a unified external narrow clause. -/
+def ExternalNarrowTraceClauseData.leftLiteral
+    {R : SupportFamily} {C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (d : ExternalNarrowTraceClauseData R C K D cell q) :
+    BinaryCellLiteral cell :=
+  ⟨d.leftCell, ⟨d.leftPoint, d.leftPoint_mem⟩⟩
+
+/-- Right endpoint of a unified external narrow clause.  In the common
+external case this is definitionally the same literal as `leftLiteral`. -/
+def ExternalNarrowTraceClauseData.rightLiteral
+    {R : SupportFamily} {C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (d : ExternalNarrowTraceClauseData R C K D cell q) :
     BinaryCellLiteral cell :=
   ⟨d.rightCell, ⟨d.rightPoint, d.rightPoint_mem⟩⟩
 
@@ -8271,6 +8301,97 @@ theorem separatedTraceAlong_certificate_has_binaryPairPatternCover
       P d.leftPoint_mem hleftSelected,
     blockSelector_value_eq_of_point_mem_selectedSet
       P d.rightPoint_mem hrightSelected⟩
+
+/-- Mixed unary/binary clause cover for a migrated narrow certificate.  The
+proof is the same support-hitting argument as in the separated case; unlike
+that case the two clause literals are allowed to coincide, precisely at a
+common endpoint outside `C`. -/
+theorem externalNarrowTrace_certificate_has_binaryPairPatternCover
+    {R : SupportFamily} {C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (hnarrow : ∀ q ∈ Q,
+      HasSeparatedSingletonTwoRepairTracesAlongAt
+          R C K D cell q ∨
+        HasCommonExternalSingletonTwoRepairTracesAlongAt
+          R C K D cell q) :
+    ∃ data : ∀ q : {q // q ∈ Q},
+        ExternalNarrowTraceClauseData R C K D cell q.1,
+      ∀ s : BlockSelector cell, ∃ q : {q // q ∈ Q},
+        (s (data q).leftCell).1 = (data q).leftPoint ∧
+        (s (data q).rightCell).1 = (data q).rightPoint := by
+  classical
+  let data : ∀ q : {q // q ∈ Q},
+      ExternalNarrowTraceClauseData R C K D cell q.1 := fun q =>
+    Classical.choice (externalNarrowTraceClauseData_nonempty
+      (hnarrow q.1 q.2))
+  refine ⟨data, ?_⟩
+  intro s
+  obtain ⟨q, hqQ, hqDestroy⟩ := hcert s
+  let qsub : {q // q ∈ Q} := ⟨q, hqQ⟩
+  let d := data qsub
+  have hleftSelected : d.leftPoint ∈ selectedSet s := by
+    obtain ⟨w, hwLeft, hwSelected⟩ :=
+      Set.not_disjoint_iff.mp
+        (hqDestroy d.leftSupport d.left_mem)
+    have hwK : w ∈ K := P.selectedSet_subset s hwSelected
+    have hwEq : w = d.leftPoint := by
+      have hwTrace : w ∈
+          ((d.leftSupport : Set ℕ) ∩ K) := ⟨hwLeft, hwK⟩
+      rw [d.left_trace] at hwTrace
+      simpa using hwTrace
+    simpa [hwEq] using hwSelected
+  have hrightSelected : d.rightPoint ∈ selectedSet s := by
+    obtain ⟨w, hwRight, hwSelected⟩ :=
+      Set.not_disjoint_iff.mp
+        (hqDestroy d.rightSupport d.right_mem)
+    have hwK : w ∈ K := P.selectedSet_subset s hwSelected
+    have hwEq : w = d.rightPoint := by
+      have hwTrace : w ∈
+          ((d.rightSupport : Set ℕ) ∩ K) := ⟨hwRight, hwK⟩
+      rw [d.right_trace] at hwTrace
+      simpa using hwTrace
+    simpa [hwEq] using hwSelected
+  exact ⟨qsub,
+    blockSelector_value_eq_of_point_mem_selectedSet
+      P d.leftPoint_mem hleftSelected,
+    blockSelector_value_eq_of_point_mem_selectedSet
+      P d.rightPoint_mem hrightSelected⟩
+
+/-- If the migrated external trace certificate has no wide target, all of
+its targets form the explicit mixed unary/binary pattern cover above. -/
+theorem targetLocalized_twoRepairCertificateAlong_external_noWide_has_patternCover
+    {R : SupportFamily} {C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAlongAt R C K D cell q)
+    (hnoWide : ∀ q ∈ Q,
+      ¬ HasWideReservoirSupportAt R K q) :
+    ∃ data : ∀ q : {q // q ∈ Q},
+        ExternalNarrowTraceClauseData R C K D cell q.1,
+      ∀ s : BlockSelector cell, ∃ q : {q // q ∈ Q},
+        (s (data q).leftCell).1 = (data q).leftPoint ∧
+        (s (data q).rightCell).1 = (data q).rightPoint := by
+  have hnarrow : ∀ q ∈ Q,
+      HasSeparatedSingletonTwoRepairTracesAlongAt
+          R C K D cell q ∨
+        HasCommonExternalSingletonTwoRepairTracesAlongAt
+          R C K D cell q := by
+    intro q hqQ
+    rcases
+        twoRepairTraceObstructionAlong_external_wide_or_separated_or_common
+          P hcellCard (htrace q hqQ) with hwide | hnarrow
+    · exact (hnoWide q hqQ
+        (wideTwoRepairTraceAlong_has_wideReservoirSupport hwide)).elim
+    · exact hnarrow
+  exact externalNarrowTrace_certificate_has_binaryPairPatternCover
+    P hcert hnarrow
 
 /-- If a binary two-repair certificate has no wide support at any target,
 its trace classification is wholly separated and hence yields the explicit
