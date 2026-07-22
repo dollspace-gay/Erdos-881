@@ -28840,6 +28840,57 @@ theorem counterexample_synchronizedCertificateFamily_forces_rangeMigration_or_fi
   · exact (not_smallOrCommonAnchorSingletonPetalAffineDestroyerPattern
       hbasis hterminal).elim
 
+/-- Compact global frontier after closing the synchronized affine branch.
+A counterexample produces an injective infinite marked-target stream and
+either a second injective stream with disjoint range, or finite binary-block
+certificates whose targets migrate away from that marked stream. -/
+theorem counterexample_forces_disjointTargetStreams_or_migratedBinaryCertificates
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ I : Set ℕ, ∃ markedTarget : ℕ → ℕ,
+      I.Infinite ∧ Set.InjOn markedTarget I ∧
+      ((∃ certificateTarget : ℕ → ℕ,
+          Set.InjOn certificateTarget I ∧
+          Disjoint (certificateTarget '' I) (markedTarget '' I)) ∨
+        HasMigratedBinaryCertificateFamily A markedTarget I) := by
+  obtain ⟨C, K, hCA, _hC, _hzeroC, _hnormalC,
+      _hrepairsC, _hselfC, hKC, _hK, D, R, target,
+      moving, core, _hDC, _hgood, hdata, hcoreC,
+      _hcrossCore, _hcoreK, _htargetExternal, _hsingletonFinite,
+      _hpairBound, _hcoreBound, _htargetK, _htargetInj,
+      hmarked, hdelta, htype, J, certificateTarget, atom,
+      certificateRepair, _hJ, _hKimage, _hatomInj,
+      hcertificate, I, hIJ, hI, hcertificateInj,
+      hmarkedInj, hsync⟩ :=
+    counterexample_forces_uniformFullyZeroAtomicMarkedMinimalDestroyerSunflower
+      hbasis hzeroA hcounter
+  have hcertificate' : ∀ n ∈ J,
+      atom n ∈ K ∧
+      certificateRepair n ∈
+        additiveSupportFamily A 3 (certificateTarget n) ∧
+      Disjoint (certificateRepair n : Set ℕ) K := by
+    intro n hn
+    obtain ⟨hatomK, _hcritical, _hnTarget, hrepair,
+      _hrepairD, hrepairK⟩ := hcertificate n hn
+    exact ⟨hatomK, hrepair, hrepairK⟩
+  obtain hmigrateRange | hmigrate :=
+    counterexample_synchronizedCertificateFamily_forces_rangeMigration_or_finiteMigration
+      hbasis hcounter (hKC.trans hCA) target atom certificateTarget
+        moving core certificateRepair hIJ hI hcertificateInj
+        hmarkedInj hsync hdata
+        (fun b hb => (hcoreC b hb).trans hCA)
+        hmarked hdelta htype hcertificate'
+  · obtain ⟨L, hLI, hL, hdisjoint⟩ := hmigrateRange
+    exact ⟨L, fun n => target (atom n), hL,
+      hmarkedInj.mono hLI, Or.inl
+        ⟨certificateTarget, hcertificateInj.mono hLI,
+          hdisjoint⟩⟩
+  · exact ⟨I, fun n => target (atom n), hI, hmarkedInj,
+      Or.inr hmigrate⟩
+
 /-- On the common-anchor part of the terminal affine pattern, either an
 infinite subfamily has a unique-hit repair avoiding the moving certificate
 point, which restores binary common survival and migrated certificates, or
