@@ -11657,6 +11657,234 @@ theorem HasInfiniteAmbientThreeEndpointSelectorLayer.exists_infiniteDeletion_wit
   · rw [← htargetEq]
     exact hrepairMem
 
+/-- Center-range/fixed-center dichotomy for a neutralized three-endpoint
+layer.  The complementary center `q - x` always lies in `A \ B₀`.  If its
+range is finite, one center has an infinite fiber, producing a genuine
+fixed-translate obstruction `x + c`; otherwise the centers themselves form
+a fresh infinite reservoir in the complement. -/
+theorem HasInfiniteAmbientThreeEndpointSelectorLayer.infiniteComplementCenters_or_fixedCenterNeutralized
+    {A B₀ B₁ : Set ℕ} {F : ℕ → Finset ℕ}
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (h : HasInfiniteAmbientThreeEndpointSelectorLayer
+      A B₀ B₁ F) :
+    (∃ K, K ⊆ A \ B₀ ∧ K.Infinite) ∨
+    ∃ c, c ∈ A \ B₀ ∧
+      ∃ L, L ⊆ B₁ ∧ L.Infinite ∧
+        ∀ x ∈ L, ∃ sel : BlockSelector F, ∃ G : Finset ℕ,
+          selectedSet sel ⊆ B₁ ∧
+          (∀ E ∈ additiveSupportFamily A 2 (x + c),
+            ¬ Disjoint (E : Set ℕ) B₀ ∧
+            ¬ (E : Set ℕ) ⊆ B₀) ∧
+          DestroysAt (additiveSupportFamily A 3)
+            (selectedSet sel) (x + c) ∧
+          (crossingAtomEndpoints A B₀ (x + c)).card = 3 ∧
+          (crossingAtomEndpoints A B₀ (x + c) : Set ℕ) ⊆
+            selectedSet sel ∧
+          x ∈ crossingAtomEndpoints A B₀ (x + c) ∧
+          G ∈ additiveSupportFamily A 3 (x + c) ∧
+          Disjoint (G : Set ℕ) L := by
+  classical
+  obtain ⟨B, hBB₁, hB, hdata⟩ :=
+    h.exists_infinite_neutralizedSublayer
+      hzeroA hzeroB₀ hB₀A
+  have hchoice : ∀ x : B, ∃ q, ∃ sel : BlockSelector F,
+      ∃ G : Finset ℕ,
+        selectedSet sel ⊆ B₁ ∧
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B₀ ∧
+          ¬ (E : Set ℕ) ⊆ B₀) ∧
+        DestroysAt (additiveSupportFamily A 3)
+          (selectedSet sel) q ∧
+        (crossingAtomEndpoints A B₀ q).card = 3 ∧
+        (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+          selectedSet sel ∧
+        x.1 ∈ crossingAtomEndpoints A B₀ q ∧
+        G ∈ additiveSupportFamily A 3 q ∧
+        Disjoint (G : Set ℕ) B := by
+    intro x
+    exact hdata x.1 x.2
+  choose target sel repair htarget using hchoice
+  let center : B → ℕ := fun x => target x - x.1
+  have hcenterComplement : ∀ x, center x ∈ A \ B₀ := by
+    intro x
+    exact (mem_crossingAtomEndpoints_iff.mp
+      (htarget x).2.2.2.2.2.1).2.2
+  by_cases hcenterInfinite : (Set.range center).Infinite
+  · left
+    exact ⟨Set.range center,
+      fun c hc => by
+        obtain ⟨x, rfl⟩ := hc
+        exact hcenterComplement x,
+      hcenterInfinite⟩
+  · right
+    have hcenterFinite : (Set.range center).Finite :=
+      Set.not_infinite.mp hcenterInfinite
+    letI : Infinite B := hB.to_subtype
+    have hinfiniteFiber : ∃ c,
+        {x : B | center x = c}.Infinite := by
+      by_contra hnoFiber
+      have hallFinite : ∀ c,
+          {x : B | center x = c}.Finite := by
+        intro c
+        apply Set.not_infinite.mp
+        intro hcInfinite
+        exact hnoFiber ⟨c, hcInfinite⟩
+      have hunivFinite : (Set.univ : Set B).Finite := by
+        apply Set.Finite.of_finite_fibers center
+          (by simpa using hcenterFinite)
+        intro c _hcRange
+        simpa using hallFinite c
+      exact Set.infinite_univ hunivFinite
+    obtain ⟨c, hcFiber⟩ := hinfiniteFiber
+    let S : Set B := {x | center x = c}
+    let L : Set ℕ := Subtype.val '' S
+    have hL : L.Infinite := by
+      apply (Set.infinite_image_iff
+        Subtype.val_injective.injOn).mpr
+      simpa [S] using hcFiber
+    have hLB : L ⊆ B := by
+      rintro x ⟨b, _hbS, rfl⟩
+      exact b.2
+    have hcComplement : c ∈ A \ B₀ := by
+      obtain ⟨b, hbS⟩ := hcFiber.nonempty
+      have hbCenter : center b = c := by simpa [S] using hbS
+      rw [← hbCenter]
+      exact hcenterComplement b
+    refine ⟨c, hcComplement, L, hLB.trans hBB₁, hL, ?_⟩
+    intro x hxL
+    obtain ⟨b, hbS, rfl⟩ := hxL
+    have hbCenter : center b = c := by simpa [S] using hbS
+    obtain ⟨hselB₁, hcross, hdestroy, hcard,
+      hendpointSub, hbEndpoint, hrepairMem, hrepairB⟩ :=
+      htarget b
+    have hbLe : b.1 ≤ target b :=
+      (mem_crossingAtomEndpoints_iff.mp hbEndpoint).1
+    have hbCenterValue : target b - b.1 = c := by
+      simpa [center] using hbCenter
+    have htargetEq : target b = b.1 + c := by
+      calc
+        target b = b.1 + (target b - b.1) :=
+          (Nat.add_sub_of_le hbLe).symm
+        _ = b.1 + c := by rw [hbCenterValue]
+    rw [htargetEq] at hcross hdestroy hcard hendpointSub hbEndpoint hrepairMem
+    exact ⟨sel b, repair b, hselB₁, hcross, hdestroy,
+      hcard, hendpointSub, hbEndpoint, hrepairMem,
+      hrepairB.mono_right hLB⟩
+
+/-- Reusable constructive bridge for any fresh infinite reservoir in
+`A \ B₀`.  The splittable part becomes a zero-free self-basis reservoir and
+enters the existing Ramsey theorem; the atomic part can be thinned to a
+repaired zero-atomic reservoir. -/
+theorem infiniteComplementReservoir_gives_deletion_or_rigid_or_repairedZeroAtoms
+    {A B₀ K : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hKComplement : K ⊆ A \ B₀)
+    (hK : K.Infinite) :
+    (∃ D, D ⊆ A ∧ D.Infinite ∧
+      IsExactTupleAsymptoticBasis (A \ D) 3) ∨
+    (∃ B, B ⊆ A \ B₀ ∧ B.Infinite ∧
+      IsExactTupleAsymptoticBasisAlong (A \ B) 2 A ∧
+      ((rigidDoubleSet A B).Infinite ∨
+        ∃ L, L ⊆ B ∧ L.Infinite ∧
+          HasNoRigidDoubles A L ∧ IsPairwiseRigidSet A L)) ∨
+    ∃ Z, Z ⊆ A \ B₀ ∧ Z.Infinite ∧
+      (∀ z ∈ Z, ∀ E ∈ additiveSupportFamily A 2 z,
+        E = {z, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A Z := by
+  obtain hsplittable | hatomic :=
+    infiniteDeletionSplits_or_infiniteZeroAtoms hbasis hK
+  · obtain ⟨B, hBK, hB, hsplit⟩ := hsplittable
+    let B' : Set ℕ := B \ {0}
+    have hB'B : B' ⊆ B := Set.diff_subset
+    have hB' : B'.Infinite :=
+      hB.diff (Set.finite_singleton 0)
+    have hB'Complement : B' ⊆ A \ B₀ :=
+      hB'B.trans (hBK.trans hKComplement)
+    have hzeroB' : 0 ∉ B' := by
+      intro hzero
+      exact hzero.2 (by simp)
+    have hsplit' : DeletionSplitsIntoComplement A B' :=
+      hsplit.mono hB'B
+    have hself :
+        IsExactTupleAsymptoticBasisAlong (A \ B') 2 A :=
+      exactTwoBasisAlong_self_of_zero_and_deletedSplits
+        hzeroA hzeroB' hsplit'
+    obtain hdone | hdiag | hclique :=
+      infiniteDeletion_or_rigidObstruction_of_selfBasisReservoir
+        hbasis (fun x hx => (hB'Complement hx).1) hB' hself
+    · left
+      obtain ⟨D, hDB', hD, hthree⟩ := hdone
+      exact ⟨D, fun x hx => (hB'Complement (hDB' hx)).1,
+        hD, hthree⟩
+    · right; left
+      exact ⟨B', hB'Complement, hB', hself, Or.inl hdiag⟩
+    · right; left
+      obtain ⟨L, hLB', hL, hnoDoubles, hrigid⟩ := hclique
+      exact ⟨B', hB'Complement, hB', hself,
+        Or.inr ⟨L, hLB', hL, hnoDoubles, hrigid⟩⟩
+  · right; right
+    obtain ⟨Z, hZK, hZ, _hzero, hnormal⟩ := hatomic
+    obtain ⟨L, hLZ, hL, hrepairs⟩ :=
+      exists_infinite_directRepairs_of_zeroAtoms hbasis hZ hnormal
+    exact ⟨L, hLZ.trans (hZK.trans hKComplement), hL,
+      fun z hz E hER => hnormal z (hLZ hz) E hER,
+      hrepairs⟩
+
+/-- Counterexample-level reduction of the exact-three layer.  An infinite
+center range enters the reusable complement-reservoir bridge, whose success
+branch is excluded by the counterexample.  Thus only a complement-side
+rigid obstruction, a disjoint repaired atomic reservoir, or one fixed-center
+neutralized translate family remains. -/
+theorem HasInfiniteAmbientThreeEndpointSelectorLayer.counterexample_forces_complementRigid_or_repairedZeroAtoms_or_fixedCenter
+    {A B₀ B₁ : Set ℕ} {F : ℕ → Finset ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hcounter : ∀ D, D ⊆ A → D.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ D) 3)
+    (h : HasInfiniteAmbientThreeEndpointSelectorLayer
+      A B₀ B₁ F) :
+    (∃ B, B ⊆ A \ B₀ ∧ B.Infinite ∧
+      IsExactTupleAsymptoticBasisAlong (A \ B) 2 A ∧
+      ((rigidDoubleSet A B).Infinite ∨
+        ∃ K, K ⊆ B ∧ K.Infinite ∧
+          HasNoRigidDoubles A K ∧ IsPairwiseRigidSet A K)) ∨
+    (∃ Z, Z ⊆ A \ B₀ ∧ Z.Infinite ∧
+      (∀ z ∈ Z, ∀ E ∈ additiveSupportFamily A 2 z,
+        E = {z, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A Z) ∨
+    ∃ c, c ∈ A \ B₀ ∧
+      ∃ L, L ⊆ B₁ ∧ L.Infinite ∧
+        ∀ x ∈ L, ∃ sel : BlockSelector F, ∃ G : Finset ℕ,
+          selectedSet sel ⊆ B₁ ∧
+          (∀ E ∈ additiveSupportFamily A 2 (x + c),
+            ¬ Disjoint (E : Set ℕ) B₀ ∧
+            ¬ (E : Set ℕ) ⊆ B₀) ∧
+          DestroysAt (additiveSupportFamily A 3)
+            (selectedSet sel) (x + c) ∧
+          (crossingAtomEndpoints A B₀ (x + c)).card = 3 ∧
+          (crossingAtomEndpoints A B₀ (x + c) : Set ℕ) ⊆
+            selectedSet sel ∧
+          x ∈ crossingAtomEndpoints A B₀ (x + c) ∧
+          G ∈ additiveSupportFamily A 3 (x + c) ∧
+          Disjoint (G : Set ℕ) L := by
+  obtain hcenters | hfixed :=
+    h.infiniteComplementCenters_or_fixedCenterNeutralized
+      hzeroA hzeroB₀ hB₀A
+  · obtain ⟨K, hKComplement, hK⟩ := hcenters
+    obtain hdone | hrigid | hatomic :=
+      infiniteComplementReservoir_gives_deletion_or_rigid_or_repairedZeroAtoms
+        hbasis hzeroA hKComplement hK
+    · obtain ⟨D, hDA, hD, hthree⟩ := hdone
+      exact (hcounter D hDA hD hthree).elim
+    · exact Or.inl hrigid
+    · exact Or.inr (Or.inl hatomic)
+  · exact Or.inr (Or.inr hfixed)
+
 /-- Sharp hereditary trichotomy.  Every residual exact-core partition has
 either huge certificates, an ambient private-singleton system (which now
 feeds the complement-center route), or an infinite layer of genuine
