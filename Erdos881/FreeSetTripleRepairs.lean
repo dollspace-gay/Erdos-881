@@ -7883,6 +7883,270 @@ def IsMinimalStrictCrossingEndpointCertificateData
       (Q.erase q).card +
         2 * (crossingEndpointAlignedTargets A B₀ Q base q).card
 
+/-- A finite family of partial assignments that covers every assignment on
+`J` has at least `k ^ r` members when every coordinate has `k` choices and
+each partial assignment fixes at least `r` coordinates. -/
+theorem finitePartialAssignmentCover_card_lower
+    {J Q : Finset ℕ} {F I : ℕ → Finset ℕ}
+    {value : ℕ → ℕ → ℕ} {k r : ℕ}
+    (hk : 0 < k)
+    (hrJ : r ≤ J.card)
+    (hFcard : ∀ i ∈ J, (F i).card = k)
+    (hIQ : ∀ q ∈ Q, I q ⊆ J)
+    (hIcard : ∀ q ∈ Q, r ≤ (I q).card)
+    (hcover : ∀ s ∈ J.pi F, ∃ q, ∃ hq : q ∈ Q,
+      ∀ i (hi : i ∈ I q),
+        s i (hIQ q hq hi) = value q i) :
+    k ^ r ≤ Q.card := by
+  classical
+  let allowed : ℕ → ℕ → Finset ℕ := fun q i =>
+    if i ∈ I q then {value q i} else F i
+  have hsubset : J.pi F ⊆
+      Q.biUnion (fun q => J.pi (allowed q)) := by
+    intro s hs
+    obtain ⟨q, hqQ, hmatch⟩ := hcover s hs
+    rw [Finset.mem_biUnion]
+    refine ⟨q, hqQ, Finset.mem_pi.mpr ?_⟩
+    intro i hiJ
+    by_cases hiI : i ∈ I q
+    · simp only [allowed, if_pos hiI, Finset.mem_singleton]
+      exact hmatch i hiI
+    · simp only [allowed, if_neg hiI]
+      exact Finset.mem_pi.mp hs i hiJ
+  have heventCard : ∀ q ∈ Q,
+      (J.pi (allowed q)).card =
+        k ^ (J.card - (I q).card) := by
+    intro q hqQ
+    rw [Finset.card_pi]
+    rw [← Finset.prod_sdiff (hIQ q hqQ)]
+    have houtside : ∀ i ∈ J \ I q,
+        (allowed q i).card = k := by
+      intro i hi
+      have hiJ : i ∈ J := (Finset.mem_sdiff.mp hi).1
+      have hiI : i ∉ I q := (Finset.mem_sdiff.mp hi).2
+      simp only [allowed, if_neg hiI]
+      exact hFcard i hiJ
+    have hinside : ∀ i ∈ I q,
+        (allowed q i).card = 1 := by
+      intro i hi
+      simp [allowed, hi]
+    rw [Finset.prod_eq_pow_card houtside,
+      Finset.prod_eq_pow_card hinside, one_pow, mul_one,
+      Finset.card_sdiff_of_subset (hIQ q hqQ)]
+  have heventLe : ∀ q ∈ Q,
+      (J.pi (allowed q)).card ≤ k ^ (J.card - r) := by
+    intro q hqQ
+    rw [heventCard q hqQ]
+    exact Nat.pow_le_pow_right hk
+      (Nat.sub_le_sub_left (hIcard q hqQ) J.card)
+  have htotalCard : (J.pi F).card = k ^ J.card := by
+    rw [Finset.card_pi]
+    exact Finset.prod_eq_pow_card hFcard
+  have hcovered : k ^ J.card ≤
+      (Q.biUnion (fun q => J.pi (allowed q))).card := by
+    rw [← htotalCard]
+    exact Finset.card_le_card hsubset
+  have hunion :
+      (Q.biUnion (fun q => J.pi (allowed q))).card ≤
+        Q.card * k ^ (J.card - r) := by
+    refine Finset.card_biUnion_le.trans ?_
+    simpa [nsmul_eq_mul] using
+      Finset.sum_le_card_nsmul Q
+        (fun q => (J.pi (allowed q)).card)
+        (k ^ (J.card - r)) heventLe
+  have hproduct :
+      k ^ r * k ^ (J.card - r) ≤
+        Q.card * k ^ (J.card - r) := by
+    have hsum : r + (J.card - r) = J.card :=
+      Nat.add_sub_of_le hrJ
+    rw [← Nat.pow_add, hsum]
+    exact hcovered.trans hunion
+  exact Nat.le_of_mul_le_mul_right hproduct
+    (Nat.pow_pos hk)
+
+/-- A strict crossing-endpoint certificate whose every target has at least
+`r` endpoints contains at least `k ^ r` targets.  The endpoint sets are
+partial block assignments, and the certificate covers every selector. -/
+theorem minimalStrictCrossingEndpointCertificate_card_lower_of_endpointLower_on_core
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ}
+    {k N r : ℕ} {Q : Finset ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hk : 0 < k)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hdata : IsMinimalStrictCrossingEndpointCertificateData
+      A B₀ F k N Q)
+    (hendpointLower : ∀ q ∈ Q,
+      r ≤ (crossingAtomEndpoints A B₀ q).card) :
+    k ^ r ≤ Q.card := by
+  classical
+  rcases hdata with ⟨hstrict, _hQdata, hcert,
+    hlocalized, _hscaled, _hrefined⟩
+  let I : ℕ → Finset ℕ := fun q =>
+    (crossingAtomEndpoints A B₀ q).image (blockIndex P)
+  let J : Finset ℕ := Q.biUnion I
+  let value : ℕ → ℕ → ℕ := fun q i =>
+    if hi : i ∈ I q then
+      Classical.choose (Finset.mem_image.mp hi)
+    else 0
+  have hIQ : ∀ q ∈ Q, I q ⊆ J := by
+    intro q hqQ i hi
+    exact Finset.mem_biUnion.mpr ⟨q, hqQ, hi⟩
+  have hvalueMem : ∀ q i, ∀ hi : i ∈ I q,
+      value q i ∈ crossingAtomEndpoints A B₀ q := by
+    intro q i hi
+    simp only [value, dif_pos hi]
+    exact (Classical.choose_spec (Finset.mem_image.mp hi)).1
+  have hvalueIndex : ∀ q i, ∀ hi : i ∈ I q,
+      blockIndex P (value q i) = i := by
+    intro q i hi
+    simp only [value, dif_pos hi]
+    exact (Classical.choose_spec (Finset.mem_image.mp hi)).2
+  have hindexInj : ∀ q ∈ Q,
+      Set.InjOn (blockIndex P)
+        (crossingAtomEndpoints A B₀ q : Set ℕ) := by
+    intro q hqQ x hx y hy hindex
+    obtain ⟨base, hqDestroy, _hprivate⟩ :=
+      hlocalized q hqQ
+    have hendpointSub :=
+      (destroysAt_crossingEndpointTripleObstructionFamily_iff.mp
+        hqDestroy).2.2
+    have hxSelected : x ∈ selectedSet base :=
+      hendpointSub (Finset.mem_coe.mpr hx)
+    have hySelected : y ∈ selectedSet base :=
+      hendpointSub (Finset.mem_coe.mpr hy)
+    rw [P.mem_selectedSet_iff base] at hxSelected hySelected
+    calc
+      x = (base (blockIndex P x)).1 := hxSelected.symm
+      _ = (base (blockIndex P y)).1 := by rw [hindex]
+      _ = y := hySelected
+  have hIcard : ∀ q ∈ Q, r ≤ (I q).card := by
+    intro q hqQ
+    change r ≤ ((crossingAtomEndpoints A B₀ q).image
+      (blockIndex P)).card
+    rw [Finset.card_image_iff.mpr (hindexInj q hqQ)]
+    exact hendpointLower q hqQ
+  have hrJ : r ≤ J.card := by
+    have hQnonempty : Q.Nonempty := Finset.card_pos.mp (by omega)
+    obtain ⟨q, hqQ⟩ := hQnonempty
+    exact (hIcard q hqQ).trans
+      (Finset.card_le_card (hIQ q hqQ))
+  apply finitePartialAssignmentCover_card_lower
+    (J := J) (Q := Q) (F := cell) (I := I)
+    (value := value) (k := k) (r := r)
+    hk hrJ (fun i _hi => hcellCard i)
+    hIQ hIcard
+  intro s hs
+  let sel : BlockSelector F := fun i =>
+    if hi : i ∈ J then
+      ⟨s i hi, hcore i (Finset.mem_pi.mp hs i hi)⟩
+    else
+      ⟨Classical.choose (P.nonempty i),
+        Classical.choose_spec (P.nonempty i)⟩
+  obtain ⟨q, hqQ, _hqDestroy, hendpointSub⟩ := hcert sel
+  refine ⟨q, hqQ, ?_⟩
+  intro i hiI
+  have hiJ : i ∈ J := hIQ q hqQ hiI
+  have hvalueSelected : value q i ∈ selectedSet sel :=
+    hendpointSub (Finset.mem_coe.mpr (hvalueMem q i hiI))
+  have hcoord := (P.mem_selectedSet_iff sel).mp hvalueSelected
+  simpa [sel, hiJ, hvalueIndex q i hiI] using hcoord
+
+/-- Exact-block specialization of the core counting bound. -/
+theorem minimalStrictCrossingEndpointCertificate_card_lower_of_endpointLower
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ}
+    {k N r : ℕ} {Q : Finset ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hFcard : ∀ i, (F i).card = k)
+    (hdata : IsMinimalStrictCrossingEndpointCertificateData
+      A B₀ F k N Q)
+    (hendpointLower : ∀ q ∈ Q,
+      r ≤ (crossingAtomEndpoints A B₀ q).card) :
+    k ^ r ≤ Q.card := by
+  exact
+    minimalStrictCrossingEndpointCertificate_card_lower_of_endpointLower_on_core
+      P (by
+        rw [← hFcard 0]
+        exact Finset.card_pos.mpr (P.nonempty 0))
+      (fun _ => Finset.Subset.rfl) hFcard hdata hendpointLower
+
+/-- At one scale, either some target has fewer than `r` crossing endpoints,
+or the partial-assignment bound forces at least `k ^ r` targets. -/
+theorem minimalStrictCrossingEndpointCertificate_smallEndpoint_or_card_lower
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ}
+    {k N r : ℕ} {Q : Finset ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hk : 0 < k)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hdata : IsMinimalStrictCrossingEndpointCertificateData
+      A B₀ F k N Q) :
+    (∃ q ∈ Q,
+      (crossingAtomEndpoints A B₀ q).card < r) ∨
+      k ^ r ≤ Q.card := by
+  classical
+  by_cases hsmall : ∃ q ∈ Q,
+      (crossingAtomEndpoints A B₀ q).card < r
+  · exact Or.inl hsmall
+  · right
+    apply
+      minimalStrictCrossingEndpointCertificate_card_lower_of_endpointLower_on_core
+        P hk hcore hcellCard hdata
+    intro q hqQ
+    have hnot : ¬ (crossingAtomEndpoints A B₀ q).card < r := by
+      intro hlt
+      exact hsmall ⟨q, hqQ, hlt⟩
+    omega
+
+/-- Cofinal form of the assignment-counting dichotomy.  Either exponential
+certificate cardinality recurs beyond every threshold, or after one
+threshold every later scale supplies a target with fewer than `r` crossing
+endpoints. -/
+theorem cofinalMinimalStrictCrossingEndpointCertificates_exponential_or_eventually_smallEndpoint
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ}
+    {k r : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hk : 0 < k)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hcofinal : ∀ N, ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData
+        A B₀ F k N Q) :
+    (∀ N, ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData
+          A B₀ F k N Q ∧
+        k ^ r ≤ Q.card) ∨
+      ∃ N₀, ∀ N, N₀ ≤ N → ∃ Q q,
+        IsMinimalStrictCrossingEndpointCertificateData
+            A B₀ F k N Q ∧
+          q ∈ Q ∧
+          (crossingAtomEndpoints A B₀ q).card < r := by
+  classical
+  by_cases hlarge : ∀ N, ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData
+          A B₀ F k N Q ∧
+        k ^ r ≤ Q.card
+  · exact Or.inl hlarge
+  · right
+    obtain ⟨N₀, hnoLarge⟩ := not_forall.mp hlarge
+    refine ⟨N₀, ?_⟩
+    intro N hN₀N
+    obtain ⟨Q, hdata⟩ := hcofinal N
+    obtain hsmall | hcard :=
+      minimalStrictCrossingEndpointCertificate_smallEndpoint_or_card_lower
+        P hk hcore hcellCard hdata (r := r)
+    · obtain ⟨q, hqQ, hqsmall⟩ := hsmall
+      exact ⟨Q, q, hdata, hqQ, hqsmall⟩
+    · exfalso
+      rcases hdata with ⟨hstrict, hQdata, hcert, hlocalized,
+        hscaled, hrefined⟩
+      apply hnoLarge
+      refine ⟨Q, ⟨hstrict, ?_, hcert, hlocalized,
+        hscaled, hrefined⟩, hcard⟩
+      intro q hqQ
+      exact ⟨hN₀N.trans (hQdata q hqQ).1,
+        (hQdata q hqQ).2⟩
+
 /-- A cardinal-minimal certificate constructed on a thinned repaired
 reservoir can be interpreted relative to the original reservoir without
 changing its target set, endpoint sets, localization, or incidence bounds.
@@ -11967,6 +12231,171 @@ theorem fixedCenterTripleDestroyers_give_infiniteAntiTranslateComplement
   · rintro a ⟨x, rfl⟩
     exact (hrepair x).2.2.2.2.2.2
 
+/-- Cofinal minimal endpoint certificates already force the same
+center-range/fixed-center dichotomy as an explicitly constructed endpoint
+layer.  Choose one target from each arbitrarily late certificate and one
+crossing endpoint from that target.  The complementary centers lie in
+`A \ B₀`; if their range is finite, one center has infinitely many moving
+endpoint fibers, each carrying its localized selector destroyer. -/
+theorem cofinalMinimalStrictCrossingEndpointCertificates_centers_or_fixedCenter
+    {A B₀ B₁ : Set ℕ} {F : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (P₁ : IsFiniteBlockPartition B₁ F)
+    (hcofinal : ∀ N, ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData
+        A B₀ F k N Q) :
+    (∃ K, K ⊆ A \ B₀ ∧ K.Infinite) ∨
+      ∃ c, c ∈ A \ B₀ ∧
+        ∃ L, L ⊆ B₁ ∧ L.Infinite ∧
+          ∀ x ∈ L, ∃ D : Set ℕ,
+            D ⊆ B₁ ∧
+            DestroysAt (additiveSupportFamily A 3) D (x + c) := by
+  classical
+  obtain ⟨N₂, hN₂⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  let T : Set ℕ := {q | N₂ ≤ q ∧ ∃ N Q,
+    IsMinimalStrictCrossingEndpointCertificateData
+      A B₀ F k N Q ∧ q ∈ Q}
+  have hT : T.Infinite := by
+    apply Set.infinite_of_forall_exists_gt
+    intro n
+    obtain ⟨Q, hdata⟩ := hcofinal (max N₂ (n + 1))
+    have hQnonempty : Q.Nonempty := Finset.card_pos.mp (by
+      have hstrict := hdata.1
+      omega)
+    obtain ⟨q, hqQ⟩ := hQnonempty
+    have hqLower := (hdata.2.1 q hqQ).1
+    refine ⟨q, ?_, by omega⟩
+    exact ⟨(le_max_left N₂ (n + 1)).trans hqLower,
+      max N₂ (n + 1), Q, hdata, hqQ⟩
+  have hchoice : ∀ q : T, ∃ x, ∃ sel : BlockSelector F,
+      x ∈ B₁ ∧
+      x ∈ crossingAtomEndpoints A B₀ q.1 ∧
+      selectedSet sel ⊆ B₁ ∧
+      DestroysAt (additiveSupportFamily A 3)
+        (selectedSet sel) q.1 := by
+    intro q
+    obtain ⟨_N, Q, hdata, hqQ⟩ := q.2.2
+    rcases hdata with ⟨_hstrict, hQdata, _hcert,
+      hlocalized, _hscaled, _hrefined⟩
+    obtain ⟨sel, hqDestroy, _hprivate⟩ :=
+      hlocalized q.1 hqQ
+    have hdecoded :=
+      destroysAt_crossingEndpointTripleObstructionFamily_iff.mp
+        hqDestroy
+    obtain ⟨E, hER, _hEempty⟩ := hN₂ q.1 q.2.1
+    obtain ⟨x, hxB₀, c, hcComplement, hxc, _hEeq⟩ :=
+      exists_endpoints_of_crossingPairSupport hER
+        ((hQdata q.1 hqQ).2 E hER).1
+        ((hQdata q.1 hqQ).2 E hER).2
+    have hxLe : x ≤ q.1 := by omega
+    have hsub : q.1 - x = c := by omega
+    have hxEndpoint : x ∈ crossingAtomEndpoints A B₀ q.1 :=
+      mem_crossingAtomEndpoints_iff.mpr
+        ⟨hxLe, hxB₀, hsub ▸ hcComplement⟩
+    have hxSelected : x ∈ selectedSet sel :=
+      hdecoded.2.2 (Finset.mem_coe.mpr hxEndpoint)
+    exact ⟨x, sel, P₁.selectedSet_subset sel hxSelected,
+      hxEndpoint, P₁.selectedSet_subset sel, hdecoded.2.1⟩
+  choose endpoint selector hchosen using hchoice
+  let center : T → ℕ := fun q => q.1 - endpoint q
+  have hcenterComplement : ∀ q, center q ∈ A \ B₀ := by
+    intro q
+    exact (mem_crossingAtomEndpoints_iff.mp
+      (hchosen q).2.1).2.2
+  have htargetEq : ∀ q, q.1 = endpoint q + center q := by
+    intro q
+    have hle := (mem_crossingAtomEndpoints_iff.mp
+      (hchosen q).2.1).1
+    exact (Nat.add_sub_of_le hle).symm
+  by_cases hcenterInfinite : (Set.range center).Infinite
+  · left
+    exact ⟨Set.range center,
+      fun c hc => by
+        obtain ⟨q, rfl⟩ := hc
+        exact hcenterComplement q,
+      hcenterInfinite⟩
+  · right
+    have hcenterFinite : (Set.range center).Finite :=
+      Set.not_infinite.mp hcenterInfinite
+    letI : Infinite T := hT.to_subtype
+    have hinfiniteFiber : ∃ c,
+        {q : T | center q = c}.Infinite := by
+      by_contra hnoFiber
+      have hallFinite : ∀ c,
+          {q : T | center q = c}.Finite := by
+        intro c
+        apply Set.not_infinite.mp
+        intro hcInfinite
+        exact hnoFiber ⟨c, hcInfinite⟩
+      have hunivFinite : (Set.univ : Set T).Finite := by
+        apply Set.Finite.of_finite_fibers center
+          (by simpa using hcenterFinite)
+        intro c _hcRange
+        simpa using hallFinite c
+      exact Set.infinite_univ hunivFinite
+    obtain ⟨c, hcFiber⟩ := hinfiniteFiber
+    let S : Set T := {q | center q = c}
+    let L : Set ℕ := endpoint '' S
+    have hendpointInj : Set.InjOn endpoint S := by
+      intro q hqS t htS hendpointEq
+      apply Subtype.ext
+      have hqCenter : center q = c := by simpa [S] using hqS
+      have htCenter : center t = c := by simpa [S] using htS
+      calc
+        q.1 = endpoint q + center q := htargetEq q
+        _ = endpoint t + center t := by
+          rw [hendpointEq, hqCenter, htCenter]
+        _ = t.1 := (htargetEq t).symm
+    have hL : L.Infinite := by
+      apply (Set.infinite_image_iff hendpointInj).mpr
+      simpa [S] using hcFiber
+    have hLB₁ : L ⊆ B₁ := by
+      rintro x ⟨q, _hqS, rfl⟩
+      exact (hchosen q).1
+    have hcComplement : c ∈ A \ B₀ := by
+      obtain ⟨q, hqS⟩ := hcFiber.nonempty
+      have hqCenter : center q = c := by simpa [S] using hqS
+      rw [← hqCenter]
+      exact hcenterComplement q
+    refine ⟨c, hcComplement, L, hLB₁, hL, ?_⟩
+    intro x hxL
+    obtain ⟨q, hqS, rfl⟩ := hxL
+    have hqCenter : center q = c := by simpa [S] using hqS
+    refine ⟨selectedSet (selector q), (hchosen q).2.2.1, ?_⟩
+    have hqEq : q.1 = endpoint q + c := by
+      rw [htargetEq q, hqCenter]
+    rw [← hqEq]
+    exact (hchosen q).2.2.2
+
+/-- On a normalized self-repaired reservoir, the fixed-center side of the
+cofinal-certificate dichotomy also produces an infinite complementary
+reservoir.  Thus cofinal minimal certificates can never remain confined to
+the original side. -/
+theorem cofinalMinimalStrictCrossingEndpointCertificates_give_infiniteComplementReservoir
+    {A B₀ B₁ : Set ℕ} {F : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hB₁B₀ : B₁ ⊆ B₀)
+    (hnormal : ∀ x ∈ B₀,
+      ∀ E ∈ additiveSupportFamily A 2 x, E = {x, 0})
+    (hself : ∀ x ∈ B₀,
+      ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) B₀)
+    (P₁ : IsFiniteBlockPartition B₁ F)
+    (hcofinal : ∀ N, ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData
+        A B₀ F k N Q) :
+    ∃ K, K ⊆ A \ B₀ ∧ K.Infinite := by
+  obtain hcenters | hfixed :=
+    cofinalMinimalStrictCrossingEndpointCertificates_centers_or_fixedCenter
+      hbasis P₁ hcofinal
+  · exact hcenters
+  · obtain ⟨c, hc, L, hLB₁, hL, hdata⟩ := hfixed
+    obtain ⟨K, hKComplement, hK, _hanti⟩ :=
+      fixedCenterTripleDestroyers_give_infiniteAntiTranslateComplement
+        hB₁B₀ hnormal hself hc ⟨L, hLB₁, hL, hdata⟩
+    exact ⟨K, hKComplement, hK⟩
+
 /-- On the zero-atomic self-repaired reservoir supplied by the global
 counterexample reduction, the exact-three layer has no additional
 fixed-center branch.  Infinite centers enter the strengthened complement
@@ -13573,6 +14002,98 @@ theorem minimalCrossingEndpointCertificates_huge_or_disjointRepairedZeroAtoms_on
       hthree.counterexample_forces_repairedZeroAtoms_in_complement
         hbasis hzeroA hzeroB₀ hB₀A hB₁B₀
           hnormal hself hcounter
+
+/-- The cofinally huge branch in the preceding reduction cannot actually
+remain on the original side.  Its localized targets yield cofinally many
+endpoint/center pairs, hence an infinite complementary reservoir by the
+center-range/fixed-center theorem.  The strengthened complement bridge then
+either gives the desired deletion immediately or the same disjoint repaired
+zero-atomic reservoir as the former small branches; the counterexample
+hypothesis excludes the first outcome. -/
+theorem minimalCrossingEndpointCertificates_force_disjointRepairedZeroAtoms_on_subreservoir
+    {A B₀ B₁ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hnormal : ∀ x ∈ B₀,
+      ∀ E ∈ additiveSupportFamily A 2 x, E = {x, 0})
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hself : ∀ x ∈ B₀,
+      ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hB₁B₀ : B₁ ⊆ B₀)
+    (P₁ : IsFiniteBlockPartition B₁ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 10 ≤ k) :
+    ∃ Z, Z ⊆ A \ B₀ ∧ Z.Infinite ∧
+      (∀ z ∈ Z, ∀ E ∈ additiveSupportFamily A 2 z,
+        E = {z, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A Z ∧
+      (∀ z ∈ Z, ∃ G ∈ additiveSupportFamily A 3 z,
+        Disjoint (G : Set ℕ) Z) := by
+  obtain hhuge | hZ :=
+    minimalCrossingEndpointCertificates_huge_or_disjointRepairedZeroAtoms_on_subreservoir
+      hbasis hzeroA hzeroB₀ hB₀A hnormal hrepairs hself
+        hcounter hB₁B₀ P₁ hcore hcellCard hk
+  · have hcofinal : ∀ N, ∃ Q,
+        IsMinimalStrictCrossingEndpointCertificateData
+          A B₀ F k N Q := by
+      intro N
+      obtain ⟨Q, hdata, _hlarge⟩ := hhuge N
+      exact ⟨Q, hdata⟩
+    obtain ⟨K, hKComplement, hK⟩ :=
+      cofinalMinimalStrictCrossingEndpointCertificates_give_infiniteComplementReservoir
+        hbasis hB₁B₀ hnormal hself P₁ hcofinal
+    obtain hdone | hZ :=
+      infiniteComplementReservoir_gives_deletion_or_repairedZeroAtoms
+        hbasis hzeroA hKComplement hK
+    · obtain ⟨D, hDA, hD, hthree⟩ := hdone
+      exact (hcounter D hDA hD hthree).elim
+    · exact hZ
+  · exact hZ
+
+/-- Global consequence after eliminating the huge-certificate branch.  A
+counterexample forces two disjoint infinite zero-atomic reservoirs on
+opposite sides of the color boundary, and both reservoirs carry direct
+repairs for deleted pairs as well as self repairs. -/
+theorem counterexample_forces_two_disjointSelfRepairedZeroAtomReservoirs
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ D, D ⊆ A → D.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ D) 3) :
+    ∃ B₀ Z, B₀ ⊆ A ∧ B₀.Infinite ∧ 0 ∉ B₀ ∧
+      (∀ x ∈ B₀, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A B₀ ∧
+      (∀ x ∈ B₀, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) B₀) ∧
+      Z ⊆ A \ B₀ ∧ Z.Infinite ∧
+      (∀ z ∈ Z, ∀ E ∈ additiveSupportFamily A 2 z,
+        E = {z, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A Z ∧
+      (∀ z ∈ Z, ∃ G ∈ additiveSupportFamily A 3 z,
+        Disjoint (G : Set ℕ) Z) := by
+  obtain ⟨B₀, hB₀A, hB₀, hzeroB₀, hnormal,
+      hrepairs, hself, _hlate⟩ :=
+    counterexample_forces_repairedCrossingReservoir
+      hbasis hzeroA hcounter
+  obtain ⟨F, P, hFcard⟩ :=
+    exists_finiteBlockPartition_exactCard hB₀
+      (by omega : 0 < 10)
+  obtain ⟨Z, hZComplement, hZ, hZnormal,
+      hZrepairs, hZself⟩ :=
+    minimalCrossingEndpointCertificates_force_disjointRepairedZeroAtoms_on_subreservoir
+      hbasis hzeroA hzeroB₀ hB₀A hnormal hrepairs hself
+        hcounter Set.Subset.rfl P (fun _ => Finset.Subset.rfl)
+          hFcard (by omega : 10 ≤ 10)
+  exact ⟨B₀, Z, hB₀A, hB₀, hzeroB₀, hnormal,
+    hrepairs, hself, hZComplement, hZ, hZnormal,
+    hZrepairs, hZself⟩
 
 /-- Global scalable form of the strengthened finite-certificate bridge.
 One fixed normalized, pair-repaired, self-repaired reservoir supplied by a
