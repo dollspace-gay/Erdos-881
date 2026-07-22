@@ -7925,6 +7925,550 @@ theorem nearSharpSingletonCrossingEndpointCertificate_forces_oneDefectCoreCover
     omega
   exact ⟨point, i, hpoint, hcellSub, hHcard, hdiff⟩
 
+/-- Endpoint choices which differ at only one target cannot cover two
+different exact `k`-point cores when `k ≥ 3` and there are only `k + 1`
+targets.  Their image union has at most `k + 2` points, whereas two distinct
+partition cores would contribute `2k` disjoint points. -/
+theorem nearSharp_endpointChoices_coveredCore_eq_of_single_update
+    {B₀ : Set ℕ} {F cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {k : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 3 ≤ k)
+    (hQcard : Q.card = k + 1)
+    (point point' : {q // q ∈ Q} → ℕ)
+    (q : {q // q ∈ Q})
+    (hsame : ∀ t, t ≠ q → point' t = point t)
+    {i j : ℕ}
+    (hi : cell i ⊆ Q.attach.image point)
+    (hj : cell j ⊆ Q.attach.image point') :
+    i = j := by
+  classical
+  let H : Finset ℕ := Q.attach.image point
+  let H' : Finset ℕ := Q.attach.image point'
+  have hUnionSub : H ∪ H' ⊆ insert (point' q) H := by
+    intro x hxUnion
+    rcases Finset.mem_union.mp hxUnion with hxH | hxH'
+    · exact Finset.mem_insert_of_mem hxH
+    · obtain ⟨t, _htAttach, htx⟩ := Finset.mem_image.mp hxH'
+      by_cases htq : t = q
+      · subst t
+        exact Finset.mem_insert.mpr (Or.inl htx.symm)
+      · apply Finset.mem_insert_of_mem
+        apply Finset.mem_image.mpr
+        exact ⟨t, Finset.mem_attach Q t,
+          (hsame t htq).symm.trans htx⟩
+  have hUnionUpper : (H ∪ H').card ≤ k + 2 := by
+    calc
+      (H ∪ H').card ≤ (insert (point' q) H).card :=
+        Finset.card_le_card hUnionSub
+      _ ≤ H.card + 1 := Finset.card_insert_le _ _
+      _ ≤ Q.attach.card + 1 := Nat.add_le_add_right Finset.card_image_le 1
+      _ = k + 2 := by simp [hQcard]
+  by_contra hij
+  have hcellDisjoint : Disjoint (cell i) (cell j) :=
+    (P.disjoint hij).mono (hcore i) (hcore j)
+  have hcellUnionCard : (cell i ∪ cell j).card = 2 * k := by
+    rw [Finset.card_union_of_disjoint hcellDisjoint,
+      hcellCard i, hcellCard j]
+    omega
+  have hcellUnionSub : cell i ∪ cell j ⊆ H ∪ H' := by
+    intro x hx
+    rcases Finset.mem_union.mp hx with hxi | hxj
+    · exact Finset.mem_union_left _ (hi hxi)
+    · exact Finset.mem_union_right _ (hj hxj)
+  have hlower : 2 * k ≤ (H ∪ H').card := by
+    rw [← hcellUnionCard]
+    exact Finset.card_le_card hcellUnionSub
+  omega
+
+/-- In an exact `k + 1` certificate with one two-endpoint target `q`, choose
+one endpoint from every other target.  Switching only the endpoint chosen
+for `q` cannot change the covered core.  Hence the `k` other chosen endpoints
+already fill that core bijectively. -/
+theorem nearSharp_twoEndpointCertificate_otherChoice_fillsCore
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {q k : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 3 ≤ k)
+    (hQcard : Q.card = k + 1)
+    (hqQ : q ∈ Q)
+    (hqCard : (crossingAtomEndpoints A B₀ q).card = 2)
+    (point : {t // t ∈ Q.erase q} → ℕ)
+    (hpointMem : ∀ t,
+      point t ∈ crossingAtomEndpoints A B₀ t.1)
+    (hcert : ∀ sel : BlockSelector F,
+      (∀ i, (sel i).1 ∈ cell i) →
+      ∃ t ∈ Q,
+        (crossingAtomEndpoints A B₀ t : Set ℕ) ⊆
+          selectedSet sel) :
+    ∃ i,
+      cell i = (Q.erase q).attach.image point ∧
+      Function.Injective point := by
+  classical
+  obtain ⟨b, c, hbc, hqEndpoints⟩ := Finset.card_eq_two.mp hqCard
+  let qQ : {t // t ∈ Q} := ⟨q, hqQ⟩
+  let chosen : {t // t ∈ Q} → ℕ := fun t =>
+    if ht : t.1 = q then b else
+      point ⟨t.1, Finset.mem_erase.mpr ⟨ht, t.2⟩⟩
+  have hchosen : ∀ t,
+      chosen t ∈ crossingAtomEndpoints A B₀ t.1 := by
+    intro t
+    by_cases ht : t.1 = q
+    · have htqQ : t = qQ := Subtype.ext ht
+      subst t
+      have hb : b ∈ crossingAtomEndpoints A B₀ q := by
+        rw [hqEndpoints]
+        simp
+      simpa [chosen, qQ] using hb
+    · simpa [chosen, ht] using
+        hpointMem ⟨t.1, Finset.mem_erase.mpr ⟨ht, t.2⟩⟩
+  let pointB : {t // t ∈ Q} → ℕ := fun t =>
+    if t = qQ then b else chosen t
+  let pointC : {t // t ∈ Q} → ℕ := fun t =>
+    if t = qQ then c else chosen t
+  have hpointB : ∀ t,
+      pointB t ∈ crossingAtomEndpoints A B₀ t.1 := by
+    intro t
+    by_cases htq : t = qQ
+    · subst t
+      have hb : b ∈ crossingAtomEndpoints A B₀ q := by
+        rw [hqEndpoints]
+        simp
+      simpa [pointB, qQ] using hb
+    · simpa [pointB, htq] using hchosen t
+  have hpointC : ∀ t,
+      pointC t ∈ crossingAtomEndpoints A B₀ t.1 := by
+    intro t
+    by_cases htq : t = qQ
+    · subst t
+      have hc : c ∈ crossingAtomEndpoints A B₀ q := by
+        rw [hqEndpoints]
+        simp
+      simpa [pointC, qQ] using hc
+    · simpa [pointC, htq] using hchosen t
+  obtain ⟨i, hi⟩ :=
+    exists_coveredCell_of_crossingEndpointCertificate
+      hcore pointB hpointB hcert
+  obtain ⟨j, hj⟩ :=
+    exists_coveredCell_of_crossingEndpointCertificate
+      hcore pointC hpointC hcert
+  have hij : i = j :=
+    nearSharp_endpointChoices_coveredCore_eq_of_single_update
+      P hcore hcellCard hk hQcard pointB pointC qQ
+        (by
+          intro t htq
+          simp [pointB, pointC, htq])
+        hi hj
+  subst j
+  let K : Finset ℕ := (Q.erase q).attach.image point
+  have hcellK : cell i ⊆ K := by
+    intro x hxCell
+    have hxB : x ∈ Q.attach.image pointB := hi hxCell
+    have hxC : x ∈ Q.attach.image pointC := hj hxCell
+    by_contra hxNotK
+    have hxb : x = b := by
+      obtain ⟨t, _htAttach, htx⟩ := Finset.mem_image.mp hxB
+      by_cases htq : t = qQ
+      · subst t
+        simpa [pointB] using htx.symm
+      · apply False.elim
+        apply hxNotK
+        apply Finset.mem_image.mpr
+        have htVal : t.1 ≠ q := by
+          intro htVal
+          apply htq
+          exact Subtype.ext htVal
+        let te : {u // u ∈ Q.erase q} :=
+          ⟨t.1, Finset.mem_erase.mpr
+            ⟨htVal, t.2⟩⟩
+        refine ⟨te, Finset.mem_attach (Q.erase q) te, ?_⟩
+        simpa [pointB, chosen, htq, htVal, te] using htx
+    have hxc : x = c := by
+      obtain ⟨t, _htAttach, htx⟩ := Finset.mem_image.mp hxC
+      by_cases htq : t = qQ
+      · subst t
+        simpa [pointC] using htx.symm
+      · apply False.elim
+        apply hxNotK
+        apply Finset.mem_image.mpr
+        have htVal : t.1 ≠ q := by
+          intro htVal
+          apply htq
+          exact Subtype.ext htVal
+        let te : {u // u ∈ Q.erase q} :=
+          ⟨t.1, Finset.mem_erase.mpr
+            ⟨htVal, t.2⟩⟩
+        refine ⟨te, Finset.mem_attach (Q.erase q) te, ?_⟩
+        simpa [pointC, chosen, htq, htVal, te] using htx
+    exact hbc (hxb.symm.trans hxc)
+  have heraseCard : (Q.erase q).card = k := by
+    rw [Finset.card_erase_of_mem hqQ, hQcard]
+    omega
+  have hcellEq : cell i = K := by
+    apply Finset.eq_of_subset_of_card_le hcellK
+    rw [hcellCard i, ← heraseCard]
+    simpa [K] using
+      (Finset.card_image_le :
+        ((Q.erase q).attach.image point).card ≤
+          (Q.erase q).attach.card)
+  have hKcard : K.card = (Q.erase q).attach.card := by
+    calc
+      K.card = (cell i).card := congrArg Finset.card hcellEq.symm
+      _ = k := hcellCard i
+      _ = (Q.erase q).card := heraseCard.symm
+      _ = (Q.erase q).attach.card := by simp
+  have hpointInj : Function.Injective point := by
+    have hinjOn : Set.InjOn point
+        ((Q.erase q).attach : Set {t // t ∈ Q.erase q}) :=
+      Finset.card_image_iff.mp (by simpa [K] using hKcard)
+    intro t u htu
+    exact hinjOn (Finset.mem_attach (Q.erase q) t)
+      (Finset.mem_attach (Q.erase q) u) htu
+  exact ⟨i, hcellEq, hpointInj⟩
+
+/-- The same core-stability count for a choice domain of cardinality at most
+`k`.  Two images differing at one coordinate have union cardinality at most
+`k + 1`, too small to contain two disjoint `k`-point cores. -/
+theorem endpointChoices_coveredCore_eq_of_single_update
+    {B₀ : Set ℕ} {F cell : ℕ → Finset ℕ}
+    {S : Finset ℕ} {k : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 2 ≤ k)
+    (hScard : S.card ≤ k)
+    (point point' : {s // s ∈ S} → ℕ)
+    (s : {s // s ∈ S})
+    (hsame : ∀ t, t ≠ s → point' t = point t)
+    {i j : ℕ}
+    (hi : cell i ⊆ S.attach.image point)
+    (hj : cell j ⊆ S.attach.image point') :
+    i = j := by
+  classical
+  let H : Finset ℕ := S.attach.image point
+  let H' : Finset ℕ := S.attach.image point'
+  have hUnionSub : H ∪ H' ⊆ insert (point' s) H := by
+    intro x hxUnion
+    rcases Finset.mem_union.mp hxUnion with hxH | hxH'
+    · exact Finset.mem_insert_of_mem hxH
+    · obtain ⟨t, _htAttach, htx⟩ := Finset.mem_image.mp hxH'
+      by_cases hts : t = s
+      · subst t
+        exact Finset.mem_insert.mpr (Or.inl htx.symm)
+      · apply Finset.mem_insert_of_mem
+        apply Finset.mem_image.mpr
+        exact ⟨t, Finset.mem_attach S t,
+          (hsame t hts).symm.trans htx⟩
+  have hUnionUpper : (H ∪ H').card ≤ k + 1 := by
+    calc
+      (H ∪ H').card ≤ (insert (point' s) H).card :=
+        Finset.card_le_card hUnionSub
+      _ ≤ H.card + 1 := Finset.card_insert_le _ _
+      _ ≤ S.attach.card + 1 := Nat.add_le_add_right Finset.card_image_le 1
+      _ = S.card + 1 := by simp
+      _ ≤ k + 1 := Nat.add_le_add_right hScard 1
+  by_contra hij
+  have hcellDisjoint : Disjoint (cell i) (cell j) :=
+    (P.disjoint hij).mono (hcore i) (hcore j)
+  have hcellUnionCard : (cell i ∪ cell j).card = 2 * k := by
+    rw [Finset.card_union_of_disjoint hcellDisjoint,
+      hcellCard i, hcellCard j]
+    omega
+  have hcellUnionSub : cell i ∪ cell j ⊆ H ∪ H' := by
+    intro x hx
+    rcases Finset.mem_union.mp hx with hxi | hxj
+    · exact Finset.mem_union_left _ (hi hxi)
+    · exact Finset.mem_union_right _ (hj hxj)
+  have hlower : 2 * k ≤ (H ∪ H').card := by
+    rw [← hcellUnionCard]
+    exact Finset.card_le_card hcellUnionSub
+  omega
+
+/-- Therefore a near-sharp certificate cannot contain two distinct
+two-endpoint targets.  Once `q` has two endpoints, all other targets have
+singleton endpoint families, and those singleton endpoints fill one core
+bijectively. -/
+theorem nearSharp_twoEndpointCertificate_forces_otherSingletonCore
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {q k : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 3 ≤ k)
+    (hQcard : Q.card = k + 1)
+    (hqQ : q ∈ Q)
+    (hendpoint : ∀ t ∈ Q,
+      (crossingAtomEndpoints A B₀ t).Nonempty)
+    (hqCard : (crossingAtomEndpoints A B₀ q).card = 2)
+    (hcert : ∀ sel : BlockSelector F,
+      (∀ i, (sel i).1 ∈ cell i) →
+      ∃ t ∈ Q,
+        (crossingAtomEndpoints A B₀ t : Set ℕ) ⊆
+          selectedSet sel) :
+    ∃ point : {t // t ∈ Q.erase q} → ℕ, ∃ i,
+      cell i = (Q.erase q).attach.image point ∧
+      Function.Injective point ∧
+      ∀ t, crossingAtomEndpoints A B₀ t.1 = {point t} := by
+  classical
+  have hchoose : ∀ t : {t // t ∈ Q.erase q}, ∃ x,
+      x ∈ crossingAtomEndpoints A B₀ t.1 := by
+    intro t
+    exact hendpoint t.1 (Finset.mem_of_mem_erase t.2)
+  choose point hpointMem using hchoose
+  obtain ⟨i, hcellEq, hpointInj⟩ :=
+    nearSharp_twoEndpointCertificate_otherChoice_fillsCore
+      P hcore hcellCard hk hQcard hqQ hqCard point hpointMem hcert
+  have heraseCard : (Q.erase q).card = k := by
+    rw [Finset.card_erase_of_mem hqQ, hQcard]
+    omega
+  refine ⟨point, i, hcellEq, hpointInj, ?_⟩
+  intro t
+  apply Finset.Subset.antisymm
+  · intro x hxEndpoint
+    let point' : {u // u ∈ Q.erase q} → ℕ := fun u =>
+      if u = t then x else point u
+    have hpoint'Mem : ∀ u,
+        point' u ∈ crossingAtomEndpoints A B₀ u.1 := by
+      intro u
+      by_cases hut : u = t
+      · subst u
+        simpa [point'] using hxEndpoint
+      · simpa [point', hut] using hpointMem u
+    obtain ⟨j, hcellEq', _hpointInj'⟩ :=
+      nearSharp_twoEndpointCertificate_otherChoice_fillsCore
+        P hcore hcellCard hk hQcard hqQ hqCard
+          point' hpoint'Mem hcert
+    have hij : i = j :=
+      endpointChoices_coveredCore_eq_of_single_update
+        P hcore hcellCard (by omega) (by omega)
+          point point' t
+          (by
+            intro u hut
+            simp [point', hut])
+          (by rw [← hcellEq])
+          (by rw [← hcellEq'])
+    subst j
+    have hpCell : point t ∈ cell i := by
+      rw [hcellEq]
+      exact Finset.mem_image.mpr
+        ⟨t, Finset.mem_attach (Q.erase q) t, rfl⟩
+    have hpImage' : point t ∈ (Q.erase q).attach.image point' := by
+      rw [← hcellEq']
+      exact hpCell
+    obtain ⟨u, _huAttach, huPoint⟩ := Finset.mem_image.mp hpImage'
+    by_cases hut : u = t
+    · subst u
+      simpa [point'] using huPoint
+    · have hpointUT : point u = point t := by
+        simpa [point', hut] using huPoint
+      exact False.elim (hut (hpointInj hpointUT))
+  · intro x hxSingleton
+    have hx : x = point t := by simpa using hxSingleton
+    exact hx ▸ hpointMem t
+
+set_option maxHeartbeats 3000000 in
+/-- In the strengthened certificate, all core points except the at most two
+positions occupied by `q`'s endpoint pair are genuine singleton
+order-three destroyers for their matched targets. -/
+theorem nearSharp_twoEndpointTripleCertificate_forces_almostCoreDestroyers
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {q k : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 6 ≤ k)
+    (hQcard : Q.card = k + 1)
+    (hqQ : q ∈ Q)
+    (hendpoint : ∀ t ∈ Q,
+      (crossingAtomEndpoints A B₀ t).Nonempty)
+    (hqCard : (crossingAtomEndpoints A B₀ q).card = 2)
+    (hcert : ∀ sel : BlockSelector F,
+      (∀ i, (sel i).1 ∈ cell i) →
+      ∃ t ∈ Q,
+        DestroysAt (additiveSupportFamily A 3)
+          (selectedSet sel) t ∧
+        (crossingAtomEndpoints A B₀ t : Set ℕ) ⊆
+          selectedSet sel) :
+    ∃ (Good : Finset ℕ) (target : ℕ → ℕ) (i : ℕ),
+      Good ⊆ cell i ∧
+      k - 2 ≤ Good.card ∧
+      ∀ x ∈ Good,
+        target x ∈ Q ∧
+        target x ≠ q ∧
+        crossingAtomEndpoints A B₀ (target x) = {x} ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ({x} : Set ℕ) (target x) := by
+  classical
+  have hcontain : ∀ sel : BlockSelector F,
+      (∀ i, (sel i).1 ∈ cell i) →
+      ∃ t ∈ Q,
+        (crossingAtomEndpoints A B₀ t : Set ℕ) ⊆
+          selectedSet sel := by
+    intro sel hsel
+    obtain ⟨t, htQ, _hdestroy, htSub⟩ := hcert sel hsel
+    exact ⟨t, htQ, htSub⟩
+  obtain ⟨point, i, hcellEq, hpointInj, hsingle⟩ :=
+    nearSharp_twoEndpointCertificate_forces_otherSingletonCore
+      P hcore hcellCard (by omega) hQcard hqQ hendpoint hqCard hcontain
+  have hpreimage : ∀ x : {x // x ∈ cell i},
+      ∃ t : {t // t ∈ Q.erase q}, point t = x.1 := by
+    intro x
+    have hxImage : x.1 ∈ (Q.erase q).attach.image point := by
+      rw [← hcellEq]
+      exact x.2
+    obtain ⟨t, _htAttach, htx⟩ := Finset.mem_image.mp hxImage
+    exact ⟨t, htx⟩
+  choose targetCell htargetPoint using hpreimage
+  let target : ℕ → ℕ := fun x =>
+    if hx : x ∈ cell i then (targetCell ⟨x, hx⟩).1 else 0
+  have htargetErase : ∀ x, x ∈ cell i → target x ∈ Q.erase q := by
+    intro x hx
+    simpa [target, hx] using (targetCell ⟨x, hx⟩).2
+  have htargetPoint : ∀ x, ∀ hx : x ∈ cell i,
+      point ⟨target x, htargetErase x hx⟩ = x := by
+    intro x hx
+    simpa [target, hx] using htargetPoint ⟨x, hx⟩
+  let Good : Finset ℕ := cell i \ crossingAtomEndpoints A B₀ q
+  have hGoodSub : Good ⊆ cell i := Finset.sdiff_subset
+  have hGoodCard : k - 2 ≤ Good.card := by
+    have hbound := Finset.card_le_card_sdiff_add_card
+      (s := cell i) (t := crossingAtomEndpoints A B₀ q)
+    rw [hcellCard i, hqCard] at hbound
+    simpa [Good] using hbound
+  refine ⟨Good, target, i, hGoodSub, hGoodCard, ?_⟩
+  intro x hxGood
+  have hxCell : x ∈ cell i := hGoodSub hxGood
+  have htErase : target x ∈ Q.erase q := htargetErase x hxCell
+  have htQ : target x ∈ Q := Finset.mem_of_mem_erase htErase
+  have htNeq : target x ≠ q := (Finset.mem_erase.mp htErase).1
+  let tx : {t // t ∈ Q.erase q} := ⟨target x, htErase⟩
+  have htargetEndpoint :
+      crossingAtomEndpoints A B₀ (target x) = {x} := by
+    calc
+      crossingAtomEndpoints A B₀ (target x) = {point tx} := hsingle tx
+      _ = {x} := by rw [htargetPoint x hxCell]
+  refine ⟨htQ, htNeq, htargetEndpoint, ?_⟩
+  intro G hGR hGsingleton
+  have hxNotG : x ∉ G := by
+    intro hxG
+    exact Set.disjoint_left.mp hGsingleton
+      (Finset.mem_coe.mpr hxG) (by simp)
+  have hxNotQEndpoints : x ∉ crossingAtomEndpoints A B₀ q :=
+    (Finset.mem_sdiff.mp hxGood).2
+  have hGcard : G.card ≤ 3 :=
+    additiveSupportFamily_cardAtMost A 3 (target x) G hGR
+  let Forbidden : Finset ℕ :=
+    G ∪ crossingAtomEndpoints A B₀ q
+  have hForbiddenCard : Forbidden.card ≤ 5 := by
+    have hunion := Finset.card_union_le G
+      (crossingAtomEndpoints A B₀ q)
+    dsimp only [Forbidden]
+    omega
+  have houtside : ∀ j, ∃ y, y ∈ cell j ∧ y ∉ Forbidden := by
+    intro j
+    have hnsub : ¬ cell j ⊆ Forbidden := by
+      intro hsub
+      have hcard := Finset.card_le_card hsub
+      rw [hcellCard j] at hcard
+      omega
+    exact Finset.not_subset.mp hnsub
+  choose other hotherCell hotherForbidden using houtside
+  let value : ℕ → ℕ := fun j =>
+    if hj : j = i then x else other j
+  have hvalueCell : ∀ j, value j ∈ cell j := by
+    intro j
+    by_cases hj : j = i
+    · subst j
+      simpa [value] using hxCell
+    · simpa [value, hj] using hotherCell j
+  have hvalueG : ∀ j, value j ∉ G := by
+    intro j
+    by_cases hj : j = i
+    · subst j
+      simpa [value] using hxNotG
+    · intro hG
+      apply hotherForbidden j
+      apply Finset.mem_union_left
+      simpa [value, hj] using hG
+  have hvalueQEndpoints : ∀ j,
+      value j ∉ crossingAtomEndpoints A B₀ q := by
+    intro j
+    by_cases hj : j = i
+    · subst j
+      simpa [value] using hxNotQEndpoints
+    · intro hqEndpoint
+      apply hotherForbidden j
+      apply Finset.mem_union_right
+      simpa [value, hj] using hqEndpoint
+  let sel : BlockSelector F := fun j =>
+    ⟨value j, hcore j (hvalueCell j)⟩
+  have hselCore : ∀ j, (sel j).1 ∈ cell j := by
+    intro j
+    exact hvalueCell j
+  have hselI : (sel i).1 = x := by simp [sel, value]
+  have hGselected : Disjoint (G : Set ℕ) (selectedSet sel) := by
+    rw [Set.disjoint_left]
+    intro z hzG hzSelected
+    obtain ⟨j, hj⟩ := hzSelected
+    apply hvalueG j
+    have : value j = z := hj
+    exact this ▸ Finset.mem_coe.mp hzG
+  have hqEndpointsSelected : Disjoint
+      (crossingAtomEndpoints A B₀ q : Set ℕ) (selectedSet sel) := by
+    rw [Set.disjoint_left]
+    intro z hzEndpoint hzSelected
+    obtain ⟨j, hj⟩ := hzSelected
+    apply hvalueQEndpoints j
+    have : value j = z := hj
+    exact this ▸ Finset.mem_coe.mp hzEndpoint
+  have hcellSelected : ∀ z, z ∈ cell i →
+      z ∈ selectedSet sel → z = x := by
+    intro z hzCell hzSelected
+    obtain ⟨j, hj⟩ := hzSelected
+    have hji : j = i := by
+      by_contra hji
+      have hzFj : z ∈ F j := by
+        rw [← hj]
+        exact (sel j).2
+      exact Finset.disjoint_left.mp
+        (P.disjoint (fun hij => hji hij.symm))
+        (hcore i hzCell) hzFj
+    subst j
+    exact hj.symm.trans hselI
+  obtain ⟨r, hrQ, hrDestroy, hrSub⟩ := hcert sel hselCore
+  have hrNeq : r ≠ q := by
+    intro hrq
+    subst r
+    obtain ⟨z, hzEndpoint⟩ := hendpoint q hqQ
+    have hzSelected := hrSub (Finset.mem_coe.mpr hzEndpoint)
+    exact Set.disjoint_left.mp hqEndpointsSelected
+      (Finset.mem_coe.mpr hzEndpoint) hzSelected
+  have hrErase : r ∈ Q.erase q := Finset.mem_erase.mpr ⟨hrNeq, hrQ⟩
+  let rE : {t // t ∈ Q.erase q} := ⟨r, hrErase⟩
+  have hpointEndpoint : point rE ∈ crossingAtomEndpoints A B₀ r := by
+    rw [hsingle rE]
+    simp
+  have hpointSelected : point rE ∈ selectedSet sel :=
+    hrSub (Finset.mem_coe.mpr hpointEndpoint)
+  have hpointCell : point rE ∈ cell i := by
+    rw [hcellEq]
+    exact Finset.mem_image.mpr
+      ⟨rE, Finset.mem_attach (Q.erase q) rE, rfl⟩
+  have hpointEq : point rE = x :=
+    hcellSelected (point rE) hpointCell hpointSelected
+  have hrTarget : r = target x := by
+    have : rE = tx := hpointInj (by
+      simpa [tx] using hpointEq.trans (htargetPoint x hxCell).symm)
+    exact congrArg Subtype.val this
+  have htargetDestroy : DestroysAt (additiveSupportFamily A 3)
+      (selectedSet sel) (target x) := by
+    simpa [hrTarget] using hrDestroy
+  exact (htargetDestroy G hGR) hGselected
+
 set_option maxHeartbeats 3000000 in
 /-- The one-defect core cover still forces almost a whole core of genuine
 singleton order-three destroyers.  Choose one target above each core point;
@@ -8154,23 +8698,21 @@ theorem nearSharpSingletonCrossingEndpointTripleCertificate_forces_almostCoreDes
     simpa [hrTarget] using hrDestroy
   exact (htargetDestroy G hGR) hGselected
 
-/-- A fixed core cannot carry arbitrarily late near-sharp singleton
-certificates with `k - 1` singleton destroyers.  Globally, at most three
-basis elements admit arbitrarily late singleton order-three destruction;
-an almost-full core of size at least five contains a safe point, and the
-maximum of the finitely many safe-point cutoffs rules out the certificate. -/
+/-- A fixed core cannot carry arbitrarily late certificates with four
+singleton destroyers.  Globally, at most three basis elements admit
+arbitrarily late singleton order-three destruction; the maximum of the
+finitely many safe-point cutoffs rules out the certificate. -/
 theorem eventually_no_nearSharpSingletonAlmostCoreDestroyers_on_fixedCore
     {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ}
-    {k i : ℕ}
+    {i : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
     (hB₀A : B₀ ⊆ A)
     (P : IsFiniteBlockPartition B₀ F)
-    (hcore : ∀ j, cell j ⊆ F j)
-    (hk : 5 ≤ k) :
+    (hcore : ∀ j, cell j ⊆ F j) :
     ∃ N, ∀ {Q Good : Finset ℕ} (target : ℕ → ℕ),
       (∀ q ∈ Q, N ≤ q) →
       Good ⊆ cell i →
-      k - 1 ≤ Good.card →
+      4 ≤ Good.card →
       (∀ x ∈ Good,
         target x ∈ Q ∧
         DestroysAt (additiveSupportFamily A 3)
@@ -8301,14 +8843,14 @@ theorem cofinalMinimalNearSharpSingletonCertificates_force_infiniteCores
       (target : ℕ → ℕ),
       (∀ q ∈ Q, Ni ≤ q) →
       Good ⊆ cell i →
-      k - 1 ≤ Good.card →
+      4 ≤ Good.card →
       (∀ x ∈ Good,
         target x ∈ Q ∧
         DestroysAt (additiveSupportFamily A 3)
           ({x} : Set ℕ) (target x)) → False := by
     intro i
     exact eventually_no_nearSharpSingletonAlmostCoreDestroyers_on_fixedCore
-      hbasis hB₀A P hcore hk
+      hbasis hB₀A P hcore
   choose cutoff hcutoff using hcutoffExists
   let N : ℕ := J.sup cutoff
   obtain ⟨Q, hdata, hQcard, hendpointCard⟩ := hcofinal N
@@ -8324,7 +8866,7 @@ theorem cofinalMinimalNearSharpSingletonCertificates_force_infiniteCores
   · intro q hqQ
     exact hcutoffN.trans (hdata'.2.1 q hqQ).1
   · exact hGoodSub
-  · exact hGoodCard
+  · omega
   · intro x hxGood
     exact ⟨(hGoodData x hxGood).1, (hGoodData x hxGood).2.2⟩
 
@@ -8446,6 +8988,229 @@ theorem eventualMinimalNearSharpSingletonCertificates_give_infiniteEndpointSet
     cofinalMinimalNearSharpSingletonCertificates_force_infiniteCores
       hbasis hB₀A P hcore hcellCard hk hcofinal
   exact infiniteNearSharpSingletonCores_give_infiniteEndpointSet
+    P hcore hk hMoving
+
+/-- Core-indexed package extracted from a dense two-endpoint certificate. -/
+def IsNearSharpTwoAlmostCoreCertificate
+    (A B₀ : Set ℕ) (F cell : ℕ → Finset ℕ)
+    (k N i : ℕ) : Prop :=
+  ∃ Q : Finset ℕ, ∃ q, ∃ base : BlockSelector F,
+    ∃ Good : Finset ℕ, ∃ target : ℕ → ℕ,
+      IsMinimalNearSharpDenseTwoEndpointCertificate
+        A B₀ F k N Q q base ∧
+      Good ⊆ cell i ∧
+      k - 2 ≤ Good.card ∧
+      ∀ x ∈ Good,
+        target x ∈ Q ∧
+        target x ≠ q ∧
+        crossingAtomEndpoints A B₀ (target x) = {x} ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ({x} : Set ℕ) (target x)
+
+/-- A dense two-endpoint certificate whose endpoint families are nonempty
+supplies `k - 2` singleton destroyers in one core. -/
+theorem minimalNearSharpDenseTwoCertificate_gives_almostCoreCertificate
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {q k N : ℕ} {base : BlockSelector F}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 6 ≤ k)
+    (hdense : IsMinimalNearSharpDenseTwoEndpointCertificate
+      A B₀ F k N Q q base)
+    (hendpoint : ∀ t ∈ Q,
+      (crossingAtomEndpoints A B₀ t).Nonempty) :
+    ∃ i, IsNearSharpTwoAlmostCoreCertificate
+      A B₀ F cell k N i := by
+  rcases hdense with ⟨hdata, hQcard, hendpointSmall, hqQ,
+    hqCard, hdestroy, hprivate, haligned⟩
+  rcases hdata with ⟨hstrict, hQdata, hcert, hlocalized,
+    hscaled, hrefined⟩
+  obtain ⟨Good, target, i, hGoodSub, hGoodCard, hGoodData⟩ :=
+    nearSharp_twoEndpointTripleCertificate_forces_almostCoreDestroyers
+      P hcore hcellCard hk hQcard hqQ hendpoint hqCard
+        (fun sel _hsel => hcert sel)
+  refine ⟨i, Q, q, base, Good, target, ?_, hGoodSub,
+    hGoodCard, hGoodData⟩
+  exact ⟨⟨hstrict, hQdata, hcert, hlocalized, hscaled, hrefined⟩,
+    hQcard, hendpointSmall, hqQ, hqCard, hdestroy, hprivate, haligned⟩
+
+/-- Cofinal dense two-endpoint certificates migrate through infinitely many
+cores.  Their `k - 2` singleton destroyers exceed the global three-point
+exception exactly as in the singleton near-sharp branch. -/
+theorem cofinalMinimalNearSharpDenseTwoCertificates_force_infiniteCores
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hB₀A : B₀ ⊆ A)
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 6 ≤ k)
+    (hcofinal : ∀ N, ∃ Q q base,
+      IsMinimalNearSharpDenseTwoEndpointCertificate
+        A B₀ F k N Q q base) :
+    {i | ∃ N, IsNearSharpTwoAlmostCoreCertificate
+      A B₀ F cell k N i}.Infinite := by
+  classical
+  obtain ⟨Nbasis, hNbasis⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  let Moving : Set ℕ := {i | ∃ N,
+    IsNearSharpTwoAlmostCoreCertificate A B₀ F cell k N i}
+  change Moving.Infinite
+  apply Set.not_finite.mp
+  intro hMovingFinite
+  let J : Finset ℕ := hMovingFinite.toFinset
+  have hcutoffExists : ∀ i, ∃ Ni, ∀ {Q Good : Finset ℕ}
+      (target : ℕ → ℕ),
+      (∀ t ∈ Q, Ni ≤ t) →
+      Good ⊆ cell i →
+      4 ≤ Good.card →
+      (∀ x ∈ Good,
+        target x ∈ Q ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ({x} : Set ℕ) (target x)) → False := by
+    intro i
+    exact eventually_no_nearSharpSingletonAlmostCoreDestroyers_on_fixedCore
+      hbasis hB₀A P hcore
+  choose cutoff hcutoff using hcutoffExists
+  let T : ℕ := J.sup cutoff
+  let N : ℕ := max Nbasis T
+  obtain ⟨Q, q, base, hdense⟩ := hcofinal N
+  have hendpoint : ∀ t ∈ Q,
+      (crossingAtomEndpoints A B₀ t).Nonempty := by
+    intro t htQ
+    have hdata := hdense.1
+    obtain ⟨E, hER, _hEempty⟩ :=
+      hNbasis t ((le_max_left Nbasis T).trans
+        (hdata.2.1 t htQ).1)
+    obtain ⟨b, hbB₀, c, hcC, hbc, _hEeq⟩ :=
+      exists_endpoints_of_crossingPairSupport hER
+        ((hdata.2.1 t htQ).2 E hER).1
+        ((hdata.2.1 t htQ).2 E hER).2
+    have hbLe : b ≤ t := by omega
+    have hsub : t - b = c := by omega
+    exact ⟨b, mem_crossingAtomEndpoints_iff.mpr
+      ⟨hbLe, hbB₀, hsub ▸ hcC⟩⟩
+  obtain ⟨i, hcoreCert⟩ :=
+    minimalNearSharpDenseTwoCertificate_gives_almostCoreCertificate
+      P hcore hcellCard hk hdense hendpoint
+  have hiMoving : i ∈ Moving := ⟨N, hcoreCert⟩
+  have hiJ : i ∈ J := hMovingFinite.mem_toFinset.mpr hiMoving
+  have hcutoffT : cutoff i ≤ T := Finset.le_sup (f := cutoff) hiJ
+  obtain ⟨Q', q', base', Good, target, hdense', hGoodSub,
+    hGoodCard, hGoodData⟩ := hcoreCert
+  apply hcutoff i target
+  · intro t htQ
+    exact hcutoffT.trans ((le_max_right Nbasis T).trans
+      (hdense'.1.2.1 t htQ).1)
+  · exact hGoodSub
+  · omega
+  · intro x hxGood
+    exact ⟨(hGoodData x hxGood).1, (hGoodData x hxGood).2.2.2⟩
+
+/-- Migrating dense-two cores lift to an infinite subset of `B₀` carrying
+singleton private destroyers from those certificates. -/
+theorem infiniteNearSharpDenseTwoCores_give_infiniteEndpointSet
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hk : 6 ≤ k)
+    (hMoving : {i | ∃ N,
+      IsNearSharpTwoAlmostCoreCertificate
+        A B₀ F cell k N i}.Infinite) :
+    ∃ L, L ⊆ B₀ ∧ L.Infinite ∧
+      ∀ x ∈ L, ∃ N Q q t base,
+        IsMinimalNearSharpDenseTwoEndpointCertificate
+          A B₀ F k N Q q base ∧
+        t ∈ Q ∧ t ≠ q ∧
+        crossingAtomEndpoints A B₀ t = {x} ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ({x} : Set ℕ) t := by
+  classical
+  let Moving : Set ℕ := {i | ∃ N,
+    IsNearSharpTwoAlmostCoreCertificate A B₀ F cell k N i}
+  have hMoving' : Moving.Infinite := by
+    simpa [Moving] using hMoving
+  have hwitness : ∀ i, i ∈ Moving → ∃ x N Q q t base,
+      x ∈ B₀ ∧ blockIndex P x = i ∧
+      IsMinimalNearSharpDenseTwoEndpointCertificate
+        A B₀ F k N Q q base ∧
+      t ∈ Q ∧ t ≠ q ∧
+      crossingAtomEndpoints A B₀ t = {x} ∧
+      DestroysAt (additiveSupportFamily A 3)
+        ({x} : Set ℕ) t := by
+    intro i hiMoving
+    change ∃ N, IsNearSharpTwoAlmostCoreCertificate
+      A B₀ F cell k N i at hiMoving
+    obtain ⟨N, Q, q, base, Good, target, hdense,
+      hGoodSub, hGoodCard, hGoodData⟩ := hiMoving
+    have hGoodNonempty : Good.Nonempty := by
+      apply Finset.card_pos.mp
+      have : 1 ≤ k - 2 := by omega
+      exact this.trans hGoodCard
+    obtain ⟨x, hxGood⟩ := hGoodNonempty
+    have hxCell : x ∈ cell i := hGoodSub hxGood
+    have hxF : x ∈ F i := hcore i hxCell
+    have hxB₀ : x ∈ B₀ := (P.mem_iff x).2 ⟨i, hxF⟩
+    have hxIndex : blockIndex P x = i := P.blockIndex_eq_of_mem hxF
+    exact ⟨x, N, Q, q, target x, base, hxB₀, hxIndex, hdense,
+      (hGoodData x hxGood).1, (hGoodData x hxGood).2.1,
+      (hGoodData x hxGood).2.2.1,
+      (hGoodData x hxGood).2.2.2⟩
+  choose point N Q q t base hpointB₀ hpointIndex hdense htQ htNeq
+    hendpoint hdestroy using hwitness
+  let pick : ℕ → ℕ := fun i =>
+    if hi : i ∈ Moving then point i hi else 0
+  have hpickB₀ : ∀ i ∈ Moving, pick i ∈ B₀ := by
+    intro i hi
+    simpa [pick, hi] using hpointB₀ i hi
+  have hpickIndex : ∀ i ∈ Moving, blockIndex P (pick i) = i := by
+    intro i hi
+    simpa [pick, hi] using hpointIndex i hi
+  have hpickInj : Set.InjOn pick Moving := by
+    intro i hi j hj hpickEq
+    calc
+      i = blockIndex P (pick i) := (hpickIndex i hi).symm
+      _ = blockIndex P (pick j) := by rw [hpickEq]
+      _ = j := hpickIndex j hj
+  let L : Set ℕ := pick '' Moving
+  have hL : L.Infinite := hMoving'.image hpickInj
+  have hLB₀ : L ⊆ B₀ := by
+    rintro x ⟨i, hiMoving, rfl⟩
+    exact hpickB₀ i hiMoving
+  refine ⟨L, hLB₀, hL, ?_⟩
+  rintro x ⟨i, hiMoving, rfl⟩
+  refine ⟨N i hiMoving, Q i hiMoving, q i hiMoving,
+    t i hiMoving, base i hiMoving, hdense i hiMoving,
+    htQ i hiMoving, htNeq i hiMoving, ?_, ?_⟩
+  · simpa [pick, hiMoving] using hendpoint i hiMoving
+  · simpa [pick, hiMoving] using hdestroy i hiMoving
+
+/-- The dense two-endpoint branch itself therefore yields an actual infinite
+endpoint set. -/
+theorem cofinalMinimalNearSharpDenseTwoCertificates_give_infiniteEndpointSet
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hB₀A : B₀ ⊆ A)
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 6 ≤ k)
+    (hcofinal : ∀ N, ∃ Q q base,
+      IsMinimalNearSharpDenseTwoEndpointCertificate
+        A B₀ F k N Q q base) :
+    ∃ L, L ⊆ B₀ ∧ L.Infinite ∧
+      ∀ x ∈ L, ∃ N Q q t base,
+        IsMinimalNearSharpDenseTwoEndpointCertificate
+          A B₀ F k N Q q base ∧
+        t ∈ Q ∧ t ≠ q ∧
+        crossingAtomEndpoints A B₀ t = {x} ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ({x} : Set ℕ) t := by
+  have hMoving :=
+    cofinalMinimalNearSharpDenseTwoCertificates_force_infiniteCores
+      hbasis hB₀A P hcore hcellCard hk hcofinal
+  exact infiniteNearSharpDenseTwoCores_give_infiniteEndpointSet
     P hcore hk hMoving
 
 /-- Meaningful minimal-certificate dichotomy.  Either cardinal-minimal
@@ -8789,6 +9554,70 @@ theorem minimalCrossingEndpointCertificates_two_finite_branches_or_infiniteEndpo
       exact Or.inr (Or.inr (Or.inr
         (Or.inl ⟨L, hLB₀, hL, hdata⟩)))
   · exact Or.inr (Or.inr (Or.inl hthree))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr hrigid)))
+
+/-- Final refinement of the near-sharp analysis.  The dense two-endpoint
+branch also migrates, so the only remaining finite-certificate alternative
+is cofinal recurrence of genuinely oversized minimal certificates. -/
+theorem minimalCrossingEndpointCertificates_large_or_infiniteEndpointObstructions
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 10 ≤ k) :
+    (∀ N, ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+      k + 2 ≤ Q.card) ∨
+    (∃ L, L ⊆ B₀ ∧ L.Infinite ∧
+      ∀ x ∈ L, ∃ N Q q t base,
+        IsMinimalNearSharpDenseTwoEndpointCertificate
+          A B₀ F k N Q q base ∧
+        t ∈ Q ∧ t ≠ q ∧
+        crossingAtomEndpoints A B₀ t = {x} ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ({x} : Set ℕ) t) ∨
+    (∃ L, L ⊆ B₀ ∧ L.Infinite ∧
+      ∀ x ∈ L, ∃ N Q q,
+        IsMinimalNearSharpThreeEndpointCertificate
+          A B₀ F k N Q q ∧
+        x ∈ crossingAtomEndpoints A B₀ q) ∨
+    (∃ L, L ⊆ B₀ ∧ L.Infinite ∧
+      ∀ x ∈ L, ∃ N Q q,
+        IsMinimalStrictCrossingEndpointCertificateData
+          A B₀ F k N Q ∧
+        Q.card = k + 1 ∧
+        q ∈ Q ∧
+        crossingAtomEndpoints A B₀ q = {x} ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ({x} : Set ℕ) q) ∨
+    ∃ N₀ L, L ⊆ B₀ ∧ L.Infinite ∧
+      ∀ b ∈ L, ∃ q,
+        N₀ ≤ q ∧
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B₀ ∧
+          ¬ (E : Set ℕ) ⊆ B₀) ∧
+        crossingAtomEndpoints A B₀ q = {b} ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ({b} : Set ℕ) q ∧
+        IsRigidPairSum A b (q - b) := by
+  obtain hlarge | hdense | hthree | hsingle | hrigid :=
+    minimalCrossingEndpointCertificates_two_finite_branches_or_infiniteEndpoints
+      hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+        P hcore hcellCard hk
+  · exact Or.inl hlarge
+  · obtain ⟨L, hLB₀, hL, hdata⟩ :=
+      cofinalMinimalNearSharpDenseTwoCertificates_give_infiniteEndpointSet
+        hbasis hB₀A P hcore hcellCard (by omega) hdense
+    exact Or.inr (Or.inl ⟨L, hLB₀, hL, hdata⟩)
+  · exact Or.inr (Or.inr (Or.inl hthree))
+  · exact Or.inr (Or.inr (Or.inr (Or.inl hsingle)))
   · exact Or.inr (Or.inr (Or.inr (Or.inr hrigid)))
 
 /-- Endpoint-set form of the global migration dichotomy.  If the strict
