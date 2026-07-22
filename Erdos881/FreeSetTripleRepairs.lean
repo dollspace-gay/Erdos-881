@@ -14549,6 +14549,119 @@ theorem additiveSupportFamily_three_sum_eq_of_card_eq_three
   · simpa using hvsum
   · exact hinj
 
+/-- Two distinct vertices occurring in one additive support contribute at
+most the whole represented target.  This records the elementary two-term
+lower bound on the tuple sum in a form useful for pruning bounded collision
+patterns. -/
+theorem additiveSupportFamily_two_mem_add_le_target
+    {A : Set ℕ} {h q : ℕ} {G : Finset ℕ} {x y : ℕ}
+    (hGR : G ∈ additiveSupportFamily A h q)
+    (hxG : x ∈ G) (hyG : y ∈ G) (hxy : x ≠ y) :
+    x + y ≤ q := by
+  classical
+  obtain ⟨v, _hvA, hvsum, rfl⟩ :=
+    mem_additiveSupportFamily_iff.mp hGR
+  obtain ⟨i, hi⟩ := mem_tupleSupport_iff.mp hxG
+  obtain ⟨j, hj⟩ := mem_tupleSupport_iff.mp hyG
+  have hij : i ≠ j := by
+    intro hij
+    apply hxy
+    calc
+      x = (v i).1 := hi.symm
+      _ = (v j).1 := by rw [hij]
+      _ = y := hj
+  have hpairSub : ({i, j} : Finset (Fin h)) ⊆ Finset.univ := by
+    simp
+  have hsumle :
+      ∑ k ∈ ({i, j} : Finset (Fin h)), (v k).1 ≤
+        ∑ k, (v k).1 := by
+    exact Finset.sum_le_sum_of_subset hpairSub
+  rw [Finset.sum_insert (by simpa using hij), Finset.sum_singleton,
+    hi, hj, hvsum] at hsumle
+  exact hsumle
+
+/-- If an injective infinite family of order-three repairs all contains the
+same two-point set, then after thinning each repair has exactly one further
+point.  Those third points are injective, and the target is the fixed root
+sum plus the third point. -/
+theorem fixedTwoPointRepairTrace_has_injectiveThirdPoint
+    {A I : Set ℕ} (hI : I.Infinite)
+    (target : ℕ → ℕ) (htargetInj : Set.InjOn target I)
+    (repair : ℕ → Finset ℕ) (S : Finset ℕ)
+    (hScard : S.card = 2)
+    (hrepairR : ∀ n ∈ I,
+      repair n ∈ additiveSupportFamily A 3 (target n))
+    (hSrepair : ∀ n ∈ I, S ⊆ repair n) :
+    ∃ L, L ⊆ I ∧ L.Infinite ∧
+      ∃ third : ℕ → ℕ, Set.InjOn third L ∧
+        ∀ n ∈ L,
+          third n ∈ repair n \ S ∧
+          repair n = insert (third n) S ∧
+          target n = S.sum id + third n := by
+  classical
+  obtain ⟨N, hescape⟩ :=
+    additiveSupportFamily_eventuallyEscapesFiniteCores A 3 S
+  let Small : Set ℕ := {n | n ∈ I ∧ repair n ⊆ S}
+  have hSmallFinite : Small.Finite := by
+    apply Set.Finite.of_finite_image (f := target)
+    · apply (Set.finite_Iio N).subset
+      rintro q ⟨n, hnSmall, rfl⟩
+      by_contra hnot
+      have hnonempty := hescape (target n) (Nat.le_of_not_gt hnot)
+        (repair n) (hrepairR n hnSmall.1)
+      exact hnonempty.ne_empty
+        (Finset.sdiff_eq_empty_iff_subset.mpr hnSmall.2)
+    · exact htargetInj.mono (fun _ hn => hn.1)
+  let L : Set ℕ := I \ Small
+  have hLI : L ⊆ I := Set.diff_subset
+  have hL : L.Infinite := hI.diff hSmallFinite
+  have hdiffNonempty : ∀ n ∈ L, (repair n \ S).Nonempty := by
+    intro n hn
+    apply Finset.nonempty_iff_ne_empty.mpr
+    intro hempty
+    exact hn.2 ⟨hn.1,
+      Finset.sdiff_eq_empty_iff_subset.mp hempty⟩
+  let third : ℕ → ℕ := fun n =>
+    if hn : n ∈ L then Classical.choose (hdiffNonempty n hn) else 0
+  have hthirdDiff : ∀ n ∈ L, third n ∈ repair n \ S := by
+    intro n hn
+    simpa only [third, dif_pos hn] using
+      Classical.choose_spec (hdiffNonempty n hn)
+  have hrepairEq : ∀ n ∈ L,
+      repair n = insert (third n) S := by
+    intro n hn
+    have hthirdRepair := (Finset.mem_sdiff.mp (hthirdDiff n hn)).1
+    have hthirdNotS := (Finset.mem_sdiff.mp (hthirdDiff n hn)).2
+    have hinsertSub : insert (third n) S ⊆ repair n := by
+      intro x hx
+      rcases Finset.mem_insert.mp hx with rfl | hxS
+      · exact hthirdRepair
+      · exact hSrepair n (hLI hn) hxS
+    have hrepairCard : (repair n).card ≤ 3 :=
+      additiveSupportFamily_cardAtMost A 3
+        (target n) (repair n) (hrepairR n (hLI hn))
+    have hinsertCard : (insert (third n) S).card = 3 := by
+      simp [hthirdNotS, hScard]
+    exact (Finset.eq_of_subset_of_card_le hinsertSub (by
+      simpa [hinsertCard] using hrepairCard)).symm
+  have htargetEq : ∀ n ∈ L,
+      target n = S.sum id + third n := by
+    intro n hn
+    have hrepairCard : (repair n).card = 3 := by
+      rw [hrepairEq n hn]
+      simp [(Finset.mem_sdiff.mp (hthirdDiff n hn)).2, hScard]
+    have hsum := additiveSupportFamily_three_sum_eq_of_card_eq_three
+      (hrepairR n (hLI hn)) hrepairCard
+    rw [hrepairEq n hn,
+      Finset.sum_insert (Finset.mem_sdiff.mp (hthirdDiff n hn)).2] at hsum
+    simpa [Nat.add_comm] using hsum.symm
+  have hthirdInj : Set.InjOn third L := by
+    intro n hn m hm hthirdEq
+    apply htargetInj (hLI hn) (hLI hm)
+    rw [htargetEq n hn, htargetEq m hm, hthirdEq]
+  exact ⟨L, hLI, hL, third, hthirdInj, fun n hn =>
+    ⟨hthirdDiff n hn, hrepairEq n hn, htargetEq n hn⟩⟩
+
 set_option maxHeartbeats 5000000 in
 /-- Uniform payload of the three-endpoint near-cover theorem.  Regardless
 of which alignment case occurs, at least `k - 6` distinct other targets have
@@ -25658,6 +25771,148 @@ theorem exists_infinite_binaryChoice_commonSurvival
           (Finset.mem_union_left _
             (Finset.mem_coe.mp (hsmy ▸ hzE)))
 
+/-- A coincident certificate family whose exact core trace is one fixed
+two-point set also yields binary common survival.  Each certificate repair
+is the fixed pair plus an injective third point.  A private core repair can
+contain that third point only when the corresponding marked atom is bounded
+by the fixed-pair sum, so target injectivity lets us discard all such
+indices. -/
+theorem coincidentFixedTwoPointCoreTrace_gives_binaryChoice_commonSurvival
+    {A C K I : Set ℕ} {D : Finset ℕ}
+    (target atom : ℕ → ℕ)
+    (moving core certificateRepair : ℕ → Finset ℕ)
+    (S : Finset ℕ)
+    (hI : I.Infinite)
+    (hatomK : ∀ n ∈ I, atom n ∈ K)
+    (hatomInj : Set.InjOn atom I)
+    (htargetInj : Set.InjOn (fun n => target (atom n)) I)
+    (hdata : ∀ b ∈ K,
+      IsCriticalMarkedMinimalDestroyerData
+        A C D b (target b) (moving b) (core b))
+    (hcertificateR : ∀ n ∈ I,
+      certificateRepair n ∈
+        additiveSupportFamily A 3 (target (atom n)))
+    (hcertificateK : ∀ n ∈ I,
+      Disjoint (certificateRepair n : Set ℕ) K)
+    (hScard : S.card = 2)
+    (htrace : ∀ n ∈ I,
+      certificateRepair n ∩ core (atom n) = S) :
+    ∃ J, J ⊆ I ∧ J.Infinite ∧
+      ∃ third : ℕ → ℕ,
+        Set.InjOn third J ∧
+        (∀ n ∈ J,
+          third n ∈ certificateRepair n \ S ∧
+          atom n ≠ third n) ∧
+        (∀ n ∈ J, ∀ m ∈ J, n ≠ m →
+          Disjoint ({atom n, third n} : Finset ℕ)
+            ({atom m, third m} : Finset ℕ)) ∧
+        ∀ s : ℕ → ℕ,
+          (∀ n ∈ J, s n = atom n ∨ s n = third n) →
+          ∀ n ∈ J, ∃ G ∈
+            additiveSupportFamily A 3 (target (atom n)),
+            Disjoint (G : Set ℕ) (s '' J) := by
+  classical
+  have hSrepair : ∀ n ∈ I, S ⊆ certificateRepair n := by
+    intro n hn x hxS
+    have hxTrace : x ∈ certificateRepair n ∩ core (atom n) := by
+      rw [htrace n hn]
+      exact hxS
+    exact (Finset.mem_inter.mp hxTrace).1
+  obtain ⟨L₀, hL₀I, hL₀, third, hthirdInj, hthirdData⟩ :=
+    fixedTwoPointRepairTrace_has_injectiveThirdPoint
+      hI (fun n => target (atom n)) htargetInj
+        certificateRepair S hScard hcertificateR hSrepair
+  have hprivateExists : ∀ n ∈ L₀, ∃ U,
+      U ∈ additiveSupportFamily A 3 (target (atom n)) ∧
+      U ∩ core (atom n) = {atom n} := by
+    intro n hn
+    obtain ⟨_hbound, _hno, _hmovingC, _hmovingDisjoint,
+        _hmovingNonempty, _hmovingCard, _hdestroy,
+        _hcoreSub, hatomCore, hminimal, _htype⟩ :=
+      hdata (atom n) (hatomK n (hL₀I hn))
+    exact hminimal.exists_uniqueHitSupport hatomCore
+  let privateRepair : ℕ → Finset ℕ := fun n =>
+    if hn : n ∈ L₀ then Classical.choose (hprivateExists n hn) else ∅
+  have hprivateR : ∀ n ∈ L₀,
+      privateRepair n ∈
+        additiveSupportFamily A 3 (target (atom n)) := by
+    intro n hn
+    simpa only [privateRepair, dif_pos hn] using
+      (Classical.choose_spec (hprivateExists n hn)).1
+  have hprivateHit : ∀ n ∈ L₀,
+      privateRepair n ∩ core (atom n) = {atom n} := by
+    intro n hn
+    simpa only [privateRepair, dif_pos hn] using
+      (Classical.choose_spec (hprivateExists n hn)).2
+  have hatomPrivate : ∀ n ∈ L₀, atom n ∈ privateRepair n := by
+    intro n hn
+    have hmem : atom n ∈ privateRepair n ∩ core (atom n) := by
+      rw [hprivateHit n hn]
+      simp
+    exact (Finset.mem_inter.mp hmem).1
+  have hthirdNotK : ∀ n ∈ L₀, third n ∉ K := by
+    intro n hn hthirdK
+    exact Set.disjoint_left.mp (hcertificateK n (hL₀I hn))
+      (Finset.mem_coe.mpr
+        (Finset.mem_sdiff.mp (hthirdData n hn).1).1) hthirdK
+  have hatomThirdNe : ∀ n ∈ L₀, atom n ≠ third n := by
+    intro n hn heq
+    exact hthirdNotK n hn (heq ▸ hatomK n (hL₀I hn))
+  let Bad : Set ℕ :=
+    {n | n ∈ L₀ ∧ third n ∈ privateRepair n}
+  have hBadFinite : Bad.Finite := by
+    apply Set.Finite.of_finite_image (f := atom)
+    · apply (Set.finite_Iic (S.sum id)).subset
+      rintro b ⟨n, hnBad, rfl⟩
+      have htwoLe := additiveSupportFamily_two_mem_add_le_target
+        (hprivateR n hnBad.1) (hatomPrivate n hnBad.1)
+          hnBad.2 (hatomThirdNe n hnBad.1)
+      have htargetEq := (hthirdData n hnBad.1).2.2
+      rw [htargetEq] at htwoLe
+      exact Nat.le_of_add_le_add_right htwoLe
+    · exact hatomInj.mono (fun _ hn => hL₀I hn.1)
+  let L : Set ℕ := L₀ \ Bad
+  have hLL₀ : L ⊆ L₀ := Set.diff_subset
+  have hLI : L ⊆ I := hLL₀.trans hL₀I
+  have hL : L.Infinite := hL₀.diff hBadFinite
+  have hthirdNotPrivate : ∀ n ∈ L,
+      third n ∉ privateRepair n := by
+    intro n hn hthirdPrivate
+    exact hn.2 ⟨hn.1, hthirdPrivate⟩
+  have hatomNotCertificate : ∀ n ∈ L,
+      atom n ∉ certificateRepair n := by
+    intro n hn hatomRepair
+    exact Set.disjoint_left.mp (hcertificateK n (hLI hn))
+      (Finset.mem_coe.mpr hatomRepair) (hatomK n (hLI hn))
+  have hmatching : ∀ n ∈ L, ∀ m ∈ L, n ≠ m →
+      Disjoint ({atom n, third n} : Finset ℕ)
+        ({atom m, third m} : Finset ℕ) := by
+    intro n hn m hm hnm
+    rw [Finset.disjoint_left]
+    intro z hzn hzm
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hzn hzm
+    rcases hzn with hzn | hzn <;> rcases hzm with hzm | hzm
+    · exact hnm (hatomInj (hLI hn) (hLI hm) (hzn.symm.trans hzm))
+    · exact hthirdNotK m (hLL₀ hm)
+        (hzm.symm ▸ hzn.symm ▸ hatomK n (hLI hn))
+    · exact hthirdNotK n (hLL₀ hn)
+        (hzn.symm ▸ hzm.symm ▸ hatomK m (hLI hm))
+    · exact hnm (hthirdInj (hLL₀ hn) (hLL₀ hm)
+        (hzn.symm.trans hzm))
+  obtain ⟨J, hJL, hJ, hcommon⟩ :=
+    exists_infinite_binaryChoice_commonSurvival
+      hL (fun n => target (atom n)) atom third hmatching
+        privateRepair certificateRepair
+        (fun n hn => hprivateR n (hLL₀ hn))
+        (fun n hn => hcertificateR n (hLI hn))
+        hthirdNotPrivate hatomNotCertificate
+  exact ⟨J, hJL.trans hLI, hJ, third,
+    hthirdInj.mono (hJL.trans hLL₀),
+    fun n hn => ⟨(hthirdData n (hLL₀ (hJL hn))).1,
+      hatomThirdNe n (hLL₀ (hJL hn))⟩,
+    fun n hn m hm hnm => hmatching n (hJL hn) m (hJL hm) hnm,
+    hcommon⟩
+
 /-- A coincident moving-petal certificate/core branch produces binary
 sunflower blocks `{atom n, petalHit n}` which survive every orientation at
 all retained marked targets.  The certificate repair avoids the atom and
@@ -25901,6 +26156,67 @@ theorem strongDeletion_binaryCommonSurvival_forces_migratedCertificate
     exact ⟨t, Finset.mem_filter.mpr ⟨htQ₀, htNotMarked⟩,
       htdestroy⟩
   exact ⟨Q, hQlate, by simpa [MarkedTargets] using hQdisjoint, hcert⟩
+
+/-- Counterexample-level closure of the fixed two-point core-trace branch.
+The injective third points form binary blocks with the marked atoms; common
+survival and strong deletion then force finite certificates whose complete
+target sets avoid the retained marked-target image. -/
+theorem counterexample_coincidentFixedTwoPointCoreTrace_forces_migratedCertificates
+    {A C K I : Set ℕ} {D : Finset ℕ}
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3)
+    (hKA : K ⊆ A)
+    (target atom : ℕ → ℕ)
+    (moving core certificateRepair : ℕ → Finset ℕ)
+    (S : Finset ℕ)
+    (hI : I.Infinite)
+    (hatomK : ∀ n ∈ I, atom n ∈ K)
+    (hatomInj : Set.InjOn atom I)
+    (htargetInj : Set.InjOn (fun n => target (atom n)) I)
+    (hdata : ∀ b ∈ K,
+      IsCriticalMarkedMinimalDestroyerData
+        A C D b (target b) (moving b) (core b))
+    (hcertificateR : ∀ n ∈ I,
+      certificateRepair n ∈
+        additiveSupportFamily A 3 (target (atom n)))
+    (hcertificateK : ∀ n ∈ I,
+      Disjoint (certificateRepair n : Set ℕ) K)
+    (hScard : S.card = 2)
+    (htrace : ∀ n ∈ I,
+      certificateRepair n ∩ core (atom n) = S) :
+    ∃ J, J ⊆ I ∧ J.Infinite ∧
+      ∃ K' : Set ℕ, ∃ pairCell : ℕ → Finset ℕ,
+        K' ⊆ A ∧ K'.Infinite ∧
+        IsFiniteBlockPartition K' pairCell ∧
+        (∀ i, (pairCell i).card = 2) ∧
+        ∀ N, ∃ Q : Finset ℕ,
+          (∀ t ∈ Q, N ≤ t) ∧
+          Disjoint (Q : Set ℕ)
+            ((fun n => target (atom n)) '' J) ∧
+          ∀ sel : BlockSelector pairCell, ∃ t ∈ Q,
+            DestroysAt (additiveSupportFamily A 3)
+              (selectedSet sel) t := by
+  obtain ⟨J, hJI, hJ, third, _hthirdInj,
+      hthirdData, hmatching, hcommon⟩ :=
+    coincidentFixedTwoPointCoreTrace_gives_binaryChoice_commonSurvival
+      target atom moving core certificateRepair S hI
+        hatomK hatomInj htargetInj hdata hcertificateR
+          hcertificateK hScard htrace
+  have hxyA : ∀ n ∈ J, atom n ∈ A ∧ third n ∈ A := by
+    intro n hn
+    have hnI := hJI hn
+    exact ⟨hKA (hatomK n hnI),
+      additiveSupportFamily_supportsIn A 3
+        (target (atom n)) (certificateRepair n)
+          (hcertificateR n hnI) (third n)
+            (Finset.mem_sdiff.mp (hthirdData n hn).1).1⟩
+  obtain ⟨K', pairCell, hK'A, hK', P, hcard, hmigrate⟩ :=
+    strongDeletion_binaryCommonSurvival_forces_migratedCertificate
+      (strongOrderThreeDeletion_of_counterexample hcounter)
+        hJ (fun n => target (atom n)) atom third hxyA
+          (fun n hn => (hthirdData n hn).2) hmatching hcommon
+  exact ⟨J, hJI, hJ, K', pairCell,
+    hK'A, hK', P, hcard, hmigrate⟩
 
 /-- Counterexample-level closure of the moving-petal coincidence branch.
 The binary common-survival subsystem is fed directly to strong order-three
