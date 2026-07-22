@@ -5250,6 +5250,262 @@ theorem finiteCrossingEndpointTripleCertificates_strict_or_freshRigidCore
         exact (hsharp q).2.1
     exact ⟨point, i, hiJ, hcellEq, hpointInj, hsharp⟩
 
+/-- Global dichotomy extracted from fresh-core migration.  Either strict
+`Q.card > k` endpoint certificates exist beyond every threshold, or from
+one threshold onward there are infinitely many distinct cores admitting a
+sharp bijective matching by private rigid endpoint targets.  The latter is
+the precise moving (rather than recurrent-at-one-core) obstruction left by
+the sharp branch. -/
+theorem strictCrossingEndpointCertificates_or_infiniteMovingRigidCores
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 4 ≤ k) :
+    (∀ N, ∃ Q : Finset ℕ,
+      k < Q.card ∧
+      (∀ q ∈ Q, N ≤ q ∧
+        ∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B₀ ∧
+          ¬ (E : Set ℕ) ⊆ B₀) ∧
+      ∀ sel : BlockSelector F, ∃ q ∈ Q,
+        DestroysAt (additiveSupportFamily A 3)
+          (selectedSet sel) q ∧
+        (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+          selectedSet sel) ∨
+      ∃ N₀, {i | ∃ Q : Finset ℕ,
+        ∃ point : {q // q ∈ Q} → ℕ,
+          (∀ q ∈ Q, N₀ ≤ q ∧
+            ∀ E ∈ additiveSupportFamily A 2 q,
+              ¬ Disjoint (E : Set ℕ) B₀ ∧
+              ¬ (E : Set ℕ) ⊆ B₀) ∧
+          cell i = Q.attach.image point ∧
+          Function.Injective point ∧
+          ∀ q,
+            crossingAtomEndpoints A B₀ q.1 = {point q} ∧
+            DestroysAt (additiveSupportFamily A 3)
+              ({point q} : Set ℕ) q.1 ∧
+            IsRigidPairSum A (point q)
+              (q.1 - point q)}.Infinite := by
+  classical
+  let StrictAt : ℕ → Prop := fun N =>
+    ∃ Q : Finset ℕ,
+      k < Q.card ∧
+      (∀ q ∈ Q, N ≤ q ∧
+        ∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B₀ ∧
+          ¬ (E : Set ℕ) ⊆ B₀) ∧
+      ∀ sel : BlockSelector F, ∃ q ∈ Q,
+        DestroysAt (additiveSupportFamily A 3)
+          (selectedSet sel) q ∧
+        (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+          selectedSet sel
+  by_cases hstrict : ∀ N, StrictAt N
+  · left
+    simpa [StrictAt] using hstrict
+  · right
+    push Not at hstrict
+    obtain ⟨N₀, hnoStrict⟩ := hstrict
+    let Moving : Set ℕ := {i | ∃ Q : Finset ℕ,
+      ∃ point : {q // q ∈ Q} → ℕ,
+        (∀ q ∈ Q, N₀ ≤ q ∧
+          ∀ E ∈ additiveSupportFamily A 2 q,
+            ¬ Disjoint (E : Set ℕ) B₀ ∧
+            ¬ (E : Set ℕ) ⊆ B₀) ∧
+        cell i = Q.attach.image point ∧
+        Function.Injective point ∧
+        ∀ q,
+          crossingAtomEndpoints A B₀ q.1 = {point q} ∧
+          DestroysAt (additiveSupportFamily A 3)
+            ({point q} : Set ℕ) q.1 ∧
+          IsRigidPairSum A (point q) (q.1 - point q)}
+    refine ⟨N₀, ?_⟩
+    change Moving.Infinite
+    apply Set.not_finite.mp
+    intro hMovingFinite
+    let J : Finset ℕ := hMovingFinite.toFinset
+    obtain ⟨Q, _hQlower, hQdata, hcert, hfork⟩ :=
+      finiteCrossingEndpointTripleCertificates_strict_or_freshRigidCore
+        hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+          P hcore hcellCard hk J N₀
+    rcases hfork with hQstrict |
+        ⟨point, i, hiJ, hcellEq, hpointInj, hsharp⟩
+    · exact hnoStrict ⟨Q, hQstrict, hQdata, hcert⟩
+    · have hiMoving : i ∈ Moving := by
+        exact ⟨Q, point, hQdata, hcellEq, hpointInj, hsharp⟩
+      have hiJ' : i ∈ J :=
+        hMovingFinite.mem_toFinset.mpr hiMoving
+      exact hiJ hiJ'
+
+/-- Named pointwise predicate for the moving sharp-core branch. -/
+def IsSharpCrossingEndpointRigidCore
+    (A B₀ : Set ℕ) (cell : ℕ → Finset ℕ)
+    (N₀ i : ℕ) : Prop :=
+  ∃ Q : Finset ℕ, ∃ point : {q // q ∈ Q} → ℕ,
+    (∀ q ∈ Q, N₀ ≤ q ∧
+      ∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧
+        ¬ (E : Set ℕ) ⊆ B₀) ∧
+    cell i = Q.attach.image point ∧
+    Function.Injective point ∧
+    ∀ q,
+      crossingAtomEndpoints A B₀ q.1 = {point q} ∧
+      DestroysAt (additiveSupportFamily A 3)
+        ({point q} : Set ℕ) q.1 ∧
+      IsRigidPairSum A (point q) (q.1 - point q)
+
+/-- Infinitely many moving sharp cores yield an actual infinite subset of
+the repaired reservoir consisting of distinct private rigid endpoints.
+Choose one point from each core.  Block disjointness makes this choice
+injective, while the sharp bijection supplies the matched late target and
+its singleton destruction/rigid-pair data. -/
+theorem infiniteMovingRigidCores_give_infiniteRigidEndpointSet
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ}
+    {k N₀ : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 4 ≤ k)
+    (hMoving : {i | IsSharpCrossingEndpointRigidCore
+      A B₀ cell N₀ i}.Infinite) :
+    ∃ L, L ⊆ B₀ ∧ L.Infinite ∧
+      ∀ b ∈ L, ∃ q,
+        N₀ ≤ q ∧
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B₀ ∧
+          ¬ (E : Set ℕ) ⊆ B₀) ∧
+        crossingAtomEndpoints A B₀ q = {b} ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ({b} : Set ℕ) q ∧
+        IsRigidPairSum A b (q - b) := by
+  classical
+  have hcellNonempty : ∀ i, (cell i).Nonempty := by
+    intro i
+    apply Finset.card_pos.mp
+    rw [hcellCard i]
+    omega
+  choose pick hpick using hcellNonempty
+  let Moving : Set ℕ := {i | IsSharpCrossingEndpointRigidCore
+    A B₀ cell N₀ i}
+  have hpickInj : Set.InjOn pick Moving := by
+    intro i hiI j hjI hij
+    by_contra hne
+    have hipickF : pick i ∈ F i := hcore i (hpick i)
+    have hjpickF : pick j ∈ F j := hcore j (hpick j)
+    exact Finset.disjoint_left.mp (P.disjoint hne)
+      hipickF (hij ▸ hjpickF)
+  let L : Set ℕ := pick '' Moving
+  have hMoving' : Moving.Infinite := by
+    simpa [Moving] using hMoving
+  have hL : L.Infinite := hMoving'.image hpickInj
+  have hLB₀ : L ⊆ B₀ := by
+    rintro b ⟨i, hiMoving, rfl⟩
+    exact (P.mem_iff (pick i)).2 ⟨i, hcore i (hpick i)⟩
+  refine ⟨L, hLB₀, hL, ?_⟩
+  rintro b ⟨i, hiMoving, rfl⟩
+  change IsSharpCrossingEndpointRigidCore
+    A B₀ cell N₀ i at hiMoving
+  obtain ⟨Q, point, hQdata, hcellEq, _hpointInj, hsharp⟩ :=
+    hiMoving
+  have hpickImage : pick i ∈ Q.attach.image point := by
+    rw [← hcellEq]
+    exact hpick i
+  obtain ⟨q, _hqAttach, hpointEq⟩ :=
+    Finset.mem_image.mp hpickImage
+  refine ⟨q.1, (hQdata q.1 q.2).1, (hQdata q.1 q.2).2, ?_⟩
+  have hqSharp := hsharp q
+  simpa [hpointEq] using hqSharp
+
+/-- Endpoint-set form of the global migration dichotomy.  If the strict
+certificate branch is not cofinal, the sharp branch yields an infinite
+subset of `B₀` carrying distinct late private targets with unique rigid
+crossing pairs. -/
+theorem strictCrossingEndpointCertificates_or_infiniteMovingRigidEndpoints
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 4 ≤ k) :
+    (∀ N, ∃ Q : Finset ℕ,
+      k < Q.card ∧
+      (∀ q ∈ Q, N ≤ q ∧
+        ∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B₀ ∧
+          ¬ (E : Set ℕ) ⊆ B₀) ∧
+      ∀ sel : BlockSelector F, ∃ q ∈ Q,
+        DestroysAt (additiveSupportFamily A 3)
+          (selectedSet sel) q ∧
+        (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+          selectedSet sel) ∨
+      ∃ N₀ L, L ⊆ B₀ ∧ L.Infinite ∧
+        ∀ b ∈ L, ∃ q,
+          N₀ ≤ q ∧
+          (∀ E ∈ additiveSupportFamily A 2 q,
+            ¬ Disjoint (E : Set ℕ) B₀ ∧
+            ¬ (E : Set ℕ) ⊆ B₀) ∧
+          crossingAtomEndpoints A B₀ q = {b} ∧
+          DestroysAt (additiveSupportFamily A 3)
+            ({b} : Set ℕ) q ∧
+          IsRigidPairSum A b (q - b) := by
+  obtain hstrict | ⟨N₀, hMoving⟩ :=
+    strictCrossingEndpointCertificates_or_infiniteMovingRigidCores
+      hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+        P hcore hcellCard hk
+  · exact Or.inl hstrict
+  · right
+    have hMoving' : {i | IsSharpCrossingEndpointRigidCore
+        A B₀ cell N₀ i}.Infinite := by
+      simpa [IsSharpCrossingEndpointRigidCore] using hMoving
+    obtain ⟨L, hLB₀, hL, hdata⟩ :=
+      infiniteMovingRigidCores_give_infiniteRigidEndpointSet
+        P hcore hcellCard hk hMoving'
+    exact ⟨N₀, L, hLB₀, hL, hdata⟩
+
+/-- Complements of moving private crossing endpoints escape to infinity.
+Fix a basis element `a > T`.  Once `b` is beyond the order-two threshold
+plus `a`, a private target `q` whose crossing endpoint is `b` reflects `a`
+to `q - b - a`; in particular `b + a ≤ q`, so `T < a ≤ q - b`.
+Thus the moving sharp branch cannot collapse to a bounded rigid star. -/
+theorem privateCrossingEndpoint_complements_eventuallyLarge
+    {A B₀ L : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2) :
+    ∀ T, ∃ K, ∀ b ∈ L, K ≤ b → ∀ q,
+      crossingAtomEndpoints A B₀ q = {b} →
+      DestroysAt (additiveSupportFamily A 3)
+        ({b} : Set ℕ) q →
+      T ≤ q - b := by
+  have hAinf := hbasis.infinite
+  obtain ⟨N, hN⟩ := hbasis
+  intro T
+  obtain ⟨a, haA, hTa⟩ := hAinf.exists_gt T
+  refine ⟨N + a + 1, ?_⟩
+  intro b _hbL hbLarge q hendpoint hdestroy
+  have hba : a ≠ b := by omega
+  have hbEndpoint : b ∈ crossingAtomEndpoints A B₀ q := by
+    rw [hendpoint]
+    simp
+  have hbLe : b ≤ q :=
+    (mem_crossingAtomEndpoints_iff.mp hbEndpoint).1
+  have hNaq : N + a ≤ q := by omega
+  obtain ⟨hbaq, _hreflected⟩ :=
+    privateOrderThree_implies_longReflection_of_threshold
+      hN hdestroy a haA hba hNaq
+  omega
+
 /-- Counterexample-level form of the scalable crossing-endpoint fork.  For
 every finite scale `k ≥ 4`, one fixed repaired zero-atomic reservoir admits
 an exact `k`-point core partition.  Arbitrarily late strengthened endpoint

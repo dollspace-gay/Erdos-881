@@ -108,6 +108,37 @@ theorem two_privateOrderThreeTargets_imply_localTranslation_of_threshold
     omega
   exact heq ▸ htranslated
 
+/-- Reflections coming from private targets for two different deleted
+points also compose to a translation.  The effective reflection centers are
+`n - a` and `m - d`; when the second lies to the right of the first, their
+difference translates every point for which both reflections are valid. -/
+theorem two_privateOrderThreeTargets_imply_crossTranslation_of_threshold
+    {A : Set ℕ} {a d n m N x : ℕ}
+    (hN : ∀ q, N ≤ q →
+      ∃ v : Fin 2 → ℕ, (∀ i, v i ∈ A) ∧ ∑ i, v i = q)
+    (hdestroy_n : DestroysAt
+      (additiveSupportFamily A 3) ({a} : Set ℕ) n)
+    (hdestroy_m : DestroysAt
+      (additiveSupportFamily A 3) ({d} : Set ℕ) m)
+    (hxA : x ∈ A) (hxa : x ≠ a) (hNx : N + x ≤ n)
+    (hreflectedNe : n - a - x ≠ d)
+    (hNreflected : N + (n - a - x) ≤ m)
+    (hcenter : n - a ≤ m - d) :
+    x + ((m - d) - (n - a)) ∈ A := by
+  obtain ⟨haxn, hyA⟩ :=
+    privateOrderThree_implies_longReflection_of_threshold
+      hN hdestroy_n x hxA hxa hNx
+  let y := n - a - x
+  obtain ⟨hdym, htranslated⟩ :=
+    privateOrderThree_implies_longReflection_of_threshold
+      hN hdestroy_m y (by simpa [y] using hyA)
+        (by simpa [y] using hreflectedNe)
+        (by simpa [y] using hNreflected)
+  have heq : m - d - y = x + ((m - d) - (n - a)) := by
+    dsimp only [y]
+    omega
+  exact heq ▸ htranslated
+
 /-- Reflections about two private order-three targets for the same `a`
 compose to translation by their difference.  Apart from the single possible
 fixed point of the first reflection, a sufficiently long initial segment of
