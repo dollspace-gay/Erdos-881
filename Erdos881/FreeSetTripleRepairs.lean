@@ -5109,6 +5109,142 @@ theorem finiteCrossingEndpointTripleCertificates_strict_or_rigidCore
   · left
     omega
 
+set_option maxHeartbeats 3000000 in
+/-- Cardinal-minimal version of the strict/sharp endpoint fork.  Minimizing
+inside the combined crossing/triple obstruction family preserves the exact
+certificate relation and gives every retained target a private selector.
+Consequently `Q.card > k` is now a substantive alternative rather than an
+artifact of freely enlarging a certificate. -/
+theorem finiteMinimalCrossingEndpointTripleCertificates_strict_or_rigidCore
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 4 ≤ k) :
+    ∀ N, ∃ Q : Finset ℕ,
+      k ≤ Q.card ∧
+      (∀ q ∈ Q, N ≤ q ∧
+        ∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B₀ ∧
+          ¬ (E : Set ℕ) ⊆ B₀) ∧
+      (∀ sel : BlockSelector F, ∃ q ∈ Q,
+        DestroysAt (additiveSupportFamily A 3)
+          (selectedSet sel) q ∧
+        (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+          selectedSet sel) ∧
+      (∀ q ∈ Q, ∃ sel : BlockSelector F,
+        DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+          (selectedSet sel) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt
+            (crossingEndpointTripleObstructionFamily A B₀)
+            (selectedSet sel) q') ∧
+      (k < Q.card ∨
+        ∃ point : {q // q ∈ Q} → ℕ, ∃ i,
+          cell i = Q.attach.image point ∧
+          Function.Injective point ∧
+          ∀ q,
+            crossingAtomEndpoints A B₀ q.1 = {point q} ∧
+            DestroysAt (additiveSupportFamily A 3)
+              ({point q} : Set ℕ) q.1 ∧
+            IsRigidPairSum A (point q) (q.1 - point q)) := by
+  classical
+  obtain ⟨N₂, hN₂⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  intro N
+  let R : SupportFamily :=
+    crossingEndpointTripleObstructionFamily A B₀
+  have hstrong : StrongInfiniteDeletion R B₀ := by
+    simpa [R] using
+      strongCrossingEndpointTripleObstruction_of_counterexample
+        hzeroA hzeroB₀ hB₀A hrepairs hcounter
+  obtain ⟨Qraw, hQrawLate, hQrawCert⟩ :=
+    finiteBlockCertificates_of_strongInfiniteDeletion
+      hstrong F P (max N N₂)
+  obtain ⟨Q, hQQraw, hcertR, hlocalizedR⟩ :=
+    exists_minimal_targetLocalized_subcertificate hQrawCert
+  have hQdata : ∀ q ∈ Q, N ≤ q ∧
+      ∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧
+        ¬ (E : Set ℕ) ⊆ B₀ := by
+    intro q hqQ
+    obtain ⟨sel, hqDestroy, _hprivate⟩ := hlocalizedR q hqQ
+    have hqData :=
+      destroysAt_crossingEndpointTripleObstructionFamily_iff.mp
+        (by simpa [R] using hqDestroy)
+    exact ⟨(le_max_left N N₂).trans
+      (hQrawLate q (hQQraw hqQ)), hqData.1⟩
+  have hcert : ∀ sel : BlockSelector F, ∃ q ∈ Q,
+      DestroysAt (additiveSupportFamily A 3)
+        (selectedSet sel) q ∧
+      (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+        selectedSet sel := by
+    intro sel
+    obtain ⟨q, hqQ, hqDestroy⟩ := hcertR sel
+    have hqData :=
+      destroysAt_crossingEndpointTripleObstructionFamily_iff.mp
+        (by simpa [R] using hqDestroy)
+    exact ⟨q, hqQ, hqData.2.1, hqData.2.2⟩
+  have hlocalized : ∀ q ∈ Q, ∃ sel : BlockSelector F,
+      DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet sel) q ∧
+      ∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt
+          (crossingEndpointTripleObstructionFamily A B₀)
+          (selectedSet sel) q' := by
+    intro q hqQ
+    obtain ⟨sel, hqDestroy, hprivate⟩ := hlocalizedR q hqQ
+    refine ⟨sel, by simpa [R] using hqDestroy, ?_⟩
+    intro q' hq'Q hq'ne
+    simpa [R] using hprivate q' hq'Q hq'ne
+  have hendpoint : ∀ q ∈ Q,
+      (crossingAtomEndpoints A B₀ q).Nonempty := by
+    intro q hqQ
+    obtain ⟨E, hER, _hEempty⟩ :=
+      hN₂ q ((le_max_right N N₂).trans
+        (hQrawLate q (hQQraw hqQ)))
+    obtain ⟨b, hbB₀, c, hcC, hbc, _hEeq⟩ :=
+      exists_endpoints_of_crossingPairSupport hER
+        ((hQdata q hqQ).2 E hER).1
+        ((hQdata q hqQ).2 E hER).2
+    have hbLe : b ≤ q := by omega
+    have hsub : q - b = c := by omega
+    exact ⟨b, mem_crossingAtomEndpoints_iff.mpr
+      ⟨hbLe, hbB₀, hsub ▸ hcC⟩⟩
+  have hblockLower : ∀ i, k ≤ (F i).card := by
+    intro i
+    rw [← hcellCard i]
+    exact Finset.card_le_card (hcore i)
+  have hQlower : k ≤ Q.card :=
+    crossingEndpointCertificate_forces_targetCard_lower
+      (A := A) (B₀ := B₀) (cell := F)
+      (fun _ => Finset.Subset.rfl) hblockLower hendpoint
+      (fun sel _hsel => by
+        obtain ⟨q, hqQ, _hqDestroy, hqSub⟩ := hcert sel
+        exact ⟨q, hqQ, hqSub⟩)
+  refine ⟨Q, hQlower, hQdata, hcert, hlocalized, ?_⟩
+  by_cases hsharp : Q.card = k
+  · right
+    obtain ⟨point, i, hcellEq, hpointInj, hsingleDestroy⟩ :=
+      sharpCrossingEndpointTripleCertificate_forces_singletonDestroyers
+        P hcore hcellCard hk hsharp hendpoint
+          (fun sel _hsel => hcert sel)
+    refine ⟨point, i, hcellEq, hpointInj, ?_⟩
+    intro q
+    have hsingle := (hsingleDestroy q).1
+    exact ⟨hsingle, (hsingleDestroy q).2,
+      rigidPairSum_of_crossingEndpoint_eq_singleton
+        hB₀A (hQdata q.1 q.2).2 hsingle⟩
+  · left
+    omega
+
 /-- A sharp private-destroyer certificate cannot recur arbitrarily late on
 one fixed core of size at least four.  At most three basis elements have
 arbitrarily late singleton order-three destruction, so every such core
@@ -5361,6 +5497,107 @@ def IsSharpCrossingEndpointRigidCore
         ({point q} : Set ℕ) q.1 ∧
       IsRigidPairSum A (point q) (q.1 - point q)
 
+/-- A genuinely strict cardinal-minimal endpoint certificate.  Target
+localization records minimality and prevents this predicate from becoming
+true merely by adjoining irrelevant targets. -/
+def HasMinimalStrictCrossingEndpointCertificate
+    (A B₀ : Set ℕ) (F : ℕ → Finset ℕ)
+    (k N : ℕ) : Prop :=
+  ∃ Q : Finset ℕ,
+    k < Q.card ∧
+    (∀ q ∈ Q, N ≤ q ∧
+      ∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧
+        ¬ (E : Set ℕ) ⊆ B₀) ∧
+    (∀ sel : BlockSelector F, ∃ q ∈ Q,
+      DestroysAt (additiveSupportFamily A 3)
+        (selectedSet sel) q ∧
+      (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+        selectedSet sel) ∧
+    ∀ q ∈ Q, ∃ sel : BlockSelector F,
+      DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet sel) q ∧
+      ∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt
+          (crossingEndpointTripleObstructionFamily A B₀)
+          (selectedSet sel) q'
+
+/-- Meaningful minimal-certificate dichotomy.  Either cardinal-minimal
+crossing certificates are strictly larger than `k` beyond every threshold,
+or sharp equality certificates migrate through infinitely many distinct
+rigid cores.  Unlike the earlier nonminimal version, the strict side cannot
+be manufactured by amplification. -/
+theorem minimalStrictCrossingEndpointCertificates_or_infiniteMovingRigidCores
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 4 ≤ k) :
+    (∀ N, HasMinimalStrictCrossingEndpointCertificate
+      A B₀ F k N) ∨
+      ∃ N₀, {i | IsSharpCrossingEndpointRigidCore
+        A B₀ cell N₀ i}.Infinite := by
+  classical
+  by_cases hstrict : ∀ N,
+      HasMinimalStrictCrossingEndpointCertificate A B₀ F k N
+  · exact Or.inl hstrict
+  · right
+    push Not at hstrict
+    obtain ⟨N₀, hnoStrict⟩ := hstrict
+    let Moving : Set ℕ := {i | IsSharpCrossingEndpointRigidCore
+      A B₀ cell N₀ i}
+    refine ⟨N₀, ?_⟩
+    change Moving.Infinite
+    apply Set.not_finite.mp
+    intro hMovingFinite
+    let J : Finset ℕ := hMovingFinite.toFinset
+    have hcutoffExists : ∀ i, ∃ Ni, ∀ {Q : Finset ℕ}
+        (point : {q // q ∈ Q} → ℕ),
+        (∀ q ∈ Q, Ni ≤ q) →
+        cell i = Q.attach.image point →
+        (∀ q, DestroysAt (additiveSupportFamily A 3)
+          ({point q} : Set ℕ) q.1) → False := by
+      intro i
+      exact eventually_no_sharpPrivateCertificate_on_fixedCore
+        hbasis hB₀A P hcore hcellCard hk
+    choose cutoff hcutoff using hcutoffExists
+    let T : ℕ := J.sup cutoff
+    obtain ⟨Q, _hQlower, hQdata, hcert, hlocalized, hfork⟩ :=
+      finiteMinimalCrossingEndpointTripleCertificates_strict_or_rigidCore
+        hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+          P hcore hcellCard hk (max N₀ T)
+    have hQdata₀ : ∀ q ∈ Q, N₀ ≤ q ∧
+        ∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B₀ ∧
+          ¬ (E : Set ℕ) ⊆ B₀ := by
+      intro q hqQ
+      exact ⟨(le_max_left N₀ T).trans (hQdata q hqQ).1,
+        (hQdata q hqQ).2⟩
+    rcases hfork with hQstrict |
+        ⟨point, i, hcellEq, hpointInj, hsharp⟩
+    · apply hnoStrict
+      exact ⟨Q, hQstrict, hQdata₀, hcert, hlocalized⟩
+    · have hiMoving : i ∈ Moving := by
+        exact ⟨Q, point, hQdata₀, hcellEq, hpointInj, hsharp⟩
+      have hiJ : i ∈ J :=
+        hMovingFinite.mem_toFinset.mpr hiMoving
+      have hcutoffT : cutoff i ≤ T :=
+        Finset.le_sup (f := cutoff) hiJ
+      apply hcutoff i point
+      · intro q hqQ
+        exact hcutoffT.trans
+          ((le_max_right N₀ T).trans (hQdata q hqQ).1)
+      · exact hcellEq
+      · intro q
+        exact (hsharp q).2.1
+
 /-- Infinitely many moving sharp cores yield an actual infinite subset of
 the repaired reservoir consisting of distinct private rigid endpoints.
 Choose one point from each core.  Block disjointness makes this choice
@@ -5422,6 +5659,46 @@ theorem infiniteMovingRigidCores_give_infiniteRigidEndpointSet
   refine ⟨q.1, (hQdata q.1 q.2).1, (hQdata q.1 q.2).2, ?_⟩
   have hqSharp := hsharp q
   simpa [hpointEq] using hqSharp
+
+/-- Endpoint-set form of the cardinal-minimal migration dichotomy.  The
+strict alternative retains target localization, while failure of that
+alternative produces an actual infinite subset of `B₀` whose elements are
+private endpoints of late rigid crossing pairs. -/
+theorem minimalStrictCrossingEndpointCertificates_or_infiniteMovingRigidEndpoints
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 4 ≤ k) :
+    (∀ N, HasMinimalStrictCrossingEndpointCertificate
+      A B₀ F k N) ∨
+      ∃ N₀ L, L ⊆ B₀ ∧ L.Infinite ∧
+        ∀ b ∈ L, ∃ q,
+          N₀ ≤ q ∧
+          (∀ E ∈ additiveSupportFamily A 2 q,
+            ¬ Disjoint (E : Set ℕ) B₀ ∧
+            ¬ (E : Set ℕ) ⊆ B₀) ∧
+          crossingAtomEndpoints A B₀ q = {b} ∧
+          DestroysAt (additiveSupportFamily A 3)
+            ({b} : Set ℕ) q ∧
+          IsRigidPairSum A b (q - b) := by
+  obtain hstrict | ⟨N₀, hMoving⟩ :=
+    minimalStrictCrossingEndpointCertificates_or_infiniteMovingRigidCores
+      hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+        P hcore hcellCard hk
+  · exact Or.inl hstrict
+  · right
+    obtain ⟨L, hLB₀, hL, hdata⟩ :=
+      infiniteMovingRigidCores_give_infiniteRigidEndpointSet
+        P hcore hcellCard hk hMoving
+    exact ⟨N₀, L, hLB₀, hL, hdata⟩
 
 /-- Endpoint-set form of the global migration dichotomy.  If the strict
 certificate branch is not cofinal, the sharp branch yields an infinite
@@ -5505,6 +5782,224 @@ theorem privateCrossingEndpoint_complements_eventuallyLarge
     privateOrderThree_implies_longReflection_of_threshold
       hN hdestroy a haA hba hNaq
   omega
+
+/-- A private rigid target forbids a nontrivial small forward translation
+of its distinguished endpoint.  If `q = b + c`, `d ∈ A`, and `b + d ∈ A`,
+the private reflection at `q` puts `c - d` in `A`.  These two translated
+points give a second pair representation of `q`; rigidity leaves only the
+trivial possibilities `d = 0` or `b + d = c`. -/
+theorem privateRigidPair_forbids_smallForwardTranslate_of_threshold
+    {A : Set ℕ} {b c q d N : ℕ}
+    (hN : ∀ n, N ≤ n →
+      ∃ v : Fin 2 → ℕ, (∀ i, v i ∈ A) ∧ ∑ i, v i = n)
+    (hq : q = b + c)
+    (hdestroy : DestroysAt (additiveSupportFamily A 3)
+      ({b} : Set ℕ) q)
+    (hrigid : IsRigidPairSum A b c)
+    (hdA : d ∈ A) (hbdA : b + d ∈ A)
+    (hdpos : 0 < d) (hdb : d ≠ b)
+    (hdc : d ≤ c) (hbdc : b + d ≠ c)
+    (hNd : N + d ≤ q) : False := by
+  obtain ⟨_hbdq, hsubA⟩ :=
+    privateOrderThree_implies_longReflection_of_threshold
+      hN hdestroy d hdA hdb hNd
+  have hcomp : (b + c) - (b + d) = c - d := by omega
+  have hcsubA : c - d ∈ A := by
+    have hsubEq : q - b - d = c - d := by
+      rw [hq]
+      omega
+    exact hsubEq ▸ hsubA
+  let E : Finset ℕ := pairSupport (b + c) (b + d)
+  have hER : E ∈ additiveSupportFamily A 2 (b + c) := by
+    apply pairSupport_mem_additiveSupportFamily (by omega) hbdA
+    simpa [E, hcomp] using hcsubA
+  have hEcanonical : E = pairSupport (b + c) b :=
+    hrigid E hER
+  have hbdE : b + d ∈ E := by simp [E, pairSupport]
+  have hbdCanonical : b + d ∈ pairSupport (b + c) b := by
+    rw [← hEcanonical]
+    exact hbdE
+  have hcases : b + d = b ∨ b + d = c := by
+    simpa [pairSupport] using hbdCanonical
+  rcases hcases with hzero | hswap
+  · omega
+  · exact hbdc hswap
+
+/-- Explicit center-gap obstruction for three moving private targets.  The
+second and third targets translate both `0` and the first endpoint `b₀` by
+the difference of their reflection centers.  If that positive gap lies
+strictly inside the first rigid pair (and is not its swapping displacement),
+the preceding lemma gives a second representation of the first target. -/
+theorem three_privateRigidTargets_forbid_smallCenterGap_of_threshold
+    {A : Set ℕ} {b₀ c₀ q₀ b₁ q₁ b₂ q₂ N : ℕ}
+    (hN : ∀ n, N ≤ n →
+      ∃ v : Fin 2 → ℕ, (∀ i, v i ∈ A) ∧ ∑ i, v i = n)
+    (hzeroA : 0 ∈ A) (hb₀A : b₀ ∈ A)
+    (hq₀ : q₀ = b₀ + c₀)
+    (hdestroy₀ : DestroysAt (additiveSupportFamily A 3)
+      ({b₀} : Set ℕ) q₀)
+    (hrigid₀ : IsRigidPairSum A b₀ c₀)
+    (hdestroy₁ : DestroysAt (additiveSupportFamily A 3)
+      ({b₁} : Set ℕ) q₁)
+    (hdestroy₂ : DestroysAt (additiveSupportFamily A 3)
+      ({b₂} : Set ℕ) q₂)
+    (hzeroNe₁ : 0 ≠ b₁) (hb₀Ne₁ : b₀ ≠ b₁)
+    (hNq₁ : N ≤ q₁) (hNb₀q₁ : N + b₀ ≤ q₁)
+    (hreflectedZeroNe : q₁ - b₁ ≠ b₂)
+    (hreflectedBNe : q₁ - b₁ - b₀ ≠ b₂)
+    (hNreflectedZero : N + (q₁ - b₁) ≤ q₂)
+    (hNreflectedB : N + (q₁ - b₁ - b₀) ≤ q₂)
+    (hcenter : q₁ - b₁ ≤ q₂ - b₂)
+    (hcenterStrict : q₁ - b₁ < q₂ - b₂)
+    (hgapNeB₀ : (q₂ - b₂) - (q₁ - b₁) ≠ b₀)
+    (hgapLe : (q₂ - b₂) - (q₁ - b₁) ≤ c₀)
+    (hgapNoSwap : b₀ + ((q₂ - b₂) - (q₁ - b₁)) ≠ c₀)
+    (hNgap : N + ((q₂ - b₂) - (q₁ - b₁)) ≤ q₀) :
+    False := by
+  let d := (q₂ - b₂) - (q₁ - b₁)
+  have hdpos : 0 < d := by
+    dsimp only [d]
+    omega
+  have hdA : d ∈ A := by
+    simpa [d] using
+      (two_privateOrderThreeTargets_imply_crossTranslation_of_threshold
+        hN hdestroy₁ hdestroy₂ hzeroA hzeroNe₁ hNq₁
+          hreflectedZeroNe hNreflectedZero hcenter)
+  have hb₀dA : b₀ + d ∈ A := by
+    simpa [d] using
+      (two_privateOrderThreeTargets_imply_crossTranslation_of_threshold
+        hN hdestroy₁ hdestroy₂ hb₀A hb₀Ne₁ hNb₀q₁
+          hreflectedBNe hNreflectedB hcenter)
+  exact privateRigidPair_forbids_smallForwardTranslate_of_threshold
+    hN hq₀ hdestroy₀ hrigid₀ hdA hb₀dA hdpos
+      (by simpa [d] using hgapNeB₀)
+      (by simpa [d] using hgapLe)
+      (by simpa [d] using hgapNoSwap)
+      (by simpa [d] using hNgap)
+
+/-- Functional parametrization of an infinite moving rigid-endpoint set.
+Choose one private target for every endpoint.  Its complementary center
+`target b - b` tends to infinity along the natural ordering of the endpoint
+set, by `privateCrossingEndpoint_complements_eventuallyLarge`. -/
+theorem exists_movingRigidEndpointParametrization
+    {A B₀ L : Set ℕ} {N₀ : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hdata : ∀ b ∈ L, ∃ q,
+      N₀ ≤ q ∧
+      (∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧
+        ¬ (E : Set ℕ) ⊆ B₀) ∧
+      crossingAtomEndpoints A B₀ q = {b} ∧
+      DestroysAt (additiveSupportFamily A 3)
+        ({b} : Set ℕ) q ∧
+      IsRigidPairSum A b (q - b)) :
+    ∃ target : L → ℕ,
+      (∀ b,
+        N₀ ≤ target b ∧
+        (∀ E ∈ additiveSupportFamily A 2 (target b),
+          ¬ Disjoint (E : Set ℕ) B₀ ∧
+          ¬ (E : Set ℕ) ⊆ B₀) ∧
+        crossingAtomEndpoints A B₀ (target b) = {b.1} ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ({b.1} : Set ℕ) (target b) ∧
+        IsRigidPairSum A b.1 (target b - b.1)) ∧
+      ∀ T, ∃ K, ∀ b : L, K ≤ b.1 →
+        T ≤ target b - b.1 := by
+  classical
+  have hchoose : ∀ b : L, ∃ q,
+      N₀ ≤ q ∧
+      (∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧
+        ¬ (E : Set ℕ) ⊆ B₀) ∧
+      crossingAtomEndpoints A B₀ q = {b.1} ∧
+      DestroysAt (additiveSupportFamily A 3)
+        ({b.1} : Set ℕ) q ∧
+      IsRigidPairSum A b.1 (q - b.1) := by
+    intro b
+    exact hdata b.1 b.2
+  choose target htarget using hchoose
+  refine ⟨target, htarget, ?_⟩
+  intro T
+  obtain ⟨K, hK⟩ :=
+    privateCrossingEndpoint_complements_eventuallyLarge
+      (B₀ := B₀) (L := L) hbasis T
+  refine ⟨K, ?_⟩
+  intro b hbLarge
+  exact hK b.1 b.2 hbLarge (target b)
+    (htarget b).2.2.1 (htarget b).2.2.2.1
+
+/-- Lacunarity forced on any parametrized moving rigid-endpoint system.
+Take three sufficiently separated endpoints `u < v < w`.  Reflections at
+the targets of `v` and `w` translate both `0` and `u` by their positive
+center gap.  The rigid target at `u` then forces that gap either to exceed
+the whole earlier center or to be one of the two trivial exceptional
+displacements (`gap = u` or `u + gap = center u`). -/
+theorem movingRigidEndpoint_centerGap_large_or_exception
+    {A B₀ L : Set ℕ} {target : L → ℕ} {N : ℕ}
+    (hN : ∀ n, N ≤ n →
+      ∃ v : Fin 2 → ℕ, (∀ i, v i ∈ A) ∧ ∑ i, v i = n)
+    (hzeroA : 0 ∈ A) (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (htarget : ∀ b,
+      crossingAtomEndpoints A B₀ (target b) = {b.1} ∧
+      DestroysAt (additiveSupportFamily A 3)
+        ({b.1} : Set ℕ) (target b) ∧
+      IsRigidPairSum A b.1 (target b - b.1))
+    {u v w : L}
+    (huv : u.1 ≠ v.1)
+    (hNu : N ≤ u.1)
+    (hNuv : N + u.1 ≤ v.1)
+    (hNcenterW : N + (target v - v.1) + 1 ≤ w.1)
+    (hcenter : target v - v.1 < target w - w.1) :
+    target u - u.1 <
+        (target w - w.1) - (target v - v.1) ∨
+      (target w - w.1) - (target v - v.1) = u.1 ∨
+      u.1 + ((target w - w.1) - (target v - v.1)) =
+        target u - u.1 := by
+  classical
+  let gap := (target w - w.1) - (target v - v.1)
+  have endpointMem (b : L) :
+      b.1 ∈ crossingAtomEndpoints A B₀ (target b) := by
+    rw [(htarget b).1]
+    simp
+  have hvalueLe (b : L) : b.1 ≤ target b :=
+    (mem_crossingAtomEndpoints_iff.mp (endpointMem b)).1
+  have hvalueB₀ (b : L) : b.1 ∈ B₀ :=
+    (mem_crossingAtomEndpoints_iff.mp (endpointMem b)).2.1
+  have htargetEq (b : L) :
+      target b = b.1 + (target b - b.1) := by
+    exact (Nat.add_sub_of_le (hvalueLe b)).symm
+  have hvpos : 0 ≠ v.1 := by
+    intro hvzero
+    exact hzeroB₀ (hvzero ▸ hvalueB₀ v)
+  have hvTarget : v.1 ≤ target v := hvalueLe v
+  have hwTarget : w.1 ≤ target w := hvalueLe w
+  have hNqv : N ≤ target v := by omega
+  have hNuvTarget : N + u.1 ≤ target v := hNuv.trans hvTarget
+  have hcenterVW : target v - v.1 ≤ target w - w.1 :=
+    Nat.le_of_lt hcenter
+  have hreflectedZeroNe : target v - v.1 ≠ w.1 := by omega
+  have hreflectedUNe : target v - v.1 - u.1 ≠ w.1 := by omega
+  have hNreflectedZero : N + (target v - v.1) ≤ target w := by
+    omega
+  have hNreflectedU : N + (target v - v.1 - u.1) ≤ target w := by
+    omega
+  by_contra hnot
+  push Not at hnot
+  have hgapLe : gap ≤ target u - u.1 := by omega
+  have hNgap : N + gap ≤ target u := by
+    rw [htargetEq u]
+    omega
+  exact three_privateRigidTargets_forbid_smallCenterGap_of_threshold
+    hN hzeroA (hB₀A (hvalueB₀ u)) (htargetEq u)
+      (htarget u).2.1 (htarget u).2.2
+      (htarget v).2.1 (htarget w).2.1
+      hvpos huv hNqv hNuvTarget hreflectedZeroNe hreflectedUNe
+      hNreflectedZero hNreflectedU hcenterVW hcenter
+      (by simpa [gap] using hnot.2.1)
+      (by simpa [gap] using hgapLe)
+      (by simpa [gap] using hnot.2.2)
+      (by simpa [gap] using hNgap)
 
 /-- Counterexample-level form of the scalable crossing-endpoint fork.  For
 every finite scale `k ≥ 4`, one fixed repaired zero-atomic reservoir admits
