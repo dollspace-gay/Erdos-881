@@ -7550,6 +7550,286 @@ def HasMinimalStrictCrossingEndpointCertificate
         (Q.erase q).card +
           2 * (crossingEndpointAlignedTargets A B₀ Q base q).card
 
+/-- Target-set-indexed form of `HasMinimalStrictCrossingEndpointCertificate`,
+used to compare certificate cardinalities without losing their witnesses. -/
+def IsMinimalStrictCrossingEndpointCertificateData
+    (A B₀ : Set ℕ) (F : ℕ → Finset ℕ)
+    (k N : ℕ) (Q : Finset ℕ) : Prop :=
+  k < Q.card ∧
+  (∀ q ∈ Q, N ≤ q ∧
+    ∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) B₀ ∧
+      ¬ (E : Set ℕ) ⊆ B₀) ∧
+  (∀ sel : BlockSelector F, ∃ q ∈ Q,
+    DestroysAt (additiveSupportFamily A 3)
+      (selectedSet sel) q ∧
+    (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+      selectedSet sel) ∧
+  (∀ q ∈ Q, ∃ sel : BlockSelector F,
+    DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+      (selectedSet sel) q ∧
+    ∀ q' ∈ Q, q' ≠ q →
+      ¬ DestroysAt
+        (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet sel) q') ∧
+  (∀ q ∈ Q,
+    (k - 1) * (crossingAtomEndpoints A B₀ q).card ≤
+      3 * (Q.erase q).card) ∧
+  ∀ q ∈ Q, ∃ base : BlockSelector F,
+    DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+      (selectedSet base) q ∧
+    (∀ q' ∈ Q, q' ≠ q →
+      ¬ DestroysAt
+        (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet base) q') ∧
+    (k - 1) * (crossingAtomEndpoints A B₀ q).card ≤
+      (Q.erase q).card +
+        2 * (crossingEndpointAlignedTargets A B₀ Q base q).card
+
+theorem hasMinimalStrictCrossingEndpointCertificate_iff_data
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ} {k N : ℕ} :
+    HasMinimalStrictCrossingEndpointCertificate A B₀ F k N ↔
+      ∃ Q, IsMinimalStrictCrossingEndpointCertificateData
+        A B₀ F k N Q := by
+  rfl
+
+/-- Lowering the target threshold preserves fixed-target-set certificate
+data. -/
+theorem IsMinimalStrictCrossingEndpointCertificateData.mono_threshold
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ}
+    {k N N' : ℕ} {Q : Finset ℕ}
+    (hNN' : N ≤ N')
+    (h : IsMinimalStrictCrossingEndpointCertificateData
+      A B₀ F k N' Q) :
+    IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q := by
+  rcases h with ⟨hstrict, hQdata, hcert, hlocalized,
+    hscaled, hrefined⟩
+  refine ⟨hstrict, ?_, hcert, hlocalized, hscaled, hrefined⟩
+  intro q hqQ
+  exact ⟨hNN'.trans (hQdata q hqQ).1, (hQdata q hqQ).2⟩
+
+/-- Exact `k + 1` data with a three-endpoint target gives the named
+near-sharp package. -/
+theorem IsMinimalStrictCrossingEndpointCertificateData.to_nearSharpThree
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ}
+    {k N : ℕ} {Q : Finset ℕ} {q : ℕ}
+    (h : IsMinimalStrictCrossingEndpointCertificateData
+      A B₀ F k N Q)
+    (hqQ : q ∈ Q)
+    (hQcard : Q.card = k + 1)
+    (hendpointCard : (crossingAtomEndpoints A B₀ q).card = 3) :
+    IsMinimalNearSharpThreeEndpointCertificate A B₀ F k N Q q := by
+  rcases h with ⟨_hstrict, hQdata, hcert, hlocalized,
+    _hscaled, _hrefined⟩
+  have hcertCombined : ∀ sel : BlockSelector F, ∃ t ∈ Q,
+      DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet sel) t := by
+    intro sel
+    obtain ⟨t, htQ, htDestroy, htEndpoints⟩ := hcert sel
+    exact ⟨t, htQ,
+      destroysAt_crossingEndpointTripleObstructionFamily_iff.mpr
+        ⟨(hQdata t htQ).2, htDestroy, htEndpoints⟩⟩
+  exact ⟨hqQ, hQcard, hQdata, hendpointCard,
+    hcertCombined, hlocalized⟩
+
+/-- Exhaustive refinement of the cofinal minimal-strict branch.  Either
+minimal certificates of size at least `k + 2` recur cofinally, exact
+`k + 1` certificates with a three-endpoint target recur cofinally, or after
+one threshold an exact `k + 1` certificate exists at every later threshold
+and all its endpoint families have size at most two. -/
+theorem cofinalMinimalStrictCrossingEndpointCertificates_trichotomy
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ} {k : ℕ}
+    (hk : 5 ≤ k)
+    (hcofinal : ∀ N,
+      HasMinimalStrictCrossingEndpointCertificate A B₀ F k N) :
+    (∀ N, ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+      k + 2 ≤ Q.card) ∨
+    (∀ N, ∃ Q q,
+      IsMinimalNearSharpThreeEndpointCertificate A B₀ F k N Q q) ∨
+    ∃ N₀, ∀ N, N₀ ≤ N → ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+      Q.card = k + 1 ∧
+      ∀ q ∈ Q, (crossingAtomEndpoints A B₀ q).card ≤ 2 := by
+  classical
+  let LargeAt : ℕ → Prop := fun N =>
+    ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+      k + 2 ≤ Q.card
+  by_cases hlarge : ∀ N, LargeAt N
+  · left
+    simpa [LargeAt] using hlarge
+  · right
+    push Not at hlarge
+    obtain ⟨Nlarge, hnoLarge⟩ := hlarge
+    let ThreeAt : ℕ → Prop := fun N =>
+      ∃ Q q,
+        IsMinimalNearSharpThreeEndpointCertificate A B₀ F k N Q q
+    by_cases hthree : ∀ N, ThreeAt N
+    · left
+      simpa [ThreeAt] using hthree
+    · right
+      push Not at hthree
+      obtain ⟨Nthree, hnoThree⟩ := hthree
+      refine ⟨max Nlarge Nthree, ?_⟩
+      intro N hN
+      obtain ⟨Q, hdata⟩ :=
+        hasMinimalStrictCrossingEndpointCertificate_iff_data.mp
+          (hcofinal N)
+      rcases hdata with ⟨hstrict, hQdata, hcert, hlocalized,
+        hscaled, hrefined⟩
+      have hdataFull : IsMinimalStrictCrossingEndpointCertificateData
+          A B₀ F k N Q :=
+        ⟨hstrict, hQdata, hcert, hlocalized, hscaled, hrefined⟩
+      have hNlarge : Nlarge ≤ N := (le_max_left _ _).trans hN
+      have hNthree : Nthree ≤ N := (le_max_right _ _).trans hN
+      have hdataLarge : IsMinimalStrictCrossingEndpointCertificateData
+          A B₀ F k Nlarge Q :=
+        IsMinimalStrictCrossingEndpointCertificateData.mono_threshold
+          hNlarge hdataFull
+      have hnotLarge : ¬ k + 2 ≤ Q.card := by
+        intro hcard
+        exact hnoLarge ⟨Q, hdataLarge, hcard⟩
+      have hQcard : Q.card = k + 1 := by omega
+      have hendpointSmall : ∀ q ∈ Q,
+          (crossingAtomEndpoints A B₀ q).card ≤ 2 := by
+        intro q hqQ
+        have hthreeUpper :
+            (crossingAtomEndpoints A B₀ q).card ≤ 3 :=
+          nearSharp_scaledEndpointBound_forces_endpointCard_le_three
+            hk hqQ (by omega) (hscaled q hqQ)
+        by_contra hnotTwo
+        have hthreeCard :
+            (crossingAtomEndpoints A B₀ q).card = 3 := by omega
+        have hdataThree :
+            IsMinimalStrictCrossingEndpointCertificateData
+              A B₀ F k Nthree Q :=
+          IsMinimalStrictCrossingEndpointCertificateData.mono_threshold
+            hNthree hdataFull
+        have hnear : IsMinimalNearSharpThreeEndpointCertificate
+            A B₀ F k Nthree Q q :=
+          hdataThree.to_nearSharpThree hqQ hQcard hthreeCard
+        exact hnoThree ⟨Q, q, hnear⟩
+      exact ⟨Q, hdataFull, hQcard, hendpointSmall⟩
+
+/-- Named package for the exact first-strict-size two-endpoint branch.  The
+private selector has to align with enough other endpoint families to pay for
+the two selected block remainders. -/
+def IsMinimalNearSharpDenseTwoEndpointCertificate
+    (A B₀ : Set ℕ) (F : ℕ → Finset ℕ)
+    (k N : ℕ) (Q : Finset ℕ) (q : ℕ)
+    (base : BlockSelector F) : Prop :=
+  IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+  Q.card = k + 1 ∧
+  q ∈ Q ∧
+  (crossingAtomEndpoints A B₀ q).card = 2 ∧
+  DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+    (selectedSet base) q ∧
+  (∀ q' ∈ Q, q' ≠ q →
+    ¬ DestroysAt
+      (crossingEndpointTripleObstructionFamily A B₀)
+      (selectedSet base) q') ∧
+  k - 2 ≤
+    2 * (crossingEndpointAlignedTargets A B₀ Q base q).card
+
+/-- The surviving exact-size, at-most-two-endpoint branch has a further
+exhaustive split.  Either dense two-endpoint certificates occur beyond every
+threshold, or after one threshold every endpoint family in the available
+exact-size certificates has cardinality at most one. -/
+theorem eventualMinimalNearSharpSmallEndpointCertificates_two_or_singleton
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ} {k : ℕ}
+    (hsmall : ∃ N₀, ∀ N, N₀ ≤ N → ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+      Q.card = k + 1 ∧
+      ∀ q ∈ Q, (crossingAtomEndpoints A B₀ q).card ≤ 2) :
+    (∀ N, ∃ Q q base,
+      IsMinimalNearSharpDenseTwoEndpointCertificate
+        A B₀ F k N Q q base) ∨
+    ∃ N₁, ∀ N, N₁ ≤ N → ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+      Q.card = k + 1 ∧
+      ∀ q ∈ Q, (crossingAtomEndpoints A B₀ q).card ≤ 1 := by
+  classical
+  let TwoAt : ℕ → Prop := fun N =>
+    ∃ Q q,
+      IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+      Q.card = k + 1 ∧
+      q ∈ Q ∧
+      (crossingAtomEndpoints A B₀ q).card = 2
+  by_cases htwo : ∀ N, TwoAt N
+  · left
+    intro N
+    obtain ⟨Q, q, hdata, hQcard, hqQ, hendpointCard⟩ := htwo N
+    obtain ⟨base, hdestroy, hprivate, hrefined⟩ :=
+      hdata.2.2.2.2.2 q hqQ
+    have haligned : k - 2 ≤
+        2 * (crossingEndpointAlignedTargets A B₀ Q base q).card :=
+      nearSharp_refinedEndpointBound_two_forces_manyAligned
+        hqQ (by omega) hendpointCard hrefined
+    exact ⟨Q, q, base, hdata, hQcard, hqQ, hendpointCard,
+      hdestroy, hprivate, haligned⟩
+  · right
+    push Not at htwo
+    obtain ⟨Ntwo, hnoTwo⟩ := htwo
+    obtain ⟨Nsmall, hsmall⟩ := hsmall
+    refine ⟨max Nsmall Ntwo, ?_⟩
+    intro N hN
+    have hNsmall : Nsmall ≤ N := (le_max_left _ _).trans hN
+    have hNtwo : Ntwo ≤ N := (le_max_right _ _).trans hN
+    obtain ⟨Q, hdata, hQcard, hendpointSmall⟩ :=
+      hsmall N hNsmall
+    refine ⟨Q, hdata, hQcard, ?_⟩
+    intro q hqQ
+    have hleTwo := hendpointSmall q hqQ
+    by_contra hnotOne
+    have hcardTwo :
+        (crossingAtomEndpoints A B₀ q).card = 2 := by omega
+    have hdataTwo :
+        IsMinimalStrictCrossingEndpointCertificateData
+          A B₀ F k Ntwo Q :=
+      hdata.mono_threshold hNtwo
+    exact hnoTwo ⟨Q, q, hdataTwo, hQcard, hqQ, hcardTwo⟩
+
+/-- Once targets lie beyond the order-two basis threshold, the singleton
+side of the preceding split is exact: every crossing endpoint family is
+nonempty, hence its cardinality is one rather than zero. -/
+theorem eventualMinimalNearSharpSingletonEndpointCertificates_exact
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hsingle : ∃ N₁, ∀ N, N₁ ≤ N → ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+      Q.card = k + 1 ∧
+      ∀ q ∈ Q, (crossingAtomEndpoints A B₀ q).card ≤ 1) :
+    ∃ N₂, ∀ N, N₂ ≤ N → ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+      Q.card = k + 1 ∧
+      ∀ q ∈ Q, (crossingAtomEndpoints A B₀ q).card = 1 := by
+  obtain ⟨Nbasis, hNbasis⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  obtain ⟨Nsingle, hsingle⟩ := hsingle
+  refine ⟨max Nbasis Nsingle, ?_⟩
+  intro N hN
+  have hNsingle : Nsingle ≤ N := (le_max_right _ _).trans hN
+  have hNbasisN : Nbasis ≤ N := (le_max_left _ _).trans hN
+  obtain ⟨Q, hdata, hQcard, hendpointLe⟩ :=
+    hsingle N hNsingle
+  refine ⟨Q, hdata, hQcard, ?_⟩
+  intro q hqQ
+  have hQdata := hdata.2.1 q hqQ
+  obtain ⟨E, hER, _hEempty⟩ :=
+    hNbasis q (hNbasisN.trans hQdata.1)
+  obtain ⟨b, hbB₀, c, hcC, hbc, _hEeq⟩ :=
+    exists_endpoints_of_crossingPairSupport hER
+      (hQdata.2 E hER).1 (hQdata.2 E hER).2
+  have hbLe : b ≤ q := by omega
+  have hsub : q - b = c := by omega
+  have hbEndpoint : b ∈ crossingAtomEndpoints A B₀ q :=
+    mem_crossingAtomEndpoints_iff.mpr
+      ⟨hbLe, hbB₀, hsub ▸ hcC⟩
+  have hpositive : 0 < (crossingAtomEndpoints A B₀ q).card :=
+    Finset.card_pos.mpr ⟨b, hbEndpoint⟩
+  exact Nat.le_antisymm (hendpointLe q hqQ) (by omega)
+
 /-- Meaningful minimal-certificate dichotomy.  Either cardinal-minimal
 crossing certificates are strictly larger than `k` beyond every threshold,
 or sharp equality certificates migrate through infinitely many distinct
@@ -7762,6 +8042,69 @@ theorem minimalStrictCrossingEndpointCertificates_or_infiniteMovingRigidEndpoint
       infiniteMovingRigidCores_give_infiniteRigidEndpointSet
         P hcore hcellCard hk hMoving
     exact ⟨N₀, L, hLB₀, hL, hdata⟩
+
+/-- Four-way endpoint form of the full cardinal-minimal certificate analysis.
+Under the counterexample hypothesis, either genuinely larger minimal
+certificates recur, exact first-strict-size certificates eventually have only
+one- or two-endpoint targets, or one of the two migration mechanisms already
+produces an actual infinite subset of `B₀`.  Thus only the first two
+alternatives remain finite-certificate branches. -/
+theorem minimalCrossingEndpointCertificates_four_way
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 10 ≤ k) :
+    (∀ N, ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+      k + 2 ≤ Q.card) ∨
+    (∃ N₀, ∀ N, N₀ ≤ N → ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData A B₀ F k N Q ∧
+      Q.card = k + 1 ∧
+      ∀ q ∈ Q, (crossingAtomEndpoints A B₀ q).card ≤ 2) ∨
+    (∃ L, L ⊆ B₀ ∧ L.Infinite ∧
+      ∀ x ∈ L, ∃ N Q q,
+        IsMinimalNearSharpThreeEndpointCertificate
+          A B₀ F k N Q q ∧
+        x ∈ crossingAtomEndpoints A B₀ q) ∨
+    ∃ N₀ L, L ⊆ B₀ ∧ L.Infinite ∧
+      ∀ b ∈ L, ∃ q,
+        N₀ ≤ q ∧
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B₀ ∧
+          ¬ (E : Set ℕ) ⊆ B₀) ∧
+        crossingAtomEndpoints A B₀ q = {b} ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ({b} : Set ℕ) q ∧
+        IsRigidPairSum A b (q - b) := by
+  obtain hstrict | hrigid :=
+    minimalStrictCrossingEndpointCertificates_or_infiniteMovingRigidEndpoints
+      hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+        P hcore hcellCard (by omega)
+  · obtain hlarge | hnear | hsmall :=
+      cofinalMinimalStrictCrossingEndpointCertificates_trichotomy
+        (by omega) hstrict
+    · exact Or.inl hlarge
+    · have hblockLower : ∀ i, k ≤ (F i).card := by
+        intro i
+        rw [← hcellCard i]
+        exact Finset.card_le_card (hcore i)
+      have hMoving :=
+        cofinalMinimalNearSharpThreeEndpointCertificates_force_infiniteAnchorBlocks
+          P hblockLower hk hnear
+      obtain ⟨L, hLB₀, hL, hdata⟩ :=
+        infiniteNearSharpThreeAnchorBlocks_give_infiniteEndpointSet
+          P hMoving
+      exact Or.inr (Or.inr (Or.inl ⟨L, hLB₀, hL, hdata⟩))
+    · exact Or.inr (Or.inl hsmall)
+  · exact Or.inr (Or.inr (Or.inr hrigid))
 
 /-- Endpoint-set form of the global migration dichotomy.  If the strict
 certificate branch is not cofinal, the sharp branch yields an infinite
