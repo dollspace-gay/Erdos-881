@@ -5268,6 +5268,148 @@ theorem finiteMinimalCrossingEndpointTripleCertificates_strict_or_rigidCore
     omega
 
 set_option maxHeartbeats 5000000 in
+/-- Structural block cover behind private-selector occupancy.  Once one
+surviving support has been fixed for every target other than `q`, replacing
+`q`'s support by a selected singleton `x` forces the remainder of `x`'s
+block into the fixed union of those other supports. -/
+theorem targetLocalized_singletonSupports_force_blockCover_of_choice
+    {A : Set ℕ} {R : SupportFamily} {F : ℕ → Finset ℕ}
+    {Q X : Finset ℕ} {q : ℕ}
+    (P : IsFiniteBlockPartition A F)
+    (hcert : ∀ sel : BlockSelector F, ∃ t ∈ Q,
+      DestroysAt R (selectedSet sel) t)
+    (base : BlockSelector F)
+    (cOther : FiniteSupportChoice R (Q.erase q))
+    (hOtherDisjoint : ∀ t : {n // n ∈ Q.erase q},
+      Disjoint ((cOther t).1 : Set ℕ) (selectedSet base))
+    (hXsupport : ∀ x ∈ X, ({x} : Finset ℕ) ∈ R q) :
+    ∀ x ∈ X,
+      F (blockIndex P x) \ {x} ⊆ finiteSupportChoiceUnion cOther := by
+  classical
+  let U : Finset ℕ := finiteSupportChoiceUnion cOther
+  have hUDisjoint : Disjoint (U : Set ℕ) (selectedSet base) := by
+    rw [Set.disjoint_left]
+    intro x hxU hxSelected
+    obtain ⟨t, _htAttach, hxt⟩ :=
+      Finset.mem_biUnion.mp (Finset.mem_coe.mp hxU)
+    exact Set.disjoint_left.mp (hOtherDisjoint t)
+      (Finset.mem_coe.mpr hxt) hxSelected
+  intro x hxX
+  let cFull : FiniteSupportChoice R Q := fun t =>
+    if htq : t.1 = q then
+      ⟨{x}, by simpa [htq] using hXsupport x hxX⟩
+    else
+      let t' : {n // n ∈ Q.erase q} :=
+        ⟨t.1, Finset.mem_erase.mpr ⟨htq, t.2⟩⟩
+      ⟨(cOther t').1, (cOther t').2⟩
+  have hfullCases : ∀ y,
+      y ∈ finiteSupportChoiceUnion cFull → y = x ∨ y ∈ U := by
+    intro y hy
+    obtain ⟨t, _htAttach, hyt⟩ := Finset.mem_biUnion.mp hy
+    by_cases htq : t.1 = q
+    · left
+      simpa [cFull, htq] using hyt
+    · right
+      let t' : {n // n ∈ Q.erase q} :=
+        ⟨t.1, Finset.mem_erase.mpr ⟨htq, t.2⟩⟩
+      apply finiteSupportChoice_subset_union cOther t'
+      simpa [cFull, htq, t'] using hyt
+  obtain ⟨i, hiCover⟩ :=
+    exists_block_subset_supportChoiceUnion_of_certificate hcert cFull
+  have hsiUnion : (base i).1 ∈
+      finiteSupportChoiceUnion cFull := hiCover (base i).2
+  have hsiEq : (base i).1 = x := by
+    rcases hfullCases (base i).1 hsiUnion with hix | hiU
+    · exact hix
+    · exact (Set.disjoint_left.mp hUDisjoint
+        (Finset.mem_coe.mpr hiU) ⟨i, rfl⟩).elim
+  have hxFi : x ∈ F i := by
+    rw [← hsiEq]
+    exact (base i).2
+  have hindex : blockIndex P x = i :=
+    P.blockIndex_eq_of_mem hxFi
+  intro y hyDiff
+  have hyFi : y ∈ F i := by
+    rw [← hindex]
+    exact (Finset.mem_sdiff.mp hyDiff).1
+  rcases hfullCases y (hiCover hyFi) with hyx | hyU
+  · exact ((Finset.mem_sdiff.mp hyDiff).2 (by simp [hyx])).elim
+  · simpa [U] using hyU
+
+/-- The union of the nonselected remainders of the blocks indexed by `X`. -/
+noncomputable def selectedBlockRemainderUnion
+    {A : Set ℕ} {F : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition A F) (X : Finset ℕ) : Finset ℕ :=
+  X.biUnion fun x => F (blockIndex P x) \ {x}
+
+/-- Distinct points of one block selector index distinct partition blocks,
+so their block remainders are disjoint and contribute independently. -/
+theorem selectedBlockRemainderUnion_card_lower
+    {A : Set ℕ} {F : ℕ → Finset ℕ}
+    {X : Finset ℕ} {k : ℕ}
+    (P : IsFiniteBlockPartition A F)
+    (hblockLower : ∀ i, k ≤ (F i).card)
+    (base : BlockSelector F)
+    (hXselected : (X : Set ℕ) ⊆ selectedSet base) :
+    (k - 1) * X.card ≤ (selectedBlockRemainderUnion P X).card := by
+  classical
+  have hindexInj : Set.InjOn (blockIndex P) (X : Set ℕ) := by
+    intro x hxX y hyX hindex
+    have hxSelected := hXselected hxX
+    have hySelected := hXselected hyX
+    rw [P.mem_selectedSet_iff base] at hxSelected hySelected
+    calc
+      x = (base (blockIndex P x)).1 := hxSelected.symm
+      _ = (base (blockIndex P y)).1 := by rw [hindex]
+      _ = y := hySelected
+  have hpairwise : (X : Set ℕ).PairwiseDisjoint
+      (fun x => F (blockIndex P x) \ {x}) := by
+    intro x hxX y hyX hxy
+    have hindexNe : blockIndex P x ≠ blockIndex P y := by
+      intro hindex
+      exact hxy (hindexInj hxX hyX hindex)
+    exact (P.disjoint hindexNe).mono
+      Finset.sdiff_subset Finset.sdiff_subset
+  have hpieceLower : ∀ x ∈ X,
+      k - 1 ≤ (F (blockIndex P x) \ {x}).card := by
+    intro x hxX
+    have hxSelected : x ∈ selectedSet base :=
+      hXselected (Finset.mem_coe.mpr hxX)
+    obtain ⟨i, hi⟩ := hxSelected
+    have hxFi : x ∈ F i := by
+      rw [← hi]
+      exact (base i).2
+    have hxA : x ∈ A := (P.mem_iff x).2 ⟨i, hxFi⟩
+    have hxBlock : x ∈ F (blockIndex P x) :=
+      P.mem_blockIndex hxA
+    rw [Finset.sdiff_singleton_eq_erase,
+      Finset.card_erase_of_mem hxBlock]
+    have hlower := hblockLower (blockIndex P x)
+    omega
+  dsimp only [selectedBlockRemainderUnion]
+  rw [Finset.card_biUnion hpairwise]
+  calc
+    (k - 1) * X.card = ∑ x ∈ X, (k - 1) := by
+      simp [Nat.mul_comm]
+    _ ≤ ∑ x ∈ X,
+        (F (blockIndex P x) \ {x}).card := by
+      apply Finset.sum_le_sum
+      intro x hxX
+      exact hpieceLower x hxX
+
+/-- Pointwise block-remainder covers combine into a cover of their union. -/
+theorem selectedBlockRemainderUnion_subset
+    {A : Set ℕ} {F : ℕ → Finset ℕ}
+    {X U : Finset ℕ}
+    (P : IsFiniteBlockPartition A F)
+    (hcover : ∀ x ∈ X, F (blockIndex P x) \ {x} ⊆ U) :
+    selectedBlockRemainderUnion P X ⊆ U := by
+  classical
+  intro y hy
+  obtain ⟨x, hxX, hyPiece⟩ := Finset.mem_biUnion.mp hy
+  exact hcover x hxX hyPiece
+
+set_option maxHeartbeats 5000000 in
 /-- Quantitative occupancy forced by a target-private selector.  Suppose a
 minimal selector certificate has a private selector for `q`, and `X` is a
 finite family of singleton supports of `q` all selected by that selector.
@@ -5276,43 +5418,33 @@ selector.  Varying the singleton chosen at `q` forces those other supports
 to cover the rest of the singleton's block.  Distinct selected singletons
 lie in distinct blocks, so
 
-`(k - 1) * X.card ≤ r * (Q.erase q).card`.
+`(k - 1) * X.card ≤ (finiteSupportChoiceUnion cOther).card`.
 
 This is the cardinal information supplied by target localization which is
 lost if the certificate is enlarged without re-minimizing. -/
-theorem targetLocalized_singletonSupports_force_blockOccupancy
+theorem targetLocalized_singletonSupports_force_blockOccupancy_of_choice
     {A : Set ℕ} {R : SupportFamily} {F : ℕ → Finset ℕ}
-    {Q X : Finset ℕ} {q k r : ℕ}
+    {Q X : Finset ℕ} {q k : ℕ}
     (P : IsFiniteBlockPartition A F)
     (hblockLower : ∀ i, k ≤ (F i).card)
-    (hcard : SupportsCardAtMost R r)
     (hcert : ∀ sel : BlockSelector F, ∃ t ∈ Q,
       DestroysAt R (selectedSet sel) t)
     (base : BlockSelector F)
-    (hprivate : ∀ t ∈ Q, t ≠ q →
-      ¬ DestroysAt R (selectedSet base) t)
+    (cOther : FiniteSupportChoice R (Q.erase q))
+    (hOtherDisjoint : ∀ t : {n // n ∈ Q.erase q},
+      Disjoint ((cOther t).1 : Set ℕ) (selectedSet base))
     (hXselected : (X : Set ℕ) ⊆ selectedSet base)
     (hXsupport : ∀ x ∈ X, ({x} : Finset ℕ) ∈ R q) :
-    (k - 1) * X.card ≤ r * (Q.erase q).card := by
+    (k - 1) * X.card ≤ (finiteSupportChoiceUnion cOther).card := by
   classical
-  let Q' : Finset ℕ := Q.erase q
-  have hsurvive : ∀ t : {n // n ∈ Q'},
-      ∃ E ∈ R t.1, Disjoint (E : Set ℕ) (selectedSet base) := by
-    intro t
-    have ht := Finset.mem_erase.mp t.2
-    exact not_destroysAt_iff.mp
-      (hprivate t.1 ht.2 ht.1)
-  choose chosen hchosenMem hchosenDisjoint using hsurvive
-  let cOther : FiniteSupportChoice R Q' := fun t =>
-    ⟨chosen t, hchosenMem t⟩
   let U : Finset ℕ := finiteSupportChoiceUnion cOther
   have hUDisjoint : Disjoint (U : Set ℕ) (selectedSet base) := by
     rw [Set.disjoint_left]
     intro x hxU hxSelected
     obtain ⟨t, _htAttach, hxt⟩ :=
       Finset.mem_biUnion.mp (Finset.mem_coe.mp hxU)
-    exact Set.disjoint_left.mp (hchosenDisjoint t)
-      (Finset.mem_coe.mpr (by simpa [cOther] using hxt)) hxSelected
+    exact Set.disjoint_left.mp (hOtherDisjoint t)
+      (Finset.mem_coe.mpr hxt) hxSelected
   have hblockCover : ∀ x ∈ X,
       F (blockIndex P x) \ {x} ⊆ U := by
     intro x hxX
@@ -5320,7 +5452,7 @@ theorem targetLocalized_singletonSupports_force_blockOccupancy
       if htq : t.1 = q then
         ⟨{x}, by simpa [htq] using hXsupport x hxX⟩
       else
-        let t' : {n // n ∈ Q'} :=
+        let t' : {n // n ∈ Q.erase q} :=
           ⟨t.1, Finset.mem_erase.mpr ⟨htq, t.2⟩⟩
         ⟨(cOther t').1, (cOther t').2⟩
     have hfullCases : ∀ y,
@@ -5331,7 +5463,7 @@ theorem targetLocalized_singletonSupports_force_blockOccupancy
       · left
         simpa [cFull, htq] using hyt
       · right
-        let t' : {n // n ∈ Q'} :=
+        let t' : {n // n ∈ Q.erase q} :=
           ⟨t.1, Finset.mem_erase.mpr ⟨htq, t.2⟩⟩
         apply finiteSupportChoice_subset_union cOther t'
         simpa [cFull, htq, t'] using hyt
@@ -5406,9 +5538,44 @@ theorem targetLocalized_singletonSupports_force_blockOccupancy
     intro y hyV
     obtain ⟨x, hxX, hyPiece⟩ := Finset.mem_biUnion.mp hyV
     exact hblockCover x hxX hyPiece
-  have hUcard : U.card ≤ r * Q'.card := by
-    simpa [U] using finiteSupportChoiceUnion_card_le hcard cOther
-  exact hVLower.trans ((Finset.card_le_card hVsub).trans hUcard)
+  simpa [U] using hVLower.trans (Finset.card_le_card hVsub)
+
+/-- Uniform-cardinality consequence of
+`targetLocalized_singletonSupports_force_blockOccupancy_of_choice`.
+Minimality supplies one surviving support for every other target, and the
+uniform support bound controls their union. -/
+theorem targetLocalized_singletonSupports_force_blockOccupancy
+    {A : Set ℕ} {R : SupportFamily} {F : ℕ → Finset ℕ}
+    {Q X : Finset ℕ} {q k r : ℕ}
+    (P : IsFiniteBlockPartition A F)
+    (hblockLower : ∀ i, k ≤ (F i).card)
+    (hcard : SupportsCardAtMost R r)
+    (hcert : ∀ sel : BlockSelector F, ∃ t ∈ Q,
+      DestroysAt R (selectedSet sel) t)
+    (base : BlockSelector F)
+    (hprivate : ∀ t ∈ Q, t ≠ q →
+      ¬ DestroysAt R (selectedSet base) t)
+    (hXselected : (X : Set ℕ) ⊆ selectedSet base)
+    (hXsupport : ∀ x ∈ X, ({x} : Finset ℕ) ∈ R q) :
+    (k - 1) * X.card ≤ r * (Q.erase q).card := by
+  classical
+  have hsurvive : ∀ t : {n // n ∈ Q.erase q},
+      ∃ E ∈ R t.1, Disjoint (E : Set ℕ) (selectedSet base) := by
+    intro t
+    have ht := Finset.mem_erase.mp t.2
+    exact not_destroysAt_iff.mp
+      (hprivate t.1 ht.2 ht.1)
+  choose chosen hchosenMem hchosenDisjoint using hsurvive
+  let cOther : FiniteSupportChoice R (Q.erase q) := fun t =>
+    ⟨chosen t, hchosenMem t⟩
+  have hoccupancy : (k - 1) * X.card ≤
+      (finiteSupportChoiceUnion cOther).card :=
+    targetLocalized_singletonSupports_force_blockOccupancy_of_choice
+      P hblockLower hcert base cOther
+        (fun t => by simpa [cOther] using hchosenDisjoint t)
+        hXselected hXsupport
+  exact hoccupancy.trans
+    (finiteSupportChoiceUnion_card_le hcard cOther)
 
 /-- In a cardinal-minimal strengthened crossing certificate, every target's
 crossing endpoint family obeys the private-selector occupancy bound. -/
@@ -5455,6 +5622,602 @@ theorem minimalCrossingEndpointTripleCertificate_forces_scaledEndpointBound
       crossingEndpointTripleObstructionFamily_cardAtMost
       hcert sel hprivate hendpointSelected hsingleton
 
+/-- Other certificate targets whose entire crossing-endpoint family is
+already contained in a fixed selector. -/
+noncomputable def crossingEndpointAlignedTargets
+    (A B₀ : Set ℕ) {F : ℕ → Finset ℕ}
+    (Q : Finset ℕ) (base : BlockSelector F) (q : ℕ) : Finset ℕ := by
+  classical
+  exact (Q.erase q).filter fun t =>
+    (crossingAtomEndpoints A B₀ t : Set ℕ) ⊆ selectedSet base
+
+/-- Aligned targets are, by definition, other targets in the certificate. -/
+theorem crossingEndpointAlignedTargets_subset
+    (A B₀ : Set ℕ) {F : ℕ → Finset ℕ}
+    (Q : Finset ℕ) (base : BlockSelector F) (q : ℕ) :
+    crossingEndpointAlignedTargets A B₀ Q base q ⊆ Q.erase q := by
+  classical
+  intro t ht
+  exact (Finset.mem_filter.mp ht).1
+
+/-- The total of the `3`/`1` capacities is one per index plus two per
+distinguished index. -/
+theorem sum_attach_ite_three_one_eq_card_add_twice
+    {Q Aligned : Finset ℕ} (hAlignedSub : Aligned ⊆ Q) :
+    (∑ t ∈ Q.attach, if t.1 ∈ Aligned then 3 else 1) =
+      Q.card + 2 * Aligned.card := by
+  classical
+  calc
+    (∑ t ∈ Q.attach, if t.1 ∈ Aligned then 3 else 1) =
+        ∑ t ∈ Q.attach,
+          (1 + 2 * (if t.1 ∈ Aligned then 1 else 0)) := by
+      apply Finset.sum_congr rfl
+      intro t _ht
+      split_ifs <;> omega
+    _ = Q.card + 2 * Aligned.card := by
+      have hbool :
+          (∑ t ∈ Q.attach,
+            if t.1 ∈ Aligned then 1 else 0) = Aligned.card := by
+        rw [Finset.sum_boole]
+        have hfilterCard :
+            (Q.attach.filter fun t => t.1 ∈ Aligned).card =
+              (Q.filter fun t => t ∈ Aligned).card := by
+          have hfilter := congrArg Finset.card
+            (Finset.filter_attach (fun t => t ∈ Aligned) Q)
+          simpa only [Finset.card_map, Finset.card_attach] using hfilter
+        have hfilterEq :
+            Q.filter (fun t => t ∈ Aligned) = Aligned := by
+          ext t
+          simp only [Finset.mem_filter]
+          constructor
+          · exact fun ht => ht.2
+          · exact fun ht => ⟨hAlignedSub ht, ht⟩
+        rw [hfilterCard, hfilterEq]
+        simp
+      have htwos :
+          (∑ t ∈ Q.attach,
+            2 * (if t.1 ∈ Aligned then 1 else 0)) =
+              2 * Aligned.card := by
+        calc
+          (∑ t ∈ Q.attach,
+              2 * (if t.1 ∈ Aligned then 1 else 0)) =
+              2 * (∑ t ∈ Q.attach,
+                if t.1 ∈ Aligned then 1 else 0) := by
+            rw [Finset.mul_sum]
+          _ = 2 * Aligned.card := by rw [hbool]
+      calc
+        (∑ t ∈ Q.attach,
+            (1 + 2 * (if t.1 ∈ Aligned then 1 else 0))) =
+            Q.card +
+              (∑ t ∈ Q.attach,
+                2 * (if t.1 ∈ Aligned then 1 else 0)) := by
+          simp [Finset.sum_add_distrib]
+        _ = Q.card + 2 * Aligned.card := by rw [htwos]
+
+/-- If the union of a finite support choice is within `d` of the sum of
+prescribed pointwise capacities, then at most `d` chosen supports are
+strictly below their capacity.  Any overlap only makes this conclusion
+stronger. -/
+theorem finiteSupportChoice_shortIndices_card_le_defect
+    {R : SupportFamily} {Q : Finset ℕ}
+    (c : FiniteSupportChoice R Q)
+    (capacity : {n // n ∈ Q} → ℕ)
+    {M d : ℕ}
+    (hcard : ∀ t : {n // n ∈ Q}, (c t).1.card ≤ capacity t)
+    (hcapacitySum : ∑ t ∈ Q.attach, capacity t = M)
+    (hunionLower : M - d ≤ (finiteSupportChoiceUnion c).card) :
+    (Q.attach.filter fun t => (c t).1.card < capacity t).card ≤ d := by
+  classical
+  let Short : Finset {n // n ∈ Q} :=
+    Q.attach.filter fun t => (c t).1.card < capacity t
+  have hpoint : ∀ t ∈ Q.attach,
+      (c t).1.card + (if t ∈ Short then 1 else 0) ≤ capacity t := by
+    intro t _ht
+    by_cases htShort : t ∈ Short
+    · have hlt : (c t).1.card < capacity t :=
+        (Finset.mem_filter.mp htShort).2
+      simp [htShort]
+      omega
+    · simp [htShort]
+      exact hcard t
+  have hsum :
+      (∑ t ∈ Q.attach, (c t).1.card) + Short.card ≤ M := by
+    have hsumPoint :
+        (∑ t ∈ Q.attach,
+          ((c t).1.card + (if t ∈ Short then 1 else 0))) ≤
+            ∑ t ∈ Q.attach, capacity t := by
+      apply Finset.sum_le_sum
+      intro t ht
+      exact hpoint t ht
+    have hshortSum :
+        (∑ t ∈ Q.attach, if t ∈ Short then 1 else 0) =
+          Short.card := by
+      rw [Finset.sum_boole]
+      have hfilterEq : Q.attach.filter (fun t => t ∈ Short) = Short := by
+        ext t
+        simp only [Finset.mem_filter]
+        constructor
+        · exact fun ht => ht.2
+        · exact fun ht =>
+            ⟨(Finset.mem_filter.mp ht).1, ht⟩
+      rw [hfilterEq]
+      simp
+    rw [Finset.sum_add_distrib, hshortSum, hcapacitySum] at hsumPoint
+    exact hsumPoint
+  have hunionSum : (finiteSupportChoiceUnion c).card ≤
+      ∑ t ∈ Q.attach, (c t).1.card :=
+    Finset.card_biUnion_le
+  change Short.card ≤ d
+  omega
+
+/-- If a covered set already has all but `d` of the total incidence
+capacity, at most `d` chosen supports can use any point outside that set. -/
+theorem finiteSupportChoice_not_subset_card_le_defect
+    {R : SupportFamily} {Q V : Finset ℕ}
+    (c : FiniteSupportChoice R Q)
+    (capacity : {n // n ∈ Q} → ℕ)
+    {M d : ℕ}
+    (hcard : ∀ t : {n // n ∈ Q}, (c t).1.card ≤ capacity t)
+    (hcapacitySum : ∑ t ∈ Q.attach, capacity t = M)
+    (hVsub : V ⊆ finiteSupportChoiceUnion c)
+    (hVlower : M - d ≤ V.card) :
+    (Q.attach.filter fun t => ¬ (c t).1 ⊆ V).card ≤ d := by
+  classical
+  let Bad : Finset {n // n ∈ Q} :=
+    Q.attach.filter fun t => ¬ (c t).1 ⊆ V
+  have hbadPoint : ∀ t ∈ Q.attach,
+      (if ¬ (c t).1 ⊆ V then 1 else 0) ≤ ((c t).1 \ V).card := by
+    intro t _ht
+    by_cases htSub : (c t).1 ⊆ V
+    · simp [htSub]
+    · have hnonempty : ((c t).1 \ V).Nonempty :=
+        Finset.sdiff_nonempty.mpr htSub
+      simp [htSub]
+      exact hnonempty
+  have hbadSum :
+      (∑ t ∈ Q.attach,
+        if ¬ (c t).1 ⊆ V then 1 else 0) = Bad.card := by
+    rw [Finset.sum_boole]
+    rfl
+  have hbadOutside : Bad.card ≤
+      ∑ t ∈ Q.attach, ((c t).1 \ V).card := by
+    rw [← hbadSum]
+    apply Finset.sum_le_sum
+    intro t ht
+    exact hbadPoint t ht
+  have hVcover : V ⊆
+      Q.attach.biUnion fun t => (c t).1 ∩ V := by
+    intro x hxV
+    obtain ⟨t, _htAttach, hxt⟩ :=
+      Finset.mem_biUnion.mp (hVsub hxV)
+    apply Finset.mem_biUnion.mpr
+    exact ⟨t, Finset.mem_attach Q t,
+      Finset.mem_inter.mpr ⟨hxt, hxV⟩⟩
+  have hVincidence : V.card ≤
+      ∑ t ∈ Q.attach, ((c t).1 ∩ V).card := by
+    exact (Finset.card_le_card hVcover).trans Finset.card_biUnion_le
+  have htotal :
+      (∑ t ∈ Q.attach, (c t).1.card) ≤ M := by
+    calc
+      (∑ t ∈ Q.attach, (c t).1.card) ≤
+          ∑ t ∈ Q.attach, capacity t := by
+        apply Finset.sum_le_sum
+        intro t _ht
+        exact hcard t
+      _ = M := hcapacitySum
+  have hdecomp :
+      (∑ t ∈ Q.attach, (c t).1.card) =
+        (∑ t ∈ Q.attach, ((c t).1 ∩ V).card) +
+          ∑ t ∈ Q.attach, ((c t).1 \ V).card := by
+    rw [← Finset.sum_add_distrib]
+    apply Finset.sum_congr rfl
+    intro t _ht
+    exact (Finset.card_inter_add_card_sdiff (c t).1 V).symm
+  change Bad.card ≤ d
+  omega
+
+/-- Every aligned index is either a full three-point choice or is short
+relative to the `3`/`1` capacity profile. -/
+theorem aligned_card_le_fullThree_add_short
+    {R : SupportFamily} {Q Aligned : Finset ℕ}
+    (c : FiniteSupportChoice R Q)
+    (hAlignedSub : Aligned ⊆ Q)
+    (hcard : ∀ t : {n // n ∈ Q},
+      (c t).1.card ≤ if t.1 ∈ Aligned then 3 else 1) :
+    Aligned.card ≤
+      (Q.attach.filter fun t =>
+        t.1 ∈ Aligned ∧ (c t).1.card = 3).card +
+      (Q.attach.filter fun t =>
+        (c t).1.card < if t.1 ∈ Aligned then 3 else 1).card := by
+  classical
+  let I : Finset {n // n ∈ Q} :=
+    Q.attach.filter fun t => t.1 ∈ Aligned
+  let Full : Finset {n // n ∈ Q} :=
+    Q.attach.filter fun t => t.1 ∈ Aligned ∧ (c t).1.card = 3
+  let Short : Finset {n // n ∈ Q} :=
+    Q.attach.filter fun t =>
+      (c t).1.card < if t.1 ∈ Aligned then 3 else 1
+  have hIcard : I.card = Aligned.card := by
+    have hfilterCard :
+        (Q.attach.filter fun t => t.1 ∈ Aligned).card =
+          (Q.filter fun t => t ∈ Aligned).card := by
+      have hfilter := congrArg Finset.card
+        (Finset.filter_attach (fun t => t ∈ Aligned) Q)
+      simpa only [Finset.card_map, Finset.card_attach] using hfilter
+    have hfilterEq : Q.filter (fun t => t ∈ Aligned) = Aligned := by
+      ext t
+      simp only [Finset.mem_filter]
+      constructor
+      · exact fun ht => ht.2
+      · exact fun ht => ⟨hAlignedSub ht, ht⟩
+    simpa [I, hfilterEq] using hfilterCard
+  have hIsub : I ⊆ Full ∪ Short := by
+    intro t htI
+    have htAligned : t.1 ∈ Aligned := (Finset.mem_filter.mp htI).2
+    have htCard : (c t).1.card ≤ 3 := by
+      simpa [htAligned] using hcard t
+    by_cases hfull : (c t).1.card = 3
+    · apply Finset.mem_union_left
+      exact Finset.mem_filter.mpr
+        ⟨Finset.mem_attach Q t, htAligned, hfull⟩
+    · apply Finset.mem_union_right
+      apply Finset.mem_filter.mpr
+      refine ⟨Finset.mem_attach Q t, ?_⟩
+      simp [htAligned]
+      omega
+  have hcardSub : I.card ≤ (Full ∪ Short).card :=
+    Finset.card_le_card hIsub
+  have hunionCard : (Full ∪ Short).card ≤ Full.card + Short.card :=
+    Finset.card_union_le Full Short
+  simpa [I, Full, Short, hIcard] using hcardSub.trans hunionCard
+
+/-- A full aligned choice either lies entirely in `V` or belongs to the
+family of choices using a point outside `V`. -/
+theorem fullAlignedThree_card_le_internal_add_notSubset
+    {R : SupportFamily} {Q Aligned V : Finset ℕ}
+    (c : FiniteSupportChoice R Q) :
+    (Q.attach.filter fun t =>
+      t.1 ∈ Aligned ∧ (c t).1.card = 3).card ≤
+      (Q.attach.filter fun t =>
+        t.1 ∈ Aligned ∧ (c t).1.card = 3 ∧ (c t).1 ⊆ V).card +
+      (Q.attach.filter fun t => ¬ (c t).1 ⊆ V).card := by
+  classical
+  let Full : Finset {n // n ∈ Q} :=
+    Q.attach.filter fun t => t.1 ∈ Aligned ∧ (c t).1.card = 3
+  let Internal : Finset {n // n ∈ Q} :=
+    Q.attach.filter fun t =>
+      t.1 ∈ Aligned ∧ (c t).1.card = 3 ∧ (c t).1 ⊆ V
+  let Outside : Finset {n // n ∈ Q} :=
+    Q.attach.filter fun t => ¬ (c t).1 ⊆ V
+  have hsub : Full ⊆ Internal ∪ Outside := by
+    intro t htFull
+    have ht := (Finset.mem_filter.mp htFull).2
+    by_cases hinside : (c t).1 ⊆ V
+    · apply Finset.mem_union_left
+      exact Finset.mem_filter.mpr
+        ⟨Finset.mem_attach Q t, ht.1, ht.2, hinside⟩
+    · apply Finset.mem_union_right
+      exact Finset.mem_filter.mpr
+        ⟨Finset.mem_attach Q t, hinside⟩
+  have hcardSub : Full.card ≤ (Internal ∪ Outside).card :=
+    Finset.card_le_card hsub
+  have hunionCard : (Internal ∪ Outside).card ≤
+      Internal.card + Outside.card :=
+    Finset.card_union_le Internal Outside
+  simpa [Full, Internal, Outside] using hcardSub.trans hunionCard
+
+/-- Union bound for a support choice in which ordinary indices cost one
+point and a distinguished subfamily may cost three. -/
+theorem finiteSupportChoiceUnion_card_le_one_plus_two_aligned
+    {R : SupportFamily} {Q Aligned : Finset ℕ}
+    (c : FiniteSupportChoice R Q)
+    (hAlignedSub : Aligned ⊆ Q)
+    (hcard : ∀ t : {n // n ∈ Q},
+      (c t).1.card ≤ if t.1 ∈ Aligned then 3 else 1) :
+    (finiteSupportChoiceUnion c).card ≤
+      Q.card + 2 * Aligned.card := by
+  classical
+  calc
+    (finiteSupportChoiceUnion c).card ≤
+        ∑ t ∈ Q.attach, (c t).1.card :=
+      Finset.card_biUnion_le
+    _ ≤ ∑ t ∈ Q.attach,
+        if t.1 ∈ Aligned then 3 else 1 := by
+      apply Finset.sum_le_sum
+      intro t _ht
+      exact hcard t
+    _ = Q.card + 2 * Aligned.card := by
+      calc
+        (∑ t ∈ Q.attach,
+            if t.1 ∈ Aligned then 3 else 1) =
+            ∑ t ∈ Q.attach,
+              (1 + 2 * (if t.1 ∈ Aligned then 1 else 0)) := by
+          apply Finset.sum_congr rfl
+          intro t _ht
+          split_ifs <;> omega
+        _ = Q.card + 2 * Aligned.card := by
+          have hbool :
+              (∑ t ∈ Q.attach,
+                if t.1 ∈ Aligned then 1 else 0) = Aligned.card := by
+            rw [Finset.sum_boole]
+            have hfilterCard :
+                (Q.attach.filter fun t => t.1 ∈ Aligned).card =
+                  (Q.filter fun t => t ∈ Aligned).card := by
+              have hfilter := congrArg Finset.card
+                (Finset.filter_attach (fun t => t ∈ Aligned) Q)
+              simpa only [Finset.card_map, Finset.card_attach] using hfilter
+            have hfilterEq :
+                Q.filter (fun t => t ∈ Aligned) = Aligned := by
+              ext t
+              simp only [Finset.mem_filter]
+              constructor
+              · exact fun ht => ht.2
+              · exact fun ht => ⟨hAlignedSub ht, ht⟩
+            rw [hfilterCard, hfilterEq]
+            simp
+          have htwos :
+              (∑ t ∈ Q.attach,
+                2 * (if t.1 ∈ Aligned then 1 else 0)) =
+                  2 * Aligned.card := by
+            calc
+              (∑ t ∈ Q.attach,
+                  2 * (if t.1 ∈ Aligned then 1 else 0)) =
+                  2 * (∑ t ∈ Q.attach,
+                    if t.1 ∈ Aligned then 1 else 0) := by
+                rw [Finset.mul_sum]
+              _ = 2 * Aligned.card := by rw [hbool]
+          calc
+            (∑ t ∈ Q.attach,
+                (1 + 2 * (if t.1 ∈ Aligned then 1 else 0))) =
+                Q.card +
+                  (∑ t ∈ Q.attach,
+                    2 * (if t.1 ∈ Aligned then 1 else 0)) := by
+              simp [Finset.sum_add_distrib]
+            _ = Q.card + 2 * Aligned.card := by rw [htwos]
+
+/-- A target-private selector admits a controlled surviving-support choice
+for all other certificate targets.  An unaligned target supplies a missing
+endpoint singleton, while an aligned target supplies a genuine surviving
+order-three support. -/
+theorem exists_controlledCrossingEndpointSupportChoice_of_private
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {q : ℕ}
+    (hQcross : ∀ t ∈ Q,
+      ∀ E ∈ additiveSupportFamily A 2 t,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧
+        ¬ (E : Set ℕ) ⊆ B₀)
+    (base : BlockSelector F)
+    (hprivate : ∀ t ∈ Q, t ≠ q →
+      ¬ DestroysAt
+        (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet base) t) :
+    ∃ cOther : FiniteSupportChoice
+        (crossingEndpointTripleObstructionFamily A B₀) (Q.erase q),
+      (∀ t : {n // n ∈ Q.erase q},
+        Disjoint ((cOther t).1 : Set ℕ) (selectedSet base)) ∧
+      (∀ t : {n // n ∈ Q.erase q},
+        (cOther t).1.card ≤
+          if t.1 ∈ crossingEndpointAlignedTargets A B₀ Q base q
+          then 3 else 1) ∧
+      ∀ t : {n // n ∈ Q.erase q},
+        if t.1 ∈ crossingEndpointAlignedTargets A B₀ Q base q
+        then (cOther t).1 ∈ additiveSupportFamily A 3 t.1
+        else (cOther t).1.card = 1 := by
+  classical
+  let Aligned : Finset ℕ :=
+    crossingEndpointAlignedTargets A B₀ Q base q
+  have hcontrolled : ∀ t : {n // n ∈ Q.erase q}, ∃ E : Finset ℕ,
+      E ∈ crossingEndpointTripleObstructionFamily A B₀ t.1 ∧
+      Disjoint (E : Set ℕ) (selectedSet base) ∧
+      E.card ≤ (if t.1 ∈ Aligned then 3 else 1) ∧
+      (if t.1 ∈ Aligned then
+        E ∈ additiveSupportFamily A 3 t.1 else E.card = 1) := by
+    intro t
+    have htErase := Finset.mem_erase.mp t.2
+    have htQ : t.1 ∈ Q := htErase.2
+    by_cases htAligned : t.1 ∈ Aligned
+    · have hendpointSub :
+          (crossingAtomEndpoints A B₀ t.1 : Set ℕ) ⊆
+            selectedSet base := by
+        change t.1 ∈ (Q.erase q).filter (fun u =>
+          (crossingAtomEndpoints A B₀ u : Set ℕ) ⊆
+            selectedSet base) at htAligned
+        exact (Finset.mem_filter.mp htAligned).2
+      have hnotTriple : ¬ DestroysAt (additiveSupportFamily A 3)
+          (selectedSet base) t.1 := by
+        intro htriple
+        apply hprivate t.1 htQ htErase.1
+        exact destroysAt_crossingEndpointTripleObstructionFamily_iff.mpr
+          ⟨hQcross t.1 htQ, htriple, hendpointSub⟩
+      obtain ⟨G, hGR, hGdisjoint⟩ :=
+        not_destroysAt_iff.mp hnotTriple
+      refine ⟨G, ?_, hGdisjoint, ?_, ?_⟩
+      · simp only [crossingEndpointTripleObstructionFamily,
+          if_pos (hQcross t.1 htQ)]
+        exact Finset.mem_union_left _ hGR
+      · simpa [htAligned] using
+          additiveSupportFamily_cardAtMost A 3 t.1 G hGR
+      · simpa [htAligned] using hGR
+    · have hendpointNotSub :
+          ¬ (crossingAtomEndpoints A B₀ t.1 : Set ℕ) ⊆
+            selectedSet base := by
+        intro hsub
+        apply htAligned
+        change t.1 ∈ (Q.erase q).filter (fun u =>
+          (crossingAtomEndpoints A B₀ u : Set ℕ) ⊆
+            selectedSet base)
+        exact Finset.mem_filter.mpr ⟨t.2, hsub⟩
+      obtain ⟨x, hxEndpoint, hxNotSelected⟩ :=
+        Set.not_subset.mp hendpointNotSub
+      refine ⟨{x}, ?_, ?_, ?_, ?_⟩
+      · simp only [crossingEndpointTripleObstructionFamily,
+          if_pos (hQcross t.1 htQ)]
+        apply Finset.mem_union_right
+        exact Finset.mem_image.mpr
+          ⟨x, Finset.mem_coe.mp hxEndpoint, rfl⟩
+      · rw [Set.disjoint_left]
+        intro y hySingleton hySelected
+        have hyx : y = x := by simpa using hySingleton
+        exact hxNotSelected (hyx ▸ hySelected)
+      · simp [htAligned]
+      · simp [htAligned]
+  choose chosen hchosenMem hchosenDisjoint hchosenCard hchosenKind using
+    hcontrolled
+  let cOther : FiniteSupportChoice
+      (crossingEndpointTripleObstructionFamily A B₀) (Q.erase q) := fun t =>
+    ⟨chosen t, hchosenMem t⟩
+  refine ⟨cOther, ?_, ?_, ?_⟩
+  · intro t
+    simpa [cOther] using hchosenDisjoint t
+  · intro t
+    simpa [cOther, Aligned] using hchosenCard t
+  · intro t
+    simpa [cOther, Aligned] using hchosenKind t
+
+/-- Structural form of refined endpoint occupancy.  For each private target
+there is one controlled surviving support for every other target, and their
+union covers the remainder of every block selected by a crossing endpoint
+of the private target. -/
+theorem minimalCrossingEndpointTripleCertificate_forces_refinedEndpointCover
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ}
+    {Q : Finset ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hQcross : ∀ q ∈ Q,
+      ∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧
+        ¬ (E : Set ℕ) ⊆ B₀)
+    (hcert : ∀ sel : BlockSelector F, ∃ q ∈ Q,
+      DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet sel) q)
+    (hlocalized : ∀ q ∈ Q, ∃ sel : BlockSelector F,
+      DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet sel) q ∧
+      ∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt
+          (crossingEndpointTripleObstructionFamily A B₀)
+          (selectedSet sel) q') :
+    ∀ q ∈ Q, ∃ base : BlockSelector F,
+      DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet base) q ∧
+      (∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt
+          (crossingEndpointTripleObstructionFamily A B₀)
+          (selectedSet base) q') ∧
+      ∃ cOther : FiniteSupportChoice
+          (crossingEndpointTripleObstructionFamily A B₀) (Q.erase q),
+        (∀ t : {n // n ∈ Q.erase q},
+          Disjoint ((cOther t).1 : Set ℕ) (selectedSet base)) ∧
+        (∀ t : {n // n ∈ Q.erase q},
+          (cOther t).1.card ≤
+            if t.1 ∈ crossingEndpointAlignedTargets A B₀ Q base q
+            then 3 else 1) ∧
+        (∀ t : {n // n ∈ Q.erase q},
+          if t.1 ∈ crossingEndpointAlignedTargets A B₀ Q base q
+          then (cOther t).1 ∈ additiveSupportFamily A 3 t.1
+          else (cOther t).1.card = 1) ∧
+        (finiteSupportChoiceUnion cOther).card ≤
+          (Q.erase q).card +
+            2 * (crossingEndpointAlignedTargets A B₀ Q base q).card ∧
+        ∀ x ∈ crossingAtomEndpoints A B₀ q,
+          F (blockIndex P x) \ {x} ⊆
+            finiteSupportChoiceUnion cOther := by
+  classical
+  intro q hqQ
+  obtain ⟨base, hqDestroy, hprivate⟩ := hlocalized q hqQ
+  obtain ⟨cOther, hdisjoint, hcard, hkind⟩ :=
+    exists_controlledCrossingEndpointSupportChoice_of_private
+      hQcross base hprivate
+  have hsingleton : ∀ x ∈ crossingAtomEndpoints A B₀ q,
+      ({x} : Finset ℕ) ∈
+        crossingEndpointTripleObstructionFamily A B₀ q := by
+    intro x hx
+    simp only [crossingEndpointTripleObstructionFamily,
+      if_pos (hQcross q hqQ)]
+    apply Finset.mem_union_right
+    exact Finset.mem_image.mpr ⟨x, hx, rfl⟩
+  have hcover : ∀ x ∈ crossingAtomEndpoints A B₀ q,
+      F (blockIndex P x) \ {x} ⊆
+        finiteSupportChoiceUnion cOther :=
+    targetLocalized_singletonSupports_force_blockCover_of_choice
+      P hcert base cOther hdisjoint hsingleton
+  have hunion : (finiteSupportChoiceUnion cOther).card ≤
+      (Q.erase q).card +
+        2 * (crossingEndpointAlignedTargets A B₀ Q base q).card :=
+    finiteSupportChoiceUnion_card_le_one_plus_two_aligned
+      cOther
+        (crossingEndpointAlignedTargets_subset A B₀ Q base q)
+        hcard
+  exact ⟨base, hqDestroy, hprivate, cOther,
+    hdisjoint, hcard, hkind, hunion, hcover⟩
+
+set_option maxHeartbeats 5000000 in
+/-- Refined private-selector occupancy.  An unaligned other target has a
+missing singleton endpoint, so it contributes only one point to the support
+union.  Only an aligned target can require a surviving triple support and
+contribute three points.  Thus, if `a_q` counts the aligned other targets,
+
+`(k - 1) * |X_q| ≤ (|Q| - 1) + 2 * a_q`.
+
+For near-sharp certificates this forces any two- or three-endpoint target to
+share its private selector with many other endpoint families. -/
+theorem minimalCrossingEndpointTripleCertificate_forces_refinedEndpointBound
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {k : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hblockLower : ∀ i, k ≤ (F i).card)
+    (hQcross : ∀ q ∈ Q,
+      ∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧
+        ¬ (E : Set ℕ) ⊆ B₀)
+    (hcert : ∀ sel : BlockSelector F, ∃ q ∈ Q,
+      DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet sel) q)
+    (hlocalized : ∀ q ∈ Q, ∃ sel : BlockSelector F,
+      DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet sel) q ∧
+      ∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt
+          (crossingEndpointTripleObstructionFamily A B₀)
+          (selectedSet sel) q') :
+    ∀ q ∈ Q, ∃ base : BlockSelector F,
+      DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet base) q ∧
+      (∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt
+          (crossingEndpointTripleObstructionFamily A B₀)
+          (selectedSet base) q') ∧
+      (k - 1) * (crossingAtomEndpoints A B₀ q).card ≤
+        (Q.erase q).card +
+          2 * (crossingEndpointAlignedTargets A B₀ Q base q).card := by
+  classical
+  intro q hqQ
+  obtain ⟨base, hqDestroy, hprivate, cOther,
+      hdisjoint, _hchosenCard, _hchosenKind, hunion, _hpointCover⟩ :=
+    minimalCrossingEndpointTripleCertificate_forces_refinedEndpointCover
+      P hQcross hcert hlocalized q hqQ
+  have hendpointSelected :
+      (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+        selectedSet base :=
+    (destroysAt_crossingEndpointTripleObstructionFamily_iff.mp
+      hqDestroy).2.2
+  have hsingleton : ∀ x ∈ crossingAtomEndpoints A B₀ q,
+      ({x} : Finset ℕ) ∈
+        crossingEndpointTripleObstructionFamily A B₀ q := by
+    intro x hx
+    simp only [crossingEndpointTripleObstructionFamily,
+      if_pos (hQcross q hqQ)]
+    apply Finset.mem_union_right
+    exact Finset.mem_image.mpr ⟨x, hx, rfl⟩
+  have hoccupancy :
+      (k - 1) * (crossingAtomEndpoints A B₀ q).card ≤
+        (finiteSupportChoiceUnion cOther).card :=
+    targetLocalized_singletonSupports_force_blockOccupancy_of_choice
+      P hblockLower hcert base cOther
+        hdisjoint
+        hendpointSelected hsingleton
+  refine ⟨base, hqDestroy, hprivate, ?_⟩
+  exact hoccupancy.trans hunion
+
 /-- At the first strict cardinality above a `k`-point block, the scaled
 occupancy inequality forces every endpoint family to have size at most
 three as soon as `k ≥ 5`. -/
@@ -5482,6 +6245,497 @@ theorem nearSharp_scaledEndpointBound_forces_endpointCard_le_three
     Nat.mul_le_mul_left 3 heraseLe
   have : 4 * (k - 1) ≤ 3 * k :=
     hlower.trans (hscaled.trans hupper)
+  omega
+
+/-- In a near-sharp certificate, a three-endpoint target forces its private
+selector to align with all but at most one of the other targets. -/
+theorem nearSharp_refinedEndpointBound_three_forces_almostAllAligned
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {base : BlockSelector F} {q k : ℕ}
+    (hk : 2 ≤ k)
+    (hqQ : q ∈ Q)
+    (hQcard : Q.card ≤ k + 1)
+    (hendpointCard :
+      (crossingAtomEndpoints A B₀ q).card = 3)
+    (hrefined :
+      (k - 1) * (crossingAtomEndpoints A B₀ q).card ≤
+        (Q.erase q).card +
+          2 * (crossingEndpointAlignedTargets A B₀ Q base q).card) :
+    k - 1 ≤
+      (crossingEndpointAlignedTargets A B₀ Q base q).card := by
+  have heraseCard : (Q.erase q).card = Q.card - 1 :=
+    Finset.card_erase_of_mem hqQ
+  have heraseLe : (Q.erase q).card ≤ k := by
+    rw [heraseCard]
+    omega
+  by_contra hnot
+  have halignedLe :
+      (crossingEndpointAlignedTargets A B₀ Q base q).card ≤ k - 2 := by
+    omega
+  rw [hendpointCard] at hrefined
+  omega
+
+/-- At the exact first strict size `|Q| = k + 1`, a three-endpoint target's
+private selector contains the full endpoint families of either all other
+targets or all but exactly one of them. -/
+theorem nearSharp_refinedEndpointBound_three_aligned_eq_k_or_pred
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {base : BlockSelector F} {q k : ℕ}
+    (hk : 2 ≤ k)
+    (hqQ : q ∈ Q)
+    (hQcard : Q.card = k + 1)
+    (hendpointCard :
+      (crossingAtomEndpoints A B₀ q).card = 3)
+    (hrefined :
+      (k - 1) * (crossingAtomEndpoints A B₀ q).card ≤
+        (Q.erase q).card +
+          2 * (crossingEndpointAlignedTargets A B₀ Q base q).card) :
+    (crossingEndpointAlignedTargets A B₀ Q base q).card = k - 1 ∨
+      (crossingEndpointAlignedTargets A B₀ Q base q).card = k := by
+  have hlower : k - 1 ≤
+      (crossingEndpointAlignedTargets A B₀ Q base q).card :=
+    nearSharp_refinedEndpointBound_three_forces_almostAllAligned
+      hk hqQ (by omega) hendpointCard hrefined
+  have hsubset :
+      crossingEndpointAlignedTargets A B₀ Q base q ⊆ Q.erase q :=
+    crossingEndpointAlignedTargets_subset A B₀ Q base q
+  have hupper :
+      (crossingEndpointAlignedTargets A B₀ Q base q).card ≤ k := by
+    have heraseCard : (Q.erase q).card = k := by
+      rw [Finset.card_erase_of_mem hqQ, hQcard]
+      omega
+    exact (Finset.card_le_card hsubset).trans_eq heraseCard
+  omega
+
+set_option maxHeartbeats 5000000 in
+/-- Structural near-equality in the first strict certificate size.  For a
+three-endpoint private target, the three disjoint block remainders lie in
+the surviving-support union.  If exactly one other target is unaligned the
+union has at most one further point; if all other targets align it has at
+most three further points. -/
+theorem minimalCrossingEndpointTripleCertificate_threeEndpoint_nearCover
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {q k : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hblockLower : ∀ i, k ≤ (F i).card)
+    (hQcross : ∀ t ∈ Q,
+      ∀ E ∈ additiveSupportFamily A 2 t,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧
+        ¬ (E : Set ℕ) ⊆ B₀)
+    (hcert : ∀ sel : BlockSelector F, ∃ t ∈ Q,
+      DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet sel) t)
+    (hlocalized : ∀ t ∈ Q, ∃ sel : BlockSelector F,
+      DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet sel) t ∧
+      ∀ t' ∈ Q, t' ≠ t →
+        ¬ DestroysAt
+          (crossingEndpointTripleObstructionFamily A B₀)
+          (selectedSet sel) t')
+    (hk : 2 ≤ k)
+    (hqQ : q ∈ Q)
+    (hQcard : Q.card = k + 1)
+    (hendpointCard :
+      (crossingAtomEndpoints A B₀ q).card = 3) :
+    ∃ base : BlockSelector F,
+      ∃ cOther : FiniteSupportChoice
+          (crossingEndpointTripleObstructionFamily A B₀) (Q.erase q),
+        DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+          (selectedSet base) q ∧
+        (∀ t ∈ Q, t ≠ q →
+          ¬ DestroysAt
+            (crossingEndpointTripleObstructionFamily A B₀)
+            (selectedSet base) t) ∧
+        (∀ t : {n // n ∈ Q.erase q},
+          Disjoint ((cOther t).1 : Set ℕ) (selectedSet base)) ∧
+        (∀ t : {n // n ∈ Q.erase q},
+          (cOther t).1.card ≤
+            if t.1 ∈ crossingEndpointAlignedTargets A B₀ Q base q
+            then 3 else 1) ∧
+        (∀ t : {n // n ∈ Q.erase q},
+          if t.1 ∈ crossingEndpointAlignedTargets A B₀ Q base q
+          then (cOther t).1 ∈ additiveSupportFamily A 3 t.1
+          else (cOther t).1.card = 1) ∧
+        selectedBlockRemainderUnion P
+            (crossingAtomEndpoints A B₀ q) ⊆
+          finiteSupportChoiceUnion cOther ∧
+        (((crossingEndpointAlignedTargets A B₀ Q base q).card =
+              k - 1 ∧
+            (finiteSupportChoiceUnion cOther).card ≤
+              (selectedBlockRemainderUnion P
+                (crossingAtomEndpoints A B₀ q)).card + 1 ∧
+            ((Q.erase q).attach.filter fun t =>
+              (cOther t).1.card <
+                if t.1 ∈ crossingEndpointAlignedTargets
+                    A B₀ Q base q then 3 else 1).card ≤ 1 ∧
+            k - 2 ≤ ((Q.erase q).attach.filter fun t =>
+              t.1 ∈ crossingEndpointAlignedTargets A B₀ Q base q ∧
+                (cOther t).1.card = 3).card ∧
+            ((Q.erase q).attach.filter fun t =>
+              ¬ (cOther t).1 ⊆ selectedBlockRemainderUnion P
+                (crossingAtomEndpoints A B₀ q)).card ≤ 1 ∧
+            k - 3 ≤ ((Q.erase q).attach.filter fun t =>
+              t.1 ∈ crossingEndpointAlignedTargets A B₀ Q base q ∧
+                (cOther t).1.card = 3 ∧
+                (cOther t).1 ⊆ selectedBlockRemainderUnion P
+                  (crossingAtomEndpoints A B₀ q)).card) ∨
+          ((crossingEndpointAlignedTargets A B₀ Q base q).card = k ∧
+            (finiteSupportChoiceUnion cOther).card ≤
+              (selectedBlockRemainderUnion P
+                (crossingAtomEndpoints A B₀ q)).card + 3 ∧
+            ((Q.erase q).attach.filter fun t =>
+              (cOther t).1.card <
+                if t.1 ∈ crossingEndpointAlignedTargets
+                    A B₀ Q base q then 3 else 1).card ≤ 3 ∧
+            k - 3 ≤ ((Q.erase q).attach.filter fun t =>
+              t.1 ∈ crossingEndpointAlignedTargets A B₀ Q base q ∧
+                (cOther t).1.card = 3).card ∧
+            ((Q.erase q).attach.filter fun t =>
+              ¬ (cOther t).1 ⊆ selectedBlockRemainderUnion P
+                (crossingAtomEndpoints A B₀ q)).card ≤ 3 ∧
+            k - 6 ≤ ((Q.erase q).attach.filter fun t =>
+              t.1 ∈ crossingEndpointAlignedTargets A B₀ Q base q ∧
+                (cOther t).1.card = 3 ∧
+                (cOther t).1 ⊆ selectedBlockRemainderUnion P
+                  (crossingAtomEndpoints A B₀ q)).card)) := by
+  classical
+  obtain ⟨base, hqDestroy, hprivate, cOther,
+      hdisjoint, hchosenCard, hchosenKind, hunion, hpointCover⟩ :=
+    minimalCrossingEndpointTripleCertificate_forces_refinedEndpointCover
+      P hQcross hcert hlocalized q hqQ
+  let X : Finset ℕ := crossingAtomEndpoints A B₀ q
+  let V : Finset ℕ := selectedBlockRemainderUnion P X
+  let U : Finset ℕ := finiteSupportChoiceUnion cOther
+  let Aligned : Finset ℕ :=
+    crossingEndpointAlignedTargets A B₀ Q base q
+  have hendpointSelected : (X : Set ℕ) ⊆ selectedSet base := by
+    simpa [X] using
+      (destroysAt_crossingEndpointTripleObstructionFamily_iff.mp
+        hqDestroy).2.2
+  have hVlower : 3 * (k - 1) ≤ V.card := by
+    have hlower := selectedBlockRemainderUnion_card_lower
+      P hblockLower base hendpointSelected
+    rw [hendpointCard] at hlower
+    simpa [V, X, Nat.mul_comm] using hlower
+  have hVsub : V ⊆ U := by
+    apply selectedBlockRemainderUnion_subset P
+    intro x hxX
+    simpa [U, X] using hpointCover x hxX
+  have hUupper : U.card ≤ (Q.erase q).card + 2 * Aligned.card := by
+    simpa [U, Aligned] using hunion
+  have hrefined :
+      (k - 1) * (crossingAtomEndpoints A B₀ q).card ≤
+        (Q.erase q).card + 2 * Aligned.card := by
+    have hVU : V.card ≤ U.card := Finset.card_le_card hVsub
+    rw [hendpointCard]
+    have : 3 * (k - 1) ≤
+        (Q.erase q).card + 2 * Aligned.card :=
+      hVlower.trans (hVU.trans hUupper)
+    simpa [Nat.mul_comm] using this
+  have halignedCases : Aligned.card = k - 1 ∨ Aligned.card = k := by
+    simpa [Aligned] using
+      nearSharp_refinedEndpointBound_three_aligned_eq_k_or_pred
+        (A := A) (B₀ := B₀) hk hqQ hQcard
+          hendpointCard (by simpa [Aligned] using hrefined)
+  have heraseCard : (Q.erase q).card = k := by
+    rw [Finset.card_erase_of_mem hqQ, hQcard]
+    omega
+  have hVU : V.card ≤ U.card := Finset.card_le_card hVsub
+  have hULower : 3 * (k - 1) ≤ U.card := hVlower.trans hVU
+  refine ⟨base, cOther, hqDestroy, hprivate, hdisjoint,
+    hchosenCard, hchosenKind,
+    by simpa [V, U, X] using hVsub, ?_⟩
+  rcases halignedCases with haligned | haligned
+  · left
+    have hUcap : U.card ≤ 3 * k - 2 := by
+      rw [heraseCard, haligned] at hUupper
+      omega
+    have hslack : U.card ≤ V.card + 1 := by omega
+    have hcapacitySum :
+        (∑ t ∈ (Q.erase q).attach,
+          if t.1 ∈ Aligned then 3 else 1) = 3 * k - 2 := by
+      calc
+        (∑ t ∈ (Q.erase q).attach,
+            if t.1 ∈ Aligned then 3 else 1) =
+            (Q.erase q).card + 2 * Aligned.card :=
+          sum_attach_ite_three_one_eq_card_add_twice
+            (by simpa [Aligned] using
+              crossingEndpointAlignedTargets_subset A B₀ Q base q)
+        _ = 3 * k - 2 := by rw [heraseCard, haligned]; omega
+    have hshort := finiteSupportChoice_shortIndices_card_le_defect
+      cOther (fun t => if t.1 ∈ Aligned then 3 else 1)
+        (fun t => by simpa [Aligned] using hchosenCard t)
+        hcapacitySum (d := 1) (by
+          have heq : (3 * k - 2) - 1 = 3 * (k - 1) := by omega
+          rw [heq]
+          exact hULower)
+    have hfullBound := aligned_card_le_fullThree_add_short
+      cOther
+        (by simpa [Aligned] using
+          crossingEndpointAlignedTargets_subset A B₀ Q base q)
+        (fun t => by simpa [Aligned] using hchosenCard t)
+    change Aligned.card ≤
+      ((Q.erase q).attach.filter fun t =>
+        t.1 ∈ Aligned ∧ (cOther t).1.card = 3).card +
+      ((Q.erase q).attach.filter fun t =>
+        (cOther t).1.card <
+          if t.1 ∈ Aligned then 3 else 1).card at hfullBound
+    change ((Q.erase q).attach.filter fun t =>
+      (cOther t).1.card <
+        if t.1 ∈ Aligned then 3 else 1).card ≤ 1 at hshort
+    have hfullLower : k - 2 ≤
+        ((Q.erase q).attach.filter fun t =>
+          t.1 ∈ Aligned ∧ (cOther t).1.card = 3).card := by
+      rw [haligned] at hfullBound
+      have hkPred : k - 1 = (k - 2) + 1 := by omega
+      rw [hkPred] at hfullBound
+      omega
+    have houtside := finiteSupportChoice_not_subset_card_le_defect
+      cOther (fun t => if t.1 ∈ Aligned then 3 else 1)
+        (fun t => by simpa [Aligned] using hchosenCard t)
+        hcapacitySum hVsub (d := 1) (by
+          have heq : (3 * k - 2) - 1 = 3 * (k - 1) := by omega
+          rw [heq]
+          exact hVlower)
+    change ((Q.erase q).attach.filter fun t =>
+      ¬ (cOther t).1 ⊆ V).card ≤ 1 at houtside
+    have hinternalBound :=
+      fullAlignedThree_card_le_internal_add_notSubset
+        (Aligned := Aligned) (V := V) cOther
+    change ((Q.erase q).attach.filter fun t =>
+        t.1 ∈ Aligned ∧ (cOther t).1.card = 3).card ≤
+      ((Q.erase q).attach.filter fun t =>
+        t.1 ∈ Aligned ∧ (cOther t).1.card = 3 ∧
+          (cOther t).1 ⊆ V).card +
+      ((Q.erase q).attach.filter fun t =>
+        ¬ (cOther t).1 ⊆ V).card at hinternalBound
+    have hinternalLower : k - 3 ≤
+        ((Q.erase q).attach.filter fun t =>
+          t.1 ∈ Aligned ∧ (cOther t).1.card = 3 ∧
+            (cOther t).1 ⊆ V).card := by
+      by_cases hkThree : 3 ≤ k
+      · have hkPred : k - 2 = (k - 3) + 1 := by omega
+        rw [hkPred] at hfullLower
+        omega
+      · omega
+    exact ⟨by simpa [Aligned] using haligned,
+      by simpa [U, V, X] using hslack,
+      by simpa [Aligned] using hshort,
+      by simpa [Aligned] using hfullLower,
+      by simpa [V, X] using houtside,
+      by simpa [Aligned, V, X] using hinternalLower⟩
+  · right
+    have hUcap : U.card ≤ 3 * k := by
+      rw [heraseCard, haligned] at hUupper
+      omega
+    have hslack : U.card ≤ V.card + 3 := by omega
+    have hcapacitySum :
+        (∑ t ∈ (Q.erase q).attach,
+          if t.1 ∈ Aligned then 3 else 1) = 3 * k := by
+      calc
+        (∑ t ∈ (Q.erase q).attach,
+            if t.1 ∈ Aligned then 3 else 1) =
+            (Q.erase q).card + 2 * Aligned.card :=
+          sum_attach_ite_three_one_eq_card_add_twice
+            (by simpa [Aligned] using
+              crossingEndpointAlignedTargets_subset A B₀ Q base q)
+        _ = 3 * k := by rw [heraseCard, haligned]; omega
+    have hshort := finiteSupportChoice_shortIndices_card_le_defect
+      cOther (fun t => if t.1 ∈ Aligned then 3 else 1)
+        (fun t => by simpa [Aligned] using hchosenCard t)
+        hcapacitySum (d := 3) (by
+          have heq : 3 * k - 3 = 3 * (k - 1) := by omega
+          rw [heq]
+          exact hULower)
+    have hfullBound := aligned_card_le_fullThree_add_short
+      cOther
+        (by simpa [Aligned] using
+          crossingEndpointAlignedTargets_subset A B₀ Q base q)
+        (fun t => by simpa [Aligned] using hchosenCard t)
+    change Aligned.card ≤
+      ((Q.erase q).attach.filter fun t =>
+        t.1 ∈ Aligned ∧ (cOther t).1.card = 3).card +
+      ((Q.erase q).attach.filter fun t =>
+        (cOther t).1.card <
+          if t.1 ∈ Aligned then 3 else 1).card at hfullBound
+    change ((Q.erase q).attach.filter fun t =>
+      (cOther t).1.card <
+        if t.1 ∈ Aligned then 3 else 1).card ≤ 3 at hshort
+    have hfullLower : k - 3 ≤
+        ((Q.erase q).attach.filter fun t =>
+          t.1 ∈ Aligned ∧ (cOther t).1.card = 3).card := by
+      rw [haligned] at hfullBound
+      by_cases hkThree : 3 ≤ k
+      · have hkPred : k = (k - 3) + 3 := by omega
+        rw [hkPred] at hfullBound
+        omega
+      · omega
+    have houtside := finiteSupportChoice_not_subset_card_le_defect
+      cOther (fun t => if t.1 ∈ Aligned then 3 else 1)
+        (fun t => by simpa [Aligned] using hchosenCard t)
+        hcapacitySum hVsub (d := 3) (by
+          have heq : 3 * k - 3 = 3 * (k - 1) := by omega
+          rw [heq]
+          exact hVlower)
+    change ((Q.erase q).attach.filter fun t =>
+      ¬ (cOther t).1 ⊆ V).card ≤ 3 at houtside
+    have hinternalBound :=
+      fullAlignedThree_card_le_internal_add_notSubset
+        (Aligned := Aligned) (V := V) cOther
+    change ((Q.erase q).attach.filter fun t =>
+        t.1 ∈ Aligned ∧ (cOther t).1.card = 3).card ≤
+      ((Q.erase q).attach.filter fun t =>
+        t.1 ∈ Aligned ∧ (cOther t).1.card = 3 ∧
+          (cOther t).1 ⊆ V).card +
+      ((Q.erase q).attach.filter fun t =>
+        ¬ (cOther t).1 ⊆ V).card at hinternalBound
+    have hinternalLower : k - 6 ≤
+        ((Q.erase q).attach.filter fun t =>
+          t.1 ∈ Aligned ∧ (cOther t).1.card = 3 ∧
+            (cOther t).1 ⊆ V).card := by
+      by_cases hkSix : 6 ≤ k
+      · have hkPred : k - 3 = (k - 6) + 3 := by omega
+        rw [hkPred] at hfullLower
+        omega
+      · omega
+    exact ⟨by simpa [Aligned] using haligned,
+      by simpa [U, V, X] using hslack,
+      by simpa [Aligned] using hshort,
+      by simpa [Aligned] using hfullLower,
+      by simpa [V, X] using houtside,
+      by simpa [Aligned, V, X] using hinternalLower⟩
+
+/-- A three-point support of an order-three additive representation uses
+each of its three vertices exactly once, so its finset sum is the target. -/
+theorem additiveSupportFamily_three_sum_eq_of_card_eq_three
+    {A : Set ℕ} {q : ℕ} {G : Finset ℕ}
+    (hGR : G ∈ additiveSupportFamily A 3 q)
+    (hGcard : G.card = 3) :
+    G.sum id = q := by
+  classical
+  obtain ⟨v, _hvA, hvsum, rfl⟩ :=
+    mem_additiveSupportFamily_iff.mp hGR
+  have himageCard :
+      (Finset.univ.image fun i : Fin 3 => (v i).1).card =
+        (Finset.univ : Finset (Fin 3)).card := by
+    rw [← tupleSupport]
+    rw [hGcard]
+    simp
+  have hinj : Set.InjOn (fun i : Fin 3 => (v i).1)
+      ((Finset.univ : Finset (Fin 3)) : Set (Fin 3)) :=
+    Finset.card_image_iff.mp himageCard
+  rw [tupleSupport, Finset.sum_image]
+  · simpa using hvsum
+  · exact hinj
+
+set_option maxHeartbeats 5000000 in
+/-- Uniform payload of the three-endpoint near-cover theorem.  Regardless
+of which alignment case occurs, at least `k - 6` distinct other targets have
+a genuine three-point additive support, disjoint from the private selector
+and contained in the same three block remainders. -/
+theorem minimalCrossingEndpointTripleCertificate_threeEndpoint_forces_trappedTripleSupports
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {q k : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hblockLower : ∀ i, k ≤ (F i).card)
+    (hQcross : ∀ t ∈ Q,
+      ∀ E ∈ additiveSupportFamily A 2 t,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧
+        ¬ (E : Set ℕ) ⊆ B₀)
+    (hcert : ∀ sel : BlockSelector F, ∃ t ∈ Q,
+      DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet sel) t)
+    (hlocalized : ∀ t ∈ Q, ∃ sel : BlockSelector F,
+      DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet sel) t ∧
+      ∀ t' ∈ Q, t' ≠ t →
+        ¬ DestroysAt
+          (crossingEndpointTripleObstructionFamily A B₀)
+          (selectedSet sel) t')
+    (hk : 2 ≤ k)
+    (hqQ : q ∈ Q)
+    (hQcard : Q.card = k + 1)
+    (hendpointCard :
+      (crossingAtomEndpoints A B₀ q).card = 3) :
+    ∃ base : BlockSelector F,
+      ∃ cOther : FiniteSupportChoice
+          (crossingEndpointTripleObstructionFamily A B₀) (Q.erase q),
+        ∃ T : Finset {n // n ∈ Q.erase q},
+          DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+            (selectedSet base) q ∧
+          (∀ t ∈ Q, t ≠ q →
+            ¬ DestroysAt
+              (crossingEndpointTripleObstructionFamily A B₀)
+              (selectedSet base) t) ∧
+          k - 6 ≤ T.card ∧
+          ∀ t ∈ T,
+            t.1 ∈ crossingEndpointAlignedTargets A B₀ Q base q ∧
+            (cOther t).1 ∈ additiveSupportFamily A 3 t.1 ∧
+            (cOther t).1.card = 3 ∧
+            (cOther t).1.sum id = t.1 ∧
+            (cOther t).1 ⊆ selectedBlockRemainderUnion P
+              (crossingAtomEndpoints A B₀ q) ∧
+            Disjoint ((cOther t).1 : Set ℕ) (selectedSet base) := by
+  classical
+  obtain ⟨base, cOther, hqDestroy, hprivate, hdisjoint,
+      _hcard, hkind, _hVsub, hcases⟩ :=
+    minimalCrossingEndpointTripleCertificate_threeEndpoint_nearCover
+      P hblockLower hQcross hcert hlocalized hk hqQ hQcard hendpointCard
+  let T : Finset {n // n ∈ Q.erase q} :=
+    (Q.erase q).attach.filter fun t =>
+      t.1 ∈ crossingEndpointAlignedTargets A B₀ Q base q ∧
+      (cOther t).1.card = 3 ∧
+      (cOther t).1 ⊆ selectedBlockRemainderUnion P
+        (crossingAtomEndpoints A B₀ q)
+  have hTlower : k - 6 ≤ T.card := by
+    rcases hcases with
+        ⟨_haligned, _hslack, _hshort, _hfull,
+          _houtside, hinternal⟩ |
+        ⟨_haligned, _hslack, _hshort, _hfull,
+          _houtside, hinternal⟩
+    · have : k - 6 ≤ k - 3 := by omega
+      exact this.trans (by simpa [T] using hinternal)
+    · simpa [T] using hinternal
+  have hTdata : ∀ t ∈ T,
+      t.1 ∈ crossingEndpointAlignedTargets A B₀ Q base q ∧
+      (cOther t).1 ∈ additiveSupportFamily A 3 t.1 ∧
+      (cOther t).1.card = 3 ∧
+      (cOther t).1.sum id = t.1 ∧
+      (cOther t).1 ⊆ selectedBlockRemainderUnion P
+        (crossingAtomEndpoints A B₀ q) ∧
+      Disjoint ((cOther t).1 : Set ℕ) (selectedSet base) := by
+    intro t htT
+    have ht := (Finset.mem_filter.mp htT).2
+    have htriple : (cOther t).1 ∈ additiveSupportFamily A 3 t.1 := by
+      simpa [ht.1] using hkind t
+    have hsum : (cOther t).1.sum id = t.1 :=
+      additiveSupportFamily_three_sum_eq_of_card_eq_three
+        htriple ht.2.1
+    exact ⟨ht.1, htriple, ht.2.1, hsum,
+      ht.2.2, hdisjoint t⟩
+  exact ⟨base, cOther, T, hqDestroy, hprivate, hTlower, hTdata⟩
+
+/-- The analogous two-endpoint consequence: at least half of the available
+`k - 2` occupancy must be paid for by aligned other targets. -/
+theorem nearSharp_refinedEndpointBound_two_forces_manyAligned
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {base : BlockSelector F} {q k : ℕ}
+    (hqQ : q ∈ Q)
+    (hQcard : Q.card ≤ k + 1)
+    (hendpointCard :
+      (crossingAtomEndpoints A B₀ q).card = 2)
+    (hrefined :
+      (k - 1) * (crossingAtomEndpoints A B₀ q).card ≤
+        (Q.erase q).card +
+          2 * (crossingEndpointAlignedTargets A B₀ Q base q).card) :
+    k - 2 ≤
+      2 * (crossingEndpointAlignedTargets A B₀ Q base q).card := by
+  have heraseCard : (Q.erase q).card = Q.card - 1 :=
+    Finset.card_erase_of_mem hqQ
+  have heraseLe : (Q.erase q).card ≤ k := by
+    rw [heraseCard]
+    omega
+  rw [hendpointCard] at hrefined
   omega
 
 /-- A sharp private-destroyer certificate cannot recur arbitrarily late on
@@ -5761,9 +7015,19 @@ def HasMinimalStrictCrossingEndpointCertificate
         ¬ DestroysAt
           (crossingEndpointTripleObstructionFamily A B₀)
           (selectedSet sel) q') ∧
-    ∀ q ∈ Q,
+    (∀ q ∈ Q,
       (k - 1) * (crossingAtomEndpoints A B₀ q).card ≤
-        3 * (Q.erase q).card
+        3 * (Q.erase q).card) ∧
+    ∀ q ∈ Q, ∃ base : BlockSelector F,
+      DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet base) q ∧
+      (∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt
+          (crossingEndpointTripleObstructionFamily A B₀)
+          (selectedSet base) q') ∧
+      (k - 1) * (crossingAtomEndpoints A B₀ q).card ≤
+        (Q.erase q).card +
+          2 * (crossingEndpointAlignedTargets A B₀ Q base q).card
 
 /-- Meaningful minimal-certificate dichotomy.  Either cardinal-minimal
 crossing certificates are strictly larger than `k` beyond every threshold,
@@ -5845,7 +7109,23 @@ theorem minimalStrictCrossingEndpointCertificates_or_infiniteMovingRigidCores
         minimalCrossingEndpointTripleCertificate_forces_scaledEndpointBound
           P hblockLower (fun q hqQ => (hQdata q hqQ).2)
             hcertCombined hlocalized
-      exact ⟨Q, hQstrict, hQdata₀, hcert, hlocalized, hscaled⟩
+      have hrefined : ∀ q ∈ Q, ∃ base : BlockSelector F,
+          DestroysAt
+            (crossingEndpointTripleObstructionFamily A B₀)
+            (selectedSet base) q ∧
+          (∀ q' ∈ Q, q' ≠ q →
+            ¬ DestroysAt
+              (crossingEndpointTripleObstructionFamily A B₀)
+              (selectedSet base) q') ∧
+          (k - 1) * (crossingAtomEndpoints A B₀ q).card ≤
+            (Q.erase q).card +
+              2 * (crossingEndpointAlignedTargets
+                A B₀ Q base q).card :=
+        minimalCrossingEndpointTripleCertificate_forces_refinedEndpointBound
+          P hblockLower (fun q hqQ => (hQdata q hqQ).2)
+            hcertCombined hlocalized
+      exact ⟨Q, hQstrict, hQdata₀, hcert, hlocalized,
+        hscaled, hrefined⟩
     · have hiMoving : i ∈ Moving := by
         exact ⟨Q, point, hQdata₀, hcellEq, hpointInj, hsharp⟩
       have hiJ : i ∈ J :=
