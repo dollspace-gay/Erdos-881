@@ -14596,6 +14596,47 @@ theorem additiveSupportFamily_sum_le_target
     exact Finset.sum_image_le_of_nonneg fun _ _ => Nat.zero_le _
   simpa [tupleSupport, hvsum] using himageLe
 
+/-- A two-point support for a three-term additive representation repeats
+exactly one of its two vertices. -/
+theorem additiveSupportFamily_three_card_two_target_eq
+    {A : Set ℕ} {q : ℕ} {G : Finset ℕ} {x y : ℕ}
+    (hGR : G ∈ additiveSupportFamily A 3 q)
+    (hG : G = {x, y}) (hxy : x ≠ y) :
+    q = 2 * x + y ∨ q = x + 2 * y := by
+  classical
+  obtain ⟨v, _hvA, hvsum, hvSupport⟩ :=
+    mem_additiveSupportFamily_iff.mp hGR
+  have hxSupport : x ∈ tupleSupport v := by
+    rw [hvSupport, hG]
+    simp
+  have hySupport : y ∈ tupleSupport v := by
+    rw [hvSupport, hG]
+    simp
+  obtain ⟨i, hi⟩ := mem_tupleSupport_iff.mp hxSupport
+  obtain ⟨j, hj⟩ := mem_tupleSupport_iff.mp hySupport
+  have hij : i ≠ j := by
+    intro hij
+    apply hxy
+    calc
+      x = (v i).1 := hi.symm
+      _ = (v j).1 := by rw [hij]
+      _ = y := hj
+  have hvalue : ∀ k, (v k).1 = x ∨ (v k).1 = y := by
+    intro k
+    have hkSupport : (v k).1 ∈ tupleSupport v :=
+      mem_tupleSupport_iff.mpr ⟨k, rfl⟩
+    rw [hvSupport, hG] at hkSupport
+    simpa using hkSupport
+  have h₀ := hvalue 0
+  have h₁ := hvalue 1
+  have h₂ := hvalue 2
+  have hsum : (v 0).1 + ((v 1).1 + (v 2).1) = q := by
+    simpa [Fin.sum_univ_succ] using hvsum
+  rcases h₀ with h₀ | h₀ <;>
+    rcases h₁ with h₁ | h₁ <;>
+      rcases h₂ with h₂ | h₂ <;>
+        fin_cases i <;> fin_cases j <;> simp_all <;> omega
+
 /-- If an injective infinite family of order-three repairs all contains the
 same two-point set, then after thinning each repair has exactly one further
 point.  Those third points are injective, and the target is the fixed root
@@ -14739,6 +14780,183 @@ theorem fixedSingletonRepairTrace_thins_to_cardTwo_orThree
         exact hn.2 (Or.inr ⟨hLI hn, hrepairSub⟩)
       omega
     exact ⟨L, hLI, hL, Or.inl hcardTwo⟩
+
+/-- Exact arithmetic normal form of the residual singleton/two-point branch.
+Each repair is the fixed root point together with one injective moving point,
+and after thinning the three-term tuple uniformly repeats either the root or
+the moving point. -/
+theorem fixedSingletonCardTwoRepairs_have_uniformMultiplicity
+    {A I : Set ℕ} (hI : I.Infinite)
+    (target : ℕ → ℕ) (htargetInj : Set.InjOn target I)
+    (repair : ℕ → Finset ℕ) (S : Finset ℕ)
+    (hScard : S.card = 1)
+    (hrepairR : ∀ n ∈ I,
+      repair n ∈ additiveSupportFamily A 3 (target n))
+    (hrepairCard : ∀ n ∈ I, (repair n).card = 2)
+    (hSrepair : ∀ n ∈ I, S ⊆ repair n) :
+    ∃ root, S = {root} ∧
+      ∃ L, L ⊆ I ∧ L.Infinite ∧
+        ∃ other : ℕ → ℕ,
+          Set.InjOn other L ∧
+          (∀ n ∈ L,
+            other n ≠ root ∧ repair n = {root, other n}) ∧
+          ((∀ n ∈ L, target n = 2 * root + other n) ∨
+            ∀ n ∈ L, target n = root + 2 * other n) := by
+  classical
+  obtain ⟨root, hSeq⟩ := Finset.card_eq_one.mp hScard
+  have hdiffCard : ∀ n ∈ I, (repair n \ S).card = 1 := by
+    intro n hn
+    rw [Finset.card_sdiff,
+      Finset.inter_eq_left.mpr (hSrepair n hn),
+      hrepairCard n hn, hScard]
+  have hotherExists : ∀ n : I, ∃ x, repair n.1 \ S = {x} := by
+    intro n
+    exact Finset.card_eq_one.mp (hdiffCard n.1 n.2)
+  choose chosen hchosen using hotherExists
+  let other : ℕ → ℕ := fun n =>
+    if hn : n ∈ I then chosen ⟨n, hn⟩ else 0
+  have hdiffEq : ∀ n ∈ I, repair n \ S = {other n} := by
+    intro n hn
+    simpa only [other, dif_pos hn] using hchosen ⟨n, hn⟩
+  have hotherDiff : ∀ n ∈ I, other n ∈ repair n \ S := by
+    intro n hn
+    rw [hdiffEq n hn]
+    simp
+  have hotherNe : ∀ n ∈ I, other n ≠ root := by
+    intro n hn heq
+    exact (Finset.mem_sdiff.mp (hotherDiff n hn)).2 <|
+      hSeq.symm ▸ heq ▸ Finset.mem_singleton_self root
+  have hrepairEq : ∀ n ∈ I, repair n = {root, other n} := by
+    intro n hn
+    have hrootRepair : root ∈ repair n :=
+      hSrepair n hn (hSeq.symm ▸ Finset.mem_singleton_self root)
+    have hotherRepair := (Finset.mem_sdiff.mp (hotherDiff n hn)).1
+    have hsub : ({root, other n} : Finset ℕ) ⊆ repair n := by
+      intro x hx
+      simp only [Finset.mem_insert, Finset.mem_singleton] at hx
+      rcases hx with rfl | rfl
+      · exact hrootRepair
+      · exact hotherRepair
+    have hpairCard : ({root, other n} : Finset ℕ).card = 2 := by
+      simp [(hotherNe n hn).symm]
+    exact (Finset.eq_of_subset_of_card_le hsub (by
+      rw [hrepairCard n hn, hpairCard])).symm
+  have hformula : ∀ n ∈ I,
+      target n = 2 * root + other n ∨
+        target n = root + 2 * other n := by
+    intro n hn
+    exact additiveSupportFamily_three_card_two_target_eq
+      (hrepairR n hn) (hrepairEq n hn) (hotherNe n hn).symm
+  let RepeatRoot : Set ℕ :=
+    {n | n ∈ I ∧ target n = 2 * root + other n}
+  by_cases hRepeatRoot : RepeatRoot.Infinite
+  · have hRI : RepeatRoot ⊆ I := fun _ hn => hn.1
+    have hotherInj : Set.InjOn other RepeatRoot := by
+      intro n hn m hm hotherEq
+      apply htargetInj hn.1 hm.1
+      rw [hn.2, hm.2, hotherEq]
+    exact ⟨root, hSeq, RepeatRoot, hRI, hRepeatRoot, other,
+      hotherInj,
+      fun n hn => ⟨hotherNe n hn.1, hrepairEq n hn.1⟩,
+      Or.inl (fun n hn => hn.2)⟩
+  · have hRepeatRootFinite : RepeatRoot.Finite :=
+      Set.not_infinite.mp hRepeatRoot
+    let L : Set ℕ := I \ RepeatRoot
+    have hLI : L ⊆ I := Set.diff_subset
+    have hL : L.Infinite := hI.diff hRepeatRootFinite
+    have hrepeatOther : ∀ n ∈ L,
+        target n = root + 2 * other n := by
+      intro n hn
+      rcases hformula n hn.1 with hroot | hother
+      · exact (hn.2 ⟨hn.1, hroot⟩).elim
+      · exact hother
+    have hotherInj : Set.InjOn other L := by
+      intro n hn m hm hotherEq
+      apply htargetInj hn.1 hm.1
+      rw [hrepeatOther n hn, hrepeatOther m hm, hotherEq]
+    exact ⟨root, hSeq, L, hLI, hL, other, hotherInj,
+      fun n hn => ⟨hotherNe n (hLI hn), hrepairEq n (hLI hn)⟩,
+      Or.inr hrepeatOther⟩
+
+/-- When a private marked-core repair shares the moving point of a
+singleton-root two-point certificate, the certificate cannot repeat the
+fixed root on an infinite injectively marked family: the third-summand
+identity would bound every marked atom by twice that root.  Hence the moving
+point is repeated, and the private repair supplies an affine partner
+`atom + partner = root + moving`. -/
+theorem privateRepairs_sharedMovingPoint_force_affinePartner
+    {A I : Set ℕ} (hI : I.Infinite)
+    (target atom movingPoint : ℕ → ℕ) (root : ℕ)
+    (hatomInj : Set.InjOn atom I)
+    (privateRepair : ℕ → Finset ℕ)
+    (hprivateR : ∀ n ∈ I,
+      privateRepair n ∈ additiveSupportFamily A 3 (target n))
+    (hatomPrivate : ∀ n ∈ I, atom n ∈ privateRepair n)
+    (hmovingPrivate : ∀ n ∈ I,
+      movingPoint n ∈ privateRepair n)
+    (hatomMovingNe : ∀ n ∈ I, atom n ≠ movingPoint n)
+    (hformula :
+      (∀ n ∈ I, target n = 2 * root + movingPoint n) ∨
+        ∀ n ∈ I, target n = root + 2 * movingPoint n) :
+    (∀ n ∈ I, target n = root + 2 * movingPoint n) ∧
+      ∃ partner : ℕ → ℕ, ∀ n ∈ I,
+        partner n ∈ A ∧ partner n ∈ privateRepair n ∧
+        atom n + partner n = root + movingPoint n := by
+  classical
+  have hpartnerExists : ∀ n ∈ I, ∃ u,
+      u ∈ A ∧ u ∈ privateRepair n ∧
+      atom n + movingPoint n + u = target n := by
+    intro n hn
+    exact OrderThreeUniqueHitRepairChoice.exists_thirdSummand
+      (hprivateR n hn) (hatomPrivate n hn) (hmovingPrivate n hn)
+        (hatomMovingNe n hn)
+  rcases hformula with hrepeatRoot | hrepeatMoving
+  · exfalso
+    apply hI
+    apply Set.Finite.of_finite_image (f := atom)
+    · apply (Set.finite_Iic (2 * root)).subset
+      rintro b ⟨n, hn, rfl⟩
+      obtain ⟨u, _huA, _huPrivate, hsum⟩ := hpartnerExists n hn
+      have htargetEq := hrepeatRoot n hn
+      have hcancel : movingPoint n + (atom n + u) =
+          movingPoint n + 2 * root := by
+        calc
+          movingPoint n + (atom n + u) =
+              atom n + movingPoint n + u := by omega
+          _ = target n := hsum
+          _ = 2 * root + movingPoint n := htargetEq
+          _ = movingPoint n + 2 * root := by omega
+      have heq : atom n + u = 2 * root :=
+        Nat.add_left_cancel hcancel
+      exact (Nat.le_add_right (atom n) u).trans_eq heq
+    · exact hatomInj
+  · have hpartnerExists' : ∀ n : I, ∃ u,
+        u ∈ A ∧ u ∈ privateRepair n.1 ∧
+        atom n.1 + movingPoint n.1 + u = target n.1 := by
+      intro n
+      exact hpartnerExists n.1 n.2
+    choose partnerI hpartner using hpartnerExists'
+    let partner : ℕ → ℕ := fun n =>
+      if hn : n ∈ I then partnerI ⟨n, hn⟩ else 0
+    refine ⟨hrepeatMoving, partner, ?_⟩
+    intro n hn
+    obtain ⟨hpartnerA, hpartnerPrivate, hsum⟩ := hpartner ⟨n, hn⟩
+    have hpartnerA' : partner n ∈ A := by
+      simpa [partner, hn] using hpartnerA
+    have hpartnerPrivate' : partner n ∈ privateRepair n := by
+      simpa [partner, hn] using hpartnerPrivate
+    refine ⟨hpartnerA', hpartnerPrivate', ?_⟩
+    have htargetEq := hrepeatMoving n hn
+    have hcancel : movingPoint n + (atom n + partner n) =
+        movingPoint n + (root + movingPoint n) := by
+      simp only [partner, dif_pos hn]
+      calc
+        movingPoint n + (atom n + partnerI ⟨n, hn⟩) =
+            atom n + movingPoint n + partnerI ⟨n, hn⟩ := by omega
+        _ = target n := hsum
+        _ = root + 2 * movingPoint n := htargetEq
+        _ = movingPoint n + (root + movingPoint n) := by omega
+    exact Nat.add_left_cancel hcancel
 
 set_option maxHeartbeats 5000000 in
 /-- Uniform payload of the three-endpoint near-cover theorem.  Regardless
@@ -25849,6 +26067,120 @@ theorem exists_infinite_binaryChoice_commonSurvival
           (Finset.mem_union_left _
             (Finset.mem_coe.mp (hsmy ▸ hzE)))
 
+/-- An injective moving point carried by every certificate repair either is
+avoided by the private core repair on an infinite subfamily, giving binary
+common survival, or is carried by the private repair throughout an infinite
+subfamily.  The latter is the precise incidence which remains to be analyzed
+in the singleton/two-point arithmetic branch. -/
+theorem coincidentInjectiveCertificatePoint_commonSurvival_or_privateIncidence
+    {A C K I : Set ℕ} {D : Finset ℕ}
+    (target atom point : ℕ → ℕ)
+    (moving core certificateRepair : ℕ → Finset ℕ)
+    (hI : I.Infinite)
+    (hatomK : ∀ n ∈ I, atom n ∈ K)
+    (hatomInj : Set.InjOn atom I)
+    (hpointInj : Set.InjOn point I)
+    (hdata : ∀ b ∈ K,
+      IsCriticalMarkedMinimalDestroyerData
+        A C D b (target b) (moving b) (core b))
+    (hcertificateR : ∀ n ∈ I,
+      certificateRepair n ∈
+        additiveSupportFamily A 3 (target (atom n)))
+    (hcertificateK : ∀ n ∈ I,
+      Disjoint (certificateRepair n : Set ℕ) K)
+    (hpointCertificate : ∀ n ∈ I,
+      point n ∈ certificateRepair n) :
+    (∃ J, J ⊆ I ∧ J.Infinite ∧
+      (∀ n ∈ J, ∀ m ∈ J, n ≠ m →
+        Disjoint ({atom n, point n} : Finset ℕ)
+          ({atom m, point m} : Finset ℕ)) ∧
+      ∀ s : ℕ → ℕ,
+        (∀ n ∈ J, s n = atom n ∨ s n = point n) →
+        ∀ n ∈ J, ∃ G ∈
+          additiveSupportFamily A 3 (target (atom n)),
+          Disjoint (G : Set ℕ) (s '' J)) ∨
+      ∃ L, L ⊆ I ∧ L.Infinite ∧
+        ∃ privateRepair : ℕ → Finset ℕ,
+          ∀ n ∈ L,
+            privateRepair n ∈
+              additiveSupportFamily A 3 (target (atom n)) ∧
+            privateRepair n ∩ core (atom n) = {atom n} ∧
+            point n ∈ privateRepair n := by
+  classical
+  have hprivateExists : ∀ n ∈ I, ∃ U,
+      U ∈ additiveSupportFamily A 3 (target (atom n)) ∧
+      U ∩ core (atom n) = {atom n} := by
+    intro n hn
+    obtain ⟨_hbound, _hno, _hmovingC, _hmovingDisjoint,
+        _hmovingNonempty, _hmovingCard, _hdestroy,
+        _hcoreSub, hatomCore, hminimal, _htype⟩ :=
+      hdata (atom n) (hatomK n hn)
+    exact hminimal.exists_uniqueHitSupport hatomCore
+  let privateRepair : ℕ → Finset ℕ := fun n =>
+    if hn : n ∈ I then Classical.choose (hprivateExists n hn) else ∅
+  have hprivateR : ∀ n ∈ I,
+      privateRepair n ∈
+        additiveSupportFamily A 3 (target (atom n)) := by
+    intro n hn
+    simpa only [privateRepair, dif_pos hn] using
+      (Classical.choose_spec (hprivateExists n hn)).1
+  have hprivateHit : ∀ n ∈ I,
+      privateRepair n ∩ core (atom n) = {atom n} := by
+    intro n hn
+    simpa only [privateRepair, dif_pos hn] using
+      (Classical.choose_spec (hprivateExists n hn)).2
+  let Avoided : Set ℕ :=
+    {n | n ∈ I ∧ point n ∉ privateRepair n}
+  by_cases hAvoided : Avoided.Infinite
+  · left
+    have hAI : Avoided ⊆ I := fun _ hn => hn.1
+    have hpointNotPrivate : ∀ n ∈ Avoided,
+        point n ∉ privateRepair n := fun _ hn => hn.2
+    have hatomNotCertificate : ∀ n ∈ Avoided,
+        atom n ∉ certificateRepair n := by
+      intro n hn hatomRepair
+      exact Set.disjoint_left.mp (hcertificateK n (hAI hn))
+        (Finset.mem_coe.mpr hatomRepair) (hatomK n (hAI hn))
+    have hpointNotK : ∀ n ∈ I, point n ∉ K := by
+      intro n hn hpointK
+      exact Set.disjoint_left.mp (hcertificateK n hn)
+        (Finset.mem_coe.mpr (hpointCertificate n hn)) hpointK
+    have hmatching : ∀ n ∈ Avoided, ∀ m ∈ Avoided,
+        n ≠ m → Disjoint ({atom n, point n} : Finset ℕ)
+          ({atom m, point m} : Finset ℕ) := by
+      intro n hn m hm hnm
+      rw [Finset.disjoint_left]
+      intro z hzn hzm
+      simp only [Finset.mem_insert, Finset.mem_singleton] at hzn hzm
+      rcases hzn with hzn | hzn <;> rcases hzm with hzm | hzm
+      · exact hnm (hatomInj (hAI hn) (hAI hm) (hzn.symm.trans hzm))
+      · exact hpointNotK m (hAI hm)
+          (hzm.symm ▸ hzn.symm ▸ hatomK n (hAI hn))
+      · exact hpointNotK n (hAI hn)
+          (hzn.symm ▸ hzm.symm ▸ hatomK m (hAI hm))
+      · exact hnm (hpointInj (hAI hn) (hAI hm)
+          (hzn.symm.trans hzm))
+    obtain ⟨J, hJA, hJ, hcommon⟩ :=
+      exists_infinite_binaryChoice_commonSurvival
+        hAvoided (fun n => target (atom n)) atom point hmatching
+          privateRepair certificateRepair
+          (fun n hn => hprivateR n (hAI hn))
+          (fun n hn => hcertificateR n (hAI hn))
+          hpointNotPrivate hatomNotCertificate
+    exact ⟨J, hJA.trans hAI, hJ,
+      fun n hn m hm hnm => hmatching n (hJA hn) m (hJA hm) hnm,
+      hcommon⟩
+  · right
+    have hAvoidedFinite : Avoided.Finite := Set.not_infinite.mp hAvoided
+    let L : Set ℕ := I \ Avoided
+    have hLI : L ⊆ I := Set.diff_subset
+    have hL : L.Infinite := hI.diff hAvoidedFinite
+    refine ⟨L, hLI, hL, privateRepair, ?_⟩
+    intro n hn
+    refine ⟨hprivateR n (hLI hn), hprivateHit n (hLI hn), ?_⟩
+    by_contra hnot
+    exact hn.2 ⟨hn.1, hnot⟩
+
 /-- A coincident certificate family whose exact core trace is one fixed
 two-point set also yields binary common survival.  Each certificate repair
 is the fixed pair plus an injective third point.  A private core repair can
@@ -26473,6 +26805,80 @@ theorem strongDeletion_binaryCommonSurvival_forces_migratedCertificate
       htdestroy⟩
   exact ⟨Q, hQlate, by simpa [MarkedTargets] using hQdisjoint, hcert⟩
 
+/-- Under the counterexample hypothesis, the preceding incidence dichotomy
+has only two outcomes: strong deletion forces a migrated finite certificate,
+or the injective certificate point occurs in the private core repair on an
+infinite subfamily. -/
+theorem counterexample_coincidentInjectiveCertificatePoint_forces_migration_or_privateIncidence
+    {A C K I : Set ℕ} {D : Finset ℕ}
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3)
+    (hKA : K ⊆ A)
+    (target atom point : ℕ → ℕ)
+    (moving core certificateRepair : ℕ → Finset ℕ)
+    (hI : I.Infinite)
+    (hatomK : ∀ n ∈ I, atom n ∈ K)
+    (hatomInj : Set.InjOn atom I)
+    (hpointInj : Set.InjOn point I)
+    (hdata : ∀ b ∈ K,
+      IsCriticalMarkedMinimalDestroyerData
+        A C D b (target b) (moving b) (core b))
+    (hcertificateR : ∀ n ∈ I,
+      certificateRepair n ∈
+        additiveSupportFamily A 3 (target (atom n)))
+    (hcertificateK : ∀ n ∈ I,
+      Disjoint (certificateRepair n : Set ℕ) K)
+    (hpointCertificate : ∀ n ∈ I,
+      point n ∈ certificateRepair n) :
+    (∃ J, J ⊆ I ∧ J.Infinite ∧
+      ∃ K' : Set ℕ, ∃ pairCell : ℕ → Finset ℕ,
+        K' ⊆ A ∧ K'.Infinite ∧
+        IsFiniteBlockPartition K' pairCell ∧
+        (∀ i, (pairCell i).card = 2) ∧
+        ∀ N, ∃ Q : Finset ℕ,
+          (∀ t ∈ Q, N ≤ t) ∧
+          Disjoint (Q : Set ℕ)
+            ((fun n => target (atom n)) '' J) ∧
+          ∀ sel : BlockSelector pairCell, ∃ t ∈ Q,
+            DestroysAt (additiveSupportFamily A 3)
+              (selectedSet sel) t) ∨
+      ∃ L, L ⊆ I ∧ L.Infinite ∧
+        ∃ privateRepair : ℕ → Finset ℕ,
+          ∀ n ∈ L,
+            privateRepair n ∈
+              additiveSupportFamily A 3 (target (atom n)) ∧
+            privateRepair n ∩ core (atom n) = {atom n} ∧
+            point n ∈ privateRepair n := by
+  obtain hcommon | hprivate :=
+    coincidentInjectiveCertificatePoint_commonSurvival_or_privateIncidence
+      target atom point moving core certificateRepair hI
+        hatomK hatomInj hpointInj hdata hcertificateR
+          hcertificateK hpointCertificate
+  · left
+    obtain ⟨J, hJI, hJ, hmatching, hsurvive⟩ := hcommon
+    have hxyA : ∀ n ∈ J, atom n ∈ A ∧ point n ∈ A := by
+      intro n hn
+      have hnI := hJI hn
+      exact ⟨hKA (hatomK n hnI),
+        additiveSupportFamily_supportsIn A 3
+          (target (atom n)) (certificateRepair n)
+            (hcertificateR n hnI) (point n)
+              (hpointCertificate n hnI)⟩
+    have hne : ∀ n ∈ J, atom n ≠ point n := by
+      intro n hn heq
+      have hnI := hJI hn
+      exact Set.disjoint_left.mp (hcertificateK n hnI)
+        (Finset.mem_coe.mpr (hpointCertificate n hnI))
+        (heq ▸ hatomK n hnI)
+    obtain ⟨K', pairCell, hK'A, hK', P, hcard, hmigrate⟩ :=
+      strongDeletion_binaryCommonSurvival_forces_migratedCertificate
+        (strongOrderThreeDeletion_of_counterexample hcounter)
+          hJ (fun n => target (atom n)) atom point
+            hxyA hne hmatching hsurvive
+    exact ⟨J, hJI, hJ, K', pairCell,
+      hK'A, hK', P, hcard, hmigrate⟩
+  · exact Or.inr hprivate
+
 /-- Counterexample-level closure of a coincident family of full three-point
 certificate repairs.  Their injective repair petals form binary blocks with
 the marked atoms, so strong deletion again forces the finite certificate
@@ -26531,11 +26937,12 @@ theorem counterexample_coincidentFullCertificateRepairs_forces_migratedCertifica
   exact ⟨J, hJI, hJ, K', pairCell,
     hK'A, hK', P, hcard, hmigrate⟩
 
-/-- Final cardinality reduction inside the singleton core-trace branch.  A
-full three-point certificate family already migrates by the preceding
-binary-choice argument.  Consequently the only genuinely residual
-coincident singleton-trace family consists of two-point certificate supports. -/
-theorem counterexample_coincidentSingletonCoreTrace_forces_cardTwo_or_migratedCertificates
+/-- Final reduction inside the singleton core-trace branch.  Full three-point
+certificate families migrate.  Two-point families have a uniform repeated
+summand and an injective moving point; unless strong deletion again forces
+migration, that same moving point must occur in the private marked-core
+repair on an infinite subfamily. -/
+theorem counterexample_coincidentSingletonCoreTrace_forces_privateSharedTwoPointPattern_or_migratedCertificates
     {A C K I : Set ℕ} {D : Finset ℕ}
     (hcounter : ∀ X, X ⊆ A → X.Infinite →
       ¬ IsExactTupleAsymptoticBasis (A \ X) 3)
@@ -26558,8 +26965,24 @@ theorem counterexample_coincidentSingletonCoreTrace_forces_cardTwo_or_migratedCe
     (hScard : S.card = 1)
     (htrace : ∀ n ∈ I,
       certificateRepair n ∩ core (atom n) = S) :
-    (∃ L, L ⊆ I ∧ L.Infinite ∧
-      ∀ n ∈ L, (certificateRepair n).card = 2) ∨
+    (∃ root, S = {root} ∧
+      ∃ L, L ⊆ I ∧ L.Infinite ∧
+        ∃ other partner : ℕ → ℕ,
+        ∃ privateRepair : ℕ → Finset ℕ,
+          Set.InjOn other L ∧
+          (∀ n ∈ L,
+            other n ≠ root ∧
+              certificateRepair n = {root, other n}) ∧
+          (∀ n ∈ L,
+            target (atom n) = root + 2 * other n) ∧
+          (∀ n ∈ L,
+            privateRepair n ∈
+                additiveSupportFamily A 3 (target (atom n)) ∧
+              privateRepair n ∩ core (atom n) = {atom n} ∧
+              other n ∈ privateRepair n) ∧
+          ∀ n ∈ L,
+            partner n ∈ A ∧ partner n ∈ privateRepair n ∧
+            atom n + partner n = root + other n) ∨
       ∃ J, J ⊆ I ∧ J.Infinite ∧
         ∃ K' : Set ℕ, ∃ pairCell : ℕ → Finset ℕ,
           K' ⊆ A ∧ K'.Infinite ∧
@@ -26582,7 +27005,71 @@ theorem counterexample_coincidentSingletonCoreTrace_forces_cardTwo_or_migratedCe
     fixedSingletonRepairTrace_thins_to_cardTwo_orThree
       hI (fun n => target (atom n)) htargetInj
         certificateRepair S hScard hcertificateR hSrepair
-  · exact Or.inl ⟨L, hLI, hL, hcardTwo⟩
+  · obtain ⟨root, hSeq, L₁, hL₁L, hL₁, other,
+        hotherInj, hotherData, hformula⟩ :=
+      fixedSingletonCardTwoRepairs_have_uniformMultiplicity
+        hL (fun n => target (atom n)) (htargetInj.mono hLI)
+          certificateRepair S hScard
+            (fun n hn => hcertificateR n (hLI hn)) hcardTwo
+            (fun n hn => hSrepair n (hLI hn))
+    have hL₁I : L₁ ⊆ I := hL₁L.trans hLI
+    obtain hmigrate | hprivate :=
+      counterexample_coincidentInjectiveCertificatePoint_forces_migration_or_privateIncidence
+        hcounter hKA target atom other moving core certificateRepair hL₁
+          (fun n hn => hatomK n (hL₁I hn))
+          (hatomInj.mono hL₁I) hotherInj hdata
+          (fun n hn => hcertificateR n (hL₁I hn))
+          (fun n hn => hcertificateK n (hL₁I hn))
+          (fun n hn => by
+            rw [(hotherData n hn).2]
+            simp)
+    · right
+      obtain ⟨J, hJL₁, hJ, K', pairCell,
+          hK'A, hK', P, hpairCard, hQ⟩ := hmigrate
+      exact ⟨J, hJL₁.trans hL₁I, hJ, K', pairCell,
+        hK'A, hK', P, hpairCard, hQ⟩
+    · obtain ⟨L₂, hL₂L₁, hL₂, privateRepair,
+          hprivateData⟩ := hprivate
+      have hL₂I : L₂ ⊆ I := hL₂L₁.trans hL₁I
+      have hatomPrivate : ∀ n ∈ L₂,
+          atom n ∈ privateRepair n := by
+        intro n hn
+        have hmem : atom n ∈
+            privateRepair n ∩ core (atom n) := by
+          rw [(hprivateData n hn).2.1]
+          simp
+        exact (Finset.mem_inter.mp hmem).1
+      have hatomOtherNe : ∀ n ∈ L₂,
+          atom n ≠ other n := by
+        intro n hn heq
+        have hnL₁ := hL₂L₁ hn
+        have hotherCertificate : other n ∈ certificateRepair n := by
+          rw [(hotherData n hnL₁).2]
+          simp
+        exact Set.disjoint_left.mp (hcertificateK n (hL₂I hn))
+          (Finset.mem_coe.mpr hotherCertificate)
+          (heq ▸ hatomK n (hL₂I hn))
+      have hformulaL₂ :
+          (∀ n ∈ L₂,
+              target (atom n) = 2 * root + other n) ∨
+            ∀ n ∈ L₂,
+              target (atom n) = root + 2 * other n := by
+        rcases hformula with hrepeatRoot | hrepeatOther
+        · exact Or.inl (fun n hn => hrepeatRoot n (hL₂L₁ hn))
+        · exact Or.inr (fun n hn => hrepeatOther n (hL₂L₁ hn))
+      obtain ⟨hrepeatOther, partner, hpartnerData⟩ :=
+        privateRepairs_sharedMovingPoint_force_affinePartner
+          hL₂ (fun n => target (atom n)) atom other root
+            (hatomInj.mono hL₂I) privateRepair
+            (fun n hn => (hprivateData n hn).1) hatomPrivate
+            (fun n hn => (hprivateData n hn).2.2)
+            hatomOtherNe hformulaL₂
+      left
+      refine ⟨root, hSeq, L₂,
+        hL₂I, hL₂, other, partner, privateRepair,
+        hotherInj.mono hL₂L₁,
+        fun n hn => hotherData n (hL₂L₁ hn),
+        hrepeatOther, hprivateData, hpartnerData⟩
   · right
     obtain ⟨J, hJL, hJ, K', pairCell,
         hK'A, hK', P, hpairCard, hmigrate⟩ :=
