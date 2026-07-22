@@ -10738,6 +10738,167 @@ theorem criticalMarkedMinimalDestroyerData_pairSupport_card_le_core_card
   rw [card_pairSupports_eq_card_crossingAtomEndpoints hCA hcross]
   exact Finset.card_le_card hendpointSub
 
+/-- Any repair at the marked target must meet its inclusion-minimal core.
+If the repair avoids an ambient index set containing the marked point, the
+core hit is necessarily a second, unmarked core vertex.  This is the local
+incidence forced when a surviving certificate target coincides with its
+marked recurrent target. -/
+theorem criticalMarkedMinimalDestroyerData_repair_hits_core_away_mark
+    {A C K : Set ℕ} {D T S G : Finset ℕ} {b q : ℕ}
+    (hbK : b ∈ K)
+    (hdata : IsCriticalMarkedMinimalDestroyerData
+      A C D b q T S)
+    (hGR : G ∈ additiveSupportFamily A 3 q)
+    (hGK : Disjoint (G : Set ℕ) K) :
+    ∃ x, x ∈ G ∧ x ∈ S ∧ x ≠ b := by
+  have hnotDisjoint : ¬ Disjoint (G : Set ℕ) (S : Set ℕ) :=
+    hdata.2.2.2.2.2.2.2.2.2.1.1 G hGR
+  obtain ⟨x, hxG, hxS⟩ := Set.not_disjoint_iff.mp hnotDisjoint
+  refine ⟨x, Finset.mem_coe.mp hxG, Finset.mem_coe.mp hxS, ?_⟩
+  intro hxb
+  exact Set.disjoint_left.mp hGK hxG (hxb ▸ hbK)
+
+/-- Indexed form of the preceding incidence.  On a synchronized branch,
+every certificate repair is a repair of the marked target at the same
+index, so it must hit that marked core away from the marked atom. -/
+theorem coincidentCertificateMarkedTargets_hit_unmarkedCores
+    {A C K I J : Set ℕ} {D : Finset ℕ}
+    {target atom certificateTarget : ℕ → ℕ}
+    {moving core certificateRepair : ℕ → Finset ℕ}
+    (hIJ : I ⊆ J)
+    (hdata : ∀ b ∈ K,
+      IsCriticalMarkedMinimalDestroyerData
+        A C D b (target b) (moving b) (core b))
+    (hcertificate : ∀ n ∈ J,
+      atom n ∈ K ∧
+      certificateRepair n ∈
+        additiveSupportFamily A 3 (certificateTarget n) ∧
+      Disjoint (certificateRepair n : Set ℕ) K)
+    (hequal : ∀ n ∈ I,
+      certificateTarget n = target (atom n)) :
+    ∀ n ∈ I, ∃ x,
+      x ∈ certificateRepair n ∧
+      x ∈ core (atom n) ∧ x ≠ atom n := by
+  intro n hn
+  have hnJ := hIJ hn
+  obtain ⟨hatomK, hrepair, hrepairK⟩ := hcertificate n hnJ
+  apply criticalMarkedMinimalDestroyerData_repair_hits_core_away_mark
+    hatomK (hdata (atom n) hatomK)
+  · rwa [← hequal n hn]
+  · exact hrepairK
+
+/-- Thin infinitely many chosen core hits according to whether they land in
+the fixed sunflower root.  The retained family either always has a root hit,
+or always has an unmarked hit in the moving petal `core n \ R`. -/
+theorem infinite_coreHits_thin_root_or_petals
+    {I : Set ℕ} (hI : I.Infinite) (R : Finset ℕ)
+    (mark : ℕ → ℕ) (repair core : ℕ → Finset ℕ)
+    (hhit : ∀ n ∈ I, ∃ x,
+      x ∈ repair n ∧ x ∈ core n ∧ x ≠ mark n) :
+    ∃ L, L ⊆ I ∧ L.Infinite ∧
+      ((∃ x ∈ R, ∀ n ∈ L, x ∈ repair n ∧
+          x ∈ core n ∧ x ≠ mark n) ∨
+        ∀ n ∈ L, ∃ x, x ∈ repair n ∧
+          x ∈ core n \ R ∧ x ≠ mark n) := by
+  classical
+  let hit : ℕ → ℕ := fun n =>
+    if hn : n ∈ I then Classical.choose (hhit n hn) else 0
+  have hhitSpec : ∀ n ∈ I,
+      hit n ∈ repair n ∧ hit n ∈ core n ∧ hit n ≠ mark n := by
+    intro n hn
+    simpa only [hit, dif_pos hn] using
+      Classical.choose_spec (hhit n hn)
+  let RootIndex : Set ℕ := {n | n ∈ I ∧ hit n ∈ R}
+  by_cases hRoot : RootIndex.Infinite
+  · letI : Infinite RootIndex := hRoot.to_subtype
+    let rootValue : RootIndex → {x // x ∈ R} := fun n =>
+      ⟨hit n.1, n.2.2⟩
+    obtain ⟨r, hrFiber⟩ := Finite.exists_infinite_fiber rootValue
+    let Fiber : Set RootIndex := rootValue ⁻¹' {r}
+    have hFiber : Fiber.Infinite := by
+      apply Set.infinite_coe_iff.mp
+      simpa [Fiber] using hrFiber
+    let L : Set ℕ := Subtype.val '' Fiber
+    have hL : L.Infinite := by
+      apply (Set.infinite_image_iff
+        (Set.injOn_of_injective Subtype.val_injective)).mpr hFiber
+    have hLI : L ⊆ I := by
+      rintro n ⟨nRoot, _hnFiber, rfl⟩
+      exact nRoot.2.1
+    refine ⟨L, hLI, hL, Or.inl ⟨r.1, r.2, ?_⟩⟩
+    rintro n ⟨nRoot, hnFiber, rfl⟩
+    have hrootEq : rootValue nRoot = r := by
+      simpa [Fiber] using hnFiber
+    have hhitEq : hit nRoot.1 = r.1 :=
+      congrArg Subtype.val hrootEq
+    have hspec := hhitSpec nRoot.1 nRoot.2.1
+    exact ⟨hhitEq ▸ hspec.1, hhitEq ▸ hspec.2.1,
+      hhitEq ▸ hspec.2.2⟩
+  · let L : Set ℕ := I \ RootIndex
+    have hRootFinite : RootIndex.Finite := Set.not_infinite.mp hRoot
+    have hL : L.Infinite := hI.diff hRootFinite
+    refine ⟨L, Set.diff_subset, hL, Or.inr ?_⟩
+    intro n hn
+    have hnI : n ∈ I := hn.1
+    have hnNotRoot : n ∉ RootIndex := hn.2
+    refine ⟨hit n, (hhitSpec n hnI).1,
+      Finset.mem_sdiff.mpr ⟨(hhitSpec n hnI).2.1, ?_⟩,
+      (hhitSpec n hnI).2.2⟩
+    intro hhitR
+    exact hnNotRoot ⟨hnI, hhitR⟩
+
+/-- Refine a synchronized certificate/marked-target family into the exact
+three geometric branches needed for the finite-certificate endgame.  Either
+the two target ranges migrate apart, or they agree pointwise and the forced
+certificate/core incidences concentrate at one fixed sunflower-root vertex
+or move through the individual core petals. -/
+theorem certificateMarkedTargetSynchronization_refines_to_migration_or_coreIncidence
+    {A C K I J : Set ℕ} {D R : Finset ℕ}
+    {target atom certificateTarget : ℕ → ℕ}
+    {moving core certificateRepair : ℕ → Finset ℕ}
+    (hIJ : I ⊆ J) (hI : I.Infinite)
+    (hcertificateInj : Set.InjOn certificateTarget I)
+    (hmarkedInj : Set.InjOn (fun n => target (atom n)) I)
+    (hsync :
+      (∀ n ∈ I, certificateTarget n = target (atom n)) ∨
+        Disjoint (certificateTarget '' I)
+          ((fun n => target (atom n)) '' I))
+    (hdata : ∀ b ∈ K,
+      IsCriticalMarkedMinimalDestroyerData
+        A C D b (target b) (moving b) (core b))
+    (hcertificate : ∀ n ∈ J,
+      atom n ∈ K ∧
+      certificateRepair n ∈
+        additiveSupportFamily A 3 (certificateTarget n) ∧
+      Disjoint (certificateRepair n : Set ℕ) K) :
+    ∃ L, L ⊆ I ∧ L.Infinite ∧
+      Set.InjOn certificateTarget L ∧
+      Set.InjOn (fun n => target (atom n)) L ∧
+      (Disjoint (certificateTarget '' L)
+          ((fun n => target (atom n)) '' L) ∨
+        (∀ n ∈ L,
+          certificateTarget n = target (atom n)) ∧
+          ((∃ x ∈ R, ∀ n ∈ L,
+              x ∈ certificateRepair n ∧
+              x ∈ core (atom n) ∧ x ≠ atom n) ∨
+            ∀ n ∈ L, ∃ x,
+              x ∈ certificateRepair n ∧
+              x ∈ core (atom n) \ R ∧ x ≠ atom n)) := by
+  rcases hsync with hequal | hmigrate
+  · have hhits : ∀ n ∈ I, ∃ x,
+        x ∈ certificateRepair n ∧
+        x ∈ core (atom n) ∧ x ≠ atom n :=
+      coincidentCertificateMarkedTargets_hit_unmarkedCores
+        hIJ hdata hcertificate hequal
+    obtain ⟨L, hLI, hL, hrootOrPetal⟩ :=
+      infinite_coreHits_thin_root_or_petals
+        hI R atom certificateRepair (fun n => core (atom n)) hhits
+    exact ⟨L, hLI, hL, hcertificateInj.mono hLI,
+      hmarkedInj.mono hLI, Or.inr
+        ⟨fun n hn => hequal n (hLI hn), hrootOrPetal⟩⟩
+  · exact ⟨I, Set.Subset.rfl, hI, hcertificateInj,
+      hmarkedInj, Or.inl hmigrate⟩
+
 /-- If the deletion reservoir `C` is a thinning of a larger repaired
 reservoir `B`, failure of two repairs on `C` has a stronger consequence:
 every pair support meets `C`, but cannot be contained even in `B`.  Thus its
@@ -24081,6 +24242,98 @@ theorem exists_infinite_crossAvoiding_injectiveImage
     (Finset.mem_coe.mpr
       (hcollisionMem b d (hLK hd) hudErased)) hd
 
+/-- Compare an arbitrary target map with an injective target map on an
+infinite index set.  Either the two targets agree at infinitely many
+indices, or they can be thinned to an infinite set on which their image
+ranges are disjoint.  In the unequal branch, apply cross-image avoidance to
+the singleton point-map `{u n}`; the removed equalizer handles the diagonal
+case. -/
+theorem infinite_equalizer_or_disjoint_images
+    {K : Set ℕ} (hK : K.Infinite)
+    (u v : ℕ → ℕ) (hvInj : Set.InjOn v K) :
+    {n | n ∈ K ∧ u n = v n}.Infinite ∨
+      ∃ L, L ⊆ K ∧ L.Infinite ∧
+        Disjoint (u '' L) (v '' L) := by
+  classical
+  let Eq : Set ℕ := {n | n ∈ K ∧ u n = v n}
+  by_cases hEq : Eq.Infinite
+  · left
+    exact hEq
+  · right
+    have hEqFinite : Eq.Finite := Set.not_infinite.mp hEq
+    have hUnequal : (K \ Eq).Infinite := hK.diff hEqFinite
+    obtain ⟨L, hLUnequal, hL, hcross⟩ :=
+      exists_infinite_crossAvoiding_injectiveImage
+        hUnequal v (hvInj.mono Set.diff_subset)
+          (fun n => {u n}) 1 (by intro n hn; simp)
+    refine ⟨L, hLUnequal.trans Set.diff_subset, hL, ?_⟩
+    rw [Set.disjoint_left]
+    intro x hxU hxV
+    obtain ⟨i, hiL, rfl⟩ := hxU
+    obtain ⟨j, hjL, hji⟩ := hxV
+    by_cases hij : i = j
+    · subst j
+      exact (hLUnequal hiL).2 ⟨(hLUnequal hiL).1, hji.symm⟩
+    · exact hcross i hiL j hjL hij (by simpa using hji)
+
+/-- A target map which lies above its index on an infinite set has infinite
+image.  This is the cofinality input used to make the certificate-target map
+injective before comparing it with the marked-target map. -/
+theorem image_infinite_of_self_le_on_infinite
+    {K : Set ℕ} (hK : K.Infinite) (q : ℕ → ℕ)
+    (hq : ∀ n ∈ K, n ≤ q n) :
+    (q '' K).Infinite := by
+  apply Set.not_finite.mp
+  intro hfinite
+  obtain ⟨U, hU⟩ := hfinite.bddAbove
+  obtain ⟨n, hnK, hnU⟩ := hK.exists_gt U
+  have hqnU : q n ≤ U := hU ⟨n, hnK, rfl⟩
+  exact (not_le_of_gt hnU) ((hq n hnK).trans hqnU)
+
+/-- Synchronize the cofinal certificate targets with the injectively marked
+recurrent targets.  After first thinning so that the certificate target map
+is injective, there is an infinite indexed family on which both maps are
+injective and either agree pointwise or have disjoint ranges. -/
+theorem exists_infinite_certificateMarkedTargetSynchronization
+    {J K : Set ℕ} (hJ : J.Infinite)
+    (certificateTarget atom target : ℕ → ℕ)
+    (hatomK : ∀ n ∈ J, atom n ∈ K)
+    (hatomInj : Set.InjOn atom J)
+    (htargetInj : Set.InjOn target K)
+    (hcofinal : ∀ n ∈ J, n ≤ certificateTarget n) :
+    ∃ I, I ⊆ J ∧ I.Infinite ∧
+      Set.InjOn certificateTarget I ∧
+      Set.InjOn (fun n => target (atom n)) I ∧
+      ((∀ n ∈ I, certificateTarget n = target (atom n)) ∨
+        Disjoint (certificateTarget '' I)
+          ((fun n => target (atom n)) '' I)) := by
+  have hcertificateImage : (certificateTarget '' J).Infinite :=
+    image_infinite_of_self_le_on_infinite hJ certificateTarget hcofinal
+  obtain ⟨I₀, hI₀J, hcertificateBij⟩ :=
+    Set.exists_subset_bijOn J certificateTarget
+  have hI₀ : I₀.Infinite := by
+    intro hI₀Finite
+    apply hcertificateImage
+    rw [← hcertificateBij.image_eq]
+    exact hI₀Finite.image certificateTarget
+  have hmarkedInj : Set.InjOn (fun n => target (atom n)) J := by
+    intro n hn m hm htargetEq
+    apply hatomInj hn hm
+    exact htargetInj (hatomK n hn) (hatomK m hm) htargetEq
+  obtain hequal | ⟨I, hII₀, hI, hdisjoint⟩ :=
+    infinite_equalizer_or_disjoint_images hI₀ certificateTarget
+      (fun n => target (atom n)) (hmarkedInj.mono hI₀J)
+  · let I : Set ℕ :=
+      {n | n ∈ I₀ ∧ certificateTarget n = target (atom n)}
+    have hII₀ : I ⊆ I₀ := fun n hn => hn.1
+    exact ⟨I, hII₀.trans hI₀J, hequal,
+      hcertificateBij.injOn.mono hII₀,
+      hmarkedInj.mono (hII₀.trans hI₀J),
+      Or.inl (fun n hn => hn.2)⟩
+  · exact ⟨I, hII₀.trans hI₀J, hI,
+      hcertificateBij.injOn.mono hII₀,
+      hmarkedInj.mono (hII₀.trans hI₀J), Or.inr hdisjoint⟩
+
 /-- Orient an infinite matching toward its `x` endpoints and thin it so a
 bounded designated support at every retained index avoids the entire
 oriented image.  Pairwise disjointness makes `x` injective; cross-image
@@ -24658,13 +24911,20 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_uniformZeroAtomi
         ∃ J : Set ℕ, ∃ certificateTarget atom : ℕ → ℕ,
         ∃ certificateRepair : ℕ → Finset ℕ,
           J.Infinite ∧ K = atom '' J ∧ Set.InjOn atom J ∧
-          ∀ n ∈ J, atom n ∈ K ∧
+          (∀ n ∈ J, atom n ∈ K ∧
             IsRecurrentNoTwoRepairPrefix A C (insert (atom n) D) ∧
             n ≤ certificateTarget n ∧
             certificateRepair n ∈
               additiveSupportFamily A 3 (certificateTarget n) ∧
             Disjoint (certificateRepair n) D ∧
-            Disjoint (certificateRepair n : Set ℕ) K := by
+            Disjoint (certificateRepair n : Set ℕ) K) ∧
+          ∃ I, I ⊆ J ∧ I.Infinite ∧
+            Set.InjOn certificateTarget I ∧
+            Set.InjOn (fun n => target (atom n)) I ∧
+            ((∀ n ∈ I,
+                certificateTarget n = target (atom n)) ∨
+              Disjoint (certificateTarget '' I)
+                ((fun n => target (atom n)) '' I)) := by
   obtain ⟨L, hLC, hLA, hL, hnormal, D, R, target,
       moving, core, hDC, hgood, hdata, _htarget,
       htargetInj, hmarked, hdelta, J, certificateTarget,
@@ -24679,19 +24939,38 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_uniformZeroAtomi
   obtain ⟨J', hJ'J, hJ', hKimage⟩ :=
     exists_infinite_indexPreimage_of_infinite_subset_image
       atom hLimage hKL hK
+  have hcertificateJ : ∀ n ∈ J', atom n ∈ K ∧
+      IsRecurrentNoTwoRepairPrefix A C (insert (atom n) D) ∧
+      n ≤ certificateTarget n ∧
+      certificateRepair n ∈
+        additiveSupportFamily A 3 (certificateTarget n) ∧
+      Disjoint (certificateRepair n) D ∧
+      Disjoint (certificateRepair n : Set ℕ) K := by
+    intro n hn
+    obtain ⟨_hatomL, hcritical, hnTarget, hrepair,
+        hrepairD, hrepairL⟩ := hcertificate n (hJ'J hn)
+    have hatomK : atom n ∈ K := by
+      rw [hKimage]
+      exact ⟨n, hn, rfl⟩
+    exact ⟨hatomK, hcritical, hnTarget, hrepair,
+      hrepairD, hrepairL.mono_right hKL⟩
+  have hsync : ∃ I, I ⊆ J' ∧ I.Infinite ∧
+      Set.InjOn certificateTarget I ∧
+      Set.InjOn (fun n => target (atom n)) I ∧
+      ((∀ n ∈ I, certificateTarget n = target (atom n)) ∨
+        Disjoint (certificateTarget '' I)
+          ((fun n => target (atom n)) '' I)) :=
+    exists_infinite_certificateMarkedTargetSynchronization
+      hJ' certificateTarget atom target
+        (fun n hn => (hcertificateJ n hn).1)
+        (hatomInj.mono hJ'J) htargetInjK
+        (fun n hn => (hcertificateJ n hn).2.2.1)
   exact ⟨K, hKL.trans hLC, hKL.trans hLA, hK,
     fun b hb E hER => hnormal b (hKL hb) E hER,
     D, R, target, moving, core, hDC, hgood, hdataK,
     htargetK, htargetInjK, hmarkedK, hdeltaK, htype,
     J', certificateTarget, atom, certificateRepair,
-    hJ', hKimage, hatomInj.mono hJ'J, fun n hn => by
-      obtain ⟨_hatomL, hcritical, hnTarget, hrepair,
-          hrepairD, hrepairL⟩ := hcertificate n (hJ'J hn)
-      have hatomK : atom n ∈ K := by
-        rw [hKimage]
-        exact ⟨n, hn, rfl⟩
-      exact ⟨hatomK, hcritical, hnTarget, hrepair,
-        hrepairD, hrepairL.mono_right hKL⟩⟩
+    hJ', hKimage, hatomInj.mono hJ'J, hcertificateJ, hsync⟩
 
 /-- Fully zero-atomic form of the uniform marked-sunflower obstruction.
 First restart the recurrent-prefix argument inside the repaired zero-atom
@@ -24749,13 +25028,20 @@ theorem counterexample_forces_uniformFullyZeroAtomicMarkedMinimalDestroyerSunflo
         ∃ J : Set ℕ, ∃ certificateTarget atom : ℕ → ℕ,
         ∃ certificateRepair : ℕ → Finset ℕ,
           J.Infinite ∧ K = atom '' J ∧ Set.InjOn atom J ∧
-          ∀ n ∈ J, atom n ∈ K ∧
+          (∀ n ∈ J, atom n ∈ K ∧
             IsRecurrentNoTwoRepairPrefix A C (insert (atom n) D) ∧
             n ≤ certificateTarget n ∧
             certificateRepair n ∈
               additiveSupportFamily A 3 (certificateTarget n) ∧
             Disjoint (certificateRepair n) D ∧
-            Disjoint (certificateRepair n : Set ℕ) K := by
+            Disjoint (certificateRepair n : Set ℕ) K) ∧
+          ∃ I, I ⊆ J ∧ I.Infinite ∧
+            Set.InjOn certificateTarget I ∧
+            Set.InjOn (fun n => target (atom n)) I ∧
+            ((∀ n ∈ I,
+                certificateTarget n = target (atom n)) ∨
+              Disjoint (certificateTarget '' I)
+                ((fun n => target (atom n)) '' I)) := by
   obtain ⟨C, D₀, hCA, hC, hzeroC, hnormalC,
       hrepairsC, hselfC, hD₀, hrec, hminimal⟩ :=
     counterexample_forces_zeroAtomicMinimalRecurrentPrefix
@@ -24764,7 +25050,7 @@ theorem counterexample_forces_uniformFullyZeroAtomicMarkedMinimalDestroyerSunflo
       moving, core, hDC, hgood, hdata, htargetK,
       htargetInj, hmarked, hdelta, htype, J,
       certificateTarget, atom, certificateRepair, hJ,
-      hKimage, hatomInj, hcertificate⟩ :=
+      hKimage, hatomInj, hcertificate, hsync⟩ :=
     minimalRecurrentNoTwoRepairPrefix_counterexample_forces_uniformZeroAtomicMarkedMinimalDestroyerSunflower
       hbasis hzeroA hCA hC hrec hD₀ hminimal hcounter
   have hcoreC : ∀ b ∈ K, (core b : Set ℕ) ⊆ C := by
@@ -24852,7 +25138,7 @@ theorem counterexample_forces_uniformFullyZeroAtomicMarkedMinimalDestroyerSunflo
     htargetExternal, hsingletonFinite, hpairBound, hcoreBound,
     htargetK, htargetInj, hmarked,
     hdelta, htype, J, certificateTarget, atom,
-    certificateRepair, hJ, hKimage, hatomInj, hcertificate⟩
+    certificateRepair, hJ, hKimage, hatomInj, hcertificate, hsync⟩
 
 /-- Exact negation of eventual pair independence: arbitrarily late there is
 a target every one of whose ambient order-two supports is entirely red. -/
