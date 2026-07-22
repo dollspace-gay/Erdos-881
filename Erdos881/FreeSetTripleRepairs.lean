@@ -28167,6 +28167,111 @@ theorem infiniteAffineSingletonDestroyers_force_rigidRootDouble
   have hrootE : root ∈ E := hbEq ▸ hbE
   exact additiveSupportFamily_two_eq_pairSupport_of_mem hER hrootE
 
+/-- A bounded predecessor core cannot coexist with infinitely many affine
+singleton destroyers.  Fix more earlier affine points than twice the core
+bound, then choose one much later target.  Reflecting every earlier point
+through that singleton destroyer gives a distinct order-two support of the
+predecessor `root + other n`.  After discarding the earlier points already
+in the core, the destroyer condition forces too many distinct reflected
+points into the same bounded core. -/
+theorem not_infiniteAffineSingletonDestroyers_with_boundedPredecessorCores
+    {A I : Set ℕ} (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (root : ℕ) (q other : ℕ → ℕ) (core : ℕ → Finset ℕ) (r : ℕ)
+    (hI : I.Infinite) (hotherInj : Set.InjOn other I)
+    (hotherA : ∀ n ∈ I, other n ∈ A)
+    (hq : ∀ n ∈ I, q n = root + 2 * other n)
+    (hdestroy : ∀ n ∈ I,
+      DestroysAt (additiveSupportFamily A 3)
+        ({other n} : Set ℕ) (q n))
+    (hcoreCard : ∀ n ∈ I, (core n).card ≤ r)
+    (hcoreDestroy : ∀ n ∈ I,
+      DestroysAt (additiveSupportFamily A 2)
+        (core n : Set ℕ) (root + other n)) :
+    False := by
+  classical
+  obtain ⟨N, hN⟩ := hbasis
+  have hotherRange : (other '' I).Infinite := hI.image hotherInj
+  obtain ⟨B, hBRange, hBcard⟩ :=
+    hotherRange.exists_subset_card_eq (2 * r + 1)
+  have hBnonempty : B.Nonempty := by
+    apply Finset.card_pos.mp
+    rw [hBcard]
+    omega
+  obtain ⟨_z, ⟨n, hn, rfl⟩, hzLarge⟩ :=
+    hotherRange.exists_gt (N + B.max' hBnonempty)
+  let S := B \ core n
+  let reflected : Finset ℕ :=
+    S.image (fun b => root + other n - b)
+  have hSlarge : r < S.card := by
+    have hinterLe : (B ∩ core n).card ≤ (core n).card :=
+      Finset.card_le_card Finset.inter_subset_right
+    have hdecomp := Finset.card_sdiff_add_card_inter B (core n)
+    have hbound := hcoreCard n hn
+    dsimp only [S]
+    omega
+  have hbLarge : ∀ b ∈ S, N + b ≤ q n := by
+    intro b hbS
+    have hbB : b ∈ B := (Finset.mem_sdiff.mp hbS).1
+    have hbMax : b ≤ B.max' hBnonempty := Finset.le_max' B b hbB
+    rw [hq n hn]
+    omega
+  have hbNe : ∀ b ∈ S, b ≠ other n := by
+    intro b hbS
+    have hbB : b ∈ B := (Finset.mem_sdiff.mp hbS).1
+    have hbMax : b ≤ B.max' hBnonempty := Finset.le_max' B b hbB
+    omega
+  have hbOther : ∀ b ∈ S, b < other n := by
+    intro b hbS
+    have hbB : b ∈ B := (Finset.mem_sdiff.mp hbS).1
+    have hbMax : b ≤ B.max' hBnonempty := Finset.le_max' B b hbB
+    omega
+  have hbA : ∀ b ∈ S, b ∈ A := by
+    intro b hbS
+    have hbRange := hBRange (Finset.mem_sdiff.mp hbS).1
+    obtain ⟨m, hm, rfl⟩ := hbRange
+    exact hotherA m hm
+  have hreflectedCore : reflected ⊆ core n := by
+    intro w hw
+    obtain ⟨b, hbS, rfl⟩ := Finset.mem_image.mp hw
+    obtain ⟨_hotherb, hreflectA⟩ :=
+      privateOrderThree_implies_longReflection_of_threshold
+        hN (hdestroy n hn) b (hbA b hbS) (hbNe b hbS)
+          (hbLarge b hbS)
+    have hbLe : b ≤ root + other n := by
+      exact (Nat.le_of_lt (hbOther b hbS)).trans (Nat.le_add_left _ _)
+    have hcomp : root + other n - b = q n - other n - b := by
+      rw [hq n hn]
+      omega
+    have hpair : pairSupport (root + other n) b ∈
+        additiveSupportFamily A 2 (root + other n) :=
+      pairSupport_mem_additiveSupportFamily hbLe (hbA b hbS)
+        (hcomp ▸ hreflectA)
+    have hhit := hcoreDestroy n hn
+      (pairSupport (root + other n) b) hpair
+    obtain ⟨x, hxPair, hxCore⟩ := Set.not_disjoint_iff.mp hhit
+    have hxCases : x = b ∨ x = root + other n - b := by
+      simpa [pairSupport] using hxPair
+    rcases hxCases with rfl | hxEq
+    · exact ((Finset.mem_sdiff.mp hbS).2 (Finset.mem_coe.mp hxCore)).elim
+    · exact Finset.mem_coe.mp (hxEq ▸ hxCore)
+  have hreflectInj : Set.InjOn
+      (fun b => root + other n - b) (S : Set ℕ) := by
+    intro b hbS c hcS hEq
+    have hbLe : b ≤ root + other n := by
+      exact (Nat.le_of_lt (hbOther b (Finset.mem_coe.mp hbS))).trans
+        (Nat.le_add_left _ _)
+    have hcLe : c ≤ root + other n := by
+      exact (Nat.le_of_lt (hbOther c (Finset.mem_coe.mp hcS))).trans
+        (Nat.le_add_left _ _)
+    change root + other n - b = root + other n - c at hEq
+    omega
+  have hreflectedCard : reflected.card = S.card := by
+    exact Finset.card_image_iff.mpr hreflectInj
+  have hsmall : reflected.card ≤ (core n).card :=
+    Finset.card_le_card hreflectedCore
+  have hbound := hcoreCard n hn
+  omega
+
 /-- The terminal affine pattern after the moving certificate point has also
 been tested against every alternate repair.  In addition to the exact
 singleton-petal geometry, that point is now a singleton destroyer of the
@@ -28414,6 +28519,34 @@ theorem counterexample_terminalAffineDestroyerPattern_forces_indexedZeroAtomicRi
       hrootStarNonrigid n hnL, hnormal (other n) hotherZ,
       hcoreEq n hnL, hcoreDestroysCenter n hnL⟩
 
+/-- The terminal affine destroyer package is empty.  Its exact singleton
+petals give uniformly bounded predecessor cores, while the affine targets,
+singleton destroyers, and injective moving points trigger the finite-capacity
+reflection contradiction above. -/
+theorem not_smallOrCommonAnchorSingletonPetalAffineDestroyerPattern
+    {A I : Set ℕ} {R : Finset ℕ}
+    {target atom : ℕ → ℕ}
+    {core certificateRepair : ℕ → Finset ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hpattern : HasSmallOrCommonAnchorSingletonPetalAffineDestroyerPattern
+      A target atom core certificateRepair R I) :
+    False := by
+  obtain ⟨root, L, _hLI, hL, other, _partner, _privateRepair,
+      _hrootR, _hrootA, _hatomNotR, hcoreEq, hotherInj,
+      _hatomInj, _hotherData, _hcertificateR, hotherA,
+      _hotherNotCore, htargetFormula, _hprivateData, _hpartnerData,
+      hdestroy, _hotherRigid, _hpartnerRigid, _hrootStarNonrigid,
+      hcoreDestroysCenter, _htype⟩ := hpattern
+  exact not_infiniteAffineSingletonDestroyers_with_boundedPredecessorCores
+    hbasis root (fun n => target (atom n)) other
+      (fun n => core (atom n)) (R.card + 1) hL hotherInj hotherA
+      htargetFormula hdestroy
+      (fun n hn => by
+        change (core (atom n)).card ≤ R.card + 1
+        rw [hcoreEq n hn]
+        exact Finset.card_insert_le (atom n) R)
+      hcoreDestroysCenter
+
 /-- The generic certificate-point dichotomy sharpens the old terminal
 affine package without needing to know whether its cores are small or have
 a common anchor.  Thus the only non-migrating terminal family has explicit
@@ -28650,6 +28783,62 @@ theorem counterexample_synchronizedCertificateFamily_forces_rangeMigration_or_fi
       · exact Or.inr (Or.inl hmigrate)
       · exact Or.inr (Or.inr hdestroy)
   · exact Or.inl ⟨I, fun _ hn => hn, hI, hdisjoint⟩
+
+/-- Closing the affine reflection loop removes the last synchronized
+singleton-petal alternative.  Thus the certificate family must genuinely
+migrate: either its original target range separates from the marked target
+range, or strong deletion supplies a finite binary-block certificate whose
+targets do. -/
+theorem counterexample_synchronizedCertificateFamily_forces_rangeMigration_or_finiteMigration
+    {A C K I J : Set ℕ} {D R : Finset ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3)
+    (hKA : K ⊆ A)
+    (target atom certificateTarget : ℕ → ℕ)
+    (moving core certificateRepair : ℕ → Finset ℕ)
+    (hIJ : I ⊆ J) (hI : I.Infinite)
+    (hcertificateInj : Set.InjOn certificateTarget I)
+    (hmarkedInj : Set.InjOn (fun n => target (atom n)) I)
+    (hsync :
+      (∀ n ∈ I, certificateTarget n = target (atom n)) ∨
+        Disjoint (certificateTarget '' I)
+          ((fun n => target (atom n)) '' I))
+    (hdata : ∀ b ∈ K,
+      IsCriticalMarkedMinimalDestroyerData
+        A C D b (target b) (moving b) (core b))
+    (hcoreA : ∀ b ∈ K, (core b : Set ℕ) ⊆ A)
+    (hmarked : ∀ b ∈ K, b ∈ core b \ R)
+    (hdelta : ∀ b ∈ K, ∀ d ∈ K, b ≠ d →
+      core b ∩ core d = R ∧
+        Disjoint (core b \ R) (core d \ R))
+    (htype :
+      (R.card ≤ 2 ∧ ∀ b ∈ K, (core b).card ≤ 3) ∨
+        (∀ b ∈ K,
+          HasTwoDisjointUniqueHitRepairs
+            (additiveSupportFamily A 3) (core b) (target b)) ∨
+        (∀ b ∈ K, 4 ≤ (core b).card ∧
+          HasCommonAnchorOrderThreeRepairs
+            A (core b) (target b)))
+    (hcertificate : ∀ n ∈ J,
+      atom n ∈ K ∧
+      certificateRepair n ∈
+        additiveSupportFamily A 3 (certificateTarget n) ∧
+      Disjoint (certificateRepair n : Set ℕ) K) :
+    (∃ L, L ⊆ I ∧ L.Infinite ∧
+      Disjoint (certificateTarget '' L)
+        ((fun n => target (atom n)) '' L)) ∨
+      HasMigratedBinaryCertificateFamily
+        A (fun n => target (atom n)) I := by
+  obtain hmigrateRange | hmigrate | hterminal :=
+    counterexample_synchronizedCertificateFamily_forces_rangeMigration_or_finiteMigration_or_terminalSingletonDestroyers
+      hcounter hKA target atom certificateTarget moving core
+        certificateRepair hIJ hI hcertificateInj hmarkedInj hsync
+        hdata hcoreA hmarked hdelta htype hcertificate
+  · exact Or.inl hmigrateRange
+  · exact Or.inr hmigrate
+  · exact (not_smallOrCommonAnchorSingletonPetalAffineDestroyerPattern
+      hbasis hterminal).elim
 
 /-- On the common-anchor part of the terminal affine pattern, either an
 infinite subfamily has a unique-hit repair avoiding the moving certificate
