@@ -370,6 +370,137 @@ theorem IsFiniteBlockPartition.blockIndex_eq_of_mem
   rw [Finset.disjoint_left] at hd
   exact hd (P.mem_blockIndex hxA) hxi
 
+/-- An infinite subset of a finite-block partition must meet infinitely many
+blocks.  Equivalently, the block-index map has infinite image on that subset.
+The only input is that every individual block is finite. -/
+theorem IsFiniteBlockPartition.infinite_blockIndex_image
+    {A L : Set ℕ} {F : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition A F)
+    (hLA : L ⊆ A) (hL : L.Infinite) :
+    (blockIndex P '' L).Infinite := by
+  by_contra himage
+  apply hL
+  apply Set.Finite.of_finite_fibers (blockIndex P)
+    (Set.not_infinite.mp himage)
+  intro i hiImage
+  apply (F i).finite_toSet.subset
+  rintro x ⟨hxL, hxIndex⟩
+  have hxA : x ∈ A := hLA hxL
+  have hxBlock : x ∈ F (blockIndex P x) :=
+    P.mem_blockIndex hxA
+  rw [hxIndex] at hxBlock
+  exact hxBlock
+
+/-- Every infinite subset of a finite-block partition can be thinned to an
+infinite block transversal: no two retained points lie in the same block. -/
+theorem IsFiniteBlockPartition.exists_infinite_blockTransversal
+    {A L : Set ℕ} {F : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition A F)
+    (hLA : L ⊆ A) (hL : L.Infinite) :
+    ∃ T, T ⊆ L ∧ T.Infinite ∧
+      Set.InjOn (blockIndex P) T := by
+  classical
+  let I : Set ℕ := blockIndex P '' L
+  have hI : I.Infinite := by
+    simpa [I] using P.infinite_blockIndex_image hLA hL
+  have hwitness : ∀ i, i ∈ I →
+      ∃ x, x ∈ L ∧ blockIndex P x = i := by
+    intro i hi
+    simpa [I] using hi
+  choose point hpointL hpointIndex using hwitness
+  let pick : ℕ → ℕ := fun i =>
+    if hi : i ∈ I then point i hi else 0
+  have hpickL : ∀ i ∈ I, pick i ∈ L := by
+    intro i hi
+    simpa [pick, hi] using hpointL i hi
+  have hpickIndex : ∀ i ∈ I, blockIndex P (pick i) = i := by
+    intro i hi
+    simpa [pick, hi] using hpointIndex i hi
+  have hpickInj : Set.InjOn pick I := by
+    intro i hi j hj hpickEq
+    calc
+      i = blockIndex P (pick i) := (hpickIndex i hi).symm
+      _ = blockIndex P (pick j) := by rw [hpickEq]
+      _ = j := hpickIndex j hj
+  let T : Set ℕ := pick '' I
+  have hTInfinite : T.Infinite := hI.image hpickInj
+  have hTL : T ⊆ L := by
+    rintro x ⟨i, hi, rfl⟩
+    exact hpickL i hi
+  have hindexInj : Set.InjOn (blockIndex P) T := by
+    rintro x ⟨i, hi, rfl⟩ y ⟨j, hj, rfl⟩ hindex
+    have hij : i = j := by
+      calc
+        i = blockIndex P (pick i) := (hpickIndex i hi).symm
+        _ = blockIndex P (pick j) := hindex
+        _ = j := hpickIndex j hj
+    subst j
+    rfl
+  exact ⟨T, hTL, hTInfinite, hindexInj⟩
+
+/-- Removing one point from each of infinitely many distinct blocks does not
+exhaust a partition whose blocks all contain at least two points.  Choosing
+an alternate point in each used block gives an explicit infinite subset of
+the residual reservoir. -/
+theorem IsFiniteBlockPartition.infinite_diff_of_blockIndex_injective
+    {A T : Set ℕ} {F : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition A F)
+    (hTA : T ⊆ A) (hT : T.Infinite)
+    (hindexInj : Set.InjOn (blockIndex P) T)
+    (hblockTwo : ∀ i, 2 ≤ (F i).card) :
+    (A \ T).Infinite := by
+  classical
+  have haltExists : ∀ x, x ∈ T →
+      ∃ y, y ∈ F (blockIndex P x) ∧ y ≠ x := by
+    intro x hxT
+    have hxA : x ∈ A := hTA hxT
+    have hxBlock : x ∈ F (blockIndex P x) :=
+      P.mem_blockIndex hxA
+    by_contra hnone
+    push Not at hnone
+    have hsubset : F (blockIndex P x) ⊆ {x} := by
+      intro y hy
+      exact Finset.mem_singleton.mpr (hnone y hy)
+    have hcard : (F (blockIndex P x)).card ≤ 1 := by
+      simpa using Finset.card_le_card hsubset
+    have htwo := hblockTwo (blockIndex P x)
+    omega
+  choose alt haltBlock haltNe using haltExists
+  let pick : ℕ → ℕ := fun x =>
+    if hx : x ∈ T then alt x hx else 0
+  have hpickBlock : ∀ x ∈ T,
+      pick x ∈ F (blockIndex P x) := by
+    intro x hx
+    simpa [pick, hx] using haltBlock x hx
+  have hpickNe : ∀ x ∈ T, pick x ≠ x := by
+    intro x hx
+    simpa [pick, hx] using haltNe x hx
+  have hpickIndex : ∀ x ∈ T,
+      blockIndex P (pick x) = blockIndex P x := by
+    intro x hx
+    exact P.blockIndex_eq_of_mem (hpickBlock x hx)
+  have hpickNotT : ∀ x ∈ T, pick x ∉ T := by
+    intro x hx hpickT
+    have heq : pick x = x :=
+      hindexInj hpickT hx (hpickIndex x hx)
+    exact hpickNe x hx heq
+  have hpickA : ∀ x ∈ T, pick x ∈ A := by
+    intro x hx
+    exact (P.mem_iff (pick x)).2
+      ⟨blockIndex P x, hpickBlock x hx⟩
+  have hpickInj : Set.InjOn pick T := by
+    intro x hx y hy hpickEq
+    apply hindexInj hx hy
+    calc
+      blockIndex P x = blockIndex P (pick x) :=
+        (hpickIndex x hx).symm
+      _ = blockIndex P (pick y) := by rw [hpickEq]
+      _ = blockIndex P y := hpickIndex y hy
+  have hRange : (pick '' T).Infinite := hT.image hpickInj
+  apply hRange.mono
+  rintro y ⟨x, hx, rfl⟩
+  exact ⟨hpickA x hx, hpickNotT x hx⟩
+
 theorem IsFiniteBlockPartition.mem_selectedSet_iff
     {A : Set ℕ} {F : ℕ → Finset ℕ}
     (P : IsFiniteBlockPartition A F) (s : BlockSelector F)

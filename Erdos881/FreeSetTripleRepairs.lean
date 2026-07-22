@@ -4290,6 +4290,96 @@ theorem crossingEndpointTripleObstruction_of_orderThreeDestroyer
   exact destroysAt_crossingEndpointTripleObstructionFamily_iff.mpr
     ⟨hcross, hdestroy, hendpointSub⟩
 
+/-- Crossing data from a thinned reservoir promote back to any repaired
+superreservoir, provided the same thinning genuinely destroys the target at
+order three.  A pair support contained in the superreservoir would have a
+direct triple repair disjoint from it, contradicting destruction.  Hence no
+new crossing endpoints can be created or lost when the reservoir is
+thinned in this situation. -/
+theorem crossingEndpoints_eq_of_destroyer_on_repaired_subreservoir
+    {A B₀ B₁ D : Set ℕ} {q : ℕ}
+    (hB₀A : B₀ ⊆ A)
+    (hB₁B₀ : B₁ ⊆ B₀)
+    (hDB₁ : D ⊆ B₁)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcross₁ : ∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) B₁ ∧
+      ¬ (E : Set ℕ) ⊆ B₁)
+    (hdestroy : DestroysAt (additiveSupportFamily A 3) D q) :
+    (∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) B₀ ∧
+      ¬ (E : Set ℕ) ⊆ B₀) ∧
+    crossingAtomEndpoints A B₀ q =
+      crossingAtomEndpoints A B₁ q := by
+  classical
+  have hDB₀ : D ⊆ B₀ := hDB₁.trans hB₁B₀
+  have hcross₀ : ∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) B₀ ∧
+      ¬ (E : Set ℕ) ⊆ B₀ := by
+    intro E hER
+    constructor
+    · intro hdisjoint₀
+      exact (hcross₁ E hER).1
+        (hdisjoint₀.mono_right hB₁B₀)
+    · intro hsub₀
+      obtain ⟨v, _hvA, hvsum, hvSupport⟩ :=
+        mem_additiveSupportFamily_iff.mp hER
+      have hv0B₀ : (v 0).1 ∈ B₀ :=
+        hsub₀ (by
+          rw [← hvSupport]
+          exact mem_tupleSupport_iff.mpr ⟨0, rfl⟩)
+      have hv1B₀ : (v 1).1 ∈ B₀ :=
+        hsub₀ (by
+          rw [← hvSupport]
+          exact mem_tupleSupport_iff.mpr ⟨1, rfl⟩)
+      have hsum : (v 0).1 + (v 1).1 = q := by
+        simpa [Fin.sum_univ_two] using hvsum
+      obtain ⟨G, hGR, hGB₀⟩ :=
+        hrepairs (v 0).1 hv0B₀ (v 1).1 hv1B₀
+      rw [hsum] at hGR
+      exact (hdestroy G hGR) (hGB₀.mono_right hDB₀)
+  refine ⟨hcross₀, ?_⟩
+  apply Finset.ext
+  intro b
+  rw [mem_crossingAtomEndpoints_iff,
+    mem_crossingAtomEndpoints_iff]
+  constructor
+  · rintro ⟨hbq, hbB₀, hcA, hcB₀⟩
+    have hbB₁ : b ∈ B₁ := by
+      by_contra hbB₁
+      let E : Finset ℕ := pairSupport q b
+      have hER : E ∈ additiveSupportFamily A 2 q :=
+        pairSupport_mem_additiveSupportFamily
+          hbq (hB₀A hbB₀) hcA
+      have hEB₁ : Disjoint (E : Set ℕ) B₁ := by
+        rw [Set.disjoint_left]
+        intro x hxE hxB₁
+        have hxCases : x = b ∨ x = q - b := by
+          simpa [E, pairSupport] using hxE
+        rcases hxCases with rfl | rfl
+        · exact hbB₁ hxB₁
+        · exact hcB₀ (hB₁B₀ hxB₁)
+      exact (hcross₁ E hER).1 hEB₁
+    exact ⟨hbq, hbB₁, hcA,
+      fun hcB₁ => hcB₀ (hB₁B₀ hcB₁)⟩
+  · rintro ⟨hbq, hbB₁, hcA, hcB₁⟩
+    have hbB₀ : b ∈ B₀ := hB₁B₀ hbB₁
+    have hcB₀ : q - b ∉ B₀ := by
+      intro hcB₀
+      let E : Finset ℕ := pairSupport q b
+      have hER : E ∈ additiveSupportFamily A 2 q :=
+        pairSupport_mem_additiveSupportFamily
+          hbq (hB₀A hbB₀) hcA
+      have hEB₀ : (E : Set ℕ) ⊆ B₀ := by
+        intro x hxE
+        have hxCases : x = b ∨ x = q - b := by
+          simpa [E, pairSupport] using hxE
+        rcases hxCases with rfl | rfl
+        · exact hbB₀
+        · exact hcB₀
+      exact (hcross₀ E hER).2 hEB₀
+    exact ⟨hbq, hbB₀, hcA, hcB₀⟩
+
 /-- Under the counterexample assumption, the strengthened endpoint/triple
 family is strongly deleting on the repaired reservoir. -/
 theorem strongCrossingEndpointTripleObstruction_of_counterexample
@@ -5045,6 +5135,43 @@ theorem exists_finiteBlockPartition_with_exactCoreCard
         exact Finset.card_image_iff.mpr (hvalueInj i).injOn
       _ = k := by simp
   exact ⟨F, cell, P, hcore, hcellCard⟩
+
+/-- Restart package for an infinite structured obstruction.  Thin the
+obstruction to one point per old block, remove those points, and repartition
+the still-infinite residual reservoir into fresh exact-size cores.  Direct
+triple repairs survive because they are monotone under thinning. -/
+theorem exists_disjoint_repaired_partition_restart
+    {A B₀ L : Set ℕ} {F : ℕ → Finset ℕ} {k : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hblockTwo : ∀ i, 2 ≤ (F i).card)
+    (hLB₀ : L ⊆ B₀) (hL : L.Infinite)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hk : 0 < k) :
+    ∃ (T : Set ℕ) (G cell : ℕ → Finset ℕ),
+      T ⊆ L ∧ T.Infinite ∧
+      (B₀ \ T).Infinite ∧
+      Disjoint T (B₀ \ T) ∧
+      HasDirectTripleRepairsForDeletedPairs A (B₀ \ T) ∧
+      IsFiniteBlockPartition (B₀ \ T) G ∧
+      (∀ i, cell i ⊆ G i) ∧
+      ∀ i, (cell i).card = k := by
+  obtain ⟨T, hTL, hT, hindexInj⟩ :=
+    P.exists_infinite_blockTransversal hLB₀ hL
+  have hTB₀ : T ⊆ B₀ := hTL.trans hLB₀
+  have hresidual : (B₀ \ T).Infinite :=
+    P.infinite_diff_of_blockIndex_injective
+      hTB₀ hT hindexInj hblockTwo
+  have hdisjoint : Disjoint T (B₀ \ T) := by
+    rw [Set.disjoint_left]
+    intro x hxT hxDiff
+    exact hxDiff.2 hxT
+  have hrepairResidual :
+      HasDirectTripleRepairsForDeletedPairs A (B₀ \ T) :=
+    hrepairs.mono Set.diff_subset
+  obtain ⟨G, cell, PG, hcore, hcellCard⟩ :=
+    exists_finiteBlockPartition_with_exactCoreCard hresidual hk
+  exact ⟨T, G, cell, hTL, hT, hresidual, hdisjoint,
+    hrepairResidual, PG, hcore, hcellCard⟩
 
 /-- Exhaustive late fork for exact `k`-point blocks.  A strengthened
 crossing-endpoint certificate is either strictly larger than the block, or
@@ -7585,6 +7712,102 @@ def IsMinimalStrictCrossingEndpointCertificateData
     (k - 1) * (crossingAtomEndpoints A B₀ q).card ≤
       (Q.erase q).card +
         2 * (crossingEndpointAlignedTargets A B₀ Q base q).card
+
+/-- A cardinal-minimal certificate constructed on a thinned repaired
+reservoir can be interpreted relative to the original reservoir without
+changing its target set, endpoint sets, localization, or incidence bounds.
+This is the certificate-level form of upward stability needed to compare
+successive pruning/restart stages in one ambient system. -/
+theorem IsMinimalStrictCrossingEndpointCertificateData.promote
+    {A B₀ B₁ : Set ℕ} {F : ℕ → Finset ℕ}
+    {k N : ℕ} {Q : Finset ℕ}
+    (hB₀A : B₀ ⊆ A)
+    (hB₁B₀ : B₁ ⊆ B₀)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (P₁ : IsFiniteBlockPartition B₁ F)
+    (h : IsMinimalStrictCrossingEndpointCertificateData
+      A B₁ F k N Q) :
+    IsMinimalStrictCrossingEndpointCertificateData
+      A B₀ F k N Q := by
+  classical
+  rcases h with ⟨hstrict, hQdata₁, hcert₁, hlocalized₁,
+    hscaled₁, hrefined₁⟩
+  have hpromotion : ∀ q ∈ Q,
+      (∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧
+        ¬ (E : Set ℕ) ⊆ B₀) ∧
+      crossingAtomEndpoints A B₀ q =
+        crossingAtomEndpoints A B₁ q := by
+    intro q hqQ
+    obtain ⟨sel, hqDestroy, _hprivate⟩ :=
+      hlocalized₁ q hqQ
+    have hdecoded :=
+      destroysAt_crossingEndpointTripleObstructionFamily_iff.mp
+        hqDestroy
+    exact crossingEndpoints_eq_of_destroyer_on_repaired_subreservoir
+      hB₀A hB₁B₀ (P₁.selectedSet_subset sel) hrepairs
+        (hQdata₁ q hqQ).2 hdecoded.2.1
+  have hfamilyEq : ∀ q ∈ Q,
+      crossingEndpointTripleObstructionFamily A B₀ q =
+        crossingEndpointTripleObstructionFamily A B₁ q := by
+    intro q hqQ
+    have hcross₀ := (hpromotion q hqQ).1
+    have hcross₁ := (hQdata₁ q hqQ).2
+    simp only [crossingEndpointTripleObstructionFamily,
+      if_pos hcross₀, if_pos hcross₁]
+    rw [(hpromotion q hqQ).2]
+  have hdestroyIff : ∀ q ∈ Q, ∀ D : Set ℕ,
+      DestroysAt (crossingEndpointTripleObstructionFamily A B₀) D q ↔
+        DestroysAt
+          (crossingEndpointTripleObstructionFamily A B₁) D q := by
+    intro q hqQ D
+    constructor
+    · intro hdestroy E hE
+      apply hdestroy E
+      rw [hfamilyEq q hqQ]
+      exact hE
+    · intro hdestroy E hE
+      apply hdestroy E
+      rw [← hfamilyEq q hqQ]
+      exact hE
+  have halignedEq : ∀ q ∈ Q, ∀ base : BlockSelector F,
+      crossingEndpointAlignedTargets A B₀ Q base q =
+        crossingEndpointAlignedTargets A B₁ Q base q := by
+    intro q hqQ base
+    apply Finset.ext
+    intro t
+    simp only [crossingEndpointAlignedTargets, Finset.mem_filter]
+    by_cases ht : t ∈ Q.erase q
+    · simp only [ht, true_and]
+      rw [(hpromotion t (Finset.mem_of_mem_erase ht)).2]
+    · simp [ht]
+  refine ⟨hstrict, ?_, ?_, ?_, ?_, ?_⟩
+  · intro q hqQ
+    exact ⟨(hQdata₁ q hqQ).1, (hpromotion q hqQ).1⟩
+  · intro sel
+    obtain ⟨q, hqQ, hqDestroy, hendpoint₁⟩ := hcert₁ sel
+    refine ⟨q, hqQ, hqDestroy, ?_⟩
+    rw [(hpromotion q hqQ).2]
+    exact hendpoint₁
+  · intro q hqQ
+    obtain ⟨sel, hqDestroy, hprivate⟩ := hlocalized₁ q hqQ
+    refine ⟨sel, ?_, ?_⟩
+    · exact (hdestroyIff q hqQ (selectedSet sel)).mpr hqDestroy
+    · intro q' hq'Q hq'Ne hq'Destroy
+      apply hprivate q' hq'Q hq'Ne
+      exact (hdestroyIff q' hq'Q (selectedSet sel)).mp hq'Destroy
+  · intro q hqQ
+    simpa [(hpromotion q hqQ).2] using hscaled₁ q hqQ
+  · intro q hqQ
+    obtain ⟨base, hqDestroy, hprivate, hbound⟩ :=
+      hrefined₁ q hqQ
+    refine ⟨base, ?_, ?_, ?_⟩
+    · exact (hdestroyIff q hqQ (selectedSet base)).mpr hqDestroy
+    · intro q' hq'Q hq'Ne hq'Destroy
+      apply hprivate q' hq'Q hq'Ne
+      exact (hdestroyIff q' hq'Q (selectedSet base)).mp hq'Destroy
+    · simpa [(hpromotion q hqQ).2,
+        halignedEq q hqQ base] using hbound
 
 theorem hasMinimalStrictCrossingEndpointCertificate_iff_data
     {A B₀ : Set ℕ} {F : ℕ → Finset ℕ} {k N : ℕ} :
@@ -10611,6 +10834,32 @@ def HasInfinitePrivateSingletonCrossingEndpoints
       crossingAtomEndpoints A B₀ q = {x} ∧
       DestroysAt (additiveSupportFamily A 3)
         ({x} : Set ℕ) q
+
+/-- Private singleton crossing systems found after a repaired reservoir has
+been thinned already existed in the original reservoir.  The genuine
+singleton destroyer supplies the order-three destruction hypothesis needed
+by `crossingEndpoints_eq_of_destroyer_on_repaired_subreservoir`. -/
+theorem HasInfinitePrivateSingletonCrossingEndpoints.promote
+    {A B₀ B₁ : Set ℕ}
+    (hB₀A : B₀ ⊆ A)
+    (hB₁B₀ : B₁ ⊆ B₀)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (h : HasInfinitePrivateSingletonCrossingEndpoints A B₁) :
+    HasInfinitePrivateSingletonCrossingEndpoints A B₀ := by
+  obtain ⟨L, hLB₁, hL, hdata⟩ := h
+  refine ⟨L, hLB₁.trans hB₁B₀, hL, ?_⟩
+  intro x hxL
+  obtain ⟨q, hcross₁, hendpoint₁, hdestroy⟩ := hdata x hxL
+  have hxB₁ : x ∈ B₁ := hLB₁ hxL
+  have hsingletonB₁ : ({x} : Set ℕ) ⊆ B₁ := by
+    intro y hy
+    simpa using hy ▸ hxB₁
+  obtain ⟨hcross₀, hendpointEq⟩ :=
+    crossingEndpoints_eq_of_destroyer_on_repaired_subreservoir
+      hB₀A hB₁B₀ hsingletonB₁ hrepairs hcross₁ hdestroy
+  refine ⟨q, hcross₀, ?_, hdestroy⟩
+  rw [hendpointEq]
+  exact hendpoint₁
 
 /-- Singleton crossing endpoints in the common infinite output are rigid
 pair targets. -/
