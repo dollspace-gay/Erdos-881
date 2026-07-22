@@ -26769,6 +26769,8 @@ theorem strongDeletion_binaryCommonSurvival_forces_migratedCertificate
       K' ⊆ B ∧ K'.Infinite ∧
       IsFiniteBlockPartition K' pairCell ∧
       (∀ i, (pairCell i).card = 2) ∧
+      (∀ n ∈ I, q n ∈
+        commonSurvivalTargets (additiveSupportFamily A 3) pairCell) ∧
       ∀ N, ∃ Q : Finset ℕ,
         (∀ t ∈ Q, N ≤ t) ∧
         Disjoint (Q : Set ℕ) (q '' I) ∧
@@ -26827,7 +26829,42 @@ theorem strongDeletion_binaryCommonSurvival_forces_migratedCertificate
       (additiveSupportFamily A 3) K' := by
     intro X hXK' hX N
     exact hstrong X (hXK'.trans hK'B) hX N
-  refine ⟨K', pairCell, hK'B, hK', P, hpairCard, ?_⟩
+  let orientOf : BlockSelector pairCell → ℕ → ℕ := fun sel j =>
+    if hj : j ∈ I then (sel (e.symm ⟨j, hj⟩)).1 else x j
+  have horientOf : ∀ sel, ∀ j ∈ I,
+      orientOf sel j = x j ∨ orientOf sel j = y j := by
+    intro sel j hj
+    have hindexEq : index (e.symm ⟨j, hj⟩) = j := by
+      exact congrArg Subtype.val (e.apply_symm_apply ⟨j, hj⟩)
+    have hmem := (sel (e.symm ⟨j, hj⟩)).2
+    have hcases : (sel (e.symm ⟨j, hj⟩)).1 = x j ∨
+        (sel (e.symm ⟨j, hj⟩)).1 = y j := by
+      simpa [pairCell, hindexEq] using hmem
+    simpa [orientOf, hj] using hcases
+  have hselectedSubOf : ∀ sel,
+      selectedSet sel ⊆ orientOf sel '' I := by
+    intro sel z hzSelected
+    obtain ⟨n, hsn⟩ := hzSelected
+    refine ⟨index n, hindexI n, ?_⟩
+    have hsubtype : (⟨index n, hindexI n⟩ : I) = e n := by
+      apply Subtype.ext
+      rfl
+    have hsymm : e.symm ⟨index n, hindexI n⟩ = n := by
+      rw [hsubtype]
+      exact e.symm_apply_apply n
+    calc
+      orientOf sel (index n) =
+          (sel (e.symm ⟨index n, hindexI n⟩)).1 := by
+        simp [orientOf, hindexI n]
+      _ = (sel n).1 := by rw [hsymm]
+      _ = z := hsn
+  have hsafe : ∀ n ∈ I, q n ∈
+      commonSurvivalTargets (additiveSupportFamily A 3) pairCell := by
+    intro n hn sel
+    obtain ⟨G, hGR, hGorient⟩ :=
+      hcommon (orientOf sel) (horientOf sel) n hn
+    exact ⟨G, hGR, hGorient.mono_right (hselectedSubOf sel)⟩
+  refine ⟨K', pairCell, hK'B, hK', P, hpairCard, hsafe, ?_⟩
   intro N
   obtain ⟨Q₀, hQ₀late, hcert₀⟩ :=
     finiteBlockCertificates_of_strongInfiniteDeletion
@@ -26845,40 +26882,13 @@ theorem strongDeletion_binaryCommonSurvival_forces_migratedCertificate
       DestroysAt (additiveSupportFamily A 3)
         (selectedSet sel) t := by
     intro sel
-    let orient : ℕ → ℕ := fun j =>
-      if hj : j ∈ I then (sel (e.symm ⟨j, hj⟩)).1 else x j
-    have horient : ∀ j ∈ I,
-        orient j = x j ∨ orient j = y j := by
-      intro j hj
-      have hindexEq : index (e.symm ⟨j, hj⟩) = j := by
-        exact congrArg Subtype.val (e.apply_symm_apply ⟨j, hj⟩)
-      have hmem := (sel (e.symm ⟨j, hj⟩)).2
-      have hcases : (sel (e.symm ⟨j, hj⟩)).1 = x j ∨
-          (sel (e.symm ⟨j, hj⟩)).1 = y j := by
-        simpa [pairCell, hindexEq] using hmem
-      simpa [orient, hj] using hcases
-    have hselectedSub : selectedSet sel ⊆ orient '' I := by
-      intro z hzSelected
-      obtain ⟨n, hsn⟩ := hzSelected
-      refine ⟨index n, hindexI n, ?_⟩
-      have hsubtype : (⟨index n, hindexI n⟩ : I) = e n := by
-        apply Subtype.ext
-        rfl
-      have hsymm : e.symm ⟨index n, hindexI n⟩ = n := by
-        rw [hsubtype]
-        exact e.symm_apply_apply n
-      calc
-        orient (index n) =
-            (sel (e.symm ⟨index n, hindexI n⟩)).1 := by
-          simp [orient, hindexI n]
-        _ = (sel n).1 := by rw [hsymm]
-        _ = z := hsn
     obtain ⟨t, htQ₀, htdestroy⟩ := hcert₀ sel
     have htNotMarked : t ∉ MarkedTargets := by
       rintro ⟨n, hn, rfl⟩
       obtain ⟨G, hGR, hGorient⟩ :=
-        hcommon orient horient n hn
-      exact htdestroy G hGR (hGorient.mono_right hselectedSub)
+        hcommon (orientOf sel) (horientOf sel) n hn
+      exact htdestroy G hGR
+        (hGorient.mono_right (hselectedSubOf sel))
     exact ⟨t, Finset.mem_filter.mpr ⟨htQ₀, htNotMarked⟩,
       htdestroy⟩
   exact ⟨Q, hQlate, by simpa [MarkedTargets] using hQdisjoint, hcert⟩
@@ -26913,6 +26923,8 @@ theorem counterexample_coincidentInjectiveCertificatePoint_forces_migration_or_p
         K' ⊆ A ∧ K'.Infinite ∧
         IsFiniteBlockPartition K' pairCell ∧
         (∀ i, (pairCell i).card = 2) ∧
+        (∀ n ∈ J, target (atom n) ∈
+          commonSurvivalTargets (additiveSupportFamily A 3) pairCell) ∧
         ∀ N, ∃ Q : Finset ℕ,
           (∀ t ∈ Q, N ≤ t) ∧
           Disjoint (Q : Set ℕ)
@@ -26948,13 +26960,13 @@ theorem counterexample_coincidentInjectiveCertificatePoint_forces_migration_or_p
       exact Set.disjoint_left.mp (hcertificateK n hnI)
         (Finset.mem_coe.mpr (hpointCertificate n hnI))
         (heq ▸ hatomK n hnI)
-    obtain ⟨K', pairCell, hK'A, hK', P, hcard, hmigrate⟩ :=
+    obtain ⟨K', pairCell, hK'A, hK', P, hcard, hsafe, hmigrate⟩ :=
       strongDeletion_binaryCommonSurvival_forces_migratedCertificate
         (strongOrderThreeDeletion_of_counterexample hcounter)
           hJ (fun n => target (atom n)) atom point
             hxyA hne hmatching hsurvive
     exact ⟨J, hJI, hJ, K', pairCell,
-      hK'A, hK', P, hcard, hmigrate⟩
+      hK'A, hK', P, hcard, hsafe, hmigrate⟩
   · exact Or.inr hprivate
 
 /-- Counterexample-level closure of a coincident family of full three-point
@@ -26987,6 +26999,8 @@ theorem counterexample_coincidentFullCertificateRepairs_forces_migratedCertifica
         K' ⊆ A ∧ K'.Infinite ∧
         IsFiniteBlockPartition K' pairCell ∧
         (∀ i, (pairCell i).card = 2) ∧
+        (∀ n ∈ J, target (atom n) ∈
+          commonSurvivalTargets (additiveSupportFamily A 3) pairCell) ∧
         ∀ N, ∃ Q : Finset ℕ,
           (∀ t ∈ Q, N ≤ t) ∧
           Disjoint (Q : Set ℕ)
@@ -27007,13 +27021,13 @@ theorem counterexample_coincidentFullCertificateRepairs_forces_migratedCertifica
       additiveSupportFamily_supportsIn A 3
         (target (atom n)) (certificateRepair n)
           (hcertificateR n hnI) (petal n) (hpetalData n hn).1⟩
-  obtain ⟨K', pairCell, hK'A, hK', P, hcard, hmigrate⟩ :=
+  obtain ⟨K', pairCell, hK'A, hK', P, hcard, hsafe, hmigrate⟩ :=
     strongDeletion_binaryCommonSurvival_forces_migratedCertificate
       (strongOrderThreeDeletion_of_counterexample hcounter)
         hJ (fun n => target (atom n)) atom petal hxyA
           (fun n hn => (hpetalData n hn).2) hmatching hcommon
   exact ⟨J, hJI, hJ, K', pairCell,
-    hK'A, hK', P, hcard, hmigrate⟩
+    hK'A, hK', P, hcard, hsafe, hmigrate⟩
 
 /-- Final reduction inside the singleton core-trace branch.  Full three-point
 certificate families migrate.  Two-point families have a uniform repeated
@@ -27066,6 +27080,8 @@ theorem counterexample_coincidentSingletonCoreTrace_forces_privateSharedTwoPoint
           K' ⊆ A ∧ K'.Infinite ∧
           IsFiniteBlockPartition K' pairCell ∧
           (∀ i, (pairCell i).card = 2) ∧
+          (∀ n ∈ J, target (atom n) ∈
+            commonSurvivalTargets (additiveSupportFamily A 3) pairCell) ∧
           ∀ N, ∃ Q : Finset ℕ,
             (∀ t ∈ Q, N ≤ t) ∧
             Disjoint (Q : Set ℕ)
@@ -27103,9 +27119,9 @@ theorem counterexample_coincidentSingletonCoreTrace_forces_privateSharedTwoPoint
             simp)
     · right
       obtain ⟨J, hJL₁, hJ, K', pairCell,
-          hK'A, hK', P, hpairCard, hQ⟩ := hmigrate
+          hK'A, hK', P, hpairCard, hsafe, hQ⟩ := hmigrate
       exact ⟨J, hJL₁.trans hL₁I, hJ, K', pairCell,
-        hK'A, hK', P, hpairCard, hQ⟩
+        hK'A, hK', P, hpairCard, hsafe, hQ⟩
     · obtain ⟨L₂, hL₂L₁, hL₂, privateRepair,
           hprivateData⟩ := hprivate
       have hL₂I : L₂ ⊆ I := hL₂L₁.trans hL₁I
@@ -27150,7 +27166,7 @@ theorem counterexample_coincidentSingletonCoreTrace_forces_privateSharedTwoPoint
         hrepeatOther, hprivateData, hpartnerData⟩
   · right
     obtain ⟨J, hJL, hJ, K', pairCell,
-        hK'A, hK', P, hpairCard, hmigrate⟩ :=
+        hK'A, hK', P, hpairCard, hsafe, hmigrate⟩ :=
       counterexample_coincidentFullCertificateRepairs_forces_migratedCertificates
         hcounter hKA target atom moving core certificateRepair hL
           (fun n hn => hatomK n (hLI hn))
@@ -27158,7 +27174,7 @@ theorem counterexample_coincidentSingletonCoreTrace_forces_privateSharedTwoPoint
           (fun n hn => hcertificateR n (hLI hn))
           (fun n hn => hcertificateK n (hLI hn)) hcardThree
     exact ⟨J, hJL.trans hLI, hJ, K', pairCell,
-      hK'A, hK', P, hpairCard, hmigrate⟩
+      hK'A, hK', P, hpairCard, hsafe, hmigrate⟩
 
 /-- The two-disjoint-repair destroyer type eliminates the final
 singleton/two-point incidence pattern.  The moving certificate point lies
@@ -27197,6 +27213,8 @@ theorem counterexample_coincidentSingletonCoreTrace_twoDisjointType_forces_migra
         K' ⊆ A ∧ K'.Infinite ∧
         IsFiniteBlockPartition K' pairCell ∧
         (∀ i, (pairCell i).card = 2) ∧
+        (∀ n ∈ J, target (atom n) ∈
+          commonSurvivalTargets (additiveSupportFamily A 3) pairCell) ∧
         ∀ N, ∃ Q : Finset ℕ,
           (∀ t ∈ Q, N ≤ t) ∧
           Disjoint (Q : Set ℕ)
@@ -27291,7 +27309,7 @@ theorem counterexample_coincidentSingletonCoreTrace_twoDisjointType_forces_migra
             (hcertificateR n hnI) (other n) (by
               rw [(hotherData n hnL).2]
               simp)⟩
-    obtain ⟨K', pairCell, hK'A, hK', P, hpairCard, hQ⟩ :=
+    obtain ⟨K', pairCell, hK'A, hK', P, hpairCard, hsafe, hQ⟩ :=
       strongDeletion_binaryCommonSurvival_forces_migratedCertificate
         (strongOrderThreeDeletion_of_counterexample hcounter)
           hJ (fun n => target (atom n)) atom other hxyA
@@ -27300,7 +27318,7 @@ theorem counterexample_coincidentSingletonCoreTrace_twoDisjointType_forces_migra
             hmatching n (hJL hn) m (hJL hm) hnm)
           hcommon
     exact ⟨J, hJL.trans hLI, hJ, K', pairCell,
-      hK'A, hK', P, hpairCard, hQ⟩
+      hK'A, hK', P, hpairCard, hsafe, hQ⟩
   · exact hmigrate
 
 /-- Counterexample-level closure of the fixed two-point core-trace branch.
@@ -27335,6 +27353,8 @@ theorem counterexample_coincidentFixedTwoPointCoreTrace_forces_migratedCertifica
         K' ⊆ A ∧ K'.Infinite ∧
         IsFiniteBlockPartition K' pairCell ∧
         (∀ i, (pairCell i).card = 2) ∧
+        (∀ n ∈ J, target (atom n) ∈
+          commonSurvivalTargets (additiveSupportFamily A 3) pairCell) ∧
         ∀ N, ∃ Q : Finset ℕ,
           (∀ t ∈ Q, N ≤ t) ∧
           Disjoint (Q : Set ℕ)
@@ -27356,13 +27376,13 @@ theorem counterexample_coincidentFixedTwoPointCoreTrace_forces_migratedCertifica
         (target (atom n)) (certificateRepair n)
           (hcertificateR n hnI) (third n)
             (Finset.mem_sdiff.mp (hthirdData n hn).1).1⟩
-  obtain ⟨K', pairCell, hK'A, hK', P, hcard, hmigrate⟩ :=
+  obtain ⟨K', pairCell, hK'A, hK', P, hcard, hsafe, hmigrate⟩ :=
     strongDeletion_binaryCommonSurvival_forces_migratedCertificate
       (strongOrderThreeDeletion_of_counterexample hcounter)
         hJ (fun n => target (atom n)) atom third hxyA
           (fun n hn => (hthirdData n hn).2) hmatching hcommon
   exact ⟨J, hJI, hJ, K', pairCell,
-    hK'A, hK', P, hcard, hmigrate⟩
+    hK'A, hK', P, hcard, hsafe, hmigrate⟩
 
 /-- Counterexample-level closure of the moving-petal coincidence branch.
 The binary common-survival subsystem is fed directly to strong order-three
@@ -27399,6 +27419,8 @@ theorem counterexample_coincidentMovingCorePetals_forces_migratedCertificates
         K' ⊆ A ∧ K'.Infinite ∧
         IsFiniteBlockPartition K' pairCell ∧
         (∀ i, (pairCell i).card = 2) ∧
+        (∀ n ∈ J, target (atom n) ∈
+          commonSurvivalTargets (additiveSupportFamily A 3) pairCell) ∧
         ∀ N, ∃ Q : Finset ℕ,
           (∀ t ∈ Q, N ≤ t) ∧
           Disjoint (Q : Set ℕ)
@@ -27418,13 +27440,13 @@ theorem counterexample_coincidentMovingCorePetals_forces_migratedCertificates
     exact ⟨hKA hatomK', hcoreA (atom n) hatomK'
       (Finset.mem_coe.mpr
         (Finset.mem_sdiff.mp (hpetalHit n hnI).2.1).1)⟩
-  obtain ⟨K', pairCell, hK'A, hK', P, hcard, hmigrate⟩ :=
+  obtain ⟨K', pairCell, hK'A, hK', P, hcard, hsafe, hmigrate⟩ :=
     strongDeletion_binaryCommonSurvival_forces_migratedCertificate
       (strongOrderThreeDeletion_of_counterexample hcounter)
         hJ (fun n => target (atom n)) atom petalHit
           hxyA hne hmatching hcommon
   exact ⟨J, hJI, hJ, K', pairCell,
-    hK'A, hK', P, hcard, hmigrate⟩
+    hK'A, hK', P, hcard, hsafe, hmigrate⟩
 
 /-- In the root-only incidence branch, any second moving core-petal point
 besides the marked atom gives a binary block which the certificate avoids
@@ -27460,6 +27482,8 @@ theorem counterexample_rootOnlyCoreIncidence_forces_singletonPetals_or_migratedC
           K' ⊆ A ∧ K'.Infinite ∧
           IsFiniteBlockPartition K' pairCell ∧
           (∀ i, (pairCell i).card = 2) ∧
+          (∀ n ∈ J, target (atom n) ∈
+            commonSurvivalTargets (additiveSupportFamily A 3) pairCell) ∧
           ∀ N, ∃ Q : Finset ℕ,
             (∀ t ∈ Q, N ≤ t) ∧
             Disjoint (Q : Set ℕ)
@@ -27532,7 +27556,7 @@ theorem counterexample_rootOnlyCoreIncidence_forces_singletonPetals_or_migratedC
         hcoreA (atom n) (hatomK n hnI)
           (Finset.mem_coe.mpr
             (Finset.mem_sdiff.mp (hpointData n hnExtra).1).1)⟩
-    obtain ⟨K', pairCell, hK'A, hK', P, hpairCard, hQ⟩ :=
+    obtain ⟨K', pairCell, hK'A, hK', P, hpairCard, hsafe, hQ⟩ :=
       strongDeletion_binaryCommonSurvival_forces_migratedCertificate
         (strongOrderThreeDeletion_of_counterexample hcounter)
           hJ (fun n => target (atom n)) atom point hxyA
@@ -27542,7 +27566,7 @@ theorem counterexample_rootOnlyCoreIncidence_forces_singletonPetals_or_migratedC
           hcommon
     right
     exact ⟨J, hJExtra.trans hExtraI, hJ, K', pairCell,
-      hK'A, hK', P, hpairCard, hQ⟩
+      hK'A, hK', P, hpairCard, hsafe, hQ⟩
   · left
     have hExtraFinite : Extra.Finite := Set.not_infinite.mp hExtra
     let L : Set ℕ := I \ Extra
@@ -27570,6 +27594,8 @@ def HasMigratedBinaryCertificateFamily
       K' ⊆ A ∧ K'.Infinite ∧
       IsFiniteBlockPartition K' pairCell ∧
       (∀ i, (pairCell i).card = 2) ∧
+      (∀ n ∈ J, q n ∈
+        commonSurvivalTargets (additiveSupportFamily A 3) pairCell) ∧
       ∀ N, ∃ Q : Finset ℕ,
         (∀ t ∈ Q, N ≤ t) ∧
         Disjoint (Q : Set ℕ) (q '' J) ∧
@@ -27585,9 +27611,9 @@ theorem HasMigratedBinaryCertificateFamily.mono_index
     (hLI : L ⊆ I) :
     HasMigratedBinaryCertificateFamily A q I := by
   obtain ⟨J, hJL, hJ, K', pairCell, hK'A, hK', P,
-      hpairCard, hQ⟩ := h
+      hpairCard, hsafe, hQ⟩ := h
   exact ⟨J, hJL.trans hLI, hJ, K', pairCell,
-    hK'A, hK', P, hpairCard, hQ⟩
+    hK'A, hK', P, hpairCard, hsafe, hQ⟩
 
 /-- Every migrated binary certificate can be made target-minimal.  Besides
 remaining late and disjoint from the marked target stream, the minimized
@@ -27601,6 +27627,8 @@ theorem HasMigratedBinaryCertificateFamily.has_targetLocalizedCertificates
         K' ⊆ A ∧ K'.Infinite ∧
         IsFiniteBlockPartition K' pairCell ∧
         (∀ i, (pairCell i).card = 2) ∧
+        (∀ n ∈ J, q n ∈
+          commonSurvivalTargets (additiveSupportFamily A 3) pairCell) ∧
         ∀ N, ∃ Q : Finset ℕ,
           Q.Nonempty ∧
           (∀ t ∈ Q, N ≤ t) ∧
@@ -27616,9 +27644,9 @@ theorem HasMigratedBinaryCertificateFamily.has_targetLocalizedCertificates
                   (selectedSet sel) u := by
   classical
   obtain ⟨J, hJI, hJ, K', pairCell, hK'A, hK', P,
-      hpairCard, hcertificates⟩ := h
+      hpairCard, hsafe, hcertificates⟩ := h
   refine ⟨J, hJI, hJ, K', pairCell, hK'A, hK', P,
-    hpairCard, ?_⟩
+    hpairCard, hsafe, ?_⟩
   intro N
   obtain ⟨Q₀, hQ₀late, hQ₀disjoint, hQ₀cert⟩ := hcertificates N
   obtain ⟨Q, hQQ₀, hcert, hlocalized⟩ :=
