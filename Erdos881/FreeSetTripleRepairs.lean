@@ -5004,6 +5004,7 @@ theorem privateConflictClique_has_binaryCells_with_unboundedCommonSurvival
     (hprivate : HasInfinitePairwisePrivateTwoRepairConflictClique A C D) :
     ∃ cell : ℕ → Finset ℕ, ∃ target : ℕ → ℕ,
       (∀ i, (cell i : Set ℕ) ⊆ C) ∧
+      Disjoint {z | ∃ i, z ∈ cell i} (D : Set ℕ) ∧
       (∀ i, (cell i).card = 2) ∧
       (Pairwise fun i j => Disjoint (cell i) (cell j)) ∧
       (Set.range target).Infinite ∧
@@ -5011,7 +5012,7 @@ theorem privateConflictClique_has_binaryCells_with_unboundedCommonSurvival
         ∀ i, ∃ G ∈ additiveSupportFamily A 3 (target i),
           Disjoint (G : Set ℕ) (Set.range s) := by
   classical
-  obtain ⟨K, hKC, hK, _hKD, hconflict⟩ := hprivate
+  obtain ⟨K, hKC, hK, hKD, hconflict⟩ := hprivate
   letI : Infinite K := hK.to_subtype
   letI : Denumerable K := Denumerable.ofEncodableOfInfinite K
   let e : ℕ ≃ K := (Denumerable.eqv K).symm
@@ -5041,6 +5042,15 @@ theorem privateConflictClique_has_binaryCells_with_unboundedCommonSurvival
     rcases hzCases with rfl | rfl
     · exact hKC (hxK i)
     · exact hKC (hyK i)
+  have hcellD : Disjoint {z | ∃ i, z ∈ cell i}
+      (D : Set ℕ) := by
+    rw [Set.disjoint_left]
+    rintro z ⟨i, hzi⟩ hzD
+    have hzCases : z = x i ∨ z = y i := by
+      simpa [cell] using hzi
+    rcases hzCases with rfl | rfl
+    · exact Set.disjoint_left.mp hKD (hxK i) hzD
+    · exact Set.disjoint_left.mp hKD (hyK i) hzD
   have hcellCard : ∀ i, (cell i).card = 2 := by
     intro i
     simp [cell, hxy i]
@@ -5086,7 +5096,7 @@ theorem privateConflictClique_has_binaryCells_with_unboundedCommonSurvival
     apply (Set.finite_Iic U).subset
     rintro z ⟨i, rfl⟩
     exact (hxTarget i).trans (hU ⟨i, rfl⟩)
-  refine ⟨cell, target, hcellC, hcellCard,
+  refine ⟨cell, target, hcellC, hcellD, hcellCard,
     hcellDisjoint, htarget, ?_⟩
   intro s hs i
   have hsi : s i = x i ∨ s i = y i := by
@@ -5142,6 +5152,7 @@ theorem privateConflictClique_has_binaryCommonSurvivalPartition
     ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
       ∃ target : ℕ → ℕ,
         K ⊆ C ∧ K.Infinite ∧
+        Disjoint K (D : Set ℕ) ∧
         IsFiniteBlockPartition K cell ∧
         (∀ i, (cell i).card = 2) ∧
         (Set.range target).Infinite ∧
@@ -5149,7 +5160,7 @@ theorem privateConflictClique_has_binaryCommonSurvivalPartition
           ∃ G ∈ additiveSupportFamily A 3 (target i),
             Disjoint (G : Set ℕ) (selectedSet s) := by
   classical
-  obtain ⟨cell, target, hcellC, hcellCard,
+  obtain ⟨cell, target, hcellC, hcellD, hcellCard,
       hcellDisjoint, htarget, hsurvive⟩ :=
     privateConflictClique_has_binaryCells_with_unboundedCommonSurvival
       hprivate
@@ -5180,7 +5191,7 @@ theorem privateConflictClique_has_binaryCommonSurvivalPartition
     refine ⟨hcellNonempty, hcellDisjoint, ?_⟩
     intro z
     rfl
-  refine ⟨K, cell, target, hKC, hK, P,
+  refine ⟨K, cell, target, hKC, hK, hcellD, P,
     hcellCard, htarget, ?_⟩
   intro s i
   obtain ⟨G, hGR, hG⟩ :=
@@ -5307,6 +5318,747 @@ theorem targetLocalizedCertificate_disjoint_oppositePrivateCellRepairs
         intro q hq
         exact commonSurvivalTarget_of_oppositePrivateCellRepairs P hq
 
+/-- The residual shape of a target after a binary selector destroys it even
+though two prefix-avoiding, reservoir-disjoint repairs are available.  Each
+repair must have a nonempty trace on the block reservoir, while the simplest
+opposite-singleton configuration is excluded. -/
+def HasTwoRepairTraceObstructionAt
+    (R : SupportFamily) (K : Set ℕ) (D : Finset ℕ)
+    (cell : ℕ → Finset ℕ) (q : ℕ) : Prop :=
+  ¬ HasOppositePrivateCellRepairsAt R K cell q ∧
+    ∃ E ∈ R q, Disjoint E D ∧
+      ¬ Disjoint (E : Set ℕ) K ∧
+      ∃ F ∈ R q, Disjoint F D ∧
+        ¬ Disjoint (F : Set ℕ) K ∧
+        Disjoint ((E : Set ℕ) ∩ K) ((F : Set ℕ) ∩ K)
+
+/-- Every target of a localized certificate has the exact finite trace
+obstruction left after two reservoir-disjoint repairs are supplied.  Both
+repairs must meet the block reservoir (otherwise the target's private
+destroying selector would leave that repair untouched), their reservoir
+traces remain disjoint, but they cannot be opposite singleton traces in one
+binary cell. -/
+theorem targetLocalizedCertificate_has_twoRepairTraceObstruction
+    {R : SupportFamily} {C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hKC : K ⊆ C)
+    (P : IsFiniteBlockPartition K cell)
+    (hlocalized : ∀ q ∈ Q, ∃ s : BlockSelector cell,
+      DestroysAt R (selectedSet s) q ∧
+      ∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt R (selectedSet s) q')
+    (hrepairs : ∀ q ∈ Q,
+      ∃ E ∈ R q, Disjoint E D ∧
+        ∃ F ∈ R q, Disjoint F D ∧
+          Disjoint ((E : Set ℕ) ∩ C) ((F : Set ℕ) ∩ C)) :
+    ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAt R K D cell q := by
+  classical
+  have hnoOpposite :=
+    targetLocalizedCertificate_disjoint_oppositePrivateCellRepairs
+      P hlocalized
+  intro q hqQ
+  change ¬ HasOppositePrivateCellRepairsAt R K cell q ∧
+    ∃ E ∈ R q, Disjoint E D ∧
+      ¬ Disjoint (E : Set ℕ) K ∧
+      ∃ F ∈ R q, Disjoint F D ∧
+        ¬ Disjoint (F : Set ℕ) K ∧
+        Disjoint ((E : Set ℕ) ∩ K) ((F : Set ℕ) ∩ K)
+  have hnoOppositeAt :
+      ¬ HasOppositePrivateCellRepairsAt R K cell q := by
+    intro hqOpposite
+    exact Set.disjoint_left.mp hnoOpposite
+      (Finset.mem_coe.mpr hqQ) hqOpposite
+  obtain ⟨s, hqDestroy, _hprivate⟩ := hlocalized q hqQ
+  obtain ⟨E, hER, hED, F, hFR, hFD, hEF⟩ := hrepairs q hqQ
+  have hEhit : ¬ Disjoint (E : Set ℕ) K := by
+    intro hEK
+    exact (hqDestroy E hER)
+      (hEK.mono_right (P.selectedSet_subset s))
+  have hFhit : ¬ Disjoint (F : Set ℕ) K := by
+    intro hFK
+    exact (hqDestroy F hFR)
+      (hFK.mono_right (P.selectedSet_subset s))
+  have hEFK :
+      Disjoint ((E : Set ℕ) ∩ K) ((F : Set ℕ) ∩ K) := by
+    rw [Set.disjoint_left] at hEF ⊢
+    intro z hzE hzF
+    exact hEF ⟨hzE.1, hKC hzE.2⟩
+      ⟨hzF.1, hKC hzF.2⟩
+  exact ⟨hnoOppositeAt, E, hER, hED, hEhit,
+    F, hFR, hFD, hFhit, hEFK⟩
+
+/-- Wide branch of the binary trace obstruction: one of the two disjoint
+repairs uses at least two points of the reservoir. -/
+def HasWideTwoRepairTraceAt
+    (R : SupportFamily) (K : Set ℕ) (D : Finset ℕ) (q : ℕ) : Prop :=
+  ∃ E ∈ R q, Disjoint E D ∧
+    ∃ F ∈ R q, Disjoint F D ∧
+      Disjoint ((E : Set ℕ) ∩ K) ((F : Set ℕ) ∩ K) ∧
+      ((∃ x, x ∈ (E : Set ℕ) ∩ K ∧
+          ∃ y, y ∈ (E : Set ℕ) ∩ K ∧ x ≠ y) ∨
+       ∃ x, x ∈ (F : Set ℕ) ∩ K ∧
+          ∃ y, y ∈ (F : Set ℕ) ∩ K ∧ x ≠ y)
+
+/-- Separated branch of the binary trace obstruction: both traces are
+singletons, but their endpoints belong to different partition cells. -/
+def HasSeparatedSingletonTwoRepairTracesAt
+    (R : SupportFamily) (K : Set ℕ) (D : Finset ℕ)
+    (cell : ℕ → Finset ℕ) (q : ℕ) : Prop :=
+  ∃ E ∈ R q, Disjoint E D ∧
+    ∃ F ∈ R q, Disjoint F D ∧
+      Disjoint ((E : Set ℕ) ∩ K) ((F : Set ℕ) ∩ K) ∧
+      ∃ i j x y, i ≠ j ∧ x ∈ cell i ∧ y ∈ cell j ∧
+        ((E : Set ℕ) ∩ K) = {x} ∧
+        ((F : Set ℕ) ∩ K) = {y}
+
+/-- On a binary partition, the residual trace obstruction has only two
+combinatorial forms.  Either one repair uses at least two reservoir points,
+or both repair traces are singletons lying in different cells.  Singleton
+traces in one cell would be the forbidden opposite-private configuration. -/
+theorem twoRepairTraceObstruction_wide_or_separated
+    {R : SupportFamily} {K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hobs : HasTwoRepairTraceObstructionAt R K D cell q) :
+    HasWideTwoRepairTraceAt R K D q ∨
+      HasSeparatedSingletonTwoRepairTracesAt R K D cell q := by
+  classical
+  change ¬ HasOppositePrivateCellRepairsAt R K cell q ∧
+    ∃ E ∈ R q, Disjoint E D ∧
+      ¬ Disjoint (E : Set ℕ) K ∧
+      ∃ F ∈ R q, Disjoint F D ∧
+        ¬ Disjoint (F : Set ℕ) K ∧
+        Disjoint ((E : Set ℕ) ∩ K) ((F : Set ℕ) ∩ K) at hobs
+  obtain ⟨hnoOpposite, E, hER, hED, hEhit,
+      F, hFR, hFD, hFhit, hEF⟩ := hobs
+  obtain ⟨x, hxE, hxK⟩ := Set.not_disjoint_iff.mp hEhit
+  obtain ⟨y, hyF, hyK⟩ := Set.not_disjoint_iff.mp hFhit
+  let Etrace : Set ℕ := (E : Set ℕ) ∩ K
+  let Ftrace : Set ℕ := (F : Set ℕ) ∩ K
+  have hxTrace : x ∈ Etrace := ⟨hxE, hxK⟩
+  have hyTrace : y ∈ Ftrace := ⟨hyF, hyK⟩
+  by_cases hEwide : ∃ z, z ∈ Etrace ∧ x ≠ z
+  · obtain ⟨z, hzTrace, hxz⟩ := hEwide
+    exact Or.inl ⟨E, hER, hED, F, hFR, hFD, hEF,
+      Or.inl ⟨x, hxTrace, z, hzTrace, hxz⟩⟩
+  by_cases hFwide : ∃ z, z ∈ Ftrace ∧ y ≠ z
+  · obtain ⟨z, hzTrace, hyz⟩ := hFwide
+    exact Or.inl ⟨E, hER, hED, F, hFR, hFD, hEF,
+      Or.inr ⟨y, hyTrace, z, hzTrace, hyz⟩⟩
+  have hEtrace : Etrace = {x} := by
+    ext z
+    constructor
+    · intro hz
+      have hzx : z = x := by
+        by_contra hne
+        exact hEwide ⟨z, hz, Ne.symm hne⟩
+      simpa [hzx]
+    · intro hz
+      have hzx : z = x := by simpa using hz
+      simpa [hzx] using hxTrace
+  have hFtrace : Ftrace = {y} := by
+    ext z
+    constructor
+    · intro hz
+      have hzy : z = y := by
+        by_contra hne
+        exact hFwide ⟨z, hz, Ne.symm hne⟩
+      simpa [hzy]
+    · intro hz
+      have hzy : z = y := by simpa using hz
+      simpa [hzy] using hyTrace
+  have hxy : x ≠ y := by
+    intro hxy
+    subst y
+    exact Set.disjoint_left.mp hEF hxTrace hyTrace
+  obtain ⟨i, hxi⟩ := (P.mem_iff x).mp hxK
+  obtain ⟨j, hyj⟩ := (P.mem_iff y).mp hyK
+  have hij : i ≠ j := by
+    intro hij
+    subst j
+    have hpairSub : ({x, y} : Finset ℕ) ⊆ cell i := by
+      intro z hz
+      rcases Finset.mem_insert.mp hz with rfl | hz
+      · exact hxi
+      · have hzy : z = y := by simpa using hz
+        simpa [hzy] using hyj
+    have hcellEq : cell i = {x, y} := by
+      exact (Finset.eq_of_subset_of_card_le hpairSub (by
+        simp [hcellCard i, hxy])).symm
+    apply hnoOpposite
+    exact ⟨i, x, y, hxy, hcellEq,
+      E, hER, hEtrace, F, hFR, hFtrace⟩
+  exact Or.inr ⟨E, hER, hED, F, hFR, hFD, hEF,
+    i, j, x, y, hij, hxi, hyj, hEtrace, hFtrace⟩
+
+/-- If finite certificates carrying binary trace obstructions occur
+arbitrarily late, then one of the two residual shapes itself occurs
+arbitrarily late.  This removes the moving finite target set `Q` from the
+next argument: the remaining proof may treat the wide and separated cases
+as two honest cofinal branches. -/
+theorem arbitrarilyLate_traceObstruction_wide_or_separated
+    {R : SupportFamily} {K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hlate : ∀ N, ∃ Q : Finset ℕ,
+      Q.Nonempty ∧
+      (∀ q ∈ Q, N ≤ q) ∧
+      ∀ q ∈ Q,
+        HasTwoRepairTraceObstructionAt R K D cell q) :
+    (∀ N, ∃ q, N ≤ q ∧
+      HasWideTwoRepairTraceAt R K D q) ∨
+    (∀ N, ∃ q, N ≤ q ∧
+      HasSeparatedSingletonTwoRepairTracesAt R K D cell q) := by
+  classical
+  by_cases hwide : ∀ N, ∃ q, N ≤ q ∧
+      HasWideTwoRepairTraceAt R K D q
+  · exact Or.inl hwide
+  · right
+    push Not at hwide
+    obtain ⟨T, hT⟩ := hwide
+    intro N
+    obtain ⟨Q, hQ, hQlate, htrace⟩ := hlate (max N T)
+    obtain ⟨q, hqQ⟩ := hQ
+    have hqN : N ≤ q :=
+      (Nat.le_max_left N T).trans (hQlate q hqQ)
+    have hqT : T ≤ q :=
+      (Nat.le_max_right N T).trans (hQlate q hqQ)
+    rcases twoRepairTraceObstruction_wide_or_separated
+        P hcellCard (htrace q hqQ) with hqWide | hqSeparated
+    · exact (hT q hqT hqWide).elim
+    · exact ⟨q, hqN, hqSeparated⟩
+
+/-- Any specified vertex of an order-three support can be singled out,
+leaving two (not necessarily distinct) basis summands. -/
+theorem orderThreeSupport_member_has_twoSummands
+    {A : Set ℕ} {q : ℕ} {E : Finset ℕ} {x : ℕ}
+    (hER : E ∈ additiveSupportFamily A 3 q)
+    (hxE : x ∈ E) :
+    ∃ u, u ∈ A ∧ ∃ v, v ∈ A ∧ x + u + v = q := by
+  obtain ⟨w, hwA, hwsum, rfl⟩ :=
+    mem_additiveSupportFamily_iff.mp hER
+  obtain ⟨i, hi⟩ := mem_tupleSupport_iff.mp hxE
+  have hsum : (w 0).1 + ((w 1).1 + (w 2).1) = q := by
+    simpa [Fin.sum_univ_succ] using hwsum
+  fin_cases i
+  · refine ⟨(w 1).1, hwA 1, (w 2).1, hwA 2, ?_⟩
+    change (w 0).1 = x at hi
+    omega
+  · refine ⟨(w 0).1, hwA 0, (w 2).1, hwA 2, ?_⟩
+    change (w 1).1 = x at hi
+    omega
+  · refine ⟨(w 0).1, hwA 0, (w 1).1, hwA 1, ?_⟩
+    change (w 2).1 = x at hi
+    omega
+
+/-- Arithmetic residual of a wide repair trace. -/
+def HasTwoReservoirSummandRepresentationAt
+    (A K : Set ℕ) (q : ℕ) : Prop :=
+  ∃ x ∈ K, ∃ y ∈ K, x ≠ y ∧
+    ∃ u ∈ A, x + y + u = q
+
+/-- Arithmetic residual of separated singleton traces. -/
+def HasSeparatedMarkedDecompositionsAt
+    (A : Set ℕ) (cell : ℕ → Finset ℕ) (q : ℕ) : Prop :=
+  ∃ i j x y, i ≠ j ∧ x ∈ cell i ∧ y ∈ cell j ∧ x ≠ y ∧
+    (∃ u ∈ A, ∃ v ∈ A, x + u + v = q) ∧
+    ∃ u' ∈ A, ∃ v' ∈ A, y + u' + v' = q
+
+/-- Arithmetic content of the wide branch: the certified target has an
+order-three representation containing two distinct reservoir elements. -/
+theorem wideTwoRepairTrace_has_twoReservoirSummands
+    {A K : Set ℕ} {D : Finset ℕ} {q : ℕ}
+    (hwide : HasWideTwoRepairTraceAt
+      (additiveSupportFamily A 3) K D q) :
+    HasTwoReservoirSummandRepresentationAt A K q := by
+  change ∃ x ∈ K, ∃ y ∈ K, x ≠ y ∧
+    ∃ u ∈ A, x + y + u = q
+  change ∃ E ∈ additiveSupportFamily A 3 q, Disjoint E D ∧
+    ∃ F ∈ additiveSupportFamily A 3 q, Disjoint F D ∧
+      Disjoint ((E : Set ℕ) ∩ K) ((F : Set ℕ) ∩ K) ∧
+      ((∃ x, x ∈ (E : Set ℕ) ∩ K ∧
+          ∃ y, y ∈ (E : Set ℕ) ∩ K ∧ x ≠ y) ∨
+       ∃ x, x ∈ (F : Set ℕ) ∩ K ∧
+          ∃ y, y ∈ (F : Set ℕ) ∩ K ∧ x ≠ y) at hwide
+  obtain ⟨E, hER, _hED, F, hFR, _hFD, _hEF, hwide⟩ := hwide
+  rcases hwide with hEwide | hFwide
+  · obtain ⟨x, hx, y, hy, hxy⟩ := hEwide
+    obtain ⟨u, huA, _huE, hsum⟩ :=
+      OrderThreeUniqueHitRepairChoice.exists_thirdSummand
+        hER (Finset.mem_coe.mp hx.1) (Finset.mem_coe.mp hy.1) hxy
+    exact ⟨x, hx.2, y, hy.2, hxy, u, huA, hsum⟩
+  · obtain ⟨x, hx, y, hy, hxy⟩ := hFwide
+    obtain ⟨u, huA, _huF, hsum⟩ :=
+      OrderThreeUniqueHitRepairChoice.exists_thirdSummand
+        hFR (Finset.mem_coe.mp hx.1) (Finset.mem_coe.mp hy.1) hxy
+    exact ⟨x, hx.2, y, hy.2, hxy, u, huA, hsum⟩
+
+/-- Arithmetic content of the separated branch: one late target has two
+three-term decompositions, each marked by a different binary cell, and the
+marked reservoir vertices are distinct. -/
+theorem separatedSingletonTwoRepairTraces_have_markedDecompositions
+    {A K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (hsep : HasSeparatedSingletonTwoRepairTracesAt
+      (additiveSupportFamily A 3) K D cell q) :
+    HasSeparatedMarkedDecompositionsAt A cell q := by
+  change ∃ i j x y,
+    i ≠ j ∧ x ∈ cell i ∧ y ∈ cell j ∧ x ≠ y ∧
+    (∃ u ∈ A, ∃ v ∈ A, x + u + v = q) ∧
+    ∃ u' ∈ A, ∃ v' ∈ A, y + u' + v' = q
+  change ∃ E ∈ additiveSupportFamily A 3 q, Disjoint E D ∧
+    ∃ F ∈ additiveSupportFamily A 3 q, Disjoint F D ∧
+      Disjoint ((E : Set ℕ) ∩ K) ((F : Set ℕ) ∩ K) ∧
+      ∃ i j x y, i ≠ j ∧ x ∈ cell i ∧ y ∈ cell j ∧
+        ((E : Set ℕ) ∩ K) = {x} ∧
+        ((F : Set ℕ) ∩ K) = {y} at hsep
+  obtain ⟨E, hER, _hED, F, hFR, _hFD, hEF,
+      i, j, x, y, hij, hxi, hyj, hEtrace, hFtrace⟩ := hsep
+  have hxTrace : x ∈ (E : Set ℕ) ∩ K := by
+    rw [hEtrace]
+    simp
+  have hyTrace : y ∈ (F : Set ℕ) ∩ K := by
+    rw [hFtrace]
+    simp
+  have hxy : x ≠ y := by
+    intro hxy
+    subst y
+    exact Set.disjoint_left.mp hEF hxTrace hyTrace
+  obtain ⟨u, huA, v, hvA, hxsum⟩ :=
+    orderThreeSupport_member_has_twoSummands
+      hER (Finset.mem_coe.mp hxTrace.1)
+  obtain ⟨u', hu'A, v', hv'A, hysum⟩ :=
+    orderThreeSupport_member_has_twoSummands
+      hFR (Finset.mem_coe.mp hyTrace.1)
+  exact ⟨i, j, x, y, hij, hxi, hyj, hxy,
+    ⟨u, huA, v, hvA, hxsum⟩,
+    u', hu'A, v', hv'A, hysum⟩
+
+/-- Forgetting the support witnesses turns the cofinal trace dichotomy into
+a cofinal arithmetic dichotomy. -/
+theorem cofinalTraceDichotomy_implies_cofinalArithmeticDichotomy
+    {A K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (htrace :
+      (∀ N, ∃ q, N ≤ q ∧
+        HasWideTwoRepairTraceAt
+          (additiveSupportFamily A 3) K D q) ∨
+      ∀ N, ∃ q, N ≤ q ∧
+        HasSeparatedSingletonTwoRepairTracesAt
+          (additiveSupportFamily A 3) K D cell q) :
+    (∀ N, ∃ q, N ≤ q ∧
+      HasTwoReservoirSummandRepresentationAt A K q) ∨
+    (∀ N, ∃ q, N ≤ q ∧
+      HasSeparatedMarkedDecompositionsAt A cell q) := by
+  rcases htrace with hwide | hsep
+  · left
+    intro N
+    obtain ⟨q, hqN, hqWide⟩ := hwide N
+    exact ⟨q, hqN,
+      wideTwoRepairTrace_has_twoReservoirSummands hqWide⟩
+  · right
+    intro N
+    obtain ⟨q, hqN, hqSep⟩ := hsep N
+    exact ⟨q, hqN,
+      separatedSingletonTwoRepairTraces_have_markedDecompositions hqSep⟩
+
+/-- Replace the choice in one block of a selector. -/
+noncomputable def overrideBlockSelector
+    {cell : ℕ → Finset ℕ} (s : BlockSelector cell)
+    (i : ℕ) (z : {z // z ∈ cell i}) : BlockSelector cell :=
+  fun j => if hij : i = j then
+    ⟨z.1, by rw [← hij]; exact z.2⟩
+  else s j
+
+/-- A one-block override introduces only the new point; every other selected
+point already belonged to the old selector. -/
+theorem overrideBlockSelector_selected_old_or_new
+    {cell : ℕ → Finset ℕ} (s : BlockSelector cell)
+    (i : ℕ) (z : {z // z ∈ cell i}) :
+    ∀ w ∈ selectedSet (overrideBlockSelector s i z),
+      w ∈ selectedSet s ∨ w = z.1 := by
+  intro w hw
+  obtain ⟨j, hj⟩ := hw
+  change (overrideBlockSelector s i z j).1 = w at hj
+  by_cases hij : i = j
+  · subst j
+    right
+    simpa [overrideBlockSelector] using hj.symm
+  · left
+    refine ⟨j, ?_⟩
+    change (s j).1 = w
+    simpa [overrideBlockSelector, hij] using hj
+
+/-- If a support's whole reservoir trace is the old selected point in one
+cell, replacing that cell choice by its other endpoint makes the support
+survive the new selector. -/
+theorem singletonTrace_survives_blockSelector_override
+    {K : Set ℕ}
+    {cell : ℕ → Finset ℕ} {i x : ℕ}
+    {E : Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (htrace : ((E : Set ℕ) ∩ K) = {x})
+    (hxi : x ∈ cell i)
+    (s : BlockSelector cell)
+    (z : {z // z ∈ cell i})
+    (hzx : z.1 ≠ x) :
+    Disjoint (E : Set ℕ)
+      (selectedSet (overrideBlockSelector s i z)) := by
+  rw [Set.disjoint_left]
+  intro w hwE hwSelected
+  obtain ⟨j, hj⟩ := hwSelected
+  change (overrideBlockSelector s i z j).1 = w at hj
+  by_cases hij : i = j
+  · subst j
+    have hzw : z.1 = w := by
+      simpa [overrideBlockSelector] using hj
+    have hwK : w ∈ K := by
+      rw [← hzw]
+      exact (P.mem_iff z.1).mpr ⟨i, z.2⟩
+    have hwx : w = x := by
+      have hwTrace : w ∈ ((E : Set ℕ) ∩ K) := ⟨hwE, hwK⟩
+      rw [htrace] at hwTrace
+      simpa using hwTrace
+    exact hzx (hzw.trans hwx)
+  · have hsj : (s j).1 = w := by
+      simpa [overrideBlockSelector, hij] using hj
+    have hwK : w ∈ K :=
+      P.selectedSet_subset s ⟨j, hsj⟩
+    have hwx : w = x := by
+      have hwTrace : w ∈ ((E : Set ℕ) ∩ K) := ⟨hwE, hwK⟩
+      rw [htrace] at hwTrace
+      simpa using hwTrace
+    have hwCellJ : w ∈ cell j := by
+      rw [← hsj]
+      exact (s j).2
+    exact Finset.disjoint_left.mp (P.disjoint hij)
+      hxi (hwx ▸ hwCellJ)
+
+/-- A separated target has two genuine escape transitions in the selector
+cube of any finite certificate.  Starting with any selector, flip either
+marked cell.  The corresponding singleton-trace repair then survives, so
+the certificate must move to a different target. -/
+theorem separatedTrace_certificate_has_twoEscapeTransitions
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (hsep : HasSeparatedSingletonTwoRepairTracesAt
+      R K D cell q) :
+    (∃ qx ∈ Q, qx ≠ q ∧ ∃ sx : BlockSelector cell,
+      DestroysAt R (selectedSet sx) qx ∧
+      ¬ DestroysAt R (selectedSet sx) q) ∧
+    ∃ qy ∈ Q, qy ≠ q ∧ ∃ sy : BlockSelector cell,
+      DestroysAt R (selectedSet sy) qy ∧
+      ¬ DestroysAt R (selectedSet sy) q := by
+  classical
+  change ∃ E ∈ R q, Disjoint E D ∧
+    ∃ F ∈ R q, Disjoint F D ∧
+      Disjoint ((E : Set ℕ) ∩ K) ((F : Set ℕ) ∩ K) ∧
+      ∃ i j x y, i ≠ j ∧ x ∈ cell i ∧ y ∈ cell j ∧
+        ((E : Set ℕ) ∩ K) = {x} ∧
+        ((F : Set ℕ) ∩ K) = {y} at hsep
+  obtain ⟨E, hER, _hED, F, hFR, _hFD, _hEF,
+      i, j, x, y, _hij, hxi, hyj, hEtrace, hFtrace⟩ := hsep
+  let s : BlockSelector cell := fun k =>
+    ⟨(P.nonempty k).choose, (P.nonempty k).choose_spec⟩
+  obtain ⟨x', hx'Cell, hx'x⟩ :=
+    Finset.exists_mem_ne (by rw [hcellCard i]; omega) x
+  obtain ⟨y', hy'Cell, hy'y⟩ :=
+    Finset.exists_mem_ne (by rw [hcellCard j]; omega) y
+  let sx : BlockSelector cell :=
+    overrideBlockSelector s i ⟨x', hx'Cell⟩
+  let sy : BlockSelector cell :=
+    overrideBlockSelector s j ⟨y', hy'Cell⟩
+  have hEsx : Disjoint (E : Set ℕ) (selectedSet sx) := by
+    exact singletonTrace_survives_blockSelector_override
+      P hEtrace hxi s ⟨x', hx'Cell⟩ hx'x
+  have hFsy : Disjoint (F : Set ℕ) (selectedSet sy) := by
+    exact singletonTrace_survives_blockSelector_override
+      P hFtrace hyj s ⟨y', hy'Cell⟩ hy'y
+  have hqSurvivesX : ¬ DestroysAt R (selectedSet sx) q := by
+    intro hdestroy
+    exact (hdestroy E hER) hEsx
+  have hqSurvivesY : ¬ DestroysAt R (selectedSet sy) q := by
+    intro hdestroy
+    exact (hdestroy F hFR) hFsy
+  obtain ⟨qx, hqxQ, hqxDestroy⟩ := hcert sx
+  obtain ⟨qy, hqyQ, hqyDestroy⟩ := hcert sy
+  have hqxq : qx ≠ q := by
+    intro hEq
+    subst qx
+    exact hqSurvivesX hqxDestroy
+  have hqyq : qy ≠ q := by
+    intro hEq
+    subst qy
+    exact hqSurvivesY hqyDestroy
+  exact ⟨⟨qx, hqxQ, hqxq, sx, hqxDestroy, hqSurvivesX⟩,
+    qy, hqyQ, hqyq, sy, hqyDestroy, hqSurvivesY⟩
+
+/-- Data carried by one localized certificate jump.  Replacing `x` by the
+other point `z` in its cell forces a different certificate target `q'`.
+Because `q'` survived the old private selector, one of its supports is
+disjoint from the old selector and must contain the newly introduced `z`. -/
+def HasLocalizedCertificateEscapeAt
+    (R : SupportFamily) (Q : Finset ℕ)
+    (cell : ℕ → Finset ℕ) (s : BlockSelector cell)
+    (q i x : ℕ) : Prop :=
+  ∃ z, ∃ hz : z ∈ cell i, z ≠ x ∧
+    ∃ q' ∈ Q, q' ≠ q ∧
+      DestroysAt R
+        (selectedSet (overrideBlockSelector s i ⟨z, hz⟩)) q' ∧
+      ∃ G ∈ R q',
+        Disjoint (G : Set ℕ) (selectedSet s) ∧ z ∈ G
+
+/-- Localized strengthening of the two escape transitions.  Each separated
+certificate target has a private destroying selector with two different
+one-cell exits, and each exit target supplies a support anchored at the new
+endpoint while avoiding the old selector. -/
+theorem separatedTrace_targetLocalizedCertificate_has_anchoredEscapes
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (hlocalized : ∀ q ∈ Q, ∃ s : BlockSelector cell,
+      DestroysAt R (selectedSet s) q ∧
+      ∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt R (selectedSet s) q')
+    (hqQ : q ∈ Q)
+    (hsep : HasSeparatedSingletonTwoRepairTracesAt
+      R K D cell q) :
+    ∃ i j x y, i ≠ j ∧ x ∈ cell i ∧ y ∈ cell j ∧
+      ∃ s : BlockSelector cell,
+        DestroysAt R (selectedSet s) q ∧
+        (∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt R (selectedSet s) q') ∧
+        HasLocalizedCertificateEscapeAt R Q cell s q i x ∧
+        HasLocalizedCertificateEscapeAt R Q cell s q j y := by
+  classical
+  change ∃ E ∈ R q, Disjoint E D ∧
+    ∃ F ∈ R q, Disjoint F D ∧
+      Disjoint ((E : Set ℕ) ∩ K) ((F : Set ℕ) ∩ K) ∧
+      ∃ i j x y, i ≠ j ∧ x ∈ cell i ∧ y ∈ cell j ∧
+        ((E : Set ℕ) ∩ K) = {x} ∧
+        ((F : Set ℕ) ∩ K) = {y} at hsep
+  obtain ⟨E, hER, _hED, F, hFR, _hFD, _hEF,
+      i, j, x, y, hij, hxi, hyj, hEtrace, hFtrace⟩ := hsep
+  obtain ⟨s, hqDestroy, hprivate⟩ := hlocalized q hqQ
+  obtain ⟨x', hx'Cell, hx'x⟩ :=
+    Finset.exists_mem_ne (by rw [hcellCard i]; omega) x
+  obtain ⟨y', hy'Cell, hy'y⟩ :=
+    Finset.exists_mem_ne (by rw [hcellCard j]; omega) y
+  let sx : BlockSelector cell :=
+    overrideBlockSelector s i ⟨x', hx'Cell⟩
+  let sy : BlockSelector cell :=
+    overrideBlockSelector s j ⟨y', hy'Cell⟩
+  have hEsx : Disjoint (E : Set ℕ) (selectedSet sx) :=
+    singletonTrace_survives_blockSelector_override
+      P hEtrace hxi s ⟨x', hx'Cell⟩ hx'x
+  have hFsy : Disjoint (F : Set ℕ) (selectedSet sy) :=
+    singletonTrace_survives_blockSelector_override
+      P hFtrace hyj s ⟨y', hy'Cell⟩ hy'y
+  have hqSurvivesX : ¬ DestroysAt R (selectedSet sx) q := by
+    intro hdestroy
+    exact (hdestroy E hER) hEsx
+  have hqSurvivesY : ¬ DestroysAt R (selectedSet sy) q := by
+    intro hdestroy
+    exact (hdestroy F hFR) hFsy
+  obtain ⟨qx, hqxQ, hqxDestroy⟩ := hcert sx
+  obtain ⟨qy, hqyQ, hqyDestroy⟩ := hcert sy
+  have hqxq : qx ≠ q := by
+    intro hEq
+    subst qx
+    exact hqSurvivesX hqxDestroy
+  have hqyq : qy ≠ q := by
+    intro hEq
+    subst qy
+    exact hqSurvivesY hqyDestroy
+  obtain ⟨Gx, hGxR, hGxOld⟩ :=
+    not_destroysAt_iff.mp (hprivate qx hqxQ hqxq)
+  obtain ⟨Gy, hGyR, hGyOld⟩ :=
+    not_destroysAt_iff.mp (hprivate qy hqyQ hqyq)
+  have hx'Gx : x' ∈ Gx := by
+    obtain ⟨w, hwGx, hwSx⟩ :=
+      Set.not_disjoint_iff.mp (hqxDestroy Gx hGxR)
+    rcases overrideBlockSelector_selected_old_or_new
+        s i ⟨x', hx'Cell⟩ w hwSx with hwOld | hwNew
+    · exact (Set.disjoint_left.mp hGxOld hwGx hwOld).elim
+    · have hwEq : w = x' := by simpa using hwNew
+      exact Finset.mem_coe.mp (hwEq ▸ hwGx)
+  have hy'Gy : y' ∈ Gy := by
+    obtain ⟨w, hwGy, hwSy⟩ :=
+      Set.not_disjoint_iff.mp (hqyDestroy Gy hGyR)
+    rcases overrideBlockSelector_selected_old_or_new
+        s j ⟨y', hy'Cell⟩ w hwSy with hwOld | hwNew
+    · exact (Set.disjoint_left.mp hGyOld hwGy hwOld).elim
+    · have hwEq : w = y' := by simpa using hwNew
+      exact Finset.mem_coe.mp (hwEq ▸ hwGy)
+  refine ⟨i, j, x, y, hij, hxi, hyj, s,
+    hqDestroy, hprivate, ?_, ?_⟩
+  · exact ⟨x', hx'Cell, hx'x, qx, hqxQ, hqxq,
+      hqxDestroy, Gx, hGxR, hGxOld, hx'Gx⟩
+  · exact ⟨y', hy'Cell, hy'y, qy, hqyQ, hqyq,
+      hqyDestroy, Gy, hGyR, hGyOld, hy'Gy⟩
+
+/-- A target has a wide reservoir support when one of its supports contains
+two distinct reservoir vertices. -/
+def HasWideReservoirSupportAt
+    (R : SupportFamily) (K : Set ℕ) (q : ℕ) : Prop :=
+  ∃ G ∈ R q, ∃ x, x ∈ (G : Set ℕ) ∩ K ∧
+    ∃ y, y ∈ (G : Set ℕ) ∩ K ∧ x ≠ y
+
+/-- The two localized exits from a separated target either go to two
+different certificate targets, or their collision forces one old-surviving
+support of the common target to contain both newly selected endpoints.  In
+the latter case a wide reservoir support has been created inside `Q`. -/
+theorem separatedTrace_targetLocalizedCertificate_distinctEscapes_or_wideSupport
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (hlocalized : ∀ q ∈ Q, ∃ s : BlockSelector cell,
+      DestroysAt R (selectedSet s) q ∧
+      ∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt R (selectedSet s) q')
+    (hqQ : q ∈ Q)
+    (hsep : HasSeparatedSingletonTwoRepairTracesAt
+      R K D cell q) :
+    (∃ qx ∈ Q, ∃ qy ∈ Q,
+      qx ≠ q ∧ qy ≠ q ∧ qx ≠ qy) ∨
+    ∃ q' ∈ Q, q' ≠ q ∧
+      HasWideReservoirSupportAt R K q' := by
+  classical
+  obtain ⟨i, j, x, y, hij, _hxi, _hyj, s,
+      _hqDestroy, hprivate, hescapeX, hescapeY⟩ :=
+    separatedTrace_targetLocalizedCertificate_has_anchoredEscapes
+      P hcellCard hcert hlocalized hqQ hsep
+  change ∃ z, ∃ hz : z ∈ cell i, z ≠ x ∧
+    ∃ q' ∈ Q, q' ≠ q ∧
+      DestroysAt R
+        (selectedSet (overrideBlockSelector s i ⟨z, hz⟩)) q' ∧
+      ∃ G ∈ R q',
+        Disjoint (G : Set ℕ) (selectedSet s) ∧ z ∈ G at hescapeX
+  change ∃ z, ∃ hz : z ∈ cell j, z ≠ y ∧
+    ∃ q' ∈ Q, q' ≠ q ∧
+      DestroysAt R
+        (selectedSet (overrideBlockSelector s j ⟨z, hz⟩)) q' ∧
+      ∃ G ∈ R q',
+        Disjoint (G : Set ℕ) (selectedSet s) ∧ z ∈ G at hescapeY
+  obtain ⟨x', hx'Cell, _hx'x, qx, hqxQ, hqxq,
+      hqxDestroy, _Gx, _hGxR, _hGxOld, _hx'Gx⟩ := hescapeX
+  obtain ⟨y', hy'Cell, _hy'y, qy, hqyQ, hqyq,
+      hqyDestroy, _Gy, _hGyR, _hGyOld, _hy'Gy⟩ := hescapeY
+  by_cases hqxqy : qx ≠ qy
+  · exact Or.inl ⟨qx, hqxQ, qy, hqyQ,
+      hqxq, hqyq, hqxqy⟩
+  · right
+    have hqyqx : qx = qy := not_ne_iff.mp hqxqy
+    subst qy
+    obtain ⟨G, hGR, hGold⟩ :=
+      not_destroysAt_iff.mp (hprivate qx hqxQ hqxq)
+    have hx'G : x' ∈ G := by
+      obtain ⟨w, hwG, hwSelected⟩ :=
+        Set.not_disjoint_iff.mp (hqxDestroy G hGR)
+      rcases overrideBlockSelector_selected_old_or_new
+          s i ⟨x', hx'Cell⟩ w hwSelected with hwOld | hwNew
+      · exact (Set.disjoint_left.mp hGold hwG hwOld).elim
+      · have hwEq : w = x' := by simpa using hwNew
+        exact Finset.mem_coe.mp (hwEq ▸ hwG)
+    have hy'G : y' ∈ G := by
+      obtain ⟨w, hwG, hwSelected⟩ :=
+        Set.not_disjoint_iff.mp (hqyDestroy G hGR)
+      rcases overrideBlockSelector_selected_old_or_new
+          s j ⟨y', hy'Cell⟩ w hwSelected with hwOld | hwNew
+      · exact (Set.disjoint_left.mp hGold hwG hwOld).elim
+      · have hwEq : w = y' := by simpa using hwNew
+        exact Finset.mem_coe.mp (hwEq ▸ hwG)
+    have hx'K : x' ∈ K := (P.mem_iff x').mpr ⟨i, hx'Cell⟩
+    have hy'K : y' ∈ K := (P.mem_iff y').mpr ⟨j, hy'Cell⟩
+    have hx'y' : x' ≠ y' := by
+      intro hEq
+      exact Finset.disjoint_left.mp (P.disjoint hij)
+        hx'Cell (hEq ▸ hy'Cell)
+    exact ⟨qx, hqxQ, hqxq, G, hGR, x',
+      ⟨Finset.mem_coe.mpr hx'G, hx'K⟩,
+      y', ⟨Finset.mem_coe.mpr hy'G, hy'K⟩, hx'y'⟩
+
+/-- The wide two-repair branch in particular supplies one wide support. -/
+theorem wideTwoRepairTrace_has_wideReservoirSupport
+    {R : SupportFamily} {K : Set ℕ} {D : Finset ℕ} {q : ℕ}
+    (hwide : HasWideTwoRepairTraceAt R K D q) :
+    HasWideReservoirSupportAt R K q := by
+  change ∃ E ∈ R q, Disjoint E D ∧
+    ∃ F ∈ R q, Disjoint F D ∧
+      Disjoint ((E : Set ℕ) ∩ K) ((F : Set ℕ) ∩ K) ∧
+      ((∃ x, x ∈ (E : Set ℕ) ∩ K ∧
+          ∃ y, y ∈ (E : Set ℕ) ∩ K ∧ x ≠ y) ∨
+       ∃ x, x ∈ (F : Set ℕ) ∩ K ∧
+          ∃ y, y ∈ (F : Set ℕ) ∩ K ∧ x ≠ y) at hwide
+  obtain ⟨E, hER, _hED, F, hFR, _hFD, _hEF,
+      hEwide | hFwide⟩ := hwide
+  · obtain ⟨x, hx, y, hy, hxy⟩ := hEwide
+    exact ⟨E, hER, x, hx, y, hy, hxy⟩
+  · obtain ⟨x, hx, y, hy, hxy⟩ := hFwide
+    exact ⟨F, hFR, x, hx, y, hy, hxy⟩
+
+/-- A target-localized binary certificate of size at most two cannot consist
+only of narrow separated targets.  A separated target has two exits; with
+fewer than three targets those exits collide, and the collision creates a
+wide reservoir support. -/
+theorem small_targetLocalized_twoRepairCertificate_has_wideReservoirSupport
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hQ : Q.Nonempty)
+    (hQcard : Q.card ≤ 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (hlocalized : ∀ q ∈ Q, ∃ s : BlockSelector cell,
+      DestroysAt R (selectedSet s) q ∧
+      ∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt R (selectedSet s) q')
+    (htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAt R K D cell q) :
+    ∃ q ∈ Q, HasWideReservoirSupportAt R K q := by
+  classical
+  obtain ⟨q, hqQ⟩ := hQ
+  rcases twoRepairTraceObstruction_wide_or_separated
+      P hcellCard (htrace q hqQ) with hwide | hsep
+  · exact ⟨q, hqQ,
+      wideTwoRepairTrace_has_wideReservoirSupport hwide⟩
+  · rcases
+      separatedTrace_targetLocalizedCertificate_distinctEscapes_or_wideSupport
+        P hcellCard hcert hlocalized hqQ hsep with
+      hthree | hwide
+    · obtain ⟨qx, hqxQ, qy, hqyQ,
+        hqxq, hqyq, hqxqy⟩ := hthree
+      have hsub : ({q, qx, qy} : Finset ℕ) ⊆ Q := by
+        intro z hz
+        simp only [Finset.mem_insert, Finset.mem_singleton] at hz
+        rcases hz with rfl | rfl | rfl
+        · exact hqQ
+        · exact hqxQ
+        · exact hqyQ
+      have hthreeCard : ({q, qx, qy} : Finset ℕ).card = 3 := by
+        have hqqx : q ≠ qx := Ne.symm hqxq
+        have hqqy : q ≠ qy := Ne.symm hqyq
+        simp [hqqx, hqqy, hqxqy]
+      have hle := Finset.card_le_card hsub
+      rw [hthreeCard] at hle
+      omega
+    · obtain ⟨q', hq'Q, _hq'q, hq'Wide⟩ := hwide
+      exact ⟨q', hq'Q, hq'Wide⟩
+
 /-- Strong deletion therefore produces arbitrarily late cardinal-minimal
 certificates lying wholly in the complement of the universally safe target
 set of any infinite deletion-reservoir partition. -/
@@ -5344,6 +6096,57 @@ theorem strongDeletion_certificate_avoids_allCommonSurvivalTargets
   exact ⟨Q, hQ, hQlate, hcert, hlocalized,
     targetLocalizedCertificate_disjoint_commonSurvivalTargets
       hlocalized⟩
+
+/-- Strong deletion and an eventually good two-repair prefix meet in one
+finite obstruction.  Arbitrarily late, there is a target-minimal block
+certificate all of whose targets have two prefix-avoiding, disjoint,
+nonempty reservoir traces, but none has opposite private traces in a binary
+cell.  This is the finite Hall/diagonal obstruction which remains to be
+eliminated. -/
+theorem strongDeletion_eventuallyGoodPrefix_forces_lateTraceObstruction
+    {A C K : Set ℕ} {R : SupportFamily} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion R A)
+    (hKA : K ⊆ A)
+    (hKC : K ⊆ C)
+    (P : IsFiniteBlockPartition K cell)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      R C Set.univ D) :
+    ∀ N, ∃ Q : Finset ℕ,
+      Q.Nonempty ∧
+      (∀ q ∈ Q, N ≤ q) ∧
+      (∀ s : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt R (selectedSet s) q) ∧
+      (∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt R (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt R (selectedSet s) q') ∧
+      Disjoint (Q : Set ℕ)
+        (commonSurvivalTargets R cell) ∧
+      (∀ q ∈ Q,
+        HasTwoRepairTraceObstructionAt R K D cell q) := by
+  classical
+  obtain ⟨T, hrepair⟩ := hgood
+  intro N
+  obtain ⟨Q, hQ, hQlate, hcert, hlocalized, hQsafe⟩ :=
+    strongDeletion_certificate_avoids_allCommonSurvivalTargets
+      hstrong hKA P (max N T)
+  have hQlateN : ∀ q ∈ Q, N ≤ q := by
+    intro q hqQ
+    exact (Nat.le_max_left N T).trans (hQlate q hqQ)
+  have hQrepairs : ∀ q ∈ Q,
+      ∃ E ∈ R q, Disjoint E D ∧
+        ∃ F ∈ R q, Disjoint F D ∧
+          Disjoint ((E : Set ℕ) ∩ C) ((F : Set ℕ) ∩ C) := by
+    intro q hqQ
+    exact hrepair q
+      ((Nat.le_max_right N T).trans (hQlate q hqQ))
+      (Set.mem_univ q)
+  have htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAt R K D cell q :=
+    targetLocalizedCertificate_has_twoRepairTraceObstruction
+      hKC P hlocalized hQrepairs
+  exact ⟨Q, hQ, hQlateN, hcert, hlocalized, hQsafe, htrace⟩
 
 /-- If the universally safe targets of one infinite partition contain a
 tail, any block selector is the desired infinite deletion. -/
@@ -5453,6 +6256,67 @@ def HasBinaryCommonSurvivalCertificateMigration
                 (selectedSet s) q') ∧
           Disjoint (Q : Set ℕ) (Set.range target)
 
+/-- Strengthened migration package retaining the eventually-good prefix.
+Every late minimal certificate not only avoids the protected target family:
+each of its targets carries two prefix-avoiding, disjoint, nonempty traces on
+the binary reservoir, with opposite private endpoints formally excluded. -/
+def HasBinaryTwoRepairTraceCertificateObstruction
+    (A C : Set ℕ) (D : Finset ℕ) : Prop :=
+  ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+    ∃ target : ℕ → ℕ,
+      K ⊆ C ∧ K.Infinite ∧
+      Disjoint K (D : Set ℕ) ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2) ∧
+      (Set.range target).Infinite ∧
+      (∀ s : BlockSelector cell, ∀ i,
+        ∃ G ∈ additiveSupportFamily A 3 (target i),
+          Disjoint (G : Set ℕ) (selectedSet s)) ∧
+      ∀ N, ∃ Q : Finset ℕ,
+        Q.Nonempty ∧
+        (∀ q ∈ Q, N ≤ q) ∧
+        (∀ s : BlockSelector cell, ∃ q ∈ Q,
+          DestroysAt (additiveSupportFamily A 3)
+            (selectedSet s) q) ∧
+        (∀ q ∈ Q, ∃ s : BlockSelector cell,
+          DestroysAt (additiveSupportFamily A 3)
+            (selectedSet s) q ∧
+          ∀ q' ∈ Q, q' ≠ q →
+            ¬ DestroysAt (additiveSupportFamily A 3)
+              (selectedSet s) q') ∧
+        Disjoint (Q : Set ℕ)
+          (commonSurvivalTargets
+            (additiveSupportFamily A 3) cell) ∧
+        ∀ q ∈ Q,
+          HasTwoRepairTraceObstructionAt
+            (additiveSupportFamily A 3) K D cell q
+
+/-- Eliminate the moving finite certificates from the strengthened package.
+On its fixed infinite binary reservoir, either wide repair traces recur
+arbitrarily late or separated singleton repair traces do. -/
+theorem HasBinaryTwoRepairTraceCertificateObstruction.cofinalTraceDichotomy
+    {A C : Set ℕ} {D : Finset ℕ}
+    (h : HasBinaryTwoRepairTraceCertificateObstruction A C D) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      K ⊆ C ∧ K.Infinite ∧
+      Disjoint K (D : Set ℕ) ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2) ∧
+      ((∀ N, ∃ q, N ≤ q ∧
+        HasWideTwoRepairTraceAt
+          (additiveSupportFamily A 3) K D q) ∨
+       ∀ N, ∃ q, N ≤ q ∧
+        HasSeparatedSingletonTwoRepairTracesAt
+          (additiveSupportFamily A 3) K D cell q) := by
+  obtain ⟨K, cell, _target, hKC, hK, hKD, P, hcellCard,
+      _htarget, _hsurvive, hlate⟩ := h
+  refine ⟨K, cell, hKC, hK, hKD, P, hcellCard, ?_⟩
+  apply arbitrarilyLate_traceObstruction_wide_or_separated P hcellCard
+  intro N
+  obtain ⟨Q, hQ, hQlate, _hcert, _hlocalized,
+      _hdisjoint, htrace⟩ := hlate N
+  exact ⟨Q, hQ, hQlate, htrace⟩
+
 /-- Combined private-clique/strong-deletion bridge.  A private conflict
 clique yields an infinite binary deletion reservoir and an unbounded family
 of targets preserved by every selector.  Strong deletion can still return
@@ -5465,7 +6329,7 @@ theorem strongDeletion_privateConflictClique_forces_binaryCertificateMigration
       (additiveSupportFamily A 3) A)
     (hprivate : HasInfinitePairwisePrivateTwoRepairConflictClique A C D) :
     HasBinaryCommonSurvivalCertificateMigration A C := by
-  obtain ⟨K, cell, target, hKC, hK, P,
+  obtain ⟨K, cell, target, hKC, hK, _hKD, P,
       hcellCard, htarget, hsurvive⟩ :=
     privateConflictClique_has_binaryCommonSurvivalPartition hprivate
   refine ⟨K, cell, target, hKC, hK, P,
@@ -5473,6 +6337,28 @@ theorem strongDeletion_privateConflictClique_forces_binaryCertificateMigration
   exact
     strongDeletion_certificate_avoids_unboundedCommonSurvivalTargets
       hstrong (hKC.trans hCA) P htarget hsurvive
+
+/-- The full finite-certificate bridge for one eventually-good prefix and
+one private conflict clique.  The clique supplies the binary reservoir and
+protected targets; eventual two-repair goodness supplies the two traces at
+every late certificate target; strong deletion forces those targets to
+carry the residual trace obstruction. -/
+theorem strongDeletion_eventuallyGoodPrivateConflictClique_forces_traceObstruction
+    {A C : Set ℕ} {D : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D)
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A)
+    (hprivate : HasInfinitePairwisePrivateTwoRepairConflictClique A C D) :
+    HasBinaryTwoRepairTraceCertificateObstruction A C D := by
+  obtain ⟨K, cell, target, hKC, hK, hKD, P,
+      hcellCard, htarget, hsurvive⟩ :=
+    privateConflictClique_has_binaryCommonSurvivalPartition hprivate
+  refine ⟨K, cell, target, hKC, hK, hKD, P,
+    hcellCard, htarget, hsurvive, ?_⟩
+  exact strongDeletion_eventuallyGoodPrefix_forces_lateTraceObstruction
+    hstrong (hKC.trans hCA) hKC P hgood
 
 /-- Direct counterexample consequence for any eventually good finite
 prefix.  The independent Ramsey branch would already be the desired
@@ -5495,6 +6381,29 @@ theorem eventuallyGoodPrefix_counterexample_forces_binaryCertificateMigration
   · exact
       strongDeletion_privateConflictClique_forces_binaryCertificateMigration
         hCA (strongOrderThreeDeletion_of_counterexample hcounter)
+          (twoRepairConflictClique_has_privateSubclique hclique)
+
+/-- Sharpened counterexample consequence: the Ramsey-independent branch
+would finish the desired deletion, so a genuine counterexample forces the
+binary trace obstruction, not merely migration away from one chosen target
+range. -/
+theorem eventuallyGoodPrefix_counterexample_forces_binaryTraceObstruction
+    {A C : Set ℕ} {D : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hDC : (D : Set ℕ) ⊆ C)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    HasBinaryTwoRepairTraceCertificateObstruction A C D := by
+  rcases eventuallyGoodPrefix_infiniteDeletion_or_twoRepairConflictClique
+      hC hDC hgood with hsuccess | hclique
+  · obtain ⟨B, hBC, hB, hthree⟩ := hsuccess
+    exact (hcounter B (hBC.trans hCA) hB hthree).elim
+  · exact
+      strongDeletion_eventuallyGoodPrivateConflictClique_forces_traceObstruction
+        hCA hgood (strongOrderThreeDeletion_of_counterexample hcounter)
           (twoRepairConflictClique_has_privateSubclique hclique)
 
 /-- A nonempty minimal recurrent obstruction inside a genuine
@@ -5521,6 +6430,146 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_binaryCertificat
   exact
     strongDeletion_privateConflictClique_forces_binaryCertificateMigration
       hCA (strongOrderThreeDeletion_of_counterexample hcounter) hprivate
+
+/-- A minimal recurrent counterexample forces the strengthened binary trace
+obstruction after retaining one point of its core.  This keeps the exact
+erased prefix which supplies the eventual repair pair, so no repair data is
+lost at the certificate interface. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_binaryTraceObstruction
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ d ∈ D₀,
+      HasBinaryTwoRepairTraceCertificateObstruction
+        A C (D₀.erase d) := by
+  obtain ⟨d, hdD₀⟩ := hD₀
+  have hseedC : (((D₀.erase d : Finset ℕ) : Set ℕ)) ⊆ C :=
+    fun x hx => hrec.1 (Finset.mem_erase.mp
+      (Finset.mem_coe.mp hx)).2
+  have hgood :=
+    minimalRecurrentNoTwoRepairPrefix_erase_eventuallyGood
+      hrec hminimal d hdD₀
+  exact ⟨d, hdD₀,
+    eventuallyGoodPrefix_counterexample_forces_binaryTraceObstruction
+      hCA hC hseedC hgood hcounter⟩
+
+/-- The critical-extension obstruction and the binary certificate
+obstruction can be forced for the same eventually-good prefix.  Thus every
+sufficiently late point of the binary reservoir is itself a recurrently bad
+one-point extension; this is the arithmetic input missing from a purely
+incidence-theoretic Hall argument. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_criticalBinaryTraceObstruction
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ D : Finset ℕ, ∃ T,
+      (D : Set ℕ) ⊆ C ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      (∀ b, b ∈ C → b ∉ D → T ≤ b →
+        IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+      HasBinaryTwoRepairTraceCertificateObstruction A C D := by
+  obtain ⟨D, hDC, hgood, T, hcritical⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_counterexample_forces_criticalExtensions
+      hCA hrec hD₀ hminimal hcounter
+  refine ⟨D, T, hDC, hgood, hcritical, ?_⟩
+  exact eventuallyGoodPrefix_counterexample_forces_binaryTraceObstruction
+    hCA hC hDC hgood hcounter
+
+/-- Final two-branch normal form of the finite-certificate bridge.  In a
+counterexample there is one critical good prefix and one disjoint infinite
+binary reservoir such that all late reservoir points give recurrent bad
+extensions, while either wide repair traces or separated singleton traces
+occur at arbitrarily large targets. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_criticalCofinalTraceDichotomy
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ D : Finset ℕ, ∃ T, ∃ K : Set ℕ,
+      ∃ cell : ℕ → Finset ℕ,
+        (D : Set ℕ) ⊆ C ∧
+        HasEventuallyTwoRepairsAtPrefixAlong
+          (additiveSupportFamily A 3) C Set.univ D ∧
+        K ⊆ C ∧ K.Infinite ∧ Disjoint K (D : Set ℕ) ∧
+        IsFiniteBlockPartition K cell ∧
+        (∀ i, (cell i).card = 2) ∧
+        (∀ b ∈ K, T ≤ b →
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        ((∀ N, ∃ q, N ≤ q ∧
+          HasWideTwoRepairTraceAt
+            (additiveSupportFamily A 3) K D q) ∨
+         ∀ N, ∃ q, N ≤ q ∧
+          HasSeparatedSingletonTwoRepairTracesAt
+            (additiveSupportFamily A 3) K D cell q) := by
+  obtain ⟨D, T, hDC, hgood, hcritical, hbinary⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_counterexample_forces_criticalBinaryTraceObstruction
+      hCA hC hrec hD₀ hminimal hcounter
+  obtain ⟨K, cell, hKC, hK, hKD, P, hcellCard, hdichotomy⟩ :=
+    hbinary.cofinalTraceDichotomy
+  have hcriticalK : ∀ b ∈ K, T ≤ b →
+      IsRecurrentNoTwoRepairPrefix A C (insert b D) := by
+    intro b hbK hbT
+    have hbD : b ∉ D := by
+      intro hbD
+      exact Set.disjoint_left.mp hKD hbK
+        (Finset.mem_coe.mpr hbD)
+    exact hcritical b (hKC hbK) hbD hbT
+  exact ⟨D, T, K, cell, hDC, hgood, hKC, hK, hKD,
+    P, hcellCard, hcriticalK, hdichotomy⟩
+
+/-- Arithmetic version of the critical cofinal normal form.  The remaining
+counterexample must exhibit, at arbitrarily late targets, either a
+three-term representation containing two distinct reservoir elements or
+two marked decompositions based in different binary cells. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_criticalCofinalArithmeticDichotomy
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ D : Finset ℕ, ∃ T, ∃ K : Set ℕ,
+      ∃ cell : ℕ → Finset ℕ,
+        (D : Set ℕ) ⊆ C ∧
+        HasEventuallyTwoRepairsAtPrefixAlong
+          (additiveSupportFamily A 3) C Set.univ D ∧
+        K ⊆ C ∧ K.Infinite ∧ Disjoint K (D : Set ℕ) ∧
+        IsFiniteBlockPartition K cell ∧
+        (∀ i, (cell i).card = 2) ∧
+        (∀ b ∈ K, T ≤ b →
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        ((∀ N, ∃ q, N ≤ q ∧
+          HasTwoReservoirSummandRepresentationAt A K q) ∨
+         ∀ N, ∃ q, N ≤ q ∧
+          HasSeparatedMarkedDecompositionsAt A cell q) := by
+  obtain ⟨D, T, K, cell, hDC, hgood, hKC, hK, hKD,
+      P, hcellCard, hcriticalK, htrace⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_counterexample_forces_criticalCofinalTraceDichotomy
+      hCA hC hrec hD₀ hminimal hcounter
+  exact ⟨D, T, K, cell, hDC, hgood, hKC, hK, hKD,
+    P, hcellCard, hcriticalK,
+    cofinalTraceDichotomy_implies_cofinalArithmeticDichotomy htrace⟩
 
 /-- At arbitrarily late targets of a minimal recurrent prefix, every core
 point simultaneously has a unique-hit support and a companion support which
