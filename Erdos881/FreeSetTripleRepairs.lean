@@ -4654,6 +4654,100 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_criticalMarkedFa
   exact criticalGoodPrefix_has_late_markedUniqueHitSystems
     hDC hbC hbD hgood (hcritical b hbC hbD hbT)
 
+/-- Infinite clique obstruction to extracting an independent deletion from
+one eventually good prefix.  Every two distinct clique vertices occur on
+opposite sides of some reservoir-disjoint repair pair for one common target,
+and both repairs avoid the fixed prefix. -/
+def HasInfinitePairwiseTwoRepairConflictClique
+    (A C : Set ℕ) (D : Finset ℕ) : Prop :=
+  ∃ K, K ⊆ C ∧ K.Infinite ∧
+    Disjoint K (D : Set ℕ) ∧
+    ∀ x ∈ K, ∀ y ∈ K, x ≠ y →
+      ∃ q, ∃ E ∈ additiveSupportFamily A 3 q,
+        Disjoint E D ∧ x ∈ E ∧
+        ∃ F ∈ additiveSupportFamily A 3 q,
+          Disjoint F D ∧ y ∈ F ∧
+          Disjoint ((E : Set ℕ) ∩ C)
+            ((F : Set ℕ) ∩ C)
+
+/-- Ramsey dichotomy for one eventually good prefix.  Join two reservoir
+points when some late repair pair places them on opposite sides.  An
+infinite independent set meets at most one side of every chosen pair, so one
+repair survives the whole set at every late target and gives the desired
+order-three deletion.  The only alternative is an infinite conflict clique.
+-/
+theorem eventuallyGoodPrefix_infiniteDeletion_or_twoRepairConflictClique
+    {A C : Set ℕ} {D : Finset ℕ}
+    (hC : C.Infinite)
+    (hDC : (D : Set ℕ) ⊆ C)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D) :
+    (∃ B, B ⊆ C ∧ B.Infinite ∧
+      IsExactTupleAsymptoticBasis (A \ B) 3) ∨
+      HasInfinitePairwiseTwoRepairConflictClique A C D := by
+  classical
+  obtain ⟨T, hrepair⟩ := hgood
+  let K₀ : Set ℕ := C \ (D : Set ℕ)
+  have hK₀ : K₀.Infinite := hC.diff D.finite_toSet
+  let Conflict : ℕ → ℕ → Prop := fun x y =>
+    ∃ q, T ≤ q ∧
+      ∃ E ∈ additiveSupportFamily A 3 q,
+        Disjoint E D ∧
+        ∃ F ∈ additiveSupportFamily A 3 q,
+          Disjoint F D ∧
+          Disjoint ((E : Set ℕ) ∩ C)
+            ((F : Set ℕ) ∩ C) ∧
+          ((x ∈ E ∧ y ∈ F) ∨ (x ∈ F ∧ y ∈ E))
+  have hConflictSymm : Symmetric Conflict := by
+    intro x y hxy
+    obtain ⟨q, hqT, E, hER, hED, F, hFR, hFD,
+      hEF, hside⟩ := hxy
+    exact ⟨q, hqT, E, hER, hED, F, hFR, hFD,
+      hEF, hside.elim (fun h => Or.inr ⟨h.2, h.1⟩)
+        (fun h => Or.inl ⟨h.2, h.1⟩)⟩
+  obtain ⟨L, hLK₀, hL, hclique⟩ |
+      ⟨L, hLK₀, hL, hindependent⟩ :=
+    infinite_pairRamsey_nat hK₀ Conflict hConflictSymm
+  · right
+    have hLC : L ⊆ C := fun x hx => (hLK₀ hx).1
+    have hLD : Disjoint L (D : Set ℕ) := by
+      rw [Set.disjoint_left]
+      intro x hxL hxD
+      exact (hLK₀ hxL).2 hxD
+    refine ⟨L, hLC, hL, hLD, ?_⟩
+    intro x hxL y hyL hxy
+    obtain ⟨q, _hqT, E, hER, hED, F, hFR, hFD,
+      hEF, hside⟩ := hclique hxL hyL hxy
+    rcases hside with hside | hside
+    · exact ⟨q, E, hER, hED, hside.1,
+        F, hFR, hFD, hside.2, hEF⟩
+    · exact ⟨q, F, hFR, hFD, hside.1,
+        E, hER, hED, hside.2, hEF.symm⟩
+  · left
+    have hLC : L ⊆ C := fun x hx => (hLK₀ hx).1
+    refine ⟨L, hLC, hL, ?_⟩
+    apply hasEventuallySurvivingSupport_additive_iff.mp
+    refine ⟨T, ?_⟩
+    intro q hqT
+    obtain ⟨E, hER, hED, F, hFR, hFD, hEF⟩ :=
+      hrepair q hqT (Set.mem_univ q)
+    by_cases hEL : Disjoint (E : Set ℕ) L
+    · exact ⟨E, hER, hEL⟩
+    · have hFL : Disjoint (F : Set ℕ) L := by
+        by_contra hFL
+        obtain ⟨x, hxE, hxL⟩ := Set.not_disjoint_iff.mp hEL
+        obtain ⟨y, hyF, hyL⟩ := Set.not_disjoint_iff.mp hFL
+        have hxy : x ≠ y := by
+          intro hxy
+          subst y
+          exact Set.disjoint_left.mp hEF
+            ⟨hxE, hLC hxL⟩ ⟨hyF, hLC hxL⟩
+        exact hindependent hxL hyL hxy
+          ⟨q, hqT, E, hER, hED, F, hFR, hFD, hEF,
+            Or.inl ⟨Finset.mem_coe.mp hxE,
+              Finset.mem_coe.mp hyF⟩⟩
+      exact ⟨F, hFR, hFL⟩
+
 /-- At arbitrarily late targets of a minimal recurrent prefix, every core
 point simultaneously has a unique-hit support and a companion support which
 avoids the whole core.  Minimality makes the erased-prefix two-repair
