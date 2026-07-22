@@ -10154,21 +10154,21 @@ theorem criticalGoodPrefix_exists_markedMinimalDestroyerData
   exact ⟨(le_max_right N b).trans hqN, hno, hTC, hTP,
     hTnonempty, hTcard, hdestroy, hSsub, hbS, hSminimal, htri⟩
 
-/-- Sunflower normal form of the critical marked family.  After discarding
-the fixed prefix and a finite initial segment, choose one late marked minimal
-destroyer for every remaining reservoir point.  Uniform boundedness by
+/-- Sunflower normal form of an infinite critical marked subfamily.  After
+discarding the fixed prefix and a finite initial segment, choose one late
+marked minimal destroyer for every remaining critical point.  Uniform boundedness by
 `D.card + 4` gives an infinite delta-system thinning.  Removing the finite
 root from the index set ensures that every marked point lies in its own
 nonempty petal, and the petals are pairwise disjoint. -/
 theorem criticalGoodPrefix_has_infiniteMarkedMinimalDestroyerSunflower
-    {A C : Set ℕ} {D : Finset ℕ} {T₀ : ℕ}
-    (hC : C.Infinite)
+    {A C I : Set ℕ} {D : Finset ℕ} {T₀ : ℕ}
+    (hI : I.Infinite) (hIC : I ⊆ C)
     (hDC : (D : Set ℕ) ⊆ C)
     (hgood : HasEventuallyTwoRepairsAtPrefixAlong
       (additiveSupportFamily A 3) C Set.univ D)
-    (hcritical : ∀ b, b ∈ C → b ∉ D → T₀ ≤ b →
+    (hcritical : ∀ b, b ∈ I → b ∉ D → T₀ ≤ b →
       IsRecurrentNoTwoRepairPrefix A C (insert b D)) :
-    ∃ L, L ⊆ C ∧ L.Infinite ∧
+    ∃ L, L ⊆ I ∧ L.Infinite ∧
       ∃ R : Finset ℕ, ∃ target : ℕ → ℕ,
       ∃ moving core : ℕ → Finset ℕ,
         (∀ b ∈ L,
@@ -10184,9 +10184,9 @@ theorem criticalGoodPrefix_has_infiniteMarkedMinimalDestroyerSunflower
   let excluded : Set ℕ := (D : Set ℕ) ∪ Set.Iio T₀
   have hexcluded : excluded.Finite :=
     D.finite_toSet.union (Set.finite_Iio T₀)
-  let K : Set ℕ := C \ excluded
-  have hK : K.Infinite := hC.diff hexcluded
-  have hKC : K ⊆ C := Set.diff_subset
+  let K : Set ℕ := I \ excluded
+  have hK : K.Infinite := hI.diff hexcluded
+  have hKI : K ⊆ I := Set.diff_subset
   have hchoice : ∀ b : K, ∃ q T S,
       IsCriticalMarkedMinimalDestroyerData
         A C D b.1 q T S := by
@@ -10198,8 +10198,8 @@ theorem criticalGoodPrefix_has_infiniteMarkedMinimalDestroyerSunflower
       exact Nat.le_of_not_gt fun hbLt => hbExcluded (Or.inr hbLt)
     obtain ⟨q, T, S, _hqZero, hdata⟩ :=
       criticalGoodPrefix_exists_markedMinimalDestroyerData
-        hDC (hKC b.2) hbD hgood
-          (hcritical b.1 (hKC b.2) hbD hbT₀)
+        hDC (hIC (hKI b.2)) hbD hgood
+          (hcritical b.1 (hKI b.2) hbD hbT₀)
           (N := 0)
     exact ⟨q, T, S, hdata⟩
   choose chosenTarget chosenMoving chosenCore hchosen using hchoice
@@ -10233,7 +10233,7 @@ theorem criticalGoodPrefix_has_infiniteMarkedMinimalDestroyerSunflower
   let L : Set ℕ := L₀ \ (R : Set ℕ)
   have hLL₀ : L ⊆ L₀ := Set.diff_subset
   have hL : L.Infinite := hL₀.diff R.finite_toSet
-  have hLC : L ⊆ C := hLL₀.trans (hL₀K.trans hKC)
+  have hLI : L ⊆ I := hLL₀.trans (hL₀K.trans hKI)
   have hdataL : ∀ b ∈ L,
       IsCriticalMarkedMinimalDestroyerData
         A C D b (target b) (moving b) (core b) := by
@@ -10260,7 +10260,7 @@ theorem criticalGoodPrefix_has_infiniteMarkedMinimalDestroyerSunflower
     apply htargetInfinite
     rw [← htargetBij.image_eq]
     exact hJfinite.image target
-  have hJC : J ⊆ C := hJL.trans hLC
+  have hJI : J ⊆ I := hJL.trans hLI
   have hdataJ : ∀ b ∈ J,
       IsCriticalMarkedMinimalDestroyerData
         A C D b (target b) (moving b) (core b) :=
@@ -10270,7 +10270,7 @@ theorem criticalGoodPrefix_has_infiniteMarkedMinimalDestroyerSunflower
     exact htargetInfinite
   have hmarkedJ : ∀ b ∈ J, b ∈ core b \ R :=
     fun b hb => hmarkedPetal b (hJL hb)
-  refine ⟨J, hJC, hJ, R, target, moving, core,
+  refine ⟨J, hJI, hJ, R, target, moving, core,
     hdataJ, htargetJ, htargetBij.injOn, hmarkedJ, ?_⟩
   intro b hbJ d hdJ hbd
   have hinter : core b ∩ core d = R :=
@@ -23611,12 +23611,39 @@ theorem exists_infinite_orientedMatchingDeletion_avoiding_supports
     (hxNotF : ∀ n ∈ I, x n ∉ F n) :
     ∃ J, J ⊆ I ∧ J.Infinite ∧
       ∃ B : Set ℕ, B = x '' J ∧ B.Infinite ∧
+        Set.InjOn x J ∧
         ∀ n ∈ J, Disjoint (F n : Set ℕ) B := by
   obtain ⟨J, hJI, hJ, hxInj, havoid⟩ :=
     exists_infinite_orientedMatchingImage_avoiding_supports
       hI x y hmatching F r hcard hxNotF
-  refine ⟨J, hJI, hJ, x '' J, rfl, ?_, havoid⟩
+  refine ⟨J, hJI, hJ, x '' J, rfl, ?_, hxInj, havoid⟩
   exact hJ.image hxInj
+
+/-- Pull an infinite subset of an indexed image back to an infinite set of
+indices.  This small bookkeeping lemma prevents later thinnings from losing
+the certificate index attached to each chosen matching endpoint. -/
+theorem exists_infinite_indexPreimage_of_infinite_subset_image
+    {I B L : Set ℕ} (x : ℕ → ℕ)
+    (hB : B = x '' I) (hLB : L ⊆ B) (hL : L.Infinite) :
+    ∃ J, J ⊆ I ∧ J.Infinite ∧ L = x '' J := by
+  let J : Set ℕ := {n | n ∈ I ∧ x n ∈ L}
+  have hJI : J ⊆ I := fun _ hn => hn.1
+  have himage : x '' J = L := by
+    apply Set.Subset.antisymm
+    · rintro z ⟨n, hn, rfl⟩
+      exact hn.2
+    · intro z hzL
+      have hzB := hLB hzL
+      rw [hB] at hzB
+      obtain ⟨n, hnI, hxn⟩ := hzB
+      refine ⟨n, ⟨hnI, ?_⟩, hxn⟩
+      exact hxn ▸ hzL
+  have hJ : J.Infinite := by
+    intro hJFinite
+    apply hL
+    rw [← himage]
+    exact hJFinite.image x
+  exact ⟨J, hJI, hJ, himage.symm⟩
 
 /-- In the cofinal balanced-with-repairs branch we can now construct an
 actual infinite candidate deletion `B ⊆ K ⊆ C`.  Infinitely many
@@ -23633,10 +23660,11 @@ theorem cofinalSpatialCriticalBalancedAdditivePairsWithRepairs_exists_infiniteCa
       HasCriticalBalancedAdditivePairWithRepairsAt A C
         {x | ∃ i, x ∈ cell (start + i)} D q) :
     ∃ B, B ⊆ K ∧ B.Infinite ∧
-      ∃ J : Set ℕ, ∃ q : ℕ → ℕ,
+      ∃ J : Set ℕ, ∃ q x : ℕ → ℕ,
         ∃ F : ℕ → Finset ℕ,
-          J.Infinite ∧
-          ∀ n ∈ J, n ≤ q n ∧
+          J.Infinite ∧ B = x '' J ∧ Set.InjOn x J ∧
+          ∀ n ∈ J, n ≤ q n ∧ x n ∈ K ∧
+            IsRecurrentNoTwoRepairPrefix A C (insert (x n) D) ∧
             F n ∈ additiveSupportFamily A 3 (q n) ∧
             Disjoint (F n) D ∧
             Disjoint (F n : Set ℕ) B := by
@@ -23661,7 +23689,7 @@ theorem cofinalSpatialCriticalBalancedAdditivePairsWithRepairs_exists_infiniteCa
     exact Set.disjoint_left.mp hEFC
       ⟨Finset.mem_coe.mpr hxE, hKC hxK⟩
       ⟨Finset.mem_coe.mpr hxF, hKC hxK⟩
-  obtain ⟨J, hJL, hJ, B, hB, hBInfinite, havoid⟩ :=
+  obtain ⟨J, hJL, hJ, B, hB, hBInfinite, hxInj, havoid⟩ :=
     exists_infinite_orientedMatchingDeletion_avoiding_supports
       hL x y hmatching F 3 hFcard hxNotF
   have hBK : B ⊆ K := by
@@ -23670,10 +23698,17 @@ theorem cofinalSpatialCriticalBalancedAdditivePairsWithRepairs_exists_infiniteCa
     have hxTail := (hw n).2.2.2.2.2.2.2.2.1
     obtain ⟨i, hxi⟩ := hxTail
     exact (P.mem_iff (x n)).mpr ⟨n + i, hxi⟩
-  refine ⟨B, hBK, hBInfinite, J, q, F, hJ, ?_⟩
+  refine ⟨B, hBK, hBInfinite, J, q, x, F,
+    hJ, hB, hxInj, ?_⟩
   intro n hn
-  exact ⟨(hw n).1, (hw n).2.2.2.1,
-    (hw n).2.2.2.2.1, havoid n hn⟩
+  obtain ⟨hqn, _hER, _hED, hFR, hFD, _hEFC,
+      _hxE, _hyF, hxTail, _hyTail, _hxy,
+      hxCritical, _hyCritical, _huA, _hvA,
+      _hu'A, _hv'A, _hxsum, _hysum⟩ := hw n
+  have hxK : x n ∈ K := by
+    obtain ⟨i, hxi⟩ := hxTail
+    exact (P.mem_iff (x n)).mpr ⟨n + i, hxi⟩
+  exact ⟨hqn, hxK, hxCritical, hFR, hFD, havoid n hn⟩
 
 /-- The cofinal wide-with-repairs branch also produces an actual infinite
 candidate deletion.  At each index choose whichever member of the globally
@@ -23688,10 +23723,11 @@ theorem cofinalSpatialCriticalWideSupportsWithRepairs_exists_infiniteCandidateDe
       HasCriticalWideReservoirSupportWithRepairsAt A C
         {x | ∃ i, x ∈ cell (start + i)} D q) :
     ∃ B, B ⊆ K ∧ B.Infinite ∧
-      ∃ J : Set ℕ, ∃ q : ℕ → ℕ,
+      ∃ J : Set ℕ, ∃ q x : ℕ → ℕ,
         ∃ R : ℕ → Finset ℕ,
-          J.Infinite ∧
-          ∀ n ∈ J, n ≤ q n ∧
+          J.Infinite ∧ B = x '' J ∧ Set.InjOn x J ∧
+          ∀ n ∈ J, n ≤ q n ∧ x n ∈ K ∧
+            IsRecurrentNoTwoRepairPrefix A C (insert (x n) D) ∧
             R n ∈ additiveSupportFamily A 3 (q n) ∧
             Disjoint (R n) D ∧
             Disjoint (R n : Set ℕ) B := by
@@ -23738,7 +23774,7 @@ theorem cofinalSpatialCriticalWideSupportsWithRepairs_exists_infiniteCandidateDe
         ⟨Finset.mem_coe.mpr hxE, hKC hxK⟩
         ⟨Finset.mem_coe.mpr hxF, hKC hxK⟩
     · simpa [R, hxE] using hxE
-  obtain ⟨J, hJL, hJ, B, hB, hBInfinite, havoid⟩ :=
+  obtain ⟨J, hJL, hJ, B, hB, hBInfinite, hxInj, havoid⟩ :=
     exists_infinite_orientedMatchingDeletion_avoiding_supports
       hL x y hmatching R 3 hRcard hxNotR
   have hBK : B ⊆ K := by
@@ -23747,10 +23783,18 @@ theorem cofinalSpatialCriticalWideSupportsWithRepairs_exists_infiniteCandidateDe
     have hxTail := (hw n).2.2.2.2.1
     obtain ⟨i, hxi⟩ := hxTail
     exact (P.mem_iff (x n)).mpr ⟨n + i, hxi⟩
-  refine ⟨B, hBK, hBInfinite, J, q, R, hJ, ?_⟩
+  refine ⟨B, hBK, hBInfinite, J, q, x, R,
+    hJ, hB, hxInj, ?_⟩
   intro n hn
-  exact ⟨(hw n).1, hRSupport n (hJL hn),
-    hRDisjointD n (hJL hn), havoid n hn⟩
+  obtain ⟨hqn, _hGR, _hxG, _hyG, hxTail, _hyTail,
+      _hxy, hxCritical, _hyCritical, _huA, _hsum,
+      _hER, _hED, _hFR, _hFD, _hEFC⟩ := hw n
+  have hxK : x n ∈ K := by
+    obtain ⟨i, hxi⟩ := hxTail
+    exact (P.mem_iff (x n)).mpr ⟨n + i, hxi⟩
+  exact ⟨hqn, hxK, hxCritical,
+    hRSupport n (hJL hn), hRDisjointD n (hJL hn),
+    havoid n hn⟩
 
 /-- Counterexample-level set construction obtained from the two repaired
 matching branches.  It produces one actual infinite `B ⊆ C ⊆ A` and an
@@ -23770,27 +23814,45 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_exists_infiniteCandidat
       ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
     ∃ B, B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
       ∃ D : Finset ℕ, (D : Set ℕ) ⊆ C ∧
-        ∃ J : Set ℕ, ∃ q : ℕ → ℕ,
+        HasEventuallyTwoRepairsAtPrefixAlong
+          (additiveSupportFamily A 3) C Set.univ D ∧
+        ∃ J : Set ℕ, ∃ q b : ℕ → ℕ,
           ∃ R : ℕ → Finset ℕ,
-            J.Infinite ∧
-            ∀ n ∈ J, n ≤ q n ∧
+            J.Infinite ∧ B = b '' J ∧ Set.InjOn b J ∧
+            ∀ n ∈ J, b n ∈ B ∧
+              IsRecurrentNoTwoRepairPrefix A C (insert (b n) D) ∧
+              n ≤ q n ∧
               R n ∈ additiveSupportFamily A 3 (q n) ∧
               Disjoint (R n) D ∧
               Disjoint (R n : Set ℕ) B := by
-  obtain ⟨D, K, cell, hDC, _hgood, hKC, _hK, _hKD,
+  obtain ⟨D, K, cell, hDC, hgood, hKC, _hK, _hKD,
       P, _hcellCard, _hcriticalK, hwide | hbalanced⟩ :=
     minimalRecurrentNoTwoRepairPrefix_counterexample_forces_cofinalSpatialCriticalArithmeticWithRepairsDichotomy
       hCA hC hrec hD₀ hminimal hcounter
-  · obtain ⟨B, hBK, hB, J, q, R, hJ, hsurvive⟩ :=
+  · obtain ⟨B, hBK, hB, J, q, b, R,
+      hJ, hBimage, hbInj, hsurvive⟩ :=
       cofinalSpatialCriticalWideSupportsWithRepairs_exists_infiniteCandidateDeletion
         hKC P hwide
     exact ⟨B, hBK.trans hKC, (hBK.trans hKC).trans hCA, hB,
-      D, hDC, J, q, R, hJ, hsurvive⟩
-  · obtain ⟨B, hBK, hB, J, q, R, hJ, hsurvive⟩ :=
+      D, hDC, hgood, J, q, b, R, hJ, hBimage, hbInj, fun n hn => by
+        obtain ⟨hqn, _hbK, hcritical, hRR, hRD, hRB⟩ :=
+          hsurvive n hn
+        have hbnB : b n ∈ B := by
+          rw [hBimage]
+          exact ⟨n, hn, rfl⟩
+        exact ⟨hbnB, hcritical, hqn, hRR, hRD, hRB⟩⟩
+  · obtain ⟨B, hBK, hB, J, q, b, R,
+      hJ, hBimage, hbInj, hsurvive⟩ :=
       cofinalSpatialCriticalBalancedAdditivePairsWithRepairs_exists_infiniteCandidateDeletion
         hKC P hbalanced
     exact ⟨B, hBK.trans hKC, (hBK.trans hKC).trans hCA, hB,
-      D, hDC, J, q, R, hJ, hsurvive⟩
+      D, hDC, hgood, J, q, b, R, hJ, hBimage, hbInj, fun n hn => by
+        obtain ⟨hqn, _hbK, hcritical, hRR, hRD, hRB⟩ :=
+          hsurvive n hn
+        have hbnB : b n ∈ B := by
+          rw [hBimage]
+          exact ⟨n, hn, rfl⟩
+        exact ⟨hbnB, hcritical, hqn, hRR, hRD, hRB⟩⟩
 
 /-- Feed the candidate deletion into the bounded-stratum splitting
 dichotomy.  In the non-atomic branch, remove zero and obtain an infinite
@@ -23825,7 +23887,7 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_selfSplittingCandidate_
         ∀ a ∈ L, ∀ E ∈ additiveSupportFamily A 2 a,
           E = {a, 0} := by
   obtain ⟨B₀, hB₀C, hB₀A, hB₀, D, hDC,
-      J, q, R, hJ, hsurvive⟩ :=
+      _hgood, J, q, _b, R, hJ, _hB₀image, _hbInj, hsurvive⟩ :=
     minimalRecurrentNoTwoRepairPrefix_counterexample_exists_infiniteCandidateDeletion_with_unboundedSurvivingRepairs
       hCA hC hrec hD₀ hminimal hcounter
   rcases infiniteDeletionSplits_or_infiniteZeroAtoms hbasis hB₀ with
@@ -23845,7 +23907,8 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_selfSplittingCandidate_
     refine ⟨B, hBB₀.trans hB₀C, hBB₀.trans hB₀A,
       hB, hsplitB, hself, D, hDC, J, q, R, hJ, ?_⟩
     intro n hn
-    obtain ⟨hqn, hRR, hRD, hRB₀⟩ := hsurvive n hn
+    obtain ⟨_hbB₀, _hcritical, hqn, hRR, hRD, hRB₀⟩ :=
+      hsurvive n hn
     exact ⟨hqn, hRR, hRD, hRB₀.mono_right hBB₀⟩
   · obtain ⟨L, hLB₀, hL, _hzeroA', hnormal⟩ := hatomic
     right
@@ -23904,15 +23967,19 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_zeroAtoms_with_u
       (∀ a ∈ L, ∀ E ∈ additiveSupportFamily A 2 a,
         E = {a, 0}) ∧
       ∃ D : Finset ℕ, (D : Set ℕ) ⊆ C ∧
-        ∃ J : Set ℕ, ∃ q : ℕ → ℕ,
+        HasEventuallyTwoRepairsAtPrefixAlong
+          (additiveSupportFamily A 3) C Set.univ D ∧
+        ∃ J : Set ℕ, ∃ q b : ℕ → ℕ,
           ∃ R : ℕ → Finset ℕ,
-            J.Infinite ∧
-            ∀ n ∈ J, n ≤ q n ∧
+            J.Infinite ∧ L = b '' J ∧ Set.InjOn b J ∧
+            ∀ n ∈ J, b n ∈ L ∧
+              IsRecurrentNoTwoRepairPrefix A C (insert (b n) D) ∧
+              n ≤ q n ∧
               R n ∈ additiveSupportFamily A 3 (q n) ∧
               Disjoint (R n) D ∧
               Disjoint (R n : Set ℕ) L := by
   obtain ⟨B₀, hB₀C, hB₀A, hB₀, D, hDC,
-      J, q, R, hJ, hsurvive⟩ :=
+      hgood, J, q, b, R, hJ, hB₀image, hbInj, hsurvive⟩ :=
     minimalRecurrentNoTwoRepairPrefix_counterexample_exists_infiniteCandidateDeletion_with_unboundedSurvivingRepairs
       hCA hC hrec hD₀ hminimal hcounter
   rcases infiniteDeletionSplits_or_infiniteZeroAtoms hbasis hB₀ with
@@ -23931,11 +23998,74 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_zeroAtoms_with_u
         hbasis hzeroA hzeroB hBA hB hsplitB
     exact (hcounter B' (hB'B.trans hBA) hB' hthree).elim
   · obtain ⟨L, hLB₀, hL, _hzeroA', hnormal⟩ := hatomic
+    obtain ⟨J', hJ'J, hJ', hLimage⟩ :=
+      exists_infinite_indexPreimage_of_infinite_subset_image
+        b hB₀image hLB₀ hL
     refine ⟨L, hLB₀.trans hB₀C, hLB₀.trans hB₀A,
-      hL, hnormal, D, hDC, J, q, R, hJ, ?_⟩
+      hL, hnormal, D, hDC, hgood, J', q, b, R,
+      hJ', hLimage, hbInj.mono hJ'J, ?_⟩
     intro n hn
-    obtain ⟨hqn, hRR, hRD, hRB₀⟩ := hsurvive n hn
-    exact ⟨hqn, hRR, hRD, hRB₀.mono_right hLB₀⟩
+    obtain ⟨_hbB₀, hcritical, hqn, hRR, hRD, hRB₀⟩ :=
+      hsurvive n (hJ'J hn)
+    have hbnL : b n ∈ L := by
+      rw [hLimage]
+      exact ⟨n, hn, rfl⟩
+    exact ⟨hbnL, hcritical, hqn, hRR, hRD,
+      hRB₀.mono_right hLB₀⟩
+
+/-- Feed the indexed zero-atomic critical family back into the recurrent
+prefix machinery.  The result is an infinite zero-atomic marked family of
+arbitrarily late inclusion-minimal order-three destroyers arranged as a
+delta system.  Thus the atomic branch now retains both its arithmetic
+normal form and the full bounded-core geometry of the finite certificate. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_zeroAtomicMarkedMinimalDestroyerSunflower
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ L, L ⊆ C ∧ L ⊆ A ∧ L.Infinite ∧
+      (∀ b ∈ L, ∀ E ∈ additiveSupportFamily A 2 b,
+        E = {b, 0}) ∧
+      ∃ D : Finset ℕ, ∃ R : Finset ℕ,
+        ∃ target : ℕ → ℕ,
+        ∃ moving core : ℕ → Finset ℕ,
+          (D : Set ℕ) ⊆ C ∧
+          HasEventuallyTwoRepairsAtPrefixAlong
+            (additiveSupportFamily A 3) C Set.univ D ∧
+          (∀ b ∈ L,
+            IsCriticalMarkedMinimalDestroyerData
+              A C D b (target b) (moving b) (core b)) ∧
+          (target '' L).Infinite ∧
+          Set.InjOn target L ∧
+          (∀ b ∈ L, b ∈ core b \ R) ∧
+          ∀ b ∈ L, ∀ d ∈ L, b ≠ d →
+            core b ∩ core d = R ∧
+            Disjoint (core b \ R) (core d \ R) := by
+  obtain ⟨Z, hZC, hZA, hZ, hnormalZ, D, hDC, hgood,
+      J, _q, b, _repair, _hJ, hZimage, _hbInj, hindexed⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_counterexample_forces_zeroAtoms_with_unboundedSurvivingRepairs
+      hbasis hzeroA hCA hC hrec hD₀ hminimal hcounter
+  have hcriticalZ : ∀ z, z ∈ Z → z ∉ D → 0 ≤ z →
+      IsRecurrentNoTwoRepairPrefix A C (insert z D) := by
+    intro z hzZ _hzD _hzZero
+    rw [hZimage] at hzZ
+    obtain ⟨n, hnJ, rfl⟩ := hzZ
+    exact (hindexed n hnJ).2.1
+  obtain ⟨L, hLZ, hL, R, target, moving, core,
+      hdata, htarget, htargetInj, hmarked, hdelta⟩ :=
+    criticalGoodPrefix_has_infiniteMarkedMinimalDestroyerSunflower
+      hZ hZC hDC hgood hcriticalZ
+  refine ⟨L, hLZ.trans hZC, hLZ.trans hZA, hL,
+    fun b hb E hER => hnormalZ b (hLZ hb) E hER,
+    D, R, target, moving, core, hDC, hgood,
+    hdata, htarget, htargetInj, hmarked, hdelta⟩
 
 /-- Exact negation of eventual pair independence: arbitrarily late there is
 a target every one of whose ambient order-two supports is entirely red. -/
