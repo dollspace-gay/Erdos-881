@@ -4189,6 +4189,28 @@ theorem destroysAt_crossingEndpointTripleObstructionFamily_iff
     · rintro ⟨h, _htriple, _hsub⟩
       exact (hcross h).elim
 
+/-- Every support in the combined crossing/triple obstruction has at most
+three points.  At a crossing target it is either a genuine order-three
+support or a singleton endpoint; away from the crossing case it is empty. -/
+theorem crossingEndpointTripleObstructionFamily_cardAtMost
+    {A B₀ : Set ℕ} :
+    SupportsCardAtMost
+      (crossingEndpointTripleObstructionFamily A B₀) 3 := by
+  classical
+  intro q E hE
+  by_cases hcross : ∀ G ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (G : Set ℕ) B₀ ∧ ¬ (G : Set ℕ) ⊆ B₀
+  · simp only [crossingEndpointTripleObstructionFamily,
+      if_pos hcross] at hE
+    rcases Finset.mem_union.mp hE with hEthree | hEsingle
+    · exact additiveSupportFamily_cardAtMost A 3 q E hEthree
+    · obtain ⟨b, _hb, rfl⟩ := Finset.mem_image.mp hEsingle
+      simp
+  · simp only [crossingEndpointTripleObstructionFamily,
+      if_neg hcross, Finset.mem_singleton] at hE
+    subst E
+    simp
+
 /-- A genuine order-three destroyer on a thinning `B ⊆ B₀` must satisfy
 the two additional crossing-endpoint conditions.  A pair support disjoint
 from `B₀` could be zero-padded; one contained in `B₀` could use the direct
@@ -5245,6 +5267,223 @@ theorem finiteMinimalCrossingEndpointTripleCertificates_strict_or_rigidCore
   · left
     omega
 
+set_option maxHeartbeats 5000000 in
+/-- Quantitative occupancy forced by a target-private selector.  Suppose a
+minimal selector certificate has a private selector for `q`, and `X` is a
+finite family of singleton supports of `q` all selected by that selector.
+For every other target choose a surviving support disjoint from the private
+selector.  Varying the singleton chosen at `q` forces those other supports
+to cover the rest of the singleton's block.  Distinct selected singletons
+lie in distinct blocks, so
+
+`(k - 1) * X.card ≤ r * (Q.erase q).card`.
+
+This is the cardinal information supplied by target localization which is
+lost if the certificate is enlarged without re-minimizing. -/
+theorem targetLocalized_singletonSupports_force_blockOccupancy
+    {A : Set ℕ} {R : SupportFamily} {F : ℕ → Finset ℕ}
+    {Q X : Finset ℕ} {q k r : ℕ}
+    (P : IsFiniteBlockPartition A F)
+    (hblockLower : ∀ i, k ≤ (F i).card)
+    (hcard : SupportsCardAtMost R r)
+    (hcert : ∀ sel : BlockSelector F, ∃ t ∈ Q,
+      DestroysAt R (selectedSet sel) t)
+    (base : BlockSelector F)
+    (hprivate : ∀ t ∈ Q, t ≠ q →
+      ¬ DestroysAt R (selectedSet base) t)
+    (hXselected : (X : Set ℕ) ⊆ selectedSet base)
+    (hXsupport : ∀ x ∈ X, ({x} : Finset ℕ) ∈ R q) :
+    (k - 1) * X.card ≤ r * (Q.erase q).card := by
+  classical
+  let Q' : Finset ℕ := Q.erase q
+  have hsurvive : ∀ t : {n // n ∈ Q'},
+      ∃ E ∈ R t.1, Disjoint (E : Set ℕ) (selectedSet base) := by
+    intro t
+    have ht := Finset.mem_erase.mp t.2
+    exact not_destroysAt_iff.mp
+      (hprivate t.1 ht.2 ht.1)
+  choose chosen hchosenMem hchosenDisjoint using hsurvive
+  let cOther : FiniteSupportChoice R Q' := fun t =>
+    ⟨chosen t, hchosenMem t⟩
+  let U : Finset ℕ := finiteSupportChoiceUnion cOther
+  have hUDisjoint : Disjoint (U : Set ℕ) (selectedSet base) := by
+    rw [Set.disjoint_left]
+    intro x hxU hxSelected
+    obtain ⟨t, _htAttach, hxt⟩ :=
+      Finset.mem_biUnion.mp (Finset.mem_coe.mp hxU)
+    exact Set.disjoint_left.mp (hchosenDisjoint t)
+      (Finset.mem_coe.mpr (by simpa [cOther] using hxt)) hxSelected
+  have hblockCover : ∀ x ∈ X,
+      F (blockIndex P x) \ {x} ⊆ U := by
+    intro x hxX
+    let cFull : FiniteSupportChoice R Q := fun t =>
+      if htq : t.1 = q then
+        ⟨{x}, by simpa [htq] using hXsupport x hxX⟩
+      else
+        let t' : {n // n ∈ Q'} :=
+          ⟨t.1, Finset.mem_erase.mpr ⟨htq, t.2⟩⟩
+        ⟨(cOther t').1, (cOther t').2⟩
+    have hfullCases : ∀ y,
+        y ∈ finiteSupportChoiceUnion cFull → y = x ∨ y ∈ U := by
+      intro y hy
+      obtain ⟨t, _htAttach, hyt⟩ := Finset.mem_biUnion.mp hy
+      by_cases htq : t.1 = q
+      · left
+        simpa [cFull, htq] using hyt
+      · right
+        let t' : {n // n ∈ Q'} :=
+          ⟨t.1, Finset.mem_erase.mpr ⟨htq, t.2⟩⟩
+        apply finiteSupportChoice_subset_union cOther t'
+        simpa [cFull, htq, t'] using hyt
+    obtain ⟨i, hiCover⟩ :=
+      exists_block_subset_supportChoiceUnion_of_certificate hcert cFull
+    have hsiUnion : (base i).1 ∈
+        finiteSupportChoiceUnion cFull := hiCover (base i).2
+    have hsiEq : (base i).1 = x := by
+      rcases hfullCases (base i).1 hsiUnion with hix | hiU
+      · exact hix
+      · exact (Set.disjoint_left.mp hUDisjoint
+          (Finset.mem_coe.mpr hiU) ⟨i, rfl⟩).elim
+    have hxFi : x ∈ F i := by
+      rw [← hsiEq]
+      exact (base i).2
+    have hindex : blockIndex P x = i :=
+      P.blockIndex_eq_of_mem hxFi
+    intro y hyDiff
+    have hyFi : y ∈ F i := by
+      rw [← hindex]
+      exact (Finset.mem_sdiff.mp hyDiff).1
+    rcases hfullCases y (hiCover hyFi) with hyx | hyU
+    · exact ((Finset.mem_sdiff.mp hyDiff).2 (by simp [hyx])).elim
+    · exact hyU
+  have hindexInj : Set.InjOn (blockIndex P) (X : Set ℕ) := by
+    intro x hxX y hyX hindex
+    have hxSelected := hXselected hxX
+    have hySelected := hXselected hyX
+    rw [P.mem_selectedSet_iff base] at hxSelected hySelected
+    calc
+      x = (base (blockIndex P x)).1 := hxSelected.symm
+      _ = (base (blockIndex P y)).1 := by rw [hindex]
+      _ = y := hySelected
+  let V : Finset ℕ := X.biUnion fun x =>
+    F (blockIndex P x) \ {x}
+  have hpairwise : (X : Set ℕ).PairwiseDisjoint
+      (fun x => F (blockIndex P x) \ {x}) := by
+    intro x hxX y hyX hxy
+    have hindexNe : blockIndex P x ≠ blockIndex P y := by
+      intro hindex
+      exact hxy (hindexInj hxX hyX hindex)
+    exact (P.disjoint hindexNe).mono
+      Finset.sdiff_subset Finset.sdiff_subset
+  have hpieceLower : ∀ x ∈ X,
+      k - 1 ≤ (F (blockIndex P x) \ {x}).card := by
+    intro x hxX
+    have hxSelected : x ∈ selectedSet base :=
+      hXselected (Finset.mem_coe.mpr hxX)
+    obtain ⟨i, hi⟩ := hxSelected
+    have hxFi : x ∈ F i := by
+      rw [← hi]
+      exact (base i).2
+    have hxA : x ∈ A := (P.mem_iff x).2 ⟨i, hxFi⟩
+    have hxBlock : x ∈ F (blockIndex P x) :=
+      P.mem_blockIndex hxA
+    rw [Finset.sdiff_singleton_eq_erase,
+      Finset.card_erase_of_mem hxBlock]
+    have hlower := hblockLower (blockIndex P x)
+    omega
+  have hVLower : (k - 1) * X.card ≤ V.card := by
+    dsimp only [V]
+    rw [Finset.card_biUnion hpairwise]
+    calc
+      (k - 1) * X.card = ∑ x ∈ X, (k - 1) := by
+        simp [Nat.mul_comm]
+      _ ≤ ∑ x ∈ X,
+          (F (blockIndex P x) \ {x}).card := by
+        apply Finset.sum_le_sum
+        intro x hxX
+        exact hpieceLower x hxX
+  have hVsub : V ⊆ U := by
+    intro y hyV
+    obtain ⟨x, hxX, hyPiece⟩ := Finset.mem_biUnion.mp hyV
+    exact hblockCover x hxX hyPiece
+  have hUcard : U.card ≤ r * Q'.card := by
+    simpa [U] using finiteSupportChoiceUnion_card_le hcard cOther
+  exact hVLower.trans ((Finset.card_le_card hVsub).trans hUcard)
+
+/-- In a cardinal-minimal strengthened crossing certificate, every target's
+crossing endpoint family obeys the private-selector occupancy bound. -/
+theorem minimalCrossingEndpointTripleCertificate_forces_scaledEndpointBound
+    {A B₀ : Set ℕ} {F : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {k : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hblockLower : ∀ i, k ≤ (F i).card)
+    (hQcross : ∀ q ∈ Q,
+      ∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧
+        ¬ (E : Set ℕ) ⊆ B₀)
+    (hcert : ∀ sel : BlockSelector F, ∃ q ∈ Q,
+      DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet sel) q)
+    (hlocalized : ∀ q ∈ Q, ∃ sel : BlockSelector F,
+      DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
+        (selectedSet sel) q ∧
+      ∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt
+          (crossingEndpointTripleObstructionFamily A B₀)
+          (selectedSet sel) q') :
+    ∀ q ∈ Q,
+      (k - 1) * (crossingAtomEndpoints A B₀ q).card ≤
+        3 * (Q.erase q).card := by
+  classical
+  intro q hqQ
+  obtain ⟨sel, hqDestroy, hprivate⟩ := hlocalized q hqQ
+  have hendpointSelected :
+      (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+        selectedSet sel :=
+    (destroysAt_crossingEndpointTripleObstructionFamily_iff.mp
+      hqDestroy).2.2
+  have hsingleton : ∀ x ∈ crossingAtomEndpoints A B₀ q,
+      ({x} : Finset ℕ) ∈
+        crossingEndpointTripleObstructionFamily A B₀ q := by
+    intro x hx
+    simp only [crossingEndpointTripleObstructionFamily,
+      if_pos (hQcross q hqQ)]
+    apply Finset.mem_union_right
+    exact Finset.mem_image.mpr ⟨x, hx, rfl⟩
+  exact targetLocalized_singletonSupports_force_blockOccupancy
+    P hblockLower
+      crossingEndpointTripleObstructionFamily_cardAtMost
+      hcert sel hprivate hendpointSelected hsingleton
+
+/-- At the first strict cardinality above a `k`-point block, the scaled
+occupancy inequality forces every endpoint family to have size at most
+three as soon as `k ≥ 5`. -/
+theorem nearSharp_scaledEndpointBound_forces_endpointCard_le_three
+    {A B₀ : Set ℕ} {Q : Finset ℕ} {q k : ℕ}
+    (hk : 5 ≤ k)
+    (hqQ : q ∈ Q)
+    (hQcard : Q.card ≤ k + 1)
+    (hscaled :
+      (k - 1) * (crossingAtomEndpoints A B₀ q).card ≤
+        3 * (Q.erase q).card) :
+    (crossingAtomEndpoints A B₀ q).card ≤ 3 := by
+  have heraseCard : (Q.erase q).card = Q.card - 1 :=
+    Finset.card_erase_of_mem hqQ
+  have heraseLe : (Q.erase q).card ≤ k := by
+    rw [heraseCard]
+    omega
+  by_contra hnot
+  have hfour : 4 ≤ (crossingAtomEndpoints A B₀ q).card := by
+    omega
+  have hlower : 4 * (k - 1) ≤
+      (k - 1) * (crossingAtomEndpoints A B₀ q).card := by
+    simpa [Nat.mul_comm] using Nat.mul_le_mul_left (k - 1) hfour
+  have hupper : 3 * (Q.erase q).card ≤ 3 * k :=
+    Nat.mul_le_mul_left 3 heraseLe
+  have : 4 * (k - 1) ≤ 3 * k :=
+    hlower.trans (hscaled.trans hupper)
+  omega
+
 /-- A sharp private-destroyer certificate cannot recur arbitrarily late on
 one fixed core of size at least four.  At most three basis elements have
 arbitrarily late singleton order-three destruction, so every such core
@@ -5499,7 +5738,8 @@ def IsSharpCrossingEndpointRigidCore
 
 /-- A genuinely strict cardinal-minimal endpoint certificate.  Target
 localization records minimality and prevents this predicate from becoming
-true merely by adjoining irrelevant targets. -/
+true merely by adjoining irrelevant targets.  The final scaled occupancy
+bound records the quantitative consequence of those private selectors. -/
 def HasMinimalStrictCrossingEndpointCertificate
     (A B₀ : Set ℕ) (F : ℕ → Finset ℕ)
     (k N : ℕ) : Prop :=
@@ -5514,13 +5754,16 @@ def HasMinimalStrictCrossingEndpointCertificate
         (selectedSet sel) q ∧
       (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
         selectedSet sel) ∧
-    ∀ q ∈ Q, ∃ sel : BlockSelector F,
+    (∀ q ∈ Q, ∃ sel : BlockSelector F,
       DestroysAt (crossingEndpointTripleObstructionFamily A B₀)
         (selectedSet sel) q ∧
       ∀ q' ∈ Q, q' ≠ q →
         ¬ DestroysAt
           (crossingEndpointTripleObstructionFamily A B₀)
-          (selectedSet sel) q'
+          (selectedSet sel) q') ∧
+    ∀ q ∈ Q,
+      (k - 1) * (crossingAtomEndpoints A B₀ q).card ≤
+        3 * (Q.erase q).card
 
 /-- Meaningful minimal-certificate dichotomy.  Either cardinal-minimal
 crossing certificates are strictly larger than `k` beyond every threshold,
@@ -5583,7 +5826,26 @@ theorem minimalStrictCrossingEndpointCertificates_or_infiniteMovingRigidCores
     rcases hfork with hQstrict |
         ⟨point, i, hcellEq, hpointInj, hsharp⟩
     · apply hnoStrict
-      exact ⟨Q, hQstrict, hQdata₀, hcert, hlocalized⟩
+      have hblockLower : ∀ i, k ≤ (F i).card := by
+        intro i
+        rw [← hcellCard i]
+        exact Finset.card_le_card (hcore i)
+      have hcertCombined : ∀ sel : BlockSelector F, ∃ q ∈ Q,
+          DestroysAt
+            (crossingEndpointTripleObstructionFamily A B₀)
+            (selectedSet sel) q := by
+        intro sel
+        obtain ⟨q, hqQ, hqDestroy, hqEndpoints⟩ := hcert sel
+        exact ⟨q, hqQ,
+          destroysAt_crossingEndpointTripleObstructionFamily_iff.mpr
+            ⟨(hQdata q hqQ).2, hqDestroy, hqEndpoints⟩⟩
+      have hscaled : ∀ q ∈ Q,
+          (k - 1) * (crossingAtomEndpoints A B₀ q).card ≤
+            3 * (Q.erase q).card :=
+        minimalCrossingEndpointTripleCertificate_forces_scaledEndpointBound
+          P hblockLower (fun q hqQ => (hQdata q hqQ).2)
+            hcertCombined hlocalized
+      exact ⟨Q, hQstrict, hQdata₀, hcert, hlocalized, hscaled⟩
     · have hiMoving : i ∈ Moving := by
         exact ⟨Q, point, hQdata₀, hcellEq, hpointInj, hsharp⟩
       have hiJ : i ∈ J :=
