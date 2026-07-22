@@ -23792,6 +23792,141 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_exists_infiniteCandidat
     exact ⟨B, hBK.trans hKC, (hBK.trans hKC).trans hCA, hB,
       D, hDC, J, q, R, hJ, hsurvive⟩
 
+/-- Feed the candidate deletion into the bounded-stratum splitting
+dichotomy.  In the non-atomic branch, remove zero and obtain an infinite
+`B ⊆ C ⊆ A` whose deleted points split in `A \ B`; because zero is
+retained, the complement is already an exact order-two basis along `A`.
+Thus only pair independence remains before applying the splittable deletion
+theorem.  The alternative is the explicit infinite zero-atom branch. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_selfSplittingCandidate_or_zeroAtoms
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    (∃ B, B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+      DeletionSplitsIntoComplement A B ∧
+      IsExactTupleAsymptoticBasisAlong (A \ B) 2 A ∧
+      ∃ D : Finset ℕ, (D : Set ℕ) ⊆ C ∧
+        ∃ J : Set ℕ, ∃ q : ℕ → ℕ,
+          ∃ R : ℕ → Finset ℕ,
+            J.Infinite ∧
+            ∀ n ∈ J, n ≤ q n ∧
+              R n ∈ additiveSupportFamily A 3 (q n) ∧
+              Disjoint (R n) D ∧
+              Disjoint (R n : Set ℕ) B) ∨
+      ∃ L, L ⊆ C ∧ L.Infinite ∧
+        ∀ a ∈ L, ∀ E ∈ additiveSupportFamily A 2 a,
+          E = {a, 0} := by
+  obtain ⟨B₀, hB₀C, hB₀A, hB₀, D, hDC,
+      J, q, R, hJ, hsurvive⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_counterexample_exists_infiniteCandidateDeletion_with_unboundedSurvivingRepairs
+      hCA hC hrec hD₀ hminimal hcounter
+  rcases infiniteDeletionSplits_or_infiniteZeroAtoms hbasis hB₀ with
+      hsplit | hatomic
+  · obtain ⟨B₁, hB₁B₀, hB₁, hsplitB₁⟩ := hsplit
+    let B : Set ℕ := B₁ \ {0}
+    have hBB₁ : B ⊆ B₁ := Set.diff_subset
+    have hBB₀ : B ⊆ B₀ := hBB₁.trans hB₁B₀
+    have hB : B.Infinite := hB₁.diff (Set.finite_singleton 0)
+    have hzeroB : 0 ∉ B := by simp [B]
+    have hsplitB : DeletionSplitsIntoComplement A B :=
+      hsplitB₁.mono hBB₁
+    have hself : IsExactTupleAsymptoticBasisAlong (A \ B) 2 A :=
+      exactTwoBasisAlong_self_of_zero_and_deletedSplits
+        hzeroA hzeroB hsplitB
+    left
+    refine ⟨B, hBB₀.trans hB₀C, hBB₀.trans hB₀A,
+      hB, hsplitB, hself, D, hDC, J, q, R, hJ, ?_⟩
+    intro n hn
+    obtain ⟨hqn, hRR, hRD, hRB₀⟩ := hsurvive n hn
+    exact ⟨hqn, hRR, hRD, hRB₀.mono_right hBB₀⟩
+  · obtain ⟨L, hLB₀, hL, _hzeroA', hnormal⟩ := hatomic
+    right
+    exact ⟨L, hLB₀.trans hB₀C, hL, hnormal⟩
+
+/-- Exact negation of eventual pair independence: arbitrarily late there is
+a target every one of whose ambient order-two supports is entirely red. -/
+theorem not_eventuallyPairIndependent_iff_arbitrarilyLate_allPairSupportsRed
+    {A B : Set ℕ} :
+    ¬ IsEventuallyPairIndependentDeletion A B ↔
+      ∀ N, ∃ n, N ≤ n ∧
+        ∀ E ∈ additiveSupportFamily A 2 n, (E : Set ℕ) ⊆ B := by
+  rw [pairIndependent_iff_supportNotContained]
+  simp only [HasEventuallySupportNotContained]
+  push Not
+  rfl
+
+/-- If an infinite deletion already has the order-two self-basis property
+but the counterexample hypothesis forbids every successful deletion, its
+only remaining defect is the explicit arbitrarily-late all-red pair-support
+obstruction. -/
+theorem counterexample_selfBasisDeletion_has_arbitrarilyLate_allPairSupportsRed
+    {A B : Set ℕ}
+    (hBA : B ⊆ A)
+    (hB : B.Infinite)
+    (hself : IsExactTupleAsymptoticBasisAlong (A \ B) 2 A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∀ N, ∃ n, N ≤ n ∧
+      ∀ E ∈ additiveSupportFamily A 2 n, (E : Set ℕ) ⊆ B := by
+  apply not_eventuallyPairIndependent_iff_arbitrarilyLate_allPairSupportsRed.mp
+  intro hpair
+  have hselection : IsPairIndependentDeletionWithSelfBasis A B :=
+    ⟨hBA, hB, hpair, hself⟩
+  obtain ⟨B', hB'A, hB', hthree⟩ :=
+    hselection.exists_infiniteDeletion_threeBasis
+  exact hcounter B' hB'A hB' hthree
+
+/-- Sharpen the non-atomic branch of the preceding dichotomy by recording
+the exact pair-independence obstruction which remains. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_selfSplittingAllRedCandidate_or_zeroAtoms
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    (∃ B, B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+      DeletionSplitsIntoComplement A B ∧
+      IsExactTupleAsymptoticBasisAlong (A \ B) 2 A ∧
+      (∀ N, ∃ n, N ≤ n ∧
+        ∀ E ∈ additiveSupportFamily A 2 n, (E : Set ℕ) ⊆ B) ∧
+      ∃ D : Finset ℕ, (D : Set ℕ) ⊆ C ∧
+        ∃ J : Set ℕ, ∃ q : ℕ → ℕ,
+          ∃ R : ℕ → Finset ℕ,
+            J.Infinite ∧
+            ∀ n ∈ J, n ≤ q n ∧
+              R n ∈ additiveSupportFamily A 3 (q n) ∧
+              Disjoint (R n) D ∧
+              Disjoint (R n : Set ℕ) B) ∨
+      ∃ L, L ⊆ C ∧ L.Infinite ∧
+        ∀ a ∈ L, ∀ E ∈ additiveSupportFamily A 2 a,
+          E = {a, 0} := by
+  rcases
+      minimalRecurrentNoTwoRepairPrefix_counterexample_selfSplittingCandidate_or_zeroAtoms
+        hbasis hzeroA hCA hC hrec hD₀ hminimal hcounter with
+    hsplit | hatomic
+  · left
+    obtain ⟨B, hBC, hBA, hB, hsplitB, hself,
+      D, hDC, J, q, R, hJ, hsurvive⟩ := hsplit
+    exact ⟨B, hBC, hBA, hB, hsplitB, hself,
+      counterexample_selfBasisDeletion_has_arbitrarilyLate_allPairSupportsRed
+        hBA hB hself hcounter,
+      D, hDC, J, q, R, hJ, hsurvive⟩
+  · exact Or.inr hatomic
+
 /- Finite-family version of cross-block image avoidance.  The support map
 is thinned successively against each injective marked image; previously
 obtained avoidance properties persist under further thinning. -/
@@ -23822,6 +23957,284 @@ theorem exists_infinite_crossAvoiding_injectiveImages
       · intro b hb d hd hbd
         exact havoid₀ b (hLL₀ hb) d (hLL₀ hd) hbd
       · exact havoidTail a
+
+/-- Simultaneous two-sided thinning of an infinite matching.  After
+thinning, neither endpoint of any other matched pair occurs in either of
+the two bounded repair supports at the current index.  This is the exact
+cross-index invariant needed to make one of the two repairs survive every
+orientation of the matching. -/
+theorem exists_infinite_matching_twoSidedCrossAvoidance
+    {I : Set ℕ} (hI : I.Infinite)
+    (x y : ℕ → ℕ)
+    (hmatching : ∀ n ∈ I, ∀ m ∈ I, n ≠ m →
+      Disjoint ({x n, y n} : Finset ℕ)
+        ({x m, y m} : Finset ℕ))
+    (E F : ℕ → Finset ℕ) (r : ℕ)
+    (hcard : ∀ n ∈ I, (E n ∪ F n).card ≤ r) :
+    ∃ J, J ⊆ I ∧ J.Infinite ∧
+      ∀ n ∈ J, ∀ m ∈ J, n ≠ m →
+        x m ∉ E n ∪ F n ∧ y m ∉ E n ∪ F n := by
+  classical
+  have hxInj : Set.InjOn x I := by
+    intro n hn m hm hxm
+    by_contra hnm
+    have hdisj := hmatching n hn m hm hnm
+    have hleft : x n ∈ ({x n, y n} : Finset ℕ) := by simp
+    have hright : x n ∈ ({x m, y m} : Finset ℕ) := by
+      rw [hxm]
+      simp
+    exact Finset.disjoint_left.mp hdisj hleft hright
+  have hyInj : Set.InjOn y I := by
+    intro n hn m hm hym
+    by_contra hnm
+    have hdisj := hmatching n hn m hm hnm
+    have hleft : y n ∈ ({x n, y n} : Finset ℕ) := by simp
+    have hright : y n ∈ ({x m, y m} : Finset ℕ) := by
+      rw [hym]
+      simp
+    exact Finset.disjoint_left.mp hdisj hleft hright
+  let endpoint : Fin 2 → ℕ → ℕ := fun a =>
+    Fin.cases x (fun _ => y) a
+  have hendpointInj : ∀ a, Set.InjOn (endpoint a) I := by
+    intro a
+    refine Fin.cases hxInj (fun a => ?_) a
+    exact hyInj
+  obtain ⟨J, hJI, hJ, havoid⟩ :=
+    exists_infinite_crossAvoiding_injectiveImages
+      hI 2 endpoint hendpointInj (fun n => E n ∪ F n) r hcard
+  refine ⟨J, hJI, hJ, ?_⟩
+  intro n hn m hm hnm
+  constructor
+  · simpa [endpoint] using havoid 0 n hn m hm hnm
+  · simpa [endpoint] using havoid 1 n hn m hm hnm
+
+/-- The balanced repaired matching contains an infinite submatching whose
+targets survive every orientation of that submatching.  If an orientation
+chooses `x n`, the opposite repair `F n` survives; if it chooses `y n`, the
+repair `E n` survives.  Two-sided cross avoidance handles every other
+index, while global `C`-disjointness handles the diagonal choice. -/
+theorem cofinalSpatialCriticalBalancedAdditivePairsWithRepairs_exist_commonSurvivalSubmatching
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hKC : K ⊆ C)
+    (P : IsFiniteBlockPartition K cell)
+    (hbalanced : ∀ start N, ∃ q, N ≤ q ∧
+      HasCriticalBalancedAdditivePairWithRepairsAt A C
+        {x | ∃ i, x ∈ cell (start + i)} D q) :
+    ∃ q x y : ℕ → ℕ, ∃ E F : ℕ → Finset ℕ,
+      ∃ J : Set ℕ, J.Infinite ∧
+        (∀ n ∈ J, ∀ m ∈ J, n ≠ m →
+          Disjoint ({x n, y n} : Finset ℕ)
+            ({x m, y m} : Finset ℕ)) ∧
+        (∀ n ∈ J, x n ≠ y n) ∧
+        (∀ n ∈ J, x n ∈ K ∧ y n ∈ K) ∧
+        (∀ n ∈ J, n ≤ q n) ∧
+        (∀ n ∈ J,
+          E n ∈ additiveSupportFamily A 3 (q n) ∧
+          F n ∈ additiveSupportFamily A 3 (q n)) ∧
+        ∀ s : ℕ → ℕ,
+          (∀ n ∈ J, s n = x n ∨ s n = y n) →
+          ∀ n ∈ J, ∃ G ∈ additiveSupportFamily A 3 (q n),
+            Disjoint (G : Set ℕ) (s '' J) := by
+  classical
+  obtain ⟨q, x, y, u, v, u', v', E, F,
+      L, hL, hmatching, hw⟩ :=
+    cofinalSpatialCriticalBalancedAdditivePairsWithRepairs_exist_infiniteMatching
+      P hbalanced
+  have hunionCard : ∀ n ∈ L, (E n ∪ F n).card ≤ 6 := by
+    intro n hn
+    have hEcard : (E n).card ≤ 3 :=
+      additiveSupportFamily_cardAtMost A 3 (q n) (E n) (hw n).2.1
+    have hFcard : (F n).card ≤ 3 :=
+      additiveSupportFamily_cardAtMost A 3 (q n) (F n)
+        (hw n).2.2.2.1
+    exact (Finset.card_union_le (E n) (F n)).trans (by omega)
+  obtain ⟨J, hJL, hJ, hcross⟩ :=
+    exists_infinite_matching_twoSidedCrossAvoidance
+      hL x y hmatching E F 6 hunionCard
+  have hxNotF : ∀ n ∈ J, x n ∉ F n := by
+    intro n hn hxF
+    obtain ⟨_hqn, _hER, _hED, _hFR, _hFD, hEFC,
+        hxE, _hyF, hxTail, _hyTail, _hxy,
+        _hxCritical, _hyCritical, _huA, _hvA,
+        _hu'A, _hv'A, _hxsum, _hysum⟩ := hw n
+    have hxK : x n ∈ K := by
+      obtain ⟨i, hxi⟩ := hxTail
+      exact (P.mem_iff (x n)).mpr ⟨n + i, hxi⟩
+    exact Set.disjoint_left.mp hEFC
+      ⟨Finset.mem_coe.mpr hxE, hKC hxK⟩
+      ⟨Finset.mem_coe.mpr hxF, hKC hxK⟩
+  have hyNotE : ∀ n ∈ J, y n ∉ E n := by
+    intro n hn hyE
+    obtain ⟨_hqn, _hER, _hED, _hFR, _hFD, hEFC,
+        _hxE, hyF, _hxTail, hyTail, _hxy,
+        _hxCritical, _hyCritical, _huA, _hvA,
+        _hu'A, _hv'A, _hxsum, _hysum⟩ := hw n
+    have hyK : y n ∈ K := by
+      obtain ⟨i, hyi⟩ := hyTail
+      exact (P.mem_iff (y n)).mpr ⟨n + i, hyi⟩
+    exact Set.disjoint_left.mp hEFC
+      ⟨Finset.mem_coe.mpr hyE, hKC hyK⟩
+      ⟨Finset.mem_coe.mpr hyF, hKC hyK⟩
+  refine ⟨q, x, y, E, F, J, hJ,
+    fun n hn m hm hnm => hmatching n (hJL hn) m (hJL hm) hnm,
+    fun n hn => (hw n).2.2.2.2.2.2.2.2.2.2.1,
+    ?_,
+    fun n hn => (hw n).1,
+    fun n hn => ⟨(hw n).2.1, (hw n).2.2.2.1⟩, ?_⟩
+  · intro n hn
+    have hxTail := (hw n).2.2.2.2.2.2.2.2.1
+    have hyTail := (hw n).2.2.2.2.2.2.2.2.2.1
+    constructor
+    · obtain ⟨i, hxi⟩ := hxTail
+      exact (P.mem_iff (x n)).mpr ⟨n + i, hxi⟩
+    · obtain ⟨i, hyi⟩ := hyTail
+      exact (P.mem_iff (y n)).mpr ⟨n + i, hyi⟩
+  · intro s hs n hn
+    rcases hs n hn with hsnx | hsny
+    · refine ⟨F n, (hw n).2.2.2.1, ?_⟩
+      rw [Set.disjoint_left]
+      intro z hzF hzSelected
+      obtain ⟨m, hm, rfl⟩ := hzSelected
+      by_cases hnm : n = m
+      · subst m
+        exact hxNotF n hn (Finset.mem_coe.mp (hsnx ▸ hzF))
+      · rcases hs m hm with hsmx | hsmy
+        · exact (hcross n hn m hm hnm).1
+            (Finset.mem_union_right _
+              (Finset.mem_coe.mp (hsmx ▸ hzF)))
+        · exact (hcross n hn m hm hnm).2
+            (Finset.mem_union_right _
+              (Finset.mem_coe.mp (hsmy ▸ hzF)))
+    · refine ⟨E n, (hw n).2.1, ?_⟩
+      rw [Set.disjoint_left]
+      intro z hzE hzSelected
+      obtain ⟨m, hm, rfl⟩ := hzSelected
+      by_cases hnm : n = m
+      · subst m
+        exact hyNotE n hn (Finset.mem_coe.mp (hsny ▸ hzE))
+      · rcases hs m hm with hsmx | hsmy
+        · exact (hcross n hn m hm hnm).1
+            (Finset.mem_union_left _
+              (Finset.mem_coe.mp (hsmx ▸ hzE)))
+        · exact (hcross n hn m hm hnm).2
+            (Finset.mem_union_left _
+              (Finset.mem_coe.mp (hsmy ▸ hzE)))
+
+/-- Reindex the common-survival submatching by all natural numbers.  Its
+endpoint pairs form an honest binary finite-block partition, and its
+unbounded target sequence survives every block selector. -/
+theorem cofinalSpatialCriticalBalancedAdditivePairsWithRepairs_exist_binaryPartition_commonSurvivalTargets
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hKC : K ⊆ C)
+    (P : IsFiniteBlockPartition K cell)
+    (hbalanced : ∀ start N, ∃ q, N ≤ q ∧
+      HasCriticalBalancedAdditivePairWithRepairsAt A C
+        {x | ∃ i, x ∈ cell (start + i)} D q) :
+    ∃ K' : Set ℕ, ∃ pairCell : ℕ → Finset ℕ,
+      ∃ target : ℕ → ℕ,
+        K' ⊆ K ∧ K'.Infinite ∧
+        IsFiniteBlockPartition K' pairCell ∧
+        (∀ i, (pairCell i).card = 2) ∧
+        (Set.range target).Infinite ∧
+        ∀ s : BlockSelector pairCell, ∀ i,
+          ∃ G ∈ additiveSupportFamily A 3 (target i),
+            Disjoint (G : Set ℕ) (selectedSet s) := by
+  classical
+  obtain ⟨q, x, y, E, F, J, hJ, hmatching,
+      hxy, hxyK, hqLate, _hEF, hcommon⟩ :=
+    cofinalSpatialCriticalBalancedAdditivePairsWithRepairs_exist_commonSurvivalSubmatching
+      hKC P hbalanced
+  letI : Infinite J := hJ.to_subtype
+  let e : ℕ ≃ J := Classical.choice (inferInstance : Nonempty (ℕ ≃ J))
+  let index : ℕ → ℕ := fun n => (e n).1
+  have hindexJ : ∀ n, index n ∈ J := fun n => (e n).2
+  have hindexInj : Function.Injective index := by
+    intro n m hnm
+    apply e.injective
+    exact Subtype.ext hnm
+  let pairCell : ℕ → Finset ℕ := fun n =>
+    {x (index n), y (index n)}
+  let K' : Set ℕ := {z | ∃ n, z ∈ pairCell n}
+  have P' : IsFiniteBlockPartition K' pairCell := by
+    refine ⟨?_, ?_, ?_⟩
+    · intro n
+      exact ⟨x (index n), by simp [pairCell]⟩
+    · intro n m hnm
+      exact hmatching (index n) (hindexJ n)
+        (index m) (hindexJ m) (fun hEq => hnm (hindexInj hEq))
+    · intro z
+      simp only [K', Set.mem_setOf_eq]
+  have hK'K : K' ⊆ K := by
+    rintro z ⟨n, hzn⟩
+    have hzCases : z = x (index n) ∨ z = y (index n) := by
+      simpa [pairCell] using hzn
+    rcases hzCases with rfl | rfl
+    · exact (hxyK (index n) (hindexJ n)).1
+    · exact (hxyK (index n) (hindexJ n)).2
+  have hxIndexInj : Function.Injective (fun n => x (index n)) := by
+    intro n m hxm
+    change x (index n) = x (index m) at hxm
+    by_contra hnm
+    have hdisj := hmatching (index n) (hindexJ n)
+      (index m) (hindexJ m) (fun hEq => hnm (hindexInj hEq))
+    have hleft : x (index n) ∈
+        ({x (index n), y (index n)} : Finset ℕ) := by simp
+    have hright : x (index n) ∈
+        ({x (index m), y (index m)} : Finset ℕ) := by
+      rw [hxm]
+      simp
+    exact Finset.disjoint_left.mp hdisj hleft hright
+  have hK' : K'.Infinite := by
+    apply (Set.infinite_range_of_injective hxIndexInj).mono
+    rintro z ⟨n, rfl⟩
+    exact ⟨n, by simp [pairCell]⟩
+  have hpairCard : ∀ n, (pairCell n).card = 2 := by
+    intro n
+    simp [pairCell, hxy (index n) (hindexJ n)]
+  let target : ℕ → ℕ := fun n => q (index n)
+  have htargetInfinite : (Set.range target).Infinite := by
+    apply Set.infinite_of_forall_exists_gt
+    intro N
+    have hindexRange : (Set.range index).Infinite :=
+      Set.infinite_range_of_injective hindexInj
+    obtain ⟨j, ⟨n, rfl⟩, hjN⟩ := hindexRange.exists_gt N
+    exact ⟨target n, ⟨n, rfl⟩,
+      hjN.trans_le (hqLate (index n) (hindexJ n))⟩
+  refine ⟨K', pairCell, target, hK'K, hK', P',
+    hpairCard, htargetInfinite, ?_⟩
+  intro s i
+  let orient : ℕ → ℕ := fun j =>
+    if hj : j ∈ J then (s (e.symm ⟨j, hj⟩)).1 else x j
+  have horient : ∀ j ∈ J,
+      orient j = x j ∨ orient j = y j := by
+    intro j hj
+    have hindexEq : index (e.symm ⟨j, hj⟩) = j := by
+      exact congrArg Subtype.val (e.apply_symm_apply ⟨j, hj⟩)
+    have hmem := (s (e.symm ⟨j, hj⟩)).2
+    have hcases : (s (e.symm ⟨j, hj⟩)).1 = x j ∨
+        (s (e.symm ⟨j, hj⟩)).1 = y j := by
+      simpa [pairCell, hindexEq] using hmem
+    simpa [orient, hj] using hcases
+  obtain ⟨G, hGR, hGorient⟩ :=
+    hcommon orient horient (index i) (hindexJ i)
+  refine ⟨G, hGR, hGorient.mono_right ?_⟩
+  intro z hzSelected
+  obtain ⟨n, hsn⟩ := hzSelected
+  refine ⟨index n, hindexJ n, ?_⟩
+  have hsubtype : (⟨index n, hindexJ n⟩ : J) = e n := by
+    apply Subtype.ext
+    rfl
+  have hsymm : e.symm ⟨index n, hindexJ n⟩ = n := by
+    rw [hsubtype]
+    exact e.symm_apply_apply n
+  calc
+    orient (index n) =
+        (s (e.symm ⟨index n, hindexJ n⟩)).1 := by
+      simp [orient, hindexJ n]
+    _ = (s n).1 := by rw [hsymm]
+    _ = z := hsn
 
 /-- Any injective third-option map strictly below both its atom and the first
 petal has an infinite thinning with simultaneous self-repairs.  Two uses of
