@@ -4670,6 +4670,35 @@ def HasInfinitePairwiseTwoRepairConflictClique
           Disjoint ((E : Set ℕ) ∩ C)
             ((F : Set ℕ) ∩ C)
 
+/-- Packaged witness for one oriented edge of the two-repair conflict
+graph.  The first support contains `x`, the second contains `y`, and their
+reservoir traces are disjoint. -/
+structure TwoRepairConflictData
+    (A C : Set ℕ) (D : Finset ℕ) (x y : ℕ) where
+  target : ℕ
+  left : Finset ℕ
+  left_mem : left ∈ additiveSupportFamily A 3 target
+  left_disjoint : Disjoint left D
+  left_point : x ∈ left
+  right : Finset ℕ
+  right_mem : right ∈ additiveSupportFamily A 3 target
+  right_disjoint : Disjoint right D
+  right_point : y ∈ right
+  traces_disjoint : Disjoint ((left : Set ℕ) ∩ C)
+    ((right : Set ℕ) ∩ C)
+
+/-- Private-endpoint normal form of the infinite conflict clique.  Each
+edge has two same-target supports whose intersections with the whole clique
+are exactly its two opposite endpoints. -/
+def HasInfinitePairwisePrivateTwoRepairConflictClique
+    (A C : Set ℕ) (D : Finset ℕ) : Prop :=
+  ∃ K, K ⊆ C ∧ K.Infinite ∧
+    Disjoint K (D : Set ℕ) ∧
+    ∀ x ∈ K, ∀ y ∈ K, x ≠ y →
+      ∃ w : TwoRepairConflictData A C D x y,
+        ((w.left : Set ℕ) ∩ K) = {x} ∧
+        ((w.right : Set ℕ) ∩ K) = {y}
+
 /-- Ramsey dichotomy for one eventually good prefix.  Join two reservoir
 points when some late repair pair places them on opposite sides.  An
 infinite independent set meets at most one side of every chosen pair, so one
@@ -4747,6 +4776,564 @@ theorem eventuallyGoodPrefix_infiniteDeletion_or_twoRepairConflictClique
             Or.inl ⟨Finset.mem_coe.mp hxE,
               Finset.mem_coe.mp hyF⟩⟩
       exact ⟨F, hFR, hFL⟩
+
+/-- A genuine counterexample cannot take the independent-set branch of the
+Ramsey dichotomy.  Hence every nonempty inclusion-minimal recurrent prefix,
+after retaining one of its points, exposes an infinite pairwise two-repair
+conflict clique on the remaining eventually good prefix. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_conflictClique
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ d ∈ D₀,
+      HasInfinitePairwiseTwoRepairConflictClique A C (D₀.erase d) := by
+  obtain ⟨d, hdD₀⟩ := hD₀
+  have hseedC : (((D₀.erase d : Finset ℕ) : Set ℕ)) ⊆ C :=
+    fun x hx => hrec.1 (Finset.mem_erase.mp
+      (Finset.mem_coe.mp hx)).2
+  have hgood :=
+    minimalRecurrentNoTwoRepairPrefix_erase_eventuallyGood
+      hrec hminimal d hdD₀
+  rcases eventuallyGoodPrefix_infiniteDeletion_or_twoRepairConflictClique
+      hC hseedC hgood with hsuccess | hclique
+  · obtain ⟨B, hBC, hB, hthree⟩ := hsuccess
+    exact (hcounter B (hBC.trans hCA) hB hthree).elim
+  · exact ⟨d, hdD₀, hclique⟩
+
+/-- Every infinite two-repair conflict clique has an infinite subclique in
+private-endpoint normal form.  For each oriented pair choose its two triple
+supports and put all non-endpoint vertices of their union into a bounded
+pair map.  The symmetric union of the two orientations has size at most
+twelve.  Pair-map free-set thinning removes all those auxiliary vertices
+from one infinite subclique. -/
+theorem twoRepairConflictClique_has_privateSubclique
+    {A C : Set ℕ} {D : Finset ℕ}
+    (hclique : HasInfinitePairwiseTwoRepairConflictClique A C D) :
+    HasInfinitePairwisePrivateTwoRepairConflictClique A C D := by
+  classical
+  obtain ⟨K, hKC, hK, hKD, hconflict⟩ := hclique
+  let Valid : ℕ → ℕ → Prop := fun x y =>
+    x ∈ K ∧ y ∈ K ∧ x ≠ y
+  have hdata : ∀ x y, Valid x y →
+      Nonempty (TwoRepairConflictData A C D x y) := by
+    intro x y hxy
+    obtain ⟨q, E, hER, hED, hxE, F, hFR, hFD, hyF, hEF⟩ :=
+      hconflict x hxy.1 y hxy.2.1 hxy.2.2
+    exact ⟨{
+      target := q
+      left := E
+      left_mem := hER
+      left_disjoint := hED
+      left_point := hxE
+      right := F
+      right_mem := hFR
+      right_disjoint := hFD
+      right_point := hyF
+      traces_disjoint := hEF
+    }⟩
+  let data : ∀ x y, Valid x y →
+      TwoRepairConflictData A C D x y :=
+    fun x y hxy => Classical.choice (hdata x y hxy)
+  let g : ℕ → ℕ → Finset ℕ := fun x y =>
+    if hxy : Valid x y then
+      (((data x y hxy).left ∪ (data x y hxy).right).erase x).erase y
+    else ∅
+  let f : ℕ → ℕ → Finset ℕ := fun x y =>
+    g x y ∪ g y x
+  have hfsymm : ∀ x y, f x y = f y x := by
+    intro x y
+    simp only [f]
+    exact Finset.union_comm _ _
+  have hgcard : ∀ x ∈ K, ∀ y ∈ K, x ≠ y →
+      (g x y).card ≤ 6 := by
+    intro x hxK y hyK hxy
+    have hv : Valid x y := ⟨hxK, hyK, hxy⟩
+    simp only [g, dif_pos hv]
+    calc
+      (((((data x y hv).left ∪ (data x y hv).right).erase x).erase y)).card
+          ≤ (((data x y hv).left ∪ (data x y hv).right).erase x).card :=
+        Finset.card_erase_le
+      _ ≤ ((data x y hv).left ∪ (data x y hv).right).card :=
+        Finset.card_erase_le
+      _ ≤ (data x y hv).left.card + (data x y hv).right.card :=
+        Finset.card_union_le _ _
+      _ ≤ 3 + 3 := Nat.add_le_add
+        (additiveSupportFamily_cardAtMost A 3 (data x y hv).target
+          (data x y hv).left (data x y hv).left_mem)
+        (additiveSupportFamily_cardAtMost A 3 (data x y hv).target
+          (data x y hv).right (data x y hv).right_mem)
+      _ = 6 := by omega
+  have hfcard : ∀ x ∈ K, ∀ y ∈ K, x ≠ y →
+      (f x y).card ≤ 12 := by
+    intro x hxK y hyK hxy
+    exact (Finset.card_union_le (g x y) (g y x)).trans <|
+      (Nat.add_le_add (hgcard x hxK y hyK hxy)
+        (hgcard y hyK x hxK hxy.symm)).trans (by omega)
+  have hgleft : ∀ x y, x ∉ g x y := by
+    intro x y
+    by_cases hv : Valid x y
+    · simp [g, hv]
+    · simp [g, hv]
+  have hgright : ∀ x y, y ∉ g x y := by
+    intro x y
+    by_cases hv : Valid x y
+    · simp [g, hv]
+    · simp [g, hv]
+  have hfavoid : ∀ x ∈ K, ∀ y ∈ K, x ≠ y →
+      x ∉ f x y ∧ y ∉ f x y := by
+    intro x _hxK y _hyK _hxy
+    constructor
+    · intro hx
+      rcases Finset.mem_union.mp hx with hx | hx
+      · exact hgleft x y hx
+      · exact hgright y x hx
+    · intro hy
+      rcases Finset.mem_union.mp hy with hy | hy
+      · exact hgright x y hy
+      · exact hgleft y x hy
+  obtain ⟨L, hLK, hL, hfree⟩ :=
+    exists_infinite_freeSet_of_symmetric_bounded_pairMap
+      hK f 12 hfsymm hfcard hfavoid
+  have hLC : L ⊆ C := hLK.trans hKC
+  have hLD : Disjoint L (D : Set ℕ) := hKD.mono_left hLK
+  refine ⟨L, hLC, hL, hLD, ?_⟩
+  intro x hxL y hyL hxy
+  have hxK : x ∈ K := hLK hxL
+  have hyK : y ∈ K := hLK hyL
+  have hv : Valid x y := ⟨hxK, hyK, hxy⟩
+  let w := data x y hv
+  have hgEq : g x y =
+      ((w.left ∪ w.right).erase x).erase y := by
+    simp only [g, dif_pos hv]
+    rfl
+  have hgfree : Disjoint (g x y : Set ℕ) L :=
+    (hfree x hxL y hyL hxy).mono_left <| by
+      intro z hz
+      exact Finset.mem_union_left (g y x) hz
+  have hyNotLeft : y ∉ w.left := by
+    intro hyLeft
+    exact Set.disjoint_left.mp w.traces_disjoint
+      ⟨Finset.mem_coe.mpr hyLeft, hKC hyK⟩
+      ⟨Finset.mem_coe.mpr w.right_point, hKC hyK⟩
+  have hxNotRight : x ∉ w.right := by
+    intro hxRight
+    exact Set.disjoint_left.mp w.traces_disjoint
+      ⟨Finset.mem_coe.mpr w.left_point, hKC hxK⟩
+      ⟨Finset.mem_coe.mpr hxRight, hKC hxK⟩
+  refine ⟨w, ?_, ?_⟩
+  · ext z
+    constructor
+    · intro hz
+      have hzLeft : z ∈ w.left := Finset.mem_coe.mp hz.1
+      have hzL : z ∈ L := hz.2
+      by_cases hzx : z = x
+      · simpa [hzx]
+      have hzy : z ≠ y := by
+        intro hzy
+        subst z
+        exact hyNotLeft hzLeft
+      have hzg : z ∈ g x y := by
+        rw [hgEq]
+        exact Finset.mem_erase.mpr ⟨hzy,
+          Finset.mem_erase.mpr ⟨hzx,
+            Finset.mem_union_left _ hzLeft⟩⟩
+      exact (Set.disjoint_left.mp hgfree
+        (Finset.mem_coe.mpr hzg) hzL).elim
+    · intro hz
+      have hzx : z = x := by simpa using hz
+      subst z
+      exact ⟨Finset.mem_coe.mpr w.left_point, hxL⟩
+  · ext z
+    constructor
+    · intro hz
+      have hzRight : z ∈ w.right := Finset.mem_coe.mp hz.1
+      have hzL : z ∈ L := hz.2
+      by_cases hzy : z = y
+      · simpa [hzy]
+      have hzx : z ≠ x := by
+        intro hzx
+        subst z
+        exact hxNotRight hzRight
+      have hzg : z ∈ g x y := by
+        rw [hgEq]
+        exact Finset.mem_erase.mpr ⟨hzy,
+          Finset.mem_erase.mpr ⟨hzx,
+            Finset.mem_union_right _ hzRight⟩⟩
+      exact (Set.disjoint_left.mp hgfree
+        (Finset.mem_coe.mpr hzg) hzL).elim
+    · intro hz
+      have hzy : z = y := by simpa using hz
+      subst z
+      exact ⟨Finset.mem_coe.mpr w.right_point, hyL⟩
+
+/-- Counterexample-level private-clique reduction.  The minimal recurrent
+prefix first supplies a conflict clique after one point is retained, and
+bounded pair-map thinning then makes all edge witnesses private at their
+two marked endpoints. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_privateConflictClique
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ d ∈ D₀,
+      HasInfinitePairwisePrivateTwoRepairConflictClique
+        A C (D₀.erase d) := by
+  obtain ⟨d, hdD₀, hclique⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_counterexample_forces_conflictClique
+      hCA hC hrec hD₀ hminimal hcounter
+  exact ⟨d, hdD₀,
+    twoRepairConflictClique_has_privateSubclique hclique⟩
+
+/-- Pair a private conflict clique into disjoint two-point cells.  Every
+choice of one point from each cell simultaneously preserves the unbounded
+family of corresponding edge targets: at cell `i`, use the private support
+belonging to the endpoint which the selector did not choose. -/
+theorem privateConflictClique_has_binaryCells_with_unboundedCommonSurvival
+    {A C : Set ℕ} {D : Finset ℕ}
+    (hprivate : HasInfinitePairwisePrivateTwoRepairConflictClique A C D) :
+    ∃ cell : ℕ → Finset ℕ, ∃ target : ℕ → ℕ,
+      (∀ i, (cell i : Set ℕ) ⊆ C) ∧
+      (∀ i, (cell i).card = 2) ∧
+      (Pairwise fun i j => Disjoint (cell i) (cell j)) ∧
+      (Set.range target).Infinite ∧
+      ∀ s : ℕ → ℕ, (∀ i, s i ∈ cell i) →
+        ∀ i, ∃ G ∈ additiveSupportFamily A 3 (target i),
+          Disjoint (G : Set ℕ) (Set.range s) := by
+  classical
+  obtain ⟨K, hKC, hK, _hKD, hconflict⟩ := hprivate
+  letI : Infinite K := hK.to_subtype
+  letI : Denumerable K := Denumerable.ofEncodableOfInfinite K
+  let e : ℕ ≃ K := (Denumerable.eqv K).symm
+  let x : ℕ → ℕ := fun i => (e (2 * i)).1
+  let y : ℕ → ℕ := fun i => (e (2 * i + 1)).1
+  have hxK : ∀ i, x i ∈ K := fun i => (e (2 * i)).2
+  have hyK : ∀ i, y i ∈ K := fun i => (e (2 * i + 1)).2
+  have hindex : ∀ {a b : ℕ}, (e a).1 = (e b).1 → a = b := by
+    intro a b hab
+    exact e.injective (Subtype.ext hab)
+  have hxy : ∀ i, x i ≠ y i := by
+    intro i hEq
+    have hi := hindex hEq
+    omega
+  have hw : ∀ i, ∃ w : TwoRepairConflictData A C D (x i) (y i),
+      ((w.left : Set ℕ) ∩ K) = {x i} ∧
+      ((w.right : Set ℕ) ∩ K) = {y i} := by
+    intro i
+    exact hconflict (x i) (hxK i) (y i) (hyK i) (hxy i)
+  choose w hleftTrace hrightTrace using hw
+  let cell : ℕ → Finset ℕ := fun i => {x i, y i}
+  let target : ℕ → ℕ := fun i => (w i).target
+  have hcellC : ∀ i, (cell i : Set ℕ) ⊆ C := by
+    intro i z hz
+    have hzCases : z = x i ∨ z = y i := by
+      simpa [cell] using hz
+    rcases hzCases with rfl | rfl
+    · exact hKC (hxK i)
+    · exact hKC (hyK i)
+  have hcellCard : ∀ i, (cell i).card = 2 := by
+    intro i
+    simp [cell, hxy i]
+  have hcellDisjoint : Pairwise fun i j =>
+      Disjoint (cell i) (cell j) := by
+    intro i j hij
+    rw [Finset.disjoint_left]
+    intro z hzi hzj
+    have hzi' : z = x i ∨ z = y i := by
+      simpa [cell] using hzi
+    have hzj' : z = x j ∨ z = y j := by
+      simpa [cell] using hzj
+    rcases hzi' with hzx | hzy <;>
+      rcases hzj' with hzx' | hzy'
+    · apply hij
+      have := hindex (hzx.symm.trans hzx')
+      omega
+    · apply hij
+      have := hindex (hzx.symm.trans hzy')
+      omega
+    · apply hij
+      have := hindex (hzy.symm.trans hzx')
+      omega
+    · apply hij
+      have := hindex (hzy.symm.trans hzy')
+      omega
+  have hxInjective : Function.Injective x := by
+    intro i j hij
+    have hindices := hindex hij
+    omega
+  have hxRange : (Set.range x).Infinite :=
+    Set.infinite_range_of_injective hxInjective
+  have hxTarget : ∀ i, x i ≤ target i := by
+    intro i
+    exact additiveSupportFamily_supportsBounded A 3 (target i)
+      (w i).left (w i).left_mem (x i) (w i).left_point
+  have htarget : (Set.range target).Infinite := by
+    by_contra hnot
+    have hfinite : (Set.range target).Finite :=
+      Set.not_infinite.mp hnot
+    obtain ⟨U, hU⟩ := hfinite.bddAbove
+    apply hxRange
+    apply (Set.finite_Iic U).subset
+    rintro z ⟨i, rfl⟩
+    exact (hxTarget i).trans (hU ⟨i, rfl⟩)
+  refine ⟨cell, target, hcellC, hcellCard,
+    hcellDisjoint, htarget, ?_⟩
+  intro s hs i
+  have hsi : s i = x i ∨ s i = y i := by
+    simpa [cell] using hs i
+  rcases hsi with hsi | hsi
+  · refine ⟨(w i).right, (w i).right_mem, ?_⟩
+    rw [Set.disjoint_left]
+    rintro z hzRight ⟨j, rfl⟩
+    have hsjK : s j ∈ K := by
+      have hsjC := hs j
+      have hsjCases : s j = x j ∨ s j = y j := by
+        simpa [cell] using hsjC
+      rcases hsjCases with hsj | hsj
+      · exact hsj.symm ▸ hxK j
+      · exact hsj.symm ▸ hyK j
+    have hsjEq : s j = y i := by
+      have hmem : s j ∈ ((w i).right : Set ℕ) ∩ K :=
+        ⟨hzRight, hsjK⟩
+      rw [hrightTrace i] at hmem
+      simpa using hmem
+    by_cases hji : j = i
+    · subst j
+      exact hxy i (hsi.symm.trans hsjEq)
+    · exact Finset.disjoint_left.mp (hcellDisjoint hji)
+        (hs j) (by simpa [cell, hsjEq])
+  · refine ⟨(w i).left, (w i).left_mem, ?_⟩
+    rw [Set.disjoint_left]
+    rintro z hzLeft ⟨j, rfl⟩
+    have hsjK : s j ∈ K := by
+      have hsjC := hs j
+      have hsjCases : s j = x j ∨ s j = y j := by
+        simpa [cell] using hsjC
+      rcases hsjCases with hsj | hsj
+      · exact hsj.symm ▸ hxK j
+      · exact hsj.symm ▸ hyK j
+    have hsjEq : s j = x i := by
+      have hmem : s j ∈ ((w i).left : Set ℕ) ∩ K :=
+        ⟨hzLeft, hsjK⟩
+      rw [hleftTrace i] at hmem
+      simpa using hmem
+    by_cases hji : j = i
+    · subst j
+      exact hxy i (hsjEq.symm.trans hsi)
+    · exact Finset.disjoint_left.mp (hcellDisjoint hji)
+        (hs j) (by simpa [cell, hsjEq])
+
+/-- The binary cells above, viewed as their own union, are already a finite
+block partition of an infinite subreservoir.  This packages the private
+clique in the form expected by strong-deletion compactness. -/
+theorem privateConflictClique_has_binaryCommonSurvivalPartition
+    {A C : Set ℕ} {D : Finset ℕ}
+    (hprivate : HasInfinitePairwisePrivateTwoRepairConflictClique A C D) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ target : ℕ → ℕ,
+        K ⊆ C ∧ K.Infinite ∧
+        IsFiniteBlockPartition K cell ∧
+        (∀ i, (cell i).card = 2) ∧
+        (Set.range target).Infinite ∧
+        ∀ s : BlockSelector cell, ∀ i,
+          ∃ G ∈ additiveSupportFamily A 3 (target i),
+            Disjoint (G : Set ℕ) (selectedSet s) := by
+  classical
+  obtain ⟨cell, target, hcellC, hcellCard,
+      hcellDisjoint, htarget, hsurvive⟩ :=
+    privateConflictClique_has_binaryCells_with_unboundedCommonSurvival
+      hprivate
+  let K : Set ℕ := {z | ∃ i, z ∈ cell i}
+  have hcellNonempty : ∀ i, (cell i).Nonempty := by
+    intro i
+    apply Finset.card_pos.mp
+    rw [hcellCard i]
+    omega
+  have hKC : K ⊆ C := by
+    rintro z ⟨i, hzi⟩
+    exact hcellC i hzi
+  let point : ℕ → ℕ := fun i =>
+    (cell i).min' (hcellNonempty i)
+  have hpointMem : ∀ i, point i ∈ cell i := by
+    intro i
+    exact Finset.min'_mem _ _
+  have hpointInjective : Function.Injective point := by
+    intro i j hij
+    by_contra hne
+    exact Finset.disjoint_left.mp (hcellDisjoint hne)
+      (hpointMem i) (hij.symm ▸ hpointMem j)
+  have hK : K.Infinite := by
+    exact (Set.infinite_range_of_injective hpointInjective).mono <| by
+      rintro z ⟨i, rfl⟩
+      exact ⟨i, hpointMem i⟩
+  have P : IsFiniteBlockPartition K cell := by
+    refine ⟨hcellNonempty, hcellDisjoint, ?_⟩
+    intro z
+    rfl
+  refine ⟨K, cell, target, hKC, hK, P,
+    hcellCard, htarget, ?_⟩
+  intro s i
+  obtain ⟨G, hGR, hG⟩ :=
+    hsurvive (fun j => (s j).1) (fun j => (s j).2) i
+  exact ⟨G, hGR, by simpa [selectedSet] using hG⟩
+
+/-- Exact finite-certificate consequence of an unbounded target family
+which survives every selector of one infinite block partition.  Strong
+deletion gives a late finite certificate; after target-minimizing it, every
+certificate target has a private destroying selector.  Hence none can
+belong to the commonly surviving target family. -/
+theorem strongDeletion_certificate_avoids_unboundedCommonSurvivalTargets
+    {A K : Set ℕ} {R : SupportFamily}
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (hstrong : StrongInfiniteDeletion R A)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (_htarget : (Set.range target).Infinite)
+    (hsurvive : ∀ s : BlockSelector cell, ∀ i,
+      ∃ G ∈ R (target i),
+        Disjoint (G : Set ℕ) (selectedSet s)) :
+    ∀ N, ∃ Q : Finset ℕ,
+      Q.Nonempty ∧
+      (∀ q ∈ Q, N ≤ q) ∧
+      (∀ s : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt R (selectedSet s) q) ∧
+      (∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt R (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt R (selectedSet s) q') ∧
+      Disjoint (Q : Set ℕ) (Set.range target) := by
+  classical
+  intro N
+  obtain ⟨Q₀, hQ₀late, hQ₀cert⟩ :=
+    finiteBlockCertificates_on_subset_of_strongInfiniteDeletion
+      hstrong hKA cell P N
+  obtain ⟨Q, hQQ₀, hcert, hlocalized⟩ :=
+    exists_minimal_targetLocalized_subcertificate hQ₀cert
+  let s₀ : BlockSelector cell := fun i =>
+    ⟨(P.nonempty i).choose, (P.nonempty i).choose_spec⟩
+  obtain ⟨q₀, hq₀Q, _hq₀Destroy⟩ := hcert s₀
+  have hQ : Q.Nonempty := ⟨q₀, hq₀Q⟩
+  have hQlate : ∀ q ∈ Q, N ≤ q := by
+    intro q hqQ
+    exact hQ₀late q (hQQ₀ hqQ)
+  have hdisjoint : Disjoint (Q : Set ℕ)
+      (Set.range target) := by
+    rw [Set.disjoint_left]
+    intro q hqQ hqTarget
+    obtain ⟨i, rfl⟩ := hqTarget
+    obtain ⟨s, hdestroy, _hprivate⟩ :=
+      hlocalized (target i) (Finset.mem_coe.mp hqQ)
+    obtain ⟨G, hGR, hGsurvive⟩ := hsurvive s i
+    exact (hdestroy G hGR) hGsurvive
+  exact ⟨Q, hQ, hQlate, hcert, hlocalized, hdisjoint⟩
+
+/-- The certificate-migration package exposed by a private conflict clique:
+an infinite binary block reservoir, an unbounded target family surviving
+every selector, and arbitrarily late cardinal-minimal certificates which
+avoid that entire protected family. -/
+def HasBinaryCommonSurvivalCertificateMigration
+    (A C : Set ℕ) : Prop :=
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ target : ℕ → ℕ,
+        K ⊆ C ∧ K.Infinite ∧
+        IsFiniteBlockPartition K cell ∧
+        (∀ i, (cell i).card = 2) ∧
+        (Set.range target).Infinite ∧
+        (∀ s : BlockSelector cell, ∀ i,
+          ∃ G ∈ additiveSupportFamily A 3 (target i),
+            Disjoint (G : Set ℕ) (selectedSet s)) ∧
+        ∀ N, ∃ Q : Finset ℕ,
+          Q.Nonempty ∧
+          (∀ q ∈ Q, N ≤ q) ∧
+          (∀ s : BlockSelector cell, ∃ q ∈ Q,
+            DestroysAt (additiveSupportFamily A 3)
+              (selectedSet s) q) ∧
+          (∀ q ∈ Q, ∃ s : BlockSelector cell,
+            DestroysAt (additiveSupportFamily A 3)
+              (selectedSet s) q ∧
+            ∀ q' ∈ Q, q' ≠ q →
+              ¬ DestroysAt (additiveSupportFamily A 3)
+                (selectedSet s) q') ∧
+          Disjoint (Q : Set ℕ) (Set.range target)
+
+/-- Combined private-clique/strong-deletion bridge.  A private conflict
+clique yields an infinite binary deletion reservoir and an unbounded family
+of targets preserved by every selector.  Strong deletion can still return
+finite certificates on that reservoir, but every cardinal-minimal such
+certificate is forced completely off the protected target family. -/
+theorem strongDeletion_privateConflictClique_forces_binaryCertificateMigration
+    {A C : Set ℕ} {D : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A)
+    (hprivate : HasInfinitePairwisePrivateTwoRepairConflictClique A C D) :
+    HasBinaryCommonSurvivalCertificateMigration A C := by
+  obtain ⟨K, cell, target, hKC, hK, P,
+      hcellCard, htarget, hsurvive⟩ :=
+    privateConflictClique_has_binaryCommonSurvivalPartition hprivate
+  refine ⟨K, cell, target, hKC, hK, P,
+    hcellCard, htarget, hsurvive, ?_⟩
+  exact
+    strongDeletion_certificate_avoids_unboundedCommonSurvivalTargets
+      hstrong (hKC.trans hCA) P htarget hsurvive
+
+/-- Direct counterexample consequence for any eventually good finite
+prefix.  The independent Ramsey branch would already be the desired
+infinite deletion, so the private conflict clique and its binary certificate
+migration package are forced. -/
+theorem eventuallyGoodPrefix_counterexample_forces_binaryCertificateMigration
+    {A C : Set ℕ} {D : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hDC : (D : Set ℕ) ⊆ C)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    HasBinaryCommonSurvivalCertificateMigration A C := by
+  rcases eventuallyGoodPrefix_infiniteDeletion_or_twoRepairConflictClique
+      hC hDC hgood with hsuccess | hclique
+  · obtain ⟨B, hBC, hB, hthree⟩ := hsuccess
+    exact (hcounter B (hBC.trans hCA) hB hthree).elim
+  · exact
+      strongDeletion_privateConflictClique_forces_binaryCertificateMigration
+        hCA (strongOrderThreeDeletion_of_counterexample hcounter)
+          (twoRepairConflictClique_has_privateSubclique hclique)
+
+/-- A nonempty minimal recurrent obstruction inside a genuine
+counterexample therefore forces the full binary certificate-migration
+package.  This is the direct meeting point of the adaptive two-repair
+construction, the private-clique free-set reduction, and strong deletion's
+finite certificate `Q`. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_binaryCertificateMigration
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ d ∈ D₀,
+      HasBinaryCommonSurvivalCertificateMigration A C := by
+  obtain ⟨d, hdD₀, hprivate⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_counterexample_forces_privateConflictClique
+      hCA hC hrec hD₀ hminimal hcounter
+  refine ⟨d, hdD₀, ?_⟩
+  exact
+    strongDeletion_privateConflictClique_forces_binaryCertificateMigration
+      hCA (strongOrderThreeDeletion_of_counterexample hcounter) hprivate
 
 /-- At arbitrarily late targets of a minimal recurrent prefix, every core
 point simultaneously has a unique-hit support and a companion support which
