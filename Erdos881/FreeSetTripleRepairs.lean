@@ -4773,6 +4773,134 @@ theorem reservoirTrace_nonempty_of_noTwoRepairs
   rw [hempty] at hxTrace
   simpa using hxTrace
 
+/-- A marked unique-hit repair and its prefix-avoiding companion force a
+small moving minimal destroyer through the marked point.  The companion's
+reservoir trace has size at most three and completes the prefix to a
+destroyer; the marked repair then forces every minimal subdestroyer to retain
+`d`.  The final clause exposes the standard order-three minimal-destroyer
+trichotomy immediately. -/
+theorem markedUniqueHitRepair_has_smallMinimalDestroyerThroughPoint
+    {A C : Set ℕ} {P U V : Finset ℕ} {q d : ℕ}
+    (hno : NoTwoRepairsOnDeletionReservoirAt A C P q)
+    (hUR : U ∈ additiveSupportFamily A 3 q)
+    (hUhit : U ∩ P = {d})
+    (hVR : V ∈ additiveSupportFamily A 3 q)
+    (hVP : Disjoint V P)
+    (hUV : Disjoint ((U : Set ℕ) ∩ C)
+      ((V : Set ℕ) ∩ C)) :
+    ∃ T S : Finset ℕ,
+      (∀ x ∈ T, x ∈ C) ∧
+      Disjoint T P ∧ T.Nonempty ∧ T.card ≤ 3 ∧
+      DestroysAt (additiveSupportFamily A 3)
+        ((((P ∪ T : Finset ℕ) : Set ℕ))) q ∧
+      S ⊆ P ∪ T ∧ d ∈ S ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A 3) S q ∧
+      (S.card ≤ 3 ∨
+        HasTwoDisjointUniqueHitRepairs
+          (additiveSupportFamily A 3) S q ∨
+        (4 ≤ S.card ∧
+          HasCommonAnchorOrderThreeRepairs A S q)) := by
+  classical
+  let T : Finset ℕ := deletionReservoirTrace C V
+  have hTC : ∀ x ∈ T, x ∈ C := by
+    intro x hxT
+    exact (mem_deletionReservoirTrace.mp hxT).2
+  have hTP : Disjoint T P := by
+    rw [Finset.disjoint_left]
+    intro x hxT hxP
+    exact Finset.disjoint_left.mp hVP
+      (mem_deletionReservoirTrace.mp hxT).1 hxP
+  have hTnonempty : T.Nonempty := by
+    exact reservoirTrace_nonempty_of_noTwoRepairs hno hVR hVP
+  have hTcard : T.card ≤ 3 := by
+    calc
+      T.card ≤ V.card := by
+        simpa [T, deletionReservoirTrace] using
+          (Finset.card_filter_le V (fun x => x ∈ C))
+      _ ≤ 3 := additiveSupportFamily_cardAtMost A 3 q V hVR
+  have hdestroy : DestroysAt (additiveSupportFamily A 3)
+      ((((P ∪ T : Finset ℕ) : Set ℕ))) q := by
+    exact prefix_union_reservoirTrace_destroys_of_noTwoRepairs
+      hno hVR hVP
+  obtain ⟨S, hSsub, hSminimal⟩ :=
+    exists_inclusionMinimalDestroyer_subset hdestroy
+  have hdS : d ∈ S := by
+    by_contra hdS
+    have hUS : Disjoint (U : Set ℕ) (S : Set ℕ) := by
+      rw [Set.disjoint_left]
+      intro x hxU hxS
+      have hxUnion : x ∈ P ∪ T :=
+        hSsub (Finset.mem_coe.mp hxS)
+      rcases Finset.mem_union.mp hxUnion with hxP | hxT
+      · have hxInter : x ∈ U ∩ P :=
+          Finset.mem_inter.mpr
+            ⟨Finset.mem_coe.mp hxU, hxP⟩
+        rw [hUhit] at hxInter
+        have hxd : x = d := by simpa using hxInter
+        exact hdS (hxd ▸ Finset.mem_coe.mp hxS)
+      · have hxV : x ∈ V :=
+          (mem_deletionReservoirTrace.mp hxT).1
+        have hxC : x ∈ C :=
+          (mem_deletionReservoirTrace.mp hxT).2
+        exact Set.disjoint_left.mp hUV
+          ⟨hxU, hxC⟩
+          ⟨Finset.mem_coe.mpr hxV, hxC⟩
+    exact hSminimal.1 U hUR hUS
+  have htrichotomy : S.card ≤ 3 ∨
+      HasTwoDisjointUniqueHitRepairs
+        (additiveSupportFamily A 3) S q ∨
+      (4 ≤ S.card ∧ HasCommonAnchorOrderThreeRepairs A S q) := by
+    by_cases hsmall : S.card ≤ 3
+    · exact Or.inl hsmall
+    · have hfour : 4 ≤ S.card := by omega
+      obtain hdisjoint | hanchor :=
+        minimalOrderThreeDestroyer_disjointRepairs_or_commonAnchor
+          hSminimal hfour
+      · exact Or.inr (Or.inl hdisjoint)
+      · exact Or.inr (Or.inr ⟨hfour, hanchor⟩)
+  exact ⟨T, S, hTC, hTP, hTnonempty, hTcard,
+    hdestroy, hSsub, hdS, hSminimal, htrichotomy⟩
+
+/-- The marked critical system in minimal-destroyer form.  Its moving trace
+has one to three reservoir vertices, the minimal subdestroyer contains the
+new point `b`, and it is already classified into the small, disjoint-repair,
+or common-anchor alternatives. -/
+theorem criticalGoodPrefix_has_late_markedMinimalDestroyers
+    {A C : Set ℕ} {D : Finset ℕ} {b : ℕ}
+    (hDC : (D : Set ℕ) ⊆ C)
+    (hbC : b ∈ C) (hbD : b ∉ D)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D)
+    (hbad : IsRecurrentNoTwoRepairPrefix A C (insert b D)) :
+    ∀ N, ∃ q, N ≤ q ∧
+      NoTwoRepairsOnDeletionReservoirAt A C (insert b D) q ∧
+      ∃ T S : Finset ℕ,
+        (∀ x ∈ T, x ∈ C) ∧
+        Disjoint T (insert b D) ∧
+        T.Nonempty ∧ T.card ≤ 3 ∧
+        DestroysAt (additiveSupportFamily A 3)
+          (((((insert b D) ∪ T : Finset ℕ) : Set ℕ))) q ∧
+        S ⊆ (insert b D) ∪ T ∧ b ∈ S ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A 3) S q ∧
+        (S.card ≤ 3 ∨
+          HasTwoDisjointUniqueHitRepairs
+            (additiveSupportFamily A 3) S q ∨
+          (4 ≤ S.card ∧
+            HasCommonAnchorOrderThreeRepairs A S q)) := by
+  intro N
+  obtain ⟨q, hqN, hno, U, hUR, hUhit,
+      V, hVR, hVprefix, hUV⟩ :=
+    criticalGoodPrefix_has_late_markedUniqueHitSystems
+      hDC hbC hbD hgood hbad N
+  obtain ⟨T, S, hTC, hTP, hTnonempty, hTcard,
+      hdestroy, hSsub, hbS, hSminimal, htri⟩ :=
+    markedUniqueHitRepair_has_smallMinimalDestroyerThroughPoint
+      hno hUR hUhit hVR hVprefix hUV
+  exact ⟨q, hqN, hno, T, S, hTC, hTP, hTnonempty,
+    hTcard, hdestroy, hSsub, hbS, hSminimal, htri⟩
+
 /-- Every point of a minimal no-two-repair prefix lies in a genuine minimal
 destroyer obtained by adjoining at most three fresh reservoir vertices.  The
 unique-hit support at `d` avoids the moving trace paired with it, so any
