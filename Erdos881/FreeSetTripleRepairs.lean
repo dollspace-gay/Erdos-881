@@ -7855,6 +7855,80 @@ theorem IsMinimalStrictCrossingEndpointCertificateData.to_nearSharpThree
   exact ⟨hqQ, hQcard, hQdata, hendpointCard,
     hcertCombined, hlocalized⟩
 
+/-- Near-sharp three-endpoint certificates are stable when promoted from a
+repaired subreservoir to its original superreservoir.  Reconstruct the full
+minimal-certificate data from the near-sharp package, use certificate
+promotion, and transport the distinguished endpoint cardinality through the
+pointwise crossing-endpoint equality. -/
+theorem IsMinimalNearSharpThreeEndpointCertificate.promote
+    {A B₀ B₁ : Set ℕ} {F : ℕ → Finset ℕ}
+    {k N : ℕ} {Q : Finset ℕ} {q : ℕ}
+    (hB₀A : B₀ ⊆ A)
+    (hB₁B₀ : B₁ ⊆ B₀)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (P₁ : IsFiniteBlockPartition B₁ F)
+    (hblockLower : ∀ i, k ≤ (F i).card)
+    (h : IsMinimalNearSharpThreeEndpointCertificate
+      A B₁ F k N Q q) :
+    IsMinimalNearSharpThreeEndpointCertificate
+      A B₀ F k N Q q := by
+  rcases h with ⟨hqQ, hQcard, hQdata₁, hendpointCard₁,
+    hcertCombined₁, hlocalized₁⟩
+  have hcert₁ : ∀ sel : BlockSelector F, ∃ t ∈ Q,
+      DestroysAt (additiveSupportFamily A 3)
+          (selectedSet sel) t ∧
+        (crossingAtomEndpoints A B₁ t : Set ℕ) ⊆
+          selectedSet sel := by
+    intro sel
+    obtain ⟨t, htQ, htDestroy⟩ := hcertCombined₁ sel
+    have htData :=
+      destroysAt_crossingEndpointTripleObstructionFamily_iff.mp
+        htDestroy
+    exact ⟨t, htQ, htData.2.1, htData.2.2⟩
+  have hscaled₁ : ∀ t ∈ Q,
+      (k - 1) * (crossingAtomEndpoints A B₁ t).card ≤
+        3 * (Q.erase t).card :=
+    minimalCrossingEndpointTripleCertificate_forces_scaledEndpointBound
+      P₁ hblockLower (fun t htQ => (hQdata₁ t htQ).2)
+        hcertCombined₁ hlocalized₁
+  have hrefined₁ : ∀ t ∈ Q, ∃ base : BlockSelector F,
+      DestroysAt
+        (crossingEndpointTripleObstructionFamily A B₁)
+        (selectedSet base) t ∧
+      (∀ t' ∈ Q, t' ≠ t →
+        ¬ DestroysAt
+          (crossingEndpointTripleObstructionFamily A B₁)
+          (selectedSet base) t') ∧
+      (k - 1) * (crossingAtomEndpoints A B₁ t).card ≤
+        (Q.erase t).card +
+          2 * (crossingEndpointAlignedTargets
+            A B₁ Q base t).card :=
+    minimalCrossingEndpointTripleCertificate_forces_refinedEndpointBound
+      P₁ hblockLower (fun t htQ => (hQdata₁ t htQ).2)
+        hcertCombined₁ hlocalized₁
+  have hdata₁ : IsMinimalStrictCrossingEndpointCertificateData
+      A B₁ F k N Q := by
+    refine ⟨?_, hQdata₁, hcert₁, hlocalized₁,
+      hscaled₁, hrefined₁⟩
+    omega
+  have hdata₀ : IsMinimalStrictCrossingEndpointCertificateData
+      A B₀ F k N Q :=
+    hdata₁.promote hB₀A hB₁B₀ hrepairs P₁
+  obtain ⟨sel, hqDestroy, _hprivate⟩ :=
+    hlocalized₁ q hqQ
+  have hqDecoded :=
+    destroysAt_crossingEndpointTripleObstructionFamily_iff.mp
+      hqDestroy
+  obtain ⟨_hcross₀, hendpointEq⟩ :=
+    crossingEndpoints_eq_of_destroyer_on_repaired_subreservoir
+      hB₀A hB₁B₀ (P₁.selectedSet_subset sel) hrepairs
+        (hQdata₁ q hqQ).2 hqDecoded.2.1
+  have hendpointCard₀ :
+      (crossingAtomEndpoints A B₀ q).card = 3 := by
+    rw [hendpointEq]
+    exact hendpointCard₁
+  exact hdata₀.to_nearSharpThree hqQ hQcard hendpointCard₀
+
 /-- Exhaustive refinement of the cofinal minimal-strict branch.  Either
 minimal certificates of size at least `k + 2` recur cofinally, exact
 `k + 1` certificates with a three-endpoint target recur cofinally, or after
@@ -10950,6 +11024,518 @@ theorem minimalCrossingEndpointCertificates_huge_or_infiniteEndpointObstructions
     obtain ⟨q, _hqLate, hcross, hendpoint, hdestroy,
       _hrigid⟩ := hdata x hxL
     exact ⟨q, hcross, hendpoint, hdestroy⟩
+
+/-- Hereditary restart form of the compact endpoint reduction.  Run the
+certificate classification on any infinite repaired subreservoir, then
+promote every surviving alternative back to the fixed original reservoir.
+Thus pruning may change the selector partition, but it cannot reset or hide
+the ambient arithmetic obstruction. -/
+theorem minimalCrossingEndpointCertificates_huge_or_ambientObstructions_on_subreservoir
+    {A B₀ B₁ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hB₁B₀ : B₁ ⊆ B₀)
+    (P₁ : IsFiniteBlockPartition B₁ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 10 ≤ k) :
+    (∀ N, ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData
+          A B₀ F k N Q ∧
+        2 * k - 3 ≤ Q.card) ∨
+    (∃ L, L ⊆ B₁ ∧ L.Infinite ∧
+      ∀ x ∈ L, ∃ q,
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B₀ ∧
+          ¬ (E : Set ℕ) ⊆ B₀) ∧
+        crossingAtomEndpoints A B₀ q = {x} ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ({x} : Set ℕ) q) ∨
+    ∃ L, L ⊆ B₁ ∧ L.Infinite ∧
+      ∀ x ∈ L, ∃ N Q q,
+        IsMinimalNearSharpThreeEndpointCertificate
+          A B₀ F k N Q q ∧
+        x ∈ crossingAtomEndpoints A B₀ q := by
+  have hzeroB₁ : 0 ∉ B₁ := fun hzero => hzeroB₀ (hB₁B₀ hzero)
+  have hB₁A : B₁ ⊆ A := hB₁B₀.trans hB₀A
+  have hrepairs₁ : HasDirectTripleRepairsForDeletedPairs A B₁ :=
+    hrepairs.mono hB₁B₀
+  have hblockLower : ∀ i, k ≤ (F i).card := by
+    intro i
+    rw [← hcellCard i]
+    exact Finset.card_le_card (hcore i)
+  obtain hhuge | hprivate | hthree :=
+    minimalCrossingEndpointCertificates_huge_or_infiniteEndpointObstructions
+      hbasis hzeroA hzeroB₁ hB₁A hrepairs₁ hcounter
+        P₁ hcore hcellCard hk
+  · left
+    intro N
+    obtain ⟨Q, hdata₁, hQhuge⟩ := hhuge N
+    exact ⟨Q,
+      hdata₁.promote hB₀A hB₁B₀ hrepairs P₁,
+      hQhuge⟩
+  · right
+    left
+    obtain ⟨L, hLB₁, hL, hdata⟩ := hprivate
+    refine ⟨L, hLB₁, hL, ?_⟩
+    intro x hxL
+    obtain ⟨q, hcross₁, hendpoint₁, hdestroy⟩ := hdata x hxL
+    have hsingletonB₁ : ({x} : Set ℕ) ⊆ B₁ := by
+      intro y hy
+      simpa using hy ▸ hLB₁ hxL
+    obtain ⟨hcross₀, hendpointEq⟩ :=
+      crossingEndpoints_eq_of_destroyer_on_repaired_subreservoir
+        hB₀A hB₁B₀ hsingletonB₁ hrepairs hcross₁ hdestroy
+    refine ⟨q, hcross₀, ?_, hdestroy⟩
+    rw [hendpointEq]
+    exact hendpoint₁
+  · right
+    right
+    obtain ⟨L, hLB₁, hL, hdata⟩ := hthree
+    refine ⟨L, hLB₁, hL, ?_⟩
+    intro x hxL
+    obtain ⟨N, Q, q, hnear₁, hxEndpoint₁⟩ := hdata x hxL
+    have hnear₀ := hnear₁.promote
+      hB₀A hB₁B₀ hrepairs P₁ hblockLower
+    obtain ⟨hqQ, _hQcard, hQdata₁, _hendpointCard,
+      _hcert, hlocalized₁⟩ := hnear₁
+    obtain ⟨sel, hqDestroy, _hprivate⟩ :=
+      hlocalized₁ q hqQ
+    have hqDecoded :=
+      destroysAt_crossingEndpointTripleObstructionFamily_iff.mp
+        hqDestroy
+    have hendpointEq : crossingAtomEndpoints A B₀ q =
+        crossingAtomEndpoints A B₁ q := by
+      exact (crossingEndpoints_eq_of_destroyer_on_repaired_subreservoir
+        hB₀A hB₁B₀ (P₁.selectedSet_subset sel) hrepairs
+          (hQdata₁ q hqQ).2 hqDecoded.2.1).2
+    refine ⟨N, Q, q, hnear₀, ?_⟩
+    rw [hendpointEq]
+    exact hxEndpoint₁
+
+/-- A stage-local small obstruction, measured in one fixed ambient repaired
+reservoir.  Infinitely many points of the current residual occur in ambient
+crossing-endpoint sets of size at most three, and each associated target is
+genuinely destroyed by a set lying in the current residual. -/
+def HasInfiniteAmbientSmallEndpointDestroyerLayer
+    (A B₀ B₁ : Set ℕ) : Prop :=
+  ∃ L, L ⊆ B₁ ∧ L.Infinite ∧
+    ∀ x ∈ L, ∃ q D,
+      D ⊆ B₁ ∧
+      (∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧
+        ¬ (E : Set ℕ) ⊆ B₀) ∧
+      DestroysAt (additiveSupportFamily A 3) D q ∧
+      (crossingAtomEndpoints A B₀ q).card ≤ 3 ∧
+      x ∈ crossingAtomEndpoints A B₀ q
+
+/-- Two-branch hereditary form: every exact-core partition of an infinite
+repaired residual has either cofinally huge minimal certificates or an
+infinite stage-local layer of ambient endpoint destroyers of size at most
+three. -/
+theorem minimalCrossingEndpointCertificates_huge_or_ambientSmallLayer_on_subreservoir
+    {A B₀ B₁ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hB₁B₀ : B₁ ⊆ B₀)
+    (P₁ : IsFiniteBlockPartition B₁ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 10 ≤ k) :
+    (∀ N, ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData
+          A B₀ F k N Q ∧
+        2 * k - 3 ≤ Q.card) ∨
+    HasInfiniteAmbientSmallEndpointDestroyerLayer A B₀ B₁ := by
+  obtain hhuge | hprivate | hthree :=
+    minimalCrossingEndpointCertificates_huge_or_ambientObstructions_on_subreservoir
+      hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+        hB₁B₀ P₁ hcore hcellCard hk
+  · exact Or.inl hhuge
+  · right
+    obtain ⟨L, hLB₁, hL, hdata⟩ := hprivate
+    refine ⟨L, hLB₁, hL, ?_⟩
+    intro x hxL
+    obtain ⟨q, hcross, hendpoint, hdestroy⟩ := hdata x hxL
+    refine ⟨q, ({x} : Set ℕ), ?_, hcross, hdestroy, ?_, ?_⟩
+    · intro y hy
+      simpa using hy ▸ hLB₁ hxL
+    · rw [hendpoint]
+      simp
+    · rw [hendpoint]
+      simp
+  · right
+    obtain ⟨L, hLB₁, hL, hdata⟩ := hthree
+    refine ⟨L, hLB₁, hL, ?_⟩
+    intro x hxL
+    obtain ⟨N, Q, q, hnear, hxEndpoint⟩ := hdata x hxL
+    obtain ⟨hqQ, _hQcard, hQdata, hendpointCard,
+      _hcert, hlocalized⟩ := hnear
+    obtain ⟨sel, hqDestroy, _hprivate⟩ := hlocalized q hqQ
+    have hqDecoded :=
+      destroysAt_crossingEndpointTripleObstructionFamily_iff.mp
+        hqDestroy
+    exact ⟨q, selectedSet sel, P₁.selectedSet_subset sel,
+      (hQdata q hqQ).2, hqDecoded.2.1,
+      by omega, hxEndpoint⟩
+
+/-- Consume one ambient small-endpoint layer by removing an infinite block
+transversal from its carrier.  The residual remains infinite and repaired,
+admits a fresh exact-core partition, and immediately satisfies the same
+ambient huge-or-small classification.  The removed transversal retains the
+full stage-local obstruction data and is disjoint from the next residual. -/
+theorem ambientSmallEndpointLayer_restarts_disjointly
+    {A B₀ B₁ : Set ℕ} {F : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hB₁B₀ : B₁ ⊆ B₀)
+    (P₁ : IsFiniteBlockPartition B₁ F)
+    (hblockTwo : ∀ i, 2 ≤ (F i).card)
+    (hk : 10 ≤ k)
+    (hsmall :
+      HasInfiniteAmbientSmallEndpointDestroyerLayer A B₀ B₁) :
+    ∃ (T : Set ℕ) (G cell : ℕ → Finset ℕ),
+      T ⊆ B₁ ∧ T.Infinite ∧
+      (∀ x ∈ T, ∃ q D,
+        D ⊆ B₁ ∧
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B₀ ∧
+          ¬ (E : Set ℕ) ⊆ B₀) ∧
+        DestroysAt (additiveSupportFamily A 3) D q ∧
+        (crossingAtomEndpoints A B₀ q).card ≤ 3 ∧
+        x ∈ crossingAtomEndpoints A B₀ q) ∧
+      (B₁ \ T).Infinite ∧
+      Disjoint T (B₁ \ T) ∧
+      HasDirectTripleRepairsForDeletedPairs A (B₁ \ T) ∧
+      IsFiniteBlockPartition (B₁ \ T) G ∧
+      (∀ i, cell i ⊆ G i) ∧
+      (∀ i, (cell i).card = k) ∧
+      ((∀ N, ∃ Q,
+        IsMinimalStrictCrossingEndpointCertificateData
+            A B₀ G k N Q ∧
+          2 * k - 3 ≤ Q.card) ∨
+        HasInfiniteAmbientSmallEndpointDestroyerLayer
+          A B₀ (B₁ \ T)) := by
+  obtain ⟨L, hLB₁, hL, hdata⟩ := hsmall
+  have hrepairs₁ : HasDirectTripleRepairsForDeletedPairs A B₁ :=
+    hrepairs.mono hB₁B₀
+  obtain ⟨T, G, cell, hTL, hT, hresidual, hdisjoint,
+      hrepairResidual, PG, hcore, hcellCard⟩ :=
+    exists_disjoint_repaired_partition_restart
+      P₁ hblockTwo hLB₁ hL hrepairs₁ (by omega : 0 < k)
+  have hTB₁ : T ⊆ B₁ := hTL.trans hLB₁
+  have hresidualB₀ : B₁ \ T ⊆ B₀ :=
+    Set.diff_subset.trans hB₁B₀
+  have hnext :=
+    minimalCrossingEndpointCertificates_huge_or_ambientSmallLayer_on_subreservoir
+      hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+        hresidualB₀ PG hcore hcellCard hk
+  exact ⟨T, G, cell, hTB₁, hT,
+    fun x hxT => hdata x (hTL hxT),
+    hresidual, hdisjoint, hrepairResidual,
+    PG, hcore, hcellCard, hnext⟩
+
+/-- Partition-independent statement that one residual supports cofinally
+huge ambient certificates at scale `k`.  The witnessing exact-core
+partition is included in the predicate. -/
+def HasCofinalHugeAmbientCertificatesOnResidual
+    (A B₀ B₁ : Set ℕ) (k : ℕ) : Prop :=
+  ∃ F cell : ℕ → Finset ℕ,
+    IsFiniteBlockPartition B₁ F ∧
+    (∀ i, cell i ⊆ F i) ∧
+    (∀ i, (cell i).card = k) ∧
+    ∀ N, ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData
+          A B₀ F k N Q ∧
+        2 * k - 3 ≤ Q.card
+
+/-- Partition-free hereditary dichotomy on every infinite residual of the
+original repaired reservoir.  A fresh exact-core partition either witnesses
+the huge branch or produces a stage-local small endpoint layer. -/
+theorem infiniteSubreservoir_hugeAmbientCertificates_or_smallLayer
+    {A B₀ B₁ : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hB₁B₀ : B₁ ⊆ B₀)
+    (hB₁ : B₁.Infinite)
+    (hk : 10 ≤ k) :
+    HasCofinalHugeAmbientCertificatesOnResidual A B₀ B₁ k ∨
+      HasInfiniteAmbientSmallEndpointDestroyerLayer A B₀ B₁ := by
+  obtain ⟨F, cell, P₁, hcore, hcellCard⟩ :=
+    exists_finiteBlockPartition_with_exactCoreCard
+      hB₁ (by omega : 0 < k)
+  obtain hhuge | hsmall :=
+    minimalCrossingEndpointCertificates_huge_or_ambientSmallLayer_on_subreservoir
+      hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+        hB₁B₀ P₁ hcore hcellCard hk
+  · exact Or.inl ⟨F, cell, P₁, hcore, hcellCard, hhuge⟩
+  · exact Or.inr hsmall
+
+/-- A small ambient endpoint layer contains an infinite sublayer whose
+removal leaves the current residual infinite.  Repartition into blocks with
+two-point cores and keep at most one layer point from each block. -/
+theorem HasInfiniteAmbientSmallEndpointDestroyerLayer.exists_prunableSublayer
+    {A B₀ B₁ : Set ℕ}
+    (hB₁ : B₁.Infinite)
+    (hsmall :
+      HasInfiniteAmbientSmallEndpointDestroyerLayer A B₀ B₁) :
+    ∃ T,
+      T ⊆ B₁ ∧ T.Infinite ∧
+      (∀ x ∈ T, ∃ q D,
+        D ⊆ B₁ ∧
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B₀ ∧
+          ¬ (E : Set ℕ) ⊆ B₀) ∧
+        DestroysAt (additiveSupportFamily A 3) D q ∧
+        (crossingAtomEndpoints A B₀ q).card ≤ 3 ∧
+        x ∈ crossingAtomEndpoints A B₀ q) ∧
+      (B₁ \ T).Infinite ∧
+      Disjoint T (B₁ \ T) := by
+  obtain ⟨L, hLB₁, hL, hdata⟩ := hsmall
+  obtain ⟨F, cell, P, hcore, hcellCard⟩ :=
+    exists_finiteBlockPartition_with_exactCoreCard
+      hB₁ (by omega : 0 < 2)
+  have hblockTwo : ∀ i, 2 ≤ (F i).card := by
+    intro i
+    rw [← hcellCard i]
+    exact Finset.card_le_card (hcore i)
+  obtain ⟨T, hTL, hT, hindexInj⟩ :=
+    P.exists_infinite_blockTransversal hLB₁ hL
+  have hTB₁ : T ⊆ B₁ := hTL.trans hLB₁
+  have hresidual : (B₁ \ T).Infinite :=
+    P.infinite_diff_of_blockIndex_injective
+      hTB₁ hT hindexInj hblockTwo
+  have hdisjoint : Disjoint T (B₁ \ T) := by
+    rw [Set.disjoint_left]
+    intro x hxT hxDiff
+    exact hxDiff.2 hxT
+  exact ⟨T, hTB₁, hT, fun x hxT => hdata x (hTL hxT),
+    hresidual, hdisjoint⟩
+
+/-- Operational hereditary fork.  Every infinite residual either already
+supports the huge certificate branch, or one can remove an infinite ambient
+small-endpoint layer and continue inside an infinite disjoint residual. -/
+theorem infiniteSubreservoir_hugeAmbientCertificates_or_prunableSmallLayer
+    {A B₀ B₁ : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hB₁B₀ : B₁ ⊆ B₀)
+    (hB₁ : B₁.Infinite)
+    (hk : 10 ≤ k) :
+    HasCofinalHugeAmbientCertificatesOnResidual A B₀ B₁ k ∨
+    ∃ T,
+      T ⊆ B₁ ∧ T.Infinite ∧
+      (∀ x ∈ T, ∃ q D,
+        D ⊆ B₁ ∧
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B₀ ∧
+          ¬ (E : Set ℕ) ⊆ B₀) ∧
+        DestroysAt (additiveSupportFamily A 3) D q ∧
+        (crossingAtomEndpoints A B₀ q).card ≤ 3 ∧
+        x ∈ crossingAtomEndpoints A B₀ q) ∧
+      (B₁ \ T).Infinite ∧
+      Disjoint T (B₁ \ T) := by
+  obtain hhuge | hsmall :=
+    infiniteSubreservoir_hugeAmbientCertificates_or_smallLayer
+      hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+        hB₁B₀ hB₁ hk
+  · exact Or.inl hhuge
+  · exact Or.inr (hsmall.exists_prunableSublayer hB₁)
+
+/-- One stage of the small-layer pruning process. -/
+structure IsAmbientSmallEndpointPruningStep
+    (A B₀ current layer next : Set ℕ) : Prop where
+  layer_subset : layer ⊆ current
+  layer_infinite : layer.Infinite
+  layer_data : ∀ x ∈ layer, ∃ q D,
+    D ⊆ current ∧
+    (∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) B₀ ∧
+      ¬ (E : Set ℕ) ⊆ B₀) ∧
+    DestroysAt (additiveSupportFamily A 3) D q ∧
+    (crossingAtomEndpoints A B₀ q).card ≤ 3 ∧
+    x ∈ crossingAtomEndpoints A B₀ q
+  next_eq : next = current \ layer
+  next_infinite : next.Infinite
+  disjoint : Disjoint layer next
+
+/-- The negation of the huge branch on every infinite residual of `B₀`. -/
+def HasNoCofinalHugeAmbientCertificatesOnInfiniteResiduals
+    (A B₀ : Set ℕ) (k : ℕ) : Prop :=
+  ∀ B, B ⊆ B₀ → B.Infinite →
+    ¬ HasCofinalHugeAmbientCertificatesOnResidual A B₀ B k
+
+/-- If the huge branch is absent on all infinite residuals, every current
+infinite residual admits a certified small-layer pruning step. -/
+theorem exists_ambientSmallEndpointPruningStep_of_noHuge
+    {A B₀ current : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hk : 10 ≤ k)
+    (hnoHuge :
+      HasNoCofinalHugeAmbientCertificatesOnInfiniteResiduals
+        A B₀ k)
+    (hcurrentB₀ : current ⊆ B₀)
+    (hcurrent : current.Infinite) :
+    ∃ layer next,
+      IsAmbientSmallEndpointPruningStep
+        A B₀ current layer next := by
+  obtain hhuge | ⟨layer, hlayerCurrent, hlayer,
+      hlayerData, hnext, hdisjoint⟩ :=
+    infiniteSubreservoir_hugeAmbientCertificates_or_prunableSmallLayer
+      hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+        hcurrentB₀ hcurrent hk
+  · exact (hnoHuge current hcurrentB₀ hcurrent hhuge).elim
+  · exact ⟨layer, current \ layer,
+      hlayerCurrent, hlayer, hlayerData, rfl, hnext, hdisjoint⟩
+
+/-- Countable iteration of the restart bridge.  Unless some infinite
+residual realizes the huge-certificate branch, there are residuals and
+small endpoint layers at every natural stage; each next residual is obtained
+by deleting the current infinite layer and remains infinite. -/
+theorem exists_infiniteAmbientSmallEndpointPruningSequence_of_noHuge
+    {A B₀ : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hB₀ : B₀.Infinite)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hk : 10 ≤ k)
+    (hnoHuge :
+      HasNoCofinalHugeAmbientCertificatesOnInfiniteResiduals
+        A B₀ k) :
+    ∃ residual layer : ℕ → Set ℕ,
+      residual 0 = B₀ ∧
+      ∀ n, IsAmbientSmallEndpointPruningStep
+        A B₀ (residual n) (layer n) (residual (n + 1)) := by
+  classical
+  let S := {B : Set ℕ // B ⊆ B₀ ∧ B.Infinite}
+  have hserial : ∀ s : S, ∃ p : Set ℕ × S,
+      IsAmbientSmallEndpointPruningStep
+        A B₀ s.1 p.1 p.2.1 := by
+    intro s
+    obtain ⟨layer, next, hstep⟩ :=
+      exists_ambientSmallEndpointPruningStep_of_noHuge
+        hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+          hk hnoHuge s.2.1 s.2.2
+    have hnextB₀ : next ⊆ B₀ := by
+      rw [hstep.next_eq]
+      exact Set.diff_subset.trans s.2.1
+    let nextS : S := ⟨next, hnextB₀, hstep.next_infinite⟩
+    exact ⟨(layer, nextS), hstep⟩
+  let advance : S → Set ℕ × S := fun s =>
+    Classical.choose (hserial s)
+  have hadvance : ∀ s : S,
+      IsAmbientSmallEndpointPruningStep
+        A B₀ s.1 (advance s).1 (advance s).2.1 := by
+    intro s
+    exact Classical.choose_spec (hserial s)
+  let start : S := ⟨B₀, Set.Subset.rfl, hB₀⟩
+  let states : ℕ → S := fun n =>
+    Nat.rec start (fun _ s => (advance s).2) n
+  let layers : ℕ → Set ℕ := fun n => (advance (states n)).1
+  refine ⟨fun n => (states n).1, layers, ?_, ?_⟩
+  · rfl
+  · intro n
+    simpa [states, layers] using hadvance (states n)
+
+/-- Residuals in a pruning sequence form a decreasing family. -/
+theorem ambientSmallEndpointPruningSequence_antitone
+    {A B₀ : Set ℕ} {residual layer : ℕ → Set ℕ}
+    (hstep : ∀ n, IsAmbientSmallEndpointPruningStep
+      A B₀ (residual n) (layer n) (residual (n + 1))) :
+    Antitone residual := by
+  intro i j hij
+  induction j, hij using Nat.le_induction with
+  | base => exact Set.Subset.rfl
+  | succ j _hij ih =>
+      have hnext : residual (j + 1) ⊆ residual j := by
+        rw [(hstep j).next_eq]
+        exact Set.diff_subset
+      exact hnext.trans ih
+
+/-- The infinite layers removed at distinct stages of a pruning sequence are
+pairwise disjoint.  A later layer lies in a later residual, hence inside the
+residual already disjoint from every earlier removed layer. -/
+theorem ambientSmallEndpointPruningSequence_pairwiseDisjoint
+    {A B₀ : Set ℕ} {residual layer : ℕ → Set ℕ}
+    (hstep : ∀ n, IsAmbientSmallEndpointPruningStep
+      A B₀ (residual n) (layer n) (residual (n + 1))) :
+    Pairwise fun i j => Disjoint (layer i) (layer j) := by
+  have hanti : Antitone residual :=
+    ambientSmallEndpointPruningSequence_antitone hstep
+  intro i j hij
+  rcases lt_or_gt_of_ne hij with hijlt | hjilt
+  · have hjSub : layer j ⊆ residual (i + 1) :=
+      (hstep j).layer_subset.trans
+        (hanti (by omega : i + 1 ≤ j))
+    exact (hstep i).disjoint.mono_right hjSub
+  · have hiSub : layer i ⊆ residual (j + 1) :=
+      (hstep i).layer_subset.trans
+        (hanti (by omega : j + 1 ≤ i))
+    exact ((hstep j).disjoint.mono_right hiSub).symm
+
+/-- Global countable-layer consequence of failure of the huge branch on
+every residual.  The original reservoir then contains pairwise-disjoint
+infinite small-endpoint obstruction layers at all natural stages. -/
+theorem exists_pairwiseDisjoint_infiniteAmbientSmallEndpointLayers_of_noHuge
+    {A B₀ : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hB₀ : B₀.Infinite)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hk : 10 ≤ k)
+    (hnoHuge :
+      HasNoCofinalHugeAmbientCertificatesOnInfiniteResiduals
+        A B₀ k) :
+    ∃ residual layer : ℕ → Set ℕ,
+      residual 0 = B₀ ∧
+      (∀ n, IsAmbientSmallEndpointPruningStep
+        A B₀ (residual n) (layer n) (residual (n + 1))) ∧
+      Pairwise fun i j => Disjoint (layer i) (layer j) := by
+  obtain ⟨residual, layer, hzero, hstep⟩ :=
+    exists_infiniteAmbientSmallEndpointPruningSequence_of_noHuge
+      hbasis hzeroA hzeroB₀ hB₀A hB₀ hrepairs
+        hcounter hk hnoHuge
+  exact ⟨residual, layer, hzero, hstep,
+    ambientSmallEndpointPruningSequence_pairwiseDisjoint hstep⟩
 
 /-- Endpoint-set form of the global migration dichotomy.  If the strict
 certificate branch is not cofinal, the sharp branch yields an infinite
