@@ -23557,6 +23557,241 @@ theorem exists_infinite_crossAvoiding_injectiveImage
     (Finset.mem_coe.mpr
       (hcollisionMem b d (hLK hd) hudErased)) hd
 
+/-- Orient an infinite matching toward its `x` endpoints and thin it so a
+bounded designated support at every retained index avoids the entire
+oriented image.  Pairwise disjointness makes `x` injective; cross-image
+avoidance handles different indices, while `hxNotF` handles the diagonal.
+This is the abstract construction of the candidate infinite deletion
+`B = x '' J`. -/
+theorem exists_infinite_orientedMatchingImage_avoiding_supports
+    {I : Set ℕ} (hI : I.Infinite)
+    (x y : ℕ → ℕ)
+    (hmatching : ∀ n ∈ I, ∀ m ∈ I, n ≠ m →
+      Disjoint ({x n, y n} : Finset ℕ)
+        ({x m, y m} : Finset ℕ))
+    (F : ℕ → Finset ℕ) (r : ℕ)
+    (hcard : ∀ n ∈ I, (F n).card ≤ r)
+    (hxNotF : ∀ n ∈ I, x n ∉ F n) :
+    ∃ J, J ⊆ I ∧ J.Infinite ∧ Set.InjOn x J ∧
+      ∀ n ∈ J, Disjoint (F n : Set ℕ) (x '' J) := by
+  classical
+  have hxInj : Set.InjOn x I := by
+    intro n hn m hm hxm
+    by_contra hnm
+    have hdisj := hmatching n hn m hm hnm
+    have hleft : x n ∈ ({x n, y n} : Finset ℕ) := by simp
+    have hright : x n ∈ ({x m, y m} : Finset ℕ) := by
+      rw [hxm]
+      simp
+    exact Finset.disjoint_left.mp hdisj hleft hright
+  obtain ⟨J, hJI, hJ, hcross⟩ :=
+    exists_infinite_crossAvoiding_injectiveImage
+      hI x hxInj F r hcard
+  refine ⟨J, hJI, hJ, hxInj.mono hJI, ?_⟩
+  intro n hn
+  rw [Set.disjoint_left]
+  intro z hzF hzImage
+  obtain ⟨m, hm, rfl⟩ := hzImage
+  by_cases hnm : n = m
+  · subst m
+    exact hxNotF n (hJI hn) (Finset.mem_coe.mp hzF)
+  · exact hcross n hn m hm hnm (Finset.mem_coe.mp hzF)
+
+/-- Set-valued form of the preceding orientation lemma: the image itself
+is an infinite candidate deletion and every chosen alternate support
+survives it. -/
+theorem exists_infinite_orientedMatchingDeletion_avoiding_supports
+    {I : Set ℕ} (hI : I.Infinite)
+    (x y : ℕ → ℕ)
+    (hmatching : ∀ n ∈ I, ∀ m ∈ I, n ≠ m →
+      Disjoint ({x n, y n} : Finset ℕ)
+        ({x m, y m} : Finset ℕ))
+    (F : ℕ → Finset ℕ) (r : ℕ)
+    (hcard : ∀ n ∈ I, (F n).card ≤ r)
+    (hxNotF : ∀ n ∈ I, x n ∉ F n) :
+    ∃ J, J ⊆ I ∧ J.Infinite ∧
+      ∃ B : Set ℕ, B = x '' J ∧ B.Infinite ∧
+        ∀ n ∈ J, Disjoint (F n : Set ℕ) B := by
+  obtain ⟨J, hJI, hJ, hxInj, havoid⟩ :=
+    exists_infinite_orientedMatchingImage_avoiding_supports
+      hI x y hmatching F r hcard hxNotF
+  refine ⟨J, hJI, hJ, x '' J, rfl, ?_, havoid⟩
+  exact hJ.image hxInj
+
+/-- In the cofinal balanced-with-repairs branch we can now construct an
+actual infinite candidate deletion `B ⊆ K ⊆ C`.  Infinitely many
+unbounded matched targets retain their designated opposite repair entirely
+outside `B`.  This is the first set-valued output of the critical matching
+normal form; the remaining bridge must promote these surviving targets to
+the eventual pair-independence and self-basis conditions. -/
+theorem cofinalSpatialCriticalBalancedAdditivePairsWithRepairs_exists_infiniteCandidateDeletion
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hKC : K ⊆ C)
+    (P : IsFiniteBlockPartition K cell)
+    (hbalanced : ∀ start N, ∃ q, N ≤ q ∧
+      HasCriticalBalancedAdditivePairWithRepairsAt A C
+        {x | ∃ i, x ∈ cell (start + i)} D q) :
+    ∃ B, B ⊆ K ∧ B.Infinite ∧
+      ∃ J : Set ℕ, ∃ q : ℕ → ℕ,
+        ∃ F : ℕ → Finset ℕ,
+          J.Infinite ∧
+          ∀ n ∈ J, n ≤ q n ∧
+            F n ∈ additiveSupportFamily A 3 (q n) ∧
+            Disjoint (F n) D ∧
+            Disjoint (F n : Set ℕ) B := by
+  classical
+  obtain ⟨q, x, y, u, v, u', v', E, F,
+      L, hL, hmatching, hw⟩ :=
+    cofinalSpatialCriticalBalancedAdditivePairsWithRepairs_exist_infiniteMatching
+      P hbalanced
+  have hFcard : ∀ n ∈ L, (F n).card ≤ 3 := by
+    intro n hn
+    exact additiveSupportFamily_cardAtMost A 3 (q n) (F n)
+      (hw n).2.2.2.1
+  have hxNotF : ∀ n ∈ L, x n ∉ F n := by
+    intro n hn hxF
+    obtain ⟨_hqn, _hER, _hED, _hFR, _hFD, hEFC,
+        hxE, _hyF, hxTail, _hyTail, _hxy,
+        _hxCritical, _hyCritical, _huA, _hvA,
+        _hu'A, _hv'A, _hxsum, _hysum⟩ := hw n
+    have hxK : x n ∈ K := by
+      obtain ⟨i, hxi⟩ := hxTail
+      exact (P.mem_iff (x n)).mpr ⟨n + i, hxi⟩
+    exact Set.disjoint_left.mp hEFC
+      ⟨Finset.mem_coe.mpr hxE, hKC hxK⟩
+      ⟨Finset.mem_coe.mpr hxF, hKC hxK⟩
+  obtain ⟨J, hJL, hJ, B, hB, hBInfinite, havoid⟩ :=
+    exists_infinite_orientedMatchingDeletion_avoiding_supports
+      hL x y hmatching F 3 hFcard hxNotF
+  have hBK : B ⊆ K := by
+    rw [hB]
+    rintro z ⟨n, hn, rfl⟩
+    have hxTail := (hw n).2.2.2.2.2.2.2.2.1
+    obtain ⟨i, hxi⟩ := hxTail
+    exact (P.mem_iff (x n)).mpr ⟨n + i, hxi⟩
+  refine ⟨B, hBK, hBInfinite, J, q, F, hJ, ?_⟩
+  intro n hn
+  exact ⟨(hw n).1, (hw n).2.2.2.1,
+    (hw n).2.2.2.2.1, havoid n hn⟩
+
+/-- The cofinal wide-with-repairs branch also produces an actual infinite
+candidate deletion.  At each index choose whichever member of the globally
+disjoint repair pair omits the oriented endpoint `x n`, then thin against
+all cross-index collisions. -/
+theorem cofinalSpatialCriticalWideSupportsWithRepairs_exists_infiniteCandidateDeletion
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hKC : K ⊆ C)
+    (P : IsFiniteBlockPartition K cell)
+    (hwide : ∀ start N, ∃ q, N ≤ q ∧
+      HasCriticalWideReservoirSupportWithRepairsAt A C
+        {x | ∃ i, x ∈ cell (start + i)} D q) :
+    ∃ B, B ⊆ K ∧ B.Infinite ∧
+      ∃ J : Set ℕ, ∃ q : ℕ → ℕ,
+        ∃ R : ℕ → Finset ℕ,
+          J.Infinite ∧
+          ∀ n ∈ J, n ≤ q n ∧
+            R n ∈ additiveSupportFamily A 3 (q n) ∧
+            Disjoint (R n) D ∧
+            Disjoint (R n : Set ℕ) B := by
+  classical
+  obtain ⟨q, x, y, u, G, E, F,
+      L, hL, hmatching, hw⟩ :=
+    cofinalSpatialCriticalWideSupportsWithRepairs_exist_infiniteMatching
+      P hwide
+  let R : ℕ → Finset ℕ := fun n =>
+    if x n ∈ E n then F n else E n
+  have hRSupport : ∀ n ∈ L,
+      R n ∈ additiveSupportFamily A 3 (q n) := by
+    intro n hn
+    obtain ⟨_hqn, _hGR, _hxG, _hyG, _hxTail, _hyTail,
+        _hxy, _hxCritical, _hyCritical, _huA, _hsum,
+        hER, _hED, hFR, _hFD, _hEFC⟩ := hw n
+    by_cases hxE : x n ∈ E n
+    · simpa [R, hxE] using hFR
+    · simpa [R, hxE] using hER
+  have hRDisjointD : ∀ n ∈ L, Disjoint (R n) D := by
+    intro n hn
+    obtain ⟨_hqn, _hGR, _hxG, _hyG, _hxTail, _hyTail,
+        _hxy, _hxCritical, _hyCritical, _huA, _hsum,
+        _hER, hED, _hFR, hFD, _hEFC⟩ := hw n
+    by_cases hxE : x n ∈ E n
+    · simpa [R, hxE] using hFD
+    · simpa [R, hxE] using hED
+  have hRcard : ∀ n ∈ L, (R n).card ≤ 3 := by
+    intro n hn
+    exact additiveSupportFamily_cardAtMost A 3 (q n) (R n)
+      (hRSupport n hn)
+  have hxNotR : ∀ n ∈ L, x n ∉ R n := by
+    intro n hn
+    obtain ⟨_hqn, _hGR, _hxG, _hyG, hxTail, _hyTail,
+        _hxy, _hxCritical, _hyCritical, _huA, _hsum,
+        _hER, _hED, _hFR, _hFD, hEFC⟩ := hw n
+    have hxK : x n ∈ K := by
+      obtain ⟨i, hxi⟩ := hxTail
+      exact (P.mem_iff (x n)).mpr ⟨n + i, hxi⟩
+    by_cases hxE : x n ∈ E n
+    · simp only [R, if_pos hxE]
+      intro hxF
+      exact Set.disjoint_left.mp hEFC
+        ⟨Finset.mem_coe.mpr hxE, hKC hxK⟩
+        ⟨Finset.mem_coe.mpr hxF, hKC hxK⟩
+    · simpa [R, hxE] using hxE
+  obtain ⟨J, hJL, hJ, B, hB, hBInfinite, havoid⟩ :=
+    exists_infinite_orientedMatchingDeletion_avoiding_supports
+      hL x y hmatching R 3 hRcard hxNotR
+  have hBK : B ⊆ K := by
+    rw [hB]
+    rintro z ⟨n, hn, rfl⟩
+    have hxTail := (hw n).2.2.2.2.1
+    obtain ⟨i, hxi⟩ := hxTail
+    exact (P.mem_iff (x n)).mpr ⟨n + i, hxi⟩
+  refine ⟨B, hBK, hBInfinite, J, q, R, hJ, ?_⟩
+  intro n hn
+  exact ⟨(hw n).1, hRSupport n (hJL hn),
+    hRDisjointD n (hJL hn), havoid n hn⟩
+
+/-- Counterexample-level set construction obtained from the two repaired
+matching branches.  It produces one actual infinite `B ⊆ C ⊆ A` and an
+unbounded indexed family of order-three supports which survive deletion of
+`B`.  The desired complement is therefore concretely `A \ B`; what remains
+is to upgrade this cofinal family to the eventual order-two red/blue
+conditions required by `IsPairIndependentDeletionWithSelfBasis`. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_exists_infiniteCandidateDeletion_with_unboundedSurvivingRepairs
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ B, B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+      ∃ D : Finset ℕ, (D : Set ℕ) ⊆ C ∧
+        ∃ J : Set ℕ, ∃ q : ℕ → ℕ,
+          ∃ R : ℕ → Finset ℕ,
+            J.Infinite ∧
+            ∀ n ∈ J, n ≤ q n ∧
+              R n ∈ additiveSupportFamily A 3 (q n) ∧
+              Disjoint (R n) D ∧
+              Disjoint (R n : Set ℕ) B := by
+  obtain ⟨D, K, cell, hDC, _hgood, hKC, _hK, _hKD,
+      P, _hcellCard, _hcriticalK, hwide | hbalanced⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_counterexample_forces_cofinalSpatialCriticalArithmeticWithRepairsDichotomy
+      hCA hC hrec hD₀ hminimal hcounter
+  · obtain ⟨B, hBK, hB, J, q, R, hJ, hsurvive⟩ :=
+      cofinalSpatialCriticalWideSupportsWithRepairs_exists_infiniteCandidateDeletion
+        hKC P hwide
+    exact ⟨B, hBK.trans hKC, (hBK.trans hKC).trans hCA, hB,
+      D, hDC, J, q, R, hJ, hsurvive⟩
+  · obtain ⟨B, hBK, hB, J, q, R, hJ, hsurvive⟩ :=
+      cofinalSpatialCriticalBalancedAdditivePairsWithRepairs_exists_infiniteCandidateDeletion
+        hKC P hbalanced
+    exact ⟨B, hBK.trans hKC, (hBK.trans hKC).trans hCA, hB,
+      D, hDC, J, q, R, hJ, hsurvive⟩
+
 /- Finite-family version of cross-block image avoidance.  The support map
 is thinned successively against each injective marked image; previously
 obtained avoidance properties persist under further thinning. -/
