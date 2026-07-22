@@ -5389,6 +5389,77 @@ theorem targetLocalizedCertificate_has_twoRepairTraceObstruction
   exact ⟨hnoOppositeAt, E, hER, hED, hEhit,
     F, hFR, hFD, hFhit, hEFK⟩
 
+/-- Strengthened trace obstruction which retains the disjointness of the
+two repairs on the whole deletion reservoir `C`, rather than forgetting it
+after restricting to the temporary block reservoir `K`.  This is the form
+needed by the eventual red/blue deletion construction. -/
+def HasTwoRepairTraceObstructionAlongAt
+    (R : SupportFamily) (C K : Set ℕ) (D : Finset ℕ)
+    (cell : ℕ → Finset ℕ) (q : ℕ) : Prop :=
+  ¬ HasOppositePrivateCellRepairsAt R K cell q ∧
+    ∃ E ∈ R q, Disjoint E D ∧
+      ¬ Disjoint (E : Set ℕ) K ∧
+      ∃ F ∈ R q, Disjoint F D ∧
+        ¬ Disjoint (F : Set ℕ) K ∧
+        Disjoint ((E : Set ℕ) ∩ C) ((F : Set ℕ) ∩ C)
+
+/-- Forgetting global reservoir disjointness recovers the original local
+trace obstruction. -/
+theorem HasTwoRepairTraceObstructionAlongAt.toTraceObstruction
+    {R : SupportFamily} {C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (hKC : K ⊆ C)
+    (h : HasTwoRepairTraceObstructionAlongAt R C K D cell q) :
+    HasTwoRepairTraceObstructionAt R K D cell q := by
+  obtain ⟨hnoOpposite, E, hER, hED, hEhit,
+      F, hFR, hFD, hFhit, hEFC⟩ := h
+  refine ⟨hnoOpposite, E, hER, hED, hEhit,
+    F, hFR, hFD, hFhit, ?_⟩
+  rw [Set.disjoint_left] at hEFC ⊢
+  intro z hzE hzF
+  exact hEFC ⟨hzE.1, hKC hzE.2⟩ ⟨hzF.1, hKC hzF.2⟩
+
+/-- The localized-certificate construction in fact supplies the stronger
+global trace obstruction: its input repairs were disjoint on all of `C`.
+Keeping that fact explicit prevents a later spatial-tail restriction from
+discarding information needed to choose one global deletion. -/
+theorem targetLocalizedCertificate_has_twoRepairTraceObstructionAlong
+    {R : SupportFamily} {C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hKC : K ⊆ C)
+    (P : IsFiniteBlockPartition K cell)
+    (hlocalized : ∀ q ∈ Q, ∃ s : BlockSelector cell,
+      DestroysAt R (selectedSet s) q ∧
+      ∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt R (selectedSet s) q')
+    (hrepairs : ∀ q ∈ Q,
+      ∃ E ∈ R q, Disjoint E D ∧
+        ∃ F ∈ R q, Disjoint F D ∧
+          Disjoint ((E : Set ℕ) ∩ C) ((F : Set ℕ) ∩ C)) :
+    ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAlongAt R C K D cell q := by
+  have hnoOpposite :=
+    targetLocalizedCertificate_disjoint_oppositePrivateCellRepairs
+      P hlocalized
+  intro q hqQ
+  have hnoOppositeAt :
+      ¬ HasOppositePrivateCellRepairsAt R K cell q := by
+    intro hqOpposite
+    exact Set.disjoint_left.mp hnoOpposite
+      (Finset.mem_coe.mpr hqQ) hqOpposite
+  obtain ⟨s, hqDestroy, _hprivate⟩ := hlocalized q hqQ
+  obtain ⟨E, hER, hED, F, hFR, hFD, hEFC⟩ := hrepairs q hqQ
+  have hEhit : ¬ Disjoint (E : Set ℕ) K := by
+    intro hEK
+    exact (hqDestroy E hER)
+      (hEK.mono_right (P.selectedSet_subset s))
+  have hFhit : ¬ Disjoint (F : Set ℕ) K := by
+    intro hFK
+    exact (hqDestroy F hFR)
+      (hFK.mono_right (P.selectedSet_subset s))
+  exact ⟨hnoOppositeAt, E, hER, hED, hEhit,
+    F, hFR, hFD, hFhit, hEFC⟩
+
 /-- Wide branch of the binary trace obstruction: one of the two disjoint
 repairs uses at least two points of the reservoir. -/
 def HasWideTwoRepairTraceAt
@@ -5492,6 +5563,109 @@ theorem twoRepairTraceObstruction_wide_or_separated
     exact ⟨i, x, y, hxy, hcellEq,
       E, hER, hEtrace, F, hFR, hFtrace⟩
   exact Or.inr ⟨E, hER, hED, F, hFR, hFD, hEF,
+    i, j, x, y, hij, hxi, hyj, hEtrace, hFtrace⟩
+
+/-- Wide branch retaining disjointness of the two chosen repairs on the
+whole deletion reservoir `C`. -/
+def HasWideTwoRepairTraceAlongAt
+    (R : SupportFamily) (C K : Set ℕ) (D : Finset ℕ) (q : ℕ) : Prop :=
+  ∃ E ∈ R q, Disjoint E D ∧
+    ∃ F ∈ R q, Disjoint F D ∧
+      Disjoint ((E : Set ℕ) ∩ C) ((F : Set ℕ) ∩ C) ∧
+      ((∃ x, x ∈ (E : Set ℕ) ∩ K ∧
+          ∃ y, y ∈ (E : Set ℕ) ∩ K ∧ x ≠ y) ∨
+       ∃ x, x ∈ (F : Set ℕ) ∩ K ∧
+          ∃ y, y ∈ (F : Set ℕ) ∩ K ∧ x ≠ y)
+
+/-- Separated singleton branch retaining disjointness of the two repairs on
+the whole deletion reservoir `C`. -/
+def HasSeparatedSingletonTwoRepairTracesAlongAt
+    (R : SupportFamily) (C K : Set ℕ) (D : Finset ℕ)
+    (cell : ℕ → Finset ℕ) (q : ℕ) : Prop :=
+  ∃ E ∈ R q, Disjoint E D ∧
+    ∃ F ∈ R q, Disjoint F D ∧
+      Disjoint ((E : Set ℕ) ∩ C) ((F : Set ℕ) ∩ C) ∧
+      ∃ i j x y, i ≠ j ∧ x ∈ cell i ∧ y ∈ cell j ∧
+        ((E : Set ℕ) ∩ K) = {x} ∧
+        ((F : Set ℕ) ∩ K) = {y}
+
+/-- The exact binary trace classification without forgetting global
+reservoir disjointness. -/
+theorem twoRepairTraceObstructionAlong_wide_or_separated
+    {R : SupportFamily} {C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (hKC : K ⊆ C)
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hobs : HasTwoRepairTraceObstructionAlongAt R C K D cell q) :
+    HasWideTwoRepairTraceAlongAt R C K D q ∨
+      HasSeparatedSingletonTwoRepairTracesAlongAt
+        R C K D cell q := by
+  classical
+  obtain ⟨hnoOpposite, E, hER, hED, hEhit,
+      F, hFR, hFD, hFhit, hEFC⟩ := hobs
+  obtain ⟨x, hxE, hxK⟩ := Set.not_disjoint_iff.mp hEhit
+  obtain ⟨y, hyF, hyK⟩ := Set.not_disjoint_iff.mp hFhit
+  let Etrace : Set ℕ := (E : Set ℕ) ∩ K
+  let Ftrace : Set ℕ := (F : Set ℕ) ∩ K
+  have hxTrace : x ∈ Etrace := ⟨hxE, hxK⟩
+  have hyTrace : y ∈ Ftrace := ⟨hyF, hyK⟩
+  have hEFK : Disjoint Etrace Ftrace := by
+    rw [Set.disjoint_left] at hEFC ⊢
+    intro z hzE hzF
+    exact hEFC ⟨hzE.1, hKC hzE.2⟩ ⟨hzF.1, hKC hzF.2⟩
+  by_cases hEwide : ∃ z, z ∈ Etrace ∧ x ≠ z
+  · obtain ⟨z, hzTrace, hxz⟩ := hEwide
+    exact Or.inl ⟨E, hER, hED, F, hFR, hFD, hEFC,
+      Or.inl ⟨x, hxTrace, z, hzTrace, hxz⟩⟩
+  by_cases hFwide : ∃ z, z ∈ Ftrace ∧ y ≠ z
+  · obtain ⟨z, hzTrace, hyz⟩ := hFwide
+    exact Or.inl ⟨E, hER, hED, F, hFR, hFD, hEFC,
+      Or.inr ⟨y, hyTrace, z, hzTrace, hyz⟩⟩
+  have hEtrace : Etrace = {x} := by
+    ext z
+    constructor
+    · intro hz
+      have hzx : z = x := by
+        by_contra hne
+        exact hEwide ⟨z, hz, Ne.symm hne⟩
+      simpa [hzx]
+    · intro hz
+      have hzx : z = x := by simpa using hz
+      simpa [hzx] using hxTrace
+  have hFtrace : Ftrace = {y} := by
+    ext z
+    constructor
+    · intro hz
+      have hzy : z = y := by
+        by_contra hne
+        exact hFwide ⟨z, hz, Ne.symm hne⟩
+      simpa [hzy]
+    · intro hz
+      have hzy : z = y := by simpa using hz
+      simpa [hzy] using hyTrace
+  have hxy : x ≠ y := by
+    intro hxy
+    subst y
+    exact Set.disjoint_left.mp hEFK hxTrace hyTrace
+  obtain ⟨i, hxi⟩ := (P.mem_iff x).mp hxK
+  obtain ⟨j, hyj⟩ := (P.mem_iff y).mp hyK
+  have hij : i ≠ j := by
+    intro hij
+    subst j
+    have hpairSub : ({x, y} : Finset ℕ) ⊆ cell i := by
+      intro z hz
+      rcases Finset.mem_insert.mp hz with rfl | hz
+      · exact hxi
+      · have hzy : z = y := by simpa using hz
+        simpa [hzy] using hyj
+    have hcellEq : cell i = {x, y} := by
+      exact (Finset.eq_of_subset_of_card_le hpairSub (by
+        simp [hcellCard i, hxy])).symm
+    apply hnoOpposite
+    exact ⟨i, x, y, hxy, hcellEq,
+      E, hER, hEtrace, F, hFR, hFtrace⟩
+  exact Or.inr ⟨E, hER, hED, F, hFR, hFD, hEFC,
     i, j, x, y, hij, hxi, hyj, hEtrace, hFtrace⟩
 
 /-- If finite certificates carrying binary trace obstructions occur
@@ -6409,6 +6583,16 @@ structure SeparatedTraceClauseData
   left_trace : ((leftSupport : Set ℕ) ∩ K) = {leftPoint}
   right_trace : ((rightSupport : Set ℕ) ∩ K) = {rightPoint}
 
+/-- A separated clause together with the global fact that its two repairs
+are disjoint on the full deletion reservoir `C`. -/
+structure SeparatedTraceClauseDataAlong
+    (R : SupportFamily) (C K : Set ℕ) (D : Finset ℕ)
+    (cell : ℕ → Finset ℕ) (q : ℕ) where
+  clause : SeparatedTraceClauseData R K D cell q
+  reservoir_traces_disjoint : Disjoint
+    ((clause.leftSupport : Set ℕ) ∩ C)
+    ((clause.rightSupport : Set ℕ) ∩ C)
+
 /-- Arithmetic and recurrent-extension labels attached to one separated
 binary certificate clause on a fully critical reservoir.  Each of the two
 marked literals is a recurrently bad one-point extension of the same good
@@ -6419,6 +6603,9 @@ structure CriticalSeparatedTraceClauseData
     (cell : ℕ → Finset ℕ) (q : ℕ) where
   clause : SeparatedTraceClauseData
     (additiveSupportFamily A 3) K D cell q
+  reservoir_traces_disjoint : Disjoint
+    ((clause.leftSupport : Set ℕ) ∩ C)
+    ((clause.rightSupport : Set ℕ) ∩ C)
   leftPoint_mem_reservoir : clause.leftPoint ∈ K
   leftPoint_critical : IsRecurrentNoTwoRepairPrefix
     A C (insert clause.leftPoint D)
@@ -6456,6 +6643,28 @@ theorem separatedTraceClauseData_nonempty
   exact ⟨⟨E, hER, hED, F, hFR, hFD, hEF,
     i, j, x, y, hij, hxi, hyj, hEtrace, hFtrace⟩⟩
 
+/-- The strengthened separated-trace predicate supplies chosen clause data
+without discarding global reservoir disjointness. -/
+theorem separatedTraceClauseDataAlong_nonempty
+    {R : SupportFamily} {C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (hKC : K ⊆ C)
+    (hsep : HasSeparatedSingletonTwoRepairTracesAlongAt
+      R C K D cell q) :
+    Nonempty (SeparatedTraceClauseDataAlong R C K D cell q) := by
+  obtain ⟨E, hER, hED, F, hFR, hFD, hEFC,
+      i, j, x, y, hij, hxi, hyj, hEtrace, hFtrace⟩ := hsep
+  have hEFK : Disjoint
+      ((E : Set ℕ) ∩ K) ((F : Set ℕ) ∩ K) := by
+    rw [Set.disjoint_left]
+    intro z hzE hzF
+    exact Set.disjoint_left.mp hEFC
+      ⟨hzE.1, hKC hzE.2⟩ ⟨hzF.1, hKC hzF.2⟩
+  exact ⟨⟨⟨E, hER, hED, F, hFR, hFD,
+    hEFK,
+    i, j, x, y, hij, hxi, hyj, hEtrace, hFtrace⟩,
+    hEFC⟩⟩
+
 /-- On a fully critical binary reservoir, every separated certificate
 clause canonically acquires recurrent endpoint labels and two marked
 additive decompositions of its target. -/
@@ -6466,7 +6675,10 @@ noncomputable def SeparatedTraceClauseData.withCriticalAdditiveData
     (hcritical : ∀ b ∈ K,
       IsRecurrentNoTwoRepairPrefix A C (insert b D))
     (d : SeparatedTraceClauseData
-      (additiveSupportFamily A 3) K D cell q) :
+      (additiveSupportFamily A 3) K D cell q)
+    (hreservoir : Disjoint
+      ((d.leftSupport : Set ℕ) ∩ C)
+      ((d.rightSupport : Set ℕ) ∩ C)) :
     CriticalSeparatedTraceClauseData A C K D cell q := by
   have hxK : d.leftPoint ∈ K :=
     (P.mem_iff d.leftPoint).mpr ⟨d.leftCell, d.leftPoint_mem⟩
@@ -6498,6 +6710,7 @@ noncomputable def SeparatedTraceClauseData.withCriticalAdditiveData
   have hv' := Classical.choose_spec hu'.2
   exact
     { clause := d
+      reservoir_traces_disjoint := hreservoir
       leftPoint_mem_reservoir := hxK
       leftPoint_critical := hcritical d.leftPoint hxK
       leftFirstSummand := u
@@ -6520,8 +6733,11 @@ noncomputable def SeparatedTraceClauseData.withCriticalAdditiveData
     (hcritical : ∀ b ∈ K,
       IsRecurrentNoTwoRepairPrefix A C (insert b D))
     (d : SeparatedTraceClauseData
-      (additiveSupportFamily A 3) K D cell q) :
-    (d.withCriticalAdditiveData P hcritical).clause = d := by
+      (additiveSupportFamily A 3) K D cell q)
+    (hreservoir : Disjoint
+      ((d.leftSupport : Set ℕ) ∩ C)
+      ((d.rightSupport : Set ℕ) ∩ C)) :
+    (d.withCriticalAdditiveData P hcritical hreservoir).clause = d := by
   simp [SeparatedTraceClauseData.withCriticalAdditiveData]
 
 /-- A point of a partition block can occur in a global selector only as the
@@ -6959,6 +7175,40 @@ def HasCriticalBalancedAdditivePairAt
       ∃ u' ∈ A, ∃ v' ∈ A,
         x + u + v = q ∧ y + u' + v' = q
 
+/-- Two actual order-three repairs of one target which avoid the finite
+prefix and are disjoint on the full deletion reservoir. -/
+def HasPrefixAvoidingDisjointRepairPairAt
+    (A C : Set ℕ) (D : Finset ℕ) (q : ℕ) : Prop :=
+  ∃ E ∈ additiveSupportFamily A 3 q, Disjoint E D ∧
+    ∃ F ∈ additiveSupportFamily A 3 q, Disjoint F D ∧
+      Disjoint ((E : Set ℕ) ∩ C) ((F : Set ℕ) ∩ C)
+
+/-- Strong separated witness: the two critical endpoints belong to the two
+actual prefix-avoiding repairs, which remain disjoint on all of `C`. -/
+def HasCriticalSeparatedRepairPairAt
+    (A C K : Set ℕ) (D : Finset ℕ) (q : ℕ) : Prop :=
+  ∃ E ∈ additiveSupportFamily A 3 q, Disjoint E D ∧
+    ∃ F ∈ additiveSupportFamily A 3 q, Disjoint F D ∧
+      Disjoint ((E : Set ℕ) ∩ C) ((F : Set ℕ) ∩ C) ∧
+      ∃ x, x ∈ (E : Set ℕ) ∩ K ∧
+        IsRecurrentNoTwoRepairPrefix A C (insert x D) ∧
+        ∃ y, y ∈ (F : Set ℕ) ∩ K ∧ x ≠ y ∧
+          IsRecurrentNoTwoRepairPrefix A C (insert y D)
+
+/-- Wide branch retaining the globally disjoint repair pair available at
+the same target. -/
+def HasCriticalWideReservoirSupportWithRepairsAt
+    (A C K : Set ℕ) (D : Finset ℕ) (q : ℕ) : Prop :=
+  HasCriticalWideReservoirSupportAt A C K D q ∧
+    HasPrefixAvoidingDisjointRepairPairAt A C D q
+
+/-- Balanced branch retaining both its equal-target arithmetic equations
+and the concrete globally disjoint separated repairs. -/
+def HasCriticalBalancedAdditivePairWithRepairsAt
+    (A C K : Set ℕ) (D : Finset ℕ) (q : ℕ) : Prop :=
+  HasCriticalBalancedAdditivePairAt A C K D q ∧
+    HasCriticalSeparatedRepairPairAt A C K D q
+
 /-- Enlarging the reservoir preserves a critical wide witness. -/
 theorem HasCriticalWideReservoirSupportAt.mono_reservoir
     {A C K L : Set ℕ} {D : Finset ℕ} {q : ℕ}
@@ -6981,6 +7231,33 @@ theorem HasCriticalBalancedAdditivePairAt.mono_reservoir
   exact ⟨x, hKL hxK, y, hKL hyK, hxy,
     hxCritical, hyCritical, u, huA, v, hvA,
     u', hu'A, v', hv'A, hxsum, hysum⟩
+
+/-- Enlarging the temporary reservoir preserves a strong separated repair
+pair; its global `C`-disjointness is unchanged. -/
+theorem HasCriticalSeparatedRepairPairAt.mono_reservoir
+    {A C K L : Set ℕ} {D : Finset ℕ} {q : ℕ}
+    (hKL : K ⊆ L)
+    (h : HasCriticalSeparatedRepairPairAt A C K D q) :
+    HasCriticalSeparatedRepairPairAt A C L D q := by
+  obtain ⟨E, hER, hED, F, hFR, hFD, hEFC,
+      x, hx, hxCritical, y, hy, hxy, hyCritical⟩ := h
+  exact ⟨E, hER, hED, F, hFR, hFD, hEFC,
+    x, ⟨hx.1, hKL hx.2⟩, hxCritical,
+    y, ⟨hy.1, hKL hy.2⟩, hxy, hyCritical⟩
+
+theorem HasCriticalWideReservoirSupportWithRepairsAt.mono_reservoir
+    {A C K L : Set ℕ} {D : Finset ℕ} {q : ℕ}
+    (hKL : K ⊆ L)
+    (h : HasCriticalWideReservoirSupportWithRepairsAt A C K D q) :
+    HasCriticalWideReservoirSupportWithRepairsAt A C L D q :=
+  ⟨h.1.mono_reservoir hKL, h.2⟩
+
+theorem HasCriticalBalancedAdditivePairWithRepairsAt.mono_reservoir
+    {A C K L : Set ℕ} {D : Finset ℕ} {q : ℕ}
+    (hKL : K ⊆ L)
+    (h : HasCriticalBalancedAdditivePairWithRepairsAt A C K D q) :
+    HasCriticalBalancedAdditivePairWithRepairsAt A C L D q :=
+  ⟨h.1.mono_reservoir hKL, h.2.mono_reservoir hKL⟩
 
 /-- Block tails are antitone in their starting index. -/
 theorem binaryBlockTail_antitone
@@ -7094,6 +7371,69 @@ theorem CriticalBinaryPairImplicationEdgeData.hasCriticalBalancedAdditivePair
     w.oppositeDestinationSecondSummand,
       w.oppositeDestinationSecondSummand_mem,
     w.source_sum_eq, w.oppositeDestination_sum_eq⟩
+
+/-- A critical separated clause retains its two concrete globally disjoint
+repairs and their critical marked endpoints. -/
+theorem CriticalSeparatedTraceClauseData.hasCriticalSeparatedRepairPair
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (d : CriticalSeparatedTraceClauseData A C K D cell q) :
+    HasCriticalSeparatedRepairPairAt A C K D q := by
+  have hx : d.clause.leftPoint ∈
+      (d.clause.leftSupport : Set ℕ) ∩ K := by
+    rw [d.clause.left_trace]
+    simp
+  have hy : d.clause.rightPoint ∈
+      (d.clause.rightSupport : Set ℕ) ∩ K := by
+    rw [d.clause.right_trace]
+    simp
+  have hxy : d.clause.leftPoint ≠ d.clause.rightPoint := by
+    intro hEq
+    exact Finset.disjoint_left.mp
+      (P.disjoint d.clause.cells_ne)
+      d.clause.leftPoint_mem (by
+        simpa [hEq] using d.clause.rightPoint_mem)
+  exact ⟨d.clause.leftSupport, d.clause.left_mem,
+    d.clause.left_disjoint,
+    d.clause.rightSupport, d.clause.right_mem,
+    d.clause.right_disjoint, d.reservoir_traces_disjoint,
+    d.clause.leftPoint, hx, d.leftPoint_critical,
+    d.clause.rightPoint, hy, hxy, d.rightPoint_critical⟩
+
+/-- The concrete separated repairs themselves imply the balanced additive
+equations, with no need to remember separately chosen summands. -/
+theorem HasCriticalSeparatedRepairPairAt.hasCriticalBalancedAdditivePair
+    {A C K : Set ℕ} {D : Finset ℕ} {q : ℕ}
+    (h : HasCriticalSeparatedRepairPairAt A C K D q) :
+    HasCriticalBalancedAdditivePairAt A C K D q := by
+  obtain ⟨E, hER, _hED, F, hFR, _hFD, _hEFC,
+      x, hx, hxCritical, y, hy, hxy, hyCritical⟩ := h
+  obtain ⟨u, huA, v, hvA, hxsum⟩ :=
+    orderThreeSupport_member_has_twoSummands
+      hER (Finset.mem_coe.mp hx.1)
+  obtain ⟨u', hu'A, v', hv'A, hysum⟩ :=
+    orderThreeSupport_member_has_twoSummands
+      hFR (Finset.mem_coe.mp hy.1)
+  exact ⟨x, hx.2, y, hy.2, hxy, hxCritical, hyCritical,
+    u, huA, v, hvA, u', hu'A, v', hv'A, hxsum, hysum⟩
+
+/-- A labelled implication edge now yields the full balanced branch: both
+sum equations and the original globally disjoint repair pair. -/
+theorem CriticalBinaryPairImplicationEdgeData.hasCriticalBalancedAdditivePairWithRepairs
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    {hcellCard : ∀ i, (cell i).card = 2}
+    {data : ∀ q : {q // q ∈ Q},
+      CriticalSeparatedTraceClauseData A C K D cell q.1}
+    {a b : BinaryCellLiteral cell}
+    (P : IsFiniteBlockPartition K cell)
+    (w : CriticalBinaryPairImplicationEdgeData
+      A C K D Q cell hcellCard data a b) :
+    HasCriticalBalancedAdditivePairWithRepairsAt
+      A C K D w.target.1 :=
+  ⟨w.hasCriticalBalancedAdditivePair P,
+    (data w.target).hasCriticalSeparatedRepairPair P⟩
 
 /-- Every implication edge in a critical clause family has the full
 recurrent and balanced-additive label above. -/
@@ -7681,6 +8021,63 @@ theorem separatedTrace_certificate_has_binaryPairPatternCover
     blockSelector_value_eq_of_point_mem_selectedSet
       P d.rightPoint_mem hrightSelected⟩
 
+/-- Clause-cover extraction which keeps the globally disjoint repair pair
+attached to every chosen clause. -/
+theorem separatedTraceAlong_certificate_has_binaryPairPatternCover
+    {R : SupportFamily} {C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hKC : K ⊆ C)
+    (P : IsFiniteBlockPartition K cell)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (hsep : ∀ q ∈ Q,
+      HasSeparatedSingletonTwoRepairTracesAlongAt
+        R C K D cell q) :
+    ∃ data : ∀ q : {q // q ∈ Q},
+        SeparatedTraceClauseDataAlong R C K D cell q.1,
+      ∀ s : BlockSelector cell, ∃ q : {q // q ∈ Q},
+        (s (data q).clause.leftCell).1 =
+          (data q).clause.leftPoint ∧
+        (s (data q).clause.rightCell).1 =
+          (data q).clause.rightPoint := by
+  classical
+  let data : ∀ q : {q // q ∈ Q},
+      SeparatedTraceClauseDataAlong R C K D cell q.1 := fun q =>
+    Classical.choice (separatedTraceClauseDataAlong_nonempty
+      hKC (hsep q.1 q.2))
+  refine ⟨data, ?_⟩
+  intro s
+  obtain ⟨q, hqQ, hqDestroy⟩ := hcert s
+  let qsub : {q // q ∈ Q} := ⟨q, hqQ⟩
+  let d := (data qsub).clause
+  have hleftSelected : d.leftPoint ∈ selectedSet s := by
+    obtain ⟨w, hwLeft, hwSelected⟩ :=
+      Set.not_disjoint_iff.mp
+        (hqDestroy d.leftSupport d.left_mem)
+    have hwK : w ∈ K := P.selectedSet_subset s hwSelected
+    have hwEq : w = d.leftPoint := by
+      have hwTrace : w ∈
+          ((d.leftSupport : Set ℕ) ∩ K) := ⟨hwLeft, hwK⟩
+      rw [d.left_trace] at hwTrace
+      simpa using hwTrace
+    simpa [hwEq] using hwSelected
+  have hrightSelected : d.rightPoint ∈ selectedSet s := by
+    obtain ⟨w, hwRight, hwSelected⟩ :=
+      Set.not_disjoint_iff.mp
+        (hqDestroy d.rightSupport d.right_mem)
+    have hwK : w ∈ K := P.selectedSet_subset s hwSelected
+    have hwEq : w = d.rightPoint := by
+      have hwTrace : w ∈
+          ((d.rightSupport : Set ℕ) ∩ K) := ⟨hwRight, hwK⟩
+      rw [d.right_trace] at hwTrace
+      simpa using hwTrace
+    simpa [hwEq] using hwSelected
+  exact ⟨qsub,
+    blockSelector_value_eq_of_point_mem_selectedSet
+      P d.leftPoint_mem hleftSelected,
+    blockSelector_value_eq_of_point_mem_selectedSet
+      P d.rightPoint_mem hrightSelected⟩
+
 /-- If a binary two-repair certificate has no wide support at any target,
 its trace classification is wholly separated and hence yields the explicit
 unsatisfiable pair-pattern cover above. -/
@@ -7735,6 +8132,47 @@ theorem targetLocalized_twoRepairCertificate_noWide_has_complementaryImplication
     binaryPairPatternCover_has_complementaryImplicationSCC
       P hcellCard data hcover⟩
 
+/-- Globally disjoint version of the finite 2-SAT bridge.  Every clause in
+the contradictory SCC retains the same two repairs that were disjoint on
+all of the deletion reservoir `C`. -/
+theorem targetLocalized_twoRepairCertificateAlong_noWide_has_complementaryImplicationSCC
+    {R : SupportFamily} {C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hKC : K ⊆ C)
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAlongAt R C K D cell q)
+    (hnoWide : ∀ q ∈ Q,
+      ¬ HasWideReservoirSupportAt R K q) :
+    ∃ data : ∀ q : {q // q ∈ Q},
+        SeparatedTraceClauseDataAlong R C K D cell q.1,
+      HasComplementaryBinaryPairImplicationSCC hcellCard
+        (fun q => (data q).clause) := by
+  have hsep : ∀ q ∈ Q,
+      HasSeparatedSingletonTwoRepairTracesAlongAt
+        R C K D cell q := by
+    intro q hqQ
+    rcases twoRepairTraceObstructionAlong_wide_or_separated
+        hKC P hcellCard (htrace q hqQ) with hwide | hsep
+    · obtain ⟨E, hER, hED, F, hFR, hFD, hEFC, hwide⟩ := hwide
+      have hwideSupport : HasWideReservoirSupportAt R K q := by
+        rcases hwide with hEwide | hFwide
+        · obtain ⟨x, hx, y, hy, hxy⟩ := hEwide
+          exact ⟨E, hER, x, hx, y, hy, hxy⟩
+        · obtain ⟨x, hx, y, hy, hxy⟩ := hFwide
+          exact ⟨F, hFR, x, hx, y, hy, hxy⟩
+      exact (hnoWide q hqQ hwideSupport).elim
+    · exact hsep
+  obtain ⟨data, hcover⟩ :=
+    separatedTraceAlong_certificate_has_binaryPairPatternCover
+      hKC P hcert hsep
+  exact ⟨data,
+    binaryPairPatternCover_has_complementaryImplicationSCC
+      P hcellCard (fun q => (data q).clause) hcover⟩
+
 /-- Critical arithmetic sharpening of the exact finite-certificate bridge.
 When the reservoir is pointwise critical and no target has a wide support,
 the contradictory implication SCC carries recurrent labels on both marked
@@ -7749,8 +8187,8 @@ theorem targetLocalized_twoRepairCertificate_noWide_has_criticalComplementaryImp
     (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
       DestroysAt (additiveSupportFamily A 3) (selectedSet s) q)
     (htrace : ∀ q ∈ Q,
-      HasTwoRepairTraceObstructionAt
-        (additiveSupportFamily A 3) K D cell q)
+      HasTwoRepairTraceObstructionAlongAt
+        (additiveSupportFamily A 3) C K D cell q)
     (hnoWide : ∀ q ∈ Q,
       ¬ HasWideReservoirSupportAt
         (additiveSupportFamily A 3) K q) :
@@ -7758,11 +8196,13 @@ theorem targetLocalized_twoRepairCertificate_noWide_has_criticalComplementaryImp
       A C K D Q cell hcellCard := by
   classical
   obtain ⟨data, hSCC⟩ :=
-    targetLocalized_twoRepairCertificate_noWide_has_complementaryImplicationSCC
-      P hcellCard hcert htrace hnoWide
+    targetLocalized_twoRepairCertificateAlong_noWide_has_complementaryImplicationSCC
+      (fun x hx => (hcritical x hx).1 (by simp)) P hcellCard
+        hcert htrace hnoWide
   let criticalData : ∀ q : {q // q ∈ Q},
       CriticalSeparatedTraceClauseData A C K D cell q.1 := fun q =>
-    (data q).withCriticalAdditiveData P hcritical
+    (data q).clause.withCriticalAdditiveData P hcritical
+      (data q).reservoir_traces_disjoint
   refine ⟨criticalData, ?_⟩
   simpa [criticalData] using hSCC
 
@@ -7780,8 +8220,8 @@ theorem targetLocalized_twoRepairCertificate_wideSupport_or_criticalComplementar
     (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
       DestroysAt (additiveSupportFamily A 3) (selectedSet s) q)
     (htrace : ∀ q ∈ Q,
-      HasTwoRepairTraceObstructionAt
-        (additiveSupportFamily A 3) K D cell q) :
+      HasTwoRepairTraceObstructionAlongAt
+        (additiveSupportFamily A 3) C K D cell q) :
     (∃ q ∈ Q, HasWideReservoirSupportAt
       (additiveSupportFamily A 3) K q) ∨
       HasCriticalComplementaryBinaryPairImplicationSCC
@@ -8005,6 +8445,54 @@ theorem strongDeletion_eventuallyGoodPrefix_forces_lateTraceObstruction
       hKC P hlocalized hQrepairs
   exact ⟨Q, hQ, hQlateN, hcert, hlocalized, hQsafe, htrace⟩
 
+/-- Strengthened strong-deletion certificate which keeps the two supplied
+repairs disjoint on all of `C`. -/
+theorem strongDeletion_eventuallyGoodPrefix_forces_lateTraceObstructionAlong
+    {A C K : Set ℕ} {R : SupportFamily} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion R A)
+    (hKA : K ⊆ A)
+    (hKC : K ⊆ C)
+    (P : IsFiniteBlockPartition K cell)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      R C Set.univ D) :
+    ∀ N, ∃ Q : Finset ℕ,
+      Q.Nonempty ∧
+      (∀ q ∈ Q, N ≤ q) ∧
+      (∀ s : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt R (selectedSet s) q) ∧
+      (∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt R (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt R (selectedSet s) q') ∧
+      Disjoint (Q : Set ℕ)
+        (commonSurvivalTargets R cell) ∧
+      (∀ q ∈ Q,
+        HasTwoRepairTraceObstructionAlongAt
+          R C K D cell q) := by
+  classical
+  obtain ⟨T, hrepair⟩ := hgood
+  intro N
+  obtain ⟨Q, hQ, hQlate, hcert, hlocalized, hQsafe⟩ :=
+    strongDeletion_certificate_avoids_allCommonSurvivalTargets
+      hstrong hKA P (max N T)
+  have hQlateN : ∀ q ∈ Q, N ≤ q := by
+    intro q hqQ
+    exact (Nat.le_max_left N T).trans (hQlate q hqQ)
+  have hQrepairs : ∀ q ∈ Q,
+      ∃ E ∈ R q, Disjoint E D ∧
+        ∃ F ∈ R q, Disjoint F D ∧
+          Disjoint ((E : Set ℕ) ∩ C) ((F : Set ℕ) ∩ C) := by
+    intro q hqQ
+    exact hrepair q
+      ((Nat.le_max_right N T).trans (hQlate q hqQ))
+      (Set.mem_univ q)
+  have htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAlongAt R C K D cell q :=
+    targetLocalizedCertificate_has_twoRepairTraceObstructionAlong
+      hKC P hlocalized hQrepairs
+  exact ⟨Q, hQ, hQlateN, hcert, hlocalized, hQsafe, htrace⟩
+
 /-- Strong deletion's late certificate, after the exact binary trace
 classification.  At every requested height the finite obstruction either
 contains a wide reservoir support or carries a nontrivial anchored escape
@@ -8115,7 +8603,7 @@ theorem strongDeletion_eventuallyGoodPrefix_forces_lateWideSupport_or_criticalCo
   intro N
   obtain ⟨Q, hQ, hQlate, hcert, hlocalized,
       hQsafe, htrace⟩ :=
-    strongDeletion_eventuallyGoodPrefix_forces_lateTraceObstruction
+    strongDeletion_eventuallyGoodPrefix_forces_lateTraceObstructionAlong
       hstrong hKA hKC P hgood N
   exact ⟨Q, hQ, hQlate, hcert, hlocalized, hQsafe,
     targetLocalized_twoRepairCertificate_wideSupport_or_criticalComplementaryImplicationSCC
@@ -8243,6 +8731,63 @@ theorem strongDeletion_eventuallyGoodPrefix_forces_spatialTailCriticalWide_or_ba
     exact ⟨w.target.1, hQlate w.target.1 w.target.2,
       Or.inr (w.hasCriticalBalancedAdditivePair Ptail)⟩
 
+/-- Information-preserving spatial residual.  The wide branch carries a
+globally disjoint repair pair at the same target, while the balanced branch
+retains the two original separated repairs containing its critical
+endpoints.  These are the data needed for a single global red/blue
+thinning, rather than merely targetwise arithmetic equalities. -/
+theorem strongDeletion_eventuallyGoodPrefix_forces_spatialTailCriticalWideWithRepairs_or_balancedWithRepairs
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A)
+    (hKA : K ⊆ A)
+    (hKC : K ⊆ C)
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D)
+    (hcritical : ∀ b ∈ K,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D)) :
+    ∀ start N, ∃ q, N ≤ q ∧
+      (HasCriticalWideReservoirSupportWithRepairsAt A C
+          {x | ∃ i, x ∈ cell (start + i)} D q ∨
+        HasCriticalBalancedAdditivePairWithRepairsAt A C
+          {x | ∃ i, x ∈ cell (start + i)} D q) := by
+  have hgoodCopy := hgood
+  obtain ⟨T, hrepair⟩ := hgoodCopy
+  intro start N
+  let Ktail : Set ℕ := {x | ∃ i, x ∈ cell (start + i)}
+  let tailCell : ℕ → Finset ℕ := fun i => cell (start + i)
+  have hKtailK : Ktail ⊆ K := by
+    intro x hx
+    obtain ⟨i, hxi⟩ := hx
+    exact (P.mem_iff x).mpr ⟨start + i, hxi⟩
+  have htailCritical : ∀ b ∈ Ktail,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D) := by
+    intro b hb
+    exact hcritical b (hKtailK hb)
+  obtain ⟨Q, Ptail, _hQ, hQlate, _hcert, _hlocalized,
+      _hQsafe, hwide | hSCC⟩ :=
+    strongDeletion_eventuallyGoodPrefix_forces_spatialTailWideSupport_or_criticalComplementaryImplicationSCC
+      hstrong hKA hKC P hcellCard hgood hcritical
+        start (max N T)
+  · obtain ⟨q, hqQ, hqWide⟩ := hwide
+    have hqLate := hQlate q hqQ
+    have hpair : HasPrefixAvoidingDisjointRepairPairAt A C D q :=
+      hrepair q ((le_max_right N T).trans hqLate) (Set.mem_univ q)
+    exact ⟨q, (le_max_left N T).trans hqLate, Or.inl
+      ⟨wideReservoirSupport_has_criticalWideReservoirSupport
+        htailCritical hqWide, hpair⟩⟩
+  · obtain ⟨data, l, hforward, _hbackward⟩ :=
+      hSCC.exists_nontrivialCriticalArithmeticContradictoryPaths
+    obtain ⟨b, hedge, _hrest⟩ :=
+      Relation.TransGen.head'_iff.mp hforward
+    obtain ⟨w⟩ := hedge
+    have hqLate := hQlate w.target.1 w.target.2
+    exact ⟨w.target.1, (le_max_left N T).trans hqLate,
+      Or.inr (w.hasCriticalBalancedAdditivePairWithRepairs Ptail)⟩
+
 /-- Monotone cofinal dichotomy for the certificate-free spatial residual.
 Either critical wide supports occur beyond every block and target threshold,
 or critical balanced pairs do.  A single failure of the wide alternative
@@ -8264,6 +8809,47 @@ theorem cofinalSpatialCriticalWide_or_balancedAdditivePair_dichotomy
   classical
   by_cases hwide : ∀ start N, ∃ q, N ≤ q ∧
       HasCriticalWideReservoirSupportAt A C
+        {x | ∃ i, x ∈ cell (start + i)} D q
+  · exact Or.inl hwide
+  · right
+    push Not at hwide
+    obtain ⟨start₀, N₀, hnoWide⟩ := hwide
+    intro start N
+    obtain ⟨q, hqLate, hqWide | hqBalanced⟩ :=
+      hresidual (max start start₀) (max N N₀)
+    · have htailToStart₀ :
+          {x | ∃ i, x ∈ cell (max start start₀ + i)} ⊆
+            {x | ∃ i, x ∈ cell (start₀ + i)} :=
+        binaryBlockTail_antitone (le_max_right start start₀)
+      have hwide₀ := hqWide.mono_reservoir htailToStart₀
+      exact (hnoWide q
+        ((le_max_right N N₀).trans hqLate) hwide₀).elim
+    · have htailToStart :
+          {x | ∃ i, x ∈ cell (max start start₀ + i)} ⊆
+            {x | ∃ i, x ∈ cell (start + i)} :=
+        binaryBlockTail_antitone (le_max_left start start₀)
+      exact ⟨q, (le_max_left N N₀).trans hqLate,
+        hqBalanced.mono_reservoir htailToStart⟩
+
+/-- Monotone cofinal dichotomy with the actual globally disjoint repair
+supports retained in both branches. -/
+theorem cofinalSpatialCriticalWideWithRepairs_or_balancedWithRepairs_dichotomy
+    {A C : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hresidual : ∀ start N, ∃ q, N ≤ q ∧
+      (HasCriticalWideReservoirSupportWithRepairsAt A C
+          {x | ∃ i, x ∈ cell (start + i)} D q ∨
+        HasCriticalBalancedAdditivePairWithRepairsAt A C
+          {x | ∃ i, x ∈ cell (start + i)} D q)) :
+    (∀ start N, ∃ q, N ≤ q ∧
+      HasCriticalWideReservoirSupportWithRepairsAt A C
+        {x | ∃ i, x ∈ cell (start + i)} D q) ∨
+    (∀ start N, ∃ q, N ≤ q ∧
+      HasCriticalBalancedAdditivePairWithRepairsAt A C
+        {x | ∃ i, x ∈ cell (start + i)} D q) := by
+  classical
+  by_cases hwide : ∀ start N, ∃ q, N ≤ q ∧
+      HasCriticalWideReservoirSupportWithRepairsAt A C
         {x | ∃ i, x ∈ cell (start + i)} D q
   · exact Or.inl hwide
   · right
@@ -8336,6 +8922,79 @@ theorem cofinalSpatialCriticalBalancedAdditivePairs_exist_infiniteMatching
         (fun n => (hw n).2.2.1)
   exact ⟨q, x, y, u, v, u', v', L, hL, hmatching, hw⟩
 
+/-- The strengthened cofinal balanced branch yields an infinite endpoint
+matching together with the two concrete prefix-avoiding repairs for every
+matched pair.  The repairs remain disjoint on the full reservoir `C`, and
+the displayed additive decompositions are extracted from those very
+supports. -/
+theorem cofinalSpatialCriticalBalancedAdditivePairsWithRepairs_exist_infiniteMatching
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hbalanced : ∀ start N, ∃ q, N ≤ q ∧
+      HasCriticalBalancedAdditivePairWithRepairsAt A C
+        {x | ∃ i, x ∈ cell (start + i)} D q) :
+    ∃ q x y u v u' v' : ℕ → ℕ,
+      ∃ E F : ℕ → Finset ℕ,
+      ∃ L : Set ℕ, L.Infinite ∧
+        (∀ n ∈ L, ∀ m ∈ L, n ≠ m →
+          Disjoint ({x n, y n} : Finset ℕ)
+            ({x m, y m} : Finset ℕ)) ∧
+        ∀ n,
+          n ≤ q n ∧
+          E n ∈ additiveSupportFamily A 3 (q n) ∧
+          Disjoint (E n) D ∧
+          F n ∈ additiveSupportFamily A 3 (q n) ∧
+          Disjoint (F n) D ∧
+          Disjoint (((E n : Finset ℕ) : Set ℕ) ∩ C)
+            (((F n : Finset ℕ) : Set ℕ) ∩ C) ∧
+          x n ∈ E n ∧ y n ∈ F n ∧
+          x n ∈ {z | ∃ i, z ∈ cell (n + i)} ∧
+          y n ∈ {z | ∃ i, z ∈ cell (n + i)} ∧
+          x n ≠ y n ∧
+          IsRecurrentNoTwoRepairPrefix A C (insert (x n) D) ∧
+          IsRecurrentNoTwoRepairPrefix A C (insert (y n) D) ∧
+          u n ∈ A ∧ v n ∈ A ∧ u' n ∈ A ∧ v' n ∈ A ∧
+          x n + u n + v n = q n ∧
+          y n + u' n + v' n = q n := by
+  classical
+  have hwitness : ∀ n, ∃ q x y u v u' v' E F,
+      n ≤ q ∧
+      E ∈ additiveSupportFamily A 3 q ∧ Disjoint E D ∧
+      F ∈ additiveSupportFamily A 3 q ∧ Disjoint F D ∧
+      Disjoint ((E : Set ℕ) ∩ C) ((F : Set ℕ) ∩ C) ∧
+      x ∈ E ∧ y ∈ F ∧
+      x ∈ {z | ∃ i, z ∈ cell (n + i)} ∧
+      y ∈ {z | ∃ i, z ∈ cell (n + i)} ∧
+      x ≠ y ∧
+      IsRecurrentNoTwoRepairPrefix A C (insert x D) ∧
+      IsRecurrentNoTwoRepairPrefix A C (insert y D) ∧
+      u ∈ A ∧ v ∈ A ∧ u' ∈ A ∧ v' ∈ A ∧
+      x + u + v = q ∧ y + u' + v' = q := by
+    intro n
+    obtain ⟨q, hqn, _harithmetic,
+        E, hER, hED, F, hFR, hFD, hEFC,
+        x, hx, hxCritical, y, hy, hxy, hyCritical⟩ :=
+      hbalanced n n
+    obtain ⟨u, huA, v, hvA, hxsum⟩ :=
+      orderThreeSupport_member_has_twoSummands
+        hER (Finset.mem_coe.mp hx.1)
+    obtain ⟨u', hu'A, v', hv'A, hysum⟩ :=
+      orderThreeSupport_member_has_twoSummands
+        hFR (Finset.mem_coe.mp hy.1)
+    exact ⟨q, x, y, u, v, u', v', E, F,
+      hqn, hER, hED, hFR, hFD, hEFC,
+      Finset.mem_coe.mp hx.1, Finset.mem_coe.mp hy.1,
+      hx.2, hy.2, hxy, hxCritical, hyCritical,
+      huA, hvA, hu'A, hv'A, hxsum, hysum⟩
+  choose q x y u v u' v' E F hw using hwitness
+  obtain ⟨L, hL, hmatching⟩ :=
+    exists_infinite_pairwiseDisjoint_pairs_of_mem_binaryBlockTails
+      P x y (fun n => (hw n).2.2.2.2.2.2.2.2.1)
+        (fun n => (hw n).2.2.2.2.2.2.2.2.2.1)
+  exact ⟨q, x, y, u, v, u', v', E, F,
+    L, hL, hmatching, hw⟩
+
 /-- The cofinal wide branch likewise contains an infinite matching of
 endpoint pairs.  Here each matched pair occurs together in one order-three
 support, so a third ambient summand is retained as well. -/
@@ -8388,6 +9047,70 @@ theorem cofinalSpatialCriticalWideSupports_exist_infiniteMatching
       P x y (fun n => (hw n).2.2.2.2.1)
         (fun n => (hw n).2.2.2.2.2.1)
   exact ⟨q, x, y, u, G, L, hL, hmatching, hw⟩
+
+/-- The strengthened wide branch yields an infinite matching of the two
+wide-support endpoints and, at every matched target, also retains a pair of
+prefix-avoiding repairs globally disjoint on `C`. -/
+theorem cofinalSpatialCriticalWideSupportsWithRepairs_exist_infiniteMatching
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hwide : ∀ start N, ∃ q, N ≤ q ∧
+      HasCriticalWideReservoirSupportWithRepairsAt A C
+        {x | ∃ i, x ∈ cell (start + i)} D q) :
+    ∃ q x y u : ℕ → ℕ, ∃ G E F : ℕ → Finset ℕ,
+      ∃ L : Set ℕ, L.Infinite ∧
+        (∀ n ∈ L, ∀ m ∈ L, n ≠ m →
+          Disjoint ({x n, y n} : Finset ℕ)
+            ({x m, y m} : Finset ℕ)) ∧
+        ∀ n,
+          n ≤ q n ∧
+          G n ∈ additiveSupportFamily A 3 (q n) ∧
+          x n ∈ G n ∧ y n ∈ G n ∧
+          x n ∈ {z | ∃ i, z ∈ cell (n + i)} ∧
+          y n ∈ {z | ∃ i, z ∈ cell (n + i)} ∧
+          x n ≠ y n ∧
+          IsRecurrentNoTwoRepairPrefix A C (insert (x n) D) ∧
+          IsRecurrentNoTwoRepairPrefix A C (insert (y n) D) ∧
+          u n ∈ A ∧ x n + y n + u n = q n ∧
+          E n ∈ additiveSupportFamily A 3 (q n) ∧
+          Disjoint (E n) D ∧
+          F n ∈ additiveSupportFamily A 3 (q n) ∧
+          Disjoint (F n) D ∧
+          Disjoint (((E n : Finset ℕ) : Set ℕ) ∩ C)
+            (((F n : Finset ℕ) : Set ℕ) ∩ C) := by
+  classical
+  have hwitness : ∀ n, ∃ q x y u G E F,
+      n ≤ q ∧
+      G ∈ additiveSupportFamily A 3 q ∧ x ∈ G ∧ y ∈ G ∧
+      x ∈ {z | ∃ i, z ∈ cell (n + i)} ∧
+      y ∈ {z | ∃ i, z ∈ cell (n + i)} ∧
+      x ≠ y ∧
+      IsRecurrentNoTwoRepairPrefix A C (insert x D) ∧
+      IsRecurrentNoTwoRepairPrefix A C (insert y D) ∧
+      u ∈ A ∧ x + y + u = q ∧
+      E ∈ additiveSupportFamily A 3 q ∧ Disjoint E D ∧
+      F ∈ additiveSupportFamily A 3 q ∧ Disjoint F D ∧
+      Disjoint ((E : Set ℕ) ∩ C) ((F : Set ℕ) ∩ C) := by
+    intro n
+    obtain ⟨q, hqn,
+        ⟨G, hGR, x, hx, hxCritical,
+          y, hy, hxy, hyCritical⟩,
+        E, hER, hED, F, hFR, hFD, hEFC⟩ := hwide n n
+    obtain ⟨u, huA, _huG, hsum⟩ :=
+      OrderThreeUniqueHitRepairChoice.exists_thirdSummand
+        hGR (Finset.mem_coe.mp hx.1)
+          (Finset.mem_coe.mp hy.1) hxy
+    exact ⟨q, x, y, u, G, E, F, hqn, hGR,
+      Finset.mem_coe.mp hx.1, Finset.mem_coe.mp hy.1,
+      hx.2, hy.2, hxy, hxCritical, hyCritical, huA, hsum,
+      hER, hED, hFR, hFD, hEFC⟩
+  choose q x y u G E F hw using hwitness
+  obtain ⟨L, hL, hmatching⟩ :=
+    exists_infinite_pairwiseDisjoint_pairs_of_mem_binaryBlockTails
+      P x y (fun n => (hw n).2.2.2.2.1)
+        (fun n => (hw n).2.2.2.2.2.1)
+  exact ⟨q, x, y, u, G, E, F, L, hL, hmatching, hw⟩
 
 /-- If the universally safe targets of one infinite partition contain a
 tail, any block selector is the desired infinite deletion. -/
@@ -9066,6 +9789,48 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_cofinalSpatialCr
   exact ⟨D, K, cell, hDC, hgood, hKC, hK, hKD,
     P, hcellCard, hcriticalK,
     cofinalSpatialCriticalWide_or_balancedAdditivePair_dichotomy
+      hresidual⟩
+
+/-- Information-preserving counterexample normal form.  In either pure
+cofinal branch the original prefix-avoiding repairs, globally disjoint on
+`C`, remain available for the final deletion/thinning argument. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_cofinalSpatialCriticalArithmeticWithRepairsDichotomy
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ D : Finset ℕ, ∃ K : Set ℕ,
+      ∃ cell : ℕ → Finset ℕ,
+        (D : Set ℕ) ⊆ C ∧
+        HasEventuallyTwoRepairsAtPrefixAlong
+          (additiveSupportFamily A 3) C Set.univ D ∧
+        K ⊆ C ∧ K.Infinite ∧ Disjoint K (D : Set ℕ) ∧
+        IsFiniteBlockPartition K cell ∧
+        (∀ i, (cell i).card = 2) ∧
+        (∀ b ∈ K,
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        ((∀ start N, ∃ q, N ≤ q ∧
+            HasCriticalWideReservoirSupportWithRepairsAt A C
+              {x | ∃ i, x ∈ cell (start + i)} D q) ∨
+          ∀ start N, ∃ q, N ≤ q ∧
+            HasCriticalBalancedAdditivePairWithRepairsAt A C
+              {x | ∃ i, x ∈ cell (start + i)} D q) := by
+  obtain ⟨D, K, cell, hDC, hgood, hKC, hK, hKD,
+      P, hcellCard, hcriticalK, _hcofinal⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_counterexample_forces_fullyCriticalCofinalTraceDichotomy
+      hCA hC hrec hD₀ hminimal hcounter
+  have hresidual :=
+    strongDeletion_eventuallyGoodPrefix_forces_spatialTailCriticalWideWithRepairs_or_balancedWithRepairs
+      (strongOrderThreeDeletion_of_counterexample hcounter)
+        (hKC.trans hCA) hKC P hcellCard hgood hcriticalK
+  exact ⟨D, K, cell, hDC, hgood, hKC, hK, hKD,
+    P, hcellCard, hcriticalK,
+    cofinalSpatialCriticalWideWithRepairs_or_balancedWithRepairs_dichotomy
       hresidual⟩
 
 /-- Arithmetic version of the critical cofinal normal form.  The remaining
