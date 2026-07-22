@@ -27606,6 +27606,7 @@ def HasSmallOrCommonAnchorSingletonPetalAffinePattern
       (∀ n ∈ L, atom n ∉ R) ∧
       (∀ n ∈ L, core (atom n) = insert (atom n) R) ∧
       Set.InjOn other L ∧
+      Set.InjOn atom L ∧
       (∀ n ∈ L,
         other n ≠ root ∧
           certificateRepair n = {root, other n}) ∧
@@ -27768,7 +27769,9 @@ theorem counterexample_synchronizedCertificateFamily_forces_rangeMigration_or_fi
                   (hmarked (atom n)
                     (hatomK_L n (hL₁L (hL₂L₁ hn))))).2,
                 fun n hn => hcoreEq n (hL₂L₁ hn),
-                hotherInj, hotherData,
+                hotherInj,
+                (hatomInj_L.mono hL₁L).mono hL₂L₁,
+                hotherData,
                 (fun n hn hotherCore => by
                   have hotherInter : other n ∈
                       certificateRepair n ∩ core (atom n) :=
@@ -27817,7 +27820,9 @@ theorem counterexample_synchronizedCertificateFamily_forces_rangeMigration_or_fi
                   (hmarked (atom n)
                     (hatomK_L n (hL₁L (hL₂L₁ hn))))).2,
                 fun n hn => hcoreEq n (hL₂L₁ hn),
-                hotherInj, hotherData,
+                hotherInj,
+                (hatomInj_L.mono hL₁L).mono hL₂L₁,
+                hotherData,
                 (fun n hn hotherCore => by
                   have hotherInter : other n ∈
                       certificateRepair n ∩ core (atom n) :=
@@ -28179,6 +28184,7 @@ def HasSmallOrCommonAnchorSingletonPetalAffineDestroyerPattern
       (∀ n ∈ L, atom n ∉ R) ∧
       (∀ n ∈ L, core (atom n) = insert (atom n) R) ∧
       Set.InjOn other L ∧
+      Set.InjOn atom L ∧
       (∀ n ∈ L,
         other n ≠ root ∧
           certificateRepair n = {root, other n}) ∧
@@ -28229,7 +28235,7 @@ theorem HasSmallOrCommonAnchorSingletonPetalAffineDestroyerPattern.rigidDiagonal
       ∀ o ∈ O,
         IsRigidPairSum A o o ∧ ¬ IsRigidPairSum A root o := by
   obtain ⟨root, L, _hLI, hL, other, _partner, _privateRepair,
-      hrootR, hrootA, _hatomNotR, _hcoreEq, hotherInj,
+      hrootR, hrootA, _hatomNotR, _hcoreEq, hotherInj, _hatomInj,
       hotherData, _hcertificateR, hotherA, _hotherNotCore,
       htargetFormula, _hprivateData, _hpartnerData,
       hdestroy, hotherRigid, _hpartnerRigid, hrootStarNonrigid,
@@ -28298,6 +28304,116 @@ theorem counterexample_terminalAffineDestroyerPattern_forces_zeroAtomicRigidDoub
     · intro z hz
       exact hstar z (hZO hz)
 
+/-- Indexed arithmetic core of the final atomic obstruction.  It retains
+the certificate index, its marked atom and private partner, all rigid and
+nonrigid pair information, and the descended order-two core destroyer. -/
+def HasZeroAtomicRigidAffineCertificateStar
+    (A : Set ℕ) (target atom : ℕ → ℕ)
+    (core : ℕ → Finset ℕ) (R : Finset ℕ) (I : Set ℕ) : Prop :=
+  ∃ root, ∃ L, L ⊆ I ∧ L.Infinite ∧
+    ∃ other partner : ℕ → ℕ,
+      root ∈ R ∧ root ∈ A ∧
+      IsRigidPairSum A root root ∧ Set.InjOn other L ∧
+      Set.InjOn atom L ∧
+      ∀ n ∈ L,
+        atom n ∈ A ∧ other n ∈ A ∧ partner n ∈ A ∧
+        atom n ≠ root ∧ atom n ≠ other n ∧ other n ≠ root ∧
+        target (atom n) = root + 2 * other n ∧
+        atom n + partner n = root + other n ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ({other n} : Set ℕ) (target (atom n)) ∧
+        IsRigidPairSum A (other n) (other n) ∧
+        IsRigidPairSum A (other n) (partner n) ∧
+        ¬ IsRigidPairSum A root (other n) ∧
+        (∀ E ∈ additiveSupportFamily A 2 (other n),
+          E = {other n, 0}) ∧
+        core (atom n) = insert (atom n) R ∧
+        DestroysAt (additiveSupportFamily A 2)
+          (core (atom n) : Set ℕ) (root + other n)
+
+/-- Pull the atomic thinning of the rigid-double image back to the original
+certificate indices.  No affine, private-repair, or predecessor-destroyer
+data are lost in passing to the zero-atomic subfamily. -/
+theorem counterexample_terminalAffineDestroyerPattern_forces_indexedZeroAtomicRigidStar
+    {A I : Set ℕ} {R : Finset ℕ}
+    {target atom : ℕ → ℕ}
+    {core certificateRepair : ℕ → Finset ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3)
+    (hpattern : HasSmallOrCommonAnchorSingletonPetalAffineDestroyerPattern
+      A target atom core certificateRepair R I) :
+    HasZeroAtomicRigidAffineCertificateStar
+      A target atom core R I := by
+  classical
+  obtain ⟨root, L, hLI, hL, other, partner, privateRepair,
+      hrootR, hrootA, hatomNotR, hcoreEq, hotherInj, hatomInj,
+      hotherData, _hcertificateR, hotherA, hotherNotCore,
+      htargetFormula, hprivateData, hpartnerData,
+      hdestroy, hotherRigid, hpartnerRigid, hrootStarNonrigid,
+      hcoreDestroysCenter, _htype⟩ := hpattern
+  have hrootRigid : IsRigidPairSum A root root :=
+    infiniteAffineSingletonDestroyers_force_rigidRootDouble
+      hbasis root (fun n => target (atom n)) other hL hotherInj
+        htargetFormula hdestroy hotherRigid
+  let O : Set ℕ := other '' L
+  have hO : O.Infinite := hL.image hotherInj
+  have hOA : O ⊆ A := by
+    rintro o ⟨n, hn, rfl⟩
+    exact hotherA n hn
+  obtain ⟨B, hBO, hB, hsplit⟩ |
+      ⟨Z, hZO, hZ, _hzero, hnormal⟩ :=
+    infiniteDeletionSplits_or_infiniteZeroAtoms hbasis hO
+  · let B' : Set ℕ := B \ {0}
+    have hB'B : B' ⊆ B := Set.diff_subset
+    have hB' : B'.Infinite :=
+      hB.diff (Set.finite_singleton 0)
+    have hB'A : B' ⊆ A :=
+      hB'B.trans (hBO.trans hOA)
+    have hzeroB' : 0 ∉ B' := by simp [B']
+    have hsplit' : DeletionSplitsIntoComplement A B' :=
+      hsplit.mono hB'B
+    obtain ⟨D, hDB', hD, hthree⟩ :=
+      exists_infiniteDeletion_threeBasis_of_zero_splittingReservoir
+        hbasis hzeroA hzeroB' hB'A hB' hsplit'
+    exact (hcounter D (hDB'.trans hB'A) hD hthree).elim
+  · obtain ⟨M, hML, hM, hZimage⟩ :=
+      exists_infinite_indexPreimage_of_infinite_subset_image
+        other rfl hZO hZ
+    refine ⟨root, M, hML.trans hLI, hM, other, partner,
+      hrootR, hrootA, hrootRigid, hotherInj.mono hML,
+      hatomInj.mono hML, ?_⟩
+    intro n hn
+    have hnL := hML hn
+    have hatomPrivate : atom n ∈ privateRepair n := by
+      have hatomInter : atom n ∈
+          privateRepair n ∩ core (atom n) := by
+        rw [(hprivateData n hnL).2.1]
+        simp
+      exact (Finset.mem_inter.mp hatomInter).1
+    have hatomA : atom n ∈ A :=
+      additiveSupportFamily_supportsIn A 3
+        (target (atom n)) (privateRepair n)
+          (hprivateData n hnL).1 (atom n) hatomPrivate
+    have hatomRoot : atom n ≠ root := by
+      intro hEq
+      exact hatomNotR n hnL (hEq ▸ hrootR)
+    have hatomOther : atom n ≠ other n := by
+      intro hEq
+      apply hotherNotCore n hnL
+      rw [← hEq, hcoreEq n hnL]
+      simp
+    have hotherZ : other n ∈ Z := by
+      rw [hZimage]
+      exact ⟨n, hn, rfl⟩
+    exact ⟨hatomA, hotherA n hnL, (hpartnerData n hnL).1,
+      hatomRoot, hatomOther, (hotherData n hnL).1,
+      htargetFormula n hnL, (hpartnerData n hnL).2.2,
+      hdestroy n hnL, hotherRigid n hnL, hpartnerRigid n hnL,
+      hrootStarNonrigid n hnL, hnormal (other n) hotherZ,
+      hcoreEq n hnL, hcoreDestroysCenter n hnL⟩
+
 /-- The generic certificate-point dichotomy sharpens the old terminal
 affine package without needing to know whether its cores are small or have
 a common anchor.  Thus the only non-migrating terminal family has explicit
@@ -28327,7 +28443,8 @@ theorem counterexample_terminalAffinePattern_forces_migration_or_singletonDestro
         A target atom core certificateRepair R I := by
   classical
   obtain ⟨root, L, hLI, hL, other, partner, privateRepair,
-      hrootR, hatomNotR, hcoreEq, hotherInj, hotherData,
+      hrootR, hatomNotR, hcoreEq, hotherInj, _hatomInjPattern,
+      hotherData,
       hotherNotCore, htargetFormula, hprivateData,
       hpartnerData, htype⟩ := hpattern
   have hotherCertificate : ∀ n ∈ L,
@@ -28358,6 +28475,7 @@ theorem counterexample_terminalAffinePattern_forces_migration_or_singletonDestro
       fun n hn => hatomNotR n (hML hn),
       fun n hn => hcoreEq n (hML hn),
       hotherInj.mono hML,
+      (hatomInj.mono hLI).mono hML,
       fun n hn => hotherData n (hML hn),
       fun n hn => hcertificateR n (hLI (hML hn)),
       (fun n hn =>
