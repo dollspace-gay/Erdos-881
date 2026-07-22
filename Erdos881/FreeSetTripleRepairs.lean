@@ -5136,6 +5136,166 @@ theorem exists_finiteBlockPartition_with_exactCoreCard
       _ = k := by simp
   exact ⟨F, cell, P, hcore, hcellCard⟩
 
+/-- Every infinite set admits a partition whose blocks themselves, rather
+than merely dedicated subcores, have one prescribed positive cardinality.
+The quotient/remainder equivalence `ℕ ≃ ℕ × Fin k` groups a denumeration of
+the set into exact `k`-point fibers. -/
+theorem exists_finiteBlockPartition_exactCard
+    {B₀ : Set ℕ} (hB₀ : B₀.Infinite) {k : ℕ} (hk : 0 < k) :
+    ∃ F : ℕ → Finset ℕ,
+      IsFiniteBlockPartition B₀ F ∧
+      ∀ i, (F i).card = k := by
+  classical
+  letI : Infinite B₀ := hB₀.to_subtype
+  letI : Denumerable B₀ := Denumerable.ofEncodableOfInfinite B₀
+  letI : NeZero k := ⟨Nat.ne_of_gt hk⟩
+  let e : ℕ ≃ B₀ := (Denumerable.eqv B₀).symm
+  let d : ℕ ≃ ℕ × Fin k := Nat.divModEquiv k
+  let value : ℕ × Fin k → ℕ := fun p =>
+    (e (d.symm p)).1
+  let F : ℕ → Finset ℕ := fun i =>
+    (Finset.univ : Finset (Fin k)).image fun a => value (i, a)
+  have hvalueInj : Function.Injective value := by
+    intro p q hpq
+    apply d.symm.injective
+    apply e.injective
+    exact Subtype.ext hpq
+  have hnonempty : ∀ i, (F i).Nonempty := by
+    intro i
+    let a : Fin k := ⟨0, hk⟩
+    exact ⟨value (i, a), Finset.mem_image.mpr
+      ⟨a, Finset.mem_univ a, rfl⟩⟩
+  have hdisjoint : Pairwise fun i j => Disjoint (F i) (F j) := by
+    intro i j hij
+    rw [Finset.disjoint_left]
+    intro x hxi hxj
+    obtain ⟨a, _ha, hax⟩ := Finset.mem_image.mp hxi
+    obtain ⟨b, _hb, hbx⟩ := Finset.mem_image.mp hxj
+    have hp : (i, a) = (j, b) :=
+      hvalueInj (hax.trans hbx.symm)
+    exact hij (congrArg Prod.fst hp)
+  have hmem : ∀ x, x ∈ B₀ ↔ ∃ i, x ∈ F i := by
+    intro x
+    constructor
+    · intro hxB₀
+      let p : ℕ × Fin k := d (e.symm ⟨x, hxB₀⟩)
+      refine ⟨p.1, Finset.mem_image.mpr
+        ⟨p.2, Finset.mem_univ p.2, ?_⟩⟩
+      change value (p.1, p.2) = x
+      have hpEta : (p.1, p.2) = p := Prod.eta p
+      rw [hpEta]
+      change (e (d.symm p)).1 = x
+      have hd : d.symm p = e.symm ⟨x, hxB₀⟩ := by
+        dsimp only [p]
+        exact d.symm_apply_apply _
+      rw [hd]
+      exact congrArg Subtype.val (e.apply_symm_apply ⟨x, hxB₀⟩)
+    · rintro ⟨i, hxi⟩
+      obtain ⟨a, _ha, rfl⟩ := Finset.mem_image.mp hxi
+      exact (e (d.symm (i, a))).2
+  have P : IsFiniteBlockPartition B₀ F :=
+    ⟨hnonempty, hdisjoint, hmem⟩
+  have hfiberInj : ∀ i,
+      Function.Injective (fun a : Fin k => value (i, a)) := by
+    intro i a b hab
+    have hp : (i, a) = (i, b) := hvalueInj hab
+    exact congrArg Prod.snd hp
+  have hcard : ∀ i, (F i).card = k := by
+    intro i
+    calc
+      (F i).card = (Finset.univ : Finset (Fin k)).card := by
+        exact Finset.card_image_iff.mpr (hfiberInj i).injOn
+      _ = k := by simp
+  exact ⟨F, P, hcard⟩
+
+/-- Exact-block depletion along an infinite obstruction set.  Thin the set
+to one point in each of infinitely many distinct exact `k`-blocks, discard
+all unused blocks, and erase the chosen point in every used block.  The
+remaining union is infinite, disjoint from the thinned obstruction, and is
+partitioned into exact `(k - 1)`-point blocks. -/
+theorem exists_infinite_exactBlockDepletion
+    {B₀ L : Set ℕ} {F : ℕ → Finset ℕ} {k : ℕ}
+    (P : IsFiniteBlockPartition B₀ F)
+    (hFcard : ∀ i, (F i).card = k)
+    (hk : 2 ≤ k)
+    (hLB₀ : L ⊆ B₀) (hL : L.Infinite) :
+    ∃ (T C : Set ℕ) (H : ℕ → Finset ℕ),
+      T ⊆ L ∧ T.Infinite ∧
+      C ⊆ B₀ \ T ∧ C.Infinite ∧
+      Disjoint T C ∧
+      IsFiniteBlockPartition C H ∧
+      ∀ i, (H i).card = k - 1 := by
+  classical
+  obtain ⟨T, hTL, hT, hindexInj⟩ :=
+    P.exists_infinite_blockTransversal hLB₀ hL
+  have hTB₀ : T ⊆ B₀ := hTL.trans hLB₀
+  letI : Infinite T := hT.to_subtype
+  letI : Denumerable T := Denumerable.ofEncodableOfInfinite T
+  let e : ℕ ≃ T := (Denumerable.eqv T).symm
+  let H : ℕ → Finset ℕ := fun i =>
+    (F (blockIndex P (e i).1)).erase (e i).1
+  have heBlock : ∀ i, (e i).1 ∈ F (blockIndex P (e i).1) := by
+    intro i
+    exact P.mem_blockIndex (hTB₀ (e i).2)
+  have hHcard : ∀ i, (H i).card = k - 1 := by
+    intro i
+    dsimp only [H]
+    rw [Finset.card_erase_of_mem (heBlock i), hFcard]
+  have hHnonempty : ∀ i, (H i).Nonempty := by
+    intro i
+    apply Finset.card_pos.mp
+    rw [hHcard i]
+    omega
+  have hHdisjoint : Pairwise fun i j => Disjoint (H i) (H j) := by
+    intro i j hij
+    have heNe : (e i).1 ≠ (e j).1 := by
+      intro heq
+      apply hij
+      apply e.injective
+      exact Subtype.ext heq
+    have hindexNe : blockIndex P (e i).1 ≠
+        blockIndex P (e j).1 := by
+      intro hindex
+      exact heNe (hindexInj (e i).2 (e j).2 hindex)
+    have hiSubset : H i ⊆ F (blockIndex P (e i).1) := by
+      simpa only [H] using
+        (Finset.erase_subset (e i).1 (F (blockIndex P (e i).1)))
+    have hjSubset : H j ⊆ F (blockIndex P (e j).1) := by
+      simpa only [H] using
+        (Finset.erase_subset (e j).1 (F (blockIndex P (e j).1)))
+    exact (P.disjoint hindexNe).mono
+      hiSubset hjSubset
+  let C : Set ℕ := {x | ∃ i, x ∈ H i}
+  have PC : IsFiniteBlockPartition C H := by
+    refine ⟨hHnonempty, hHdisjoint, ?_⟩
+    intro x
+    rfl
+  have hCB₀diff : C ⊆ B₀ \ T := by
+    intro x hxC
+    obtain ⟨i, hxi⟩ := hxC
+    have hxerase := Finset.mem_erase.mp hxi
+    have hxF : x ∈ F (blockIndex P (e i).1) := hxerase.2
+    have hxB₀ : x ∈ B₀ :=
+      (P.mem_iff x).2 ⟨blockIndex P (e i).1, hxF⟩
+    refine ⟨hxB₀, ?_⟩
+    intro hxT
+    have hindexEq : blockIndex P x = blockIndex P (e i).1 :=
+      P.blockIndex_eq_of_mem hxF
+    have hxe : x = (e i).1 :=
+      hindexInj hxT (e i).2 hindexEq
+    exact hxerase.1 hxe
+  let selector : BlockSelector H := fun i =>
+    ⟨(hHnonempty i).choose, (hHnonempty i).choose_spec⟩
+  have hC : C.Infinite :=
+    (PC.selectedSet_infinite selector).mono
+      (PC.selectedSet_subset selector)
+  have hdisjoint : Disjoint T C := by
+    rw [Set.disjoint_left]
+    intro x hxT hxC
+    exact (hCB₀diff hxC).2 hxT
+  exact ⟨T, C, H, hTL, hT, hCB₀diff, hC,
+    hdisjoint, PC, hHcard⟩
+
 /-- Restart package for an infinite structured obstruction.  Thin the
 obstruction to one point per old block, remove those points, and repartition
 the still-infinite residual reservoir into fresh exact-size cores.  Direct
