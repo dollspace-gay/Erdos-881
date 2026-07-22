@@ -6409,6 +6409,35 @@ structure SeparatedTraceClauseData
   left_trace : ((leftSupport : Set ℕ) ∩ K) = {leftPoint}
   right_trace : ((rightSupport : Set ℕ) ∩ K) = {rightPoint}
 
+/-- Arithmetic and recurrent-extension labels attached to one separated
+binary certificate clause on a fully critical reservoir.  Each of the two
+marked literals is a recurrently bad one-point extension of the same good
+prefix, and each is singled out in an order-three representation of the
+clause target. -/
+structure CriticalSeparatedTraceClauseData
+    (A C K : Set ℕ) (D : Finset ℕ)
+    (cell : ℕ → Finset ℕ) (q : ℕ) where
+  clause : SeparatedTraceClauseData
+    (additiveSupportFamily A 3) K D cell q
+  leftPoint_mem_reservoir : clause.leftPoint ∈ K
+  leftPoint_critical : IsRecurrentNoTwoRepairPrefix
+    A C (insert clause.leftPoint D)
+  leftFirstSummand : ℕ
+  leftFirstSummand_mem : leftFirstSummand ∈ A
+  leftSecondSummand : ℕ
+  leftSecondSummand_mem : leftSecondSummand ∈ A
+  left_sum_eq : clause.leftPoint + leftFirstSummand +
+    leftSecondSummand = q
+  rightPoint_mem_reservoir : clause.rightPoint ∈ K
+  rightPoint_critical : IsRecurrentNoTwoRepairPrefix
+    A C (insert clause.rightPoint D)
+  rightFirstSummand : ℕ
+  rightFirstSummand_mem : rightFirstSummand ∈ A
+  rightSecondSummand : ℕ
+  rightSecondSummand_mem : rightSecondSummand ∈ A
+  right_sum_eq : clause.rightPoint + rightFirstSummand +
+    rightSecondSummand = q
+
 /-- The existential separated-trace predicate supplies chosen clause data. -/
 theorem separatedTraceClauseData_nonempty
     {R : SupportFamily} {K : Set ℕ} {D : Finset ℕ}
@@ -6426,6 +6455,74 @@ theorem separatedTraceClauseData_nonempty
       i, j, x, y, hij, hxi, hyj, hEtrace, hFtrace⟩ := hsep
   exact ⟨⟨E, hER, hED, F, hFR, hFD, hEF,
     i, j, x, y, hij, hxi, hyj, hEtrace, hFtrace⟩⟩
+
+/-- On a fully critical binary reservoir, every separated certificate
+clause canonically acquires recurrent endpoint labels and two marked
+additive decompositions of its target. -/
+noncomputable def SeparatedTraceClauseData.withCriticalAdditiveData
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcritical : ∀ b ∈ K,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D))
+    (d : SeparatedTraceClauseData
+      (additiveSupportFamily A 3) K D cell q) :
+    CriticalSeparatedTraceClauseData A C K D cell q := by
+  have hxK : d.leftPoint ∈ K :=
+    (P.mem_iff d.leftPoint).mpr ⟨d.leftCell, d.leftPoint_mem⟩
+  have hyK : d.rightPoint ∈ K :=
+    (P.mem_iff d.rightPoint).mpr ⟨d.rightCell, d.rightPoint_mem⟩
+  have hxTrace : d.leftPoint ∈
+      ((d.leftSupport : Set ℕ) ∩ K) := by
+    rw [d.left_trace]
+    simp
+  have hyTrace : d.rightPoint ∈
+      ((d.rightSupport : Set ℕ) ∩ K) := by
+    rw [d.right_trace]
+    simp
+  have hxSupport : d.leftPoint ∈ d.leftSupport :=
+    Finset.mem_coe.mp hxTrace.1
+  have hySupport : d.rightPoint ∈ d.rightSupport :=
+    Finset.mem_coe.mp hyTrace.1
+  let hleft :=
+    orderThreeSupport_member_has_twoSummands d.left_mem hxSupport
+  let u := Classical.choose hleft
+  have hu := Classical.choose_spec hleft
+  let v := Classical.choose hu.2
+  have hv := Classical.choose_spec hu.2
+  let hright :=
+    orderThreeSupport_member_has_twoSummands d.right_mem hySupport
+  let u' := Classical.choose hright
+  have hu' := Classical.choose_spec hright
+  let v' := Classical.choose hu'.2
+  have hv' := Classical.choose_spec hu'.2
+  exact
+    { clause := d
+      leftPoint_mem_reservoir := hxK
+      leftPoint_critical := hcritical d.leftPoint hxK
+      leftFirstSummand := u
+      leftFirstSummand_mem := hu.1
+      leftSecondSummand := v
+      leftSecondSummand_mem := hv.1
+      left_sum_eq := hv.2
+      rightPoint_mem_reservoir := hyK
+      rightPoint_critical := hcritical d.rightPoint hyK
+      rightFirstSummand := u'
+      rightFirstSummand_mem := hu'.1
+      rightSecondSummand := v'
+      rightSecondSummand_mem := hv'.1
+      right_sum_eq := hv'.2 }
+
+@[simp] theorem SeparatedTraceClauseData.withCriticalAdditiveData_clause
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcritical : ∀ b ∈ K,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D))
+    (d : SeparatedTraceClauseData
+      (additiveSupportFamily A 3) K D cell q) :
+    (d.withCriticalAdditiveData P hcritical).clause = d := by
+  simp [SeparatedTraceClauseData.withCriticalAdditiveData]
 
 /-- A point of a partition block can occur in a global selector only as the
 choice made at that block's unique index. -/
@@ -6696,6 +6793,136 @@ def BinaryPairImplication
       b = oppositeBinaryCellLiteral hcellCard
         (data q).leftLiteral)
 
+/-- Full recurrent and additive label carried by one implication edge of a
+critical separated certificate.  An edge `a → b` comes from one target `q`;
+the source literal `a` and the opposite of its destination `b` are the two
+marked endpoints in equal order-three representations of `q`. -/
+structure CriticalBinaryPairImplicationEdgeData
+    (A C K : Set ℕ) (D Q : Finset ℕ)
+    (cell : ℕ → Finset ℕ)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      CriticalSeparatedTraceClauseData A C K D cell q.1)
+    (a b : BinaryCellLiteral cell) where
+  target : {q // q ∈ Q}
+  orientation :
+    (a = (data target).clause.leftLiteral ∧
+      b = oppositeBinaryCellLiteral hcellCard
+        (data target).clause.rightLiteral) ∨
+    (a = (data target).clause.rightLiteral ∧
+      b = oppositeBinaryCellLiteral hcellCard
+        (data target).clause.leftLiteral)
+  source_critical : IsRecurrentNoTwoRepairPrefix
+    A C (insert a.2.1 D)
+  oppositeDestination_critical : IsRecurrentNoTwoRepairPrefix
+    A C (insert
+      (oppositeBinaryCellLiteral hcellCard b).2.1 D)
+  sourceFirstSummand : ℕ
+  sourceFirstSummand_mem : sourceFirstSummand ∈ A
+  sourceSecondSummand : ℕ
+  sourceSecondSummand_mem : sourceSecondSummand ∈ A
+  source_sum_eq : a.2.1 + sourceFirstSummand +
+    sourceSecondSummand = target.1
+  oppositeDestinationFirstSummand : ℕ
+  oppositeDestinationFirstSummand_mem :
+    oppositeDestinationFirstSummand ∈ A
+  oppositeDestinationSecondSummand : ℕ
+  oppositeDestinationSecondSummand_mem :
+    oppositeDestinationSecondSummand ∈ A
+  oppositeDestination_sum_eq :
+    (oppositeBinaryCellLiteral hcellCard b).2.1 +
+      oppositeDestinationFirstSummand +
+        oppositeDestinationSecondSummand = target.1
+
+/-- The arithmetic-labelled implication relation associated with a critical
+certificate. -/
+def CriticalBinaryPairImplication
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      CriticalSeparatedTraceClauseData A C K D cell q.1)
+    (a b : BinaryCellLiteral cell) : Prop :=
+  Nonempty (CriticalBinaryPairImplicationEdgeData
+    A C K D Q cell hcellCard data a b)
+
+/-- Forgetting the recurrent and additive labels recovers the underlying
+binary implication edge. -/
+theorem CriticalBinaryPairImplicationEdgeData.toBinaryPairImplication
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    {hcellCard : ∀ i, (cell i).card = 2}
+    {data : ∀ q : {q // q ∈ Q},
+      CriticalSeparatedTraceClauseData A C K D cell q.1}
+    {a b : BinaryCellLiteral cell}
+    (w : CriticalBinaryPairImplicationEdgeData
+      A C K D Q cell hcellCard data a b) :
+    BinaryPairImplication hcellCard
+      (fun q => (data q).clause) a b :=
+  ⟨w.target, w.orientation⟩
+
+/-- Every implication edge in a critical clause family has the full
+recurrent and balanced-additive label above. -/
+theorem binaryPairImplication_has_criticalArithmeticEdge
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      CriticalSeparatedTraceClauseData A C K D cell q.1)
+    {a b : BinaryCellLiteral cell}
+    (himp : BinaryPairImplication hcellCard
+      (fun q => (data q).clause) a b) :
+    CriticalBinaryPairImplication hcellCard data a b := by
+  rcases himp with ⟨q, horient | horient⟩
+  · rcases horient with ⟨rfl, rfl⟩
+    refine ⟨
+      { target := q
+        orientation := Or.inl ⟨rfl, rfl⟩
+        source_critical := (data q).leftPoint_critical
+        oppositeDestination_critical := ?_
+        sourceFirstSummand := (data q).leftFirstSummand
+        sourceFirstSummand_mem := (data q).leftFirstSummand_mem
+        sourceSecondSummand := (data q).leftSecondSummand
+        sourceSecondSummand_mem := (data q).leftSecondSummand_mem
+        source_sum_eq := (data q).left_sum_eq
+        oppositeDestinationFirstSummand :=
+          (data q).rightFirstSummand
+        oppositeDestinationFirstSummand_mem :=
+          (data q).rightFirstSummand_mem
+        oppositeDestinationSecondSummand :=
+          (data q).rightSecondSummand
+        oppositeDestinationSecondSummand_mem :=
+          (data q).rightSecondSummand_mem
+        oppositeDestination_sum_eq := ?_ }⟩
+    · rw [oppositeBinaryCellLiteral_involutive hcellCard]
+      exact (data q).rightPoint_critical
+    · rw [oppositeBinaryCellLiteral_involutive hcellCard]
+      exact (data q).right_sum_eq
+  · rcases horient with ⟨rfl, rfl⟩
+    refine ⟨
+      { target := q
+        orientation := Or.inr ⟨rfl, rfl⟩
+        source_critical := (data q).rightPoint_critical
+        oppositeDestination_critical := ?_
+        sourceFirstSummand := (data q).rightFirstSummand
+        sourceFirstSummand_mem := (data q).rightFirstSummand_mem
+        sourceSecondSummand := (data q).rightSecondSummand
+        sourceSecondSummand_mem := (data q).rightSecondSummand_mem
+        source_sum_eq := (data q).right_sum_eq
+        oppositeDestinationFirstSummand :=
+          (data q).leftFirstSummand
+        oppositeDestinationFirstSummand_mem :=
+          (data q).leftFirstSummand_mem
+        oppositeDestinationSecondSummand :=
+          (data q).leftSecondSummand
+        oppositeDestinationSecondSummand_mem :=
+          (data q).leftSecondSummand_mem
+        oppositeDestination_sum_eq := ?_ }⟩
+    · rw [oppositeBinaryCellLiteral_involutive hcellCard]
+      exact (data q).leftPoint_critical
+    · rw [oppositeBinaryCellLiteral_involutive hcellCard]
+      exact (data q).left_sum_eq
+
 /-- A selector avoids the clause family when it never chooses both marked
 endpoints of the same target. -/
 def AvoidsBinaryPairPatterns
@@ -6904,6 +7131,45 @@ def HasComplementaryBinaryPairImplicationSCC
     Relation.ReflTransGen (BinaryPairImplication hcellCard data)
       (oppositeBinaryCellLiteral hcellCard l) l
 
+/-- Fully arithmetic complementary-SCC obstruction.  Its clauses retain
+the recurrent criticality of both reservoir endpoints and marked
+order-three decompositions of every certificate target. -/
+def HasCriticalComplementaryBinaryPairImplicationSCC
+    (A C K : Set ℕ) (D Q : Finset ℕ)
+    (cell : ℕ → Finset ℕ)
+    (hcellCard : ∀ i, (cell i).card = 2) : Prop :=
+  ∃ data : ∀ q : {q // q ∈ Q},
+      CriticalSeparatedTraceClauseData A C K D cell q.1,
+    HasComplementaryBinaryPairImplicationSCC hcellCard
+      (fun q => (data q).clause)
+
+/-- The critical complementary SCC is literally a pair of contradictory
+finite paths all of whose edges carry recurrent endpoints and balanced
+additive equations. -/
+theorem HasCriticalComplementaryBinaryPairImplicationSCC.exists_criticalArithmeticContradictoryPaths
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    {hcellCard : ∀ i, (cell i).card = 2}
+    (hSCC : HasCriticalComplementaryBinaryPairImplicationSCC
+      A C K D Q cell hcellCard) :
+    ∃ data : ∀ q : {q // q ∈ Q},
+        CriticalSeparatedTraceClauseData A C K D cell q.1,
+      ∃ l : BinaryCellLiteral cell,
+        Relation.ReflTransGen
+          (CriticalBinaryPairImplication hcellCard data)
+          l (oppositeBinaryCellLiteral hcellCard l) ∧
+        Relation.ReflTransGen
+          (CriticalBinaryPairImplication hcellCard data)
+          (oppositeBinaryCellLiteral hcellCard l) l := by
+  obtain ⟨data, l, hforward, hbackward⟩ := hSCC
+  refine ⟨data, l, ?_, ?_⟩
+  · exact hforward.mono (fun _ _ himp =>
+      binaryPairImplication_has_criticalArithmeticEdge
+        hcellCard data himp)
+  · exact hbackward.mono (fun _ _ himp =>
+      binaryPairImplication_has_criticalArithmeticEdge
+        hcellCard data himp)
+
 /-- A complementary implication SCC makes an avoiding selector impossible:
 whichever endpoint it chooses, path soundness forces the opposite endpoint
 as well. -/
@@ -6958,14 +7224,14 @@ theorem exists_avoidingSelector_of_no_complementaryBinaryPairImplicationSCC
   let opp : BinaryCellLiteral cell → BinaryCellLiteral cell :=
     oppositeBinaryCellLiteral hcellCard
   let cls : BinaryCellLiteral cell → SCC := fun l =>
-    Quotient.mk' l
+    Quotient.mk'' l
   let preferred : BinaryCellLiteral cell → Prop := fun l =>
     lin (cls (opp l)) (cls l)
   have hclsNe : ∀ l : BinaryCellLiteral cell,
       cls (opp l) ≠ cls l := by
     intro l hEq
     have hrel :
-        (binaryPairImplicationSCCSetoid hcellCard data).Rel
+        (binaryPairImplicationSCCSetoid hcellCard data)
           (opp l) l := by
       exact Quotient.exact (by simpa [cls] using hEq)
     apply hnoSCC
@@ -6983,7 +7249,7 @@ theorem exists_avoidingSelector_of_no_complementaryBinaryPairImplicationSCC
     constructor
     · intro hlOpp hl
       have hEq : cls l = cls (opp l) :=
-        hlin.antisymm hlOpp hl
+        hlin.antisymm (cls l) (cls (opp l)) hlOpp hl
       exact hclsNe l hEq.symm
     · intro hnot
       rcases hlin.total (cls l) (cls (opp l)) with h | h
@@ -6995,22 +7261,21 @@ theorem exists_avoidingSelector_of_no_complementaryBinaryPairImplicationSCC
     ⟨i, base i⟩
   let s : BlockSelector cell := fun i =>
     if preferred (baseLiteral i) then
-      (baseLiteral i).2
+      base i
     else
-      (opp (baseLiteral i)).2
+      oppositeBlockChoice hcellCard i (base i)
   have hbaseSelected : ∀ i,
       (baseLiteral i).IsSelected s ↔
         preferred (baseLiteral i) := by
     intro i
     by_cases hpref : preferred (baseLiteral i)
-    · simp [s, hpref, BinaryCellLiteral.IsSelected]
+    · simp [s, baseLiteral, hpref, BinaryCellLiteral.IsSelected]
     · constructor
       · intro hselected
         exfalso
         apply oppositeBlockChoice_ne hcellCard i (base i)
-        change (oppositeBlockChoice hcellCard i (base i)).1 =
-          (base i).1 at hselected
-        exact hselected
+        simpa [s, baseLiteral, hpref,
+          BinaryCellLiteral.IsSelected] using hselected
       · exact fun h => (hpref h).elim
   have hoppositeSelected : ∀ i,
       (opp (baseLiteral i)).IsSelected s ↔
@@ -7033,25 +7298,27 @@ theorem exists_avoidingSelector_of_no_complementaryBinaryPairImplicationSCC
       simpa [b, baseLiteral, opp] using
         binaryCellLiteral_eq_base_or_oppositeBase
           hcellCard base l
-    rcases hcases with rfl | rfl
-    · exact hbaseSelected _
-    · exact hoppositeSelected _
+    rcases hcases with hl | hl
+    · rw [hl]
+      exact hbaseSelected l.1
+    · rw [hl]
+      exact hoppositeSelected l.1
   have himpPreferred : ∀ {a b : BinaryCellLiteral cell},
       BinaryPairImplication hcellCard data a b →
       preferred a → preferred b := by
     intro a b hab ha
     have habSCC : sccReach (cls a) (cls b) := by
-      change Relation.ReflTransGen
-        (BinaryPairImplication hcellCard data) a b
-      exact Relation.ReflTransGen.single hab
+      simpa [sccReach, cls, binaryPairImplicationSCCReach] using
+        (Relation.ReflTransGen.single hab)
     have hcontra :=
       binaryPairImplication_contrapositive hcellCard data hab
     have hcontraSCC : sccReach (cls (opp b)) (cls (opp a)) := by
-      change Relation.ReflTransGen
-        (BinaryPairImplication hcellCard data) (opp b) (opp a)
-      exact Relation.ReflTransGen.single hcontra
-    exact hlin.trans (hsccLin _ _ hcontraSCC)
-      (hlin.trans ha (hsccLin _ _ habSCC))
+      simpa [sccReach, cls, binaryPairImplicationSCCReach] using
+        (Relation.ReflTransGen.single hcontra)
+    exact hlin.trans (cls (opp b)) (cls (opp a)) (cls b)
+      (hsccLin _ _ hcontraSCC)
+      (hlin.trans (cls (opp a)) (cls a) (cls b)
+        ha (hsccLin _ _ habSCC))
   have himpSelected : ∀ {a b : BinaryCellLiteral cell},
       BinaryPairImplication hcellCard data a b →
       a.IsSelected s → b.IsSelected s := by
@@ -7195,6 +7462,68 @@ theorem targetLocalized_twoRepairCertificate_noWide_has_complementaryImplication
   exact ⟨data,
     binaryPairPatternCover_has_complementaryImplicationSCC
       P hcellCard data hcover⟩
+
+/-- Critical arithmetic sharpening of the exact finite-certificate bridge.
+When the reservoir is pointwise critical and no target has a wide support,
+the contradictory implication SCC carries recurrent labels on both marked
+endpoints of every clause together with their additive equations. -/
+theorem targetLocalized_twoRepairCertificate_noWide_has_criticalComplementaryImplicationSCC
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcritical : ∀ b ∈ K,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D))
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt (additiveSupportFamily A 3) (selectedSet s) q)
+    (htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAt
+        (additiveSupportFamily A 3) K D cell q)
+    (hnoWide : ∀ q ∈ Q,
+      ¬ HasWideReservoirSupportAt
+        (additiveSupportFamily A 3) K q) :
+    HasCriticalComplementaryBinaryPairImplicationSCC
+      A C K D Q cell hcellCard := by
+  classical
+  obtain ⟨data, hSCC⟩ :=
+    targetLocalized_twoRepairCertificate_noWide_has_complementaryImplicationSCC
+      P hcellCard hcert htrace hnoWide
+  let criticalData : ∀ q : {q // q ∈ Q},
+      CriticalSeparatedTraceClauseData A C K D cell q.1 := fun q =>
+    (data q).withCriticalAdditiveData P hcritical
+  refine ⟨criticalData, ?_⟩
+  simpa [criticalData] using hSCC
+
+/-- Exact critical finite dichotomy.  A fully critical binary certificate
+either exposes a support containing two reservoir vertices or contains a
+complementary implication SCC whose clauses retain all recurrent and
+additive labels. -/
+theorem targetLocalized_twoRepairCertificate_wideSupport_or_criticalComplementaryImplicationSCC
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcritical : ∀ b ∈ K,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D))
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt (additiveSupportFamily A 3) (selectedSet s) q)
+    (htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAt
+        (additiveSupportFamily A 3) K D cell q) :
+    (∃ q ∈ Q, HasWideReservoirSupportAt
+      (additiveSupportFamily A 3) K q) ∨
+      HasCriticalComplementaryBinaryPairImplicationSCC
+        A C K D Q cell hcellCard := by
+  classical
+  by_cases hwide : ∃ q ∈ Q, HasWideReservoirSupportAt
+      (additiveSupportFamily A 3) K q
+  · exact Or.inl hwide
+  · right
+    apply
+      targetLocalized_twoRepairCertificate_noWide_has_criticalComplementaryImplicationSCC
+        P hcellCard hcritical hcert htrace
+    intro q hqQ hqWide
+    exact hwide ⟨q, hqQ, hqWide⟩
 
 /-- The same no-wide hypothesis retains the localized selector data.  Thus
 the unsatisfiable binary clause cover can be oriented into a nontrivial
@@ -7473,6 +7802,52 @@ theorem strongDeletion_eventuallyGoodPrefix_forces_lateWideSupport_or_narrowAnch
   exact ⟨Q, hQ, hQlate, hcert, hlocalized, hQsafe,
     targetLocalized_twoRepairCertificate_wideSupport_or_narrowAnchoredEscapeCycle
       P hcellCard hQ hcert hlocalized htrace⟩
+
+/-- Exact implication-graph form of the strong-deletion residual.  On a
+fully critical binary reservoir, every requested height admits a localized
+finite certificate which either contains a wide support or contains a
+complementary implication SCC with recurrent and additive labels on all of
+its clauses. -/
+theorem strongDeletion_eventuallyGoodPrefix_forces_lateWideSupport_or_criticalComplementaryImplicationSCC
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A)
+    (hKA : K ⊆ A)
+    (hKC : K ⊆ C)
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D)
+    (hcritical : ∀ b ∈ K,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D)) :
+    ∀ N, ∃ Q : Finset ℕ,
+      Q.Nonempty ∧
+      (∀ q ∈ Q, N ≤ q) ∧
+      (∀ s : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt (additiveSupportFamily A 3)
+          (selectedSet s) q) ∧
+      (∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt (additiveSupportFamily A 3)
+          (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt (additiveSupportFamily A 3)
+            (selectedSet s) q') ∧
+      Disjoint (Q : Set ℕ)
+        (commonSurvivalTargets
+          (additiveSupportFamily A 3) cell) ∧
+      ((∃ q ∈ Q, HasWideReservoirSupportAt
+          (additiveSupportFamily A 3) K q) ∨
+        HasCriticalComplementaryBinaryPairImplicationSCC
+          A C K D Q cell hcellCard) := by
+  intro N
+  obtain ⟨Q, hQ, hQlate, hcert, hlocalized,
+      hQsafe, htrace⟩ :=
+    strongDeletion_eventuallyGoodPrefix_forces_lateTraceObstruction
+      hstrong hKA hKC P hgood N
+  exact ⟨Q, hQ, hQlate, hcert, hlocalized, hQsafe,
+    targetLocalized_twoRepairCertificate_wideSupport_or_criticalComplementaryImplicationSCC
+      P hcellCard hcritical hcert htrace⟩
 
 /-- If the universally safe targets of one infinite partition contain a
 tail, any block selector is the desired infinite deletion. -/
@@ -8015,6 +8390,63 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_fullyCriticalLat
       Or.inl hwide⟩
   · exact ⟨Q, hQ, hQlate, hcert, hlocalized, hQsafe,
       Or.inr (hcycle.withCriticalAdditiveData P hcriticalK)⟩
+
+/-- Fully synchronized implication-SCC normal form.  In a counterexample,
+one fixed eventually-good prefix and one fully critical infinite binary
+reservoir produce arbitrarily late strong-deletion certificates.  Each such
+certificate either exposes a wide order-three support or an exact
+complementary 2-SAT SCC whose clauses carry recurrent endpoint labels and
+both marked additive decompositions. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_fullyCriticalLateWideSupportOrComplementaryImplicationSCC
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ D : Finset ℕ, ∃ K : Set ℕ,
+      ∃ cell : ℕ → Finset ℕ,
+        (D : Set ℕ) ⊆ C ∧
+        HasEventuallyTwoRepairsAtPrefixAlong
+          (additiveSupportFamily A 3) C Set.univ D ∧
+        K ⊆ C ∧ K.Infinite ∧ Disjoint K (D : Set ℕ) ∧
+        IsFiniteBlockPartition K cell ∧
+        ∃ hcellCard : ∀ i, (cell i).card = 2,
+          (∀ b ∈ K,
+            IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+          ∀ N, ∃ Q : Finset ℕ,
+            Q.Nonempty ∧
+            (∀ q ∈ Q, N ≤ q) ∧
+            (∀ s : BlockSelector cell, ∃ q ∈ Q,
+              DestroysAt (additiveSupportFamily A 3)
+                (selectedSet s) q) ∧
+            (∀ q ∈ Q, ∃ s : BlockSelector cell,
+              DestroysAt (additiveSupportFamily A 3)
+                (selectedSet s) q ∧
+              ∀ q' ∈ Q, q' ≠ q →
+                ¬ DestroysAt (additiveSupportFamily A 3)
+                  (selectedSet s) q') ∧
+            Disjoint (Q : Set ℕ)
+              (commonSurvivalTargets
+                (additiveSupportFamily A 3) cell) ∧
+            ((∃ q ∈ Q,
+                HasWideReservoirSupportAt
+                  (additiveSupportFamily A 3) K q) ∨
+              HasCriticalComplementaryBinaryPairImplicationSCC
+                A C K D Q cell hcellCard) := by
+  obtain ⟨D, K, cell, hDC, hgood, hKC, hK, hKD,
+      P, hcellCard, hcriticalK, _hcofinal⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_counterexample_forces_fullyCriticalCofinalTraceDichotomy
+      hCA hC hrec hD₀ hminimal hcounter
+  refine ⟨D, K, cell, hDC, hgood, hKC, hK, hKD,
+    P, hcellCard, hcriticalK, ?_⟩
+  exact
+    strongDeletion_eventuallyGoodPrefix_forces_lateWideSupport_or_criticalComplementaryImplicationSCC
+      (strongOrderThreeDeletion_of_counterexample hcounter)
+        (hKC.trans hCA) hKC P hcellCard hgood hcriticalK
 
 /-- Arithmetic version of the critical cofinal normal form.  The remaining
 counterexample must exhibit, at arbitrarily late targets, either a
