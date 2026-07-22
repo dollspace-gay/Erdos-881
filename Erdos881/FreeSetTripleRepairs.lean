@@ -27636,12 +27636,15 @@ theorem HasMigratedBinaryCertificateFamily.has_targetLocalizedCertificates
           (∀ sel : BlockSelector pairCell, ∃ t ∈ Q,
             DestroysAt (additiveSupportFamily A 3)
               (selectedSet sel) t) ∧
-          ∀ t ∈ Q, ∃ sel : BlockSelector pairCell,
+          (∀ t ∈ Q, ∃ sel : BlockSelector pairCell,
             DestroysAt (additiveSupportFamily A 3)
                 (selectedSet sel) t ∧
               ∀ u ∈ Q, u ≠ t →
                 ¬ DestroysAt (additiveSupportFamily A 3)
-                  (selectedSet sel) u := by
+                  (selectedSet sel) u) ∧
+          Disjoint (Q : Set ℕ)
+            (commonSurvivalTargets
+              (additiveSupportFamily A 3) pairCell) := by
   classical
   obtain ⟨J, hJI, hJ, K', pairCell, hK'A, hK', P,
       hpairCard, hsafe, hcertificates⟩ := h
@@ -27660,7 +27663,65 @@ theorem HasMigratedBinaryCertificateFamily.has_targetLocalizedCertificates
     exact hQ₀late t (hQQ₀ htQ)
   have hQdisjoint : Disjoint (Q : Set ℕ) (q '' J) :=
     hQ₀disjoint.mono_left (fun t ht => hQQ₀ (Finset.mem_coe.mp ht))
-  exact ⟨Q, hQ, hQlate, hQdisjoint, hcert, hlocalized⟩
+  have hQsafe : Disjoint (Q : Set ℕ)
+      (commonSurvivalTargets
+        (additiveSupportFamily A 3) pairCell) :=
+    targetLocalizedCertificate_disjoint_commonSurvivalTargets hlocalized
+  exact ⟨Q, hQ, hQlate, hQdisjoint, hcert, hlocalized, hQsafe⟩
+
+/-- A migrated binary certificate family contains infinitely many genuinely
+unsafe targets for its fixed selector space.  They are not merely outside
+the originally marked target stream: target localization forces them outside
+the whole set of targets which survive every binary selector. -/
+theorem HasMigratedBinaryCertificateFamily.has_infinite_unsafeTargets
+    {A I : Set ℕ} {q : ℕ → ℕ}
+    (h : HasMigratedBinaryCertificateFamily A q I) :
+    ∃ J, J ⊆ I ∧ J.Infinite ∧
+      ∃ K' : Set ℕ, ∃ pairCell : ℕ → Finset ℕ,
+        K' ⊆ A ∧ K'.Infinite ∧
+        IsFiniteBlockPartition K' pairCell ∧
+        (∀ i, (pairCell i).card = 2) ∧
+        (∀ n ∈ J, q n ∈
+          commonSurvivalTargets (additiveSupportFamily A 3) pairCell) ∧
+        ∃ T : Set ℕ, T.Infinite ∧
+          Disjoint T (q '' J) ∧
+          T ⊆ (commonSurvivalTargets
+            (additiveSupportFamily A 3) pairCell)ᶜ := by
+  classical
+  obtain ⟨J, hJI, hJ, K', pairCell, hK'A, hK', P,
+      hpairCard, hsafe, hcertificates⟩ :=
+    h.has_targetLocalizedCertificates
+  let T : Set ℕ := {t |
+    t ∉ q '' J ∧
+      t ∉ commonSurvivalTargets
+        (additiveSupportFamily A 3) pairCell}
+  have hT : T.Infinite := by
+    apply Set.infinite_of_forall_exists_gt
+    intro N
+    obtain ⟨Q, hQ, hQlate, hQmarked, _hcert,
+        _hlocalized, hQsafe⟩ := hcertificates (N + 1)
+    obtain ⟨t, htQ⟩ := hQ
+    have htMarked : t ∉ q '' J := by
+      intro ht
+      exact Set.disjoint_left.mp hQmarked
+        (Finset.mem_coe.mpr htQ) ht
+    have htUnsafe : t ∉ commonSurvivalTargets
+        (additiveSupportFamily A 3) pairCell := by
+      intro ht
+      exact Set.disjoint_left.mp hQsafe
+        (Finset.mem_coe.mpr htQ) ht
+    exact ⟨t, ⟨htMarked, htUnsafe⟩,
+      (Nat.lt_succ_self N).trans_le (hQlate t htQ)⟩
+  have hTmarked : Disjoint T (q '' J) := by
+    rw [Set.disjoint_left]
+    intro t htT htMarked
+    exact htT.1 htMarked
+  have hTunsafe : T ⊆ (commonSurvivalTargets
+      (additiveSupportFamily A 3) pairCell)ᶜ := by
+    intro t htT
+    exact htT.2
+  exact ⟨J, hJI, hJ, K', pairCell, hK'A, hK', P,
+    hpairCard, hsafe, T, hT, hTmarked, hTunsafe⟩
 
 /-- Exact terminal pattern left by the synchronized singleton trace after
 all currently available binary migrations.  Every moving core petal is the
