@@ -10372,6 +10372,78 @@ theorem markedSmallCoreDeltaSystem_root_card_le_two
   have hcoreSmall := hsmall b hbL
   omega
 
+/-- Uniformize a marked minimal-destroyer sunflower without losing any of
+its geometry.  Target injectivity makes the target image of every infinite
+thinning infinite, while the marked-petal and delta-system properties are
+hereditary.  In the small-core branch the common root has at most two
+vertices.  This is the geometry-preserving form of
+`exists_infinite_uniformCriticalMarkedDestroyerType` needed to attack the
+three residual branches separately. -/
+theorem exists_infinite_uniformCriticalMarkedDestroyerSunflowerType
+    {A C L : Set ℕ} {D R : Finset ℕ}
+    {target : ℕ → ℕ} {moving core : ℕ → Finset ℕ}
+    (hL : L.Infinite)
+    (hdata : ∀ b ∈ L,
+      IsCriticalMarkedMinimalDestroyerData
+        A C D b (target b) (moving b) (core b))
+    (htargetInj : Set.InjOn target L)
+    (hmarked : ∀ b ∈ L, b ∈ core b \ R)
+    (hdelta : ∀ b ∈ L, ∀ d ∈ L, b ≠ d →
+      core b ∩ core d = R ∧
+      Disjoint (core b \ R) (core d \ R)) :
+    ∃ K, K ⊆ L ∧ K.Infinite ∧
+      (target '' K).Infinite ∧
+      Set.InjOn target K ∧
+      (∀ b ∈ K,
+        IsCriticalMarkedMinimalDestroyerData
+          A C D b (target b) (moving b) (core b)) ∧
+      (∀ b ∈ K, b ∈ core b \ R) ∧
+      (∀ b ∈ K, ∀ d ∈ K, b ≠ d →
+        core b ∩ core d = R ∧
+        Disjoint (core b \ R) (core d \ R)) ∧
+      ((R.card ≤ 2 ∧ ∀ b ∈ K, (core b).card ≤ 3) ∨
+        (∀ b ∈ K,
+          HasTwoDisjointUniqueHitRepairs
+            (additiveSupportFamily A 3) (core b) (target b)) ∨
+        (∀ b ∈ K, 4 ≤ (core b).card ∧
+          HasCommonAnchorOrderThreeRepairs
+            A (core b) (target b))) := by
+  obtain ⟨K, hKL, hK, hsmall⟩ |
+      ⟨K, hKL, hK, hdisjoint⟩ |
+      ⟨K, hKL, hK, hanchor⟩ :=
+    exists_infinite_uniformCriticalMarkedDestroyerType hL hdata
+  · have htargetInjK : Set.InjOn target K :=
+      htargetInj.mono hKL
+    have htargetK : (target '' K).Infinite :=
+      hK.image htargetInjK
+    have hmarkedK : ∀ b ∈ K, b ∈ core b \ R :=
+      fun b hb => hmarked b (hKL hb)
+    have hdeltaK : ∀ b ∈ K, ∀ d ∈ K, b ≠ d →
+        core b ∩ core d = R ∧
+        Disjoint (core b \ R) (core d \ R) :=
+      fun b hb d hd hbd => hdelta b (hKL hb) d (hKL hd) hbd
+    have hroot : R.card ≤ 2 :=
+      markedSmallCoreDeltaSystem_root_card_le_two
+        hK hmarkedK (fun b hb d hd hbd =>
+          (hdeltaK b hb d hd hbd).1) hsmall
+    exact ⟨K, hKL, hK, htargetK, htargetInjK,
+      fun b hb => hdata b (hKL hb), hmarkedK, hdeltaK,
+      Or.inl ⟨hroot, hsmall⟩⟩
+  · have htargetInjK : Set.InjOn target K :=
+      htargetInj.mono hKL
+    exact ⟨K, hKL, hK, hK.image htargetInjK,
+      htargetInjK, fun b hb => hdata b (hKL hb),
+      fun b hb => hmarked b (hKL hb),
+      fun b hb d hd hbd => hdelta b (hKL hb) d (hKL hd) hbd,
+      Or.inr (Or.inl hdisjoint)⟩
+  · have htargetInjK : Set.InjOn target K :=
+      htargetInj.mono hKL
+    exact ⟨K, hKL, hK, hK.image htargetInjK,
+      htargetInjK, fun b hb => hdata b (hKL hb),
+      fun b hb => hmarked b (hKL hb),
+      fun b hb d hd hbd => hdelta b (hKL hb) d (hKL hd) hbd,
+      Or.inr (Or.inr hanchor)⟩
+
 /-- Every point of a minimal no-two-repair prefix lies in a genuine minimal
 destroyer obtained by adjoining at most three fresh reservoir vertices.  The
 unique-hit support at `d` avoids the moving trace paired with it, so any
@@ -24045,11 +24117,21 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_zeroAtomicMarked
           (target '' L).Infinite ∧
           Set.InjOn target L ∧
           (∀ b ∈ L, b ∈ core b \ R) ∧
-          ∀ b ∈ L, ∀ d ∈ L, b ≠ d →
+          (∀ b ∈ L, ∀ d ∈ L, b ≠ d →
             core b ∩ core d = R ∧
-            Disjoint (core b \ R) (core d \ R) := by
+            Disjoint (core b \ R) (core d \ R)) ∧
+          ∃ J : Set ℕ, ∃ certificateTarget atom : ℕ → ℕ,
+          ∃ certificateRepair : ℕ → Finset ℕ,
+            J.Infinite ∧ L = atom '' J ∧ Set.InjOn atom J ∧
+            ∀ n ∈ J, atom n ∈ L ∧
+              IsRecurrentNoTwoRepairPrefix A C (insert (atom n) D) ∧
+              n ≤ certificateTarget n ∧
+              certificateRepair n ∈
+                additiveSupportFamily A 3 (certificateTarget n) ∧
+              Disjoint (certificateRepair n) D ∧
+              Disjoint (certificateRepair n : Set ℕ) L := by
   obtain ⟨Z, hZC, hZA, hZ, hnormalZ, D, hDC, hgood,
-      J, _q, b, _repair, _hJ, hZimage, _hbInj, hindexed⟩ :=
+      J, q, b, repair, hJ, hZimage, hbInj, hindexed⟩ :=
     minimalRecurrentNoTwoRepairPrefix_counterexample_forces_zeroAtoms_with_unboundedSurvivingRepairs
       hbasis hzeroA hCA hC hrec hD₀ hminimal hcounter
   have hcriticalZ : ∀ z, z ∈ Z → z ∉ D → 0 ≤ z →
@@ -24062,10 +24144,102 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_zeroAtomicMarked
       hdata, htarget, htargetInj, hmarked, hdelta⟩ :=
     criticalGoodPrefix_has_infiniteMarkedMinimalDestroyerSunflower
       hZ hZC hDC hgood hcriticalZ
+  obtain ⟨J', hJ'J, hJ', hLimage⟩ :=
+    exists_infinite_indexPreimage_of_infinite_subset_image
+      b hZimage hLZ hL
   refine ⟨L, hLZ.trans hZC, hLZ.trans hZA, hL,
     fun b hb E hER => hnormalZ b (hLZ hb) E hER,
     D, R, target, moving, core, hDC, hgood,
-    hdata, htarget, htargetInj, hmarked, hdelta⟩
+    hdata, htarget, htargetInj, hmarked, hdelta,
+    J', q, b, repair, hJ', hLimage, hbInj.mono hJ'J, ?_⟩
+  intro n hn
+  obtain ⟨_hbnZ, hcritical, hqn, hrepair,
+      hrepairD, hrepairZ⟩ := hindexed n (hJ'J hn)
+  have hbnL : b n ∈ L := by
+    rw [hLimage]
+    exact ⟨n, hn, rfl⟩
+  exact ⟨hbnL, hcritical, hqn, hrepair, hrepairD,
+    hrepairZ.mono_right hLZ⟩
+
+/-- Counterexample-level uniform form of the zero-atomic marked sunflower.
+All arithmetic and delta-system data survive the infinite thinning, and the
+minimal destroyers now have one fixed type.  In particular, the residual
+finite-certificate bridge has exactly the following three branches: cores
+of size at most three with a root of size at most two, two disjoint
+unique-hit repairs, or large cores with common-anchor order-three repairs. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_uniformZeroAtomicMarkedMinimalDestroyerSunflower
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ K, K ⊆ C ∧ K ⊆ A ∧ K.Infinite ∧
+      (∀ b ∈ K, ∀ E ∈ additiveSupportFamily A 2 b,
+        E = {b, 0}) ∧
+      ∃ D R : Finset ℕ, ∃ target : ℕ → ℕ,
+      ∃ moving core : ℕ → Finset ℕ,
+        (D : Set ℕ) ⊆ C ∧
+        HasEventuallyTwoRepairsAtPrefixAlong
+          (additiveSupportFamily A 3) C Set.univ D ∧
+        (∀ b ∈ K,
+          IsCriticalMarkedMinimalDestroyerData
+            A C D b (target b) (moving b) (core b)) ∧
+        (target '' K).Infinite ∧
+        Set.InjOn target K ∧
+        (∀ b ∈ K, b ∈ core b \ R) ∧
+        (∀ b ∈ K, ∀ d ∈ K, b ≠ d →
+          core b ∩ core d = R ∧
+          Disjoint (core b \ R) (core d \ R)) ∧
+        ((R.card ≤ 2 ∧ ∀ b ∈ K, (core b).card ≤ 3) ∨
+          (∀ b ∈ K,
+            HasTwoDisjointUniqueHitRepairs
+              (additiveSupportFamily A 3) (core b) (target b)) ∨
+          (∀ b ∈ K, 4 ≤ (core b).card ∧
+            HasCommonAnchorOrderThreeRepairs
+              A (core b) (target b))) ∧
+        ∃ J : Set ℕ, ∃ certificateTarget atom : ℕ → ℕ,
+        ∃ certificateRepair : ℕ → Finset ℕ,
+          J.Infinite ∧ K = atom '' J ∧ Set.InjOn atom J ∧
+          ∀ n ∈ J, atom n ∈ K ∧
+            IsRecurrentNoTwoRepairPrefix A C (insert (atom n) D) ∧
+            n ≤ certificateTarget n ∧
+            certificateRepair n ∈
+              additiveSupportFamily A 3 (certificateTarget n) ∧
+            Disjoint (certificateRepair n) D ∧
+            Disjoint (certificateRepair n : Set ℕ) K := by
+  obtain ⟨L, hLC, hLA, hL, hnormal, D, R, target,
+      moving, core, hDC, hgood, hdata, _htarget,
+      htargetInj, hmarked, hdelta, J, certificateTarget,
+      atom, certificateRepair, hJ, hLimage, hatomInj,
+      hcertificate⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_counterexample_forces_zeroAtomicMarkedMinimalDestroyerSunflower
+      hbasis hzeroA hCA hC hrec hD₀ hminimal hcounter
+  obtain ⟨K, hKL, hK, htargetK, htargetInjK,
+      hdataK, hmarkedK, hdeltaK, htype⟩ :=
+    exists_infinite_uniformCriticalMarkedDestroyerSunflowerType
+      hL hdata htargetInj hmarked hdelta
+  obtain ⟨J', hJ'J, hJ', hKimage⟩ :=
+    exists_infinite_indexPreimage_of_infinite_subset_image
+      atom hLimage hKL hK
+  exact ⟨K, hKL.trans hLC, hKL.trans hLA, hK,
+    fun b hb E hER => hnormal b (hKL hb) E hER,
+    D, R, target, moving, core, hDC, hgood, hdataK,
+    htargetK, htargetInjK, hmarkedK, hdeltaK, htype,
+    J', certificateTarget, atom, certificateRepair,
+    hJ', hKimage, hatomInj.mono hJ'J, fun n hn => by
+      obtain ⟨_hatomL, hcritical, hnTarget, hrepair,
+          hrepairD, hrepairL⟩ := hcertificate n (hJ'J hn)
+      have hatomK : atom n ∈ K := by
+        rw [hKimage]
+        exact ⟨n, hn, rfl⟩
+      exact ⟨hatomK, hcritical, hnTarget, hrepair,
+        hrepairD, hrepairL.mono_right hKL⟩⟩
 
 /-- Exact negation of eventual pair independence: arbitrarily late there is
 a target every one of whose ambient order-two supports is entirely red. -/
