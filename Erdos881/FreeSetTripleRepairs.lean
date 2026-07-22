@@ -6999,6 +6999,62 @@ theorem binaryBlockTail_antitone
   rw [hindex]
   exact hxi
 
+/-- Membership in the tail beginning at `start` forces the unique original
+block index to be at least `start`. -/
+theorem blockIndex_ge_of_mem_binaryBlockTail
+    {K : Set ℕ} {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    {start x : ℕ}
+    (hx : x ∈ {z | ∃ i, z ∈ cell (start + i)}) :
+    start ≤ blockIndex P x := by
+  obtain ⟨i, hxi⟩ := hx
+  rw [P.blockIndex_eq_of_mem hxi]
+  omega
+
+/-- Pairs chosen inside progressively later binary block tails have an
+infinite matching thinning.  The bounded-set sunflower lemma gives a
+delta-system; its root must be empty because a fixed vertex has one finite
+block index and therefore cannot occur in tails with unbounded starts. -/
+theorem exists_infinite_pairwiseDisjoint_pairs_of_mem_binaryBlockTails
+    {K : Set ℕ} {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (x y : ℕ → ℕ)
+    (hx : ∀ n, x n ∈ {z | ∃ i, z ∈ cell (n + i)})
+    (hy : ∀ n, y n ∈ {z | ∃ i, z ∈ cell (n + i)}) :
+    ∃ L : Set ℕ, L.Infinite ∧
+      ∀ n ∈ L, ∀ m ∈ L, n ≠ m →
+        Disjoint ({x n, y n} : Finset ℕ)
+          ({x m, y m} : Finset ℕ) := by
+  classical
+  let f : ℕ → Finset ℕ := fun n => {x n, y n}
+  have hfCard : ∀ n ∈ (Set.univ : Set ℕ), (f n).card ≤ 2 := by
+    intro n _hn
+    exact Finset.card_le_two
+  obtain ⟨L, _hLuniv, hL, R, hdelta⟩ :=
+    exists_infinite_deltaSystem_of_bounded_pointMap
+      Set.infinite_univ f 2 hfCard
+  have hRempty : R = ∅ := by
+    by_contra hRne
+    obtain ⟨z, hzR⟩ := Finset.nonempty_iff_ne_empty.mpr hRne
+    obtain ⟨n, hnL, hzn⟩ := hL.exists_gt (blockIndex P z)
+    obtain ⟨m, hmL, hnm⟩ := hL.exists_gt n
+    have hnmNe : n ≠ m := by omega
+    have hzInter : z ∈ f n ∩ f m := by
+      rw [hdelta n hnL m hmL hnmNe]
+      exact hzR
+    have hzf : z ∈ f n := (Finset.mem_inter.mp hzInter).1
+    have hzCases : z = x n ∨ z = y n := by
+      simpa [f] using hzf
+    rcases hzCases with rfl | rfl
+    · have hnIndex := blockIndex_ge_of_mem_binaryBlockTail P (hx n)
+      omega
+    · have hnIndex := blockIndex_ge_of_mem_binaryBlockTail P (hy n)
+      omega
+  refine ⟨L, hL, ?_⟩
+  intro n hnL m hmL hnm
+  rw [Finset.disjoint_iff_inter_eq_empty]
+  exact (hdelta n hnL m hmL hnm).trans hRempty
+
 /-- Pointwise criticality upgrades an ordinary wide support to the critical
 wide arithmetic witness. -/
 theorem wideReservoirSupport_has_criticalWideReservoirSupport
@@ -8229,6 +8285,109 @@ theorem cofinalSpatialCriticalWide_or_balancedAdditivePair_dichotomy
         binaryBlockTail_antitone (le_max_left start start₀)
       exact ⟨q, (le_max_left N N₀).trans hqLate,
         hqBalanced.mono_reservoir htailToStart⟩
+
+/-- The cofinal balanced branch contains an infinite matching of endpoint
+pairs, while retaining every recurrent label and both additive
+decompositions. -/
+theorem cofinalSpatialCriticalBalancedAdditivePairs_exist_infiniteMatching
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hbalanced : ∀ start N, ∃ q, N ≤ q ∧
+      HasCriticalBalancedAdditivePairAt A C
+        {x | ∃ i, x ∈ cell (start + i)} D q) :
+    ∃ q x y u v u' v' : ℕ → ℕ,
+      ∃ L : Set ℕ, L.Infinite ∧
+        (∀ n ∈ L, ∀ m ∈ L, n ≠ m →
+          Disjoint ({x n, y n} : Finset ℕ)
+            ({x m, y m} : Finset ℕ)) ∧
+        ∀ n,
+          n ≤ q n ∧
+          x n ∈ {z | ∃ i, z ∈ cell (n + i)} ∧
+          y n ∈ {z | ∃ i, z ∈ cell (n + i)} ∧
+          x n ≠ y n ∧
+          IsRecurrentNoTwoRepairPrefix A C (insert (x n) D) ∧
+          IsRecurrentNoTwoRepairPrefix A C (insert (y n) D) ∧
+          u n ∈ A ∧ v n ∈ A ∧ u' n ∈ A ∧ v' n ∈ A ∧
+          x n + u n + v n = q n ∧
+          y n + u' n + v' n = q n := by
+  classical
+  have hwitness : ∀ n, ∃ q x y u v u' v',
+      n ≤ q ∧
+      x ∈ {z | ∃ i, z ∈ cell (n + i)} ∧
+      y ∈ {z | ∃ i, z ∈ cell (n + i)} ∧
+      x ≠ y ∧
+      IsRecurrentNoTwoRepairPrefix A C (insert x D) ∧
+      IsRecurrentNoTwoRepairPrefix A C (insert y D) ∧
+      u ∈ A ∧ v ∈ A ∧ u' ∈ A ∧ v' ∈ A ∧
+      x + u + v = q ∧ y + u' + v' = q := by
+    intro n
+    obtain ⟨q, hqn, x, hx, y, hy, hxy,
+        hxCritical, hyCritical, u, huA, v, hvA,
+        u', hu'A, v', hv'A, hxsum, hysum⟩ :=
+      hbalanced n n
+    exact ⟨q, x, y, u, v, u', v', hqn, hx, hy, hxy,
+      hxCritical, hyCritical, huA, hvA, hu'A, hv'A,
+      hxsum, hysum⟩
+  choose q x y u v u' v' hw using hwitness
+  obtain ⟨L, hL, hmatching⟩ :=
+    exists_infinite_pairwiseDisjoint_pairs_of_mem_binaryBlockTails
+      P x y (fun n => (hw n).2.1)
+        (fun n => (hw n).2.2.1)
+  exact ⟨q, x, y, u, v, u', v', L, hL, hmatching, hw⟩
+
+/-- The cofinal wide branch likewise contains an infinite matching of
+endpoint pairs.  Here each matched pair occurs together in one order-three
+support, so a third ambient summand is retained as well. -/
+theorem cofinalSpatialCriticalWideSupports_exist_infiniteMatching
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hwide : ∀ start N, ∃ q, N ≤ q ∧
+      HasCriticalWideReservoirSupportAt A C
+        {x | ∃ i, x ∈ cell (start + i)} D q) :
+    ∃ q x y u : ℕ → ℕ, ∃ G : ℕ → Finset ℕ,
+      ∃ L : Set ℕ, L.Infinite ∧
+        (∀ n ∈ L, ∀ m ∈ L, n ≠ m →
+          Disjoint ({x n, y n} : Finset ℕ)
+            ({x m, y m} : Finset ℕ)) ∧
+        ∀ n,
+          n ≤ q n ∧
+          G n ∈ additiveSupportFamily A 3 (q n) ∧
+          x n ∈ G n ∧ y n ∈ G n ∧
+          x n ∈ {z | ∃ i, z ∈ cell (n + i)} ∧
+          y n ∈ {z | ∃ i, z ∈ cell (n + i)} ∧
+          x n ≠ y n ∧
+          IsRecurrentNoTwoRepairPrefix A C (insert (x n) D) ∧
+          IsRecurrentNoTwoRepairPrefix A C (insert (y n) D) ∧
+          u n ∈ A ∧ x n + y n + u n = q n := by
+  classical
+  have hwitness : ∀ n, ∃ q x y u G,
+      n ≤ q ∧
+      G ∈ additiveSupportFamily A 3 q ∧
+      x ∈ G ∧ y ∈ G ∧
+      x ∈ {z | ∃ i, z ∈ cell (n + i)} ∧
+      y ∈ {z | ∃ i, z ∈ cell (n + i)} ∧
+      x ≠ y ∧
+      IsRecurrentNoTwoRepairPrefix A C (insert x D) ∧
+      IsRecurrentNoTwoRepairPrefix A C (insert y D) ∧
+      u ∈ A ∧ x + y + u = q := by
+    intro n
+    obtain ⟨q, hqn, G, hGR, x, hx, hxCritical,
+        y, hy, hxy, hyCritical⟩ := hwide n n
+    obtain ⟨u, huA, _huG, hsum⟩ :=
+      OrderThreeUniqueHitRepairChoice.exists_thirdSummand
+        hGR (Finset.mem_coe.mp hx.1)
+          (Finset.mem_coe.mp hy.1) hxy
+    exact ⟨q, x, y, u, G, hqn, hGR,
+      Finset.mem_coe.mp hx.1, Finset.mem_coe.mp hy.1,
+      hx.2, hy.2, hxy, hxCritical, hyCritical, huA, hsum⟩
+  choose q x y u G hw using hwitness
+  obtain ⟨L, hL, hmatching⟩ :=
+    exists_infinite_pairwiseDisjoint_pairs_of_mem_binaryBlockTails
+      P x y (fun n => (hw n).2.2.2.2.1)
+        (fun n => (hw n).2.2.2.2.2.1)
+  exact ⟨q, x, y, u, G, L, hL, hmatching, hw⟩
 
 /-- If the universally safe targets of one infinite partition contain a
 tail, any block selector is the desired infinite deletion. -/
