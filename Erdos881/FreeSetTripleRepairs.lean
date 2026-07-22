@@ -3,6 +3,7 @@ import Erdos881.CertificateAmplification
 import Erdos881.HybridPairTripleRepairs
 import Erdos881.InfiniteSunflower
 import Erdos881.ReflectionDefects
+import Mathlib.Order.Extension.Linear
 
 /-!
 # Free-set thinning of local direct triple repairs
@@ -6502,6 +6503,589 @@ theorem HasCriticalNarrowAdditiveEscapeCycle.exists_data_with_successorSelectorP
       P (data r) (data (next r)).escape.baseSelector
         (data (next r)).escape.source_destroy
 
+/-! ### Binary literals and implication edges -/
+
+/-- A literal is one endpoint in one indexed binary cell. -/
+abbrev BinaryCellLiteral (cell : ℕ → Finset ℕ) :=
+  Σ i, {x // x ∈ cell i}
+
+/-- The other endpoint of a chosen point in a binary cell. -/
+noncomputable def oppositeBlockChoice
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (i : ℕ) (x : {x // x ∈ cell i}) :
+    {x // x ∈ cell i} :=
+  ⟨(Classical.choose
+      (Finset.exists_mem_ne (by rw [hcellCard i]; omega) x.1)),
+    (Classical.choose_spec
+      (Finset.exists_mem_ne (by rw [hcellCard i]; omega) x.1)).1⟩
+
+/-- The opposite choice is genuinely different. -/
+theorem oppositeBlockChoice_ne
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (i : ℕ) (x : {x // x ∈ cell i}) :
+    (oppositeBlockChoice hcellCard i x).1 ≠ x.1 := by
+  exact (Classical.choose_spec
+    (Finset.exists_mem_ne (by rw [hcellCard i]; omega) x.1)).2
+
+/-- In a two-point cell, taking the other endpoint twice returns the
+original choice. -/
+@[simp] theorem oppositeBlockChoice_involutive
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (i : ℕ) (x : {x // x ∈ cell i}) :
+    oppositeBlockChoice hcellCard i
+      (oppositeBlockChoice hcellCard i x) = x := by
+  apply Subtype.ext
+  let y := oppositeBlockChoice hcellCard i x
+  let z := oppositeBlockChoice hcellCard i y
+  have hxy : x.1 ≠ y.1 :=
+    (oppositeBlockChoice_ne hcellCard i x).symm
+  have hpairSub : ({x.1, y.1} : Finset ℕ) ⊆ cell i := by
+    intro w hw
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hw
+    rcases hw with rfl | rfl
+    · exact x.2
+    · exact y.2
+  have hcellEq : cell i = {x.1, y.1} := by
+    exact (Finset.eq_of_subset_of_card_le hpairSub (by
+      simp [hcellCard i, hxy])).symm
+  have hzCases : z.1 = x.1 ∨ z.1 = y.1 := by
+    have hzMem : z.1 ∈ ({x.1, y.1} : Finset ℕ) := by
+      rw [← hcellEq]
+      exact z.2
+    simpa using hzMem
+  have hzy : z.1 ≠ y.1 := oppositeBlockChoice_ne hcellCard i y
+  exact hzCases.resolve_right hzy
+
+/-- Complement a binary-cell literal. -/
+noncomputable def oppositeBinaryCellLiteral
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2) :
+    BinaryCellLiteral cell → BinaryCellLiteral cell := fun l =>
+  ⟨l.1, oppositeBlockChoice hcellCard l.1 l.2⟩
+
+/-- Literal complementation is fixed-point free. -/
+theorem oppositeBinaryCellLiteral_ne
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (l : BinaryCellLiteral cell) :
+    oppositeBinaryCellLiteral hcellCard l ≠ l := by
+  intro hEq
+  have hval := congrArg (fun w : BinaryCellLiteral cell => w.2.1) hEq
+  exact oppositeBlockChoice_ne hcellCard l.1 l.2 hval
+
+/-- Literal complementation is an involution. -/
+@[simp] theorem oppositeBinaryCellLiteral_involutive
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (l : BinaryCellLiteral cell) :
+    oppositeBinaryCellLiteral hcellCard
+      (oppositeBinaryCellLiteral hcellCard l) = l := by
+  rcases l with ⟨i, x⟩
+  simp [oppositeBinaryCellLiteral]
+
+/-- A selector makes a literal true when it chooses that endpoint in the
+literal's cell. -/
+def BinaryCellLiteral.IsSelected
+    {cell : ℕ → Finset ℕ}
+    (s : BlockSelector cell) (l : BinaryCellLiteral cell) : Prop :=
+  (s l.1).1 = l.2.1
+
+/-- A binary selector chooses either a literal or its opposite. -/
+theorem binaryCellLiteral_selected_or_oppositeSelected
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (s : BlockSelector cell) (l : BinaryCellLiteral cell) :
+    l.IsSelected s ∨
+      (oppositeBinaryCellLiteral hcellCard l).IsSelected s := by
+  let y := oppositeBlockChoice hcellCard l.1 l.2
+  have hxy : l.2.1 ≠ y.1 :=
+    (oppositeBlockChoice_ne hcellCard l.1 l.2).symm
+  have hpairSub : ({l.2.1, y.1} : Finset ℕ) ⊆ cell l.1 := by
+    intro w hw
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hw
+    rcases hw with rfl | rfl
+    · exact l.2.2
+    · exact y.2
+  have hcellEq : cell l.1 = {l.2.1, y.1} := by
+    exact (Finset.eq_of_subset_of_card_le hpairSub (by
+      simp [hcellCard l.1, hxy])).symm
+  have hsCases : (s l.1).1 = l.2.1 ∨ (s l.1).1 = y.1 := by
+    have hsMem : (s l.1).1 ∈ ({l.2.1, y.1} : Finset ℕ) := by
+      rw [← hcellEq]
+      exact (s l.1).2
+    simpa using hsMem
+  exact hsCases
+
+/-- Exactly one of a literal and its opposite is selected. -/
+theorem binaryCellLiteral_opposite_selected_iff_not_selected
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (s : BlockSelector cell) (l : BinaryCellLiteral cell) :
+    (oppositeBinaryCellLiteral hcellCard l).IsSelected s ↔
+      ¬ l.IsSelected s := by
+  constructor
+  · intro hopp hl
+    change (s l.1).1 =
+      (oppositeBlockChoice hcellCard l.1 l.2).1 at hopp
+    change (s l.1).1 = l.2.1 at hl
+    exact oppositeBlockChoice_ne hcellCard l.1 l.2
+      (hopp.symm.trans hl)
+  · intro hnot
+    rcases binaryCellLiteral_selected_or_oppositeSelected
+        hcellCard s l with hl | hopp
+    · exact (hnot hl).elim
+    · exact hopp
+
+/-- Relative to any base selector, every literal is either the selected
+endpoint in its cell or the opposite of that endpoint. -/
+theorem binaryCellLiteral_eq_base_or_oppositeBase
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (base : BlockSelector cell) (l : BinaryCellLiteral cell) :
+    l = (⟨l.1, base l.1⟩ : BinaryCellLiteral cell) ∨
+      l = oppositeBinaryCellLiteral hcellCard
+        (⟨l.1, base l.1⟩ : BinaryCellLiteral cell) := by
+  rcases l with ⟨i, x⟩
+  rcases binaryCellLiteral_selected_or_oppositeSelected
+      hcellCard base (⟨i, x⟩ : BinaryCellLiteral cell) with hl | hopp
+  · left
+    exact Sigma.ext rfl (heq_of_eq (Subtype.ext hl.symm))
+  · right
+    let b : BinaryCellLiteral cell := ⟨i, base i⟩
+    have hbOpp : b = oppositeBinaryCellLiteral hcellCard
+        (⟨i, x⟩ : BinaryCellLiteral cell) :=
+      Sigma.ext rfl (heq_of_eq (Subtype.ext hopp))
+    have hcomp := congrArg
+      (oppositeBinaryCellLiteral hcellCard) hbOpp
+    simpa [b] using hcomp.symm
+
+/-- The left endpoint of one separated target, viewed as a binary literal. -/
+def SeparatedTraceClauseData.leftLiteral
+    {R : SupportFamily} {K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (d : SeparatedTraceClauseData R K D cell q) :
+    BinaryCellLiteral cell :=
+  ⟨d.leftCell, ⟨d.leftPoint, d.leftPoint_mem⟩⟩
+
+/-- The right endpoint of one separated target, viewed as a binary literal. -/
+def SeparatedTraceClauseData.rightLiteral
+    {R : SupportFamily} {K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (d : SeparatedTraceClauseData R K D cell q) :
+    BinaryCellLiteral cell :=
+  ⟨d.rightCell, ⟨d.rightPoint, d.rightPoint_mem⟩⟩
+
+/-- The implication graph of the forbidden endpoint pairs.  A clause
+forbidding simultaneous selection of `left` and `right` contributes the
+two standard edges `left → ¬right` and `right → ¬left`. -/
+def BinaryPairImplication
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      SeparatedTraceClauseData R K D cell q.1)
+    (a b : BinaryCellLiteral cell) : Prop :=
+  ∃ q : {q // q ∈ Q},
+    (a = (data q).leftLiteral ∧
+      b = oppositeBinaryCellLiteral hcellCard
+        (data q).rightLiteral) ∨
+    (a = (data q).rightLiteral ∧
+      b = oppositeBinaryCellLiteral hcellCard
+        (data q).leftLiteral)
+
+/-- A selector avoids the clause family when it never chooses both marked
+endpoints of the same target. -/
+def AvoidsBinaryPairPatterns
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (data : ∀ q : {q // q ∈ Q},
+      SeparatedTraceClauseData R K D cell q.1)
+    (s : BlockSelector cell) : Prop :=
+  ∀ q,
+    ¬ ((data q).leftLiteral.IsSelected s ∧
+      (data q).rightLiteral.IsSelected s)
+
+/-- Every implication edge is sound for a selector avoiding all forbidden
+pairs: selecting its source forces selection of its destination. -/
+theorem binaryPairImplication_preserves_selected_of_avoids
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      SeparatedTraceClauseData R K D cell q.1)
+    (s : BlockSelector cell)
+    (havoid : AvoidsBinaryPairPatterns data s)
+    {a b : BinaryCellLiteral cell}
+    (himp : BinaryPairImplication hcellCard data a b)
+    (ha : a.IsSelected s) :
+    b.IsSelected s := by
+  rcases himp with ⟨q, (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)⟩
+  · apply (binaryCellLiteral_opposite_selected_iff_not_selected
+      hcellCard s (data q).rightLiteral).2
+    intro hright
+    exact havoid q ⟨ha, hright⟩
+  · apply (binaryCellLiteral_opposite_selected_iff_not_selected
+      hcellCard s (data q).leftLiteral).2
+    intro hleft
+    exact havoid q ⟨hleft, ha⟩
+
+/-- Implication edges are closed under contraposition. -/
+theorem binaryPairImplication_contrapositive
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      SeparatedTraceClauseData R K D cell q.1)
+    {a b : BinaryCellLiteral cell}
+    (himp : BinaryPairImplication hcellCard data a b) :
+    BinaryPairImplication hcellCard data
+      (oppositeBinaryCellLiteral hcellCard b)
+      (oppositeBinaryCellLiteral hcellCard a) := by
+  rcases himp with ⟨q, (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)⟩
+  · exact ⟨q, Or.inr ⟨by simp, rfl⟩⟩
+  · exact ⟨q, Or.inl ⟨by simp, rfl⟩⟩
+
+/-- Soundness propagates along finite implication paths. -/
+theorem binaryPairImplication_reflTransGen_preserves_selected_of_avoids
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      SeparatedTraceClauseData R K D cell q.1)
+    (s : BlockSelector cell)
+    (havoid : AvoidsBinaryPairPatterns data s)
+    {a b : BinaryCellLiteral cell}
+    (hpath : Relation.ReflTransGen
+      (BinaryPairImplication hcellCard data) a b)
+    (ha : a.IsSelected s) :
+    b.IsSelected s := by
+  induction hpath with
+  | refl => exact ha
+  | tail _ hedge ih =>
+      exact binaryPairImplication_preserves_selected_of_avoids
+        hcellCard data s havoid hedge ih
+
+/-- Contraposition reverses an entire implication path. -/
+theorem binaryPairImplication_reflTransGen_contrapositive
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      SeparatedTraceClauseData R K D cell q.1)
+    {a b : BinaryCellLiteral cell}
+    (hpath : Relation.ReflTransGen
+      (BinaryPairImplication hcellCard data) a b) :
+    Relation.ReflTransGen (BinaryPairImplication hcellCard data)
+      (oppositeBinaryCellLiteral hcellCard b)
+      (oppositeBinaryCellLiteral hcellCard a) := by
+  induction hpath with
+  | refl => exact Relation.ReflTransGen.refl
+  | tail _ hedge ih =>
+      exact ih.head
+        (binaryPairImplication_contrapositive
+          hcellCard data hedge)
+
+/-- Mutual implication reachability as a setoid on binary literals. -/
+def binaryPairImplicationSCCSetoid
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      SeparatedTraceClauseData R K D cell q.1) :
+    Setoid (BinaryCellLiteral cell) where
+  r a b :=
+    Relation.ReflTransGen (BinaryPairImplication hcellCard data) a b ∧
+    Relation.ReflTransGen (BinaryPairImplication hcellCard data) b a
+  iseqv := {
+    refl := fun _ => ⟨Relation.ReflTransGen.refl,
+      Relation.ReflTransGen.refl⟩
+    symm := fun h => ⟨h.2, h.1⟩
+    trans := fun hab hbc =>
+      ⟨hab.1.trans hbc.1, hbc.2.trans hab.2⟩ }
+
+/-- Strongly connected components of the binary implication graph. -/
+abbrev BinaryPairImplicationSCC
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      SeparatedTraceClauseData R K D cell q.1) :=
+  Quotient (binaryPairImplicationSCCSetoid hcellCard data)
+
+/-- Reachability descends to a well-defined relation on implication SCCs. -/
+def binaryPairImplicationSCCReach
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      SeparatedTraceClauseData R K D cell q.1) :
+    BinaryPairImplicationSCC hcellCard data →
+      BinaryPairImplicationSCC hcellCard data → Prop :=
+  fun X Y => Quotient.liftOn₂ X Y
+    (fun a b => Relation.ReflTransGen
+      (BinaryPairImplication hcellCard data) a b)
+    (by
+      intro a b a' b' haa hbb
+      apply propext
+      constructor
+      · intro hab
+        exact haa.2.trans (hab.trans hbb.1)
+      · intro ha'b'
+        exact haa.1.trans (ha'b'.trans hbb.2))
+
+/-- The SCC reachability relation is a partial order. -/
+theorem binaryPairImplicationSCCReach_isPartialOrder
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      SeparatedTraceClauseData R K D cell q.1) :
+    IsPartialOrder (BinaryPairImplicationSCC hcellCard data)
+      (binaryPairImplicationSCCReach hcellCard data) := by
+  refine {
+    refl := ?_
+    trans := ?_
+    antisymm := ?_ }
+  · intro X
+    refine Quotient.inductionOn X ?_
+    intro a
+    change Relation.ReflTransGen
+      (BinaryPairImplication hcellCard data) a a
+    exact Relation.ReflTransGen.refl
+  · intro X Y Z
+    refine Quotient.inductionOn₃ X Y Z ?_
+    intro a b c hab hbc
+    change Relation.ReflTransGen
+      (BinaryPairImplication hcellCard data) a b at hab
+    change Relation.ReflTransGen
+      (BinaryPairImplication hcellCard data) b c at hbc
+    change Relation.ReflTransGen
+      (BinaryPairImplication hcellCard data) a c
+    exact hab.trans hbc
+  · intro X Y
+    refine Quotient.inductionOn₂ X Y ?_
+    intro a b hab hba
+    change Relation.ReflTransGen
+      (BinaryPairImplication hcellCard data) a b at hab
+    change Relation.ReflTransGen
+      (BinaryPairImplication hcellCard data) b a at hba
+    exact Quotient.sound ⟨hab, hba⟩
+
+/-- A pair-pattern cover has no avoiding selector. -/
+theorem binaryPairPatternCover_no_avoidingSelector
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (data : ∀ q : {q // q ∈ Q},
+      SeparatedTraceClauseData R K D cell q.1)
+    (hcover : ∀ s : BlockSelector cell, ∃ q : {q // q ∈ Q},
+      (s (data q).leftCell).1 = (data q).leftPoint ∧
+      (s (data q).rightCell).1 = (data q).rightPoint) :
+    ¬ ∃ s : BlockSelector cell,
+      AvoidsBinaryPairPatterns data s := by
+  rintro ⟨s, havoid⟩
+  obtain ⟨q, hleft, hright⟩ := hcover s
+  apply havoid q
+  exact ⟨hleft, hright⟩
+
+/-- The standard contradictory SCC obstruction for a binary implication
+graph: some literal reaches its opposite and its opposite reaches back. -/
+def HasComplementaryBinaryPairImplicationSCC
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      SeparatedTraceClauseData R K D cell q.1) : Prop :=
+  ∃ l : BinaryCellLiteral cell,
+    Relation.ReflTransGen (BinaryPairImplication hcellCard data)
+      l (oppositeBinaryCellLiteral hcellCard l) ∧
+    Relation.ReflTransGen (BinaryPairImplication hcellCard data)
+      (oppositeBinaryCellLiteral hcellCard l) l
+
+/-- A complementary implication SCC makes an avoiding selector impossible:
+whichever endpoint it chooses, path soundness forces the opposite endpoint
+as well. -/
+theorem complementaryBinaryPairImplicationSCC_no_avoidingSelector
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      SeparatedTraceClauseData R K D cell q.1)
+    (hSCC : HasComplementaryBinaryPairImplicationSCC
+      hcellCard data) :
+    ¬ ∃ s : BlockSelector cell,
+      AvoidsBinaryPairPatterns data s := by
+  rintro ⟨s, havoid⟩
+  obtain ⟨l, hforward, hbackward⟩ := hSCC
+  rcases binaryCellLiteral_selected_or_oppositeSelected
+      hcellCard s l with hl | hopp
+  · have hopp' :=
+      binaryPairImplication_reflTransGen_preserves_selected_of_avoids
+        hcellCard data s havoid hforward hl
+    exact (binaryCellLiteral_opposite_selected_iff_not_selected
+      hcellCard s l).mp hopp' hl
+  · have hl' :=
+      binaryPairImplication_reflTransGen_preserves_selected_of_avoids
+        hcellCard data s havoid hbackward hopp
+    exact (binaryCellLiteral_opposite_selected_iff_not_selected
+      hcellCard s l).mp hopp hl'
+
+/-- The converse 2-SAT direction.  If no literal shares an implication SCC
+with its opposite, linearly order the SCC reachability poset and select in
+each binary cell the endpoint whose SCC lies later than its opposite.  Edge
+contraposition makes this choice implication-closed, hence it avoids every
+forbidden endpoint pair. -/
+theorem exists_avoidingSelector_of_no_complementaryBinaryPairImplicationSCC
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      SeparatedTraceClauseData R K D cell q.1)
+    (hnoSCC : ¬ HasComplementaryBinaryPairImplicationSCC
+      hcellCard data) :
+    ∃ s : BlockSelector cell,
+      AvoidsBinaryPairPatterns data s := by
+  classical
+  let SCC := BinaryPairImplicationSCC hcellCard data
+  let sccReach : SCC → SCC → Prop :=
+    binaryPairImplicationSCCReach hcellCard data
+  letI : IsPartialOrder SCC sccReach :=
+    binaryPairImplicationSCCReach_isPartialOrder hcellCard data
+  obtain ⟨lin, hlin, hsccLin⟩ := extend_partialOrder sccReach
+  let opp : BinaryCellLiteral cell → BinaryCellLiteral cell :=
+    oppositeBinaryCellLiteral hcellCard
+  let cls : BinaryCellLiteral cell → SCC := fun l =>
+    Quotient.mk' l
+  let preferred : BinaryCellLiteral cell → Prop := fun l =>
+    lin (cls (opp l)) (cls l)
+  have hclsNe : ∀ l : BinaryCellLiteral cell,
+      cls (opp l) ≠ cls l := by
+    intro l hEq
+    have hrel :
+        (binaryPairImplicationSCCSetoid hcellCard data).Rel
+          (opp l) l := by
+      exact Quotient.exact (by simpa [cls] using hEq)
+    apply hnoSCC
+    exact ⟨l, hrel.2, hrel.1⟩
+  have hoppOpp : ∀ l : BinaryCellLiteral cell,
+      opp (opp l) = l := by
+    intro l
+    exact oppositeBinaryCellLiteral_involutive hcellCard l
+  have hpreferredOpp : ∀ l : BinaryCellLiteral cell,
+      preferred (opp l) ↔ ¬ preferred l := by
+    intro l
+    change lin (cls (opp (opp l))) (cls (opp l)) ↔
+      ¬ lin (cls (opp l)) (cls l)
+    rw [hoppOpp l]
+    constructor
+    · intro hlOpp hl
+      have hEq : cls l = cls (opp l) :=
+        hlin.antisymm hlOpp hl
+      exact hclsNe l hEq.symm
+    · intro hnot
+      rcases hlin.total (cls l) (cls (opp l)) with h | h
+      · exact h
+      · exact (hnot h).elim
+  let base : BlockSelector cell := fun i =>
+    ⟨(P.nonempty i).choose, (P.nonempty i).choose_spec⟩
+  let baseLiteral : ℕ → BinaryCellLiteral cell := fun i =>
+    ⟨i, base i⟩
+  let s : BlockSelector cell := fun i =>
+    if preferred (baseLiteral i) then
+      (baseLiteral i).2
+    else
+      (opp (baseLiteral i)).2
+  have hbaseSelected : ∀ i,
+      (baseLiteral i).IsSelected s ↔
+        preferred (baseLiteral i) := by
+    intro i
+    by_cases hpref : preferred (baseLiteral i)
+    · simp [s, hpref, BinaryCellLiteral.IsSelected]
+    · constructor
+      · intro hselected
+        exfalso
+        apply oppositeBlockChoice_ne hcellCard i (base i)
+        change (oppositeBlockChoice hcellCard i (base i)).1 =
+          (base i).1 at hselected
+        exact hselected
+      · exact fun h => (hpref h).elim
+  have hoppositeSelected : ∀ i,
+      (opp (baseLiteral i)).IsSelected s ↔
+        preferred (opp (baseLiteral i)) := by
+    intro i
+    calc
+      (opp (baseLiteral i)).IsSelected s ↔
+          ¬ (baseLiteral i).IsSelected s :=
+        binaryCellLiteral_opposite_selected_iff_not_selected
+          hcellCard s (baseLiteral i)
+      _ ↔ ¬ preferred (baseLiteral i) :=
+        not_congr (hbaseSelected i)
+      _ ↔ preferred (opp (baseLiteral i)) :=
+        (hpreferredOpp (baseLiteral i)).symm
+  have hselected : ∀ l : BinaryCellLiteral cell,
+      l.IsSelected s ↔ preferred l := by
+    intro l
+    let b := baseLiteral l.1
+    have hcases : l = b ∨ l = opp b := by
+      simpa [b, baseLiteral, opp] using
+        binaryCellLiteral_eq_base_or_oppositeBase
+          hcellCard base l
+    rcases hcases with rfl | rfl
+    · exact hbaseSelected _
+    · exact hoppositeSelected _
+  have himpPreferred : ∀ {a b : BinaryCellLiteral cell},
+      BinaryPairImplication hcellCard data a b →
+      preferred a → preferred b := by
+    intro a b hab ha
+    have habSCC : sccReach (cls a) (cls b) := by
+      change Relation.ReflTransGen
+        (BinaryPairImplication hcellCard data) a b
+      exact Relation.ReflTransGen.single hab
+    have hcontra :=
+      binaryPairImplication_contrapositive hcellCard data hab
+    have hcontraSCC : sccReach (cls (opp b)) (cls (opp a)) := by
+      change Relation.ReflTransGen
+        (BinaryPairImplication hcellCard data) (opp b) (opp a)
+      exact Relation.ReflTransGen.single hcontra
+    exact hlin.trans (hsccLin _ _ hcontraSCC)
+      (hlin.trans ha (hsccLin _ _ habSCC))
+  have himpSelected : ∀ {a b : BinaryCellLiteral cell},
+      BinaryPairImplication hcellCard data a b →
+      a.IsSelected s → b.IsSelected s := by
+    intro a b hab ha
+    exact (hselected b).2
+      (himpPreferred hab ((hselected a).1 ha))
+  refine ⟨s, ?_⟩
+  intro q hboth
+  have hedge : BinaryPairImplication hcellCard data
+      (data q).leftLiteral
+      (opp (data q).rightLiteral) :=
+    ⟨q, Or.inl ⟨rfl, rfl⟩⟩
+  have hoppRight : (opp (data q).rightLiteral).IsSelected s :=
+    himpSelected hedge hboth.1
+  exact (binaryCellLiteral_opposite_selected_iff_not_selected
+    hcellCard s (data q).rightLiteral).mp hoppRight hboth.2
+
+/-- Exact 2-SAT characterization for the separated certificate clauses. -/
+theorem binaryPairPatternCover_has_complementaryImplicationSCC
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      SeparatedTraceClauseData R K D cell q.1)
+    (hcover : ∀ s : BlockSelector cell, ∃ q : {q // q ∈ Q},
+      (s (data q).leftCell).1 = (data q).leftPoint ∧
+      (s (data q).rightCell).1 = (data q).rightPoint) :
+    HasComplementaryBinaryPairImplicationSCC hcellCard data := by
+  by_contra hnoSCC
+  exact binaryPairPatternCover_no_avoidingSelector data hcover
+    (exists_avoidingSelector_of_no_complementaryBinaryPairImplicationSCC
+      P hcellCard data hnoSCC)
+
 /-- Pure finite clause-cover statement extracted from a separated repair
 certificate.  For each target choose its two marked cells and endpoints.
 Every selector must realize at least one of those forbidden endpoint pairs;
@@ -6587,6 +7171,30 @@ theorem targetLocalized_twoRepairCertificate_noWide_has_binaryPairPatternCover
     · exact hsep
   exact separatedTrace_certificate_has_binaryPairPatternCover
     P hcert hsep
+
+/-- Exact finite-certificate bridge.  When every repair trace is narrow, the
+certificate clauses contain a complementary strongly connected component in
+their binary implication graph. -/
+theorem targetLocalized_twoRepairCertificate_noWide_has_complementaryImplicationSCC
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAt R K D cell q)
+    (hnoWide : ∀ q ∈ Q,
+      ¬ HasWideReservoirSupportAt R K q) :
+    ∃ data : ∀ q : {q // q ∈ Q},
+        SeparatedTraceClauseData R K D cell q.1,
+      HasComplementaryBinaryPairImplicationSCC hcellCard data := by
+  obtain ⟨data, hcover⟩ :=
+    targetLocalized_twoRepairCertificate_noWide_has_binaryPairPatternCover
+      P hcellCard hcert htrace hnoWide
+  exact ⟨data,
+    binaryPairPatternCover_has_complementaryImplicationSCC
+      P hcellCard data hcover⟩
 
 /-- The same no-wide hypothesis retains the localized selector data.  Thus
 the unsatisfiable binary clause cover can be oriented into a nontrivial
