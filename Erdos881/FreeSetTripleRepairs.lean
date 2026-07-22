@@ -14976,6 +14976,66 @@ theorem twoDisjointUniqueHitRepairs_has_repair_avoiding_outsidePoint
       (Finset.mem_sdiff.mpr ⟨hpF, hpD⟩)
   · exact ⟨E, hER, hpE⟩
 
+/-- In a common-anchor system on a core with at least two vertices, an
+outside point is avoided by one chosen unique-hit repair unless it is the
+common anchor itself.  If the point occurred with the distinct anchor in
+two repairs, the two three-term sum identities would force their distinct
+core hits to coincide. -/
+theorem commonAnchorOrderThreeRepairs_avoids_outsidePoint_or_is_anchor
+    {A : Set ℕ} {D : Finset ℕ} {q p : ℕ}
+    (hDcard : 2 ≤ D.card) (hpD : p ∉ D)
+    (hcommon : HasCommonAnchorOrderThreeRepairs A D q) :
+    ∃ c : OrderThreeUniqueHitRepairChoice A D q, ∃ z,
+      (∀ x : {x // x ∈ D}, z ∈ c.tail x) ∧
+      (p = z ∨
+        ∃ G ∈ additiveSupportFamily A 3 q, p ∉ G) := by
+  classical
+  obtain ⟨c, z, hz⟩ := hcommon
+  refine ⟨c, z, hz, ?_⟩
+  by_cases hpz : p = z
+  · exact Or.inl hpz
+  · right
+    have hDnonempty : D.Nonempty := Finset.card_pos.mp (by omega)
+    obtain ⟨x, hxD⟩ := hDnonempty
+    let xD : {x // x ∈ D} := ⟨x, hxD⟩
+    by_cases hpX : p ∈ c.support xD
+    · obtain ⟨y, hyD, hyx⟩ :=
+        Finset.exists_mem_ne (s := D) (by omega) x
+      let yD : {y // y ∈ D} := ⟨y, hyD⟩
+      refine ⟨c.support yD, c.support_mem yD, ?_⟩
+      intro hpY
+      have hxSupport : x ∈ c.support xD := by
+        have hxInter : x ∈ c.support xD ∩ D := by
+          rw [c.unique_hit xD]
+          simp [xD]
+        exact (Finset.mem_inter.mp hxInter).1
+      have hySupport : y ∈ c.support yD := by
+        have hyInter : y ∈ c.support yD ∩ D := by
+          rw [c.unique_hit yD]
+          simp [yD]
+        exact (Finset.mem_inter.mp hyInter).1
+      have hzX : z ∈ c.support xD :=
+        (Finset.mem_sdiff.mp (hz xD)).1
+      have hzY : z ∈ c.support yD :=
+        (Finset.mem_sdiff.mp (hz yD)).1
+      have hxz : x ≠ z := fun hEq =>
+        (Finset.mem_sdiff.mp (hz xD)).2 (hEq ▸ hxD)
+      have hyz : y ≠ z := fun hEq =>
+        (Finset.mem_sdiff.mp (hz yD)).2 (hEq ▸ hyD)
+      have hxp : x ≠ p := fun hEq => hpD (hEq ▸ hxD)
+      have hyp : y ≠ p := fun hEq => hpD (hEq ▸ hyD)
+      have hsumX : x + z + p = q :=
+        OrderThreeUniqueHitRepairChoice.sum_eq_of_three_distinct_mem
+          (c.support_mem xD) hxSupport hzX hpX
+            hxz hxp (fun hEq => hpz hEq.symm)
+      have hsumY : y + z + p = q :=
+        OrderThreeUniqueHitRepairChoice.sum_eq_of_three_distinct_mem
+          (c.support_mem yD) hySupport hzY hpY
+            hyz hyp (fun hEq => hpz hEq.symm)
+      have hxyEq : x = y := by omega
+      exact hyx hxyEq.symm
+    · exact ⟨c.support xD, c.support_mem xD, hpX⟩
+
 set_option maxHeartbeats 5000000 in
 /-- Uniform payload of the three-endpoint near-cover theorem.  Regardless
 of which alignment case occurs, at least `k - 6` distinct other targets have
@@ -27542,11 +27602,14 @@ def HasSmallOrCommonAnchorSingletonPetalAffinePattern
   ∃ root, ∃ L, L ⊆ I ∧ L.Infinite ∧
     ∃ other partner : ℕ → ℕ,
     ∃ privateRepair : ℕ → Finset ℕ,
-      (∀ n ∈ L, core (atom n) \ R = {atom n}) ∧
+      root ∈ R ∧
+      (∀ n ∈ L, atom n ∉ R) ∧
+      (∀ n ∈ L, core (atom n) = insert (atom n) R) ∧
       Set.InjOn other L ∧
       (∀ n ∈ L,
         other n ≠ root ∧
           certificateRepair n = {root, other n}) ∧
+      (∀ n ∈ L, other n ∉ core (atom n)) ∧
       (∀ n ∈ L,
         target (atom n) = root + 2 * other n) ∧
       (∀ n ∈ L,
@@ -27588,8 +27651,9 @@ theorem counterexample_synchronizedCertificateFamily_forces_rangeMigration_or_fi
         A C D b (target b) (moving b) (core b))
     (hcoreA : ∀ b ∈ K, (core b : Set ℕ) ⊆ A)
     (hmarked : ∀ b ∈ K, b ∈ core b \ R)
-    (hpetalDisjoint : ∀ b ∈ K, ∀ d ∈ K, b ≠ d →
-      Disjoint (core b \ R) (core d \ R))
+    (hdelta : ∀ b ∈ K, ∀ d ∈ K, b ≠ d →
+      core b ∩ core d = R ∧
+        Disjoint (core b \ R) (core d \ R))
     (htype :
       (R.card ≤ 2 ∧ ∀ b ∈ K, (core b).card ≤ 3) ∨
         (∀ b ∈ K,
@@ -27633,12 +27697,25 @@ theorem counterexample_synchronizedCertificateFamily_forces_rangeMigration_or_fi
     have hatomInj_L : Set.InjOn atom L := by
       intro n hn m hm hEq
       exact hmarkedInjL hn hm (congrArg target hEq)
-    obtain ⟨S, hSnonempty, _hSR, hScard, hrootData⟩ := hroot
+    have hrootSub_L : ∀ n ∈ L, R ⊆ core (atom n) := by
+      intro n hn x hxR
+      obtain ⟨m, hm, hnmIndex⟩ := hL.exists_gt n
+      have hnmAtom : atom n ≠ atom m := by
+        intro hEq
+        exact (Nat.ne_of_lt hnmIndex) (hatomInj_L hn hm hEq)
+      have hxInter : x ∈ core (atom n) ∩ core (atom m) := by
+        rw [(hdelta (atom n) (hatomK_L n hn)
+          (atom m) (hatomK_L m hm) hnmAtom).1]
+        exact hxR
+      exact (Finset.mem_inter.mp hxInter).1
+    obtain ⟨S, hSnonempty, hSR, hScard, hrootData⟩ := hroot
     obtain hsingletonPetal | hmigrate :=
       counterexample_rootOnlyCoreIncidence_forces_singletonPetals_or_migratedCertificates
         hcounter hKA target atom core certificateRepair hL
           hatomK_L hatomInj_L
-          hcoreA hmarked hpetalDisjoint hcertificateR_L
+          hcoreA hmarked
+          (fun b hb d hd hbd => (hdelta b hb d hd hbd).2)
+          hcertificateR_L
           hcertificateK_L (fun n hn => (hrootData n hn).1)
     · obtain ⟨L₁, hL₁L, hL₁, hpetalSingleton⟩ := hsingletonPetal
       have hL₁I : L₁ ⊆ I := hL₁L.trans hLI
@@ -27646,6 +27723,26 @@ theorem counterexample_synchronizedCertificateFamily_forces_rangeMigration_or_fi
           certificateRepair n ∩ core (atom n) = S := by
         intro n hn
         exact (hrootData n (hL₁L hn)).2
+      have hcoreEq : ∀ n ∈ L₁,
+          core (atom n) = insert (atom n) R := by
+        intro n hn
+        apply Finset.Subset.antisymm
+        · intro x hxCore
+          by_cases hxR : x ∈ R
+          · exact Finset.mem_insert_of_mem hxR
+          · have hxPetal : x ∈ core (atom n) \ R :=
+              Finset.mem_sdiff.mpr ⟨hxCore, hxR⟩
+            have hxAtom : x = atom n := by
+              have hxSingleton : x ∈ ({atom n} : Finset ℕ) := by
+                rw [← hpetalSingleton n hn]
+                exact hxPetal
+              simpa using hxSingleton
+            exact hxAtom ▸ Finset.mem_insert_self _ _
+        · intro x hxInsert
+          rcases Finset.mem_insert.mp hxInsert with rfl | hxR
+          · exact (Finset.mem_sdiff.mp
+              (hmarked (atom n) (hatomK_L n (hL₁L hn)))).1
+          · exact hrootSub_L n (hL₁L hn) hxR
       have hScardPos : 0 < S.card := Finset.card_pos.mpr hSnonempty
       have hScardCases : S.card = 1 ∨ S.card = 2 := by omega
       rcases hScardCases with hScardOne | hScardTwo
@@ -27659,15 +27756,27 @@ theorem counterexample_synchronizedCertificateFamily_forces_rangeMigration_or_fi
                 (fun n hn => hcertificateR_L n (hL₁L hn))
                 (fun n hn => hcertificateK_L n (hL₁L hn))
                 hScardOne htrace
-          · obtain ⟨root, _hSeq, L₂, hL₂L₁, hL₂,
+          · obtain ⟨root, hSeq, L₂, hL₂L₁, hL₂,
                 other, partner, privateRepair, hotherInj,
                 hotherData, htargetFormula, hprivateData,
                 hpartnerData⟩ := hpattern
             exact Or.inr (Or.inr
               ⟨root, L₂, hL₂L₁.trans hL₁I, hL₂,
                 other, partner, privateRepair,
-                fun n hn => hpetalSingleton n (hL₂L₁ hn),
-                hotherInj, hotherData, htargetFormula,
+                hSR (by rw [hSeq]; simp),
+                fun n hn => (Finset.mem_sdiff.mp
+                  (hmarked (atom n)
+                    (hatomK_L n (hL₁L (hL₂L₁ hn))))).2,
+                fun n hn => hcoreEq n (hL₂L₁ hn),
+                hotherInj, hotherData,
+                (fun n hn hotherCore => by
+                  have hotherInter : other n ∈
+                      certificateRepair n ∩ core (atom n) :=
+                    Finset.mem_inter.mpr
+                      ⟨by rw [(hotherData n hn).2]; simp, hotherCore⟩
+                  rw [htrace n (hL₂L₁ hn), hSeq] at hotherInter
+                  exact (hotherData n hn).1 (by simpa using hotherInter)),
+                htargetFormula,
                 hprivateData, hpartnerData,
                 Or.inl (fun n hn =>
                   hsmall.2 (atom n)
@@ -27696,15 +27805,27 @@ theorem counterexample_synchronizedCertificateFamily_forces_rangeMigration_or_fi
                 (fun n hn => hcertificateR_L n (hL₁L hn))
                 (fun n hn => hcertificateK_L n (hL₁L hn))
                 hScardOne htrace
-          · obtain ⟨root, _hSeq, L₂, hL₂L₁, hL₂,
+          · obtain ⟨root, hSeq, L₂, hL₂L₁, hL₂,
                 other, partner, privateRepair, hotherInj,
                 hotherData, htargetFormula, hprivateData,
                 hpartnerData⟩ := hpattern
             exact Or.inr (Or.inr
               ⟨root, L₂, hL₂L₁.trans hL₁I, hL₂,
                 other, partner, privateRepair,
-                fun n hn => hpetalSingleton n (hL₂L₁ hn),
-                hotherInj, hotherData, htargetFormula,
+                hSR (by rw [hSeq]; simp),
+                fun n hn => (Finset.mem_sdiff.mp
+                  (hmarked (atom n)
+                    (hatomK_L n (hL₁L (hL₂L₁ hn))))).2,
+                fun n hn => hcoreEq n (hL₂L₁ hn),
+                hotherInj, hotherData,
+                (fun n hn hotherCore => by
+                  have hotherInter : other n ∈
+                      certificateRepair n ∩ core (atom n) :=
+                    Finset.mem_inter.mpr
+                      ⟨by rw [(hotherData n hn).2]; simp, hotherCore⟩
+                  rw [htrace n (hL₂L₁ hn), hSeq] at hotherInter
+                  exact (hotherData n hn).1 (by simpa using hotherInter)),
+                htargetFormula,
                 hprivateData, hpartnerData,
                 Or.inr (fun n hn =>
                   hanchor (atom n)
@@ -27747,16 +27868,469 @@ theorem counterexample_synchronizedCertificateFamily_forces_rangeMigration_or_fi
     obtain ⟨petalHit, _hpetalHitInj, hpetalHit⟩ :=
       exists_injective_markedCorePetalHit
         atom hatomK_L hatomInj_L
-          certificateRepair core hpetalDisjoint hpetal
+          certificateRepair core
+          (fun b hb d hd hbd => (hdelta b hb d hd hbd).2) hpetal
     have hmigrate :=
       counterexample_coincidentMovingCorePetals_forces_migratedCertificates
         hcounter hKA target atom petalHit moving core certificateRepair
           hL hatomK_L hatomInj_L
-          hdata hcoreA hmarked hpetalDisjoint hcertificateR_L
+          hdata hcoreA hmarked
+          (fun b hb d hd hbd => (hdelta b hb d hd hbd).2)
+          hcertificateR_L
           hcertificateK_L hpetalHit
     exact Or.inr (Or.inl <|
       HasMigratedBinaryCertificateFamily.mono_index
         hmigrate hLI)
+
+/-- An injective moving point in a repair certificate has only two possible
+infinite behaviours.  If infinitely many corresponding targets have an
+alternate repair avoiding that point, the pairs formed by the marked atom
+and the moving certificate point have common survival, so strong deletion
+forces migrated finite certificates.  Otherwise, after deleting finitely
+many indices, the moving point by itself destroys every repair of its
+target.  This argument is independent of the local minimal-destroyer type. -/
+theorem counterexample_injectiveCertificatePoint_forces_migration_or_singletonDestroyers
+    {A K I : Set ℕ}
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3)
+    (hKA : K ⊆ A)
+    (target atom other : ℕ → ℕ)
+    (certificateRepair : ℕ → Finset ℕ)
+    (hI : I.Infinite)
+    (hatomK : ∀ n ∈ I, atom n ∈ K)
+    (hatomInj : Set.InjOn atom I)
+    (hotherInj : Set.InjOn other I)
+    (hcertificateR : ∀ n ∈ I,
+      certificateRepair n ∈
+        additiveSupportFamily A 3 (target (atom n)))
+    (hcertificateK : ∀ n ∈ I,
+      Disjoint (certificateRepair n : Set ℕ) K)
+    (hotherCertificate : ∀ n ∈ I,
+      other n ∈ certificateRepair n) :
+    HasMigratedBinaryCertificateFamily
+        A (fun n => target (atom n)) I ∨
+      ∃ L, L ⊆ I ∧ L.Infinite ∧
+        ∀ n ∈ L,
+          DestroysAt (additiveSupportFamily A 3)
+            ({other n} : Set ℕ) (target (atom n)) := by
+  classical
+  let Avoidable : Set ℕ :=
+    {n | n ∈ I ∧ ∃ G,
+      G ∈ additiveSupportFamily A 3 (target (atom n)) ∧
+        other n ∉ G}
+  by_cases hAvoidable : Avoidable.Infinite
+  · have hAvoidableI : Avoidable ⊆ I := fun _ hn => hn.1
+    have halternateExists : ∀ n : Avoidable, ∃ G,
+        G ∈ additiveSupportFamily A 3 (target (atom n.1)) ∧
+          other n.1 ∉ G := by
+      intro n
+      exact n.2.2
+    choose alternateA halternate using halternateExists
+    let alternate : ℕ → Finset ℕ := fun n =>
+      if hn : n ∈ Avoidable then alternateA ⟨n, hn⟩ else ∅
+    have halternateR : ∀ n ∈ Avoidable,
+        alternate n ∈
+          additiveSupportFamily A 3 (target (atom n)) := by
+      intro n hn
+      simpa only [alternate, dif_pos hn] using
+        (halternate ⟨n, hn⟩).1
+    have hotherNotAlternate : ∀ n ∈ Avoidable,
+        other n ∉ alternate n := by
+      intro n hn
+      simpa only [alternate, dif_pos hn] using
+        (halternate ⟨n, hn⟩).2
+    have hotherNotK : ∀ n ∈ Avoidable, other n ∉ K := by
+      intro n hn hotherK
+      exact Set.disjoint_left.mp (hcertificateK n (hAvoidableI hn))
+        (Finset.mem_coe.mpr
+          (hotherCertificate n (hAvoidableI hn))) hotherK
+    have hatomNotCertificate : ∀ n ∈ Avoidable,
+        atom n ∉ certificateRepair n := by
+      intro n hn hatomRepair
+      exact Set.disjoint_left.mp (hcertificateK n (hAvoidableI hn))
+        (Finset.mem_coe.mpr hatomRepair)
+        (hatomK n (hAvoidableI hn))
+    have hatomOtherNe : ∀ n ∈ Avoidable,
+        atom n ≠ other n := by
+      intro n hn hEq
+      exact hotherNotK n hn
+        (hEq ▸ hatomK n (hAvoidableI hn))
+    have hmatching : ∀ n ∈ Avoidable, ∀ m ∈ Avoidable,
+        n ≠ m → Disjoint ({atom n, other n} : Finset ℕ)
+          ({atom m, other m} : Finset ℕ) := by
+      intro n hn m hm hnm
+      rw [Finset.disjoint_left]
+      intro z hzn hzm
+      simp only [Finset.mem_insert, Finset.mem_singleton] at hzn hzm
+      rcases hzn with hzn | hzn <;> rcases hzm with hzm | hzm
+      · exact hnm (hatomInj (hAvoidableI hn) (hAvoidableI hm)
+          (hzn.symm.trans hzm))
+      · exact hotherNotK m hm
+          (hzm.symm ▸ hzn.symm ▸ hatomK n (hAvoidableI hn))
+      · exact hotherNotK n hn
+          (hzn.symm ▸ hzm.symm ▸ hatomK m (hAvoidableI hm))
+      · exact hnm (hotherInj (hAvoidableI hn) (hAvoidableI hm)
+          (hzn.symm.trans hzm))
+    obtain ⟨J, hJAvoidable, hJ, hcommon⟩ :=
+      exists_infinite_binaryChoice_commonSurvival
+        hAvoidable (fun n => target (atom n)) atom other hmatching
+          alternate certificateRepair halternateR
+          (fun n hn => hcertificateR n (hAvoidableI hn))
+          hotherNotAlternate hatomNotCertificate
+    have hxyA : ∀ n ∈ J, atom n ∈ A ∧ other n ∈ A := by
+      intro n hn
+      have hnAvoidable := hJAvoidable hn
+      have hnI := hAvoidableI hnAvoidable
+      exact ⟨hKA (hatomK n hnI),
+        additiveSupportFamily_supportsIn A 3
+          (target (atom n)) (certificateRepair n)
+            (hcertificateR n hnI) (other n)
+              (hotherCertificate n hnI)⟩
+    obtain ⟨K', pairCell, hK'A, hK', P, hpairCard, hQ⟩ :=
+      strongDeletion_binaryCommonSurvival_forces_migratedCertificate
+        (strongOrderThreeDeletion_of_counterexample hcounter)
+          hJ (fun n => target (atom n)) atom other hxyA
+          (fun n hn => hatomOtherNe n (hJAvoidable hn))
+          (fun n hn m hm hnm =>
+            hmatching n (hJAvoidable hn) m (hJAvoidable hm) hnm)
+          hcommon
+    left
+    exact ⟨J, hJAvoidable.trans hAvoidableI, hJ,
+      K', pairCell, hK'A, hK', P, hpairCard, hQ⟩
+  · right
+    have hAvoidableFinite : Avoidable.Finite :=
+      Set.not_infinite.mp hAvoidable
+    let L : Set ℕ := I \ Avoidable
+    have hLI : L ⊆ I := Set.diff_subset
+    have hL : L.Infinite := hI.diff hAvoidableFinite
+    refine ⟨L, hLI, hL, ?_⟩
+    intro n hn G hGR hdisjoint
+    have hotherNotG : other n ∉ G := by
+      intro hotherG
+      exact Set.disjoint_left.mp hdisjoint
+        (Finset.mem_coe.mpr hotherG) (by simp)
+    exact hn.2 ⟨hn.1, G, hGR, hotherNotG⟩
+
+/-- The terminal affine pattern after the moving certificate point has also
+been tested against every alternate repair.  In addition to the exact
+singleton-petal geometry, that point is now a singleton destroyer of the
+corresponding target. -/
+def HasSmallOrCommonAnchorSingletonPetalAffineDestroyerPattern
+    (A : Set ℕ) (target atom : ℕ → ℕ)
+    (core certificateRepair : ℕ → Finset ℕ)
+    (R : Finset ℕ) (I : Set ℕ) : Prop :=
+  ∃ root, ∃ L, L ⊆ I ∧ L.Infinite ∧
+    ∃ other partner : ℕ → ℕ,
+    ∃ privateRepair : ℕ → Finset ℕ,
+      root ∈ R ∧
+      (∀ n ∈ L, atom n ∉ R) ∧
+      (∀ n ∈ L, core (atom n) = insert (atom n) R) ∧
+      Set.InjOn other L ∧
+      (∀ n ∈ L,
+        other n ≠ root ∧
+          certificateRepair n = {root, other n}) ∧
+      (∀ n ∈ L, other n ∉ core (atom n)) ∧
+      (∀ n ∈ L,
+        target (atom n) = root + 2 * other n) ∧
+      (∀ n ∈ L,
+        privateRepair n ∈
+            additiveSupportFamily A 3 (target (atom n)) ∧
+          privateRepair n ∩ core (atom n) = {atom n} ∧
+          other n ∈ privateRepair n) ∧
+      (∀ n ∈ L,
+        partner n ∈ A ∧ partner n ∈ privateRepair n ∧
+          atom n + partner n = root + other n) ∧
+      (∀ n ∈ L,
+        DestroysAt (additiveSupportFamily A 3)
+          ({other n} : Set ℕ) (target (atom n))) ∧
+      ((∀ n ∈ L, (core (atom n)).card ≤ 3) ∨
+        ∀ n ∈ L, 4 ≤ (core (atom n)).card ∧
+          HasCommonAnchorOrderThreeRepairs
+            A (core (atom n)) (target (atom n)))
+
+/-- The generic certificate-point dichotomy sharpens the old terminal
+affine package without needing to know whether its cores are small or have
+a common anchor.  Thus the only non-migrating terminal family has explicit
+singleton destroyers at all of its retained affine targets. -/
+theorem counterexample_terminalAffinePattern_forces_migration_or_singletonDestroyerPattern
+    {A K I : Set ℕ} {R : Finset ℕ}
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3)
+    (hKA : K ⊆ A)
+    (target atom : ℕ → ℕ)
+    (core certificateRepair : ℕ → Finset ℕ)
+    (hatomK : ∀ n ∈ I, atom n ∈ K)
+    (hatomInj : Set.InjOn atom I)
+    (hcertificateR : ∀ n ∈ I,
+      certificateRepair n ∈
+        additiveSupportFamily A 3 (target (atom n)))
+    (hcertificateK : ∀ n ∈ I,
+      Disjoint (certificateRepair n : Set ℕ) K)
+    (hpattern : HasSmallOrCommonAnchorSingletonPetalAffinePattern
+      A target atom core certificateRepair R I) :
+    HasMigratedBinaryCertificateFamily
+        A (fun n => target (atom n)) I ∨
+      HasSmallOrCommonAnchorSingletonPetalAffineDestroyerPattern
+        A target atom core certificateRepair R I := by
+  classical
+  obtain ⟨root, L, hLI, hL, other, partner, privateRepair,
+      hrootR, hatomNotR, hcoreEq, hotherInj, hotherData,
+      hotherNotCore, htargetFormula, hprivateData,
+      hpartnerData, htype⟩ := hpattern
+  have hotherCertificate : ∀ n ∈ L,
+      other n ∈ certificateRepair n := by
+    intro n hn
+    rw [(hotherData n hn).2]
+    simp
+  obtain hmigrate | ⟨M, hML, hM, hdestroy⟩ :=
+    counterexample_injectiveCertificatePoint_forces_migration_or_singletonDestroyers
+      hcounter hKA target atom other certificateRepair hL
+        (fun n hn => hatomK n (hLI hn))
+        (hatomInj.mono hLI) hotherInj
+        (fun n hn => hcertificateR n (hLI hn))
+        (fun n hn => hcertificateK n (hLI hn))
+        hotherCertificate
+  · exact Or.inl <|
+      HasMigratedBinaryCertificateFamily.mono_index hmigrate hLI
+  · right
+    refine ⟨root, M, hML.trans hLI, hM,
+      other, partner, privateRepair, hrootR,
+      fun n hn => hatomNotR n (hML hn),
+      fun n hn => hcoreEq n (hML hn),
+      hotherInj.mono hML,
+      fun n hn => hotherData n (hML hn),
+      fun n hn => hotherNotCore n (hML hn),
+      fun n hn => htargetFormula n (hML hn),
+      fun n hn => hprivateData n (hML hn),
+      fun n hn => hpartnerData n (hML hn),
+      hdestroy, ?_⟩
+    rcases htype with hsmall | hanchor
+    · exact Or.inl (fun n hn => hsmall n (hML hn))
+    · exact Or.inr (fun n hn => hanchor n (hML hn))
+
+/-- Strengthened integrated certificate endgame.  The unsynchronized case
+still separates the two target ranges, and every successful binary choice
+still gives migrated finite certificates.  In the sole remaining affine
+case, however, the moving certificate point is now known to be a singleton
+destroyer of every retained target. -/
+theorem counterexample_synchronizedCertificateFamily_forces_rangeMigration_or_finiteMigration_or_terminalSingletonDestroyers
+    {A C K I J : Set ℕ} {D R : Finset ℕ}
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3)
+    (hKA : K ⊆ A)
+    (target atom certificateTarget : ℕ → ℕ)
+    (moving core certificateRepair : ℕ → Finset ℕ)
+    (hIJ : I ⊆ J) (hI : I.Infinite)
+    (hcertificateInj : Set.InjOn certificateTarget I)
+    (hmarkedInj : Set.InjOn (fun n => target (atom n)) I)
+    (hsync :
+      (∀ n ∈ I, certificateTarget n = target (atom n)) ∨
+        Disjoint (certificateTarget '' I)
+          ((fun n => target (atom n)) '' I))
+    (hdata : ∀ b ∈ K,
+      IsCriticalMarkedMinimalDestroyerData
+        A C D b (target b) (moving b) (core b))
+    (hcoreA : ∀ b ∈ K, (core b : Set ℕ) ⊆ A)
+    (hmarked : ∀ b ∈ K, b ∈ core b \ R)
+    (hdelta : ∀ b ∈ K, ∀ d ∈ K, b ≠ d →
+      core b ∩ core d = R ∧
+        Disjoint (core b \ R) (core d \ R))
+    (htype :
+      (R.card ≤ 2 ∧ ∀ b ∈ K, (core b).card ≤ 3) ∨
+        (∀ b ∈ K,
+          HasTwoDisjointUniqueHitRepairs
+            (additiveSupportFamily A 3) (core b) (target b)) ∨
+        (∀ b ∈ K, 4 ≤ (core b).card ∧
+          HasCommonAnchorOrderThreeRepairs
+            A (core b) (target b)))
+    (hcertificate : ∀ n ∈ J,
+      atom n ∈ K ∧
+      certificateRepair n ∈
+        additiveSupportFamily A 3 (certificateTarget n) ∧
+      Disjoint (certificateRepair n : Set ℕ) K) :
+    (∃ L, L ⊆ I ∧ L.Infinite ∧
+      Disjoint (certificateTarget '' L)
+        ((fun n => target (atom n)) '' L)) ∨
+      HasMigratedBinaryCertificateFamily
+        A (fun n => target (atom n)) I ∨
+      HasSmallOrCommonAnchorSingletonPetalAffineDestroyerPattern
+        A target atom core certificateRepair R I := by
+  classical
+  rcases hsync with hequal | hdisjoint
+  · have hbase :=
+      counterexample_synchronizedCertificateFamily_forces_rangeMigration_or_finiteMigration_or_terminalAffinePattern
+        hcounter hKA target atom certificateTarget moving core
+          certificateRepair hIJ hI hcertificateInj hmarkedInj
+          (Or.inl hequal) hdata hcoreA hmarked hdelta htype hcertificate
+    rcases hbase with hmigrateRange | hmigrate | hpattern
+    · exact Or.inl hmigrateRange
+    · exact Or.inr (Or.inl hmigrate)
+    · have hatomK_I : ∀ n ∈ I, atom n ∈ K := by
+        intro n hn
+        exact (hcertificate n (hIJ hn)).1
+      have hatomInj_I : Set.InjOn atom I := by
+        intro n hn m hm hEq
+        exact hmarkedInj hn hm (congrArg target hEq)
+      have hcertificateR_I : ∀ n ∈ I,
+          certificateRepair n ∈
+            additiveSupportFamily A 3 (target (atom n)) := by
+        intro n hn
+        have hrepair := (hcertificate n (hIJ hn)).2.1
+        rw [hequal n hn] at hrepair
+        exact hrepair
+      have hcertificateK_I : ∀ n ∈ I,
+          Disjoint (certificateRepair n : Set ℕ) K := by
+        intro n hn
+        exact (hcertificate n (hIJ hn)).2.2
+      obtain hmigrate | hdestroy :=
+        counterexample_terminalAffinePattern_forces_migration_or_singletonDestroyerPattern
+          hcounter hKA target atom core certificateRepair
+            hatomK_I hatomInj_I hcertificateR_I
+              hcertificateK_I hpattern
+      · exact Or.inr (Or.inl hmigrate)
+      · exact Or.inr (Or.inr hdestroy)
+  · exact Or.inl ⟨I, fun _ hn => hn, hI, hdisjoint⟩
+
+/-- On the common-anchor part of the terminal affine pattern, either an
+infinite subfamily has a unique-hit repair avoiding the moving certificate
+point, which restores binary common survival and migrated certificates, or
+that point is itself the common anchor for every core repair throughout an
+infinite thinning. -/
+theorem counterexample_commonAnchorSingletonPetalCertificates_force_migration_or_anchorEquality
+    {A K I : Set ℕ}
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3)
+    (hKA : K ⊆ A)
+    (target atom other : ℕ → ℕ)
+    (core certificateRepair : ℕ → Finset ℕ)
+    (hI : I.Infinite)
+    (hatomK : ∀ n ∈ I, atom n ∈ K)
+    (hatomInj : Set.InjOn atom I)
+    (hotherInj : Set.InjOn other I)
+    (hcertificateR : ∀ n ∈ I,
+      certificateRepair n ∈
+        additiveSupportFamily A 3 (target (atom n)))
+    (hcertificateK : ∀ n ∈ I,
+      Disjoint (certificateRepair n : Set ℕ) K)
+    (hotherCertificate : ∀ n ∈ I,
+      other n ∈ certificateRepair n)
+    (hotherNotCore : ∀ n ∈ I,
+      other n ∉ core (atom n))
+    (hanchor : ∀ n ∈ I,
+      4 ≤ (core (atom n)).card ∧
+        HasCommonAnchorOrderThreeRepairs
+          A (core (atom n)) (target (atom n))) :
+    HasMigratedBinaryCertificateFamily
+        A (fun n => target (atom n)) I ∨
+      ∃ L, L ⊆ I ∧ L.Infinite ∧
+        ∀ n ∈ L,
+          ∃ c : OrderThreeUniqueHitRepairChoice
+              A (core (atom n)) (target (atom n)),
+            ∀ x : {x // x ∈ core (atom n)},
+              other n ∈ c.tail x := by
+  classical
+  let Avoidable : Set ℕ :=
+    {n | n ∈ I ∧ ∃ G,
+      G ∈ additiveSupportFamily A 3 (target (atom n)) ∧
+        other n ∉ G}
+  by_cases hAvoidable : Avoidable.Infinite
+  · have hAvoidableI : Avoidable ⊆ I := fun _ hn => hn.1
+    have halternateExists : ∀ n : Avoidable, ∃ G,
+        G ∈ additiveSupportFamily A 3 (target (atom n.1)) ∧
+          other n.1 ∉ G := by
+      intro n
+      exact n.2.2
+    choose alternateA halternate using halternateExists
+    let alternate : ℕ → Finset ℕ := fun n =>
+      if hn : n ∈ Avoidable then alternateA ⟨n, hn⟩ else ∅
+    have halternateR : ∀ n ∈ Avoidable,
+        alternate n ∈
+          additiveSupportFamily A 3 (target (atom n)) := by
+      intro n hn
+      simpa only [alternate, dif_pos hn] using
+        (halternate ⟨n, hn⟩).1
+    have hotherNotAlternate : ∀ n ∈ Avoidable,
+        other n ∉ alternate n := by
+      intro n hn
+      simpa only [alternate, dif_pos hn] using
+        (halternate ⟨n, hn⟩).2
+    have hotherNotK : ∀ n ∈ Avoidable, other n ∉ K := by
+      intro n hn hotherK
+      exact Set.disjoint_left.mp (hcertificateK n (hAvoidableI hn))
+        (Finset.mem_coe.mpr
+          (hotherCertificate n (hAvoidableI hn))) hotherK
+    have hatomNotCertificate : ∀ n ∈ Avoidable,
+        atom n ∉ certificateRepair n := by
+      intro n hn hatomRepair
+      exact Set.disjoint_left.mp (hcertificateK n (hAvoidableI hn))
+        (Finset.mem_coe.mpr hatomRepair)
+        (hatomK n (hAvoidableI hn))
+    have hatomOtherNe : ∀ n ∈ Avoidable,
+        atom n ≠ other n := by
+      intro n hn hEq
+      exact hotherNotK n hn
+        (hEq ▸ hatomK n (hAvoidableI hn))
+    have hmatching : ∀ n ∈ Avoidable, ∀ m ∈ Avoidable,
+        n ≠ m → Disjoint ({atom n, other n} : Finset ℕ)
+          ({atom m, other m} : Finset ℕ) := by
+      intro n hn m hm hnm
+      rw [Finset.disjoint_left]
+      intro z hzn hzm
+      simp only [Finset.mem_insert, Finset.mem_singleton] at hzn hzm
+      rcases hzn with hzn | hzn <;> rcases hzm with hzm | hzm
+      · exact hnm (hatomInj (hAvoidableI hn) (hAvoidableI hm)
+          (hzn.symm.trans hzm))
+      · exact hotherNotK m hm
+          (hzm.symm ▸ hzn.symm ▸ hatomK n (hAvoidableI hn))
+      · exact hotherNotK n hn
+          (hzn.symm ▸ hzm.symm ▸ hatomK m (hAvoidableI hm))
+      · exact hnm (hotherInj (hAvoidableI hn) (hAvoidableI hm)
+          (hzn.symm.trans hzm))
+    obtain ⟨J, hJAvoidable, hJ, hcommon⟩ :=
+      exists_infinite_binaryChoice_commonSurvival
+        hAvoidable (fun n => target (atom n)) atom other hmatching
+          alternate certificateRepair halternateR
+          (fun n hn => hcertificateR n (hAvoidableI hn))
+          hotherNotAlternate hatomNotCertificate
+    have hxyA : ∀ n ∈ J, atom n ∈ A ∧ other n ∈ A := by
+      intro n hn
+      have hnAvoidable := hJAvoidable hn
+      have hnI := hAvoidableI hnAvoidable
+      exact ⟨hKA (hatomK n hnI),
+        additiveSupportFamily_supportsIn A 3
+          (target (atom n)) (certificateRepair n)
+            (hcertificateR n hnI) (other n)
+              (hotherCertificate n hnI)⟩
+    obtain ⟨K', pairCell, hK'A, hK', P, hpairCard, hQ⟩ :=
+      strongDeletion_binaryCommonSurvival_forces_migratedCertificate
+        (strongOrderThreeDeletion_of_counterexample hcounter)
+          hJ (fun n => target (atom n)) atom other hxyA
+          (fun n hn => hatomOtherNe n (hJAvoidable hn))
+          (fun n hn m hm hnm =>
+            hmatching n (hJAvoidable hn) m (hJAvoidable hm) hnm)
+          hcommon
+    left
+    exact ⟨J, hJAvoidable.trans hAvoidableI, hJ,
+      K', pairCell, hK'A, hK', P, hpairCard, hQ⟩
+  · right
+    have hAvoidableFinite : Avoidable.Finite :=
+      Set.not_infinite.mp hAvoidable
+    let L : Set ℕ := I \ Avoidable
+    have hLI : L ⊆ I := Set.diff_subset
+    have hL : L.Infinite := hI.diff hAvoidableFinite
+    refine ⟨L, hLI, hL, ?_⟩
+    intro n hn
+    obtain ⟨c, z, hz, hotherEq | ⟨G, hGR, hotherG⟩⟩ :=
+      commonAnchorOrderThreeRepairs_avoids_outsidePoint_or_is_anchor
+        (by
+          have hfour := (hanchor n (hLI hn)).1
+          omega)
+        (hotherNotCore n (hLI hn))
+        (hanchor n (hLI hn)).2
+    · refine ⟨c, ?_⟩
+      intro x
+      simpa [hotherEq] using hz x
+    · exact (hn.2 ⟨hn.1, G, hGR, hotherG⟩).elim
 
 /-- The balanced repaired matching contains an infinite submatching whose
 targets survive every orientation of that submatching.  If an orientation
