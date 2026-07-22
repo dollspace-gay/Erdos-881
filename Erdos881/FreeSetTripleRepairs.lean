@@ -4066,6 +4066,476 @@ theorem card_pairSupports_eq_card_crossingAtomEndpoints
   exact Finset.card_image_iff.mpr
     pairSupport_injOn_crossingAtomEndpoints
 
+/-! ## The exact two-repair obstruction on a zero-free reservoir -/
+
+/-- If two crossing endpoints lie outside a finite deletion prefix, padding
+their two canonical pair supports by the retained zero gives two order-three
+supports which avoid the prefix and whose intersections with the deletion
+reservoir are disjoint. -/
+theorem exists_twoRepairsDisjointOnReservoir_of_two_crossingEndpointsOutside
+    {A B : Set ℕ} {D : Finset ℕ} {q b d : ℕ}
+    (hzeroA : 0 ∈ A) (hzeroB : 0 ∉ B)
+    (hBA : B ⊆ A) (hDB : (D : Set ℕ) ⊆ B)
+    (hb : b ∈ crossingAtomEndpoints A B q)
+    (hd : d ∈ crossingAtomEndpoints A B q)
+    (hbD : b ∉ D) (hdD : d ∉ D) (hbd : b ≠ d) :
+    ∃ E ∈ additiveSupportFamily A 3 q, Disjoint E D ∧
+      ∃ E' ∈ additiveSupportFamily A 3 q, Disjoint E' D ∧
+        Disjoint ((E : Set ℕ) ∩ B) ((E' : Set ℕ) ∩ B) := by
+  classical
+  have hbData := mem_crossingAtomEndpoints_iff.mp hb
+  have hdData := mem_crossingAtomEndpoints_iff.mp hd
+  let E : Finset ℕ := insert 0 (pairSupport q b)
+  let E' : Finset ℕ := insert 0 (pairSupport q d)
+  have hER : E ∈ additiveSupportFamily A 3 q := by
+    have hpair : pairSupport q b ∈
+        additiveSupportFamily A 2 q :=
+      pairSupport_mem_additiveSupportFamily hbData.1
+        (hBA hbData.2.1) hbData.2.2.1
+    simpa [E] using
+      (insert_mem_additiveSupportFamily_succ hzeroA hpair)
+  have hE'R : E' ∈ additiveSupportFamily A 3 q := by
+    have hpair : pairSupport q d ∈
+        additiveSupportFamily A 2 q :=
+      pairSupport_mem_additiveSupportFamily hdData.1
+        (hBA hdData.2.1) hdData.2.2.1
+    simpa [E'] using
+      (insert_mem_additiveSupportFamily_succ hzeroA hpair)
+  have hED : Disjoint E D := by
+    rw [Finset.disjoint_left]
+    intro x hxE hxD
+    have hxB : x ∈ B := hDB (Finset.mem_coe.mpr hxD)
+    rcases Finset.mem_insert.mp hxE with rfl | hxPair
+    · exact hzeroB hxB
+    · have hxCases : x = b ∨ x = q - b := by
+        simpa [pairSupport] using hxPair
+      rcases hxCases with rfl | rfl
+      · exact hbD hxD
+      · exact hbData.2.2.2 hxB
+  have hE'D : Disjoint E' D := by
+    rw [Finset.disjoint_left]
+    intro x hxE hxD
+    have hxB : x ∈ B := hDB (Finset.mem_coe.mpr hxD)
+    rcases Finset.mem_insert.mp hxE with rfl | hxPair
+    · exact hzeroB hxB
+    · have hxCases : x = d ∨ x = q - d := by
+        simpa [pairSupport] using hxPair
+      rcases hxCases with rfl | rfl
+      · exact hdD hxD
+      · exact hdData.2.2.2 hxB
+  have hEonly : ∀ x, x ∈ (E : Set ℕ) ∩ B → x = b := by
+    intro x hx
+    rcases Finset.mem_insert.mp (Finset.mem_coe.mp hx.1) with
+        rfl | hxPair
+    · exact (hzeroB hx.2).elim
+    · have hxCases : x = b ∨ x = q - b := by
+        simpa [pairSupport] using hxPair
+      exact hxCases.resolve_right fun hxc =>
+        hbData.2.2.2 (hxc ▸ hx.2)
+  have hE'only : ∀ x, x ∈ (E' : Set ℕ) ∩ B → x = d := by
+    intro x hx
+    rcases Finset.mem_insert.mp (Finset.mem_coe.mp hx.1) with
+        rfl | hxPair
+    · exact (hzeroB hx.2).elim
+    · have hxCases : x = d ∨ x = q - d := by
+        simpa [pairSupport] using hxPair
+      exact hxCases.resolve_right fun hxc =>
+        hdData.2.2.2 (hxc ▸ hx.2)
+  refine ⟨E, hER, hED, E', hE'R, hE'D, ?_⟩
+  rw [Set.disjoint_left]
+  intro x hxE hxE'
+  exact hbd ((hEonly x hxE).symm.trans (hE'only x hxE'))
+
+/-- Failure of the pointwise reservoir-relative two-repair condition forces
+all but at most one crossing endpoint into the already deleted finite
+prefix.  Two endpoints outside the prefix would give the preceding pair of
+padded repairs. -/
+theorem crossingEndpointsOutsidePrefix_card_le_one_of_no_twoRepairs
+    {A B : Set ℕ} {D : Finset ℕ} {q : ℕ}
+    (hzeroA : 0 ∈ A) (hzeroB : 0 ∉ B)
+    (hBA : B ⊆ A) (hDB : (D : Set ℕ) ⊆ B)
+    (hno : ¬ ∃ E ∈ additiveSupportFamily A 3 q,
+      Disjoint E D ∧
+        ∃ E' ∈ additiveSupportFamily A 3 q,
+          Disjoint E' D ∧
+            Disjoint ((E : Set ℕ) ∩ B) ((E' : Set ℕ) ∩ B)) :
+    ((crossingAtomEndpoints A B q) \ D).card ≤ 1 := by
+  classical
+  by_contra hcard
+  have hone : 1 < ((crossingAtomEndpoints A B q) \ D).card := by
+    omega
+  obtain ⟨b, hb, d, hd, hbd⟩ := Finset.one_lt_card.mp hone
+  have hbData := Finset.mem_sdiff.mp hb
+  have hdData := Finset.mem_sdiff.mp hd
+  exact hno <|
+    exists_twoRepairsDisjointOnReservoir_of_two_crossingEndpointsOutside
+      hzeroA hzeroB hBA hDB hbData.1 hdData.1
+        hbData.2 hdData.2 hbd
+
+/-- The possible unique crossing endpoint outside the finite prefix is a
+genuine moving extension of that prefix: adjoining it makes the whole set a
+destroyer.  Its padded canonical support avoids the old prefix and meets the
+reservoir only at that endpoint, so any support avoiding both the prefix and
+the endpoint would form a forbidden second repair. -/
+theorem prefix_insert_crossingEndpoint_destroys_of_no_twoRepairs
+    {A B : Set ℕ} {D : Finset ℕ} {q b : ℕ}
+    (hzeroA : 0 ∈ A) (hzeroB : 0 ∉ B)
+    (hBA : B ⊆ A) (hDB : (D : Set ℕ) ⊆ B)
+    (hb : b ∈ crossingAtomEndpoints A B q) (hbD : b ∉ D)
+    (hno : ¬ ∃ E ∈ additiveSupportFamily A 3 q,
+      Disjoint E D ∧
+        ∃ E' ∈ additiveSupportFamily A 3 q,
+          Disjoint E' D ∧
+            Disjoint ((E : Set ℕ) ∩ B) ((E' : Set ℕ) ∩ B)) :
+    DestroysAt (additiveSupportFamily A 3)
+      (((insert b D : Finset ℕ) : Set ℕ)) q := by
+  classical
+  have hbData := mem_crossingAtomEndpoints_iff.mp hb
+  let E : Finset ℕ := insert 0 (pairSupport q b)
+  have hER : E ∈ additiveSupportFamily A 3 q := by
+    have hpair : pairSupport q b ∈
+        additiveSupportFamily A 2 q :=
+      pairSupport_mem_additiveSupportFamily hbData.1
+        (hBA hbData.2.1) hbData.2.2.1
+    simpa [E] using
+      (insert_mem_additiveSupportFamily_succ hzeroA hpair)
+  have hED : Disjoint E D := by
+    rw [Finset.disjoint_left]
+    intro x hxE hxD
+    have hxB : x ∈ B := hDB (Finset.mem_coe.mpr hxD)
+    rcases Finset.mem_insert.mp hxE with rfl | hxPair
+    · exact hzeroB hxB
+    · have hxCases : x = b ∨ x = q - b := by
+        simpa [pairSupport] using hxPair
+      rcases hxCases with rfl | rfl
+      · exact hbD hxD
+      · exact hbData.2.2.2 hxB
+  have hEonly : ∀ x, x ∈ (E : Set ℕ) ∩ B → x = b := by
+    intro x hx
+    rcases Finset.mem_insert.mp (Finset.mem_coe.mp hx.1) with
+        rfl | hxPair
+    · exact (hzeroB hx.2).elim
+    · have hxCases : x = b ∨ x = q - b := by
+        simpa [pairSupport] using hxPair
+      exact hxCases.resolve_right fun hxc =>
+        hbData.2.2.2 (hxc ▸ hx.2)
+  intro G hGR hGprefix
+  have hGD : Disjoint G D := by
+    rw [Finset.disjoint_left]
+    intro x hxG hxD
+    exact Set.disjoint_left.mp hGprefix
+      (Finset.mem_coe.mpr hxG) (by simp [hxD])
+  have hbG : b ∉ G := by
+    intro hbG
+    exact Set.disjoint_left.mp hGprefix
+      (Finset.mem_coe.mpr hbG) (by simp)
+  have hinter :
+      Disjoint ((E : Set ℕ) ∩ B) ((G : Set ℕ) ∩ B) := by
+    rw [Set.disjoint_left]
+    intro x hxE hxG
+    have hxb : x = b := hEonly x hxE
+    exact hbG (hxb ▸ Finset.mem_coe.mp hxG.1)
+  exact hno ⟨E, hER, hED, G, hGR, hGD, hinter⟩
+
+/-- Pointwise dichotomy for the finite-prefix obstruction.  Either every
+crossing endpoint is already in the prefix, or there is exactly one outside
+endpoint and adjoining it to the prefix destroys the target. -/
+theorem crossingEndpoints_subset_prefix_or_uniqueDestroyerExtension
+    {A B : Set ℕ} {D : Finset ℕ} {q : ℕ}
+    (hzeroA : 0 ∈ A) (hzeroB : 0 ∉ B)
+    (hBA : B ⊆ A) (hDB : (D : Set ℕ) ⊆ B)
+    (hno : ¬ ∃ E ∈ additiveSupportFamily A 3 q,
+      Disjoint E D ∧
+        ∃ E' ∈ additiveSupportFamily A 3 q,
+          Disjoint E' D ∧
+            Disjoint ((E : Set ℕ) ∩ B) ((E' : Set ℕ) ∩ B)) :
+    (crossingAtomEndpoints A B q : Set ℕ) ⊆ (D : Set ℕ) ∨
+      ∃ b, b ∈ crossingAtomEndpoints A B q ∧ b ∉ D ∧
+        (crossingAtomEndpoints A B q) \ D = {b} ∧
+        DestroysAt (additiveSupportFamily A 3)
+          (((insert b D : Finset ℕ) : Set ℕ)) q := by
+  classical
+  by_cases hsub :
+      (crossingAtomEndpoints A B q : Set ℕ) ⊆ (D : Set ℕ)
+  · exact Or.inl hsub
+  · right
+    obtain ⟨b, hbEndpoint, hbD⟩ := Set.not_subset.mp hsub
+    have hbEndpointFin := Finset.mem_coe.mp hbEndpoint
+    have hbDiff : b ∈ crossingAtomEndpoints A B q \ D :=
+      Finset.mem_sdiff.mpr ⟨hbEndpointFin, by simpa using hbD⟩
+    have hcard :=
+      crossingEndpointsOutsidePrefix_card_le_one_of_no_twoRepairs
+        hzeroA hzeroB hBA hDB hno
+    have hdiffEq : crossingAtomEndpoints A B q \ D = {b} := by
+      apply Finset.eq_singleton_iff_unique_mem.mpr
+      refine ⟨hbDiff, ?_⟩
+      intro x hx
+      by_contra hxb
+      have hone : 1 < (crossingAtomEndpoints A B q \ D).card :=
+        Finset.one_lt_card.mpr ⟨b, hbDiff, x, hx, Ne.symm hxb⟩
+      omega
+    exact ⟨b, hbEndpointFin, by simpa using hbD, hdiffEq,
+      prefix_insert_crossingEndpoint_destroys_of_no_twoRepairs
+        hzeroA hzeroB hBA hDB hbEndpointFin (by simpa using hbD) hno⟩
+
+/-- At a target with no reservoir-relative pair of repairs, direct repairs
+for same-color pairs force every order-two support to cross the reservoir.
+A retained pair could be padded by zero, while a deleted pair could use its
+direct triple repair; in either case the same reservoir-avoiding support
+could be used twice. -/
+theorem allPairSupports_crossing_of_no_twoRepairsOnReservoir
+    {A B : Set ℕ} {D : Finset ℕ} {q : ℕ}
+    (hzeroA : 0 ∈ A) (hzeroB : 0 ∉ B)
+    (hDB : (D : Set ℕ) ⊆ B)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B)
+    (hno : ¬ ∃ E ∈ additiveSupportFamily A 3 q,
+      Disjoint E D ∧
+        ∃ E' ∈ additiveSupportFamily A 3 q,
+          Disjoint E' D ∧
+            Disjoint ((E : Set ℕ) ∩ B) ((E' : Set ℕ) ∩ B)) :
+    ∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) B ∧ ¬ (E : Set ℕ) ⊆ B := by
+  classical
+  have duplicateContradiction : ∀ G : Finset ℕ,
+      G ∈ additiveSupportFamily A 3 q →
+      Disjoint (G : Set ℕ) B → False := by
+    intro G hGR hGB
+    have hGD : Disjoint G D := by
+      rw [Finset.disjoint_left]
+      intro x hxG hxD
+      exact Set.disjoint_left.mp hGB
+        (Finset.mem_coe.mpr hxG) (hDB (Finset.mem_coe.mpr hxD))
+    have hinter : Disjoint ((G : Set ℕ) ∩ B) ((G : Set ℕ) ∩ B) := by
+      rw [Set.disjoint_left]
+      intro x hx _hx'
+      exact Set.disjoint_left.mp hGB hx.1 hx.2
+    exact hno ⟨G, hGR, hGD, G, hGR, hGD, hinter⟩
+  intro E hER
+  constructor
+  · intro hEB
+    let G : Finset ℕ := insert 0 E
+    have hGR : G ∈ additiveSupportFamily A 3 q := by
+      simpa [G] using
+        (insert_mem_additiveSupportFamily_succ hzeroA hER)
+    have hGB : Disjoint (G : Set ℕ) B := by
+      rw [Set.disjoint_left]
+      intro x hxG hxB
+      rcases Finset.mem_insert.mp (Finset.mem_coe.mp hxG) with
+          rfl | hxE
+      · exact hzeroB hxB
+      · exact Set.disjoint_left.mp hEB
+          (Finset.mem_coe.mpr hxE) hxB
+    exact duplicateContradiction G hGR hGB
+  · intro hEsub
+    obtain ⟨v, _hvA, hvsum, rfl⟩ :=
+      mem_additiveSupportFamily_iff.mp hER
+    have hv₀B : (v 0).1 ∈ B :=
+      hEsub (mem_tupleSupport_iff.mpr ⟨0, rfl⟩)
+    have hv₁B : (v 1).1 ∈ B :=
+      hEsub (mem_tupleSupport_iff.mpr ⟨1, rfl⟩)
+    have hsum : (v 0).1 + (v 1).1 = q := by
+      simpa [Fin.sum_univ_two] using hvsum
+    obtain ⟨G, hGR, hGB⟩ :=
+      hrepairs (v 0).1 hv₀B (v 1).1 hv₁B
+    rw [hsum] at hGR
+    exact duplicateContradiction G hGR hGB
+
+/-- If the deletion reservoir `C` is a thinning of a larger repaired
+reservoir `B`, failure of two repairs on `C` has a stronger consequence:
+every pair support meets `C`, but cannot be contained even in `B`.  Thus its
+other endpoint lies outside the original reservoir, not merely in the
+finite part of `B` which was retained. -/
+theorem allPairSupports_crossing_superreservoir_of_no_twoRepairs
+    {A B C : Set ℕ} {D : Finset ℕ} {q : ℕ}
+    (hzeroA : 0 ∈ A) (hzeroB : 0 ∉ B)
+    (hCB : C ⊆ B) (hDC : (D : Set ℕ) ⊆ C)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B)
+    (hno : ¬ ∃ E ∈ additiveSupportFamily A 3 q,
+      Disjoint E D ∧
+        ∃ E' ∈ additiveSupportFamily A 3 q,
+          Disjoint E' D ∧
+            Disjoint ((E : Set ℕ) ∩ C) ((E' : Set ℕ) ∩ C)) :
+    ∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) C ∧ ¬ (E : Set ℕ) ⊆ B := by
+  classical
+  have duplicateContradiction : ∀ G : Finset ℕ,
+      G ∈ additiveSupportFamily A 3 q →
+      Disjoint (G : Set ℕ) C → False := by
+    intro G hGR hGC
+    have hGD : Disjoint G D := by
+      rw [Finset.disjoint_left]
+      intro x hxG hxD
+      exact Set.disjoint_left.mp hGC
+        (Finset.mem_coe.mpr hxG) (hDC (Finset.mem_coe.mpr hxD))
+    have hinter : Disjoint ((G : Set ℕ) ∩ C) ((G : Set ℕ) ∩ C) := by
+      rw [Set.disjoint_left]
+      intro x hx _hx'
+      exact Set.disjoint_left.mp hGC hx.1 hx.2
+    exact hno ⟨G, hGR, hGD, G, hGR, hGD, hinter⟩
+  intro E hER
+  constructor
+  · intro hEC
+    let G : Finset ℕ := insert 0 E
+    have hGR : G ∈ additiveSupportFamily A 3 q := by
+      simpa [G] using
+        (insert_mem_additiveSupportFamily_succ hzeroA hER)
+    have hGC : Disjoint (G : Set ℕ) C := by
+      rw [Set.disjoint_left]
+      intro x hxG hxC
+      rcases Finset.mem_insert.mp (Finset.mem_coe.mp hxG) with
+          rfl | hxE
+      · exact hzeroB (hCB hxC)
+      · exact Set.disjoint_left.mp hEC
+          (Finset.mem_coe.mpr hxE) hxC
+    exact duplicateContradiction G hGR hGC
+  · intro hEsub
+    obtain ⟨v, _hvA, hvsum, rfl⟩ :=
+      mem_additiveSupportFamily_iff.mp hER
+    have hv₀B : (v 0).1 ∈ B :=
+      hEsub (mem_tupleSupport_iff.mpr ⟨0, rfl⟩)
+    have hv₁B : (v 1).1 ∈ B :=
+      hEsub (mem_tupleSupport_iff.mpr ⟨1, rfl⟩)
+    have hsum : (v 0).1 + (v 1).1 = q := by
+      simpa [Fin.sum_univ_two] using hvsum
+    obtain ⟨G, hGR, hGB⟩ :=
+      hrepairs (v 0).1 hv₀B (v 1).1 hv₁B
+    rw [hsum] at hGR
+    have hGC : Disjoint (G : Set ℕ) C :=
+      hGB.mono_right hCB
+    exact duplicateContradiction G hGR hGC
+
+/-- Under the strict crossing conclusion above, thinning a repaired
+reservoir creates no new crossing endpoints: every endpoint relative to the
+large reservoir already lies in the thinned reservoir, and conversely. -/
+theorem crossingAtomEndpoints_eq_of_crossing_superreservoir
+    {A B C : Set ℕ} {q : ℕ}
+    (hBA : B ⊆ A) (hCB : C ⊆ B)
+    (hcross : ∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) C ∧ ¬ (E : Set ℕ) ⊆ B) :
+    crossingAtomEndpoints A C q = crossingAtomEndpoints A B q := by
+  classical
+  ext b
+  rw [mem_crossingAtomEndpoints_iff,
+    mem_crossingAtomEndpoints_iff]
+  constructor
+  · rintro ⟨hbq, hbC, hcA, hcC⟩
+    have hbB : b ∈ B := hCB hbC
+    refine ⟨hbq, hbB, hcA, ?_⟩
+    intro hcB
+    have hpair : pairSupport q b ∈
+        additiveSupportFamily A 2 q :=
+      pairSupport_mem_additiveSupportFamily hbq
+        (hBA hbB) hcA
+    apply (hcross (pairSupport q b) hpair).2
+    intro x hx
+    have hxCases : x = b ∨ x = q - b := by
+      simpa [pairSupport] using hx
+    rcases hxCases with rfl | rfl
+    · exact hbB
+    · exact hcB
+  · rintro ⟨hbq, hbB, hcA, hcB⟩
+    have hpair : pairSupport q b ∈
+        additiveSupportFamily A 2 q :=
+      pairSupport_mem_additiveSupportFamily hbq
+        (hBA hbB) hcA
+    obtain ⟨x, hxPair, hxC⟩ :=
+      Set.not_disjoint_iff.mp (hcross (pairSupport q b) hpair).1
+    have hxCases : x = b ∨ x = q - b := by
+      simpa [pairSupport] using hxPair
+    have hbC : b ∈ C := by
+      rcases hxCases with hxb | hxc
+      · simpa [hxb] using hxC
+      · exact (hcB (hCB (hxc ▸ hxC))).elim
+    exact ⟨hbq, hbC, hcA, fun hcC => hcB (hCB hcC)⟩
+
+/-- Exact recurrent normal form of a failed sparse-deletion endgame on a
+repaired zero-free reservoir.  One finite prefix captures all but at most
+one crossing endpoint at arbitrarily late targets, and every order-two
+support at those targets genuinely crosses the reservoir boundary. -/
+theorem recurrent_almostCoveredCrossingEndpoints_of_not_twoRepairsOnReservoir
+    {A B : Set ℕ}
+    (hzeroA : 0 ∈ A) (hzeroB : 0 ∉ B)
+    (hBA : B ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B)
+    (hnot : ¬ HasTwoRepairsDisjointOnDeletionReservoirAlong
+      (additiveSupportFamily A 3) B Set.univ) :
+    ∃ D : Finset ℕ, (D : Set ℕ) ⊆ B ∧
+      ∀ N, ∃ q, N ≤ q ∧
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B ∧
+            ¬ (E : Set ℕ) ⊆ B) ∧
+        ((crossingAtomEndpoints A B q) \ D).card ≤ 1 := by
+  obtain ⟨D, hDB, hbad⟩ :=
+    not_hasTwoRepairsDisjointOnDeletionReservoirAlong_iff.mp hnot
+  refine ⟨D, hDB, ?_⟩
+  intro N
+  obtain ⟨q, hqN, _hqUniv, hno⟩ := hbad N
+  exact ⟨q, hqN,
+    allPairSupports_crossing_of_no_twoRepairsOnReservoir
+      hzeroA hzeroB hDB hrepairs hno,
+    crossingEndpointsOutsidePrefix_card_le_one_of_no_twoRepairs
+      hzeroA hzeroB hBA hDB hno⟩
+
+/-- Hereditary finite-core form of the sparse-deletion obstruction.  If no
+infinite deletion exists, then after declaring any finite set `F` retained,
+one can find a fresh finite prefix `D ⊆ B \ F` which captures all but at
+most one endpoint of arbitrarily late targets.  Those endpoints are the
+crossing endpoints for the original repaired reservoir `B`, not just for its
+thinning `B \ F`. -/
+theorem repairedZeroAtomReservoir_counterexample_forces_freshAlmostCoveredEndpoints
+    {A B : Set ℕ}
+    (hzeroA : 0 ∈ A) (hzeroB : 0 ∉ B)
+    (hBA : B ⊆ A) (hB : B.Infinite)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∀ F : Finset ℕ, ∃ D : Finset ℕ,
+      (D : Set ℕ) ⊆ B \ (F : Set ℕ) ∧
+      ∀ N, ∃ q, N ≤ q ∧
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B ∧
+            ¬ (E : Set ℕ) ⊆ B) ∧
+        ((crossingAtomEndpoints A B q) \ D).card ≤ 1 := by
+  classical
+  intro F
+  let C : Set ℕ := B \ (F : Set ℕ)
+  have hCB : C ⊆ B := Set.diff_subset
+  have hCA : C ⊆ A := hCB.trans hBA
+  have hC : C.Infinite := hB.diff F.finite_toSet
+  have hCunbounded : ∀ T, ∃ c ∈ C, T ≤ c := by
+    intro T
+    obtain ⟨c, hcC, hcT⟩ := hC.exists_gt T
+    exact ⟨c, hcC, Nat.le_of_lt hcT⟩
+  have hnot : ¬ HasTwoRepairsDisjointOnDeletionReservoirAlong
+      (additiveSupportFamily A 3) C Set.univ := by
+    intro htwo
+    obtain ⟨X, hXC, hX, hthree⟩ :=
+      exists_infiniteDeletion_succBasis_of_twoRepairsDisjointOnReservoir
+        (k := 2) hCunbounded htwo ⟨0, by simp⟩
+    exact hcounter X (hXC.trans hCA) hX hthree
+  obtain ⟨D, hDC, hbad⟩ :=
+    not_hasTwoRepairsDisjointOnDeletionReservoirAlong_iff.mp hnot
+  refine ⟨D, hDC, ?_⟩
+  intro N
+  obtain ⟨q, hqN, _hqUniv, hno⟩ := hbad N
+  have hstrict :=
+    allPairSupports_crossing_superreservoir_of_no_twoRepairs
+      hzeroA hzeroB hCB hDC hrepairs hno
+  have hendpointEq :
+      crossingAtomEndpoints A C q =
+        crossingAtomEndpoints A B q :=
+    crossingAtomEndpoints_eq_of_crossing_superreservoir
+      hBA hCB hstrict
+  have hcard : ((crossingAtomEndpoints A C q) \ D).card ≤ 1 :=
+    crossingEndpointsOutsidePrefix_card_le_one_of_no_twoRepairs
+      hzeroA (fun hzeroC => hzeroB (hCB hzeroC))
+        hCA hDC hno
+  rw [hendpointEq] at hcard
+  refine ⟨q, hqN, ?_, hcard⟩
+  intro E hER
+  have hE := hstrict E hER
+  exact ⟨fun hEB => hE.1 (hEB.mono_right hCB), hE.2⟩
+
 /-! ## The crossing-endpoint thinning bridge -/
 
 /-- A thinning `B ⊆ B₀` eventually omits a crossing endpoint at every
@@ -13927,6 +14397,108 @@ theorem HasInfinitePrivateSingletonCrossingEndpoints.exists_infiniteComplementCe
     exact (mem_crossingAtomEndpoints_iff.mp hbEndpoint).2.2
   exact ⟨K, hKComplement, hcenterInfinite⟩
 
+/-- Private singleton crossing endpoints already force the desired infinite
+deletion.  Parametrize the private targets as `target b = b + center b`.
+If an infinite subset of the centers is splittable, it is a self-basis
+reservoir and the completed splittable bridge applies.  Otherwise an
+infinite subset of the centers consists of zero-atoms.  Infinitely many of
+those atoms have aligned endpoint preimages `b`; sufficiently late aligned
+pairs have a cross-local triple repair avoiding `b`, contradicting the fact
+that the singleton `{b}` destroys its private target. -/
+theorem HasInfinitePrivateSingletonCrossingEndpoints.exists_infiniteDeletion_threeBasis
+    {A B₀ : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hB₀A : B₀ ⊆ A)
+    (hnormal : ∀ x ∈ B₀,
+      ∀ E ∈ additiveSupportFamily A 2 x, E = {x, 0})
+    (h : HasInfinitePrivateSingletonCrossingEndpoints A B₀) :
+    ∃ D, D ⊆ A ∧ D.Infinite ∧
+      IsExactTupleAsymptoticBasis (A \ D) 3 := by
+  classical
+  obtain ⟨L, hLB₀, hL, target, htarget,
+      hgrow, hcenterInfinite⟩ :=
+    h.exists_rigidParametrization hbasis hB₀A
+  let center : L → ℕ := fun b => target b - b.1
+  let K : Set ℕ := Set.range center
+  have hKComplement : K ⊆ A \ B₀ := by
+    rintro c ⟨b, rfl⟩
+    have hbEndpoint :
+        b.1 ∈ crossingAtomEndpoints A B₀ (target b) := by
+      rw [(htarget b).2.1]
+      simp
+    exact (mem_crossingAtomEndpoints_iff.mp hbEndpoint).2.2
+  have hK : K.Infinite := by
+    simpa [K, center] using hcenterInfinite
+  obtain hsplittable | hatomic :=
+    infiniteDeletionSplits_or_infiniteZeroAtoms hbasis hK
+  · obtain ⟨B, hBK, hB, hsplit⟩ := hsplittable
+    let B' : Set ℕ := B \ {0}
+    have hB'B : B' ⊆ B := Set.diff_subset
+    have hB' : B'.Infinite :=
+      hB.diff (Set.finite_singleton 0)
+    have hB'A : B' ⊆ A := by
+      intro b hb
+      exact (hKComplement (hBK (hB'B hb))).1
+    have hzeroB' : 0 ∉ B' := by simp [B']
+    have hsplit' : DeletionSplitsIntoComplement A B' :=
+      hsplit.mono hB'B
+    obtain ⟨D, hDB', hD, hthree⟩ :=
+      exists_infiniteDeletion_threeBasis_of_zero_splittingReservoir
+        hbasis hzeroA hzeroB' hB'A hB' hsplit'
+    exact ⟨D, hDB'.trans hB'A, hD, hthree⟩
+  · obtain ⟨Z, hZK, hZ, _hzero, hnormalZ⟩ := hatomic
+    obtain ⟨T, hcross⟩ :=
+      zeroAtomReservoirs_have_eventual_crossLocalDirectRepairs
+        hbasis hnormal hnormalZ
+    let P : Set L := {b | center b ∈ Z}
+    have hP : P.Infinite := by
+      apply Set.not_finite.mp
+      intro hPfinite
+      have himageFinite : (center '' P).Finite :=
+        hPfinite.image center
+      apply hZ
+      apply himageFinite.subset
+      intro z hzZ
+      obtain ⟨b, hbcenter⟩ := hZK hzZ
+      refine ⟨b, ?_, hbcenter⟩
+      change center b ∈ Z
+      rw [hbcenter]
+      exact hzZ
+    let endpoints : Set ℕ := Subtype.val '' P
+    have hendpointInfinite : endpoints.Infinite := by
+      apply (Set.infinite_image_iff
+        (Set.injOn_of_injective Subtype.val_injective)).mpr
+      exact hP
+    obtain ⟨K₀, hcenterLarge⟩ := hgrow T
+    obtain ⟨b, hbEndpoint, hbLarge⟩ :=
+      hendpointInfinite.exists_gt (max T K₀)
+    obtain ⟨bL, hbP, rfl⟩ := hbEndpoint
+    change center bL ∈ Z at hbP
+    have hbT : T ≤ bL.1 :=
+      (le_max_left T K₀).trans (Nat.le_of_lt hbLarge)
+    have hbK₀ : K₀ ≤ bL.1 :=
+      (le_max_right T K₀).trans (Nat.le_of_lt hbLarge)
+    have hcenterT : T ≤ center bL :=
+      hcenterLarge bL hbK₀
+    obtain ⟨G, hGR, hGpair⟩ :=
+      hcross bL.1 (hLB₀ bL.2) hbT
+        (center bL) hbP hcenterT
+    have hbCrossingEndpoint :
+        bL.1 ∈ crossingAtomEndpoints A B₀ (target bL) := by
+      rw [(htarget bL).2.1]
+      simp
+    have htargetEq : bL.1 + center bL = target bL := by
+      exact crossingAtomEndpoint_sum hbCrossingEndpoint
+    rw [htargetEq] at hGR
+    have hGsingle : Disjoint (G : Set ℕ) ({bL.1} : Set ℕ) := by
+      rw [Set.disjoint_left] at hGpair ⊢
+      intro x hxG hxb
+      have hxb' : x = bL.1 := by simpa using hxb
+      subst x
+      exact hGpair hxG (by simp)
+    exact (((htarget bL).2.2.1 G hGR) hGsingle).elim
+
 /-- Feed the fresh complement-center reservoir back into the original
 splittable-deletion dichotomy.  Thus the private-singleton branch either
 already produces an infinite set of centers whose elements split outside
@@ -14073,11 +14645,11 @@ theorem HasInfinitePrivateSingletonCrossingEndpoints.counterexample_forces_disjo
   · exact hatomic
 
 /-- Sharp one-scale certificate reduction on the normalized repaired
-reservoir.  Both small endpoint alternatives now migrate across the color
-boundary to a new repaired zero-atomic reservoir: private endpoints use
-their infinite center range, while the exact-three case uses either its
-center range or the repair vertices of its fixed-center fiber.  Therefore
-only the cofinally huge certificate branch remains on the original side. -/
+reservoir.  The private-singleton alternative is now impossible: its aligned
+endpoint/center pairs contradict the cross-local repair theorem.  The
+exact-three alternative migrates across the color boundary to a repaired
+zero-atomic reservoir, so only the cofinally huge certificate branch remains
+on the original side. -/
 theorem minimalCrossingEndpointCertificates_huge_or_disjointRepairedZeroAtoms_on_subreservoir
     {A B₀ B₁ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -14112,9 +14684,10 @@ theorem minimalCrossingEndpointCertificates_huge_or_disjointRepairedZeroAtoms_on
       hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
         hB₁B₀ P₁ hcore hcellCard hk
   · exact Or.inl hhuge
-  · exact Or.inr <|
-      hprivate.counterexample_forces_disjointRepairedZeroAtoms
-        hbasis hzeroA hB₀A hcounter
+  · obtain ⟨D, hDA, hD, hthree⟩ :=
+      hprivate.exists_infiniteDeletion_threeBasis
+        hbasis hzeroA hB₀A hnormal
+    exact (hcounter D hDA hD hthree).elim
   · exact Or.inr <|
       hthree.counterexample_forces_repairedZeroAtoms_in_complement
         hbasis hzeroA hzeroB₀ hB₀A hB₁B₀
