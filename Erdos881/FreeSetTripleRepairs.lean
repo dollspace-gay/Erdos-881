@@ -6711,6 +6711,82 @@ structure SeparatedTraceClauseDataAlong
     ((clause.leftSupport : Set ℕ) ∩ C)
     ((clause.rightSupport : Set ℕ) ∩ C)
 
+/-- Unified narrow clause data for a binary partition which may extend
+outside `C`.  A clause either marks two different cells, as before, or is a
+unary clause represented by the same external endpoint on both sides. -/
+structure ExternalNarrowTraceClauseData
+    (R : SupportFamily) (C K : Set ℕ) (D : Finset ℕ)
+    (cell : ℕ → Finset ℕ) (q : ℕ) where
+  leftSupport : Finset ℕ
+  left_mem : leftSupport ∈ R q
+  left_disjoint : Disjoint leftSupport D
+  rightSupport : Finset ℕ
+  right_mem : rightSupport ∈ R q
+  right_disjoint : Disjoint rightSupport D
+  reservoir_traces_disjoint : Disjoint
+    ((leftSupport : Set ℕ) ∩ C)
+    ((rightSupport : Set ℕ) ∩ C)
+  leftCell : ℕ
+  rightCell : ℕ
+  leftPoint : ℕ
+  rightPoint : ℕ
+  leftPoint_mem : leftPoint ∈ cell leftCell
+  rightPoint_mem : rightPoint ∈ cell rightCell
+  left_trace : ((leftSupport : Set ℕ) ∩ K) = {leftPoint}
+  right_trace : ((rightSupport : Set ℕ) ∩ K) = {rightPoint}
+  separated_or_commonExternal :
+    leftCell ≠ rightCell ∨
+      (leftCell = rightCell ∧ leftPoint = rightPoint ∧ leftPoint ∉ C)
+
+/-- Either narrow external trace shape supplies the unified clause data. -/
+theorem externalNarrowTraceClauseData_nonempty
+    {R : SupportFamily} {C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (h : HasSeparatedSingletonTwoRepairTracesAlongAt
+        R C K D cell q ∨
+      HasCommonExternalSingletonTwoRepairTracesAlongAt
+        R C K D cell q) :
+    Nonempty (ExternalNarrowTraceClauseData R C K D cell q) := by
+  rcases h with hsep | hcommon
+  · obtain ⟨E, hER, hED, F, hFR, hFD, hEFC,
+        i, j, x, y, hij, hxi, hyj, hEtrace, hFtrace⟩ := hsep
+    exact ⟨{
+      leftSupport := E
+      left_mem := hER
+      left_disjoint := hED
+      rightSupport := F
+      right_mem := hFR
+      right_disjoint := hFD
+      reservoir_traces_disjoint := hEFC
+      leftCell := i
+      rightCell := j
+      leftPoint := x
+      rightPoint := y
+      leftPoint_mem := hxi
+      rightPoint_mem := hyj
+      left_trace := hEtrace
+      right_trace := hFtrace
+      separated_or_commonExternal := Or.inl hij }⟩
+  · obtain ⟨E, hER, hED, F, hFR, hFD, hEFC,
+        i, x, hxi, hxC, hEtrace, hFtrace⟩ := hcommon
+    exact ⟨{
+      leftSupport := E
+      left_mem := hER
+      left_disjoint := hED
+      rightSupport := F
+      right_mem := hFR
+      right_disjoint := hFD
+      reservoir_traces_disjoint := hEFC
+      leftCell := i
+      rightCell := i
+      leftPoint := x
+      rightPoint := x
+      leftPoint_mem := hxi
+      rightPoint_mem := hxi
+      left_trace := hEtrace
+      right_trace := hFtrace
+      separated_or_commonExternal := Or.inr ⟨rfl, rfl, hxC⟩ }⟩
+
 /-- Arithmetic and recurrent-extension labels attached to one separated
 binary certificate clause on a fully critical reservoir.  Each of the two
 marked literals is a recurrently bad one-point extension of the same good
