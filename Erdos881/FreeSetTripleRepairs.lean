@@ -667,6 +667,123 @@ theorem not_pairwiseOrderThreeDestroyers_of_zeroAtoms
         (hnormal y hyH.1) haA haPos hay⟩
   exact hyx (hexceptions hyException hxException)
 
+/-- A two-point order-three destroyer at `x + y` forces at least one late
+backward translate by a fixed anchor `a ∈ A` to lie in `A`.  This is the
+pointwise, two-reservoir form of the destroyer-clique argument above. -/
+theorem orderThreePairSumDestroyer_forces_backwardTranslate
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    {a : ℕ} (haA : a ∈ A) :
+    ∃ T, ∀ x y, T ≤ x → T ≤ y →
+      DestroysAt (additiveSupportFamily A 3)
+        ((({x, y} : Finset ℕ) : Set ℕ)) (x + y) →
+      x - a ∈ A ∨ y - a ∈ A := by
+  obtain ⟨N, hN⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  refine ⟨N + a + 1, ?_⟩
+  intro x y hxT hyT hdestroy
+  let n := x + y - a
+  have haX : a < x := by omega
+  have haY : a < y := by omega
+  have hnN : N ≤ n := by
+    dsimp only [n]
+    omega
+  obtain ⟨E, hER, _hEempty⟩ := hN n hnN
+  have hGR : insert a E ∈ additiveSupportFamily A 3 (x + y) := by
+    have hlift := insert_mem_additiveSupportFamily_succ haA hER
+    have hsum : a + n = x + y := by
+      dsimp only [n]
+      omega
+    simpa [hsum] using hlift
+  have hhit := hdestroy (insert a E) hGR
+  obtain ⟨z, hzG, hzPair⟩ := Set.not_disjoint_iff.mp hhit
+  have hzG' : z = a ∨ z ∈ E := by
+    simpa using hzG
+  have hzPair' : z = x ∨ z = y := by
+    simpa using hzPair
+  have hzE : z ∈ E := by
+    rcases hzG' with rfl | hzE
+    · rcases hzPair' with hax | hay
+      · exact (Nat.ne_of_lt haX hax).elim
+      · exact (Nat.ne_of_lt haY hay).elim
+    · exact hzE
+  rcases hzPair' with hzx | hzy
+  · right
+    have hxE : x ∈ E := hzx ▸ hzE
+    have hxle : x ≤ n := by
+      dsimp only [n]
+      omega
+    have hEq :=
+      additiveSupportFamily_two_eq_pairSupport_of_mem hER hxE
+    have hcompE : n - x ∈ E := by
+      rw [hEq]
+      simp [pairSupport]
+    have hcompA := additiveSupportFamily_supportsIn A 2 n E hER
+      (n - x) hcompE
+    have hcomp : n - x = y - a := by
+      dsimp only [n]
+      omega
+    exact hcomp ▸ hcompA
+  · left
+    have hyE : y ∈ E := hzy ▸ hzE
+    have hyle : y ≤ n := by
+      dsimp only [n]
+      omega
+    have hEq :=
+      additiveSupportFamily_two_eq_pairSupport_of_mem hER hyE
+    have hcompE : n - y ∈ E := by
+      rw [hEq]
+      simp [pairSupport]
+    have hcompA := additiveSupportFamily_supportsIn A 2 n E hER
+      (n - y) hcompE
+    have hcomp : n - y = x - a := by
+      dsimp only [n]
+      omega
+    exact hcomp ▸ hcompA
+
+/-- Two zero-atomic reservoirs have eventual local direct repairs across
+the color boundary.  A cross pair which destroyed every triple support
+would force one of the backward translates supplied by the preceding lemma,
+contradicting zero-atomicity on that side. -/
+theorem zeroAtomReservoirs_have_eventual_crossLocalDirectRepairs
+    {A B C : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hnormalB : ∀ x ∈ B,
+      ∀ E ∈ additiveSupportFamily A 2 x, E = {x, 0})
+    (hnormalC : ∀ y ∈ C,
+      ∀ E ∈ additiveSupportFamily A 2 y, E = {y, 0}) :
+    ∃ T, ∀ x ∈ B, T ≤ x → ∀ y ∈ C, T ≤ y →
+      ∃ G ∈ additiveSupportFamily A 3 (x + y),
+        Disjoint (G : Set ℕ)
+          ((({x, y} : Finset ℕ) : Set ℕ)) := by
+  obtain ⟨a, haA, haPos⟩ := hbasis.infinite.exists_gt 0
+  obtain ⟨T, hback⟩ :=
+    orderThreePairSumDestroyer_forces_backwardTranslate hbasis haA
+  refine ⟨max T (a + 1), ?_⟩
+  intro x hxB hxLarge y hyC hyLarge
+  have hxT : T ≤ x := (le_max_left T (a + 1)).trans hxLarge
+  have hyT : T ≤ y := (le_max_left T (a + 1)).trans hyLarge
+  have hax : a < x := by omega
+  have hay : a < y := by omega
+  apply not_destroysAt_iff.mp
+  intro hdestroy
+  obtain hxBack | hyBack := hback x y hxT hyT hdestroy
+  · exact (zeroAtom_forbids_positiveBackwardTranslate
+      (hnormalB x hxB) haA haPos hax) hxBack
+  · exact (zeroAtom_forbids_positiveBackwardTranslate
+      (hnormalC y hyC) haA haPos hay) hyBack
+
+/-- The common normalized reservoir package used in the two-reservoir
+endgame. -/
+def IsRepairedZeroAtomReservoir
+    (A B : Set ℕ) : Prop :=
+  B ⊆ A ∧ B.Infinite ∧ 0 ∉ B ∧
+    (∀ x ∈ B, ∀ E ∈ additiveSupportFamily A 2 x,
+      E = {x, 0}) ∧
+    HasDirectTripleRepairsForDeletedPairs A B ∧
+    ∀ x ∈ B, ∃ G ∈ additiveSupportFamily A 3 x,
+      Disjoint (G : Set ℕ) B
+
 /-- Only finitely many zero-atoms can be singleton order-three destroyers at
 their doubles. -/
 theorem finite_singletonOrderThreeDoubleDestroyers_of_zeroAtoms
@@ -14094,6 +14211,59 @@ theorem counterexample_forces_two_disjointSelfRepairedZeroAtomReservoirs
   exact ⟨B₀, Z, hB₀A, hB₀, hzeroB₀, hnormal,
     hrepairs, hself, hZComplement, hZ, hZnormal,
     hZrepairs, hZself⟩
+
+/-- Packaged two-reservoir endgame.  After removing the possible zero from
+the complementary reservoir, a counterexample supplies two genuinely
+disjoint repaired zero-atomic reservoirs.  Their sufficiently late cross
+pairs all have endpoint-avoiding local triple repairs. -/
+theorem counterexample_forces_disjointRepairedZeroAtomReservoirs_with_crossRepairs
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ D, D ⊆ A → D.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ D) 3) :
+    ∃ B C, IsRepairedZeroAtomReservoir A B ∧
+      IsRepairedZeroAtomReservoir A C ∧
+      Disjoint B C ∧
+      ∃ T, ∀ b ∈ B, T ≤ b → ∀ c ∈ C, T ≤ c →
+        ∃ G ∈ additiveSupportFamily A 3 (b + c),
+          Disjoint (G : Set ℕ)
+            ((({b, c} : Finset ℕ) : Set ℕ)) := by
+  obtain ⟨B, Z, hBA, hB, hzeroB, hnormalB,
+      hrepairsB, hselfB, hZComplement, hZ, hnormalZ,
+      hrepairsZ, hselfZ⟩ :=
+    counterexample_forces_two_disjointSelfRepairedZeroAtomReservoirs
+      hbasis hzeroA hcounter
+  let C : Set ℕ := Z \ {0}
+  have hCZ : C ⊆ Z := Set.diff_subset
+  have hCA : C ⊆ A := by
+    intro c hc
+    exact (hZComplement (hCZ hc)).1
+  have hC : C.Infinite := hZ.diff (Set.finite_singleton 0)
+  have hzeroC : 0 ∉ C := by simp [C]
+  have hnormalC : ∀ c ∈ C,
+      ∀ E ∈ additiveSupportFamily A 2 c, E = {c, 0} := by
+    intro c hc
+    exact hnormalZ c (hCZ hc)
+  have hrepairsC : HasDirectTripleRepairsForDeletedPairs A C :=
+    hrepairsZ.mono hCZ
+  have hselfC : ∀ c ∈ C,
+      ∃ G ∈ additiveSupportFamily A 3 c,
+        Disjoint (G : Set ℕ) C := by
+    intro c hc
+    obtain ⟨G, hGR, hGZ⟩ := hselfZ c (hCZ hc)
+    exact ⟨G, hGR, hGZ.mono_right hCZ⟩
+  have hdisjoint : Disjoint B C := by
+    rw [Set.disjoint_left]
+    intro x hxB hxC
+    exact (hZComplement (hCZ hxC)).2 hxB
+  obtain ⟨T, hcross⟩ :=
+    zeroAtomReservoirs_have_eventual_crossLocalDirectRepairs
+      hbasis hnormalB hnormalC
+  exact ⟨B, C,
+    ⟨hBA, hB, hzeroB, hnormalB, hrepairsB, hselfB⟩,
+    ⟨hCA, hC, hzeroC, hnormalC, hrepairsC, hselfC⟩,
+    hdisjoint, T, hcross⟩
 
 /-- Global scalable form of the strengthened finite-certificate bridge.
 One fixed normalized, pair-repaired, self-repaired reservoir supplied by a
