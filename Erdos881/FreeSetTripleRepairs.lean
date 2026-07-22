@@ -10706,6 +10706,38 @@ theorem allPairSupports_crossing_of_no_twoRepairsOnReservoir
     rw [hsum] at hGR
     exact duplicateContradiction G hGR hGB
 
+/-- In the fully zero-atomic marked setting, the order-two representation
+family of a marked target is bounded by its minimal order-three core.  The
+no-two-repair datum forces every pair support to cross the reservoir; crossing
+supports are parametrized injectively by their reservoir endpoints, and the
+preceding core-capture lemma puts all of those endpoints in `S`. -/
+theorem criticalMarkedMinimalDestroyerData_pairSupport_card_le_core_card
+    {A C : Set ℕ} {D T S : Finset ℕ} {b q : ℕ}
+    (hzeroA : 0 ∈ A) (hzeroC : 0 ∉ C)
+    (hCA : C ⊆ A) (hbC : b ∈ C)
+    (hDC : (D : Set ℕ) ⊆ C)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A C)
+    (hdata : IsCriticalMarkedMinimalDestroyerData
+      A C D b q T S) :
+    (additiveSupportFamily A 2 q).card ≤ S.card := by
+  have hprefixC : ((insert b D : Finset ℕ) : Set ℕ) ⊆ C := by
+    intro x hx
+    rcases Finset.mem_insert.mp (Finset.mem_coe.mp hx) with rfl | hxD
+    · exact hbC
+    · exact hDC (Finset.mem_coe.mpr hxD)
+  have hcross : ∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) C ∧ ¬ (E : Set ℕ) ⊆ C :=
+    allPairSupports_crossing_of_no_twoRepairsOnReservoir
+      hzeroA hzeroC hprefixC hrepairs hdata.2.1
+  have hendpointSub : crossingAtomEndpoints A C q ⊆ S := by
+    intro x hx
+    exact Finset.mem_coe.mp
+      (criticalMarkedMinimalDestroyerData_crossingEndpoints_subset_core
+        hzeroA hzeroC hCA hbC hDC hdata
+          (Finset.mem_coe.mpr hx))
+  rw [card_pairSupports_eq_card_crossingAtomEndpoints hCA hcross]
+  exact Finset.card_le_card hendpointSub
+
 /-- If the deletion reservoir `C` is a thinning of a larger repaired
 reservoir `B`, failure of two repairs on `C` has a stronger consequence:
 every pair support meets `C`, but cannot be contained even in `B`.  Thus its
@@ -21373,12 +21405,14 @@ theorem counterexample_forces_zeroAtomicMinimalRecurrentPrefix
       (∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
         E = {x, 0}) ∧
       HasDirectTripleRepairsForDeletedPairs A C ∧
+      (∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) C) ∧
       D.Nonempty ∧ IsRecurrentNoTwoRepairPrefix A C D ∧
       ∀ d ∈ D,
         ¬ IsRecurrentNoTwoRepairPrefix A C (D.erase d) := by
   obtain ⟨B, hBA, hB, hzeroB, hnormalB, hrepairsB,
-      _hcrossing⟩ :=
-    counterexample_forces_zeroAtomicCrossingReservoir
+      hselfB, _hcrossing⟩ :=
+    counterexample_forces_repairedCrossingReservoir
       hbasis hzeroA hcounter
   obtain ⟨_F, C, D, _hCeq, hCB, hC, hD,
       hrec, hminimal⟩ :=
@@ -21387,7 +21421,117 @@ theorem counterexample_forces_zeroAtomicMinimalRecurrentPrefix
   exact ⟨C, D, hCB.trans hBA, hC,
     fun hzeroC => hzeroB (hCB hzeroC),
     fun x hx E hER => hnormalB x (hCB hx) E hER,
-    hrepairsB.mono hCB, hD, hrec, hminimal⟩
+    hrepairsB.mono hCB,
+    fun x hx => by
+      obtain ⟨G, hGR, hGB⟩ := hselfB x (hCB hx)
+      exact ⟨G, hGR, hGB.mono_right hCB⟩,
+    hD, hrec, hminimal⟩
+
+/-- Infinitely many singleton marked cores already solve the deletion
+problem.  Target injectivity lets us discard the finitely many targets below
+the order-two threshold.  Thereafter the no-two-repair datum makes every
+pair support cross the zero-atom reservoir, core capture makes the unique
+crossing endpoint the marked point, and the singleton core itself destroys
+the target.  This is exactly the private-singleton endpoint configuration. -/
+theorem infinite_singletonCriticalMarkedCores_give_deletion
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {target : ℕ → ℕ} {moving core : ℕ → Finset ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A) (hzeroC : 0 ∉ C)
+    (hCA : C ⊆ A) (hKC : K ⊆ C)
+    (hnormal : ∀ x ∈ C,
+      ∀ E ∈ additiveSupportFamily A 2 x, E = {x, 0})
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A C)
+    (hDC : (D : Set ℕ) ⊆ C)
+    (htargetInj : Set.InjOn target K)
+    (hdata : ∀ b ∈ K,
+      IsCriticalMarkedMinimalDestroyerData
+        A C D b (target b) (moving b) (core b))
+    (hsingleton : {b | b ∈ K ∧ (core b).card = 1}.Infinite) :
+    ∃ X, X ⊆ A ∧ X.Infinite ∧
+      IsExactTupleAsymptoticBasis (A \ X) 3 := by
+  classical
+  let Singleton : Set ℕ := {b | b ∈ K ∧ (core b).card = 1}
+  have hSingleton : Singleton.Infinite := by
+    simpa [Singleton] using hsingleton
+  obtain ⟨N, hN⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  let Low : Set ℕ := {b | b ∈ Singleton ∧ target b < N}
+  have hLow : Low.Finite := by
+    apply Set.Finite.of_finite_image (f := target)
+    · apply (Set.finite_Iio N).subset
+      rintro q ⟨b, hbLow, rfl⟩
+      exact hbLow.2
+    · exact htargetInj.mono (fun _ hb => hb.1.1)
+  let L : Set ℕ := Singleton \ Low
+  have hL : L.Infinite := hSingleton.diff hLow
+  have hLK : L ⊆ K := fun _ hb => hb.1.1
+  have hLC : L ⊆ C := hLK.trans hKC
+  have htargetLarge : ∀ b ∈ L, N ≤ target b := by
+    intro b hb
+    by_contra hnot
+    exact hb.2 ⟨hb.1, Nat.lt_of_not_ge hnot⟩
+  have hprivate : HasInfinitePrivateSingletonCrossingEndpoints A C := by
+    refine ⟨L, hLC, hL, ?_⟩
+    intro b hbL
+    have hbK := hLK hbL
+    have hcoreCard : (core b).card = 1 := hbL.1.2
+    obtain ⟨x, hcoreEq⟩ := Finset.card_eq_one.mp hcoreCard
+    have hbCore : b ∈ core b :=
+      (hdata b hbK).2.2.2.2.2.2.2.2.1
+    have hbx : b = x := by
+      rw [hcoreEq] at hbCore
+      simpa using hbCore
+    have hxb : x = b := hbx.symm
+    subst x
+    have hprefixC : ((insert b D : Finset ℕ) : Set ℕ) ⊆ C := by
+      intro z hz
+      rcases Finset.mem_insert.mp (Finset.mem_coe.mp hz) with rfl | hzD
+      · exact hKC hbK
+      · exact hDC (Finset.mem_coe.mpr hzD)
+    have hcross : ∀ E ∈ additiveSupportFamily A 2 (target b),
+        ¬ Disjoint (E : Set ℕ) C ∧ ¬ (E : Set ℕ) ⊆ C :=
+      allPairSupports_crossing_of_no_twoRepairsOnReservoir
+        hzeroA hzeroC hprefixC hrepairs (hdata b hbK).2.1
+    obtain ⟨E, hER, _hEempty⟩ :=
+      hN (target b) (htargetLarge b hbL)
+    obtain ⟨z, hzC, c, hcOutside, hzc, _hEeq⟩ :=
+      exists_endpoints_of_crossingPairSupport hER
+        (hcross E hER).1 (hcross E hER).2
+    have hzle : z ≤ target b := by omega
+    have hsub : target b - z = c := by omega
+    have hzEndpoint : z ∈ crossingAtomEndpoints A C (target b) :=
+      mem_crossingAtomEndpoints_iff.mpr
+        ⟨hzle, hzC, hsub ▸ hcOutside⟩
+    have hzCore :=
+      criticalMarkedMinimalDestroyerData_crossingEndpoints_subset_core
+        hzeroA hzeroC hCA (hKC hbK) hDC (hdata b hbK)
+          (Finset.mem_coe.mpr hzEndpoint)
+    have hzb : z = b := by
+      rw [hcoreEq] at hzCore
+      simpa using hzCore
+    have hbEndpoint : b ∈ crossingAtomEndpoints A C (target b) :=
+      hzb ▸ hzEndpoint
+    have hendpointEq : crossingAtomEndpoints A C (target b) = {b} := by
+      apply Finset.eq_singleton_iff_unique_mem.mpr
+      refine ⟨hbEndpoint, ?_⟩
+      intro y hy
+      have hyCore :=
+        criticalMarkedMinimalDestroyerData_crossingEndpoints_subset_core
+          hzeroA hzeroC hCA (hKC hbK) hDC (hdata b hbK)
+            (Finset.mem_coe.mpr hy)
+      rw [hcoreEq] at hyCore
+      simpa using hyCore
+    obtain ⟨_hbTarget, _hno, _hmovingC, _hmovingDisjoint,
+        _hmovingNonempty, _hmovingCard, _hprefixDestroy,
+        _hcoreSub, _hbCore, hminimalCore, _htype⟩ :=
+      hdata b hbK
+    have hdestroy : DestroysAt (additiveSupportFamily A 3)
+        ({b} : Set ℕ) (target b) := by
+      simpa [hcoreEq] using hminimalCore.1
+    exact ⟨target b, hcross, hendpointEq, hdestroy⟩
+  exact hprivate.exists_infiniteDeletion_threeBasis
+    hbasis hzeroA hCA hnormal
 
 /-- Concrete nonempty-core consequence of the hereditary two-repair
 obstruction.  The abstract private-endpoint closure hypothesis used earlier
@@ -24567,6 +24711,8 @@ theorem counterexample_forces_uniformFullyZeroAtomicMarkedMinimalDestroyerSunflo
       (∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
         E = {x, 0}) ∧
       HasDirectTripleRepairsForDeletedPairs A C ∧
+      (∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) C) ∧
       K ⊆ C ∧ K.Infinite ∧
       ∃ D R : Finset ℕ, ∃ target : ℕ → ℕ,
       ∃ moving core : ℕ → Finset ℕ,
@@ -24581,6 +24727,12 @@ theorem counterexample_forces_uniformFullyZeroAtomicMarkedMinimalDestroyerSunflo
           (crossingAtomEndpoints A C (target b) : Set ℕ) ⊆
             (core b : Set ℕ)) ∧
         (∀ b ∈ K, (core b : Set ℕ) ∩ K = {b}) ∧
+        (∀ b ∈ K, target b ∉ A) ∧
+        {b | b ∈ K ∧ (core b).card = 1}.Finite ∧
+        (∀ b ∈ K,
+          (additiveSupportFamily A 2 (target b)).card ≤
+            (core b).card) ∧
+        (∀ b ∈ K, (core b).card ≤ D.card + 4) ∧
         (target '' K).Infinite ∧
         Set.InjOn target K ∧
         (∀ b ∈ K, b ∈ core b \ R) ∧
@@ -24605,7 +24757,7 @@ theorem counterexample_forces_uniformFullyZeroAtomicMarkedMinimalDestroyerSunflo
             Disjoint (certificateRepair n) D ∧
             Disjoint (certificateRepair n : Set ℕ) K := by
   obtain ⟨C, D₀, hCA, hC, hzeroC, hnormalC,
-      hrepairsC, hD₀, hrec, hminimal⟩ :=
+      hrepairsC, hselfC, hD₀, hrec, hminimal⟩ :=
     counterexample_forces_zeroAtomicMinimalRecurrentPrefix
       hbasis hzeroA hcounter
   obtain ⟨K, hKC, _hKA, hK, _hnormalK, D, R, target,
@@ -24630,9 +24782,74 @@ theorem counterexample_forces_uniformFullyZeroAtomicMarkedMinimalDestroyerSunflo
       (core b : Set ℕ) ∩ K = {b} :=
     markedDeltaSystem_core_inter_indexSet_eq_singleton
       hmarked (fun b hb d hd hbd => (hdelta b hb d hd hbd).1)
-  exact ⟨C, K, hCA, hC, hzeroC, hnormalC, hrepairsC,
+  have htargetExternal : ∀ b ∈ K, target b ∉ A := by
+    intro b hb htargetA
+    by_cases htargetC : target b ∈ C
+    · obtain ⟨G, hGR, hGC⟩ := hselfC (target b) htargetC
+      have hGcore : Disjoint (G : Set ℕ) (core b : Set ℕ) :=
+        hGC.mono_right (hcoreC b hb)
+      obtain ⟨_hbTarget, _hno, _hmovingC, _hmovingDisjoint,
+          _hmovingNonempty, _hmovingCard, _hprefixDestroy,
+          _hcoreSub, _hbCore, hminimalCore, _htype⟩ :=
+        hdata b hb
+      have hcoreDestroy : DestroysAt
+          (additiveSupportFamily A 3) (core b : Set ℕ) (target b) :=
+        hminimalCore.1
+      exact (hcoreDestroy G hGR) hGcore
+    · let E : Finset ℕ := pairSupport (target b) 0
+      have hER : E ∈ additiveSupportFamily A 2 (target b) := by
+        exact pairSupport_mem_additiveSupportFamily
+          (Nat.zero_le (target b)) hzeroA (by simpa using htargetA)
+      have hEC : Disjoint (E : Set ℕ) C := by
+        rw [Set.disjoint_left]
+        intro x hxE hxC
+        have hxCases : x = 0 ∨ x = target b := by
+          simpa [E, pairSupport] using hxE
+        rcases hxCases with rfl | rfl
+        · exact hzeroC hxC
+        · exact htargetC hxC
+      have hprefixC :
+          ((insert b D : Finset ℕ) : Set ℕ) ⊆ C := by
+        intro x hx
+        rcases Finset.mem_insert.mp (Finset.mem_coe.mp hx) with rfl | hxD
+        · exact hKC hb
+        · exact hDC (Finset.mem_coe.mpr hxD)
+      have hcross :=
+        allPairSupports_crossing_of_no_twoRepairsOnReservoir
+          hzeroA hzeroC hprefixC hrepairsC (hdata b hb).2.1
+      exact (hcross E hER).1 hEC
+  have hsingletonFinite :
+      {b | b ∈ K ∧ (core b).card = 1}.Finite := by
+    apply Set.not_infinite.mp
+    intro hsingleton
+    obtain ⟨X, hXA, hX, hthree⟩ :=
+      infinite_singletonCriticalMarkedCores_give_deletion
+        hbasis hzeroA hzeroC hCA hKC hnormalC hrepairsC
+          hDC htargetInj hdata hsingleton
+    exact hcounter X hXA hX hthree
+  have hpairBound : ∀ b ∈ K,
+      (additiveSupportFamily A 2 (target b)).card ≤
+        (core b).card := by
+    intro b hb
+    exact criticalMarkedMinimalDestroyerData_pairSupport_card_le_core_card
+      hzeroA hzeroC hCA (hKC hb) hDC hrepairsC (hdata b hb)
+  have hcoreBound : ∀ b ∈ K, (core b).card ≤ D.card + 4 := by
+    intro b hb
+    rcases hdata b hb with ⟨_hbTarget, _hno, _hmovingC,
+      _hmovingDisjoint, _hmovingNonempty, hmovingCard,
+      _hprefixDestroy, hcoreSub, _hbCore, _hminimal, _htype⟩
+    calc
+      (core b).card ≤ ((insert b D) ∪ moving b).card :=
+        Finset.card_le_card hcoreSub
+      _ ≤ (insert b D).card + (moving b).card :=
+        Finset.card_union_le _ _
+      _ ≤ (D.card + 1) + 3 :=
+        Nat.add_le_add (Finset.card_insert_le b D) hmovingCard
+      _ = D.card + 4 := by omega
+  exact ⟨C, K, hCA, hC, hzeroC, hnormalC, hrepairsC, hselfC,
     hKC, hK, D, R, target, moving, core, hDC, hgood,
     hdata, hcoreC, hcrossCore, hcoreK,
+    htargetExternal, hsingletonFinite, hpairBound, hcoreBound,
     htargetK, htargetInj, hmarked,
     hdelta, htype, J, certificateTarget, atom,
     certificateRepair, hJ, hKimage, hatomInj, hcertificate⟩
