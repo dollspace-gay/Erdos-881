@@ -3041,6 +3041,35 @@ theorem exists_infiniteDeletion_succBasis_of_twoRepairsDisjointOnReservoir
       hCunbounded hrepairs
   exact ⟨B, hBC, hB, halong.of_eventually_mem hcofinite⟩
 
+/-- Adaptive good-prefix form of the reservoir-relative deletion bridge.
+Instead of requiring two repairs after every finite prefix, it suffices to
+start from one eventually good prefix and to have arbitrarily late fresh
+extensions which remain eventually good. -/
+theorem exists_infiniteDeletion_succBasis_of_extendableTwoRepairPrefixes
+    {A C : Set ℕ} {k : ℕ} {D₀ : Finset ℕ}
+    (hD₀C : (D₀ : Set ℕ) ⊆ C)
+    (hD₀good : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A (k + 1)) C Set.univ D₀)
+    (hextend : ∀ D : Finset ℕ, (D : Set ℕ) ⊆ C →
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A (k + 1)) C Set.univ D →
+      ∀ T, ∃ b ∈ C, b ∉ D ∧ T ≤ b ∧
+        HasEventuallyTwoRepairsAtPrefixAlong
+          (additiveSupportFamily A (k + 1)) C Set.univ
+            (insert b D)) :
+    ∃ B, B ⊆ C ∧ B.Infinite ∧
+      IsExactTupleAsymptoticBasis (A \ B) (k + 1) := by
+  obtain ⟨B, hBC, hB, hsurvive⟩ :=
+    sparseDeletion_of_extendableTwoRepairPrefixesAlong
+      (C := C) (S := Set.univ)
+      (R := additiveSupportFamily A (k + 1))
+      (additiveSupportFamily_supportsBounded A (k + 1))
+      hD₀C hD₀good hextend
+  refine ⟨B, hBC, hB, ?_⟩
+  apply hasEventuallySurvivingSupport_additive_iff.mp
+  obtain ⟨N, hN⟩ := hsurvive
+  exact ⟨N, fun n hn => hN n hn (Set.mem_univ n)⟩
+
 /- Finite retained-core form.  If the reservoir-relative two-repair property
 holds on `A \ F`, then the infinite deletion can be chosen to avoid `F`
 entirely. -/

@@ -4344,6 +4344,70 @@ theorem minimalNoTwoRepairPrefix_has_uniqueHitAndAvoidingRepair
     exact ⟨E', hE'R, unique_hit hdD hE'erase hdE',
       E, hER, disjoint_full hdD hEerase hdE, hEE'.symm⟩
 
+/-- One-point version of the minimal-prefix exchange.  If two repairs avoid
+`D` but no two repairs avoid `insert b D`, then exactly one of the former
+repairs contains the fresh point `b`.  Orienting the pair gives a support
+which hits the enlarged prefix only at `b`, together with a companion which
+avoids it completely. -/
+theorem onePointNoTwoRepairExtension_has_markedUniqueHit
+    {A C : Set ℕ} {D : Finset ℕ} {b q : ℕ}
+    (hDC : (D : Set ℕ) ⊆ C)
+    (hbC : b ∈ C) (hbD : b ∉ D)
+    (hno : ¬ ∃ E ∈ additiveSupportFamily A 3 q,
+      Disjoint E (insert b D) ∧
+        ∃ E' ∈ additiveSupportFamily A 3 q,
+          Disjoint E' (insert b D) ∧
+            Disjoint ((E : Set ℕ) ∩ C)
+              ((E' : Set ℕ) ∩ C))
+    (hpair : ∃ E ∈ additiveSupportFamily A 3 q,
+      Disjoint E D ∧
+        ∃ E' ∈ additiveSupportFamily A 3 q,
+          Disjoint E' D ∧
+            Disjoint ((E : Set ℕ) ∩ C)
+              ((E' : Set ℕ) ∩ C)) :
+    ∃ U ∈ additiveSupportFamily A 3 q,
+      U ∩ insert b D = {b} ∧
+        ∃ V ∈ additiveSupportFamily A 3 q,
+          Disjoint V (insert b D) ∧
+            Disjoint ((U : Set ℕ) ∩ C)
+              ((V : Set ℕ) ∩ C) := by
+  classical
+  have disjoint_insert : ∀ {G : Finset ℕ},
+      Disjoint G D → b ∉ G → Disjoint G (insert b D) := by
+    intro G hGD hbG
+    rw [Finset.disjoint_left]
+    intro x hxG hxInsert
+    rcases Finset.mem_insert.mp hxInsert with rfl | hxD
+    · exact hbG hxG
+    · exact Finset.disjoint_left.mp hGD hxG hxD
+  have unique_hit : ∀ {G : Finset ℕ},
+      Disjoint G D → b ∈ G → G ∩ insert b D = {b} := by
+    intro G hGD hbG
+    apply Finset.eq_singleton_iff_unique_mem.mpr
+    refine ⟨Finset.mem_inter.mpr
+      ⟨hbG, Finset.mem_insert_self _ _⟩, ?_⟩
+    intro x hx
+    obtain hxb | hxD := Finset.mem_insert.mp
+      (Finset.mem_inter.mp hx).2
+    · exact hxb
+    · exact (Finset.disjoint_left.mp hGD
+        (Finset.mem_inter.mp hx).1 hxD).elim
+  obtain ⟨E, hER, hED, E', hE'R, hE'D, hEE'⟩ := hpair
+  by_cases hbE : b ∈ E
+  · have hbE' : b ∉ E' := by
+      intro hbE'
+      exact Set.disjoint_left.mp hEE'
+        ⟨Finset.mem_coe.mpr hbE, hbC⟩
+        ⟨Finset.mem_coe.mpr hbE', hbC⟩
+    exact ⟨E, hER, unique_hit hED hbE,
+      E', hE'R, disjoint_insert hE'D hbE', hEE'⟩
+  · have hbE' : b ∈ E' := by
+      by_contra hbE'
+      exact hno ⟨E, hER, disjoint_insert hED hbE,
+        E', hE'R, disjoint_insert hE'D hbE', hEE'⟩
+    exact ⟨E', hE'R, unique_hit hE'D hbE',
+      E, hER, disjoint_insert hED hbE, hEE'.symm⟩
+
 /-- Pointwise failure of the reservoir-relative two-repair condition after
 one finite deletion prefix. -/
 def NoTwoRepairsOnDeletionReservoirAt
@@ -4361,6 +4425,32 @@ def IsRecurrentNoTwoRepairPrefix
   (D : Set ℕ) ⊆ C ∧
     ∀ N, ∃ q, N ≤ q ∧
       NoTwoRepairsOnDeletionReservoirAt A C D q
+
+/-- For a prefix inside the reservoir, recurrent failure is exactly the
+negation of being eventually good. -/
+theorem recurrentNoTwoRepairPrefix_iff_not_eventuallyGood
+    {A C : Set ℕ} {D : Finset ℕ}
+    (hDC : (D : Set ℕ) ⊆ C) :
+    IsRecurrentNoTwoRepairPrefix A C D ↔
+      ¬ HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D := by
+  classical
+  constructor
+  · intro hrec hgood
+    obtain ⟨T, hrepair⟩ := hgood
+    obtain ⟨q, hqT, hno⟩ := hrec.2 T
+    exact hno (hrepair q hqT (Set.mem_univ q))
+  · intro hnotGood
+    refine ⟨hDC, ?_⟩
+    intro N
+    by_contra hnone
+    push Not at hnone
+    apply hnotGood
+    refine ⟨N, ?_⟩
+    intro q hqN _hqUniv
+    have hnotNo : ¬ NoTwoRepairsOnDeletionReservoirAt A C D q :=
+      hnone q hqN
+    simpa [NoTwoRepairsOnDeletionReservoirAt] using hnotNo
 
 /-- Failure of the sparse two-repair hypothesis has an inclusion-minimal
 recurrent finite prefix.  Minimality is taken inside one finite witness, so
@@ -4405,6 +4495,164 @@ theorem exists_inclusionMinimalRecurrentNoTwoRepairPrefix
     hcardMin (D.erase d) hEraseCandidate
   have hcardEq := Finset.card_erase_add_one hdD
   omega
+
+/-- Erasing any point of an inclusion-minimal recurrent prefix leaves an
+eventually good two-repair prefix. -/
+theorem minimalRecurrentNoTwoRepairPrefix_erase_eventuallyGood
+    {A C : Set ℕ} {D : Finset ℕ}
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D)
+    (hminimal : ∀ d ∈ D,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D.erase d)) :
+    ∀ d ∈ D,
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ (D.erase d) := by
+  classical
+  intro d hdD
+  have hEraseSubset : ((D.erase d : Finset ℕ) : Set ℕ) ⊆ C :=
+    fun x hx => hrec.1 (Finset.mem_erase.mp
+      (Finset.mem_coe.mp hx)).2
+  by_contra hnotGood
+  exact hminimal d hdD
+    ((recurrentNoTwoRepairPrefix_iff_not_eventuallyGood
+      hEraseSubset).mpr hnotGood)
+
+/-- If an eventually good prefix cannot be grown indefinitely, there is a
+critical good prefix all of whose sufficiently late fresh one-point
+extensions are recurrent obstructions.  Conversely, absence of such a
+critical prefix feeds the adaptive sparse-deletion theorem and completes the
+desired infinite deletion. -/
+theorem counterexample_forces_criticalGoodPrefix
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hD₀C : (D₀ : Set ℕ) ⊆ C)
+    (hD₀good : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D₀)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ D : Finset ℕ, (D : Set ℕ) ⊆ C ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      ∃ T, ∀ b, b ∈ C → b ∉ D → T ≤ b →
+        IsRecurrentNoTwoRepairPrefix A C (insert b D) := by
+  classical
+  by_contra hcritical
+  push Not at hcritical
+  have hextend : ∀ D : Finset ℕ, (D : Set ℕ) ⊆ C →
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D →
+      ∀ T, ∃ b ∈ C, b ∉ D ∧ T ≤ b ∧
+        HasEventuallyTwoRepairsAtPrefixAlong
+          (additiveSupportFamily A 3) C Set.univ (insert b D) := by
+    intro D hDC hgood T
+    obtain ⟨b, hbC, hbD, hbT, hnotRec⟩ :=
+      hcritical D hDC hgood T
+    refine ⟨b, hbC, hbD, hbT, ?_⟩
+    have hinsertC : (((insert b D : Finset ℕ) : Set ℕ)) ⊆ C := by
+      intro x hx
+      rcases Finset.mem_insert.mp (Finset.mem_coe.mp hx) with rfl | hxD
+      · exact hbC
+      · exact hDC hxD
+    by_contra hnotGood
+    exact hnotRec
+      ((recurrentNoTwoRepairPrefix_iff_not_eventuallyGood
+        hinsertC).mpr hnotGood)
+  obtain ⟨X, hXC, hX, hthree⟩ :=
+    exists_infiniteDeletion_succBasis_of_extendableTwoRepairPrefixes
+      (k := 2) hD₀C hD₀good hextend
+  exact (hcounter X (hXC.trans hCA) hX hthree).elim
+
+/-- A nonempty minimal recurrent trap therefore yields the sharp critical
+extension obstruction under the counterexample hypothesis: after one core
+point is retained, some eventually good prefix has every sufficiently late
+fresh extension recurrently bad. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_criticalExtensions
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ D : Finset ℕ, (D : Set ℕ) ⊆ C ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      ∃ T, ∀ b, b ∈ C → b ∉ D → T ≤ b →
+        IsRecurrentNoTwoRepairPrefix A C (insert b D) := by
+  obtain ⟨d, hdD₀⟩ := hD₀
+  have hseedC : (((D₀.erase d : Finset ℕ) : Set ℕ)) ⊆ C :=
+    fun x hx => hrec.1 (Finset.mem_erase.mp
+      (Finset.mem_coe.mp hx)).2
+  exact counterexample_forces_criticalGoodPrefix
+    hCA hseedC
+      (minimalRecurrentNoTwoRepairPrefix_erase_eventuallyGood
+        hrec hminimal d hdD₀)
+      hcounter
+
+/-- A critical one-point extension has marked unique-hit systems
+arbitrarily late.  Eventual goodness of the old prefix synchronizes with
+recurrent badness of the enlarged prefix simply by raising the bad target
+above the old repair threshold. -/
+theorem criticalGoodPrefix_has_late_markedUniqueHitSystems
+    {A C : Set ℕ} {D : Finset ℕ} {b : ℕ}
+    (hDC : (D : Set ℕ) ⊆ C)
+    (hbC : b ∈ C) (hbD : b ∉ D)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D)
+    (hbad : IsRecurrentNoTwoRepairPrefix A C (insert b D)) :
+    ∀ N, ∃ q, N ≤ q ∧
+      NoTwoRepairsOnDeletionReservoirAt A C (insert b D) q ∧
+      ∃ U ∈ additiveSupportFamily A 3 q,
+        U ∩ insert b D = {b} ∧
+          ∃ V ∈ additiveSupportFamily A 3 q,
+            Disjoint V (insert b D) ∧
+              Disjoint ((U : Set ℕ) ∩ C)
+                ((V : Set ℕ) ∩ C) := by
+  obtain ⟨T, hrepair⟩ := hgood
+  intro N
+  obtain ⟨q, hq, hno⟩ := hbad.2 (max N T)
+  have hqN : N ≤ q := (le_max_left N T).trans hq
+  have hqT : T ≤ q := (le_max_right N T).trans hq
+  have hpair := hrepair q hqT (Set.mem_univ q)
+  refine ⟨q, hqN, hno, ?_⟩
+  exact onePointNoTwoRepairExtension_has_markedUniqueHit
+    hDC hbC hbD
+      (by simpa [NoTwoRepairsOnDeletionReservoirAt] using hno)
+      hpair
+
+/-- Combined critical-family normal form.  Starting from any nonempty
+minimal recurrent trap in a counterexample, one reaches a fixed eventually
+good prefix `D` such that every sufficiently late fresh reservoir point `b`
+has arbitrarily late bad targets with a repair unique-hit at `b` and a
+reservoir-disjoint companion avoiding `insert b D`. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_criticalMarkedFamily
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ D : Finset ℕ, (D : Set ℕ) ⊆ C ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      ∃ T, ∀ b, b ∈ C → b ∉ D → T ≤ b →
+        ∀ N, ∃ q, N ≤ q ∧
+          NoTwoRepairsOnDeletionReservoirAt A C (insert b D) q ∧
+          ∃ U ∈ additiveSupportFamily A 3 q,
+            U ∩ insert b D = {b} ∧
+              ∃ V ∈ additiveSupportFamily A 3 q,
+                Disjoint V (insert b D) ∧
+                  Disjoint ((U : Set ℕ) ∩ C)
+                    ((V : Set ℕ) ∩ C) := by
+  obtain ⟨D, hDC, hgood, T, hcritical⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_counterexample_forces_criticalExtensions
+      hCA hrec hD₀ hminimal hcounter
+  refine ⟨D, hDC, hgood, T, ?_⟩
+  intro b hbC hbD hbT
+  exact criticalGoodPrefix_has_late_markedUniqueHitSystems
+    hDC hbC hbD hgood (hcritical b hbC hbD hbT)
 
 /-- At arbitrarily late targets of a minimal recurrent prefix, every core
 point simultaneously has a unique-hit support and a companion support which
@@ -4460,6 +4708,168 @@ theorem minimalRecurrentNoTwoRepairPrefix_has_late_uniqueHitSystems
   exact minimalNoTwoRepairPrefix_has_uniqueHitAndAvoidingRepair
     hrec.1 (by simpa [NoTwoRepairsOnDeletionReservoirAt] using hno)
       herase
+
+/-- The finite trace of a support on a possibly undecidable deletion
+reservoir. -/
+noncomputable def deletionReservoirTrace
+    (C : Set ℕ) (V : Finset ℕ) : Finset ℕ :=
+  @Finset.filter ℕ (fun x => x ∈ C) (Classical.decPred _) V
+
+@[simp] theorem mem_deletionReservoirTrace
+    {C : Set ℕ} {V : Finset ℕ} {x : ℕ} :
+    x ∈ deletionReservoirTrace C V ↔ x ∈ V ∧ x ∈ C := by
+  classical
+  simp [deletionReservoirTrace]
+
+/-- Once one support avoids the obstructing prefix, its trace on the
+deletion reservoir completes that prefix to a destroyer.  Indeed, any
+support avoiding the prefix and the trace would be a second repair disjoint
+from the chosen support on the reservoir. -/
+theorem prefix_union_reservoirTrace_destroys_of_noTwoRepairs
+    {A C : Set ℕ} {D V : Finset ℕ} {q : ℕ}
+    (hno : NoTwoRepairsOnDeletionReservoirAt A C D q)
+    (hVR : V ∈ additiveSupportFamily A 3 q)
+    (hVD : Disjoint V D) :
+    DestroysAt (additiveSupportFamily A 3)
+      ((((D ∪ deletionReservoirTrace C V : Finset ℕ) : Set ℕ))) q := by
+  classical
+  intro E hER hEunion
+  have hED : Disjoint E D := by
+    rw [Finset.disjoint_left]
+    intro x hxE hxD
+    exact Set.disjoint_left.mp hEunion
+      (Finset.mem_coe.mpr hxE)
+      (Finset.mem_coe.mpr (Finset.mem_union_left _ hxD))
+  have hEV :
+      Disjoint ((E : Set ℕ) ∩ C) ((V : Set ℕ) ∩ C) := by
+    rw [Set.disjoint_left]
+    intro x hxE hxV
+    have hxTrace : x ∈ deletionReservoirTrace C V :=
+      mem_deletionReservoirTrace.mpr
+        ⟨Finset.mem_coe.mp hxV.1, hxV.2⟩
+    exact Set.disjoint_left.mp hEunion hxE.1
+      (Finset.mem_coe.mpr (Finset.mem_union_right D hxTrace))
+  exact hno ⟨E, hER, hED, V, hVR, hVD, hEV⟩
+
+/-- The reservoir trace used in the preceding destroyer extension is
+nonempty.  Otherwise the chosen support could be paired with itself, giving
+two repairs whose reservoir traces are disjoint. -/
+theorem reservoirTrace_nonempty_of_noTwoRepairs
+    {A C : Set ℕ} {D V : Finset ℕ} {q : ℕ}
+    (hno : NoTwoRepairsOnDeletionReservoirAt A C D q)
+    (hVR : V ∈ additiveSupportFamily A 3 q)
+    (hVD : Disjoint V D) :
+    (deletionReservoirTrace C V).Nonempty := by
+  classical
+  by_contra hempty
+  rw [Finset.not_nonempty_iff_eq_empty] at hempty
+  apply hno
+  refine ⟨V, hVR, hVD, V, hVR, hVD, ?_⟩
+  rw [Set.disjoint_left]
+  intro x hx₁ hx₂
+  have hxTrace : x ∈ deletionReservoirTrace C V :=
+    mem_deletionReservoirTrace.mpr
+      ⟨Finset.mem_coe.mp hx₁.1, hx₁.2⟩
+  rw [hempty] at hxTrace
+  simpa using hxTrace
+
+/-- Every point of a minimal no-two-repair prefix lies in a genuine minimal
+destroyer obtained by adjoining at most three fresh reservoir vertices.  The
+unique-hit support at `d` avoids the moving trace paired with it, so any
+minimal subdestroyer of the extension is forced to retain `d`. -/
+theorem minimalNoTwoRepairPrefix_has_smallMinimalDestroyerThroughEachPoint
+    {A C : Set ℕ} {D : Finset ℕ} {q : ℕ}
+    (hno : NoTwoRepairsOnDeletionReservoirAt A C D q)
+    (hsystems : ∀ d ∈ D, ∃ U ∈ additiveSupportFamily A 3 q,
+      U ∩ D = {d} ∧
+        ∃ V ∈ additiveSupportFamily A 3 q,
+          Disjoint V D ∧
+            Disjoint ((U : Set ℕ) ∩ C)
+              ((V : Set ℕ) ∩ C)) :
+    ∀ d ∈ D, ∃ T S : Finset ℕ,
+      (∀ x ∈ T, x ∈ C) ∧
+      Disjoint T D ∧ T.Nonempty ∧ T.card ≤ 3 ∧
+      DestroysAt (additiveSupportFamily A 3)
+        ((((D ∪ T : Finset ℕ) : Set ℕ))) q ∧
+      S ⊆ D ∪ T ∧ d ∈ S ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A 3) S q := by
+  classical
+  intro d hdD
+  obtain ⟨U, hUR, hUhit, V, hVR, hVD, hUV⟩ :=
+    hsystems d hdD
+  let T : Finset ℕ := deletionReservoirTrace C V
+  have hTC : ∀ x ∈ T, x ∈ C := by
+    intro x hxT
+    exact (mem_deletionReservoirTrace.mp hxT).2
+  have hTD : Disjoint T D := by
+    rw [Finset.disjoint_left]
+    intro x hxT hxD
+    exact Finset.disjoint_left.mp hVD
+      (mem_deletionReservoirTrace.mp hxT).1 hxD
+  have hTnonempty : T.Nonempty := by
+    exact reservoirTrace_nonempty_of_noTwoRepairs hno hVR hVD
+  have hTcard : T.card ≤ 3 := by
+    calc
+      T.card ≤ V.card := by
+        simpa [T, deletionReservoirTrace] using
+          (Finset.card_filter_le V (fun x => x ∈ C))
+      _ ≤ 3 := additiveSupportFamily_cardAtMost A 3 q V hVR
+  have hdestroy : DestroysAt (additiveSupportFamily A 3)
+      ((((D ∪ T : Finset ℕ) : Set ℕ))) q := by
+    exact prefix_union_reservoirTrace_destroys_of_noTwoRepairs
+      hno hVR hVD
+  obtain ⟨S, hSsub, hSminimal⟩ :=
+    exists_inclusionMinimalDestroyer_subset hdestroy
+  have hdS : d ∈ S := by
+    by_contra hdS
+    have hUS : Disjoint (U : Set ℕ) (S : Set ℕ) := by
+      rw [Set.disjoint_left]
+      intro x hxU hxS
+      have hxUnion : x ∈ D ∪ T :=
+        hSsub (Finset.mem_coe.mp hxS)
+      rcases Finset.mem_union.mp hxUnion with hxD | hxT
+      · have hxInter : x ∈ U ∩ D :=
+          Finset.mem_inter.mpr
+            ⟨Finset.mem_coe.mp hxU, hxD⟩
+        rw [hUhit] at hxInter
+        have hxd : x = d := by simpa using hxInter
+        exact hdS (hxd ▸ Finset.mem_coe.mp hxS)
+      · have hxV : x ∈ V := (mem_deletionReservoirTrace.mp hxT).1
+        have hxC : x ∈ C := (mem_deletionReservoirTrace.mp hxT).2
+        exact Set.disjoint_left.mp hUV
+          ⟨hxU, hxC⟩
+          ⟨Finset.mem_coe.mpr hxV, hxC⟩
+    exact hSminimal.1 U hUR hUS
+  exact ⟨T, S, hTC, hTD, hTnonempty, hTcard,
+    hdestroy, hSsub, hdS, hSminimal⟩
+
+/-- Recurrent version of the small-extension normal form.  Arbitrarily late,
+every point of the fixed minimal core is carried by its own minimal
+order-three destroyer, whose moving part has between one and three reservoir
+vertices. -/
+theorem minimalRecurrentNoTwoRepairPrefix_has_late_smallMinimalDestroyers
+    {A C : Set ℕ} {D : Finset ℕ}
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D)
+    (hminimal : ∀ d ∈ D,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D.erase d)) :
+    ∀ N, ∃ q, N ≤ q ∧
+      NoTwoRepairsOnDeletionReservoirAt A C D q ∧
+      ∀ d ∈ D, ∃ T S : Finset ℕ,
+        (∀ x ∈ T, x ∈ C) ∧
+        Disjoint T D ∧ T.Nonempty ∧ T.card ≤ 3 ∧
+        DestroysAt (additiveSupportFamily A 3)
+          ((((D ∪ T : Finset ℕ) : Set ℕ))) q ∧
+        S ⊆ D ∪ T ∧ d ∈ S ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A 3) S q := by
+  intro N
+  obtain ⟨q, hqN, hno, hsystems⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_has_late_uniqueHitSystems
+      hrec hminimal N
+  exact ⟨q, hqN, hno,
+    minimalNoTwoRepairPrefix_has_smallMinimalDestroyerThroughEachPoint
+      hno hsystems⟩
 
 /-- At a target with no reservoir-relative pair of repairs, direct repairs
 for same-color pairs force every order-two support to cross the reservoir.

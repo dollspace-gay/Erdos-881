@@ -574,6 +574,45 @@ theorem not_hasTwoRepairsDisjointOnDeletionReservoirAlong_iff
   push Not
   rfl
 
+/-- A single finite deletion prefix is eventually good for the
+reservoir-relative two-repair condition.  Unlike the global condition, this
+only asks for repairs after this one prefix. -/
+def HasEventuallyTwoRepairsAtPrefixAlong
+    (R : SupportFamily) (C S : Set ℕ) (D : Finset ℕ) : Prop :=
+  ∃ threshold, ∀ n ≥ threshold, n ∈ S →
+    ∃ E ∈ R n, Disjoint E D ∧
+      ∃ E' ∈ R n, Disjoint E' D ∧
+        Disjoint ((E : Set ℕ) ∩ C) ((E' : Set ℕ) ∩ C)
+
+/-- One adaptive sparse-deletion step.  Besides the repairs for the current
+prefix, the selected fresh point is required to leave the enlarged prefix
+eventually good, so the construction can continue. -/
+structure ExtendableTwoRepairSparseDeletionStep
+    (R : SupportFamily) (C S : Set ℕ)
+    (D : Finset ℕ) (last : ℕ) where
+  threshold : ℕ
+  point : ℕ
+  repairs : ∀ n ≥ threshold, n ∈ S →
+    ∃ E ∈ R n, Disjoint E D ∧
+      ∃ E' ∈ R n, Disjoint E' D ∧
+        Disjoint ((E : Set ℕ) ∩ C) ((E' : Set ℕ) ∩ C)
+  point_mem : point ∈ C
+  point_fresh : point ∉ D
+  point_lower : max threshold (last + 1) ≤ point
+  next_good : HasEventuallyTwoRepairsAtPrefixAlong
+    R C S (insert point D)
+
+theorem extendableTwoRepairSparseDeletionStep_nonempty
+    {R : SupportFamily} {C S : Set ℕ} {D : Finset ℕ} {last : ℕ}
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong R C S D)
+    (hextend : ∀ T, ∃ b ∈ C, b ∉ D ∧ T ≤ b ∧
+      HasEventuallyTwoRepairsAtPrefixAlong R C S (insert b D)) :
+    Nonempty (ExtendableTwoRepairSparseDeletionStep R C S D last) := by
+  obtain ⟨threshold, hrepair⟩ := hgood
+  obtain ⟨b, hbC, hbD, hbLower, hnext⟩ :=
+    hextend (max threshold (last + 1))
+  exact ⟨⟨threshold, b, hrepair, hbC, hbD, hbLower, hnext⟩⟩
+
 /-- One stage in the two-repair sparse-deletion recursion. -/
 structure TwoRepairSparseDeletionStep
     (R : SupportFamily) (C S : Set ℕ)
@@ -1152,6 +1191,140 @@ theorem sparseDeletion_of_twoRepairsDisjointOnDeletionReservoirAlong
       obtain rfl | hxOld := Finset.mem_insert.mp hx
       · exact (chooseStep s).point_mem
       · exact s.2 hxOld⟩
+  let state : ℕ → State := fun i =>
+    Nat.rec initial (fun _ s => advance s) i
+  let witness (i : ℕ) := chooseStep (state i)
+  let used (i : ℕ) : Finset ℕ := (state i).1.1
+  let b (i : ℕ) : ℕ := (witness i).point
+  let threshold (i : ℕ) : ℕ := (witness i).threshold
+  have hstate_succ : ∀ i, state (i + 1) = advance (state i) := by
+    intro i
+    simp [state]
+  have hused_succ : ∀ i, used (i + 1) = insert (b i) (used i) := by
+    intro i
+    change (state (i + 1)).1.1 =
+      insert (chooseStep (state i)).point (state i).1.1
+    rw [hstate_succ]
+  have hlast_succ : ∀ i, (state (i + 1)).1.2 = b i := by
+    intro i
+    change (state (i + 1)).1.2 = (chooseStep (state i)).point
+    rw [hstate_succ]
+  have hused_step : ∀ i, used i ⊆ used (i + 1) := by
+    intro i
+    rw [hused_succ]
+    exact Finset.subset_insert _ _
+  have hused_mono : Monotone used :=
+    monotone_nat_of_le_succ hused_step
+  have hb_into_next : ∀ i, b i ∈ used (i + 1) := by
+    intro i
+    rw [hused_succ]
+    exact Finset.mem_insert_self _ _
+  have hbC : ∀ i, b i ∈ C := fun i => (witness i).point_mem
+  have hthreshold_b : ∀ i, threshold i ≤ b i := by
+    intro i
+    exact le_trans (le_max_left _ _) (witness i).point_lower
+  have hbmono : StrictMono b := by
+    apply strictMono_nat_of_lt_succ
+    intro i
+    have hlower : (state (i + 1)).1.2 + 1 ≤ b (i + 1) :=
+      le_trans (le_max_right _ _) (witness (i + 1)).point_lower
+    rw [hlast_succ] at hlower
+    exact Nat.lt_of_succ_le hlower
+  let B : Set ℕ := Set.range b
+  refine ⟨B, ?_, Set.infinite_range_of_injective hbmono.injective, ?_⟩
+  · rintro _ ⟨i, rfl⟩
+    exact hbC i
+  · refine ⟨b 0, ?_⟩
+    intro n hn hnS
+    have hex : ∃ i, n < b i := by
+      refine ⟨n + 1, ?_⟩
+      exact lt_of_lt_of_le (Nat.lt_succ_self n) (hbmono.id_le (n + 1))
+    let dec : DecidablePred (fun i : ℕ => n < b i) :=
+      fun i => Nat.decLt n (b i)
+    let r : ℕ := @Nat.find (fun i => n < b i) dec hex
+    have hnr : n < b r := @Nat.find_spec (fun i => n < b i) dec hex
+    have hrpos : 0 < r := by
+      apply Nat.pos_of_ne_zero
+      intro hr
+      rw [hr] at hnr
+      exact (not_lt_of_ge hn) hnr
+    have hbprev : b (r - 1) ≤ n := by
+      letI : Decidable (b (r - 1) ≤ n) := Nat.decLe (b (r - 1)) n
+      by_contra hprev
+      have hp : n < b (r - 1) := Nat.lt_of_not_ge hprev
+      have hmin : r ≤ r - 1 :=
+        @Nat.find_min' (fun i => n < b i) dec hex (r - 1) hp
+      omega
+    have hTr : threshold (r - 1) ≤ n :=
+      le_trans (hthreshold_b (r - 1)) hbprev
+    obtain ⟨E, hER, hEold, E', hE'R, hE'old, hEE'⟩ :=
+      (witness (r - 1)).repairs n hTr hnS
+    have hfinish : ∀ G : Finset ℕ,
+        G ∈ R n → Disjoint G (used (r - 1)) →
+        b (r - 1) ∉ G →
+        ∃ H ∈ R n, Disjoint (H : Set ℕ) B := by
+      intro G hGR hGold hbG
+      refine ⟨G, hGR, ?_⟩
+      rw [Set.disjoint_left]
+      intro x hxG hxB
+      obtain ⟨i, rfl⟩ := hxB
+      have hbi : b i ≤ n := hbounded n G hGR (b i) hxG
+      have hir : i < r := by
+        by_contra hir
+        have hri : r ≤ i := Nat.le_of_not_gt hir
+        exact (not_lt_of_ge (le_trans (hbmono.monotone hri) hbi)) hnr
+      by_cases hi : i = r - 1
+      · subst i
+        exact hbG hxG
+      · have hiold : i < r - 1 := by omega
+        have hbiUsed : b i ∈ used (r - 1) :=
+          hused_mono (Nat.succ_le_of_lt hiold) (hb_into_next i)
+        exact Finset.disjoint_left.mp hGold hxG hbiUsed
+    by_cases hbE : b (r - 1) ∈ E
+    · have hbE' : b (r - 1) ∉ E' := by
+        intro hbE'
+        exact Set.disjoint_left.mp hEE'
+          ⟨Finset.mem_coe.mpr hbE, hbC (r - 1)⟩
+          ⟨Finset.mem_coe.mpr hbE', hbC (r - 1)⟩
+      exact hfinish E' hE'R hE'old hbE'
+    · exact hfinish E hER hEold hbE
+
+/-- Adaptive form of reservoir-relative sparse deletion.  It is unnecessary
+to have the two-repair condition after every finite prefix: one eventually
+good seed and arbitrarily late fresh good extensions suffice.  The chosen
+extensions form the deletion set, while the good-prefix invariant supplies
+the same two-repair protection at every stage. -/
+theorem sparseDeletion_of_extendableTwoRepairPrefixesAlong
+    {C S : Set ℕ} {R : SupportFamily} {D₀ : Finset ℕ}
+    (hbounded : SupportsBounded R)
+    (hD₀C : (D₀ : Set ℕ) ⊆ C)
+    (hD₀good : HasEventuallyTwoRepairsAtPrefixAlong R C S D₀)
+    (hextend : ∀ D : Finset ℕ, (D : Set ℕ) ⊆ C →
+      HasEventuallyTwoRepairsAtPrefixAlong R C S D →
+      ∀ T, ∃ b ∈ C, b ∉ D ∧ T ≤ b ∧
+        HasEventuallyTwoRepairsAtPrefixAlong R C S (insert b D)) :
+    ∃ B ⊆ C, B.Infinite ∧
+      HasEventuallySurvivingSupportAlong R B S := by
+  classical
+  let State := {p : Finset ℕ × ℕ //
+    (p.1 : Set ℕ) ⊆ C ∧
+      HasEventuallyTwoRepairsAtPrefixAlong R C S p.1}
+  let initial : State := ⟨(D₀, 0), hD₀C, hD₀good⟩
+  let chooseStep : (s : State) →
+      ExtendableTwoRepairSparseDeletionStep
+        R C S s.1.1 s.1.2 := fun s =>
+    Classical.choice
+      (extendableTwoRepairSparseDeletionStep_nonempty
+        s.2.2 (hextend s.1.1 s.2.1 s.2.2))
+  let advance : State → State := fun s =>
+    ⟨(insert (chooseStep s).point s.1.1, (chooseStep s).point),
+      by
+        constructor
+        · intro x hx
+          obtain rfl | hxOld := Finset.mem_insert.mp hx
+          · exact (chooseStep s).point_mem
+          · exact s.2.1 hxOld
+        · exact (chooseStep s).next_good⟩
   let state : ℕ → State := fun i =>
     Nat.rec initial (fun _ s => advance s) i
   let witness (i : ℕ) := chooseStep (state i)
