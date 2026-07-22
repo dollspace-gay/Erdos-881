@@ -6861,6 +6861,79 @@ theorem CriticalBinaryPairImplicationEdgeData.toBinaryPairImplication
       (fun q => (data q).clause) a b :=
   ⟨w.target, w.orientation⟩
 
+/-- The two marked endpoints carried by an implication edge lie in distinct
+binary cells. -/
+theorem CriticalBinaryPairImplicationEdgeData.sourceCell_ne_oppositeDestinationCell
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    {hcellCard : ∀ i, (cell i).card = 2}
+    {data : ∀ q : {q // q ∈ Q},
+      CriticalSeparatedTraceClauseData A C K D cell q.1}
+    {a b : BinaryCellLiteral cell}
+    (w : CriticalBinaryPairImplicationEdgeData
+      A C K D Q cell hcellCard data a b) :
+    a.1 ≠ (oppositeBinaryCellLiteral hcellCard b).1 := by
+  rcases w.orientation with horient | horient
+  · intro hEq
+    apply (data w.target).clause.cells_ne
+    calc
+      (data w.target).clause.leftCell = a.1 :=
+        (congrArg (fun l : BinaryCellLiteral cell => l.1)
+          horient.1).symm
+      _ = (oppositeBinaryCellLiteral hcellCard b).1 := hEq
+      _ = b.1 := rfl
+      _ = (data w.target).clause.rightCell := by
+        exact congrArg (fun l : BinaryCellLiteral cell => l.1)
+          horient.2
+  · intro hEq
+    apply (data w.target).clause.cells_ne
+    calc
+      (data w.target).clause.leftCell = b.1 := by
+        exact (congrArg (fun l : BinaryCellLiteral cell => l.1)
+          horient.2).symm
+      _ = (oppositeBinaryCellLiteral hcellCard b).1 := rfl
+      _ = a.1 := hEq.symm
+      _ = (data w.target).clause.rightCell := by
+        exact congrArg (fun l : BinaryCellLiteral cell => l.1)
+          horient.1
+
+/-- Consequently an arithmetic implication edge relates two genuinely
+different reservoir vertices. -/
+theorem CriticalBinaryPairImplicationEdgeData.sourcePoint_ne_oppositeDestinationPoint
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    {hcellCard : ∀ i, (cell i).card = 2}
+    {data : ∀ q : {q // q ∈ Q},
+      CriticalSeparatedTraceClauseData A C K D cell q.1}
+    {a b : BinaryCellLiteral cell}
+    (P : IsFiniteBlockPartition K cell)
+    (w : CriticalBinaryPairImplicationEdgeData
+      A C K D Q cell hcellCard data a b) :
+    a.2.1 ≠ (oppositeBinaryCellLiteral hcellCard b).2.1 := by
+  intro hEq
+  exact Finset.disjoint_left.mp
+    (P.disjoint w.sourceCell_ne_oppositeDestinationCell)
+      a.2.2 (by
+        simpa [hEq] using
+          (oppositeBinaryCellLiteral hcellCard b).2.2)
+
+/-- Eliminating the common certificate target gives the balanced equation
+attached to one implication edge. -/
+theorem CriticalBinaryPairImplicationEdgeData.balanced_sum_eq
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    {hcellCard : ∀ i, (cell i).card = 2}
+    {data : ∀ q : {q // q ∈ Q},
+      CriticalSeparatedTraceClauseData A C K D cell q.1}
+    {a b : BinaryCellLiteral cell}
+    (w : CriticalBinaryPairImplicationEdgeData
+      A C K D Q cell hcellCard data a b) :
+    a.2.1 + w.sourceFirstSummand + w.sourceSecondSummand =
+      (oppositeBinaryCellLiteral hcellCard b).2.1 +
+        w.oppositeDestinationFirstSummand +
+          w.oppositeDestinationSecondSummand :=
+  w.source_sum_eq.trans w.oppositeDestination_sum_eq.symm
+
 /-- Every implication edge in a critical clause family has the full
 recurrent and balanced-additive label above. -/
 theorem binaryPairImplication_has_criticalArithmeticEdge
@@ -7169,6 +7242,36 @@ theorem HasCriticalComplementaryBinaryPairImplicationSCC.exists_criticalArithmet
   · exact hbackward.mono (fun _ _ himp =>
       binaryPairImplication_has_criticalArithmeticEdge
         hcellCard data himp)
+
+/-- Both arithmetic refutation paths contain an actual edge: literal
+complementation has no fixed point in a binary cell, so neither half of the
+contradictory SCC can be merely reflexive. -/
+theorem HasCriticalComplementaryBinaryPairImplicationSCC.exists_nontrivialCriticalArithmeticContradictoryPaths
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    {hcellCard : ∀ i, (cell i).card = 2}
+    (hSCC : HasCriticalComplementaryBinaryPairImplicationSCC
+      A C K D Q cell hcellCard) :
+    ∃ data : ∀ q : {q // q ∈ Q},
+        CriticalSeparatedTraceClauseData A C K D cell q.1,
+      ∃ l : BinaryCellLiteral cell,
+        Relation.TransGen
+          (CriticalBinaryPairImplication hcellCard data)
+          l (oppositeBinaryCellLiteral hcellCard l) ∧
+        Relation.TransGen
+          (CriticalBinaryPairImplication hcellCard data)
+          (oppositeBinaryCellLiteral hcellCard l) l := by
+  obtain ⟨data, l, hforward, hbackward⟩ :=
+    hSCC.exists_criticalArithmeticContradictoryPaths
+  refine ⟨data, l, ?_, ?_⟩
+  · rcases Relation.reflTransGen_iff_eq_or_transGen.mp hforward with
+      hEq | hpath
+    · exact (oppositeBinaryCellLiteral_ne hcellCard l hEq).elim
+    · exact hpath
+  · rcases Relation.reflTransGen_iff_eq_or_transGen.mp hbackward with
+      hEq | hpath
+    · exact (oppositeBinaryCellLiteral_ne hcellCard l hEq.symm).elim
+    · exact hpath
 
 /-- A complementary implication SCC makes an avoiding selector impossible:
 whichever endpoint it chooses, path soundness forces the opposite endpoint
@@ -13535,6 +13638,146 @@ theorem finitePartialAssignmentCover_card_lower
     exact hcovered.trans hunion
   exact Nat.le_of_mul_le_mul_right hproduct
     (Nat.pow_pos hk)
+
+/-- A separated binary pair-pattern certificate has at least four targets.
+Each target fixes two distinct binary coordinates, so it covers exactly one
+quarter of the assignments on those coordinates; the general finite partial
+assignment bound makes the union-bound argument exact. -/
+theorem binaryPairPatternCover_card_lower_four
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      SeparatedTraceClauseData R K D cell q.1)
+    (hcover : ∀ s : BlockSelector cell, ∃ q : {q // q ∈ Q},
+      (s (data q).leftCell).1 = (data q).leftPoint ∧
+      (s (data q).rightCell).1 = (data q).rightPoint) :
+    4 ≤ Q.card := by
+  classical
+  let leftCell : ℕ → ℕ := fun q =>
+    if hq : q ∈ Q then (data ⟨q, hq⟩).leftCell else 0
+  let rightCell : ℕ → ℕ := fun q =>
+    if hq : q ∈ Q then (data ⟨q, hq⟩).rightCell else 0
+  let leftPoint : ℕ → ℕ := fun q =>
+    if hq : q ∈ Q then (data ⟨q, hq⟩).leftPoint else 0
+  let rightPoint : ℕ → ℕ := fun q =>
+    if hq : q ∈ Q then (data ⟨q, hq⟩).rightPoint else 0
+  let I : ℕ → Finset ℕ := fun q => {leftCell q, rightCell q}
+  let J : Finset ℕ := Q.biUnion I
+  let value : ℕ → ℕ → ℕ := fun q i =>
+    if i = leftCell q then leftPoint q else rightPoint q
+  have hIQ : ∀ q ∈ Q, I q ⊆ J := by
+    intro q hqQ i hi
+    exact Finset.mem_biUnion.mpr ⟨q, hqQ, hi⟩
+  have hIcard : ∀ q ∈ Q, 2 ≤ (I q).card := by
+    intro q hqQ
+    have hne := (data ⟨q, hqQ⟩).cells_ne
+    simp [I, leftCell, rightCell, hqQ, hne]
+  let base : BlockSelector cell := fun i =>
+    ⟨(P.nonempty i).choose, (P.nonempty i).choose_spec⟩
+  have hrJ : 2 ≤ J.card := by
+    obtain ⟨q, hqQ, _hmatch⟩ := hcover base
+    exact (hIcard q.1 q.2).trans
+      (Finset.card_le_card (hIQ q.1 q.2))
+  have hpartialCover : ∀ s ∈ J.pi cell,
+      ∃ q, ∃ hq : q ∈ Q,
+        ∀ i (hi : i ∈ I q),
+          s i (hIQ q hq hi) = value q i := by
+    intro s hs
+    let sel : BlockSelector cell := fun i =>
+      if hi : i ∈ J then
+        ⟨s i hi, Finset.mem_pi.mp hs i hi⟩
+      else base i
+    obtain ⟨q, hleft, hright⟩ := hcover sel
+    have hleftCellEq : leftCell q.1 = (data q).leftCell := by
+      simp only [leftCell, dif_pos q.2]
+    have hrightCellEq : rightCell q.1 = (data q).rightCell := by
+      simp only [rightCell, dif_pos q.2]
+    have hleftPointEq : leftPoint q.1 = (data q).leftPoint := by
+      simp only [leftPoint, dif_pos q.2]
+    have hrightPointEq : rightPoint q.1 = (data q).rightPoint := by
+      simp only [rightPoint, dif_pos q.2]
+    refine ⟨q.1, q.2, ?_⟩
+    intro i hiI
+    have hiJ : i ∈ J := hIQ q.1 q.2 hiI
+    have hselEq : (sel i).1 = s i hiJ := by
+      simp [sel, hiJ]
+    have hiCases : i = leftCell q.1 ∨ i = rightCell q.1 := by
+      simpa [I] using hiI
+    rcases hiCases with hiLeft | hiRight
+    · subst i
+      calc
+        s (leftCell q.1) hiJ = (sel (leftCell q.1)).1 :=
+          hselEq.symm
+        _ = (data q).leftPoint := by
+          rw [hleftCellEq]
+          exact hleft
+        _ = value q.1 (leftCell q.1) := by
+          simp [value, hleftPointEq]
+    · subst i
+      have hne := (data q).cells_ne
+      calc
+        s (rightCell q.1) hiJ = (sel (rightCell q.1)).1 :=
+          hselEq.symm
+        _ = (data q).rightPoint := by
+          rw [hrightCellEq]
+          exact hright
+        _ = value q.1 (rightCell q.1) := by
+          change (data q).rightPoint =
+            (if rightCell q.1 = leftCell q.1 then
+              leftPoint q.1 else rightPoint q.1)
+          rw [hrightCellEq, hleftCellEq, hrightPointEq]
+          simp [hne.symm]
+  have hbound := finitePartialAssignmentCover_card_lower
+    (J := J) (Q := Q) (F := cell) (I := I)
+    (value := value) (k := 2) (r := 2)
+    (by decide) hrJ (fun i _hi => hcellCard i)
+      hIQ hIcard hpartialCover
+  norm_num at hbound ⊢
+  exact hbound
+
+/-- The no-wide branch of a binary two-repair certificate therefore has at
+least four target clauses. -/
+theorem targetLocalized_twoRepairCertificate_noWide_card_lower_four
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAt R K D cell q)
+    (hnoWide : ∀ q ∈ Q,
+      ¬ HasWideReservoirSupportAt R K q) :
+    4 ≤ Q.card := by
+  obtain ⟨data, hcover⟩ :=
+    targetLocalized_twoRepairCertificate_noWide_has_binaryPairPatternCover
+      P hcellCard hcert htrace hnoWide
+  exact binaryPairPatternCover_card_lower_four
+    P hcellCard data hcover
+
+/-- Sharp small-certificate consequence of the binary counting bridge: any
+certificate with at most three targets must already contain a support using
+two reservoir vertices. -/
+theorem small_three_targetLocalized_twoRepairCertificate_has_wideReservoirSupport
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hQcard : Q.card ≤ 3)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAt R K D cell q) :
+    ∃ q ∈ Q, HasWideReservoirSupportAt R K q := by
+  classical
+  by_contra hnoWide
+  push Not at hnoWide
+  have hfour :=
+    targetLocalized_twoRepairCertificate_noWide_card_lower_four
+      P hcellCard hcert htrace hnoWide
+  omega
 
 /-- A strict crossing-endpoint certificate whose every target has at least
 `r` endpoints contains at least `k ^ r` targets.  The endpoint sets are
