@@ -11833,6 +11833,200 @@ theorem infiniteComplementReservoir_gives_deletion_or_rigid_or_repairedZeroAtoms
       fun z hz E hER => hnormal z (hLZ hz) E hER,
       hrepairs⟩
 
+/-- Strengthened complement-reservoir bridge.  The earlier formulation
+stopped the splittable branch at the intermediate rigid alternatives, but
+the completed self-basis-reservoir theorem eliminates those alternatives.
+Consequently every fresh infinite reservoir in `A \ B₀` either gives the
+desired deletion outright or contains a repaired zero-atomic reservoir. -/
+theorem infiniteComplementReservoir_gives_deletion_or_repairedZeroAtoms
+    {A B₀ K : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hKComplement : K ⊆ A \ B₀)
+    (hK : K.Infinite) :
+    (∃ D, D ⊆ A ∧ D.Infinite ∧
+      IsExactTupleAsymptoticBasis (A \ D) 3) ∨
+    ∃ Z, Z ⊆ A \ B₀ ∧ Z.Infinite ∧
+      (∀ z ∈ Z, ∀ E ∈ additiveSupportFamily A 2 z,
+        E = {z, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A Z ∧
+      (∀ z ∈ Z, ∃ G ∈ additiveSupportFamily A 3 z,
+        Disjoint (G : Set ℕ) Z) := by
+  obtain hsplittable | hatomic :=
+    infiniteDeletionSplits_or_infiniteZeroAtoms hbasis hK
+  · left
+    obtain ⟨B, hBK, hB, hsplit⟩ := hsplittable
+    let B' : Set ℕ := B \ {0}
+    have hB'B : B' ⊆ B := Set.diff_subset
+    have hB' : B'.Infinite :=
+      hB.diff (Set.finite_singleton 0)
+    have hB'Complement : B' ⊆ A \ B₀ :=
+      hB'B.trans (hBK.trans hKComplement)
+    have hzeroB' : 0 ∉ B' := by
+      intro hzero
+      exact hzero.2 (by simp)
+    have hsplit' : DeletionSplitsIntoComplement A B' :=
+      hsplit.mono hB'B
+    obtain ⟨D, hDB', hD, hthree⟩ :=
+      exists_infiniteDeletion_threeBasis_of_zero_splittingReservoir
+        hbasis hzeroA hzeroB'
+          (fun x hx => (hB'Complement hx).1) hB' hsplit'
+    exact ⟨D, fun x hx => (hB'Complement (hDB' hx)).1,
+      hD, hthree⟩
+  · right
+    obtain ⟨Z, hZK, hZ, _hzero, hnormal⟩ := hatomic
+    obtain ⟨L, hLZ, hL, hrepairs, hself⟩ :=
+      exists_infinite_pairAndSelfTripleRepairs_of_zeroAtoms
+        hbasis hZ hnormal
+    exact ⟨L, hLZ.trans (hZK.trans hKComplement), hL,
+      fun z hz E hER => hnormal z (hLZ hz) E hER,
+      hrepairs, hself⟩
+
+/-- A fixed-center family cannot remain confined to the original repaired
+reservoir.  For every moving endpoint `x`, enlarge its selector destroyer to
+`B₀` and use the surviving self-repair of the zero-atom `x`.  The resulting
+external four-clique has three repair vertices in `A \ B₀`, each of whose
+sum with the common center `c` lies outside `A`.  At least one of the three
+coordinate ranges is infinite, since their sum is the injective parameter
+`x`. -/
+theorem fixedCenterTripleDestroyers_give_infiniteAntiTranslateComplement
+    {A B₀ B₁ : Set ℕ} {c : ℕ}
+    (hB₁B₀ : B₁ ⊆ B₀)
+    (hnormal : ∀ x ∈ B₀,
+      ∀ E ∈ additiveSupportFamily A 2 x, E = {x, 0})
+    (hself : ∀ x ∈ B₀,
+      ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) B₀)
+    (hc : c ∈ A \ B₀)
+    (hfixed : ∃ L, L ⊆ B₁ ∧ L.Infinite ∧
+      ∀ x ∈ L, ∃ D : Set ℕ,
+        D ⊆ B₁ ∧
+        DestroysAt (additiveSupportFamily A 3) D (x + c)) :
+    ∃ K, K ⊆ A \ B₀ ∧ K.Infinite ∧
+      ∀ a ∈ K, a + c ∉ A := by
+  classical
+  obtain ⟨L, hLB₁, hL, hdata⟩ := hfixed
+  have hchoice : ∀ x : L, ∃ u v w,
+      u ∈ A \ B₀ ∧ v ∈ A \ B₀ ∧ w ∈ A \ B₀ ∧
+      u + v + w = x.1 ∧
+      u + c ∉ A ∧ v + c ∉ A ∧ w + c ∉ A := by
+    intro x
+    obtain ⟨D, hDB₁, hdestroy⟩ := hdata x.1 x.2
+    have hxB₀ : x.1 ∈ B₀ := hB₁B₀ (hLB₁ x.2)
+    have hdestroyB₀ : DestroysAt
+        (additiveSupportFamily A 3) B₀ (x.1 + c) :=
+      hdestroy.mono (hDB₁.trans hB₁B₀)
+    obtain ⟨u, v, w, huC, hvC, hwC,
+        _hupos, _hvpos, _hwpos, _hcpos, huvwx,
+        _huv, _huw, _hvw, huc, hvc, hwc⟩ :=
+      exists_externalFourClique_of_zeroAtom_crossingDestroyer
+        hnormal hxB₀ hc rfl (hself x.1 hxB₀) hdestroyB₀
+    exact ⟨u, v, w, huC, hvC, hwC, huvwx, huc, hvc, hwc⟩
+  choose u v w hrepair using hchoice
+  let code : L → ℕ × ℕ × ℕ := fun x => (u x, v x, w x)
+  have hcodeInjective : Function.Injective code := by
+    intro x y hxy
+    apply Subtype.ext
+    have hu : u x = u y := congrArg (fun p => p.1) hxy
+    have hv : v x = v y := congrArg (fun p => p.2.1) hxy
+    have hw : w x = w y := congrArg (fun p => p.2.2) hxy
+    have hxsum := (hrepair x).2.2.2.1
+    have hysum := (hrepair y).2.2.2.1
+    omega
+  letI : Infinite L := hL.to_subtype
+  have hcodeRange : (Set.range code).Infinite :=
+    Set.infinite_range_of_injective hcodeInjective
+  by_cases huInfinite : (Set.range u).Infinite
+  · refine ⟨Set.range u, ?_, huInfinite, ?_⟩
+    · rintro a ⟨x, rfl⟩
+      exact (hrepair x).1
+    · rintro a ⟨x, rfl⟩
+      exact (hrepair x).2.2.2.2.1
+  by_cases hvInfinite : (Set.range v).Infinite
+  · refine ⟨Set.range v, ?_, hvInfinite, ?_⟩
+    · rintro a ⟨x, rfl⟩
+      exact (hrepair x).2.1
+    · rintro a ⟨x, rfl⟩
+      exact (hrepair x).2.2.2.2.2.1
+  have hwInfinite : (Set.range w).Infinite := by
+    intro hwFinite
+    have huFinite : (Set.range u).Finite :=
+      Set.not_infinite.mp huInfinite
+    have hvFinite : (Set.range v).Finite :=
+      Set.not_infinite.mp hvInfinite
+    have hproductFinite :
+        (Set.range u ×ˢ (Set.range v ×ˢ Set.range w)).Finite :=
+      huFinite.prod (hvFinite.prod hwFinite)
+    apply hcodeRange
+    apply hproductFinite.subset
+    rintro p ⟨x, rfl⟩
+    exact ⟨⟨x, rfl⟩, ⟨⟨x, rfl⟩, ⟨x, rfl⟩⟩⟩
+  refine ⟨Set.range w, ?_, hwInfinite, ?_⟩
+  · rintro a ⟨x, rfl⟩
+    exact (hrepair x).2.2.1
+  · rintro a ⟨x, rfl⟩
+    exact (hrepair x).2.2.2.2.2.2
+
+/-- On the zero-atomic self-repaired reservoir supplied by the global
+counterexample reduction, the exact-three layer has no additional
+fixed-center branch.  Infinite centers enter the strengthened complement
+bridge directly; a fixed center first produces the infinite anti-translate
+reservoir above and then enters the same bridge.  Under the counterexample
+hypothesis, only a repaired zero-atomic reservoir disjoint from `B₀`
+survives. -/
+theorem HasInfiniteAmbientThreeEndpointSelectorLayer.counterexample_forces_repairedZeroAtoms_in_complement
+    {A B₀ B₁ : Set ℕ} {F : ℕ → Finset ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hB₁B₀ : B₁ ⊆ B₀)
+    (hnormal : ∀ x ∈ B₀,
+      ∀ E ∈ additiveSupportFamily A 2 x, E = {x, 0})
+    (hself : ∀ x ∈ B₀,
+      ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) B₀)
+    (hcounter : ∀ D, D ⊆ A → D.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ D) 3)
+    (h : HasInfiniteAmbientThreeEndpointSelectorLayer
+      A B₀ B₁ F) :
+    ∃ Z, Z ⊆ A \ B₀ ∧ Z.Infinite ∧
+      (∀ z ∈ Z, ∀ E ∈ additiveSupportFamily A 2 z,
+        E = {z, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A Z ∧
+      (∀ z ∈ Z, ∃ G ∈ additiveSupportFamily A 3 z,
+        Disjoint (G : Set ℕ) Z) := by
+  obtain hcenters | hfixed :=
+    h.infiniteComplementCenters_or_fixedCenterNeutralized
+      hzeroA hzeroB₀ hB₀A
+  · obtain ⟨K, hKComplement, hK⟩ := hcenters
+    obtain hdone | hatomic :=
+      infiniteComplementReservoir_gives_deletion_or_repairedZeroAtoms
+        hbasis hzeroA hKComplement hK
+    · obtain ⟨D, hDA, hD, hthree⟩ := hdone
+      exact (hcounter D hDA hD hthree).elim
+    · exact hatomic
+  · obtain ⟨c, hc, L, hLB₁, hL, hdata⟩ := hfixed
+    have hsimple : ∃ L, L ⊆ B₁ ∧ L.Infinite ∧
+        ∀ x ∈ L, ∃ D : Set ℕ,
+          D ⊆ B₁ ∧
+          DestroysAt (additiveSupportFamily A 3) D (x + c) := by
+      refine ⟨L, hLB₁, hL, ?_⟩
+      intro x hxL
+      obtain ⟨sel, G, hselB₁, _hcross, hdestroy,
+        _hcard, _hendpointSub, _hxEndpoint, _hGR, _hGL⟩ :=
+        hdata x hxL
+      exact ⟨selectedSet sel, hselB₁, hdestroy⟩
+    obtain ⟨K, hKComplement, hK, _hanti⟩ :=
+      fixedCenterTripleDestroyers_give_infiniteAntiTranslateComplement
+        hB₁B₀ hnormal hself hc hsimple
+    obtain hdone | hatomic :=
+      infiniteComplementReservoir_gives_deletion_or_repairedZeroAtoms
+        hbasis hzeroA hKComplement hK
+    · obtain ⟨D, hDA, hD, hthree⟩ := hdone
+      exact (hcounter D hDA hD hthree).elim
+    · exact hatomic
+
 /-- Counterexample-level reduction of the exact-three layer.  An infinite
 center range enters the reusable complement-reservoir bridge, whose success
 branch is excluded by the counterexample.  Thus only a complement-side
@@ -13302,6 +13496,130 @@ theorem HasInfinitePrivateSingletonCrossingEndpoints.counterexample_forces_compl
     exact (hcounter D hDA hD hthree).elim
   · exact Or.inl hrigid
   · exact Or.inr hatomic
+
+/-- Strengthened private-endpoint continuation using the completed
+self-basis theorem.  The infinite reflection-center set enters the strong
+complement-reservoir bridge, so the former rigid intermediate branches
+disappear.  Under the counterexample hypothesis the private branch must
+migrate to a disjoint zero-atomic reservoir carrying both pair and self
+triple repairs. -/
+theorem HasInfinitePrivateSingletonCrossingEndpoints.counterexample_forces_disjointRepairedZeroAtoms
+    {A B₀ : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hB₀A : B₀ ⊆ A)
+    (hcounter : ∀ D, D ⊆ A → D.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ D) 3)
+    (h : HasInfinitePrivateSingletonCrossingEndpoints A B₀) :
+    ∃ Z, Z ⊆ A \ B₀ ∧ Z.Infinite ∧
+      (∀ z ∈ Z, ∀ E ∈ additiveSupportFamily A 2 z,
+        E = {z, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A Z ∧
+      (∀ z ∈ Z, ∃ G ∈ additiveSupportFamily A 3 z,
+        Disjoint (G : Set ℕ) Z) := by
+  obtain ⟨K, hKComplement, hK⟩ :=
+    h.exists_infiniteComplementCenterSet hbasis hB₀A
+  obtain hdone | hatomic :=
+    infiniteComplementReservoir_gives_deletion_or_repairedZeroAtoms
+      hbasis hzeroA hKComplement hK
+  · obtain ⟨D, hDA, hD, hthree⟩ := hdone
+    exact (hcounter D hDA hD hthree).elim
+  · exact hatomic
+
+/-- Sharp one-scale certificate reduction on the normalized repaired
+reservoir.  Both small endpoint alternatives now migrate across the color
+boundary to a new repaired zero-atomic reservoir: private endpoints use
+their infinite center range, while the exact-three case uses either its
+center range or the repair vertices of its fixed-center fiber.  Therefore
+only the cofinally huge certificate branch remains on the original side. -/
+theorem minimalCrossingEndpointCertificates_huge_or_disjointRepairedZeroAtoms_on_subreservoir
+    {A B₀ B₁ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hnormal : ∀ x ∈ B₀,
+      ∀ E ∈ additiveSupportFamily A 2 x, E = {x, 0})
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hself : ∀ x ∈ B₀,
+      ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hB₁B₀ : B₁ ⊆ B₀)
+    (P₁ : IsFiniteBlockPartition B₁ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 10 ≤ k) :
+    (∀ N, ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData
+          A B₀ F k N Q ∧
+        2 * k - 3 ≤ Q.card) ∨
+    ∃ Z, Z ⊆ A \ B₀ ∧ Z.Infinite ∧
+      (∀ z ∈ Z, ∀ E ∈ additiveSupportFamily A 2 z,
+        E = {z, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A Z ∧
+      (∀ z ∈ Z, ∃ G ∈ additiveSupportFamily A 3 z,
+        Disjoint (G : Set ℕ) Z) := by
+  obtain hhuge | hprivate | hthree :=
+    minimalCrossingEndpointCertificates_huge_or_private_or_threeSelectorLayer_on_subreservoir
+      hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+        hB₁B₀ P₁ hcore hcellCard hk
+  · exact Or.inl hhuge
+  · exact Or.inr <|
+      hprivate.counterexample_forces_disjointRepairedZeroAtoms
+        hbasis hzeroA hB₀A hcounter
+  · exact Or.inr <|
+      hthree.counterexample_forces_repairedZeroAtoms_in_complement
+        hbasis hzeroA hzeroB₀ hB₀A hB₁B₀
+          hnormal hself hcounter
+
+/-- Global scalable form of the strengthened finite-certificate bridge.
+One fixed normalized, pair-repaired, self-repaired reservoir supplied by a
+counterexample works at every block scale `k ≥ 10`.  At each scale it has
+either cofinally huge exact endpoint certificates or a second infinite
+normalized reservoir on the opposite side, again carrying pair and self
+repairs. -/
+theorem counterexample_forces_scalableHugeCertificates_or_disjointSelfRepairedZeroAtoms
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ D, D ⊆ A → D.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ D) 3) :
+    ∃ B₀, B₀ ⊆ A ∧ B₀.Infinite ∧ 0 ∉ B₀ ∧
+      (∀ x ∈ B₀, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A B₀ ∧
+      (∀ x ∈ B₀, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) B₀) ∧
+      ∀ k, 10 ≤ k → ∃ F : ℕ → Finset ℕ,
+        IsFiniteBlockPartition B₀ F ∧
+        (∀ i, (F i).card = k) ∧
+        ((∀ N, ∃ Q,
+          IsMinimalStrictCrossingEndpointCertificateData
+              A B₀ F k N Q ∧
+            2 * k - 3 ≤ Q.card) ∨
+        ∃ Z, Z ⊆ A \ B₀ ∧ Z.Infinite ∧
+          (∀ z ∈ Z, ∀ E ∈ additiveSupportFamily A 2 z,
+            E = {z, 0}) ∧
+          HasDirectTripleRepairsForDeletedPairs A Z ∧
+          (∀ z ∈ Z, ∃ G ∈ additiveSupportFamily A 3 z,
+            Disjoint (G : Set ℕ) Z)) := by
+  obtain ⟨B₀, hB₀A, hB₀, hzeroB₀, hnormal,
+      hrepairs, hself, _hlate⟩ :=
+    counterexample_forces_repairedCrossingReservoir
+      hbasis hzeroA hcounter
+  refine ⟨B₀, hB₀A, hB₀, hzeroB₀, hnormal,
+    hrepairs, hself, ?_⟩
+  intro k hk
+  obtain ⟨F, P, hFcard⟩ :=
+    exists_finiteBlockPartition_exactCard hB₀ (by omega : 0 < k)
+  refine ⟨F, P, hFcard, ?_⟩
+  exact
+    minimalCrossingEndpointCertificates_huge_or_disjointRepairedZeroAtoms_on_subreservoir
+      hbasis hzeroA hzeroB₀ hB₀A hnormal hrepairs hself
+        hcounter Set.Subset.rfl P (fun _ => Finset.Subset.rfl)
+          hFcard hk
 
 /-- Lacunarity forced on any parametrized moving rigid-endpoint system.
 Take three sufficiently separated endpoints `u < v < w`.  Reflections at
