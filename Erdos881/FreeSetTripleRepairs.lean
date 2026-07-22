@@ -5907,6 +5907,148 @@ theorem separatedTrace_targetLocalizedCertificate_has_anchoredEscapes
   · exact ⟨y', hy'Cell, hy'y, qy, hqyQ, hqyq,
       hqyDestroy, Gy, hGyR, hGyOld, hy'Gy⟩
 
+/-- One directed edge in the localized certificate escape graph.  The
+source `q` has a private destroying selector `s`; changing one marked cell
+from `x` to `z` makes a different target `q'` be destroyed.  A support of
+`q'` survives the old selector and is therefore anchored at the newly
+introduced reservoir point `z`. -/
+def HasAnchoredCertificateEscapeTransition
+    (R : SupportFamily) (Q : Finset ℕ)
+    (cell : ℕ → Finset ℕ) (q q' : ℕ) : Prop :=
+  ∃ i x, x ∈ cell i ∧
+    ∃ s : BlockSelector cell,
+      DestroysAt R (selectedSet s) q ∧
+      (∀ r ∈ Q, r ≠ q →
+        ¬ DestroysAt R (selectedSet s) r) ∧
+      ∃ z, ∃ hz : z ∈ cell i, z ≠ x ∧
+        DestroysAt R
+          (selectedSet (overrideBlockSelector s i ⟨z, hz⟩)) q' ∧
+        ∃ G ∈ R q',
+          Disjoint (G : Set ℕ) (selectedSet s) ∧ z ∈ G
+
+/-- Either anchored exit of a separated localized target gives a genuine
+outgoing edge to another target in the same finite certificate. -/
+theorem separatedTrace_targetLocalizedCertificate_has_anchoredEscapeTransition
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (hlocalized : ∀ q ∈ Q, ∃ s : BlockSelector cell,
+      DestroysAt R (selectedSet s) q ∧
+      ∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt R (selectedSet s) q')
+    (hqQ : q ∈ Q)
+    (hsep : HasSeparatedSingletonTwoRepairTracesAt
+      R K D cell q) :
+    ∃ q' ∈ Q, q' ≠ q ∧
+      HasAnchoredCertificateEscapeTransition R Q cell q q' := by
+  classical
+  obtain ⟨i, _j, x, _y, _hij, hxi, _hyj, s,
+      hqDestroy, hprivate, hescapeX, _hescapeY⟩ :=
+    separatedTrace_targetLocalizedCertificate_has_anchoredEscapes
+      P hcellCard hcert hlocalized hqQ hsep
+  change ∃ z, ∃ hz : z ∈ cell i, z ≠ x ∧
+    ∃ q' ∈ Q, q' ≠ q ∧
+      DestroysAt R
+        (selectedSet (overrideBlockSelector s i ⟨z, hz⟩)) q' ∧
+      ∃ G ∈ R q',
+        Disjoint (G : Set ℕ) (selectedSet s) ∧ z ∈ G at hescapeX
+  obtain ⟨z, hz, hzx, q', hq'Q, hq'q,
+      hq'Destroy, G, hGR, hGs, hzG⟩ := hescapeX
+  exact ⟨q', hq'Q, hq'q, i, x, hxi, s,
+    hqDestroy, hprivate, z, hz, hzx,
+    hq'Destroy, G, hGR, hGs, hzG⟩
+
+/-- A self-map of a nonempty finite type has a periodic orbit.  If it has
+no fixed points, one can choose a genuine cycle of length at least two. -/
+theorem finite_selfMap_without_fixedPoint_has_nontrivialCycle
+    {X : Type*} [Finite X] [Nonempty X]
+    (next : X → X) (hnext : ∀ x, next x ≠ x) :
+    ∃ x p, 2 ≤ p ∧ (next^[p]) x = x := by
+  classical
+  let x₀ : X := Classical.choice (inferInstance : Nonempty X)
+  obtain ⟨m, n, hmn, horbit⟩ :=
+    Set.finite_univ.exists_lt_map_eq_of_forall_mem
+      (f := fun k : ℕ ↦ (next^[k]) x₀)
+      (fun _ ↦ Set.mem_univ _)
+  let p := n - m
+  let x := (next^[m]) x₀
+  have hpPos : 0 < p := Nat.sub_pos_of_lt hmn
+  have hn : n = p + m := by
+    dsimp [p]
+    omega
+  have hperiod : (next^[p]) x = x := by
+    calc
+      (next^[p]) x = (next^[p + m]) x₀ := by
+        simp only [x, Function.iterate_add_apply]
+      _ = (next^[n]) x₀ := by rw [hn]
+      _ = (next^[m]) x₀ := horbit.symm
+      _ = x := rfl
+  have hpOne : p ≠ 1 := by
+    intro hp
+    apply hnext x
+    simpa [hp] using hperiod
+  exact ⟨x, p, by omega, hperiod⟩
+
+/-- A finite certificate has an anchored escape cycle when one may choose
+one genuine anchored outgoing transition from every target and the chosen
+self-map has a periodic orbit of length at least two. -/
+def HasAnchoredCertificateEscapeCycle
+    (R : SupportFamily) (Q : Finset ℕ)
+    (cell : ℕ → Finset ℕ) : Prop :=
+  ∃ next : {q // q ∈ Q} → {q // q ∈ Q},
+    (∀ q, HasAnchoredCertificateEscapeTransition
+      R Q cell q.1 (next q).1) ∧
+    ∃ q p, 2 ≤ p ∧ (next^[p]) q = q
+
+/-- If every target of a finite localized certificate is in the separated
+trace branch, its anchored escape graph contains a nontrivial directed
+cycle.  The chosen successor edge at every vertex retains the selector
+flip and the destination support anchored at the new endpoint. -/
+theorem separatedTrace_targetLocalizedCertificate_has_anchoredEscapeCycle
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hQ : Q.Nonempty)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (hlocalized : ∀ q ∈ Q, ∃ s : BlockSelector cell,
+      DestroysAt R (selectedSet s) q ∧
+      ∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt R (selectedSet s) q')
+    (hsep : ∀ q ∈ Q,
+      HasSeparatedSingletonTwoRepairTracesAt R K D cell q) :
+    HasAnchoredCertificateEscapeCycle R Q cell := by
+  classical
+  have hout : ∀ q : {q // q ∈ Q},
+      ∃ q' : {q' // q' ∈ Q},
+        q' ≠ q ∧
+        HasAnchoredCertificateEscapeTransition
+          R Q cell q.1 q'.1 := by
+    intro q
+    obtain ⟨q', hq'Q, hq'q, hedge⟩ :=
+      separatedTrace_targetLocalizedCertificate_has_anchoredEscapeTransition
+        P hcellCard hcert hlocalized q.2 (hsep q.1 q.2)
+    refine ⟨⟨q', hq'Q⟩, ?_, hedge⟩
+    intro heq
+    exact hq'q (congrArg Subtype.val heq)
+  let next : {q // q ∈ Q} → {q // q ∈ Q} := fun q =>
+    Classical.choose (hout q)
+  have hnextNe : ∀ q, next q ≠ q := fun q =>
+    (Classical.choose_spec (hout q)).1
+  have hnextEdge : ∀ q, HasAnchoredCertificateEscapeTransition
+      R Q cell q.1 (next q).1 := fun q =>
+    (Classical.choose_spec (hout q)).2
+  obtain ⟨q₀, hq₀Q⟩ := hQ
+  letI : Nonempty {q // q ∈ Q} := ⟨⟨q₀, hq₀Q⟩⟩
+  obtain ⟨q, p, hp, hcycle⟩ :=
+    finite_selfMap_without_fixedPoint_has_nontrivialCycle
+      next hnextNe
+  exact ⟨next, hnextEdge, q, p, hp, hcycle⟩
+
 /-- A target has a wide reservoir support when one of its supports contains
 two distinct reservoir vertices. -/
 def HasWideReservoirSupportAt
@@ -6206,6 +6348,69 @@ theorem targetLocalized_twoRepairCertificate_noWide_has_binaryPairPatternCover
   exact separatedTrace_certificate_has_binaryPairPatternCover
     P hcert hsep
 
+/-- The same no-wide hypothesis retains the localized selector data.  Thus
+the unsatisfiable binary clause cover can be oriented into a nontrivial
+cycle whose edges carry newly anchored supports of their destination
+targets. -/
+theorem targetLocalized_twoRepairCertificate_noWide_has_anchoredEscapeCycle
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hQ : Q.Nonempty)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (hlocalized : ∀ q ∈ Q, ∃ s : BlockSelector cell,
+      DestroysAt R (selectedSet s) q ∧
+      ∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt R (selectedSet s) q')
+    (htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAt R K D cell q)
+    (hnoWide : ∀ q ∈ Q,
+      ¬ HasWideReservoirSupportAt R K q) :
+    HasAnchoredCertificateEscapeCycle R Q cell := by
+  have hsep : ∀ q ∈ Q,
+      HasSeparatedSingletonTwoRepairTracesAt R K D cell q := by
+    intro q hqQ
+    rcases twoRepairTraceObstruction_wide_or_separated
+        P hcellCard (htrace q hqQ) with hwide | hsep
+    · exact (hnoWide q hqQ
+        (wideTwoRepairTrace_has_wideReservoirSupport hwide)).elim
+    · exact hsep
+  exact separatedTrace_targetLocalizedCertificate_has_anchoredEscapeCycle
+    P hcellCard hQ hcert hlocalized hsep
+
+/-- Exact finite residual of a target-localized binary certificate.  Either
+some target already has an order-three support using two reservoir points,
+or all targets are narrow and the certificate contains a nontrivial cycle
+of anchored selector-flip transitions. -/
+theorem targetLocalized_twoRepairCertificate_wideSupport_or_anchoredEscapeCycle
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hQ : Q.Nonempty)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (hlocalized : ∀ q ∈ Q, ∃ s : BlockSelector cell,
+      DestroysAt R (selectedSet s) q ∧
+      ∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt R (selectedSet s) q')
+    (htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAt R K D cell q) :
+    (∃ q ∈ Q, HasWideReservoirSupportAt R K q) ∨
+      HasAnchoredCertificateEscapeCycle R Q cell := by
+  classical
+  by_cases hwide :
+      ∃ q ∈ Q, HasWideReservoirSupportAt R K q
+  · exact Or.inl hwide
+  · right
+    apply
+      targetLocalized_twoRepairCertificate_noWide_has_anchoredEscapeCycle
+        P hcellCard hQ hcert hlocalized htrace
+    intro q hqQ hqWide
+    exact hwide ⟨q, hqQ, hqWide⟩
+
 /-- Strong deletion therefore produces arbitrarily late cardinal-minimal
 certificates lying wholly in the complement of the universally safe target
 set of any infinite deletion-reservoir partition. -/
@@ -6294,6 +6499,43 @@ theorem strongDeletion_eventuallyGoodPrefix_forces_lateTraceObstruction
     targetLocalizedCertificate_has_twoRepairTraceObstruction
       hKC P hlocalized hQrepairs
   exact ⟨Q, hQ, hQlateN, hcert, hlocalized, hQsafe, htrace⟩
+
+/-- Strong deletion's late certificate, after the exact binary trace
+classification.  At every requested height the finite obstruction either
+contains a wide reservoir support or carries a nontrivial anchored escape
+cycle.  This keeps the certificate `Q`, its target-localized selectors, and
+the common-survival exclusion available at the final bridge. -/
+theorem strongDeletion_eventuallyGoodPrefix_forces_lateWideSupport_or_anchoredEscapeCycle
+    {A C K : Set ℕ} {R : SupportFamily} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion R A)
+    (hKA : K ⊆ A)
+    (hKC : K ⊆ C)
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      R C Set.univ D) :
+    ∀ N, ∃ Q : Finset ℕ,
+      Q.Nonempty ∧
+      (∀ q ∈ Q, N ≤ q) ∧
+      (∀ s : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt R (selectedSet s) q) ∧
+      (∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt R (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt R (selectedSet s) q') ∧
+      Disjoint (Q : Set ℕ)
+        (commonSurvivalTargets R cell) ∧
+      ((∃ q ∈ Q, HasWideReservoirSupportAt R K q) ∨
+        HasAnchoredCertificateEscapeCycle R Q cell) := by
+  intro N
+  obtain ⟨Q, hQ, hQlate, hcert, hlocalized,
+      hQsafe, htrace⟩ :=
+    strongDeletion_eventuallyGoodPrefix_forces_lateTraceObstruction
+      hstrong hKA hKC P hgood N
+  exact ⟨Q, hQ, hQlate, hcert, hlocalized, hQsafe,
+    targetLocalized_twoRepairCertificate_wideSupport_or_anchoredEscapeCycle
+      P hcellCard hQ hcert hlocalized htrace⟩
 
 /-- If the universally safe targets of one infinite partition contain a
 tail, any block selector is the desired infinite deletion. -/
@@ -6681,6 +6923,154 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_criticalCofinalT
     exact hcritical b (hKC hbK) hbD hbT
   exact ⟨D, T, K, cell, hDC, hgood, hKC, hK, hKD,
     P, hcellCard, hcriticalK, hdichotomy⟩
+
+/-- Tail-strengthened critical trace normal form.  Instead of retaining a
+lower-bound side condition on the binary reservoir, adjoin the fixed prefix
+to the late tail of `C` before running the private-clique/certificate
+construction.  The resulting clique is disjoint from the prefix and hence
+lies wholly in the late tail.  Consequently *every* endpoint in every
+binary cell is a recurrently bad one-point extension of the same good
+prefix.  This is the pointwise arithmetic label needed for a later
+implication-cycle argument on the binary certificate. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_fullyCriticalCofinalTraceDichotomy
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ D : Finset ℕ, ∃ K : Set ℕ,
+      ∃ cell : ℕ → Finset ℕ,
+        (D : Set ℕ) ⊆ C ∧
+        HasEventuallyTwoRepairsAtPrefixAlong
+          (additiveSupportFamily A 3) C Set.univ D ∧
+        K ⊆ C ∧ K.Infinite ∧ Disjoint K (D : Set ℕ) ∧
+        IsFiniteBlockPartition K cell ∧
+        (∀ i, (cell i).card = 2) ∧
+        (∀ b ∈ K,
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        ((∀ N, ∃ q, N ≤ q ∧
+          HasWideTwoRepairTraceAt
+            (additiveSupportFamily A 3) K D q) ∨
+         ∀ N, ∃ q, N ≤ q ∧
+          HasSeparatedSingletonTwoRepairTracesAt
+            (additiveSupportFamily A 3) K D cell q) := by
+  classical
+  obtain ⟨D, hDC, hgood, T, hcritical⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_counterexample_forces_criticalExtensions
+      hCA hrec hD₀ hminimal hcounter
+  let Ctail : Set ℕ := (D : Set ℕ) ∪ (C \ Set.Iio T)
+  have hCtailC : Ctail ⊆ C := by
+    rintro x (hxD | hxLate)
+    · exact hDC hxD
+    · exact hxLate.1
+  have hDCtail : (D : Set ℕ) ⊆ Ctail := by
+    intro x hxD
+    exact Or.inl hxD
+  have hCtail : Ctail.Infinite := by
+    have hLate : (C \ Set.Iio T).Infinite :=
+      hC.diff (Set.finite_Iio T)
+    exact hLate.mono (fun _ hx => Or.inr hx)
+  have hgoodTail : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) Ctail Set.univ D := by
+    obtain ⟨threshold, hrepair⟩ := hgood
+    refine ⟨threshold, ?_⟩
+    intro q hqThreshold hqUniv
+    obtain ⟨E, hER, hED, F, hFR, hFD, hEF⟩ :=
+      hrepair q hqThreshold hqUniv
+    refine ⟨E, hER, hED, F, hFR, hFD, ?_⟩
+    rw [Set.disjoint_left] at hEF ⊢
+    intro x hxE hxF
+    exact hEF ⟨hxE.1, hCtailC hxE.2⟩
+      ⟨hxF.1, hCtailC hxF.2⟩
+  have hbinary :
+      HasBinaryTwoRepairTraceCertificateObstruction A Ctail D :=
+    eventuallyGoodPrefix_counterexample_forces_binaryTraceObstruction
+      (C := Ctail) (hCtailC.trans hCA) hCtail hDCtail
+        hgoodTail hcounter
+  obtain ⟨K, cell, hKCtail, hK, hKD, P, hcellCard,
+      hdichotomy⟩ := hbinary.cofinalTraceDichotomy
+  have hKC : K ⊆ C := hKCtail.trans hCtailC
+  have hcriticalK : ∀ b ∈ K,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D) := by
+    intro b hbK
+    have hbD : b ∉ D := by
+      intro hbD
+      exact Set.disjoint_left.mp hKD hbK
+        (Finset.mem_coe.mpr hbD)
+    have hbTail : b ∈ Ctail := hKCtail hbK
+    have hbT : T ≤ b := by
+      change b ∈ (D : Set ℕ) ∪ (C \ Set.Iio T) at hbTail
+      rcases hbTail with hbPrefix | hbLate
+      · exact (hbD (Finset.mem_coe.mp hbPrefix)).elim
+      · exact Nat.le_of_not_gt hbLate.2
+    exact hcritical b (hKC hbK) hbD hbT
+  exact ⟨D, K, cell, hDC, hgood, hKC, hK, hKD,
+    P, hcellCard, hcriticalK, hdichotomy⟩
+
+/-- Fully synchronized finite-certificate normal form.  In a counterexample
+there is one eventually good prefix and one infinite binary reservoir such
+that every cell endpoint is a recurrently bad extension of that prefix.
+At every requested target height, strong deletion then supplies a late
+target-localized certificate which either already contains a wide support
+or contains a nontrivial cycle of anchored selector-flip transitions.
+
+This is the exact meeting point of the arithmetic critical-extension input
+and the finite certificate `Q`: no threshold guard, moving target set, or
+unlabelled separated branch remains. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_fullyCriticalLateWideSupportOrAnchoredEscapeCycle
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ D : Finset ℕ, ∃ K : Set ℕ,
+      ∃ cell : ℕ → Finset ℕ,
+        (D : Set ℕ) ⊆ C ∧
+        HasEventuallyTwoRepairsAtPrefixAlong
+          (additiveSupportFamily A 3) C Set.univ D ∧
+        K ⊆ C ∧ K.Infinite ∧ Disjoint K (D : Set ℕ) ∧
+        IsFiniteBlockPartition K cell ∧
+        (∀ i, (cell i).card = 2) ∧
+        (∀ b ∈ K,
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        ∀ N, ∃ Q : Finset ℕ,
+          Q.Nonempty ∧
+          (∀ q ∈ Q, N ≤ q) ∧
+          (∀ s : BlockSelector cell, ∃ q ∈ Q,
+            DestroysAt (additiveSupportFamily A 3)
+              (selectedSet s) q) ∧
+          (∀ q ∈ Q, ∃ s : BlockSelector cell,
+            DestroysAt (additiveSupportFamily A 3)
+              (selectedSet s) q ∧
+            ∀ q' ∈ Q, q' ≠ q →
+              ¬ DestroysAt (additiveSupportFamily A 3)
+                (selectedSet s) q') ∧
+          Disjoint (Q : Set ℕ)
+            (commonSurvivalTargets
+              (additiveSupportFamily A 3) cell) ∧
+          ((∃ q ∈ Q,
+              HasWideReservoirSupportAt
+                (additiveSupportFamily A 3) K q) ∨
+            HasAnchoredCertificateEscapeCycle
+              (additiveSupportFamily A 3) Q cell) := by
+  obtain ⟨D, K, cell, hDC, hgood, hKC, hK, hKD,
+      P, hcellCard, hcriticalK, _hcofinal⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_counterexample_forces_fullyCriticalCofinalTraceDichotomy
+      hCA hC hrec hD₀ hminimal hcounter
+  refine ⟨D, K, cell, hDC, hgood, hKC, hK, hKD,
+    P, hcellCard, hcriticalK, ?_⟩
+  exact
+    strongDeletion_eventuallyGoodPrefix_forces_lateWideSupport_or_anchoredEscapeCycle
+      (strongOrderThreeDeletion_of_counterexample hcounter)
+        (hKC.trans hCA) hKC P hcellCard hgood
 
 /-- Arithmetic version of the critical cofinal normal form.  The remaining
 counterexample must exhibit, at arbitrarily late targets, either a
