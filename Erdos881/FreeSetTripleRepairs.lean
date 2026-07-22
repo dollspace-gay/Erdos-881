@@ -10895,6 +10895,89 @@ theorem infinite_coreIncidences_thin_rootOnly_or_petals
       (Finset.mem_sdiff.mpr
         ⟨(Finset.mem_inter.mp hxTrace).2, hxR⟩)
 
+/-- In the root-only branch, the finite root leaves only finitely many
+possible nonempty core traces.  Hence one exact trace `S ⊆ R` occurs on an
+infinite subfamily. -/
+theorem infinite_rootOnlyCoreTraces_stabilize
+    {I : Set ℕ} (hI : I.Infinite) (R : Finset ℕ)
+    (repair core : ℕ → Finset ℕ)
+    (hroot : ∀ n ∈ I,
+      (repair n ∩ core n).Nonempty ∧
+      repair n ∩ core n ⊆ R) :
+    ∃ S : Finset ℕ, S.Nonempty ∧ S ⊆ R ∧
+      ∃ L, L ⊆ I ∧ L.Infinite ∧
+        ∀ n ∈ L, repair n ∩ core n = S := by
+  classical
+  let trace : ℕ → Finset ℕ := fun n => repair n ∩ core n
+  have himageFinite : (trace '' I).Finite := by
+    apply R.powerset.finite_toSet.subset
+    rintro S ⟨n, hn, rfl⟩
+    exact Finset.mem_powerset.mpr (hroot n hn).2
+  have hinfiniteFiber : ∃ S ∈ trace '' I,
+      (I ∩ trace ⁻¹' ({S} : Set (Finset ℕ))).Infinite := by
+    by_contra hnoFiber
+    push Not at hnoFiber
+    apply hI
+    apply Set.Finite.of_finite_fibers trace himageFinite
+    intro S hSImage
+    exact hnoFiber S hSImage
+  obtain ⟨S, hSImage, hSFiber⟩ := hinfiniteFiber
+  obtain ⟨n, hnI, htraceEq⟩ := hSImage
+  have hSnonempty : S.Nonempty := by
+    rw [← htraceEq]
+    exact (hroot n hnI).1
+  have hSR : S ⊆ R := by
+    rw [← htraceEq]
+    exact (hroot n hnI).2
+  let L : Set ℕ := I ∩ trace ⁻¹' ({S} : Set (Finset ℕ))
+  refine ⟨S, hSnonempty, hSR, L, (fun n hn => hn.1), hSFiber, ?_⟩
+  intro n hn
+  change trace n = S
+  simpa [L] using hn.2
+
+/-- An injective infinite order-three target family cannot have all of its
+chosen repairs contain the same three-point set.  Cardinality forces every
+repair to equal that set, whose sum then fixes the target. -/
+theorem no_infinite_injectiveTargets_with_fixedThreePointRepairTrace
+    {A I : Set ℕ} (hI : I.Infinite)
+    (target : ℕ → ℕ) (htargetInj : Set.InjOn target I)
+    (repair : ℕ → Finset ℕ) (S : Finset ℕ)
+    (hScard : S.card = 3)
+    (hrepairR : ∀ n ∈ I,
+      repair n ∈ additiveSupportFamily A 3 (target n))
+    (hSrepair : ∀ n ∈ I, S ⊆ repair n) : False := by
+  have htargetImage : (target '' I).Infinite :=
+    (Set.infinite_image_iff htargetInj).mpr hI
+  apply htargetImage
+  apply (Set.finite_singleton (S.sum id)).subset
+  rintro q ⟨n, hn, rfl⟩
+  have hrepairCard : (repair n).card ≤ 3 :=
+    additiveSupportFamily_cardAtMost A 3
+      (target n) (repair n) (hrepairR n hn)
+  have hSrepairEq : S = repair n :=
+    Finset.eq_of_subset_of_card_le (hSrepair n hn) (by
+      simpa [hScard] using hrepairCard)
+  have hsum : (repair n).sum id = target n := by
+    classical
+    obtain ⟨v, _hvA, hvsum, hvSupport⟩ :=
+      mem_additiveSupportFamily_iff.mp (hrepairR n hn)
+    have himageCard :
+        (Finset.univ.image fun i : Fin 3 => (v i).1).card =
+          (Finset.univ : Finset (Fin 3)).card := by
+      rw [← tupleSupport, hvSupport]
+      rw [← hSrepairEq, hScard]
+      simp
+    have hinj : Set.InjOn (fun i : Fin 3 => (v i).1)
+        ((Finset.univ : Finset (Fin 3)) : Set (Fin 3)) :=
+      Finset.card_image_iff.mp himageCard
+    rw [← hvSupport, tupleSupport, Finset.sum_image]
+    · simpa using hvsum
+    · exact hinj
+  have : target n = S.sum id := by
+    rw [hSrepairEq]
+    exact hsum.symm
+  simpa [this]
+
 /-- Hits chosen from pairwise-disjoint marked core petals are automatically
 injective.  The marked atoms identify the petals, and equality of two chosen
 hits would put one point in two disjoint petals. -/
@@ -10933,8 +11016,8 @@ theorem exists_injective_markedCorePetalHit
 /-- Refine a synchronized certificate/marked-target family into the exact
 three geometric branches needed for the finite-certificate endgame.  Either
 the two target ranges migrate apart, or they agree pointwise and the forced
-certificate/core incidences concentrate at one fixed sunflower-root vertex
-or move through the individual core petals. -/
+certificate/core incidences have one fixed nonempty trace in the sunflower
+root or move through the individual core petals. -/
 theorem certificateMarkedTargetSynchronization_refines_to_migration_or_coreIncidence
     {A C K I J : Set ℕ} {D R : Finset ℕ}
     {target atom certificateTarget : ℕ → ℕ}
@@ -10961,9 +11044,11 @@ theorem certificateMarkedTargetSynchronization_refines_to_migration_or_coreIncid
           ((fun n => target (atom n)) '' L) ∨
         (∀ n ∈ L,
           certificateTarget n = target (atom n)) ∧
-          ((∃ x ∈ R, ∀ n ∈ L,
-              x ∈ certificateRepair n ∧
-              x ∈ core (atom n) ∧ x ≠ atom n) ∨
+          ((∃ S : Finset ℕ, S.Nonempty ∧ S ⊆ R ∧ S.card ≤ 2 ∧
+              ∀ n ∈ L,
+                Disjoint (certificateRepair n)
+                  (core (atom n) \ R) ∧
+                certificateRepair n ∩ core (atom n) = S) ∨
             ∀ n ∈ L, ∃ x,
               x ∈ certificateRepair n ∧
               x ∈ core (atom n) \ R ∧ x ≠ atom n)) := by
@@ -10973,12 +11058,67 @@ theorem certificateMarkedTargetSynchronization_refines_to_migration_or_coreIncid
         x ∈ core (atom n) ∧ x ≠ atom n :=
       coincidentCertificateMarkedTargets_hit_unmarkedCores
         hIJ hdata hcertificate hequal
-    obtain ⟨L, hLI, hL, hrootOrPetal⟩ :=
-      infinite_coreHits_thin_root_or_petals
-        hI R atom certificateRepair (fun n => core (atom n)) hhits
-    exact ⟨L, hLI, hL, hcertificateInj.mono hLI,
-      hmarkedInj.mono hLI, Or.inr
-        ⟨fun n hn => hequal n (hLI hn), hrootOrPetal⟩⟩
+    have hincidence : ∀ n ∈ I,
+        ((certificateRepair n : Set ℕ) ∩
+          (core (atom n) : Set ℕ)).Nonempty := by
+      intro n hn
+      obtain ⟨x, hxRepair, hxCore, _hxNe⟩ := hhits n hn
+      exact ⟨x, Finset.mem_coe.mpr hxRepair,
+        Finset.mem_coe.mpr hxCore⟩
+    obtain hrootOnly | hpetal :=
+      infinite_coreIncidences_thin_rootOnly_or_petals
+        hI R certificateRepair (fun n => core (atom n)) hincidence
+    · obtain ⟨L₀, hL₀I, hL₀, hroot₀⟩ := hrootOnly
+      obtain ⟨S, hSnonempty, hSR, L, hLL₀, hL, htrace⟩ :=
+        infinite_rootOnlyCoreTraces_stabilize
+          hL₀ R certificateRepair (fun n => core (atom n))
+            (fun n hn => ⟨(hroot₀ n hn).2.1,
+              (hroot₀ n hn).2.2⟩)
+      have hLI : L ⊆ I := hLL₀.trans hL₀I
+      have hScard : S.card ≤ 3 := by
+        obtain ⟨n, hn⟩ := hL.nonempty
+        rw [← htrace n hn]
+        exact (Finset.card_le_card
+          (Finset.inter_subset_left :
+            certificateRepair n ∩ core (atom n) ⊆
+              certificateRepair n)).trans
+            (additiveSupportFamily_cardAtMost A 3
+              (certificateTarget n) (certificateRepair n)
+              (hcertificate n (hIJ (hLI hn))).2.1)
+      have hScardTwo : S.card ≤ 2 := by
+        by_contra hnot
+        have hScardThree : S.card = 3 := by omega
+        exact no_infinite_injectiveTargets_with_fixedThreePointRepairTrace
+          hL certificateTarget (hcertificateInj.mono hLI)
+            certificateRepair S hScardThree
+            (fun n hn => (hcertificate n (hIJ (hLI hn))).2.1)
+            (fun n hn x hxS => by
+              have hxTrace : x ∈
+                  certificateRepair n ∩ core (atom n) := by
+                rw [htrace n hn]
+                exact hxS
+              exact (Finset.mem_inter.mp hxTrace).1)
+      exact ⟨L, hLI, hL, hcertificateInj.mono hLI,
+        hmarkedInj.mono hLI, Or.inr
+          ⟨fun n hn => hequal n (hLI hn), Or.inl
+            ⟨S, hSnonempty, hSR, hScardTwo, fun n hn =>
+              ⟨(hroot₀ n (hLL₀ hn)).1, htrace n hn⟩⟩⟩⟩
+    · obtain ⟨L, hLI, hL, hpetalHit⟩ := hpetal
+      have hpetalHit' : ∀ n ∈ L, ∃ x,
+          x ∈ certificateRepair n ∧
+          x ∈ core (atom n) \ R ∧ x ≠ atom n := by
+        intro n hn
+        obtain ⟨x, hxRepair, hxPetal⟩ := hpetalHit n hn
+        have hnJ := hIJ (hLI hn)
+        have hxNe : x ≠ atom n := by
+          intro hxEq
+          exact Set.disjoint_left.mp (hcertificate n hnJ).2.2
+            (Finset.mem_coe.mpr hxRepair)
+            (hxEq ▸ (hcertificate n hnJ).1)
+        exact ⟨x, hxRepair, hxPetal, hxNe⟩
+      exact ⟨L, hLI, hL, hcertificateInj.mono hLI,
+        hmarkedInj.mono hLI, Or.inr
+          ⟨fun n hn => hequal n (hLI hn), Or.inr hpetalHit'⟩⟩
   · exact ⟨I, Set.Subset.rfl, hI, hcertificateInj,
       hmarkedInj, Or.inl hmigrate⟩
 
