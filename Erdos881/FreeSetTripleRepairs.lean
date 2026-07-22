@@ -11450,6 +11450,71 @@ theorem minimalCrossingEndpointCertificates_huge_or_ambientSmallSelectorLayer_on
       (hQdata q hqQ).2, hqDecoded.2.1,
       by omega, hqDecoded.2.2, hxEndpoint⟩
 
+/-- The genuinely three-endpoint selector layer, separated from the private
+singleton branch. -/
+def HasInfiniteAmbientThreeEndpointSelectorLayer
+    (A B₀ B₁ : Set ℕ) (F : ℕ → Finset ℕ) : Prop :=
+  ∃ L, L ⊆ B₁ ∧ L.Infinite ∧
+    ∀ x ∈ L, ∃ q, ∃ sel : BlockSelector F,
+      selectedSet sel ⊆ B₁ ∧
+      (∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧
+        ¬ (E : Set ℕ) ⊆ B₀) ∧
+      DestroysAt (additiveSupportFamily A 3)
+        (selectedSet sel) q ∧
+      (crossingAtomEndpoints A B₀ q).card = 3 ∧
+      (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+        selectedSet sel ∧
+      x ∈ crossingAtomEndpoints A B₀ q
+
+/-- Sharp hereditary trichotomy.  Every residual exact-core partition has
+either huge certificates, an ambient private-singleton system (which now
+feeds the complement-center route), or an infinite layer of genuine
+three-endpoint obstructions destroyed by full block selectors. -/
+theorem minimalCrossingEndpointCertificates_huge_or_private_or_threeSelectorLayer_on_subreservoir
+    {A B₀ B₁ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hB₁B₀ : B₁ ⊆ B₀)
+    (P₁ : IsFiniteBlockPartition B₁ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 10 ≤ k) :
+    (∀ N, ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData
+          A B₀ F k N Q ∧
+        2 * k - 3 ≤ Q.card) ∨
+    HasInfinitePrivateSingletonCrossingEndpoints A B₀ ∨
+    HasInfiniteAmbientThreeEndpointSelectorLayer
+      A B₀ B₁ F := by
+  obtain hhuge | hprivate | hthree :=
+    minimalCrossingEndpointCertificates_huge_or_ambientObstructions_on_subreservoir
+      hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+        hB₁B₀ P₁ hcore hcellCard hk
+  · exact Or.inl hhuge
+  · right; left
+    obtain ⟨L, hLB₁, hL, hdata⟩ := hprivate
+    exact ⟨L, hLB₁.trans hB₁B₀, hL, hdata⟩
+  · right; right
+    obtain ⟨L, hLB₁, hL, hdata⟩ := hthree
+    refine ⟨L, hLB₁, hL, ?_⟩
+    intro x hxL
+    obtain ⟨N, Q, q, hnear, hxEndpoint⟩ := hdata x hxL
+    obtain ⟨hqQ, _hQcard, hQdata, hendpointCard,
+      _hcert, hlocalized⟩ := hnear
+    obtain ⟨sel, hqDestroy, _hprivate⟩ := hlocalized q hqQ
+    have hqDecoded :=
+      destroysAt_crossingEndpointTripleObstructionFamily_iff.mp
+        hqDestroy
+    exact ⟨q, sel, P₁.selectedSet_subset sel,
+      (hQdata q hqQ).2, hqDecoded.2.1,
+      hendpointCard, hqDecoded.2.2, hxEndpoint⟩
+
 /-- Partition-independent statement that one residual supports cofinally
 huge ambient certificates at scale `k`.  The witnessing exact-core
 partition is included in the predicate. -/
@@ -11523,6 +11588,68 @@ theorem exactBlockPartition_hugeCertificates_or_ambientSmallDepletion
   · exact Or.inl hhuge
   · right
     obtain ⟨L, hLB₁, hL, hdata⟩ := hsmall
+    obtain ⟨T, C, H, hTL, hT, hCdiff, hC, hdisjoint,
+        PH, hHcard, e, heIndexInj, hlineage⟩ :=
+      exists_infinite_exactBlockDepletion
+        P₁ hFcard (by omega : 2 ≤ k) hLB₁ hL
+    have hCB₀ : C ⊆ B₀ :=
+      hCdiff.trans (Set.diff_subset.trans hB₁B₀)
+    exact ⟨T, C, H, hTL.trans hLB₁, hT,
+      fun x hxT => hdata x (hTL hxT),
+      hCdiff, hC, hdisjoint, hrepairs.mono hCB₀,
+      PH, hHcard, e, heIndexInj, hlineage⟩
+
+/-- Sharp exact one-scale descent.  The singleton case is kept as its own
+global ambient alternative; only the genuine three-endpoint selector layer
+is consumed by block depletion. -/
+theorem exactBlockPartition_huge_or_private_or_threeEndpointDepletion
+    {A B₀ B₁ : Set ℕ} {F : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hB₁B₀ : B₁ ⊆ B₀)
+    (P₁ : IsFiniteBlockPartition B₁ F)
+    (hFcard : ∀ i, (F i).card = k)
+    (hk : 10 ≤ k) :
+    (∀ N, ∃ Q,
+      IsMinimalStrictCrossingEndpointCertificateData
+          A B₀ F k N Q ∧
+        2 * k - 3 ≤ Q.card) ∨
+    HasInfinitePrivateSingletonCrossingEndpoints A B₀ ∨
+    ∃ (T C : Set ℕ) (H : ℕ → Finset ℕ),
+      T ⊆ B₁ ∧ T.Infinite ∧
+      (∀ x ∈ T, ∃ q, ∃ sel : BlockSelector F,
+        selectedSet sel ⊆ B₁ ∧
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B₀ ∧
+          ¬ (E : Set ℕ) ⊆ B₀) ∧
+        DestroysAt (additiveSupportFamily A 3)
+          (selectedSet sel) q ∧
+        (crossingAtomEndpoints A B₀ q).card = 3 ∧
+        (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+          selectedSet sel ∧
+        x ∈ crossingAtomEndpoints A B₀ q) ∧
+      C ⊆ B₁ \ T ∧ C.Infinite ∧
+      Disjoint T C ∧
+      HasDirectTripleRepairsForDeletedPairs A C ∧
+      IsFiniteBlockPartition C H ∧
+      (∀ i, (H i).card = k - 1) ∧
+      ∃ e : ℕ ≃ T,
+        Function.Injective (fun i => blockIndex P₁ (e i).1) ∧
+        ∀ i, H i =
+          (F (blockIndex P₁ (e i).1)).erase (e i).1 := by
+  obtain hhuge | hprivate | hthree :=
+    minimalCrossingEndpointCertificates_huge_or_private_or_threeSelectorLayer_on_subreservoir
+      hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter hB₁B₀
+        P₁ (fun _ => Finset.Subset.rfl) hFcard hk
+  · exact Or.inl hhuge
+  · exact Or.inr (Or.inl hprivate)
+  · right; right
+    obtain ⟨L, hLB₁, hL, hdata⟩ := hthree
     obtain ⟨T, C, H, hTL, hT, hCdiff, hC, hdisjoint,
         PH, hHcard, e, heIndexInj, hlineage⟩ :=
       exists_infinite_exactBlockDepletion
@@ -11779,6 +11906,229 @@ theorem exists_hugeResidual_someScale_or_arbitrarilyLongExactDepletionChains
     exact exists_exactAmbientSmallEndpointDepletionChain_of_noHuge
       hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter hnoHuge
         Set.Subset.rfl hB₀ P hFcard (by omega)
+
+/-- An exact depletion step whose layer data genuinely have three crossing
+endpoints.  It extends the general small-endpoint step so all genealogy and
+terminal-block results remain reusable. -/
+structure IsExactAmbientThreeEndpointDepletionStep
+    (A B₀ current layer next : Set ℕ)
+    (F H : ℕ → Finset ℕ) (k : ℕ) extends
+    IsExactAmbientSmallEndpointDepletionStep
+      A B₀ current layer next F H k where
+  three_layer_data : ∀ x ∈ layer, ∃ q, ∃ sel : BlockSelector F,
+    selectedSet sel ⊆ current ∧
+    (∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) B₀ ∧
+      ¬ (E : Set ℕ) ⊆ B₀) ∧
+    DestroysAt (additiveSupportFamily A 3)
+      (selectedSet sel) q ∧
+    (crossingAtomEndpoints A B₀ q).card = 3 ∧
+    (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+      selectedSet sel ∧
+    x ∈ crossingAtomEndpoints A B₀ q
+
+/-- Excluding both the huge and private alternatives forces one exact
+three-endpoint genealogical depletion step. -/
+theorem exists_exactAmbientThreeEndpointDepletionStep_of_noHuge_noPrivate
+    {A B₀ current : Set ℕ} {F : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hcurrentB₀ : current ⊆ B₀)
+    (hcurrent : current.Infinite)
+    (P : IsFiniteBlockPartition current F)
+    (hFcard : ∀ i, (F i).card = k)
+    (hk : 10 ≤ k)
+    (hnoHuge :
+      ¬ HasCofinalHugeAmbientCertificatesOnResidual
+        A B₀ current k)
+    (hnoPrivate :
+      ¬ HasInfinitePrivateSingletonCrossingEndpoints A B₀) :
+    ∃ layer next H,
+      IsExactAmbientThreeEndpointDepletionStep
+        A B₀ current layer next F H k := by
+  obtain hhuge | hprivate | ⟨layer, next, H, hlayerCurrent,
+      hlayer, hlayerData, hnextDiff, hnext, hdisjoint,
+      hnextRepairs, PH, hHcard, e, heIndexInj, hlineage⟩ :=
+    exactBlockPartition_huge_or_private_or_threeEndpointDepletion
+      hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+        hcurrentB₀ P hFcard hk
+  · exfalso
+    apply hnoHuge
+    exact ⟨F, F, P, fun _ => Finset.Subset.rfl,
+      hFcard, hhuge⟩
+  · exact (hnoPrivate hprivate).elim
+  · refine ⟨layer, next, H, ?_⟩
+    refine
+      { current_subset := hcurrentB₀
+        current_infinite := hcurrent
+        current_partition := P
+        current_card := hFcard
+        layer_subset := hlayerCurrent
+        layer_infinite := hlayer
+        layer_data := ?_
+        next_subset := hnextDiff
+        next_infinite := hnext
+        layer_next_disjoint := hdisjoint
+        next_repairs := hnextRepairs
+        next_partition := PH
+        next_card := hHcard
+        lineage := ⟨e, heIndexInj, hlineage⟩
+        three_layer_data := hlayerData }
+    intro x hx
+    obtain ⟨q, sel, hselCurrent, hcross, hdestroy,
+        hcard, hendpointSub, hxEndpoint⟩ := hlayerData x hx
+    exact ⟨q, sel, hselCurrent, hcross, hdestroy,
+      by omega, hendpointSub, hxEndpoint⟩
+
+/-- Finite chains consisting only of genuine three-endpoint depletion
+steps. -/
+def HasExactAmbientThreeEndpointDepletionChain
+    (A B₀ : Set ℕ) :
+    ℕ → ℕ → Set ℕ → (ℕ → Finset ℕ) → Prop
+  | 0, k, current, F =>
+      IsFiniteBlockPartition current F ∧
+      ∀ i, (F i).card = k
+  | steps + 1, k, current, F =>
+      ∃ layer next H,
+        IsExactAmbientThreeEndpointDepletionStep
+          A B₀ current layer next F H k ∧
+        HasExactAmbientThreeEndpointDepletionChain
+          A B₀ steps (k - 1) next H
+
+/-- Forgetting exact endpoint cardinality turns a sharp chain into the
+general genealogical chain. -/
+theorem HasExactAmbientThreeEndpointDepletionChain.to_smallEndpointChain
+    {A B₀ current : Set ℕ} {F : ℕ → Finset ℕ}
+    {steps k : ℕ}
+    (hchain : HasExactAmbientThreeEndpointDepletionChain
+      A B₀ steps k current F) :
+    HasExactAmbientSmallEndpointDepletionChain
+      A B₀ steps k current F := by
+  induction steps generalizing k current F with
+  | zero =>
+      exact hchain
+  | succ steps ih =>
+      change ∃ layer next H,
+        IsExactAmbientThreeEndpointDepletionStep
+          A B₀ current layer next F H k ∧
+        HasExactAmbientThreeEndpointDepletionChain
+          A B₀ steps (k - 1) next H at hchain
+      obtain ⟨layer, next, H, hstep, htail⟩ := hchain
+      exact ⟨layer, next, H,
+        hstep.toIsExactAmbientSmallEndpointDepletionStep,
+        ih htail⟩
+
+/-- The sharp chain inherits the cumulative terminal-block genealogy: after
+`steps` levels every terminal block is an original block with exactly that
+many points removed. -/
+theorem HasExactAmbientThreeEndpointDepletionChain.exists_terminal_genealogy
+    {A B₀ current : Set ℕ} {F : ℕ → Finset ℕ}
+    {steps k : ℕ}
+    (hchain : HasExactAmbientThreeEndpointDepletionChain
+      A B₀ steps k current F) :
+    ∃ terminal G,
+      IsFiniteBlockPartition terminal G ∧
+      (∀ j, (G j).card = k - steps) ∧
+      ∀ j, ∃ i, ∃ removed : Finset ℕ,
+        removed ⊆ F i ∧
+        removed.card = steps ∧
+        G j = F i \ removed :=
+  hchain.to_smallEndpointChain.exists_terminal_genealogy
+
+/-- Exact three-endpoint depletion iterates to every finite depth whenever
+both competing ambient alternatives are absent. -/
+theorem exists_exactAmbientThreeEndpointDepletionChain_of_noHuge_noPrivate
+    {A B₀ current : Set ℕ} {F : ℕ → Finset ℕ}
+    {steps k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hnoHuge : ∀ j, 10 ≤ j →
+      HasNoCofinalHugeAmbientCertificatesOnInfiniteResiduals
+        A B₀ j)
+    (hnoPrivate :
+      ¬ HasInfinitePrivateSingletonCrossingEndpoints A B₀)
+    (hcurrentB₀ : current ⊆ B₀)
+    (hcurrent : current.Infinite)
+    (P : IsFiniteBlockPartition current F)
+    (hFcard : ∀ i, (F i).card = k)
+    (hscale : 10 + steps ≤ k) :
+    HasExactAmbientThreeEndpointDepletionChain
+      A B₀ steps k current F := by
+  induction steps generalizing k current F with
+  | zero =>
+      exact ⟨P, hFcard⟩
+  | succ steps ih =>
+      have hk : 10 ≤ k := by omega
+      have hnoCurrent :
+          ¬ HasCofinalHugeAmbientCertificatesOnResidual
+            A B₀ current k :=
+        hnoHuge k hk current hcurrentB₀ hcurrent
+      obtain ⟨layer, next, H, hstep⟩ :=
+        exists_exactAmbientThreeEndpointDepletionStep_of_noHuge_noPrivate
+          hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+            hcurrentB₀ hcurrent P hFcard hk hnoCurrent hnoPrivate
+      have hnextB₀ : next ⊆ B₀ :=
+        (hstep.next_subset.trans Set.diff_subset).trans hcurrentB₀
+      have hnextScale : 10 + steps ≤ k - 1 := by omega
+      refine ⟨layer, next, H, hstep, ?_⟩
+      exact ih hnextB₀ hstep.next_infinite
+        hstep.next_partition hstep.next_card hnextScale
+
+/-- Final sharp finite-depth reduction of the repaired-reservoir branch.
+Either some residual has huge certificates, the private-singleton center
+route occurs, or genuine three-endpoint selector-depletion chains exist at
+every finite depth. -/
+theorem exists_hugeResidual_or_privateEndpoints_or_arbitrarilyLongThreeEndpointDepletionChains
+    {A B₀ : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hB₀ : B₀.Infinite)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∃ B k, B ⊆ B₀ ∧ B.Infinite ∧ 10 ≤ k ∧
+      HasCofinalHugeAmbientCertificatesOnResidual A B₀ B k) ∨
+    HasInfinitePrivateSingletonCrossingEndpoints A B₀ ∨
+    ∀ steps, ∃ F : ℕ → Finset ℕ,
+      IsFiniteBlockPartition B₀ F ∧
+      (∀ i, (F i).card = 10 + steps) ∧
+      HasExactAmbientThreeEndpointDepletionChain
+        A B₀ steps (10 + steps) B₀ F := by
+  classical
+  by_cases hhuge : ∃ B k, B ⊆ B₀ ∧ B.Infinite ∧ 10 ≤ k ∧
+      HasCofinalHugeAmbientCertificatesOnResidual A B₀ B k
+  · exact Or.inl hhuge
+  · right
+    by_cases hprivate :
+        HasInfinitePrivateSingletonCrossingEndpoints A B₀
+    · exact Or.inl hprivate
+    · right
+      have hnoHuge : ∀ j, 10 ≤ j →
+          HasNoCofinalHugeAmbientCertificatesOnInfiniteResiduals
+            A B₀ j := by
+        intro j hj B hBB₀ hB hcert
+        exact hhuge ⟨B, j, hBB₀, hB, hj, hcert⟩
+      intro steps
+      obtain ⟨F, P, hFcard⟩ :=
+        exists_finiteBlockPartition_exactCard
+          hB₀ (by omega : 0 < 10 + steps)
+      refine ⟨F, P, hFcard, ?_⟩
+      exact
+        exists_exactAmbientThreeEndpointDepletionChain_of_noHuge_noPrivate
+          hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+            hnoHuge hprivate Set.Subset.rfl hB₀ P hFcard (by omega)
 
 /-- Consume one ambient small-endpoint layer by removing an infinite block
 transversal from its carrier.  The residual remains infinite and repaired,
