@@ -2,6 +2,7 @@ import Erdos881.BoundedStratumSplitting
 import Erdos881.CertificateAmplification
 import Erdos881.HybridPairTripleRepairs
 import Erdos881.InfiniteSunflower
+import Erdos881.ReflectionDefects
 
 /-!
 # Free-set thinning of local direct triple repairs
@@ -5107,6 +5108,147 @@ theorem finiteCrossingEndpointTripleCertificates_strict_or_rigidCore
         hB₀A hcross hsingle⟩
   · left
     omega
+
+/-- A sharp private-destroyer certificate cannot recur arbitrarily late on
+one fixed core of size at least four.  At most three basis elements have
+arbitrarily late singleton order-three destruction, so every such core
+contains a point with a personal cutoff; once all certificate targets lie
+beyond that cutoff, a bijective sharp matching onto the core is impossible.
+-/
+theorem eventually_no_sharpPrivateCertificate_on_fixedCore
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ} {k i : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hB₀A : B₀ ⊆ A)
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ j, cell j ⊆ F j)
+    (hcellCard : ∀ j, (cell j).card = k)
+    (hk : 4 ≤ k) :
+    ∃ N, ∀ {Q : Finset ℕ}
+      (point : {q // q ∈ Q} → ℕ),
+      (∀ q ∈ Q, N ≤ q) →
+      cell i = Q.attach.image point →
+      (∀ q, DestroysAt (additiveSupportFamily A 3)
+        ({point q} : Set ℕ) q.1) → False := by
+  classical
+  let Bad : Set ℕ := {a | a ∈ A ∧ ∀ N, ∃ n, N ≤ n ∧
+    DestroysAt (additiveSupportFamily A 3)
+      ({a} : Set ℕ) n}
+  have hBad : Bad.Finite :=
+    finite_arbitrarilyLateSingletonDestruction_orderThree hbasis
+  have hBadCard : hBad.toFinset.card ≤ 3 := by
+    rw [← Set.ncard_eq_toFinset_card Bad hBad]
+    simpa [Bad] using
+      ncard_arbitrarilyLateSingletonDestruction_orderThree_le_three
+        hbasis
+  have hnsub : ¬ cell i ⊆ hBad.toFinset := by
+    intro hsub
+    have hcard := Finset.card_le_card hsub
+    rw [hcellCard i] at hcard
+    omega
+  obtain ⟨x, hxCell, hxBadFinset⟩ := Finset.not_subset.mp hnsub
+  have hxB₀ : x ∈ B₀ :=
+    (P.mem_iff x).2 ⟨i, hcore i hxCell⟩
+  have hxA : x ∈ A := hB₀A hxB₀
+  have hxNotBad : x ∉ Bad := by
+    intro hxBad
+    exact hxBadFinset (hBad.mem_toFinset.mpr hxBad)
+  have hxNotLate : ¬ (∀ N, ∃ n, N ≤ n ∧
+      DestroysAt (additiveSupportFamily A 3)
+        ({x} : Set ℕ) n) := by
+    intro hxLate
+    exact hxNotBad ⟨hxA, hxLate⟩
+  push Not at hxNotLate
+  obtain ⟨N, hN⟩ := hxNotLate
+  refine ⟨N, ?_⟩
+  intro Q point hQlate hcellEq hdestroy
+  have hxImage : x ∈ Q.attach.image point := by
+    rw [← hcellEq]
+    exact hxCell
+  obtain ⟨q, _hqAttach, hqx⟩ := Finset.mem_image.mp hxImage
+  have hxEq : point q = x := hqx
+  exact hN q.1 (hQlate q.1 q.2) (by
+    simpa [hxEq] using hdestroy q)
+
+/-- The sharp branch must migrate beyond every prescribed finite collection
+of cores.  Choose a personal singleton-destruction cutoff for one safe point
+in each core in `J`, then ask for the endpoint certificate beyond the maximum
+of those cutoffs.  Equality `Q.card = k` may still occur, but its matched
+core cannot belong to `J`; otherwise its sharp singleton destroyers violate
+that core's cutoff. -/
+theorem finiteCrossingEndpointTripleCertificates_strict_or_freshRigidCore
+    {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroB₀ : 0 ∉ B₀)
+    (hB₀A : B₀ ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B₀)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (P : IsFiniteBlockPartition B₀ F)
+    (hcore : ∀ i, cell i ⊆ F i)
+    (hcellCard : ∀ i, (cell i).card = k)
+    (hk : 4 ≤ k) (J : Finset ℕ) :
+    ∀ N, ∃ Q : Finset ℕ,
+      k ≤ Q.card ∧
+      (∀ q ∈ Q, N ≤ q ∧
+        ∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B₀ ∧
+          ¬ (E : Set ℕ) ⊆ B₀) ∧
+      (∀ sel : BlockSelector F, ∃ q ∈ Q,
+        DestroysAt (additiveSupportFamily A 3)
+          (selectedSet sel) q ∧
+        (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆
+          selectedSet sel) ∧
+      (k < Q.card ∨
+        ∃ point : {q // q ∈ Q} → ℕ, ∃ i,
+          i ∉ J ∧
+          cell i = Q.attach.image point ∧
+          Function.Injective point ∧
+          ∀ q,
+            crossingAtomEndpoints A B₀ q.1 = {point q} ∧
+            DestroysAt (additiveSupportFamily A 3)
+              ({point q} : Set ℕ) q.1 ∧
+            IsRigidPairSum A (point q) (q.1 - point q)) := by
+  classical
+  have hcutoffExists : ∀ i, ∃ Ni, ∀ {Q : Finset ℕ}
+      (point : {q // q ∈ Q} → ℕ),
+      (∀ q ∈ Q, Ni ≤ q) →
+      cell i = Q.attach.image point →
+      (∀ q, DestroysAt (additiveSupportFamily A 3)
+        ({point q} : Set ℕ) q.1) → False := by
+    intro i
+    exact eventually_no_sharpPrivateCertificate_on_fixedCore
+      hbasis hB₀A P hcore hcellCard hk
+  choose cutoff hcutoff using hcutoffExists
+  let T : ℕ := J.sup cutoff
+  intro N
+  obtain ⟨Q, hQlower, hQdata, hcert, hfork⟩ :=
+    finiteCrossingEndpointTripleCertificates_strict_or_rigidCore
+      hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
+        P hcore hcellCard hk (max N T)
+  have hQlate : ∀ q ∈ Q, N ≤ q ∧
+      ∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) B₀ ∧
+        ¬ (E : Set ℕ) ⊆ B₀ := by
+    intro q hqQ
+    exact ⟨(le_max_left N T).trans (hQdata q hqQ).1,
+      (hQdata q hqQ).2⟩
+  refine ⟨Q, hQlower, hQlate, hcert, ?_⟩
+  rcases hfork with hstrict | ⟨point, i, hcellEq, hpointInj, hsharp⟩
+  · exact Or.inl hstrict
+  · right
+    have hiJ : i ∉ J := by
+      intro hiJ
+      have hcutoffT : cutoff i ≤ T := by
+        exact Finset.le_sup (f := cutoff) hiJ
+      apply hcutoff i point
+      · intro q hqQ
+        exact hcutoffT.trans
+          ((le_max_right N T).trans (hQdata q hqQ).1)
+      · exact hcellEq
+      · intro q
+        exact (hsharp q).2.1
+    exact ⟨point, i, hiJ, hcellEq, hpointInj, hsharp⟩
 
 /-- Counterexample-level form of the scalable crossing-endpoint fork.  For
 every finite scale `k ≥ 4`, one fixed repaired zero-atomic reservoir admits
