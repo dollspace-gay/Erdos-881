@@ -23851,6 +23851,92 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_selfSplittingCandidate_
     right
     exact ⟨L, hLB₀.trans hB₀C, hL, hnormal⟩
 
+/-- The self-splitting alternative produced by the repaired matching
+construction is already impossible under the counterexample hypothesis:
+the completed self-basis-reservoir theorem thins it directly to a successful
+order-three deletion.  Thus the minimal recurrent finite certificate forces
+the explicit infinite zero-atomic branch. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_zeroAtoms
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ L, L ⊆ C ∧ L.Infinite ∧
+      ∀ a ∈ L, ∀ E ∈ additiveSupportFamily A 2 a,
+        E = {a, 0} := by
+  rcases
+      minimalRecurrentNoTwoRepairPrefix_counterexample_selfSplittingCandidate_or_zeroAtoms
+        hbasis hzeroA hCA hC hrec hD₀ hminimal hcounter with
+    hsplit | hatomic
+  · obtain ⟨B, _hBC, hBA, hB, _hsplit, hself,
+      _D, _hDC, _J, _q, _R, _hJ, _hsurvive⟩ := hsplit
+    obtain ⟨B', hB'B, hB', hthree⟩ :=
+      exists_infiniteDeletion_threeBasis_of_selfBasisReservoir
+        hbasis hBA hB hself
+    exact (hcounter B' (hB'B.trans hBA) hB' hthree).elim
+  · exact hatomic
+
+/-- Strengthened zero-atomic conclusion retaining the cofinal family of
+order-three repairs constructed before the splitting/atomic dichotomy.
+Under a counterexample the splitting branch is impossible, while in the
+atomic branch the final zero-atomic thinning remains inside the original
+candidate deletion, so every previously surviving support still avoids it. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_zeroAtoms_with_unboundedSurvivingRepairs
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ L, L ⊆ C ∧ L ⊆ A ∧ L.Infinite ∧
+      (∀ a ∈ L, ∀ E ∈ additiveSupportFamily A 2 a,
+        E = {a, 0}) ∧
+      ∃ D : Finset ℕ, (D : Set ℕ) ⊆ C ∧
+        ∃ J : Set ℕ, ∃ q : ℕ → ℕ,
+          ∃ R : ℕ → Finset ℕ,
+            J.Infinite ∧
+            ∀ n ∈ J, n ≤ q n ∧
+              R n ∈ additiveSupportFamily A 3 (q n) ∧
+              Disjoint (R n) D ∧
+              Disjoint (R n : Set ℕ) L := by
+  obtain ⟨B₀, hB₀C, hB₀A, hB₀, D, hDC,
+      J, q, R, hJ, hsurvive⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_counterexample_exists_infiniteCandidateDeletion_with_unboundedSurvivingRepairs
+      hCA hC hrec hD₀ hminimal hcounter
+  rcases infiniteDeletionSplits_or_infiniteZeroAtoms hbasis hB₀ with
+      hsplit | hatomic
+  · obtain ⟨B₁, hB₁B₀, hB₁, hsplitB₁⟩ := hsplit
+    let B : Set ℕ := B₁ \ {0}
+    have hBB₁ : B ⊆ B₁ := Set.diff_subset
+    have hBB₀ : B ⊆ B₀ := hBB₁.trans hB₁B₀
+    have hB : B.Infinite := hB₁.diff (Set.finite_singleton 0)
+    have hzeroB : 0 ∉ B := by simp [B]
+    have hBA : B ⊆ A := hBB₀.trans hB₀A
+    have hsplitB : DeletionSplitsIntoComplement A B :=
+      hsplitB₁.mono hBB₁
+    obtain ⟨B', hB'B, hB', hthree⟩ :=
+      exists_infiniteDeletion_threeBasis_of_zero_splittingReservoir
+        hbasis hzeroA hzeroB hBA hB hsplitB
+    exact (hcounter B' (hB'B.trans hBA) hB' hthree).elim
+  · obtain ⟨L, hLB₀, hL, _hzeroA', hnormal⟩ := hatomic
+    refine ⟨L, hLB₀.trans hB₀C, hLB₀.trans hB₀A,
+      hL, hnormal, D, hDC, J, q, R, hJ, ?_⟩
+    intro n hn
+    obtain ⟨hqn, hRR, hRD, hRB₀⟩ := hsurvive n hn
+    exact ⟨hqn, hRR, hRD, hRB₀.mono_right hLB₀⟩
+
 /-- Exact negation of eventual pair independence: arbitrarily late there is
 a target every one of whose ambient order-two supports is entirely red. -/
 theorem not_eventuallyPairIndependent_iff_arbitrarilyLate_allPairSupportsRed
