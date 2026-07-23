@@ -3,6 +3,8 @@ import Erdos881.CertificateAmplification
 import Erdos881.HybridPairTripleRepairs
 import Erdos881.InfiniteSunflower
 import Erdos881.ReflectionDefects
+import Mathlib.Combinatorics.Hall.Finite
+import Mathlib.Combinatorics.Pigeonhole
 import Mathlib.Order.Extension.Linear
 
 /-!
@@ -4005,6 +4007,53 @@ theorem crossingAtomEndpoint_sum
   have hble := (mem_crossingAtomEndpoints_iff.mp hb).1
   omega
 
+/-- If one crossing endpoint alone destroys a target at order three, it is
+the only crossing endpoint.  Indeed, zero-padding the canonical pair of any
+other endpoint would be a triple support; singleton destruction forces the
+distinguished point into that pair, and the complementary endpoint lies
+outside the deletion. -/
+theorem crossingAtomEndpoints_eq_singleton_of_singletonDestroyer
+    {A B : Set ℕ} {q b : ℕ}
+    (hzeroA : 0 ∈ A) (hzeroB : 0 ∉ B) (hBA : B ⊆ A)
+    (hb : b ∈ crossingAtomEndpoints A B q)
+    (hdestroy : DestroysAt (additiveSupportFamily A 3)
+      ({b} : Set ℕ) q) :
+    crossingAtomEndpoints A B q = {b} := by
+  classical
+  ext d
+  constructor
+  · intro hd
+    have hdData := mem_crossingAtomEndpoints_iff.mp hd
+    have hpair : pairSupport q d ∈
+        additiveSupportFamily A 2 q :=
+      pairSupport_mem_additiveSupportFamily hdData.1
+        (hBA hdData.2.1) hdData.2.2.1
+    have hlift : insert 0 (pairSupport q d) ∈
+        additiveSupportFamily A 3 q := by
+      simpa using
+        insert_mem_additiveSupportFamily_succ hzeroA hpair
+    obtain ⟨z, hzSupport, hzSingle⟩ :=
+      Set.not_disjoint_iff.mp
+        (hdestroy (insert 0 (pairSupport q d)) hlift)
+    have hzb : z = b := by simpa using hzSingle
+    subst z
+    have hbPair : b ∈ pairSupport q d := by
+      rcases Finset.mem_insert.mp (Finset.mem_coe.mp hzSupport) with
+          hbZero | hbPair
+      · have hbEq : b = 0 := hbZero
+        exact (hzeroB (hbEq ▸
+          (mem_crossingAtomEndpoints_iff.mp hb).2.1)).elim
+      · exact hbPair
+    have hcases : b = d ∨ b = q - d := by
+      simpa [pairSupport] using hbPair
+    have hbd : b = d := hcases.resolve_right fun hcomp =>
+      hdData.2.2.2
+        (hcomp ▸ (mem_crossingAtomEndpoints_iff.mp hb).2.1)
+    simpa [hbd]
+  · intro hd
+    have hdb : d = b := by simpa using hd
+    simpa [hdb] using hb
+
 /-- At a target whose every pair support crosses `B`, the entire pair-support
 family is obtained by mapping each crossing atom endpoint to its canonical
 pair support. -/
@@ -4996,6 +5045,66 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_privateConflictC
   exact ⟨d, hdD₀,
     twoRepairConflictClique_has_privateSubclique hclique⟩
 
+/-- The additive provenance of one binary cell cut from a private conflict
+clique.  Its two endpoints occur in prefix-avoiding supports of one common
+protected target, and those supports meet the whole binary reservoir only
+at the corresponding endpoint. -/
+structure PrivateConflictBinaryCellData
+    (A C K : Set ℕ) (D : Finset ℕ)
+    (cell : ℕ → Finset ℕ) (i : ℕ) where
+  leftPoint : ℕ
+  leftPoint_mem : leftPoint ∈ cell i
+  rightPoint : ℕ
+  rightPoint_mem : rightPoint ∈ cell i
+  points_ne : leftPoint ≠ rightPoint
+  conflict : TwoRepairConflictData A C D leftPoint rightPoint
+  left_trace : ((conflict.left : Set ℕ) ∩ K) = {leftPoint}
+  right_trace : ((conflict.right : Set ℕ) ∩ K) = {rightPoint}
+
+/-- The two retained endpoints exhaust their binary cell. -/
+theorem PrivateConflictBinaryCellData.cell_eq_pair
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {i : ℕ}
+    (hcellCard : ∀ j, (cell j).card = 2)
+    (w : PrivateConflictBinaryCellData A C K D cell i) :
+    cell i = {w.leftPoint, w.rightPoint} := by
+  have hsub : ({w.leftPoint, w.rightPoint} : Finset ℕ) ⊆ cell i := by
+    intro z hz
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hz
+    rcases hz with rfl | rfl
+    · exact w.leftPoint_mem
+    · exact w.rightPoint_mem
+  exact (Finset.eq_of_subset_of_card_le hsub (by
+    simp [hcellCard i, w.points_ne])).symm
+
+/-- Hence any point in the cell is one of its two provenance endpoints. -/
+theorem PrivateConflictBinaryCellData.eq_left_or_right_of_mem
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {i z : ℕ}
+    (hcellCard : ∀ j, (cell j).card = 2)
+    (w : PrivateConflictBinaryCellData A C K D cell i)
+    (hz : z ∈ cell i) :
+    z = w.leftPoint ∨ z = w.rightPoint := by
+  rw [w.cell_eq_pair hcellCard] at hz
+  simpa using hz
+
+/-- Two distinct points in the cell are its provenance endpoints, in one
+of the two possible orientations. -/
+theorem PrivateConflictBinaryCellData.orient_distinct_points
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {i z z' : ℕ}
+    (hcellCard : ∀ j, (cell j).card = 2)
+    (w : PrivateConflictBinaryCellData A C K D cell i)
+    (hz : z ∈ cell i) (hz' : z' ∈ cell i) (hne : z ≠ z') :
+    (z = w.leftPoint ∧ z' = w.rightPoint) ∨
+      (z = w.rightPoint ∧ z' = w.leftPoint) := by
+  rcases w.eq_left_or_right_of_mem hcellCard hz with hzL | hzR <;>
+    rcases w.eq_left_or_right_of_mem hcellCard hz' with hz'L | hz'R
+  · exact (hne (hzL.trans hz'L.symm)).elim
+  · exact Or.inl ⟨hzL, hz'R⟩
+  · exact Or.inr ⟨hzR, hz'L⟩
+  · exact (hne (hzR.trans hz'R.symm)).elim
+
 /-- Pair a private conflict clique into disjoint two-point cells.  Every
 choice of one point from each cell simultaneously preserves the unbounded
 family of corresponding edge targets: at cell `i`, use the private support
@@ -5009,6 +5118,8 @@ theorem privateConflictClique_has_binaryCells_with_unboundedCommonSurvival
       (∀ i, (cell i).card = 2) ∧
       (Pairwise fun i j => Disjoint (cell i) (cell j)) ∧
       (Set.range target).Infinite ∧
+      (∀ i, Nonempty (PrivateConflictBinaryCellData
+        A C {z | ∃ j, z ∈ cell j} D cell i)) ∧
       ∀ s : ℕ → ℕ, (∀ i, s i ∈ cell i) →
         ∀ i, ∃ G ∈ additiveSupportFamily A 3 (target i),
           Disjoint (G : Set ℕ) (Set.range s) := by
@@ -5036,6 +5147,14 @@ theorem privateConflictClique_has_binaryCells_with_unboundedCommonSurvival
   choose w hleftTrace hrightTrace using hw
   let cell : ℕ → Finset ℕ := fun i => {x i, y i}
   let target : ℕ → ℕ := fun i => (w i).target
+  let Kcell : Set ℕ := {z | ∃ i, z ∈ cell i}
+  have hKcellK : Kcell ⊆ K := by
+    rintro z ⟨i, hzi⟩
+    have hzCases : z = x i ∨ z = y i := by
+      simpa [cell] using hzi
+    rcases hzCases with rfl | rfl
+    · exact hxK i
+    · exact hyK i
   have hcellC : ∀ i, (cell i : Set ℕ) ⊆ C := by
     intro i z hz
     have hzCases : z = x i ∨ z = y i := by
@@ -5097,8 +5216,42 @@ theorem privateConflictClique_has_binaryCells_with_unboundedCommonSurvival
     apply (Set.finite_Iic U).subset
     rintro z ⟨i, rfl⟩
     exact (hxTarget i).trans (hU ⟨i, rfl⟩)
+  have hcellData : ∀ i, Nonempty (PrivateConflictBinaryCellData
+      A C {z | ∃ j, z ∈ cell j} D cell i) := by
+    intro i
+    have hleftCellTrace : ((w i).left : Set ℕ) ∩ Kcell =
+        {x i} := by
+      ext z
+      constructor
+      · intro hz
+        have hzOriginal : z ∈ ((w i).left : Set ℕ) ∩ K :=
+          ⟨hz.1, hKcellK hz.2⟩
+        rw [hleftTrace i] at hzOriginal
+        simpa using hzOriginal
+      · intro hz
+        have hzx : z = x i := by simpa using hz
+        subst z
+        exact ⟨Finset.mem_coe.mpr (w i).left_point,
+          ⟨i, by simp [cell]⟩⟩
+    have hrightCellTrace : ((w i).right : Set ℕ) ∩ Kcell =
+        {y i} := by
+      ext z
+      constructor
+      · intro hz
+        have hzOriginal : z ∈ ((w i).right : Set ℕ) ∩ K :=
+          ⟨hz.1, hKcellK hz.2⟩
+        rw [hrightTrace i] at hzOriginal
+        simpa using hzOriginal
+      · intro hz
+        have hzy : z = y i := by simpa using hz
+        subst z
+        exact ⟨Finset.mem_coe.mpr (w i).right_point,
+          ⟨i, by simp [cell]⟩⟩
+    exact ⟨⟨x i, by simp [cell], y i, by simp [cell], hxy i,
+      w i, by simpa [Kcell] using hleftCellTrace,
+      by simpa [Kcell] using hrightCellTrace⟩⟩
   refine ⟨cell, target, hcellC, hcellD, hcellCard,
-    hcellDisjoint, htarget, ?_⟩
+    hcellDisjoint, htarget, hcellData, ?_⟩
   intro s hs i
   have hsi : s i = x i ∨ s i = y i := by
     simpa [cell] using hs i
@@ -5157,12 +5310,14 @@ theorem privateConflictClique_has_binaryCommonSurvivalPartition
         IsFiniteBlockPartition K cell ∧
         (∀ i, (cell i).card = 2) ∧
         (Set.range target).Infinite ∧
+        (∀ i, Nonempty (PrivateConflictBinaryCellData
+          A C K D cell i)) ∧
         ∀ s : BlockSelector cell, ∀ i,
           ∃ G ∈ additiveSupportFamily A 3 (target i),
             Disjoint (G : Set ℕ) (selectedSet s) := by
   classical
   obtain ⟨cell, target, hcellC, hcellD, hcellCard,
-      hcellDisjoint, htarget, hsurvive⟩ :=
+      hcellDisjoint, htarget, hcellData, hsurvive⟩ :=
     privateConflictClique_has_binaryCells_with_unboundedCommonSurvival
       hprivate
   let K : Set ℕ := {z | ∃ i, z ∈ cell i}
@@ -5192,12 +5347,102 @@ theorem privateConflictClique_has_binaryCommonSurvivalPartition
     refine ⟨hcellNonempty, hcellDisjoint, ?_⟩
     intro z
     rfl
+  have hcellDataK : ∀ i, Nonempty (PrivateConflictBinaryCellData
+      A C K D cell i) := by
+    simpa [K] using hcellData
   refine ⟨K, cell, target, hKC, hK, hcellD, P,
-    hcellCard, htarget, ?_⟩
+    hcellCard, htarget, hcellDataK, ?_⟩
   intro s i
   obtain ⟨G, hGR, hG⟩ :=
     hsurvive (fun j => (s j).1) (fun j => (s j).2) i
   exact ⟨G, hGR, by simpa [selectedSet] using hG⟩
+
+/-! ### Fixed-prefix-relative selector certificates -/
+
+/-- The subfamily of supports which avoid a fixed deleted prefix.  Encoding
+the prefix in the support family, rather than adding it to every selector,
+ensures that supports supplied by target-private selectors retain prefix
+avoidance. -/
+noncomputable def prefixAvoidingSupportFamily
+    (R : SupportFamily) (D : Set ℕ) : SupportFamily := by
+  classical
+  exact fun q => (R q).filter fun E => Disjoint (E : Set ℕ) D
+
+@[simp] theorem mem_prefixAvoidingSupportFamily
+    {R : SupportFamily} {D : Set ℕ} {q : ℕ} {E : Finset ℕ} :
+    E ∈ prefixAvoidingSupportFamily R D q ↔
+      E ∈ R q ∧ Disjoint (E : Set ℕ) D := by
+  simp [prefixAvoidingSupportFamily]
+
+/-- Destroying all prefix-avoiding supports with `B` is equivalent to
+destroying all original supports with the enlarged deletion `D ∪ B`. -/
+theorem destroysAt_prefixAvoidingSupportFamily_iff
+    {R : SupportFamily} {D B : Set ℕ} {q : ℕ} :
+    DestroysAt (prefixAvoidingSupportFamily R D) B q ↔
+      DestroysAt R (D ∪ B) q := by
+  constructor
+  · intro h E hER hEunion
+    have hED : Disjoint (E : Set ℕ) D :=
+      hEunion.mono_right Set.subset_union_left
+    have hEB : Disjoint (E : Set ℕ) B :=
+      hEunion.mono_right Set.subset_union_right
+    exact h E
+      (mem_prefixAvoidingSupportFamily.mpr ⟨hER, hED⟩) hEB
+  · intro h E hEmem hEB
+    rcases mem_prefixAvoidingSupportFamily.mp hEmem with ⟨hER, hED⟩
+    apply h E hER
+    exact hED.union_right hEB
+
+/-- Strong deletion persists after restricting to supports which avoid a
+fixed prefix.  The original strong-deletion hypothesis is applied to the
+infinite enlarged deletion `D ∪ B`. -/
+theorem StrongInfiniteDeletion.prefixAvoiding_on_subset
+    {A C : Set ℕ} {R : SupportFamily} {D : Set ℕ}
+    (hstrong : StrongInfiniteDeletion R A)
+    (hCA : C ⊆ A) (hDA : D ⊆ A) :
+    StrongInfiniteDeletion (prefixAvoidingSupportFamily R D) C := by
+  intro B hBC hB N
+  have hUnionA : D ∪ B ⊆ A :=
+    Set.union_subset hDA (hBC.trans hCA)
+  have hUnionInfinite : (D ∪ B).Infinite :=
+    hB.mono Set.subset_union_right
+  obtain ⟨q, hqN, hqDestroy⟩ :=
+    hstrong (D ∪ B) hUnionA hUnionInfinite N
+  exact ⟨q, hqN,
+    destroysAt_prefixAvoidingSupportFamily_iff.mpr hqDestroy⟩
+
+/-- Hence strong deletion supplies finite selector certificates whose every
+support witness avoids the same fixed prefix. -/
+theorem finiteBlockCertificates_prefixAvoiding_on_subset_of_strongInfiniteDeletion
+    {A C : Set ℕ} {R : SupportFamily} {D : Set ℕ}
+    (hstrong : StrongInfiniteDeletion R A)
+    (hCA : C ⊆ A) (hDA : D ⊆ A)
+    (F : ℕ → Finset ℕ) (P : IsFiniteBlockPartition C F) (N : ℕ) :
+    HasFiniteSelectorCertificate
+      (prefixAvoidingSupportFamily R D) F N := by
+  exact finiteBlockCertificates_on_subset_of_strongInfiniteDeletion
+    (hstrong.prefixAvoiding_on_subset hCA hDA)
+      Set.Subset.rfl F P N
+
+/-- An eventually good finite prefix becomes an empty-prefix repair property
+for the support family in which avoidance of that prefix is built in. -/
+theorem HasEventuallyTwoRepairsAtPrefixAlong.to_prefixAvoidingSupportFamily
+    {R : SupportFamily} {C S : Set ℕ} {D : Finset ℕ}
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong R C S D) :
+    HasEventuallyTwoRepairsAtPrefixAlong
+      (prefixAvoidingSupportFamily R (D : Set ℕ)) C S ∅ := by
+  obtain ⟨T, hrepair⟩ := hgood
+  refine ⟨T, ?_⟩
+  intro q hqT hqS
+  obtain ⟨E, hER, hED, F, hFR, hFD, hEF⟩ :=
+    hrepair q hqT hqS
+  refine ⟨E,
+    mem_prefixAvoidingSupportFamily.mpr ⟨hER, ?_⟩,
+    by simp, F,
+    mem_prefixAvoidingSupportFamily.mpr ⟨hFR, ?_⟩,
+    by simp, hEF⟩
+  · simpa using hED
+  · simpa using hFD
 
 /-- A target is universally safe for one block partition when every block
 selector leaves at least one of its supports untouched. -/
@@ -5210,6 +5455,36 @@ def IsCommonSurvivalTarget
 def commonSurvivalTargets
     (R : SupportFamily) (cell : ℕ → Finset ℕ) : Set ℕ :=
   {q | IsCommonSurvivalTarget R cell q}
+
+/-- Universal survival for a full block partition persists after discarding
+any finite initial segment of its blocks.  A selector of the tail is
+extended arbitrarily across the omitted prefix and then the original
+surviving support is reused. -/
+theorem IsCommonSurvivalTarget.of_blockTail
+    {R : SupportFamily} {K : Set ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (h : IsCommonSurvivalTarget R cell q)
+    (start : ℕ) :
+    IsCommonSurvivalTarget R (fun i => cell (start + i)) q := by
+  classical
+  intro tailSelector
+  let selector : BlockSelector cell := fun i =>
+    if hi : start ≤ i then
+      ⟨(tailSelector (i - start)).1, by
+        have hmem := (tailSelector (i - start)).2
+        simpa only [Nat.add_sub_of_le hi] using hmem⟩
+    else
+      ⟨(P.nonempty i).choose, (P.nonempty i).choose_spec⟩
+  obtain ⟨G, hGR, hG⟩ := h selector
+  refine ⟨G, hGR, hG.mono_right ?_⟩
+  rintro x ⟨i, rfl⟩
+  refine ⟨start + i, ?_⟩
+  change (selector (start + i)).1 = (tailSelector i).1
+  dsimp only [selector]
+  rw [dif_pos (Nat.le_add_right start i)]
+  have hindex : start + i - start = i := by omega
+  exact congrArg (fun j => (tailSelector j).1) hindex
 
 /-- Concrete sufficient witness for universal safety on a binary
 partition: one cell has two opposite endpoints, and the target has one
@@ -5847,6 +6122,487 @@ theorem orderThreeSupport_member_has_twoSummands
     change (w 2).1 = x at hi
     omega
 
+/-- Support-retaining version of `orderThreeSupport_member_has_twoSummands`.
+The two residual summands may repeat one another or the distinguished point,
+but both still belong to the original support finset. -/
+theorem orderThreeSupport_member_has_twoSummands_in_support
+    {A : Set ℕ} {q : ℕ} {E : Finset ℕ} {x : ℕ}
+    (hER : E ∈ additiveSupportFamily A 3 q)
+    (hxE : x ∈ E) :
+    ∃ u, u ∈ A ∧ u ∈ E ∧
+      ∃ v, v ∈ A ∧ v ∈ E ∧ x + u + v = q := by
+  obtain ⟨w, hwA, hwsum, rfl⟩ :=
+    mem_additiveSupportFamily_iff.mp hER
+  obtain ⟨i, hi⟩ := mem_tupleSupport_iff.mp hxE
+  have hsum : (w 0).1 + ((w 1).1 + (w 2).1) = q := by
+    simpa [Fin.sum_univ_succ] using hwsum
+  fin_cases i
+  · refine ⟨(w 1).1, hwA 1,
+      mem_tupleSupport_iff.mpr ⟨1, rfl⟩,
+      (w 2).1, hwA 2,
+      mem_tupleSupport_iff.mpr ⟨2, rfl⟩, ?_⟩
+    change (w 0).1 = x at hi
+    omega
+  · refine ⟨(w 0).1, hwA 0,
+      mem_tupleSupport_iff.mpr ⟨0, rfl⟩,
+      (w 2).1, hwA 2,
+      mem_tupleSupport_iff.mpr ⟨2, rfl⟩, ?_⟩
+    change (w 1).1 = x at hi
+    omega
+  · refine ⟨(w 0).1, hwA 0,
+      mem_tupleSupport_iff.mpr ⟨0, rfl⟩,
+      (w 1).1, hwA 1,
+      mem_tupleSupport_iff.mpr ⟨1, rfl⟩, ?_⟩
+    change (w 2).1 = x at hi
+    omega
+
+/-- Additive labels of retained binary-cell provenance.  Its opposite
+endpoints occur in two actual prefix-avoiding order-three supports of one
+and the same protected target. -/
+theorem PrivateConflictBinaryCellData.exists_balancedAdditiveLabels
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {i : ℕ}
+    (w : PrivateConflictBinaryCellData A C K D cell i) :
+    ∃ u ∈ A, ∃ v ∈ A, ∃ u' ∈ A, ∃ v' ∈ A,
+      u ∈ w.conflict.left ∧ v ∈ w.conflict.left ∧
+      u' ∈ w.conflict.right ∧ v' ∈ w.conflict.right ∧
+      w.leftPoint + u + v = w.conflict.target ∧
+      w.rightPoint + u' + v' = w.conflict.target := by
+  obtain ⟨u, huA, huSupport, v, hvA, hvSupport, hleft⟩ :=
+    orderThreeSupport_member_has_twoSummands_in_support
+      w.conflict.left_mem w.conflict.left_point
+  obtain ⟨u', hu'A, hu'Support, v', hv'A, hv'Support, hright⟩ :=
+    orderThreeSupport_member_has_twoSummands_in_support
+      w.conflict.right_mem w.conflict.right_point
+  exact ⟨u, huA, v, hvA, u', hu'A, v', hv'A,
+    huSupport, hvSupport, hu'Support, hv'Support, hleft, hright⟩
+
+/-- Orientation-free additive balance for any two distinct points of the
+retained cell.  This is the equation available when a same-`Q` target cover
+forces two opposite escape anchors. -/
+theorem PrivateConflictBinaryCellData.exists_balancedAdditiveLabels_of_distinct_points
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {i z z' : ℕ}
+    (hcellCard : ∀ j, (cell j).card = 2)
+    (w : PrivateConflictBinaryCellData A C K D cell i)
+    (hz : z ∈ cell i) (hz' : z' ∈ cell i) (hne : z ≠ z') :
+    ∃ u ∈ A, ∃ v ∈ A, ∃ u' ∈ A, ∃ v' ∈ A,
+      z + u + v = w.conflict.target ∧
+      z' + u' + v' = w.conflict.target := by
+  obtain ⟨u, huA, v, hvA, u', hu'A, v', hv'A,
+      _huSupport, _hvSupport, _hu'Support, _hv'Support,
+      hleft, hright⟩ := w.exists_balancedAdditiveLabels
+  rcases w.orient_distinct_points hcellCard hz hz' hne with
+      ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  · exact ⟨u, huA, v, hvA, u', hu'A, v', hv'A,
+      hleft, hright⟩
+  · exact ⟨u', hu'A, v', hv'A, u, huA, v, hvA,
+      hright, hleft⟩
+
+/-- The two residual summands obtained by singling out one member of an
+order-three support exhaust the whole support together with that member.
+This is the support-equality information needed when a descended pair is
+later used to protect the original repair. -/
+theorem orderThreeSupport_member_has_twoSummands_cover_support
+    {A : Set ℕ} {q : ℕ} {E : Finset ℕ} {x : ℕ}
+    (hER : E ∈ additiveSupportFamily A 3 q)
+    (hxE : x ∈ E) :
+    ∃ u, u ∈ A ∧ u ∈ E ∧
+      ∃ v, v ∈ A ∧ v ∈ E ∧
+        x + u + v = q ∧ E ⊆ {x, u, v} := by
+  obtain ⟨w, hwA, hwsum, rfl⟩ :=
+    mem_additiveSupportFamily_iff.mp hER
+  obtain ⟨i, hi⟩ := mem_tupleSupport_iff.mp hxE
+  have hsum : (w 0).1 + ((w 1).1 + (w 2).1) = q := by
+    simpa [Fin.sum_univ_succ] using hwsum
+  fin_cases i
+  · change (w 0).1 = x at hi
+    refine ⟨(w 1).1, hwA 1,
+      mem_tupleSupport_iff.mpr ⟨1, rfl⟩,
+      (w 2).1, hwA 2,
+      mem_tupleSupport_iff.mpr ⟨2, rfl⟩, by omega, ?_⟩
+    intro z hz
+    obtain ⟨j, hj⟩ := mem_tupleSupport_iff.mp hz
+    fin_cases j <;> simp [← hj, hi]
+  · change (w 1).1 = x at hi
+    refine ⟨(w 0).1, hwA 0,
+      mem_tupleSupport_iff.mpr ⟨0, rfl⟩,
+      (w 2).1, hwA 2,
+      mem_tupleSupport_iff.mpr ⟨2, rfl⟩, by omega, ?_⟩
+    intro z hz
+    obtain ⟨j, hj⟩ := mem_tupleSupport_iff.mp hz
+    fin_cases j <;> simp [← hj, hi]
+  · change (w 2).1 = x at hi
+    refine ⟨(w 0).1, hwA 0,
+      mem_tupleSupport_iff.mpr ⟨0, rfl⟩,
+      (w 1).1, hwA 1,
+      mem_tupleSupport_iff.mpr ⟨1, rfl⟩, by omega, ?_⟩
+    intro z hz
+    obtain ⟨j, hj⟩ := mem_tupleSupport_iff.mp hz
+    fin_cases j <;> simp [← hj, hi]
+
+/-- A genuine two-point support of an order-two representation sums to its
+target. -/
+theorem additiveSupportFamily_two_sum_eq_of_card_eq_two
+    {A : Set ℕ} {q : ℕ} {E : Finset ℕ}
+    (hER : E ∈ additiveSupportFamily A 2 q)
+    (hEcard : E.card = 2) :
+    E.sum id = q := by
+  classical
+  obtain ⟨v, _hvA, hvsum, rfl⟩ :=
+    mem_additiveSupportFamily_iff.mp hER
+  have himageCard :
+      (Finset.univ.image fun i : Fin 2 => (v i).1).card =
+        (Finset.univ : Finset (Fin 2)).card := by
+    rw [← tupleSupport]
+    rw [hEcard]
+    simp
+  have hinj : Set.InjOn (fun i : Fin 2 => (v i).1)
+      ((Finset.univ : Finset (Fin 2)) : Set (Fin 2)) :=
+    Finset.card_image_iff.mp himageCard
+  rw [tupleSupport, Finset.sum_image]
+  · simpa using hvsum
+  · exact hinj
+
+/-- A singleton support of an order-two representation repeats its unique
+vertex twice. -/
+theorem additiveSupportFamily_two_target_eq_double_of_eq_singleton
+    {A : Set ℕ} {q x : ℕ} {E : Finset ℕ}
+    (hER : E ∈ additiveSupportFamily A 2 q)
+    (hE : E = {x}) :
+    q = 2 * x := by
+  obtain ⟨v, _hvA, hvsum, hvSupport⟩ :=
+    mem_additiveSupportFamily_iff.mp hER
+  have hvalue : ∀ i, (v i).1 = x := by
+    intro i
+    have hi : (v i).1 ∈ tupleSupport v :=
+      mem_tupleSupport_iff.mpr ⟨i, rfl⟩
+    rw [hvSupport, hE] at hi
+    simpa using hi
+  have h₀ := hvalue 0
+  have h₁ := hvalue 1
+  simpa [Fin.sum_univ_two, h₀, h₁, two_mul] using hvsum.symm
+
+/-- An injective infinite stream of surviving order-two supports has one of
+the two graph-theoretic shapes available to a family of edges.  After
+thinning, either the chosen supports are pairwise disjoint, or they all have
+one common endpoint and their other endpoints are injective.  The additive
+equation and avoidance of the old deletion are retained in both branches. -/
+theorem infiniteInjectivePairSurvival_matching_or_star
+    {A D I : Set ℕ} {target : ℕ → ℕ}
+    {container : ℕ → Finset ℕ} {cap : ℕ}
+    (hI : I.Infinite)
+    (htargetInj : Set.InjOn target I)
+    (hsupport : ∀ n ∈ I,
+      ∃ E ∈ additiveSupportFamily A 2 (target n),
+        E ⊆ container n ∧ container n = insert cap E ∧
+        Disjoint (E : Set ℕ) D) :
+    (∃ L : Set ℕ, ∃ support : ℕ → Finset ℕ,
+      L ⊆ I ∧ L.Infinite ∧
+      (∀ n ∈ L,
+        support n ∈ additiveSupportFamily A 2 (target n) ∧
+        support n ⊆ container n ∧
+        container n = insert cap (support n) ∧
+        Disjoint (support n : Set ℕ) D) ∧
+      ∀ n ∈ L, ∀ m ∈ L, n ≠ m →
+        Disjoint (support n) (support m)) ∨
+    (∃ L : Set ℕ, ∃ anchor : ℕ, ∃ endpoint : ℕ → ℕ,
+      L ⊆ I ∧ L.Infinite ∧ anchor ∈ A ∧
+      Set.InjOn endpoint L ∧
+      ∀ n ∈ L,
+        endpoint n ∈ A ∧ endpoint n ≠ anchor ∧
+        target n = anchor + endpoint n ∧
+        ({anchor, endpoint n} : Finset ℕ) ∈
+          additiveSupportFamily A 2 (target n) ∧
+        ({anchor, endpoint n} : Finset ℕ) ⊆ container n ∧
+        container n = insert cap {anchor, endpoint n} ∧
+        Disjoint (({anchor, endpoint n} : Finset ℕ) : Set ℕ) D) := by
+  classical
+  let support : ℕ → Finset ℕ := fun n =>
+    if hn : n ∈ I then (hsupport n hn).choose else ∅
+  have hsupportData : ∀ n ∈ I,
+      support n ∈ additiveSupportFamily A 2 (target n) ∧
+      support n ⊆ container n ∧
+      container n = insert cap (support n) ∧
+      Disjoint (support n : Set ℕ) D := by
+    intro n hn
+    simpa only [support, dif_pos hn] using
+      (hsupport n hn).choose_spec
+  have hsupportCard : ∀ n ∈ I, (support n).card ≤ 2 := by
+    intro n hn
+    exact additiveSupportFamily_cardAtMost A 2
+      (target n) (support n) (hsupportData n hn).1
+  obtain ⟨L₀, hL₀I, hL₀, R, hdelta⟩ :=
+    exists_infinite_deltaSystem_of_bounded_pointMap
+      hI support 2 hsupportCard
+  have hRsub : ∀ n ∈ L₀, R ⊆ support n := by
+    intro n hn x hxR
+    obtain ⟨m, hm, hnm⟩ := hL₀.exists_gt n
+    have hne : n ≠ m := Nat.ne_of_lt hnm
+    have hxInter : x ∈ support n ∩ support m := by
+      rw [hdelta n hn m hm hne]
+      exact hxR
+    exact (Finset.mem_inter.mp hxInter).1
+  have hRcardLeTwo : R.card ≤ 2 := by
+    obtain ⟨n, hn⟩ := hL₀.nonempty
+    exact (Finset.card_le_card (hRsub n hn)).trans
+      (hsupportCard n (hL₀I hn))
+  have hRcardNeTwo : R.card ≠ 2 := by
+    intro hRcard
+    obtain ⟨n, hn⟩ := hL₀.nonempty
+    obtain ⟨m, hm, hnm⟩ := hL₀.exists_gt n
+    have hnCard : (support n).card = 2 := by
+      have hle := hsupportCard n (hL₀I hn)
+      have hge := Finset.card_le_card (hRsub n hn)
+      omega
+    have hmCard : (support m).card = 2 := by
+      have hle := hsupportCard m (hL₀I hm)
+      have hge := Finset.card_le_card (hRsub m hm)
+      omega
+    have hRn : R = support n :=
+      Finset.eq_of_subset_of_card_le (hRsub n hn) (by
+        rw [hnCard, hRcard])
+    have hRm : R = support m :=
+      Finset.eq_of_subset_of_card_le (hRsub m hm) (by
+        rw [hmCard, hRcard])
+    have htargetEq : target n = target m := by
+      calc
+        target n = (support n).sum id :=
+          (additiveSupportFamily_two_sum_eq_of_card_eq_two
+            (hsupportData n (hL₀I hn)).1 hnCard).symm
+        _ = R.sum id := by rw [← hRn]
+        _ = (support m).sum id := by rw [hRm]
+        _ = target m :=
+          additiveSupportFamily_two_sum_eq_of_card_eq_two
+            (hsupportData m (hL₀I hm)).1 hmCard
+    exact (Nat.ne_of_lt hnm)
+      (htargetInj (hL₀I hn) (hL₀I hm) htargetEq)
+  have hRcardLeOne : R.card ≤ 1 := by
+    omega
+  by_cases hRempty : R = ∅
+  · left
+    refine ⟨L₀, support, hL₀I, hL₀, ?_, ?_⟩
+    · intro n hn
+      exact hsupportData n (hL₀I hn)
+    · intro n hn m hm hnm
+      rw [Finset.disjoint_iff_inter_eq_empty]
+      exact (hdelta n hn m hm hnm).trans hRempty
+  · have hRcardOne : R.card = 1 := by
+      have hRpos : 0 < R.card := Finset.card_pos.mpr
+        (Finset.nonempty_iff_ne_empty.mpr hRempty)
+      omega
+    obtain ⟨anchor, hR⟩ := Finset.card_eq_one.mp hRcardOne
+    have hanchorSupport : ∀ n ∈ L₀, anchor ∈ support n := by
+      intro n hn
+      apply hRsub n hn
+      rw [hR]
+      simp
+    have hanchorA : anchor ∈ A := by
+      obtain ⟨n, hn⟩ := hL₀.nonempty
+      exact additiveSupportFamily_supportsIn A 2
+        (target n) (support n)
+        (hsupportData n (hL₀I hn)).1 anchor
+        (hanchorSupport n hn)
+    let Bad : Set ℕ :=
+      {n | n ∈ L₀ ∧ support n = {anchor}}
+    have hBadFinite : Bad.Finite := by
+      apply Set.Subsingleton.finite
+      intro n hn m hm
+      apply htargetInj (hL₀I hn.1) (hL₀I hm.1)
+      calc
+        target n = 2 * anchor :=
+          additiveSupportFamily_two_target_eq_double_of_eq_singleton
+            (hsupportData n (hL₀I hn.1)).1 hn.2
+        _ = target m :=
+          (additiveSupportFamily_two_target_eq_double_of_eq_singleton
+            (hsupportData m (hL₀I hm.1)).1 hm.2).symm
+    let L : Set ℕ := L₀ \ Bad
+    have hLL₀ : L ⊆ L₀ := Set.diff_subset
+    have hLI : L ⊆ I := hLL₀.trans hL₀I
+    have hL : L.Infinite := hL₀.diff hBadFinite
+    have hsupportCardTwo : ∀ n ∈ L, (support n).card = 2 := by
+      intro n hn
+      have hle := hsupportCard n (hLI hn)
+      have hnotLeOne : ¬ (support n).card ≤ 1 := by
+        intro hcard
+        have hsingleton : support n = {anchor} := by
+          exact (Finset.eq_of_subset_of_card_le
+            (show ({anchor} : Finset ℕ) ⊆ support n by
+              intro x hx
+              have hxEq : x = anchor := by simpa using hx
+              simpa [hxEq] using hanchorSupport n (hLL₀ hn))
+            (by simpa using hcard)).symm
+        exact hn.2 ⟨hLL₀ hn, hsingleton⟩
+      omega
+    have hpetal : ∀ n : L,
+        (support n.1 \ {anchor}).Nonempty := by
+      intro n
+      apply Finset.nonempty_iff_ne_empty.mpr
+      intro hempty
+      have hsub : support n.1 ⊆ ({anchor} : Finset ℕ) :=
+        Finset.sdiff_eq_empty_iff_subset.mp hempty
+      have hsingleton : support n.1 = {anchor} := by
+        apply Finset.Subset.antisymm hsub
+        intro x hx
+        have hxEq : x = anchor := by simpa using hx
+        simpa [hxEq] using hanchorSupport n.1 (hLL₀ n.2)
+      have : n.1 ∈ Bad := ⟨hLL₀ n.2, hsingleton⟩
+      exact n.2.2 this
+    let endpoint : ℕ → ℕ := fun n =>
+      if hn : n ∈ L then
+        Classical.choose (hpetal ⟨n, hn⟩)
+      else 0
+    have hendpointPetal : ∀ n ∈ L,
+        endpoint n ∈ support n \ {anchor} := by
+      intro n hn
+      simpa only [endpoint, dif_pos hn] using
+        Classical.choose_spec (hpetal ⟨n, hn⟩)
+    have hendpointNe : ∀ n ∈ L, endpoint n ≠ anchor := by
+      intro n hn heq
+      exact (Finset.mem_sdiff.mp (hendpointPetal n hn)).2
+        (heq ▸ Finset.mem_singleton_self anchor)
+    have hendpointInj : Set.InjOn endpoint L := by
+      intro n hn m hm hendEq
+      by_contra hnm
+      have hendInter : endpoint n ∈ support n ∩ support m :=
+        Finset.mem_inter.mpr
+          ⟨(Finset.mem_sdiff.mp (hendpointPetal n hn)).1,
+            hendEq ▸
+              (Finset.mem_sdiff.mp (hendpointPetal m hm)).1⟩
+      have hendRoot : endpoint n ∈ R := by
+        rw [← hdelta n (hLL₀ hn) m (hLL₀ hm) hnm]
+        exact hendInter
+      have : endpoint n = anchor := by
+        simpa [hR] using hendRoot
+      exact hendpointNe n hn this
+    have hsupportEq : ∀ n ∈ L,
+        support n = {anchor, endpoint n} := by
+      intro n hn
+      have hpairSub : ({anchor, endpoint n} : Finset ℕ) ⊆
+          support n := by
+        intro x hx
+        simp only [Finset.mem_insert, Finset.mem_singleton] at hx
+        rcases hx with rfl | rfl
+        · exact hanchorSupport n (hLL₀ hn)
+        · exact (Finset.mem_sdiff.mp (hendpointPetal n hn)).1
+      exact (Finset.eq_of_subset_of_card_le hpairSub (by
+        rw [hsupportCardTwo n hn]
+        simp [(hendpointNe n hn).symm])).symm
+    right
+    refine ⟨L, anchor, endpoint, hLI, hL, hanchorA,
+      hendpointInj, ?_⟩
+    intro n hn
+    have hendpointA : endpoint n ∈ A :=
+      additiveSupportFamily_supportsIn A 2
+        (target n) (support n)
+        (hsupportData n (hLI hn)).1 (endpoint n)
+        (Finset.mem_sdiff.mp (hendpointPetal n hn)).1
+    have hsum :=
+      additiveSupportFamily_two_sum_eq_of_card_eq_two
+        (hsupportData n (hLI hn)).1
+        (hsupportCardTwo n hn)
+    have htargetEq : target n = anchor + endpoint n := by
+      rw [hsupportEq n hn] at hsum
+      simpa [(hendpointNe n hn).symm] using hsum.symm
+    rw [← hsupportEq n hn]
+    exact ⟨hendpointA, hendpointNe n hn, htargetEq,
+      (hsupportData n (hLI hn)).1,
+      (hsupportData n (hLI hn)).2.1,
+      (hsupportData n (hLI hn)).2.2.1,
+      (hsupportData n (hLI hn)).2.2.2⟩
+
+/-- Packaged matching branch of the injective order-two support
+classification. -/
+def HasInfinitePairSupportMatchingInside
+    (A D I : Set ℕ) (target : ℕ → ℕ)
+    (container : ℕ → Finset ℕ) (cap : ℕ) : Prop :=
+  ∃ L : Set ℕ, ∃ support : ℕ → Finset ℕ,
+    L ⊆ I ∧ L.Infinite ∧
+    (∀ n ∈ L,
+      support n ∈ additiveSupportFamily A 2 (target n) ∧
+      support n ⊆ container n ∧
+      container n = insert cap (support n) ∧
+      Disjoint (support n : Set ℕ) D) ∧
+    ∀ n ∈ L, ∀ m ∈ L, n ≠ m →
+      Disjoint (support n) (support m)
+
+/-- Packaged common-anchor branch of the injective order-two support
+classification. -/
+def HasInfinitePairSupportStarInside
+    (A D I : Set ℕ) (target : ℕ → ℕ)
+    (container : ℕ → Finset ℕ) (cap : ℕ) : Prop :=
+  ∃ L : Set ℕ, ∃ anchor : ℕ, ∃ endpoint : ℕ → ℕ,
+    L ⊆ I ∧ L.Infinite ∧ anchor ∈ A ∧
+    Set.InjOn endpoint L ∧
+    ∀ n ∈ L,
+      endpoint n ∈ A ∧ endpoint n ≠ anchor ∧
+      target n = anchor + endpoint n ∧
+      ({anchor, endpoint n} : Finset ℕ) ∈
+        additiveSupportFamily A 2 (target n) ∧
+      ({anchor, endpoint n} : Finset ℕ) ⊆ container n ∧
+      container n = insert cap {anchor, endpoint n} ∧
+      Disjoint (({anchor, endpoint n} : Finset ℕ) : Set ℕ) D
+
+/-- Predicate-valued form of
+`infiniteInjectivePairSurvival_matching_or_star`. -/
+theorem infiniteInjectivePairSurvival_has_matching_or_star
+    {A D I : Set ℕ} {target : ℕ → ℕ}
+    {container : ℕ → Finset ℕ} {cap : ℕ}
+    (hI : I.Infinite)
+    (htargetInj : Set.InjOn target I)
+    (hsupport : ∀ n ∈ I,
+      ∃ E ∈ additiveSupportFamily A 2 (target n),
+        E ⊆ container n ∧ container n = insert cap E ∧
+        Disjoint (E : Set ℕ) D) :
+    HasInfinitePairSupportMatchingInside A D I target container cap ∨
+      HasInfinitePairSupportStarInside A D I target container cap := by
+  simpa only [HasInfinitePairSupportMatchingInside,
+    HasInfinitePairSupportStarInside] using
+      infiniteInjectivePairSurvival_matching_or_star
+        hI htargetInj hsupport
+
+/-- Every infinite set of natural-number indices contains two disjoint
+infinite substreams. -/
+theorem exists_two_disjoint_infinite_subsets_of_infinite
+    {S : Set ℕ} (hS : S.Infinite) :
+    ∃ Even Odd : Set ℕ,
+      Even ⊆ S ∧ Odd ⊆ S ∧
+      Even.Infinite ∧ Odd.Infinite ∧ Disjoint Even Odd := by
+  let e : ℕ ↪ S := hS.natEmbedding S
+  let evenIndex : ℕ → ℕ := fun n => (e (2 * n)).1
+  let oddIndex : ℕ → ℕ := fun n => (e (2 * n + 1)).1
+  let Even : Set ℕ := Set.range evenIndex
+  let Odd : Set ℕ := Set.range oddIndex
+  have hevenInj : Function.Injective evenIndex := by
+    intro n m hnm
+    have heq : e (2 * n) = e (2 * m) := Subtype.ext hnm
+    have := e.injective heq
+    omega
+  have hoddInj : Function.Injective oddIndex := by
+    intro n m hnm
+    have heq : e (2 * n + 1) = e (2 * m + 1) := Subtype.ext hnm
+    have := e.injective heq
+    omega
+  have hEven : Even.Infinite :=
+    Set.infinite_range_of_injective hevenInj
+  have hOdd : Odd.Infinite :=
+    Set.infinite_range_of_injective hoddInj
+  have hEvenS : Even ⊆ S := by
+    rintro _ ⟨n, rfl⟩
+    exact (e (2 * n)).2
+  have hOddS : Odd ⊆ S := by
+    rintro _ ⟨n, rfl⟩
+    exact (e (2 * n + 1)).2
+  have hEvenOdd : Disjoint Even Odd := by
+    rw [Set.disjoint_left]
+    rintro x ⟨n, rfl⟩ ⟨m, hm⟩
+    have heq : e (2 * n) = e (2 * m + 1) := by
+      apply Subtype.ext
+      exact hm.symm
+    have := e.injective heq
+    omega
+  exact ⟨Even, Odd, hEvenS, hOddS, hEven, hOdd, hEvenOdd⟩
+
 /-- Arithmetic residual of a wide repair trace. -/
 def HasTwoReservoirSummandRepresentationAt
     (A K : Set ℕ) (q : ℕ) : Prop :=
@@ -6276,6 +7032,62 @@ structure AnchoredCertificateEscapeTransitionData
     (selectedSet baseSelector)
   newPoint_anchor : newPoint ∈ anchorSupport
 
+/-- An anchor extracted from a prefix-relative certificate is an original
+support which still avoids the fixed prefix. -/
+theorem AnchoredCertificateEscapeTransitionData.anchorSupport_mem_original
+    {R : SupportFamily} {D : Set ℕ} {Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q q' : ℕ}
+    (w : AnchoredCertificateEscapeTransitionData
+      (prefixAvoidingSupportFamily R D) Q cell q q') :
+    w.anchorSupport ∈ R q' :=
+  (mem_prefixAvoidingSupportFamily.mp w.anchorSupport_mem).1
+
+/-- Prefix avoidance is retained by every anchor support on the escape
+graph, rather than being lost when a private surviving support is chosen. -/
+theorem AnchoredCertificateEscapeTransitionData.anchorSupport_disjoint_prefix
+    {R : SupportFamily} {D : Set ℕ} {Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q q' : ℕ}
+    (w : AnchoredCertificateEscapeTransitionData
+      (prefixAvoidingSupportFamily R D) Q cell q q') :
+    Disjoint (w.anchorSupport : Set ℕ) D :=
+  (mem_prefixAvoidingSupportFamily.mp w.anchorSupport_mem).2
+
+/-- The source destruction label of a prefix-relative edge is exactly
+destruction by the original family after adjoining the fixed prefix. -/
+theorem AnchoredCertificateEscapeTransitionData.source_destroy_with_prefix
+    {R : SupportFamily} {D : Set ℕ} {Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q q' : ℕ}
+    (w : AnchoredCertificateEscapeTransitionData
+      (prefixAvoidingSupportFamily R D) Q cell q q') :
+    DestroysAt R (D ∪ selectedSet w.baseSelector) q :=
+  destroysAt_prefixAvoidingSupportFamily_iff.mp w.source_destroy
+
+/-- The flipped-selector destruction label has the same prefix-relative
+interpretation in the original support family. -/
+theorem AnchoredCertificateEscapeTransitionData.target_destroy_with_prefix
+    {R : SupportFamily} {D : Set ℕ} {Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q q' : ℕ}
+    (w : AnchoredCertificateEscapeTransitionData
+      (prefixAvoidingSupportFamily R D) Q cell q q') :
+    DestroysAt R
+      (D ∪ selectedSet
+        (overrideBlockSelector w.baseSelector w.cellIndex
+      ⟨w.newPoint, w.newPoint_mem⟩)) q' :=
+  destroysAt_prefixAvoidingSupportFamily_iff.mp w.target_destroy
+
+/-- Every value selected by an edge's base selector is absent from that
+edge's old-surviving anchor support. -/
+theorem AnchoredCertificateEscapeTransitionData.selectedPoint_not_mem_anchorSupport
+    {R : SupportFamily} {Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q q' i z : ℕ}
+    (w : AnchoredCertificateEscapeTransitionData
+      R Q cell q q')
+    (hz : (w.baseSelector i).1 = z) :
+    z ∉ w.anchorSupport := by
+  intro hzSupport
+  exact Set.disjoint_left.mp w.anchorSupport_survives
+    (Finset.mem_coe.mpr hzSupport) ⟨i, hz⟩
+
 /-- Existence of a structured anchored escape transition. -/
 def HasAnchoredCertificateEscapeTransition
     (R : SupportFamily) (Q : Finset ℕ)
@@ -6290,6 +7102,31 @@ def HasNarrowAnchoredCertificateEscapeTransition
     (cell : ℕ → Finset ℕ) (q q' : ℕ) : Prop :=
   ∃ w : AnchoredCertificateEscapeTransitionData R Q cell q q',
     ((w.anchorSupport : Set ℕ) ∩ K) = {w.newPoint}
+
+/-- The two genuine narrow exits retained at one separated certificate
+target.  Unlike the earlier cardinality-only conclusion, this package keeps
+both old-surviving anchor supports, their common private selector, and their
+distinct destination labels. -/
+structure DistinctNarrowAnchoredCertificateEscapeForkData
+    (R : SupportFamily) (K : Set ℕ) (Q : Finset ℕ)
+    (cell : ℕ → Finset ℕ) (q : ℕ) where
+  leftTarget : ℕ
+  leftTarget_mem : leftTarget ∈ Q
+  leftTarget_ne_source : leftTarget ≠ q
+  rightTarget : ℕ
+  rightTarget_mem : rightTarget ∈ Q
+  rightTarget_ne_source : rightTarget ≠ q
+  targets_ne : leftTarget ≠ rightTarget
+  leftEdge : AnchoredCertificateEscapeTransitionData
+    R Q cell q leftTarget
+  rightEdge : AnchoredCertificateEscapeTransitionData
+    R Q cell q rightTarget
+  cells_ne : leftEdge.cellIndex ≠ rightEdge.cellIndex
+  shared_baseSelector : leftEdge.baseSelector = rightEdge.baseSelector
+  left_trace : ((leftEdge.anchorSupport : Set ℕ) ∩ K) =
+    {leftEdge.newPoint}
+  right_trace : ((rightEdge.anchorSupport : Set ℕ) ∩ K) =
+    {rightEdge.newPoint}
 
 /-- Either anchored exit of a separated localized target gives a genuine
 outgoing edge to another target in the same finite certificate. -/
@@ -6360,6 +7197,193 @@ theorem anchoredCertificateEscapeTransition_noWide_isNarrow
     have hyz : y = w.newPoint := by simpa using hy
     simpa [hyz] using hzTrace
 
+/-- Pointwise form of narrowness, retaining a specified anchored edge
+rather than merely an existentially packaged one. -/
+theorem AnchoredCertificateEscapeTransitionData.anchor_trace_eq_singleton_of_noWide
+    {R : SupportFamily} {K : Set ℕ} {Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q q' : ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (w : AnchoredCertificateEscapeTransitionData R Q cell q q')
+    (hnoWide : ¬ HasWideReservoirSupportAt R K q') :
+    ((w.anchorSupport : Set ℕ) ∩ K) = {w.newPoint} := by
+  classical
+  have hzK : w.newPoint ∈ K :=
+    (P.mem_iff w.newPoint).mpr ⟨w.cellIndex, w.newPoint_mem⟩
+  have hzTrace : w.newPoint ∈
+      (w.anchorSupport : Set ℕ) ∩ K :=
+    ⟨Finset.mem_coe.mpr w.newPoint_anchor, hzK⟩
+  ext y
+  constructor
+  · intro hyTrace
+    have hyz : y = w.newPoint := by
+      by_contra hyz
+      apply hnoWide
+      exact ⟨w.anchorSupport, w.anchorSupport_mem,
+        w.newPoint, hzTrace, y, hyTrace,
+        fun hzy => hyz hzy.symm⟩
+    simpa [hyz]
+  · intro hy
+    have hyz : y = w.newPoint := by simpa using hy
+    simpa [hyz] using hzTrace
+
+/-- With wide supports excluded throughout `Q`, the two localized flips of
+a separated target give two distinct narrow anchored exits, not just three
+distinct target names.  Both concrete destination supports and the common
+private source selector are retained for later matching arguments. -/
+theorem separatedTrace_targetLocalizedCertificate_has_distinctNarrowAnchoredEscapeFork
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ r ∈ Q,
+      DestroysAt R (selectedSet s) r)
+    (hlocalized : ∀ r ∈ Q, ∃ s : BlockSelector cell,
+      DestroysAt R (selectedSet s) r ∧
+      ∀ r' ∈ Q, r' ≠ r →
+        ¬ DestroysAt R (selectedSet s) r')
+    (hqQ : q ∈ Q)
+    (hsep : HasSeparatedSingletonTwoRepairTracesAt
+      R K D cell q)
+    (hnoWide : ∀ r ∈ Q,
+      ¬ HasWideReservoirSupportAt R K r) :
+    Nonempty (DistinctNarrowAnchoredCertificateEscapeForkData
+      R K Q cell q) := by
+  classical
+  obtain ⟨i, j, x, y, hij, hxi, hyj, s,
+      hqDestroy, hprivate, hsi, hsj,
+      hescapeX, hescapeY⟩ :=
+    separatedTrace_targetLocalizedCertificate_has_anchoredEscapes
+      P hcellCard hcert hlocalized hqQ hsep
+  change ∃ z, ∃ hz : z ∈ cell i, z ≠ x ∧
+    ∃ r ∈ Q, r ≠ q ∧
+      DestroysAt R
+        (selectedSet (overrideBlockSelector s i ⟨z, hz⟩)) r ∧
+      ∃ G ∈ R r,
+        Disjoint (G : Set ℕ) (selectedSet s) ∧ z ∈ G at hescapeX
+  change ∃ z, ∃ hz : z ∈ cell j, z ≠ y ∧
+    ∃ r ∈ Q, r ≠ q ∧
+      DestroysAt R
+        (selectedSet (overrideBlockSelector s j ⟨z, hz⟩)) r ∧
+      ∃ G ∈ R r,
+        Disjoint (G : Set ℕ) (selectedSet s) ∧ z ∈ G at hescapeY
+  obtain ⟨x', hx'Cell, hx'x, qx, hqxQ, hqxq,
+      hqxDestroy, Gx, hGxR, hGxOld, hx'Gx⟩ := hescapeX
+  obtain ⟨y', hy'Cell, hy'y, qy, hqyQ, hqyq,
+      hqyDestroy, Gy, hGyR, hGyOld, hy'Gy⟩ := hescapeY
+  have hqxqy : qx ≠ qy := by
+    intro htargets
+    subst qy
+    obtain ⟨G, hGR, hGold⟩ :=
+      not_destroysAt_iff.mp (hprivate qx hqxQ hqxq)
+    have hx'G : x' ∈ G := by
+      obtain ⟨w, hwG, hwSelected⟩ :=
+        Set.not_disjoint_iff.mp (hqxDestroy G hGR)
+      rcases overrideBlockSelector_selected_old_or_new
+          s i ⟨x', hx'Cell⟩ w hwSelected with hwOld | hwNew
+      · exact (Set.disjoint_left.mp hGold hwG hwOld).elim
+      · have hwEq : w = x' := by simpa using hwNew
+        exact Finset.mem_coe.mp (hwEq ▸ hwG)
+    have hy'G : y' ∈ G := by
+      obtain ⟨w, hwG, hwSelected⟩ :=
+        Set.not_disjoint_iff.mp (hqyDestroy G hGR)
+      rcases overrideBlockSelector_selected_old_or_new
+          s j ⟨y', hy'Cell⟩ w hwSelected with hwOld | hwNew
+      · exact (Set.disjoint_left.mp hGold hwG hwOld).elim
+      · have hwEq : w = y' := by simpa using hwNew
+        exact Finset.mem_coe.mp (hwEq ▸ hwG)
+    have hx'K : x' ∈ K := (P.mem_iff x').mpr ⟨i, hx'Cell⟩
+    have hy'K : y' ∈ K := (P.mem_iff y').mpr ⟨j, hy'Cell⟩
+    have hx'y' : x' ≠ y' := by
+      intro hEq
+      exact Finset.disjoint_left.mp (P.disjoint hij)
+        hx'Cell (hEq ▸ hy'Cell)
+    exact hnoWide qx hqxQ
+      ⟨G, hGR, x',
+        ⟨Finset.mem_coe.mpr hx'G, hx'K⟩,
+        y', ⟨Finset.mem_coe.mpr hy'G, hy'K⟩, hx'y'⟩
+  let wx : AnchoredCertificateEscapeTransitionData
+      R Q cell q qx :=
+    ⟨i, x, hxi, s, hqDestroy, hprivate, hsi,
+      x', hx'Cell, hx'x, hqxDestroy,
+      Gx, hGxR, hGxOld, hx'Gx⟩
+  let wy : AnchoredCertificateEscapeTransitionData
+      R Q cell q qy :=
+    ⟨j, y, hyj, s, hqDestroy, hprivate, hsj,
+      y', hy'Cell, hy'y, hqyDestroy,
+      Gy, hGyR, hGyOld, hy'Gy⟩
+  have hxTrace : ((wx.anchorSupport : Set ℕ) ∩ K) =
+      {wx.newPoint} :=
+    wx.anchor_trace_eq_singleton_of_noWide P (hnoWide qx hqxQ)
+  have hyTrace : ((wy.anchorSupport : Set ℕ) ∩ K) =
+      {wy.newPoint} :=
+    wy.anchor_trace_eq_singleton_of_noWide P (hnoWide qy hqyQ)
+  exact ⟨⟨qx, hqxQ, hqxq, qy, hqyQ, hqyq, hqxqy,
+    wx, wy, hij, rfl, hxTrace, hyTrace⟩⟩
+
+/-- The two destination vertices of a retained escape fork, as a finset in
+the certificate subtype. -/
+def DistinctNarrowAnchoredCertificateEscapeForkData.targetFinset
+    {R : SupportFamily} {K : Set ℕ} {Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (w : DistinctNarrowAnchoredCertificateEscapeForkData
+      R K Q cell q) : Finset {r // r ∈ Q} :=
+  {⟨w.leftTarget, w.leftTarget_mem⟩,
+    ⟨w.rightTarget, w.rightTarget_mem⟩}
+
+/-- Select the left or right destination of a retained fork. -/
+def DistinctNarrowAnchoredCertificateEscapeForkData.exitTarget
+    {R : SupportFamily} {K : Set ℕ} {Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (w : DistinctNarrowAnchoredCertificateEscapeForkData
+      R K Q cell q) (side : Bool) : {r // r ∈ Q} :=
+  if side then ⟨w.leftTarget, w.leftTarget_mem⟩
+  else ⟨w.rightTarget, w.rightTarget_mem⟩
+
+theorem DistinctNarrowAnchoredCertificateEscapeForkData.exitTarget_mem_targetFinset
+    {R : SupportFamily} {K : Set ℕ} {Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (w : DistinctNarrowAnchoredCertificateEscapeForkData
+      R K Q cell q) (side : Bool) :
+    w.exitTarget side ∈ w.targetFinset := by
+  cases side <;>
+    simp [DistinctNarrowAnchoredCertificateEscapeForkData.exitTarget,
+      DistinctNarrowAnchoredCertificateEscapeForkData.targetFinset]
+
+/-- The two Boolean sides really are two distinct exits. -/
+theorem DistinctNarrowAnchoredCertificateEscapeForkData.exitTarget_injective
+    {R : SupportFamily} {K : Set ℕ} {Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (w : DistinctNarrowAnchoredCertificateEscapeForkData
+      R K Q cell q) :
+    Function.Injective w.exitTarget := by
+  intro a b hab
+  cases a <;> cases b
+  · rfl
+  · have hval := congrArg Subtype.val hab
+    exact (w.targets_ne hval.symm).elim
+  · have hval := congrArg Subtype.val hab
+    exact (w.targets_ne hval).elim
+  · rfl
+
+/-- Every member of a fork's two-point target finset comes with its concrete
+narrow anchored edge. -/
+theorem DistinctNarrowAnchoredCertificateEscapeForkData.exists_edge_of_mem_targetFinset
+    {R : SupportFamily} {K : Set ℕ} {Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (w : DistinctNarrowAnchoredCertificateEscapeForkData
+      R K Q cell q)
+    (r : {r // r ∈ Q}) (hr : r ∈ w.targetFinset) :
+    ∃ edge : AnchoredCertificateEscapeTransitionData
+        R Q cell q r.1,
+      ((edge.anchorSupport : Set ℕ) ∩ K) = {edge.newPoint} := by
+  simp only [DistinctNarrowAnchoredCertificateEscapeForkData.targetFinset,
+    Finset.mem_insert, Finset.mem_singleton] at hr
+  rcases hr with hr | hr
+  · subst r
+    exact ⟨w.leftEdge, w.left_trace⟩
+  · subst r
+    exact ⟨w.rightEdge, w.right_trace⟩
+
 /-- A self-map of a nonempty finite type has a periodic orbit.  If it has
 no fixed points, one can choose a genuine cycle of length at least two. -/
 theorem finite_selfMap_without_fixedPoint_has_nontrivialCycle
@@ -6391,6 +7415,54 @@ theorem finite_selfMap_without_fixedPoint_has_nontrivialCycle
     simpa [hp] using hperiod
   exact ⟨x, p, by omega, hperiod⟩
 
+/-- Choose the least positive period of a nontrivial finite orbit.  Besides
+ruling out a disguised fixed point, minimality makes all orbit positions
+strictly before the return pairwise distinct. -/
+theorem finite_selfMap_without_fixedPoint_has_shortestNontrivialCycle
+    {X : Type*} [Finite X] [Nonempty X]
+    (next : X → X) (hnext : ∀ x, next x ≠ x) :
+    ∃ x p, 2 ≤ p ∧ (next^[p]) x = x ∧
+      (∀ m, 0 < m → m < p → (next^[m]) x ≠ x) ∧
+      ∀ i j, i < j → j < p →
+        (next^[i]) x ≠ (next^[j]) x := by
+  classical
+  obtain ⟨x, p, hp, hperiod⟩ :=
+    finite_selfMap_without_fixedPoint_has_nontrivialCycle next hnext
+  have hex : ∃ n, 0 < n ∧ (next^[n]) x = x :=
+    ⟨p, by omega, hperiod⟩
+  let least := Nat.find hex
+  have hleast := Nat.find_spec hex
+  have hleastNeOne : least ≠ 1 := by
+    intro hOne
+    apply hnext x
+    simpa [least, hOne] using hleast.2
+  have hleastTwo : 2 ≤ least := by omega
+  have hminimal : ∀ m, 0 < m → m < least →
+      (next^[m]) x ≠ x := by
+    intro m hm hmlt hEq
+    exact (Nat.find_min hex hmlt) ⟨hm, hEq⟩
+  refine ⟨x, least, hleastTwo, hleast.2, hminimal, ?_⟩
+  intro i j hij hjleast hEq
+  let m := least - j + i
+  have hmPos : 0 < m := by
+    dsimp [m]
+    omega
+  have hmLt : m < least := by
+    dsimp [m]
+    omega
+  apply hminimal m hmPos hmLt
+  calc
+    (next^[m]) x =
+        (next^[least - j]) ((next^[i]) x) := by
+      rw [Function.iterate_add_apply]
+    _ = (next^[least - j]) ((next^[j]) x) := by rw [hEq]
+    _ = (next^[least - j + j]) x := by
+      rw [Function.iterate_add_apply]
+    _ = (next^[least]) x := by
+      congr 1
+      omega
+    _ = x := hleast.2
+
 /-- A finite certificate has an anchored escape cycle when one may choose
 one genuine anchored outgoing transition from every target and the chosen
 self-map has a periodic orbit of length at least two. -/
@@ -6400,6 +7472,7 @@ def HasAnchoredCertificateEscapeCycle
   ∃ next : {q // q ∈ Q} → {q // q ∈ Q},
     (∀ q, HasAnchoredCertificateEscapeTransition
       R Q cell q.1 (next q).1) ∧
+    (∀ q, next q ≠ q) ∧
     ∃ q p, 2 ≤ p ∧ (next^[p]) q = q
 
 /-- Narrow anchored escape cycle: every chosen transition carries a
@@ -6411,6 +7484,7 @@ def HasNarrowAnchoredCertificateEscapeCycle
   ∃ next : {q // q ∈ Q} → {q // q ∈ Q},
     (∀ q, HasNarrowAnchoredCertificateEscapeTransition
       R K Q cell q.1 (next q).1) ∧
+    (∀ q, next q ≠ q) ∧
     ∃ q p, 2 ≤ p ∧ (next^[p]) q = q
 
 /-- Arithmetic data carried by one narrow cycle edge on a fully critical
@@ -6464,6 +7538,7 @@ def HasCriticalNarrowAdditiveEscapeCycle
   ∃ next : {q // q ∈ Q} → {q // q ∈ Q},
     (∀ q, Nonempty (CriticalNarrowAdditiveEscapeTransitionData
       A C K D Q cell q.1 (next q).1)) ∧
+    (∀ q, next q ≠ q) ∧
     ∃ q p, 2 ≤ p ∧ (next^[p]) q = q
 
 /-- Attach the common critical-extension hypothesis and additive equations
@@ -6477,11 +7552,197 @@ theorem HasNarrowAnchoredCertificateEscapeCycle.withCriticalAdditiveData
     (hcritical : ∀ b ∈ K,
       IsRecurrentNoTwoRepairPrefix A C (insert b D)) :
     HasCriticalNarrowAdditiveEscapeCycle A C K D Q cell := by
-  obtain ⟨next, hnext, q, p, hp, hperiod⟩ := hcycle
-  refine ⟨next, ?_, q, p, hp, hperiod⟩
+  obtain ⟨next, hnext, hnextNe, q, p, hp, hperiod⟩ := hcycle
+  refine ⟨next, ?_, hnextNe, q, p, hp, hperiod⟩
   intro r
   exact
     narrowAnchoredCertificateEscapeTransition_has_criticalAdditiveData
+      P hcritical (hnext r)
+
+/-- Arithmetic edge data for the strengthened fixed-prefix certificate.
+Besides the recurrent endpoint and additive equation, both residual
+summands are retained as members of the actual anchor support.  Since that
+support belongs to `prefixAvoidingSupportFamily`, the endpoint and residual
+summands all avoid the same prefix `D`. -/
+structure CriticalPrefixAvoidingNarrowAdditiveEscapeTransitionData
+    (A C K : Set ℕ) (D Q : Finset ℕ)
+    (cell : ℕ → Finset ℕ) (q q' : ℕ) where
+  escape : AnchoredCertificateEscapeTransitionData
+    (prefixAvoidingSupportFamily
+      (additiveSupportFamily A 3) (D : Set ℕ))
+      Q cell q q'
+  anchor_trace : ((escape.anchorSupport : Set ℕ) ∩ K) =
+    {escape.newPoint}
+  newPoint_mem_reservoir : escape.newPoint ∈ K
+  newPoint_critical : IsRecurrentNoTwoRepairPrefix
+    A C (insert escape.newPoint D)
+  firstSummand : ℕ
+  firstSummand_mem : firstSummand ∈ A
+  firstSummand_mem_anchor : firstSummand ∈ escape.anchorSupport
+  secondSummand : ℕ
+  secondSummand_mem : secondSummand ∈ A
+  secondSummand_mem_anchor : secondSummand ∈ escape.anchorSupport
+  sum_eq : escape.newPoint + firstSummand + secondSummand = q'
+
+/-- Upgrade one prefix-relative narrow escape edge without losing the
+support membership of its residual summands. -/
+theorem prefixAvoidingNarrowAnchoredCertificateEscapeTransition_has_criticalAdditiveData
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q q' : ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcritical : ∀ b ∈ K,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D))
+    (hedge : HasNarrowAnchoredCertificateEscapeTransition
+      (prefixAvoidingSupportFamily
+        (additiveSupportFamily A 3) (D : Set ℕ))
+      K Q cell q q') :
+    Nonempty (CriticalPrefixAvoidingNarrowAdditiveEscapeTransitionData
+      A C K D Q cell q q') := by
+  obtain ⟨w, htrace⟩ := hedge
+  have hzK : w.newPoint ∈ K :=
+    (P.mem_iff w.newPoint).mpr
+      ⟨w.cellIndex, w.newPoint_mem⟩
+  obtain ⟨u, huA, huSupport, v, hvA, hvSupport, hsum⟩ :=
+    orderThreeSupport_member_has_twoSummands_in_support
+      w.anchorSupport_mem_original w.newPoint_anchor
+  exact ⟨⟨w, htrace, hzK, hcritical w.newPoint hzK,
+    u, huA, huSupport, v, hvA, hvSupport, hsum⟩⟩
+
+/-- Every marked endpoint in a prefix-relative escape edge avoids the fixed
+prefix. -/
+theorem CriticalPrefixAvoidingNarrowAdditiveEscapeTransitionData.newPoint_not_mem_prefix
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q q' : ℕ}
+    (w : CriticalPrefixAvoidingNarrowAdditiveEscapeTransitionData
+      A C K D Q cell q q') :
+    w.escape.newPoint ∉ D := by
+  intro hzD
+  exact Set.disjoint_left.mp w.escape.anchorSupport_disjoint_prefix
+    (Finset.mem_coe.mpr w.escape.newPoint_anchor)
+      (Finset.mem_coe.mpr hzD)
+
+/-- The first residual summand also avoids the fixed prefix. -/
+theorem CriticalPrefixAvoidingNarrowAdditiveEscapeTransitionData.firstSummand_not_mem_prefix
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q q' : ℕ}
+    (w : CriticalPrefixAvoidingNarrowAdditiveEscapeTransitionData
+      A C K D Q cell q q') :
+    w.firstSummand ∉ D := by
+  intro huD
+  exact Set.disjoint_left.mp w.escape.anchorSupport_disjoint_prefix
+    (Finset.mem_coe.mpr w.firstSummand_mem_anchor)
+      (Finset.mem_coe.mpr huD)
+
+/-- The second residual summand also avoids the fixed prefix. -/
+theorem CriticalPrefixAvoidingNarrowAdditiveEscapeTransitionData.secondSummand_not_mem_prefix
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q q' : ℕ}
+    (w : CriticalPrefixAvoidingNarrowAdditiveEscapeTransitionData
+      A C K D Q cell q q') :
+    w.secondSummand ∉ D := by
+  intro hvD
+  exact Set.disjoint_left.mp w.escape.anchorSupport_disjoint_prefix
+    (Finset.mem_coe.mpr w.secondSummand_mem_anchor)
+      (Finset.mem_coe.mpr hvD)
+
+/-- A residual summand can lie back in the binary reservoir only by
+coinciding with the edge's unique marked reservoir point. -/
+theorem CriticalPrefixAvoidingNarrowAdditiveEscapeTransitionData.firstSummand_mem_reservoir_iff
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q q' : ℕ}
+    (w : CriticalPrefixAvoidingNarrowAdditiveEscapeTransitionData
+      A C K D Q cell q q') :
+    w.firstSummand ∈ K ↔
+      w.firstSummand = w.escape.newPoint := by
+  constructor
+  · intro huK
+    have huTrace : w.firstSummand ∈
+        (w.escape.anchorSupport : Set ℕ) ∩ K :=
+      ⟨Finset.mem_coe.mpr w.firstSummand_mem_anchor, huK⟩
+    rw [w.anchor_trace] at huTrace
+    simpa using huTrace
+  · intro hu
+    rw [hu]
+    exact w.newPoint_mem_reservoir
+
+/-- The same singleton-trace externality holds for the second residual
+summand. -/
+theorem CriticalPrefixAvoidingNarrowAdditiveEscapeTransitionData.secondSummand_mem_reservoir_iff
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q q' : ℕ}
+    (w : CriticalPrefixAvoidingNarrowAdditiveEscapeTransitionData
+      A C K D Q cell q q') :
+    w.secondSummand ∈ K ↔
+      w.secondSummand = w.escape.newPoint := by
+  constructor
+  · intro hvK
+    have hvTrace : w.secondSummand ∈
+        (w.escape.anchorSupport : Set ℕ) ∩ K :=
+      ⟨Finset.mem_coe.mpr w.secondSummand_mem_anchor, hvK⟩
+    rw [w.anchor_trace] at hvTrace
+    simpa using hvTrace
+  · intro hv
+    rw [hv]
+    exact w.newPoint_mem_reservoir
+
+/-- Every strengthened additive edge is either genuinely increasing from
+its marked reservoir point to its certificate target, or is the exact unit
+case supported by two zero residual summands.  This separates the only
+zero-sensitive branch from the strict-potential branch. -/
+theorem CriticalPrefixAvoidingNarrowAdditiveEscapeTransitionData.strict_or_unit
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q q' : ℕ}
+    (w : CriticalPrefixAvoidingNarrowAdditiveEscapeTransitionData
+      A C K D Q cell q q') :
+    w.escape.newPoint < q' ∨
+      (q' = w.escape.newPoint ∧
+        w.firstSummand = 0 ∧ w.secondSummand = 0) := by
+  have hsum := w.sum_eq
+  omega
+
+/-- If either residual summand is nonzero, the additive edge is strict. -/
+theorem CriticalPrefixAvoidingNarrowAdditiveEscapeTransitionData.newPoint_lt_target_of_nonunit
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q q' : ℕ}
+    (w : CriticalPrefixAvoidingNarrowAdditiveEscapeTransitionData
+      A C K D Q cell q q')
+    (hnonunit : w.firstSummand ≠ 0 ∨ w.secondSummand ≠ 0) :
+    w.escape.newPoint < q' := by
+  rcases w.strict_or_unit with hstrict | hunit
+  · exact hstrict
+  · rcases hunit with ⟨_htarget, hu, hv⟩
+    exact (hnonunit.elim (fun h => h hu) (fun h => h hv)).elim
+
+/-- Fully labelled cycle for the strengthened fixed-prefix certificate. -/
+def HasCriticalPrefixAvoidingNarrowAdditiveEscapeCycle
+    (A C K : Set ℕ) (D Q : Finset ℕ)
+    (cell : ℕ → Finset ℕ) : Prop :=
+  ∃ next : {q // q ∈ Q} → {q // q ∈ Q},
+    (∀ q, Nonempty
+      (CriticalPrefixAvoidingNarrowAdditiveEscapeTransitionData
+        A C K D Q cell q.1 (next q).1)) ∧
+    (∀ q, next q ≠ q) ∧
+    ∃ q p, 2 ≤ p ∧ (next^[p]) q = q
+
+/-- Attach recurrent endpoint labels, prefix avoidance, and support-retained
+additive equations to every edge of a prefix-relative narrow cycle. -/
+theorem HasNarrowAnchoredCertificateEscapeCycle.withCriticalPrefixAvoidingAdditiveData
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hcycle : HasNarrowAnchoredCertificateEscapeCycle
+      (prefixAvoidingSupportFamily
+        (additiveSupportFamily A 3) (D : Set ℕ))
+      K Q cell)
+    (P : IsFiniteBlockPartition K cell)
+    (hcritical : ∀ b ∈ K,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D)) :
+    HasCriticalPrefixAvoidingNarrowAdditiveEscapeCycle
+      A C K D Q cell := by
+  obtain ⟨next, hnext, hnextNe, q, p, hp, hperiod⟩ := hcycle
+  refine ⟨next, ?_, hnextNe, q, p, hp, hperiod⟩
+  intro r
+  exact
+    prefixAvoidingNarrowAnchoredCertificateEscapeTransition_has_criticalAdditiveData
       P hcritical (hnext r)
 
 /-- If every target of a finite localized certificate is in the separated
@@ -6528,7 +7789,7 @@ theorem separatedTrace_targetLocalizedCertificate_has_anchoredEscapeCycle
   obtain ⟨q, p, hp, hcycle⟩ :=
     finite_selfMap_without_fixedPoint_has_nontrivialCycle
       next hnextNe
-  exact ⟨next, hnextEdge, q, p, hp, hcycle⟩
+  exact ⟨next, hnextEdge, hnextNe, q, p, hp, hcycle⟩
 
 /-- The two localized exits from a separated target either go to two
 different certificate targets, or their collision forces one old-surviving
@@ -6800,6 +8061,31 @@ theorem externalNarrowTraceClauseData_nonempty
       right_trace := hFtrace
       separated_or_commonExternal := Or.inr ⟨rfl, rfl, hxC⟩ }⟩
 
+/-- Forget chosen-field packaging and recover the underlying separated or
+common-external trace predicate. -/
+theorem ExternalNarrowTraceClauseData.hasSeparatedOrCommonTrace
+    {R : SupportFamily} {C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (d : ExternalNarrowTraceClauseData R C K D cell q) :
+    HasSeparatedSingletonTwoRepairTracesAlongAt
+        R C K D cell q ∨
+      HasCommonExternalSingletonTwoRepairTracesAlongAt
+        R C K D cell q := by
+  rcases d.separated_or_commonExternal with hsep | hcommon
+  · exact Or.inl ⟨d.leftSupport, d.left_mem, d.left_disjoint,
+      d.rightSupport, d.right_mem, d.right_disjoint,
+      d.reservoir_traces_disjoint,
+      d.leftCell, d.rightCell, d.leftPoint, d.rightPoint,
+      hsep, d.leftPoint_mem, d.rightPoint_mem,
+      d.left_trace, d.right_trace⟩
+  · obtain ⟨_hcells, hpoints, houtside⟩ := hcommon
+    exact Or.inr ⟨d.leftSupport, d.left_mem, d.left_disjoint,
+      d.rightSupport, d.right_mem, d.right_disjoint,
+      d.reservoir_traces_disjoint,
+      d.leftCell, d.leftPoint, d.leftPoint_mem, houtside,
+      d.left_trace,
+      d.right_trace.trans (congrArg singleton hpoints).symm⟩
+
 /-- Arithmetic and recurrent-extension labels attached to one separated
 binary certificate clause on a fully critical reservoir.  Each of the two
 marked literals is a recurrently bad one-point extension of the same good
@@ -6965,6 +8251,34 @@ theorem blockSelector_value_eq_of_point_mem_selectedSet
   subst j
   exact hj
 
+/-- Generic singleton-anchor propagation.  Any selector destroying the
+destination of a narrow anchored edge must choose that edge's unique
+reservoir point in its marked cell. -/
+theorem narrowAnchoredCertificateEscapeTransition_targetSelector_selects_newPoint
+    {R : SupportFamily} {K : Set ℕ} {Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q q' : ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (w : AnchoredCertificateEscapeTransitionData
+      R Q cell q q')
+    (htrace : ((w.anchorSupport : Set ℕ) ∩ K) =
+      {w.newPoint})
+    (t : BlockSelector cell)
+    (ht : DestroysAt R (selectedSet t) q') :
+    (t w.cellIndex).1 = w.newPoint := by
+  have hzSelected : w.newPoint ∈ selectedSet t := by
+    obtain ⟨y, hySupport, hySelected⟩ :=
+      Set.not_disjoint_iff.mp
+        (ht w.anchorSupport w.anchorSupport_mem)
+    have hyK : y ∈ K := P.selectedSet_subset t hySelected
+    have hyz : y = w.newPoint := by
+      have hyTrace : y ∈ (w.anchorSupport : Set ℕ) ∩ K :=
+        ⟨hySupport, hyK⟩
+      rw [htrace] at hyTrace
+      simpa using hyTrace
+    simpa [hyz] using hySelected
+  exact blockSelector_value_eq_of_point_mem_selectedSet
+    P w.newPoint_mem hzSelected
+
 /-- The singleton anchor trace of a critical narrow edge forces every
 selector destroying the destination target to choose that edge's new point
 in its marked cell. -/
@@ -7010,18 +8324,155 @@ theorem HasCriticalNarrowAdditiveEscapeCycle.exists_data_with_successorSelectorP
           ((data (next q)).escape.baseSelector
             (data q).escape.cellIndex).1 =
               (data q).escape.newPoint) ∧
+        (∀ q, next q ≠ q) ∧
         ∃ q p, 2 ≤ p ∧ (next^[p]) q = q := by
   classical
-  obtain ⟨next, hnext, q, p, hp, hperiod⟩ := hcycle
+  obtain ⟨next, hnext, hnextNe, q, p, hp, hperiod⟩ := hcycle
   let data : ∀ r, CriticalNarrowAdditiveEscapeTransitionData
       A C K D Q cell r.1 (next r).1 := fun r =>
     Classical.choice (hnext r)
-  refine ⟨next, data, ?_, q, p, hp, hperiod⟩
+  refine ⟨next, data, ?_, hnextNe, q, p, hp, hperiod⟩
   intro r
   exact
     criticalNarrowAdditiveEscapeTransition_targetSelector_selects_newPoint
       P (data r) (data (next r)).escape.baseSelector
         (data (next r)).escape.source_destroy
+
+/-- The strengthened prefix-relative cycle has the same successor-selector
+propagation law while retaining prefix avoidance and support membership for
+every additive label. -/
+theorem HasCriticalPrefixAvoidingNarrowAdditiveEscapeCycle.exists_data_with_successorSelectorPropagation
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hcycle : HasCriticalPrefixAvoidingNarrowAdditiveEscapeCycle
+      A C K D Q cell)
+    (P : IsFiniteBlockPartition K cell) :
+    ∃ next : {q // q ∈ Q} → {q // q ∈ Q},
+      ∃ data : ∀ q,
+          CriticalPrefixAvoidingNarrowAdditiveEscapeTransitionData
+            A C K D Q cell q.1 (next q).1,
+        (∀ q,
+          ((data (next q)).escape.baseSelector
+            (data q).escape.cellIndex).1 =
+              (data q).escape.newPoint) ∧
+        (∀ q, next q ≠ q) ∧
+        ∃ q p, 2 ≤ p ∧ (next^[p]) q = q := by
+  classical
+  obtain ⟨next, hnext, hnextNe, q, p, hp, hperiod⟩ := hcycle
+  let data : ∀ r,
+      CriticalPrefixAvoidingNarrowAdditiveEscapeTransitionData
+        A C K D Q cell r.1 (next r).1 := fun r =>
+    Classical.choice (hnext r)
+  refine ⟨next, data, ?_, hnextNe, q, p, hp, hperiod⟩
+  intro r
+  exact
+    narrowAnchoredCertificateEscapeTransition_targetSelector_selects_newPoint
+      P (data r).escape (data r).anchor_trace
+        (data (next r)).escape.baseSelector
+          (data (next r)).escape.source_destroy
+
+/-- Edge-to-edge coherence around the strengthened cycle.  The next
+edge's anchor repair and both of its residual summands avoid the previous
+edge's marked point.  This is the first relation which genuinely composes
+between consecutive additive labels rather than merely packaging
+independent equations at their targets. -/
+theorem HasCriticalPrefixAvoidingNarrowAdditiveEscapeCycle.exists_data_with_successorAnchorAvoidance
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hcycle : HasCriticalPrefixAvoidingNarrowAdditiveEscapeCycle
+      A C K D Q cell)
+    (P : IsFiniteBlockPartition K cell) :
+    ∃ next : {q // q ∈ Q} → {q // q ∈ Q},
+      ∃ data : ∀ q,
+          CriticalPrefixAvoidingNarrowAdditiveEscapeTransitionData
+            A C K D Q cell q.1 (next q).1,
+        (∀ q,
+          (data q).escape.newPoint ∉
+              (data (next q)).escape.anchorSupport ∧
+          (data q).escape.newPoint ≠
+              (data (next q)).escape.newPoint ∧
+          (data q).escape.newPoint ≠
+              (data (next q)).firstSummand ∧
+          (data q).escape.newPoint ≠
+              (data (next q)).secondSummand) ∧
+        (∀ q, next q ≠ q) ∧
+        ∃ q p, 2 ≤ p ∧ (next^[p]) q = q ∧
+          (∀ m, 0 < m → m < p → (next^[m]) q ≠ q) ∧
+          ∀ i j, i < j → j < p →
+            (next^[i]) q ≠ (next^[j]) q := by
+  obtain ⟨next, data, hselect, hnextNe, q₀, _p₀, _hp₀,
+      _hperiod₀⟩ :=
+    hcycle.exists_data_with_successorSelectorPropagation P
+  letI : Nonempty {q // q ∈ Q} := ⟨q₀⟩
+  obtain ⟨q, p, hp, hperiod, hminimal, hdistinct⟩ :=
+    finite_selfMap_without_fixedPoint_has_shortestNontrivialCycle
+      next hnextNe
+  refine ⟨next, data, ?_, hnextNe, q, p, hp, hperiod,
+    hminimal, hdistinct⟩
+  intro r
+  have havoid : (data r).escape.newPoint ∉
+      (data (next r)).escape.anchorSupport :=
+    (data (next r)).escape.selectedPoint_not_mem_anchorSupport
+      (hselect r)
+  refine ⟨havoid, ?_, ?_, ?_⟩
+  · intro hEq
+    apply havoid
+    rw [hEq]
+    exact (data (next r)).escape.newPoint_anchor
+  · intro hEq
+    apply havoid
+    rw [hEq]
+    exact (data (next r)).firstSummand_mem_anchor
+  · intro hEq
+    apply havoid
+    rw [hEq]
+    exact (data (next r)).secondSummand_mem_anchor
+
+/-- Exact telescoping identity for a closed labelled escape orbit.  Summing
+the edge equations gives the cyclic sum of certificate targets: the
+destination-target sum is merely a one-step rotation of the source-target
+sum.  Any eventual strict-potential contradiction must therefore add an
+inequality not already present in the raw additive equations. -/
+theorem criticalPrefixAvoidingNarrowAdditiveEscapeCycle_sum_eq
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    {next : {q // q ∈ Q} → {q // q ∈ Q}}
+    (data : ∀ q,
+      CriticalPrefixAvoidingNarrowAdditiveEscapeTransitionData
+        A C K D Q cell q.1 (next q).1)
+    (q : {q // q ∈ Q}) (p : ℕ)
+    (hperiod : (next^[p]) q = q) :
+    (∑ i ∈ Finset.range p,
+      let w := data ((next^[i]) q)
+      w.escape.newPoint + w.firstSummand + w.secondSummand) =
+    ∑ i ∈ Finset.range p, ((next^[i]) q).1 := by
+  let f : ℕ → ℕ := fun i => ((next^[i]) q).1
+  have hedge : ∀ i,
+      (let w := data ((next^[i]) q);
+        w.escape.newPoint + w.firstSummand + w.secondSummand) =
+        f (i + 1) := by
+    intro i
+    simpa only [f, Function.iterate_succ_apply', Nat.succ_eq_add_one]
+      using (data ((next^[i]) q)).sum_eq
+  have hsumEdge :
+      (∑ i ∈ Finset.range p,
+        let w := data ((next^[i]) q)
+        w.escape.newPoint + w.firstSummand + w.secondSummand) =
+      ∑ i ∈ Finset.range p, f (i + 1) := by
+    exact Finset.sum_congr rfl (fun i _hi => hedge i)
+  have hfp : f p = f 0 := by
+    simp [f, hperiod]
+  have htotal :
+      (∑ i ∈ Finset.range p, f i) + f p =
+        (∑ i ∈ Finset.range p, f (i + 1)) + f 0 :=
+    (Finset.sum_range_succ f p).symm.trans
+      (Finset.sum_range_succ' f p)
+  rw [hfp] at htotal
+  have hrotate :
+      (∑ i ∈ Finset.range p, f (i + 1)) =
+        ∑ i ∈ Finset.range p, f i :=
+    (Nat.add_right_cancel htotal).symm
+  exact hsumEdge.trans (hrotate.trans (by rfl))
 
 /-! ### Binary literals and implication edges -/
 
@@ -7182,6 +8633,430 @@ theorem binaryCellLiteral_eq_base_or_oppositeBase
       (oppositeBinaryCellLiteral hcellCard) hbOpp
     simpa [b] using hcomp.symm
 
+/-- A family of supports with singleton reservoir traces can all be avoided
+by one binary selector unless two chosen anchors forbid opposite endpoints
+of the same cell.  This is the exact unit-clause compatibility criterion
+needed when one support has been assigned to every target of a fixed finite
+certificate. -/
+theorem singletonReservoirAnchors_commonAvoidingSelector_or_conflict
+    {X : Type*} {K : Set ℕ} {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (anchor : X → BinaryCellLiteral cell)
+    (support : X → Finset ℕ)
+    (htrace : ∀ x,
+      ((support x : Set ℕ) ∩ K) = {(anchor x).2.1}) :
+    (∃ s : BlockSelector cell, ∀ x,
+      Disjoint (support x : Set ℕ) (selectedSet s)) ∨
+    ∃ x y,
+      (anchor x).1 = (anchor y).1 ∧
+      (anchor x).2.1 ≠ (anchor y).2.1 := by
+  classical
+  by_cases hconflict : ∃ x y,
+      (anchor x).1 = (anchor y).1 ∧
+      (anchor x).2.1 ≠ (anchor y).2.1
+  · exact Or.inr hconflict
+  · left
+    have hcompatible : ∀ x y,
+        (anchor x).1 = (anchor y).1 →
+        (anchor x).2.1 = (anchor y).2.1 := by
+      intro x y hcell
+      by_contra hpoint
+      exact hconflict ⟨x, y, hcell, hpoint⟩
+    let base : BlockSelector cell := fun i =>
+      ⟨(P.nonempty i).choose, (P.nonempty i).choose_spec⟩
+    let forbidden : BlockSelector cell := fun i =>
+      if h : ∃ x, (anchor x).1 = i then
+        ⟨(anchor (Classical.choose h)).2.1, by
+          have hi := Classical.choose_spec h
+          simpa [hi] using (anchor (Classical.choose h)).2.2⟩
+      else base i
+    let s : BlockSelector cell := fun i =>
+      if h : ∃ x, (anchor x).1 = i then
+        oppositeBlockChoice hcellCard i (forbidden i)
+      else base i
+    have hforbidden : ∀ x,
+        (forbidden (anchor x).1).1 = (anchor x).2.1 := by
+      intro x
+      have hexists : ∃ y, (anchor y).1 = (anchor x).1 :=
+        ⟨x, rfl⟩
+      simp only [forbidden, dif_pos hexists]
+      exact hcompatible (Classical.choose hexists) x
+        (Classical.choose_spec hexists)
+    have hsAvoidsAnchor : ∀ x,
+        (s (anchor x).1).1 ≠ (anchor x).2.1 := by
+      intro x hEq
+      have hexists : ∃ y, (anchor y).1 = (anchor x).1 :=
+        ⟨x, rfl⟩
+      have hOpp :
+          (oppositeBlockChoice hcellCard (anchor x).1
+            (forbidden (anchor x).1)).1 ≠
+              (forbidden (anchor x).1).1 :=
+        oppositeBlockChoice_ne hcellCard (anchor x).1
+          (forbidden (anchor x).1)
+      apply hOpp
+      have hsEq :
+          (oppositeBlockChoice hcellCard (anchor x).1
+            (forbidden (anchor x).1)).1 = (anchor x).2.1 := by
+        simpa [s, hexists] using hEq
+      exact hsEq.trans (hforbidden x).symm
+    refine ⟨s, ?_⟩
+    intro x
+    rw [Set.disjoint_left]
+    intro y hySupport hySelected
+    have hyK : y ∈ K := P.selectedSet_subset s hySelected
+    have hyTrace : y ∈ (support x : Set ℕ) ∩ K :=
+      ⟨hySupport, hyK⟩
+    rw [htrace x] at hyTrace
+    have hyAnchor : y = (anchor x).2.1 := by
+      simpa using hyTrace
+    apply hsAvoidsAnchor x
+    exact blockSelector_value_eq_of_point_mem_selectedSet
+      P (anchor x).2.2 (hyAnchor ▸ hySelected)
+
+/-- If singleton-anchor supports cover every target of a fixed selector
+certificate, the common-avoiding-selector branch is impossible.  Hence any
+such target cover necessarily contains two incompatible unit anchors in one
+binary cell. -/
+theorem singletonReservoirAnchoredTargetCover_forces_conflict
+    {X : Type*} {R : SupportFamily} {K : Set ℕ} {Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (target : X → {q // q ∈ Q})
+    (anchor : X → BinaryCellLiteral cell)
+    (support : X → Finset ℕ)
+    (hsupport : ∀ x, support x ∈ R (target x).1)
+    (htrace : ∀ x,
+      ((support x : Set ℕ) ∩ K) = {(anchor x).2.1})
+    (htarget : Function.Surjective target) :
+    ∃ x y,
+      (anchor x).1 = (anchor y).1 ∧
+      (anchor x).2.1 ≠ (anchor y).2.1 := by
+  rcases singletonReservoirAnchors_commonAvoidingSelector_or_conflict
+      P hcellCard anchor support htrace with hselector | hconflict
+  · obtain ⟨s, hs⟩ := hselector
+    obtain ⟨q, hqQ, hqDestroy⟩ := hcert s
+    obtain ⟨x, hx⟩ := htarget ⟨q, hqQ⟩
+    have hxSupport : support x ∈ R q := by
+      simpa [hx] using hsupport x
+    exact (hqDestroy (support x) hxSupport (hs x)).elim
+  · exact hconflict
+
+/-- Applied to an anchored escape assignment, surjectivity of its target
+map forces two recorded destination supports to have opposite singleton
+anchors in one cell.  Thus a permutation or cycle cover of the fixed
+certificate cannot remain conflict-free. -/
+theorem narrowAnchoredCertificateTargetCover_forces_anchorConflict
+    {R : SupportFamily} {K : Set ℕ} {Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (next : {q // q ∈ Q} → {q // q ∈ Q})
+    (data : ∀ q, AnchoredCertificateEscapeTransitionData
+      R Q cell q.1 (next q).1)
+    (htrace : ∀ q,
+      (((data q).anchorSupport : Set ℕ) ∩ K) =
+        {(data q).newPoint})
+    (hnext : Function.Surjective next) :
+    ∃ q r,
+      (data q).cellIndex = (data r).cellIndex ∧
+      (data q).newPoint ≠ (data r).newPoint := by
+  let anchor : {q // q ∈ Q} → BinaryCellLiteral cell := fun q =>
+    ⟨(data q).cellIndex,
+      ⟨(data q).newPoint, (data q).newPoint_mem⟩⟩
+  simpa [anchor] using
+    (singletonReservoirAnchoredTargetCover_forces_conflict
+      P hcellCard hcert next anchor
+        (fun q => (data q).anchorSupport)
+        (fun q => (data q).anchorSupport_mem)
+        htrace hnext)
+
+/-- When the original binary-cell provenance is retained, the opposite
+anchors forced by a surjective same-`Q` support cover also come with two
+equal-target additive decompositions at those exact anchor points. -/
+theorem narrowAnchoredCertificateTargetCover_forces_balancedCellConflict
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {R : SupportFamily} {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcellData : ∀ i, Nonempty
+      (PrivateConflictBinaryCellData A C K D cell i))
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (next : {q // q ∈ Q} → {q // q ∈ Q})
+    (data : ∀ q, AnchoredCertificateEscapeTransitionData
+      R Q cell q.1 (next q).1)
+    (htrace : ∀ q,
+      (((data q).anchorSupport : Set ℕ) ∩ K) =
+        {(data q).newPoint})
+    (hnext : Function.Surjective next) :
+    ∃ q r,
+      (data q).cellIndex = (data r).cellIndex ∧
+      (data q).newPoint ≠ (data r).newPoint ∧
+      ∃ t, ∃ u ∈ A, ∃ v ∈ A, ∃ u' ∈ A, ∃ v' ∈ A,
+        (data q).newPoint + u + v = t ∧
+        (data r).newPoint + u' + v' = t := by
+  obtain ⟨q, r, hcell, hpoints⟩ :=
+    narrowAnchoredCertificateTargetCover_forces_anchorConflict
+      P hcellCard hcert next data htrace hnext
+  let w := Classical.choice (hcellData (data q).cellIndex)
+  have hz : (data q).newPoint ∈ cell (data q).cellIndex :=
+    (data q).newPoint_mem
+  have hz' : (data r).newPoint ∈ cell (data q).cellIndex := by
+    rw [hcell]
+    exact (data r).newPoint_mem
+  obtain ⟨u, huA, v, hvA, u', hu'A, v', hv'A,
+      hsum, hsum'⟩ :=
+    w.exists_balancedAdditiveLabels_of_distinct_points
+      hcellCard hz hz' hpoints
+  exact ⟨q, r, hcell, hpoints, w.conflict.target,
+    u, huA, v, hvA, u', hu'A, v', hv'A, hsum, hsum'⟩
+
+/-- Hall's theorem applied to the retained two-exit graph.  Either its
+two-point neighborhoods admit a system of distinct representatives, which
+is a surjective target cover and therefore forces an opposite-anchor
+conflict, or a concrete subset of certificate targets has strictly too few
+out-neighbors.  The second branch is the exact remaining finite bottleneck,
+with no support or selector provenance discarded. -/
+theorem distinctNarrowAnchoredCertificateEscapeForks_targetCoverConflict_or_hallDeficient
+    {R : SupportFamily} {K : Set ℕ} {Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (fork : ∀ q : {q // q ∈ Q},
+      DistinctNarrowAnchoredCertificateEscapeForkData
+        R K Q cell q.1) :
+    (∃ next : {q // q ∈ Q} → {q // q ∈ Q},
+      ∃ data : ∀ q, AnchoredCertificateEscapeTransitionData
+          R Q cell q.1 (next q).1,
+        Function.Surjective next ∧
+        (∀ q, (((data q).anchorSupport : Set ℕ) ∩ K) =
+          {(data q).newPoint}) ∧
+        ∃ q r,
+          (data q).cellIndex = (data r).cellIndex ∧
+          (data q).newPoint ≠ (data r).newPoint) ∨
+    ∃ S : Finset {q // q ∈ Q},
+      (S.biUnion fun q => (fork q).targetFinset).card < S.card := by
+  classical
+  let neighbors : {q // q ∈ Q} → Finset {q // q ∈ Q} :=
+    fun q => (fork q).targetFinset
+  by_cases hHall : ∀ S : Finset {q // q ∈ Q},
+      S.card ≤ (S.biUnion neighbors).card
+  · left
+    obtain ⟨next, hnextInjective, hnextMem⟩ :=
+      (Finset.all_card_le_biUnion_card_iff_existsInjective'
+        neighbors).mp hHall
+    have hnextSurjective : Function.Surjective next :=
+      Finite.surjective_of_injective hnextInjective
+    have hedge : ∀ q,
+        ∃ edge : AnchoredCertificateEscapeTransitionData
+            R Q cell q.1 (next q).1,
+          ((edge.anchorSupport : Set ℕ) ∩ K) =
+            {edge.newPoint} := by
+      intro q
+      exact (fork q).exists_edge_of_mem_targetFinset
+        (next q) (by simpa [neighbors] using hnextMem q)
+    let data : ∀ q, AnchoredCertificateEscapeTransitionData
+        R Q cell q.1 (next q).1 := fun q =>
+      Classical.choose (hedge q)
+    have htrace : ∀ q,
+        (((data q).anchorSupport : Set ℕ) ∩ K) =
+          {(data q).newPoint} := fun q =>
+      Classical.choose_spec (hedge q)
+    have hconflict :=
+      narrowAnchoredCertificateTargetCover_forces_anchorConflict
+        P hcellCard hcert next data htrace hnextSurjective
+    exact ⟨next, data, hnextSurjective, htrace, hconflict⟩
+  · right
+    obtain ⟨S, hS⟩ := not_forall.mp hHall
+    refine ⟨S, ?_⟩
+    have hlt : (S.biUnion neighbors).card < S.card := by omega
+    simpa [neighbors] using hlt
+
+/-- Quantitative content of the Hall-deficient branch.  Counting the two
+distinct exits of every source as incidences, strict deficiency forces one
+destination target to receive at least three incoming fork incidences. -/
+theorem hallDeficient_narrowEscapeForks_has_tripleIncomingIncidences
+    {R : SupportFamily} {K : Set ℕ} {Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (fork : ∀ q : {q // q ∈ Q},
+      DistinctNarrowAnchoredCertificateEscapeForkData
+        R K Q cell q.1)
+    (S : Finset {q // q ∈ Q})
+    (hdeficient :
+      (S.biUnion fun q => (fork q).targetFinset).card < S.card) :
+    ∃ y ∈ S.biUnion (fun q => (fork q).targetFinset),
+      2 < ((S.product (Finset.univ : Finset Bool)).filter
+        fun p => (fork p.1).exitTarget p.2 = y).card := by
+  classical
+  let holes : Finset {q // q ∈ Q} :=
+    S.biUnion fun q => (fork q).targetFinset
+  let pigeons : Finset ({q // q ∈ Q} × Bool) :=
+    S.product Finset.univ
+  let exit : ({q // q ∈ Q} × Bool) → {q // q ∈ Q} :=
+    fun p => (fork p.1).exitTarget p.2
+  have hmaps : ∀ p ∈ pigeons, exit p ∈ holes := by
+    intro p hp
+    have hpS : p.1 ∈ S := (Finset.mem_product.mp hp).1
+    exact Finset.mem_biUnion.mpr
+      ⟨p.1, hpS, (fork p.1).exitTarget_mem_targetFinset p.2⟩
+  have hdef : holes.card < S.card := by
+    simpa [holes] using hdeficient
+  have hmul : holes.card * 2 < pigeons.card := by
+    calc
+      holes.card * 2 < S.card * 2 :=
+        (Nat.mul_lt_mul_right (by omega : 0 < 2)).2 hdef
+      _ = pigeons.card := by simp [pigeons]
+  obtain ⟨y, hy, hfiber⟩ :=
+    Finset.exists_lt_card_fiber_of_mul_lt_card_of_maps_to
+      (f := exit) (s := pigeons) (t := holes) hmaps hmul
+  exact ⟨y, by simpa [holes] using hy,
+    by simpa [exit, pigeons] using hfiber⟩
+
+/-- The three incidences in the deficient branch have three distinct source
+targets: a single fork cannot send both of its distinct sides to the same
+destination.  Thus one certificate target receives narrow anchor supports
+from at least three different sources in the deficient set. -/
+theorem hallDeficient_narrowEscapeForks_has_threeIncomingSources
+    {R : SupportFamily} {K : Set ℕ} {Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (fork : ∀ q : {q // q ∈ Q},
+      DistinctNarrowAnchoredCertificateEscapeForkData
+        R K Q cell q.1)
+    (S : Finset {q // q ∈ Q})
+    (hdeficient :
+      (S.biUnion fun q => (fork q).targetFinset).card < S.card) :
+    ∃ y ∈ S.biUnion (fun q => (fork q).targetFinset),
+      ∃ T : Finset {q // q ∈ Q},
+        2 < T.card ∧ T ⊆ S ∧
+        ∀ q ∈ T, y ∈ (fork q).targetFinset := by
+  classical
+  obtain ⟨y, hy, hthree⟩ :=
+    hallDeficient_narrowEscapeForks_has_tripleIncomingIncidences
+      fork S hdeficient
+  let incoming : Finset ({q // q ∈ Q} × Bool) :=
+    (S.product (Finset.univ : Finset Bool)).filter
+      fun p => (fork p.1).exitTarget p.2 = y
+  let source : ({q // q ∈ Q} × Bool) → {q // q ∈ Q} :=
+    fun p => p.1
+  let T : Finset {q // q ∈ Q} := incoming.image source
+  have hproj : Set.InjOn source
+      (incoming : Set ({q // q ∈ Q} × Bool)) := by
+    rintro ⟨q, side⟩ hqs ⟨r, side'⟩ hrs hsource
+    simp only [source] at hsource
+    subst r
+    have hside : side = side' :=
+      (fork q).exitTarget_injective <|
+        (Finset.mem_filter.mp hqs).2.trans
+          (Finset.mem_filter.mp hrs).2.symm
+    subst side'
+    rfl
+  have hTcard : T.card = incoming.card :=
+    Finset.card_image_of_injOn hproj
+  refine ⟨y, hy, T, ?_, ?_, ?_⟩
+  · rw [hTcard]
+    simpa [incoming] using hthree
+  · intro q hqT
+    obtain ⟨p, hpIncoming, hpq⟩ := Finset.mem_image.mp hqT
+    have hpq' : p.1 = q := by simpa [source] using hpq
+    rw [← hpq']
+    exact (Finset.mem_product.mp
+      (Finset.mem_filter.mp hpIncoming).1).1
+  · intro q hqT
+    obtain ⟨p, hpIncoming, hpq⟩ := Finset.mem_image.mp hqT
+    have hpq' : p.1 = q := by simpa [source] using hpq
+    have hpExit : (fork p.1).exitTarget p.2 = y :=
+      (Finset.mem_filter.mp hpIncoming).2
+    rw [← hpq', ← hpExit]
+    exact (fork p.1).exitTarget_mem_targetFinset p.2
+
+/-- Support-retaining form of the triple-incoming conclusion. -/
+theorem hallDeficient_narrowEscapeForks_has_threeIncomingNarrowEdges
+    {R : SupportFamily} {K : Set ℕ} {Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (fork : ∀ q : {q // q ∈ Q},
+      DistinctNarrowAnchoredCertificateEscapeForkData
+        R K Q cell q.1)
+    (S : Finset {q // q ∈ Q})
+    (hdeficient :
+      (S.biUnion fun q => (fork q).targetFinset).card < S.card) :
+    ∃ y ∈ S.biUnion (fun q => (fork q).targetFinset),
+      ∃ T : Finset {q // q ∈ Q},
+        2 < T.card ∧ T ⊆ S ∧
+        ∀ q ∈ T,
+          ∃ edge : AnchoredCertificateEscapeTransitionData
+              R Q cell q.1 y.1,
+            ((edge.anchorSupport : Set ℕ) ∩ K) =
+              {edge.newPoint} := by
+  obtain ⟨y, hy, T, hTcard, hTS, hincoming⟩ :=
+    hallDeficient_narrowEscapeForks_has_threeIncomingSources
+      fork S hdeficient
+  exact ⟨y, hy, T, hTcard, hTS, fun q hqT =>
+    (fork q).exists_edge_of_mem_targetFinset y
+      (hincoming q hqT)⟩
+
+/-- Named fixed-certificate residual for the two-exit argument.  It retains
+one concrete narrow fork at every target and then records the exhaustive
+Hall split: a surjective support cover with an incompatible unit-anchor
+pair, or a strictly Hall-deficient source subset. -/
+def HasNarrowAnchoredCertificateForkHallResidual
+    (R : SupportFamily) (K : Set ℕ) (Q : Finset ℕ)
+    (cell : ℕ → Finset ℕ) : Prop :=
+  ∃ fork : ∀ q : {q // q ∈ Q},
+      DistinctNarrowAnchoredCertificateEscapeForkData
+        R K Q cell q.1,
+    (∃ next : {q // q ∈ Q} → {q // q ∈ Q},
+      ∃ data : ∀ q, AnchoredCertificateEscapeTransitionData
+          R Q cell q.1 (next q).1,
+        Function.Surjective next ∧
+        (∀ q, (((data q).anchorSupport : Set ℕ) ∩ K) =
+          {(data q).newPoint}) ∧
+        ∃ q r,
+          (data q).cellIndex = (data r).cellIndex ∧
+          (data q).newPoint ≠ (data r).newPoint) ∨
+    ∃ S : Finset {q // q ∈ Q},
+      (S.biUnion fun q => (fork q).targetFinset).card < S.card
+
+/-- An all-separated target-localized certificate with no wide support has
+the fork Hall residual.  This threads both concrete exits at every target
+into the finite matching split instead of collapsing them to one arbitrary
+functional cycle. -/
+theorem separatedTrace_targetLocalizedCertificate_has_forkHallResidual_of_noWide
+    {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (hlocalized : ∀ q ∈ Q, ∃ s : BlockSelector cell,
+      DestroysAt R (selectedSet s) q ∧
+      ∀ q' ∈ Q, q' ≠ q →
+        ¬ DestroysAt R (selectedSet s) q')
+    (hsep : ∀ q ∈ Q,
+      HasSeparatedSingletonTwoRepairTracesAt R K D cell q)
+    (hnoWide : ∀ q ∈ Q,
+      ¬ HasWideReservoirSupportAt R K q) :
+    HasNarrowAnchoredCertificateForkHallResidual R K Q cell := by
+  classical
+  have hfork : ∀ q : {q // q ∈ Q},
+      Nonempty (DistinctNarrowAnchoredCertificateEscapeForkData
+        R K Q cell q.1) := fun q =>
+    separatedTrace_targetLocalizedCertificate_has_distinctNarrowAnchoredEscapeFork
+      P hcellCard hcert hlocalized q.2 (hsep q.1 q.2) hnoWide
+  let fork : ∀ q : {q // q ∈ Q},
+      DistinctNarrowAnchoredCertificateEscapeForkData
+        R K Q cell q.1 := fun q => Classical.choice (hfork q)
+  exact ⟨fork,
+    distinctNarrowAnchoredCertificateEscapeForks_targetCoverConflict_or_hallDeficient
+      P hcellCard hcert fork⟩
+
 /-- The left endpoint of one separated target, viewed as a binary literal. -/
 def SeparatedTraceClauseData.leftLiteral
     {R : SupportFamily} {K : Set ℕ} {D : Finset ℕ}
@@ -7214,6 +9089,49 @@ def ExternalNarrowTraceClauseData.rightLiteral
     (d : ExternalNarrowTraceClauseData R C K D cell q) :
     BinaryCellLiteral cell :=
   ⟨d.rightCell, ⟨d.rightPoint, d.rightPoint_mem⟩⟩
+
+/-- The shape field of a migrated narrow clause, expressed directly at the
+literal level: either its cells are distinct or its two literals coincide at
+a point outside the original reservoir. -/
+theorem ExternalNarrowTraceClauseData.separated_cells_or_literals_eq_external
+    {R : SupportFamily} {C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (d : ExternalNarrowTraceClauseData R C K D cell q) :
+    d.leftCell ≠ d.rightCell ∨
+      (d.leftLiteral = d.rightLiteral ∧ d.leftPoint ∉ C) := by
+  rcases d.separated_or_commonExternal with hsep | hcommon
+  · exact Or.inl hsep
+  · right
+    obtain ⟨hcells, hpoints, houtside⟩ := hcommon
+    refine ⟨?_, houtside⟩
+    have hpred : ∀ x,
+        x ∈ cell d.leftCell ↔ x ∈ cell d.rightCell := by
+      intro x
+      rw [hcells]
+    apply Sigma.ext_iff.2
+    refine ⟨hcells, ?_⟩
+    exact (Subtype.heq_iff_coe_eq hpred).2 hpoints
+
+/-- Literal coincidence rules out the separated alternative and recovers
+the common-external trace witness directly. -/
+theorem ExternalNarrowTraceClauseData.hasCommonTrace_of_literals_eq
+    {R : SupportFamily} {C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ} {q : ℕ}
+    (d : ExternalNarrowTraceClauseData R C K D cell q)
+    (hunit : d.leftLiteral = d.rightLiteral) :
+    HasCommonExternalSingletonTwoRepairTracesAlongAt
+      R C K D cell q := by
+  rcases d.separated_or_commonExternal with hsep | hcommon
+  · have hcells : d.leftCell = d.rightCell :=
+      congrArg (fun l : BinaryCellLiteral cell => l.1) hunit
+    exact (hsep hcells).elim
+  · obtain ⟨_hcells, hpoints, houtside⟩ := hcommon
+    exact ⟨d.leftSupport, d.left_mem, d.left_disjoint,
+      d.rightSupport, d.right_mem, d.right_disjoint,
+      d.reservoir_traces_disjoint,
+      d.leftCell, d.leftPoint, d.leftPoint_mem, houtside,
+      d.left_trace,
+      d.right_trace.trans (congrArg singleton hpoints).symm⟩
 
 /-- The implication graph of the forbidden endpoint pairs.  A clause
 forbidding simultaneous selection of `left` and `right` contributes the
@@ -7552,6 +9470,56 @@ theorem exists_infinite_pairwiseDisjoint_pairs_of_mem_binaryBlockTails
     · have hnIndex := blockIndex_ge_of_mem_binaryBlockTail P (hy n)
       omega
   refine ⟨L, hL, ?_⟩
+  intro n hnL m hmL hnm
+  rw [Finset.disjoint_iff_inter_eq_empty]
+  exact (hdelta n hnL m hmL hnm).trans hRempty
+
+/-- Restricted-index version of the spatial matching lemma.  It is useful
+after an infinite-pigeonhole thinning selects only those tail indices which
+carry one fixed obstruction type. -/
+theorem exists_infinite_pairwiseDisjoint_pairs_of_mem_binaryBlockTails_on
+    {K I : Set ℕ} {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hI : I.Infinite)
+    (x y : ℕ → ℕ)
+    (hx : ∀ n ∈ I,
+      x n ∈ {z | ∃ i, z ∈ cell (n + i)})
+    (hy : ∀ n ∈ I,
+      y n ∈ {z | ∃ i, z ∈ cell (n + i)}) :
+    ∃ L : Set ℕ, L ⊆ I ∧ L.Infinite ∧
+      ∀ n ∈ L, ∀ m ∈ L, n ≠ m →
+        Disjoint ({x n, y n} : Finset ℕ)
+          ({x m, y m} : Finset ℕ) := by
+  classical
+  let f : ℕ → Finset ℕ := fun n => {x n, y n}
+  have hfCard : ∀ n ∈ I, (f n).card ≤ 2 := by
+    intro n _hn
+    exact Finset.card_le_two
+  obtain ⟨L, hLI, hL, R, hdelta⟩ :=
+    exists_infinite_deltaSystem_of_bounded_pointMap
+      hI f 2 hfCard
+  have hRempty : R = ∅ := by
+    by_contra hRne
+    obtain ⟨z, hzR⟩ := Finset.nonempty_iff_ne_empty.mpr hRne
+    obtain ⟨n, hnL, hzn⟩ := hL.exists_gt (blockIndex P z)
+    obtain ⟨m, hmL, hnm⟩ := hL.exists_gt n
+    have hnmNe : n ≠ m := by omega
+    have hzInter : z ∈ f n ∩ f m := by
+      rw [hdelta n hnL m hmL hnmNe]
+      exact hzR
+    have hzf : z ∈ f n := (Finset.mem_inter.mp hzInter).1
+    have hzCases : z = x n ∨ z = y n := by
+      simpa [f] using hzf
+    rcases hzCases with rfl | rfl
+    · have hnIndex :=
+        blockIndex_ge_of_mem_binaryBlockTail P
+          (hx n (hLI hnL))
+      omega
+    · have hnIndex :=
+        blockIndex_ge_of_mem_binaryBlockTail P
+          (hy n (hLI hnL))
+      omega
+  refine ⟨L, hLI, hL, ?_⟩
   intro n hnL m hmL hnm
   rw [Finset.disjoint_iff_inter_eq_empty]
   exact (hdelta n hnL m hmL hnm).trans hRempty
@@ -8189,6 +10157,306 @@ theorem binaryPairPatternCover_has_complementaryImplicationSCC
     (exists_avoidingSelector_of_no_complementaryBinaryPairImplicationSCC
       P hcellCard data hnoSCC)
 
+/-! ### Endpoint-level 2-SAT, including unit clauses -/
+
+/-- Implication graph generated by an arbitrary indexed family of forbidden
+literal pairs.  No distinctness assumption is made on the two endpoints, so
+`left q = right q` represents the unit clause forbidding that literal. -/
+def BinaryClauseImplication
+    {cell : ℕ → Finset ℕ} {ι : Type*}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (left right : ι → BinaryCellLiteral cell)
+    (a b : BinaryCellLiteral cell) : Prop :=
+  ∃ q : ι,
+    (a = left q ∧
+      b = oppositeBinaryCellLiteral hcellCard (right q)) ∨
+    (a = right q ∧
+      b = oppositeBinaryCellLiteral hcellCard (left q))
+
+/-- A selector avoids an arbitrary family of forbidden literal pairs when
+it never selects both endpoints of any indexed pair. -/
+def AvoidsBinaryClausePatterns
+    {cell : ℕ → Finset ℕ} {ι : Type*}
+    (left right : ι → BinaryCellLiteral cell)
+    (s : BlockSelector cell) : Prop :=
+  ∀ q, ¬ ((left q).IsSelected s ∧ (right q).IsSelected s)
+
+/-- Implication edges from arbitrary (possibly unary) clauses are closed
+under contraposition. -/
+theorem binaryClauseImplication_contrapositive
+    {cell : ℕ → Finset ℕ} {ι : Type*}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (left right : ι → BinaryCellLiteral cell)
+    {a b : BinaryCellLiteral cell}
+    (himp : BinaryClauseImplication hcellCard left right a b) :
+    BinaryClauseImplication hcellCard left right
+      (oppositeBinaryCellLiteral hcellCard b)
+      (oppositeBinaryCellLiteral hcellCard a) := by
+  rcases himp with ⟨q, (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)⟩
+  · exact ⟨q, Or.inr ⟨by simp, rfl⟩⟩
+  · exact ⟨q, Or.inl ⟨by simp, rfl⟩⟩
+
+/-- Mutual implication reachability for an arbitrary family of forbidden
+pairs. -/
+def binaryClauseImplicationSCCSetoid
+    {cell : ℕ → Finset ℕ} {ι : Type*}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (left right : ι → BinaryCellLiteral cell) :
+    Setoid (BinaryCellLiteral cell) where
+  r a b :=
+    Relation.ReflTransGen
+        (BinaryClauseImplication hcellCard left right) a b ∧
+      Relation.ReflTransGen
+        (BinaryClauseImplication hcellCard left right) b a
+  iseqv := {
+    refl := fun _ => ⟨Relation.ReflTransGen.refl,
+      Relation.ReflTransGen.refl⟩
+    symm := fun h => ⟨h.2, h.1⟩
+    trans := fun hab hbc =>
+      ⟨hab.1.trans hbc.1, hbc.2.trans hab.2⟩ }
+
+/-- Strongly connected components of the endpoint-level implication
+graph. -/
+abbrev BinaryClauseImplicationSCC
+    {cell : ℕ → Finset ℕ} {ι : Type*}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (left right : ι → BinaryCellLiteral cell) :=
+  Quotient (binaryClauseImplicationSCCSetoid hcellCard left right)
+
+/-- Reachability between endpoint-level implication SCCs. -/
+def binaryClauseImplicationSCCReach
+    {cell : ℕ → Finset ℕ} {ι : Type*}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (left right : ι → BinaryCellLiteral cell) :
+    BinaryClauseImplicationSCC hcellCard left right →
+      BinaryClauseImplicationSCC hcellCard left right → Prop :=
+  fun X Y => Quotient.liftOn₂ X Y
+    (fun a b => Relation.ReflTransGen
+      (BinaryClauseImplication hcellCard left right) a b)
+    (by
+      intro a b a' b' haa hbb
+      apply propext
+      constructor
+      · intro hab
+        exact haa.2.trans (hab.trans hbb.1)
+      · intro ha'b'
+        exact haa.1.trans (ha'b'.trans hbb.2))
+
+/-- Endpoint-level SCC reachability is a partial order. -/
+theorem binaryClauseImplicationSCCReach_isPartialOrder
+    {cell : ℕ → Finset ℕ} {ι : Type*}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (left right : ι → BinaryCellLiteral cell) :
+    IsPartialOrder (BinaryClauseImplicationSCC hcellCard left right)
+      (binaryClauseImplicationSCCReach hcellCard left right) := by
+  refine {
+    refl := ?_
+    trans := ?_
+    antisymm := ?_ }
+  · intro X
+    refine Quotient.inductionOn X ?_
+    intro a
+    exact Relation.ReflTransGen.refl
+  · intro X Y Z
+    refine Quotient.inductionOn₃ X Y Z ?_
+    intro a b c hab hbc
+    exact hab.trans hbc
+  · intro X Y
+    refine Quotient.inductionOn₂ X Y ?_
+    intro a b hab hba
+    exact Quotient.sound ⟨hab, hba⟩
+
+/-- Contradictory SCC for an arbitrary family of forbidden pairs. -/
+def HasComplementaryBinaryClauseImplicationSCC
+    {cell : ℕ → Finset ℕ} {ι : Type*}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (left right : ι → BinaryCellLiteral cell) : Prop :=
+  ∃ l : BinaryCellLiteral cell,
+    Relation.ReflTransGen
+        (BinaryClauseImplication hcellCard left right)
+        l (oppositeBinaryCellLiteral hcellCard l) ∧
+      Relation.ReflTransGen
+        (BinaryClauseImplication hcellCard left right)
+        (oppositeBinaryCellLiteral hcellCard l) l
+
+/-- Both halves of a contradictory endpoint-level SCC contain an actual
+edge.  This remains true with unit clauses because complementation has no
+fixed point in a two-element cell. -/
+theorem HasComplementaryBinaryClauseImplicationSCC.exists_nontrivialContradictoryPaths
+    {cell : ℕ → Finset ℕ} {ι : Type*}
+    {hcellCard : ∀ i, (cell i).card = 2}
+    {left right : ι → BinaryCellLiteral cell}
+    (hSCC : HasComplementaryBinaryClauseImplicationSCC
+      hcellCard left right) :
+    ∃ l : BinaryCellLiteral cell,
+      Relation.TransGen
+          (BinaryClauseImplication hcellCard left right)
+          l (oppositeBinaryCellLiteral hcellCard l) ∧
+        Relation.TransGen
+          (BinaryClauseImplication hcellCard left right)
+          (oppositeBinaryCellLiteral hcellCard l) l := by
+  obtain ⟨l, hforward, hbackward⟩ := hSCC
+  refine ⟨l, ?_, ?_⟩
+  · rcases Relation.reflTransGen_iff_eq_or_transGen.mp hforward with
+      hEq | hpath
+    · exact (oppositeBinaryCellLiteral_ne hcellCard l hEq).elim
+    · exact hpath
+  · rcases Relation.reflTransGen_iff_eq_or_transGen.mp hbackward with
+      hEq | hpath
+    · exact (oppositeBinaryCellLiteral_ne hcellCard l hEq.symm).elim
+    · exact hpath
+
+/-- If the endpoint-level graph has no contradictory SCC, its SCC order
+constructs a selector avoiding every forbidden pair.  This is the standard
+2-SAT completeness proof and remains valid when a pair is unary. -/
+theorem exists_avoidingSelector_of_no_complementaryBinaryClauseImplicationSCC
+    {K : Set ℕ} {cell : ℕ → Finset ℕ} {ι : Type*}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (left right : ι → BinaryCellLiteral cell)
+    (hnoSCC : ¬ HasComplementaryBinaryClauseImplicationSCC
+      hcellCard left right) :
+    ∃ s : BlockSelector cell,
+      AvoidsBinaryClausePatterns left right s := by
+  classical
+  let SCC := BinaryClauseImplicationSCC hcellCard left right
+  let sccReach : SCC → SCC → Prop :=
+    binaryClauseImplicationSCCReach hcellCard left right
+  letI : IsPartialOrder SCC sccReach :=
+    binaryClauseImplicationSCCReach_isPartialOrder
+      hcellCard left right
+  obtain ⟨lin, hlin, hsccLin⟩ := extend_partialOrder sccReach
+  let opp : BinaryCellLiteral cell → BinaryCellLiteral cell :=
+    oppositeBinaryCellLiteral hcellCard
+  let cls : BinaryCellLiteral cell → SCC := fun l => Quotient.mk'' l
+  let preferred : BinaryCellLiteral cell → Prop := fun l =>
+    lin (cls (opp l)) (cls l)
+  have hclsNe : ∀ l : BinaryCellLiteral cell,
+      cls (opp l) ≠ cls l := by
+    intro l hEq
+    have hrel :
+        (binaryClauseImplicationSCCSetoid hcellCard left right)
+          (opp l) l := by
+      exact Quotient.exact (by simpa [cls] using hEq)
+    apply hnoSCC
+    exact ⟨l, hrel.2, hrel.1⟩
+  have hoppOpp : ∀ l : BinaryCellLiteral cell,
+      opp (opp l) = l := by
+    intro l
+    exact oppositeBinaryCellLiteral_involutive hcellCard l
+  have hpreferredOpp : ∀ l : BinaryCellLiteral cell,
+      preferred (opp l) ↔ ¬ preferred l := by
+    intro l
+    change lin (cls (opp (opp l))) (cls (opp l)) ↔
+      ¬ lin (cls (opp l)) (cls l)
+    rw [hoppOpp l]
+    constructor
+    · intro hlOpp hl
+      have hEq : cls l = cls (opp l) :=
+        hlin.antisymm (cls l) (cls (opp l)) hlOpp hl
+      exact hclsNe l hEq.symm
+    · intro hnot
+      rcases hlin.total (cls l) (cls (opp l)) with h | h
+      · exact h
+      · exact (hnot h).elim
+  let base : BlockSelector cell := fun i =>
+    ⟨(P.nonempty i).choose, (P.nonempty i).choose_spec⟩
+  let baseLiteral : ℕ → BinaryCellLiteral cell := fun i =>
+    ⟨i, base i⟩
+  let s : BlockSelector cell := fun i =>
+    if preferred (baseLiteral i) then
+      base i
+    else
+      oppositeBlockChoice hcellCard i (base i)
+  have hbaseSelected : ∀ i,
+      (baseLiteral i).IsSelected s ↔ preferred (baseLiteral i) := by
+    intro i
+    by_cases hpref : preferred (baseLiteral i)
+    · simp [s, baseLiteral, hpref, BinaryCellLiteral.IsSelected]
+    · constructor
+      · intro hselected
+        exfalso
+        apply oppositeBlockChoice_ne hcellCard i (base i)
+        simpa [s, baseLiteral, hpref,
+          BinaryCellLiteral.IsSelected] using hselected
+      · exact fun h => (hpref h).elim
+  have hoppositeSelected : ∀ i,
+      (opp (baseLiteral i)).IsSelected s ↔
+        preferred (opp (baseLiteral i)) := by
+    intro i
+    calc
+      (opp (baseLiteral i)).IsSelected s ↔
+          ¬ (baseLiteral i).IsSelected s :=
+        binaryCellLiteral_opposite_selected_iff_not_selected
+          hcellCard s (baseLiteral i)
+      _ ↔ ¬ preferred (baseLiteral i) :=
+        not_congr (hbaseSelected i)
+      _ ↔ preferred (opp (baseLiteral i)) :=
+        (hpreferredOpp (baseLiteral i)).symm
+  have hselected : ∀ l : BinaryCellLiteral cell,
+      l.IsSelected s ↔ preferred l := by
+    intro l
+    let b := baseLiteral l.1
+    have hcases : l = b ∨ l = opp b := by
+      simpa [b, baseLiteral, opp] using
+        binaryCellLiteral_eq_base_or_oppositeBase
+          hcellCard base l
+    rcases hcases with hl | hl
+    · rw [hl]
+      exact hbaseSelected l.1
+    · rw [hl]
+      exact hoppositeSelected l.1
+  have himpPreferred : ∀ {a b : BinaryCellLiteral cell},
+      BinaryClauseImplication hcellCard left right a b →
+      preferred a → preferred b := by
+    intro a b hab ha
+    have habSCC : sccReach (cls a) (cls b) := by
+      simpa [sccReach, cls, binaryClauseImplicationSCCReach] using
+        (Relation.ReflTransGen.single hab)
+    have hcontra :=
+      binaryClauseImplication_contrapositive
+        hcellCard left right hab
+    have hcontraSCC : sccReach (cls (opp b)) (cls (opp a)) := by
+      simpa [sccReach, cls, binaryClauseImplicationSCCReach] using
+        (Relation.ReflTransGen.single hcontra)
+    exact hlin.trans (cls (opp b)) (cls (opp a)) (cls b)
+      (hsccLin _ _ hcontraSCC)
+      (hlin.trans (cls (opp a)) (cls a) (cls b)
+        ha (hsccLin _ _ habSCC))
+  have himpSelected : ∀ {a b : BinaryCellLiteral cell},
+      BinaryClauseImplication hcellCard left right a b →
+      a.IsSelected s → b.IsSelected s := by
+    intro a b hab ha
+    exact (hselected b).2
+      (himpPreferred hab ((hselected a).1 ha))
+  refine ⟨s, ?_⟩
+  intro q hboth
+  have hedge : BinaryClauseImplication hcellCard left right
+      (left q) (opp (right q)) :=
+    ⟨q, Or.inl ⟨rfl, rfl⟩⟩
+  have hoppRight : (opp (right q)).IsSelected s :=
+    himpSelected hedge hboth.1
+  exact (binaryCellLiteral_opposite_selected_iff_not_selected
+    hcellCard s (right q)).mp hoppRight hboth.2
+
+/-- Any cover of all binary selectors by forbidden literal pairs has a
+complementary implication SCC, even when some pairs are unit clauses. -/
+theorem binaryClausePatternCover_has_complementaryImplicationSCC
+    {K : Set ℕ} {cell : ℕ → Finset ℕ} {ι : Type*}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (left right : ι → BinaryCellLiteral cell)
+    (hcover : ∀ s : BlockSelector cell, ∃ q : ι,
+      (left q).IsSelected s ∧ (right q).IsSelected s) :
+    HasComplementaryBinaryClauseImplicationSCC
+      hcellCard left right := by
+  by_contra hnoSCC
+  obtain ⟨s, havoid⟩ :=
+    exists_avoidingSelector_of_no_complementaryBinaryClauseImplicationSCC
+      P hcellCard left right hnoSCC
+  obtain ⟨q, hleft, hright⟩ := hcover s
+  exact havoid q ⟨hleft, hright⟩
+
 /-- Pure finite clause-cover statement extracted from a separated repair
 certificate.  For each target choose its two marked cells and endpoints.
 Every selector must realize at least one of those forbidden endpoint pairs;
@@ -8392,6 +10660,673 @@ theorem targetLocalized_twoRepairCertificateAlong_external_noWide_has_patternCov
     · exact hnarrow
   exact externalNarrowTrace_certificate_has_binaryPairPatternCover
     P hcert hnarrow
+
+/-- Exact mixed finite-certificate bridge.  Even when migrated traces create
+unit clauses at common external endpoints, the no-wide certificate contains
+a literal and its complement in one implication SCC. -/
+theorem targetLocalized_twoRepairCertificateAlong_external_noWide_has_complementaryImplicationSCC
+    {R : SupportFamily} {C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAlongAt R C K D cell q)
+    (hnoWide : ∀ q ∈ Q,
+      ¬ HasWideReservoirSupportAt R K q) :
+    ∃ data : ∀ q : {q // q ∈ Q},
+        ExternalNarrowTraceClauseData R C K D cell q.1,
+      HasComplementaryBinaryClauseImplicationSCC hcellCard
+        (fun q => (data q).leftLiteral)
+        (fun q => (data q).rightLiteral) := by
+  obtain ⟨data, hcover⟩ :=
+    targetLocalized_twoRepairCertificateAlong_external_noWide_has_patternCover
+      P hcellCard hcert htrace hnoWide
+  refine ⟨data,
+    binaryClausePatternCover_has_complementaryImplicationSCC
+      P hcellCard
+        (fun q => (data q).leftLiteral)
+        (fun q => (data q).rightLiteral) ?_⟩
+  intro s
+  obtain ⟨q, hleft, hright⟩ := hcover s
+  exact ⟨q, hleft, hright⟩
+
+/-- Path form of the mixed bridge: the migrated certificate supplies two
+nonempty contradictory implication paths.  Every edge still names the
+target and the two globally `C`-disjoint repairs that generated it. -/
+theorem targetLocalized_twoRepairCertificateAlong_external_noWide_has_nontrivialContradictoryPaths
+    {R : SupportFamily} {C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt R (selectedSet s) q)
+    (htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAlongAt R C K D cell q)
+    (hnoWide : ∀ q ∈ Q,
+      ¬ HasWideReservoirSupportAt R K q) :
+    ∃ data : ∀ q : {q // q ∈ Q},
+        ExternalNarrowTraceClauseData R C K D cell q.1,
+      ∃ l : BinaryCellLiteral cell,
+        Relation.TransGen
+            (BinaryClauseImplication hcellCard
+              (fun q => (data q).leftLiteral)
+              (fun q => (data q).rightLiteral))
+            l (oppositeBinaryCellLiteral hcellCard l) ∧
+          Relation.TransGen
+            (BinaryClauseImplication hcellCard
+              (fun q => (data q).leftLiteral)
+              (fun q => (data q).rightLiteral))
+            (oppositeBinaryCellLiteral hcellCard l) l := by
+  obtain ⟨data, hSCC⟩ :=
+    targetLocalized_twoRepairCertificateAlong_external_noWide_has_complementaryImplicationSCC
+      P hcellCard hcert htrace hnoWide
+  exact ⟨data, hSCC.exists_nontrivialContradictoryPaths⟩
+
+/-- Arithmetic label on an implication edge of a migrated narrow
+certificate.  The source literal and the opposite destination literal are
+the two marked summands in equal order-three representations of one target.
+The target index also retains the original pair of repairs and their global
+disjointness on `C` through `data`. -/
+structure ExternalNarrowAdditiveImplicationEdgeData
+    (A C K : Set ℕ) (D Q : Finset ℕ)
+    (cell : ℕ → Finset ℕ)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      ExternalNarrowTraceClauseData
+        (additiveSupportFamily A 3) C K D cell q.1)
+    (a b : BinaryCellLiteral cell) where
+  target : {q // q ∈ Q}
+  orientation :
+    (a = (data target).leftLiteral ∧
+      b = oppositeBinaryCellLiteral hcellCard
+        (data target).rightLiteral) ∨
+    (a = (data target).rightLiteral ∧
+      b = oppositeBinaryCellLiteral hcellCard
+        (data target).leftLiteral)
+  sourceFirstSummand : ℕ
+  sourceFirstSummand_mem : sourceFirstSummand ∈ A
+  sourceSecondSummand : ℕ
+  sourceSecondSummand_mem : sourceSecondSummand ∈ A
+  source_sum_eq : a.2.1 + sourceFirstSummand +
+    sourceSecondSummand = target.1
+  oppositeDestinationFirstSummand : ℕ
+  oppositeDestinationFirstSummand_mem :
+    oppositeDestinationFirstSummand ∈ A
+  oppositeDestinationSecondSummand : ℕ
+  oppositeDestinationSecondSummand_mem :
+    oppositeDestinationSecondSummand ∈ A
+  oppositeDestination_sum_eq :
+    (oppositeBinaryCellLiteral hcellCard b).2.1 +
+      oppositeDestinationFirstSummand +
+        oppositeDestinationSecondSummand = target.1
+
+/-- Arithmetic-labelled implication relation for migrated narrow clauses. -/
+def ExternalNarrowAdditiveClauseImplication
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      ExternalNarrowTraceClauseData
+        (additiveSupportFamily A 3) C K D cell q.1)
+    (a b : BinaryCellLiteral cell) : Prop :=
+  Nonempty (ExternalNarrowAdditiveImplicationEdgeData
+    A C K D Q cell hcellCard data a b)
+
+/-- Eliminating the common target on a migrated arithmetic implication edge
+gives its balanced additive equation. -/
+theorem ExternalNarrowAdditiveImplicationEdgeData.balanced_sum_eq
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    {hcellCard : ∀ i, (cell i).card = 2}
+    {data : ∀ q : {q // q ∈ Q},
+      ExternalNarrowTraceClauseData
+        (additiveSupportFamily A 3) C K D cell q.1}
+    {a b : BinaryCellLiteral cell}
+    (w : ExternalNarrowAdditiveImplicationEdgeData
+      A C K D Q cell hcellCard data a b) :
+    a.2.1 + w.sourceFirstSummand + w.sourceSecondSummand =
+      (oppositeBinaryCellLiteral hcellCard b).2.1 +
+        w.oppositeDestinationFirstSummand +
+          w.oppositeDestinationSecondSummand :=
+  w.source_sum_eq.trans w.oppositeDestination_sum_eq.symm
+
+/-- Every migrated arithmetic edge is either generated by a genuinely
+binary separated clause or is the one-way implication from an external
+literal to its complement generated by a unit clause. -/
+theorem ExternalNarrowAdditiveImplicationEdgeData.separated_or_unit
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    {hcellCard : ∀ i, (cell i).card = 2}
+    {data : ∀ q : {q // q ∈ Q},
+      ExternalNarrowTraceClauseData
+        (additiveSupportFamily A 3) C K D cell q.1}
+    {a b : BinaryCellLiteral cell}
+    (w : ExternalNarrowAdditiveImplicationEdgeData
+      A C K D Q cell hcellCard data a b) :
+    (data w.target).leftCell ≠ (data w.target).rightCell ∨
+      ((data w.target).leftLiteral = (data w.target).rightLiteral ∧
+        b = oppositeBinaryCellLiteral hcellCard a ∧ a.2.1 ∉ C) := by
+  rcases (data w.target).separated_cells_or_literals_eq_external with
+      hsep | ⟨hlr, houtside⟩
+  · exact Or.inl hsep
+  · right
+    refine ⟨hlr, ?_, ?_⟩
+    · rcases w.orientation with horient | horient
+      · calc
+          b = oppositeBinaryCellLiteral hcellCard
+                (data w.target).rightLiteral := horient.2
+          _ = oppositeBinaryCellLiteral hcellCard
+                (data w.target).leftLiteral :=
+              congrArg (oppositeBinaryCellLiteral hcellCard) hlr.symm
+          _ = oppositeBinaryCellLiteral hcellCard a :=
+              congrArg (oppositeBinaryCellLiteral hcellCard)
+                horient.1.symm
+      · calc
+          b = oppositeBinaryCellLiteral hcellCard
+                (data w.target).leftLiteral := horient.2
+          _ = oppositeBinaryCellLiteral hcellCard
+                (data w.target).rightLiteral :=
+              congrArg (oppositeBinaryCellLiteral hcellCard) hlr
+          _ = oppositeBinaryCellLiteral hcellCard a :=
+              congrArg (oppositeBinaryCellLiteral hcellCard)
+                horient.1.symm
+    · have haLeft : a = (data w.target).leftLiteral := by
+        rcases w.orientation with horient | horient
+        · exact horient.1
+        · exact horient.1.trans hlr.symm
+      have haValue : a.2.1 = (data w.target).leftPoint :=
+        congrArg (fun l : BinaryCellLiteral cell => l.2.1) haLeft
+      rw [haValue]
+      exact houtside
+
+/-- In the unit case the source of an oriented edge is the common clause
+literal, independently of which of the two symmetric orientations supplied
+the edge. -/
+theorem ExternalNarrowAdditiveImplicationEdgeData.source_eq_leftLiteral_of_unit
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    {hcellCard : ∀ i, (cell i).card = 2}
+    {data : ∀ q : {q // q ∈ Q},
+      ExternalNarrowTraceClauseData
+        (additiveSupportFamily A 3) C K D cell q.1}
+    {a b : BinaryCellLiteral cell}
+    (w : ExternalNarrowAdditiveImplicationEdgeData
+      A C K D Q cell hcellCard data a b)
+    (hunit : (data w.target).leftLiteral =
+      (data w.target).rightLiteral) :
+    a = (data w.target).leftLiteral := by
+  rcases w.orientation with horient | horient
+  · exact horient.1
+  · exact horient.1.trans hunit.symm
+
+/-- A genuinely binary arithmetic edge occurs in the migrated implication
+graph. -/
+def HasSeparatedExternalNarrowAdditiveImplicationEdge
+    (A C K : Set ℕ) (D Q : Finset ℕ)
+    (cell : ℕ → Finset ℕ)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      ExternalNarrowTraceClauseData
+        (additiveSupportFamily A 3) C K D cell q.1) : Prop :=
+  ∃ a b : BinaryCellLiteral cell,
+    ∃ w : ExternalNarrowAdditiveImplicationEdgeData
+        A C K D Q cell hcellCard data a b,
+      (data w.target).leftCell ≠ (data w.target).rightCell
+
+/-- Two directly conflicting external unit clauses: one forbids a literal
+and the other forbids its opposite.  Both edge witnesses retain their two
+additive repairs and global disjointness on `C`. -/
+def HasOpposedExternalUnitAdditiveImplicationEdges
+    (A C K : Set ℕ) (D Q : Finset ℕ)
+    (cell : ℕ → Finset ℕ)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      ExternalNarrowTraceClauseData
+        (additiveSupportFamily A 3) C K D cell q.1) : Prop :=
+  ∃ l b : BinaryCellLiteral cell,
+    ∃ w : ExternalNarrowAdditiveImplicationEdgeData
+        A C K D Q cell hcellCard data l b,
+      (data w.target).leftLiteral = (data w.target).rightLiteral ∧
+      b = oppositeBinaryCellLiteral hcellCard l ∧ l.2.1 ∉ C ∧
+      ∃ b' : BinaryCellLiteral cell,
+        ∃ w' : ExternalNarrowAdditiveImplicationEdgeData
+            A C K D Q cell hcellCard data
+              (oppositeBinaryCellLiteral hcellCard l) b',
+          (data w'.target).leftLiteral =
+              (data w'.target).rightLiteral ∧
+            b' = l ∧
+            (oppositeBinaryCellLiteral hcellCard l).2.1 ∉ C
+
+/-- Opposed unit edges really come from two distinct certificate targets,
+whose common literals are complementary endpoints of one binary cell. -/
+theorem HasOpposedExternalUnitAdditiveImplicationEdges.exists_distinctTargets
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    {hcellCard : ∀ i, (cell i).card = 2}
+    {data : ∀ q : {q // q ∈ Q},
+      ExternalNarrowTraceClauseData
+        (additiveSupportFamily A 3) C K D cell q.1}
+    (h : HasOpposedExternalUnitAdditiveImplicationEdges
+      A C K D Q cell hcellCard data) :
+    ∃ q q' : {q // q ∈ Q}, q ≠ q' ∧
+      (data q).leftLiteral = (data q).rightLiteral ∧
+      (data q').leftLiteral = (data q').rightLiteral ∧
+      (data q').leftLiteral = oppositeBinaryCellLiteral hcellCard
+        (data q).leftLiteral ∧
+      (data q).leftPoint ∉ C ∧ (data q').leftPoint ∉ C := by
+  obtain ⟨l, b, w, hunit, _hb, hlOutside,
+      b', w', hunit', _hb', hlOutside'⟩ := h
+  have hlSource : l = (data w.target).leftLiteral :=
+    w.source_eq_leftLiteral_of_unit hunit
+  have hlSource' : oppositeBinaryCellLiteral hcellCard l =
+      (data w'.target).leftLiteral :=
+    w'.source_eq_leftLiteral_of_unit hunit'
+  have hopposed : (data w'.target).leftLiteral =
+      oppositeBinaryCellLiteral hcellCard
+        (data w.target).leftLiteral := by
+    calc
+      (data w'.target).leftLiteral =
+          oppositeBinaryCellLiteral hcellCard l := hlSource'.symm
+      _ = oppositeBinaryCellLiteral hcellCard
+          (data w.target).leftLiteral :=
+        congrArg (oppositeBinaryCellLiteral hcellCard) hlSource
+  have htargetsNe : w.target ≠ w'.target := by
+    intro htargets
+    have hliterals : (data w.target).leftLiteral =
+        (data w'.target).leftLiteral :=
+      congrArg (fun q => (data q).leftLiteral) htargets
+    have hfixed : oppositeBinaryCellLiteral hcellCard
+        (data w.target).leftLiteral =
+          (data w.target).leftLiteral :=
+      (hliterals.trans hopposed).symm
+    exact oppositeBinaryCellLiteral_ne hcellCard
+      (data w.target).leftLiteral hfixed
+  have hleftOutside : (data w.target).leftPoint ∉ C := by
+    rw [hlSource] at hlOutside
+    exact hlOutside
+  have hrightOutside : (data w'.target).leftPoint ∉ C := by
+    rw [hlSource'] at hlOutside'
+    exact hlOutside'
+  exact ⟨w.target, w'.target, htargetsNe,
+    hunit, hunit', hopposed, hleftOutside, hrightOutside⟩
+
+/-- A separated implication edge exposes one certificate target in the
+original separated two-repair trace predicate. -/
+theorem HasSeparatedExternalNarrowAdditiveImplicationEdge.exists_target
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    {hcellCard : ∀ i, (cell i).card = 2}
+    {data : ∀ q : {q // q ∈ Q},
+      ExternalNarrowTraceClauseData
+        (additiveSupportFamily A 3) C K D cell q.1}
+    (h : HasSeparatedExternalNarrowAdditiveImplicationEdge
+      A C K D Q cell hcellCard data) :
+    ∃ q ∈ Q,
+      HasSeparatedSingletonTwoRepairTracesAlongAt
+        (additiveSupportFamily A 3) C K D cell q := by
+  obtain ⟨_a, _b, w, hsep⟩ := h
+  exact ⟨w.target.1, w.target.2,
+    (data w.target).leftSupport, (data w.target).left_mem,
+    (data w.target).left_disjoint,
+    (data w.target).rightSupport, (data w.target).right_mem,
+    (data w.target).right_disjoint,
+    (data w.target).reservoir_traces_disjoint,
+    (data w.target).leftCell, (data w.target).rightCell,
+    (data w.target).leftPoint, (data w.target).rightPoint,
+    hsep, (data w.target).leftPoint_mem,
+    (data w.target).rightPoint_mem,
+    (data w.target).left_trace, (data w.target).right_trace⟩
+
+/-- The opposed-unit obstruction exposes two distinct certificate targets,
+each in the common-external trace branch, attached to complementary block
+literals. -/
+theorem HasOpposedExternalUnitAdditiveImplicationEdges.exists_distinct_commonTargets
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    {hcellCard : ∀ i, (cell i).card = 2}
+    {data : ∀ q : {q // q ∈ Q},
+      ExternalNarrowTraceClauseData
+        (additiveSupportFamily A 3) C K D cell q.1}
+    (h : HasOpposedExternalUnitAdditiveImplicationEdges
+      A C K D Q cell hcellCard data) :
+    ∃ q q' : {q // q ∈ Q}, q ≠ q' ∧
+      HasCommonExternalSingletonTwoRepairTracesAlongAt
+        (additiveSupportFamily A 3) C K D cell q.1 ∧
+      HasCommonExternalSingletonTwoRepairTracesAlongAt
+        (additiveSupportFamily A 3) C K D cell q'.1 ∧
+      (data q').leftLiteral = oppositeBinaryCellLiteral hcellCard
+        (data q).leftLiteral := by
+  obtain ⟨q, q', hqq', hunit, hunit', hopposed,
+      _hqOutside, _hq'Outside⟩ := h.exists_distinctTargets
+  have hqCommon : HasCommonExternalSingletonTwoRepairTracesAlongAt
+      (additiveSupportFamily A 3) C K D cell q.1 :=
+    (data q).hasCommonTrace_of_literals_eq hunit
+  have hq'Common : HasCommonExternalSingletonTwoRepairTracesAlongAt
+      (additiveSupportFamily A 3) C K D cell q'.1 :=
+    (data q').hasCommonTrace_of_literals_eq hunit'
+  exact ⟨q, q', hqq', hqCommon, hq'Common, hopposed⟩
+
+/-- Every endpoint-level edge from a migrated additive clause acquires the
+equal-target sum equations of the two concrete repairs that generated it. -/
+theorem binaryClauseImplication_has_externalNarrowAdditiveEdge
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (data : ∀ q : {q // q ∈ Q},
+      ExternalNarrowTraceClauseData
+        (additiveSupportFamily A 3) C K D cell q.1)
+    {a b : BinaryCellLiteral cell}
+    (himp : BinaryClauseImplication hcellCard
+      (fun q => (data q).leftLiteral)
+      (fun q => (data q).rightLiteral) a b) :
+    ExternalNarrowAdditiveClauseImplication
+      hcellCard data a b := by
+  obtain ⟨q, horient⟩ := himp
+  have hleftTrace : (data q).leftPoint ∈
+      ((data q).leftSupport : Set ℕ) ∩ K := by
+    rw [(data q).left_trace]
+    simp
+  obtain ⟨u, huA, v, hvA, huv⟩ :=
+    orderThreeSupport_member_has_twoSummands
+      (data q).left_mem (Finset.mem_coe.mp hleftTrace.1)
+  have hrightTrace : (data q).rightPoint ∈
+      ((data q).rightSupport : Set ℕ) ∩ K := by
+    rw [(data q).right_trace]
+    simp
+  obtain ⟨u', hu'A, v', hv'A, hu'v'⟩ :=
+    orderThreeSupport_member_has_twoSummands
+      (data q).right_mem (Finset.mem_coe.mp hrightTrace.1)
+  rcases horient with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  · refine ⟨{
+      target := q
+      orientation := Or.inl ⟨rfl, rfl⟩
+      sourceFirstSummand := u
+      sourceFirstSummand_mem := huA
+      sourceSecondSummand := v
+      sourceSecondSummand_mem := hvA
+      source_sum_eq := huv
+      oppositeDestinationFirstSummand := u'
+      oppositeDestinationFirstSummand_mem := hu'A
+      oppositeDestinationSecondSummand := v'
+      oppositeDestinationSecondSummand_mem := hv'A
+      oppositeDestination_sum_eq := ?_ }⟩
+    rw [oppositeBinaryCellLiteral_involutive hcellCard]
+    exact hu'v'
+  · refine ⟨{
+      target := q
+      orientation := Or.inr ⟨rfl, rfl⟩
+      sourceFirstSummand := u'
+      sourceFirstSummand_mem := hu'A
+      sourceSecondSummand := v'
+      sourceSecondSummand_mem := hv'A
+      source_sum_eq := hu'v'
+      oppositeDestinationFirstSummand := u
+      oppositeDestinationFirstSummand_mem := huA
+      oppositeDestinationSecondSummand := v
+      oppositeDestinationSecondSummand_mem := hvA
+      oppositeDestination_sum_eq := ?_ }⟩
+    rw [oppositeBinaryCellLiteral_involutive hcellCard]
+    exact huv
+
+/-- Arithmetic path form of the migrated mixed-clause bridge.  The two
+contradictory paths now carry, edge by edge, the concrete additive equations
+and globally `C`-disjoint repair pairs needed for the next elimination. -/
+theorem targetLocalized_twoRepairCertificateAlong_external_noWide_has_nontrivialAdditiveContradictoryPaths
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt (additiveSupportFamily A 3) (selectedSet s) q)
+    (htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAlongAt
+        (additiveSupportFamily A 3) C K D cell q)
+    (hnoWide : ∀ q ∈ Q,
+      ¬ HasWideReservoirSupportAt
+        (additiveSupportFamily A 3) K q) :
+    ∃ data : ∀ q : {q // q ∈ Q},
+        ExternalNarrowTraceClauseData
+          (additiveSupportFamily A 3) C K D cell q.1,
+      ∃ l : BinaryCellLiteral cell,
+        Relation.TransGen
+            (ExternalNarrowAdditiveClauseImplication hcellCard data)
+            l (oppositeBinaryCellLiteral hcellCard l) ∧
+          Relation.TransGen
+            (ExternalNarrowAdditiveClauseImplication hcellCard data)
+            (oppositeBinaryCellLiteral hcellCard l) l := by
+  obtain ⟨data, l, hforward, hbackward⟩ :=
+    targetLocalized_twoRepairCertificateAlong_external_noWide_has_nontrivialContradictoryPaths
+      P hcellCard hcert htrace hnoWide
+  refine ⟨data, l, ?_, ?_⟩
+  · exact hforward.mono (fun _ _ himp =>
+      binaryClauseImplication_has_externalNarrowAdditiveEdge
+        hcellCard data himp)
+  · exact hbackward.mono (fun _ _ himp =>
+      binaryClauseImplication_has_externalNarrowAdditiveEdge
+        hcellCard data himp)
+
+/-- Decisive first-edge dichotomy for the mixed certificate.  Either a
+contradictory path exposes a genuinely separated additive repair edge, or
+the first edges in the two directions are opposed external unit clauses.
+Thus the new common-endpoint case is isolated rather than contaminating the
+whole implication cycle. -/
+theorem targetLocalized_twoRepairCertificateAlong_external_noWide_has_separatedAdditiveEdge_or_opposedExternalUnits
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt (additiveSupportFamily A 3) (selectedSet s) q)
+    (htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAlongAt
+        (additiveSupportFamily A 3) C K D cell q)
+    (hnoWide : ∀ q ∈ Q,
+      ¬ HasWideReservoirSupportAt
+        (additiveSupportFamily A 3) K q) :
+    ∃ data : ∀ q : {q // q ∈ Q},
+        ExternalNarrowTraceClauseData
+          (additiveSupportFamily A 3) C K D cell q.1,
+      HasSeparatedExternalNarrowAdditiveImplicationEdge
+          A C K D Q cell hcellCard data ∨
+        HasOpposedExternalUnitAdditiveImplicationEdges
+          A C K D Q cell hcellCard data := by
+  obtain ⟨data, l, hforward, hbackward⟩ :=
+    targetLocalized_twoRepairCertificateAlong_external_noWide_has_nontrivialAdditiveContradictoryPaths
+      P hcellCard hcert htrace hnoWide
+  obtain ⟨b, hfirst, _hforwardRest⟩ :=
+    Relation.TransGen.head'_iff.mp hforward
+  obtain ⟨w⟩ := hfirst
+  rcases w.separated_or_unit with hsep | ⟨hlr, hb, hlOutside⟩
+  · exact ⟨data, Or.inl ⟨l, b, w, hsep⟩⟩
+  · obtain ⟨b', hfirst', _hbackwardRest⟩ :=
+      Relation.TransGen.head'_iff.mp hbackward
+    obtain ⟨w'⟩ := hfirst'
+    rcases w'.separated_or_unit with
+        hsep' | ⟨hlr', hb', hlOutside'⟩
+    · exact ⟨data, Or.inl
+        ⟨oppositeBinaryCellLiteral hcellCard l, b', w', hsep'⟩⟩
+    · have hb'' : b' = l := by
+        rw [oppositeBinaryCellLiteral_involutive hcellCard] at hb'
+        exact hb'
+      exact ⟨data, Or.inr
+        ⟨l, b, w, hlr, hb, hlOutside,
+          b', w', hlr', hb'', hlOutside'⟩⟩
+
+/-- Complete local trichotomy for a migrated additive certificate.  The
+wide case is kept explicitly; otherwise the mixed 2-SAT analysis reduces
+the certificate to a separated arithmetic edge or two opposed external
+unit edges. -/
+theorem targetLocalized_twoRepairCertificateAlong_external_has_wide_or_separatedAdditiveEdge_or_opposedExternalUnits
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt (additiveSupportFamily A 3) (selectedSet s) q)
+    (htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAlongAt
+        (additiveSupportFamily A 3) C K D cell q) :
+    (∃ q ∈ Q,
+        HasWideReservoirSupportAt
+          (additiveSupportFamily A 3) K q) ∨
+      ∃ data : ∀ q : {q // q ∈ Q},
+          ExternalNarrowTraceClauseData
+            (additiveSupportFamily A 3) C K D cell q.1,
+        HasSeparatedExternalNarrowAdditiveImplicationEdge
+            A C K D Q cell hcellCard data ∨
+          HasOpposedExternalUnitAdditiveImplicationEdges
+            A C K D Q cell hcellCard data := by
+  classical
+  by_cases hwide : ∃ q ∈ Q,
+      HasWideReservoirSupportAt
+        (additiveSupportFamily A 3) K q
+  · exact Or.inl hwide
+  · right
+    apply
+      targetLocalized_twoRepairCertificateAlong_external_noWide_has_separatedAdditiveEdge_or_opposedExternalUnits
+        P hcellCard hcert htrace
+    intro q hqQ hqWide
+    exact hwide ⟨q, hqQ, hqWide⟩
+
+/-- Stronger arithmetic path extraction using only the absence of a wide
+trace among the two repairs supplied at each certificate target.  Other
+unrelated supports of the same target may still be wide. -/
+theorem targetLocalized_twoRepairCertificateAlong_external_noWideTrace_has_nontrivialAdditiveContradictoryPaths
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt (additiveSupportFamily A 3) (selectedSet s) q)
+    (htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAlongAt
+        (additiveSupportFamily A 3) C K D cell q)
+    (hnoWideTrace : ∀ q ∈ Q,
+      ¬ HasWideTwoRepairTraceAlongAt
+        (additiveSupportFamily A 3) C K D q) :
+    ∃ data : ∀ q : {q // q ∈ Q},
+        ExternalNarrowTraceClauseData
+          (additiveSupportFamily A 3) C K D cell q.1,
+      ∃ l : BinaryCellLiteral cell,
+        Relation.TransGen
+            (ExternalNarrowAdditiveClauseImplication hcellCard data)
+            l (oppositeBinaryCellLiteral hcellCard l) ∧
+          Relation.TransGen
+            (ExternalNarrowAdditiveClauseImplication hcellCard data)
+            (oppositeBinaryCellLiteral hcellCard l) l := by
+  have hnarrow : ∀ q ∈ Q,
+      HasSeparatedSingletonTwoRepairTracesAlongAt
+          (additiveSupportFamily A 3) C K D cell q ∨
+        HasCommonExternalSingletonTwoRepairTracesAlongAt
+          (additiveSupportFamily A 3) C K D cell q := by
+    intro q hqQ
+    rcases
+        twoRepairTraceObstructionAlong_external_wide_or_separated_or_common
+          P hcellCard (htrace q hqQ) with hwide | hnarrow
+    · exact (hnoWideTrace q hqQ hwide).elim
+    · exact hnarrow
+  obtain ⟨data, hcover⟩ :=
+    externalNarrowTrace_certificate_has_binaryPairPatternCover
+      P hcert hnarrow
+  have hSCC : HasComplementaryBinaryClauseImplicationSCC hcellCard
+      (fun q => (data q).leftLiteral)
+      (fun q => (data q).rightLiteral) := by
+    apply binaryClausePatternCover_has_complementaryImplicationSCC
+      P hcellCard
+    intro s
+    obtain ⟨q, hleft, hright⟩ := hcover s
+    exact ⟨q, hleft, hright⟩
+  obtain ⟨l, hforward, hbackward⟩ :=
+    hSCC.exists_nontrivialContradictoryPaths
+  refine ⟨data, l, ?_, ?_⟩
+  · exact hforward.mono (fun _ _ himp =>
+      binaryClauseImplication_has_externalNarrowAdditiveEdge
+        hcellCard data himp)
+  · exact hbackward.mono (fun _ _ himp =>
+      binaryClauseImplication_has_externalNarrowAdditiveEdge
+        hcellCard data himp)
+
+/-- With no wide supplied repair pair, the strengthened path extraction
+again reduces to a separated additive edge or two opposed external unit
+edges. -/
+theorem targetLocalized_twoRepairCertificateAlong_external_noWideTrace_has_separatedAdditiveEdge_or_opposedExternalUnits
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt (additiveSupportFamily A 3) (selectedSet s) q)
+    (htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAlongAt
+        (additiveSupportFamily A 3) C K D cell q)
+    (hnoWideTrace : ∀ q ∈ Q,
+      ¬ HasWideTwoRepairTraceAlongAt
+        (additiveSupportFamily A 3) C K D q) :
+    ∃ data : ∀ q : {q // q ∈ Q},
+        ExternalNarrowTraceClauseData
+          (additiveSupportFamily A 3) C K D cell q.1,
+      HasSeparatedExternalNarrowAdditiveImplicationEdge
+          A C K D Q cell hcellCard data ∨
+        HasOpposedExternalUnitAdditiveImplicationEdges
+          A C K D Q cell hcellCard data := by
+  obtain ⟨data, l, hforward, hbackward⟩ :=
+    targetLocalized_twoRepairCertificateAlong_external_noWideTrace_has_nontrivialAdditiveContradictoryPaths
+      P hcellCard hcert htrace hnoWideTrace
+  obtain ⟨b, hfirst, _hforwardRest⟩ :=
+    Relation.TransGen.head'_iff.mp hforward
+  obtain ⟨w⟩ := hfirst
+  rcases w.separated_or_unit with hsep | ⟨hlr, hb, hlOutside⟩
+  · exact ⟨data, Or.inl ⟨l, b, w, hsep⟩⟩
+  · obtain ⟨b', hfirst', _hbackwardRest⟩ :=
+      Relation.TransGen.head'_iff.mp hbackward
+    obtain ⟨w'⟩ := hfirst'
+    rcases w'.separated_or_unit with
+        hsep' | ⟨hlr', hb', hlOutside'⟩
+    · exact ⟨data, Or.inl
+        ⟨oppositeBinaryCellLiteral hcellCard l, b', w', hsep'⟩⟩
+    · have hb'' : b' = l := by
+        rw [oppositeBinaryCellLiteral_involutive hcellCard] at hb'
+        exact hb'
+      exact ⟨data, Or.inr
+        ⟨l, b, w, hlr, hb, hlOutside,
+          b', w', hlr', hb'', hlOutside'⟩⟩
+
+/-- Repair-pair-preserving local trichotomy.  The wide branch now names one
+of the two prefix-avoiding repairs whose traces are globally disjoint on
+`C`, rather than an arbitrary unrelated wide support at the same target. -/
+theorem targetLocalized_twoRepairCertificateAlong_external_has_wideTrace_or_separatedAdditiveEdge_or_opposedExternalUnits
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hcert : ∀ s : BlockSelector cell, ∃ q ∈ Q,
+      DestroysAt (additiveSupportFamily A 3) (selectedSet s) q)
+    (htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAlongAt
+        (additiveSupportFamily A 3) C K D cell q) :
+    (∃ q ∈ Q,
+        HasWideTwoRepairTraceAlongAt
+          (additiveSupportFamily A 3) C K D q) ∨
+      ∃ data : ∀ q : {q // q ∈ Q},
+          ExternalNarrowTraceClauseData
+            (additiveSupportFamily A 3) C K D cell q.1,
+        HasSeparatedExternalNarrowAdditiveImplicationEdge
+            A C K D Q cell hcellCard data ∨
+          HasOpposedExternalUnitAdditiveImplicationEdges
+            A C K D Q cell hcellCard data := by
+  classical
+  by_cases hwide : ∃ q ∈ Q,
+      HasWideTwoRepairTraceAlongAt
+        (additiveSupportFamily A 3) C K D q
+  · exact Or.inl hwide
+  · right
+    apply
+      targetLocalized_twoRepairCertificateAlong_external_noWideTrace_has_separatedAdditiveEdge_or_opposedExternalUnits
+        P hcellCard hcert htrace
+    intro q hqQ hqWide
+    exact hwide ⟨q, hqQ, hqWide⟩
 
 /-- If a binary two-repair certificate has no wide support at any target,
 its trace classification is wholly separated and hence yields the explicit
@@ -8604,10 +11539,10 @@ theorem targetLocalized_twoRepairCertificate_noWide_has_narrowAnchoredEscapeCycl
     (hnoWide : ∀ q ∈ Q,
       ¬ HasWideReservoirSupportAt R K q) :
     HasNarrowAnchoredCertificateEscapeCycle R K Q cell := by
-  obtain ⟨next, hnext, q, p, hp, hcycle⟩ :=
+  obtain ⟨next, hnext, hnextNe, q, p, hp, hcycle⟩ :=
     targetLocalized_twoRepairCertificate_noWide_has_anchoredEscapeCycle
       P hcellCard hQ hcert hlocalized htrace hnoWide
-  refine ⟨next, ?_, q, p, hp, hcycle⟩
+  refine ⟨next, ?_, hnextNe, q, p, hp, hcycle⟩
   intro r
   exact anchoredCertificateEscapeTransition_noWide_isNarrow
     P (hnext r) (hnoWide (next r).1 (next r).2)
@@ -8709,6 +11644,34 @@ theorem strongDeletion_certificate_avoids_allCommonSurvivalTargets
     targetLocalizedCertificate_disjoint_commonSurvivalTargets
       hlocalized⟩
 
+/-- Prefix-relative form of the preceding certificate.  Every support
+quantified by the certificate already avoids `D`; in particular, supports
+later extracted from target-private selectors cannot fall back into the
+fixed prefix. -/
+theorem strongDeletion_prefixAvoidingCertificate_avoids_allCommonSurvivalTargets
+    {A K : Set ℕ} {R : SupportFamily} {D : Set ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion R A)
+    (hKA : K ⊆ A) (hDA : D ⊆ A)
+    (P : IsFiniteBlockPartition K cell) :
+    ∀ N, ∃ Q : Finset ℕ,
+      Q.Nonempty ∧
+      (∀ q ∈ Q, N ≤ q) ∧
+      (∀ s : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt (prefixAvoidingSupportFamily R D)
+          (selectedSet s) q) ∧
+      (∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt (prefixAvoidingSupportFamily R D)
+          (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt (prefixAvoidingSupportFamily R D)
+            (selectedSet s) q') ∧
+      Disjoint (Q : Set ℕ)
+        (commonSurvivalTargets
+          (prefixAvoidingSupportFamily R D) cell) := by
+  exact strongDeletion_certificate_avoids_allCommonSurvivalTargets
+    (hstrong.prefixAvoiding_on_subset Set.Subset.rfl hDA) hKA P
+
 /-- Strong deletion and an eventually good two-repair prefix meet in one
 finite obstruction.  Arbitrarily late, there is a target-minimal block
 certificate all of whose targets have two prefix-avoiding, disjoint,
@@ -8760,6 +11723,213 @@ theorem strongDeletion_eventuallyGoodPrefix_forces_lateTraceObstruction
       hKC P hlocalized hQrepairs
   exact ⟨Q, hQ, hQlateN, hcert, hlocalized, hQsafe, htrace⟩
 
+/-- Fixed-prefix-relative strengthening of the finite trace obstruction.
+The selector certificate, its private selectors, and both supplied repairs
+all live in the same subfamily of supports avoiding `D`. -/
+theorem strongDeletion_eventuallyGoodPrefix_forces_latePrefixAvoidingTraceObstruction
+    {A C K : Set ℕ} {R : SupportFamily} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion R A)
+    (hKA : K ⊆ A) (hKC : K ⊆ C)
+    (hDA : (D : Set ℕ) ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      R C Set.univ D) :
+    ∀ N, ∃ Q : Finset ℕ,
+      Q.Nonempty ∧
+      (∀ q ∈ Q, N ≤ q) ∧
+      (∀ s : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (prefixAvoidingSupportFamily R (D : Set ℕ))
+          (selectedSet s) q) ∧
+      (∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt
+          (prefixAvoidingSupportFamily R (D : Set ℕ))
+          (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt
+            (prefixAvoidingSupportFamily R (D : Set ℕ))
+            (selectedSet s) q') ∧
+      Disjoint (Q : Set ℕ)
+        (commonSurvivalTargets
+          (prefixAvoidingSupportFamily R (D : Set ℕ)) cell) ∧
+      (∀ q ∈ Q,
+        HasTwoRepairTraceObstructionAt
+          (prefixAvoidingSupportFamily R (D : Set ℕ))
+          K ∅ cell q) := by
+  exact strongDeletion_eventuallyGoodPrefix_forces_lateTraceObstruction
+    (hstrong.prefixAvoiding_on_subset Set.Subset.rfl hDA)
+      hKA hKC P hgood.to_prefixAvoidingSupportFamily
+
+/-- Synchronized fixed-prefix residual.  At every requested height, one
+fixed target-minimal certificate either contains a prefix-avoiding wide
+support or a nontrivial narrow escape cycle all of whose anchors avoid the
+same prefix `D`. -/
+theorem strongDeletion_eventuallyGoodPrefix_forces_latePrefixAvoidingWideSupport_or_narrowAnchoredEscapeCycle
+    {A C K : Set ℕ} {R : SupportFamily} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion R A)
+    (hKA : K ⊆ A) (hKC : K ⊆ C)
+    (hDA : (D : Set ℕ) ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      R C Set.univ D) :
+    ∀ N, ∃ Q : Finset ℕ,
+      Q.Nonempty ∧
+      (∀ q ∈ Q, N ≤ q) ∧
+      (∀ s : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (prefixAvoidingSupportFamily R (D : Set ℕ))
+          (selectedSet s) q) ∧
+      (∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt
+          (prefixAvoidingSupportFamily R (D : Set ℕ))
+          (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt
+            (prefixAvoidingSupportFamily R (D : Set ℕ))
+            (selectedSet s) q') ∧
+      Disjoint (Q : Set ℕ)
+        (commonSurvivalTargets
+          (prefixAvoidingSupportFamily R (D : Set ℕ)) cell) ∧
+      ((∃ q ∈ Q,
+          HasWideReservoirSupportAt
+            (prefixAvoidingSupportFamily R (D : Set ℕ)) K q) ∨
+        HasNarrowAnchoredCertificateEscapeCycle
+          (prefixAvoidingSupportFamily R (D : Set ℕ))
+            K Q cell) := by
+  intro N
+  obtain ⟨Q, hQ, hQlate, hcert, hlocalized, hQsafe, htrace⟩ :=
+    strongDeletion_eventuallyGoodPrefix_forces_latePrefixAvoidingTraceObstruction
+      hstrong hKA hKC hDA P hgood N
+  exact ⟨Q, hQ, hQlate, hcert, hlocalized, hQsafe,
+    targetLocalized_twoRepairCertificate_wideSupport_or_narrowAnchoredEscapeCycle
+      P hcellCard hQ hcert hlocalized htrace⟩
+
+/-- Two-exit Hall refinement of the synchronized prefix-relative residual.
+In the no-wide branch it retains both narrow exits at every target of the
+same fixed certificate `Q`, and exposes either a surjective support cover
+with an opposite-anchor conflict or an explicit Hall-deficient subset. -/
+theorem strongDeletion_eventuallyGoodPrefix_forces_latePrefixAvoidingWideSupport_or_forkHallResidual
+    {A C K : Set ℕ} {R : SupportFamily} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion R A)
+    (hKA : K ⊆ A) (hKC : K ⊆ C)
+    (hDA : (D : Set ℕ) ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      R C Set.univ D) :
+    ∀ N, ∃ Q : Finset ℕ,
+      Q.Nonempty ∧
+      (∀ q ∈ Q, N ≤ q) ∧
+      (∀ s : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (prefixAvoidingSupportFamily R (D : Set ℕ))
+          (selectedSet s) q) ∧
+      (∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt
+          (prefixAvoidingSupportFamily R (D : Set ℕ))
+          (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt
+            (prefixAvoidingSupportFamily R (D : Set ℕ))
+            (selectedSet s) q') ∧
+      Disjoint (Q : Set ℕ)
+        (commonSurvivalTargets
+          (prefixAvoidingSupportFamily R (D : Set ℕ)) cell) ∧
+      ((∃ q ∈ Q,
+          HasWideReservoirSupportAt
+            (prefixAvoidingSupportFamily R (D : Set ℕ)) K q) ∨
+        HasNarrowAnchoredCertificateForkHallResidual
+          (prefixAvoidingSupportFamily R (D : Set ℕ))
+            K Q cell) := by
+  intro N
+  obtain ⟨Q, hQ, hQlate, hcert, hlocalized, hQsafe, htrace⟩ :=
+    strongDeletion_eventuallyGoodPrefix_forces_latePrefixAvoidingTraceObstruction
+      hstrong hKA hKC hDA P hgood N
+  by_cases hwide : ∃ q ∈ Q,
+      HasWideReservoirSupportAt
+        (prefixAvoidingSupportFamily R (D : Set ℕ)) K q
+  · exact ⟨Q, hQ, hQlate, hcert, hlocalized, hQsafe,
+      Or.inl hwide⟩
+  · have hnoWide : ∀ q ∈ Q,
+        ¬ HasWideReservoirSupportAt
+          (prefixAvoidingSupportFamily R (D : Set ℕ)) K q := by
+      intro q hqQ hqWide
+      exact hwide ⟨q, hqQ, hqWide⟩
+    have hsep : ∀ q ∈ Q,
+        HasSeparatedSingletonTwoRepairTracesAt
+          (prefixAvoidingSupportFamily R (D : Set ℕ)) K ∅ cell q := by
+      intro q hqQ
+      rcases twoRepairTraceObstruction_wide_or_separated
+          P hcellCard (htrace q hqQ) with htraceWide | htraceSep
+      · exact (hnoWide q hqQ
+          (wideTwoRepairTrace_has_wideReservoirSupport htraceWide)).elim
+      · exact htraceSep
+    exact ⟨Q, hQ, hQlate, hcert, hlocalized, hQsafe,
+      Or.inr
+        (separatedTrace_targetLocalizedCertificate_has_forkHallResidual_of_noWide
+          P hcellCard hcert hlocalized hsep hnoWide)⟩
+
+/-- Arithmetic and recurrent-label version of the synchronized
+prefix-relative residual.  The no-wide branch now retains, edge by edge,
+the actual prefix-avoiding anchor support and both residual summands inside
+that support. -/
+theorem strongDeletion_eventuallyGoodPrefix_forces_latePrefixAvoidingWideSupport_or_criticalNarrowAdditiveEscapeCycle
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A)
+    (hKA : K ⊆ A) (hKC : K ⊆ C)
+    (hDA : (D : Set ℕ) ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D)
+    (hcritical : ∀ b ∈ K,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D)) :
+    ∀ N, ∃ Q : Finset ℕ,
+      Q.Nonempty ∧
+      (∀ q ∈ Q, N ≤ q) ∧
+      (∀ s : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (prefixAvoidingSupportFamily
+            (additiveSupportFamily A 3) (D : Set ℕ))
+          (selectedSet s) q) ∧
+      (∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt
+          (prefixAvoidingSupportFamily
+            (additiveSupportFamily A 3) (D : Set ℕ))
+          (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt
+            (prefixAvoidingSupportFamily
+              (additiveSupportFamily A 3) (D : Set ℕ))
+            (selectedSet s) q') ∧
+      Disjoint (Q : Set ℕ)
+        (commonSurvivalTargets
+          (prefixAvoidingSupportFamily
+            (additiveSupportFamily A 3) (D : Set ℕ)) cell) ∧
+      ((∃ q ∈ Q,
+          HasWideReservoirSupportAt
+            (prefixAvoidingSupportFamily
+              (additiveSupportFamily A 3) (D : Set ℕ)) K q) ∨
+        HasCriticalPrefixAvoidingNarrowAdditiveEscapeCycle
+          A C K D Q cell) := by
+  intro N
+  obtain ⟨Q, hQ, hQlate, hcert, hlocalized, hQsafe,
+      hwide | hcycle⟩ :=
+    strongDeletion_eventuallyGoodPrefix_forces_latePrefixAvoidingWideSupport_or_narrowAnchoredEscapeCycle
+      hstrong hKA hKC hDA P hcellCard hgood N
+  · exact ⟨Q, hQ, hQlate, hcert, hlocalized, hQsafe,
+      Or.inl hwide⟩
+  · exact ⟨Q, hQ, hQlate, hcert, hlocalized, hQsafe,
+      Or.inr
+        (hcycle.withCriticalPrefixAvoidingAdditiveData
+          P hcritical)⟩
+
 /-- Strengthened strong-deletion certificate which keeps the two supplied
 repairs disjoint on all of `C`. -/
 theorem strongDeletion_eventuallyGoodPrefix_forces_lateTraceObstructionAlong
@@ -8807,6 +11977,674 @@ theorem strongDeletion_eventuallyGoodPrefix_forces_lateTraceObstructionAlong
     targetLocalizedCertificate_has_twoRepairTraceObstructionAlong
       hKC P hlocalized hQrepairs
   exact ⟨Q, hQ, hQlateN, hcert, hlocalized, hQsafe, htrace⟩
+
+/-- External-reservoir form of the preceding late trace obstruction.  The
+binary block reservoir need not be contained in `C`: target localization
+still forces both supplied repairs to meet the block reservoir, while the
+eventually-good prefix retains their disjointness on `C`.  This is the form
+needed after certificate migration. -/
+theorem strongDeletion_eventuallyGoodPrefix_forces_lateTraceObstructionAlong_external
+    {A C K : Set ℕ} {R : SupportFamily} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion R A)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      R C Set.univ D) :
+    ∀ N, ∃ Q : Finset ℕ,
+      Q.Nonempty ∧
+      (∀ q ∈ Q, N ≤ q) ∧
+      (∀ s : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt R (selectedSet s) q) ∧
+      (∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt R (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt R (selectedSet s) q') ∧
+      Disjoint (Q : Set ℕ)
+        (commonSurvivalTargets R cell) ∧
+      (∀ q ∈ Q,
+        HasTwoRepairTraceObstructionAlongAt
+          R C K D cell q) := by
+  classical
+  obtain ⟨T, hrepair⟩ := hgood
+  intro N
+  obtain ⟨Q, hQ, hQlate, hcert, hlocalized, hQsafe⟩ :=
+    strongDeletion_certificate_avoids_allCommonSurvivalTargets
+      hstrong hKA P (max N T)
+  have hQlateN : ∀ q ∈ Q, N ≤ q := by
+    intro q hqQ
+    exact (Nat.le_max_left N T).trans (hQlate q hqQ)
+  have hQrepairs : ∀ q ∈ Q,
+      ∃ E ∈ R q, Disjoint E D ∧
+        ∃ F ∈ R q, Disjoint F D ∧
+          Disjoint ((E : Set ℕ) ∩ C) ((F : Set ℕ) ∩ C) := by
+    intro q hqQ
+    exact hrepair q
+      ((Nat.le_max_right N T).trans (hQlate q hqQ))
+      (Set.mem_univ q)
+  have htrace : ∀ q ∈ Q,
+      HasTwoRepairTraceObstructionAlongAt R C K D cell q :=
+    targetLocalizedCertificate_has_twoRepairTraceObstructionAlong_external
+      P hlocalized hQrepairs
+  exact ⟨Q, hQ, hQlateN, hcert, hlocalized, hQsafe, htrace⟩
+
+/-- Spatial-tail form of the migrated mixed-clause obstruction.  After any
+finite initial segment of the binary partition is discarded, strong
+deletion produces a fresh localized certificate on the remaining blocks.
+Its two external repairs then yield exactly the wide/separated/opposed-unit
+trichotomy on that tail.  Thus not only the certificate targets but also all
+of the clause endpoints can be forced into arbitrarily late blocks. -/
+theorem strongDeletion_eventuallyGoodPrefix_forces_spatialTailWide_or_separatedAdditiveEdge_or_opposedExternalUnits
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D) :
+    ∀ start N,
+      let Ktail : Set ℕ := {x | ∃ i, x ∈ cell (start + i)}
+      let tailCell : ℕ → Finset ℕ := fun i => cell (start + i)
+      ∃ Q : Finset ℕ,
+        IsFiniteBlockPartition Ktail tailCell ∧
+        Q.Nonempty ∧
+        (∀ q ∈ Q, N ≤ q) ∧
+        (∀ s : BlockSelector tailCell, ∃ q ∈ Q,
+          DestroysAt (additiveSupportFamily A 3)
+            (selectedSet s) q) ∧
+        (∀ q ∈ Q, ∃ s : BlockSelector tailCell,
+          DestroysAt (additiveSupportFamily A 3)
+              (selectedSet s) q ∧
+            ∀ q' ∈ Q, q' ≠ q →
+              ¬ DestroysAt (additiveSupportFamily A 3)
+                (selectedSet s) q') ∧
+        Disjoint (Q : Set ℕ)
+          (commonSurvivalTargets
+            (additiveSupportFamily A 3) tailCell) ∧
+        ((∃ q ∈ Q,
+            HasWideReservoirSupportAt
+              (additiveSupportFamily A 3) Ktail q) ∨
+          ∃ htailCard : ∀ i, (tailCell i).card = 2,
+            ∃ data : ∀ q : {q // q ∈ Q},
+                ExternalNarrowTraceClauseData
+                  (additiveSupportFamily A 3)
+                    C Ktail D tailCell q.1,
+              HasSeparatedExternalNarrowAdditiveImplicationEdge
+                  A C Ktail D Q tailCell htailCard data ∨
+                HasOpposedExternalUnitAdditiveImplicationEdges
+                  A C Ktail D Q tailCell htailCard data) := by
+  intro start N
+  let Ktail : Set ℕ := {x | ∃ i, x ∈ cell (start + i)}
+  let tailCell : ℕ → Finset ℕ := fun i => cell (start + i)
+  have hKtailK : Ktail ⊆ K := by
+    intro x hx
+    obtain ⟨i, hxi⟩ := hx
+    exact (P.mem_iff x).mpr ⟨start + i, hxi⟩
+  have Ptail : IsFiniteBlockPartition Ktail tailCell := by
+    refine ⟨?_, ?_, ?_⟩
+    · intro i
+      exact P.nonempty (start + i)
+    · intro i j hij
+      apply P.disjoint
+      omega
+    · intro x
+      simp only [Ktail, tailCell, Set.mem_setOf_eq]
+  have htailCard : ∀ i, (tailCell i).card = 2 := by
+    intro i
+    exact hcellCard (start + i)
+  obtain ⟨Q, hQ, hQlate, hcert, hlocalized,
+      hQsafe, htrace⟩ :=
+    strongDeletion_eventuallyGoodPrefix_forces_lateTraceObstructionAlong_external
+      hstrong (hKtailK.trans hKA) Ptail hgood N
+  have htrichotomy :=
+    targetLocalized_twoRepairCertificateAlong_external_has_wide_or_separatedAdditiveEdge_or_opposedExternalUnits
+      Ptail htailCard hcert htrace
+  rcases htrichotomy with hwide | ⟨data, hnarrow⟩
+  · exact ⟨Q, Ptail, hQ, hQlate, hcert,
+      hlocalized, hQsafe, Or.inl hwide⟩
+  · exact ⟨Q, Ptail, hQ, hQlate, hcert,
+      hlocalized, hQsafe, Or.inr
+        ⟨htailCard, data, hnarrow⟩⟩
+
+/-- Certificate-free projection of the spatial mixed-clause obstruction.
+The separated edge is reduced to its concrete two-repair trace at one late
+target; only the opposed-unit branch retains the finite dependent clause
+data needed to name its two conflicting targets. -/
+theorem strongDeletion_eventuallyGoodPrefix_forces_spatialTailWide_or_separatedTrace_or_opposedExternalUnits
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D) :
+    ∀ start N,
+      let Ktail : Set ℕ := {x | ∃ i, x ∈ cell (start + i)}
+      let tailCell : ℕ → Finset ℕ := fun i => cell (start + i)
+      (∃ q, N ≤ q ∧
+        HasWideReservoirSupportAt
+          (additiveSupportFamily A 3) Ktail q) ∨
+      (∃ q, N ≤ q ∧
+        HasSeparatedSingletonTwoRepairTracesAlongAt
+          (additiveSupportFamily A 3) C Ktail D tailCell q) ∨
+      ∃ Q : Finset ℕ,
+        ∃ htailCard : ∀ i, (tailCell i).card = 2,
+          ∃ data : ∀ q : {q // q ∈ Q},
+              ExternalNarrowTraceClauseData
+                (additiveSupportFamily A 3)
+                  C Ktail D tailCell q.1,
+            (∀ q ∈ Q, N ≤ q) ∧
+              HasOpposedExternalUnitAdditiveImplicationEdges
+                A C Ktail D Q tailCell htailCard data := by
+  intro start N
+  obtain ⟨Q, _Ptail, _hQ, hQlate, _hcert,
+      _hlocalized, _hQsafe,
+      hwide | ⟨htailCard, data, hsep | hunits⟩⟩ :=
+    strongDeletion_eventuallyGoodPrefix_forces_spatialTailWide_or_separatedAdditiveEdge_or_opposedExternalUnits
+      hstrong hKA P hcellCard hgood start N
+  · obtain ⟨q, hqQ, hqWide⟩ := hwide
+    exact Or.inl ⟨q, hQlate q hqQ, hqWide⟩
+  · obtain ⟨q, hqQ, hqSeparated⟩ := hsep.exists_target
+    exact Or.inr (Or.inl
+      ⟨q, hQlate q hqQ, hqSeparated⟩)
+  · exact Or.inr (Or.inr
+      ⟨Q, htailCard, data, hQlate, hunits⟩)
+
+/-- Repair-pair-preserving spatial projection.  Unlike the preceding broad
+wide alternative, its wide witness is one of the two concrete repairs
+provided by the eventually-good prefix, with global `C`-disjointness and
+prefix avoidance retained. -/
+theorem strongDeletion_eventuallyGoodPrefix_forces_spatialTailWideTrace_or_separatedTrace_or_opposedExternalUnits
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D) :
+    ∀ start N,
+      let Ktail : Set ℕ := {x | ∃ i, x ∈ cell (start + i)}
+      let tailCell : ℕ → Finset ℕ := fun i => cell (start + i)
+      (∃ q, N ≤ q ∧
+        HasWideTwoRepairTraceAlongAt
+          (additiveSupportFamily A 3) C Ktail D q) ∨
+      (∃ q, N ≤ q ∧
+        HasSeparatedSingletonTwoRepairTracesAlongAt
+          (additiveSupportFamily A 3) C Ktail D tailCell q) ∨
+      ∃ Q : Finset ℕ,
+        ∃ htailCard : ∀ i, (tailCell i).card = 2,
+          ∃ data : ∀ q : {q // q ∈ Q},
+              ExternalNarrowTraceClauseData
+                (additiveSupportFamily A 3)
+                  C Ktail D tailCell q.1,
+            (∀ q ∈ Q, N ≤ q) ∧
+              HasOpposedExternalUnitAdditiveImplicationEdges
+                A C Ktail D Q tailCell htailCard data := by
+  intro start N
+  let Ktail : Set ℕ := {x | ∃ i, x ∈ cell (start + i)}
+  let tailCell : ℕ → Finset ℕ := fun i => cell (start + i)
+  have hKtailK : Ktail ⊆ K := by
+    intro x hx
+    obtain ⟨i, hxi⟩ := hx
+    exact (P.mem_iff x).mpr ⟨start + i, hxi⟩
+  have Ptail : IsFiniteBlockPartition Ktail tailCell := by
+    refine ⟨?_, ?_, ?_⟩
+    · intro i
+      exact P.nonempty (start + i)
+    · intro i j hij
+      apply P.disjoint
+      omega
+    · intro x
+      simp only [Ktail, tailCell, Set.mem_setOf_eq]
+  have htailCard : ∀ i, (tailCell i).card = 2 := by
+    intro i
+    exact hcellCard (start + i)
+  obtain ⟨Q, _hQ, hQlate, hcert, _hlocalized,
+      _hQsafe, htrace⟩ :=
+    strongDeletion_eventuallyGoodPrefix_forces_lateTraceObstructionAlong_external
+      hstrong (hKtailK.trans hKA) Ptail hgood N
+  rcases
+      targetLocalized_twoRepairCertificateAlong_external_has_wideTrace_or_separatedAdditiveEdge_or_opposedExternalUnits
+        Ptail htailCard hcert htrace with
+    hwide | ⟨data, hsep | hunits⟩
+  · obtain ⟨q, hqQ, hqWide⟩ := hwide
+    exact Or.inl ⟨q, hQlate q hqQ, hqWide⟩
+  · obtain ⟨q, hqQ, hqSeparated⟩ := hsep.exists_target
+    exact Or.inr (Or.inl
+      ⟨q, hQlate q hqQ, hqSeparated⟩)
+  · exact Or.inr (Or.inr
+      ⟨Q, htailCard, data, hQlate, hunits⟩)
+
+/-- Infinite pigeonhole for a three-way cover of the natural numbers. -/
+theorem exists_infinite_subfamily_of_three_way_cover
+    (P₀ P₁ P₂ : ℕ → Prop)
+    (hcover : ∀ n, P₀ n ∨ P₁ n ∨ P₂ n) :
+    (∃ I : Set ℕ, I.Infinite ∧ ∀ n ∈ I, P₀ n) ∨
+      (∃ I : Set ℕ, I.Infinite ∧ ∀ n ∈ I, P₁ n) ∨
+        ∃ I : Set ℕ, I.Infinite ∧ ∀ n ∈ I, P₂ n := by
+  classical
+  let I₀ : Set ℕ := {n | P₀ n}
+  by_cases hI₀ : I₀.Infinite
+  · exact Or.inl ⟨I₀, hI₀, fun n hn => hn⟩
+  · let I₁ : Set ℕ := {n | P₁ n}
+    by_cases hI₁ : I₁.Infinite
+    · exact Or.inr (Or.inl ⟨I₁, hI₁, fun n hn => hn⟩)
+    · let I₂ : Set ℕ := Set.univ \ (I₀ ∪ I₁)
+      have hI₂ : I₂.Infinite :=
+        Set.infinite_univ.diff
+          ((Set.not_infinite.mp hI₀).union
+            (Set.not_infinite.mp hI₁))
+      refine Or.inr (Or.inr ⟨I₂, hI₂, ?_⟩)
+      intro n hn
+      rcases hcover n with hn₀ | hn₁ | hn₂
+      · exact (hn.2 (Or.inl hn₀)).elim
+      · exact (hn.2 (Or.inr hn₁)).elim
+      · exact hn₂
+
+/-- Spatial branch stabilization without a false monotonicity assumption.
+The separated and unit trace predicates need not persist when a reservoir
+is enlarged, so instead choose the obstruction independently on every tail
+and pass to an infinite set of starting indices on which one of the three
+types occurs. -/
+theorem strongDeletion_eventuallyGoodPrefix_forces_infiniteSpatialWide_or_separatedTrace_or_opposedExternalUnits
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D) :
+    (∃ I : Set ℕ, I.Infinite ∧ ∀ n ∈ I,
+      ∃ q, n ≤ q ∧
+        HasWideReservoirSupportAt
+          (additiveSupportFamily A 3)
+            {x | ∃ i, x ∈ cell (n + i)} q) ∨
+    (∃ I : Set ℕ, I.Infinite ∧ ∀ n ∈ I,
+      ∃ q, n ≤ q ∧
+        HasSeparatedSingletonTwoRepairTracesAlongAt
+          (additiveSupportFamily A 3) C
+            {x | ∃ i, x ∈ cell (n + i)} D
+              (fun i => cell (n + i)) q) ∨
+    ∃ I : Set ℕ, I.Infinite ∧ ∀ n ∈ I,
+      ∃ Q : Finset ℕ,
+        ∃ htailCard : ∀ i, (cell (n + i)).card = 2,
+          ∃ data : ∀ q : {q // q ∈ Q},
+              ExternalNarrowTraceClauseData
+                (additiveSupportFamily A 3) C
+                  {x | ∃ i, x ∈ cell (n + i)} D
+                    (fun i => cell (n + i)) q.1,
+            (∀ q ∈ Q, n ≤ q) ∧
+              HasOpposedExternalUnitAdditiveImplicationEdges
+                A C {x | ∃ i, x ∈ cell (n + i)} D Q
+                  (fun i => cell (n + i)) htailCard data := by
+  let Wide : ℕ → Prop := fun n =>
+    ∃ q, n ≤ q ∧
+      HasWideReservoirSupportAt
+        (additiveSupportFamily A 3)
+          {x | ∃ i, x ∈ cell (n + i)} q
+  let Separated : ℕ → Prop := fun n =>
+    ∃ q, n ≤ q ∧
+      HasSeparatedSingletonTwoRepairTracesAlongAt
+        (additiveSupportFamily A 3) C
+          {x | ∃ i, x ∈ cell (n + i)} D
+            (fun i => cell (n + i)) q
+  let Units : ℕ → Prop := fun n =>
+    ∃ Q : Finset ℕ,
+      ∃ htailCard : ∀ i, (cell (n + i)).card = 2,
+        ∃ data : ∀ q : {q // q ∈ Q},
+            ExternalNarrowTraceClauseData
+              (additiveSupportFamily A 3) C
+                {x | ∃ i, x ∈ cell (n + i)} D
+                  (fun i => cell (n + i)) q.1,
+          (∀ q ∈ Q, n ≤ q) ∧
+            HasOpposedExternalUnitAdditiveImplicationEdges
+              A C {x | ∃ i, x ∈ cell (n + i)} D Q
+                (fun i => cell (n + i)) htailCard data
+  have hcover : ∀ n, Wide n ∨ Separated n ∨ Units n := by
+    intro n
+    exact
+      strongDeletion_eventuallyGoodPrefix_forces_spatialTailWide_or_separatedTrace_or_opposedExternalUnits
+        hstrong hKA P hcellCard hgood n n
+  simpa only [Wide, Separated, Units] using
+    exists_infinite_subfamily_of_three_way_cover
+      Wide Separated Units hcover
+
+/-- Named data extracted from a separated trace on the tail beginning at
+`n`.  Naming the two endpoints and repairs makes it possible to thin the
+resulting family by ordinary infinite-matching lemmas. -/
+structure SpatialSeparatedTraceWitness
+    (A C : Set ℕ) (D : Finset ℕ)
+    (cell : ℕ → Finset ℕ) (n : ℕ) where
+  target : ℕ
+  target_late : n ≤ target
+  leftSupport : Finset ℕ
+  left_mem : leftSupport ∈ additiveSupportFamily A 3 target
+  left_disjoint : Disjoint leftSupport D
+  rightSupport : Finset ℕ
+  right_mem : rightSupport ∈ additiveSupportFamily A 3 target
+  right_disjoint : Disjoint rightSupport D
+  reservoir_traces_disjoint :
+    Disjoint ((leftSupport : Set ℕ) ∩ C)
+      ((rightSupport : Set ℕ) ∩ C)
+  leftPoint : ℕ
+  rightPoint : ℕ
+  leftPoint_tail :
+    leftPoint ∈ {x | ∃ i, x ∈ cell (n + i)}
+  rightPoint_tail :
+    rightPoint ∈ {x | ∃ i, x ∈ cell (n + i)}
+  points_ne : leftPoint ≠ rightPoint
+  left_trace :
+    ((leftSupport : Set ℕ) ∩
+      {x | ∃ i, x ∈ cell (n + i)}) = {leftPoint}
+  right_trace :
+    ((rightSupport : Set ℕ) ∩
+      {x | ∃ i, x ∈ cell (n + i)}) = {rightPoint}
+
+/-- A separated two-repair trace on one spatial tail supplies the named
+matching witness above. -/
+theorem separatedTailTrace_has_spatialWitness
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    {n q : ℕ} (hnq : n ≤ q)
+    (htrace : HasSeparatedSingletonTwoRepairTracesAlongAt
+      (additiveSupportFamily A 3) C
+        {x | ∃ k, x ∈ cell (n + k)} D
+          (fun k => cell (n + k)) q) :
+    Nonempty (SpatialSeparatedTraceWitness A C D cell n) := by
+  obtain ⟨E, hER, hED, F, hFR, hFD, hEFC,
+      i, j, x, y, hij, hxi, hyj, hEtrace, hFtrace⟩ := htrace
+  have hxy : x ≠ y := by
+    intro hxy
+    have hindices : n + i ≠ n + j := by omega
+    have hySame : x ∈ cell (n + j) := by
+      simpa [hxy] using hyj
+    exact Finset.disjoint_left.mp (P.disjoint hindices)
+      hxi hySame
+  exact ⟨{
+    target := q
+    target_late := hnq
+    leftSupport := E
+    left_mem := hER
+    left_disjoint := hED
+    rightSupport := F
+    right_mem := hFR
+    right_disjoint := hFD
+    reservoir_traces_disjoint := hEFC
+    leftPoint := x
+    rightPoint := y
+    leftPoint_tail := ⟨i, hxi⟩
+    rightPoint_tail := ⟨j, hyj⟩
+    points_ne := hxy
+    left_trace := hEtrace
+    right_trace := hFtrace }⟩
+
+/-- One opposed-unit certificate, oriented toward a repair which survives
+deletion of the opposite endpoint.  The two unit targets are distinct and
+late, their endpoints are complementary points of one tail cell, and the
+recorded repair meets the whole tail only at the endpoint not being
+deleted. -/
+structure SpatialOpposedUnitSurvivingRepairWitness
+    (A : Set ℕ) (D : Finset ℕ)
+    (K : Set ℕ) (n : ℕ) where
+  blockedTarget : ℕ
+  survivingTarget : ℕ
+  blockedTarget_late : n ≤ blockedTarget
+  survivingTarget_late : n ≤ survivingTarget
+  targets_ne : blockedTarget ≠ survivingTarget
+  deletedPoint : ℕ
+  tracePoint : ℕ
+  deletedPoint_mem : deletedPoint ∈ K
+  tracePoint_mem : tracePoint ∈ K
+  points_ne : deletedPoint ≠ tracePoint
+  repair : Finset ℕ
+  repair_mem : repair ∈
+    additiveSupportFamily A 3 survivingTarget
+  repair_disjoint : Disjoint repair D
+  repair_trace :
+    ((repair : Set ℕ) ∩ K) = {tracePoint}
+
+/-- The two opposed external unit clauses canonically orient one of their
+repairs away from the complementary endpoint. -/
+theorem opposedExternalUnits_have_spatialSurvivingRepairWitness
+    {A C K : Set ℕ} {D Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    {hcellCard : ∀ i, (cell i).card = 2}
+    {data : ∀ q : {q // q ∈ Q},
+      ExternalNarrowTraceClauseData
+        (additiveSupportFamily A 3) C K D cell q.1}
+    {n : ℕ}
+    (hQlate : ∀ q ∈ Q, n ≤ q)
+    (hunits : HasOpposedExternalUnitAdditiveImplicationEdges
+      A C K D Q cell hcellCard data) :
+    Nonempty (SpatialOpposedUnitSurvivingRepairWitness
+      A D K n) := by
+  obtain ⟨q, q', hqq', _hunit, _hunit', hopposed,
+      _hqOutside, _hq'Outside⟩ := hunits.exists_distinctTargets
+  let l : BinaryCellLiteral cell := (data q).leftLiteral
+  have hvalue : (data q').leftPoint =
+      (oppositeBinaryCellLiteral hcellCard l).2.1 := by
+    exact congrArg (fun w : BinaryCellLiteral cell => w.2.1) hopposed
+  have hoppositeValueNe :
+      (oppositeBinaryCellLiteral hcellCard l).2.1 ≠
+        (data q).leftPoint := by
+    simpa only [l, ExternalNarrowTraceClauseData.leftLiteral,
+      oppositeBinaryCellLiteral] using
+        oppositeBlockChoice_ne hcellCard l.1 l.2
+  have hpointsNe : (data q).leftPoint ≠
+      (data q').leftPoint := by
+    intro hpoints
+    exact hoppositeValueNe (hvalue.symm.trans hpoints.symm)
+  exact ⟨{
+    blockedTarget := q.1
+    survivingTarget := q'.1
+    blockedTarget_late := hQlate q.1 q.2
+    survivingTarget_late := hQlate q'.1 q'.2
+    targets_ne := fun hEq => hqq' (Subtype.ext hEq)
+    deletedPoint := (data q).leftPoint
+    tracePoint := (data q').leftPoint
+    deletedPoint_mem := by
+      have hmem : (data q).leftPoint ∈
+          ((data q).leftSupport : Set ℕ) ∩ K := by
+        rw [(data q).left_trace]
+        simp
+      exact hmem.2
+    tracePoint_mem := by
+      have hmem : (data q').leftPoint ∈
+          ((data q').leftSupport : Set ℕ) ∩ K := by
+        rw [(data q').left_trace]
+        simp
+      exact hmem.2
+    points_ne := hpointsNe
+    repair := (data q').leftSupport
+    repair_mem := (data q').left_mem
+    repair_disjoint := (data q').left_disjoint
+    repair_trace := (data q').left_trace }⟩
+
+/-- Orientable part of a wide repair trace: two distinct tail points occur
+in one supplied repair, and the other supplied repair omits the point which
+will be deleted. -/
+structure SpatialOrientableWideTraceWitness
+    (A : Set ℕ) (D : Finset ℕ) (K : Set ℕ) (n : ℕ) where
+  target : ℕ
+  target_late : n ≤ target
+  deletedPoint : ℕ
+  companionPoint : ℕ
+  deletedPoint_mem : deletedPoint ∈ K
+  companionPoint_mem : companionPoint ∈ K
+  points_ne : deletedPoint ≠ companionPoint
+  repair : Finset ℕ
+  repair_mem : repair ∈ additiveSupportFamily A 3 target
+  repair_disjoint : Disjoint repair D
+  deletedPoint_not_mem : deletedPoint ∉ repair
+
+/-- Non-orientable part of a wide repair trace.  Both supplied repairs
+contain the same two distinct tail points; global trace disjointness forces
+both common points outside `C`. -/
+structure SpatialSharedExternalWideTraceWitness
+    (A C : Set ℕ) (D : Finset ℕ) (K : Set ℕ) (n : ℕ) where
+  target : ℕ
+  target_late : n ≤ target
+  leftSupport : Finset ℕ
+  left_mem : leftSupport ∈ additiveSupportFamily A 3 target
+  left_disjoint : Disjoint leftSupport D
+  rightSupport : Finset ℕ
+  right_mem : rightSupport ∈ additiveSupportFamily A 3 target
+  right_disjoint : Disjoint rightSupport D
+  reservoir_traces_disjoint :
+    Disjoint ((leftSupport : Set ℕ) ∩ C)
+      ((rightSupport : Set ℕ) ∩ C)
+  firstPoint : ℕ
+  secondPoint : ℕ
+  points_ne : firstPoint ≠ secondPoint
+  firstPoint_mem : firstPoint ∈ K
+  secondPoint_mem : secondPoint ∈ K
+  firstPoint_left : firstPoint ∈ leftSupport
+  secondPoint_left : secondPoint ∈ leftSupport
+  firstPoint_right : firstPoint ∈ rightSupport
+  secondPoint_right : secondPoint ∈ rightSupport
+  firstPoint_external : firstPoint ∉ C
+  secondPoint_external : secondPoint ∉ C
+
+/-- Exact orientability dichotomy for a wide supplied repair pair.  If the
+alternate repair does not omit either wide endpoint, the two endpoints form
+a shared external core of the pair. -/
+theorem wideTwoRepairTraceAlong_has_orientable_or_sharedExternalWitness
+    {A C K : Set ℕ} {D : Finset ℕ} {n q : ℕ}
+    (hnq : n ≤ q)
+    (hwide : HasWideTwoRepairTraceAlongAt
+      (additiveSupportFamily A 3) C K D q) :
+    Nonempty (SpatialOrientableWideTraceWitness A D K n) ∨
+      Nonempty (SpatialSharedExternalWideTraceWitness
+        A C D K n) := by
+  obtain ⟨E, hER, hED, F, hFR, hFD, hEFC,
+      hEwide | hFwide⟩ := hwide
+  · obtain ⟨x, hx, y, hy, hxy⟩ := hEwide
+    by_cases hxF : x ∈ F
+    · by_cases hyF : y ∈ F
+      · right
+        have hxOutside : x ∉ C := by
+          intro hxC
+          exact Set.disjoint_left.mp hEFC
+            ⟨hx.1, hxC⟩ ⟨Finset.mem_coe.mpr hxF, hxC⟩
+        have hyOutside : y ∉ C := by
+          intro hyC
+          exact Set.disjoint_left.mp hEFC
+            ⟨hy.1, hyC⟩ ⟨Finset.mem_coe.mpr hyF, hyC⟩
+        exact ⟨{
+          target := q
+          target_late := hnq
+          leftSupport := E
+          left_mem := hER
+          left_disjoint := hED
+          rightSupport := F
+          right_mem := hFR
+          right_disjoint := hFD
+          reservoir_traces_disjoint := hEFC
+          firstPoint := x
+          secondPoint := y
+          points_ne := hxy
+          firstPoint_mem := hx.2
+          secondPoint_mem := hy.2
+          firstPoint_left := Finset.mem_coe.mp hx.1
+          secondPoint_left := Finset.mem_coe.mp hy.1
+          firstPoint_right := hxF
+          secondPoint_right := hyF
+          firstPoint_external := hxOutside
+          secondPoint_external := hyOutside }⟩
+      · left
+        exact ⟨{
+          target := q
+          target_late := hnq
+          deletedPoint := y
+          companionPoint := x
+          deletedPoint_mem := hy.2
+          companionPoint_mem := hx.2
+          points_ne := hxy.symm
+          repair := F
+          repair_mem := hFR
+          repair_disjoint := hFD
+          deletedPoint_not_mem := hyF }⟩
+    · left
+      exact ⟨{
+        target := q
+        target_late := hnq
+        deletedPoint := x
+        companionPoint := y
+        deletedPoint_mem := hx.2
+        companionPoint_mem := hy.2
+        points_ne := hxy
+        repair := F
+        repair_mem := hFR
+        repair_disjoint := hFD
+        deletedPoint_not_mem := hxF }⟩
+  · obtain ⟨x, hx, y, hy, hxy⟩ := hFwide
+    by_cases hxE : x ∈ E
+    · by_cases hyE : y ∈ E
+      · right
+        have hxOutside : x ∉ C := by
+          intro hxC
+          exact Set.disjoint_left.mp hEFC
+            ⟨Finset.mem_coe.mpr hxE, hxC⟩ ⟨hx.1, hxC⟩
+        have hyOutside : y ∉ C := by
+          intro hyC
+          exact Set.disjoint_left.mp hEFC
+            ⟨Finset.mem_coe.mpr hyE, hyC⟩ ⟨hy.1, hyC⟩
+        exact ⟨{
+          target := q
+          target_late := hnq
+          leftSupport := E
+          left_mem := hER
+          left_disjoint := hED
+          rightSupport := F
+          right_mem := hFR
+          right_disjoint := hFD
+          reservoir_traces_disjoint := hEFC
+          firstPoint := x
+          secondPoint := y
+          points_ne := hxy
+          firstPoint_mem := hx.2
+          secondPoint_mem := hy.2
+          firstPoint_left := hxE
+          secondPoint_left := hyE
+          firstPoint_right := Finset.mem_coe.mp hx.1
+          secondPoint_right := Finset.mem_coe.mp hy.1
+          firstPoint_external := hxOutside
+          secondPoint_external := hyOutside }⟩
+      · left
+        exact ⟨{
+          target := q
+          target_late := hnq
+          deletedPoint := y
+          companionPoint := x
+          deletedPoint_mem := hy.2
+          companionPoint_mem := hx.2
+          points_ne := hxy.symm
+          repair := E
+          repair_mem := hER
+          repair_disjoint := hED
+          deletedPoint_not_mem := hyE }⟩
+    · left
+      exact ⟨{
+        target := q
+        target_late := hnq
+        deletedPoint := x
+        companionPoint := y
+        deletedPoint_mem := hx.2
+        companionPoint_mem := hy.2
+        points_ne := hxy
+        repair := E
+        repair_mem := hER
+        repair_disjoint := hED
+        deletedPoint_not_mem := hxE }⟩
 
 /-- Strong deletion's late certificate, after the exact binary trace
 classification.  At every requested height the finite obstruction either
@@ -9570,6 +13408,47 @@ def HasBinaryTwoRepairTraceCertificateObstruction
           HasTwoRepairTraceObstructionAt
             (additiveSupportFamily A 3) K D cell q
 
+/-- Prefix-relative finite-certificate obstruction retaining the additive
+provenance of every binary cell and the full two-exit Hall residual on the
+same fixed target set `Q`. -/
+def HasPrefixAvoidingForkHallCertificateObstructionWithCellData
+    (A C : Set ℕ) (D : Finset ℕ) : Prop :=
+  ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+    K ⊆ C ∧ K.Infinite ∧ Disjoint K (D : Set ℕ) ∧
+    IsFiniteBlockPartition K cell ∧
+    (∀ i, (cell i).card = 2) ∧
+    (∀ i, Nonempty
+      (PrivateConflictBinaryCellData A C K D cell i)) ∧
+    ∀ N, ∃ Q : Finset ℕ,
+      Q.Nonempty ∧
+      (∀ q ∈ Q, N ≤ q) ∧
+      (∀ s : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (prefixAvoidingSupportFamily
+            (additiveSupportFamily A 3) (D : Set ℕ))
+          (selectedSet s) q) ∧
+      (∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt
+          (prefixAvoidingSupportFamily
+            (additiveSupportFamily A 3) (D : Set ℕ))
+          (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt
+            (prefixAvoidingSupportFamily
+              (additiveSupportFamily A 3) (D : Set ℕ))
+            (selectedSet s) q') ∧
+      Disjoint (Q : Set ℕ)
+        (commonSurvivalTargets
+          (prefixAvoidingSupportFamily
+            (additiveSupportFamily A 3) (D : Set ℕ)) cell) ∧
+      ((∃ q ∈ Q,
+          HasWideReservoirSupportAt
+            (prefixAvoidingSupportFamily
+              (additiveSupportFamily A 3) (D : Set ℕ)) K q) ∨
+        HasNarrowAnchoredCertificateForkHallResidual
+          (prefixAvoidingSupportFamily
+            (additiveSupportFamily A 3) (D : Set ℕ)) K Q cell)
+
 /-- Eliminate the moving finite certificates from the strengthened package.
 On its fixed infinite binary reservoir, either wide repair traces recur
 arbitrarily late or separated singleton repair traces do. -/
@@ -9609,7 +13488,7 @@ theorem strongDeletion_privateConflictClique_forces_binaryCertificateMigration
     (hprivate : HasInfinitePairwisePrivateTwoRepairConflictClique A C D) :
     HasBinaryCommonSurvivalCertificateMigration A C := by
   obtain ⟨K, cell, target, hKC, hK, _hKD, P,
-      hcellCard, htarget, hsurvive⟩ :=
+      hcellCard, htarget, _hcellData, hsurvive⟩ :=
     privateConflictClique_has_binaryCommonSurvivalPartition hprivate
   refine ⟨K, cell, target, hKC, hK, P,
     hcellCard, htarget, hsurvive, ?_⟩
@@ -9632,12 +13511,35 @@ theorem strongDeletion_eventuallyGoodPrivateConflictClique_forces_traceObstructi
     (hprivate : HasInfinitePairwisePrivateTwoRepairConflictClique A C D) :
     HasBinaryTwoRepairTraceCertificateObstruction A C D := by
   obtain ⟨K, cell, target, hKC, hK, hKD, P,
-      hcellCard, htarget, hsurvive⟩ :=
+      hcellCard, htarget, _hcellData, hsurvive⟩ :=
     privateConflictClique_has_binaryCommonSurvivalPartition hprivate
   refine ⟨K, cell, target, hKC, hK, hKD, P,
     hcellCard, htarget, hsurvive, ?_⟩
   exact strongDeletion_eventuallyGoodPrefix_forces_lateTraceObstruction
     hstrong (hKC.trans hCA) hKC P hgood
+
+/-- Cell-provenance-preserving strong-deletion bridge.  The private clique
+supplies the additive equality on each opposite endpoint pair; the
+eventually good prefix and strong deletion then supply arbitrarily late
+prefix-relative certificates whose no-wide branch is the full fork Hall
+residual on that same partition. -/
+theorem strongDeletion_eventuallyGoodPrivateConflictClique_forces_prefixAvoidingForkHallObstruction
+    {A C : Set ℕ} {D : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hDA : (D : Set ℕ) ⊆ A)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D)
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A)
+    (hprivate : HasInfinitePairwisePrivateTwoRepairConflictClique A C D) :
+    HasPrefixAvoidingForkHallCertificateObstructionWithCellData
+      A C D := by
+  obtain ⟨K, cell, _target, hKC, hK, hKD, P,
+      hcellCard, _htarget, hcellData, _hsurvive⟩ :=
+    privateConflictClique_has_binaryCommonSurvivalPartition hprivate
+  exact ⟨K, cell, hKC, hK, hKD, P, hcellCard, hcellData,
+    strongDeletion_eventuallyGoodPrefix_forces_latePrefixAvoidingWideSupport_or_forkHallResidual
+      hstrong (hKC.trans hCA) hKC hDA P hcellCard hgood⟩
 
 /-- Direct counterexample consequence for any eventually good finite
 prefix.  The independent Ramsey branch would already be the desired
@@ -9737,6 +13639,38 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_binaryTraceObstr
   exact ⟨d, hdD₀,
     eventuallyGoodPrefix_counterexample_forces_binaryTraceObstruction
       hCA hC hseedC hgood hcounter⟩
+
+/-- Counterexample-level form of the cell-provenance-preserving Hall
+bridge.  One erased minimal prefix simultaneously carries its private
+conflict-cell equations and arbitrarily late fixed-`Q` prefix-relative Hall
+residuals. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_prefixAvoidingForkHallObstruction
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ d ∈ D₀,
+      HasPrefixAvoidingForkHallCertificateObstructionWithCellData
+        A C (D₀.erase d) := by
+  obtain ⟨d, hdD₀, hprivate⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_counterexample_forces_privateConflictClique
+      hCA hC hrec hD₀ hminimal hcounter
+  have hDA : (((D₀.erase d : Finset ℕ) : Set ℕ)) ⊆ A :=
+    fun x hx => hCA (hrec.1 (Finset.mem_erase.mp
+      (Finset.mem_coe.mp hx)).2)
+  have hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ (D₀.erase d) :=
+    minimalRecurrentNoTwoRepairPrefix_erase_eventuallyGood
+      hrec hminimal d hdD₀
+  exact ⟨d, hdD₀,
+    strongDeletion_eventuallyGoodPrivateConflictClique_forces_prefixAvoidingForkHallObstruction
+      hCA hDA hgood (strongOrderThreeDeletion_of_counterexample hcounter)
+        hprivate⟩
 
 /-- The critical-extension obstruction and the binary certificate
 obstruction can be forced for the same eventually-good prefix.  Thus every
@@ -9968,6 +13902,71 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_fullyCriticalLat
       Or.inl hwide⟩
   · exact ⟨Q, hQ, hQlate, hcert, hlocalized, hQsafe,
       Or.inr (hcycle.withCriticalAdditiveData P hcriticalK)⟩
+
+/-- Prefix-preserving refinement of the synchronized counterexample normal
+form.  The finite certificate is built after absorbing the fixed prefix
+`D` into the deletion.  Consequently every clause support, private
+surviving support, escape anchor, and additive residual on the cycle avoids
+that same `D`. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_fullyCriticalLatePrefixAvoidingWideSupportOrAnchoredEscapeCycle
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ D : Finset ℕ, ∃ K : Set ℕ,
+      ∃ cell : ℕ → Finset ℕ,
+        (D : Set ℕ) ⊆ C ∧
+        HasEventuallyTwoRepairsAtPrefixAlong
+          (additiveSupportFamily A 3) C Set.univ D ∧
+        K ⊆ C ∧ K.Infinite ∧ Disjoint K (D : Set ℕ) ∧
+        IsFiniteBlockPartition K cell ∧
+        (∀ i, (cell i).card = 2) ∧
+        (∀ b ∈ K,
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        ∀ N, ∃ Q : Finset ℕ,
+          Q.Nonempty ∧
+          (∀ q ∈ Q, N ≤ q) ∧
+          (∀ s : BlockSelector cell, ∃ q ∈ Q,
+            DestroysAt
+              (prefixAvoidingSupportFamily
+                (additiveSupportFamily A 3) (D : Set ℕ))
+              (selectedSet s) q) ∧
+          (∀ q ∈ Q, ∃ s : BlockSelector cell,
+            DestroysAt
+              (prefixAvoidingSupportFamily
+                (additiveSupportFamily A 3) (D : Set ℕ))
+              (selectedSet s) q ∧
+            ∀ q' ∈ Q, q' ≠ q →
+              ¬ DestroysAt
+                (prefixAvoidingSupportFamily
+                  (additiveSupportFamily A 3) (D : Set ℕ))
+                (selectedSet s) q') ∧
+          Disjoint (Q : Set ℕ)
+            (commonSurvivalTargets
+              (prefixAvoidingSupportFamily
+                (additiveSupportFamily A 3) (D : Set ℕ)) cell) ∧
+          ((∃ q ∈ Q,
+              HasWideReservoirSupportAt
+                (prefixAvoidingSupportFamily
+                  (additiveSupportFamily A 3) (D : Set ℕ)) K q) ∨
+            HasCriticalPrefixAvoidingNarrowAdditiveEscapeCycle
+              A C K D Q cell) := by
+  obtain ⟨D, K, cell, hDC, hgood, hKC, hK, hKD,
+      P, hcellCard, hcriticalK, _hcofinal⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_counterexample_forces_fullyCriticalCofinalTraceDichotomy
+      hCA hC hrec hD₀ hminimal hcounter
+  refine ⟨D, K, cell, hDC, hgood, hKC, hK, hKD,
+    P, hcellCard, hcriticalK, ?_⟩
+  exact
+    strongDeletion_eventuallyGoodPrefix_forces_latePrefixAvoidingWideSupport_or_criticalNarrowAdditiveEscapeCycle
+      (strongOrderThreeDeletion_of_counterexample hcounter)
+        (hKC.trans hCA) hKC (hDC.trans hCA)
+          P hcellCard hgood hcriticalK
 
 /-- Fully synchronized implication-SCC normal form.  In a counterexample,
 one fixed eventually-good prefix and one fully critical infinite binary
@@ -14951,6 +18950,113 @@ theorem additiveSupportFamily_three_card_two_target_eq
     rcases h₁ with h₁ | h₁ <;>
       rcases h₂ with h₂ | h₂ <;>
         fin_cases i <;> fin_cases j <;> simp_all <;> omega
+
+/-- In an order-three representation, two distinct support values determine
+the whole support.  The third tuple value is forced by subtracting the two
+common values from the target; this remains true when that third value
+repeats one of them and the support finset has cardinality two. -/
+theorem additiveSupportFamily_three_eq_of_two_common_points
+    {A : Set ℕ} {q : ℕ} {E F : Finset ℕ} {x y : ℕ}
+    (hER : E ∈ additiveSupportFamily A 3 q)
+    (hFR : F ∈ additiveSupportFamily A 3 q)
+    (hxE : x ∈ E) (hyE : y ∈ E)
+    (hxF : x ∈ F) (hyF : y ∈ F)
+    (hxy : x ≠ y) :
+    E = F := by
+  classical
+  obtain ⟨u, _huA, huE, hxyu⟩ :=
+    OrderThreeUniqueHitRepairChoice.exists_thirdSummand
+      hER hxE hyE hxy
+  obtain ⟨v, _hvA, hvF, hxyv⟩ :=
+    OrderThreeUniqueHitRepairChoice.exists_thirdSummand
+      hFR hxF hyF hxy
+  have huv : u = v := by omega
+  subst v
+  apply Finset.Subset.antisymm
+  · intro z hzE
+    by_cases hzx : z = x
+    · simpa [hzx] using hxF
+    by_cases hzy : z = y
+    · simpa [hzy] using hyF
+    have htripleSub : ({x, y, z} : Finset ℕ) ⊆ E := by
+      intro w hw
+      simp only [Finset.mem_insert, Finset.mem_singleton] at hw
+      rcases hw with rfl | rfl | rfl
+      · exact hxE
+      · exact hyE
+      · exact hzE
+    have htripleCard : ({x, y, z} : Finset ℕ).card = 3 := by
+      simp [hxy, hzx, hzy, Ne.symm hzx, Ne.symm hzy]
+    have hEcardUpper : E.card ≤ 3 :=
+      additiveSupportFamily_cardAtMost A 3 q E hER
+    have hEeq : E = {x, y, z} := by
+      exact (Finset.eq_of_subset_of_card_le htripleSub (by
+        simpa [htripleCard] using hEcardUpper)).symm
+    have hEsum :=
+      additiveSupportFamily_three_sum_eq_of_card_eq_three
+        hER (by rw [hEeq, htripleCard])
+    have hxyz : x + y + z = q := by
+      rw [hEeq] at hEsum
+      simpa [Finset.sum_insert, hxy, hzx, hzy,
+        Ne.symm hzx, Ne.symm hzy,
+        Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using hEsum
+    have hzu : z = u := by omega
+    exact hzu ▸ hvF
+  · intro z hzF
+    by_cases hzx : z = x
+    · simpa [hzx] using hxE
+    by_cases hzy : z = y
+    · simpa [hzy] using hyE
+    have htripleSub : ({x, y, z} : Finset ℕ) ⊆ F := by
+      intro w hw
+      simp only [Finset.mem_insert, Finset.mem_singleton] at hw
+      rcases hw with rfl | rfl | rfl
+      · exact hxF
+      · exact hyF
+      · exact hzF
+    have htripleCard : ({x, y, z} : Finset ℕ).card = 3 := by
+      simp [hxy, hzx, hzy, Ne.symm hzx, Ne.symm hzy]
+    have hFcardUpper : F.card ≤ 3 :=
+      additiveSupportFamily_cardAtMost A 3 q F hFR
+    have hFeq : F = {x, y, z} := by
+      exact (Finset.eq_of_subset_of_card_le htripleSub (by
+        simpa [htripleCard] using hFcardUpper)).symm
+    have hFsum :=
+      additiveSupportFamily_three_sum_eq_of_card_eq_three
+        hFR (by rw [hFeq, htripleCard])
+    have hxyz : x + y + z = q := by
+      rw [hFeq] at hFsum
+      simpa [Finset.sum_insert, hxy, hzx, hzy,
+        Ne.symm hzx, Ne.symm hzy,
+        Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using hFsum
+    have hzu : z = u := by omega
+    exact hzu ▸ huE
+
+/-- The two supports in the non-orientable wide residual coincide: their two
+distinct common points determine the third tuple value. -/
+theorem SpatialSharedExternalWideTraceWitness.supports_eq
+    {A C K : Set ℕ} {D : Finset ℕ} {n : ℕ}
+    (w : SpatialSharedExternalWideTraceWitness A C D K n) :
+    w.leftSupport = w.rightSupport :=
+  additiveSupportFamily_three_eq_of_two_common_points
+    w.left_mem w.right_mem
+      w.firstPoint_left w.secondPoint_left
+      w.firstPoint_right w.secondPoint_right w.points_ne
+
+/-- Consequently the common support in a shared-external wide residual
+avoids the entire reservoir.  Otherwise the same reservoir point would lie
+in both traces, contrary to their disjointness. -/
+theorem SpatialSharedExternalWideTraceWitness.leftSupport_disjoint_reservoir
+    {A C K : Set ℕ} {D : Finset ℕ} {n : ℕ}
+    (w : SpatialSharedExternalWideTraceWitness A C D K n) :
+    Disjoint (w.leftSupport : Set ℕ) C := by
+  rw [Set.disjoint_left]
+  intro z hzLeft hzC
+  have hzRight : z ∈ (w.rightSupport : Set ℕ) := by
+    rw [← w.supports_eq]
+    exact hzLeft
+  exact Set.disjoint_left.mp w.reservoir_traces_disjoint
+    ⟨hzLeft, hzC⟩ ⟨hzRight, hzC⟩
 
 /-- If an injective infinite family of order-three repairs all contains the
 same two-point set, then after thinning each repair has exactly one further
@@ -26460,6 +30566,6235 @@ theorem exists_infinite_binaryChoice_commonSurvival
           (Finset.mem_union_left _
             (Finset.mem_coe.mp (hsmy ▸ hzE)))
 
+/-- Infinitely many spatially separated traces contain an infinite matching
+whose targets survive every orientation of that matching.  Exact singleton
+tail traces give the two diagonal avoidance conditions; bounded support
+size supplies all cross-index avoidance after thinning. -/
+theorem infiniteSpatialSeparatedTraces_exist_commonSurvivalSubmatching
+    {A C K I : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hI : I.Infinite)
+    (hseparated : ∀ n ∈ I,
+      ∃ q, n ≤ q ∧
+        HasSeparatedSingletonTwoRepairTracesAlongAt
+          (additiveSupportFamily A 3) C
+            {x | ∃ i, x ∈ cell (n + i)} D
+              (fun i => cell (n + i)) q) :
+    ∃ q x y : ℕ → ℕ, ∃ E F : ℕ → Finset ℕ,
+      ∃ J : Set ℕ, J.Infinite ∧
+        (∀ n ∈ J, ∀ m ∈ J, n ≠ m →
+          Disjoint ({x n, y n} : Finset ℕ)
+            ({x m, y m} : Finset ℕ)) ∧
+        (∀ n ∈ J,
+          n ≤ q n ∧
+          E n ∈ additiveSupportFamily A 3 (q n) ∧
+          Disjoint (E n) D ∧
+          F n ∈ additiveSupportFamily A 3 (q n) ∧
+          Disjoint (F n) D ∧
+          Disjoint (((E n : Finset ℕ) : Set ℕ) ∩ C)
+            (((F n : Finset ℕ) : Set ℕ) ∩ C) ∧
+          x n ∈ {z | ∃ i, z ∈ cell (n + i)} ∧
+          y n ∈ {z | ∃ i, z ∈ cell (n + i)} ∧
+          x n ≠ y n) ∧
+        ∀ s : ℕ → ℕ,
+          (∀ n ∈ J, s n = x n ∨ s n = y n) →
+          ∀ n ∈ J, ∃ G ∈ additiveSupportFamily A 3 (q n),
+            Disjoint (G : Set ℕ) (s '' J) := by
+  classical
+  have hwitness : ∀ n, n ∈ I →
+      Nonempty (SpatialSeparatedTraceWitness A C D cell n) := by
+    intro n hn
+    obtain ⟨q, hnq, htrace⟩ := hseparated n hn
+    exact separatedTailTrace_has_spatialWitness P hnq htrace
+  let w : ∀ n, n ∈ I →
+      SpatialSeparatedTraceWitness A C D cell n :=
+    fun n hn => Classical.choice (hwitness n hn)
+  let q : ℕ → ℕ := fun n =>
+    if hn : n ∈ I then (w n hn).target else 0
+  let x : ℕ → ℕ := fun n =>
+    if hn : n ∈ I then (w n hn).leftPoint else 0
+  let y : ℕ → ℕ := fun n =>
+    if hn : n ∈ I then (w n hn).rightPoint else 0
+  let E : ℕ → Finset ℕ := fun n =>
+    if hn : n ∈ I then (w n hn).leftSupport else ∅
+  let F : ℕ → Finset ℕ := fun n =>
+    if hn : n ∈ I then (w n hn).rightSupport else ∅
+  have hxTail : ∀ n ∈ I,
+      x n ∈ {z | ∃ i, z ∈ cell (n + i)} := by
+    intro n hn
+    simpa only [x, dif_pos hn] using (w n hn).leftPoint_tail
+  have hyTail : ∀ n ∈ I,
+      y n ∈ {z | ∃ i, z ∈ cell (n + i)} := by
+    intro n hn
+    simpa only [y, dif_pos hn] using (w n hn).rightPoint_tail
+  obtain ⟨L, hLI, hL, hmatching⟩ :=
+    exists_infinite_pairwiseDisjoint_pairs_of_mem_binaryBlockTails_on
+      P hI x y hxTail hyTail
+  have hqLate : ∀ n ∈ L, n ≤ q n := by
+    intro n hn
+    have hnI := hLI hn
+    simpa only [q, dif_pos hnI] using (w n hnI).target_late
+  have hER : ∀ n ∈ L,
+      E n ∈ additiveSupportFamily A 3 (q n) := by
+    intro n hn
+    have hnI := hLI hn
+    simpa only [E, q, dif_pos hnI] using (w n hnI).left_mem
+  have hED : ∀ n ∈ L, Disjoint (E n) D := by
+    intro n hn
+    have hnI := hLI hn
+    simpa only [E, dif_pos hnI] using (w n hnI).left_disjoint
+  have hFR : ∀ n ∈ L,
+      F n ∈ additiveSupportFamily A 3 (q n) := by
+    intro n hn
+    have hnI := hLI hn
+    simpa only [F, q, dif_pos hnI] using (w n hnI).right_mem
+  have hFD : ∀ n ∈ L, Disjoint (F n) D := by
+    intro n hn
+    have hnI := hLI hn
+    simpa only [F, dif_pos hnI] using (w n hnI).right_disjoint
+  have hEFC : ∀ n ∈ L,
+      Disjoint ((E n : Set ℕ) ∩ C) ((F n : Set ℕ) ∩ C) := by
+    intro n hn
+    have hnI := hLI hn
+    simpa only [E, F, dif_pos hnI] using
+      (w n hnI).reservoir_traces_disjoint
+  have hxy : ∀ n ∈ L, x n ≠ y n := by
+    intro n hn
+    have hnI := hLI hn
+    simpa only [x, y, dif_pos hnI] using (w n hnI).points_ne
+  have hyNotE : ∀ n ∈ L, y n ∉ E n := by
+    intro n hn hyE
+    have hnI := hLI hn
+    have hyTrace : y n ∈
+        ((E n : Set ℕ) ∩ {z | ∃ i, z ∈ cell (n + i)}) :=
+      ⟨Finset.mem_coe.mpr hyE, hyTail n hnI⟩
+    have htrace : ((E n : Set ℕ) ∩
+        {z | ∃ i, z ∈ cell (n + i)}) = {x n} := by
+      simpa only [E, x, dif_pos hnI] using (w n hnI).left_trace
+    rw [htrace] at hyTrace
+    have hyx : y n = x n := by simpa using hyTrace
+    exact hxy n hn hyx.symm
+  have hxNotF : ∀ n ∈ L, x n ∉ F n := by
+    intro n hn hxF
+    have hnI := hLI hn
+    have hxTrace : x n ∈
+        ((F n : Set ℕ) ∩ {z | ∃ i, z ∈ cell (n + i)}) :=
+      ⟨Finset.mem_coe.mpr hxF, hxTail n hnI⟩
+    have htrace : ((F n : Set ℕ) ∩
+        {z | ∃ i, z ∈ cell (n + i)}) = {y n} := by
+      simpa only [F, y, dif_pos hnI] using (w n hnI).right_trace
+    rw [htrace] at hxTrace
+    have hxy' : x n = y n := by simpa using hxTrace
+    exact hxy n hn hxy'
+  obtain ⟨J, hJL, hJ, hcommon⟩ :=
+    exists_infinite_binaryChoice_commonSurvival
+      hL q x y hmatching E F hER hFR hyNotE hxNotF
+  refine ⟨q, x, y, E, F, J, hJ,
+    fun n hn m hm hnm =>
+      hmatching n (hJL hn) m (hJL hm) hnm,
+    ?_, hcommon⟩
+  intro n hn
+  have hnL := hJL hn
+  exact ⟨hqLate n hnL, hER n hnL, hED n hnL,
+    hFR n hnL, hFD n hnL, hEFC n hnL,
+    hxTail n (hLI hnL), hyTail n (hLI hnL), hxy n hnL⟩
+
+/-- Reindex an abstract common-survival matching as an honest binary block
+partition.  The lower bound `n ≤ q n` makes the reindexed target range
+infinite even though the matching indices need not be enumerated in order. -/
+theorem infiniteMatchingCommonSurvival_exists_binaryPartition
+    {A K J : Set ℕ}
+    (q x y : ℕ → ℕ)
+    (hJ : J.Infinite)
+    (hmatching : ∀ n ∈ J, ∀ m ∈ J, n ≠ m →
+      Disjoint ({x n, y n} : Finset ℕ)
+        ({x m, y m} : Finset ℕ))
+    (hxy : ∀ n ∈ J, x n ≠ y n)
+    (hxyK : ∀ n ∈ J, x n ∈ K ∧ y n ∈ K)
+    (hqLate : ∀ n ∈ J, n ≤ q n)
+    (hcommon : ∀ s : ℕ → ℕ,
+      (∀ n ∈ J, s n = x n ∨ s n = y n) →
+      ∀ n ∈ J, ∃ G ∈ additiveSupportFamily A 3 (q n),
+        Disjoint (G : Set ℕ) (s '' J)) :
+    ∃ K' : Set ℕ, ∃ pairCell : ℕ → Finset ℕ,
+      ∃ target : ℕ → ℕ,
+        K' ⊆ K ∧ K'.Infinite ∧
+        IsFiniteBlockPartition K' pairCell ∧
+        (∀ i, (pairCell i).card = 2) ∧
+        (Set.range target).Infinite ∧
+        ∀ sel : BlockSelector pairCell, ∀ i,
+          ∃ G ∈ additiveSupportFamily A 3 (target i),
+            Disjoint (G : Set ℕ) (selectedSet sel) := by
+  classical
+  letI : Infinite J := hJ.to_subtype
+  let e : ℕ ≃ J := Classical.choice (inferInstance : Nonempty (ℕ ≃ J))
+  let index : ℕ → ℕ := fun n => (e n).1
+  have hindexJ : ∀ n, index n ∈ J := fun n => (e n).2
+  have hindexInj : Function.Injective index := by
+    intro n m hnm
+    apply e.injective
+    exact Subtype.ext hnm
+  let pairCell : ℕ → Finset ℕ := fun n =>
+    {x (index n), y (index n)}
+  let K' : Set ℕ := {z | ∃ n, z ∈ pairCell n}
+  have P' : IsFiniteBlockPartition K' pairCell := by
+    refine ⟨?_, ?_, ?_⟩
+    · intro n
+      exact ⟨x (index n), by simp [pairCell]⟩
+    · intro n m hnm
+      exact hmatching (index n) (hindexJ n)
+        (index m) (hindexJ m) (fun hEq => hnm (hindexInj hEq))
+    · intro z
+      simp only [K', Set.mem_setOf_eq]
+  have hK'K : K' ⊆ K := by
+    rintro z ⟨n, hzn⟩
+    have hzCases : z = x (index n) ∨ z = y (index n) := by
+      simpa [pairCell] using hzn
+    rcases hzCases with rfl | rfl
+    · exact (hxyK (index n) (hindexJ n)).1
+    · exact (hxyK (index n) (hindexJ n)).2
+  have hxIndexInj : Function.Injective (fun n => x (index n)) := by
+    intro n m hxm
+    change x (index n) = x (index m) at hxm
+    by_contra hnm
+    have hdisj := hmatching (index n) (hindexJ n)
+      (index m) (hindexJ m) (fun hEq => hnm (hindexInj hEq))
+    have hleft : x (index n) ∈
+        ({x (index n), y (index n)} : Finset ℕ) := by simp
+    have hright : x (index n) ∈
+        ({x (index m), y (index m)} : Finset ℕ) := by
+      rw [hxm]
+      simp
+    exact Finset.disjoint_left.mp hdisj hleft hright
+  have hK' : K'.Infinite := by
+    apply (Set.infinite_range_of_injective hxIndexInj).mono
+    rintro z ⟨n, rfl⟩
+    exact ⟨n, by simp [pairCell]⟩
+  have hpairCard : ∀ n, (pairCell n).card = 2 := by
+    intro n
+    simp [pairCell, hxy (index n) (hindexJ n)]
+  let target : ℕ → ℕ := fun n => q (index n)
+  have htargetInfinite : (Set.range target).Infinite := by
+    apply Set.infinite_of_forall_exists_gt
+    intro N
+    have hindexRange : (Set.range index).Infinite :=
+      Set.infinite_range_of_injective hindexInj
+    obtain ⟨j, ⟨n, rfl⟩, hjN⟩ := hindexRange.exists_gt N
+    exact ⟨target n, ⟨n, rfl⟩,
+      hjN.trans_le (hqLate (index n) (hindexJ n))⟩
+  refine ⟨K', pairCell, target, hK'K, hK', P',
+    hpairCard, htargetInfinite, ?_⟩
+  intro sel i
+  let orient : ℕ → ℕ := fun j =>
+    if hj : j ∈ J then (sel (e.symm ⟨j, hj⟩)).1 else x j
+  have horient : ∀ j ∈ J,
+      orient j = x j ∨ orient j = y j := by
+    intro j hj
+    have hindexEq : index (e.symm ⟨j, hj⟩) = j := by
+      exact congrArg Subtype.val (e.apply_symm_apply ⟨j, hj⟩)
+    have hmem := (sel (e.symm ⟨j, hj⟩)).2
+    have hcases : (sel (e.symm ⟨j, hj⟩)).1 = x j ∨
+        (sel (e.symm ⟨j, hj⟩)).1 = y j := by
+      simpa [pairCell, hindexEq] using hmem
+    simpa [orient, hj] using hcases
+  obtain ⟨G, hGR, hGorient⟩ :=
+    hcommon orient horient (index i) (hindexJ i)
+  refine ⟨G, hGR, hGorient.mono_right ?_⟩
+  intro z hzSelected
+  obtain ⟨n, hsn⟩ := hzSelected
+  refine ⟨index n, hindexJ n, ?_⟩
+  have hsubtype : (⟨index n, hindexJ n⟩ : J) = e n := by
+    apply Subtype.ext
+    rfl
+  have hsymm : e.symm ⟨index n, hindexJ n⟩ = n := by
+    rw [hsubtype]
+    exact e.symm_apply_apply n
+  calc
+    orient (index n) =
+        (sel (e.symm ⟨index n, hindexJ n⟩)).1 := by
+      simp [orient, hindexJ n]
+    _ = (sel n).1 := by rw [hsymm]
+    _ = z := hsn
+
+/-- The separated branch of the migrated spatial trichotomy is therefore
+absorbed into a new infinite binary partition with an unbounded family of
+universally surviving targets. -/
+theorem infiniteSpatialSeparatedTraces_exist_binaryPartition_commonSurvivalTargets
+    {A C K I : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hI : I.Infinite)
+    (hseparated : ∀ n ∈ I,
+      ∃ q, n ≤ q ∧
+        HasSeparatedSingletonTwoRepairTracesAlongAt
+          (additiveSupportFamily A 3) C
+            {x | ∃ i, x ∈ cell (n + i)} D
+              (fun i => cell (n + i)) q) :
+    ∃ K' : Set ℕ, ∃ pairCell : ℕ → Finset ℕ,
+      ∃ target : ℕ → ℕ,
+        K' ⊆ K ∧ K'.Infinite ∧
+        IsFiniteBlockPartition K' pairCell ∧
+        (∀ i, (pairCell i).card = 2) ∧
+        (Set.range target).Infinite ∧
+        ∀ sel : BlockSelector pairCell, ∀ i,
+          ∃ G ∈ additiveSupportFamily A 3 (target i),
+            Disjoint (G : Set ℕ) (selectedSet sel) := by
+  obtain ⟨q, x, y, E, F, J, hJ, hmatching,
+      hwitness, hcommon⟩ :=
+    infiniteSpatialSeparatedTraces_exist_commonSurvivalSubmatching
+      P hI hseparated
+  have hxy : ∀ n ∈ J, x n ≠ y n :=
+    fun n hn => (hwitness n hn).2.2.2.2.2.2.2.2
+  have hxyK : ∀ n ∈ J, x n ∈ K ∧ y n ∈ K := by
+    intro n hn
+    have hxTail := (hwitness n hn).2.2.2.2.2.2.1
+    have hyTail := (hwitness n hn).2.2.2.2.2.2.2.1
+    constructor
+    · obtain ⟨i, hxi⟩ := hxTail
+      exact (P.mem_iff (x n)).mpr ⟨n + i, hxi⟩
+    · obtain ⟨i, hyi⟩ := hyTail
+      exact (P.mem_iff (y n)).mpr ⟨n + i, hyi⟩
+  exact infiniteMatchingCommonSurvival_exists_binaryPartition
+    q x y hJ hmatching hxy hxyK
+      (fun n hn => (hwitness n hn).1) hcommon
+
+/-- The opposed-unit spatial branch yields an actual infinite candidate
+deletion.  Orient every complementary cell toward the first unit endpoint;
+the recorded repair for the second unit target avoids that endpoint on the
+diagonal, and bounded cross-avoidance makes it avoid all other chosen
+endpoints after thinning. -/
+theorem infiniteSpatialOpposedExternalUnits_exists_infiniteCandidateDeletion
+    {A C K I : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hI : I.Infinite)
+    (hunits : ∀ n ∈ I,
+      ∃ Q : Finset ℕ,
+        ∃ htailCard : ∀ i, (cell (n + i)).card = 2,
+          ∃ data : ∀ q : {q // q ∈ Q},
+              ExternalNarrowTraceClauseData
+                (additiveSupportFamily A 3) C
+                  {x | ∃ i, x ∈ cell (n + i)} D
+                    (fun i => cell (n + i)) q.1,
+            (∀ q ∈ Q, n ≤ q) ∧
+              HasOpposedExternalUnitAdditiveImplicationEdges
+                A C {x | ∃ i, x ∈ cell (n + i)} D Q
+                  (fun i => cell (n + i)) htailCard data) :
+    ∃ B, B ⊆ K ∧ B ⊆ A ∧ B.Infinite ∧
+      ∃ J : Set ℕ,
+        ∃ blockedTarget survivingTarget x y : ℕ → ℕ,
+          ∃ repair : ℕ → Finset ℕ,
+            J.Infinite ∧ B = x '' J ∧ Set.InjOn x J ∧
+            ∀ n ∈ J,
+              n ≤ blockedTarget n ∧
+              n ≤ survivingTarget n ∧
+              blockedTarget n ≠ survivingTarget n ∧
+              x n ∈ K ∧ y n ∈ K ∧ x n ≠ y n ∧
+              repair n ∈
+                additiveSupportFamily A 3 (survivingTarget n) ∧
+              Disjoint (repair n) D ∧
+              Disjoint (repair n : Set ℕ) B := by
+  classical
+  have hwitness : ∀ n, n ∈ I →
+      Nonempty (SpatialOpposedUnitSurvivingRepairWitness
+        A D {x | ∃ i, x ∈ cell (n + i)} n) := by
+    intro n hn
+    obtain ⟨Q, htailCard, data, hQlate, hunit⟩ := hunits n hn
+    exact opposedExternalUnits_have_spatialSurvivingRepairWitness
+      hQlate hunit
+  let w : ∀ n, n ∈ I →
+      SpatialOpposedUnitSurvivingRepairWitness
+        A D {x | ∃ i, x ∈ cell (n + i)} n :=
+    fun n hn => Classical.choice (hwitness n hn)
+  let blockedTarget : ℕ → ℕ := fun n =>
+    if hn : n ∈ I then (w n hn).blockedTarget else 0
+  let survivingTarget : ℕ → ℕ := fun n =>
+    if hn : n ∈ I then (w n hn).survivingTarget else 0
+  let x : ℕ → ℕ := fun n =>
+    if hn : n ∈ I then (w n hn).deletedPoint else 0
+  let y : ℕ → ℕ := fun n =>
+    if hn : n ∈ I then (w n hn).tracePoint else 0
+  let repair : ℕ → Finset ℕ := fun n =>
+    if hn : n ∈ I then (w n hn).repair else ∅
+  have hxTail : ∀ n ∈ I,
+      x n ∈ {z | ∃ i, z ∈ cell (n + i)} := by
+    intro n hn
+    simpa only [x, dif_pos hn] using (w n hn).deletedPoint_mem
+  have hyTail : ∀ n ∈ I,
+      y n ∈ {z | ∃ i, z ∈ cell (n + i)} := by
+    intro n hn
+    simpa only [y, dif_pos hn] using (w n hn).tracePoint_mem
+  obtain ⟨L, hLI, hL, hmatching⟩ :=
+    exists_infinite_pairwiseDisjoint_pairs_of_mem_binaryBlockTails_on
+      P hI x y hxTail hyTail
+  have hrepairMem : ∀ n ∈ L,
+      repair n ∈ additiveSupportFamily A 3 (survivingTarget n) := by
+    intro n hn
+    have hnI := hLI hn
+    simpa only [repair, survivingTarget, dif_pos hnI] using
+      (w n hnI).repair_mem
+  have hrepairDisjoint : ∀ n ∈ L, Disjoint (repair n) D := by
+    intro n hn
+    have hnI := hLI hn
+    simpa only [repair, dif_pos hnI] using
+      (w n hnI).repair_disjoint
+  have hrepairCard : ∀ n ∈ L, (repair n).card ≤ 3 := by
+    intro n hn
+    exact additiveSupportFamily_cardAtMost A 3
+      (survivingTarget n) (repair n) (hrepairMem n hn)
+  have hxy : ∀ n ∈ L, x n ≠ y n := by
+    intro n hn
+    have hnI := hLI hn
+    simpa only [x, y, dif_pos hnI] using (w n hnI).points_ne
+  have hxNotRepair : ∀ n ∈ L, x n ∉ repair n := by
+    intro n hn hxRepair
+    have hnI := hLI hn
+    have hxTrace : x n ∈
+        ((repair n : Set ℕ) ∩
+          {z | ∃ i, z ∈ cell (n + i)}) :=
+      ⟨Finset.mem_coe.mpr hxRepair, hxTail n hnI⟩
+    have htrace : ((repair n : Set ℕ) ∩
+        {z | ∃ i, z ∈ cell (n + i)}) = {y n} := by
+      simpa only [repair, y, dif_pos hnI] using
+        (w n hnI).repair_trace
+    rw [htrace] at hxTrace
+    have hxy' : x n = y n := by simpa using hxTrace
+    exact hxy n hn hxy'
+  obtain ⟨J, hJL, hJ, B, hBimage, hB,
+      hxInj, hrepairB⟩ :=
+    exists_infinite_orientedMatchingDeletion_avoiding_supports
+      hL x y hmatching repair 3 hrepairCard hxNotRepair
+  have hBK : B ⊆ K := by
+    rw [hBimage]
+    rintro z ⟨n, hnJ, rfl⟩
+    have hnI := hLI (hJL hnJ)
+    obtain ⟨i, hxi⟩ := hxTail n hnI
+    exact (P.mem_iff (x n)).mpr ⟨n + i, hxi⟩
+  refine ⟨B, hBK, hBK.trans hKA, hB, J,
+    blockedTarget, survivingTarget, x, y, repair,
+    hJ, hBimage, hxInj, ?_⟩
+  intro n hnJ
+  have hnL := hJL hnJ
+  have hnI := hLI hnL
+  have hxK : x n ∈ K := by
+    obtain ⟨i, hxi⟩ := hxTail n hnI
+    exact (P.mem_iff (x n)).mpr ⟨n + i, hxi⟩
+  have hyK : y n ∈ K := by
+    obtain ⟨i, hyi⟩ := hyTail n hnI
+    exact (P.mem_iff (y n)).mpr ⟨n + i, hyi⟩
+  have hblockedLate : n ≤ blockedTarget n := by
+    simpa only [blockedTarget, dif_pos hnI] using
+      (w n hnI).blockedTarget_late
+  have hsurvivingLate : n ≤ survivingTarget n := by
+    simpa only [survivingTarget, dif_pos hnI] using
+      (w n hnI).survivingTarget_late
+  have htargetsNe : blockedTarget n ≠ survivingTarget n := by
+    simpa only [blockedTarget, survivingTarget, dif_pos hnI] using
+      (w n hnI).targets_ne
+  exact ⟨hblockedLate, hsurvivingLate, htargetsNe,
+    hxK, hyK, hxy n hnL, hrepairMem n hnL,
+    hrepairDisjoint n hnL, hrepairB n hnJ⟩
+
+/-- Common set-valued output of the separated and opposed-unit spatial
+branches: an infinite candidate deletion together with an unbounded indexed
+family of order-three supports which already survives it. -/
+def HasInfiniteCandidateDeletionWithLateSurvivingRepairs
+    (A K : Set ℕ) : Prop :=
+  ∃ B, B ⊆ K ∧ B ⊆ A ∧ B.Infinite ∧
+    ∃ J : Set ℕ, ∃ target : ℕ → ℕ,
+      ∃ repair : ℕ → Finset ℕ,
+        J.Infinite ∧
+        ∀ n ∈ J, n ≤ target n ∧
+          repair n ∈ additiveSupportFamily A 3 (target n) ∧
+          Disjoint (repair n : Set ℕ) B
+
+/-- Exact, non-reservoir version of a candidate deletion.  Unlike the
+set-valued candidate predicate, this records that the displayed set itself
+is the infinite deletion avoided by the unbounded repair stream. -/
+def IsInfiniteCandidateDeletionWithLateSurvivingRepairs
+    (A B : Set ℕ) : Prop :=
+  B ⊆ A ∧ B.Infinite ∧
+    ∃ J : Set ℕ, ∃ target : ℕ → ℕ,
+      ∃ repair : ℕ → Finset ℕ,
+        J.Infinite ∧
+        ∀ n ∈ J, n ≤ target n ∧
+          repair n ∈ additiveSupportFamily A 3 (target n) ∧
+          Disjoint (repair n : Set ℕ) B
+
+/-- An exact candidate can be viewed as a set-valued candidate in any
+reservoir containing its deletion. -/
+theorem IsInfiniteCandidateDeletionWithLateSurvivingRepairs.to_candidate
+    {A B K : Set ℕ}
+    (h : IsInfiniteCandidateDeletionWithLateSurvivingRepairs A B)
+    (hBK : B ⊆ K) :
+    HasInfiniteCandidateDeletionWithLateSurvivingRepairs A K := by
+  obtain ⟨hBA, hB, J, target, repair, hJ, hrepair⟩ := h
+  exact ⟨B, hBK, hBA, hB, J, target, repair, hJ, hrepair⟩
+
+/-- A candidate deletion remains one when its ambient reservoir is enlarged.
+Only the first subset field depends on that ambient set. -/
+theorem HasInfiniteCandidateDeletionWithLateSurvivingRepairs.mono_reservoir
+    {A K L : Set ℕ}
+    (h : HasInfiniteCandidateDeletionWithLateSurvivingRepairs A K)
+    (hKL : K ⊆ L) :
+    HasInfiniteCandidateDeletionWithLateSurvivingRepairs A L := by
+  obtain ⟨B, hBK, hBA, hB, J, target, repair, hJ, hrepair⟩ := h
+  exact ⟨B, hBK.trans hKL, hBA, hB,
+    J, target, repair, hJ, hrepair⟩
+
+/-- The only non-orientable wide-trace residual: on infinitely many spatial
+tails the two supplied repairs share two distinct tail points, necessarily
+outside the reservoir `C` on which their traces are disjoint. -/
+def HasInfiniteSpatialSharedExternalWideTraceFamily
+    (A C : Set ℕ) (D : Finset ℕ) (cell : ℕ → Finset ℕ) : Prop :=
+  ∃ I : Set ℕ, I.Infinite ∧ ∀ n ∈ I,
+    Nonempty (SpatialSharedExternalWideTraceWitness
+      A C D {x | ∃ i, x ∈ cell (n + i)} n)
+
+/-- A shared-external wide family cannot occur when the binary partition
+itself lies in `C`: its first common tail point would be simultaneously in
+and outside `C`. -/
+theorem not_infiniteSpatialSharedExternalWideTraceFamily_of_partition_subset
+    {A C K : Set ℕ} {D : Finset ℕ} {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hKC : K ⊆ C) :
+    ¬ HasInfiniteSpatialSharedExternalWideTraceFamily
+      A C D cell := by
+  rintro ⟨I, hI, hwitness⟩
+  obtain ⟨n, hn⟩ := hI.nonempty
+  obtain ⟨w⟩ := hwitness n hn
+  apply w.firstPoint_external
+  apply hKC
+  apply (P.mem_iff w.firstPoint).mpr
+  obtain ⟨i, hi⟩ := w.firstPoint_mem
+  exact ⟨n + i, hi⟩
+
+/-- The shared-external residual is already a candidate deletion: delete
+the infinite reservoir `C` itself.  Additive uniqueness makes the two
+nominal repairs equal, and trace disjointness then says that common repair
+avoids all of `C` at arbitrarily late targets. -/
+theorem infiniteSpatialSharedExternalWideTraceFamily_has_candidateDeletionWithLateSurvivingRepairs
+    {A C : Set ℕ} {D : Finset ℕ} {cell : ℕ → Finset ℕ}
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hshared : HasInfiniteSpatialSharedExternalWideTraceFamily
+      A C D cell) :
+    HasInfiniteCandidateDeletionWithLateSurvivingRepairs A A := by
+  classical
+  obtain ⟨I, hI, hwitness⟩ := hshared
+  let w : ∀ n, n ∈ I →
+      SpatialSharedExternalWideTraceWitness
+        A C D {x | ∃ i, x ∈ cell (n + i)} n :=
+    fun n hn => Classical.choice (hwitness n hn)
+  let target : ℕ → ℕ := fun n =>
+    if hn : n ∈ I then (w n hn).target else 0
+  let repair : ℕ → Finset ℕ := fun n =>
+    if hn : n ∈ I then (w n hn).leftSupport else ∅
+  refine ⟨C, hCA, hCA, hC, I, target, repair, hI, ?_⟩
+  intro n hn
+  exact ⟨by
+      simpa only [target, dif_pos hn] using (w n hn).target_late,
+    by
+      simpa only [target, repair, dif_pos hn] using
+        (w n hn).left_mem,
+    by
+      simpa only [repair, dif_pos hn] using
+        (w n hn).leftSupport_disjoint_reservoir⟩
+
+/-- The common-survival submatching in the separated branch yields the
+common candidate-deletion package by choosing one fixed orientation. -/
+theorem infiniteSpatialSeparatedTraces_have_candidateDeletionWithLateSurvivingRepairs
+    {A C K I : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hI : I.Infinite)
+    (hseparated : ∀ n ∈ I,
+      ∃ q, n ≤ q ∧
+        HasSeparatedSingletonTwoRepairTracesAlongAt
+          (additiveSupportFamily A 3) C
+            {x | ∃ i, x ∈ cell (n + i)} D
+              (fun i => cell (n + i)) q) :
+    HasInfiniteCandidateDeletionWithLateSurvivingRepairs A K := by
+  classical
+  obtain ⟨q, x, y, E, F, J, hJ, hmatching,
+      hwitness, hcommon⟩ :=
+    infiniteSpatialSeparatedTraces_exist_commonSurvivalSubmatching
+      P hI hseparated
+  have hxInj : Set.InjOn x J := by
+    intro n hn m hm hxm
+    by_contra hnm
+    have hdisjoint := hmatching n hn m hm hnm
+    have hleft : x n ∈ ({x n, y n} : Finset ℕ) := by simp
+    have hright : x n ∈ ({x m, y m} : Finset ℕ) := by
+      rw [hxm]
+      simp
+    exact Finset.disjoint_left.mp hdisjoint hleft hright
+  let B : Set ℕ := x '' J
+  have hB : B.Infinite := hJ.image hxInj
+  have hBK : B ⊆ K := by
+    rintro z ⟨n, hnJ, rfl⟩
+    have hxTail := (hwitness n hnJ).2.2.2.2.2.2.1
+    obtain ⟨i, hxi⟩ := hxTail
+    exact (P.mem_iff (x n)).mpr ⟨n + i, hxi⟩
+  have hsurvive : ∀ n ∈ J,
+      ∃ G ∈ additiveSupportFamily A 3 (q n),
+        Disjoint (G : Set ℕ) B := by
+    intro n hn
+    exact hcommon x (fun _ _ => Or.inl rfl) n hn
+  let repair : ℕ → Finset ℕ := fun n =>
+    if hn : n ∈ J then Classical.choose (hsurvive n hn) else ∅
+  have hrepair : ∀ n ∈ J,
+      repair n ∈ additiveSupportFamily A 3 (q n) ∧
+        Disjoint (repair n : Set ℕ) B := by
+    intro n hn
+    simpa only [repair, dif_pos hn] using
+      Classical.choose_spec (hsurvive n hn)
+  exact ⟨B, hBK, hBK.trans hKA, hB, J, q, repair, hJ,
+    fun n hn => ⟨(hwitness n hn).1,
+      (hrepair n hn).1, (hrepair n hn).2⟩⟩
+
+/-- The candidate deletion constructed from opposed units forgets its extra
+blocked-target labels to give the same common package. -/
+theorem infiniteSpatialOpposedExternalUnits_have_candidateDeletionWithLateSurvivingRepairs
+    {A C K I : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hI : I.Infinite)
+    (hunits : ∀ n ∈ I,
+      ∃ Q : Finset ℕ,
+        ∃ htailCard : ∀ i, (cell (n + i)).card = 2,
+          ∃ data : ∀ q : {q // q ∈ Q},
+              ExternalNarrowTraceClauseData
+                (additiveSupportFamily A 3) C
+                  {x | ∃ i, x ∈ cell (n + i)} D
+                    (fun i => cell (n + i)) q.1,
+            (∀ q ∈ Q, n ≤ q) ∧
+              HasOpposedExternalUnitAdditiveImplicationEdges
+                A C {x | ∃ i, x ∈ cell (n + i)} D Q
+                  (fun i => cell (n + i)) htailCard data) :
+    HasInfiniteCandidateDeletionWithLateSurvivingRepairs A K := by
+  obtain ⟨B, hBK, hBA, hB, J, _blockedTarget,
+      survivingTarget, _x, _y, repair, hJ, _hBimage,
+      _hxInj, hsurvive⟩ :=
+    infiniteSpatialOpposedExternalUnits_exists_infiniteCandidateDeletion
+      hKA P hI hunits
+  exact ⟨B, hBK, hBA, hB, J, survivingTarget, repair, hJ,
+    fun n hn => ⟨(hsurvive n hn).2.1,
+      (hsurvive n hn).2.2.2.2.2.2.1,
+      (hsurvive n hn).2.2.2.2.2.2.2.2⟩⟩
+
+/-- An infinite spatial family of wide supplied repairs is orientable on an
+infinite subfamily, yielding a candidate deletion, unless an infinite
+subfamily has the explicit shared two-point external core. -/
+theorem infiniteSpatialWideTraces_have_candidateDeletion_or_sharedExternalWideFamily
+    {A C K I : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hI : I.Infinite)
+    (hwide : ∀ n ∈ I,
+      ∃ q, n ≤ q ∧
+        HasWideTwoRepairTraceAlongAt
+          (additiveSupportFamily A 3) C
+            {x | ∃ i, x ∈ cell (n + i)} D q) :
+    HasInfiniteCandidateDeletionWithLateSurvivingRepairs A K ∨
+      HasInfiniteSpatialSharedExternalWideTraceFamily
+        A C D cell := by
+  classical
+  let Orientable : ℕ → Prop := fun n =>
+    Nonempty (SpatialOrientableWideTraceWitness
+      A D {x | ∃ i, x ∈ cell (n + i)} n)
+  let Shared : ℕ → Prop := fun n =>
+    Nonempty (SpatialSharedExternalWideTraceWitness
+      A C D {x | ∃ i, x ∈ cell (n + i)} n)
+  have hcover : ∀ n, n ∈ I → Orientable n ∨ Shared n := by
+    intro n hn
+    obtain ⟨q, hnq, hqWide⟩ := hwide n hn
+    exact wideTwoRepairTraceAlong_has_orientable_or_sharedExternalWitness
+      hnq hqWide
+  let OrientableIndex : Set ℕ := {n | n ∈ I ∧ Orientable n}
+  by_cases hOrientable : OrientableIndex.Infinite
+  · left
+    have hOI : OrientableIndex ⊆ I := fun _ hn => hn.1
+    have hwitness : ∀ n, n ∈ OrientableIndex →
+        Nonempty (SpatialOrientableWideTraceWitness
+          A D {x | ∃ i, x ∈ cell (n + i)} n) := by
+      intro n hn
+      exact hn.2
+    let w : ∀ n, n ∈ OrientableIndex →
+        SpatialOrientableWideTraceWitness
+          A D {x | ∃ i, x ∈ cell (n + i)} n :=
+      fun n hn => Classical.choice (hwitness n hn)
+    let target : ℕ → ℕ := fun n =>
+      if hn : n ∈ OrientableIndex then (w n hn).target else 0
+    let x : ℕ → ℕ := fun n =>
+      if hn : n ∈ OrientableIndex then
+        (w n hn).deletedPoint else 0
+    let y : ℕ → ℕ := fun n =>
+      if hn : n ∈ OrientableIndex then
+        (w n hn).companionPoint else 0
+    let repair : ℕ → Finset ℕ := fun n =>
+      if hn : n ∈ OrientableIndex then (w n hn).repair else ∅
+    have hxTail : ∀ n ∈ OrientableIndex,
+        x n ∈ {z | ∃ i, z ∈ cell (n + i)} := by
+      intro n hn
+      simpa only [x, dif_pos hn] using (w n hn).deletedPoint_mem
+    have hyTail : ∀ n ∈ OrientableIndex,
+        y n ∈ {z | ∃ i, z ∈ cell (n + i)} := by
+      intro n hn
+      simpa only [y, dif_pos hn] using (w n hn).companionPoint_mem
+    obtain ⟨L, hLO, hL, hmatching⟩ :=
+      exists_infinite_pairwiseDisjoint_pairs_of_mem_binaryBlockTails_on
+        P hOrientable x y hxTail hyTail
+    have hrepairMem : ∀ n ∈ L,
+        repair n ∈ additiveSupportFamily A 3 (target n) := by
+      intro n hn
+      have hnO := hLO hn
+      simpa only [repair, target, dif_pos hnO] using
+        (w n hnO).repair_mem
+    have hrepairCard : ∀ n ∈ L, (repair n).card ≤ 3 := by
+      intro n hn
+      exact additiveSupportFamily_cardAtMost A 3
+        (target n) (repair n) (hrepairMem n hn)
+    have hxNotRepair : ∀ n ∈ L, x n ∉ repair n := by
+      intro n hn
+      have hnO := hLO hn
+      simpa only [x, repair, dif_pos hnO] using
+        (w n hnO).deletedPoint_not_mem
+    obtain ⟨J, hJL, hJ, B, hBimage, hB,
+        _hxInj, hrepairB⟩ :=
+      exists_infinite_orientedMatchingDeletion_avoiding_supports
+        hL x y hmatching repair 3 hrepairCard hxNotRepair
+    have hBK : B ⊆ K := by
+      rw [hBimage]
+      rintro z ⟨n, hnJ, rfl⟩
+      have hnO := hLO (hJL hnJ)
+      obtain ⟨i, hxi⟩ := hxTail n hnO
+      exact (P.mem_iff (x n)).mpr ⟨n + i, hxi⟩
+    refine ⟨B, hBK, hBK.trans hKA, hB,
+      J, target, repair, hJ, ?_⟩
+    intro n hnJ
+    have hnL := hJL hnJ
+    have hnO := hLO hnL
+    have htargetLate : n ≤ target n := by
+      simpa only [target, dif_pos hnO] using (w n hnO).target_late
+    exact ⟨htargetLate, hrepairMem n hnL, hrepairB n hnJ⟩
+  · right
+    have hOrientableFinite : OrientableIndex.Finite :=
+      Set.not_infinite.mp hOrientable
+    let SharedIndex : Set ℕ := I \ OrientableIndex
+    have hSharedIndex : SharedIndex.Infinite :=
+      hI.diff hOrientableFinite
+    refine ⟨SharedIndex, hSharedIndex, ?_⟩
+    intro n hn
+    rcases hcover n hn.1 with horientable | hshared
+    · exact (hn.2 ⟨hn.1, horientable⟩).elim
+    · exact hshared
+
+/-- Final spatial reduction of the mixed finite-certificate bridge.  The
+separated and opposed-unit alternatives both construct the same infinite
+candidate deletion with unbounded surviving repairs.  The only branch not
+yet absorbed into such a set-valued output is an infinite family of wide
+supports migrating through the block tails. -/
+theorem strongDeletion_eventuallyGoodPrefix_forces_infiniteSpatialWide_or_candidateDeletionWithLateSurvivingRepairs
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D) :
+    (∃ I : Set ℕ, I.Infinite ∧ ∀ n ∈ I,
+      ∃ q, n ≤ q ∧
+        HasWideReservoirSupportAt
+          (additiveSupportFamily A 3)
+            {x | ∃ i, x ∈ cell (n + i)} q) ∨
+      HasInfiniteCandidateDeletionWithLateSurvivingRepairs A K := by
+  rcases
+      strongDeletion_eventuallyGoodPrefix_forces_infiniteSpatialWide_or_separatedTrace_or_opposedExternalUnits
+        hstrong hKA P hcellCard hgood with
+    hwide | hseparated | hunits
+  · exact Or.inl hwide
+  · obtain ⟨I, hI, hsep⟩ := hseparated
+    exact Or.inr
+      (infiniteSpatialSeparatedTraces_have_candidateDeletionWithLateSurvivingRepairs
+        hKA P hI hsep)
+  · obtain ⟨I, hI, hunit⟩ := hunits
+    exact Or.inr
+      (infiniteSpatialOpposedExternalUnits_have_candidateDeletionWithLateSurvivingRepairs
+        hKA P hI hunit)
+
+/-- Repair-pair-preserving version of the final spatial reduction.  In the
+remaining wide branch, the migrating wide support is itself one member of a
+prefix-avoiding repair pair whose traces are disjoint on `C`. -/
+theorem strongDeletion_eventuallyGoodPrefix_forces_infiniteSpatialWideTrace_or_candidateDeletionWithLateSurvivingRepairs
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D) :
+    (∃ I : Set ℕ, I.Infinite ∧ ∀ n ∈ I,
+      ∃ q, n ≤ q ∧
+        HasWideTwoRepairTraceAlongAt
+          (additiveSupportFamily A 3) C
+            {x | ∃ i, x ∈ cell (n + i)} D q) ∨
+      HasInfiniteCandidateDeletionWithLateSurvivingRepairs A K := by
+  let Wide : ℕ → Prop := fun n =>
+    ∃ q, n ≤ q ∧
+      HasWideTwoRepairTraceAlongAt
+        (additiveSupportFamily A 3) C
+          {x | ∃ i, x ∈ cell (n + i)} D q
+  let Separated : ℕ → Prop := fun n =>
+    ∃ q, n ≤ q ∧
+      HasSeparatedSingletonTwoRepairTracesAlongAt
+        (additiveSupportFamily A 3) C
+          {x | ∃ i, x ∈ cell (n + i)} D
+            (fun i => cell (n + i)) q
+  let Units : ℕ → Prop := fun n =>
+    ∃ Q : Finset ℕ,
+      ∃ htailCard : ∀ i, (cell (n + i)).card = 2,
+        ∃ data : ∀ q : {q // q ∈ Q},
+            ExternalNarrowTraceClauseData
+              (additiveSupportFamily A 3) C
+                {x | ∃ i, x ∈ cell (n + i)} D
+                  (fun i => cell (n + i)) q.1,
+          (∀ q ∈ Q, n ≤ q) ∧
+            HasOpposedExternalUnitAdditiveImplicationEdges
+              A C {x | ∃ i, x ∈ cell (n + i)} D Q
+                (fun i => cell (n + i)) htailCard data
+  have hcover : ∀ n, Wide n ∨ Separated n ∨ Units n := by
+    intro n
+    exact
+      strongDeletion_eventuallyGoodPrefix_forces_spatialTailWideTrace_or_separatedTrace_or_opposedExternalUnits
+        hstrong hKA P hcellCard hgood n n
+  rcases exists_infinite_subfamily_of_three_way_cover
+      Wide Separated Units hcover with hwide | hsep | hunit
+  · exact Or.inl (by simpa only [Wide] using hwide)
+  · obtain ⟨I, hI, hseparated⟩ := hsep
+    exact Or.inr
+      (infiniteSpatialSeparatedTraces_have_candidateDeletionWithLateSurvivingRepairs
+        hKA P hI (by simpa only [Separated] using hseparated))
+  · obtain ⟨I, hI, hunits⟩ := hunit
+    exact Or.inr
+      (infiniteSpatialOpposedExternalUnits_have_candidateDeletionWithLateSurvivingRepairs
+        hKA P hI (by simpa only [Units] using hunits))
+
+/-- Compact endpoint of the spatial mixed-clause bridge.  An infinite wide
+trace family can itself be oriented into the same candidate deletion unless
+the two supplied repairs share two distinct external tail points on an
+infinite subfamily.  Thus all separated, opposed-unit, and orientable-wide
+outcomes have now been absorbed into one set-valued conclusion. -/
+theorem strongDeletion_eventuallyGoodPrefix_forces_candidateDeletionWithLateSurvivingRepairs_or_infiniteSpatialSharedExternalWideTraceFamily
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D) :
+    HasInfiniteCandidateDeletionWithLateSurvivingRepairs A K ∨
+      HasInfiniteSpatialSharedExternalWideTraceFamily
+        A C D cell := by
+  rcases
+      strongDeletion_eventuallyGoodPrefix_forces_infiniteSpatialWideTrace_or_candidateDeletionWithLateSurvivingRepairs
+        hstrong hKA P hcellCard hgood with hwide | hcandidate
+  · obtain ⟨I, hI, hwide⟩ := hwide
+    exact infiniteSpatialWideTraces_have_candidateDeletion_or_sharedExternalWideFamily
+      hKA P hI hwide
+  · exact Or.inl hcandidate
+
+/-- On a binary reservoir contained in `C`, the shared-external alternative
+is contradictory.  Hence the spatial finite-certificate bridge produces a
+candidate deletion inside that same critical reservoir. -/
+theorem strongDeletion_eventuallyGoodPrefix_forces_candidateDeletionWithLateSurvivingRepairs_on_reservoir
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A)
+    (hKA : K ⊆ A)
+    (hKC : K ⊆ C)
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D) :
+    HasInfiniteCandidateDeletionWithLateSurvivingRepairs A K := by
+  rcases
+      strongDeletion_eventuallyGoodPrefix_forces_candidateDeletionWithLateSurvivingRepairs_or_infiniteSpatialSharedExternalWideTraceFamily
+        hstrong hKA P hcellCard hgood with hcandidate | hshared
+  · exact hcandidate
+  · exact
+      (not_infiniteSpatialSharedExternalWideTraceFamily_of_partition_subset
+        P hKC hshared).elim
+
+/-- Information-preserving version of the candidate deletion for a fully
+critical reservoir.  Every selected point is still a recurrently bad
+one-point extension of the same finite prefix, while one common infinite
+set of late order-three repairs avoids all selected points. -/
+def HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+    (A C K : Set ℕ) (D : Finset ℕ) : Prop :=
+  ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+    (∀ b ∈ B,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+    ∃ J : Set ℕ, ∃ target : ℕ → ℕ,
+      ∃ repair : ℕ → Finset ℕ,
+        J.Infinite ∧
+        ∀ n ∈ J, n ≤ target n ∧
+          repair n ∈ additiveSupportFamily A 3 (target n) ∧
+          Disjoint (repair n : Set ℕ) B
+
+/-- Forget the recurrent-prefix labels of a critical candidate while
+retaining its location inside the current reservoir. -/
+theorem HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs.to_candidateDeletionWithLateSurvivingRepairs
+    {A C K : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+      A C K D) :
+    HasInfiniteCandidateDeletionWithLateSurvivingRepairs A K := by
+  obtain ⟨B, hBK, _hBC, hBA, hB, _hcritical,
+      J, target, repair, hJ, hrepair⟩ := h
+  exact ⟨B, hBK, hBA, hB, J, target, repair, hJ, hrepair⟩
+
+/-- Semantic frontier attached to one critical deletion.  Its order-three
+sumset has infinitely many represented and infinitely many unrepresented
+targets, and the two target sets are disjoint by definition. -/
+def HasInfiniteCriticalSurvivalDestructionSplit
+    (A C K : Set ℕ) (D : Finset ℕ) : Prop :=
+  ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+    (∀ b ∈ B,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+    ∃ S T : Set ℕ,
+      S.Infinite ∧ T.Infinite ∧ Disjoint S T ∧
+      (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+        Disjoint (G : Set ℕ) B) ∧
+      ∀ q ∈ T,
+        DestroysAt (additiveSupportFamily A 3) B q
+
+/-- Additive form of the critical split.  The destroyed stream is thinned
+past the order-two basis threshold.  Every one of its targets is external
+to `A`, every order-two support crosses the fixed deletion boundary, and
+there is consequently a concrete equation `q = b + c` with `b` deleted and
+`c` retained. -/
+def HasInfiniteCriticalExternalCrossingSplit
+    (A C K : Set ℕ) (D : Finset ℕ) : Prop :=
+  ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+    (∀ b ∈ B,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+    HasDirectTripleRepairsForDeletedPairs A B ∧
+    ∃ S T : Set ℕ,
+      S.Infinite ∧ T.Infinite ∧ Disjoint S T ∧
+      (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+        Disjoint (G : Set ℕ) B) ∧
+      ∀ q ∈ T,
+        q ∉ A ∧
+        DestroysAt (additiveSupportFamily A 3) B q ∧
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B ∧ ¬ (E : Set ℕ) ⊆ B) ∧
+        ∃ b ∈ B, ∃ c ∈ A \ B, b + c = q
+
+/-- Fully expanded additive obstruction attached to the critical split.
+Every destroyed target is a sum `q = b + c` across the deletion boundary;
+the deleted zero-atom `b` has a retained three-term repair `x+y+z`, but none
+of the six pairs among `c,x,y,z` can be compressed back into `A`. -/
+def HasInfiniteCriticalExternalFourCliqueSplit
+    (A C K : Set ℕ) (D : Finset ℕ) : Prop :=
+  ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+    (∀ b ∈ B,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+    HasDirectTripleRepairsForDeletedPairs A B ∧
+    ∃ S T : Set ℕ,
+      S.Infinite ∧ T.Infinite ∧ Disjoint S T ∧
+      (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+        Disjoint (G : Set ℕ) B) ∧
+      ∀ q ∈ T,
+        q ∉ A ∧
+        DestroysAt (additiveSupportFamily A 3) B q ∧
+        ∃ b c x y z,
+          b ∈ B ∧ c ∈ A \ B ∧ b + c = q ∧
+          x ∈ A \ B ∧ y ∈ A \ B ∧ z ∈ A \ B ∧
+          0 < x ∧ 0 < y ∧ 0 < z ∧ 0 < c ∧
+          x + y + z = b ∧
+          x + y ∉ A ∧ x + z ∉ A ∧ y + z ∉ A ∧
+          x + c ∉ A ∧ y + c ∉ A ∧ z + c ∉ A
+
+/-- One additive edge obtained by descending a destroyed external
+four-clique target along one of its retained repair summands. -/
+structure LargeExternalFourCliquePredecessorEdge
+    (A B : Set ℕ) (q : ℕ) where
+  atom : ℕ
+  anchor : ℕ
+  predecessor : ℕ
+  step : ℕ
+  atom_mem : atom ∈ B
+  anchor_mem : anchor ∈ A \ B
+  step_mem : step ∈ A \ B
+  step_pos : 0 < step
+  step_lt_atom : step < atom
+  target_eq_atom_anchor : atom + anchor = q
+  target_eq_predecessor_step : predecessor + step = q
+  step_anchor_external : step + anchor ∉ A
+  predecessor_large : q ≤ 3 * predecessor
+  predecessor_destroyed :
+    DestroysAt (additiveSupportFamily A 2) B predecessor
+  predecessor_mem_or_external : predecessor ∈ B ∨ predecessor ∉ A
+
+/-- Chain/gap form of the expanded obstruction.  The large predecessor map
+has infinite range.  On one infinite branch all predecessors are new deleted
+atoms; on the other they are external order-two gaps.  The two displayed
+equalities retain the actual additive chain edge
+`atom + anchor = predecessor + step`, while `step + anchor ∉ A` records
+why that edge could not immediately repair the destroyed target. -/
+def HasInfiniteCriticalPredecessorStreamSplit
+    (A C K : Set ℕ) (D : Finset ℕ) : Prop :=
+  ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+    (∀ b ∈ B,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+    HasDirectTripleRepairsForDeletedPairs A B ∧
+    ∃ S I : Set ℕ, ∃ atom anchor predecessor step : ℕ → ℕ,
+      S.Infinite ∧ I.Infinite ∧
+      (predecessor '' I).Infinite ∧ Disjoint S I ∧
+      (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+        Disjoint (G : Set ℕ) B) ∧
+      (∀ q ∈ I,
+        q ∉ A ∧
+        DestroysAt (additiveSupportFamily A 3) B q ∧
+        atom q ∈ B ∧ anchor q ∈ A \ B ∧
+        step q ∈ A \ B ∧ 0 < step q ∧
+        step q < atom q ∧
+        atom q + anchor q = q ∧
+        predecessor q + step q = q ∧
+        step q + anchor q ∉ A ∧
+        q ≤ 3 * predecessor q ∧
+        DestroysAt (additiveSupportFamily A 2) B (predecessor q)) ∧
+      ((∀ q ∈ I, predecessor q ∈ B) ∨
+        ∀ q ∈ I, predecessor q ∉ A)
+
+/-- The genuinely external branch of the predecessor split. -/
+def HasInfiniteCriticalExternalPredecessorEdgeStream
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ I : Set ℕ, ∃ atom anchor predecessor step : ℕ → ℕ,
+    I.Infinite ∧ (predecessor '' I).Infinite ∧
+    ∀ q ∈ I,
+      q ∉ A ∧
+      DestroysAt (additiveSupportFamily A 3) B q ∧
+      atom q ∈ B ∧
+      IsRecurrentNoTwoRepairPrefix A C (insert (atom q) D) ∧
+      anchor q ∈ A \ B ∧ step q ∈ A \ B ∧ 0 < step q ∧
+      step q < atom q ∧
+      atom q + anchor q = q ∧ predecessor q + step q = q ∧
+      step q + anchor q ∉ A ∧ q ≤ 3 * predecessor q ∧
+      DestroysAt (additiveSupportFamily A 2) B (predecessor q) ∧
+      predecessor q ∉ A
+
+/-- One genuinely crossing order-two representation. -/
+structure CrossingPairDecomposition
+    (A B : Set ℕ) (r : ℕ) where
+  deleted : ℕ
+  complement : ℕ
+  deleted_mem : deleted ∈ B
+  complement_mem : complement ∈ A \ B
+  sum_eq : deleted + complement = r
+
+/-- Two same-target repairs whose traces on the deletion are exactly the
+two endpoints of one binary conflict edge. -/
+def HasExactBinaryRepairEdgeAt
+    (A B : Set ℕ) (q atom deleted : ℕ) : Prop :=
+  ∃ E ∈ additiveSupportFamily A 3 q,
+    ((E : Set ℕ) ∩ B) = {atom} ∧
+    ∃ F ∈ additiveSupportFamily A 3 q,
+      ((F : Set ℕ) ∩ B) = {deleted}
+
+/-- Full arithmetic label carried by one crossing binary repair edge. -/
+structure CriticalCrossingRepairEdgeData
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ)
+    (q atom deleted : ℕ) where
+  anchor : ℕ
+  predecessor : ℕ
+  step : ℕ
+  complement : ℕ
+  target_not_mem : q ∉ A
+  target_destroyed :
+    DestroysAt (additiveSupportFamily A 3) B q
+  atom_mem : atom ∈ B
+  deleted_mem : deleted ∈ B
+  atom_critical :
+    IsRecurrentNoTwoRepairPrefix A C (insert atom D)
+  deleted_critical :
+    IsRecurrentNoTwoRepairPrefix A C (insert deleted D)
+  anchor_mem : anchor ∈ A \ B
+  step_mem : step ∈ A \ B
+  complement_mem : complement ∈ A \ B
+  step_pos : 0 < step
+  step_lt_atom : step < atom
+  target_eq_atom_anchor : atom + anchor = q
+  target_eq_predecessor_step : predecessor + step = q
+  step_anchor_external : step + anchor ∉ A
+  predecessor_large : q ≤ 3 * predecessor
+  predecessor_destroyed :
+    DestroysAt (additiveSupportFamily A 2) B predecessor
+  predecessor_external : predecessor ∉ A
+  predecessor_eq_deleted_complement :
+    deleted + complement = predecessor
+  exact_binary_edge : HasExactBinaryRepairEdgeAt A B q atom deleted
+
+/-- Cancellation normal form of a loop edge. -/
+structure CriticalUnitGapData
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ)
+    (q atom : ℕ) where
+  anchor : ℕ
+  step : ℕ
+  complement : ℕ
+  target_not_mem : q ∉ A
+  target_destroyed :
+    DestroysAt (additiveSupportFamily A 3) B q
+  atom_mem : atom ∈ B
+  atom_critical :
+    IsRecurrentNoTwoRepairPrefix A C (insert atom D)
+  anchor_mem : anchor ∈ A \ B
+  step_mem : step ∈ A \ B
+  complement_mem : complement ∈ A \ B
+  step_pos : 0 < step
+  step_lt_atom : step < atom
+  complement_step_eq_anchor : complement + step = anchor
+  atom_complement_external : atom + complement ∉ A
+  step_anchor_external : step + anchor ∉ A
+  target_eq_atom_anchor : atom + anchor = q
+
+/-- Expanded external predecessor stream in which an exact order-two basis
+representation of every predecessor is genuinely crossing: one endpoint is
+a critical deleted atom and the complementary endpoint is retained. -/
+def HasInfiniteCriticalCrossingExternalPredecessorEdgeStream
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ I : Set ℕ,
+    ∃ atom anchor predecessor step deleted complement : ℕ → ℕ,
+      I.Infinite ∧ (predecessor '' I).Infinite ∧
+      ∀ q ∈ I,
+        q ∉ A ∧
+        DestroysAt (additiveSupportFamily A 3) B q ∧
+        atom q ∈ B ∧
+        IsRecurrentNoTwoRepairPrefix A C (insert (atom q) D) ∧
+        anchor q ∈ A \ B ∧ step q ∈ A \ B ∧ 0 < step q ∧
+        step q < atom q ∧
+        atom q + anchor q = q ∧ predecessor q + step q = q ∧
+        step q + anchor q ∉ A ∧ q ≤ 3 * predecessor q ∧
+        DestroysAt (additiveSupportFamily A 2) B (predecessor q) ∧
+        predecessor q ∉ A ∧
+        deleted q ∈ B ∧
+        IsRecurrentNoTwoRepairPrefix A C (insert (deleted q) D) ∧
+        complement q ∈ A \ B ∧
+        deleted q + complement q = predecessor q
+
+/-- Information-preserving clause projection of the crossing stream. -/
+def HasInfiniteCriticalArithmeticRepairEdgeStream
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ I : Set ℕ, ∃ atom deleted : ℕ → ℕ,
+    I.Infinite ∧
+    ∀ q ∈ I,
+      Nonempty (CriticalCrossingRepairEdgeData
+        A C D B q (atom q) (deleted q))
+
+/-- A crossing arithmetic stream whose selected binary clauses are all
+genuine edges rather than loops.  Keeping this pointwise inequality avoids
+reintroducing the unit branch when a noncanonical pair representation is
+expanded. -/
+def HasInfiniteCriticalNonstationaryArithmeticRepairEdgeStream
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ I : Set ℕ, ∃ atom deleted : ℕ → ℕ,
+    I.Infinite ∧
+    ∀ q ∈ I,
+      atom q ≠ deleted q ∧
+      Nonempty (CriticalCrossingRepairEdgeData
+        A C D B q (atom q) (deleted q))
+
+/-- Arithmetic unit-clause branch retaining every crossing equation. -/
+def HasInfiniteCriticalArithmeticUnitRepairEdgeStream
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ I : Set ℕ, ∃ atom : ℕ → ℕ,
+    I.Infinite ∧ (atom '' I).Infinite ∧
+    ∀ q ∈ I,
+      Nonempty (CriticalCrossingRepairEdgeData
+        A C D B q (atom q) (atom q))
+
+/-- Cancellation-normalized form of the arithmetic unit branch. -/
+def HasInfiniteCriticalUnitGapStream
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ I : Set ℕ, ∃ atom : ℕ → ℕ,
+    I.Infinite ∧ (atom '' I).Infinite ∧
+    ∀ q ∈ I,
+      Nonempty (CriticalUnitGapData A C D B q (atom q))
+
+/-- Unit-gap stream on which the positive descended step has infinite
+range.  Over the naturals this is equivalently an unbounded-step branch. -/
+def HasInfiniteCriticalUnboundedStepUnitGapStream
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ I : Set ℕ, ∃ atom step : ℕ → ℕ,
+    I.Infinite ∧ (atom '' I).Infinite ∧ (step '' I).Infinite ∧
+    ∀ q ∈ I, ∃ w : CriticalUnitGapData A C D B q (atom q),
+      w.step = step q
+
+/-- Unit-gap stream on which one fixed positive step occurs with infinitely
+many distinct critical atoms. -/
+def HasInfiniteCriticalConstantStepUnitGapStream
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ I : Set ℕ, ∃ atom : ℕ → ℕ, ∃ s : ℕ,
+    I.Infinite ∧ (atom '' I).Infinite ∧ 0 < s ∧
+    ∀ q ∈ I, ∃ w : CriticalUnitGapData A C D B q (atom q),
+      w.step = s
+
+/-- Constant-step branch whose crossing complements still have infinite
+range. -/
+def HasInfiniteCriticalConstantStepUnboundedComplementUnitGapStream
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ I : Set ℕ, ∃ atom complement : ℕ → ℕ, ∃ s : ℕ,
+    I.Infinite ∧ (atom '' I).Infinite ∧
+    (complement '' I).Infinite ∧ 0 < s ∧
+    ∀ q ∈ I, ∃ w : CriticalUnitGapData A C D B q (atom q),
+      w.step = s ∧ w.complement = complement q
+
+/-- Fully stabilized unit branch: one positive step and one positive
+complement occur at infinitely many distinct critical atoms.  Consequently
+the anchor is the same fixed translate complement + step throughout. -/
+def HasInfiniteCriticalFixedLabelUnitGapStream
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ I : Set ℕ, ∃ atom : ℕ → ℕ, ∃ s e : ℕ,
+    I.Infinite ∧ (atom '' I).Infinite ∧ 0 < s ∧ 0 < e ∧
+    ∀ q ∈ I, ∃ w : CriticalUnitGapData A C D B q (atom q),
+      w.step = s ∧ w.complement = e
+
+/-- Equation-only normal form of the fully stabilized unit branch.  The
+same positive e,s satisfy e,e+s ∈ A but e+2s ∉ A, while infinitely many
+critical atoms b have b+e ∉ A and the destroyed target b+(e+s). -/
+def HasInfiniteCriticalFixedTranslationGapStream
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ I : Set ℕ, ∃ atom : ℕ → ℕ, ∃ s e a : ℕ,
+    I.Infinite ∧ (atom '' I).Infinite ∧
+    0 < s ∧ 0 < e ∧
+    s ∈ A \ B ∧ e ∈ A \ B ∧ a ∈ A \ B ∧
+    e + s = a ∧ a ∉ C ∧ e + 2 * s ∉ A ∧
+    ∀ q ∈ I,
+      q ∉ A ∧
+      DestroysAt (additiveSupportFamily A 3) B q ∧
+      atom q ∈ B ∧
+      IsRecurrentNoTwoRepairPrefix A C (insert (atom q) D) ∧
+      atom q + e ∉ A ∧ atom q + a = q
+
+/-- The irreducible half of a fixed-translation stream: the fixed pair
+`atom + e` has only its canonical order-two support at every index. -/
+def HasInfiniteCriticalRigidFixedTranslationGapStream
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ I : Set ℕ, ∃ atom : ℕ → ℕ, ∃ s e a : ℕ,
+    I.Infinite ∧ (atom '' I).Infinite ∧
+    0 < s ∧ 0 < e ∧
+    s ∈ A \ B ∧ e ∈ A \ B ∧ a ∈ A \ B ∧
+    e + s = a ∧ a ∉ C ∧ e + 2 * s ∉ A ∧
+    ∀ q ∈ I,
+      q ∉ A ∧
+      DestroysAt (additiveSupportFamily A 3) B q ∧
+      atom q ∈ B ∧
+      IsRecurrentNoTwoRepairPrefix A C (insert (atom q) D) ∧
+      atom q + e ∉ A ∧ atom q + a = q ∧
+      IsRigidPairSum A (atom q) e
+
+/-- Order-two shadow of the stabilized unit branch.  Translating each
+critical atom by the fixed complement gives an external target all of whose
+pair supports meet the critical deletion. -/
+def HasInfiniteCriticalFixedTranslatedOrderTwoDestructionStream
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ I : Set ℕ, ∃ atom : ℕ → ℕ, ∃ e : ℕ,
+    I.Infinite ∧ (atom '' I).Infinite ∧
+    0 < e ∧ e ∈ A \ B ∧
+    ∀ q ∈ I,
+      atom q ∈ B ∧
+      IsRecurrentNoTwoRepairPrefix A C (insert (atom q) D) ∧
+      atom q + e ∉ A ∧
+      DestroysAt (additiveSupportFamily A 2) B (atom q + e)
+
+/-- The fixed translation defect forces the preceding infinite order-two
+destruction stream.  A pair support of `atom + e` avoiding `B` could be
+lifted by the fixed step `s` to a triple support of `q` avoiding `B`. -/
+theorem HasInfiniteCriticalFixedTranslationGapStream.to_fixedTranslatedOrderTwoDestructionStream
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalFixedTranslationGapStream A C D B) :
+    HasInfiniteCriticalFixedTranslatedOrderTwoDestructionStream
+      A C D B := by
+  obtain ⟨I, atom, s, e, a, hI, hatomImage,
+      _hsPos, hePos, hsAB, heAB, _haAB,
+      hesa, _haC, _he2sA, hdata⟩ := h
+  refine ⟨I, atom, e, hI, hatomImage, hePos, heAB, ?_⟩
+  intro q hqI
+  have hqData := hdata q hqI
+  refine ⟨hqData.2.2.1, hqData.2.2.2.1,
+    hqData.2.2.2.2.1, ?_⟩
+  intro E hER hEB
+  have hlift :=
+    insert_mem_additiveSupportFamily_succ hsAB.1 hER
+  have hsum : s + (atom q + e) = q := by
+    have htarget := hqData.2.2.2.2.2
+    omega
+  apply hqData.2.1 (insert s E)
+    (by simpa only [hsum] using hlift)
+  rw [Set.disjoint_left]
+  intro z hzInsert hzB
+  rcases Finset.mem_insert.mp (Finset.mem_coe.mp hzInsert) with
+    rfl | hzE
+  · exact hsAB.2 hzB
+  · exact Set.disjoint_left.mp hEB
+      (Finset.mem_coe.mpr hzE) hzB
+
+/-- The stabilized translation branch is itself an external-predecessor
+stream after thinning past the fixed step.  Its predecessor is `atom + e`;
+the identities `e + s = a` and `atom + a = q` give the descended edge, and
+the fixed defect `e + 2*s ∉ A` is exactly the step-anchor obstruction. -/
+theorem HasInfiniteCriticalFixedTranslationGapStream.to_externalPredecessorEdgeStream
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalFixedTranslationGapStream A C D B) :
+    HasInfiniteCriticalExternalPredecessorEdgeStream A C D B := by
+  classical
+  obtain ⟨I, atom, s, e, a, hI, hatomImage,
+      hsPos, _hePos, hsAB, heAB, haAB,
+      hesa, _haC, he2sA, hdata⟩ := h
+  obtain ⟨I₀, hI₀I, hatomBij⟩ :=
+    Set.exists_subset_bijOn I atom
+  have hI₀ : I₀.Infinite := by
+    intro hI₀Finite
+    apply hatomImage
+    rw [← hatomBij.image_eq]
+    exact hI₀Finite.image atom
+  let Bad : Set ℕ := {q | q ∈ I₀ ∧ atom q ≤ s}
+  have hBadFinite : Bad.Finite := by
+    apply Set.Finite.of_finite_image (f := atom)
+    · apply (Set.finite_Iic s).subset
+      rintro b ⟨q, hqBad, rfl⟩
+      exact hqBad.2
+    · exact hatomBij.injOn.mono (fun _ hq => hq.1)
+  let J : Set ℕ := I₀ \ Bad
+  have hJI : J ⊆ I := fun _ hq => hI₀I hq.1
+  have hJ : J.Infinite := hI₀.diff hBadFinite
+  have hstepLt : ∀ q ∈ J, s < atom q := by
+    intro q hqJ
+    by_contra hnot
+    exact hqJ.2 ⟨hqJ.1, Nat.le_of_not_gt hnot⟩
+  let anchor : ℕ → ℕ := fun _ => a
+  let predecessor : ℕ → ℕ := fun q => atom q + e
+  let step : ℕ → ℕ := fun _ => s
+  have hpredecessorInj : Set.InjOn predecessor J := by
+    intro q hqJ r hrJ heq
+    apply hatomBij.injOn hqJ.1 hrJ.1
+    simp only [predecessor] at heq
+    omega
+  have hpredecessorImage : (predecessor '' J).Infinite :=
+    hJ.image hpredecessorInj
+  refine ⟨J, atom, anchor, predecessor, step,
+    hJ, hpredecessorImage, ?_⟩
+  intro q hqJ
+  have hqData := hdata q (hJI hqJ)
+  have hpredecessorDestroy :
+      DestroysAt (additiveSupportFamily A 2) B
+        (predecessor q) := by
+    intro E hER hEB
+    have hlift :=
+      insert_mem_additiveSupportFamily_succ hsAB.1 hER
+    have hsum : s + predecessor q = q := by
+      have htarget := hqData.2.2.2.2.2
+      simp only [predecessor]
+      omega
+    apply hqData.2.1 (insert s E)
+      (by simpa only [step, hsum] using hlift)
+    rw [Set.disjoint_left]
+    intro z hzInsert hzB
+    rcases Finset.mem_insert.mp (Finset.mem_coe.mp hzInsert) with
+      rfl | hzE
+    · exact hsAB.2 hzB
+    · exact Set.disjoint_left.mp hEB
+        (Finset.mem_coe.mpr hzE) hzB
+  refine ⟨hqData.1, hqData.2.1, hqData.2.2.1,
+    hqData.2.2.2.1, haAB, hsAB, hsPos,
+    hstepLt q hqJ, ?_, ?_, ?_, ?_, hpredecessorDestroy,
+    hqData.2.2.2.2.1⟩
+  · simpa only [anchor] using hqData.2.2.2.2.2
+  · simp only [predecessor, step]
+    have htarget := hqData.2.2.2.2.2
+    omega
+  · simp only [step, anchor]
+    intro hmem
+    apply he2sA
+    convert hmem using 1 <;> omega
+  · simp only [predecessor]
+    have htarget := hqData.2.2.2.2.2
+    have hlt := hstepLt q hqJ
+    omega
+
+/-- A strict lateral move out of the unit branch.  An infinite deletion
+chosen from retained labels outside B preserves an infinite substream of
+targets which the original critical deletion B destroys. -/
+def HasInfiniteCriticalUnitGapLateralDeletionSwitch
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ X, X ⊆ A \ B ∧ X.Infinite ∧
+    ∃ I : Set ℕ, ∃ atom : ℕ → ℕ,
+      I.Infinite ∧
+      ∀ q ∈ I,
+        ∃ w : CriticalUnitGapData A C D B q (atom q),
+          ∃ G ∈ additiveSupportFamily A 3 q,
+            Disjoint (G : Set ℕ) X
+
+/-- Witness-independent semantic form of a lateral deletion switch. -/
+def HasInfiniteLateralDeletionSwitch
+    (A B : Set ℕ) : Prop :=
+  ∃ X, X ⊆ A \ B ∧ X.Infinite ∧
+    ∃ T : Set ℕ, T.Infinite ∧
+      ∀ q ∈ T,
+        DestroysAt (additiveSupportFamily A 3) B q ∧
+        ∃ G ∈ additiveSupportFamily A 3 q,
+          Disjoint (G : Set ℕ) X
+
+/-- A lateral switch is already a strict candidate deletion: use its
+surviving target stream as the late indexed repair family.  The new deletion
+lies entirely in `A \ B`, so this conversion retains the progress away from
+the original deletion rather than forgetting it in the ambient set `A`. -/
+theorem HasInfiniteLateralDeletionSwitch.to_candidateDeletionWithLateSurvivingRepairs
+    {A B : Set ℕ}
+    (h : HasInfiniteLateralDeletionSwitch A B) :
+    HasInfiniteCandidateDeletionWithLateSurvivingRepairs A (A \ B) := by
+  classical
+  obtain ⟨X, hXAB, hX, T, hT, hdata⟩ := h
+  let repair : ℕ → Finset ℕ := fun q =>
+    if hq : q ∈ T then Classical.choose (hdata q hq).2 else ∅
+  have hrepair : ∀ q, ∀ hq : q ∈ T,
+      repair q ∈ additiveSupportFamily A 3 q ∧
+        Disjoint (repair q : Set ℕ) X := by
+    intro q hq
+    simpa only [repair, dif_pos hq] using
+      Classical.choose_spec (hdata q hq).2
+  refine ⟨X, hXAB, ?_, hX,
+    T, (fun q => q), repair, hT, ?_⟩
+  · intro x hxX
+    exact (hXAB hxX).1
+  · intro q hqT
+    exact ⟨le_rfl, (hrepair q hqT).1, (hrepair q hqT).2⟩
+
+/-- A two-sided lateral switch: two disjoint infinite deletions each destroy
+an infinite target stream which has a repair avoiding the other deletion. -/
+def HasInfiniteMutualLateralDeletionSwitch
+    (A B : Set ℕ) : Prop :=
+  ∃ X, X ⊆ A \ B ∧ X.Infinite ∧ 0 ∉ X ∧
+    ∃ S T : Set ℕ,
+      S.Infinite ∧ T.Infinite ∧ Disjoint S T ∧
+      (∀ q ∈ S,
+        DestroysAt (additiveSupportFamily A 3) B q ∧
+        ∃ G ∈ additiveSupportFamily A 3 q,
+          Disjoint (G : Set ℕ) X) ∧
+      ∀ q ∈ T,
+        DestroysAt (additiveSupportFamily A 3) X q ∧
+        ∃ G ∈ additiveSupportFamily A 3 q,
+          Disjoint (G : Set ℕ) B
+
+/-- The complementary fusion obstruction: two disjoint infinite deletions
+simultaneously destroy every target in one infinite stream. -/
+def HasInfiniteDisjointBiDestructionStream
+    (A B : Set ℕ) : Prop :=
+  ∃ X, X ⊆ A \ B ∧ X.Infinite ∧ 0 ∉ X ∧
+    ∃ T : Set ℕ, T.Infinite ∧
+      ∀ q ∈ T,
+        DestroysAt (additiveSupportFamily A 3) B q ∧
+        DestroysAt (additiveSupportFamily A 3) X q
+
+/-- Order-two shadow of a bi-destruction stream: every pair support at each
+external target meets both disjoint deletion sides. -/
+def HasInfiniteExternalBipartitePairStream
+    (A B : Set ℕ) : Prop :=
+  ∃ X, X ⊆ A \ B ∧ X.Infinite ∧ 0 ∉ X ∧
+    ∃ T : Set ℕ, T.Infinite ∧
+      ∀ q ∈ T,
+        q ∉ A ∧
+        DestroysAt (additiveSupportFamily A 3) B q ∧
+        DestroysAt (additiveSupportFamily A 3) X q ∧
+        ∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B ∧
+          ¬ Disjoint (E : Set ℕ) X ∧
+          ¬ (E : Set ℕ) ⊆ B ∧
+          ¬ (E : Set ℕ) ⊆ X
+
+/-- Concrete basis-level form of the bipartite stream, including one
+chosen cross-boundary equation at every target. -/
+def HasInfiniteExternalBipartitePairDecompositionStream
+    (A B : Set ℕ) : Prop :=
+  ∃ X, X ⊆ A \ B ∧ X.Infinite ∧ 0 ∉ X ∧
+    ∃ T : Set ℕ, T.Infinite ∧
+      ∀ q ∈ T,
+        q ∉ A ∧
+        DestroysAt (additiveSupportFamily A 3) B q ∧
+        DestroysAt (additiveSupportFamily A 3) X q ∧
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B ∧
+          ¬ Disjoint (E : Set ℕ) X ∧
+          ¬ (E : Set ℕ) ⊆ B ∧
+          ¬ (E : Set ℕ) ⊆ X) ∧
+        ∃ b ∈ B, ∃ x ∈ X, b + x = q
+
+/-- The sharpened bipartite stream relative to a directly repaired
+reservoir `C`: the endpoint opposite `B` is forced outside `C`. -/
+def HasInfiniteExternalBipartitePairDecompositionOutsideStream
+    (A C B : Set ℕ) : Prop :=
+  ∃ X, X ⊆ A \ B ∧ X.Infinite ∧ 0 ∉ X ∧
+    ∃ T : Set ℕ, T.Infinite ∧
+      ∀ q ∈ T,
+        q ∉ A ∧
+        DestroysAt (additiveSupportFamily A 3) B q ∧
+        DestroysAt (additiveSupportFamily A 3) X q ∧
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B ∧
+          ¬ Disjoint (E : Set ℕ) X ∧
+          ¬ (E : Set ℕ) ⊆ B ∧
+          ¬ (E : Set ℕ) ⊆ X) ∧
+        ∃ b ∈ B, ∃ x ∈ X \ C, b + x = q
+
+/-- A selected cross-boundary equation in the external bipartite stream. -/
+structure ExternalBipartitePairDecompositionData
+    (B X C : Set ℕ) (q : ℕ) where
+  atom : ℕ
+  external : ℕ
+  atom_mem : atom ∈ B
+  external_mem : external ∈ X \ C
+  sum_eq : atom + external = q
+
+/-- Strong deletion applied across a lateral switch either completes the
+switch in the reverse direction on an infinite substream or leaves an
+infinite stream destroyed by both disjoint deletion sets. -/
+theorem HasInfiniteLateralDeletionSwitch.mutual_or_biDestruction
+    {A B : Set ℕ}
+    (h : HasInfiniteLateralDeletionSwitch A B)
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A) :
+    HasInfiniteMutualLateralDeletionSwitch A B ∨
+      HasInfiniteDisjointBiDestructionStream A B := by
+  classical
+  obtain ⟨X, hXAB, hX, S, hS, hSdata⟩ := h
+  let X₀ : Set ℕ := X \ {0}
+  have hX₀AB : X₀ ⊆ A \ B := by
+    intro x hx
+    exact hXAB hx.1
+  have hX₀A : X₀ ⊆ A := fun x hx => (hX₀AB hx).1
+  have hX₀ : X₀.Infinite := hX.diff (Set.finite_singleton 0)
+  have hzeroX₀ : 0 ∉ X₀ := by
+    simp [X₀]
+  let U : Set ℕ :=
+    {q | DestroysAt (additiveSupportFamily A 3) X₀ q}
+  have hU : U.Infinite := by
+    apply Set.infinite_of_forall_exists_gt
+    intro N
+    obtain ⟨q, hqN, hqDestroy⟩ :=
+      hstrong X₀ hX₀A hX₀ (N + 1)
+    exact ⟨q, hqDestroy,
+      (Nat.lt_succ_self N).trans_le hqN⟩
+  let V : Set ℕ :=
+    {q | q ∈ U ∧
+      ∃ G ∈ additiveSupportFamily A 3 q,
+        Disjoint (G : Set ℕ) B}
+  by_cases hV : V.Infinite
+  · left
+    have hSV : Disjoint S V := by
+      rw [Set.disjoint_left]
+      intro q hqS hqV
+      obtain ⟨_hqDestroyB, G, hGR, hGX⟩ := hSdata q hqS
+      exact hqV.1 G hGR (hGX.mono_right Set.diff_subset)
+    refine ⟨X₀, hX₀AB, hX₀, hzeroX₀,
+      S, V, hS, hV, hSV, ?_, ?_⟩
+    · intro q hqS
+      obtain ⟨hqDestroyB, G, hGR, hGX⟩ := hSdata q hqS
+      exact ⟨hqDestroyB, G, hGR,
+        hGX.mono_right Set.diff_subset⟩
+    · intro q hqV
+      exact ⟨hqV.1, hqV.2⟩
+  · right
+    have hVFinite : V.Finite := Set.not_infinite.mp hV
+    let T : Set ℕ := U \ V
+    have hT : T.Infinite := hU.diff hVFinite
+    refine ⟨X₀, hX₀AB, hX₀, hzeroX₀, T, hT, ?_⟩
+    intro q hqT
+    refine ⟨?_, hqT.1⟩
+    intro G hGR hGB
+    exact hqT.2 ⟨hqT.1, G, hGR, hGB⟩
+
+/-- In the bi-destruction branch, padding every order-two support by the
+retained zero shows that it must hit both deletion sides.  Since the sides
+are disjoint, every such pair support is genuinely bipartite; the target is
+also forced outside `A`. -/
+theorem HasInfiniteDisjointBiDestructionStream.has_externalBipartitePairStream
+    {A B : Set ℕ}
+    (h : HasInfiniteDisjointBiDestructionStream A B)
+    (hzeroA : 0 ∈ A) (hzeroB : 0 ∉ B) (hBA : B ⊆ A) :
+    HasInfiniteExternalBipartitePairStream A B := by
+  obtain ⟨X, hXAB, hX, hzeroX, T, hT, hdata⟩ := h
+  refine ⟨X, hXAB, hX, hzeroX, T, hT, ?_⟩
+  intro q hqT
+  have hdestroyB := (hdata q hqT).1
+  have hdestroyX := (hdata q hqT).2
+  have hpairB : ∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) B := by
+    intro E hER hEB
+    apply hdestroyB (insert 0 E)
+      (by simpa using
+        insert_mem_additiveSupportFamily_succ hzeroA hER)
+    rw [Set.disjoint_left]
+    intro z hzInsert hzB
+    rcases Finset.mem_insert.mp (Finset.mem_coe.mp hzInsert) with
+      rfl | hzE
+    · exact hzeroB hzB
+    · exact Set.disjoint_left.mp hEB
+        (Finset.mem_coe.mpr hzE) hzB
+  have hpairX : ∀ E ∈ additiveSupportFamily A 2 q,
+      ¬ Disjoint (E : Set ℕ) X := by
+    intro E hER hEX
+    apply hdestroyX (insert 0 E)
+      (by simpa using
+        insert_mem_additiveSupportFamily_succ hzeroA hER)
+    rw [Set.disjoint_left]
+    intro z hzInsert hzX
+    rcases Finset.mem_insert.mp (Finset.mem_coe.mp hzInsert) with
+      rfl | hzE
+    · exact hzeroX hzX
+    · exact Set.disjoint_left.mp hEX
+        (Finset.mem_coe.mpr hzE) hzX
+  have hqB : q ∉ B := by
+    intro hqB
+    have hpair : pairSupport q 0 ∈
+        additiveSupportFamily A 2 q := by
+      simpa using pairSupport_mem_additiveSupportFamily
+        (Nat.zero_le q) hzeroA (hBA hqB)
+    apply hpairX (pairSupport q 0) hpair
+    rw [Set.disjoint_left]
+    intro z hzPair hzX
+    have hz : z = 0 ∨ z = q := by
+      simpa [pairSupport] using Finset.mem_coe.mp hzPair
+    rcases hz with rfl | rfl
+    · exact hzeroX hzX
+    · exact (hXAB hzX).2 hqB
+  have hqA : q ∉ A :=
+    target_not_mem_of_zero_allPairSupports_crossing
+      hzeroA hzeroB hqB hpairB
+  refine ⟨hqA, hdestroyB, hdestroyX, ?_⟩
+  intro E hER
+  have hEB := hpairB E hER
+  have hEX := hpairX E hER
+  refine ⟨hEB, hEX, ?_, ?_⟩
+  · intro hEsubB
+    exact hEX (Set.disjoint_left.mpr fun z hzE hzX =>
+      (hXAB hzX).2 (hEsubB hzE))
+  · intro hEsubX
+    exact hEB (Set.disjoint_left.mpr fun z hzE hzB =>
+      (hXAB (hEsubX hzE)).2 hzB)
+
+/-- Once the order-two basis threshold is imposed, the preceding universal
+bipartite condition has a concrete decomposition at every target in an
+infinite tail: `q = b + x` with `b ∈ B` and `x ∈ X`. -/
+theorem HasInfiniteDisjointBiDestructionStream.has_externalBipartitePairDecompositionStream
+    {A B : Set ℕ}
+    (h : HasInfiniteDisjointBiDestructionStream A B)
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A) (hzeroB : 0 ∉ B) (hBA : B ⊆ A) :
+    HasInfiniteExternalBipartitePairDecompositionStream A B := by
+  obtain ⟨X, hXAB, hX, hzeroX, T, hT, hdata⟩ :=
+    h.has_externalBipartitePairStream hzeroA hzeroB hBA
+  obtain ⟨N, hN⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  let T₀ : Set ℕ := T \ Set.Iio N
+  have hT₀ : T₀.Infinite := hT.diff (Set.finite_Iio N)
+  refine ⟨X, hXAB, hX, hzeroX, T₀, hT₀, ?_⟩
+  intro q hqT₀
+  have hqT : q ∈ T := hqT₀.1
+  have hqN : N ≤ q := Nat.le_of_not_gt hqT₀.2
+  have hqData := hdata q hqT
+  obtain ⟨E, hER, _hEempty⟩ := hN q hqN
+  have hpairData := hqData.2.2.2 E hER
+  obtain ⟨b, hbB, x, hxAB, hbx, hE⟩ :=
+    exists_endpoints_of_crossingPairSupport
+      hER hpairData.1 hpairData.2.2.1
+  have hxX : x ∈ X := by
+    obtain ⟨z, hzE, hzX⟩ :=
+      Set.not_disjoint_iff.mp hpairData.2.1
+    have hzCases : z = b ∨ z = x := by
+      rw [hE] at hzE
+      simpa using Finset.mem_coe.mp hzE
+    rcases hzCases with rfl | rfl
+    · exact ((hXAB hzX).2 hbB).elim
+    · exact hzX
+  exact ⟨hqData.1, hqData.2.1, hqData.2.2.1,
+    hqData.2.2.2, b, hbB, x, hxX, hbx⟩
+
+/-- Direct repairs for pairs from `C` exclude the `X` endpoint of every
+bipartite decomposition from `C`; otherwise that repair avoids the smaller
+set `B` while representing a target destroyed by `B`. -/
+theorem HasInfiniteExternalBipartitePairDecompositionStream.outside_directReservoir
+    {A C B : Set ℕ}
+    (h : HasInfiniteExternalBipartitePairDecompositionStream A B)
+    (hBC : B ⊆ C)
+    (hrepairsC : HasDirectTripleRepairsForDeletedPairs A C) :
+    HasInfiniteExternalBipartitePairDecompositionOutsideStream A C B := by
+  obtain ⟨X, hXAB, hX, hzeroX, T, hT, hdata⟩ := h
+  refine ⟨X, hXAB, hX, hzeroX, T, hT, ?_⟩
+  intro q hqT
+  obtain ⟨hqA, hdestroyB, hdestroyX, hpair,
+      b, hbB, x, hxX, hbx⟩ := hdata q hqT
+  have hxC : x ∉ C := by
+    intro hxC
+    obtain ⟨G, hGR, hGC⟩ :=
+      hrepairsC b (hBC hbB) x hxC
+    rw [hbx] at hGR
+    exact (hdestroyB G hGR) (hGC.mono_right hBC)
+  exact ⟨hqA, hdestroyB, hdestroyX, hpair,
+    b, hbB, x, ⟨hxX, hxC⟩, hbx⟩
+
+/-- Select the bipartite equation coherently along the stream.  Since the
+targets themselves are infinite and equal `atom + external`, at least one
+of the two endpoint maps has infinite range.  This is the exact moving-versus-
+stationary split for the next additive step. -/
+theorem HasInfiniteExternalBipartitePairDecompositionOutsideStream.has_infiniteEndpointRange
+    {A C B : Set ℕ}
+    (h : HasInfiniteExternalBipartitePairDecompositionOutsideStream
+      A C B) :
+    ∃ X, X ⊆ A \ B ∧ X.Infinite ∧ 0 ∉ X ∧
+      ∃ T : Set ℕ, ∃ atom external : ℕ → ℕ,
+        T.Infinite ∧
+        (∀ q ∈ T,
+          q ∉ A ∧
+          DestroysAt (additiveSupportFamily A 3) B q ∧
+          DestroysAt (additiveSupportFamily A 3) X q ∧
+          (∀ E ∈ additiveSupportFamily A 2 q,
+            ¬ Disjoint (E : Set ℕ) B ∧
+            ¬ Disjoint (E : Set ℕ) X ∧
+            ¬ (E : Set ℕ) ⊆ B ∧
+            ¬ (E : Set ℕ) ⊆ X) ∧
+          atom q ∈ B ∧ external q ∈ X \ C ∧
+          atom q + external q = q) ∧
+        ((atom '' T).Infinite ∨ (external '' T).Infinite) := by
+  classical
+  obtain ⟨X, hXAB, hX, hzeroX, T, hT, hdata⟩ := h
+  have hwExists : ∀ q, q ∈ T →
+      Nonempty (ExternalBipartitePairDecompositionData B X C q) := by
+    intro q hqT
+    obtain ⟨b, hbB, x, hxXC, hbx⟩ := (hdata q hqT).2.2.2.2
+    exact ⟨⟨b, x, hbB, hxXC, hbx⟩⟩
+  let w : ∀ q, q ∈ T →
+      ExternalBipartitePairDecompositionData B X C q :=
+    fun q hq => Classical.choice (hwExists q hq)
+  let atom : ℕ → ℕ := fun q =>
+    if hq : q ∈ T then (w q hq).atom else 0
+  let external : ℕ → ℕ := fun q =>
+    if hq : q ∈ T then (w q hq).external else 0
+  have hatomEq : ∀ q, ∀ hq : q ∈ T,
+      atom q = (w q hq).atom := by
+    intro q hq
+    simp [atom, hq]
+  have hexternalEq : ∀ q, ∀ hq : q ∈ T,
+      external q = (w q hq).external := by
+    intro q hq
+    simp [external, hq]
+  have hselected : ∀ q ∈ T,
+      q ∉ A ∧
+      DestroysAt (additiveSupportFamily A 3) B q ∧
+      DestroysAt (additiveSupportFamily A 3) X q ∧
+      (∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) B ∧
+        ¬ Disjoint (E : Set ℕ) X ∧
+        ¬ (E : Set ℕ) ⊆ B ∧
+        ¬ (E : Set ℕ) ⊆ X) ∧
+      atom q ∈ B ∧ external q ∈ X \ C ∧
+      atom q + external q = q := by
+    intro q hqT
+    have hqData := hdata q hqT
+    refine ⟨hqData.1, hqData.2.1, hqData.2.2.1,
+      hqData.2.2.2.1, ?_, ?_, ?_⟩
+    · rw [hatomEq q hqT]
+      exact (w q hqT).atom_mem
+    · rw [hexternalEq q hqT]
+      exact (w q hqT).external_mem
+    · rw [hatomEq q hqT, hexternalEq q hqT]
+      exact (w q hqT).sum_eq
+  have hrange : (atom '' T).Infinite ∨
+      (external '' T).Infinite := by
+    by_contra hnot
+    push_neg at hnot
+    have hsumFinite := Set.Finite.image2
+      (fun a e : ℕ => a + e) hnot.1 hnot.2
+    apply hT
+    apply hsumFinite.subset
+    intro q hqT
+    rw [← (hselected q hqT).2.2.2.2.2.2]
+    exact Set.mem_image2_of_mem
+      ⟨q, hqT, rfl⟩ ⟨q, hqT, rfl⟩
+  exact ⟨X, hXAB, hX, hzeroX,
+    T, atom, external, hT, hselected, hrange⟩
+
+/-- Nested survival branch retaining the parent arithmetic edge at every
+target which survives the nested deletion. -/
+def HasInfiniteCriticalArithmeticNestedSurvivalStream
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ L, L ⊆ B ∧ L.Infinite ∧
+    (∀ b ∈ L,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+    ∃ I : Set ℕ, ∃ atom deleted : ℕ → ℕ,
+      I.Infinite ∧
+      ∀ q ∈ I,
+        Nonempty (CriticalCrossingRepairEdgeData
+          A C D B q (atom q) (deleted q)) ∧
+        ∃ G ∈ additiveSupportFamily A 3 q,
+          Disjoint (G : Set ℕ) L
+
+/-- Arithmetic clique branch: every pair of clique vertices is joined by a
+fully labelled crossing equation in one orientation. -/
+def HasInfiniteCriticalArithmeticRepairConflictClique
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ K, K ⊆ B ∧ K.Infinite ∧
+    ∀ x ∈ K, ∀ y ∈ K, x ≠ y →
+      (∃ q, Nonempty (CriticalCrossingRepairEdgeData
+          A C D B q x y)) ∨
+      ∃ q, Nonempty (CriticalCrossingRepairEdgeData
+          A C D B q y x)
+
+/-- Monotone chain extracted from an arithmetic conflict clique: every
+smaller clique vertex occurs as the atom endpoint and every larger vertex as
+the deleted predecessor endpoint of a fully labelled edge. -/
+def HasInfiniteCriticalIncreasingArithmeticRepairChain
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ K, K ⊆ B ∧ K.Infinite ∧
+    ∀ x ∈ K, ∀ y ∈ K, x < y →
+      ∃ q, Nonempty (CriticalCrossingRepairEdgeData
+        A C D B q x y)
+
+/-- Reverse monotone chain extracted from an arithmetic conflict clique:
+every larger clique vertex is the atom endpoint of a fully labelled edge to
+every smaller deleted predecessor endpoint. -/
+def HasInfiniteCriticalDecreasingArithmeticRepairChain
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ K, K ⊆ B ∧ K.Infinite ∧
+    ∀ x ∈ K, ∀ y ∈ K, x < y →
+      ∃ q, Nonempty (CriticalCrossingRepairEdgeData
+        A C D B q y x)
+
+/-- Clause-level projection of the crossing predecessor stream. -/
+def HasInfiniteCriticalExactBinaryRepairEdgeStream
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ I : Set ℕ, ∃ atom deleted : ℕ → ℕ,
+    I.Infinite ∧
+    ∀ q ∈ I,
+      q ∉ A ∧
+      DestroysAt (additiveSupportFamily A 3) B q ∧
+      atom q ∈ B ∧ deleted q ∈ B ∧
+      IsRecurrentNoTwoRepairPrefix A C (insert (atom q) D) ∧
+      IsRecurrentNoTwoRepairPrefix A C (insert (deleted q) D) ∧
+      HasExactBinaryRepairEdgeAt A B q (atom q) (deleted q)
+
+/-- Unit-clause residual: infinitely many distinct critical endpoints occur
+on edges whose two singleton traces coincide. -/
+def HasInfiniteCriticalUnitRepairEdgeStream
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ I : Set ℕ, ∃ atom : ℕ → ℕ,
+    I.Infinite ∧ (atom '' I).Infinite ∧
+    ∀ q ∈ I,
+      q ∉ A ∧
+      DestroysAt (additiveSupportFamily A 3) B q ∧
+      atom q ∈ B ∧
+      IsRecurrentNoTwoRepairPrefix A C (insert (atom q) D) ∧
+      HasExactBinaryRepairEdgeAt A B q (atom q) (atom q)
+
+/-- An infinite deletion nested inside `B` preserves every target in one
+infinite stream which the parent deletion `B` destroys. -/
+def HasInfiniteCriticalNestedSurvivalStream
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ L, L ⊆ B ∧ L.Infinite ∧
+    (∀ b ∈ L,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+    ∃ I : Set ℕ, I.Infinite ∧
+      ∀ q ∈ I,
+        q ∉ A ∧
+        DestroysAt (additiveSupportFamily A 3) B q ∧
+        ∃ G ∈ additiveSupportFamily A 3 q,
+          Disjoint (G : Set ℕ) L
+
+/-- Clique residual of the exact binary edge graph. -/
+def HasInfiniteCriticalBinaryRepairConflictClique
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ K, K ⊆ B ∧ K.Infinite ∧
+    ∀ x ∈ K, ∀ y ∈ K, x ≠ y →
+      IsRecurrentNoTwoRepairPrefix A C (insert x D) ∧
+      IsRecurrentNoTwoRepairPrefix A C (insert y D) ∧
+      ∃ q, q ∉ A ∧
+        DestroysAt (additiveSupportFamily A 3) B q ∧
+        (HasExactBinaryRepairEdgeAt A B q x y ∨
+          HasExactBinaryRepairEdgeAt A B q y x)
+
+/-- Stationary chain branch.  The descended deleted atom is the original
+atom, so cancellation identifies the two retained labels and forces their
+double to remain outside `A`. -/
+def HasInfiniteStationaryCriticalPredecessorStream
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ I : Set ℕ, ∃ atom anchor : ℕ → ℕ,
+    I.Infinite ∧ (atom '' I).Infinite ∧
+    ∀ q ∈ I,
+      q ∉ A ∧
+      DestroysAt (additiveSupportFamily A 3) B q ∧
+      atom q ∈ B ∧
+      IsRecurrentNoTwoRepairPrefix A C (insert (atom q) D) ∧
+      anchor q ∈ A \ B ∧ anchor q < atom q ∧
+      atom q + anchor q = q ∧
+      anchor q + anchor q ∉ A
+
+/-- Nonstationary chain branch, converted back into the strong balanced
+critical-pair language while retaining destruction by the fixed set `B`. -/
+def HasInfiniteCriticalBalancedRepairDestroyerStream
+    (A C : Set ℕ) (D : Finset ℕ) (B : Set ℕ) : Prop :=
+  ∃ I : Set ℕ, ∃ atom anchor predecessor step : ℕ → ℕ,
+    I.Infinite ∧ (predecessor '' I).Infinite ∧
+    ∀ q ∈ I,
+      q ∉ A ∧
+      DestroysAt (additiveSupportFamily A 3) B q ∧
+      atom q ∈ B ∧ predecessor q ∈ B ∧
+      atom q ≠ predecessor q ∧
+      IsRecurrentNoTwoRepairPrefix A C (insert (atom q) D) ∧
+      IsRecurrentNoTwoRepairPrefix A C (insert (predecessor q) D) ∧
+      anchor q ∈ A \ B ∧ step q ∈ A \ B ∧
+      step q < atom q ∧
+      atom q + anchor q = q ∧ predecessor q + step q = q ∧
+      step q + anchor q ∉ A ∧
+      HasCriticalSeparatedRepairPairAt A C B D q
+
+/-- With zero retained, a target destroyed at order two is either itself
+deleted or is genuinely external to `A`. -/
+theorem orderTwo_destroyer_target_mem_deletion_or_external
+    {A B : Set ℕ} {q : ℕ}
+    (hzeroA : 0 ∈ A) (hzeroB : 0 ∉ B)
+    (hdestroy : DestroysAt (additiveSupportFamily A 2) B q) :
+    q ∈ B ∨ q ∉ A := by
+  by_cases hqB : q ∈ B
+  · exact Or.inl hqB
+  · exact Or.inr <|
+      target_not_mem_of_zero_allPairSupports_crossing
+        hzeroA hzeroB hqB (fun E hER => hdestroy E hER)
+
+/-- A prefix-avoiding repair pair at a target destroyed by `B` acquires two
+distinct critical endpoints in `B`, one in each reservoir trace. -/
+theorem criticalSeparatedRepairPair_of_destroyed_prefixRepairPair
+    {A C B : Set ℕ} {D : Finset ℕ} {q : ℕ}
+    (hBC : B ⊆ C)
+    (hcritical : ∀ b ∈ B,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D))
+    (hpair : HasPrefixAvoidingDisjointRepairPairAt A C D q)
+    (hdestroy : DestroysAt (additiveSupportFamily A 3) B q) :
+    HasCriticalSeparatedRepairPairAt A C B D q := by
+  obtain ⟨E, hER, hED, F, hFR, hFD, hEFC⟩ := hpair
+  obtain ⟨x, hxE, hxB⟩ :=
+    Set.not_disjoint_iff.mp (hdestroy E hER)
+  obtain ⟨y, hyF, hyB⟩ :=
+    Set.not_disjoint_iff.mp (hdestroy F hFR)
+  have hxC : x ∈ C := hBC hxB
+  have hyC : y ∈ C := hBC hyB
+  have hxy : x ≠ y := by
+    intro hxy
+    subst y
+    exact Set.disjoint_left.mp hEFC
+      ⟨hxE, hxC⟩ ⟨hyF, hyC⟩
+  exact ⟨E, hER, hED, F, hFR, hFD, hEFC,
+    x, ⟨hxE, hxB⟩, hcritical x hxB,
+    y, ⟨hyF, hyB⟩, hxy, hcritical y hyB⟩
+
+/-- A destroyed external four-clique has a large order-two predecessor.
+Delete one of the three self-repair summands from the equation
+`q = x+y+z+c`; successor-transversal descent makes the remaining sum an
+order-two destroyer.  One of the three choices has size at least `q/3`. -/
+theorem externalFourClique_destroyer_has_largePairPredecessor
+    {A B : Set ℕ} {q b c x y z : ℕ}
+    (hzeroA : 0 ∈ A) (hzeroB : 0 ∉ B)
+    (hbB : b ∈ B)
+    (hcAB : c ∈ A \ B)
+    (hxAB : x ∈ A \ B) (hyAB : y ∈ A \ B)
+    (hzAB : z ∈ A \ B)
+    (hxpos : 0 < x) (hypos : 0 < y) (hzpos : 0 < z)
+    (hxyz : x + y + z = b) (hbc : b + c = q)
+    (hxc : x + c ∉ A) (hyc : y + c ∉ A)
+    (hzc : z + c ∉ A)
+    (hdestroy : DestroysAt (additiveSupportFamily A 3) B q) :
+    Nonempty (LargeExternalFourCliquePredecessorEdge A B q) := by
+  have hxq : x ≤ q := by omega
+  have hyq : y ≤ q := by omega
+  have hzq : z ≤ q := by omega
+  have hdx : DestroysAt
+      (additiveSupportFamily A 2) B (q - x) :=
+    diagonalTarget_destroyer_descends_to_petal
+      hxAB.1 hxAB.2 (by
+        simpa [Nat.add_sub_of_le hxq] using hdestroy)
+  have hdy : DestroysAt
+      (additiveSupportFamily A 2) B (q - y) :=
+    diagonalTarget_destroyer_descends_to_petal
+      hyAB.1 hyAB.2 (by
+        simpa [Nat.add_sub_of_le hyq] using hdestroy)
+  have hdz : DestroysAt
+      (additiveSupportFamily A 2) B (q - z) :=
+    diagonalTarget_destroyer_descends_to_petal
+      hzAB.1 hzAB.2 (by
+        simpa [Nat.add_sub_of_le hzq] using hdestroy)
+  have hlarge : q ≤ 3 * (q - x) ∨
+      q ≤ 3 * (q - y) ∨ q ≤ 3 * (q - z) := by
+    omega
+  rcases hlarge with hxlarge | hylarge | hzlarge
+  · exact ⟨{
+      atom := b
+      anchor := c
+      predecessor := q - x
+      step := x
+      atom_mem := hbB
+      anchor_mem := hcAB
+      step_mem := hxAB
+      step_pos := hxpos
+      step_lt_atom := by omega
+      target_eq_atom_anchor := hbc
+      target_eq_predecessor_step := by omega
+      step_anchor_external := hxc
+      predecessor_large := hxlarge
+      predecessor_destroyed := hdx
+      predecessor_mem_or_external :=
+        orderTwo_destroyer_target_mem_deletion_or_external
+          hzeroA hzeroB hdx }⟩
+  · exact ⟨{
+      atom := b
+      anchor := c
+      predecessor := q - y
+      step := y
+      atom_mem := hbB
+      anchor_mem := hcAB
+      step_mem := hyAB
+      step_pos := hypos
+      step_lt_atom := by omega
+      target_eq_atom_anchor := hbc
+      target_eq_predecessor_step := by omega
+      step_anchor_external := hyc
+      predecessor_large := hylarge
+      predecessor_destroyed := hdy
+      predecessor_mem_or_external :=
+        orderTwo_destroyer_target_mem_deletion_or_external
+          hzeroA hzeroB hdy }⟩
+  · exact ⟨{
+      atom := b
+      anchor := c
+      predecessor := q - z
+      step := z
+      atom_mem := hbB
+      anchor_mem := hcAB
+      step_mem := hzAB
+      step_pos := hzpos
+      step_lt_atom := by omega
+      target_eq_atom_anchor := hbc
+      target_eq_predecessor_step := by omega
+      step_anchor_external := hzc
+      predecessor_large := hzlarge
+      predecessor_destroyed := hdz
+      predecessor_mem_or_external :=
+        orderTwo_destroyer_target_mem_deletion_or_external
+          hzeroA hzeroB hdz }⟩
+
+/-- Pointwise criticality upgrades the common candidate package without
+changing its deletion or surviving repairs. -/
+theorem HasInfiniteCandidateDeletionWithLateSurvivingRepairs.with_criticalPoints
+    {A C K : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCandidateDeletionWithLateSurvivingRepairs A K)
+    (hKC : K ⊆ C)
+    (hcritical : ∀ b ∈ K,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D)) :
+    HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+      A C K D := by
+  obtain ⟨B, hBK, hBA, hB, J, target, repair, hJ, hrepair⟩ := h
+  exact ⟨B, hBK, hBK.trans hKC, hBA, hB,
+    fun b hb => hcritical b (hBK hb),
+    J, target, repair, hJ, hrepair⟩
+
+/-- Strong deletion supplies the complementary destroyed-target stream for
+the same critical candidate.  The recorded surviving supports prove that
+the two streams cannot meet. -/
+theorem HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs.has_survivalDestructionSplit
+    {A C K : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+      A C K D)
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A) :
+    HasInfiniteCriticalSurvivalDestructionSplit A C K D := by
+  obtain ⟨B, hBK, hBC, hBA, hB, hcritical,
+      J, target, repair, hJ, hrepair⟩ := h
+  let S : Set ℕ := target '' J
+  let T : Set ℕ :=
+    {q | DestroysAt (additiveSupportFamily A 3) B q}
+  have hS : S.Infinite := by
+    apply Set.infinite_of_forall_exists_gt
+    intro N
+    obtain ⟨n, hnJ, hNn⟩ := hJ.exists_gt N
+    exact ⟨target n, ⟨n, hnJ, rfl⟩,
+      hNn.trans_le (hrepair n hnJ).1⟩
+  have hT : T.Infinite := by
+    apply Set.infinite_of_forall_exists_gt
+    intro N
+    obtain ⟨q, hqLate, hqDestroy⟩ :=
+      hstrong B hBA hB (N + 1)
+    exact ⟨q, hqDestroy,
+      (Nat.lt_succ_self N).trans_le hqLate⟩
+  have hST : Disjoint S T := by
+    rw [Set.disjoint_left]
+    intro q hqS hqT
+    obtain ⟨n, hnJ, rfl⟩ := hqS
+    exact (hqT (repair n) (hrepair n hnJ).2.1)
+      (hrepair n hnJ).2.2
+  have hsurvive : ∀ q ∈ S,
+      ∃ G ∈ additiveSupportFamily A 3 q,
+        Disjoint (G : Set ℕ) B := by
+    intro q hqS
+    obtain ⟨n, hnJ, rfl⟩ := hqS
+    exact ⟨repair n, (hrepair n hnJ).2.1,
+      (hrepair n hnJ).2.2⟩
+  exact ⟨B, hBK, hBC, hBA, hB, hcritical,
+    S, T, hS, hT, hST, hsurvive, fun q hq => hq⟩
+
+/-- The semantic survival/destruction split automatically has a concrete
+crossing-equation form in the zero-retaining, directly repaired situation.
+Targets in the repaired reservoir cannot be destroyed; the retained zero
+then also excludes destroyed targets from `A`. -/
+theorem HasInfiniteCriticalSurvivalDestructionSplit.to_externalCrossing
+    {A C K : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalSurvivalDestructionSplit A C K D)
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hzeroC : 0 ∉ C)
+    (hrepairsC : HasDirectTripleRepairsForDeletedPairs A C)
+    (hselfC : ∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+      Disjoint (G : Set ℕ) C) :
+    HasInfiniteCriticalExternalCrossingSplit A C K D := by
+  obtain ⟨B, hBK, hBC, hBA, hB, hcritical,
+      S, T, hS, hT, hST, hsurvive, hdestroy⟩ := h
+  have hzeroB : 0 ∉ B := fun h0B => hzeroC (hBC h0B)
+  have hrepairsB : HasDirectTripleRepairsForDeletedPairs A B :=
+    hrepairsC.mono hBC
+  obtain ⟨N, hN⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  let T' : Set ℕ := T \ Set.Iio N
+  have hT' : T'.Infinite := hT.diff (Set.finite_Iio N)
+  have hT'T : T' ⊆ T := fun _ hq => hq.1
+  have hST' : Disjoint S T' := hST.mono_right hT'T
+  refine ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairsB,
+    S, T', hS, hT', hST', hsurvive, ?_⟩
+  intro q hqT'
+  have hqT : q ∈ T := hqT'.1
+  have hqN : N ≤ q := by
+    exact Nat.le_of_not_gt hqT'.2
+  have hqDestroy := hdestroy q hqT
+  have hqC : q ∉ C := by
+    intro hqC
+    obtain ⟨G, hGR, hGC⟩ := hselfC q hqC
+    exact (hqDestroy G hGR) (hGC.mono_right hBC)
+  have hqB : q ∉ B := fun hqB => hqC (hBC hqB)
+  have hcross :=
+    orderTwoSupports_crossing_of_zero_directRepairs_destroyer
+      hzeroA hzeroB hrepairsB hqDestroy
+  have hqA : q ∉ A :=
+    target_not_mem_of_zero_allPairSupports_crossing
+      hzeroA hzeroB hqB (fun E hER => (hcross E hER).1)
+  obtain ⟨E, hER, _hEempty⟩ := hN q hqN
+  obtain ⟨b, hbB, c, hcAB, hbc, _hE⟩ :=
+    exists_endpoints_of_crossingPairSupport
+      hER (hcross E hER).1 (hcross E hER).2
+  exact ⟨hqA, hqDestroy, hcross, b, hbB, c, hcAB, hbc⟩
+
+/-- Expand every crossing equation in the critical stream using the
+surviving self-repair of its deleted zero-atom. -/
+theorem HasInfiniteCriticalExternalCrossingSplit.to_externalFourCliques
+    {A C K : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalExternalCrossingSplit A C K D)
+    (hnormalC : ∀ b ∈ C, ∀ E ∈ additiveSupportFamily A 2 b,
+      E = {b, 0})
+    (hselfC : ∀ b ∈ C, ∃ G ∈ additiveSupportFamily A 3 b,
+      Disjoint (G : Set ℕ) C) :
+    HasInfiniteCriticalExternalFourCliqueSplit A C K D := by
+  obtain ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairsB,
+      S, T, hS, hT, hST, hsurvive, hdestroyed⟩ := h
+  have hnormalB : ∀ b ∈ B, ∀ E ∈ additiveSupportFamily A 2 b,
+      E = {b, 0} := by
+    intro b hb E hER
+    exact hnormalC b (hBC hb) E hER
+  have hselfB : ∀ b ∈ B, ∃ G ∈ additiveSupportFamily A 3 b,
+      Disjoint (G : Set ℕ) B := by
+    intro b hb
+    obtain ⟨G, hGR, hGC⟩ := hselfC b (hBC hb)
+    exact ⟨G, hGR, hGC.mono_right hBC⟩
+  refine ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairsB,
+    S, T, hS, hT, hST, hsurvive, ?_⟩
+  intro q hqT
+  obtain ⟨hqA, hqDestroy, hcross, b₀, hb₀B, c₀, hc₀AB, hbc₀⟩ :=
+    hdestroyed q hqT
+  have hrep : (additiveSupportFamily A 2 q).Nonempty := by
+    refine ⟨pairSupport q b₀, ?_⟩
+    apply pairSupport_mem_additiveSupportFamily
+    · omega
+    · exact hBA hb₀B
+    · have hsub : q - b₀ = c₀ := by omega
+      rw [hsub]
+      exact hc₀AB.1
+  obtain ⟨b, c, x, y, z, hbB, hcAB, hbc,
+      hxAB, hyAB, hzAB, hxpos, hypos, hzpos, hcpos,
+      hxyz, hxy, hxz, hyz, hxc, hyc, hzc⟩ :=
+    exists_externalFourClique_of_repairedCrossingTarget
+      hnormalB hselfB hqDestroy hcross hrep
+  exact ⟨hqA, hqDestroy, b, c, x, y, z, hbB, hcAB, hbc,
+    hxAB, hyAB, hzAB, hxpos, hypos, hzpos, hcpos,
+    hxyz, hxy, hxz, hyz, hxc, hyc, hzc⟩
+
+/-- Choose a large descended pair target from every external four-clique.
+The predecessor range is infinite by the uniform inequality `q ≤ 3*r`.
+Splitting indices according to whether `r` lies in the deletion gives the
+promised infinite deleted-atom chain or infinite external-gap stream. -/
+theorem HasInfiniteCriticalExternalFourCliqueSplit.to_predecessorStream
+    {A C K : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalExternalFourCliqueSplit A C K D)
+    (hzeroA : 0 ∈ A) (hzeroC : 0 ∉ C) :
+    HasInfiniteCriticalPredecessorStreamSplit A C K D := by
+  classical
+  obtain ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairsB,
+      S, T, hS, hT, hST, hsurvive, hdestroyed⟩ := h
+  have hzeroB : 0 ∉ B := fun h0B => hzeroC (hBC h0B)
+  have hedgeExists : ∀ q, q ∈ T →
+      Nonempty (LargeExternalFourCliquePredecessorEdge A B q) := by
+    intro q hqT
+    obtain ⟨_hqA, hqDestroy, b, c, x, y, z,
+        hbB, hcAB, hbcFirst, hxAB, hyAB, hzAB,
+        hxpos, hypos, hzpos, _hcpos, hxyz, _hxy,
+        _hxz, _hyz, hxc, hyc, hzc⟩ :=
+      hdestroyed q hqT
+    exact externalFourClique_destroyer_has_largePairPredecessor
+      hzeroA hzeroB hbB hcAB hxAB hyAB hzAB hxpos hypos hzpos hxyz hbcFirst
+        hxc hyc hzc hqDestroy
+  let edge : ∀ q, q ∈ T →
+      LargeExternalFourCliquePredecessorEdge A B q :=
+    fun q hq => Classical.choice (hedgeExists q hq)
+  let atom : ℕ → ℕ := fun q =>
+    if hq : q ∈ T then (edge q hq).atom else 0
+  let anchor : ℕ → ℕ := fun q =>
+    if hq : q ∈ T then (edge q hq).anchor else 0
+  let predecessor : ℕ → ℕ := fun q =>
+    if hq : q ∈ T then
+      (edge q hq).predecessor
+    else 0
+  let step : ℕ → ℕ := fun q =>
+    if hq : q ∈ T then (edge q hq).step else 0
+  have hedgeData : ∀ q, q ∈ T →
+      atom q ∈ B ∧ anchor q ∈ A \ B ∧ step q ∈ A \ B ∧
+      0 < step q ∧ step q < atom q ∧
+      atom q + anchor q = q ∧ predecessor q + step q = q ∧
+      step q + anchor q ∉ A ∧ q ≤ 3 * predecessor q ∧
+      DestroysAt (additiveSupportFamily A 2) B (predecessor q) ∧
+      (predecessor q ∈ B ∨ predecessor q ∉ A) := by
+    intro q hqT
+    simpa only [atom, anchor, predecessor, step, dif_pos hqT] using
+      ⟨(edge q hqT).atom_mem, (edge q hqT).anchor_mem,
+        (edge q hqT).step_mem,
+        (edge q hqT).step_pos,
+        (edge q hqT).step_lt_atom,
+        (edge q hqT).target_eq_atom_anchor,
+        (edge q hqT).target_eq_predecessor_step,
+        (edge q hqT).step_anchor_external,
+        (edge q hqT).predecessor_large,
+        (edge q hqT).predecessor_destroyed,
+        (edge q hqT).predecessor_mem_or_external⟩
+  have hpredecessor : ∀ q, q ∈ T →
+      q ≤ 3 * predecessor q ∧
+      DestroysAt (additiveSupportFamily A 2) B (predecessor q) ∧
+      (predecessor q ∈ B ∨ predecessor q ∉ A) := by
+    intro q hqT
+    obtain ⟨_hatom, _hanchor, _hstep, _hstepPos, _hstepLt,
+        _hatomEq, _hpredEq,
+        _hexternal, hlarge, hdestroyPair, hlocation⟩ :=
+      hedgeData q hqT
+    exact ⟨hlarge, hdestroyPair, hlocation⟩
+  have hpredecessorImage : ∀ {I : Set ℕ}, I ⊆ T → I.Infinite →
+      (predecessor '' I).Infinite := by
+    intro I hIT hI
+    apply Set.infinite_of_forall_exists_gt
+    intro N
+    obtain ⟨q, hqI, hqLarge⟩ := hI.exists_gt (3 * N)
+    have hqBound := (hpredecessor q (hIT hqI)).1
+    refine ⟨predecessor q, ⟨q, hqI, rfl⟩, ?_⟩
+    omega
+  let Deleted : Set ℕ :=
+    {q | q ∈ T ∧ predecessor q ∈ B}
+  by_cases hDeleted : Deleted.Infinite
+  · have hDeletedT : Deleted ⊆ T := fun _ hq => hq.1
+    refine ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairsB,
+      S, Deleted, atom, anchor, predecessor, step, hS, hDeleted,
+      hpredecessorImage hDeletedT hDeleted,
+      hST.mono_right hDeletedT, hsurvive, ?_, Or.inl ?_⟩
+    · intro q hqDeleted
+      obtain ⟨hqA, hqDestroy, _hrest⟩ :=
+        hdestroyed q hqDeleted.1
+      obtain ⟨hatomB, hanchorAB, hstepAB, hstepPos, hstepLt,
+          hatomEq, hpredEq,
+          hstepAnchor, hlarge, hdestroyPair, _hlocation⟩ :=
+        hedgeData q hqDeleted.1
+      exact ⟨hqA, hqDestroy, hatomB, hanchorAB, hstepAB,
+        hstepPos, hstepLt, hatomEq, hpredEq, hstepAnchor, hlarge,
+        hdestroyPair⟩
+    · intro q hqDeleted
+      exact hqDeleted.2
+  · have hDeletedFinite : Deleted.Finite :=
+      Set.not_infinite.mp hDeleted
+    let I : Set ℕ := T \ Deleted
+    have hI : I.Infinite := hT.diff hDeletedFinite
+    have hIT : I ⊆ T := fun _ hq => hq.1
+    refine ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairsB,
+      S, I, atom, anchor, predecessor, step,
+      hS, hI, hpredecessorImage hIT hI,
+      hST.mono_right hIT, hsurvive, ?_, Or.inr ?_⟩
+    · intro q hqI
+      obtain ⟨hqA, hqDestroy, _hrest⟩ := hdestroyed q hqI.1
+      obtain ⟨hatomB, hanchorAB, hstepAB, hstepPos, hstepLt,
+          hatomEq, hpredEq,
+          hstepAnchor, hlarge, hdestroyPair, _hlocation⟩ :=
+        hedgeData q hqI.1
+      exact ⟨hqA, hqDestroy, hatomB, hanchorAB, hstepAB,
+        hstepPos, hstepLt, hatomEq, hpredEq, hstepAnchor, hlarge,
+        hdestroyPair⟩
+    · intro q hqI
+      rcases (hpredecessor q hqI.1).2.2 with hqB | hqA
+      · exact (hqI.2 ⟨hqI.1, hqB⟩).elim
+      · exact hqA
+
+/-- Refine the predecessor split into its three mathematically distinct
+forms.  A deleted predecessor is either stationary infinitely often, or its
+nonstationary edges give strong critical balanced repair pairs.  An external
+predecessor is retained as an explicit infinite gap-edge stream. -/
+theorem HasInfiniteCriticalPredecessorStreamSplit.to_external_or_stationary_or_balanced
+    {A C K : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalPredecessorStreamSplit A C K D)
+    (hzeroA : 0 ∈ A)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D) :
+    ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+      (∀ b ∈ B,
+        IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+      HasDirectTripleRepairsForDeletedPairs A B ∧
+      ∃ S : Set ℕ, S.Infinite ∧
+        (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+          Disjoint (G : Set ℕ) B) ∧
+        (HasInfiniteCriticalExternalPredecessorEdgeStream A C D B ∨
+          HasInfiniteStationaryCriticalPredecessorStream A C D B ∨
+          HasInfiniteCriticalBalancedRepairDestroyerStream A C D B) := by
+  classical
+  obtain ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairsB,
+      S, I, atom, anchor, predecessor, step,
+      hS, hI, hpredecessorImage, _hSI, hsurvive, hedge,
+      hlocation⟩ := h
+  obtain ⟨I₀, hI₀I, hpredecessorBij⟩ :=
+    Set.exists_subset_bijOn I predecessor
+  have hI₀ : I₀.Infinite := by
+    intro hI₀Finite
+    apply hpredecessorImage
+    rw [← hpredecessorBij.image_eq]
+    exact hI₀Finite.image predecessor
+  have hpredecessorImage₀ : (predecessor '' I₀).Infinite := by
+    rw [hpredecessorBij.image_eq]
+    exact hpredecessorImage
+  rcases hlocation with hdeleted | hexternal
+  · let Stationary : Set ℕ :=
+      {q | q ∈ I₀ ∧ atom q = predecessor q}
+    by_cases hStationary : Stationary.Infinite
+    · have hStationaryI : Stationary ⊆ I :=
+        fun _ hq => hI₀I hq.1
+      have hatomImage : (atom '' Stationary).Infinite := by
+        apply Set.infinite_of_forall_exists_gt
+        intro N
+        obtain ⟨q, hqStationary, hqLarge⟩ :=
+          hStationary.exists_gt (3 * N)
+        obtain ⟨_hqA, _hqDestroy, _hatomB, _hanchorAB,
+            _hstepAB, _hstepPos, _hstepLt, _hatomEq, _hpredEq,
+            _hstepAnchor,
+            hqBound, _hpairDestroy⟩ :=
+          hedge q (hI₀I hqStationary.1)
+        refine ⟨atom q, ⟨q, hqStationary, rfl⟩, ?_⟩
+        rw [← hqStationary.2] at hqBound
+        omega
+      refine ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairsB,
+        S, hS, hsurvive, Or.inr (Or.inl ⟨Stationary,
+          atom, anchor, hStationary, hatomImage, ?_⟩)⟩
+      intro q hqStationary
+      obtain ⟨hqA, hqDestroy, hatomB, hanchorAB, _hstepAB,
+          _hstepPos, hstepLt, hatomEq, hpredEq, hstepAnchor, _hqBound,
+          _hpairDestroy⟩ := hedge q (hI₀I hqStationary.1)
+      have hstepEq : step q = anchor q := by
+        rw [← hqStationary.2] at hpredEq
+        omega
+      exact ⟨hqA, hqDestroy, hatomB,
+        hcritical (atom q) hatomB, hanchorAB,
+        by simpa [hstepEq] using hstepLt, hatomEq,
+        by simpa [hstepEq] using hstepAnchor⟩
+    · have hStationaryFinite : Stationary.Finite :=
+        Set.not_infinite.mp hStationary
+      let Nonstationary : Set ℕ := I₀ \ Stationary
+      have hNonstationary : Nonstationary.Infinite :=
+        hI₀.diff hStationaryFinite
+      obtain ⟨threshold, hrepairPair⟩ := hgood
+      let J : Set ℕ := Nonstationary \ Set.Iio threshold
+      have hJ : J.Infinite :=
+        hNonstationary.diff (Set.finite_Iio threshold)
+      have hpredecessorImageJ : (predecessor '' J).Infinite :=
+        hJ.image (hpredecessorBij.injOn.mono
+          (fun q hqJ => hqJ.1.1))
+      refine ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairsB,
+        S, hS, hsurvive, Or.inr (Or.inr ⟨J, atom, anchor,
+          predecessor, step, hJ, hpredecessorImageJ, ?_⟩)⟩
+      intro q hqJ
+      have hqI₀ : q ∈ I₀ := hqJ.1.1
+      have hqI : q ∈ I := hI₀I hqI₀
+      obtain ⟨hqA, hqDestroy, hatomB, hanchorAB, hstepAB,
+          _hstepPos, hstepLt, hatomEq, hpredEq, hstepAnchor, _hqBound,
+          _hpairDestroy⟩ := hedge q hqI
+      have hpredB : predecessor q ∈ B := hdeleted q hqI
+      have hne : atom q ≠ predecessor q := by
+        intro heq
+        exact hqJ.1.2 ⟨hqI₀, heq⟩
+      have hqThreshold : threshold ≤ q := by
+        exact Nat.le_of_not_gt hqJ.2
+      have hpair : HasPrefixAvoidingDisjointRepairPairAt
+          A C D q := by
+        exact hrepairPair q hqThreshold (Set.mem_univ q)
+      have hseparated : HasCriticalSeparatedRepairPairAt
+          A C B D q :=
+        criticalSeparatedRepairPair_of_destroyed_prefixRepairPair
+          hBC hcritical hpair hqDestroy
+      exact ⟨hqA, hqDestroy, hatomB, hpredB, hne,
+        hcritical (atom q) hatomB,
+        hcritical (predecessor q) hpredB,
+        hanchorAB, hstepAB, hstepLt, hatomEq, hpredEq,
+        hstepAnchor, hseparated⟩
+  · refine ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairsB,
+      S, hS, hsurvive, Or.inl ⟨I₀, atom, anchor, predecessor,
+        step, hI₀, hpredecessorImage₀, ?_⟩⟩
+    intro q hqI₀
+    have hqI : q ∈ I := hI₀I hqI₀
+    obtain ⟨hqA, hqDestroy, hatomB, hanchorAB, hstepAB,
+        hstepPos, hstepLt, hatomEq, hpredEq, hstepAnchor, hqBound,
+        hpairDestroy⟩ := hedge q hqI
+    exact ⟨hqA, hqDestroy, hatomB,
+      hcritical (atom q) hatomB, hanchorAB, hstepAB,
+      hstepPos, hstepLt, hatomEq, hpredEq, hstepAnchor, hqBound,
+      hpairDestroy, hexternal q hqI⟩
+
+/-- The nonstationary balanced branch already restarts the candidate-
+deletion mechanism.  Thin the infinitely many predecessor atoms until the
+predecessor map is injective, delete their image, and retain the canonical
+zero-padded repair `q = atom + anchor + 0`.  Cross-avoidance removes every
+off-diagonal predecessor, while nonstationarity and `anchor ∉ B` remove the
+diagonal one. -/
+theorem HasInfiniteCriticalBalancedRepairDestroyerStream.has_criticalCandidateDeletionWithLateSurvivingRepairs
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalBalancedRepairDestroyerStream A C D B)
+    (hBC : B ⊆ C) (hBA : B ⊆ A)
+    (hzeroA : 0 ∈ A) (hzeroB : 0 ∉ B) :
+    HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+      A C B D := by
+  classical
+  obtain ⟨I, atom, anchor, predecessor, step,
+      hI, hpredecessorImage, hedge⟩ := h
+  obtain ⟨I₀, hI₀I, hpredecessorBij⟩ :=
+    Set.exists_subset_bijOn I predecessor
+  have hI₀ : I₀.Infinite := by
+    intro hI₀Finite
+    apply hpredecessorImage
+    rw [← hpredecessorBij.image_eq]
+    exact hI₀Finite.image predecessor
+  let repair : ℕ → Finset ℕ := fun q =>
+    insert 0 (pairSupport q (atom q))
+  have hrepairMem : ∀ q ∈ I₀,
+      repair q ∈ additiveSupportFamily A 3 q := by
+    intro q hqI₀
+    obtain ⟨_hqA, _hqDestroy, hatomB, _hpredB, _hne,
+        _hatomCritical, _hpredCritical, hanchorAB, _hstepAB,
+        _hstepLt, hatomEq, _hpredEq, _hstepAnchor,
+        _hseparated⟩ := hedge q (hI₀I hqI₀)
+    have hatomLe : atom q ≤ q := by omega
+    have hsub : q - atom q = anchor q := by omega
+    have hpair : pairSupport q (atom q) ∈
+        additiveSupportFamily A 2 q :=
+      pairSupport_mem_additiveSupportFamily hatomLe
+        (hBA hatomB) (by simpa [hsub] using hanchorAB.1)
+    simpa [repair] using
+      (insert_mem_additiveSupportFamily_succ hzeroA hpair)
+  have hrepairCard : ∀ q ∈ I₀, (repair q).card ≤ 3 := by
+    intro q hqI₀
+    exact additiveSupportFamily_cardAtMost A 3 q (repair q)
+      (hrepairMem q hqI₀)
+  obtain ⟨J, hJI₀, hJ, hcross⟩ :=
+    exists_infinite_crossAvoiding_injectiveImage
+      hI₀ predecessor hpredecessorBij.injOn repair 3 hrepairCard
+  let X : Set ℕ := predecessor '' J
+  have hXB : X ⊆ B := by
+    rintro z ⟨q, hqJ, rfl⟩
+    exact (hedge q (hI₀I (hJI₀ hqJ))).2.2.2.1
+  have hX : X.Infinite := by
+    exact hJ.image (hpredecessorBij.injOn.mono hJI₀)
+  have hXcritical : ∀ b ∈ X,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D) := by
+    rintro _ ⟨q, hqJ, rfl⟩
+    exact (hedge q (hI₀I (hJI₀ hqJ))).2.2.2.2.2.2.1
+  have hpredecessorNotRepair : ∀ q ∈ I₀,
+      predecessor q ∉ repair q := by
+    intro q hqI₀ hpredRepair
+    obtain ⟨_hqA, _hqDestroy, _hatomB, hpredB, hne,
+        _hatomCritical, _hpredCritical, hanchorAB, _hstepAB,
+        _hstepLt, hatomEq, _hpredEq, _hstepAnchor,
+        _hseparated⟩ := hedge q (hI₀I hqI₀)
+    rcases Finset.mem_insert.mp hpredRepair with hpredZero | hpredPair
+    · exact hzeroB (hpredZero ▸ hpredB)
+    · have hcases : predecessor q = atom q ∨
+          predecessor q = q - atom q := by
+        simpa only [pairSupport, Finset.mem_insert,
+          Finset.mem_singleton] using hpredPair
+      rcases hcases with hpredAtom | hpredAnchor
+      · exact hne hpredAtom.symm
+      · have hsub : q - atom q = anchor q := by omega
+        apply hanchorAB.2
+        rw [← hsub, ← hpredAnchor]
+        exact hpredB
+  refine ⟨X, hXB, hXB.trans hBC, hXB.trans hBA, hX,
+    hXcritical, J, id, repair, hJ, ?_⟩
+  intro q hqJ
+  have hqI₀ : q ∈ I₀ := hJI₀ hqJ
+  refine ⟨by simp, hrepairMem q hqI₀, ?_⟩
+  rw [Set.disjoint_left]
+  intro z hzRepair hzX
+  obtain ⟨d, hdJ, rfl⟩ := hzX
+  by_cases hqd : q = d
+  · subst d
+    exact hpredecessorNotRepair q hqI₀
+      (Finset.mem_coe.mp hzRepair)
+  · exact hcross q hqJ d hdJ hqd
+      (Finset.mem_coe.mp hzRepair)
+
+/-- Infinitely many order-two targets with an all-deleted representation
+immediately give a critical candidate deletion.  Direct repair replaces the
+two deleted summands by a three-term support avoiding the entire deletion. -/
+theorem infinite_allDeletedPairTargets_has_criticalCandidateDeletionWithLateSurvivingRepairs
+    {A C B R : Set ℕ} {D : Finset ℕ}
+    (hBC : B ⊆ C) (hBA : B ⊆ A) (hB : B.Infinite)
+    (hcritical : ∀ b ∈ B,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D))
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B)
+    (hR : R.Infinite)
+    (hred : ∀ r ∈ R, ∃ E ∈ additiveSupportFamily A 2 r,
+      (E : Set ℕ) ⊆ B) :
+    HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+      A C B D := by
+  classical
+  have hrepairExists : ∀ r ∈ R,
+      ∃ G ∈ additiveSupportFamily A 3 r,
+        Disjoint (G : Set ℕ) B := by
+    intro r hrR
+    obtain ⟨E, hER, hEB⟩ := hred r hrR
+    obtain ⟨v, _hvA, hvsum, rfl⟩ :=
+      mem_additiveSupportFamily_iff.mp hER
+    have hv0B : (v 0).1 ∈ B := hEB
+      (mem_tupleSupport_iff.mpr ⟨0, rfl⟩)
+    have hv1B : (v 1).1 ∈ B := hEB
+      (mem_tupleSupport_iff.mpr ⟨1, rfl⟩)
+    have hsum : (v 0).1 + (v 1).1 = r := by
+      simpa [Fin.sum_univ_two] using hvsum
+    obtain ⟨G, hGR, hGB⟩ :=
+      hrepairs (v 0).1 hv0B (v 1).1 hv1B
+    exact ⟨G, hsum ▸ hGR, hGB⟩
+  let repair : ℕ → Finset ℕ := fun r =>
+    if hr : r ∈ R then Classical.choose (hrepairExists r hr) else ∅
+  have hrepairData : ∀ r ∈ R,
+      repair r ∈ additiveSupportFamily A 3 r ∧
+        Disjoint (repair r : Set ℕ) B := by
+    intro r hrR
+    simpa only [repair, dif_pos hrR] using
+      (Classical.choose_spec (hrepairExists r hrR))
+  exact ⟨B, Set.Subset.rfl, hBC, hBA, hB, hcritical,
+    R, id, repair, hR, fun r hrR =>
+      ⟨by simp, (hrepairData r hrR).1, (hrepairData r hrR).2⟩⟩
+
+/-- The stationary strict-descent branch also restarts the critical
+candidate-deletion mechanism.  Its equation gives `q < 2 * atom`; direct
+repairs of the deleted double `atom + atom` therefore form a late surviving
+stream for an injective thinning of the atom image. -/
+theorem HasInfiniteStationaryCriticalPredecessorStream.has_criticalCandidateDeletionWithLateSurvivingRepairs
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteStationaryCriticalPredecessorStream A C D B)
+    (hBC : B ⊆ C) (hBA : B ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B) :
+    HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+      A C B D := by
+  classical
+  obtain ⟨I, atom, anchor, hI, hatomImage, hedge⟩ := h
+  obtain ⟨I₀, hI₀I, hatomBij⟩ := Set.exists_subset_bijOn I atom
+  have hI₀ : I₀.Infinite := by
+    intro hI₀Finite
+    apply hatomImage
+    rw [← hatomBij.image_eq]
+    exact hI₀Finite.image atom
+  have hrepairExists : ∀ q ∈ I,
+      ∃ E ∈ additiveSupportFamily A 3 (atom q + atom q),
+        Disjoint (E : Set ℕ) B := by
+    intro q hqI
+    have hatomB := (hedge q hqI).2.2.1
+    exact hrepairs (atom q) hatomB (atom q) hatomB
+  let repair : ℕ → Finset ℕ := fun q =>
+    if hq : q ∈ I then Classical.choose (hrepairExists q hq) else ∅
+  have hrepairData : ∀ q ∈ I,
+      repair q ∈ additiveSupportFamily A 3 (atom q + atom q) ∧
+        Disjoint (repair q : Set ℕ) B := by
+    intro q hqI
+    simpa only [repair, dif_pos hqI] using
+      (Classical.choose_spec (hrepairExists q hqI))
+  let X : Set ℕ := atom '' I₀
+  have hXB : X ⊆ B := by
+    rintro _ ⟨q, hqI₀, rfl⟩
+    exact (hedge q (hI₀I hqI₀)).2.2.1
+  have hX : X.Infinite := by
+    change (atom '' I₀).Infinite
+    rw [hatomBij.image_eq]
+    exact hatomImage
+  have hXcritical : ∀ b ∈ X,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D) := by
+    rintro _ ⟨q, hqI₀, rfl⟩
+    exact (hedge q (hI₀I hqI₀)).2.2.2.1
+  refine ⟨X, hXB, hXB.trans hBC, hXB.trans hBA, hX,
+    hXcritical, I₀, (fun q => atom q + atom q), repair,
+    hI₀, ?_⟩
+  intro q hqI₀
+  obtain ⟨_hqA, _hqDestroy, _hatomB, _hatomCritical,
+      _hanchorAB, hanchorLt, hatomEq, _hdoubleExternal⟩ :=
+    hedge q (hI₀I hqI₀)
+  have hrepair := hrepairData q (hI₀I hqI₀)
+  refine ⟨?_, hrepair.1, hrepair.2.mono_right hXB⟩
+  change q ≤ atom q + atom q
+  omega
+
+/-- The crossing predecessor equation carries the literal binary clause
+promised by the arithmetic reduction.  Padding `q = atom + anchor` by zero
+gives a repair whose deletion trace is `{atom}`; lifting the crossing pair
+`predecessor = deleted + complement` by `step` gives a second repair whose
+trace is `{deleted}`. -/
+theorem crossingExternalPredecessor_has_exactBinaryRepairEdge
+    {A B : Set ℕ}
+    {q atom anchor predecessor step deleted complement : ℕ}
+    (hzeroA : 0 ∈ A) (hzeroB : 0 ∉ B) (hBA : B ⊆ A)
+    (hatomB : atom ∈ B) (hanchorAB : anchor ∈ A \ B)
+    (hstepAB : step ∈ A \ B)
+    (hatomEq : atom + anchor = q)
+    (hpredEq : predecessor + step = q)
+    (hdeletedB : deleted ∈ B)
+    (hcomplementAB : complement ∈ A \ B)
+    (hde : deleted + complement = predecessor) :
+    HasExactBinaryRepairEdgeAt A B q atom deleted := by
+  classical
+  let E : Finset ℕ := insert 0 (pairSupport q atom)
+  let F : Finset ℕ :=
+    insert step (pairSupport predecessor deleted)
+  have hatomLe : atom ≤ q := by omega
+  have hanchorSub : q - atom = anchor := by omega
+  have hpairE : pairSupport q atom ∈
+      additiveSupportFamily A 2 q :=
+    pairSupport_mem_additiveSupportFamily hatomLe
+      (hBA hatomB) (hanchorSub ▸ hanchorAB.1)
+  have hER : E ∈ additiveSupportFamily A 3 q := by
+    simpa [E] using
+      (insert_mem_additiveSupportFamily_succ hzeroA hpairE)
+  have hdeletedLe : deleted ≤ predecessor := by omega
+  have hcomplementSub : predecessor - deleted = complement := by omega
+  have hpairF : pairSupport predecessor deleted ∈
+      additiveSupportFamily A 2 predecessor :=
+    pairSupport_mem_additiveSupportFamily hdeletedLe
+      (hBA hdeletedB) (hcomplementSub ▸ hcomplementAB.1)
+  have hFR : F ∈ additiveSupportFamily A 3 q := by
+    have hlift :=
+      insert_mem_additiveSupportFamily_succ hstepAB.1 hpairF
+    have hsum : step + predecessor = q := by omega
+    simpa [F, hsum] using hlift
+  have hEtrace : ((E : Set ℕ) ∩ B) = {atom} := by
+    ext x
+    constructor
+    · rintro ⟨hxE, hxB⟩
+      have hcases : x = 0 ∨ x = atom ∨ x = anchor := by
+        simpa [E, pairSupport, hanchorSub] using
+          (Finset.mem_coe.mp hxE)
+      rcases hcases with rfl | rfl | rfl
+      · exact (hzeroB hxB).elim
+      · simp
+      · exact (hanchorAB.2 hxB).elim
+    · intro hx
+      have hxAtom : x = atom := by simpa using hx
+      subst x
+      exact ⟨by simp [E, pairSupport], hatomB⟩
+  have hFtrace : ((F : Set ℕ) ∩ B) = {deleted} := by
+    ext x
+    constructor
+    · rintro ⟨hxF, hxB⟩
+      have hcases : x = step ∨ x = deleted ∨ x = complement := by
+        simpa [F, pairSupport, hcomplementSub] using
+          (Finset.mem_coe.mp hxF)
+      rcases hcases with rfl | rfl | rfl
+      · exact (hstepAB.2 hxB).elim
+      · simp
+      · exact (hcomplementAB.2 hxB).elim
+    · intro hx
+      have hxDeleted : x = deleted := by simpa using hx
+      subst x
+      exact ⟨by simp [F, pairSupport], hdeletedB⟩
+  exact ⟨E, hER, hEtrace, F, hFR, hFtrace⟩
+
+/-- Package the crossing stream without forgetting its additive labels. -/
+theorem HasInfiniteCriticalCrossingExternalPredecessorEdgeStream.to_arithmeticRepairEdges
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalCrossingExternalPredecessorEdgeStream A C D B)
+    (hzeroA : 0 ∈ A) (hzeroC : 0 ∉ C)
+    (hBA : B ⊆ A) (hBC : B ⊆ C) :
+    HasInfiniteCriticalArithmeticRepairEdgeStream A C D B := by
+  obtain ⟨I, atom, anchor, predecessor, step, deleted, complement,
+      hI, _hpredecessorImage, hedge⟩ := h
+  have hzeroB : 0 ∉ B := fun h0B => hzeroC (hBC h0B)
+  refine ⟨I, atom, deleted, hI, ?_⟩
+  intro q hqI
+  obtain ⟨hqA, hqDestroy, hatomB, hatomCritical,
+      hanchorAB, hstepAB, hstepPos, hstepLt, hatomEq, hpredEq,
+      hstepAnchor, hqBound, hpairDestroy, hpredA,
+      hdeletedB, hdeletedCritical, hcomplementAB, hde⟩ :=
+    hedge q hqI
+  exact ⟨{
+    anchor := anchor q
+    predecessor := predecessor q
+    step := step q
+    complement := complement q
+    target_not_mem := hqA
+    target_destroyed := hqDestroy
+    atom_mem := hatomB
+    deleted_mem := hdeletedB
+    atom_critical := hatomCritical
+    deleted_critical := hdeletedCritical
+    anchor_mem := hanchorAB
+    step_mem := hstepAB
+    complement_mem := hcomplementAB
+    step_pos := hstepPos
+    step_lt_atom := hstepLt
+    target_eq_atom_anchor := hatomEq
+    target_eq_predecessor_step := hpredEq
+    step_anchor_external := hstepAnchor
+    predecessor_large := hqBound
+    predecessor_destroyed := hpairDestroy
+    predecessor_external := hpredA
+    predecessor_eq_deleted_complement := hde
+    exact_binary_edge :=
+      crossingExternalPredecessor_has_exactBinaryRepairEdge
+        hzeroA hzeroB hBA hatomB hanchorAB hstepAB
+          hatomEq hpredEq hdeletedB hcomplementAB hde }⟩
+
+/-- Forgetting the auxiliary labels of a crossing predecessor stream leaves
+an infinite family of literal binary repair clauses with critical endpoints. -/
+theorem HasInfiniteCriticalCrossingExternalPredecessorEdgeStream.to_exactBinaryRepairEdges
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalCrossingExternalPredecessorEdgeStream A C D B)
+    (hzeroA : 0 ∈ A) (hzeroC : 0 ∉ C) (hBA : B ⊆ A)
+    (hBC : B ⊆ C) :
+    HasInfiniteCriticalExactBinaryRepairEdgeStream A C D B := by
+  obtain ⟨I, atom, anchor, predecessor, step, deleted, complement,
+      hI, _hpredecessorImage, hedge⟩ := h
+  have hzeroB : 0 ∉ B := fun h0B => hzeroC (hBC h0B)
+  refine ⟨I, atom, deleted, hI, ?_⟩
+  intro q hqI
+  obtain ⟨hqA, hqDestroy, hatomB, hatomCritical,
+      hanchorAB, hstepAB, _hstepPos, _hstepLt, hatomEq, hpredEq,
+      _hstepAnchor, _hqBound, _hpairDestroy, _hpredA,
+      hdeletedB, hdeletedCritical, hcomplementAB, hde⟩ :=
+    hedge q hqI
+  exact ⟨hqA, hqDestroy, hatomB, hdeletedB,
+    hatomCritical, hdeletedCritical,
+    crossingExternalPredecessor_has_exactBinaryRepairEdge
+      hzeroA hzeroB hBA hatomB hanchorAB hstepAB
+        hatomEq hpredEq hdeletedB hcomplementAB hde⟩
+
+/-- A support whose `B`-trace is the singleton `{a}` avoids every nested
+deletion `L ⊆ B` which omits `a`. -/
+theorem support_disjoint_of_trace_eq_singleton
+    {B L : Set ℕ} {E : Finset ℕ} {a : ℕ}
+    (hLB : L ⊆ B) (htrace : ((E : Set ℕ) ∩ B) = {a})
+    (haL : a ∉ L) :
+    Disjoint (E : Set ℕ) L := by
+  rw [Set.disjoint_left]
+  intro z hzE hzL
+  have hzTrace : z ∈ ((E : Set ℕ) ∩ B) :=
+    ⟨hzE, hLB hzL⟩
+  rw [htrace] at hzTrace
+  have hza : z = a := by simpa using hzTrace
+  exact haL (hza ▸ hzL)
+
+/-- Ramsey extraction for the literal clause stream.  Infinitely many
+distinct loop endpoints give the unit branch.  Otherwise remove the finite
+unit set and apply pair Ramsey to the symmetric endpoint relation.  The
+homogeneous independent branch preserves every streamed target under one
+nested infinite deletion; the homogeneous edge branch is an infinite
+pairwise conflict clique. -/
+theorem HasInfiniteCriticalExactBinaryRepairEdgeStream.unit_or_nestedSurvival_or_conflictClique
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalExactBinaryRepairEdgeStream A C D B)
+    (hB : B.Infinite)
+    (hcritical : ∀ b ∈ B,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D)) :
+    HasInfiniteCriticalUnitRepairEdgeStream A C D B ∨
+      HasInfiniteCriticalNestedSurvivalStream A C D B ∨
+      HasInfiniteCriticalBinaryRepairConflictClique A C D B := by
+  classical
+  obtain ⟨I, atom, deleted, hI, hedge⟩ := h
+  let UnitI : Set ℕ :=
+    {q | q ∈ I ∧ atom q = deleted q}
+  let U : Set ℕ := atom '' UnitI
+  by_cases hU : U.Infinite
+  · have hUnitI : UnitI.Infinite := by
+      intro hUnitIFinite
+      exact hU (hUnitIFinite.image atom)
+    exact Or.inl ⟨UnitI, atom, hUnitI, hU, by
+      intro q hqUnit
+      obtain ⟨hqA, hqDestroy, hatomB, _hdeletedB,
+          hatomCritical, _hdeletedCritical, hrepairEdge⟩ :=
+        hedge q hqUnit.1
+      exact ⟨hqA, hqDestroy, hatomB, hatomCritical,
+        by simpa [hqUnit.2] using hrepairEdge⟩⟩
+  · have hUFinite : U.Finite := Set.not_infinite.mp hU
+    let K₀ : Set ℕ := B \ U
+    have hK₀ : K₀.Infinite := hB.diff hUFinite
+    let Conflict : ℕ → ℕ → Prop := fun x y =>
+      x ≠ y ∧ ∃ q, q ∈ I ∧
+        ((atom q = x ∧ deleted q = y) ∨
+          (atom q = y ∧ deleted q = x))
+    have hConflictSymm : Symmetric Conflict := by
+      intro x y hxy
+      obtain ⟨hne, q, hqI, hxy | hyx⟩ := hxy
+      · exact ⟨hne.symm, q, hqI, Or.inr ⟨hxy.1, hxy.2⟩⟩
+      · exact ⟨hne.symm, q, hqI, Or.inl ⟨hyx.1, hyx.2⟩⟩
+    obtain ⟨L, hLK₀, hL, hclique⟩ |
+        ⟨L, hLK₀, hL, hindependent⟩ :=
+      infinite_pairRamsey_nat hK₀ Conflict hConflictSymm
+    · exact Or.inr (Or.inr ⟨L, (fun x hx => (hLK₀ hx).1),
+        hL, by
+          intro x hxL y hyL hxy
+          obtain ⟨_hne, q, hqI, hforward | hbackward⟩ :=
+            hclique hxL hyL hxy
+          · obtain ⟨hqA, hqDestroy, _hatomB, _hdeletedB,
+                hatomCritical, hdeletedCritical, hrepairEdge⟩ :=
+              hedge q hqI
+            exact ⟨by simpa [hforward.1] using hatomCritical,
+              by simpa [hforward.2] using hdeletedCritical,
+              q, hqA, hqDestroy, Or.inl
+                (by simpa [hforward.1, hforward.2] using hrepairEdge)⟩
+          · obtain ⟨hqA, hqDestroy, _hatomB, _hdeletedB,
+                hatomCritical, hdeletedCritical, hrepairEdge⟩ :=
+              hedge q hqI
+            exact ⟨by simpa [hbackward.2] using hdeletedCritical,
+              by simpa [hbackward.1] using hatomCritical,
+              q, hqA, hqDestroy, Or.inr
+                (by simpa [hbackward.1, hbackward.2] using hrepairEdge)⟩⟩)
+    · have hLB : L ⊆ B := fun x hx => (hLK₀ hx).1
+      exact Or.inr (Or.inl ⟨L, hLB, hL,
+        (fun b hb => hcritical b (hLB hb)), I, hI, by
+          intro q hqI
+          obtain ⟨hqA, hqDestroy, _hatomB, _hdeletedB,
+              _hatomCritical, _hdeletedCritical,
+              E, hER, hEtrace, F, hFR, hFtrace⟩ :=
+            hedge q hqI
+          by_cases hatomL : atom q ∈ L
+          · have hdeletedL : deleted q ∉ L := by
+              intro hdeletedL
+              by_cases heq : atom q = deleted q
+              · exact (hLK₀ hatomL).2
+                  ⟨q, ⟨hqI, heq⟩, rfl⟩
+              · exact hindependent hatomL hdeletedL heq
+                  ⟨heq, q, hqI, Or.inl ⟨rfl, rfl⟩⟩
+            exact ⟨hqA, hqDestroy, F, hFR,
+              support_disjoint_of_trace_eq_singleton
+                hLB hFtrace hdeletedL⟩
+          · exact ⟨hqA, hqDestroy, E, hER,
+              support_disjoint_of_trace_eq_singleton
+                hLB hEtrace hatomL⟩⟩)
+
+/-- Information-preserving Ramsey extraction.  This is the form used for
+the arithmetic attack: the unit, nested-survival, and clique alternatives
+all retain the equations and inequalities of their originating crossing
+edges. -/
+theorem HasInfiniteCriticalArithmeticRepairEdgeStream.unit_or_nestedSurvival_or_conflictClique
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalArithmeticRepairEdgeStream A C D B)
+    (hB : B.Infinite)
+    (hcritical : ∀ b ∈ B,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D)) :
+    HasInfiniteCriticalArithmeticUnitRepairEdgeStream A C D B ∨
+      HasInfiniteCriticalArithmeticNestedSurvivalStream A C D B ∨
+      HasInfiniteCriticalArithmeticRepairConflictClique A C D B := by
+  classical
+  obtain ⟨I, atom, deleted, hI, hedge⟩ := h
+  let UnitI : Set ℕ :=
+    {q | q ∈ I ∧ atom q = deleted q}
+  let U : Set ℕ := atom '' UnitI
+  by_cases hU : U.Infinite
+  · have hUnitI : UnitI.Infinite := by
+      intro hUnitIFinite
+      exact hU (hUnitIFinite.image atom)
+    exact Or.inl ⟨UnitI, atom, hUnitI, hU, by
+      intro q hqUnit
+      simpa [hqUnit.2] using hedge q hqUnit.1⟩
+  · have hUFinite : U.Finite := Set.not_infinite.mp hU
+    let K₀ : Set ℕ := B \ U
+    have hK₀ : K₀.Infinite := hB.diff hUFinite
+    let Conflict : ℕ → ℕ → Prop := fun x y =>
+      x ≠ y ∧ ∃ q, q ∈ I ∧
+        ((atom q = x ∧ deleted q = y) ∨
+          (atom q = y ∧ deleted q = x))
+    have hConflictSymm : Symmetric Conflict := by
+      intro x y hxy
+      obtain ⟨hne, q, hqI, hxy | hyx⟩ := hxy
+      · exact ⟨hne.symm, q, hqI, Or.inr ⟨hxy.1, hxy.2⟩⟩
+      · exact ⟨hne.symm, q, hqI, Or.inl ⟨hyx.1, hyx.2⟩⟩
+    obtain ⟨L, hLK₀, hL, hclique⟩ |
+        ⟨L, hLK₀, hL, hindependent⟩ :=
+      infinite_pairRamsey_nat hK₀ Conflict hConflictSymm
+    · exact Or.inr (Or.inr ⟨L, (fun x hx => (hLK₀ hx).1),
+        hL, by
+          intro x hxL y hyL hxy
+          obtain ⟨_hne, q, hqI, hforward | hbackward⟩ :=
+            hclique hxL hyL hxy
+          · exact Or.inl ⟨q, by
+              simpa [hforward.1, hforward.2] using hedge q hqI⟩
+          · exact Or.inr ⟨q, by
+              simpa [hbackward.1, hbackward.2] using hedge q hqI⟩⟩)
+    · have hLB : L ⊆ B := fun x hx => (hLK₀ hx).1
+      exact Or.inr (Or.inl ⟨L, hLB, hL,
+        (fun b hb => hcritical b (hLB hb)),
+        I, atom, deleted, hI, by
+          intro q hqI
+          obtain ⟨w⟩ := hedge q hqI
+          obtain ⟨E, hER, hEtrace, F, hFR, hFtrace⟩ :=
+            w.exact_binary_edge
+          by_cases hatomL : atom q ∈ L
+          · have hdeletedL : deleted q ∉ L := by
+              intro hdeletedL
+              by_cases heq : atom q = deleted q
+              · exact (hLK₀ hatomL).2
+                  ⟨q, ⟨hqI, heq⟩, rfl⟩
+              · exact hindependent hatomL hdeletedL heq
+                  ⟨heq, q, hqI, Or.inl ⟨rfl, rfl⟩⟩
+            exact ⟨⟨w⟩, F, hFR,
+              support_disjoint_of_trace_eq_singleton
+                hLB hFtrace hdeletedL⟩
+          · exact ⟨⟨w⟩, E, hER,
+              support_disjoint_of_trace_eq_singleton
+                hLB hEtrace hatomL⟩⟩)
+
+/-- Ramsey extraction for a stream of genuinely nonstationary arithmetic
+edges.  Since every selected edge has distinct endpoints, there is no unit
+set to remove and the only homogeneous outcomes are nested survival and a
+complete conflict graph. -/
+theorem HasInfiniteCriticalNonstationaryArithmeticRepairEdgeStream.nestedSurvival_or_conflictClique
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalNonstationaryArithmeticRepairEdgeStream
+      A C D B)
+    (hB : B.Infinite)
+    (hcritical : ∀ b ∈ B,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D)) :
+    HasInfiniteCriticalArithmeticNestedSurvivalStream A C D B ∨
+      HasInfiniteCriticalArithmeticRepairConflictClique A C D B := by
+  classical
+  obtain ⟨I, atom, deleted, hI, hedge⟩ := h
+  let Conflict : ℕ → ℕ → Prop := fun x y =>
+    x ≠ y ∧ ∃ q, q ∈ I ∧
+      ((atom q = x ∧ deleted q = y) ∨
+        (atom q = y ∧ deleted q = x))
+  have hConflictSymm : Symmetric Conflict := by
+    intro x y hxy
+    obtain ⟨hne, q, hqI, hxy | hyx⟩ := hxy
+    · exact ⟨hne.symm, q, hqI, Or.inr ⟨hxy.1, hxy.2⟩⟩
+    · exact ⟨hne.symm, q, hqI, Or.inl ⟨hyx.1, hyx.2⟩⟩
+  obtain ⟨L, hLB, hL, hclique⟩ |
+      ⟨L, hLB, hL, hindependent⟩ :=
+    infinite_pairRamsey_nat hB Conflict hConflictSymm
+  · exact Or.inr ⟨L, hLB, hL, by
+      intro x hxL y hyL hxy
+      obtain ⟨_hne, q, hqI, hforward | hbackward⟩ :=
+        hclique hxL hyL hxy
+      · exact Or.inl ⟨q, by
+          simpa [hforward.1, hforward.2] using (hedge q hqI).2⟩
+      · exact Or.inr ⟨q, by
+          simpa [hbackward.1, hbackward.2] using (hedge q hqI).2⟩⟩
+  · exact Or.inl ⟨L, hLB, hL,
+      (fun b hb => hcritical b (hLB hb)),
+      I, atom, deleted, hI, by
+        intro q hqI
+        obtain ⟨hne, ⟨w⟩⟩ := hedge q hqI
+        obtain ⟨E, hER, hEtrace, F, hFR, hFtrace⟩ :=
+          w.exact_binary_edge
+        by_cases hatomL : atom q ∈ L
+        · have hdeletedL : deleted q ∉ L := by
+            intro hdeletedL
+            exact hindependent hatomL hdeletedL hne
+              ⟨hne, q, hqI, Or.inl ⟨rfl, rfl⟩⟩
+          exact ⟨⟨w⟩, F, hFR,
+            support_disjoint_of_trace_eq_singleton
+              hLB hFtrace hdeletedL⟩
+        · exact ⟨⟨w⟩, E, hER,
+            support_disjoint_of_trace_eq_singleton
+              hLB hEtrace hatomL⟩⟩
+
+/-- A second Ramsey thinning turns the undirected arithmetic conflict clique
+into a genuine monotone forced chain.  The coloring asks whether the edge
+from the numerically smaller endpoint to the larger endpoint exists.  On
+the negative homogeneous branch, clique completeness forces every edge in
+the reverse direction. -/
+theorem HasInfiniteCriticalArithmeticRepairConflictClique.increasingChain_or_decreasingChain
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalArithmeticRepairConflictClique A C D B) :
+    HasInfiniteCriticalIncreasingArithmeticRepairChain A C D B ∨
+      HasInfiniteCriticalDecreasingArithmeticRepairChain A C D B := by
+  classical
+  obtain ⟨K, hKB, hK, hedge⟩ := h
+  let Forward : ℕ → ℕ → Prop := fun x y =>
+    (x < y ∧ ∃ q, Nonempty (CriticalCrossingRepairEdgeData
+      A C D B q x y)) ∨
+    (y < x ∧ ∃ q, Nonempty (CriticalCrossingRepairEdgeData
+      A C D B q y x))
+  have hForwardSymm : Symmetric Forward := by
+    intro x y hxy
+    rcases hxy with hxy | hyx
+    · exact Or.inr hxy
+    · exact Or.inl hyx
+  obtain ⟨L, hLK, hL, hforward⟩ |
+      ⟨L, hLK, hL, hbackward⟩ :=
+    infinite_pairRamsey_nat hK Forward hForwardSymm
+  · refine Or.inl ⟨L, hLK.trans hKB, hL, ?_⟩
+    intro x hxL y hyL hxy
+    rcases hforward hxL hyL hxy.ne with
+        ⟨_hxy, q, hq⟩ | ⟨hyx, _q, _hq⟩
+    · exact ⟨q, hq⟩
+    · omega
+  · refine Or.inr ⟨L, hLK.trans hKB, hL, ?_⟩
+    intro x hxL y hyL hxy
+    rcases hedge x (hLK hxL) y (hLK hyL) hxy.ne with
+        hxyEdge | hyxEdge
+    · exact (hbackward hxL hyL hxy.ne
+        (Or.inl ⟨hxy, hxyEdge⟩)).elim
+    · exact hyxEdge
+
+/-- The compact edge equation obtained by eliminating the predecessor and
+target names from a fully labelled repair edge. -/
+theorem CriticalCrossingRepairEdgeData.atom_anchor_eq_deleted_complement_step
+    {A C B : Set ℕ} {D : Finset ℕ} {q atom deleted : ℕ}
+    (w : CriticalCrossingRepairEdgeData A C D B q atom deleted) :
+    atom + w.anchor = deleted + w.complement + w.step := by
+  have h₁ := w.target_eq_atom_anchor
+  have h₂ := w.target_eq_predecessor_step
+  have h₃ := w.predecessor_eq_deleted_complement
+  omega
+
+/-- An edge directed from a smaller atom to a larger deleted endpoint has
+its retained two-label sum strictly below its anchor. -/
+theorem CriticalCrossingRepairEdgeData.complement_step_lt_anchor_of_atom_lt_deleted
+    {A C B : Set ℕ} {D : Finset ℕ} {q atom deleted : ℕ}
+    (w : CriticalCrossingRepairEdgeData A C D B q atom deleted)
+    (h : atom < deleted) :
+    w.complement + w.step < w.anchor := by
+  have hedge := w.atom_anchor_eq_deleted_complement_step
+  omega
+
+/-- An edge directed from a larger atom to a smaller deleted endpoint has
+its anchor strictly below its retained two-label sum. -/
+theorem CriticalCrossingRepairEdgeData.anchor_lt_complement_step_of_deleted_lt_atom
+    {A C B : Set ℕ} {D : Finset ℕ} {q atom deleted : ℕ}
+    (w : CriticalCrossingRepairEdgeData A C D B q atom deleted)
+    (h : deleted < atom) :
+    w.anchor < w.complement + w.step := by
+  have hedge := w.atom_anchor_eq_deleted_complement_step
+  omega
+
+/-- The retained complement of a crossing edge is positive.  At zero the
+external predecessor would equal its deleted endpoint and hence belong to
+A. -/
+theorem CriticalCrossingRepairEdgeData.complement_pos
+    {A C B : Set ℕ} {D : Finset ℕ} {q atom deleted : ℕ}
+    (w : CriticalCrossingRepairEdgeData A C D B q atom deleted)
+    (hBA : B ⊆ A) :
+    0 < w.complement := by
+  by_contra hnot
+  have hzero : w.complement = 0 := Nat.eq_zero_of_not_pos hnot
+  apply w.predecessor_external
+  have heq := w.predecessor_eq_deleted_complement
+  have hdeletedA := hBA w.deleted_mem
+  have hpredEq : w.predecessor = deleted := by
+    omega
+  rw [hpredEq]
+  exact hdeletedA
+
+/-- On a decreasing edge the positive step cannot coincide with the anchor.
+Otherwise cancellation makes the external predecessor equal to the source
+atom, which lies in A. -/
+theorem CriticalCrossingRepairEdgeData.step_ne_anchor_of_deleted_lt_atom
+    {A C B : Set ℕ} {D : Finset ℕ} {q atom deleted : ℕ}
+    (w : CriticalCrossingRepairEdgeData A C D B q atom deleted)
+    (hBA : B ⊆ A) (h : deleted < atom) :
+    w.step ≠ w.anchor := by
+  intro hstep
+  have hedge := w.atom_anchor_eq_deleted_complement_step
+  have hpred := w.predecessor_eq_deleted_complement
+  have hpredAtom : w.predecessor = atom := by
+    omega
+  apply w.predecessor_external
+  rw [hpredAtom]
+  exact hBA w.atom_mem
+
+/-- The three edge equations on a transitively oriented triangle are not
+independent.  Cancelling the three critical vertices forces this exact
+six-label identity. -/
+theorem criticalCrossingRepairEdgeData_triangle_identity
+    {A C B : Set ℕ} {D : Finset ℕ}
+    {qab qbc qac a b c : ℕ}
+    (wab : CriticalCrossingRepairEdgeData A C D B qab a b)
+    (wbc : CriticalCrossingRepairEdgeData A C D B qbc b c)
+    (wac : CriticalCrossingRepairEdgeData A C D B qac a c) :
+    wab.anchor + wbc.anchor + (wac.complement + wac.step) =
+      (wab.complement + wab.step) +
+        (wbc.complement + wbc.step) + wac.anchor := by
+  have hab := wab.atom_anchor_eq_deleted_complement_step
+  have hbc := wbc.atom_anchor_eq_deleted_complement_step
+  have hac := wac.atom_anchor_eq_deleted_complement_step
+  omega
+
+/-- Along an increasing forced chain, fixing its first vertex and sending
+the second vertex to infinity forces the anchor labels to be unbounded. -/
+theorem HasInfiniteCriticalIncreasingArithmeticRepairChain.has_fixedSource_unboundedAnchors
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalIncreasingArithmeticRepairChain A C D B) :
+    ∃ x ∈ B, ∀ N, ∃ y ∈ B, x < y ∧
+      ∃ q, ∃ w : CriticalCrossingRepairEdgeData A C D B q x y,
+        N < w.anchor := by
+  obtain ⟨K, hKB, hK, hedge⟩ := h
+  obtain ⟨x, hxK⟩ := hK.nonempty
+  refine ⟨x, hKB hxK, ?_⟩
+  intro N
+  obtain ⟨y, hyK, hyLarge⟩ := hK.exists_gt (x + N)
+  obtain ⟨q, ⟨w⟩⟩ := hedge x hxK y hyK (by omega)
+  refine ⟨y, hKB hyK, by omega, q, w, ?_⟩
+  have heq := w.atom_anchor_eq_deleted_complement_step
+  omega
+
+/-- Along a decreasing forced chain, fixing its smaller endpoint and sending
+the larger atom to infinity forces the retained complement-plus-step labels
+to be unbounded. -/
+theorem HasInfiniteCriticalDecreasingArithmeticRepairChain.has_fixedDestination_unboundedRetainedSums
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalDecreasingArithmeticRepairChain A C D B) :
+    ∃ x ∈ B, ∀ N, ∃ y ∈ B, x < y ∧
+      ∃ q, ∃ w : CriticalCrossingRepairEdgeData A C D B q y x,
+        N < w.complement + w.step := by
+  obtain ⟨K, hKB, hK, hedge⟩ := h
+  obtain ⟨x, hxK⟩ := hK.nonempty
+  refine ⟨x, hKB hxK, ?_⟩
+  intro N
+  obtain ⟨y, hyK, hyLarge⟩ := hK.exists_gt (x + N)
+  obtain ⟨q, ⟨w⟩⟩ := hedge x hxK y hyK (by omega)
+  refine ⟨y, hKB hyK, by omega, q, w, ?_⟩
+  have heq := w.atom_anchor_eq_deleted_complement_step
+  omega
+
+/-- The increasing chain cannot remain an essentially new obstruction.
+Fix its least chosen source.  The edge anchors then have infinite range.
+The lifted repair through the larger deleted endpoint omits its own anchor:
+the anchor lies outside B, and equality with either retained lifted label
+would contradict the strict source/destination order.  Bounded-support
+free-set thinning therefore turns the anchor image into a lateral deletion
+which preserves an infinite stream destroyed by B. -/
+theorem HasInfiniteCriticalIncreasingArithmeticRepairChain.to_lateralDeletionSwitch
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalIncreasingArithmeticRepairChain A C D B)
+    (hBA : B ⊆ A) :
+    HasInfiniteLateralDeletionSwitch A B := by
+  classical
+  obtain ⟨K, hKB, hK, hedge⟩ := h
+  obtain ⟨x, hxK⟩ := hK.nonempty
+  let Y : Set ℕ := K \ Set.Iic x
+  have hY : Y.Infinite := hK.diff (Set.finite_Iic x)
+  have hYK : Y ⊆ K := fun _ hy => hy.1
+  have hxy : ∀ y ∈ Y, x < y := by
+    intro y hy
+    exact Nat.lt_of_not_ge hy.2
+  have hedgeExists : ∀ y, y ∈ Y →
+      ∃ q, Nonempty (CriticalCrossingRepairEdgeData
+        A C D B q x y) := by
+    intro y hy
+    exact hedge x hxK y (hYK hy) (hxy y hy)
+  let target : ℕ → ℕ := fun y =>
+    if hy : y ∈ Y then Classical.choose (hedgeExists y hy) else 0
+  have hwExists : ∀ y, ∀ hy : y ∈ Y,
+      Nonempty (CriticalCrossingRepairEdgeData
+        A C D B (target y) x y) := by
+    intro y hy
+    simpa only [target, dif_pos hy] using
+      Classical.choose_spec (hedgeExists y hy)
+  let w : ∀ y, y ∈ Y →
+      CriticalCrossingRepairEdgeData A C D B (target y) x y :=
+    fun y hy => Classical.choice (hwExists y hy)
+  let anchor : ℕ → ℕ := fun y =>
+    if hy : y ∈ Y then (w y hy).anchor else 0
+  have hanchorEq : ∀ y, ∀ hy : y ∈ Y,
+      anchor y = (w y hy).anchor := by
+    intro y hy
+    simp only [anchor, dif_pos hy]
+  have hanchorImage : (anchor '' Y).Infinite := by
+    apply Set.infinite_of_forall_exists_gt
+    intro N
+    obtain ⟨y, hyY, hyLarge⟩ := hY.exists_gt (x + N)
+    have heq :=
+      (w y hyY).atom_anchor_eq_deleted_complement_step
+    refine ⟨anchor y, ⟨y, hyY, rfl⟩, ?_⟩
+    rw [hanchorEq y hyY]
+    omega
+  obtain ⟨Y₀, hY₀Y, hanchorBij⟩ :=
+    Set.exists_subset_bijOn Y anchor
+  have hY₀ : Y₀.Infinite := by
+    intro hY₀Finite
+    apply hanchorImage
+    rw [← hanchorBij.image_eq]
+    exact hY₀Finite.image anchor
+  let repair : ℕ → Finset ℕ := fun y =>
+    if hy : y ∈ Y then
+      insert (w y hy).step
+        (pairSupport (w y hy).predecessor y)
+    else ∅
+  have hrepairMem : ∀ y ∈ Y₀,
+      repair y ∈ additiveSupportFamily A 3 (target y) := by
+    intro y hyY₀
+    have hyY : y ∈ Y := hY₀Y hyY₀
+    let wy := w y hyY
+    have hdeletedLe : y ≤ wy.predecessor := by
+      have heq := wy.predecessor_eq_deleted_complement
+      omega
+    have hsub : wy.predecessor - y = wy.complement := by
+      have heq := wy.predecessor_eq_deleted_complement
+      omega
+    have hpair : pairSupport wy.predecessor y ∈
+        additiveSupportFamily A 2 wy.predecessor := by
+      apply pairSupport_mem_additiveSupportFamily hdeletedLe
+      · exact hBA wy.deleted_mem
+      · simpa [hsub] using wy.complement_mem.1
+    have hlift :=
+      insert_mem_additiveSupportFamily_succ wy.step_mem.1 hpair
+    have hsum : wy.step + wy.predecessor = target y := by
+      have heq := wy.target_eq_predecessor_step
+      omega
+    simpa only [repair, dif_pos hyY, hsum] using hlift
+  have hrepairCard : ∀ y ∈ Y₀, (repair y).card ≤ 3 := by
+    intro y hyY₀
+    exact additiveSupportFamily_cardAtMost A 3 (target y)
+      (repair y) (hrepairMem y hyY₀)
+  have hanchorNotRepair : ∀ y ∈ Y₀,
+      anchor y ∉ repair y := by
+    intro y hyY₀ hanchorRepair
+    have hyY : y ∈ Y := hY₀Y hyY₀
+    have hsub : (w y hyY).predecessor - y =
+        (w y hyY).complement := by
+      have heq := (w y hyY).predecessor_eq_deleted_complement
+      omega
+    have hcases : anchor y = (w y hyY).step ∨
+        anchor y = y ∨ anchor y = (w y hyY).complement := by
+      simpa only [repair, dif_pos hyY, pairSupport, hsub,
+        Finset.mem_insert, Finset.mem_singleton] using hanchorRepair
+    have hanchor := hanchorEq y hyY
+    have hedgeEq :=
+      (w y hyY).atom_anchor_eq_deleted_complement_step
+    have hxy' := hxy y hyY
+    rcases hcases with hstep | hdeleted | hcomplement
+    · omega
+    · apply (w y hyY).anchor_mem.2
+      rw [← hanchor, hdeleted]
+      exact (w y hyY).deleted_mem
+    · omega
+  obtain ⟨J, hJY₀, hJ, hcross⟩ :=
+    exists_infinite_crossAvoiding_injectiveImage
+      hY₀ anchor hanchorBij.injOn repair 3 hrepairCard
+  let X : Set ℕ := anchor '' J
+  have hXAB : X ⊆ A \ B := by
+    rintro z ⟨y, hyJ, rfl⟩
+    have hyY : y ∈ Y := hY₀Y (hJY₀ hyJ)
+    rw [hanchorEq y hyY]
+    exact (w y hyY).anchor_mem
+  have hX : X.Infinite :=
+    hJ.image (hanchorBij.injOn.mono hJY₀)
+  have htargetInj : Set.InjOn target J := by
+    intro y hyJ z hzJ htarget
+    have hyY : y ∈ Y := hY₀Y (hJY₀ hyJ)
+    have hzY : z ∈ Y := hY₀Y (hJY₀ hzJ)
+    have hyEq := (w y hyY).target_eq_atom_anchor
+    have hzEq := (w z hzY).target_eq_atom_anchor
+    have hanchors : anchor y = anchor z := by
+      rw [hanchorEq y hyY, hanchorEq z hzY]
+      omega
+    exact hanchorBij.injOn (hJY₀ hyJ) (hJY₀ hzJ) hanchors
+  let T : Set ℕ := target '' J
+  have hT : T.Infinite := hJ.image htargetInj
+  have hrepairX : ∀ y ∈ J,
+      Disjoint (repair y : Set ℕ) X := by
+    intro y hyJ
+    rw [Set.disjoint_left]
+    intro z hzRepair hzX
+    obtain ⟨d, hdJ, rfl⟩ := hzX
+    by_cases hyd : y = d
+    · subst d
+      exact hanchorNotRepair y (hJY₀ hyJ)
+        (Finset.mem_coe.mp hzRepair)
+    · exact hcross y hyJ d hdJ hyd
+        (Finset.mem_coe.mp hzRepair)
+  refine ⟨X, hXAB, hX, T, hT, ?_⟩
+  rintro q ⟨y, hyJ, rfl⟩
+  have hyY : y ∈ Y := hY₀Y (hJY₀ hyJ)
+  exact ⟨(w y hyY).target_destroyed,
+    repair y, hrepairMem y (hJY₀ hyJ), hrepairX y hyJ⟩
+
+/-- The decreasing chain also yields a lateral deletion.  Fix its smaller
+destination.  If the step labels have infinite range, delete a free thinning
+of them; the canonical atom-anchor-zero repair omits every diagonal step.
+If the step range is finite, edges with complement equal to anchor form only
+a finite set, while the remaining complement range must be infinite.  A
+free thinning of those complements gives the same switch. -/
+theorem HasInfiniteCriticalDecreasingArithmeticRepairChain.to_lateralDeletionSwitch
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalDecreasingArithmeticRepairChain A C D B)
+    (hzeroA : 0 ∈ A) (hBA : B ⊆ A) :
+    HasInfiniteLateralDeletionSwitch A B := by
+  classical
+  obtain ⟨K, hKB, hK, hedge⟩ := h
+  obtain ⟨x, hxK⟩ := hK.nonempty
+  let Y : Set ℕ := K \ Set.Iic x
+  have hY : Y.Infinite := hK.diff (Set.finite_Iic x)
+  have hYK : Y ⊆ K := fun _ hy => hy.1
+  have hxy : ∀ y ∈ Y, x < y := by
+    intro y hy
+    exact Nat.lt_of_not_ge hy.2
+  have hedgeExists : ∀ y, y ∈ Y →
+      ∃ q, Nonempty (CriticalCrossingRepairEdgeData
+        A C D B q y x) := by
+    intro y hy
+    exact hedge x hxK y (hYK hy) (hxy y hy)
+  let target : ℕ → ℕ := fun y =>
+    if hy : y ∈ Y then Classical.choose (hedgeExists y hy) else 0
+  have hwExists : ∀ y, ∀ hy : y ∈ Y,
+      Nonempty (CriticalCrossingRepairEdgeData
+        A C D B (target y) y x) := by
+    intro y hy
+    simpa only [target, dif_pos hy] using
+      Classical.choose_spec (hedgeExists y hy)
+  let w : ∀ y, y ∈ Y →
+      CriticalCrossingRepairEdgeData A C D B (target y) y x :=
+    fun y hy => Classical.choice (hwExists y hy)
+  let anchor : ℕ → ℕ := fun y =>
+    if hy : y ∈ Y then (w y hy).anchor else 0
+  let step : ℕ → ℕ := fun y =>
+    if hy : y ∈ Y then (w y hy).step else 0
+  let complement : ℕ → ℕ := fun y =>
+    if hy : y ∈ Y then (w y hy).complement else 0
+  have hanchorEq : ∀ y, ∀ hy : y ∈ Y,
+      anchor y = (w y hy).anchor := by
+    intro y hy
+    simp only [anchor, dif_pos hy]
+  have hstepEq : ∀ y, ∀ hy : y ∈ Y,
+      step y = (w y hy).step := by
+    intro y hy
+    simp only [step, dif_pos hy]
+  have hcomplementEq : ∀ y, ∀ hy : y ∈ Y,
+      complement y = (w y hy).complement := by
+    intro y hy
+    simp only [complement, dif_pos hy]
+  let repair : ℕ → Finset ℕ := fun y =>
+    insert 0 (pairSupport (target y) y)
+  have hrepairMem : ∀ y ∈ Y,
+      repair y ∈ additiveSupportFamily A 3 (target y) := by
+    intro y hyY
+    have hatomLe : y ≤ target y := by
+      have heq := (w y hyY).target_eq_atom_anchor
+      omega
+    have hsub : target y - y = (w y hyY).anchor := by
+      have heq := (w y hyY).target_eq_atom_anchor
+      omega
+    have hpair : pairSupport (target y) y ∈
+        additiveSupportFamily A 2 (target y) := by
+      apply pairSupport_mem_additiveSupportFamily hatomLe
+      · exact hBA (w y hyY).atom_mem
+      · simpa [hsub] using (w y hyY).anchor_mem.1
+    simpa [repair] using
+      (insert_mem_additiveSupportFamily_succ hzeroA hpair)
+  have hrepairCard : ∀ y ∈ Y, (repair y).card ≤ 3 := by
+    intro y hyY
+    exact additiveSupportFamily_cardAtMost A 3 (target y)
+      (repair y) (hrepairMem y hyY)
+  have hmakeSwitch : ∀ (L : Set ℕ), L ⊆ Y → L.Infinite →
+      ∀ point : ℕ → ℕ, (point '' L).Infinite →
+      (∀ y ∈ L, point y ∈ A \ B) →
+      (∀ y ∈ L, point y ∉ repair y) →
+      HasInfiniteLateralDeletionSwitch A B := by
+    intro L hLY hL point hpointImage hpointAB hpointNotRepair
+    obtain ⟨L₀, hL₀L, hpointBij⟩ :=
+      Set.exists_subset_bijOn L point
+    have hL₀ : L₀.Infinite := by
+      intro hL₀Finite
+      apply hpointImage
+      rw [← hpointBij.image_eq]
+      exact hL₀Finite.image point
+    obtain ⟨J, hJL₀, hJ, hcross⟩ :=
+      exists_infinite_crossAvoiding_injectiveImage
+        hL₀ point hpointBij.injOn repair 3
+          (fun y hy => hrepairCard y (hLY (hL₀L hy)))
+    let X : Set ℕ := point '' J
+    have hXAB : X ⊆ A \ B := by
+      rintro z ⟨y, hyJ, rfl⟩
+      exact hpointAB y (hL₀L (hJL₀ hyJ))
+    have hX : X.Infinite :=
+      hJ.image (hpointBij.injOn.mono hJL₀)
+    let T : Set ℕ := target '' J
+    have hT : T.Infinite := by
+      apply Set.infinite_of_forall_exists_gt
+      intro N
+      obtain ⟨y, hyJ, hyLarge⟩ := hJ.exists_gt N
+      have hyY : y ∈ Y := hLY (hL₀L (hJL₀ hyJ))
+      have heq := (w y hyY).target_eq_atom_anchor
+      exact ⟨target y, ⟨y, hyJ, rfl⟩, by omega⟩
+    have hrepairX : ∀ y ∈ J,
+        Disjoint (repair y : Set ℕ) X := by
+      intro y hyJ
+      rw [Set.disjoint_left]
+      intro z hzRepair hzX
+      obtain ⟨d, hdJ, rfl⟩ := hzX
+      by_cases hyd : y = d
+      · subst d
+        exact hpointNotRepair y (hL₀L (hJL₀ hyJ))
+          (Finset.mem_coe.mp hzRepair)
+      · exact hcross y hyJ d hdJ hyd
+          (Finset.mem_coe.mp hzRepair)
+    refine ⟨X, hXAB, hX, T, hT, ?_⟩
+    rintro q ⟨y, hyJ, rfl⟩
+    have hyY : y ∈ Y := hLY (hL₀L (hJL₀ hyJ))
+    exact ⟨(w y hyY).target_destroyed,
+      repair y, hrepairMem y hyY, hrepairX y hyJ⟩
+  have hstepAB : ∀ y ∈ Y, step y ∈ A \ B := by
+    intro y hyY
+    rw [hstepEq y hyY]
+    exact (w y hyY).step_mem
+  have hstepNotRepair : ∀ y ∈ Y, step y ∉ repair y := by
+    intro y hyY hstepRepair
+    have hsub : target y - y = (w y hyY).anchor := by
+      have heq := (w y hyY).target_eq_atom_anchor
+      omega
+    have hcases : step y = 0 ∨ step y = y ∨
+        step y = (w y hyY).anchor := by
+      simpa only [repair, pairSupport, hsub, Finset.mem_insert,
+        Finset.mem_singleton] using hstepRepair
+    have hstep := hstepEq y hyY
+    rcases hcases with hzero | hatom | hanchor
+    · have hpos := (w y hyY).step_pos
+      omega
+    · have hlt := (w y hyY).step_lt_atom
+      omega
+    · apply (w y hyY).step_ne_anchor_of_deleted_lt_atom
+        hBA (hxy y hyY)
+      omega
+  by_cases hstepImage : (step '' Y).Infinite
+  · exact hmakeSwitch Y Set.Subset.rfl hY step hstepImage
+      hstepAB hstepNotRepair
+  · have hstepFinite : (step '' Y).Finite :=
+      Set.not_infinite.mp hstepImage
+    let Bad : Set ℕ :=
+      {y | y ∈ Y ∧ complement y = anchor y}
+    have hBadFinite : Bad.Finite := by
+      have hBadSubset :
+          Bad ⊆ (fun s => x + s) '' (step '' Y) := by
+        intro y hyBad
+        change y ∈ Y ∧ complement y = anchor y at hyBad
+        have hyY : y ∈ Y := hyBad.1
+        have hedgeEq :=
+          (w y hyY).atom_anchor_eq_deleted_complement_step
+        have hcomp := hcomplementEq y hyY
+        have hanchor := hanchorEq y hyY
+        have hstep := hstepEq y hyY
+        refine ⟨step y, ⟨y, hyY, rfl⟩, ?_⟩
+        have hsumEq :
+            y + anchor y = x + complement y + step y := by
+          simpa only [hanchor, hcomp, hstep] using hedgeEq
+        have hyEq : y = x + step y := by
+          omega
+        exact hyEq.symm
+      exact (hstepFinite.image (fun s => x + s)).subset hBadSubset
+    let Z : Set ℕ := Y \ Bad
+    have hZY : Z ⊆ Y := fun _ hz => hz.1
+    have hZ : Z.Infinite := hY.diff hBadFinite
+    have hsumImage :
+        ((fun y => complement y + step y) '' Z).Infinite := by
+      apply Set.infinite_of_forall_exists_gt
+      intro N
+      obtain ⟨y, hyZ, hyLarge⟩ := hZ.exists_gt (x + N)
+      have hyY : y ∈ Y := hZY hyZ
+      have hedgeEq :=
+        (w y hyY).atom_anchor_eq_deleted_complement_step
+      have hcomp := hcomplementEq y hyY
+      have hstep := hstepEq y hyY
+      have hanchor := hanchorEq y hyY
+      refine ⟨complement y + step y,
+        ⟨y, hyZ, rfl⟩, ?_⟩
+      omega
+    have hcomplementImage : (complement '' Z).Infinite := by
+      by_contra hnot
+      have hcomplementFinite : (complement '' Z).Finite :=
+        Set.not_infinite.mp hnot
+      have hstepZFinite : (step '' Z).Finite :=
+        hstepFinite.subset <| by
+          rintro s ⟨y, hyZ, rfl⟩
+          exact ⟨y, hZY hyZ, rfl⟩
+      apply hsumImage
+      apply (Set.Finite.image2 (fun a b : ℕ => a + b)
+        hcomplementFinite hstepZFinite).subset
+      rintro r ⟨y, hyZ, rfl⟩
+      exact Set.mem_image2_of_mem
+        ⟨y, hyZ, rfl⟩ ⟨y, hyZ, rfl⟩
+    have hcomplementAB : ∀ y ∈ Z,
+        complement y ∈ A \ B := by
+      intro y hyZ
+      have hyY : y ∈ Y := hZY hyZ
+      rw [hcomplementEq y hyY]
+      exact (w y hyY).complement_mem
+    have hcomplementNotRepair : ∀ y ∈ Z,
+        complement y ∉ repair y := by
+      intro y hyZ hcomplementRepair
+      have hyY : y ∈ Y := hZY hyZ
+      have hsub : target y - y = (w y hyY).anchor := by
+        have heq := (w y hyY).target_eq_atom_anchor
+        omega
+      have hcases : complement y = 0 ∨ complement y = y ∨
+          complement y = (w y hyY).anchor := by
+        simpa only [repair, pairSupport, hsub, Finset.mem_insert,
+          Finset.mem_singleton] using hcomplementRepair
+      have hcomp := hcomplementEq y hyY
+      rcases hcases with hzero | hatom | hanchor
+      · have hpos := (w y hyY).complement_pos hBA
+        omega
+      · apply (w y hyY).complement_mem.2
+        rw [← hcomp, hatom]
+        exact (w y hyY).atom_mem
+      · apply hyZ.2
+        exact ⟨hyY, by
+          exact hanchor.trans (hanchorEq y hyY).symm⟩
+    exact hmakeSwitch Z hZY hZ complement hcomplementImage
+      hcomplementAB hcomplementNotRepair
+
+/-- Cancel the common deleted endpoint in every arithmetic unit edge.  The
+result exposes the core three-label pattern
+`complement + step = anchor`, together with the two missing translates
+`atom + complement ∉ A` and `step + anchor ∉ A`. -/
+theorem HasInfiniteCriticalArithmeticUnitRepairEdgeStream.to_unitGapStream
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalArithmeticUnitRepairEdgeStream A C D B) :
+    HasInfiniteCriticalUnitGapStream A C D B := by
+  obtain ⟨I, atom, hI, hatomImage, hedge⟩ := h
+  refine ⟨I, atom, hI, hatomImage, ?_⟩
+  intro q hqI
+  obtain ⟨w⟩ := hedge q hqI
+  have hatomComplement :
+      atom q + w.complement = w.predecessor :=
+    w.predecessor_eq_deleted_complement
+  have hcomplementStep : w.complement + w.step = w.anchor := by
+    have h₁ := w.target_eq_atom_anchor
+    have h₂ := w.target_eq_predecessor_step
+    omega
+  have hatomComplementExternal :
+      atom q + w.complement ∉ A := by
+    intro hmem
+    exact w.predecessor_external (hatomComplement ▸ hmem)
+  exact ⟨{
+    anchor := w.anchor
+    step := w.step
+    complement := w.complement
+    target_not_mem := w.target_not_mem
+    target_destroyed := w.target_destroyed
+    atom_mem := w.atom_mem
+    atom_critical := w.atom_critical
+    anchor_mem := w.anchor_mem
+    step_mem := w.step_mem
+    complement_mem := w.complement_mem
+    step_pos := w.step_pos
+    step_lt_atom := w.step_lt_atom
+    complement_step_eq_anchor := hcomplementStep
+    atom_complement_external := hatomComplementExternal
+    step_anchor_external := w.step_anchor_external
+    target_eq_atom_anchor := w.target_eq_atom_anchor }⟩
+
+/-- The crossing complement in a unit gap is nonzero: otherwise the
+external predecessor would be the deleted atom itself, which belongs to A. -/
+theorem CriticalUnitGapData.complement_pos
+    {A C B : Set ℕ} {D : Finset ℕ} {q atom : ℕ}
+    (w : CriticalUnitGapData A C D B q atom)
+    (hBA : B ⊆ A) :
+    0 < w.complement := by
+  by_contra hnot
+  have hzero : w.complement = 0 := Nat.eq_zero_of_not_pos hnot
+  exact w.atom_complement_external <| by
+    simpa [hzero] using hBA w.atom_mem
+
+/-- Zero-atomic rigidity forces every unit-gap anchor outside the critical
+reservoir.  Indeed anchor = complement + step is a two-term representation
+by positive terms.  If the anchor were in C, rigidity would force one term
+to be zero; neither degeneration is possible. -/
+theorem CriticalUnitGapData.anchor_not_mem_reservoir
+    {A C B : Set ℕ} {D : Finset ℕ} {q atom : ℕ}
+    (w : CriticalUnitGapData A C D B q atom)
+    (hBA : B ⊆ A)
+    (hnormalC : ∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
+      E = {x, 0}) :
+    w.anchor ∉ C := by
+  intro hanchorC
+  have hcomplementLe : w.complement ≤ w.anchor := by
+    have heq := w.complement_step_eq_anchor
+    omega
+  have hsub : w.anchor - w.complement = w.step := by
+    have heq := w.complement_step_eq_anchor
+    omega
+  have hpair :
+      pairSupport w.anchor w.complement ∈
+        additiveSupportFamily A 2 w.anchor := by
+    apply pairSupport_mem_additiveSupportFamily hcomplementLe
+    · exact w.complement_mem.1
+    · simpa [hsub] using w.step_mem.1
+  have hpairEq :=
+    hnormalC w.anchor hanchorC
+      (pairSupport w.anchor w.complement) hpair
+  have hzeroPair : 0 ∈ pairSupport w.anchor w.complement := by
+    rw [hpairEq]
+    simp
+  have hzeroCases :
+      w.complement = 0 ∨ w.anchor - w.complement = 0 := by
+    simpa [pairSupport, eq_comm] using hzeroPair
+  rcases hzeroCases with hcomplementZero | hstepZero
+  · exact w.atom_complement_external <| by
+      simpa [hcomplementZero] using hBA w.atom_mem
+  · have hpos := w.step_pos
+    omega
+
+/-- Thin a unit-gap stream by the range of its positive step.  Either the
+step range remains infinite, or one fixed positive step occurs at
+infinitely many distinct critical atoms. -/
+theorem HasInfiniteCriticalUnitGapStream.unboundedStep_or_constantStep
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalUnitGapStream A C D B) :
+    HasInfiniteCriticalUnboundedStepUnitGapStream A C D B ∨
+      HasInfiniteCriticalConstantStepUnitGapStream A C D B := by
+  classical
+  obtain ⟨I, atom, hI, hatomImage, hexists⟩ := h
+  let chosen : ∀ q, q ∈ I →
+      CriticalUnitGapData A C D B q (atom q) :=
+    fun q hq => Classical.choice (hexists q hq)
+  let step : ℕ → ℕ := fun q =>
+    if hq : q ∈ I then (chosen q hq).step else 0
+  obtain ⟨I₀, hI₀I, hatomBij⟩ :=
+    Set.exists_subset_bijOn I atom
+  have hI₀ : I₀.Infinite := by
+    intro hI₀Finite
+    apply hatomImage
+    rw [← hatomBij.image_eq]
+    exact hI₀Finite.image atom
+  have hatomImage₀ : (atom '' I₀).Infinite := by
+    rw [hatomBij.image_eq]
+    exact hatomImage
+  by_cases hstepImage : (step '' I₀).Infinite
+  · exact Or.inl ⟨I₀, atom, step, hI₀, hatomImage₀,
+      hstepImage, by
+        intro q hqI₀
+        refine ⟨chosen q (hI₀I hqI₀), ?_⟩
+        simp only [step, dif_pos (hI₀I hqI₀)]⟩
+  · have hstepImageFinite : (step '' I₀).Finite :=
+      Set.not_infinite.mp hstepImage
+    have hinfiniteFiber : ∃ s ∈ step '' I₀,
+        (I₀ ∩ step ⁻¹' ({s} : Set ℕ)).Infinite := by
+      by_contra hnoFiber
+      push Not at hnoFiber
+      apply hI₀
+      apply Set.Finite.of_finite_fibers step hstepImageFinite
+      intro s hsImage
+      exact hnoFiber s hsImage
+    obtain ⟨s, _hsImage, hfiber⟩ := hinfiniteFiber
+    let L : Set ℕ := I₀ ∩ step ⁻¹' ({s} : Set ℕ)
+    have hLI₀ : L ⊆ I₀ := fun _ hq => hq.1
+    have hL : L.Infinite := hfiber
+    have hatomImageL : (atom '' L).Infinite :=
+      hL.image (hatomBij.injOn.mono hLI₀)
+    obtain ⟨q, hqL⟩ := hL.nonempty
+    have hstepEq : step q = s := by
+      simpa [L] using hqL.2
+    have hchosenStep :
+        (chosen q (hI₀I hqL.1)).step = step q := by
+      simp only [step, dif_pos (hI₀I hqL.1)]
+    have hsPos : 0 < s := by
+      rw [← hstepEq, ← hchosenStep]
+      exact (chosen q (hI₀I hqL.1)).step_pos
+    exact Or.inr ⟨L, atom, s, hL, hatomImageL, hsPos, by
+      intro n hnL
+      refine ⟨chosen n (hI₀I hnL.1), ?_⟩
+      have hchosenStepN :
+          (chosen n (hI₀I hnL.1)).step = step n := by
+        simp only [step, dif_pos (hI₀I hnL.1)]
+      calc
+        (chosen n (hI₀I hnL.1)).step = step n := hchosenStepN
+        _ = s := by simpa [L] using hnL.2⟩
+
+/-- Refine the fixed-step branch once more by its complement range.  An
+infinite complement range supports another lateral deletion; otherwise a
+single positive complement, and hence a single anchor, occurs at
+infinitely many distinct critical atoms. -/
+theorem HasInfiniteCriticalConstantStepUnitGapStream.unboundedComplement_or_fixedLabel
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalConstantStepUnitGapStream A C D B)
+    (hBA : B ⊆ A) :
+    HasInfiniteCriticalConstantStepUnboundedComplementUnitGapStream
+        A C D B ∨
+      HasInfiniteCriticalFixedLabelUnitGapStream A C D B := by
+  classical
+  obtain ⟨I, atom, s, hI, hatomImage, hsPos, hdata⟩ := h
+  let chosen : ∀ q, q ∈ I →
+      CriticalUnitGapData A C D B q (atom q) :=
+    fun q hq => Classical.choose (hdata q hq)
+  have hchosenStep : ∀ q, ∀ hq : q ∈ I,
+      (chosen q hq).step = s := by
+    intro q hq
+    exact Classical.choose_spec (hdata q hq)
+  let complement : ℕ → ℕ := fun q =>
+    if hq : q ∈ I then (chosen q hq).complement else 0
+  obtain ⟨I₀, hI₀I, hatomBij⟩ :=
+    Set.exists_subset_bijOn I atom
+  have hI₀ : I₀.Infinite := by
+    intro hI₀Finite
+    apply hatomImage
+    rw [← hatomBij.image_eq]
+    exact hI₀Finite.image atom
+  have hatomImage₀ : (atom '' I₀).Infinite := by
+    rw [hatomBij.image_eq]
+    exact hatomImage
+  by_cases hcomplementImage : (complement '' I₀).Infinite
+  · exact Or.inl ⟨I₀, atom, complement, s, hI₀, hatomImage₀,
+      hcomplementImage, hsPos, by
+        intro q hqI₀
+        refine ⟨chosen q (hI₀I hqI₀),
+          hchosenStep q (hI₀I hqI₀), ?_⟩
+        simp only [complement, dif_pos (hI₀I hqI₀)]⟩
+  · have hcomplementFinite : (complement '' I₀).Finite :=
+      Set.not_infinite.mp hcomplementImage
+    have hinfiniteFiber : ∃ e ∈ complement '' I₀,
+        (I₀ ∩ complement ⁻¹' ({e} : Set ℕ)).Infinite := by
+      by_contra hnoFiber
+      push Not at hnoFiber
+      apply hI₀
+      apply Set.Finite.of_finite_fibers complement hcomplementFinite
+      intro e heImage
+      exact hnoFiber e heImage
+    obtain ⟨e, _heImage, hfiber⟩ := hinfiniteFiber
+    let L : Set ℕ := I₀ ∩ complement ⁻¹' ({e} : Set ℕ)
+    have hLI₀ : L ⊆ I₀ := fun _ hq => hq.1
+    have hL : L.Infinite := hfiber
+    have hatomImageL : (atom '' L).Infinite :=
+      hL.image (hatomBij.injOn.mono hLI₀)
+    obtain ⟨q, hqL⟩ := hL.nonempty
+    have hcomplementEq : complement q = e := by
+      simpa [L] using hqL.2
+    have hchosenComplement :
+        (chosen q (hI₀I hqL.1)).complement = complement q := by
+      simp only [complement, dif_pos (hI₀I hqL.1)]
+    have hePos : 0 < e := by
+      rw [← hcomplementEq, ← hchosenComplement]
+      exact (chosen q (hI₀I hqL.1)).complement_pos hBA
+    exact Or.inr ⟨L, atom, s, e, hL, hatomImageL,
+      hsPos, hePos, by
+        intro n hnL
+        refine ⟨chosen n (hI₀I hnL.1),
+          hchosenStep n (hI₀I hnL.1), ?_⟩
+        have hchosenComplementN :
+            (chosen n (hI₀I hnL.1)).complement =
+              complement n := by
+          simp only [complement, dif_pos (hI₀I hnL.1)]
+        calc
+          (chosen n (hI₀I hnL.1)).complement =
+              complement n := hchosenComplementN
+          _ = e := by simpa [L] using hnL.2⟩
+
+/-- An unbounded-step unit stream makes a strict lateral deletion move.
+Thin until the step map is injective, then apply bounded-support free-set
+avoidance to the canonical support {atom, anchor, 0}.  Positivity,
+step < atom, and complement + step = anchor exclude the diagonal step from
+that support.  The resulting infinite step image lies outside B and
+preserves targets which B destroys. -/
+theorem HasInfiniteCriticalUnboundedStepUnitGapStream.to_lateralDeletionSwitch
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalUnboundedStepUnitGapStream A C D B)
+    (hzeroA : 0 ∈ A) (hBA : B ⊆ A) :
+    HasInfiniteCriticalUnitGapLateralDeletionSwitch A C D B := by
+  classical
+  obtain ⟨I, atom, step, hI, _hatomImage, hstepImage, hdata⟩ := h
+  let chosen : ∀ q, q ∈ I →
+      CriticalUnitGapData A C D B q (atom q) :=
+    fun q hq => Classical.choose (hdata q hq)
+  have hchosenStep : ∀ q, ∀ hq : q ∈ I,
+      (chosen q hq).step = step q := by
+    intro q hq
+    exact Classical.choose_spec (hdata q hq)
+  obtain ⟨I₀, hI₀I, hstepBij⟩ :=
+    Set.exists_subset_bijOn I step
+  have hI₀ : I₀.Infinite := by
+    intro hI₀Finite
+    apply hstepImage
+    rw [← hstepBij.image_eq]
+    exact hI₀Finite.image step
+  let repair : ℕ → Finset ℕ := fun q =>
+    insert 0 (pairSupport q (atom q))
+  have hrepairMem : ∀ q ∈ I₀,
+      repair q ∈ additiveSupportFamily A 3 q := by
+    intro q hqI₀
+    let w := chosen q (hI₀I hqI₀)
+    have hatomLe : atom q ≤ q := by
+      have heq := w.target_eq_atom_anchor
+      omega
+    have hsub : q - atom q = w.anchor := by
+      have heq := w.target_eq_atom_anchor
+      omega
+    have hpair : pairSupport q (atom q) ∈
+        additiveSupportFamily A 2 q := by
+      apply pairSupport_mem_additiveSupportFamily hatomLe
+      · exact hBA w.atom_mem
+      · simpa [hsub] using w.anchor_mem.1
+    simpa [repair] using
+      (insert_mem_additiveSupportFamily_succ hzeroA hpair)
+  have hrepairCard : ∀ q ∈ I₀, (repair q).card ≤ 3 := by
+    intro q hqI₀
+    exact additiveSupportFamily_cardAtMost A 3 q
+      (repair q) (hrepairMem q hqI₀)
+  have hstepNotRepair : ∀ q ∈ I₀, step q ∉ repair q := by
+    intro q hqI₀ hstepRepair
+    let w := chosen q (hI₀I hqI₀)
+    have hstepEq : w.step = step q :=
+      hchosenStep q (hI₀I hqI₀)
+    have hsub : q - atom q = w.anchor := by
+      have heq := w.target_eq_atom_anchor
+      omega
+    have hcases : step q = 0 ∨ step q = atom q ∨
+        step q = q - atom q := by
+      simpa only [repair, pairSupport, Finset.mem_insert,
+        Finset.mem_singleton] using hstepRepair
+    rcases hcases with hzero | hatom | hanchor
+    · have hpos := w.step_pos
+      omega
+    · have hlt := w.step_lt_atom
+      omega
+    · have hcomplementPos := w.complement_pos hBA
+      have heq := w.complement_step_eq_anchor
+      omega
+  obtain ⟨J, hJI₀, hJ, hcross⟩ :=
+    exists_infinite_crossAvoiding_injectiveImage
+      hI₀ step hstepBij.injOn repair 3 hrepairCard
+  let X : Set ℕ := step '' J
+  have hXAB : X ⊆ A \ B := by
+    rintro z ⟨q, hqJ, rfl⟩
+    let w := chosen q (hI₀I (hJI₀ hqJ))
+    have hstepEq : w.step = step q :=
+      hchosenStep q (hI₀I (hJI₀ hqJ))
+    simpa [hstepEq] using w.step_mem
+  have hX : X.Infinite :=
+    hJ.image (hstepBij.injOn.mono hJI₀)
+  refine ⟨X, hXAB, hX, J, atom, hJ, ?_⟩
+  intro q hqJ
+  have hqI₀ : q ∈ I₀ := hJI₀ hqJ
+  refine ⟨chosen q (hI₀I hqI₀), repair q,
+    hrepairMem q hqI₀, ?_⟩
+  rw [Set.disjoint_left]
+  intro z hzRepair hzX
+  obtain ⟨d, hdJ, rfl⟩ := hzX
+  by_cases hqd : q = d
+  · subst d
+    exact hstepNotRepair q hqI₀ (Finset.mem_coe.mp hzRepair)
+  · exact hcross q hqJ d hdJ hqd
+      (Finset.mem_coe.mp hzRepair)
+
+/-- The infinite-complement half of the fixed-step branch makes the same
+lateral move, now deleting a free thinning of the crossing complements.
+The complement is nonzero, lies outside B, and is strictly below its anchor,
+so it cannot occur in its own canonical support. -/
+theorem HasInfiniteCriticalConstantStepUnboundedComplementUnitGapStream.to_lateralDeletionSwitch
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalConstantStepUnboundedComplementUnitGapStream
+      A C D B)
+    (hzeroA : 0 ∈ A) (hBA : B ⊆ A) :
+    HasInfiniteCriticalUnitGapLateralDeletionSwitch A C D B := by
+  classical
+  obtain ⟨I, atom, complement, _s, hI, _hatomImage,
+      hcomplementImage, _hsPos, hdata⟩ := h
+  let chosen : ∀ q, q ∈ I →
+      CriticalUnitGapData A C D B q (atom q) :=
+    fun q hq => Classical.choose (hdata q hq)
+  have hchosenComplement : ∀ q, ∀ hq : q ∈ I,
+      (chosen q hq).complement = complement q := by
+    intro q hq
+    exact (Classical.choose_spec (hdata q hq)).2
+  obtain ⟨I₀, hI₀I, hcomplementBij⟩ :=
+    Set.exists_subset_bijOn I complement
+  have hI₀ : I₀.Infinite := by
+    intro hI₀Finite
+    apply hcomplementImage
+    rw [← hcomplementBij.image_eq]
+    exact hI₀Finite.image complement
+  let repair : ℕ → Finset ℕ := fun q =>
+    insert 0 (pairSupport q (atom q))
+  have hrepairMem : ∀ q ∈ I₀,
+      repair q ∈ additiveSupportFamily A 3 q := by
+    intro q hqI₀
+    let w := chosen q (hI₀I hqI₀)
+    have hatomLe : atom q ≤ q := by
+      have heq := w.target_eq_atom_anchor
+      omega
+    have hsub : q - atom q = w.anchor := by
+      have heq := w.target_eq_atom_anchor
+      omega
+    have hpair : pairSupport q (atom q) ∈
+        additiveSupportFamily A 2 q := by
+      apply pairSupport_mem_additiveSupportFamily hatomLe
+      · exact hBA w.atom_mem
+      · simpa [hsub] using w.anchor_mem.1
+    simpa [repair] using
+      (insert_mem_additiveSupportFamily_succ hzeroA hpair)
+  have hrepairCard : ∀ q ∈ I₀, (repair q).card ≤ 3 := by
+    intro q hqI₀
+    exact additiveSupportFamily_cardAtMost A 3 q
+      (repair q) (hrepairMem q hqI₀)
+  have hcomplementNotRepair : ∀ q ∈ I₀,
+      complement q ∉ repair q := by
+    intro q hqI₀ hcomplementRepair
+    let w := chosen q (hI₀I hqI₀)
+    have hcomplementEq : w.complement = complement q :=
+      hchosenComplement q (hI₀I hqI₀)
+    have hsub : q - atom q = w.anchor := by
+      have heq := w.target_eq_atom_anchor
+      omega
+    have hcases : complement q = 0 ∨ complement q = atom q ∨
+        complement q = q - atom q := by
+      simpa only [repair, pairSupport, Finset.mem_insert,
+        Finset.mem_singleton] using hcomplementRepair
+    rcases hcases with hzero | hatom | hanchor
+    · have hpos := w.complement_pos hBA
+      omega
+    · apply w.complement_mem.2
+      rw [hcomplementEq, hatom]
+      exact w.atom_mem
+    · have hstepPos := w.step_pos
+      have heq := w.complement_step_eq_anchor
+      omega
+  obtain ⟨J, hJI₀, hJ, hcross⟩ :=
+    exists_infinite_crossAvoiding_injectiveImage
+      hI₀ complement hcomplementBij.injOn repair 3 hrepairCard
+  let X : Set ℕ := complement '' J
+  have hXAB : X ⊆ A \ B := by
+    rintro z ⟨q, hqJ, rfl⟩
+    let w := chosen q (hI₀I (hJI₀ hqJ))
+    have hcomplementEq : w.complement = complement q :=
+      hchosenComplement q (hI₀I (hJI₀ hqJ))
+    simpa [hcomplementEq] using w.complement_mem
+  have hX : X.Infinite :=
+    hJ.image (hcomplementBij.injOn.mono hJI₀)
+  refine ⟨X, hXAB, hX, J, atom, hJ, ?_⟩
+  intro q hqJ
+  have hqI₀ : q ∈ I₀ := hJI₀ hqJ
+  refine ⟨chosen q (hI₀I hqI₀), repair q,
+    hrepairMem q hqI₀, ?_⟩
+  rw [Set.disjoint_left]
+  intro z hzRepair hzX
+  obtain ⟨d, hdJ, rfl⟩ := hzX
+  by_cases hqd : q = d
+  · subst d
+    exact hcomplementNotRepair q hqI₀
+      (Finset.mem_coe.mp hzRepair)
+  · exact hcross q hqJ d hdJ hqd
+      (Finset.mem_coe.mp hzRepair)
+
+/-- Complete unit-branch reduction.  Unless both retained labels stabilize,
+the unit stream produces an infinite lateral deletion outside the original
+critical set. -/
+theorem HasInfiniteCriticalUnitGapStream.lateralDeletionSwitch_or_fixedLabel
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalUnitGapStream A C D B)
+    (hzeroA : 0 ∈ A) (hBA : B ⊆ A) :
+    HasInfiniteCriticalUnitGapLateralDeletionSwitch A C D B ∨
+      HasInfiniteCriticalFixedLabelUnitGapStream A C D B := by
+  rcases h.unboundedStep_or_constantStep with
+      hunbounded | hconstant
+  · exact Or.inl (hunbounded.to_lateralDeletionSwitch hzeroA hBA)
+  · rcases hconstant.unboundedComplement_or_fixedLabel hBA with
+        hunboundedComplement | hfixed
+    · exact Or.inl
+        (hunboundedComplement.to_lateralDeletionSwitch hzeroA hBA)
+    · exact Or.inr hfixed
+
+/-- Forget the unit labels while retaining the strict deletion switch. -/
+theorem HasInfiniteCriticalUnitGapLateralDeletionSwitch.to_lateralDeletionSwitch
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalUnitGapLateralDeletionSwitch A C D B) :
+    HasInfiniteLateralDeletionSwitch A B := by
+  obtain ⟨X, hXAB, hX, I, atom, hI, hdata⟩ := h
+  refine ⟨X, hXAB, hX, I, hI, ?_⟩
+  intro q hqI
+  obtain ⟨w, G, hGR, hGX⟩ := hdata q hqI
+  exact ⟨w.target_destroyed, G, hGR, hGX⟩
+
+/-- Eliminate all witness-dependent labels from the fully stabilized unit
+branch.  What remains is one fixed two-step defect and infinitely many
+missing translates of the same complement by distinct critical atoms. -/
+theorem HasInfiniteCriticalFixedLabelUnitGapStream.to_fixedTranslationGapStream
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalFixedLabelUnitGapStream A C D B)
+    (hBA : B ⊆ A)
+    (hnormalC : ∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
+      E = {x, 0}) :
+    HasInfiniteCriticalFixedTranslationGapStream A C D B := by
+  classical
+  obtain ⟨I, atom, s, e, hI, hatomImage,
+      hsPos, hePos, hdata⟩ := h
+  let chosen : ∀ q, q ∈ I →
+      CriticalUnitGapData A C D B q (atom q) :=
+    fun q hq => Classical.choose (hdata q hq)
+  have hchosen : ∀ q, ∀ hq : q ∈ I,
+      (chosen q hq).step = s ∧
+        (chosen q hq).complement = e := by
+    intro q hq
+    exact Classical.choose_spec (hdata q hq)
+  let a : ℕ := e + s
+  obtain ⟨q₀, hq₀I⟩ := hI.nonempty
+  let w₀ := chosen q₀ hq₀I
+  have hs₀ : w₀.step = s := by
+    simpa only [w₀] using (hchosen q₀ hq₀I).1
+  have he₀ : w₀.complement = e := by
+    simpa only [w₀] using (hchosen q₀ hq₀I).2
+  have hanchor₀ : w₀.anchor = a := by
+    have heq := w₀.complement_step_eq_anchor
+    simp only [a]
+    omega
+  have hsAB : s ∈ A \ B := by
+    rw [← hs₀]
+    exact w₀.step_mem
+  have heAB : e ∈ A \ B := by
+    rw [← he₀]
+    exact w₀.complement_mem
+  have haAB : a ∈ A \ B := by
+    rw [← hanchor₀]
+    exact w₀.anchor_mem
+  have haC : a ∉ C := by
+    rw [← hanchor₀]
+    exact w₀.anchor_not_mem_reservoir hBA hnormalC
+  have heTwoStep : e + 2 * s ∉ A := by
+    intro hmem
+    apply w₀.step_anchor_external
+    have hanchor := w₀.complement_step_eq_anchor
+    rw [hs₀]
+    have : w₀.anchor = e + s := by omega
+    rw [this]
+    convert hmem using 1 <;> omega
+  refine ⟨I, atom, s, e, a, hI, hatomImage,
+    hsPos, hePos, hsAB, heAB, haAB, rfl, haC, heTwoStep, ?_⟩
+  intro q hqI
+  let w := chosen q hqI
+  have hsw : w.step = s := by
+    simpa only [w] using (hchosen q hqI).1
+  have hew : w.complement = e := by
+    simpa only [w] using (hchosen q hqI).2
+  have hanchor : w.anchor = a := by
+    have heq := w.complement_step_eq_anchor
+    simp only [a]
+    omega
+  exact ⟨w.target_not_mem, w.target_destroyed, w.atom_mem,
+    w.atom_critical, by
+      intro hmem
+      apply w.atom_complement_external
+      rw [hew]
+      exact hmem,
+    by
+      rw [← hanchor]
+      exact w.target_eq_atom_anchor⟩
+
+/-- The nested-survival Ramsey alternative is already a critical candidate
+deletion.  Use the nested set itself as the deletion and choose, at every
+index in the infinite parent stream, the recorded order-three support which
+avoids it.  Taking the index as its own target supplies the required
+late-target condition without discarding any of the stream. -/
+theorem HasInfiniteCriticalArithmeticNestedSurvivalStream.to_criticalCandidateDeletionWithLateSurvivingRepairs
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalArithmeticNestedSurvivalStream A C D B)
+    (hBC : B ⊆ C) (hBA : B ⊆ A) :
+    HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+      A C B D := by
+  classical
+  obtain ⟨L, hLB, hL, hcritical,
+      I, atom, deleted, hI, hedge⟩ := h
+  let repair : ℕ → Finset ℕ := fun q =>
+    if hq : q ∈ I then Classical.choose (hedge q hq).2 else ∅
+  refine ⟨L, hLB, hLB.trans hBC, hLB.trans hBA, hL, hcritical,
+    I, (fun q => q), repair, hI, ?_⟩
+  intro q hqI
+  have hrepair := Classical.choose_spec (hedge q hqI).2
+  simpa only [repair, dif_pos hqI] using
+    (show q ≤ q ∧
+        Classical.choose (hedge q hqI).2 ∈
+          additiveSupportFamily A 3 q ∧
+        Disjoint
+          ((Classical.choose (hedge q hqI).2 : Finset ℕ) : Set ℕ) L from
+      ⟨Nat.le_refl q, hrepair⟩)
+
+/-- A genuinely nonstationary stream makes immediate progress: Ramsey
+either supplies a nested candidate deletion, or a conflict clique whose
+monotone orientation gives a lateral deletion. -/
+theorem HasInfiniteCriticalNonstationaryArithmeticRepairEdgeStream.lateralDeletionSwitch_or_criticalCandidate
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalNonstationaryArithmeticRepairEdgeStream
+      A C D B)
+    (hzeroA : 0 ∈ A) (hBA : B ⊆ A) (hBC : B ⊆ C)
+    (hB : B.Infinite)
+    (hcritical : ∀ b ∈ B,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D)) :
+    HasInfiniteLateralDeletionSwitch A B ∨
+      HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+        A C B D := by
+  rcases h.nestedSurvival_or_conflictClique hB hcritical with
+      hnested | hclique
+  · exact Or.inr
+      (hnested.to_criticalCandidateDeletionWithLateSurvivingRepairs
+        hBC hBA)
+  · rcases hclique.increasingChain_or_decreasingChain with
+      hincreasing | hdecreasing
+    · exact Or.inl (hincreasing.to_lateralDeletionSwitch hBA)
+    · exact Or.inl
+        (hdecreasing.to_lateralDeletionSwitch hzeroA hBA)
+
+/-- Expand the last external-gap branch through the exact order-two basis.
+If infinitely many predecessor values have an all-deleted pair
+representation, direct repairs already give a fresh critical candidate
+deletion.  Otherwise, after deleting finitely many exceptional predecessor
+values, every selected basis representation crosses from one critical
+deleted endpoint to one retained endpoint. -/
+theorem HasInfiniteCriticalExternalPredecessorEdgeStream.to_crossing_or_criticalCandidate
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalExternalPredecessorEdgeStream A C D B)
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hBC : B ⊆ C) (hBA : B ⊆ A) (hB : B.Infinite)
+    (hcritical : ∀ b ∈ B,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D))
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B) :
+    HasInfiniteCriticalCrossingExternalPredecessorEdgeStream A C D B ∨
+      HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+        A C B D := by
+  classical
+  obtain ⟨I, atom, anchor, predecessor, step,
+      hI, hpredecessorImage, hedge⟩ := h
+  obtain ⟨N, hN⟩ := hbasis
+  let Large : Set ℕ := {q | q ∈ I ∧ N ≤ predecessor q}
+  have hpredecessorLarge : (predecessor '' Large).Infinite := by
+    intro hlargeFinite
+    apply hpredecessorImage
+    apply (hlargeFinite.union (Set.finite_Iio N)).subset
+    rintro r ⟨q, hqI, rfl⟩
+    by_cases hqLarge : N ≤ predecessor q
+    · exact Or.inl ⟨q, ⟨hqI, hqLarge⟩, rfl⟩
+    · exact Or.inr (Nat.lt_of_not_ge hqLarge)
+  have hLarge : Large.Infinite := by
+    intro hLargeFinite
+    exact hpredecessorLarge (hLargeFinite.image predecessor)
+  let RedTarget : Set ℕ :=
+    {r | r ∈ predecessor '' Large ∧
+      ∃ E ∈ additiveSupportFamily A 2 r, (E : Set ℕ) ⊆ B}
+  by_cases hRedTarget : RedTarget.Infinite
+  · exact Or.inr <|
+      infinite_allDeletedPairTargets_has_criticalCandidateDeletionWithLateSurvivingRepairs
+        hBC hBA hB hcritical hrepairs hRedTarget
+          (fun r hr => hr.2)
+  · have hRedTargetFinite : RedTarget.Finite :=
+      Set.not_infinite.mp hRedTarget
+    let J : Set ℕ :=
+      {q | q ∈ Large ∧ predecessor q ∉ RedTarget}
+    have hpredecessorJ : (predecessor '' J).Infinite := by
+      intro hJImageFinite
+      apply hpredecessorLarge
+      apply (hJImageFinite.union hRedTargetFinite).subset
+      rintro r ⟨q, hqLarge, rfl⟩
+      by_cases hrRed : predecessor q ∈ RedTarget
+      · exact Or.inr hrRed
+      · exact Or.inl ⟨q, ⟨hqLarge, hrRed⟩, rfl⟩
+    have hJ : J.Infinite := by
+      intro hJFinite
+      exact hpredecessorJ (hJFinite.image predecessor)
+    have hcrossExists : ∀ q, q ∈ J →
+        Nonempty (CrossingPairDecomposition A B (predecessor q)) := by
+      intro q hqJ
+      obtain ⟨v, hvA, hvsum⟩ :=
+        hN (predecessor q) hqJ.1.2
+      have hvBound : ∀ i, v i < predecessor q + 1 := by
+        intro i
+        have hle : v i ≤ ∑ j, v j := by
+          exact Finset.single_le_sum
+            (fun _ _ => Nat.zero_le _) (Finset.mem_univ i)
+        rw [hvsum] at hle
+        omega
+      let w : Fin 2 → Fin (predecessor q + 1) := fun i =>
+        ⟨v i, hvBound i⟩
+      let E : Finset ℕ := tupleSupport w
+      have hER : E ∈ additiveSupportFamily A 2 (predecessor q) := by
+        apply mem_additiveSupportFamily_iff.mpr
+        exact ⟨w, (by simpa [w] using hvA),
+          (by simpa [w] using hvsum), rfl⟩
+      obtain ⟨_hqA, _hqDestroy, _hatomB, _hatomCritical,
+          _hanchorAB, _hstepAB, _hstepPos, _hstepLt, _hatomEq,
+          _hpredEq,
+          _hstepAnchor, _hqBound, hpairDestroy, _hpredA⟩ :=
+        hedge q hqJ.1.1
+      have hhit : ¬ Disjoint (E : Set ℕ) B :=
+        hpairDestroy E hER
+      have hnotSub : ¬ (E : Set ℕ) ⊆ B := by
+        intro hEB
+        apply hqJ.2
+        exact ⟨⟨q, hqJ.1, rfl⟩, E, hER, hEB⟩
+      obtain ⟨d, hdB, e, heAB, hde, _hE⟩ :=
+        exists_endpoints_of_crossingPairSupport hER hhit hnotSub
+      exact ⟨{
+        deleted := d
+        complement := e
+        deleted_mem := hdB
+        complement_mem := heAB
+        sum_eq := hde }⟩
+    let crossing : ∀ q, q ∈ J →
+        CrossingPairDecomposition A B (predecessor q) :=
+      fun q hq => Classical.choice (hcrossExists q hq)
+    let deleted : ℕ → ℕ := fun q =>
+      if hq : q ∈ J then (crossing q hq).deleted else 0
+    let complement : ℕ → ℕ := fun q =>
+      if hq : q ∈ J then (crossing q hq).complement else 0
+    have hcrossData : ∀ q, q ∈ J →
+        deleted q ∈ B ∧ complement q ∈ A \ B ∧
+          deleted q + complement q = predecessor q := by
+      intro q hqJ
+      simpa only [deleted, complement, dif_pos hqJ] using
+        ⟨(crossing q hqJ).deleted_mem,
+          (crossing q hqJ).complement_mem,
+          (crossing q hqJ).sum_eq⟩
+    refine Or.inl ⟨J, atom, anchor, predecessor, step,
+      deleted, complement, hJ, hpredecessorJ, ?_⟩
+    intro q hqJ
+    obtain ⟨hqA, hqDestroy, hatomB, hatomCritical,
+        hanchorAB, hstepAB, hstepPos, hstepLt, hatomEq, hpredEq,
+        hstepAnchor, hqBound, hpairDestroy, hpredA⟩ :=
+      hedge q hqJ.1.1
+    obtain ⟨hdeletedB, hcomplementAB, hde⟩ :=
+      hcrossData q hqJ
+    exact ⟨hqA, hqDestroy, hatomB, hatomCritical,
+      hanchorAB, hstepAB, hstepPos, hstepLt, hatomEq, hpredEq,
+      hstepAnchor, hqBound, hpairDestroy, hpredA,
+      hdeletedB, hcritical (deleted q) hdeletedB,
+      hcomplementAB, hde⟩
+
+/-- Expanding the fixed translation's reconstructed predecessor through the
+order-two basis either produces genuine crossing repair edges again or an
+all-deleted representation supplies a fresh critical candidate deletion. -/
+theorem HasInfiniteCriticalFixedTranslationGapStream.to_crossing_or_criticalCandidate
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalFixedTranslationGapStream A C D B)
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hBC : B ⊆ C) (hBA : B ⊆ A) (hB : B.Infinite)
+    (hcritical : ∀ b ∈ B,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D))
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B) :
+    HasInfiniteCriticalCrossingExternalPredecessorEdgeStream A C D B ∨
+      HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+        A C B D :=
+  h.to_externalPredecessorEdgeStream.to_crossing_or_criticalCandidate
+    hbasis hBC hBA hB hcritical hrepairs
+
+/-- A fixed translation is either genuinely rigid on infinitely many
+critical atoms or it already makes recursive progress.  In the nonrigid
+case choose a noncanonical pair support of `atom + e`.  An all-deleted
+support gives a critical candidate directly; a crossing support cannot use
+the original atom, so its arithmetic edge is nonstationary and the unit
+branch has disappeared. -/
+theorem HasInfiniteCriticalFixedTranslationGapStream.rigid_or_lateralDeletionSwitch_or_criticalCandidate
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalFixedTranslationGapStream A C D B)
+    (hzeroA : 0 ∈ A) (hzeroC : 0 ∉ C)
+    (hBC : B ⊆ C) (hBA : B ⊆ A) (hB : B.Infinite)
+    (hcritical : ∀ b ∈ B,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D))
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B) :
+    HasInfiniteCriticalRigidFixedTranslationGapStream A C D B ∨
+      HasInfiniteLateralDeletionSwitch A B ∨
+      HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+        A C B D := by
+  classical
+  obtain ⟨I, atom, s, e, a, hI, hatomImage,
+      hsPos, hePos, hsAB, heAB, haAB,
+      hesa, haC, heTwoStep, hdata⟩ := h
+  have hpairDestroy : ∀ q ∈ I,
+      DestroysAt (additiveSupportFamily A 2) B (atom q + e) := by
+    intro q hqI E hER hEB
+    have hlift :=
+      insert_mem_additiveSupportFamily_succ hsAB.1 hER
+    have hsum : s + (atom q + e) = q := by
+      have htarget := (hdata q hqI).2.2.2.2.2
+      omega
+    apply (hdata q hqI).2.1 (insert s E)
+      (by simpa only [hsum] using hlift)
+    rw [Set.disjoint_left]
+    intro z hzInsert hzB
+    rcases Finset.mem_insert.mp (Finset.mem_coe.mp hzInsert) with
+      rfl | hzE
+    · exact hsAB.2 hzB
+    · exact Set.disjoint_left.mp hEB
+        (Finset.mem_coe.mpr hzE) hzB
+  obtain ⟨I₀, hI₀I, hatomBij⟩ :=
+    Set.exists_subset_bijOn I atom
+  have hI₀ : I₀.Infinite := by
+    intro hI₀Finite
+    apply hatomImage
+    rw [← hatomBij.image_eq]
+    exact hI₀Finite.image atom
+  let Bad : Set ℕ := {q | q ∈ I₀ ∧ atom q ≤ s}
+  have hBadFinite : Bad.Finite := by
+    apply Set.Finite.of_finite_image (f := atom)
+    · apply (Set.finite_Iic s).subset
+      rintro b ⟨q, hqBad, rfl⟩
+      exact hqBad.2
+    · exact hatomBij.injOn.mono (fun _ hq => hq.1)
+  let Base : Set ℕ := I₀ \ Bad
+  have hBaseI₀ : Base ⊆ I₀ := fun _ hq => hq.1
+  have hBaseI : Base ⊆ I := hBaseI₀.trans hI₀I
+  have hBase : Base.Infinite := hI₀.diff hBadFinite
+  have hsLtAtom : ∀ q ∈ Base, s < atom q := by
+    intro q hqBase
+    by_contra hnot
+    exact hqBase.2 ⟨hqBase.1, Nat.le_of_not_gt hnot⟩
+  let RigidI : Set ℕ :=
+    {q | q ∈ Base ∧ IsRigidPairSum A (atom q) e}
+  by_cases hRigidI : RigidI.Infinite
+  · have hRigidBase : RigidI ⊆ Base := fun _ hq => hq.1
+    have hRigidImage : (atom '' RigidI).Infinite :=
+      hRigidI.image
+        (hatomBij.injOn.mono (hRigidBase.trans hBaseI₀))
+    exact Or.inl ⟨RigidI, atom, s, e, a,
+      hRigidI, hRigidImage, hsPos, hePos, hsAB, heAB, haAB,
+      hesa, haC, heTwoStep, by
+        intro q hqRigid
+        exact ⟨(hdata q (hBaseI hqRigid.1)).1,
+          (hdata q (hBaseI hqRigid.1)).2.1,
+          (hdata q (hBaseI hqRigid.1)).2.2.1,
+          (hdata q (hBaseI hqRigid.1)).2.2.2.1,
+          (hdata q (hBaseI hqRigid.1)).2.2.2.2.1,
+          (hdata q (hBaseI hqRigid.1)).2.2.2.2.2,
+          hqRigid.2⟩⟩
+  · have hRigidFinite : RigidI.Finite :=
+      Set.not_infinite.mp hRigidI
+    let J : Set ℕ := Base \ RigidI
+    have hJBase : J ⊆ Base := fun _ hq => hq.1
+    have hJI : J ⊆ I := hJBase.trans hBaseI
+    have hJ : J.Infinite := hBase.diff hRigidFinite
+    let predecessor : ℕ → ℕ := fun q => atom q + e
+    have hpredecessorInj : Set.InjOn predecessor J := by
+      intro q hqJ r hrJ heq
+      apply hatomBij.injOn
+        (hBaseI₀ (hJBase hqJ)) (hBaseI₀ (hJBase hrJ))
+      simp only [predecessor] at heq
+      omega
+    have hpredecessorJ : (predecessor '' J).Infinite :=
+      hJ.image hpredecessorInj
+    let RedTarget : Set ℕ :=
+      {r | r ∈ predecessor '' J ∧
+        ∃ E ∈ additiveSupportFamily A 2 r,
+          (E : Set ℕ) ⊆ B}
+    by_cases hRedTarget : RedTarget.Infinite
+    · exact Or.inr (Or.inr <|
+        infinite_allDeletedPairTargets_has_criticalCandidateDeletionWithLateSurvivingRepairs
+          hBC hBA hB hcritical hrepairs hRedTarget
+            (fun r hr => hr.2))
+    · have hRedFinite : RedTarget.Finite :=
+        Set.not_infinite.mp hRedTarget
+      let K : Set ℕ :=
+        {q | q ∈ J ∧ predecessor q ∉ RedTarget}
+      have hpredecessorK : (predecessor '' K).Infinite := by
+        intro hKImageFinite
+        apply hpredecessorJ
+        apply (hKImageFinite.union hRedFinite).subset
+        rintro r ⟨q, hqJ, rfl⟩
+        by_cases hrRed : predecessor q ∈ RedTarget
+        · exact Or.inr hrRed
+        · exact Or.inl ⟨q, ⟨hqJ, hrRed⟩, rfl⟩
+      have hK : K.Infinite := by
+        intro hKFinite
+        exact hpredecessorK (hKFinite.image predecessor)
+      have hcrossExists : ∀ q, q ∈ K →
+          ∃ w : CrossingPairDecomposition A B (predecessor q),
+            atom q ≠ w.deleted := by
+        intro q hqK
+        have hnotRigid : ¬ IsRigidPairSum A (atom q) e := by
+          intro hrigid
+          exact hqK.1.2 ⟨hqK.1.1, hrigid⟩
+        simp only [IsRigidPairSum] at hnotRigid
+        push Not at hnotRigid
+        obtain ⟨E, hER, hEne⟩ := hnotRigid
+        have hhit : ¬ Disjoint (E : Set ℕ) B :=
+          hpairDestroy q (hJI hqK.1) E
+            (by simpa only [predecessor] using hER)
+        have hnotSub : ¬ (E : Set ℕ) ⊆ B := by
+          intro hEB
+          apply hqK.2
+          exact ⟨⟨q, hqK.1, rfl⟩, E,
+            (by simpa only [predecessor] using hER), hEB⟩
+        obtain ⟨d, hdB, c, hcAB, hdc, hEeq⟩ :=
+          exists_endpoints_of_crossingPairSupport
+            (by simpa only [predecessor] using hER) hhit hnotSub
+        have hdE : d ∈ E := by
+          rw [hEeq]
+          simp
+        have hne : atom q ≠ d := by
+          intro had
+          apply hEne
+          have hcanonical :=
+            additiveSupportFamily_two_eq_pairSupport_of_mem hER hdE
+          simpa [had] using hcanonical
+        exact ⟨{
+          deleted := d
+          complement := c
+          deleted_mem := hdB
+          complement_mem := hcAB
+          sum_eq := hdc }, hne⟩
+      let crossing : ∀ q, q ∈ K →
+          CrossingPairDecomposition A B (predecessor q) :=
+        fun q hq => Classical.choose (hcrossExists q hq)
+      let deleted : ℕ → ℕ := fun q =>
+        if hq : q ∈ K then (crossing q hq).deleted else 0
+      let complement : ℕ → ℕ := fun q =>
+        if hq : q ∈ K then (crossing q hq).complement else 0
+      have hcrossData : ∀ q, q ∈ K →
+          atom q ≠ deleted q ∧ deleted q ∈ B ∧
+            complement q ∈ A \ B ∧
+            deleted q + complement q = predecessor q := by
+        intro q hqK
+        have hspec := Classical.choose_spec (hcrossExists q hqK)
+        simpa only [deleted, complement, dif_pos hqK] using
+          ⟨hspec, (crossing q hqK).deleted_mem,
+            (crossing q hqK).complement_mem,
+            (crossing q hqK).sum_eq⟩
+      have hzeroB : 0 ∉ B := fun h0B => hzeroC (hBC h0B)
+      have hnonstationary :
+          HasInfiniteCriticalNonstationaryArithmeticRepairEdgeStream
+            A C D B := by
+        refine ⟨K, atom, deleted, hK, ?_⟩
+        intro q hqK
+        obtain ⟨hne, hdeletedB, hcomplementAB, hde⟩ :=
+          hcrossData q hqK
+        obtain ⟨hqA, hqDestroy, hatomB, hatomCritical,
+            hpredecessorA, hatomTarget⟩ :=
+          hdata q (hJI hqK.1)
+        have hstepLt := hsLtAtom q (hJBase hqK.1)
+        have hpredEq : predecessor q + s = q := by
+          simp only [predecessor]
+          omega
+        have hstepAnchor : s + a ∉ A := by
+          intro hmem
+          apply heTwoStep
+          convert hmem using 1 <;> omega
+        have hqBound : q ≤ 3 * predecessor q := by
+          simp only [predecessor]
+          omega
+        refine ⟨hne, ⟨{
+          anchor := a
+          predecessor := predecessor q
+          step := s
+          complement := complement q
+          target_not_mem := hqA
+          target_destroyed := hqDestroy
+          atom_mem := hatomB
+          deleted_mem := hdeletedB
+          atom_critical := hatomCritical
+          deleted_critical := hcritical (deleted q) hdeletedB
+          anchor_mem := haAB
+          step_mem := hsAB
+          complement_mem := hcomplementAB
+          step_pos := hsPos
+          step_lt_atom := hstepLt
+          target_eq_atom_anchor := hatomTarget
+          target_eq_predecessor_step := hpredEq
+          step_anchor_external := hstepAnchor
+          predecessor_large := hqBound
+          predecessor_destroyed :=
+            hpairDestroy q (hJI hqK.1)
+          predecessor_external := by
+            simpa only [predecessor] using hpredecessorA
+          predecessor_eq_deleted_complement := hde
+          exact_binary_edge :=
+            crossingExternalPredecessor_has_exactBinaryRepairEdge
+              hzeroA hzeroB hBA hatomB haAB hsAB
+                hatomTarget hpredEq hdeletedB hcomplementAB hde }⟩⟩
+      rcases
+          hnonstationary.lateralDeletionSwitch_or_criticalCandidate
+            hzeroA hBA hBC hB hcritical with
+        hlateral | hcandidate
+      · exact Or.inr (Or.inl hlateral)
+      · exact Or.inr (Or.inr hcandidate)
+
+/-- A fixed translation has a more direct dichotomy.  If infinitely many
+translated targets admit a support omitting their marked atom, bounded
+support thinning turns those supports into a common critical candidate
+deletion.  Otherwise the marked atom alone destroys every target on an
+infinite substream; zero-padding and direct repairs identify it as the
+unique crossing endpoint, giving the private-singleton configuration. -/
+theorem HasInfiniteCriticalFixedTranslationGapStream.privateSingleton_or_criticalCandidate
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalFixedTranslationGapStream A C D B)
+    (hzeroA : 0 ∈ A) (hzeroC : 0 ∉ C)
+    (hBC : B ⊆ C) (hBA : B ⊆ A)
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B) :
+    HasInfinitePrivateSingletonCrossingEndpoints A B ∨
+      HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+        A C B D := by
+  classical
+  obtain ⟨I, atom, _s, _e, a, hI, hatomImage,
+      _hsPos, _hePos, _hsAB, _heAB, haAB,
+      _hesa, _haC, _heTwoStep, hdata⟩ := h
+  obtain ⟨I₀, hI₀I, hatomBij⟩ :=
+    Set.exists_subset_bijOn I atom
+  have hI₀ : I₀.Infinite := by
+    intro hI₀Finite
+    apply hatomImage
+    rw [← hatomBij.image_eq]
+    exact hI₀Finite.image atom
+  let Avoidable : Set ℕ :=
+    {q | q ∈ I₀ ∧
+      ∃ G ∈ additiveSupportFamily A 3 q, atom q ∉ G}
+  by_cases hAvoidable : Avoidable.Infinite
+  · have hAvoidableI₀ : Avoidable ⊆ I₀ := fun _ hq => hq.1
+    have hrepairExists : ∀ q, q ∈ Avoidable →
+        ∃ G ∈ additiveSupportFamily A 3 q, atom q ∉ G := by
+      intro q hq
+      exact hq.2
+    let repair : ℕ → Finset ℕ := fun q =>
+      if hq : q ∈ Avoidable then
+        Classical.choose (hrepairExists q hq)
+      else ∅
+    have hrepairData : ∀ q ∈ Avoidable,
+        repair q ∈ additiveSupportFamily A 3 q ∧
+          atom q ∉ repair q := by
+      intro q hq
+      simpa only [repair, dif_pos hq] using
+        Classical.choose_spec (hrepairExists q hq)
+    have hrepairCard : ∀ q ∈ Avoidable,
+        (repair q).card ≤ 3 := by
+      intro q hq
+      exact additiveSupportFamily_cardAtMost A 3 q
+        (repair q) (hrepairData q hq).1
+    obtain ⟨J, hJAvoidable, hJ, hcross⟩ :=
+      exists_infinite_crossAvoiding_injectiveImage
+        hAvoidable atom
+          (hatomBij.injOn.mono hAvoidableI₀)
+          repair 3 hrepairCard
+    let X : Set ℕ := atom '' J
+    have hXB : X ⊆ B := by
+      rintro x ⟨q, hqJ, rfl⟩
+      exact (hdata q (hI₀I (hAvoidableI₀
+        (hJAvoidable hqJ)))).2.2.1
+    have hX : X.Infinite :=
+      hJ.image
+        (hatomBij.injOn.mono
+          (hJAvoidable.trans hAvoidableI₀))
+    have hXcritical : ∀ b ∈ X,
+        IsRecurrentNoTwoRepairPrefix A C (insert b D) := by
+      rintro _ ⟨q, hqJ, rfl⟩
+      exact (hdata q (hI₀I (hAvoidableI₀
+        (hJAvoidable hqJ)))).2.2.2.1
+    have hrepairX : ∀ q ∈ J,
+        Disjoint (repair q : Set ℕ) X := by
+      intro q hqJ
+      rw [Set.disjoint_left]
+      intro z hzRepair hzX
+      obtain ⟨d, hdJ, rfl⟩ := hzX
+      by_cases hqd : q = d
+      · subst d
+        exact (hrepairData q (hJAvoidable hqJ)).2
+          (Finset.mem_coe.mp hzRepair)
+      · exact hcross q hqJ d hdJ hqd
+          (Finset.mem_coe.mp hzRepair)
+    exact Or.inr ⟨X, hXB, hXB.trans hBC, hXB.trans hBA,
+      hX, hXcritical, J, id, repair, hJ, by
+        intro q hqJ
+        exact ⟨by simp,
+          (hrepairData q (hJAvoidable hqJ)).1,
+          hrepairX q hqJ⟩⟩
+  · have hAvoidableFinite : Avoidable.Finite :=
+      Set.not_infinite.mp hAvoidable
+    let J : Set ℕ := I₀ \ Avoidable
+    have hJI₀ : J ⊆ I₀ := fun _ hq => hq.1
+    have hJ : J.Infinite := hI₀.diff hAvoidableFinite
+    let L : Set ℕ := atom '' J
+    have hLB : L ⊆ B := by
+      rintro b ⟨q, hqJ, rfl⟩
+      exact (hdata q (hI₀I (hJI₀ hqJ))).2.2.1
+    have hL : L.Infinite :=
+      hJ.image (hatomBij.injOn.mono hJI₀)
+    have hzeroB : 0 ∉ B := fun h0B => hzeroC (hBC h0B)
+    refine Or.inl ⟨L, hLB, hL, ?_⟩
+    rintro b ⟨q, hqJ, rfl⟩
+    have hqI := hI₀I (hJI₀ hqJ)
+    obtain ⟨hqA, hqDestroy, hatomB, _hatomCritical,
+        _hpredecessorA, hatomTarget⟩ := hdata q hqI
+    have hprivate : DestroysAt
+        (additiveSupportFamily A 3) ({atom q} : Set ℕ) q := by
+      intro G hGR hGsingle
+      apply hqJ.2
+      refine ⟨hqJ.1, G, hGR, ?_⟩
+      intro hatomG
+      exact Set.disjoint_left.mp hGsingle
+        (Finset.mem_coe.mpr hatomG) (by simp)
+    have hsingletonB : ({atom q} : Set ℕ) ⊆ B := by
+      intro x hx
+      have hxEq : x = atom q := by simpa using hx
+      exact hxEq ▸ hatomB
+    have hzeroSingleton : 0 ∉ ({atom q} : Set ℕ) := by
+      intro hzero
+      have hzeroEq : 0 = atom q := by simpa using hzero
+      apply hzeroB
+      rw [hzeroEq]
+      exact hatomB
+    have hcrossSingleton : ∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) ({atom q} : Set ℕ) ∧
+          ¬ (E : Set ℕ) ⊆ ({atom q} : Set ℕ) :=
+      orderTwoSupports_crossing_of_zero_directRepairs_destroyer
+        hzeroA hzeroSingleton (hrepairs.mono hsingletonB) hprivate
+    have hendpointSingleton :
+        crossingAtomEndpoints A ({atom q} : Set ℕ) q = {atom q} := by
+      ext d
+      constructor
+      · intro hd
+        have hdSingle :=
+          (mem_crossingAtomEndpoints_iff.mp hd).2.1
+        simpa using hdSingle
+      · intro hd
+        have hdEq : d = atom q := by simpa using hd
+        subst d
+        apply mem_crossingAtomEndpoints_iff.mpr
+        have hsub : q - atom q = a := by omega
+        refine ⟨by omega, by simp, ?_⟩
+        rw [hsub]
+        exact ⟨haAB.1, by
+          intro haSingle
+          have haEq : a = atom q := by simpa using haSingle
+          exact haAB.2 (haEq ▸ hatomB)⟩
+    obtain ⟨hcrossB, hendpointEq⟩ :=
+      crossingEndpoints_eq_of_destroyer_on_repaired_subreservoir
+        hBA hsingletonB (Set.Subset.rfl) hrepairs
+          hcrossSingleton hprivate
+    exact ⟨q, hcrossB, by
+      rw [hendpointEq]
+      exact hendpointSingleton, hprivate⟩
+
+/-- Under the counterexample hypothesis the private-singleton half of the
+fixed-translation dichotomy is impossible, because the established private
+endpoint theorem already constructs an infinite deletion leaving an exact
+order-three basis.  Hence every fixed translation recycles into a critical
+candidate deletion. -/
+theorem HasInfiniteCriticalFixedTranslationGapStream.has_criticalCandidateDeletionWithLateSurvivingRepairs
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalFixedTranslationGapStream A C D B)
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A) (hzeroC : 0 ∉ C)
+    (hBC : B ⊆ C) (hBA : B ⊆ A)
+    (hnormalB : ∀ x ∈ B,
+      ∀ E ∈ additiveSupportFamily A 2 x, E = {x, 0})
+    (hrepairs : HasDirectTripleRepairsForDeletedPairs A B)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+      A C B D := by
+  rcases h.privateSingleton_or_criticalCandidate
+      hzeroA hzeroC hBC hBA hrepairs with hprivate | hcandidate
+  · obtain ⟨X, hXA, hX, hthree⟩ :=
+      hprivate.exists_infiniteDeletion_threeBasis
+        hbasis hzeroA hBA hnormalB
+    exact (hcounter X hXA hX hthree).elim
+  · exact hcandidate
+
+/-- The normal-form hypothesis in the private-singleton deletion theorem
+can be removed.  Apply the splitting-versus-zero-atom dichotomy to the
+endpoint set itself.  The splitting side is already solved; on the atomic
+side, unique crossing supports restrict the private system to an infinite
+zero-atomic subset, where the existing theorem applies. -/
+theorem HasInfinitePrivateSingletonCrossingEndpoints.exists_infiniteDeletion_threeBasis_without_normal
+    {A B₀ : Set ℕ}
+    (h : HasInfinitePrivateSingletonCrossingEndpoints A B₀)
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A) (hB₀A : B₀ ⊆ A) :
+    ∃ X, X ⊆ A ∧ X.Infinite ∧
+      IsExactTupleAsymptoticBasis (A \ X) 3 := by
+  classical
+  obtain ⟨L, hLB₀, hL, hdata⟩ := h
+  rcases infiniteDeletionSplits_or_infiniteZeroAtoms hbasis hL with
+      ⟨B, hBL, hB, hsplit⟩ |
+      ⟨Z, hZL, hZ, _hzeroA', hnormalZ⟩
+  · let B₁ : Set ℕ := B \ ({0} : Set ℕ)
+    have hB₁B : B₁ ⊆ B := Set.diff_subset
+    have hB₁A : B₁ ⊆ A :=
+      hB₁B.trans (hBL.trans (hLB₀.trans hB₀A))
+    have hB₁ : B₁.Infinite :=
+      hB.diff (Set.finite_singleton 0)
+    have hzeroB₁ : 0 ∉ B₁ := by simp [B₁]
+    have hsplit₁ : DeletionSplitsIntoComplement A B₁ :=
+      hsplit.mono hB₁B
+    obtain ⟨X, hXB₁, hX, hthree⟩ :=
+      exists_infiniteDeletion_threeBasis_of_zero_splittingReservoir
+        hbasis hzeroA hzeroB₁ hB₁A hB₁ hsplit₁
+    exact ⟨X, hXB₁.trans hB₁A, hX, hthree⟩
+  · let Z₀ : Set ℕ := Z \ ({0} : Set ℕ)
+    have hZ₀Z : Z₀ ⊆ Z := Set.diff_subset
+    have hZ₀L : Z₀ ⊆ L := hZ₀Z.trans hZL
+    have hZ₀B₀ : Z₀ ⊆ B₀ := hZ₀L.trans hLB₀
+    have hZ₀A : Z₀ ⊆ A := hZ₀B₀.trans hB₀A
+    have hZ₀ : Z₀.Infinite :=
+      hZ.diff (Set.finite_singleton 0)
+    have hzeroZ₀ : 0 ∉ Z₀ := by simp [Z₀]
+    have hnormalZ₀ : ∀ z ∈ Z₀,
+        ∀ E ∈ additiveSupportFamily A 2 z, E = {z, 0} := by
+      intro z hz
+      exact hnormalZ z (hZ₀Z hz)
+    have hprivateZ₀ :
+        HasInfinitePrivateSingletonCrossingEndpoints A Z₀ := by
+      refine ⟨Z₀, Set.Subset.rfl, hZ₀, ?_⟩
+      intro z hzZ₀
+      obtain ⟨q, hcrossB₀, hendpointB₀, hdestroy⟩ :=
+        hdata z (hZ₀L hzZ₀)
+      have hzEndpointB₀ :
+          z ∈ crossingAtomEndpoints A B₀ q := by
+        rw [hendpointB₀]
+        simp
+      have hzDataB₀ :=
+        mem_crossingAtomEndpoints_iff.mp hzEndpointB₀
+      have hzEndpointZ₀ :
+          z ∈ crossingAtomEndpoints A Z₀ q := by
+        apply mem_crossingAtomEndpoints_iff.mpr
+        exact ⟨hzDataB₀.1, hzZ₀,
+          hzDataB₀.2.2.1, fun hcompZ₀ =>
+            hzDataB₀.2.2.2 (hZ₀B₀ hcompZ₀)⟩
+      have hfamily : additiveSupportFamily A 2 q =
+          {pairSupport q z} :=
+        pairSupports_eq_singleton_of_crossingEndpoint_eq_singleton
+          hB₀A hcrossB₀ hendpointB₀
+      have hcrossZ₀ : ∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) Z₀ ∧
+            ¬ (E : Set ℕ) ⊆ Z₀ := by
+        intro E hER
+        have hEeq : E = pairSupport q z := by
+          rw [hfamily] at hER
+          simpa using hER
+        constructor
+        · apply Set.not_disjoint_iff.mpr
+          exact ⟨z, by simp [hEeq, pairSupport], hzZ₀⟩
+        · intro hEZ₀
+          apply hzDataB₀.2.2.2
+          apply hZ₀B₀
+          apply hEZ₀
+          simp [hEeq, pairSupport]
+      have hendpointZ₀ :
+          crossingAtomEndpoints A Z₀ q = {z} :=
+        crossingAtomEndpoints_eq_singleton_of_singletonDestroyer
+          hzeroA hzeroZ₀ hZ₀A hzEndpointZ₀ hdestroy
+      exact ⟨q, hcrossZ₀, hendpointZ₀, hdestroy⟩
+    exact hprivateZ₀.exists_infiniteDeletion_threeBasis
+      hbasis hzeroA hZ₀A hnormalZ₀
+
+/-- Reusable avoidable-versus-private split for marked crossing targets.
+If infinitely many targets have a support omitting their injectively marked
+endpoint, bounded-support free-set thinning gives a candidate deletion.
+Otherwise the endpoint alone destroys an infinite substream and hence is
+the unique crossing endpoint there. -/
+theorem infiniteMarkedCrossingTargets_candidateDeletion_or_privateSingleton
+    {A B I : Set ℕ} (point : ℕ → ℕ)
+    (hzeroA : 0 ∈ A) (hzeroB : 0 ∉ B) (hBA : B ⊆ A)
+    (hI : I.Infinite) (hpointInj : Set.InjOn point I)
+    (hdata : ∀ q ∈ I,
+      (∀ E ∈ additiveSupportFamily A 2 q,
+        ¬ Disjoint (E : Set ℕ) B ∧
+          ¬ (E : Set ℕ) ⊆ B) ∧
+      point q ∈ crossingAtomEndpoints A B q) :
+    HasInfiniteCandidateDeletionWithLateSurvivingRepairs A B ∨
+      HasInfinitePrivateSingletonCrossingEndpoints A B := by
+  classical
+  let Avoidable : Set ℕ :=
+    {q | q ∈ I ∧
+      ∃ G ∈ additiveSupportFamily A 3 q, point q ∉ G}
+  by_cases hAvoidable : Avoidable.Infinite
+  · have hAvoidableI : Avoidable ⊆ I := fun _ hq => hq.1
+    have hrepairExists : ∀ q, q ∈ Avoidable →
+        ∃ G ∈ additiveSupportFamily A 3 q, point q ∉ G := by
+      intro q hq
+      exact hq.2
+    let repair : ℕ → Finset ℕ := fun q =>
+      if hq : q ∈ Avoidable then
+        Classical.choose (hrepairExists q hq)
+      else ∅
+    have hrepairData : ∀ q ∈ Avoidable,
+        repair q ∈ additiveSupportFamily A 3 q ∧
+          point q ∉ repair q := by
+      intro q hq
+      simpa only [repair, dif_pos hq] using
+        Classical.choose_spec (hrepairExists q hq)
+    have hrepairCard : ∀ q ∈ Avoidable,
+        (repair q).card ≤ 3 := by
+      intro q hq
+      exact additiveSupportFamily_cardAtMost A 3 q
+        (repair q) (hrepairData q hq).1
+    obtain ⟨J, hJAvoidable, hJ, hcross⟩ :=
+      exists_infinite_crossAvoiding_injectiveImage
+        hAvoidable point (hpointInj.mono hAvoidableI)
+          repair 3 hrepairCard
+    let X : Set ℕ := point '' J
+    have hXB : X ⊆ B := by
+      rintro x ⟨q, hqJ, rfl⟩
+      exact (mem_crossingAtomEndpoints_iff.mp
+        (hdata q (hAvoidableI (hJAvoidable hqJ))).2).2.1
+    have hX : X.Infinite :=
+      hJ.image (hpointInj.mono (hJAvoidable.trans hAvoidableI))
+    have hrepairX : ∀ q ∈ J,
+        Disjoint (repair q : Set ℕ) X := by
+      intro q hqJ
+      rw [Set.disjoint_left]
+      intro z hzRepair hzX
+      obtain ⟨d, hdJ, rfl⟩ := hzX
+      by_cases hqd : q = d
+      · subst d
+        exact (hrepairData q (hJAvoidable hqJ)).2
+          (Finset.mem_coe.mp hzRepair)
+      · exact hcross q hqJ d hdJ hqd
+          (Finset.mem_coe.mp hzRepair)
+    exact Or.inl ⟨X, hXB, hXB.trans hBA, hX,
+      J, id, repair, hJ, by
+        intro q hqJ
+        exact ⟨by simp,
+          (hrepairData q (hJAvoidable hqJ)).1,
+          hrepairX q hqJ⟩⟩
+  · have hAvoidableFinite : Avoidable.Finite :=
+      Set.not_infinite.mp hAvoidable
+    let J : Set ℕ := I \ Avoidable
+    have hJI : J ⊆ I := fun _ hq => hq.1
+    have hJ : J.Infinite := hI.diff hAvoidableFinite
+    let L : Set ℕ := point '' J
+    have hLB : L ⊆ B := by
+      rintro x ⟨q, hqJ, rfl⟩
+      exact (mem_crossingAtomEndpoints_iff.mp
+        (hdata q (hJI hqJ)).2).2.1
+    have hL : L.Infinite := hJ.image (hpointInj.mono hJI)
+    refine Or.inr ⟨L, hLB, hL, ?_⟩
+    rintro x ⟨q, hqJ, rfl⟩
+    have hprivate : DestroysAt
+        (additiveSupportFamily A 3) ({point q} : Set ℕ) q := by
+      intro G hGR hGsingle
+      apply hqJ.2
+      refine ⟨hqJ.1, G, hGR, ?_⟩
+      intro hpointG
+      exact Set.disjoint_left.mp hGsingle
+        (Finset.mem_coe.mpr hpointG) (by simp)
+    have hendpoint :=
+      crossingAtomEndpoints_eq_singleton_of_singletonDestroyer
+        hzeroA hzeroB hBA (hdata q (hJI hqJ)).2 hprivate
+    exact ⟨q, (hdata q (hJI hqJ)).1, hendpoint, hprivate⟩
+
+/-- The external bipartite fusion obstruction is absorbed by the marked
+crossing-target dichotomy.  Whichever endpoint map has infinite range can
+be used as the marked deletion.  Its avoidable branch is a candidate on the
+corresponding side; its private branch gives an actual infinite deletion
+and is therefore impossible under the counterexample hypothesis. -/
+theorem HasInfiniteExternalBipartitePairDecompositionOutsideStream.criticalCandidate_or_externalCandidate
+    {A C B : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteExternalBipartitePairDecompositionOutsideStream
+      A C B)
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A) (hzeroC : 0 ∉ C)
+    (hBC : B ⊆ C) (hBA : B ⊆ A)
+    (hcritical : ∀ b ∈ B,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D))
+    (hcounter : ∀ Y, Y ⊆ A → Y.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ Y) 3) :
+    HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+        A C B D ∨
+      HasInfiniteCandidateDeletionWithLateSurvivingRepairs
+        A (A \ B) := by
+  classical
+  obtain ⟨X, hXAB, hX, hzeroX,
+      T, atom, external, hT, hselected, hrange⟩ :=
+    h.has_infiniteEndpointRange
+  have hXA : X ⊆ A := fun x hx => (hXAB hx).1
+  have hzeroB : 0 ∉ B := fun h0B => hzeroC (hBC h0B)
+  rcases hrange with hatomRange | hexternalRange
+  · obtain ⟨I, hIT, hatomBij⟩ :=
+      Set.exists_subset_bijOn T atom
+    have hI : I.Infinite := by
+      intro hIFinite
+      apply hatomRange
+      rw [← hatomBij.image_eq]
+      exact hIFinite.image atom
+    have hmarkedData : ∀ q ∈ I,
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) B ∧
+            ¬ (E : Set ℕ) ⊆ B) ∧
+        atom q ∈ crossingAtomEndpoints A B q := by
+      intro q hqI
+      obtain ⟨_hqA, _hdestroyB, _hdestroyX, hpair,
+          hatomB, hexternalXC, hsum⟩ :=
+        hselected q (hIT hqI)
+      have hexternalAB : external q ∈ A \ B :=
+        hXAB hexternalXC.1
+      have hsub : q - atom q = external q := by omega
+      exact ⟨fun E hER =>
+          ⟨(hpair E hER).1, (hpair E hER).2.2.1⟩,
+        mem_crossingAtomEndpoints_iff.mpr
+          ⟨by omega, hatomB, hsub ▸ hexternalAB⟩⟩
+    rcases
+        infiniteMarkedCrossingTargets_candidateDeletion_or_privateSingleton
+          atom hzeroA hzeroB hBA hI hatomBij.injOn hmarkedData with
+      hcandidate | hprivate
+    · exact Or.inl
+        (hcandidate.with_criticalPoints hBC hcritical)
+    · obtain ⟨Y, hYA, hY, hthree⟩ :=
+        hprivate.exists_infiniteDeletion_threeBasis_without_normal
+          hbasis hzeroA hBA
+      exact (hcounter Y hYA hY hthree).elim
+  · obtain ⟨I, hIT, hexternalBij⟩ :=
+      Set.exists_subset_bijOn T external
+    have hI : I.Infinite := by
+      intro hIFinite
+      apply hexternalRange
+      rw [← hexternalBij.image_eq]
+      exact hIFinite.image external
+    have hmarkedData : ∀ q ∈ I,
+        (∀ E ∈ additiveSupportFamily A 2 q,
+          ¬ Disjoint (E : Set ℕ) X ∧
+            ¬ (E : Set ℕ) ⊆ X) ∧
+        external q ∈ crossingAtomEndpoints A X q := by
+      intro q hqI
+      obtain ⟨_hqA, _hdestroyB, _hdestroyX, hpair,
+          hatomB, hexternalXC, hsum⟩ :=
+        hselected q (hIT hqI)
+      have hatomNotX : atom q ∉ X := by
+        intro hatomX
+        exact (hXAB hatomX).2 hatomB
+      have hsub : q - external q = atom q := by omega
+      exact ⟨fun E hER =>
+          ⟨(hpair E hER).2.1, (hpair E hER).2.2.2⟩,
+        mem_crossingAtomEndpoints_iff.mpr
+          ⟨by omega, hexternalXC.1,
+            hsub ▸ ⟨hBA hatomB, hatomNotX⟩⟩⟩
+    rcases
+        infiniteMarkedCrossingTargets_candidateDeletion_or_privateSingleton
+          external hzeroA hzeroX hXA hI
+            hexternalBij.injOn hmarkedData with
+      hcandidate | hprivate
+    · exact Or.inr (hcandidate.mono_reservoir hXAB)
+    · obtain ⟨Y, hYA, hY, hthree⟩ :=
+        hprivate.exists_infiniteDeletion_threeBasis_without_normal
+          hbasis hzeroA hXA
+      exact (hcounter Y hYA hY hthree).elim
+
+/-- A mutual lateral switch simultaneously provides candidate deletions on
+both sides: its first target stream survives the external deletion and its
+second survives the original deletion. -/
+theorem HasInfiniteMutualLateralDeletionSwitch.has_twoSidedCandidateDeletions
+    {A B : Set ℕ}
+    (h : HasInfiniteMutualLateralDeletionSwitch A B)
+    (hBA : B ⊆ A) (hB : B.Infinite) :
+    HasInfiniteCandidateDeletionWithLateSurvivingRepairs A B ∧
+      HasInfiniteCandidateDeletionWithLateSurvivingRepairs
+        A (A \ B) := by
+  classical
+  obtain ⟨X, hXAB, hX, _hzeroX,
+      S, T, hS, hT, _hST, hSdata, hTdata⟩ := h
+  let repairB : ℕ → Finset ℕ := fun q =>
+    if hq : q ∈ T then Classical.choose (hTdata q hq).2 else ∅
+  have hrepairB : ∀ q ∈ T,
+      repairB q ∈ additiveSupportFamily A 3 q ∧
+        Disjoint (repairB q : Set ℕ) B := by
+    intro q hq
+    simpa only [repairB, dif_pos hq] using
+      Classical.choose_spec (hTdata q hq).2
+  let repairX : ℕ → Finset ℕ := fun q =>
+    if hq : q ∈ S then Classical.choose (hSdata q hq).2 else ∅
+  have hrepairX : ∀ q ∈ S,
+      repairX q ∈ additiveSupportFamily A 3 q ∧
+        Disjoint (repairX q : Set ℕ) X := by
+    intro q hq
+    simpa only [repairX, dif_pos hq] using
+      Classical.choose_spec (hSdata q hq).2
+  constructor
+  · exact ⟨B, Set.Subset.rfl, hBA, hB,
+      T, id, repairB, hT, by
+        intro q hqT
+        exact ⟨by simp, (hrepairB q hqT).1,
+          (hrepairB q hqT).2⟩⟩
+  · exact ⟨X, hXAB, (fun x hx => (hXAB hx).1), hX,
+      S, id, repairX, hS, by
+        intro q hqS
+        exact ⟨by simp, (hrepairX q hqS).1,
+          (hrepairX q hqS).2⟩⟩
+
+/-- The additive trichotomy with its nonstationary branch converted into a
+fresh critical candidate deletion.  Thus only the genuinely external gap
+stream and the stationary strict-descent stream remain as new arithmetic
+phenomena; the third branch loops back into the already constructed
+survival/destruction bridge. -/
+theorem HasInfiniteCriticalPredecessorStreamSplit.to_external_or_stationary_or_criticalCandidate
+    {A C K : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalPredecessorStreamSplit A C K D)
+    (hzeroA : 0 ∈ A) (hzeroC : 0 ∉ C)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D) :
+    ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+      (∀ b ∈ B,
+        IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+      HasDirectTripleRepairsForDeletedPairs A B ∧
+      ∃ S : Set ℕ, S.Infinite ∧
+        (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+          Disjoint (G : Set ℕ) B) ∧
+        (HasInfiniteCriticalExternalPredecessorEdgeStream A C D B ∨
+          HasInfiniteStationaryCriticalPredecessorStream A C D B ∨
+          HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+            A C B D) := by
+  obtain ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, hexternal | hstationary | hbalanced⟩ :=
+    h.to_external_or_stationary_or_balanced hzeroA hgood
+  · exact ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inl hexternal⟩
+  · exact ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inr (Or.inl hstationary)⟩
+  · have hzeroB : 0 ∉ B := fun h0B => hzeroC (hBC h0B)
+    exact ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inr (Or.inr
+        (hbalanced.has_criticalCandidateDeletionWithLateSurvivingRepairs
+          hBC hBA hzeroA hzeroB))⟩
+
+/-- Both deleted-predecessor branches recycle into fresh critical candidate
+deletions.  The sole genuinely new residual of the finite-certificate
+bridge is therefore an infinite stream of external order-two predecessor
+gaps carrying the explicit additive edge. -/
+theorem HasInfiniteCriticalPredecessorStreamSplit.to_external_or_criticalCandidate
+    {A C K : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalPredecessorStreamSplit A C K D)
+    (hzeroA : 0 ∈ A) (hzeroC : 0 ∉ C)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D) :
+    ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+      (∀ b ∈ B,
+        IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+      HasDirectTripleRepairsForDeletedPairs A B ∧
+      ∃ S : Set ℕ, S.Infinite ∧
+        (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+          Disjoint (G : Set ℕ) B) ∧
+        (HasInfiniteCriticalExternalPredecessorEdgeStream A C D B ∨
+          HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+            A C B D) := by
+  obtain ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, hexternal | hstationary | hcandidate⟩ :=
+    h.to_external_or_stationary_or_criticalCandidate
+      hzeroA hzeroC hgood
+  · exact ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inl hexternal⟩
+  · exact ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inr
+        (hstationary.has_criticalCandidateDeletionWithLateSurvivingRepairs
+          hBC hBA hrepairs)⟩
+  · exact ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inr hcandidate⟩
+
+/-- Fully basis-expanded residual.  All-deleted predecessor
+representations have been absorbed, leaving only a genuinely crossing
+external predecessor stream or a recycled critical candidate deletion. -/
+theorem HasInfiniteCriticalPredecessorStreamSplit.to_crossingExternal_or_criticalCandidate
+    {A C K : Set ℕ} {D : Finset ℕ}
+    (h : HasInfiniteCriticalPredecessorStreamSplit A C K D)
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A) (hzeroC : 0 ∉ C)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D) :
+    ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+      (∀ b ∈ B,
+        IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+      HasDirectTripleRepairsForDeletedPairs A B ∧
+      ∃ S : Set ℕ, S.Infinite ∧
+        (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+          Disjoint (G : Set ℕ) B) ∧
+        (HasInfiniteCriticalCrossingExternalPredecessorEdgeStream
+            A C D B ∨
+          HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+            A C B D) := by
+  obtain ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, hexternal | hcandidate⟩ :=
+    h.to_external_or_criticalCandidate hzeroA hzeroC hgood
+  · rcases hexternal.to_crossing_or_criticalCandidate
+      hbasis hBC hBA hB hcritical hrepairs with
+      hcrossing | hcandidate
+    · exact ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive, Or.inl hcrossing⟩
+    · exact ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive, Or.inr hcandidate⟩
+  · exact ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inr hcandidate⟩
+
+/-- Fully critical endpoint of the finite-certificate bridge. -/
+theorem strongDeletion_eventuallyGoodPrefix_forces_infiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A)
+    (hKA : K ⊆ A)
+    (hKC : K ⊆ C)
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D)
+    (hcritical : ∀ b ∈ K,
+      IsRecurrentNoTwoRepairPrefix A C (insert b D)) :
+    HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+      A C K D :=
+  (strongDeletion_eventuallyGoodPrefix_forces_candidateDeletionWithLateSurvivingRepairs_on_reservoir
+    hstrong hKA hKC P hcellCard hgood).with_criticalPoints hKC hcritical
+
+/-- Counterexample-level critical endpoint.  Starting from a minimal
+recurrent failure of the two-repair extension process, the entire mixed
+finite-clause analysis now produces one infinite set of recurrently bad
+extension points together with an unbounded family of repairs avoiding that
+whole set. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_infiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ D : Finset ℕ, ∃ K : Set ℕ,
+      ∃ cell : ℕ → Finset ℕ,
+        (D : Set ℕ) ⊆ C ∧ K ⊆ C ∧ K.Infinite ∧
+        IsFiniteBlockPartition K cell ∧
+        (∀ i, (cell i).card = 2) ∧
+        HasEventuallyTwoRepairsAtPrefixAlong
+          (additiveSupportFamily A 3) C Set.univ D ∧
+        HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+          A C K D := by
+  obtain ⟨D, K, cell, hDC, hgood, hKC, hK, _hKD,
+      P, hcellCard, hcritical, _hcofinal⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_counterexample_forces_fullyCriticalCofinalTraceDichotomy
+      hCA hC hrec hD₀ hminimal hcounter
+  exact ⟨D, K, cell, hDC, hKC, hK, P, hcellCard, hgood,
+    strongDeletion_eventuallyGoodPrefix_forces_infiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+      (strongOrderThreeDeletion_of_counterexample hcounter)
+        (hKC.trans hCA) hKC P hcellCard hgood hcritical⟩
+
+/-- Stream-level form of the same endpoint: the surviving and destroyed
+targets are now attached to one fixed critical infinite deletion, rather
+than appearing as two unlabelled disjoint ranges. -/
+theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_infiniteCriticalSurvivalDestructionSplit
+    {A C : Set ℕ} {D₀ : Finset ℕ}
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hrec : IsRecurrentNoTwoRepairPrefix A C D₀)
+    (hD₀ : D₀.Nonempty)
+    (hminimal : ∀ d ∈ D₀,
+      ¬ IsRecurrentNoTwoRepairPrefix A C (D₀.erase d))
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ D : Finset ℕ, ∃ K : Set ℕ,
+      ∃ cell : ℕ → Finset ℕ,
+        (D : Set ℕ) ⊆ C ∧ K ⊆ C ∧ K.Infinite ∧
+        IsFiniteBlockPartition K cell ∧
+        (∀ i, (cell i).card = 2) ∧
+        HasEventuallyTwoRepairsAtPrefixAlong
+          (additiveSupportFamily A 3) C Set.univ D ∧
+        HasInfiniteCriticalSurvivalDestructionSplit A C K D := by
+  obtain ⟨D, K, cell, hDC, hKC, hK, P, hcellCard,
+      hgood, hcandidate⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_counterexample_forces_infiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+      hCA hC hrec hD₀ hminimal hcounter
+  exact ⟨D, K, cell, hDC, hKC, hK, P, hcellCard, hgood,
+    hcandidate.has_survivalDestructionSplit
+      (strongOrderThreeDeletion_of_counterexample hcounter)⟩
+
+/-- Global semantic endpoint of the finite-certificate bridge.  The earlier
+unlabelled disjoint-stream alternative is bypassed: one zero-atomic repaired
+reservoir contains a fixed infinite critical deletion whose retained
+three-fold sumset has both infinitely many hits and infinitely many gaps. -/
+theorem counterexample_forces_infiniteCriticalSurvivalDestructionSplit
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C K : Set ℕ, ∃ D : Finset ℕ, ∃ cell : ℕ → Finset ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧
+      (∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A C ∧
+      (∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) C) ∧
+      (D : Set ℕ) ⊆ C ∧ K ⊆ C ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2) ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      HasInfiniteCriticalSurvivalDestructionSplit A C K D := by
+  obtain ⟨C, D₀, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hD₀, hrec, hminimal⟩ :=
+    counterexample_forces_zeroAtomicMinimalRecurrentPrefix
+      hbasis hzeroA hcounter
+  obtain ⟨D, K, cell, hDC, hKC, hK, P, hcellCard,
+      hgood, hsplit⟩ :=
+    minimalRecurrentNoTwoRepairPrefix_counterexample_forces_infiniteCriticalSurvivalDestructionSplit
+      hCA hC hrec hD₀ hminimal hcounter
+  exact ⟨C, K, D, cell, hCA, hC, hzeroC,
+    hnormal, hdirect, hself, hDC, hKC, hK, P, hcellCard,
+    hgood, hsplit⟩
+
+/-- Global additive endpoint of the finite-certificate bridge.  Besides the
+critical prefix and its binary partition, this records an infinite stream
+of external destroyed targets, each carrying a genuine boundary-crossing
+equation against one fixed infinite deletion. -/
+theorem counterexample_forces_infiniteCriticalExternalCrossingSplit
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C K : Set ℕ, ∃ D : Finset ℕ, ∃ cell : ℕ → Finset ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧
+      (∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A C ∧
+      (∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) C) ∧
+      (D : Set ℕ) ⊆ C ∧ K ⊆ C ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2) ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      HasInfiniteCriticalExternalCrossingSplit A C K D := by
+  obtain ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      hsplit⟩ :=
+    counterexample_forces_infiniteCriticalSurvivalDestructionSplit
+      hbasis hzeroA hcounter
+  exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+    hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+    hsplit.to_externalCrossing hbasis hzeroA hzeroC hdirect hself⟩
+
+/-- Global fully expanded endpoint: the critical finite-certificate bridge
+and strong deletion force infinitely many destroyed targets carrying
+external four-clique equations against one fixed infinite deletion. -/
+theorem counterexample_forces_infiniteCriticalExternalFourCliqueSplit
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C K : Set ℕ, ∃ D : Finset ℕ, ∃ cell : ℕ → Finset ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧
+      (∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A C ∧
+      (∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) C) ∧
+      (D : Set ℕ) ⊆ C ∧ K ⊆ C ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2) ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      HasInfiniteCriticalExternalFourCliqueSplit A C K D := by
+  obtain ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      hsplit⟩ :=
+    counterexample_forces_infiniteCriticalExternalCrossingSplit
+      hbasis hzeroA hcounter
+  exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+    hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+    hsplit.to_externalFourCliques hnormal hself⟩
+
+/-- Global chain/gap endpoint.  A counterexample therefore forces an
+infinite family of genuine additive edges
+`atom + anchor = predecessor + step`.  The predecessor values remain
+unbounded and, after thinning, are uniformly either deleted atoms or
+external order-two gaps. -/
+theorem counterexample_forces_infiniteCriticalPredecessorStreamSplit
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C K : Set ℕ, ∃ D : Finset ℕ, ∃ cell : ℕ → Finset ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧
+      (∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A C ∧
+      (∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) C) ∧
+      (D : Set ℕ) ⊆ C ∧ K ⊆ C ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2) ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      HasInfiniteCriticalPredecessorStreamSplit A C K D := by
+  obtain ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      hsplit⟩ :=
+    counterexample_forces_infiniteCriticalExternalFourCliqueSplit
+      hbasis hzeroA hcounter
+  exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+    hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+    hsplit.to_predecessorStream hzeroA hzeroC⟩
+
+/-- Global reduced endpoint.  Every deleted-predecessor alternative can be
+fed back into a new critical candidate deletion, so a counterexample must
+either keep recycling that bridge or produce an infinite explicit stream
+of external order-two gaps. -/
+theorem counterexample_forces_externalPredecessor_or_criticalCandidate
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C K : Set ℕ, ∃ D : Finset ℕ, ∃ cell : ℕ → Finset ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧
+      (∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A C ∧
+      (∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) C) ∧
+      (D : Set ℕ) ⊆ C ∧ K ⊆ C ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2) ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+        (∀ b ∈ B,
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        HasDirectTripleRepairsForDeletedPairs A B ∧
+        ∃ S : Set ℕ, S.Infinite ∧
+          (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+            Disjoint (G : Set ℕ) B) ∧
+          (HasInfiniteCriticalExternalPredecessorEdgeStream A C D B ∨
+            HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+              A C B D) := by
+  obtain ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      hsplit⟩ :=
+    counterexample_forces_infiniteCriticalPredecessorStreamSplit
+      hbasis hzeroA hcounter
+  exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+    hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+    hsplit.to_external_or_criticalCandidate hzeroA hzeroC hgood⟩
+
+/-- Global basis-expanded endpoint.  The external predecessor values have
+now been represented by the original exact order-two basis; all-red
+representations are absorbed, and the surviving case carries literal
+crossing binary clauses. -/
+theorem counterexample_forces_crossingExternalPredecessor_or_criticalCandidate
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C K : Set ℕ, ∃ D : Finset ℕ, ∃ cell : ℕ → Finset ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧
+      (∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A C ∧
+      (∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) C) ∧
+      (D : Set ℕ) ⊆ C ∧ K ⊆ C ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2) ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+        (∀ b ∈ B,
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        HasDirectTripleRepairsForDeletedPairs A B ∧
+        ∃ S : Set ℕ, S.Infinite ∧
+          (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+            Disjoint (G : Set ℕ) B) ∧
+          ((HasInfiniteCriticalCrossingExternalPredecessorEdgeStream
+              A C D B ∧
+            HasInfiniteCriticalExactBinaryRepairEdgeStream A C D B ∧
+            HasInfiniteCriticalArithmeticRepairEdgeStream A C D B) ∨
+            HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+              A C B D) := by
+  obtain ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      hsplit⟩ :=
+    counterexample_forces_infiniteCriticalPredecessorStreamSplit
+      hbasis hzeroA hcounter
+  obtain ⟨B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, hcrossing | hcandidate⟩ :=
+    hsplit.to_crossingExternal_or_criticalCandidate
+      hbasis hzeroA hzeroC hgood
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inl ⟨hcrossing,
+        hcrossing.to_exactBinaryRepairEdges
+          hzeroA hzeroC hBA hBC,
+        hcrossing.to_arithmeticRepairEdges
+          hzeroA hzeroC hBA hBC⟩⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inr hcandidate⟩
+
+/-- Global clause/Ramsey endpoint.  A counterexample now forces one of four
+explicit residuals: infinitely many unit clauses, a nested deletion which
+preserves the entire parent-destroyed stream, an infinite binary conflict
+clique, or a recycled critical candidate deletion. -/
+theorem counterexample_forces_unit_or_nestedSurvival_or_conflictClique_or_criticalCandidate
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C K : Set ℕ, ∃ D : Finset ℕ, ∃ cell : ℕ → Finset ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧
+      (∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A C ∧
+      (∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) C) ∧
+      (D : Set ℕ) ⊆ C ∧ K ⊆ C ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2) ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+        (∀ b ∈ B,
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        HasDirectTripleRepairsForDeletedPairs A B ∧
+        ∃ S : Set ℕ, S.Infinite ∧
+          (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+            Disjoint (G : Set ℕ) B) ∧
+          ((HasInfiniteCriticalArithmeticUnitRepairEdgeStream A C D B ∧
+              HasInfiniteCriticalUnitGapStream A C D B) ∨
+            HasInfiniteCriticalArithmeticNestedSurvivalStream A C D B ∨
+            HasInfiniteCriticalArithmeticRepairConflictClique A C D B ∨
+            HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+              A C B D) := by
+  obtain ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, hcrossing | hcandidate⟩ :=
+    counterexample_forces_crossingExternalPredecessor_or_criticalCandidate
+      hbasis hzeroA hcounter
+  · obtain hunit | hnested | hclique :=
+      hcrossing.2.2.unit_or_nestedSurvival_or_conflictClique hB hcritical
+    · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+        hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+        B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive, Or.inl ⟨hunit, hunit.to_unitGapStream⟩⟩
+    · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+        hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+        B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive, Or.inr (Or.inl hnested)⟩
+    · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+        hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+        B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive, Or.inr (Or.inr (Or.inl hclique))⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inr (Or.inr (Or.inr hcandidate))⟩
+
+/-- Sharpened global endpoint.  The nested-survival branch is absorbed into
+the critical candidate mechanism, while the unit branch is split according
+to whether its positive descended steps have infinite range or stabilize to
+one value on infinitely many distinct critical atoms. -/
+theorem counterexample_forces_unboundedStep_or_constantStep_or_conflictClique_or_criticalCandidate
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C K : Set ℕ, ∃ D : Finset ℕ, ∃ cell : ℕ → Finset ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧
+      (∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A C ∧
+      (∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) C) ∧
+      (D : Set ℕ) ⊆ C ∧ K ⊆ C ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2) ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+        (∀ b ∈ B,
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        HasDirectTripleRepairsForDeletedPairs A B ∧
+        ∃ S : Set ℕ, S.Infinite ∧
+          (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+            Disjoint (G : Set ℕ) B) ∧
+          (HasInfiniteCriticalUnboundedStepUnitGapStream A C D B ∨
+            HasInfiniteCriticalConstantStepUnitGapStream A C D B ∨
+            HasInfiniteCriticalArithmeticRepairConflictClique A C D B ∨
+            HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+              A C B D) := by
+  obtain ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, hunit | hnested | hclique | hcandidate⟩ :=
+    counterexample_forces_unit_or_nestedSurvival_or_conflictClique_or_criticalCandidate
+      hbasis hzeroA hcounter
+  · rcases hunit.2.unboundedStep_or_constantStep with
+      hunbounded | hconstant
+    · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+        hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+        B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive, Or.inl hunbounded⟩
+    · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+        hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+        B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive, Or.inr (Or.inl hconstant)⟩
+  · have hcandidate' :=
+      hnested.to_criticalCandidateDeletionWithLateSurvivingRepairs hBC hBA
+    exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inr (Or.inr (Or.inr hcandidate'))⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inr (Or.inr (Or.inl hclique))⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inr (Or.inr (Or.inr hcandidate))⟩
+
+/-- Current strongest global arithmetic endpoint.  The mixed binary-clause
+clique has now been replaced by one of its two monotone forced-chain
+orientations, so every remaining nonrecursive branch carries a coherent
+infinite additive direction. -/
+theorem counterexample_forces_unitStepBranch_or_monotoneChain_or_criticalCandidate
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C K : Set ℕ, ∃ D : Finset ℕ, ∃ cell : ℕ → Finset ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧
+      (∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A C ∧
+      (∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) C) ∧
+      (D : Set ℕ) ⊆ C ∧ K ⊆ C ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2) ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+        (∀ b ∈ B,
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        HasDirectTripleRepairsForDeletedPairs A B ∧
+        ∃ S : Set ℕ, S.Infinite ∧
+          (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+            Disjoint (G : Set ℕ) B) ∧
+          (HasInfiniteCriticalUnboundedStepUnitGapStream A C D B ∨
+            HasInfiniteCriticalConstantStepUnitGapStream A C D B ∨
+            HasInfiniteCriticalIncreasingArithmeticRepairChain A C D B ∨
+            HasInfiniteCriticalDecreasingArithmeticRepairChain A C D B ∨
+            HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+              A C B D) := by
+  obtain ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive,
+      hunbounded | hconstant | hclique | hcandidate⟩ :=
+    counterexample_forces_unboundedStep_or_constantStep_or_conflictClique_or_criticalCandidate
+      hbasis hzeroA hcounter
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inl hunbounded⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inr (Or.inl hconstant)⟩
+  · rcases hclique.increasingChain_or_decreasingChain with
+      hincreasing | hdecreasing
+    · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+        hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+        B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive, Or.inr (Or.inr (Or.inl hincreasing))⟩
+    · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+        hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+        B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive,
+        Or.inr (Or.inr (Or.inr (Or.inl hdecreasing)))⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive,
+      Or.inr (Or.inr (Or.inr (Or.inr hcandidate)))⟩
+
+/-- Global endpoint after the unit-label progress argument.  Every
+counterexample now yields either a deletion switch to infinitely many labels
+outside the old critical set, the completely fixed translation defect, one
+of two monotone arithmetic chains, or the recursive critical candidate. -/
+theorem counterexample_forces_lateralSwitch_or_fixedTranslation_or_monotoneChain_or_criticalCandidate
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C K : Set ℕ, ∃ D : Finset ℕ, ∃ cell : ℕ → Finset ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧
+      (∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A C ∧
+      (∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) C) ∧
+      (D : Set ℕ) ⊆ C ∧ K ⊆ C ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2) ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+        (∀ b ∈ B,
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        HasDirectTripleRepairsForDeletedPairs A B ∧
+        ∃ S : Set ℕ, S.Infinite ∧
+          (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+            Disjoint (G : Set ℕ) B) ∧
+          (HasInfiniteCriticalUnitGapLateralDeletionSwitch A C D B ∨
+            HasInfiniteCriticalFixedTranslationGapStream A C D B ∨
+            HasInfiniteCriticalIncreasingArithmeticRepairChain A C D B ∨
+            HasInfiniteCriticalDecreasingArithmeticRepairChain A C D B ∨
+            HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+              A C B D) := by
+  obtain ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, hunit | hnested | hclique | hcandidate⟩ :=
+    counterexample_forces_unit_or_nestedSurvival_or_conflictClique_or_criticalCandidate
+      hbasis hzeroA hcounter
+  · rcases hunit.2.lateralDeletionSwitch_or_fixedLabel hzeroA hBA with
+      hswitch | hfixed
+    · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+        hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+        B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive, Or.inl hswitch⟩
+    · have htranslation :=
+        hfixed.to_fixedTranslationGapStream hBA hnormal
+      exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+        hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+        B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive, Or.inr (Or.inl htranslation)⟩
+  · have hcandidate' :=
+      hnested.to_criticalCandidateDeletionWithLateSurvivingRepairs hBC hBA
+    exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive,
+      Or.inr (Or.inr (Or.inr (Or.inr hcandidate')))⟩
+  · rcases hclique.increasingChain_or_decreasingChain with
+      hincreasing | hdecreasing
+    · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+        hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+        B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive, Or.inr (Or.inr (Or.inl hincreasing))⟩
+    · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+        hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+        B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive,
+        Or.inr (Or.inr (Or.inr (Or.inl hdecreasing)))⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive,
+      Or.inr (Or.inr (Or.inr (Or.inr hcandidate)))⟩
+
+/-- Global endpoint after eliminating both monotone-chain orientations.
+Every counterexample now reaches one of only three residual mechanisms: a
+strict lateral deletion outside the current critical set, the stabilized
+fixed-translation defect, or the recursive critical candidate. -/
+theorem counterexample_forces_lateralSwitch_or_fixedTranslation_or_criticalCandidate
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C K : Set ℕ, ∃ D : Finset ℕ, ∃ cell : ℕ → Finset ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧
+      (∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A C ∧
+      (∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) C) ∧
+      (D : Set ℕ) ⊆ C ∧ K ⊆ C ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2) ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+        (∀ b ∈ B,
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        HasDirectTripleRepairsForDeletedPairs A B ∧
+        ∃ S : Set ℕ, S.Infinite ∧
+          (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+            Disjoint (G : Set ℕ) B) ∧
+          (HasInfiniteLateralDeletionSwitch A B ∨
+            HasInfiniteCriticalFixedTranslationGapStream A C D B ∨
+            HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+              A C B D) := by
+  obtain ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive,
+      hswitch | htranslation | hincreasing | hdecreasing | hcandidate⟩ :=
+    counterexample_forces_lateralSwitch_or_fixedTranslation_or_monotoneChain_or_criticalCandidate
+      hbasis hzeroA hcounter
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive,
+      Or.inl hswitch.to_lateralDeletionSwitch⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inr (Or.inl htranslation)⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive,
+      Or.inl (hincreasing.to_lateralDeletionSwitch hBA)⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive,
+      Or.inl (hdecreasing.to_lateralDeletionSwitch hzeroA hBA)⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inr (Or.inr hcandidate)⟩
+
+/-- Global endpoint after removing the spurious nonrigid loop from the
+fixed-translation branch.  The only translation residual now consists of
+infinitely many genuinely rigid pairs with one common retained endpoint. -/
+theorem counterexample_forces_lateralSwitch_or_rigidFixedTranslation_or_criticalCandidate
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C K : Set ℕ, ∃ D : Finset ℕ, ∃ cell : ℕ → Finset ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧
+      (∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A C ∧
+      (∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) C) ∧
+      (D : Set ℕ) ⊆ C ∧ K ⊆ C ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2) ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+        (∀ b ∈ B,
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        HasDirectTripleRepairsForDeletedPairs A B ∧
+        ∃ S : Set ℕ, S.Infinite ∧
+          (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+            Disjoint (G : Set ℕ) B) ∧
+          (HasInfiniteLateralDeletionSwitch A B ∨
+            HasInfiniteCriticalRigidFixedTranslationGapStream A C D B ∨
+            HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+              A C B D) := by
+  obtain ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, hswitch | htranslation | hcandidate⟩ :=
+    counterexample_forces_lateralSwitch_or_fixedTranslation_or_criticalCandidate
+      hbasis hzeroA hcounter
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inl hswitch⟩
+  · rcases
+        htranslation.rigid_or_lateralDeletionSwitch_or_criticalCandidate
+          hzeroA hzeroC hBC hBA hB hcritical hrepairs with
+      hrigid | hlateral | hcandidate'
+    · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+        hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+        B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive, Or.inr (Or.inl hrigid)⟩
+    · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+        hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+        B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive, Or.inl hlateral⟩
+    · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+        hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+        B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive, Or.inr (Or.inr hcandidate')⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inr (Or.inr hcandidate)⟩
+
+/-- The fixed-translation residual is fully absorbed.  Its avoidable half
+is a critical candidate by free-set thinning, while its private half would
+already give the forbidden infinite deletion.  Thus a counterexample has
+only the lateral-switch and recursive-candidate outcomes. -/
+theorem counterexample_forces_lateralSwitch_or_criticalCandidate
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C K : Set ℕ, ∃ D : Finset ℕ, ∃ cell : ℕ → Finset ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧
+      (∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A C ∧
+      (∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) C) ∧
+      (D : Set ℕ) ⊆ C ∧ K ⊆ C ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2) ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+        (∀ b ∈ B,
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        HasDirectTripleRepairsForDeletedPairs A B ∧
+        ∃ S : Set ℕ, S.Infinite ∧
+          (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+            Disjoint (G : Set ℕ) B) ∧
+          (HasInfiniteLateralDeletionSwitch A B ∨
+            HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+              A C B D) := by
+  obtain ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, hswitch | htranslation | hcandidate⟩ :=
+    counterexample_forces_lateralSwitch_or_fixedTranslation_or_criticalCandidate
+      hbasis hzeroA hcounter
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inl hswitch⟩
+  · have hnormalB : ∀ x ∈ B,
+        ∀ E ∈ additiveSupportFamily A 2 x, E = {x, 0} := by
+      intro x hxB
+      exact hnormal x (hBC hxB)
+    have hcandidate' :=
+      htranslation.has_criticalCandidateDeletionWithLateSurvivingRepairs
+        hbasis hzeroA hzeroC hBC hBA hnormalB hrepairs hcounter
+    exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inr hcandidate'⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inr hcandidate⟩
+
+/-- Two-sided candidate form of the reduced endpoint.  Apart from the one
+fixed-translation defect, every counterexample supplies a candidate deletion
+either inside the current critical deletion `B` or wholly outside it.  This
+is the form suited to a subsequent fusion or well-founded descent argument. -/
+theorem counterexample_forces_fixedTranslation_or_twoSidedCandidateDeletion
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C K : Set ℕ, ∃ D : Finset ℕ, ∃ cell : ℕ → Finset ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧
+      (∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A C ∧
+      (∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) C) ∧
+      (D : Set ℕ) ⊆ C ∧ K ⊆ C ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2) ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+        (∀ b ∈ B,
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        HasDirectTripleRepairsForDeletedPairs A B ∧
+        ∃ S : Set ℕ, S.Infinite ∧
+          (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+            Disjoint (G : Set ℕ) B) ∧
+          (HasInfiniteCriticalFixedTranslationGapStream A C D B ∨
+            HasInfiniteCandidateDeletionWithLateSurvivingRepairs A B ∨
+            HasInfiniteCandidateDeletionWithLateSurvivingRepairs
+              A (A \ B)) := by
+  obtain ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, hswitch | htranslation | hcandidate⟩ :=
+    counterexample_forces_lateralSwitch_or_fixedTranslation_or_criticalCandidate
+      hbasis hzeroA hcounter
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive,
+      Or.inr (Or.inr
+        hswitch.to_candidateDeletionWithLateSurvivingRepairs)⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inl htranslation⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive,
+      Or.inr (Or.inl
+        hcandidate.to_candidateDeletionWithLateSurvivingRepairs)⟩
+
+/-- Two-sided endpoint after the fixed translation is eliminated.  Every
+counterexample now supplies a candidate deletion either inside the current
+critical reservoir or wholly outside it. -/
+theorem counterexample_forces_twoSidedCandidateDeletion
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C K : Set ℕ, ∃ D : Finset ℕ, ∃ cell : ℕ → Finset ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧
+      (∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A C ∧
+      (∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) C) ∧
+      (D : Set ℕ) ⊆ C ∧ K ⊆ C ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2) ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+        (∀ b ∈ B,
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        HasDirectTripleRepairsForDeletedPairs A B ∧
+        ∃ S : Set ℕ, S.Infinite ∧
+          (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+            Disjoint (G : Set ℕ) B) ∧
+          (HasInfiniteCandidateDeletionWithLateSurvivingRepairs A B ∨
+            HasInfiniteCandidateDeletionWithLateSurvivingRepairs
+              A (A \ B)) := by
+  obtain ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, hswitch | hcandidate⟩ :=
+    counterexample_forces_lateralSwitch_or_criticalCandidate
+      hbasis hzeroA hcounter
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inr
+        hswitch.to_candidateDeletionWithLateSurvivingRepairs⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inl
+        hcandidate.to_candidateDeletionWithLateSurvivingRepairs⟩
+
+/-- Fusion-aware global endpoint.  A lateral switch is no longer left as an
+opaque recursive move: strong deletion either produces a reverse switch or
+an infinite external stream whose every order-two representation crosses
+the two disjoint deletion sides. -/
+theorem counterexample_forces_mutualLateral_or_externalBipartite_or_fixedTranslation_or_criticalCandidate
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C K : Set ℕ, ∃ D : Finset ℕ, ∃ cell : ℕ → Finset ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧
+      (∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A C ∧
+      (∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) C) ∧
+      (D : Set ℕ) ⊆ C ∧ K ⊆ C ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2) ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+        (∀ b ∈ B,
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        HasDirectTripleRepairsForDeletedPairs A B ∧
+        ∃ S : Set ℕ, S.Infinite ∧
+          (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+            Disjoint (G : Set ℕ) B) ∧
+          (HasInfiniteMutualLateralDeletionSwitch A B ∨
+            HasInfiniteExternalBipartitePairDecompositionOutsideStream
+              A C B ∨
+            HasInfiniteCriticalFixedTranslationGapStream A C D B ∨
+            HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+              A C B D) := by
+  obtain ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, hswitch | htranslation | hcandidate⟩ :=
+    counterexample_forces_lateralSwitch_or_fixedTranslation_or_criticalCandidate
+      hbasis hzeroA hcounter
+  · have hzeroB : 0 ∉ B := fun h0B => hzeroC (hBC h0B)
+    rcases hswitch.mutual_or_biDestruction
+        (strongOrderThreeDeletion_of_counterexample hcounter) with
+      hmutual | hbi
+    · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+        hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+        B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive, Or.inl hmutual⟩
+    · have hbipartite :=
+        hbi.has_externalBipartitePairDecompositionStream
+          hbasis hzeroA hzeroB hBA
+      have hbipartiteOutside :=
+        hbipartite.outside_directReservoir hBC hdirect
+      exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+        hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+        B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive, Or.inr (Or.inl hbipartiteOutside)⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive,
+      Or.inr (Or.inr (Or.inl htranslation))⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive,
+      Or.inr (Or.inr (Or.inr hcandidate))⟩
+
+/-- Fusion-aware endpoint after the fixed translation has been absorbed.
+Only a genuinely two-sided switch, its external bipartite destruction
+shadow, or the recursive critical candidate remains. -/
+theorem counterexample_forces_mutualLateral_or_externalBipartite_or_criticalCandidate
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C K : Set ℕ, ∃ D : Finset ℕ, ∃ cell : ℕ → Finset ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧
+      (∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A C ∧
+      (∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) C) ∧
+      (D : Set ℕ) ⊆ C ∧ K ⊆ C ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2) ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+        (∀ b ∈ B,
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        HasDirectTripleRepairsForDeletedPairs A B ∧
+        ∃ S : Set ℕ, S.Infinite ∧
+          (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+            Disjoint (G : Set ℕ) B) ∧
+          (HasInfiniteMutualLateralDeletionSwitch A B ∨
+            HasInfiniteExternalBipartitePairDecompositionOutsideStream
+              A C B ∨
+            HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+              A C B D) := by
+  obtain ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, hswitch | hcandidate⟩ :=
+    counterexample_forces_lateralSwitch_or_criticalCandidate
+      hbasis hzeroA hcounter
+  · have hzeroB : 0 ∉ B := fun h0B => hzeroC (hBC h0B)
+    rcases hswitch.mutual_or_biDestruction
+        (strongOrderThreeDeletion_of_counterexample hcounter) with
+      hmutual | hbi
+    · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+        hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+        B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive, Or.inl hmutual⟩
+    · have hbipartite :=
+        hbi.has_externalBipartitePairDecompositionStream
+          hbasis hzeroA hzeroB hBA
+      have hbipartiteOutside :=
+        hbipartite.outside_directReservoir hBC hdirect
+      exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+        hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+        B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive, Or.inr (Or.inl hbipartiteOutside)⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inr (Or.inr hcandidate)⟩
+
+/-- Global fusion endpoint after absorbing the external bipartite stream.
+That stream now yields a candidate on one of the two disjoint sides; the
+only non-candidate semantic residual is the genuinely mutual switch. -/
+theorem counterexample_forces_mutualLateral_or_twoSidedCandidateDeletion
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C K : Set ℕ, ∃ D : Finset ℕ, ∃ cell : ℕ → Finset ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧
+      (∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A C ∧
+      (∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) C) ∧
+      (D : Set ℕ) ⊆ C ∧ K ⊆ C ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2) ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+        (∀ b ∈ B,
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        HasDirectTripleRepairsForDeletedPairs A B ∧
+        ∃ S : Set ℕ, S.Infinite ∧
+          (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+            Disjoint (G : Set ℕ) B) ∧
+          (HasInfiniteMutualLateralDeletionSwitch A B ∨
+            HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+              A C B D ∨
+            HasInfiniteCandidateDeletionWithLateSurvivingRepairs
+              A (A \ B)) := by
+  obtain ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, hmutual | hexternal | hcandidate⟩ :=
+    counterexample_forces_mutualLateral_or_externalBipartite_or_criticalCandidate
+      hbasis hzeroA hcounter
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inl hmutual⟩
+  · rcases hexternal.criticalCandidate_or_externalCandidate
+        hbasis hzeroA hzeroC hBC hBA hcritical hcounter with
+      hcriticalCandidate | hexternalCandidate
+    · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+        hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+        B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive, Or.inr (Or.inl hcriticalCandidate)⟩
+    · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+        hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+        B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+        S, hS, hsurvive, Or.inr (Or.inr hexternalCandidate)⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inr (Or.inl hcandidate)⟩
+
+/-- Final semantic endpoint of the mixed finite-clause analysis.  Every
+branch, including a mutual lateral switch, supplies an infinite candidate
+deletion: either a critical subdeletion of the current reservoir or an
+infinite deletion in its complement. -/
+theorem counterexample_forces_criticalCandidate_or_externalCandidateDeletion
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C K : Set ℕ, ∃ D : Finset ℕ, ∃ cell : ℕ → Finset ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧
+      (∀ x ∈ C, ∀ E ∈ additiveSupportFamily A 2 x,
+        E = {x, 0}) ∧
+      HasDirectTripleRepairsForDeletedPairs A C ∧
+      (∀ x ∈ C, ∃ G ∈ additiveSupportFamily A 3 x,
+        Disjoint (G : Set ℕ) C) ∧
+      (D : Set ℕ) ⊆ C ∧ K ⊆ C ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2) ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      ∃ B, B ⊆ K ∧ B ⊆ C ∧ B ⊆ A ∧ B.Infinite ∧
+        (∀ b ∈ B,
+          IsRecurrentNoTwoRepairPrefix A C (insert b D)) ∧
+        HasDirectTripleRepairsForDeletedPairs A B ∧
+        ∃ S : Set ℕ, S.Infinite ∧
+          (∀ q ∈ S, ∃ G ∈ additiveSupportFamily A 3 q,
+            Disjoint (G : Set ℕ) B) ∧
+          (HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs
+              A C B D ∨
+            HasInfiniteCandidateDeletionWithLateSurvivingRepairs
+              A (A \ B)) := by
+  obtain ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, hmutual | hcriticalCandidate |
+        hexternalCandidate⟩ :=
+    counterexample_forces_mutualLateral_or_twoSidedCandidateDeletion
+      hbasis hzeroA hcounter
+  · obtain ⟨hinside, _houtside⟩ :=
+      hmutual.has_twoSidedCandidateDeletions hBA hB
+    have hcriticalCandidate :=
+      hinside.with_criticalPoints hBC hcritical
+    exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inl hcriticalCandidate⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inl hcriticalCandidate⟩
+  · exact ⟨C, K, D, cell, hCA, hC, hzeroC, hnormal,
+      hdirect, hself, hDC, hKC, hK, P, hcellCard, hgood,
+      B, hBK, hBC, hBA, hB, hcritical, hrepairs,
+      S, hS, hsurvive, Or.inr hexternalCandidate⟩
+
+/-- With the original infinite reservoir retained, the final shared-wide
+residual also becomes the same candidate-deletion output.  This closes all
+three spatial mixed-clause branches at the level of unbounded surviving
+order-three repairs. -/
+theorem strongDeletion_eventuallyGoodPrefix_forces_candidateDeletionWithLateSurvivingRepairs
+    {A C K : Set ℕ} {D : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A)
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hcellCard : ∀ i, (cell i).card = 2)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D) :
+    HasInfiniteCandidateDeletionWithLateSurvivingRepairs A A := by
+  rcases
+      strongDeletion_eventuallyGoodPrefix_forces_candidateDeletionWithLateSurvivingRepairs_or_infiniteSpatialSharedExternalWideTraceFamily
+        hstrong hKA P hcellCard hgood with hcandidate | hshared
+  · exact hcandidate.mono_reservoir hKA
+  · exact
+      infiniteSpatialSharedExternalWideTraceFamily_has_candidateDeletionWithLateSurvivingRepairs
+        hCA hC hshared
+
 /-- An injective moving point carried by every certificate repair either is
 avoided by the private core repair on an infinite subfamily, giving binary
 common survival, or is carried by the private repair throughout an infinite
@@ -27930,6 +38265,76 @@ theorem HasMigratedBinaryCertificateFamily.mono_index
   exact ⟨J, hJL.trans hLI, hJ, K', pairCell,
     hK'A, hK', P, hpairCard, hsafe, hQ⟩
 
+/-- A migrated binary certificate, combined with the original strong
+deletion and eventually-good repair reservoir, has only two spatial
+outcomes: infinitely many wide supports migrating through its block tails,
+or an actual infinite candidate deletion with unbounded surviving
+order-three repairs.  The separated and opposed-unit cases have already
+been absorbed into the second outcome. -/
+theorem HasMigratedBinaryCertificateFamily.infiniteSpatialWide_or_candidateDeletionWithLateSurvivingRepairs
+    {A C I : Set ℕ} {D : Finset ℕ} {q : ℕ → ℕ}
+    (h : HasMigratedBinaryCertificateFamily A q I)
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D) :
+    ∃ K' : Set ℕ, ∃ pairCell : ℕ → Finset ℕ,
+      K' ⊆ A ∧ K'.Infinite ∧
+      IsFiniteBlockPartition K' pairCell ∧
+      (∀ i, (pairCell i).card = 2) ∧
+      ((∃ L : Set ℕ, L.Infinite ∧ ∀ n ∈ L,
+        ∃ t, n ≤ t ∧
+          HasWideReservoirSupportAt
+            (additiveSupportFamily A 3)
+              {x | ∃ i, x ∈ pairCell (n + i)} t) ∨
+        HasInfiniteCandidateDeletionWithLateSurvivingRepairs A K') := by
+  obtain ⟨_J, _hJI, _hJ, K', pairCell, hK'A, hK', P,
+      hpairCard, _hsafe, _hcertificates⟩ := h
+  exact ⟨K', pairCell, hK'A, hK', P, hpairCard,
+    strongDeletion_eventuallyGoodPrefix_forces_infiniteSpatialWide_or_candidateDeletionWithLateSurvivingRepairs
+      hstrong hK'A P hpairCard hgood⟩
+
+/-- Repair-pair-preserving compact endpoint for a migrated binary
+certificate.  All spatial clause alternatives except the shared two-point
+external core have been converted into one infinite candidate deletion. -/
+theorem HasMigratedBinaryCertificateFamily.candidateDeletionWithLateSurvivingRepairs_or_infiniteSpatialSharedExternalWideTraceFamily
+    {A C I : Set ℕ} {D : Finset ℕ} {q : ℕ → ℕ}
+    (h : HasMigratedBinaryCertificateFamily A q I)
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D) :
+    ∃ K' : Set ℕ, ∃ pairCell : ℕ → Finset ℕ,
+      K' ⊆ A ∧ K'.Infinite ∧
+      IsFiniteBlockPartition K' pairCell ∧
+      (∀ i, (pairCell i).card = 2) ∧
+      (HasInfiniteCandidateDeletionWithLateSurvivingRepairs A K' ∨
+        HasInfiniteSpatialSharedExternalWideTraceFamily
+          A C D pairCell) := by
+  obtain ⟨_J, _hJI, _hJ, K', pairCell, hK'A, hK', P,
+      hpairCard, _hsafe, _hcertificates⟩ := h
+  exact ⟨K', pairCell, hK'A, hK', P, hpairCard,
+    strongDeletion_eventuallyGoodPrefix_forces_candidateDeletionWithLateSurvivingRepairs_or_infiniteSpatialSharedExternalWideTraceFamily
+      hstrong hK'A P hpairCard hgood⟩
+
+/-- Once the original reservoir is known to be infinite, every spatial
+outcome of a migrated certificate yields one common candidate deletion. -/
+theorem HasMigratedBinaryCertificateFamily.has_candidateDeletionWithLateSurvivingRepairs
+    {A C I : Set ℕ} {D : Finset ℕ} {q : ℕ → ℕ}
+    (h : HasMigratedBinaryCertificateFamily A q I)
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A)
+    (hCA : C ⊆ A)
+    (hC : C.Infinite)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D) :
+    HasInfiniteCandidateDeletionWithLateSurvivingRepairs A A := by
+  obtain ⟨_J, _hJI, _hJ, K', pairCell, hK'A, _hK', P,
+      hpairCard, _hsafe, _hcertificates⟩ := h
+  exact
+    strongDeletion_eventuallyGoodPrefix_forces_candidateDeletionWithLateSurvivingRepairs
+      hstrong hCA hC hK'A P hpairCard hgood
+
 /-- Every migrated binary certificate can be made target-minimal.  Besides
 remaining late and disjoint from the marked target stream, the minimized
 certificate gives each of its targets a private selector: that selector
@@ -28070,6 +38475,112 @@ def HasMigratedBinaryTwoRepairTraceCertificateFamily
           HasTwoRepairTraceObstructionAlongAt
             (additiveSupportFamily A 3) C K' D pairCell t
 
+/-- Forgetting the retained two-repair traces recovers the underlying
+migrated binary certificate family. -/
+theorem HasMigratedBinaryTwoRepairTraceCertificateFamily.toBinaryCertificateFamily
+    {A C I : Set ℕ} {D : Finset ℕ} {q : ℕ → ℕ}
+    (h : HasMigratedBinaryTwoRepairTraceCertificateFamily A C D q I) :
+    HasMigratedBinaryCertificateFamily A q I := by
+  obtain ⟨J, hJI, hJ, K', pairCell, hK'A, hK', P,
+      hpairCard, hsafe, hcertificates⟩ := h
+  refine ⟨J, hJI, hJ, K', pairCell, hK'A, hK', P,
+    hpairCard, hsafe, ?_⟩
+  intro N
+  obtain ⟨Q, _hQ, hQlate, hQmarked, hcert,
+      _hlocalized, _hQsafe, _htrace⟩ := hcertificates N
+  exact ⟨Q, hQlate, hQmarked, hcert⟩
+
+/-- Arithmetic endgame package for a migrated certificate family.  At every
+target height the protected infinite target stream is still present and a
+late target-localized certificate exhibits exactly one of the three finite
+obstructions isolated above: a wide support, a separated additive edge, or
+two opposed external unit edges. -/
+def HasMigratedBinaryAdditiveClauseTrichotomyFamily
+    (A C : Set ℕ) (D : Finset ℕ) (q : ℕ → ℕ) (I : Set ℕ) : Prop :=
+  ∃ J, J ⊆ I ∧ J.Infinite ∧
+    ∃ K' : Set ℕ, ∃ pairCell : ℕ → Finset ℕ,
+      K' ⊆ A ∧ K'.Infinite ∧
+      IsFiniteBlockPartition K' pairCell ∧
+      (∀ i, (pairCell i).card = 2) ∧
+      (∀ n ∈ J, q n ∈
+        commonSurvivalTargets (additiveSupportFamily A 3) pairCell) ∧
+      ∀ N, ∃ Q : Finset ℕ,
+        Q.Nonempty ∧
+        (∀ t ∈ Q, N ≤ t) ∧
+        Disjoint (Q : Set ℕ) (q '' J) ∧
+        (∀ sel : BlockSelector pairCell, ∃ t ∈ Q,
+          DestroysAt (additiveSupportFamily A 3)
+            (selectedSet sel) t) ∧
+        (∀ t ∈ Q, ∃ sel : BlockSelector pairCell,
+          DestroysAt (additiveSupportFamily A 3)
+              (selectedSet sel) t ∧
+            ∀ u ∈ Q, u ≠ t →
+              ¬ DestroysAt (additiveSupportFamily A 3)
+                (selectedSet sel) u) ∧
+        Disjoint (Q : Set ℕ)
+          (commonSurvivalTargets
+            (additiveSupportFamily A 3) pairCell) ∧
+        ((∃ t ∈ Q,
+            HasWideReservoirSupportAt
+              (additiveSupportFamily A 3) K' t) ∨
+          ∃ hcellCard : ∀ i, (pairCell i).card = 2,
+            ∃ data : ∀ t : {t // t ∈ Q},
+                ExternalNarrowTraceClauseData
+                  (additiveSupportFamily A 3) C K' D pairCell t.1,
+              HasSeparatedExternalNarrowAdditiveImplicationEdge
+                  A C K' D Q pairCell hcellCard data ∨
+                HasOpposedExternalUnitAdditiveImplicationEdges
+                  A C K' D Q pairCell hcellCard data)
+
+/-- Spatial strengthening of the migrated arithmetic frontier.  The same
+protected marked stream and binary partition are retained, but the finite
+certificate is rebuilt on every tail of the partition.  Hence every
+endpoint occurring in the wide, separated, or opposed-unit alternative can
+be forced beyond an arbitrary block index. -/
+def HasMigratedBinarySpatialAdditiveClauseTrichotomyFamily
+    (A C : Set ℕ) (D : Finset ℕ) (q : ℕ → ℕ) (I : Set ℕ) : Prop :=
+  ∃ J, J ⊆ I ∧ J.Infinite ∧
+    ∃ K' : Set ℕ, ∃ pairCell : ℕ → Finset ℕ,
+      K' ⊆ A ∧ K'.Infinite ∧
+      IsFiniteBlockPartition K' pairCell ∧
+      (∀ i, (pairCell i).card = 2) ∧
+      (∀ n ∈ J, q n ∈
+        commonSurvivalTargets (additiveSupportFamily A 3) pairCell) ∧
+      ∀ start N,
+        let Ktail : Set ℕ :=
+          {x | ∃ i, x ∈ pairCell (start + i)}
+        let tailCell : ℕ → Finset ℕ :=
+          fun i => pairCell (start + i)
+        ∃ Q : Finset ℕ,
+          IsFiniteBlockPartition Ktail tailCell ∧
+          Q.Nonempty ∧
+          (∀ t ∈ Q, N ≤ t) ∧
+          Disjoint (Q : Set ℕ) (q '' J) ∧
+          (∀ sel : BlockSelector tailCell, ∃ t ∈ Q,
+            DestroysAt (additiveSupportFamily A 3)
+              (selectedSet sel) t) ∧
+          (∀ t ∈ Q, ∃ sel : BlockSelector tailCell,
+            DestroysAt (additiveSupportFamily A 3)
+                (selectedSet sel) t ∧
+              ∀ u ∈ Q, u ≠ t →
+                ¬ DestroysAt (additiveSupportFamily A 3)
+                  (selectedSet sel) u) ∧
+          Disjoint (Q : Set ℕ)
+            (commonSurvivalTargets
+              (additiveSupportFamily A 3) tailCell) ∧
+          ((∃ t ∈ Q,
+              HasWideReservoirSupportAt
+                (additiveSupportFamily A 3) Ktail t) ∨
+            ∃ htailCard : ∀ i, (tailCell i).card = 2,
+              ∃ data : ∀ t : {t // t ∈ Q},
+                  ExternalNarrowTraceClauseData
+                    (additiveSupportFamily A 3)
+                      C Ktail D tailCell t.1,
+                HasSeparatedExternalNarrowAdditiveImplicationEdge
+                    A C Ktail D Q tailCell htailCard data ∨
+                  HasOpposedExternalUnitAdditiveImplicationEdges
+                    A C Ktail D Q tailCell htailCard data)
+
 /-- The eventually-good prefix upgrades every migrated finite certificate to
 the external two-repair trace obstruction.  This is the direct meeting point
 of the original repair reservoir and the new migrated selector space. -/
@@ -28107,6 +38618,151 @@ theorem HasMigratedBinaryCertificateFamily.with_twoRepairTraceObstructions
       P hlocalized hQrepairs
   exact ⟨Q, hQ, hQlateN, hQmarked, hcert,
     hlocalized, hQsafe, htrace⟩
+
+/-- Apply the mixed-clause implication analysis uniformly to every late
+certificate in the migrated two-repair family. -/
+theorem HasMigratedBinaryTwoRepairTraceCertificateFamily.with_additiveClauseTrichotomy
+    {A C I : Set ℕ} {D : Finset ℕ} {q : ℕ → ℕ}
+    (h : HasMigratedBinaryTwoRepairTraceCertificateFamily A C D q I) :
+    HasMigratedBinaryAdditiveClauseTrichotomyFamily A C D q I := by
+  obtain ⟨J, hJI, hJ, K', pairCell, hK'A, hK', P,
+      hpairCard, hsafe, hcertificates⟩ := h
+  refine ⟨J, hJI, hJ, K', pairCell, hK'A, hK', P,
+    hpairCard, hsafe, ?_⟩
+  intro N
+  obtain ⟨Q, hQ, hQlate, hQmarked, hcert,
+      hlocalized, hQsafe, htrace⟩ := hcertificates N
+  have htrichotomy :=
+    targetLocalized_twoRepairCertificateAlong_external_has_wide_or_separatedAdditiveEdge_or_opposedExternalUnits
+      P hpairCard hcert htrace
+  rcases htrichotomy with hwide | ⟨data, hnarrow⟩
+  · exact ⟨Q, hQ, hQlate, hQmarked, hcert,
+      hlocalized, hQsafe, Or.inl hwide⟩
+  · exact ⟨Q, hQ, hQlate, hQmarked, hcert,
+      hlocalized, hQsafe, Or.inr
+        ⟨hpairCard, data, hnarrow⟩⟩
+
+/-- Strong deletion upgrades a migrated binary certificate all the way to
+the spatial arithmetic trichotomy.  The marked targets remain universally
+safe after passing to a block tail, so every fresh localized certificate is
+still disjoint from their range. -/
+theorem HasMigratedBinaryCertificateFamily.with_spatialAdditiveClauseTrichotomy
+    {A C I : Set ℕ} {D : Finset ℕ} {q : ℕ → ℕ}
+    (h : HasMigratedBinaryCertificateFamily A q I)
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A)
+    (hgood : HasEventuallyTwoRepairsAtPrefixAlong
+      (additiveSupportFamily A 3) C Set.univ D) :
+    HasMigratedBinarySpatialAdditiveClauseTrichotomyFamily
+      A C D q I := by
+  classical
+  obtain ⟨J, hJI, hJ, K', pairCell, hK'A, hK', P,
+      hpairCard, hsafe, _hcertificates⟩ := h
+  refine ⟨J, hJI, hJ, K', pairCell, hK'A, hK', P,
+    hpairCard, hsafe, ?_⟩
+  intro start N
+  let Ktail : Set ℕ :=
+    {x | ∃ i, x ∈ pairCell (start + i)}
+  let tailCell : ℕ → Finset ℕ :=
+    fun i => pairCell (start + i)
+  obtain ⟨Q, Ptail, hQ, hQlate, hcert, hlocalized,
+      hQsafe, htrichotomy⟩ :=
+    strongDeletion_eventuallyGoodPrefix_forces_spatialTailWide_or_separatedAdditiveEdge_or_opposedExternalUnits
+      hstrong hK'A P hpairCard hgood start N
+  have hmarkedSafe : q '' J ⊆
+      commonSurvivalTargets
+        (additiveSupportFamily A 3) tailCell := by
+    rintro t ⟨n, hnJ, rfl⟩
+    exact (hsafe n hnJ).of_blockTail P start
+  have hQmarked : Disjoint (Q : Set ℕ) (q '' J) :=
+    hQsafe.mono_right hmarkedSafe
+  exact ⟨Q, Ptail, hQ, hQlate, hQmarked, hcert,
+    hlocalized, hQsafe, htrichotomy⟩
+
+/-- Cofinal stabilization of the migrated arithmetic clause trichotomy.
+For one fixed infinite binary partition, exactly one of the three obstruction
+types can be forced at every target height after passing the two elementary
+logical exclusions. -/
+theorem HasMigratedBinaryAdditiveClauseTrichotomyFamily.cofinalTrichotomy
+    {A C I : Set ℕ} {D : Finset ℕ} {q : ℕ → ℕ}
+    (h : HasMigratedBinaryAdditiveClauseTrichotomyFamily A C D q I) :
+    ∃ K' : Set ℕ, ∃ pairCell : ℕ → Finset ℕ,
+      K' ⊆ A ∧ K'.Infinite ∧
+      ∃ P : IsFiniteBlockPartition K' pairCell,
+        ∃ hcellCard : ∀ i, (pairCell i).card = 2,
+          (∀ N, ∃ t, N ≤ t ∧
+              HasWideReservoirSupportAt
+                (additiveSupportFamily A 3) K' t) ∨
+          (∀ N, ∃ t, N ≤ t ∧
+              HasSeparatedSingletonTwoRepairTracesAlongAt
+                (additiveSupportFamily A 3)
+                  C K' D pairCell t) ∨
+          ∀ N, ∃ Q : Finset ℕ,
+            ∃ data : ∀ t : {t // t ∈ Q},
+                ExternalNarrowTraceClauseData
+                  (additiveSupportFamily A 3) C K' D pairCell t.1,
+              (∀ t ∈ Q, N ≤ t) ∧
+              HasOpposedExternalUnitAdditiveImplicationEdges
+                A C K' D Q pairCell hcellCard data := by
+  classical
+  obtain ⟨_J, _hJI, _hJ, K', pairCell, hK'A, hK', P,
+      hcellCard, _hsafe, hcertificates⟩ := h
+  refine ⟨K', pairCell, hK'A, hK', P, hcellCard, ?_⟩
+  have hresidual : ∀ N,
+      (∃ t, N ≤ t ∧ HasWideReservoirSupportAt
+        (additiveSupportFamily A 3) K' t) ∨
+      (∃ t, N ≤ t ∧
+        HasSeparatedSingletonTwoRepairTracesAlongAt
+          (additiveSupportFamily A 3) C K' D pairCell t) ∨
+      ∃ Q : Finset ℕ,
+        ∃ data : ∀ t : {t // t ∈ Q},
+            ExternalNarrowTraceClauseData
+              (additiveSupportFamily A 3) C K' D pairCell t.1,
+          (∀ t ∈ Q, N ≤ t) ∧
+          HasOpposedExternalUnitAdditiveImplicationEdges
+            A C K' D Q pairCell hcellCard data := by
+    intro N
+    obtain ⟨Q, _hQ, hQlate, _hQmarked, _hcert,
+        _hlocalized, _hQsafe, htri⟩ := hcertificates N
+    rcases htri with hwide | ⟨hcard, data, hsep | hunits⟩
+    · obtain ⟨t, htQ, htWide⟩ := hwide
+      exact Or.inl ⟨t, hQlate t htQ, htWide⟩
+    · obtain ⟨t, htQ, htSep⟩ := hsep.exists_target
+      exact Or.inr (Or.inl ⟨t, hQlate t htQ, htSep⟩)
+    · have hcardEq : hcard = hcellCard := Subsingleton.elim _ _
+      subst hcard
+      exact Or.inr (Or.inr ⟨Q, data, hQlate, hunits⟩)
+  by_cases hwide : ∀ N, ∃ t, N ≤ t ∧
+      HasWideReservoirSupportAt
+        (additiveSupportFamily A 3) K' t
+  · exact Or.inl hwide
+  · right
+    push Not at hwide
+    obtain ⟨Nwide, hnoWide⟩ := hwide
+    by_cases hsep : ∀ N, ∃ t, N ≤ t ∧
+        HasSeparatedSingletonTwoRepairTracesAlongAt
+          (additiveSupportFamily A 3) C K' D pairCell t
+    · exact Or.inl hsep
+    · right
+      push Not at hsep
+      obtain ⟨Nsep, hnoSep⟩ := hsep
+      intro N
+      obtain hwide' | hsep' | hunits :=
+        hresidual (max N (max Nwide Nsep))
+      · obtain ⟨t, htLate, htWide⟩ := hwide'
+        exact (hnoWide t
+          ((le_max_left Nwide Nsep).trans
+            ((le_max_right N (max Nwide Nsep)).trans htLate))
+          htWide).elim
+      · obtain ⟨t, htLate, htSep⟩ := hsep'
+        exact (hnoSep t
+          ((le_max_right Nwide Nsep).trans
+            ((le_max_right N (max Nwide Nsep)).trans htLate))
+          htSep).elim
+      · obtain ⟨Q, data, hQlate, hUnits⟩ := hunits
+        exact ⟨Q, data,
+          fun t htQ => (le_max_left N (max Nwide Nsep)).trans
+            (hQlate t htQ), hUnits⟩
 
 /-- Exact terminal pattern left by the synchronized singleton trace after
 all currently available binary migrations.  Every moving core petal is the
@@ -29424,6 +40080,7 @@ theorem counterexample_forces_disjointTargetStreams_or_migratedTwoRepairTraces
     ∃ C : Set ℕ, ∃ D : Finset ℕ,
       ∃ I : Set ℕ, ∃ markedTarget : ℕ → ℕ,
         C ⊆ A ∧
+        C.Infinite ∧
         HasEventuallyTwoRepairsAtPrefixAlong
           (additiveSupportFamily A 3) C Set.univ D ∧
         I.Infinite ∧ Set.InjOn markedTarget I ∧
@@ -29432,7 +40089,7 @@ theorem counterexample_forces_disjointTargetStreams_or_migratedTwoRepairTraces
             Disjoint (certificateTarget '' I) (markedTarget '' I)) ∨
           HasMigratedBinaryTwoRepairTraceCertificateFamily
             A C D markedTarget I) := by
-  obtain ⟨C, K, hCA, _hC, _hzeroC, _hnormalC,
+  obtain ⟨C, K, hCA, hC, _hzeroC, _hnormalC,
       _hrepairsC, _hselfC, hKC, _hK, D, R, target,
       moving, core, _hDC, hgood, hdata, hcoreC,
       _hcrossCore, _hcoreK, _htargetExternal, _hsingletonFinite,
@@ -29460,13 +40117,233 @@ theorem counterexample_forces_disjointTargetStreams_or_migratedTwoRepairTraces
         (fun b hb => (hcoreC b hb).trans hCA)
         hmarked hdelta htype hcertificate'
   · obtain ⟨L, hLI, hL, hdisjoint⟩ := hmigrateRange
-    exact ⟨C, D, L, fun n => target (atom n), hCA, hgood,
+    exact ⟨C, D, L, fun n => target (atom n), hCA, hC, hgood,
       hL, hmarkedInj.mono hLI, Or.inl
         ⟨certificateTarget, hcertificateInj.mono hLI,
           hdisjoint⟩⟩
-  · exact ⟨C, D, I, fun n => target (atom n), hCA, hgood,
+  · exact ⟨C, D, I, fun n => target (atom n), hCA, hC, hgood,
       hI, hmarkedInj, Or.inr
         (hmigrate.with_twoRepairTraceObstructions hgood)⟩
+
+/-- Global arithmetic clause frontier.  The finite-migration branch of any
+zero-normalized counterexample now reaches the exact wide/separated/opposed-
+unit trichotomy at every target height; the only other branch is the already
+isolated pair of disjoint injective target streams. -/
+theorem counterexample_forces_disjointTargetStreams_or_migratedAdditiveClauseTrichotomy
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C : Set ℕ, ∃ D : Finset ℕ,
+      ∃ I : Set ℕ, ∃ markedTarget : ℕ → ℕ,
+        C ⊆ A ∧
+        HasEventuallyTwoRepairsAtPrefixAlong
+          (additiveSupportFamily A 3) C Set.univ D ∧
+        I.Infinite ∧ Set.InjOn markedTarget I ∧
+        ((∃ certificateTarget : ℕ → ℕ,
+            Set.InjOn certificateTarget I ∧
+            Disjoint (certificateTarget '' I) (markedTarget '' I)) ∨
+          HasMigratedBinaryAdditiveClauseTrichotomyFamily
+            A C D markedTarget I) := by
+  obtain ⟨C, D, I, markedTarget, hCA, _hC, hgood,
+      hI, hmarkedInj, hstreams | hmigrate⟩ :=
+    counterexample_forces_disjointTargetStreams_or_migratedTwoRepairTraces
+      hbasis hzeroA hcounter
+  · exact ⟨C, D, I, markedTarget, hCA, hgood,
+      hI, hmarkedInj, Or.inl hstreams⟩
+  · exact ⟨C, D, I, markedTarget, hCA, hgood,
+      hI, hmarkedInj, Or.inr
+        hmigrate.with_additiveClauseTrichotomy⟩
+
+/-- Spatial global arithmetic frontier.  In the finite-migration branch a
+counterexample forces the mixed additive certificate after every finite
+initial segment of one fixed binary partition.  This removes the loophole
+in which arbitrarily large certificate targets repeatedly use the same few
+block endpoints. -/
+theorem counterexample_forces_disjointTargetStreams_or_migratedSpatialAdditiveClauseTrichotomy
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C : Set ℕ, ∃ D : Finset ℕ,
+      ∃ I : Set ℕ, ∃ markedTarget : ℕ → ℕ,
+        C ⊆ A ∧
+        HasEventuallyTwoRepairsAtPrefixAlong
+          (additiveSupportFamily A 3) C Set.univ D ∧
+        I.Infinite ∧ Set.InjOn markedTarget I ∧
+        ((∃ certificateTarget : ℕ → ℕ,
+            Set.InjOn certificateTarget I ∧
+            Disjoint (certificateTarget '' I)
+              (markedTarget '' I)) ∨
+          HasMigratedBinarySpatialAdditiveClauseTrichotomyFamily
+            A C D markedTarget I) := by
+  obtain ⟨C, D, I, markedTarget, hCA, _hC, hgood,
+      hI, hmarkedInj, hstreams | hmigrate⟩ :=
+    counterexample_forces_disjointTargetStreams_or_migratedTwoRepairTraces
+      hbasis hzeroA hcounter
+  · exact ⟨C, D, I, markedTarget, hCA, hgood,
+      hI, hmarkedInj, Or.inl hstreams⟩
+  · exact ⟨C, D, I, markedTarget, hCA, hgood,
+      hI, hmarkedInj, Or.inr
+        (hmigrate.toBinaryCertificateFamily.with_spatialAdditiveClauseTrichotomy
+          (strongOrderThreeDeletion_of_counterexample hcounter) hgood)⟩
+
+/-- Set-valued global frontier after absorbing the separated and opposed
+unit spatial branches.  A zero-normalized counterexample now has either two
+disjoint injective target streams, an infinite migrating wide-support
+family, or a concrete infinite deletion carrying unbounded surviving
+order-three repairs. -/
+theorem counterexample_forces_disjointTargetStreams_or_infiniteSpatialWide_or_candidateDeletionWithLateSurvivingRepairs
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C : Set ℕ, ∃ D : Finset ℕ,
+      C ⊆ A ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      ((∃ I : Set ℕ, ∃ markedTarget certificateTarget : ℕ → ℕ,
+          I.Infinite ∧ Set.InjOn markedTarget I ∧
+          Set.InjOn certificateTarget I ∧
+          Disjoint (certificateTarget '' I) (markedTarget '' I)) ∨
+        ∃ K' : Set ℕ, ∃ pairCell : ℕ → Finset ℕ,
+          K' ⊆ A ∧ K'.Infinite ∧
+          IsFiniteBlockPartition K' pairCell ∧
+          (∀ i, (pairCell i).card = 2) ∧
+          ((∃ L : Set ℕ, L.Infinite ∧ ∀ n ∈ L,
+            ∃ t, n ≤ t ∧
+              HasWideReservoirSupportAt
+                (additiveSupportFamily A 3)
+                  {x | ∃ i, x ∈ pairCell (n + i)} t) ∨
+            HasInfiniteCandidateDeletionWithLateSurvivingRepairs
+              A K')) := by
+  obtain ⟨C, D, I, markedTarget, hCA, _hC, hgood,
+      hI, hmarkedInj, hstreams | hmigrate⟩ :=
+    counterexample_forces_disjointTargetStreams_or_migratedTwoRepairTraces
+      hbasis hzeroA hcounter
+  · obtain ⟨certificateTarget, hcertificateInj, hdisjoint⟩ :=
+      hstreams
+    exact ⟨C, D, hCA, hgood, Or.inl
+      ⟨I, markedTarget, certificateTarget, hI, hmarkedInj,
+        hcertificateInj, hdisjoint⟩⟩
+  · obtain ⟨K', pairCell, hK'A, hK', P,
+        hpairCard, hspatial⟩ :=
+      hmigrate.toBinaryCertificateFamily.infiniteSpatialWide_or_candidateDeletionWithLateSurvivingRepairs
+        (strongOrderThreeDeletion_of_counterexample hcounter) hgood
+    exact ⟨C, D, hCA, hgood, Or.inr
+      ⟨K', pairCell, hK'A, hK', P, hpairCard, hspatial⟩⟩
+
+/-- Compact global endpoint of the repair-pair-preserving spatial bridge.
+The reservoir is explicitly retained as infinite.  Apart from the already
+isolated disjoint target streams, every counterexample now produces either
+one common candidate deletion or an infinite family of repair pairs sharing
+two distinct points outside that reservoir. -/
+theorem counterexample_forces_disjointTargetStreams_or_candidateDeletionWithLateSurvivingRepairs_or_sharedExternalWideTraceFamily
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ C : Set ℕ, ∃ D : Finset ℕ,
+      C ⊆ A ∧ C.Infinite ∧
+      HasEventuallyTwoRepairsAtPrefixAlong
+        (additiveSupportFamily A 3) C Set.univ D ∧
+      ((∃ I : Set ℕ, ∃ markedTarget certificateTarget : ℕ → ℕ,
+          I.Infinite ∧ Set.InjOn markedTarget I ∧
+          Set.InjOn certificateTarget I ∧
+          Disjoint (certificateTarget '' I) (markedTarget '' I)) ∨
+        ∃ K' : Set ℕ, ∃ pairCell : ℕ → Finset ℕ,
+          K' ⊆ A ∧ K'.Infinite ∧
+          IsFiniteBlockPartition K' pairCell ∧
+          (∀ i, (pairCell i).card = 2) ∧
+          (HasInfiniteCandidateDeletionWithLateSurvivingRepairs A K' ∨
+            HasInfiniteSpatialSharedExternalWideTraceFamily
+              A C D pairCell)) := by
+  obtain ⟨C, D, I, markedTarget, hCA, hC, hgood,
+      hI, hmarkedInj, hstreams | hmigrate⟩ :=
+    counterexample_forces_disjointTargetStreams_or_migratedTwoRepairTraces
+      hbasis hzeroA hcounter
+  · obtain ⟨certificateTarget, hcertificateInj, hdisjoint⟩ :=
+      hstreams
+    exact ⟨C, D, hCA, hC, hgood, Or.inl
+      ⟨I, markedTarget, certificateTarget, hI, hmarkedInj,
+        hcertificateInj, hdisjoint⟩⟩
+  · obtain ⟨K', pairCell, hK'A, hK', P,
+        hpairCard, hspatial⟩ :=
+      hmigrate.toBinaryCertificateFamily.candidateDeletionWithLateSurvivingRepairs_or_infiniteSpatialSharedExternalWideTraceFamily
+        (strongOrderThreeDeletion_of_counterexample hcounter) hgood
+    exact ⟨C, D, hCA, hC, hgood, Or.inr
+      ⟨K', pairCell, hK'A, hK', P, hpairCard, hspatial⟩⟩
+
+/-- The wide repair branch is fully absorbed.  A zero-normalized
+counterexample now yields either the independent disjoint-target-stream
+frontier or one explicit infinite subset of `A` avoided by order-three
+repairs at arbitrarily large targets. -/
+theorem counterexample_forces_disjointTargetStreams_or_candidateDeletionWithLateSurvivingRepairs
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    (∃ I : Set ℕ, ∃ markedTarget certificateTarget : ℕ → ℕ,
+        I.Infinite ∧ Set.InjOn markedTarget I ∧
+        Set.InjOn certificateTarget I ∧
+        Disjoint (certificateTarget '' I) (markedTarget '' I)) ∨
+      HasInfiniteCandidateDeletionWithLateSurvivingRepairs A A := by
+  obtain ⟨C, D, I, markedTarget, hCA, hC, hgood,
+      hI, hmarkedInj, hstreams | hmigrate⟩ :=
+    counterexample_forces_disjointTargetStreams_or_migratedTwoRepairTraces
+      hbasis hzeroA hcounter
+  · obtain ⟨certificateTarget, hcertificateInj, hdisjoint⟩ :=
+      hstreams
+    exact Or.inl ⟨I, markedTarget, certificateTarget,
+      hI, hmarkedInj, hcertificateInj, hdisjoint⟩
+  · exact Or.inr
+      (hmigrate.toBinaryCertificateFamily.has_candidateDeletionWithLateSurvivingRepairs
+        (strongOrderThreeDeletion_of_counterexample hcounter)
+          hCA hC hgood)
+
+/-- Migration can itself be absorbed into the disjoint-stream alternative.
+Its arbitrarily late certificates contain an infinite unsafe target set
+disjoint from a thinned protected marked stream; enumerating that set gives
+the second injective stream.  Thus every zero-normalized counterexample has
+two infinite injective target streams with disjoint ranges. -/
+theorem counterexample_forces_two_disjoint_injectiveTargetStreams
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ I : Set ℕ, ∃ markedTarget certificateTarget : ℕ → ℕ,
+      I.Infinite ∧ Set.InjOn markedTarget I ∧
+      Set.InjOn certificateTarget I ∧
+      Disjoint (certificateTarget '' I) (markedTarget '' I) := by
+  obtain ⟨_C, _D, I, markedTarget, _hCA, _hC, _hgood,
+      hI, hmarkedInj, hstreams | hmigrate⟩ :=
+    counterexample_forces_disjointTargetStreams_or_migratedTwoRepairTraces
+      hbasis hzeroA hcounter
+  · obtain ⟨certificateTarget, hcertificateInj, hdisjoint⟩ :=
+      hstreams
+    exact ⟨I, markedTarget, certificateTarget,
+      hI, hmarkedInj, hcertificateInj, hdisjoint⟩
+  · obtain ⟨J, hJI, hJ, _K', _pairCell, _hK'A, _hK',
+        _P, _hpairCard, _hsafe, T, hT, hTmarked, _hTunsafe⟩ :=
+      hmigrate.toBinaryCertificateFamily.has_infinite_unsafeTargets
+    let e : ℕ ↪ T := hT.natEmbedding T
+    let certificateTarget : ℕ → ℕ := fun n => (e n).1
+    have hcertificateInj : Set.InjOn certificateTarget J := by
+      intro n _hn m _hm hnm
+      apply e.injective
+      exact Subtype.ext hnm
+    have hcertificateRange : certificateTarget '' J ⊆ T := by
+      rintro t ⟨n, _hnJ, rfl⟩
+      exact (e n).2
+    exact ⟨J, markedTarget, certificateTarget,
+      hJ, hmarkedInj.mono hJI, hcertificateInj,
+      hTmarked.mono_left hcertificateRange⟩
 
 /-- On the common-anchor part of the terminal affine pattern, either an
 infinite subfamily has a unique-hit repair avoiding the moving certificate
@@ -30107,6 +40984,1636 @@ theorem exists_infinite_injectiveRepairPoint
       (hEq ▸ Finset.mem_insert_self 0 S₀)
   exact ⟨hsH, Nat.pos_of_ne_zero hsZero,
     lt_of_le_of_ne hsle hsne⟩
+
+/-- An injective unbounded target stream needs no self-avoidance hypothesis
+to supply injective points in its bounded repair supports.  A delta-system
+thinning has a fixed finite root.  Supports with empty petals have bounded
+targets, so target injectivity makes that exceptional index set finite. -/
+theorem exists_infinite_injectivePoint_in_repairs
+    {A B : Set ℕ} (hB : B.Infinite)
+    (target : ℕ → ℕ) (htargetInj : Set.InjOn target B)
+    (repair : ℕ → Finset ℕ)
+    (hrepair : ∀ b ∈ B,
+      repair b ∈ additiveSupportFamily A 3 (target b)) :
+    ∃ L, L ⊆ B ∧ L.Infinite ∧
+      ∃ point : ℕ → ℕ, Set.InjOn point L ∧
+        ∀ b ∈ L, point b ∈ repair b := by
+  classical
+  have hcard : ∀ b ∈ B, (repair b).card ≤ 3 := by
+    intro b hb
+    exact additiveSupportFamily_cardAtMost A 3
+      (target b) (repair b) (hrepair b hb)
+  obtain ⟨L₀, hL₀B, hL₀, R₀, hdelta⟩ :=
+    exists_infinite_deltaSystem_of_bounded_pointMap
+      hB repair 3 hcard
+  let R : Finset ℕ := insert 0 R₀
+  let EmptyPetal : Set ℕ :=
+    {b | b ∈ L₀ ∧ repair b \ R = ∅}
+  have hEmptyFinite : EmptyPetal.Finite := by
+    apply Set.Finite.of_finite_image (f := target)
+    · apply (Set.finite_Iic (3 * R.sum id)).subset
+      rintro q ⟨b, hbEmpty, rfl⟩
+      have hbB : b ∈ B := hL₀B hbEmpty.1
+      have hsub : repair b ⊆ R :=
+        Finset.sdiff_eq_empty_iff_subset.mp hbEmpty.2
+      obtain ⟨v, _hvA, hvsum, hvSupport⟩ :=
+        mem_additiveSupportFamily_iff.mp (hrepair b hbB)
+      have hvle : ∀ i, (v i).1 ≤ R.sum id := by
+        intro i
+        apply Finset.single_le_sum (s := R) (f := id)
+          (fun _ _ => Nat.zero_le _)
+        apply hsub
+        rw [← hvSupport]
+        exact mem_tupleSupport_iff.mpr ⟨i, rfl⟩
+      have hsumle :
+          ∑ i, (v i).1 ≤ ∑ _i : Fin 3, R.sum id := by
+        apply Finset.sum_le_sum
+        intro i _hi
+        exact hvle i
+      rw [hvsum] at hsumle
+      simpa using hsumle
+    · exact htargetInj.mono (fun _ hb => hL₀B hb.1)
+  let L : Set ℕ := L₀ \ EmptyPetal
+  have hLL₀ : L ⊆ L₀ := Set.diff_subset
+  have hL : L.Infinite := hL₀.diff hEmptyFinite
+  have hpetal : ∀ b : L, (repair b.1 \ R).Nonempty := by
+    intro b
+    apply Finset.nonempty_iff_ne_empty.mpr
+    intro hempty
+    exact b.2.2 ⟨hLL₀ b.2, hempty⟩
+  let point : ℕ → ℕ := fun b =>
+    if hb : b ∈ L then Classical.choose (hpetal ⟨b, hb⟩) else 0
+  have hpointPetal : ∀ b ∈ L, point b ∈ repair b \ R := by
+    intro b hb
+    simpa [point, hb] using Classical.choose_spec (hpetal ⟨b, hb⟩)
+  have hpointInj : Set.InjOn point L := by
+    intro b hb d hd hpointEq
+    by_contra hbd
+    have hpointInter : point b ∈ repair b ∩ repair d :=
+      Finset.mem_inter.mpr
+        ⟨(Finset.mem_sdiff.mp (hpointPetal b hb)).1,
+          hpointEq ▸ (Finset.mem_sdiff.mp
+            (hpointPetal d hd)).1⟩
+    have hpointRoot : point b ∈ R₀ := by
+      rw [← hdelta b (hLL₀ hb) d (hLL₀ hd) hbd]
+      exact hpointInter
+    exact (Finset.mem_sdiff.mp (hpointPetal b hb)).2
+      (Finset.mem_insert_of_mem hpointRoot)
+  exact ⟨L, hLL₀.trans hL₀B, hL, point, hpointInj,
+    fun b hb => (Finset.mem_sdiff.mp (hpointPetal b hb)).1⟩
+
+/-- Split one explicit unbounded repair stream into a new infinite deletion
+and an infinite surviving half.  The surviving repairs avoid both the old
+deletion and the new one, so their union is an exact larger candidate. -/
+theorem infiniteLateRepairStream_has_disjointInfiniteExtension
+    {A B J : Set ℕ}
+    (hBA : B ⊆ A) (hB : B.Infinite)
+    (target : ℕ → ℕ) (repair : ℕ → Finset ℕ)
+    (hJ : J.Infinite)
+    (hrepair : ∀ n ∈ J, n ≤ target n ∧
+      repair n ∈ additiveSupportFamily A 3 (target n) ∧
+      Disjoint (repair n : Set ℕ) B) :
+    ∃ X, X ⊆ A \ B ∧ X.Infinite ∧
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs A X ∧
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs A (B ∪ X) := by
+  classical
+  have htargetImage : (target '' J).Infinite :=
+    image_infinite_of_self_le_on_infinite hJ target
+      (fun n hn => (hrepair n hn).1)
+  obtain ⟨J₀, hJ₀J, htargetBij⟩ :=
+    Set.exists_subset_bijOn J target
+  have hJ₀ : J₀.Infinite := by
+    intro hJ₀Finite
+    apply htargetImage
+    rw [← htargetBij.image_eq]
+    exact hJ₀Finite.image target
+  obtain ⟨L₀, hL₀J₀, hL₀, point, hpointInj, hpointRepair⟩ :=
+    exists_infinite_injectivePoint_in_repairs
+      hJ₀ target htargetBij.injOn repair
+        (fun n hn => (hrepair n (hJ₀J hn)).2.1)
+  obtain ⟨L, hLL₀, hL, _hpointImage, hprivate⟩ :=
+    exists_infinite_privateHitTrace_of_injectiveRepairPoints
+      hL₀ point hpointInj repair 3
+        (fun n hn => additiveSupportFamily_cardAtMost A 3
+          (target n) (repair n)
+            (hrepair n (hJ₀J (hL₀J₀ hn))).2.1)
+        hpointRepair
+  have hLJ : L ⊆ J := hLL₀.trans (hL₀J₀.trans hJ₀J)
+  have hpointInjL : Set.InjOn point L := hpointInj.mono hLL₀
+  let e : ℕ ↪ L := hL.natEmbedding L
+  let evenIndex : ℕ → ℕ := fun n => (e (2 * n)).1
+  let oddIndex : ℕ → ℕ := fun n => (e (2 * n + 1)).1
+  let Even : Set ℕ := Set.range evenIndex
+  let Odd : Set ℕ := Set.range oddIndex
+  have hevenInj : Function.Injective evenIndex := by
+    intro n m hnm
+    have heq : e (2 * n) = e (2 * m) := Subtype.ext hnm
+    have := e.injective heq
+    omega
+  have hoddInj : Function.Injective oddIndex := by
+    intro n m hnm
+    have heq : e (2 * n + 1) = e (2 * m + 1) := Subtype.ext hnm
+    have := e.injective heq
+    omega
+  have hEven : Even.Infinite :=
+    Set.infinite_range_of_injective hevenInj
+  have hOdd : Odd.Infinite :=
+    Set.infinite_range_of_injective hoddInj
+  have hEvenL : Even ⊆ L := by
+    rintro _ ⟨n, rfl⟩
+    exact (e (2 * n)).2
+  have hOddL : Odd ⊆ L := by
+    rintro _ ⟨n, rfl⟩
+    exact (e (2 * n + 1)).2
+  have hEvenOdd : Disjoint Even Odd := by
+    rw [Set.disjoint_left]
+    rintro x ⟨n, rfl⟩ ⟨m, hm⟩
+    have heq : e (2 * n) = e (2 * m + 1) := by
+      apply Subtype.ext
+      exact hm.symm
+    have := e.injective heq
+    omega
+  let X : Set ℕ := point '' Even
+  have hX : X.Infinite :=
+    hEven.image (hpointInjL.mono hEvenL)
+  have hXAB : X ⊆ A \ B := by
+    rintro x ⟨n, hnEven, rfl⟩
+    have hnJ : n ∈ J := hLJ (hEvenL hnEven)
+    have hpointMem : point n ∈ repair n :=
+      hpointRepair n (hLL₀ (hEvenL hnEven))
+    have hrepairMem := (hrepair n hnJ).2.1
+    refine ⟨additiveSupportFamily_supportsIn A 3
+      (target n) (repair n) hrepairMem (point n) hpointMem, ?_⟩
+    intro hpointB
+    exact Set.disjoint_left.mp (hrepair n hnJ).2.2
+      (Finset.mem_coe.mpr hpointMem) hpointB
+  have hrepairX : ∀ n ∈ Odd,
+      Disjoint (repair n : Set ℕ) X := by
+    intro n hnOdd
+    rw [Set.disjoint_left]
+    rintro x hxRepair ⟨d, hdEven, rfl⟩
+    have hnL : n ∈ L := hOddL hnOdd
+    have hdL : d ∈ L := hEvenL hdEven
+    have hpointInImage : point d ∈ point '' L :=
+      ⟨d, hdL, rfl⟩
+    have hpointSingleton : point d ∈ ({point n} : Set ℕ) := by
+      rw [← hprivate n hnL]
+      exact ⟨hxRepair, hpointInImage⟩
+    have hpointEq : point d = point n := by
+      simpa using hpointSingleton
+    have hdn : d = n := hpointInjL hdL hnL hpointEq
+    exact Set.disjoint_left.mp hEvenOdd hdEven (hdn ▸ hnOdd)
+  have hXA : X ⊆ A := fun x hx => (hXAB hx).1
+  have hrepairUnion : ∀ n ∈ Odd,
+      Disjoint (repair n : Set ℕ) (B ∪ X) := by
+    intro n hnOdd
+    rw [Set.disjoint_left]
+    intro x hxRepair hxUnion
+    rcases hxUnion with hxB | hxX
+    · exact Set.disjoint_left.mp
+        (hrepair n (hLJ (hOddL hnOdd))).2.2 hxRepair hxB
+    · exact Set.disjoint_left.mp (hrepairX n hnOdd) hxRepair hxX
+  refine ⟨X, hXAB, hX, ?_, ?_⟩
+  · refine ⟨hXA, hX, Odd, target, repair, hOdd, ?_⟩
+    intro n hnOdd
+    have hnJ : n ∈ J := hLJ (hOddL hnOdd)
+    exact ⟨(hrepair n hnJ).1, (hrepair n hnJ).2.1,
+      hrepairX n hnOdd⟩
+  · refine ⟨?_, hB.mono Set.subset_union_left,
+      Odd, target, repair, hOdd, ?_⟩
+    · exact Set.union_subset hBA hXA
+    · intro n hnOdd
+      have hnJ : n ∈ J := hLJ (hOddL hnOdd)
+      exact ⟨(hrepair n hnJ).1, (hrepair n hnJ).2.1,
+        hrepairUnion n hnOdd⟩
+
+/-- Exact candidate deletions admit genuine strict extensions by an infinite
+disjoint set while retaining an unbounded surviving repair stream. -/
+theorem IsInfiniteCandidateDeletionWithLateSurvivingRepairs.has_strictExtension
+    {A B : Set ℕ}
+    (h : IsInfiniteCandidateDeletionWithLateSurvivingRepairs A B) :
+    ∃ X, X ⊆ A \ B ∧ X.Infinite ∧
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs A X ∧
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs A (B ∪ X) := by
+  obtain ⟨hBA, hB, J, target, repair, hJ, hrepair⟩ := h
+  exact infiniteLateRepairStream_has_disjointInfiniteExtension
+    hBA hB target repair hJ hrepair
+
+/-- Data for one exact strict candidate extension. -/
+structure StrictCandidateExtensionWitness
+    (A B : Set ℕ) where
+  layer : Set ℕ
+  layer_subset : layer ⊆ A \ B
+  layer_infinite : layer.Infinite
+  layer_candidate :
+    IsInfiniteCandidateDeletionWithLateSurvivingRepairs A layer
+  union_candidate :
+    IsInfiniteCandidateDeletionWithLateSurvivingRepairs A (B ∪ layer)
+
+/-- Structure-valued form of strict extension for recursive choice. -/
+theorem IsInfiniteCandidateDeletionWithLateSurvivingRepairs.strictExtensionWitness
+    {A B : Set ℕ}
+    (h : IsInfiniteCandidateDeletionWithLateSurvivingRepairs A B) :
+    Nonempty (StrictCandidateExtensionWitness A B) := by
+  obtain ⟨X, hXAB, hX, hcandidateX, hcandidateUnion⟩ :=
+    h.has_strictExtension
+  exact ⟨⟨X, hXAB, hX, hcandidateX, hcandidateUnion⟩⟩
+
+/-- An omega-length increasing tower of exact candidates.  Every stage adds
+an infinite fresh layer disjoint from everything already deleted. -/
+def HasInfiniteStrictCandidateExtensionTower (A : Set ℕ) : Prop :=
+  ∃ deletion layer : ℕ → Set ℕ,
+    (∀ n,
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs A (deletion n)) ∧
+    (∀ n, layer n ⊆ A \ deletion n) ∧
+    (∀ n, (layer n).Infinite) ∧
+    ∀ n, deletion (n + 1) = deletion n ∪ layer n
+
+/-- Recursive choice iterates exact strict extension through all natural
+stages.  No coherence at the union limit is asserted here. -/
+theorem IsInfiniteCandidateDeletionWithLateSurvivingRepairs.exists_extensionTower
+    {A B : Set ℕ}
+    (h : IsInfiniteCandidateDeletionWithLateSurvivingRepairs A B) :
+    HasInfiniteStrictCandidateExtensionTower A := by
+  classical
+  let State :=
+    {C : Set ℕ //
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs A C}
+  let initial : State := ⟨B, h⟩
+  let witness : (s : State) → StrictCandidateExtensionWitness A s.1 :=
+    fun s => Classical.choice s.2.strictExtensionWitness
+  let advance : State → State := fun s =>
+    ⟨s.1 ∪ (witness s).layer, (witness s).union_candidate⟩
+  let state : ℕ → State := fun n =>
+    Nat.rec initial (fun _ s => advance s) n
+  let deletion : ℕ → Set ℕ := fun n => (state n).1
+  let layer : ℕ → Set ℕ := fun n => (witness (state n)).layer
+  have hstateSucc : ∀ n, state (n + 1) = advance (state n) := by
+    intro n
+    simp [state]
+  refine ⟨deletion, layer, ?_, ?_, ?_, ?_⟩
+  · intro n
+    exact (state n).2
+  · intro n
+    exact (witness (state n)).layer_subset
+  · intro n
+    exact (witness (state n)).layer_infinite
+  · intro n
+    change (state (n + 1)).1 =
+      (state n).1 ∪ (witness (state n)).layer
+    rw [hstateSucc]
+
+/-- Destruction by the union of an increasing sequence of deletions is
+already visible at one finite stage.  This is the finite-character bridge
+needed at the limit of a candidate-extension tower: there are only finitely
+many supports at a fixed target, so the finitely many hits appearing in the
+union have a common stage. -/
+theorem destroysAt_iUnion_of_monotone_iff_exists_stage
+    {R : SupportFamily} {deletion : ℕ → Set ℕ} {q : ℕ}
+    (hmono : Monotone deletion) :
+    DestroysAt R (⋃ n, deletion n) q ↔
+      ∃ stage, DestroysAt R (deletion stage) q := by
+  classical
+  constructor
+  · intro hdestroy
+    have aux : ∀ supports : Finset (Finset ℕ),
+        (∀ E ∈ supports,
+          ¬ Disjoint (E : Set ℕ) (⋃ n, deletion n)) →
+        ∃ stage, ∀ E ∈ supports,
+          ¬ Disjoint (E : Set ℕ) (deletion stage) := by
+      intro supports
+      induction supports using Finset.induction_on with
+      | empty =>
+          intro _h
+          exact ⟨0, by simp⟩
+      | @insert E supports hE ih =>
+          intro h
+          have hEUnion := h E (Finset.mem_insert_self E supports)
+          obtain ⟨x, hxE, hxUnion⟩ :=
+            Set.not_disjoint_iff.mp hEUnion
+          obtain ⟨stageE, hxStageE⟩ := by
+            simpa only [Set.mem_iUnion] using hxUnion
+          obtain ⟨stageRest, hrest⟩ := ih (by
+            intro G hG
+            exact h G (Finset.mem_insert_of_mem hG))
+          refine ⟨max stageE stageRest, ?_⟩
+          intro G hG
+          rcases Finset.mem_insert.mp hG with rfl | hG
+          · apply Set.not_disjoint_iff.mpr
+            exact ⟨x, hxE,
+              hmono (le_max_left stageE stageRest) hxStageE⟩
+          · obtain ⟨y, hyG, hyStageRest⟩ :=
+              Set.not_disjoint_iff.mp (hrest G hG)
+            apply Set.not_disjoint_iff.mpr
+            exact ⟨y, hyG,
+              hmono (le_max_right stageE stageRest) hyStageRest⟩
+    exact aux (R q) hdestroy
+  · rintro ⟨stage, hdestroy⟩
+    exact hdestroy.mono (Set.subset_iUnion deletion stage)
+
+/-- The fresh layers in a strict candidate-extension tower are pairwise
+disjoint infinite subsets of the ambient basis. -/
+theorem HasInfiniteStrictCandidateExtensionTower.exists_pairwiseDisjointInfiniteLayers
+    {A : Set ℕ}
+    (h : HasInfiniteStrictCandidateExtensionTower A) :
+    ∃ layer : ℕ → Set ℕ,
+      (∀ n, layer n ⊆ A) ∧
+      (∀ n, (layer n).Infinite) ∧
+      Pairwise fun i j => Disjoint (layer i) (layer j) := by
+  obtain ⟨deletion, layer, hcandidate, hlayer, hlayerInfinite,
+      hnext⟩ := h
+  have hstep : ∀ n, deletion n ⊆ deletion (n + 1) := by
+    intro n
+    rw [hnext n]
+    exact Set.subset_union_left
+  have hmono : Monotone deletion :=
+    monotone_nat_of_le_succ hstep
+  refine ⟨layer, ?_, hlayerInfinite, ?_⟩
+  · intro n x hx
+    exact (hlayer n hx).1
+  · intro i j hij
+    rw [Set.disjoint_left]
+    intro x hxi hxj
+    rcases lt_or_gt_of_ne hij with hijlt | hjilt
+    · have hxDeletion : x ∈ deletion j := by
+        apply hmono (Nat.succ_le_of_lt hijlt)
+        rw [hnext i]
+        exact Or.inr hxi
+      exact (hlayer j hxj).2 hxDeletion
+    · have hxDeletion : x ∈ deletion i := by
+        apply hmono (Nat.succ_le_of_lt hjilt)
+        rw [hnext j]
+        exact Or.inr hxj
+      exact (hlayer i hxi).2 hxDeletion
+
+/-- Strong deletion confronted with an omega candidate tower yields an
+explicit finite-stage staircase.  Arbitrarily late targets are already
+destroyed at some finite stage, while that same stage has a still later
+order-three target with a surviving support.  The missing limit argument can
+therefore work entirely with finite stages and need not reason directly
+about supports meeting an infinite union. -/
+theorem HasInfiniteStrictCandidateExtensionTower.exists_finiteStageStaircase
+    {A : Set ℕ}
+    (htower : HasInfiniteStrictCandidateExtensionTower A)
+    (hstrong : StrongInfiniteDeletion
+      (additiveSupportFamily A 3) A) :
+    ∃ deletion layer : ℕ → Set ℕ,
+      (∀ n,
+        IsInfiniteCandidateDeletionWithLateSurvivingRepairs
+          A (deletion n)) ∧
+      (∀ n, layer n ⊆ A \ deletion n) ∧
+      (∀ n, (layer n).Infinite) ∧
+      (∀ n, deletion (n + 1) = deletion n ∪ layer n) ∧
+      ∀ N, ∃ stage q r G,
+        N ≤ q ∧ q ≤ r ∧
+        DestroysAt (additiveSupportFamily A 3)
+          (deletion stage) q ∧
+        G ∈ additiveSupportFamily A 3 r ∧
+        Disjoint (G : Set ℕ) (deletion stage) := by
+  classical
+  obtain ⟨deletion, layer, hcandidate, hlayer, hlayerInfinite,
+      hnext⟩ := htower
+  have hstep : ∀ n, deletion n ⊆ deletion (n + 1) := by
+    intro n
+    rw [hnext n]
+    exact Set.subset_union_left
+  have hmono : Monotone deletion :=
+    monotone_nat_of_le_succ hstep
+  let limitDeletion : Set ℕ := ⋃ n, deletion n
+  have hlimitA : limitDeletion ⊆ A := by
+    intro x hx
+    obtain ⟨n, hxn⟩ : ∃ n, x ∈ deletion n := by
+      simpa only [limitDeletion, Set.mem_iUnion] using hx
+    exact (hcandidate n).1 hxn
+  have hlimitInfinite : limitDeletion.Infinite := by
+    apply (hcandidate 0).2.1.mono
+    exact Set.subset_iUnion deletion 0
+  refine ⟨deletion, layer, hcandidate, hlayer, hlayerInfinite,
+    hnext, ?_⟩
+  intro N
+  obtain ⟨q, hNq, hqLimit⟩ :=
+    hstrong limitDeletion hlimitA hlimitInfinite N
+  obtain ⟨stage, hqStage⟩ :=
+    (destroysAt_iUnion_of_monotone_iff_exists_stage hmono).mp
+      (by simpa only [limitDeletion] using hqLimit)
+  obtain ⟨_J, _target, _repair, hJ, hrepair⟩ :=
+    (hcandidate stage).2.2
+  obtain ⟨n, hnJ, hqn⟩ := hJ.exists_gt q
+  obtain ⟨hnTarget, hrepairMem, hrepairDisjoint⟩ :=
+    hrepair n hnJ
+  exact ⟨stage, q, _target n, _repair n,
+    hNq, (Nat.le_of_lt hqn).trans hnTarget, hqStage,
+    hrepairMem, hrepairDisjoint⟩
+
+/-- A repair stream from one finite tower stage which is eventually injured
+at explicitly recorded fresh layers.  Immediately before its injury the
+repair is still disjoint from the accumulated deletion. -/
+def HasInfiniteCandidateFirstInjuryTrace
+    (A : Set ℕ) (deletion layer : ℕ → Set ℕ)
+    (base : ℕ) : Prop :=
+  ∃ I : Set ℕ, ∃ target : ℕ → ℕ,
+    ∃ repair : ℕ → Finset ℕ,
+    ∃ injury point : ℕ → ℕ,
+      I.Infinite ∧
+      ∀ n ∈ I,
+        n ≤ target n ∧
+        repair n ∈ additiveSupportFamily A 3 (target n) ∧
+        base ≤ injury n ∧
+        Disjoint (repair n : Set ℕ) (deletion (injury n)) ∧
+        point n ∈ repair n ∧
+        point n ∈ layer (injury n)
+
+/-- Exact limit dichotomy for the extension tower.  Either the union of all
+stages is itself an infinite candidate deletion, or every finite stage has
+an infinite repair stream with a genuine first-injury layer.  This is the
+precise place where the remaining proof must use the additive equations:
+compactness alone cannot discard the second alternative. -/
+theorem HasInfiniteStrictCandidateExtensionTower.limitCandidate_or_firstInjury
+    {A : Set ℕ}
+    (htower : HasInfiniteStrictCandidateExtensionTower A) :
+    ∃ deletion layer : ℕ → Set ℕ,
+      (∀ n,
+        IsInfiniteCandidateDeletionWithLateSurvivingRepairs
+          A (deletion n)) ∧
+      (∀ n, layer n ⊆ A \ deletion n) ∧
+      (∀ n, (layer n).Infinite) ∧
+      (∀ n, deletion (n + 1) = deletion n ∪ layer n) ∧
+      (IsInfiniteCandidateDeletionWithLateSurvivingRepairs
+          A (⋃ n, deletion n) ∨
+        ∀ base,
+          HasInfiniteCandidateFirstInjuryTrace
+            A deletion layer base) := by
+  classical
+  obtain ⟨deletion, layer, hcandidate, hlayer, hlayerInfinite,
+      hnext⟩ := htower
+  have hstep : ∀ n, deletion n ⊆ deletion (n + 1) := by
+    intro n
+    rw [hnext n]
+    exact Set.subset_union_left
+  have hmono : Monotone deletion :=
+    monotone_nat_of_le_succ hstep
+  let limitDeletion : Set ℕ := ⋃ n, deletion n
+  have hlimitA : limitDeletion ⊆ A := by
+    intro x hx
+    obtain ⟨n, hxn⟩ : ∃ n, x ∈ deletion n := by
+      simpa only [limitDeletion, Set.mem_iUnion] using hx
+    exact (hcandidate n).1 hxn
+  have hlimitInfinite : limitDeletion.Infinite := by
+    apply (hcandidate 0).2.1.mono
+    exact Set.subset_iUnion deletion 0
+  refine ⟨deletion, layer, hcandidate, hlayer, hlayerInfinite,
+    hnext, ?_⟩
+  by_cases hlimitCandidate :
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs
+        A limitDeletion
+  · exact Or.inl (by simpa only [limitDeletion] using hlimitCandidate)
+  · right
+    intro base
+    obtain ⟨J, target, repair, hJ, hrepair⟩ :=
+      (hcandidate base).2.2
+    let survives : Set ℕ :=
+      {n | n ∈ J ∧
+        Disjoint (repair n : Set ℕ) limitDeletion}
+    have hsurvivesFinite : survives.Finite := by
+      by_contra hsurvivesInfinite
+      apply hlimitCandidate
+      refine ⟨hlimitA, hlimitInfinite, survives, target, repair,
+        hsurvivesInfinite, ?_⟩
+      intro n hn
+      exact ⟨(hrepair n hn.1).1, (hrepair n hn.1).2.1, hn.2⟩
+    let injured : Set ℕ := J \ survives
+    have hinjured : injured.Infinite := hJ.diff hsurvivesFinite
+    have hfirstInjury : ∀ n ∈ injured, ∃ k x,
+        base ≤ k ∧
+        Disjoint (repair n : Set ℕ) (deletion k) ∧
+        x ∈ repair n ∧ x ∈ layer k := by
+      intro n hnInjured
+      have hnJ : n ∈ J := hnInjured.1
+      have hnNotLimit :
+          ¬ Disjoint (repair n : Set ℕ) limitDeletion := by
+        intro hnDisjoint
+        exact hnInjured.2 ⟨hnJ, hnDisjoint⟩
+      obtain ⟨x₀, hx₀Repair, hx₀Limit⟩ :=
+        Set.not_disjoint_iff.mp hnNotLimit
+      obtain ⟨m₀, hx₀Stage⟩ : ∃ m, x₀ ∈ deletion m := by
+        simpa only [limitDeletion, Set.mem_iUnion] using hx₀Limit
+      have hexistsStage : ∃ m,
+          ¬ Disjoint (repair n : Set ℕ) (deletion m) := by
+        refine ⟨m₀, Set.not_disjoint_iff.mpr ?_⟩
+        exact ⟨x₀, hx₀Repair, hx₀Stage⟩
+      let first : ℕ := Nat.find hexistsStage
+      have hfirstHit :
+          ¬ Disjoint (repair n : Set ℕ) (deletion first) := by
+        exact Nat.find_spec hexistsStage
+      have hbaseBefore : base < first := by
+        by_contra hnot
+        have hfirstBase : first ≤ base := Nat.le_of_not_gt hnot
+        have hhitBase :
+            ¬ Disjoint (repair n : Set ℕ) (deletion base) := by
+          intro hdisjointBase
+          apply hfirstHit
+          exact hdisjointBase.mono_right (hmono hfirstBase)
+        exact hhitBase (hrepair n hnJ).2.2
+      let k : ℕ := first - 1
+      have hfirstEq : first = k + 1 := by
+        dsimp only [k]
+        omega
+      have hbaseK : base ≤ k := by
+        dsimp only [k]
+        omega
+      have hbefore :
+          Disjoint (repair n : Set ℕ) (deletion k) := by
+        by_contra hnotBefore
+        have hfindLe : first ≤ k :=
+          Nat.find_min' hexistsStage hnotBefore
+        omega
+      have hhitNext :
+          ¬ Disjoint (repair n : Set ℕ) (deletion (k + 1)) := by
+        simpa only [← hfirstEq] using hfirstHit
+      obtain ⟨x, hxRepair, hxNext⟩ :=
+        Set.not_disjoint_iff.mp hhitNext
+      have hxUnion : x ∈ deletion k ∪ layer k := by
+        rw [← hnext k]
+        exact hxNext
+      rcases hxUnion with hxOld | hxLayer
+      · exact (Set.disjoint_left.mp hbefore hxRepair hxOld).elim
+      · exact ⟨k, x, hbaseK, hbefore,
+          Finset.mem_coe.mp hxRepair, hxLayer⟩
+    let injury : ℕ → ℕ := fun n =>
+      if hn : n ∈ injured then
+        (hfirstInjury n hn).choose
+      else 0
+    let point : ℕ → ℕ := fun n =>
+      if hn : n ∈ injured then
+        (hfirstInjury n hn).choose_spec.choose
+      else 0
+    have hinjury : ∀ n, ∀ hn : n ∈ injured,
+        base ≤ injury n ∧
+        Disjoint (repair n : Set ℕ) (deletion (injury n)) ∧
+        point n ∈ repair n ∧ point n ∈ layer (injury n) := by
+      intro n hn
+      simpa only [injury, point, dif_pos hn] using
+        (hfirstInjury n hn).choose_spec.choose_spec
+    refine ⟨injured, target, repair, injury, point,
+      hinjured, ?_⟩
+    intro n hn
+    have hnJ : n ∈ J := hn.1
+    exact ⟨(hrepair n hnJ).1, (hrepair n hnJ).2.1,
+      (hinjury n hn).1, (hinjury n hn).2.1,
+      (hinjury n hn).2.2.1, (hinjury n hn).2.2.2⟩
+
+/-- The first-injury stages have the same basic infinite pigeonhole
+dichotomy as the earlier mixed clause labels: either one fixed fresh layer
+injures infinitely many repairs, or after thinning the injury stages are
+injective. -/
+theorem HasInfiniteCandidateFirstInjuryTrace.fixedLayer_or_injectiveStages
+    {A : Set ℕ} {deletion layer : ℕ → Set ℕ} {base : ℕ}
+    (h : HasInfiniteCandidateFirstInjuryTrace
+      A deletion layer base) :
+    ∃ I : Set ℕ, ∃ target : ℕ → ℕ,
+      ∃ repair : ℕ → Finset ℕ,
+      ∃ injury point : ℕ → ℕ,
+        I.Infinite ∧
+        (∀ n ∈ I,
+          n ≤ target n ∧
+          repair n ∈ additiveSupportFamily A 3 (target n) ∧
+          base ≤ injury n ∧
+          Disjoint (repair n : Set ℕ) (deletion (injury n)) ∧
+          point n ∈ repair n ∧
+          point n ∈ layer (injury n)) ∧
+        ((∃ k, (I ∩ injury ⁻¹' ({k} : Set ℕ)).Infinite) ∨
+          ∃ L, L ⊆ I ∧ L.Infinite ∧ Set.InjOn injury L) := by
+  classical
+  obtain ⟨I, target, repair, injury, point, hI, hdata⟩ := h
+  refine ⟨I, target, repair, injury, point, hI, hdata, ?_⟩
+  by_cases hrange : (injury '' I).Infinite
+  · right
+    obtain ⟨L, hLI, hinjuryBij⟩ :=
+      Set.exists_subset_bijOn I injury
+    have hL : L.Infinite := by
+      intro hLFinite
+      apply hrange
+      rw [← hinjuryBij.image_eq]
+      exact hLFinite.image injury
+    exact ⟨L, hLI, hL, hinjuryBij.injOn⟩
+  · left
+    have hrangeFinite : (injury '' I).Finite :=
+      Set.not_infinite.mp hrange
+    by_contra hnoFiber
+    push Not at hnoFiber
+    apply hI
+    apply Set.Finite.of_finite_fibers injury hrangeFinite
+    intro k hkRange
+    exact hnoFiber k
+
+/-- Arithmetic normalization of a first-injury trace.  The represented
+targets are made injective first.  The injury data then has exactly three
+Ramsey/pigeonhole shapes: distinct injury layers (which automatically give
+distinct hit points), one fixed layer with distinct hit points, or one fixed
+layer and one fixed hit point.  In the last case every distinct target has
+an explicit equation `anchor + u + v = target`. -/
+def HasInfiniteCandidateFirstInjuryArithmeticTrichotomy
+    (A : Set ℕ) (deletion layer : ℕ → Set ℕ)
+    (base : ℕ) : Prop :=
+  ∃ I : Set ℕ, ∃ target : ℕ → ℕ,
+    ∃ repair : ℕ → Finset ℕ,
+    ∃ injury point : ℕ → ℕ,
+      I.Infinite ∧ Set.InjOn target I ∧
+      (∀ n ∈ I,
+        n ≤ target n ∧
+        repair n ∈ additiveSupportFamily A 3 (target n) ∧
+        base ≤ injury n ∧
+        Disjoint (repair n : Set ℕ) (deletion (injury n)) ∧
+        point n ∈ repair n ∧
+        point n ∈ layer (injury n)) ∧
+      ((Set.InjOn injury I ∧ Set.InjOn point I) ∨
+        (∃ k, (∀ n ∈ I, injury n = k) ∧
+          Set.InjOn point I) ∨
+        ∃ k anchor,
+          (∀ n ∈ I, injury n = k ∧ point n = anchor) ∧
+          ∀ n ∈ I, ∃ u, u ∈ A ∧ ∃ v, v ∈ A ∧
+            anchor + u + v = target n)
+
+theorem HasInfiniteCandidateFirstInjuryTrace.to_arithmeticTrichotomy
+    {A : Set ℕ} {deletion layer : ℕ → Set ℕ} {base : ℕ}
+    (h : HasInfiniteCandidateFirstInjuryTrace
+      A deletion layer base)
+    (hlayerDisjoint :
+      Pairwise fun i j => Disjoint (layer i) (layer j)) :
+    HasInfiniteCandidateFirstInjuryArithmeticTrichotomy
+      A deletion layer base := by
+  classical
+  obtain ⟨I, target, repair, injury, point, hI, hdata⟩ := h
+  have htargetImage : (target '' I).Infinite := by
+    by_contra htargetFinite
+    apply hI
+    apply Set.Finite.of_finite_fibers target
+      (Set.not_infinite.mp htargetFinite)
+    intro q _hqImage
+    apply (Set.finite_Iic q).subset
+    intro n hnFiber
+    have hnI : n ∈ I := hnFiber.1
+    have htargetEq : target n = q := by
+      simpa using hnFiber.2
+    have hnle := (hdata n hnI).1
+    simpa [htargetEq] using hnle
+  obtain ⟨I₀, hI₀I, htargetBij⟩ :=
+    Set.exists_subset_bijOn I target
+  have hI₀ : I₀.Infinite := by
+    intro hI₀Finite
+    apply htargetImage
+    rw [← htargetBij.image_eq]
+    exact hI₀Finite.image target
+  have htargetInj₀ : Set.InjOn target I₀ :=
+    htargetBij.injOn
+  by_cases hinjuryImage : (injury '' I₀).Infinite
+  · obtain ⟨L, hLI₀, hinjuryBij⟩ :=
+      Set.exists_subset_bijOn I₀ injury
+    have hL : L.Infinite := by
+      intro hLFinite
+      apply hinjuryImage
+      rw [← hinjuryBij.image_eq]
+      exact hLFinite.image injury
+    have hpointInj : Set.InjOn point L := by
+      intro n hnL m hmL hpointEq
+      have hinjuryEq : injury n = injury m := by
+        by_contra hinjuryNe
+        exact Set.disjoint_left.mp (hlayerDisjoint hinjuryNe)
+          (hdata n (hI₀I (hLI₀ hnL))).2.2.2.2.2
+          (hpointEq ▸
+            (hdata m (hI₀I (hLI₀ hmL))).2.2.2.2.2)
+      exact hinjuryBij.injOn hnL hmL hinjuryEq
+    refine ⟨L, target, repair, injury, point, hL,
+      htargetInj₀.mono hLI₀, ?_, Or.inl
+        ⟨hinjuryBij.injOn, hpointInj⟩⟩
+    intro n hnL
+    exact hdata n (hI₀I (hLI₀ hnL))
+  · have hinjuryFinite : (injury '' I₀).Finite :=
+      Set.not_infinite.mp hinjuryImage
+    have hinfiniteInjuryFiber : ∃ k ∈ injury '' I₀,
+        (I₀ ∩ injury ⁻¹' ({k} : Set ℕ)).Infinite := by
+      by_contra hnoFiber
+      push Not at hnoFiber
+      apply hI₀
+      apply Set.Finite.of_finite_fibers injury hinjuryFinite
+      intro k hkImage
+      exact hnoFiber k hkImage
+    obtain ⟨k, _hkImage, hK⟩ := hinfiniteInjuryFiber
+    let K : Set ℕ := I₀ ∩ injury ⁻¹' ({k} : Set ℕ)
+    have hKI₀ : K ⊆ I₀ := fun _ hn => hn.1
+    have hinjuryK : ∀ n ∈ K, injury n = k := by
+      intro n hn
+      simpa [K] using hn.2
+    by_cases hpointImage : (point '' K).Infinite
+    · obtain ⟨L, hLK, hpointBij⟩ :=
+        Set.exists_subset_bijOn K point
+      have hL : L.Infinite := by
+        intro hLFinite
+        apply hpointImage
+        rw [← hpointBij.image_eq]
+        exact hLFinite.image point
+      refine ⟨L, target, repair, injury, point, hL,
+        htargetInj₀.mono (hLK.trans hKI₀), ?_,
+        Or.inr (Or.inl ⟨k, ?_, hpointBij.injOn⟩)⟩
+      · intro n hnL
+        exact hdata n
+          (hI₀I (hKI₀ (hLK hnL)))
+      · intro n hnL
+        exact hinjuryK n (hLK hnL)
+    · have hpointFinite : (point '' K).Finite :=
+        Set.not_infinite.mp hpointImage
+      have hinfinitePointFiber : ∃ anchor ∈ point '' K,
+          (K ∩ point ⁻¹' ({anchor} : Set ℕ)).Infinite := by
+        by_contra hnoFiber
+        push Not at hnoFiber
+        apply hK
+        apply Set.Finite.of_finite_fibers point hpointFinite
+        intro anchor hanchorImage
+        exact hnoFiber anchor hanchorImage
+      obtain ⟨anchor, _hanchorImage, hL⟩ := hinfinitePointFiber
+      let L : Set ℕ := K ∩ point ⁻¹' ({anchor} : Set ℕ)
+      have hLK : L ⊆ K := fun _ hn => hn.1
+      have hpointL : ∀ n ∈ L, point n = anchor := by
+        intro n hn
+        simpa [L] using hn.2
+      refine ⟨L, target, repair, injury, point, hL,
+        htargetInj₀.mono (hLK.trans hKI₀), ?_,
+        Or.inr (Or.inr ⟨k, anchor, ?_, ?_⟩)⟩
+      · intro n hnL
+        exact hdata n
+          (hI₀I (hKI₀ (hLK hnL)))
+      · intro n hnL
+        exact ⟨hinjuryK n (hLK hnL), hpointL n hnL⟩
+      · intro n hnL
+        have hnData := hdata n
+          (hI₀I (hKI₀ (hLK hnL)))
+        obtain ⟨u, huA, v, hvA, hsum⟩ :=
+          orderThreeSupport_member_has_twoSummands
+            hnData.2.1 hnData.2.2.2.2.1
+        refine ⟨u, huA, v, hvA, ?_⟩
+        rw [hpointL n hnL] at hsum
+        exact hsum
+
+/-- In the stationary-anchor branch, subtracting the common injury point
+descends every recorded order-three repair to an order-two support which
+still avoids the deletion immediately before the injury.  Distinct original
+targets remain distinct after subtracting the fixed anchor. -/
+theorem fixedAnchorFirstInjury_descends_to_injectivePairSurvival
+    {A I : Set ℕ} {deletion layer : ℕ → Set ℕ}
+    {target : ℕ → ℕ} {repair : ℕ → Finset ℕ}
+    {injury point : ℕ → ℕ} {k anchor : ℕ}
+    (htargetInj : Set.InjOn target I)
+    (hdata : ∀ n ∈ I,
+      repair n ∈ additiveSupportFamily A 3 (target n) ∧
+      Disjoint (repair n : Set ℕ) (deletion (injury n)) ∧
+      point n ∈ repair n ∧
+      point n ∈ layer (injury n))
+    (hfixed : ∀ n ∈ I,
+      injury n = k ∧ point n = anchor) :
+    Set.InjOn (fun n => target n - anchor) I ∧
+      ∀ n ∈ I,
+        target n = anchor + (target n - anchor) ∧
+        ∃ E ∈ additiveSupportFamily A 2 (target n - anchor),
+          E ⊆ repair n ∧
+          repair n = insert anchor E ∧
+          Disjoint (E : Set ℕ) (deletion k) := by
+  classical
+  have hanchorLe : ∀ n ∈ I, anchor ≤ target n := by
+    intro n hn
+    obtain ⟨u, _huA, _huRepair, v, _hvA, _hvRepair, hsum⟩ :=
+      orderThreeSupport_member_has_twoSummands_in_support
+        (hdata n hn).1
+        (by simpa [(hfixed n hn).2] using (hdata n hn).2.2.1)
+    omega
+  constructor
+  · intro n hn m hm hsubEq
+    have hnAnchor := hanchorLe n hn
+    have hmAnchor := hanchorLe m hm
+    change target n - anchor = target m - anchor at hsubEq
+    apply htargetInj hn hm
+    calc
+      target n = anchor + (target n - anchor) := by
+        omega
+      _ = anchor + (target m - anchor) := by rw [hsubEq]
+      _ = target m := by omega
+  · intro n hn
+    have hnAnchor := hanchorLe n hn
+    have htargetSplit :
+        target n = anchor + (target n - anchor) := by
+      omega
+    obtain ⟨u, huA, huRepair, v, hvA, hvRepair, hsum,
+        hrepairCover⟩ :=
+      orderThreeSupport_member_has_twoSummands_cover_support
+        (hdata n hn).1
+        (by simpa [(hfixed n hn).2] using (hdata n hn).2.2.1)
+    have huv : u + v = target n - anchor := by
+      omega
+    have huLe : u ≤ target n - anchor := by omega
+    let E : Finset ℕ := pairSupport (target n - anchor) u
+    have hsub : target n - anchor - u = v := by omega
+    have hER : E ∈
+        additiveSupportFamily A 2 (target n - anchor) := by
+      exact pairSupport_mem_additiveSupportFamily huLe huA
+        (by simpa [hsub] using hvA)
+    have hEsub : E ⊆ repair n := by
+      intro x hxE
+      have hx : x = u ∨ x = v := by
+        simpa [E, pairSupport, hsub] using hxE
+      rcases hx with rfl | rfl
+      · exact huRepair
+      · exact hvRepair
+    have hrepairEq : repair n = insert anchor E := by
+      apply Finset.Subset.antisymm
+      · intro x hx
+        have hxCover := hrepairCover hx
+        simpa [E, pairSupport, hsub] using hxCover
+      · intro x hx
+        rcases Finset.mem_insert.mp hx with rfl | hxE
+        · simpa [(hfixed n hn).2] using
+            (hdata n hn).2.2.1
+        · exact hEsub hxE
+    refine ⟨htargetSplit, E, hER, hEsub, hrepairEq, ?_⟩
+    rw [Set.disjoint_left]
+    intro x hxE hxDeletion
+    apply Set.disjoint_left.mp (hdata n hn).2.1
+      (Finset.mem_coe.mpr (hEsub (Finset.mem_coe.mp hxE)))
+    simpa [(hfixed n hn).1] using hxDeletion
+
+/-- Strengthened arithmetic trichotomy retaining the order-two descent in
+the stationary-anchor branch. -/
+def HasInfiniteCandidateFirstInjuryDescendedTrichotomy
+    (A : Set ℕ) (deletion layer : ℕ → Set ℕ)
+    (base : ℕ) : Prop :=
+  ∃ I : Set ℕ, ∃ target : ℕ → ℕ,
+    ∃ repair : ℕ → Finset ℕ,
+    ∃ injury point : ℕ → ℕ,
+      I.Infinite ∧ Set.InjOn target I ∧
+      (∀ n ∈ I,
+        n ≤ target n ∧
+        repair n ∈ additiveSupportFamily A 3 (target n) ∧
+        base ≤ injury n ∧
+        Disjoint (repair n : Set ℕ) (deletion (injury n)) ∧
+        point n ∈ repair n ∧
+        point n ∈ layer (injury n)) ∧
+      ((Set.InjOn injury I ∧ Set.InjOn point I) ∨
+        (∃ k, (∀ n ∈ I, injury n = k) ∧
+          Set.InjOn point I) ∨
+        ∃ k anchor,
+          (∀ n ∈ I, injury n = k ∧ point n = anchor) ∧
+          (∀ n ∈ I, ∃ u, u ∈ A ∧ ∃ v, v ∈ A ∧
+            anchor + u + v = target n) ∧
+          Set.InjOn (fun n => target n - anchor) I ∧
+          ∀ n ∈ I,
+            target n = anchor + (target n - anchor) ∧
+            ∃ E ∈ additiveSupportFamily A 2 (target n - anchor),
+              E ⊆ repair n ∧
+              repair n = insert anchor E ∧
+              Disjoint (E : Set ℕ) (deletion k))
+
+theorem HasInfiniteCandidateFirstInjuryTrace.to_descendedTrichotomy
+    {A : Set ℕ} {deletion layer : ℕ → Set ℕ} {base : ℕ}
+    (h : HasInfiniteCandidateFirstInjuryTrace
+      A deletion layer base)
+    (hlayerDisjoint :
+      Pairwise fun i j => Disjoint (layer i) (layer j)) :
+    HasInfiniteCandidateFirstInjuryDescendedTrichotomy
+      A deletion layer base := by
+  obtain ⟨I, target, repair, injury, point, hI, htargetInj,
+      hdata, hmoving | hfixedPoint | hfixedAnchor⟩ :=
+    h.to_arithmeticTrichotomy hlayerDisjoint
+  · exact ⟨I, target, repair, injury, point, hI,
+      htargetInj, hdata, Or.inl hmoving⟩
+  · exact ⟨I, target, repair, injury, point, hI,
+      htargetInj, hdata, Or.inr (Or.inl hfixedPoint)⟩
+  · obtain ⟨k, anchor, hfixed, harithmetic⟩ := hfixedAnchor
+    have hdescent :=
+      fixedAnchorFirstInjury_descends_to_injectivePairSurvival
+        htargetInj
+        (fun n hn => ⟨(hdata n hn).2.1,
+          (hdata n hn).2.2.2.1,
+          (hdata n hn).2.2.2.2.1,
+          (hdata n hn).2.2.2.2.2⟩)
+        hfixed
+    exact ⟨I, target, repair, injury, point, hI,
+      htargetInj, hdata, Or.inr (Or.inr
+        ⟨k, anchor, hfixed, harithmetic, hdescent.1,
+          hdescent.2⟩)⟩
+
+/-- Final graph-theoretic normalization of the stationary first-injury
+branch.  Its descended pair supports are no longer left as arbitrary
+choices: an infinite thinning is explicitly either a matching or a
+common-anchor star, and every selected edge remains inside the original
+order-three repair. -/
+def HasInfiniteCandidateFirstInjuryPairClassifiedTrichotomy
+    (A : Set ℕ) (deletion layer : ℕ → Set ℕ)
+    (base : ℕ) : Prop :=
+  ∃ I : Set ℕ, ∃ target : ℕ → ℕ,
+    ∃ repair : ℕ → Finset ℕ,
+    ∃ injury point : ℕ → ℕ,
+      I.Infinite ∧ Set.InjOn target I ∧
+      (∀ n ∈ I,
+        n ≤ target n ∧
+        repair n ∈ additiveSupportFamily A 3 (target n) ∧
+        base ≤ injury n ∧
+        Disjoint (repair n : Set ℕ) (deletion (injury n)) ∧
+        point n ∈ repair n ∧
+        point n ∈ layer (injury n)) ∧
+      ((Set.InjOn injury I ∧ Set.InjOn point I) ∨
+        (∃ k, (∀ n ∈ I, injury n = k) ∧
+          Set.InjOn point I) ∨
+        ∃ k injuryAnchor,
+          (∀ n ∈ I,
+            injury n = k ∧ point n = injuryAnchor) ∧
+          (∀ n ∈ I, ∃ u, u ∈ A ∧ ∃ v, v ∈ A ∧
+            injuryAnchor + u + v = target n) ∧
+          Set.InjOn (fun n => target n - injuryAnchor) I ∧
+          (∀ n ∈ I,
+            target n = injuryAnchor + (target n - injuryAnchor)) ∧
+          (HasInfinitePairSupportMatchingInside
+              A (deletion k) I
+              (fun n => target n - injuryAnchor) repair injuryAnchor ∨
+            HasInfinitePairSupportStarInside
+              A (deletion k) I
+              (fun n => target n - injuryAnchor) repair injuryAnchor))
+
+/-- The descended first-injury trichotomy always admits the sharp
+matching-or-star refinement in its stationary-anchor branch. -/
+theorem HasInfiniteCandidateFirstInjuryDescendedTrichotomy.to_pairClassified
+    {A : Set ℕ} {deletion layer : ℕ → Set ℕ} {base : ℕ}
+    (h : HasInfiniteCandidateFirstInjuryDescendedTrichotomy
+      A deletion layer base) :
+    HasInfiniteCandidateFirstInjuryPairClassifiedTrichotomy
+      A deletion layer base := by
+  obtain ⟨I, target, repair, injury, point, hI, htargetInj,
+      hdata, hmoving | hfixedPoint | hfixedAnchor⟩ := h
+  · exact ⟨I, target, repair, injury, point, hI,
+      htargetInj, hdata, Or.inl hmoving⟩
+  · exact ⟨I, target, repair, injury, point, hI,
+      htargetInj, hdata, Or.inr (Or.inl hfixedPoint)⟩
+  · obtain ⟨k, injuryAnchor, hfixed, harithmetic,
+        hshiftedInj, hdescent⟩ := hfixedAnchor
+    have hclassified :=
+      infiniteInjectivePairSurvival_has_matching_or_star
+        hI hshiftedInj (fun n hn => by
+          obtain ⟨_targetSplit, E, hER, hEsub, hrepairEq, hED⟩ :=
+            hdescent n hn
+          exact ⟨E, hER, hEsub, hrepairEq, hED⟩)
+    exact ⟨I, target, repair, injury, point, hI,
+      htargetInj, hdata, Or.inr (Or.inr
+        ⟨k, injuryAnchor, hfixed, harithmetic,
+          hshiftedInj, (fun n hn => (hdescent n hn).1),
+          hclassified⟩)⟩
+
+/-- Direct first-injury entry point for the matching-or-star
+classification. -/
+theorem HasInfiniteCandidateFirstInjuryTrace.to_pairClassifiedTrichotomy
+    {A : Set ℕ} {deletion layer : ℕ → Set ℕ} {base : ℕ}
+    (h : HasInfiniteCandidateFirstInjuryTrace
+      A deletion layer base)
+    (hlayerDisjoint :
+      Pairwise fun i j => Disjoint (layer i) (layer j)) :
+    HasInfiniteCandidateFirstInjuryPairClassifiedTrichotomy
+      A deletion layer base :=
+  (h.to_descendedTrichotomy hlayerDisjoint).to_pairClassified
+
+/-- The matching side of a fixed-anchor first-injury pattern can be split
+into two infinite halves.  One chosen summand from every edge in the first
+half forms a fresh infinite deletion; exact repair equality ensures that all
+repairs indexed by the second half survive the enlarged deletion. -/
+theorem HasInfinitePairSupportMatchingInside.gives_candidateExtension
+    {A D I : Set ℕ} {shiftedTarget target : ℕ → ℕ}
+    {repair : ℕ → Finset ℕ} {cap : ℕ}
+    (h : HasInfinitePairSupportMatchingInside
+      A D I shiftedTarget repair cap)
+    (hDA : D ⊆ A) (hD : D.Infinite)
+    (htargetLate : ∀ n ∈ I, n ≤ target n)
+    (hrepairR : ∀ n ∈ I,
+      repair n ∈ additiveSupportFamily A 3 (target n))
+    (hrepairD : ∀ n ∈ I,
+      Disjoint (repair n : Set ℕ) D) :
+    ∃ X, X ⊆ A \ D ∧ X.Infinite ∧
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs
+        A (D ∪ X) := by
+  classical
+  obtain ⟨L, support, hLI, hL, hsupport, hmatching⟩ := h
+  let CapHit : Set ℕ := {n | n ∈ L ∧ cap ∈ support n}
+  have hCapHitFinite : CapHit.Finite := by
+    apply Set.Subsingleton.finite
+    intro n hn m hm
+    by_contra hnm
+    exact Finset.disjoint_left.mp
+      (hmatching n hn.1 m hm.1 hnm) hn.2 hm.2
+  let K : Set ℕ := L \ CapHit
+  have hKL : K ⊆ L := Set.diff_subset
+  have hK : K.Infinite := hL.diff hCapHitFinite
+  have hcapNotSupport : ∀ n ∈ K, cap ∉ support n := by
+    intro n hn hcap
+    exact hn.2 ⟨hKL hn, hcap⟩
+  have hsupportNonempty : ∀ n : K, (support n.1).Nonempty := by
+    intro n
+    obtain ⟨v, _hvA, _hvsum, hvSupport⟩ :=
+      mem_additiveSupportFamily_iff.mp
+        (hsupport n.1 (hKL n.2)).1
+    rw [← hvSupport]
+    exact ⟨(v 0).1, mem_tupleSupport_iff.mpr ⟨0, rfl⟩⟩
+  let chosen : ℕ → ℕ := fun n =>
+    if hn : n ∈ K then
+      Classical.choose (hsupportNonempty ⟨n, hn⟩)
+    else 0
+  have hchosenSupport : ∀ n ∈ K, chosen n ∈ support n := by
+    intro n hn
+    simpa only [chosen, dif_pos hn] using
+      Classical.choose_spec (hsupportNonempty ⟨n, hn⟩)
+  have hchosenInj : Set.InjOn chosen K := by
+    intro n hn m hm hchosenEq
+    by_contra hnm
+    exact Finset.disjoint_left.mp
+      (hmatching n (hKL hn) m (hKL hm) hnm)
+      (hchosenSupport n hn)
+      (hchosenEq ▸ hchosenSupport m hm)
+  obtain ⟨Even, Odd, hEvenK, hOddK, hEven, hOdd,
+      hEvenOdd⟩ :=
+    exists_two_disjoint_infinite_subsets_of_infinite hK
+  let X : Set ℕ := chosen '' Even
+  have hX : X.Infinite :=
+    hEven.image (hchosenInj.mono hEvenK)
+  have hXAD : X ⊆ A \ D := by
+    rintro x ⟨n, hnEven, rfl⟩
+    have hnK : n ∈ K := hEvenK hnEven
+    have hnL : n ∈ L := hKL hnK
+    have hchosenA : chosen n ∈ A :=
+      additiveSupportFamily_supportsIn A 2
+        (shiftedTarget n) (support n) (hsupport n hnL).1
+        (chosen n) (hchosenSupport n hnK)
+    have hchosenD : chosen n ∉ D := by
+      intro hDmem
+      exact Set.disjoint_left.mp (hsupport n hnL).2.2.2
+        (Finset.mem_coe.mpr (hchosenSupport n hnK)) hDmem
+    exact ⟨hchosenA, hchosenD⟩
+  have hrepairX : ∀ n ∈ Odd,
+      Disjoint (repair n : Set ℕ) X := by
+    intro n hnOdd
+    have hnK : n ∈ K := hOddK hnOdd
+    have hnL : n ∈ L := hKL hnK
+    rw [Set.disjoint_left]
+    rintro x hxRepair ⟨m, hmEven, rfl⟩
+    have hmK : m ∈ K := hEvenK hmEven
+    have hmL : m ∈ L := hKL hmK
+    have hxRepairFin : chosen m ∈ repair n :=
+      Finset.mem_coe.mp hxRepair
+    rw [(hsupport n hnL).2.2.1] at hxRepairFin
+    rcases Finset.mem_insert.mp hxRepairFin with hchosenCap | hchosenN
+    · exact hcapNotSupport m hmK
+        (hchosenCap ▸ hchosenSupport m hmK)
+    · have hnm : n ≠ m := by
+        intro hnm
+        exact Set.disjoint_left.mp hEvenOdd hmEven (hnm ▸ hnOdd)
+      exact Finset.disjoint_left.mp
+        (hmatching n hnL m hmL hnm)
+        hchosenN (hchosenSupport m hmK)
+  refine ⟨X, hXAD, hX, ?_⟩
+  refine ⟨Set.union_subset hDA (fun x hx => (hXAD hx).1),
+    hD.mono Set.subset_union_left,
+    Odd, target, repair, hOdd, ?_⟩
+  intro n hnOdd
+  have hnI : n ∈ I := hLI (hKL (hOddK hnOdd))
+  refine ⟨htargetLate n hnI, hrepairR n hnI, ?_⟩
+  rw [Set.disjoint_left]
+  intro x hxRepair hxUnion
+  rcases hxUnion with hxD | hxX
+  · exact Set.disjoint_left.mp (hrepairD n hnI) hxRepair hxD
+  · exact Set.disjoint_left.mp (hrepairX n hnOdd) hxRepair hxX
+
+/-- The star side has the analogous split: injective moving endpoints from
+one half form the new deletion, while repairs on the other half contain
+only the two fixed anchors and their own endpoint. -/
+theorem HasInfinitePairSupportStarInside.gives_candidateExtension
+    {A D I : Set ℕ} {shiftedTarget target : ℕ → ℕ}
+    {repair : ℕ → Finset ℕ} {cap : ℕ}
+    (h : HasInfinitePairSupportStarInside
+      A D I shiftedTarget repair cap)
+    (hDA : D ⊆ A) (hD : D.Infinite)
+    (htargetLate : ∀ n ∈ I, n ≤ target n)
+    (hrepairR : ∀ n ∈ I,
+      repair n ∈ additiveSupportFamily A 3 (target n))
+    (hrepairD : ∀ n ∈ I,
+      Disjoint (repair n : Set ℕ) D) :
+    ∃ X, X ⊆ A \ D ∧ X.Infinite ∧
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs
+        A (D ∪ X) := by
+  classical
+  obtain ⟨L, anchor, endpoint, hLI, hL, _hanchorA,
+      hendpointInj, hstar⟩ := h
+  let CapHit : Set ℕ := {n | n ∈ L ∧ endpoint n = cap}
+  have hCapHitFinite : CapHit.Finite := by
+    apply Set.Subsingleton.finite
+    intro n hn m hm
+    exact hendpointInj hn.1 hm.1 (hn.2.trans hm.2.symm)
+  let K : Set ℕ := L \ CapHit
+  have hKL : K ⊆ L := Set.diff_subset
+  have hK : K.Infinite := hL.diff hCapHitFinite
+  have hendpointCap : ∀ n ∈ K, endpoint n ≠ cap := by
+    intro n hn heq
+    exact hn.2 ⟨hKL hn, heq⟩
+  obtain ⟨Even, Odd, hEvenK, hOddK, hEven, hOdd,
+      hEvenOdd⟩ :=
+    exists_two_disjoint_infinite_subsets_of_infinite hK
+  let X : Set ℕ := endpoint '' Even
+  have hX : X.Infinite :=
+    hEven.image (hendpointInj.mono (hEvenK.trans hKL))
+  have hXAD : X ⊆ A \ D := by
+    rintro x ⟨n, hnEven, rfl⟩
+    have hnK : n ∈ K := hEvenK hnEven
+    have hnL : n ∈ L := hKL hnK
+    obtain ⟨hendpointA, _hendpointNe, _hshift,
+      _hpairR, _hpairSub, _hrepairEq, hpairD⟩ := hstar n hnL
+    have hendpointD : endpoint n ∉ D := by
+      intro hDmem
+      exact Set.disjoint_left.mp hpairD
+        (by simp) hDmem
+    exact ⟨hendpointA, hendpointD⟩
+  have hrepairX : ∀ n ∈ Odd,
+      Disjoint (repair n : Set ℕ) X := by
+    intro n hnOdd
+    have hnK : n ∈ K := hOddK hnOdd
+    have hnL : n ∈ L := hKL hnK
+    obtain ⟨_hendpointA, hendpointAnchor, _hshift,
+      _hpairR, _hpairSub, hrepairEq, _hpairD⟩ := hstar n hnL
+    rw [Set.disjoint_left]
+    rintro x hxRepair ⟨m, hmEven, rfl⟩
+    have hmK : m ∈ K := hEvenK hmEven
+    have hmL : m ∈ L := hKL hmK
+    have hxRepairFin : endpoint m ∈ repair n :=
+      Finset.mem_coe.mp hxRepair
+    rw [hrepairEq] at hxRepairFin
+    rcases Finset.mem_insert.mp hxRepairFin with hmCap | hmPair
+    · exact hendpointCap m hmK hmCap
+    · have hmAnchorOrOwn : endpoint m = anchor ∨
+          endpoint m = endpoint n := by
+        simpa using hmPair
+      rcases hmAnchorOrOwn with hmAnchor | hmOwn
+      · exact (hstar m hmL).2.1 hmAnchor
+      · have hmn : m = n :=
+          hendpointInj hmL hnL hmOwn
+        exact Set.disjoint_left.mp hEvenOdd hmEven (hmn ▸ hnOdd)
+  refine ⟨X, hXAD, hX, ?_⟩
+  refine ⟨Set.union_subset hDA (fun x hx => (hXAD hx).1),
+    hD.mono Set.subset_union_left,
+    Odd, target, repair, hOdd, ?_⟩
+  intro n hnOdd
+  have hnI : n ∈ I := hLI (hKL (hOddK hnOdd))
+  refine ⟨htargetLate n hnI, hrepairR n hnI, ?_⟩
+  rw [Set.disjoint_left]
+  intro x hxRepair hxUnion
+  rcases hxUnion with hxD | hxX
+  · exact Set.disjoint_left.mp (hrepairD n hnI) hxRepair hxD
+  · exact Set.disjoint_left.mp (hrepairX n hnOdd) hxRepair hxX
+
+/-- An injective marked point lying in each bounded repair gives the same
+two-half extension without any stationary-anchor analysis.  Cross-avoidance
+first removes every off-diagonal marked point from every retained repair;
+one half of the marked points can then be deleted while the other half of
+the repairs survives. -/
+theorem injectiveRepairPoints_give_candidateExtension
+    {A D I : Set ℕ} {target point : ℕ → ℕ}
+    {repair : ℕ → Finset ℕ}
+    (hI : I.Infinite) (hpointInj : Set.InjOn point I)
+    (hDA : D ⊆ A) (hD : D.Infinite)
+    (htargetLate : ∀ n ∈ I, n ≤ target n)
+    (hrepairR : ∀ n ∈ I,
+      repair n ∈ additiveSupportFamily A 3 (target n))
+    (hrepairD : ∀ n ∈ I,
+      Disjoint (repair n : Set ℕ) D)
+    (hpointAD : ∀ n ∈ I, point n ∈ A \ D) :
+    ∃ X, X ⊆ A \ D ∧ X.Infinite ∧
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs
+        A (D ∪ X) := by
+  classical
+  have hrepairCard : ∀ n ∈ I, (repair n).card ≤ 3 := by
+    intro n hn
+    exact additiveSupportFamily_cardAtMost A 3
+      (target n) (repair n) (hrepairR n hn)
+  obtain ⟨L, hLI, hL, hcross⟩ :=
+    exists_infinite_crossAvoiding_injectiveImage
+      hI point hpointInj repair 3 hrepairCard
+  obtain ⟨Even, Odd, hEvenL, hOddL, hEven, hOdd,
+      hEvenOdd⟩ :=
+    exists_two_disjoint_infinite_subsets_of_infinite hL
+  let X : Set ℕ := point '' Even
+  have hX : X.Infinite :=
+    hEven.image (hpointInj.mono (hEvenL.trans hLI))
+  have hXAD : X ⊆ A \ D := by
+    rintro x ⟨n, hnEven, rfl⟩
+    exact hpointAD n (hLI (hEvenL hnEven))
+  have hrepairX : ∀ n ∈ Odd,
+      Disjoint (repair n : Set ℕ) X := by
+    intro n hnOdd
+    rw [Set.disjoint_left]
+    rintro x hxRepair ⟨d, hdEven, rfl⟩
+    have hnL : n ∈ L := hOddL hnOdd
+    have hdL : d ∈ L := hEvenL hdEven
+    have hnd : n ≠ d := by
+      intro hnd
+      exact Set.disjoint_left.mp hEvenOdd hdEven (hnd ▸ hnOdd)
+    exact hcross n hnL d hdL hnd (Finset.mem_coe.mp hxRepair)
+  refine ⟨X, hXAD, hX, ?_⟩
+  refine ⟨Set.union_subset hDA (fun x hx => (hXAD hx).1),
+    hD.mono Set.subset_union_left,
+    Odd, target, repair, hOdd, ?_⟩
+  intro n hnOdd
+  have hnI : n ∈ I := hLI (hOddL hnOdd)
+  refine ⟨htargetLate n hnI, hrepairR n hnI, ?_⟩
+  rw [Set.disjoint_left]
+  intro x hxRepair hxUnion
+  rcases hxUnion with hxD | hxX
+  · exact Set.disjoint_left.mp (hrepairD n hnI) hxRepair hxD
+  · exact Set.disjoint_left.mp (hrepairX n hnOdd) hxRepair hxX
+
+/-- First-injury frontier after absorbing the stationary-point branch.
+Only the genuinely moving injury patterns remain as obstructions; a fixed
+injury point now comes with an explicit infinite fresh set whose addition to
+that stage is still an exact candidate deletion. -/
+def HasInfiniteCandidateFirstInjuryMovingOrPairGeneratedExtension
+    (A : Set ℕ) (deletion layer : ℕ → Set ℕ)
+    (base : ℕ) : Prop :=
+  (∃ I : Set ℕ, ∃ target : ℕ → ℕ,
+    ∃ repair : ℕ → Finset ℕ,
+    ∃ injury point : ℕ → ℕ,
+      I.Infinite ∧ Set.InjOn target I ∧
+      (∀ n ∈ I,
+        n ≤ target n ∧
+        repair n ∈ additiveSupportFamily A 3 (target n) ∧
+        base ≤ injury n ∧
+        Disjoint (repair n : Set ℕ) (deletion (injury n)) ∧
+        point n ∈ repair n ∧
+        point n ∈ layer (injury n)) ∧
+      ((Set.InjOn injury I ∧ Set.InjOn point I) ∨
+        ∃ k, (∀ n ∈ I, injury n = k) ∧
+          Set.InjOn point I)) ∨
+  ∃ k X,
+    X ⊆ A \ deletion k ∧ X.Infinite ∧
+    IsInfiniteCandidateDeletionWithLateSurvivingRepairs
+      A (deletion k ∪ X)
+
+/-- Matching/star absorption of the fixed first-injury point. -/
+theorem HasInfiniteCandidateFirstInjuryPairClassifiedTrichotomy.to_movingOrPairGeneratedExtension
+    {A : Set ℕ} {deletion layer : ℕ → Set ℕ} {base : ℕ}
+    (h : HasInfiniteCandidateFirstInjuryPairClassifiedTrichotomy
+      A deletion layer base)
+    (hcandidate : ∀ k,
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs
+        A (deletion k)) :
+    HasInfiniteCandidateFirstInjuryMovingOrPairGeneratedExtension
+      A deletion layer base := by
+  obtain ⟨I, target, repair, injury, point, hI, htargetInj,
+      hdata, hmoving | hfixedPoint | hfixedAnchor⟩ := h
+  · exact Or.inl ⟨I, target, repair, injury, point,
+      hI, htargetInj, hdata, Or.inl hmoving⟩
+  · exact Or.inl ⟨I, target, repair, injury, point,
+      hI, htargetInj, hdata, Or.inr hfixedPoint⟩
+  · obtain ⟨k, injuryAnchor, hfixed, _harithmetic,
+        _hshiftedInj, _htargetSplit,
+        hpairShape⟩ := hfixedAnchor
+    have hrepairD : ∀ n ∈ I,
+        Disjoint (repair n : Set ℕ) (deletion k) := by
+      intro n hn
+      simpa [(hfixed n hn).1] using (hdata n hn).2.2.2.1
+    obtain ⟨hdeletionA, hdeletion, _J, _candidateTarget,
+      _candidateRepair, _hJ, _hcandidateData⟩ := hcandidate k
+    rcases hpairShape with hmatching | hstar
+    · obtain ⟨X, hX, hXInfinite, hextension⟩ :=
+        hmatching.gives_candidateExtension
+          hdeletionA hdeletion
+          (fun n hn => (hdata n hn).1)
+          (fun n hn => (hdata n hn).2.1)
+          hrepairD
+      exact Or.inr ⟨k, X, hX, hXInfinite, hextension⟩
+    · obtain ⟨X, hX, hXInfinite, hextension⟩ :=
+        hstar.gives_candidateExtension
+          hdeletionA hdeletion
+          (fun n hn => (hdata n hn).1)
+          (fun n hn => (hdata n hn).2.1)
+          hrepairD
+      exact Or.inr ⟨k, X, hX, hXInfinite, hextension⟩
+
+/-- Packaged limit frontier for the strict extension tower. -/
+def HasInfiniteCandidateTowerLimitArithmeticDichotomy
+    (A : Set ℕ) : Prop :=
+  ∃ deletion layer : ℕ → Set ℕ,
+    (∀ n,
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs
+        A (deletion n)) ∧
+    (∀ n, layer n ⊆ A \ deletion n) ∧
+    (∀ n, (layer n).Infinite) ∧
+    (∀ n, deletion (n + 1) = deletion n ∪ layer n) ∧
+    (Pairwise fun i j => Disjoint (layer i) (layer j)) ∧
+    (IsInfiniteCandidateDeletionWithLateSurvivingRepairs
+        A (⋃ n, deletion n) ∨
+      ∀ base,
+        HasInfiniteCandidateFirstInjuryDescendedTrichotomy
+          A deletion layer base)
+
+theorem HasInfiniteStrictCandidateExtensionTower.to_limitArithmeticDichotomy
+    {A : Set ℕ}
+    (htower : HasInfiniteStrictCandidateExtensionTower A) :
+    HasInfiniteCandidateTowerLimitArithmeticDichotomy A := by
+  obtain ⟨deletion, layer, hcandidate, hlayer, hlayerInfinite,
+      hnext, hfinal⟩ :=
+    htower.limitCandidate_or_firstInjury
+  have hstep : ∀ n, deletion n ⊆ deletion (n + 1) := by
+    intro n
+    rw [hnext n]
+    exact Set.subset_union_left
+  have hmono : Monotone deletion :=
+    monotone_nat_of_le_succ hstep
+  have hlayerDisjoint :
+      Pairwise fun i j => Disjoint (layer i) (layer j) := by
+    intro i j hij
+    rw [Set.disjoint_left]
+    intro x hxi hxj
+    rcases lt_or_gt_of_ne hij with hijlt | hjilt
+    · have hxDeletion : x ∈ deletion j := by
+        apply hmono (Nat.succ_le_of_lt hijlt)
+        rw [hnext i]
+        exact Or.inr hxi
+      exact (hlayer j hxj).2 hxDeletion
+    · have hxDeletion : x ∈ deletion i := by
+        apply hmono (Nat.succ_le_of_lt hjilt)
+        rw [hnext j]
+        exact Or.inr hxj
+      exact (hlayer i hxi).2 hxDeletion
+  refine ⟨deletion, layer, hcandidate, hlayer, hlayerInfinite,
+    hnext, hlayerDisjoint, ?_⟩
+  rcases hfinal with hlimit | hinjury
+  · exact Or.inl hlimit
+  · apply Or.inr
+    intro base
+    exact (hinjury base).to_descendedTrichotomy hlayerDisjoint
+
+/-- Tower-limit package in which the last stationary arithmetic branch has
+already been sharpened to an infinite matching or an infinite additive
+star of pair supports. -/
+def HasInfiniteCandidateTowerLimitPairClassifiedDichotomy
+    (A : Set ℕ) : Prop :=
+  ∃ deletion layer : ℕ → Set ℕ,
+    (∀ n,
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs
+        A (deletion n)) ∧
+    (∀ n, layer n ⊆ A \ deletion n) ∧
+    (∀ n, (layer n).Infinite) ∧
+    (∀ n, deletion (n + 1) = deletion n ∪ layer n) ∧
+    (Pairwise fun i j => Disjoint (layer i) (layer j)) ∧
+    (IsInfiniteCandidateDeletionWithLateSurvivingRepairs
+        A (⋃ n, deletion n) ∨
+      ∀ base,
+        HasInfiniteCandidateFirstInjuryPairClassifiedTrichotomy
+          A deletion layer base)
+
+/-- The arithmetic tower frontier canonically upgrades to the pair-shape
+frontier. -/
+theorem HasInfiniteCandidateTowerLimitArithmeticDichotomy.to_pairClassified
+    {A : Set ℕ}
+    (h : HasInfiniteCandidateTowerLimitArithmeticDichotomy A) :
+    HasInfiniteCandidateTowerLimitPairClassifiedDichotomy A := by
+  obtain ⟨deletion, layer, hcandidate, hlayer, hlayerInfinite,
+      hnext, hlayerDisjoint, hlimit | hinjury⟩ := h
+  · exact ⟨deletion, layer, hcandidate, hlayer, hlayerInfinite,
+      hnext, hlayerDisjoint, Or.inl hlimit⟩
+  · refine ⟨deletion, layer, hcandidate, hlayer, hlayerInfinite,
+      hnext, hlayerDisjoint, Or.inr ?_⟩
+    intro base
+    exact (hinjury base).to_pairClassified
+
+/-- Direct tower-to-pair-shape normalization. -/
+theorem HasInfiniteStrictCandidateExtensionTower.to_limitPairClassifiedDichotomy
+    {A : Set ℕ}
+    (h : HasInfiniteStrictCandidateExtensionTower A) :
+    HasInfiniteCandidateTowerLimitPairClassifiedDichotomy A :=
+  h.to_limitArithmeticDichotomy.to_pairClassified
+
+/-- Tower frontier after the matching and additive-star alternatives have
+been consumed into explicit pair-generated candidate extensions. -/
+def HasInfiniteCandidateTowerLimitMovingOrPairGeneratedExtension
+    (A : Set ℕ) : Prop :=
+  ∃ deletion layer : ℕ → Set ℕ,
+    (∀ n,
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs
+        A (deletion n)) ∧
+    (∀ n, layer n ⊆ A \ deletion n) ∧
+    (∀ n, (layer n).Infinite) ∧
+    (∀ n, deletion (n + 1) = deletion n ∪ layer n) ∧
+    (Pairwise fun i j => Disjoint (layer i) (layer j)) ∧
+    (IsInfiniteCandidateDeletionWithLateSurvivingRepairs
+        A (⋃ n, deletion n) ∨
+      ∀ base,
+        HasInfiniteCandidateFirstInjuryMovingOrPairGeneratedExtension
+          A deletion layer base)
+
+/-- Absorb both classified pair shapes at every base stage of the tower. -/
+theorem HasInfiniteCandidateTowerLimitPairClassifiedDichotomy.to_movingOrPairGeneratedExtension
+    {A : Set ℕ}
+    (h : HasInfiniteCandidateTowerLimitPairClassifiedDichotomy A) :
+    HasInfiniteCandidateTowerLimitMovingOrPairGeneratedExtension A := by
+  obtain ⟨deletion, layer, hcandidate, hlayer, hlayerInfinite,
+      hnext, hlayerDisjoint, hlimit | hinjury⟩ := h
+  · exact ⟨deletion, layer, hcandidate, hlayer, hlayerInfinite,
+      hnext, hlayerDisjoint, Or.inl hlimit⟩
+  · refine ⟨deletion, layer, hcandidate, hlayer, hlayerInfinite,
+      hnext, hlayerDisjoint, Or.inr ?_⟩
+    intro base
+    exact (hinjury base).to_movingOrPairGeneratedExtension hcandidate
+
+/-- Direct tower normalization with the fixed-point branch absorbed. -/
+theorem HasInfiniteStrictCandidateExtensionTower.to_limitMovingOrPairGeneratedExtension
+    {A : Set ℕ}
+    (h : HasInfiniteStrictCandidateExtensionTower A) :
+    HasInfiniteCandidateTowerLimitMovingOrPairGeneratedExtension A :=
+  h.to_limitPairClassifiedDichotomy.to_movingOrPairGeneratedExtension
+
+/-- Finite-depth approximation to the desired fusion tower.  At every
+successor level an infinite set disjoint from the current deletion is added,
+and the enlarged deletion itself still has an unbounded surviving stream. -/
+def HasStrictCandidateExtensionDepth
+    (A : Set ℕ) : ℕ → Set ℕ → Prop
+  | 0, B =>
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs A B
+  | n + 1, B =>
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs A B ∧
+        ∃ X, X ⊆ A \ B ∧ X.Infinite ∧
+          HasStrictCandidateExtensionDepth A n (B ∪ X)
+
+/-- The private-hit extension iterates to every finite depth.  This is the
+precise compactness input needed by an eventual omega-fusion argument. -/
+theorem IsInfiniteCandidateDeletionWithLateSurvivingRepairs.has_extensionDepth
+    {A B : Set ℕ}
+    (h : IsInfiniteCandidateDeletionWithLateSurvivingRepairs A B) :
+    ∀ n, HasStrictCandidateExtensionDepth A n B := by
+  intro n
+  induction n generalizing B with
+  | zero =>
+      exact h
+  | succ n ih =>
+      obtain ⟨X, hXAB, hX, _hcandidateX, hcandidateUnion⟩ :=
+        h.has_strictExtension
+      exact ⟨h, X, hXAB, hX, ih hcandidateUnion⟩
+
+/-- A set-valued candidate exposes its exact deletion and a strict infinite
+extension of that deletion. -/
+theorem HasInfiniteCandidateDeletionWithLateSurvivingRepairs.has_disjointCandidateDeletion
+    {A K : Set ℕ}
+    (h : HasInfiniteCandidateDeletionWithLateSurvivingRepairs A K) :
+    ∃ B X, B ⊆ K ∧ B ⊆ A ∧ B.Infinite ∧
+      X ⊆ A \ B ∧ X.Infinite ∧
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs A B ∧
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs A X ∧
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs A (B ∪ X) := by
+  obtain ⟨B, hBK, hBA, hB, J, target, repair, hJ, hrepair⟩ := h
+  obtain ⟨X, hXAB, hX, hcandidateX, hcandidateUnion⟩ :=
+    infiniteLateRepairStream_has_disjointInfiniteExtension
+      hBA hB target repair hJ hrepair
+  exact ⟨B, X, hBK, hBA, hB, hXAB, hX,
+    ⟨hBA, hB, J, target, repair, hJ, hrepair⟩,
+    hcandidateX, hcandidateUnion⟩
+
+/-- All branches of the mixed finite-clause analysis have now been absorbed
+into one candidate deletion somewhere in `A`. -/
+theorem counterexample_forces_candidateDeletionWithLateSurvivingRepairs
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    HasInfiniteCandidateDeletionWithLateSurvivingRepairs A A := by
+  obtain ⟨_C, _K, _D, _cell, _hCA, _hC, _hzeroC, _hnormal,
+      _hdirect, _hself, _hDC, _hKC, _hK, _P, _hcellCard, _hgood,
+      B, _hBK, _hBC, hBA, _hB, _hcritical, _hrepairs,
+      _S, _hS, _hsurvive, hcriticalCandidate | hexternalCandidate⟩ :=
+    counterexample_forces_criticalCandidate_or_externalCandidateDeletion
+      hbasis hzeroA hcounter
+  · exact
+      hcriticalCandidate.to_candidateDeletionWithLateSurvivingRepairs
+        |>.mono_reservoir hBA
+  · exact hexternalCandidate.mono_reservoir Set.diff_subset
+
+/-- Global omega-tower endpoint: every counterexample forces an increasing
+sequence of exact candidate deletions with an infinite fresh disjoint layer
+at each successor stage. -/
+theorem counterexample_forces_infiniteStrictCandidateExtensionTower
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    HasInfiniteStrictCandidateExtensionTower A := by
+  obtain ⟨B, _hBAmbient, hBA, hB,
+      J, target, repair, hJ, hrepair⟩ :=
+    counterexample_forces_candidateDeletionWithLateSurvivingRepairs
+      hbasis hzeroA hcounter
+  exact
+    (show IsInfiniteCandidateDeletionWithLateSurvivingRepairs A B from
+      ⟨hBA, hB, J, target, repair, hJ, hrepair⟩).exists_extensionTower
+
+/-- Counterexample-level endpoint of the fusion analysis.  All earlier
+mixed-clause, monotone-chain, wide-repair, and disjoint-stream alternatives
+now feed one omega tower.  At its limit either an exact candidate survives,
+or every stage exposes one of the three explicit additive first-injury
+patterns. -/
+theorem counterexample_forces_candidateTowerLimitArithmeticDichotomy
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ D, D ⊆ A → D.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ D) 3) :
+    HasInfiniteCandidateTowerLimitArithmeticDichotomy A :=
+  (counterexample_forces_infiniteStrictCandidateExtensionTower
+    hbasis hzeroA hcounter).to_limitArithmeticDichotomy
+
+/-- Counterexample-level endpoint with the last order-two residual fully
+classified as an infinite matching or an infinite common-anchor star. -/
+theorem counterexample_forces_candidateTowerLimitPairClassifiedDichotomy
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ D, D ⊆ A → D.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ D) 3) :
+    HasInfiniteCandidateTowerLimitPairClassifiedDichotomy A :=
+  (counterexample_forces_candidateTowerLimitArithmeticDichotomy
+    hbasis hzeroA hcounter).to_pairClassified
+
+/-- Counterexample frontier after the fixed first-injury anchor has been
+absorbed: it either reaches the limit candidate, retains a genuinely moving
+injury stream, or explicitly generates another strict candidate extension
+from the additive pair equations. -/
+theorem counterexample_forces_candidateTowerLimitMovingOrPairGeneratedExtension
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ D, D ⊆ A → D.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ D) 3) :
+    HasInfiniteCandidateTowerLimitMovingOrPairGeneratedExtension A :=
+  (counterexample_forces_candidateTowerLimitPairClassifiedDichotomy
+    hbasis hzeroA hcounter).to_movingOrPairGeneratedExtension
+
+/-- Consequently, a counterexample forces strict candidate-extension towers
+of every prescribed finite depth. -/
+theorem counterexample_forces_arbitrarilyLongStrictCandidateExtensions
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∀ depth, ∃ B, B ⊆ A ∧ B.Infinite ∧
+      HasStrictCandidateExtensionDepth A depth B := by
+  intro depth
+  obtain ⟨B, _hBAmbient, hBA, hB,
+      J, target, repair, hJ, hrepair⟩ :=
+    counterexample_forces_candidateDeletionWithLateSurvivingRepairs
+      hbasis hzeroA hcounter
+  have hcandidate :
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs A B :=
+    ⟨hBA, hB, J, target, repair, hJ, hrepair⟩
+  exact ⟨B, hBA, hB, hcandidate.has_extensionDepth depth⟩
+
+/-- A counterexample therefore admits a strict infinite extension of a
+candidate deletion: `X` is an infinite new part disjoint from `B`, and the
+same unbounded repair stream avoids the enlarged deletion `B ∪ X`. -/
+theorem counterexample_forces_disjointInfiniteCandidateExtension
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ B X, B ⊆ A ∧ B.Infinite ∧
+      X ⊆ A \ B ∧ X.Infinite ∧
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs
+        A (B ∪ X) := by
+  obtain ⟨B, X, _hBAmbient, hBA, hB, hXAB, hX,
+      _hcandidateB, _hcandidateX, hcandidateUnion⟩ :=
+    (counterexample_forces_candidateDeletionWithLateSurvivingRepairs
+      hbasis hzeroA hcounter).has_disjointCandidateDeletion
+  exact ⟨B, X, hBA, hB, hXAB, hX, hcandidateUnion⟩
+
+/-- Clean fusion-ready counterexample endpoint.  The mixed clause analysis
+first supplies one candidate somewhere in `A`; the private-hit splitting
+above then supplies candidate deletions on two disjoint sides of one
+infinite cut. -/
+theorem counterexample_forces_twoDisjointCandidateDeletions
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzeroA : 0 ∈ A)
+    (hcounter : ∀ X, X ⊆ A → X.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ X) 3) :
+    ∃ B, B ⊆ A ∧ B.Infinite ∧
+      HasInfiniteCandidateDeletionWithLateSurvivingRepairs A B ∧
+      HasInfiniteCandidateDeletionWithLateSurvivingRepairs
+        A (A \ B) := by
+  obtain ⟨B, X, _hBAmbient, hBA, hB, hXAB, _hX,
+      hcandidateB, hcandidateX, _hcandidateUnion⟩ :=
+    (counterexample_forces_candidateDeletionWithLateSurvivingRepairs
+      hbasis hzeroA hcounter).has_disjointCandidateDeletion
+  exact ⟨B, hBA, hB,
+    hcandidateB.to_candidate Set.Subset.rfl,
+    hcandidateX.to_candidate hXAB⟩
 
 /-- Choose an injective new option from a self-avoiding repair family and
 then thin so every bounded old support belonging to one block avoids the new
@@ -37207,5 +49714,41 @@ theorem counterexample_forbids_uniformCoveredTripleBlockChoices
     (not_strongInfiniteDeletion_of_uniformCoveredBlockSupportChoices
       P hbound)
       (strongOrderThreeDeletion_of_counterexample hcounter)
+
+/-- Failure of strong order-three deletion is exactly the desired positive
+conclusion: some infinite subset of `A` can be deleted while retaining an
+exact order-three asymptotic basis. -/
+theorem exists_infiniteDeletion_threeBasis_iff_not_strongOrderThreeDeletion
+    {A : Set ℕ} :
+    (∃ B, B ⊆ A ∧ B.Infinite ∧
+      IsExactTupleAsymptoticBasis (A \ B) 3) ↔
+      ¬ StrongInfiniteDeletion (additiveSupportFamily A 3) A := by
+  constructor
+  · rintro ⟨B, hBA, hB, hbasis⟩ hstrong
+    obtain ⟨N, hsurvive⟩ :=
+      hasEventuallySurvivingSupport_additive_iff.mpr hbasis
+    obtain ⟨q, hNq, hqDestroy⟩ := hstrong B hBA hB N
+    obtain ⟨E, hER, hEdisjoint⟩ := hsurvive q hNq
+    exact (hqDestroy E hER) hEdisjoint
+  · intro hnotStrong
+    by_contra hnone
+    push Not at hnone
+    exact hnotStrong (strongOrderThreeDeletion_of_counterexample hnone)
+
+/-- Final contradiction interface for the finite-certificate route.  Once a
+single finite-block partition admits a uniform covered-block support-choice
+bound, certificate amplification yields the infinite deletion required by
+the order-three conclusion. -/
+theorem uniformCoveredTripleBlockChoices_gives_infiniteDeletion_threeBasis
+    {A : Set ℕ} {F : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition A F)
+    (hbound : HasUniformCoveredBlockSupportChoices
+      (additiveSupportFamily A 3) F) :
+    ∃ B, B ⊆ A ∧ B.Infinite ∧
+      IsExactTupleAsymptoticBasis (A \ B) 3 := by
+  apply
+    exists_infiniteDeletion_threeBasis_iff_not_strongOrderThreeDeletion.mpr
+  exact not_strongInfiniteDeletion_of_uniformCoveredBlockSupportChoices
+    P hbound
 
 end Erdos881
