@@ -24,3 +24,5 @@ import Erdos881.InfiniteSunflower
 import Erdos881.BoundedStratumSplitting
 import Erdos881.FreeSetTripleRepairs
 import Erdos881.AtomicObstruction
+import Erdos881.GuardianRigidity
+import Erdos881.MirrorPeriodicity
