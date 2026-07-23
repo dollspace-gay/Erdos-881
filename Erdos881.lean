@@ -26,3 +26,5 @@ import Erdos881.FreeSetTripleRepairs
 import Erdos881.AtomicObstruction
 import Erdos881.GuardianRigidity
 import Erdos881.MirrorPeriodicity
+import Erdos881.TeamGuardianRigidity
+import Erdos881.GuardianBridge
