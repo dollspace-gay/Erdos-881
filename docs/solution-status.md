@@ -88,8 +88,13 @@ experiment tested constructibility directly on the even/odd scaffold:
 every purchase at five scales broke covering, exhaustively so at the
 base scale. Gate 2b does not trigger.
 
-## Priority hygiene
+## Priority hygiene — DONE
 
-Before claiming novelty for any rigidity statement, read
-Cassaigne–Plagne, Proc. AMS 132 (2004) 2833–2840 (unobtained; AMS PDF
-Cloudflare-blocked from this environment).
+Cassaigne–Plagne (Proc. AMS 132 (2004) 2833–2840) obtained and read
+(2026-07-24; see `docs/literature-erdos881.md`). Confirmed: S(2)=3 and
+the two-destroyer clash are known (different proof mechanism); the
+mirror/desert rigidity theory and the surviving-deletion theorems are
+not in the paper. **Imported for Link B:** their Lemma-4 double count
+gives Σ δ(a) ≤ h, and the pair version bounds team-edge densities by
+C(h,2) — the team graph of any exact basis is density-degenerate. This
+is the recommended quantitative route to `TeamCliqueFree`.

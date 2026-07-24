@@ -53,12 +53,27 @@ bases as the serious counterexample zone.
   1988 partitions-of-bases paper both assume representation-count growth
   incompatible with minimal bases, so they do not touch 881.
 
-## Action items extracted
+## Cassaigne–Plagne, read first-hand (2026-07-24, AMS PDF via curl + browser UA)
 
-1. Obtain and read Cassaigne–Plagne S(2)=3 (Proc. AMS 132 (2004)
-   2833–2840; AMS PDF was Cloudflare-blocked) — check for overlap with
-   guardian rigidity, and possibly import their argument for the
-   growing-funnel front.
+Overlap verdict, now confirmed directly:
+- Their Theorem 1 (S(2)=3) finishes with a **two-destroyer contradiction**
+  (two elements b > b' with cofinal private targets; a forced element
+  d = c - b - b' plus e = c - b makes d + b' = e violate the privacy of
+  b') — the same *kind* of two-scale clash as `no_big_guardian_stacking`,
+  but executed through order-exactness bookkeeping (their Lemmas 1–3),
+  not through desert/mirror geometry. Our rigidity *statements* (mirror
+  symmetry, deserts, the [0,M] ∪ {2M+1} shape, forced-translate windows)
+  do not appear there; our no-stacking headline is a known consequence
+  with a different proof.
+- **Imported technique (their Lemma 4):** for a basis of exact order h,
+  the densities δ(a) of "targets needing a" satisfy Σ_a δ(a) ≤ h — a
+  one-line double-count (each target needs ≤ h elements). The pair
+  version is immediate: each target needs ≤ C(h,2) pairs, so the team-
+  edge densities are summable, hence → 0. This is a ready-made
+  quantitative attack on Open Link B (team graph sparsity) and possibly
+  Link A: the team graph of any exact basis is *density-degenerate*.
+
+## Action items extracted
 2. Point the lab at **thin bases**: Sidon-like / A(x) ≍ x^{1/2}
    order-2 bases (Nathanson's even/odd powers-of-2 basis is the
    canonical thin minimal one) — the forum claim and our small-guardian
