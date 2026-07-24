@@ -59,3 +59,41 @@ closure plus one-symmetric-pair variants, 3,716 second-scale candidates:
 zero fresh guardians, zero stacks. Singleton/small-guardian protection
 remains strictly single-scale — consistent with Erdős–Graham and
 Cassaigne–Plagne (S(2)=3) on the literature side.
+
+## Interlock experiments (`scripts/probe_team_interlock.py`, same day)
+
+**A — exact team graphs.** Even/odd binary: the team graph is exactly the
+path 1–5–10–21–42–85–170–341–682–1365–2730, every guard-degree ≤ 2, zero
+triangles. Base-3: a caterpillar tree — spine 6–20–60–182–546 with
+degrees 3–4 and pendant leaves — still zero triangles. Trees are
+2-colorable, so an infinite dodge always exists. Guard-degree can exceed
+2 in the wild, but no clique seed (triangle) has ever been observed.
+
+**B — the cost of interlocking.** For non-adjacent chain guards
+(a_i, a_j), the number of representations of a_i + a_j that a builder
+would have to destroy to create the team edge grows geometrically with
+scale: distance-2 costs run 5, 6, 15, 18, 45, 52, 135, 150 up the chain
+(≈ ×3 per scale); distance-3 costs 2, 3, 4, 5, 8, 9, 16. Interlocking
+the chain cofinally means paying a geometrically growing restructuring
+bill at every scale — quantified evidence that dense team hypergraphs
+fight the covering constraint harder and harder.
+
+**C — random thin bases have no protection at all.** Eight randomized
+greedy order-2 coverings of [0,1200] (√-density): max guard-degree 0 in
+every trial — not a single guarded target. Team structure never arises
+generically; it requires deliberate digit-style design.
+
+**D — caveat.** The naive cross-scale triple family (one small block +
+three separated guards) cannot even maintain covering, so the exhaustive
+clique search was vacuous in that family; cross-scale cliques remain
+unobserved but also under-explored. A scaffolded family (chained blocks,
+E-O style) is the right next vehicle.
+
+**Verdict.** Every measurement points the same way: wild protection is
+tree-structured and dodgeable, interlocking costs grow geometrically,
+and generic thin bases have no protection whatsoever. A NO-construction
+must beat geometric edge costs at infinitely many scales simultaneously
+— nothing observed comes within sight of that. The dodge (choose an
+independent set in the team forest) is now the concrete YES-side proof
+strategy: prove team graphs of order-2 coverings are (eventually)
+triangle-poor / degenerate, and the surviving deletion follows.
