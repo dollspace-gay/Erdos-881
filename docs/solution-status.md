@@ -101,3 +101,34 @@ not in the paper. **Imported for Link B:** their Lemma-4 double count
 gives Σ δ(a) ≤ h, and the pair version bounds team-edge densities by
 C(h,2) — the team graph of any exact basis is density-degenerate. This
 is the recommended quantitative route to `TeamCliqueFree`.
+
+## The attack on no_separated_triangle (derived 2026-07-24, end of session)
+
+Cassaigne–Plagne's Theorem-1 engine transplants to teams, with one new
+phenomenon. Their engine: for a private target c of guard b, the numbers
+c − b and c − b − b' are forced ELEMENTS (our corep/mirror), and the
+identity (c − b − b') + b' = (c − b) turns a forced pair-sum into a
+2-representation that violates the other guard's privacy (their Lemma 3).
+
+Team transplant: for edge {v,w} at target m₃, corep forks (m₃−v ∈ A or
+m₃−w ∈ A) and bimirror at z := u forks likewise. Each of the four
+(d, e)-combinations makes some number d + u carry a 2-rep avoiding a
+{u,·}-team. The team Lemma-3 analog is NOT a flat contradiction but a
+**pinning lemma** (provable — the u-branch case yields an immediate
+3-rep of c' avoiding the team): if a + u has a team-avoiding 2-rep,
+then the {u,v}-bimirror at z := a is pinned to its v-channel cofinally.
+
+So the triangle generates PINNED FORKS — binary clauses — and the proof
+should close by exhibiting a contradiction cycle among the ≈8 branch
+assignments of the three edges' forks at the three mutual guards. This
+is exactly what the repo's 2-SAT/implication-SCC machinery (audit
+cluster c) was built to process.
+
+NEXT SESSION, concretely:
+1. Lab: enumerate the 8 branch assignments on real team triples
+   (single-scale 3-cliques from probe_team_guardians.py — they exist!)
+   and check each assignment dies; extract the dying cycle.
+2. Formalize the pinning lemma (short — same style as bimirror).
+3. Formalize the cycle case analysis ⇒ `no_separated_triangle`,
+   then `infinite_teamClique_has_separated_triple` converts it to
+   `TeamCliqueFree`, and `master_reduction` fires.
