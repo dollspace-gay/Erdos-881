@@ -29,3 +29,4 @@ import Erdos881.MirrorPeriodicity
 import Erdos881.TeamGuardianRigidity
 import Erdos881.GuardianBridge
 import Erdos881.UnboundedMirrorGaps
+import Erdos881.TeamGraphRamsey
