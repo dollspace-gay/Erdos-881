@@ -230,6 +230,72 @@ theorem surviving_deletion_of_geometric_reflectionLevels
       omega
     · exact ⟨x, hx, y, hy, 0, h0, hxB, hyB, h0B, by omega⟩
 
+/-- **The mirror endgame, closed for element-levels.**  Cofinal
+reflection levels that are elements — with *no spacing assumption
+whatsoever* — admit a surviving infinite deletion: greedily extract a
+doubling subsequence and hand it to the geometric theorem.  The geometric
+hypotheses never mention consecutiveness, so the extraction is free. -/
+theorem surviving_deletion_of_cofinal_reflectionLevels
+    {A : Set ℕ} {N₀ c : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hlev : ∀ K, ∃ M, K < M ∧ IsReflectionLevel A M ∧ M ∈ A)
+    (hc : c ∈ A) (hc0 : 0 < c)
+    (hw : ∃ w ∈ A, ∃ w' ∈ A, w + w' = 2 * c ∧ w ≠ c) :
+    ∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n := by
+  classical
+  choose next hnext hnextLev hnextMem using hlev
+  let L : ℕ → ℕ := fun k =>
+    Nat.rec (next c) (fun _ prev => next (2 * prev)) k
+  have hL0 : L 0 = next c := rfl
+  have hLs : ∀ k, L (k + 1) = next (2 * L k) := fun _ => rfl
+  have hgrow : ∀ k, 2 * L k < L (k + 1) := by
+    intro k
+    rw [hLs]
+    exact hnext (2 * L k)
+  have hcL : c < L 0 := by rw [hL0]; exact hnext c
+  have hLpos : ∀ k, 0 < L k := by
+    intro k
+    induction k with
+    | zero => omega
+    | succ k ih => have := hgrow k; omega
+  have hmono : StrictMono L := by
+    apply strictMono_nat_of_lt_succ
+    intro k
+    have h1 := hgrow k
+    have h2 := hLpos k
+    omega
+  have hlevL : ∀ k, IsReflectionLevel A (L k) := by
+    intro k
+    cases k with
+    | zero => exact hnextLev c
+    | succ k => rw [hLs]; exact hnextLev (2 * L k)
+  have hmemL : ∀ k, L k ∈ A := by
+    intro k
+    cases k with
+    | zero => exact hnextMem c
+    | succ k => rw [hLs]; exact hnextMem (2 * L k)
+  exact surviving_deletion_of_geometric_reflectionLevels L h0 hcov hmono
+    hlevL hmemL hgrow hc hc0 hcL hw
+
+/-- Repo-vocabulary form of the closed mirror endgame: an exact order-two
+tuple basis containing zero, with cofinal element-reflection-levels of
+arbitrary spacing and an anchor whose double has an unbalanced
+representation, admits an infinite deletion leaving an exact order-three
+tuple basis. -/
+theorem exactTupleBasis_orderThree_deletion_of_cofinal_reflectionLevels
+    {A : Set ℕ} {c : ℕ}
+    (h0 : 0 ∈ A) (h2 : IsExactTupleAsymptoticBasis A 2)
+    (hlev : ∀ K, ∃ M, K < M ∧ IsReflectionLevel A M ∧ M ∈ A)
+    (hc : c ∈ A) (hc0 : 0 < c)
+    (hw : ∃ w ∈ A, ∃ w' ∈ A, w + w' = 2 * c ∧ w ≠ c) :
+    ∃ B ⊆ A, B.Infinite ∧ IsExactTupleAsymptoticBasis (A \ B) 3 := by
+  obtain ⟨N₀, hcov⟩ := pairCovers_of_exactTupleBasis h2
+  obtain ⟨B, hBA, hBinf, hsurv⟩ :=
+    surviving_deletion_of_cofinal_reflectionLevels h0 hcov hlev hc hc0 hw
+  exact ⟨B, hBA, hBinf, exactTupleBasis_diff_of_survival hsurv⟩
+
 /-- Repo-vocabulary corollary: an exact order-two tuple basis with
 geometric reflection levels admits an infinite deletion leaving an exact
 order-three tuple basis — the positive Erdős 881 answer for the

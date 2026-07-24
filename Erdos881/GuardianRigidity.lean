@@ -131,6 +131,34 @@ theorem IsPrivateTriple.forced_translate {A : Set ℕ} {N₀ a m : ℕ}
       exact ⟨u, hu, by omega⟩
     · omega
 
+/-- Small guardians leave a *totally empty* desert: when `2*a < m` (the
+guardian below its co-representative), no element at all lives in
+`(m - a, m - N₀)` — the desert exception `z = a` is out of range. -/
+theorem IsPrivateTriple.small_desert {A : Set ℕ} {N₀ a m : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hpriv : IsPrivateTriple A a m) (ha : 0 < a)
+    (hsmall : 2 * a < m)
+    {z : ℕ} (hz : z ∈ A) (hlow : m < a + z) (hhigh : z + N₀ ≤ m) :
+    False := by
+  have := hpriv.desert h0 hcov ha hz hlow hhigh
+  omega
+
+/-- Guardian-free mirror, valid for guardians of every size: a positive
+element below the co-representative other than the guardian itself
+reflects to an element.  For small guardians this gives a reflection
+level with a single interior defect at `a`. -/
+theorem IsPrivateTriple.mirror_of_ne {A : Set ℕ} {N₀ a m : ℕ}
+    (_h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hpriv : IsPrivateTriple A a m)
+    {z : ℕ} (hz : z ∈ A) (hzM : z + a < m) (hzN : z + N₀ ≤ m)
+    (hza : z ≠ a) :
+    ∃ w ∈ A, a + z + w = m := by
+  obtain ⟨u, hu, v, hv, huv⟩ := hcov (m - z) (by omega)
+  rcases hpriv.2 z hz u hu v hv (by omega) with h | h | h
+  · exact absurd h hza
+  · exact ⟨v, hv, by omega⟩
+  · exact ⟨u, hu, by omega⟩
+
 /-- **No stacking.**  Two big-guardian private pairs cannot coexist at
 separated scales: if `(a₁, m₁)` and `(a₂, m₂)` are both private with big
 guardians, the first has any room at all (`N₀ + 3 ≤ a₁`), and the second

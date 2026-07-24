@@ -160,6 +160,25 @@ theorem no_big_guardian_above_sparse_window {A : Set ℕ} {N₀ a m g e₁ e₂ 
     have h3 := hwin _ (key (g + 3) (by omega) (by omega)) (by omega) (by omega)
     omega
 
+/-- **A big guardian cannot restart above a small guardian either.**  The
+small guardian's desert is completely empty, so it is a sparse window par
+excellence. -/
+theorem no_big_guardian_above_small_guardian
+    {A : Set ℕ} {N₀ a₁ m₁ a₂ m₂ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (h1 : IsPrivateTriple A a₁ m₁) (ha₁ : 0 < a₁)
+    (hsmall : 2 * a₁ < m₁) (hN1 : N₀ + a₁ ≤ m₁)
+    (h2 : IsPrivateTriple A a₂ m₂)
+    (hbig2 : m₂ < 2 * a₂) (hN2 : N₀ + a₂ ≤ m₂)
+    (hsize : N₀ + 4 ≤ a₁)
+    (hsep : m₁ + a₂ ≤ m₂) :
+    False :=
+  no_big_guardian_above_sparse_window (g := m₁ - a₁) (e₁ := 0) (e₂ := 0)
+    h0 hcov h2 hbig2 hN2
+    (fun z hz hg1 hg2 =>
+      (h1.small_desert h0 hcov ha₁ hsmall hz (by omega) (by omega)).elim)
+    (by omega) (by omega)
+
 /-- **The singleton mechanism cannot restart above a guardian team.**  A
 big-guardian private pair strictly above a genuine team configuration is
 contradictory: the team desert is the sparse window the upper guardian
