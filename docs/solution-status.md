@@ -158,11 +158,14 @@ denoting single/joint deletability at order 2:
 > by a genuine pair has ≤ 2 disjoint representations, so ≤ 4 covering
 > pairs; lab `probe_pinned_mirror.py` V3: density sum 0.217 ≤ 2).
 >
-> **B2 (the hugging regime).**  Edges whose targets all hug
-> (`m < 4v + C`) — extract a contradiction or mirror structure from
-> cofinal hugging.  Unformalized refinement: stacking dyadic windows
-> inside the double-pin desert pushes the bound toward `2v + O(N₂)`,
-> and `IsPairDestroyer.desert` gives long empty windows near `2v`.
+> **B2 (the hugging regime).**  Edges whose targets all hug — and the
+> hug is now VERIFIED tight: `sharp_hugging_of_pairRedundant` stacks
+> three dyadic covering windows inside the double-pin desert (three
+> disjoint windows, two guards) to force `m < 2v + 20(N₀ + N₂ + 2)`
+> for every jointly 2-redundant pair.  Open content: extract a
+> contradiction or mirror structure from cofinally many edges whose
+> targets sit within `O(1)` of `2v`; `IsPairDestroyer.desert` gives
+> empty windows of length `u − N₀` just below each such target.
 >
 > **B3 (windowed endgame splice).**  Upgrade the verified full-mirror
 > extraction (`surviving_deletion_of_cofinal_reflectionLevels`) to

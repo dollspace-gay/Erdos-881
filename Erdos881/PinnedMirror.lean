@@ -207,6 +207,42 @@ theorem IsPairDestroyer.hugging_of_pairRedundant
   · exact hkill z hz (by omega) (by omega)
   · exact hkill y hy (by omega) (by omega)
 
+/-- **The sharp hugging bound.**  Stacking three dyadic covering
+windows inside the double-pin desert: each window `[q/2, q]` for
+`q = Q, Q/3, Q/9` below `m - 2v` must deposit its larger covering part
+on a guard, but the windows are pairwise disjoint and there are only
+two guards.  A jointly 2-redundant pair therefore only destroys
+targets within `O(N₀ + N₂)` of `2v` — the trivial minimum band. -/
+theorem IsPairDestroyer.sharp_hugging_of_pairRedundant
+    {A : Set ℕ} {N₀ N₂ u v m : ℕ}
+    (hcov : PairCovers A N₀)
+    (hpair : TwoRedundantPair A u v N₂)
+    (hdes : IsPairDestroyer A u v m)
+    (huv : u < v) (hN₀ : N₀ ≤ v)
+    (hbig : 2 * v + 20 * (N₀ + N₂ + 2) ≤ m) :
+    False := by
+  have hguard : ∀ w ∈ A, N₂ ≤ w → w + 2 * v < m →
+      w = u ∨ w = v := by
+    intro w hw hN hroom
+    by_contra hne
+    push Not at hne
+    exact hdes.double_pin_desert hcov huv hw hne.1 hne.2 (by omega)
+      (hpair (u + w) (by omega)) (hpair (v + w) (by omega)) hroom
+  have hwin : ∀ q, N₀ ≤ q → N₂ ≤ q / 2 → q + 2 * v < m →
+      ∃ w, (w = u ∨ w = v) ∧ 2 * w ≥ q ∧ w ≤ q := by
+    intro q hq hq2 hqm
+    obtain ⟨y, hy, z, hz, hyz⟩ := hcov q hq
+    rcases Nat.le_total y z with h | h
+    · exact ⟨z, hguard z hz (by omega) (by omega), by omega, by omega⟩
+    · exact ⟨y, hguard y hy (by omega) (by omega), by omega, by omega⟩
+  obtain ⟨w₁, hw₁, hw₁l, hw₁r⟩ :=
+    hwin (m - 2 * v - 1) (by omega) (by omega) (by omega)
+  obtain ⟨w₂, hw₂, hw₂l, hw₂r⟩ :=
+    hwin ((m - 2 * v - 1) / 3) (by omega) (by omega) (by omega)
+  obtain ⟨w₃, hw₃, hw₃l, hw₃r⟩ :=
+    hwin ((m - 2 * v - 1) / 9) (by omega) (by omega) (by omega)
+  omega
+
 /-- **Pinned levels compose to a forward translation.**  Two clear
 pinned edges of the same 2-redundant guard, the second window wide
 enough to catch the first level, translate every good element of the
