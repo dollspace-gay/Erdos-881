@@ -67,11 +67,15 @@ Overlap verdict, now confirmed directly:
   with a different proof.
 - **Imported technique (their Lemma 4):** for a basis of exact order h,
   the densities δ(a) of "targets needing a" satisfy Σ_a δ(a) ≤ h — a
-  one-line double-count (each target needs ≤ h elements). The pair
-  version is immediate: each target needs ≤ C(h,2) pairs, so the team-
-  edge densities are summable, hence → 0. This is a ready-made
-  quantitative attack on Open Link B (team graph sparsity) and possibly
-  Link A: the team graph of any exact basis is *density-degenerate*.
+  one-line double-count (each target needs ≤ h elements). A pair
+  version needs care (a singleton-guarded target is covered by unboundedly
+  many pairs through its guardian): for targets with two DISJOINT
+  supports, covering pairs live in S × S', so ≤ 9 per target; the
+  singleton-guarded and intersecting-family cases must be split off
+  first. With that split, team-edge densities for genuinely pair-guarded
+  targets are summable — a quantitative route toward Open Link B, for
+  the *cofinally-dense* team graph (single-event edges are not
+  constrained by density; closing that gap is part of Link B).
 
 ## Action items extracted
 2. Point the lab at **thin bases**: Sidon-like / A(x) ≍ x^{1/2}

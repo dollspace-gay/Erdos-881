@@ -116,6 +116,27 @@ theorem master_reduction {A : Set ℕ} (hA : A.Infinite)
   · exact absurd ⟨h.choose, h.choose_spec⟩ hclique
   · exact h
 
+/-- **Pigeonhole half of Phase 2c.**  An infinite team clique contains
+triples with arbitrarily prescribed scale separations, all three edges
+included.  What remains open is `no_separated_triangle` itself: that
+such a triple is contradictory.  Once that is proved, this theorem
+converts it into `TeamCliqueFree`. -/
+theorem infinite_teamClique_has_separated_triple
+    {A : Set ℕ} {L : Set ℕ} (hL : L.Infinite)
+    (hcl : L.Pairwise (TeamEdge A)) (sep : ℕ → ℕ) :
+    ∃ u ∈ L, ∃ v ∈ L, ∃ w ∈ L,
+      sep 0 < u ∧ sep u < v ∧ sep v < w ∧ u < v ∧ v < w ∧
+      TeamEdge A u v ∧ TeamEdge A u w ∧ TeamEdge A v w := by
+  obtain ⟨u, huL, hu⟩ := hL.exists_gt (sep 0)
+  obtain ⟨v, hvL, hv⟩ := hL.exists_gt (max u (sep u))
+  obtain ⟨w, hwL, hw⟩ := hL.exists_gt (max v (sep v))
+  have h1 : u < v := lt_of_le_of_lt (le_max_left _ _) hv
+  have h2 : sep u < v := lt_of_le_of_lt (le_max_right _ _) hv
+  have h3 : v < w := lt_of_le_of_lt (le_max_left _ _) hw
+  have h4 : sep v < w := lt_of_le_of_lt (le_max_right _ _) hw
+  exact ⟨u, huL, v, hvL, w, hwL, hu, h2, h4, h1, h3,
+    hcl huL hvL (by omega), hcl huL hwL (by omega), hcl hvL hwL (by omega)⟩
+
 /-- **The big-guardian stream self-destructs.**  A stream of private
 pairs with big guardians at arbitrarily late targets is contradictory:
 two members at separation ratio 3 violate `no_big_guardian_stacking`,

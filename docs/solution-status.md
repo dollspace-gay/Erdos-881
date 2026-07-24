@@ -69,7 +69,10 @@ hypothesis pair of `master_reduction` —
 > `infinite_tripleRamsey_nat`.
 >
 > **Link B** (`TeamCliqueFree`, defined in `TeamGraphRamsey.lean`): the
-> team graph has no infinite clique.  Attack: `TeamGuardianRigidity` +
+> team graph has no infinite clique.  The pigeonhole reduction is
+> VERIFIED (`infinite_teamClique_has_separated_triple`): any infinite
+> clique yields triples at arbitrarily prescribed separations, so the
+> open content is exactly `no_separated_triangle` for one triple.  Attack: `TeamGuardianRigidity` +
 > the coverage-conflict mechanism; base case exhaustively verified in
 > the lab (all 22 hitting sets fail), team graphs of natural bases are
 > trees, edge costs grow geometrically.  Caveat: with only cofinal
