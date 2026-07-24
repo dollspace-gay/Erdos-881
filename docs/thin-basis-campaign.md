@@ -97,3 +97,18 @@ must beat geometric edge costs at infinitely many scales simultaneously
 independent set in the team forest) is now the concrete YES-side proof
 strategy: prove team graphs of order-2 coverings are (eventually)
 triangle-poor / degenerate, and the surviving deletion follows.
+
+## Triangle-purchase experiment (probe_triangle_construction.py + inline)
+
+Can the chain be interlocked into triangles by deleting the enabling
+representations of a closing edge {a_i, a_{i+2}}?  **No.** Greedy
+hitting sets at scales 0–4 all destroy the order-2 covering instantly
+(the enabling reps force deletion of load-bearing elements: 2, 8, 16,
+32, 64…).  At scale 0 the check is exhaustive: of all 22 hitting sets of
+every composition up to size 5, **zero** create the edge while keeping
+covering — the closing edge {5, 21} for target 26 is unbuyable at any
+price.  Mechanism: every enabling representation contains either a
+protected chain guard or a covering-critical element, so interlocking
+and covering are in direct conflict.  Gate 2b (pivot to NO) does not
+trigger; `no_separated_triangle` gains an exhaustive base case and an
+identified proof mechanism.
