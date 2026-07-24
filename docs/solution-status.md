@@ -102,33 +102,74 @@ gives Σ δ(a) ≤ h, and the pair version bounds team-edge densities by
 C(h,2) — the team graph of any exact basis is density-degenerate. This
 is the recommended quantitative route to `TeamCliqueFree`.
 
-## The attack on no_separated_triangle (derived 2026-07-24, end of session)
+## The pinned-mirror arc (2026-07-24, executed): Link B restructured
 
-Cassaigne–Plagne's Theorem-1 engine transplants to teams, with one new
-phenomenon. Their engine: for a private target c of guard b, the numbers
-c − b and c − b − b' are forced ELEMENTS (our corep/mirror), and the
-identity (c − b − b') + b' = (c − b) turns a forced pair-sum into a
-2-representation that violates the other guard's privacy (their Lemma 3).
+The pinned-fork attack was executed and the lab returned a verdict that
+*redirects* Link B.
 
-Team transplant: for edge {v,w} at target m₃, corep forks (m₃−v ∈ A or
-m₃−w ∈ A) and bimirror at z := u forks likewise. Each of the four
-(d, e)-combinations makes some number d + u carry a 2-rep avoiding a
-{u,·}-team. The team Lemma-3 analog is NOT a flat contradiction but a
-**pinning lemma** (provable — the u-branch case yields an immediate
-3-rep of c' avoiding the team): if a + u has a team-avoiding 2-rep,
-then the {u,v}-bimirror at z := a is pinned to its v-channel cofinally.
+**The pinning lemma is real and VERIFIED** (`PinnedMirror.lean`,
+numerically pre-validated on 25 824 channel instances with zero
+violations, `scripts/probe_pinned_forks.py`): if `u + x` has a
+two-term representation avoiding both guards of a destroyed target,
+the `u`-channel of `x`'s bimirror is dead (`IsPairDestroyer.pinned`),
+so the fork must realize the other channel
+(`IsPairDestroyer.pinned_mirror`), and an element with both cross-sums
+avoidably represented cannot exist below the target at all
+(`IsPairDestroyer.double_pin_desert`).
 
-So the triangle generates PINNED FORKS — binary clauses — and the proof
-should close by exhibiting a contradiction cycle among the ≈8 branch
-assignments of the three edges' forks at the three mutual guards. This
-is exactly what the repo's 2-SAT/implication-SCC machinery (audit
-cluster c) was built to process.
+**But the dying cycle does not close at one triple**: separated team
+triangles EXIST inside full covering sets.  `SeparatedTriangle.lean`
+(VERIFIED) exhibits `[0,9] ∪ [18,26] ∪ {53,62} ∪ [89,∞)` — pair-covers
+from 12, contains 0, guards 9 / 53 / 62 at ratio > 5 pairwise destroy
+79 / 88 / 81.  So `no_separated_triangle` by guard separation alone is
+FALSE and the one-triple reduction is a dead end.  (Lab addendum: the
+counterexample is knife-edge — no triangle survives any filler block
+wider than its base block, and doubling ladders kill even single
+separated edges.  Growth-separated triangles remain unconstructed.)
+Note also: an infinite singleton-private stream is itself an infinite
+`TeamEdge`-clique (degenerate edges), so `TeamCliqueFree` as literally
+defined overlaps the stream branch; the effective content of Link B is
+killing *genuine* infinite cliques.
 
-NEXT SESSION, concretely:
-1. Lab: enumerate the 8 branch assignments on real team triples
-   (single-scale 3-cliques from probe_team_guardians.py — they exist!)
-   and check each assignment dies; extract the dying cycle.
-2. Formalize the pinning lemma (short — same style as bimirror).
-3. Formalize the cycle case analysis ⇒ `no_separated_triangle`,
-   then `infinite_teamClique_has_separated_triple` converts it to
-   `TeamCliqueFree`, and `master_reduction` fires.
+**The replacement, VERIFIED today** (`PinnedMirror.lean`): per clique
+edge `{u, v}` (`u < v`), with `TwoRedundant` / `TwoRedundantPair`
+denoting single/joint deletability at order 2:
+
+1. `hugging_of_pairRedundant`: a jointly 2-redundant pair only
+   destroys targets `m < 4v + N₀ + 4`.  Contrapositive: **a clear
+   target certifies that deleting the two guards breaks
+   pair-covering.**
+2. `pinned_level`: a clear target (`3v ≤ m`) of an edge whose low
+   guard is 2-redundant forces an *element* mirror level
+   `m − v ∈ A`, with the whole window below `v − u` reflecting into
+   `A` — the raw material of the VERIFIED mirror endgame.
+3. `cofinal_pinned_levels`: an infinite clique with one 2-redundant
+   vertex and clear targets manufactures these levels cofinally.
+4. `pinned_translation`: two such levels compose to a forward
+   translation by the level gap — the windowed analog of
+   `IsReflectionLevel.translation`.
+
+**Link B is now three sharper open sub-links:**
+
+> **B1 (scarcity of essentials).**  All but finitely many elements are
+> 2-redundant (Erdős–Graham 1980 / Grekos — literature-known, not yet
+> formalized), and genuinely pair-essential pairs have summable
+> density (Cassaigne–Plagne Lemma-4 double count: a target 2-destroyed
+> by a genuine pair has ≤ 2 disjoint representations, so ≤ 4 covering
+> pairs; lab `probe_pinned_mirror.py` V3: density sum 0.217 ≤ 2).
+>
+> **B2 (the hugging regime).**  Edges whose targets all hug
+> (`m < 4v + C`) — extract a contradiction or mirror structure from
+> cofinal hugging.  Unformalized refinement: stacking dyadic windows
+> inside the double-pin desert pushes the bound toward `2v + O(N₂)`,
+> and `IsPairDestroyer.desert` gives long empty windows near `2v`.
+>
+> **B3 (windowed endgame splice).**  Upgrade the verified full-mirror
+> extraction (`surviving_deletion_of_cofinal_reflectionLevels`) to
+> the one-directional windowed mirrors of `pinned_level`, using
+> `pinned_translation` for the composition step.
+
+Chain: B1 gives a 2-redundant clique vertex; its edges either go clear
+(→ B3 via pinned levels) or hug (→ B2).  Any resolution of the three
+kills the genuine-clique branch; `master_reduction` then leaves the
+singleton stream, whose big-guardian half is already dead.

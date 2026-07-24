@@ -176,6 +176,65 @@ theorem IsPairDestroyer.pinned_level {A : Set ℕ} {N₀ N₁ u v m : ℕ}
   exact hred.pinned_mirror hcov hdes huv hx hxu (by omega) (by omega)
     hwin (by omega)
 
+/-- The pair `{u, v}` is *jointly 2-redundant above `N₂`*: every
+integer from `N₂` on has a two-term representation avoiding both.
+Equivalently, `A \ {u, v}` still pair-covers asymptotically. -/
+def TwoRedundantPair (A : Set ℕ) (u v N₂ : ℕ) : Prop :=
+  ∀ n, N₂ ≤ n → ∃ s ∈ A, ∃ t ∈ A,
+    s + t = n ∧ s ≠ u ∧ s ≠ v ∧ t ≠ u ∧ t ≠ v
+
+/-- **The hugging bound.**  A jointly 2-redundant pair can only destroy
+targets below `4 * v + N₀ + 4`: any higher target leaves the larger
+covering part of `2 * v + 2` stranded in the double-pin desert.
+Contrapositive: an edge with a *clear* target is pair-2-essential —
+deleting its two guards must break asymptotic pair-covering. -/
+theorem IsPairDestroyer.hugging_of_pairRedundant
+    {A : Set ℕ} {N₀ N₂ u v m : ℕ}
+    (hcov : PairCovers A N₀)
+    (hpair : TwoRedundantPair A u v N₂)
+    (hdes : IsPairDestroyer A u v m)
+    (huv : u < v) (hN₀ : N₀ ≤ v) (hN₂ : N₂ ≤ v)
+    (hbig : 4 * v + N₀ + 4 ≤ m) :
+    False := by
+  obtain ⟨y, hy, z, hz, hyz⟩ := hcov (2 * v + 2) (by omega)
+  have hkill : ∀ w ∈ A, v < w → w ≤ 2 * v + 2 → False := by
+    intro w hw hvw hwv
+    have hrepu := hpair (u + w) (by omega)
+    have hrepv := hpair (v + w) (by omega)
+    exact hdes.double_pin_desert hcov huv hw (by omega) (by omega)
+      (by omega) hrepu hrepv (by omega)
+  rcases Nat.le_total y z with h | h
+  · exact hkill z hz (by omega) (by omega)
+  · exact hkill y hy (by omega) (by omega)
+
+/-- **Pinned levels compose to a forward translation.**  Two clear
+pinned edges of the same 2-redundant guard, the second window wide
+enough to catch the first level, translate every good element of the
+first window upward by the level gap — the windowed analog of
+`IsReflectionLevel.translation`, from destruction alone. -/
+theorem pinned_translation {A : Set ℕ} {N₀ N₁ u v₁ m₁ v₂ m₂ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hred : TwoRedundant A u N₁)
+    (hdes₁ : IsPairDestroyer A u v₁ m₁)
+    (hdes₂ : IsPairDestroyer A u v₂ m₂)
+    (hu0 : 0 < u) (huv₁ : u < v₁)
+    (hN₀ : N₀ ≤ u) (hN₁ : N₁ ≤ u)
+    (hclear₁ : 3 * v₁ ≤ m₁) (hclear₂ : 3 * v₂ ≤ m₂)
+    (hwide : m₁ - v₁ + u < v₂)
+    {x : ℕ} (hx : x ∈ A) (hxu : x ≠ u) (hwin : u + x < v₁)
+    (hdef : m₁ - v₁ - x ≠ u) :
+    x + ((m₂ - v₂) - (m₁ - v₁)) ∈ A := by
+  have huv₂ : u < v₂ := by omega
+  have hy : m₁ - v₁ - x ∈ A :=
+    (hdes₁.pinned_level h0 hcov hred hu0 huv₁ hN₀ hN₁ hclear₁).2
+      x hx hxu hwin
+  have hz : m₂ - v₂ - (m₁ - v₁ - x) ∈ A :=
+    (hdes₂.pinned_level h0 hcov hred hu0 huv₂ hN₀ hN₁ hclear₂).2
+      (m₁ - v₁ - x) hy hdef (by omega)
+  have he : m₂ - v₂ - (m₁ - v₁ - x) = x + ((m₂ - v₂) - (m₁ - v₁)) := by
+    omega
+  exact he ▸ hz
+
 /-- **Cofinal pinned levels.**  A 2-redundant vertex of an infinite
 team clique whose edges admit clear targets (`3 * v ≤ m`) manufactures
 element mirror levels cofinally — the raw material of the verified
