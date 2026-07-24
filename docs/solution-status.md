@@ -49,25 +49,32 @@ that A∖B is not an exact order-3 basis for any infinite B ⊆ A.
    through `GuardianBridge`): **VERIFIED.** These are, per the
    literature check, the first positive partial cases of 881 (k=2).
 
-## The single load-bearing open chain
+## The assembly is now formal: `master_reduction`
 
-Counterexample ⇒ (1: OPEN thinning) bounded funnels ⇒ (2: VERIFIED)
-clique or singleton stream ⇒ (3/4: the two dead-ends, partially
-VERIFIED, remainder LAB) ⇒ structures feeding (5: VERIFIED) ⇒
-contradiction. The minimal formal statement whose proof would close the
-positive direction, given the current verified stock:
+`TeamGraphRamsey.lean` proves (VERIFIED): if `HasCofinalPairFunnels A`
+(Open Link A's interface) and `TeamCliqueFree A` (Open Link B, now a
+formal Lean definition), then a counterexample reduces to an infinite
+stream of singleton private guardians.  The stream's big-guardian branch
+is then formally dead (`no_cofinal_big_privatePairs`, VERIFIED: two
+stream members at separation ratio 3 violate `no_big_guardian_stacking`,
+with separation supplied by `guardian_le`).  The small-guardian branch
+feeds the defective-mirror endgame (LAB + partially VERIFIED).
 
-> **Open Link A (funnel thinning).** Every counterexample admits an
-> infinite thinning on which cofinally many destroyed targets have
-> funnels of size ≤ K for some absolute K. — Attack with
-> `BoundedPairFreeSet` + `InfiniteSunflower` (audit-rated reusable).
+**The single remaining open statement, formally in Lean:** discharge the
+hypothesis pair of `master_reduction` —
+
+> **Link A** (`HasCofinalPairFunnels`, defined in `TeamGraphRamsey.lean`):
+> every counterexample admits a thinning with cofinal size-≤2 funnels.
+> Attack: `BoundedPairFreeSet` + `InfiniteSunflower`; size-3 layer via
+> `infinite_tripleRamsey_nat`.
 >
-> **Open Link B (no separated cliques).** No order-2 covering set has a
-> team-graph triangle whose three guards lie at pairwise separated
-> scales (and inductively, no infinite clique). — Attack with
-> `TeamGuardianRigidity` + the coverage-flooding mechanism the lab
-> identified; the geometric edge-cost measurements say why it should be
-> true.
+> **Link B** (`TeamCliqueFree`, defined in `TeamGraphRamsey.lean`): the
+> team graph has no infinite clique.  Attack: `TeamGuardianRigidity` +
+> the coverage-conflict mechanism; base case exhaustively verified in
+> the lab (all 22 hitting sets fail), team graphs of natural bases are
+> trees, edge costs grow geometrically.  Caveat: with only cofinal
+> lower-bound control over edge targets, window-alignment attacks fail —
+> the proof must use the covering conflict, not target placement.
 
 Everything else in the skeleton is machine-verified today.
 

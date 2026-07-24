@@ -95,4 +95,40 @@ theorem infinite_teamClique_or_cofinal_privatePairs
       · exact ⟨u, hu, m, hm, hdes.symm.privateTriple_of_lt_left hmv⟩
       · exact absurd ⟨hne, m, hmu, hmv, hdes⟩ (hLind hu hv hne)
 
+/-- **Open Link B, stated formally:** the team graph of `A` carries no
+infinite clique of mutual guardianship.  Lab evidence: team graphs of
+all natural bases are trees; closing edges are exhaustively unbuyable
+at the base scale (`docs/thin-basis-campaign.md`). -/
+def TeamCliqueFree (A : Set ℕ) : Prop :=
+  ¬ ∃ L, L ⊆ A ∧ L.Infinite ∧ L.Pairwise (TeamEdge A)
+
+/-- **Master reduction (Phase-4 assembly, conditional form).**  Modulo
+the two open links — cofinal pair funnels (Link A, to come from
+sunflower thinning) and team-clique-freeness (Link B) — a counterexample
+is reduced to an infinite stream of singleton private guardians, the
+object the guardian-rigidity machinery kills. -/
+theorem master_reduction {A : Set ℕ} (hA : A.Infinite)
+    (hfunnel : HasCofinalPairFunnels A)
+    (hclique : TeamCliqueFree A) :
+    ∃ L, L ⊆ A ∧ L.Infinite ∧
+      ∀ N, ∃ v ∈ L, ∃ m, N ≤ m ∧ IsPrivateTriple A v m := by
+  rcases infinite_teamClique_or_cofinal_privatePairs hA hfunnel with h | h
+  · exact absurd ⟨h.choose, h.choose_spec⟩ hclique
+  · exact h
+
+/-- **The big-guardian stream self-destructs.**  A stream of private
+pairs with big guardians at arbitrarily late targets is contradictory:
+two members at separation ratio 3 violate `no_big_guardian_stacking`,
+with the separation supplied by the boundary theorem `guardian_le`. -/
+theorem no_cofinal_big_privatePairs {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hstream : ∀ N, ∃ a m, N ≤ m ∧ IsPrivateTriple A a m ∧
+      m < 2 * a ∧ N₀ + a ≤ m ∧ N₀ + 3 ≤ a) :
+    False := by
+  obtain ⟨a₁, m₁, _, h1, hbig1, hN1, hsize⟩ := hstream N₀
+  obtain ⟨a₂, m₂, hm₂, h2, hbig2, hN2, _⟩ := hstream (3 * m₁ + 1)
+  have hle := h2.guardian_le h0 hcov hbig2 hN2
+  exact no_big_guardian_stacking h0 hcov h1 h2 hbig1 hN1 hbig2 hN2
+    hsize (by omega)
+
 end Erdos881
