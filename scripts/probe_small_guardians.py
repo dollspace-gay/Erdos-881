@@ -127,6 +127,30 @@ def part2(M: int = 8, factor: int = 2) -> None:
         print(f"  sample: M2={M2} team=({p2},{q2}) δ={d} killing rep {rep}")
 
 
+# ------------------------------------------------------------- PART 3
+
+def part3() -> None:
+    """Small-above-small stacking: mirror-close a small-guardian level and
+    sweep every candidate guardian above (pure closure, and with one extra
+    symmetric pair).  Result on record: zero fresh guardians, zero stacks —
+    matching every other guardian-mechanism combination."""
+    A1, a1, m1 = [0, 1, 2, 5, 11, 14, 15, 16], 5, 21
+    fresh = hits = tried = 0
+    for M2 in range(m1 + 1, 5 * m1 + 1):
+        base = sorted(set(A1) | {M2 - t for t in A1 if t <= M2})
+        H = covered_until(base, SLACK)
+        for a2 in base:
+            if a2 == 0 or a2 >= M2 or H < a2 + M2:
+                continue
+            tried += 1
+            if is_private(base, a2, a2 + M2):
+                fresh += 1
+                if is_private(base, a1, m1):
+                    hits += 1
+    print(f"small-above-small: {tried} candidates, fresh {fresh}, "
+          f"stacked {hits}")
+
+
 def main() -> None:
     ap = ArgumentParser()
     ap.add_argument("--Ms", type=int, nargs="*", default=[16, 20, 24, 26])
@@ -151,25 +175,3 @@ if __name__ == "__main__":
     main()
 
 
-# ------------------------------------------------------------- PART 3
-
-def part3() -> None:
-    """Small-above-small stacking: mirror-close a small-guardian level and
-    sweep every candidate guardian above (pure closure, and with one extra
-    symmetric pair).  Result on record: zero fresh guardians, zero stacks —
-    matching every other guardian-mechanism combination."""
-    A1, a1, m1 = [0, 1, 2, 5, 11, 14, 15, 16], 5, 21
-    fresh = hits = tried = 0
-    for M2 in range(m1 + 1, 5 * m1 + 1):
-        base = sorted(set(A1) | {M2 - t for t in A1 if t <= M2})
-        H = covered_until(base, SLACK)
-        for a2 in base:
-            if a2 == 0 or a2 >= M2 or H < a2 + M2:
-                continue
-            tried += 1
-            if is_private(base, a2, a2 + M2):
-                fresh += 1
-                if is_private(base, a1, m1):
-                    hits += 1
-    print(f"small-above-small: {tried} candidates, fresh {fresh}, "
-          f"stacked {hits}")
