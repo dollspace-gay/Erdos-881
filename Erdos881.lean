@@ -30,3 +30,5 @@ import Erdos881.TeamGuardianRigidity
 import Erdos881.GuardianBridge
 import Erdos881.UnboundedMirrorGaps
 import Erdos881.TeamGraphRamsey
+import Erdos881.PinnedMirror
+import Erdos881.SeparatedTriangle
