@@ -585,4 +585,74 @@ theorem pool_rank_mono {A : Set ℕ} {N₀ : ℕ}
   rank_le_of_subrel
     (fun _ _ h => ⟨h.1, fun a ha => hsub (h.2 a ha)⟩) _ _
 
+/-- **Pool ranks are strictly positive.**  Root rank zero would
+mean no pool element extends the empty node — every large pool
+element a positive singleton hub — which the private-stream kill
+forbids.  With anchors, every unbounded 0-free pool's tree has
+rank at least one: the rank interval `(0, root]` is where the
+descent must happen. -/
+theorem pool_rank_pos {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {P₀ : Set ℕ} (hP₀A : P₀ ⊆ A) (h0P : 0 ∉ P₀)
+    (hunb : ∀ X, ∃ p ∈ P₀, X ≤ p) :
+    0 < ((poolFreeStep_wf h0 hcov hfail P₀).apply ∅).rank := by
+  classical
+  have hfree0 : RepFree A N₀ ∅ := by
+    intro m hm
+    obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
+    exact ⟨x, hx, y, hy, 0, h0, by omega, Finset.notMem_empty x,
+      Finset.notMem_empty y, Finset.notMem_empty 0⟩
+  -- some pool singleton is free
+  have hchild : ∃ b, b ∈ P₀ ∧ 0 < b ∧ RepFree A N₀ {b} := by
+    by_contra hno
+    push_neg at hno
+    refine singleton_hubs_refuted h0 hcov hanchor hfail ?_
+    intro N
+    obtain ⟨b, hbP, hNb⟩ := hunb (max N 1)
+    have hbpos : 0 < b := by
+      rcases Nat.eq_zero_or_pos b with h | h
+      · exact absurd (h ▸ hbP) h0P
+      · exact h
+    have hnotfree := hno b hbP hbpos
+    rw [RepFree] at hnotfree
+    push_neg at hnotfree
+    obtain ⟨m, hm, hall⟩ := hnotfree
+    have hhub : IsRepHub A m {b} := by
+      intro x hx y hy z hz hsum
+      by_contra hmiss
+      push_neg at hmiss
+      obtain ⟨hxm, hym, hzm⟩ := hmiss
+      exact hzm (hall x hx y hy z hz hsum hxm hym)
+    -- the target dominates the guardian, so targets are cofinal
+    obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
+    have hbm : b ≤ m := by
+      rcases hhub x hx y hy 0 h0 (by omega) with h | h | h
+      · have := Finset.mem_singleton.1 h
+        omega
+      · have := Finset.mem_singleton.1 h
+        omega
+      · have := Finset.mem_singleton.1 h
+        omega
+    exact ⟨m, by
+      have := le_trans (le_max_left _ _) hNb
+      omega, b, hbpos, hhub⟩
+  obtain ⟨b, hbP, hbpos, hbfree⟩ := hchild
+  have hstep : PoolFreeStep A N₀ P₀ {b} ∅ := by
+    refine ⟨⟨⟨fun h hh => absurd hh (Finset.notMem_empty h), hfree0⟩,
+      ⟨?_, hbfree⟩, b, hP₀A hbP, hbpos,
+      fun h hh => absurd hh (Finset.notMem_empty h), rfl⟩, ?_⟩
+    · intro h hh
+      rw [Finset.mem_singleton.1 hh]
+      exact ⟨hP₀A hbP, hbpos⟩
+    · intro h hh
+      rw [Finset.mem_singleton.1 hh]
+      exact hbP
+  have hlt := Acc.rank_lt_of_rel
+    ((poolFreeStep_wf h0 hcov hfail P₀).apply ∅) hstep
+  exact lt_of_le_of_lt (zero_le _) hlt
+
 end Erdos881
