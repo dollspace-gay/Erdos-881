@@ -3268,4 +3268,22 @@ theorem covering_gap_bound {A : Set ℕ} {N₀ : ℕ}
   · exact ⟨p, hp, h, by omega⟩
   · refine ⟨q, hq, by omega, by omega⟩
 
+/-- **The shared-block parent sieve.**  When one block `b` serves two
+owners through different parents, the parents sieve each other:
+`2w - w' ∉ A`.  Each block''s parent set is Sidon-like under the
+doubled-difference sieve — the first concrete law of alphabet
+coherence: blocks can be shared only by sieve-compatible parents,
+and in the ternary model the sieve values are exactly carry
+positions. -/
+theorem shared_block_parent_sieve {A : Set ℕ} {b w w' : ℕ}
+    (hown : OwnsTarget A (b + w) (b + w + w))
+    (ha' : b + w' ∈ A)
+    (hbig : 2 * (b + w') > b + w + w)
+    (hlt : b + w' < b + w + w) (hne : w' ≠ w) :
+    2 * w - w' ∉ A := by
+  have h := star_exclusion (w := w) (a := b + w) hown ha' hbig hlt
+    (by omega)
+  have hval : b + w + w - (b + w') = 2 * w - w' := by omega
+  rwa [hval] at h
+
 end Erdos881
