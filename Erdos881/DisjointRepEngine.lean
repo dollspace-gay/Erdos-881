@@ -3330,4 +3330,21 @@ theorem two_marker_near_rigidity {A B : Set ℕ} {b₁ b₂ : ℕ}
     · exact Or.inl ⟨by omega, h'⟩
   · exact absurd h h0B
 
+/-- **The dodge primitive.**  An unbounded set escapes any finite
+exclusion set from any starting point: pick beyond the exclusions''
+maximum.  Feeds the geometric marker builders: deletions can always
+be chosen dodging the canonical owners'' exception positions
+(`2b - A`-sets), upgrading near-rigidity to rigidity along the
+chosen deletion — the rails-to-rigidity chain''s selection step. -/
+theorem unbounded_dodge {A : Set ℕ}
+    (hunb : ∀ X, ∃ a ∈ A, X ≤ a) (E : Finset ℕ) :
+    ∀ X, ∃ a ∈ A, X ≤ a ∧ a ∉ E := by
+  intro X
+  obtain ⟨a, ha, hX⟩ := hunb (max X (E.sup id + 1))
+  refine ⟨a, ha, le_trans (le_max_left _ _) hX, ?_⟩
+  intro hmem
+  have h1 : a ≤ E.sup id := Finset.le_sup (f := id) hmem
+  have h2 : E.sup id + 1 ≤ a := le_trans (le_max_right _ _) hX
+  omega
+
 end Erdos881
