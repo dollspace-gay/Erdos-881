@@ -5974,4 +5974,69 @@ theorem counterexample_portrait {A : Set ℕ} {N₀ : ℕ}
    constant_sidon_of_hfail h0 hcov hfail,
    r2_unbounded_of_hfail h0 hcov hfail⟩
 
+/-- **TEAM SUPPLY FROM EVERY DELETION.**  Against any 0-free
+infinite deletion, beyond a single global threshold every failing
+target carries a minimal hub MADE OF DELETED ELEMENTS with at least
+TWO members: the private-stream kill bounds singleton hubs
+globally, so the enemy must field genuine teams from inside every
+deletion, forever.  The legacy campaign's team hypothesis, derived. -/
+theorem guardian_team_hubs_of_deletion {A B : Set ℕ} {N₀ : ℕ}
+    [DecidablePred (· ∈ B)]
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B' ⊆ A, B'.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B') 3)
+    (hBA : B ⊆ A) (hBinf : B.Infinite) (h0B : 0 ∉ B) :
+    ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      2 ≤ H.card ∧ ∀ h ∈ H, h ∈ B := by
+  classical
+  have hsing := singleton_hubs_refuted h0 hcov hanchor hfail
+  push_neg at hsing
+  obtain ⟨Nₛ, hNₛ⟩ := hsing
+  intro N
+  have hnb := hfail B hBA hBinf
+  rw [IsExactTupleAsymptoticBasis] at hnb
+  push_neg at hnb
+  obtain ⟨n, hnN, hnorep⟩ := hnb (max N (max N₀ Nₛ))
+  have hdead : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = n →
+      x ∈ B ∨ y ∈ B ∨ z ∈ B := by
+    intro x hx y hy z hz hsum
+    by_contra hall
+    push_neg at hall
+    obtain ⟨hxB, hyB, hzB⟩ := hall
+    refine hnorep ![x, y, z] ?_ (by simpa [Fin.sum_univ_three] using hsum)
+    intro i
+    match i with
+    | 0 => exact ⟨hx, hxB⟩
+    | 1 => exact ⟨hy, hyB⟩
+    | 2 => exact ⟨hz, hzB⟩
+  have hhub := failing_hub_subset_deletion (B := B) hdead
+  obtain ⟨H', hH'sub, hH'hub, hH'min⟩ := exists_minimal_hub hhub
+  have hH'B : ∀ h ∈ H', h ∈ B := by
+    intro h hh
+    exact (Finset.mem_filter.1 (hH'sub hh)).2
+  have hH'ne : H'.Nonempty :=
+    hub_nonempty_of_covering h0 hcov
+      (le_trans (le_trans (le_max_left _ _) (le_max_right _ _)) hnN)
+      hH'hub
+  have hcard2 : 2 ≤ H'.card := by
+    by_contra hlt
+    push_neg at hlt
+    have hpos : 0 < H'.card := Finset.card_pos.2 hH'ne
+    have hone : H'.card = 1 := by omega
+    obtain ⟨a, ha⟩ := Finset.card_eq_one.1 hone
+    have haB : a ∈ B := hH'B a (ha ▸ Finset.mem_singleton_self a)
+    have hapos : 0 < a := by
+      by_contra ha0
+      push_neg at ha0
+      have haz : a = 0 := by omega
+      rw [haz] at haB
+      exact h0B haB
+    exact hNₛ n (le_trans (le_trans (le_max_right _ _)
+      (le_max_right _ _)) hnN) a hapos (ha ▸ hH'hub)
+  exact ⟨n, le_trans (le_max_left _ _) hnN, H', hH'hub, hH'min,
+    hcard2, hH'B⟩
+
 end Erdos881
