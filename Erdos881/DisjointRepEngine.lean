@@ -3788,4 +3788,74 @@ theorem trap_tower {A : Set ℕ} {N0 : ℕ}
     have h2 := Nat.le_max_right (Xt (Y i)) ((Ft (Y i)).sup id)
     omega
 
+/-- **THE GRAND DICHOTOMY.**  From the trap tower, every
+counterexample lives in one of two worlds: THE FLOOD — some finite
+envelope `F` with cofinally many elements necessary in their own
+minimal repful hubs inside `F ∪ {a}` (universal-ownership supply,
+derived) — or THE TOWER TEAMS — at every level a repful minimal
+nonempty hub inside that level''s finite trap, with targets marching
+to infinity (fixed-finite-team supply at all scales, derived).  The
+two long-assumed configurations of the campaign are now exhaustive
+and unconditional. -/
+theorem grand_dichotomy {A : Set ℕ} {N0 : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N0)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∃ F : Finset ℕ, ∀ X, ∃ a, a ∈ A ∧ X ≤ a ∧
+      ∃ n, N0 ≤ n ∧ ∃ H : Finset ℕ, IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧ a ∈ H ∧
+        ∀ h ∈ H, h ∈ F ∨ h = a) ∨
+    (∃ (Y : ℕ → ℕ) (F : ℕ → Finset ℕ),
+      (∀ i, ∀ h ∈ F i, h ∈ A ∧ Y i ≤ h) ∧
+      (∀ i, Y i < Y (i + 1)) ∧
+      ∀ i, ∃ n, N0 ≤ n ∧ Y i ≤ n ∧ ∃ H : Finset ℕ,
+        (∀ h ∈ H, h ∈ F i) ∧ H.Nonempty ∧ IsRepHub A n H ∧
+        ∀ h ∈ H, ¬IsRepHub A n (H \ {h})) := by
+  classical
+  obtain ⟨Y, F, X, hFA, hYX, hXY, hFY, htrap⟩ :=
+    trap_tower h0 hcov hfail
+  by_cases hflood : ∃ i, ∀ M, ∃ a, a ∈ A ∧ M ≤ a ∧
+      ∃ n, N0 ≤ n ∧ ∃ H : Finset ℕ, IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧ a ∈ H ∧
+        ∀ h ∈ H, h ∈ F i ∨ h = a
+  · left
+    obtain ⟨i, hi⟩ := hflood
+    exact ⟨F i, hi⟩
+  · right
+    push_neg at hflood
+    refine ⟨Y, F, hFA, ?_, ?_⟩
+    · intro i
+      have h1 := hYX i
+      have h2 := hXY i
+      omega
+    · intro i
+      obtain ⟨M, hM⟩ := hflood i
+      obtain ⟨a, ha, haM⟩ := pairCovers_unbounded hcov
+        (max M (X i))
+      have haX : X i ≤ a := le_trans (le_max_right _ _) haM
+      obtain ⟨n, hnN, H, hhub, haH, hsub⟩ := htrap i a ha haX
+      obtain ⟨H', hH'sub, hH'hub, hH'min⟩ := exists_minimal_hub hhub
+      have hH'ne : H'.Nonempty :=
+        hub_nonempty_of_covering h0 hcov hnN hH'hub
+      have haH' : a ∉ H' := by
+        intro haH'
+        obtain ⟨h, hh, hhF, hha⟩ := hM a ha
+          (le_trans (le_max_left _ _) haM) n hnN H' hH'hub hH'min haH'
+        rcases hsub h (hH'sub hh) with h' | h'
+        · exact hhF h'
+        · exact hha h'
+      have hH'F : ∀ h ∈ H', h ∈ F i := by
+        intro h hh
+        rcases hsub h (hH'sub hh) with h' | h'
+        · exact h'
+        · exact absurd (h' ▸ hh) haH'
+      -- targets march: a necessary element is hit, so n ≥ its size ≥ Y i
+      obtain ⟨h₀, hh₀⟩ := hH'ne
+      obtain ⟨x, hx, y, hy, z, hz, hsum, hhit, -⟩ :=
+        minimal_hub_necessity hH'hub hH'min h₀ hh₀
+      have hh₀n : h₀ ≤ n := by
+        rcases hhit with h' | h' | h' <;> omega
+      have hh₀Y : Y i ≤ h₀ := (hFA i h₀ (hH'F h₀ hh₀)).2
+      exact ⟨n, hnN, by omega, H', hH'F, ⟨h₀, hh₀⟩, hH'hub, hH'min⟩
+
 end Erdos881
