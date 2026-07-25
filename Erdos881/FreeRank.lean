@@ -2894,4 +2894,36 @@ theorem HereditarilyFree.tail {A B : Set ℕ} {N₀ : ℕ}
     HereditarilyFree A N₀ (B \ {b | b ≤ X}) :=
   hB.diff_finite (Set.finite_le_nat X)
 
+/-- **Branches are uniform.**  Hereditary freeness (all finite
+subsets rep-free) is equivalent to uniform avoidance: every late
+target has a representation avoiding the WHOLE set (parts below
+the target only ever meet the finite shadow).  Both verified
+branch mechanisms — Sidon counting and Cantor carry repair —
+produce exactly this object. -/
+theorem hereditarilyFree_iff_uniform {A : Set ℕ} {N₀ : ℕ}
+    {B : Set ℕ} (hBinf : B.Infinite)
+    (hBpos : ∀ b ∈ B, b ∈ A ∧ 0 < b) :
+    HereditarilyFree A N₀ B ↔
+    ∀ m, N₀ ≤ m → ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = m ∧
+      x ∉ B ∧ y ∉ B ∧ z ∉ B := by
+  classical
+  constructor
+  · rintro ⟨-, -, hfree⟩ m hm
+    obtain ⟨x, hx, y, hy, z, hz, hsum, hxP, hyP, hzP⟩ :=
+      hfree ((Finset.range (m + 1)).filter (fun b => b ∈ B))
+        (fun h hh => (Finset.mem_filter.1 hh).2) m hm
+    have havoid : ∀ w, w ≤ m →
+        w ∉ (Finset.range (m + 1)).filter (fun b => b ∈ B) →
+        w ∉ B := by
+      intro w hwm hwP hwB
+      exact hwP (Finset.mem_filter.2
+        ⟨Finset.mem_range.2 (by omega), hwB⟩)
+    exact ⟨x, hx, y, hy, z, hz, hsum, havoid x (by omega) hxP,
+      havoid y (by omega) hyP, havoid z (by omega) hzP⟩
+  · intro huni
+    refine ⟨hBinf, hBpos, fun P hP m hm => ?_⟩
+    obtain ⟨x, hx, y, hy, z, hz, hsum, hxB, hyB, hzB⟩ := huni m hm
+    exact ⟨x, hx, y, hy, z, hz, hsum, fun h => hxB (hP x h),
+      fun h => hyB (hP y h), fun h => hzB (hP z h)⟩
+
 end Erdos881
