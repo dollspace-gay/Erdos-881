@@ -7057,4 +7057,146 @@ theorem team_target_dominates {A : Set ℕ} {N₀ n u v w : ℕ}
       · have := Finset.mem_singleton.1 h''
         omega
 
+/-- Escalation step two with the freeness data exported: the
+triple-clique branch records pair-freeness (so
+`team_target_dominates` applies to every clique hub), and the
+team branch records freeness at both arities. -/
+theorem team_card_escalation_two' {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (b : ℕ → ℕ) (hmono : StrictMono b)
+    (hbA : ∀ j, b j ∈ A) (hbpos : ∀ j, 0 < b j) :
+    ∃ f : ℕ → ℕ, StrictMono f ∧
+      ((∀ i j, i < j → ∃ n, N₀ ≤ n ∧
+        IsRepHub A n {b (f i), b (f j)}) ∨
+      ((∀ i j, i < j → ¬∃ n, N₀ ≤ n ∧
+          IsRepHub A n {b (f i), b (f j)}) ∧
+        (∀ i j k, i < j → j < k → ∃ n, N₀ ≤ n ∧
+          IsRepHub A n {b (f i), b (f j), b (f k)})) ∨
+      ((∀ i j, i < j → ¬∃ n, N₀ ≤ n ∧
+          IsRepHub A n {b (f i), b (f j)}) ∧
+        (∀ i j k, i < j → j < k → ¬∃ n, N₀ ≤ n ∧
+          IsRepHub A n {b (f i), b (f j), b (f k)}) ∧
+        ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+          IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+          4 ≤ H.card ∧
+          ∀ h ∈ H, h ∈ Set.range (fun i => b (f i)))) := by
+  classical
+  set c₂ : ℕ → ℕ → Bool := fun i j =>
+    if ∃ n, N₀ ≤ n ∧ IsRepHub A n {b i, b j} then true else false
+    with hc₂
+  have hc₂iff : ∀ i j, c₂ i j = true ↔
+      ∃ n, N₀ ≤ n ∧ IsRepHub A n {b i, b j} := by
+    intro i j
+    by_cases h : ∃ n, N₀ ≤ n ∧ IsRepHub A n {b i, b j}
+    · simp [hc₂, h]
+    · simp [hc₂, h]
+  obtain ⟨f₁, hf₁, b₂col, hhom₂⟩ := infinite_ramsey_pairs c₂
+  rcases Bool.eq_false_or_eq_true b₂col with hb₂ | hb₂
+  · subst hb₂
+    exact ⟨f₁, hf₁, Or.inl (fun i j hij =>
+      (hc₂iff (f₁ i) (f₁ j)).1 (hhom₂ i j hij))⟩
+  · subst hb₂
+    have hpf₁ : ∀ i j, i < j →
+        ¬∃ n, N₀ ≤ n ∧ IsRepHub A n {b (f₁ i), b (f₁ j)} := by
+      intro i j hij hex
+      have h1 := (hc₂iff (f₁ i) (f₁ j)).2 hex
+      rw [hhom₂ i j hij] at h1
+      exact Bool.false_ne_true h1
+    set e : ℕ → ℕ := fun i => b (f₁ i) with he
+    set c₃ : ℕ → ℕ → ℕ → Bool := fun i j k =>
+      if ∃ n, N₀ ≤ n ∧ IsRepHub A n {e i, e j, e k} then true
+      else false with hc₃
+    have hc₃iff : ∀ i j k, c₃ i j k = true ↔
+        ∃ n, N₀ ≤ n ∧ IsRepHub A n {e i, e j, e k} := by
+      intro i j k
+      by_cases h : ∃ n, N₀ ≤ n ∧ IsRepHub A n {e i, e j, e k}
+      · simp [hc₃, h]
+      · simp [hc₃, h]
+    obtain ⟨f₂, hf₂, b₃col, hhom₃⟩ := infinite_ramsey_triples c₃
+    have hpfc : ∀ i j, i < j → ¬∃ n, N₀ ≤ n ∧
+        IsRepHub A n {b ((f₁ ∘ f₂) i), b ((f₁ ∘ f₂) j)} :=
+      fun i j hij => hpf₁ (f₂ i) (f₂ j) (hf₂ hij)
+    rcases Bool.eq_false_or_eq_true b₃col with hb₃ | hb₃
+    · subst hb₃
+      refine ⟨f₁ ∘ f₂, hf₁.comp hf₂, Or.inr (Or.inl ⟨hpfc, ?_⟩)⟩
+      intro i j k hij hjk
+      exact (hc₃iff (f₂ i) (f₂ j) (f₂ k)).1 (hhom₃ i j k hij hjk)
+    · subst hb₃
+      have htfc : ∀ i j k, i < j → j < k → ¬∃ n, N₀ ≤ n ∧
+          IsRepHub A n {b ((f₁ ∘ f₂) i), b ((f₁ ∘ f₂) j),
+            b ((f₁ ∘ f₂) k)} := by
+        intro i j k hij hjk hex
+        have h1 := (hc₃iff (f₂ i) (f₂ j) (f₂ k)).2 hex
+        rw [hhom₃ i j k hij hjk] at h1
+        exact Bool.false_ne_true h1
+      obtain ⟨f, hf, hout⟩ := team_card_escalation_two h0 hcov
+        hanchor hfail b hmono hbA hbpos
+      -- reuse the concrete third-branch construction instead:
+      -- rebuild teams for THIS subsequence directly
+      clear hout hf f
+      refine ⟨f₁ ∘ f₂, hf₁.comp hf₂, Or.inr (Or.inr
+        ⟨hpfc, htfc, ?_⟩)⟩
+      set g : ℕ → ℕ := fun i => b ((f₁ ∘ f₂) i) with hgdef
+      have hgmono : StrictMono g :=
+        fun i j hij => hmono (hf₁ (hf₂ hij))
+      have hBA : Set.range g ⊆ A := by
+        rintro x ⟨i, rfl⟩
+        exact hbA _
+      have hBinf : (Set.range g).Infinite :=
+        Set.infinite_range_of_injective hgmono.injective
+      have h0B : 0 ∉ Set.range g := by
+        rintro ⟨i, hi⟩
+        have h1 : b ((f₁ ∘ f₂) i) = 0 := hi
+        have := hbpos ((f₁ ∘ f₂) i)
+        omega
+      have hteams := guardian_team_hubs_of_deletion h0 hcov hanchor
+        hfail hBA hBinf h0B
+      intro N
+      obtain ⟨n, hn, H, hhub, hminH, hcard2, hHB⟩ :=
+        hteams (max N N₀)
+      have hnN₀ : N₀ ≤ n := le_trans (le_max_right _ _) hn
+      refine ⟨n, le_trans (le_max_left _ _) hn, H, hhub, hminH,
+        ?_, hHB⟩
+      rcases Nat.lt_or_ge H.card 4 with hlt | hge
+      · exfalso
+        rcases Nat.lt_or_ge H.card 3 with hlt2 | hge2
+        · have hcard : H.card = 2 := by omega
+          obtain ⟨u, v, huv, hHuv⟩ := Finset.card_eq_two.1 hcard
+          obtain ⟨i, hi⟩ := hHB u
+            (hHuv ▸ Finset.mem_insert_self _ _)
+          obtain ⟨j, hj⟩ := hHB v (hHuv ▸ Finset.mem_insert_of_mem
+            (Finset.mem_singleton_self v))
+          have hi' : g i = u := hi
+          have hj' : g j = v := hj
+          have hij : i ≠ j := by
+            intro h
+            rw [h, hj'] at hi'
+            exact huv hi'.symm
+          rcases Nat.lt_or_ge i j with h' | h'
+          · refine hpfc i j h' ⟨n, hnN₀, ?_⟩
+            have hpair : ({g i, g j} : Finset ℕ) = H := by
+              rw [hi', hj', hHuv]
+            rw [show ({b ((f₁ ∘ f₂) i), b ((f₁ ∘ f₂) j)} :
+              Finset ℕ) = H from hpair]
+            exact hhub
+          · have h'' : j < i := by omega
+            refine hpfc j i h'' ⟨n, hnN₀, ?_⟩
+            have hpair : ({g j, g i} : Finset ℕ) = H := by
+              rw [hi', hj', hHuv, Finset.pair_comm]
+            rw [show ({b ((f₁ ∘ f₂) j), b ((f₁ ∘ f₂) i)} :
+              Finset ℕ) = H from hpair]
+            exact hhub
+        · have hcard : H.card = 3 := by omega
+          obtain ⟨i, j, k, hij, hjk, hset⟩ :=
+            sorted_indices_of_card_three hgmono hcard hHB
+          refine htfc i j k hij hjk ⟨n, hnN₀, ?_⟩
+          rw [show ({b ((f₁ ∘ f₂) i), b ((f₁ ∘ f₂) j),
+            b ((f₁ ∘ f₂) k)} : Finset ℕ) = H from hset]
+          exact hhub
+      · exact hge
+
 end Erdos881
