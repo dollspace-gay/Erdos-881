@@ -3306,4 +3306,28 @@ theorem boundary_exclusion {A : Set ℕ} {w a : ℕ}
   have hval : a + w - 3 * w = a - 2 * w := by omega
   rwa [hval] at h
 
+/-- **Two-marker near-rigidity.**  A failing double under a
+two-marker window is rigid up to fibers through the lower marker:
+every representation is the diagonal or passes through `b₁`.  The
+exceptions route through OUR markers — and marker positions are
+ours to choose, so the dodge-selection machinery upgrades
+near-rigidity to rigidity along dodging deletions.  The multi-marker
+rigidity derivation''s base case. -/
+theorem two_marker_near_rigidity {A B : Set ℕ} {b₁ b₂ : ℕ}
+    (h0 : 0 ∈ A) (h0B : 0 ∉ B)
+    (hdead : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = 2 * b₂ →
+      x ∈ B ∨ y ∈ B ∨ z ∈ B)
+    (honly : ∀ x ∈ B, x ≤ 2 * b₂ → x = b₁ ∨ x = b₂) :
+    ∀ x ∈ A, ∀ y ∈ A, x + y = 2 * b₂ →
+      (x = b₂ ∧ y = b₂) ∨ x = b₁ ∨ y = b₁ := by
+  intro x hx y hy hxy
+  rcases hdead x hx y hy 0 h0 (by omega) with h | h | h
+  · rcases honly x h (by omega) with h' | h'
+    · exact Or.inr (Or.inl h')
+    · exact Or.inl ⟨h', by omega⟩
+  · rcases honly y h (by omega) with h' | h'
+    · exact Or.inr (Or.inr h')
+    · exact Or.inl ⟨by omega, h'⟩
+  · exact absurd h h0B
+
 end Erdos881
