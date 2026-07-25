@@ -372,3 +372,22 @@ the only structures that can satisfy the enemy's demands are
 digit towers, and digit towers satisfy Erdős 881's conclusion.
 Remaining mathematical gap, now singular: the general carry lemma
 (Engine V11) — rigidity all the way down forces order-3 repairs.
+
+## THE DUAL RAILS COMPLETE (2026-07-25 01:20)
+
+The digit recursion's two rails are now fully verified and
+canonical, both derived from Erdős 881's raw hypotheses:
+
+- **Order-2 rail** (from minimality): the engine ported one level
+  down — minimality forces canonical pair-hubs, a stable
+  2-destroyer core across all scales, and in the tight case THE
+  RECURRING FIXED PAIR {u, v} (`recurring_destroyer_pair_of_
+  tight_core`) — the exact configuration the legacy fixed-pair
+  campaign assumed, now a theorem.
+- **Order-3 rail** (from hfail): the canonical hub tree with
+  eliminations, alignment demands, the P/D digit-split, and the
+  service structure theorems.
+
+The final wall is the rails' interaction (the second digit and
+beyond). DisjointRepEngine.lean: ~1950 lines, zero sorries, one
+session.

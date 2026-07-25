@@ -187,3 +187,16 @@ avalanche — every dodge spawns more stamps, every stamp more
 dodges. That's next session's hunt, with tonight's census showing
 only digit-style keyrings can even attempt the dodge — and those
 pick their own locks.
+
+## The two rails (01:20)
+
+The last hour built the second rail. Everything we ever assumed
+about the enemy — the famous fixed pair of guardian keys that the
+whole campaign was built to fight — is no longer an assumption.
+The machine now derives it: the problem's own minimality rule
+forces one small guardian team for the two-key game, stable at
+every scale, exactly as the failure rule forces one for the
+three-key game. Two rails, one keyring, and the digit pattern of
+the self-picking lock emerging where they cross. The recursion
+that would finish everything runs along those rails, and its
+first rung — the first digit — is already proven.
