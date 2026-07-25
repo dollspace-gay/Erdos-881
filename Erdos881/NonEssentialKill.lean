@@ -1,4 +1,5 @@
 import Erdos881.RedundantVertexKill
+import Erdos881.FunnelTrichotomy
 
 /-!
 # The non-essential kill: pointwise thresholds
@@ -515,5 +516,57 @@ theorem surviving_deletion_of_nonessential_edges
       L j ≠ pm (b (κ k)) - u - pv (b (κ k))
     exact ⟨by omega, by omega, by omega, by omega⟩
 
+
+/-- **The grand assembly, fourth form.**  With doubling supply and one
+nonzero package, the clique escape shrinks to its sharpest shape:
+every positive vertex is **primitive** (no proper two-term
+representation) or **fully 2-essential** (redundant at no threshold
+whatsoever) — the Grekos class plus primitives. -/
+theorem erdos881_grand_assembly₄ {A : Set ℕ} {N₀ : ℕ}
+    (hA : A.Infinite) (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfunnel : HasCofinalPairFunnels A)
+    (hdb : {c | c ∈ A ∧ 2 * c ∈ A ∧ 0 < c}.Infinite)
+    (hnz : ∃ c ∈ A, 0 < c ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ 0 < w ∧ 0 < w') :
+    (∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n) ∨
+    (∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m) ∨
+    (∃ L, L ⊆ A ∧ L.Infinite ∧ L.Pairwise (TeamEdge A) ∧
+      ∀ u ∈ L, 0 < u →
+        (¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u ∧ s ≠ u ∧ t ≠ u) ∨
+        (∀ N₁, ¬ TwoRedundant A u N₁)) := by
+  have hanchor := anchor_abundance_of_doubling h0 hdb hnz
+  rcases infinite_teamClique_or_cofinal_privatePairs hA hfunnel with
+    ⟨L, hLA, hLinf, hLcl⟩ | ⟨L, hLA, hLinf, hstream⟩
+  · by_cases hesc : ∀ u ∈ L, 0 < u →
+        (¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u ∧ s ≠ u ∧ t ≠ u) ∨
+        (∀ N₁, ¬ TwoRedundant A u N₁)
+    · exact Or.inr (Or.inr ⟨L, hLA, hLinf, hLcl, hesc⟩)
+    · push Not at hesc
+      obtain ⟨u, huL, hu0, hprim, N₁, hred⟩ := hesc
+      obtain ⟨c, hcmem, hcg⟩ := hdb.exists_gt (max N₁ u)
+      obtain ⟨hcA, h2cA, hc0⟩ := hcmem
+      refine Or.inl (surviving_deletion_of_nonessential_edges h0 hcov
+        hred hprim hu0 (fun K => ?_) hcA h2cA hc0
+        (le_of_lt (lt_of_le_of_lt (le_max_left _ _) hcg))
+        (by have := lt_of_le_of_lt (le_max_right _ _) hcg; omega)
+        (by have := lt_of_le_of_lt (le_max_right _ _) hcg; omega))
+      obtain ⟨v, hvL, hv⟩ := hLinf.exists_gt (max K u)
+      have hKv : K < v := lt_of_le_of_lt (le_max_left _ _) hv
+      have huv : u < v := lt_of_le_of_lt (le_max_right _ _) hv
+      obtain ⟨-, m, hum, hvm, hdes⟩ := hLcl huL hvL (by omega)
+      exact ⟨v, m, hKv, huv, hvm, hdes⟩
+  · by_cases hz : ∀ N, ∃ a m, N ≤ m ∧ 0 < a ∧ IsPrivateTriple A a m
+    · exact Or.inl
+        (surviving_deletion_of_cofinal_privateStream h0 hcov hz hanchor)
+    · push Not at hz
+      obtain ⟨N₂, hN₂⟩ := hz
+      refine Or.inr (Or.inl fun N => ?_)
+      obtain ⟨v, hvL, m, hm, hpriv⟩ := hstream (max N N₂)
+      rcases Nat.eq_zero_or_pos v with hv0 | hv0
+      · exact ⟨m, le_trans (le_max_left _ _) hm, hv0 ▸ hpriv⟩
+      · exact absurd hpriv
+          (hN₂ v m (le_trans (le_max_right _ _) hm) hv0)
 
 end Erdos881
