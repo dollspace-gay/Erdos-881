@@ -2117,4 +2117,96 @@ theorem omega_node_diagonal {A : Set ℕ} {N₀ : ℕ}
       exact hpkdata (j + 1) (b j + 1)
   exact ⟨b, hbmono, fun j => (hbdata j).1, fun j => (hbdata j).2⟩
 
+/-- An infinite set is hereditarily free when all its finite
+subsets are rep-free: exactly a surviving deletion, since its
+prefixes never trap any target. -/
+def HereditarilyFree (A : Set ℕ) (N₀ : ℕ) (B : Set ℕ) : Prop :=
+  B.Infinite ∧ (∀ b ∈ B, b ∈ A ∧ 0 < b) ∧
+  ∀ P : Finset ℕ, (∀ h ∈ P, h ∈ B) → RepFree A N₀ P
+
+/-- **THE CHARACTERIZATION.**  For a covering set with `0`, the
+counterexample condition is EQUIVALENT to the absence of an
+infinite hereditarily rep-free subset.  Erdős 881 (k = 2) is
+exactly: does every ℵ₀-minimal exact order-2 basis contain an
+infinite hereditarily rep-free set? -/
+theorem hfail_iff_no_hereditarily_free {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) :
+    (∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) ↔
+    ¬∃ B : Set ℕ, HereditarilyFree A N₀ B := by
+  classical
+  constructor
+  · -- a hereditarily free set survives as a deletion
+    rintro hfail ⟨B, hBinf, hBpos, hBfree⟩
+    have hBA : B ⊆ A := fun b hb => (hBpos b hb).1
+    refine hfail B hBA hBinf ⟨N₀, fun m hm => ?_⟩
+    have hfree := hBfree ((Finset.range (m + 1)).filter
+      (fun b => b ∈ B))
+      (fun h hh => (Finset.mem_filter.1 hh).2)
+    obtain ⟨x, hx, y, hy, z, hz, hsum, hxP, hyP, hzP⟩ :=
+      hfree m hm
+    have havoid : ∀ w, w ≤ m →
+        w ∉ (Finset.range (m + 1)).filter (fun b => b ∈ B) →
+        w ∉ B := by
+      intro w hwm hwP hwB
+      exact hwP (Finset.mem_filter.2
+        ⟨Finset.mem_range.2 (by omega), hwB⟩)
+    refine ⟨![x, y, z], ?_, by simp [Fin.sum_univ_three]; omega⟩
+    intro i
+    match i with
+    | 0 => exact ⟨hx, havoid x (by omega) hxP⟩
+    | 1 => exact ⟨hy, havoid y (by omega) hyP⟩
+    | 2 => exact ⟨hz, havoid z (by omega) hzP⟩
+  · -- without hereditarily free sets, every deletion fails
+    intro hno B hBA hBinf hbasis
+    obtain ⟨N₁, hN₁⟩ := hbasis
+    set B' := {b ∈ B | 0 < b ∧ N₁ + 1 ≤ b} with hB'
+    have hB'inf : B'.Infinite := by
+      have h1 : B ⊆ B' ∪ {b | b ≤ N₁} := by
+        intro b hb
+        rcases Nat.lt_or_ge b (N₁ + 1) with h | h
+        · exact Or.inr (by
+            simp only [Set.mem_setOf_eq]
+            omega)
+        · exact Or.inl ⟨hb, by omega, h⟩
+      by_contra hfin
+      rw [Set.not_infinite] at hfin
+      exact hBinf (Set.Finite.subset
+        (hfin.union (Set.finite_le_nat _)) h1)
+    have hnother : ¬HereditarilyFree A N₀ B' :=
+      fun h => hno ⟨B', h⟩
+    rw [HereditarilyFree] at hnother
+    push_neg at hnother
+    obtain ⟨Q, hQB', hQnotfree⟩ := hnother hB'inf
+      (fun b hb => ⟨hBA hb.1, hb.2.1⟩)
+    rw [RepFree] at hQnotfree
+    push_neg at hQnotfree
+    obtain ⟨n, hn, halln⟩ := hQnotfree
+    have hhub : IsRepHub A n Q := by
+      intro x hx y hy z hz hsum
+      by_contra hmiss
+      push_neg at hmiss
+      obtain ⟨h1, h2, h3⟩ := hmiss
+      exact h3 (halln x hx y hy z hz hsum h1 h2)
+    -- the hub is high, so the dead target is late
+    obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hn
+    have hn₁ : N₁ ≤ n := by
+      rcases hhub x hx y hy 0 h0 (by omega) with h | h | h
+      · have := (hQB' x h).2.2
+        omega
+      · have := (hQB' y h).2.2
+        omega
+      · have := (hQB' 0 h).2.1
+        omega
+    -- but the basis provides an untouched representation
+    obtain ⟨v, hv, hvsum⟩ := hN₁ n hn₁
+    have hsum3 : v 0 + v 1 + v 2 = n := by
+      have := hvsum
+      simpa [Fin.sum_univ_three] using this
+    rcases hhub (v 0) (hv 0).1 (v 1) (hv 1).1 (v 2) (hv 2).1 hsum3
+      with h | h | h
+    · exact (hv 0).2 ((hQB' _ h).1)
+    · exact (hv 1).2 ((hQB' _ h).1)
+    · exact (hv 2).2 ((hQB' _ h).1)
+
 end Erdos881
