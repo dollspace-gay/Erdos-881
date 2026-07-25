@@ -1348,4 +1348,36 @@ theorem fixed_pair_fork_pigeonhole {A : Set ℕ} {N₀ u v z₀ : ℕ}
     · exact absurd h (hN₁ m (le_trans (le_max_right _ _) hm) hDm)
     · exact ⟨m, le_trans (le_max_left _ _) hm, hDm, h⟩
 
+
+/-- **Pair recurrence or escape.**  Cofinal pair funnels either
+concentrate on one recurring pair (the fixed-pair configuration, under
+demolition) or escape every finite set of pairs — the spread case
+feeding second-level Ramsey structure. -/
+theorem pair_escape_dichotomy {A B : Set ℕ}
+    (hpf : ∀ N, ∃ m, N ≤ m ∧ ∃ u ∈ B, ∃ v ∈ B,
+      IsPairDestroyer A u v m) :
+    (∃ u ∈ B, ∃ v ∈ B, ∀ N, ∃ m, N ≤ m ∧ IsPairDestroyer A u v m) ∨
+    (∀ F : Finset (ℕ × ℕ), ∃ N, ∀ m, N ≤ m →
+      ∀ p ∈ F, p.1 ∈ B → p.2 ∈ B →
+        ¬ IsPairDestroyer A p.1 p.2 m) := by
+  by_cases hrec : ∃ u ∈ B, ∃ v ∈ B, ∀ N, ∃ m, N ≤ m ∧
+      IsPairDestroyer A u v m
+  · exact Or.inl hrec
+  · push Not at hrec
+    right
+    -- every individual pair has bounded targets
+    have hbnd : ∀ p : ℕ × ℕ, ∃ Np, ∀ m, Np ≤ m →
+        p.1 ∈ B → p.2 ∈ B → ¬ IsPairDestroyer A p.1 p.2 m := by
+      intro p
+      by_cases h1 : p.1 ∈ B
+      · by_cases h2 : p.2 ∈ B
+        · obtain ⟨Np, hNp⟩ := hrec p.1 h1 p.2 h2
+          exact ⟨Np, fun m hm _ _ => hNp m hm⟩
+        · exact ⟨0, fun m _ _ hb => absurd hb h2⟩
+      · exact ⟨0, fun m _ hb _ => absurd hb h1⟩
+    choose Np hNp using hbnd
+    intro F
+    refine ⟨F.sup Np, fun m hm p hp h1 h2 => ?_⟩
+    exact hNp p m (le_trans (Finset.le_sup hp) hm) h1 h2
+
 end Erdos881
