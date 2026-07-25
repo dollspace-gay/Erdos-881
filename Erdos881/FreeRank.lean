@@ -2564,4 +2564,257 @@ theorem counterexample_iff_rep_tree_wf {A : Set ℕ} {N₀ : ℕ}
   · intro hwf₃
     exact ⟨pairFreeStep_wf_of_freeStep_wf h0 hwf₃, hwf₃⟩
 
+/-- **THE BRANCH TEMPLATE: Sidon covering sets carry explicit
+infinite branches.**  Under a global pair-count bound `C`, a
+geometrically spaced subset is hereditarily rep-free: at every
+target the candidate third parts outnumber the window fibers (each
+of size `≤ C + N₀`), so a stream-avoiding triple survives.  The
+constructive companion of `r2_unbounded_of_hfail`, and the counting
+shape every general branch construction must beat. -/
+theorem sidon_has_branch {A : Set ℕ} {N₀ C : ℕ}
+    [DecidablePred (· ∈ A)]
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hC : ∀ v, N₀ ≤ v → ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A)).card ≤ C) :
+    ∃ B : Set ℕ, HereditarilyFree A N₀ B := by
+  classical
+  set D := C + N₀ + 2 with hD
+  set thr : ℕ → ℕ := fun k =>
+    ((D + 2) * (k + 2) + 2 * N₀ + 3) *
+      ((D + 2) * (k + 2) + 2 * N₀ + 3) + 2 * N₀ with hthr
+  have hpick : ∀ X : ℕ, ∃ a, a ∈ A ∧ X < a := by
+    intro X
+    obtain ⟨a, ha, hXa⟩ := pairCovers_unbounded hcov (X + 1)
+    exact ⟨a, ha, by omega⟩
+  choose nx hnxA hnxgt using hpick
+  set b : ℕ → ℕ := fun j =>
+    Nat.rec (nx (thr 0)) (fun j prev =>
+      nx (max (thr (j + 1)) prev)) j with hb
+  have hbS : ∀ j, b (j + 1) = nx (max (thr (j + 1)) (b j)) :=
+    fun _ => rfl
+  have hbA : ∀ j, b j ∈ A := by
+    intro j
+    cases j with
+    | zero => exact hnxA _
+    | succ j =>
+      rw [hbS]
+      exact hnxA _
+  have hbthr : ∀ j, thr j < b j := by
+    intro j
+    cases j with
+    | zero => exact hnxgt _
+    | succ j =>
+      rw [hbS]
+      have h1 := hnxgt (max (thr (j + 1)) (b j))
+      have h2 := le_max_left (thr (j + 1)) (b j)
+      omega
+  have hbmono : StrictMono b := by
+    apply strictMono_nat_of_lt_succ
+    intro j
+    rw [hbS]
+    have h1 := hnxgt (max (thr (j + 1)) (b j))
+    have h2 := le_max_right (thr (j + 1)) (b j)
+    omega
+  have hbpos : ∀ j, 0 < b j := by
+    intro j
+    have h1 := hbthr j
+    have h2 : 0 ≤ ((D + 2) * (j + 2) + 2 * N₀ + 3) *
+        ((D + 2) * (j + 2) + 2 * N₀ + 3) := Nat.zero_le _
+    have h3 : 2 * N₀ ≤ thr j := by
+      show 2 * N₀ ≤ _ * _ + 2 * N₀
+      omega
+    omega
+  -- THE CORE: at every target, a triple avoiding the whole window
+  have hcore : ∀ m, N₀ ≤ m → ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+      x + y + z = m ∧
+      ∀ j, b j ≤ m → x ≠ b j ∧ y ≠ b j ∧ z ≠ b j := by
+    intro m hm
+    by_cases hwin : ∃ j, b j ≤ m
+    · -- the window is present: count fibers against candidates
+      obtain ⟨j₀, hj₀⟩ := hwin
+      set idxF := (Finset.range (m + 1)).filter
+        (fun j => b j ≤ m) with hidxF
+      have hidxne : idxF.Nonempty := by
+        refine ⟨j₀, Finset.mem_filter.2 ⟨?_, hj₀⟩⟩
+        have : j₀ ≤ b j₀ := hbmono.le_apply
+        exact Finset.mem_range.2 (by omega)
+      set M := idxF.max' hidxne with hM
+      have hMmem := idxF.max'_mem hidxne
+      have hbMm : b M ≤ m := (Finset.mem_filter.1 hMmem).2
+      have hidxbound : ∀ j, b j ≤ m → j ≤ M := by
+        intro j hj
+        refine idxF.le_max' j (Finset.mem_filter.2 ⟨?_, hj⟩)
+        have : j ≤ b j := hbmono.le_apply
+        exact Finset.mem_range.2 (by omega)
+      set L := (D + 2) * (M + 2) + 2 * N₀ + 3 with hL
+      have hLsq : L * L + 2 * N₀ < m :=
+        lt_of_le_of_lt (le_of_eq rfl) (lt_of_lt_of_le
+          (hbthr M) hbMm)
+      have hm2N : 2 * N₀ ≤ m := by
+        have : 0 ≤ L * L := Nat.zero_le _
+        omega
+      have hsqrt := covering_sqrt_lower (A := A) (N₀ := N₀)
+        (n := m - N₀) hcov (by omega)
+      set F := (Finset.range (m - N₀ + 1)).filter (· ∈ A) with hF
+      have hLF : L ≤ F.card := by
+        have h1 : L * L ≤ F.card * F.card := by omega
+        have h2 := Nat.sqrt_le_sqrt h1
+        rw [Nat.sqrt_eq, Nat.sqrt_eq] at h2
+        exact h2
+      set cand := (Finset.range (m - N₀ + 1)).filter
+        (fun z => z ∈ A ∧ z ∉ Set.range b) with hcand
+      set Wfin := (Finset.range (m - N₀ + 1)).filter
+        (· ∈ Set.range b) with hWfin
+      have hWcard : Wfin.card ≤ M + 1 := by
+        have hsub : Wfin ⊆ (Finset.range (M + 1)).image b := by
+          intro w hw
+          obtain ⟨hwr, j, hj⟩ := Finset.mem_filter.1 hw
+          have hwm : w ≤ m - N₀ := by
+            have := Finset.mem_range.1 hwr
+            omega
+          have hjM : j ≤ M := hidxbound j (by
+            rw [hj]
+            omega)
+          exact Finset.mem_image.2 ⟨j, Finset.mem_range.2
+            (by omega), hj⟩
+        calc Wfin.card ≤ _ := Finset.card_le_card hsub
+          _ ≤ (Finset.range (M + 1)).card := Finset.card_image_le
+          _ = M + 1 := Finset.card_range _
+      have hcandF : F \ Wfin ⊆ cand := by
+        intro z hz
+        obtain ⟨hzF, hzW⟩ := Finset.mem_sdiff.1 hz
+        obtain ⟨hzr, hzA⟩ := Finset.mem_filter.1 hzF
+        refine Finset.mem_filter.2 ⟨hzr, hzA, ?_⟩
+        intro hzb
+        exact hzW (Finset.mem_filter.2 ⟨hzr, hzb⟩)
+      have hcandcard : L - (M + 1) ≤ cand.card := by
+        have h1 := Finset.card_le_card hcandF
+        have h2 := Finset.le_card_sdiff Wfin F
+        omega
+      -- the good candidates admit a stream-avoiding pair
+      by_cases hgood : ∃ z ∈ cand, ∃ x ∈ A, ∃ y ∈ A,
+          x + y = m - z ∧ x ∉ Set.range b ∧ y ∉ Set.range b
+      · obtain ⟨z, hzc, x, hx, y, hy, hxy, hxb, hyb⟩ := hgood
+        obtain ⟨hzr, hzA, hzb⟩ := Finset.mem_filter.1 hzc
+        have hzm : z ≤ m - N₀ := by
+          have := Finset.mem_range.1 hzr
+          omega
+        refine ⟨x, hx, y, hy, z, hzA, by omega, ?_⟩
+        intro j hj
+        exact ⟨fun h => hxb ⟨j, h.symm⟩,
+          fun h => hyb ⟨j, h.symm⟩, fun h => hzb ⟨j, h.symm⟩⟩
+      · -- otherwise the candidates inject into the window fibers
+        exfalso
+        push_neg at hgood
+        set fib : ℕ → Finset ℕ := fun j =>
+          (Finset.range (m - N₀ + 1)).filter
+            (fun z => z ∈ A ∧ z + b j ≤ m ∧ m - z - b j ∈ A)
+          with hfib
+        have hcsub : cand ⊆ (Finset.range (M + 1)).biUnion fib := by
+          intro z hzc
+          obtain ⟨hzr, hzA, hzb⟩ := Finset.mem_filter.1 hzc
+          have hzm : z ≤ m - N₀ := by
+            have := Finset.mem_range.1 hzr
+            omega
+          obtain ⟨x, hx, y, hy, hxy⟩ := hcov (m - z) (by omega)
+          have hbad := hgood z hzc
+          have hxyb : x ∈ Set.range b ∨ y ∈ Set.range b := by
+            by_cases hxb : x ∈ Set.range b
+            · exact Or.inl hxb
+            · exact Or.inr (hbad x hx y hy (by omega) hxb)
+          rcases hxyb with ⟨j, hj⟩ | ⟨j, hj⟩
+          · have hjM : j ≤ M := hidxbound j (by
+              rw [hj]
+              omega)
+            refine Finset.mem_biUnion.2 ⟨j,
+              Finset.mem_range.2 (by omega),
+              Finset.mem_filter.2 ⟨hzr, hzA, ?_, ?_⟩⟩
+            · rw [hj]
+              omega
+            · rw [hj]
+              have h1 : m - z - x = y := by omega
+              rw [h1]
+              exact hy
+          · have hjM : j ≤ M := hidxbound j (by
+              rw [hj]
+              omega)
+            refine Finset.mem_biUnion.2 ⟨j,
+              Finset.mem_range.2 (by omega),
+              Finset.mem_filter.2 ⟨hzr, hzA, ?_, ?_⟩⟩
+            · rw [hj]
+              omega
+            · rw [hj]
+              have h1 : m - z - y = x := by omega
+              rw [h1]
+              exact hx
+        have hfibcard : ∀ j ∈ Finset.range (M + 1),
+            (fib j).card ≤ C + N₀ := by
+          intro j _
+          rcases Nat.lt_or_ge (m - b j) N₀ with hsmall | hbig
+          · -- tiny window: members are below N₀
+            have hsub : fib j ⊆ Finset.range N₀ := by
+              intro z hz
+              obtain ⟨-, -, hzb, -⟩ := Finset.mem_filter.1 hz
+              exact Finset.mem_range.2 (by omega)
+            calc (fib j).card ≤ _ := Finset.card_le_card hsub
+              _ = N₀ := Finset.card_range _
+              _ ≤ C + N₀ := by omega
+          · -- genuine fiber: bounded by the Sidon count at m − b j
+            have hsub : fib j ⊆ (Finset.range (m - b j + 1)).filter
+                (fun z => z ∈ A ∧ (m - b j - z) ∈ A) := by
+              intro z hz
+              obtain ⟨hzr, hzA, hzb, hzA'⟩ := Finset.mem_filter.1 hz
+              refine Finset.mem_filter.2
+                ⟨Finset.mem_range.2 (by omega), hzA, ?_⟩
+              have h1 : m - b j - z = m - z - b j := by omega
+              rw [h1]
+              exact hzA'
+            calc (fib j).card ≤ _ := Finset.card_le_card hsub
+              _ ≤ C := hC (m - b j) hbig
+              _ ≤ C + N₀ := by omega
+        have hcount : cand.card ≤ (M + 1) * (C + N₀) := by
+          calc cand.card
+              ≤ ((Finset.range (M + 1)).biUnion fib).card :=
+                Finset.card_le_card hcsub
+            _ ≤ ∑ j ∈ Finset.range (M + 1), (fib j).card :=
+                Finset.card_biUnion_le
+            _ ≤ (Finset.range (M + 1)).card * (C + N₀) := by
+                have := Finset.sum_le_card_nsmul
+                  (Finset.range (M + 1)) (fun j => (fib j).card)
+                  (C + N₀) hfibcard
+                simpa using this
+            _ = (M + 1) * (C + N₀) := by
+                rw [Finset.card_range]
+        -- the arithmetic clash
+        have hexp1 : (D + 2) * (M + 2) =
+            D * M + 2 * M + 2 * D + 4 := by ring
+        have hexp2 : (M + 1) * (C + N₀) =
+            M * C + M * N₀ + C + N₀ := by ring
+        have hexp3 : D * M = M * C + M * N₀ + 2 * M := by
+          rw [hD]
+          ring
+        omega
+    · -- no window at all: the covering pair suffices
+      obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
+      refine ⟨x, hx, y, hy, 0, h0, by omega, ?_⟩
+      intro j hj
+      exact absurd ⟨j, hj⟩ hwin
+  -- WRAPPER: hereditary freeness from window avoidance
+  refine ⟨Set.range b, Set.infinite_range_of_injective
+    hbmono.injective, ?_, ?_⟩
+  · rintro w ⟨j, rfl⟩
+    exact ⟨hbA j, hbpos j⟩
+  · intro P hP m hm
+    obtain ⟨x, hx, y, hy, z, hz, hsum, havoid⟩ := hcore m hm
+    refine ⟨x, hx, y, hy, z, hz, hsum, ?_, ?_, ?_⟩
+    · intro hxP
+      obtain ⟨j, hj⟩ := hP x hxP
+      exact (havoid j (by omega)).1 hj.symm
+    · intro hyP
+      obtain ⟨j, hj⟩ := hP y hyP
+      exact (havoid j (by omega)).2.1 hj.symm
+    · intro hzP
+      obtain ⟨j, hj⟩ := hP z hzP
+      exact (havoid j (by omega)).2.2 hj.symm
+
 end Erdos881
