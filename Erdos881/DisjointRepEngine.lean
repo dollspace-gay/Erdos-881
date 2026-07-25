@@ -2478,7 +2478,7 @@ the per-element guarding supply — the classification statement''s
 formal vocabulary. -/
 def OwnsTarget (A : Set ℕ) (a n : ℕ) : Prop :=
   a < n ∧ n < 2 * a ∧ n - a ∈ A ∧
-  ∀ y ∈ A, 2 * y > n → y ≤ n → y ≠ a → n - y ∉ A
+  ∀ y ∈ A, 2 * y > n → y < n → y ≠ a → n - y ∉ A
 
 /-- Ownership steps down: the completion is a smaller element — the
 start of the ownership chain whose infinite coherence is the digit
@@ -2573,19 +2573,6 @@ theorem ownership_bans_reflection {A : Set ℕ} {a n : ℕ}
   rw [hval] at this
   exact this hs'
 
-/-- Owned targets are co-`A` points: membership would make the target
-its own big fiber with the zero partner.  With `unique_owner`, owners
-inject into the complement — the formal dual of the U-density
-interface. -/
-theorem OwnsTarget.not_mem {A : Set ℕ} {a n : ℕ}
-    (h0 : 0 ∈ A) (h : OwnsTarget A a n) : n ∉ A := by
-  obtain ⟨h1, h2, h3, h4⟩ := h
-  intro hn
-  have := h4 n hn (by omega) (le_refl n) (by omega)
-  have hval : n - n = 0 := by omega
-  rw [hval] at this
-  exact this h0
-
 /-- **Ownership is the singleton 2-hub** (up to the midpoint): every
 pair representation of an owned target passes through its owner or
 sits exactly at the half.  The classification wall and the order-2
@@ -2593,21 +2580,24 @@ rail''s tight singleton case are the same object — the ring of the
 night''s theory closes. -/
 theorem ownsTarget_pairHub {A : Set ℕ} {a n : ℕ}
     (hown : OwnsTarget A a n) :
-    ∀ x ∈ A, ∀ y ∈ A, x + y = n → x = a ∨ y = a ∨ 2 * x = n := by
+    ∀ x ∈ A, ∀ y ∈ A, x + y = n →
+      x = a ∨ y = a ∨ 2 * x = n ∨ x = 0 ∨ y = 0 := by
   obtain ⟨h1, h2, h3, h4⟩ := hown
   intro x hx y hy hxy
+  rcases Nat.eq_zero_or_pos x with hx0 | hx0
+  · exact Or.inr (Or.inr (Or.inr (Or.inl hx0)))
+  rcases Nat.eq_zero_or_pos y with hy0 | hy0
+  · exact Or.inr (Or.inr (Or.inr (Or.inr hy0)))
   rcases Nat.lt_trichotomy (2 * x) n with hlt | heq | hgt
-  · -- y is the big side
-    by_cases hya : y = a
+  · by_cases hya : y = a
     · exact Or.inr (Or.inl hya)
     · exfalso
       have := h4 y hy (by omega) (by omega) hya
       have hval : n - y = x := by omega
       rw [hval] at this
       exact this hx
-  · exact Or.inr (Or.inr heq)
-  · -- x is the big side
-    by_cases hxa : x = a
+  · exact Or.inr (Or.inr (Or.inl heq))
+  · by_cases hxa : x = a
     · exact Or.inl hxa
     · exfalso
       have := h4 x hx (by omega) (by omega) hxa
@@ -3308,7 +3298,7 @@ The band `(w, 3w]` — where reach fails — carries its own exclusion
 family through the tri-multiples: no hiding place is law-free. -/
 theorem boundary_exclusion {A : Set ℕ} {w a : ℕ}
     (hown : OwnsTarget A a (a + w))
-    (h3w : 3 * w ∈ A) (hlow : 2 * w ≤ a) (hhigh : a < 5 * w)
+    (h3w : 3 * w ∈ A) (hlow : 2 * w < a) (hhigh : a < 5 * w)
     (hne : a ≠ 3 * w) :
     a - 2 * w ∉ A := by
   obtain ⟨h1, h2, h3, h4⟩ := hown
