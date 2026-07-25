@@ -1058,4 +1058,51 @@ theorem rank_lt_omega_perfect_clique {A : Set ℕ} {N₀ : ℕ}
   rw [repFree_iff_no_hub, not_not] at h1
   exact h1
 
+/-- In a perfect clique world every stream-subset of size at most
+`d` is free (extend it with high stream values to size exactly
+`d`), so minimal hubs inside the world have FULL cardinality
+`d + 1`: the hub hypergraph is exactly `(d+1)`-uniform — complete
+at `d + 1`, empty below. -/
+theorem perfect_world_small_sets_free {A : Set ℕ} {N₀ : ℕ}
+    {e : ℕ → ℕ} {d : ℕ} (hemono : StrictMono e)
+    (hfree : ∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e i = h) →
+      S.card = d → RepFree A N₀ S)
+    {H : Finset ℕ} (hHmem : ∀ h ∈ H, ∃ i, e i = h)
+    (hHcard : H.card ≤ d) : RepFree A N₀ H := by
+  classical
+  set M := H.sup id with hM
+  have hMbound : ∀ h ∈ H, h ≤ M := fun h hh =>
+    Finset.le_sup (f := id) hh
+  set K := M + 1 with hK
+  set T := (Finset.range (d - H.card)).image
+    (fun j => e (K + j)) with hT
+  have hTbig : ∀ t ∈ T, M < t := by
+    intro t ht
+    obtain ⟨j, -, hjt⟩ := Finset.mem_image.1 ht
+    have h1 : K + j ≤ e (K + j) := hemono.le_apply
+    omega
+  have hdisj : Disjoint H T := by
+    rw [Finset.disjoint_left]
+    intro h hh hT'
+    have h1 := hMbound h hh
+    have h2 := hTbig h hT'
+    omega
+  have hTcard : T.card = d - H.card := by
+    rw [hT, Finset.card_image_of_injective _
+      (fun i j hij => by
+        have := hemono.injective hij
+        omega),
+      Finset.card_range]
+  have hUcard : (H ∪ T).card = d := by
+    rw [Finset.card_union_of_disjoint hdisj]
+    omega
+  have hUmem : ∀ h ∈ H ∪ T, ∃ i, e i = h := by
+    intro h hh
+    rcases Finset.mem_union.1 hh with h' | h'
+    · exact hHmem h h'
+    · obtain ⟨j, -, hjt⟩ := Finset.mem_image.1 h'
+      exact ⟨K + j, hjt⟩
+  exact RepFree.mono Finset.subset_union_left
+    (hfree (H ∪ T) hUmem hUcard)
+
 end Erdos881
