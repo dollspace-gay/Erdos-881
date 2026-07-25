@@ -390,4 +390,122 @@ theorem hub_dichotomy {A : Set ℕ} {C : ℕ}
     have := hN₀ n (le_trans (le_max_right _ _) hn) H hcard hhubH h hh
     omega
 
+/-- Predicate-generalized cofinal dichotomy: any cofinal family of
+finite witness sets either has a persistent element in the window or
+cofinally avoids the window. -/
+theorem cofinal_dichotomy (Q : ℕ → Finset ℕ → Prop)
+    (hQ : ∀ N, ∃ n, N ≤ n ∧ ∃ H, Q n H) (W : ℕ) :
+    (∃ h, h ≤ W ∧ ∀ N, ∃ n, N ≤ n ∧ ∃ H, Q n H ∧ h ∈ H) ∨
+    (∀ N, ∃ n, N ≤ n ∧ ∃ H, Q n H ∧ ∀ h ∈ H, W < h) := by
+  classical
+  by_cases hmeet : ∀ N, ∃ n, N ≤ n ∧ ∃ H, Q n H ∧ ∃ h ∈ H, h ≤ W
+  · left
+    by_contra hnoper
+    push_neg at hnoper
+    have hex : ∀ h, ∃ Nh, h ≤ W → ∀ n, Nh ≤ n →
+        ∀ H, Q n H → h ∉ H := by
+      intro h
+      by_cases hh : h ≤ W
+      · obtain ⟨N, hN⟩ := hnoper h hh
+        exact ⟨N, fun _ => hN⟩
+      · exact ⟨0, fun h' => absurd h' hh⟩
+    choose g hg using hex
+    obtain ⟨n, hn, H, hQH, h₀, hh₀H, hh₀W⟩ :=
+      hmeet ((Finset.range (W + 1)).sup g)
+    have hgle : g h₀ ≤ (Finset.range (W + 1)).sup g :=
+      Finset.le_sup (Finset.mem_range.2 (by omega))
+    exact hg h₀ hh₀W n (by omega) H hQH hh₀H
+  · right
+    push_neg at hmeet
+    obtain ⟨N₀, hN₀⟩ := hmeet
+    intro N
+    obtain ⟨n, hn, H, hQH⟩ := hQ (max N N₀)
+    refine ⟨n, le_trans (le_max_left _ _) hn, H, hQH, ?_⟩
+    intro h hh
+    have := hN₀ n (le_trans (le_max_right _ _) hn) H hQH h hh
+    omega
+
+/-- Tower extraction, budget induction: from a cofinal family of hubs
+containing a core `S` with excess budget `d`, produce an enlarged core
+`S'` splitting the hubs at the window: everything outside `S'` is
+large. -/
+theorem hub_window_split_aux {A : Set ℕ} {C : ℕ} (W : ℕ) :
+    ∀ d S, S ⊆ Finset.range (W + 1) →
+    (∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ C ∧ IsRepHub A n H ∧
+      S ⊆ H ∧ H.card ≤ S.card + d) →
+    ∃ S' : Finset ℕ, S' ⊆ Finset.range (W + 1) ∧
+      ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ C ∧ IsRepHub A n H ∧
+        S' ⊆ H ∧ ∀ h ∈ H, h ∉ S' → W < h := by
+  classical
+  intro d
+  induction d with
+  | zero =>
+    intro S hSW hfam
+    refine ⟨S, hSW, fun N => ?_⟩
+    obtain ⟨n, hn, H, hcard, hhub, hSH, hbud⟩ := hfam N
+    refine ⟨n, hn, H, hcard, hhub, hSH, fun h hhH hhS => ?_⟩
+    exfalso
+    have hHS : H = S := Finset.Subset.antisymm
+      (by
+        by_contra hns
+        obtain ⟨x, hxH, hxS⟩ := Finset.not_subset.1 hns
+        have h1 : S.card < H.card := by
+          have h2 : S ⊂ H := Finset.ssubset_iff_of_subset hSH |>.2 ⟨x, hxH, hxS⟩
+          exact Finset.card_lt_card h2
+        omega) hSH
+    rw [hHS] at hhH
+    exact hhS hhH
+  | succ d ih =>
+    intro S hSW hfam
+    rcases cofinal_dichotomy
+      (fun n H' => ∃ H : Finset ℕ, H.card ≤ C ∧ IsRepHub A n H ∧
+        S ⊆ H ∧ H.card ≤ S.card + (d + 1) ∧ H' = H \ S)
+      (fun N => by
+        obtain ⟨n, hn, H, hcard, hhub, hSH, hbud⟩ := hfam N
+        exact ⟨n, hn, H \ S, H, hcard, hhub, hSH, hbud, rfl⟩) W
+      with ⟨h, hhW, hper⟩ | hlarge
+    · -- persistent new element h ∉ S: grow the core
+      refine ih (insert h S) ?_ ?_
+      · intro x hx
+        rcases Finset.mem_insert.1 hx with hxh | hxS
+        · exact Finset.mem_range.2 (by omega)
+        · exact hSW hxS
+      · intro N
+        obtain ⟨n, hn, H', ⟨H, hcard, hhub, hSH, hbud, hH'⟩, hhH'⟩ :=
+          hper N
+        subst hH'
+        have hhH : h ∈ H := (Finset.mem_sdiff.1 hhH').1
+        have hhS : h ∉ S := (Finset.mem_sdiff.1 hhH').2
+        refine ⟨n, hn, H, hcard, hhub, ?_, ?_⟩
+        · intro x hx
+          rcases Finset.mem_insert.1 hx with hxh | hxS
+          · rw [hxh]; exact hhH
+          · exact hSH hxS
+        · have : (insert h S).card = S.card + 1 :=
+            Finset.card_insert_of_notMem hhS
+          omega
+    · -- reduced hubs cofinally avoid the window: done with core S
+      refine ⟨S, hSW, fun N => ?_⟩
+      obtain ⟨n, hn, H', ⟨H, hcard, hhub, hSH, hbud, hH'⟩, hlargeH⟩ :=
+        hlarge N
+      subst hH'
+      refine ⟨n, hn, H, hcard, hhub, hSH, fun h hhH hhS => ?_⟩
+      exact hlargeH h (Finset.mem_sdiff.2 ⟨hhH, hhS⟩)
+
+/-- **The hub tower.**  Cofinal bounded hubs split at every window: a
+fixed core `S ⊆ [0, W]` persists while everything else escapes above
+`W`, cofinally.  Combined with `cofinal_bounded_hubs_of_hfail`, a
+counterexample's targets concentrate on a fixed small guardian core
+plus level-scale rotating guards — the team configuration, now derived
+from raw `hfail`. -/
+theorem hub_window_split {A : Set ℕ} {C : ℕ}
+    (hhub : ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ C ∧
+      IsRepHub A n H) (W : ℕ) :
+    ∃ S : Finset ℕ, S ⊆ Finset.range (W + 1) ∧
+      ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ C ∧ IsRepHub A n H ∧
+        S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h := by
+  refine hub_window_split_aux W C ∅ (by simp) fun N => ?_
+  obtain ⟨n, hn, H, hcard, hhub'⟩ := hhub N
+  exact ⟨n, hn, H, hcard, hhub', Finset.empty_subset _, by simpa using hcard⟩
+
 end Erdos881
