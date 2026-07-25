@@ -398,6 +398,38 @@ theorem DestroyedBySet.concentration {A B : Set ℕ}
   rw [hgeq] at hland
   exact ⟨hx'.2.1, hx'.2.2.1, hx'.2.2.2, hland⟩
 
+/-- **Translate exit.**  Combining concentration with the
+two-destroyed avoidance of undeleted elements: some single `u ∈ B`
+translates more than `n` undeleted elements clean out of `A \ B` —
+either the landing point of the fork or the cross-sum itself falls
+into `B ∪ (ℕ \ A)`.  A hereditarily diffuse structure must absorb
+such translate-exits at every scale for every sparse deletion. -/
+theorem DestroyedBySet.translate_exit {A B : Set ℕ}
+    [DecidablePred (· ∈ A)] [DecidablePred (· ∈ B)] {N₀ m n : ℕ}
+    (h0 : 0 ∈ A) (h0B : 0 ∉ B)
+    (hcov : PairCovers A N₀)
+    (hdes : DestroyedBySet A B m)
+    (hcard : ((Finset.range (m + 1)).filter fun b => b ∈ B).card * n <
+      ((Finset.range (m + 1)).filter
+        fun x => x ∈ A ∧ x ∉ B ∧ x + N₀ ≤ m).card) :
+    ∃ u ∈ B, ∃ S : Finset ℕ, n < S.card ∧
+      ∀ x ∈ S, x ∈ A ∧ x ∉ B ∧
+        (m - x - u ∈ B ∨ u + x ∈ B ∨ u + x ∉ A) := by
+  obtain ⟨u, huB, S, hScard, hS⟩ :=
+    hdes.concentration hcov hcard
+  refine ⟨u, huB, S, hScard, ?_⟩
+  intro x hx
+  obtain ⟨hxA, hxB, hxm, hland⟩ := hS x hx
+  refine ⟨hxA, hxB, ?_⟩
+  rcases hland with h | ⟨hwA, htwo⟩
+  · exact Or.inl h
+  · by_cases huxA : u + x ∈ A
+    · by_cases huxB : u + x ∈ B
+      · exact Or.inr (Or.inl huxB)
+      · exact absurd htwo
+          (not_twoDestroyedBySet_of_mem_diff h0 h0B huxA huxB)
+    · exact Or.inr (Or.inr huxA)
+
 /-- **Zero-guarded targets repel element differences.**  If every
 representation of both `m₁ < m₂` passes through `0`, then `m₂ - m₁`
 cannot be an element: the mirror of any positive `x` below `m₁`
