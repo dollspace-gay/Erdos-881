@@ -1465,4 +1465,19 @@ theorem no_three_chain_of_rigid_middle {A : Set ℕ} {x d : ℕ}
   have := hrig x hx (x + 2 * d) hxd (by ring)
   omega
 
+/-- **Partners are doubles-served.**  A partner-served marker''s twin
+requires `q - d ∈ A`; if the partner `q` were itself partner-served,
+its own twin uniqueness would bar exactly that predecessor.  So in
+the forced P/D split, every service edge points from P into D: the
+enemy''s wiring diagram is bipartite with doubles-rigid pair-tops
+serving everyone. -/
+theorem partner_is_doubles_served {A : Set ℕ} {q q' d : ℕ}
+    (hd : 0 < d) (hdq : d ≤ q) (hdq' : d ≤ q') (hq'q : q' ≠ q)
+    (hq' : q' ∈ A) (hq'd : q' - d ∈ A)
+    (hqd : q - d ∈ A)
+    (huniq : ∀ p ∈ A, ∀ r ∈ A, p + r = q + q' - d →
+      (p = q ∧ r = q' - d) ∨ (p = q' - d ∧ r = q)) :
+    False :=
+  no_predecessor_of_partner_service hd hdq hdq' hq'q hq' hq'd huniq hqd
+
 end Erdos881
