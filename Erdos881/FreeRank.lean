@@ -195,4 +195,119 @@ theorem freeNode_extension_iff {A : Set ℕ} {N₀ : ℕ} {P : Finset ℕ}
     · exact hyP h
     · exact hzP h
 
+/-- A stalled node: free, but no extension by a large positive
+basis element stays free.  The rep flood asserts such nodes exist;
+the leaf law identifies their boundary with hubs. -/
+def Stalled (A : Set ℕ) (N₀ X : ℕ) (P : Finset ℕ) : Prop :=
+  FreeNode A N₀ P ∧
+  ∀ b, b ∈ A → 0 < b → X ≤ b → ¬RepFree A N₀ (insert b P)
+
+/-- **Stalledness is hereditary.**  Not-free is upward closed, so
+every tree child of a stalled node is stalled at the same
+threshold: once the dodge is trapped, it stays trapped. -/
+theorem Stalled.of_step {A : Set ℕ} {N₀ X : ℕ} {P Q : Finset ℕ}
+    (hst : Stalled A N₀ X P) (hstep : FreeStep A N₀ Q P) :
+    Stalled A N₀ X Q := by
+  obtain ⟨-, hQnode, c, hcA, hcpos, hcmax, hQeq⟩ := hstep
+  refine ⟨hQnode, fun b hbA hbpos hXb hfree => ?_⟩
+  refine hst.2 b hbA hbpos hXb (RepFree.mono ?_ hfree)
+  rw [hQeq]
+  intro x hx
+  rcases Finset.mem_insert.1 hx with h | h
+  · rw [h]
+    exact Finset.mem_insert_self _ _
+  · exact Finset.mem_insert_of_mem (Finset.mem_insert_of_mem h)
+
+/-- **The stalled zone is shallow.**  Every ascending free chain
+from a stalled node has length at most `|A ∩ [0, X)|`: all its
+picks are distinct positive basis elements below the stall
+threshold.  Stalled nodes sit at finite depth above the tree's hub
+boundary — the flood's envelopes are the finite-rank zone. -/
+theorem stalled_chain_bound {A : Set ℕ} {N₀ X : ℕ}
+    [DecidablePred (· ∈ A)]
+    {P : Finset ℕ} (hst : Stalled A N₀ X P)
+    (f : ℕ → Finset ℕ) (L : ℕ) (hf0 : f 0 = P)
+    (hstep : ∀ i, i < L → FreeStep A N₀ (f (i + 1)) (f i)) :
+    L ≤ ((Finset.range X).filter (· ∈ A)).card := by
+  classical
+  -- every prefix node is stalled
+  have hstall : ∀ i, i ≤ L → Stalled A N₀ X (f i) := by
+    intro i
+    induction i with
+    | zero =>
+      intro _
+      rw [hf0]
+      exact hst
+    | succ i ih =>
+      intro hiL
+      exact (ih (by omega)).of_step (hstep i (by omega))
+  -- extract the picks
+  have hpick : ∀ i, i < L → ∃ b, b ∈ A ∧ 0 < b ∧
+      (∀ h ∈ f i, h < b) ∧ f (i + 1) = insert b (f i) ∧ b < X := by
+    intro i hiL
+    obtain ⟨-, hQnode, b, hbA, hbpos, hbmax, hQeq⟩ := hstep i hiL
+    refine ⟨b, hbA, hbpos, hbmax, hQeq, ?_⟩
+    by_contra hbX
+    push_neg at hbX
+    exact (hstall i (by omega)).2 b hbA hbpos hbX
+      (hQeq ▸ hQnode.2)
+  choose b hbA hbpos hbmax hbins hbX using hpick
+  -- picks are strictly increasing along the chain
+  have hbmem : ∀ i (h : i < L), b i h ∈ f (i + 1) := by
+    intro i h
+    rw [hbins i h]
+    exact Finset.mem_insert_self _ _
+  have hchainmem : ∀ i j (hi : i < L), i < j → j ≤ L →
+      b i hi ∈ f j := by
+    intro i j hi hij
+    induction j with
+    | zero => omega
+    | succ j ih =>
+      intro hjL
+      rcases Nat.lt_or_ge i j with h' | h'
+      · have h1 := ih h' (by omega)
+        rw [hbins j (by omega)]
+        exact Finset.mem_insert_of_mem h1
+      · have h1 : i = j := by omega
+        subst h1
+        exact hbmem i hi
+  have hbinc : ∀ i j (hi : i < L) (hj : j < L), i < j →
+      b i hi < b j hj := by
+    intro i j hi hj hij
+    exact hbmax j hj _ (hchainmem i j hi hij (by omega))
+  -- inject the picks into the window
+  have hinj : ∀ i j (hi : i < L) (hj : j < L),
+      b i hi = b j hj → i = j := by
+    intro i j hi hj heq
+    rcases Nat.lt_trichotomy i j with h | h | h
+    · have := hbinc i j hi hj h
+      omega
+    · exact h
+    · have := hbinc j i hj hi h
+      omega
+  have hmaps : ∀ i (hi : i < L),
+      b i hi ∈ (Finset.range X).filter (· ∈ A) := by
+    intro i hi
+    exact Finset.mem_filter.2 ⟨Finset.mem_range.2 (hbX i hi),
+      hbA i hi⟩
+  -- count
+  have hcard := Finset.card_le_card_of_injOn
+    (f := fun i : ℕ => if h : i < L then b i h else 0)
+    (s := Finset.range L)
+    (t := (Finset.range X).filter (· ∈ A))
+    (by
+      intro i hi
+      have hi' : i < L := Finset.mem_range.1 hi
+      simp only [dif_pos hi']
+      exact hmaps i hi')
+    (by
+      intro i hi j hj heq
+      have hi' : i < L := Finset.mem_range.1 (by simpa using hi)
+      have hj' : j < L := Finset.mem_range.1 (by simpa using hj)
+      have heq' : (if h : i < L then b i h else 0) =
+          (if h : j < L then b j h else 0) := heq
+      rw [dif_pos hi', dif_pos hj'] at heq'
+      exact hinj i j hi' hj' heq')
+  simpa using hcard
+
 end Erdos881
