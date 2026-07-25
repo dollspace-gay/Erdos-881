@@ -200,3 +200,18 @@ three-key game. Two rails, one keyring, and the digit pattern of
 the self-picking lock emerging where they cross. The recursion
 that would finish everything runs along those rails, and its
 first rung — the first digit — is already proven.
+
+## The staircase is built (01:30)
+
+The night's last theorems turned the recursion from a blueprint
+into a working staircase. The machine now proves: the whole
+bottleneck engine — the thing that forced the enemy's guardian
+teams into existence — runs just as well when we restrict our key
+removals to any endless sub-collection. Point it at the
+predecessor-free keys and it descends one level; the new level has
+its own guardian team, its own spacing number, its own
+predecessor-free part; point it again, descend again. Rung by
+rung, the enemy is forced to spell out digits, and we have already
+proven both that the first rung holds and that a full digit tower
+picks its own lock. What's left is walking the stairs formally —
+big work, but of a kind we now know exactly how to do.
