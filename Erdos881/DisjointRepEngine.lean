@@ -1840,4 +1840,81 @@ theorem stable_pair_core_of_minimality {A : Set ℕ} {N₀ : ℕ}
         by simpa using hcard⟩)
   exact ⟨K, S, hsplit⟩
 
+/-- **Canonical order-2 shape**: core and cardinality stabilize
+across all windows, exactly as at order 3. -/
+theorem stable_pair_core_card_of_minimality {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hmin : ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) :
+    ∃ K S c, c ≤ 2 * (K - 1) ∧
+      ∀ W N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+        H.card = c ∧ IsPairHub A n H ∧
+        S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h := by
+  classical
+  obtain ⟨K, S, hsplit⟩ := stable_pair_core_of_minimality hcov hmin
+  set Good : ℕ → ℕ → Prop := fun W c =>
+    ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card = c ∧ IsPairHub A n H ∧
+      S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h with hGood
+  have hdown : ∀ W W' c, W ≤ W' → Good W' c → Good W c := by
+    intro W W' c hWW' hg N
+    obtain ⟨n, hn, H, hcard, hhub, hSH, hrest⟩ := hg N
+    exact ⟨n, hn, H, hcard, hhub, hSH,
+      fun h hh hhS => by have := hrest h hh hhS; omega⟩
+  have hperW : ∀ W, ∃ c, c ≤ 2 * (K - 1) ∧ Good W c := by
+    intro W
+    obtain ⟨c, hc, hcof⟩ := cofinal_value_pigeonhole
+      (P := fun n c => ∃ H : Finset ℕ, H.card = c ∧ IsPairHub A n H ∧
+        S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h) (fun N => by
+        obtain ⟨n, hn, H, hcard, hhub, hSH, hrest⟩ := hsplit W N
+        exact ⟨n, hn, H.card, hcard, H, rfl, hhub, hSH, hrest⟩)
+    exact ⟨c, hc, hcof⟩
+  by_contra hno
+  push_neg at hno
+  have hex : ∀ c, ∃ Wc, c ≤ 2 * (K - 1) → ¬Good Wc c := by
+    intro c
+    by_cases hc : c ≤ 2 * (K - 1)
+    · obtain ⟨W, hW⟩ := hno K S c hc
+      refine ⟨W, fun _ hgood => ?_⟩
+      obtain ⟨N, hN⟩ := hW
+      obtain ⟨n, hn, H, hcard, hhub, hSH, hrest⟩ := hgood N
+      obtain ⟨h, hh, hhS, hhW⟩ := hN n hn H hcard hhub hSH
+      have := hrest h hh hhS
+      omega
+    · exact ⟨0, fun h => absurd h hc⟩
+  choose gW hgW using hex
+  set WS := (Finset.range (2 * (K - 1) + 1)).sup gW with hWS
+  obtain ⟨c, hc, hgood⟩ := hperW WS
+  have h2 : gW c ≤ WS := by
+    rw [hWS]
+    exact Finset.le_sup (Finset.mem_range.2 (by omega))
+  exact hgW c hc (hdown (gW c) WS c h2 hgood)
+
+/-- **The recurring destroyer pair, derived.**  If the canonical
+order-2 core is tight with two elements, minimality alone yields the
+fixed pair `{u, v}` through which ALL pair representations of
+cofinally many targets pass — the 2-destruction configuration the
+entire legacy campaign took as its starting hypothesis. -/
+theorem recurring_destroyer_pair_of_tight_core {A : Set ℕ}
+    {S : Finset ℕ} {c : ℕ}
+    (hsplit : ∀ W N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      H.card = c ∧ IsPairHub A n H ∧
+      S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h)
+    (hceq : c = S.card) (hS2 : S.card = 2) :
+    ∃ u v, u ≠ v ∧ ∀ N, ∃ n, N ≤ n ∧
+      ∀ x ∈ A, ∀ y ∈ A, x + y = n → x = u ∨ x = v ∨ y = u ∨ y = v := by
+  obtain ⟨u, v, huv, hSuv⟩ := Finset.card_eq_two.1 hS2
+  refine ⟨u, v, huv, fun N => ?_⟩
+  obtain ⟨n, hn, H, hcard, hhub, hSH, hrest⟩ := hsplit 0 N
+  have hHS : S = H := Finset.eq_of_subset_of_card_le hSH (by omega)
+  refine ⟨n, hn, fun x hx y hy hxy => ?_⟩
+  rcases hhub x hx y hy hxy with h | h
+  · rw [← hHS, hSuv] at h
+    rcases Finset.mem_insert.1 h with h' | h'
+    · exact Or.inl h'
+    · exact Or.inr (Or.inl (Finset.mem_singleton.1 h'))
+  · rw [← hHS, hSuv] at h
+    rcases Finset.mem_insert.1 h with h' | h'
+    · exact Or.inr (Or.inr (Or.inl h'))
+    · exact Or.inr (Or.inr (Or.inr (Finset.mem_singleton.1 h')))
+
 end Erdos881
