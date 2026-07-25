@@ -430,6 +430,28 @@ theorem DestroyedBySet.translate_exit {A B : Set ℕ}
           (not_twoDestroyedBySet_of_mem_diff h0 h0B huxA huxB)
     · exact Or.inr (Or.inr huxA)
 
+/-- **Anchor supply from doubling elements.**  Infinitely many
+elements with their doubles present, plus one honest nonzero
+unbalanced package, supply anchors dodging every value: for `g ≠ 0`
+take a doubling element above `g` with the trivial package
+`(c, 0, 2c)`; for `g = 0` use the nonzero package. -/
+theorem anchor_abundance_of_doubling {A : Set ℕ}
+    (h0 : 0 ∈ A)
+    (hdb : {c | c ∈ A ∧ 2 * c ∈ A ∧ 0 < c}.Infinite)
+    (hnz : ∃ c ∈ A, 0 < c ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ 0 < w ∧ 0 < w') :
+    ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g := by
+  intro g
+  rcases Nat.eq_zero_or_pos g with hg0 | hg0
+  · obtain ⟨c, hc, hc0, w, hw, w', hw', hww, hwc, hw0, hw'0⟩ := hnz
+    exact ⟨c, hc, hc0, by omega, w, hw, w', hw', hww, hwc,
+      by omega, by omega⟩
+  · obtain ⟨c, hcmem, hcg⟩ := hdb.exists_gt g
+    obtain ⟨hcA, h2cA, hc0⟩ := hcmem
+    exact ⟨c, hcA, hc0, by omega, 0, h0, 2 * c, h2cA,
+      by omega, by omega, by omega, by omega⟩
+
 /-- **Zero-guarded targets repel element differences.**  If every
 representation of both `m₁ < m₂` passes through `0`, then `m₂ - m₁`
 cannot be an element: the mirror of any positive `x` below `m₁`
