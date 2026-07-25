@@ -2471,4 +2471,41 @@ theorem per_deletion_dichotomy_final {A : Set ℕ} {b : ℕ → ℕ}
     obtain ⟨h, hh, hhn⟩ := hesc
     exact ⟨h, hh, hhn⟩
 
+/-- `a` owns `n`: the target sits in `(a, 2a)`, is completed by an
+element, and `a` is its unique big-fiber element.  The atomic unit of
+the per-element guarding supply — the classification statement''s
+formal vocabulary. -/
+def OwnsTarget (A : Set ℕ) (a n : ℕ) : Prop :=
+  a < n ∧ n < 2 * a ∧ n - a ∈ A ∧
+  ∀ y ∈ A, 2 * y > n → y ≤ n → y ≠ a → n - y ∉ A
+
+/-- Ownership steps down: the completion is a smaller element — the
+start of the ownership chain whose infinite coherence is the digit
+expansion. -/
+theorem OwnsTarget.chain_step {A : Set ℕ} {a n : ℕ}
+    (h : OwnsTarget A a n) : n - a ∈ A ∧ n - a < a := by
+  obtain ⟨h1, h2, h3, _⟩ := h
+  exact ⟨h3, by omega⟩
+
+/-- Owned targets are not shared: the unique big fiber pins the
+owner. -/
+theorem OwnsTarget.unique_owner {A : Set ℕ} {a a' n : ℕ}
+    (ha : a ∈ A) (ha' : a' ∈ A)
+    (h : OwnsTarget A a n) (h' : OwnsTarget A a' n) : a = a' := by
+  obtain ⟨h1, h2, h3, h4⟩ := h
+  obtain ⟨h1', h2', h3', h4'⟩ := h'
+  by_contra hne
+  have := h4 a' ha' (by omega) (by omega) (fun hc => hne hc.symm)
+  exact this h3'
+
+/-- **The classification statement** (the single remaining wall), in
+formal vocabulary: universal ownership.  Cofinal per-element supply:
+every sufficiently large element owns a target.  Conjecture (the
+final step of the campaign): universal ownership + covering forces
+digit structure, whose carry repair contradicts `hfail`.  Everything
+below this statement is machine-verified; the lab locates the
+threshold exactly at universality. -/
+def UniversalOwnership (A : Set ℕ) (Ns : ℕ) : Prop :=
+  ∀ a ∈ A, Ns ≤ a → ∃ n, OwnsTarget A a n
+
 end Erdos881
