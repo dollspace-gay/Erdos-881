@@ -120,3 +120,20 @@ two-key game the way clean numbers do — our earlier walls force
 that — but it must ALSO avoid the carry trick that clean numbers
 can't help but offer. Stiff and soft at once. Every wall we build
 now squeezes that contradiction tighter.
+
+## Every enemy has bottleneck doors (00:30)
+
+A brand-new engine, checked by the machine tonight: if the doors of
+the enemy's fortress each have MANY completely separate three-key
+openings, then a cunningly slow-growing set of key removals beats
+the fortress outright — too few removed keys below each door to
+touch all its separate openings. So a real enemy fortress must have
+infinitely many BOTTLENECK doors: doors whose every three-key
+opening passes through the same tiny fixed cluster of keys.
+
+We already knew how to fight two-key bottlenecks — that was the
+whole guardian-pair campaign. Tonight's theorem says bottlenecks of
+some fixed small size are FORCED, straight from the enemy's
+definition. The hunt now has a single shape to chase: tiny key
+clusters that infinitely many doors all depend on. The walls built
+for pairs are being widened to fit.

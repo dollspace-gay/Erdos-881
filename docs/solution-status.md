@@ -269,3 +269,25 @@ trichotomy→dichotomy; complete B1 case tree; fixed-pair pipeline
 (corep dichotomy → fork pigeonhole → channel Ramsey → point splits →
 composition) + engines V2–V9; the Cantor instance
 (erdos881_cantor_full_instance) and the rigidity conflict.
+
+## THE HUB REDUCTION (2026-07-25 00:30, commits 1ce42f1..91030a3)
+
+New first-principles chain, machine-verified:
+
+    hfail (order-3 failure vs every infinite deletion)
+      ⟹ [Engine V10] disjoint-rep growth is bounded: some K
+      ⟹ [hub extraction] cofinal targets carry rep-hubs ≤ 3(K−1)
+
+`cofinal_bounded_hubs_of_hfail` — the counterexample MUST
+concentrate all 3-representations of infinitely many targets on
+constant-size hub sets. The fixed-pair pipeline (corep dichotomy →
+forks → Ramsey → engines) was the |hub| = 2 case; it is now the
+provably general configuration, entered from raw hfail rather than
+through the funnel case analysis. Supporting verified facts:
+marker deletions never fail on their own pair-destroyed targets
+(MarkerRepairs.lean), and the lab finds ZERO singleton/pair-covered
+targets in every buildable covering structure.
+
+Escalation plan: hub tower extraction (iterated pigeonhole →
+fixed small hub part + level-like large part), then the |S|-fold
+generalization of the fixed-pair machinery.
