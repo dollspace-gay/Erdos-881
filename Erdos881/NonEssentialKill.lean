@@ -1014,4 +1014,35 @@ theorem witness_levels_difference_exit {A : Set ℕ} {u L₁ L₂ : ℕ}
   · omega
   · exact hL₁u h
 
+
+/-- **The witness branch still yields element levels.**  Even when the
+cross-sum `u + (m - v)` is a necessity witness of `u` (the W-aligned
+case), non-primitivity of `u` alone pins the corep: the level
+`m - v` is an element, while the witness itself never is.  The
+W-aligned enemy therefore builds a ladder of element levels whose
+`u`-translates all exit `A`. -/
+theorem witness_branch_level_mem {A : Set ℕ} {N₀ u v m : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hprim : ∃ s ∈ A, ∃ t ∈ A, s + t = u ∧ s ≠ u ∧ t ≠ u)
+    (hdes : IsPairDestroyer A u v m)
+    (hu0 : 0 < u) (huv : u < v) (hvm : v < m)
+    (hN₀ : N₀ ≤ m) (h2u : 2 * u ≠ m) (hLu : m - v ≠ u)
+    (hwit : ∀ y ∈ A, ∀ z ∈ A, y + z = u + (m - v) → y = u ∨ z = u) :
+    m - v ∈ A ∧ u + (m - v) ∉ A := by
+  obtain ⟨s, hs, t, ht, hst, hsu, htu⟩ := hprim
+  constructor
+  · have hsv : s ≠ v := by omega
+    have htv : t ≠ v := by omega
+    have hsum0 : s + t = u + 0 := by omega
+    have hd1' : m ≠ 2 * u + 0 := by omega
+    have hd2' : m ≠ u + v + 0 := by omega
+    have h := hdes.pinned_mirror_sharp hcov h0 (by omega) (by omega)
+      (by omega) (by omega)
+      ⟨s, hs, t, ht, hsum0, hsu, hsv, htu, htv⟩
+      hd1' hd2'
+    simpa using h
+  · intro hmem
+    rcases hwit 0 h0 (u + (m - v)) hmem (by omega) with h | h <;>
+      omega
+
 end Erdos881
