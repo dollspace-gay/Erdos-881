@@ -1301,4 +1301,51 @@ theorem fixed_pair_corep_dichotomy {A : Set ℕ} {N₀ u v : ℕ}
     · exact absurd h (hN₁ m (by omega) hdes)
     · exact ⟨m, by omega, hdes, h⟩
 
+
+/-- **Generic fork pigeonhole.**  For any cofinal family of destroyed
+targets of a fixed pair and any fixed reflected point, one fork
+channel recurs cofinally.  Parameterized over the family predicate so
+that successive reflected points can be pigeonholed in sequence,
+refining the family each time — the channel-constancy engine of the
+recurring-pair kill. -/
+theorem fixed_pair_fork_pigeonhole {A : Set ℕ} {N₀ u v z₀ : ℕ}
+    (D : ℕ → Prop)
+    (hcov : PairCovers A N₀)
+    (hcof : ∀ N, ∃ m, N ≤ m ∧ D m)
+    (hDdes : ∀ m, D m → IsPairDestroyer A u v m)
+    (hz : z₀ ∈ A) (hzu : z₀ ≠ u) (hzv : z₀ ≠ v)
+    (hDb : ∀ m, D m → z₀ + N₀ ≤ m) :
+    (∀ N, ∃ m, N ≤ m ∧ D m ∧ m - u - z₀ ∈ A) ∨
+    (∀ N, ∃ m, N ≤ m ∧ D m ∧ m - v - z₀ ∈ A) := by
+  have hfork : ∀ m, D m → m - u - z₀ ∈ A ∨ m - v - z₀ ∈ A := by
+    intro m hDm
+    have hdes := hDdes m hDm
+    have hb := hDb m hDm
+    obtain ⟨y, hy, z, hz', hyz⟩ := hcov (m - z₀) (by omega)
+    rcases hdes.2 z₀ hz y hy z hz' (by omega) with
+      h | h | h | h | h | h
+    · exact absurd h hzu
+    · exact Or.inl (by
+        have : z = m - u - z₀ := by omega
+        exact this ▸ hz')
+    · exact Or.inl (by
+        have : y = m - u - z₀ := by omega
+        exact this ▸ hy)
+    · exact absurd h hzv
+    · exact Or.inr (by
+        have : z = m - v - z₀ := by omega
+        exact this ▸ hz')
+    · exact Or.inr (by
+        have : y = m - v - z₀ := by omega
+        exact this ▸ hy)
+  by_cases hleft : ∀ N, ∃ m, N ≤ m ∧ D m ∧ m - u - z₀ ∈ A
+  · exact Or.inl hleft
+  · push Not at hleft
+    obtain ⟨N₁, hN₁⟩ := hleft
+    refine Or.inr fun N => ?_
+    obtain ⟨m, hm, hDm⟩ := hcof (max N N₁)
+    rcases hfork m hDm with h | h
+    · exact absurd h (hN₁ m (le_trans (le_max_right _ _) hm) hDm)
+    · exact ⟨m, le_trans (le_max_left _ _) hm, hDm, h⟩
+
 end Erdos881
