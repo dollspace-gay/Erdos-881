@@ -776,4 +776,48 @@ theorem zero_residue_exact_partition {A : Set ℕ} {N₀ : ℕ}
         exact this ▸ hy
       · exact absurd ⟨y, hy, z, hz, hyz, hy0, hz0⟩ hnorep
 
+
+/-- **Sum-free elements have trivial two-support**: the only pair
+representation of an element is `0 + n`.  Hence any infinite deletion
+two-destroys its own elements — sum-free partition bases are
+automatically ℵ₀-minimal at order two. -/
+theorem sumfree_element_support {A : Set ℕ} {N₀ n : ℕ}
+    (hcov : PairCovers A N₀)
+    (hres : ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m)
+    (hn : n ∈ A) (hn0 : 0 < n) :
+    ∀ y ∈ A, ∀ z ∈ A, y + z = n → y = 0 ∨ z = 0 := by
+  intro y hy z hz hyz
+  by_contra hne
+  push Not at hne
+  exact zero_residue_sum_free hcov hres n hn hn0
+    ⟨y, hy, z, hz, hyz, by omega, by omega⟩
+
+/-- **Elements always carry positive triples**: for any element `n`
+and any positive element `x` in its window, `n - x` is a non-element
+(sum-freeness), hence a positive pair sum (partition), assembling a
+positive three-term representation of `n` through `x`. -/
+theorem sumfree_element_triple {A : Set ℕ} {N₀ n x : ℕ}
+    (hcov : PairCovers A N₀)
+    (hres : ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m)
+    (hn : n ∈ A) (hx : x ∈ A) (hx0 : 0 < x)
+    (hxn : x + N₀ ≤ n) (hxlt : x < n) :
+    ∃ s ∈ A, ∃ t ∈ A, 0 < s ∧ 0 < t ∧ x + s + t = n := by
+  have hnx : n - x ∉ A ∨ n - x = 0 := by
+    rcases Nat.eq_zero_or_pos (n - x) with h | h
+    · exact Or.inr h
+    · left
+      intro hmem
+      exact zero_residue_sum_free hcov hres n hn (by omega)
+        ⟨x, hx, n - x, hmem, by omega, hx0, h⟩
+  have hnx0 : 0 < n - x := by omega
+  rcases hnx with hnxA | h
+  · have hpair : ∃ s ∈ A, ∃ t ∈ A, s + t = n - x ∧ 0 < s ∧ 0 < t := by
+      by_contra hno
+      exact hnxA
+        ((zero_residue_exact_partition hcov hres (n - x)
+          (by omega)).mpr hno)
+    obtain ⟨s, hs, t, ht, hst, hs0, ht0⟩ := hpair
+    exact ⟨s, hs, t, ht, hs0, ht0, by omega⟩
+  · omega
+
 end Erdos881
