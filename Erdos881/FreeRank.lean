@@ -1724,4 +1724,142 @@ theorem stalled_pool_rank_bound {A : Set ℕ} {N₀ X : ℕ}
     rw [Finset.card_sdiff, Finset.inter_eq_left.mpr hPQ]
   omega
 
+/-- **The crossing edge: narrowing elements exist.**  In a pool
+whose tree has infinite root rank but which contains a stalled node
+(every pool does, by the flood), the path from the root to the
+stalled node crosses from infinite to finite rank at one step:
+some free node `R` of infinite rank has an extension `insert b R`
+of finite rank.  One element annihilates wideness.  The
+infinite-rank room's interior structure, first theorem. -/
+theorem crossing_edge_exists {A : Set ℕ} {N₀ X : ℕ}
+    [DecidablePred (· ∈ A)]
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {P₀ : Set ℕ}
+    (hroot : Ordinal.omega0 ≤
+      ((poolFreeStep_wf h0 hcov hfail P₀).apply ∅).rank)
+    {P : Finset ℕ} (hst : Stalled A N₀ X P)
+    (hPpool : ∀ h ∈ P, h ∈ P₀) :
+    ∃ (R : Finset ℕ) (b : ℕ), FreeNode A N₀ R ∧
+      (∀ h ∈ R, h ∈ P₀) ∧
+      PoolFreeStep A N₀ P₀ (insert b R) R ∧
+      Ordinal.omega0 ≤
+        ((poolFreeStep_wf h0 hcov hfail P₀).apply R).rank ∧
+      ((poolFreeStep_wf h0 hcov hfail P₀).apply
+        (insert b R)).rank < Ordinal.omega0 := by
+  classical
+  set hwf := poolFreeStep_wf h0 hcov hfail P₀ with hhwf
+  set n := P.card with hn
+  set emb := P.orderEmbOfFin hn.symm with hemb
+  set e : ℕ → ℕ := fun j => if h : j < n then emb ⟨j, h⟩ else 0
+    with he
+  have heval : ∀ j (h : j < n), e j = emb ⟨j, h⟩ := by
+    intro j h
+    simp [he, h]
+  have hembP : ∀ (i : Fin n), emb i ∈ P :=
+    fun i => P.orderEmbOfFin_mem hn.symm i
+  set pre : ℕ → Finset ℕ := fun i => (Finset.range i).image e
+    with hpre
+  have hpresub : ∀ i, i ≤ n → pre i ⊆ P := by
+    intro i hin x hx
+    obtain ⟨j, hj, hjx⟩ := Finset.mem_image.1 hx
+    have hj' : j < n := by
+      have := Finset.mem_range.1 hj
+      omega
+    rw [← hjx, heval j hj']
+    exact hembP _
+  have hprenode : ∀ i, i ≤ n → FreeNode A N₀ (pre i) := by
+    intro i hin
+    exact ⟨fun h hh => hst.1.1 h (hpresub i hin hh),
+      RepFree.mono (hpresub i hin) hst.1.2⟩
+  have hprepool : ∀ i, i ≤ n → ∀ h ∈ pre i, h ∈ P₀ :=
+    fun i hin h hh => hPpool h (hpresub i hin hh)
+  have hprestep : ∀ i, i < n →
+      PoolFreeStep A N₀ P₀ (pre (i + 1)) (pre i) := by
+    intro i hin
+    have hstep1 : pre (i + 1) = insert (e i) (pre i) := by
+      show (Finset.range (i + 1)).image e =
+        insert (e i) ((Finset.range i).image e)
+      rw [Finset.range_add_one, Finset.image_insert]
+    refine ⟨⟨hprenode i (by omega), hprenode (i + 1) (by omega),
+      e i, ?_, ?_, ?_, hstep1⟩,
+      fun h hh => hprepool (i + 1) (by omega) h hh⟩
+    · rw [heval i hin]
+      exact (hst.1.1 _ (hembP _)).1
+    · rw [heval i hin]
+      exact (hst.1.1 _ (hembP _)).2
+    · intro h hh
+      obtain ⟨j, hj, hjx⟩ := Finset.mem_image.1 hh
+      have hj' : j < i := Finset.mem_range.1 hj
+      have hjn : j < n := by omega
+      rw [← hjx, heval j hjn, heval i hin]
+      exact emb.strictMono (Fin.mk_lt_mk.2 hj')
+  have hpreP : pre n = P := by
+    apply Finset.eq_of_subset_of_card_le (hpresub n (le_refl n))
+    have hcard : (pre n).card = n := by
+      show ((Finset.range n).image e).card = n
+      rw [Finset.card_image_of_injOn, Finset.card_range]
+      intro i hi j hj hij
+      have hi' : i < n := Finset.mem_range.1 (by simpa using hi)
+      have hj' : j < n := Finset.mem_range.1 (by simpa using hj)
+      rw [heval i hi', heval j hj'] at hij
+      exact congrArg Fin.val (emb.injective hij)
+    omega
+  -- the last prefix has finite rank; find the first finite one
+  have hlast : (hwf.apply (pre n)).rank < Ordinal.omega0 := by
+    rw [hpreP]
+    calc (hwf.apply P).rank
+        ≤ (((Finset.range X).filter (· ∈ A)).card :
+            Ordinal.{0}) :=
+          stalled_pool_rank_bound h0 hcov hfail hst hPpool
+      _ < Ordinal.omega0 := Ordinal.nat_lt_omega0 _
+  have hex : ∃ i, i ≤ n ∧ (hwf.apply (pre i)).rank <
+      Ordinal.omega0 := ⟨n, le_refl n, hlast⟩
+  have h0pre : pre 0 = ∅ := by
+    show (Finset.range 0).image e = ∅
+    simp
+  -- minimal such index is positive
+  have hspec := Nat.find_spec hex
+  set i₀ := Nat.find hex with hi₀
+  obtain ⟨hi₀n, hi₀fin⟩ := hspec
+  have hi₀pos : 0 < i₀ := by
+    rcases Nat.eq_zero_or_pos i₀ with h | h
+    · exfalso
+      have := hi₀fin
+      rw [h, h0pre] at this
+      exact absurd hroot (by
+        push_neg
+        exact this)
+    · exact h
+  have hprev : ¬((hwf.apply (pre (i₀ - 1))).rank <
+      Ordinal.omega0) := by
+    intro hfin
+    have := Nat.find_min hex (m := i₀ - 1) (by omega)
+    exact this ⟨by omega, hfin⟩
+  push_neg at hprev
+  obtain ⟨j₀, hj₀⟩ : ∃ j₀, i₀ = j₀ + 1 := ⟨i₀ - 1, by omega⟩
+  have hj₀prev : ¬((hwf.apply (pre j₀)).rank <
+      Ordinal.omega0) := by
+    have h1 : j₀ = i₀ - 1 := by omega
+    rw [h1]
+    exact fun h => absurd h (by
+      push_neg
+      exact hprev)
+  push_neg at hj₀prev
+  have hstep := hprestep j₀ (by omega)
+  have hkey : insert (e j₀) (pre j₀) = pre (j₀ + 1) := by
+    show _ = (Finset.range (j₀ + 1)).image e
+    rw [Finset.range_add_one, Finset.image_insert]
+  have hfin' : (hwf.apply (pre (j₀ + 1))).rank <
+      Ordinal.omega0 := by
+    rw [← hj₀]
+    exact hi₀fin
+  refine ⟨pre j₀, e j₀, hprenode j₀ (by omega),
+    hprepool j₀ (by omega), ?_, hj₀prev, ?_⟩
+  · rw [hkey]
+    exact hstep
+  · rw [hkey]
+    exact hfin'
+
 end Erdos881
