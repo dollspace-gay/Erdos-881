@@ -1380,4 +1380,25 @@ theorem pair_escape_dichotomy {A B : Set ℕ}
     refine ⟨F.sup Np, fun m hm p hp h1 h2 => ?_⟩
     exact hNp p m (le_trans (Finset.le_sup hp) hm) h1 h2
 
+
+/-- **Spread pairs supply fresh pairs forever.**  In the escape case,
+every finite set of pairs is eventually avoided, so the funnel supply
+must keep producing brand-new pairs with late targets — the input for
+second-level Ramsey extraction. -/
+theorem spread_pairs_extraction {A B : Set ℕ}
+    (hpf : ∀ N, ∃ m, N ≤ m ∧ ∃ u ∈ B, ∃ v ∈ B,
+      IsPairDestroyer A u v m)
+    (hesc : ∀ F : Finset (ℕ × ℕ), ∃ N, ∀ m, N ≤ m →
+      ∀ p ∈ F, p.1 ∈ B → p.2 ∈ B →
+        ¬ IsPairDestroyer A p.1 p.2 m) :
+    ∀ (F : Finset (ℕ × ℕ)) (N : ℕ), ∃ m, N ≤ m ∧
+      ∃ u ∈ B, ∃ v ∈ B, IsPairDestroyer A u v m ∧ (u, v) ∉ F := by
+  intro F N
+  obtain ⟨N₁, hN₁⟩ := hesc F
+  obtain ⟨m, hm, u, huB, v, hvB, hdes⟩ := hpf (max N N₁)
+  refine ⟨m, le_trans (le_max_left _ _) hm, u, huB, v, hvB, hdes, ?_⟩
+  intro hmem
+  exact hN₁ m (le_trans (le_max_right _ _) hm) (u, v) hmem huB hvB
+    hdes
+
 end Erdos881
