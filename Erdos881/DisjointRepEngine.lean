@@ -2340,4 +2340,49 @@ theorem cofinal_subset_pigeonhole {Q : ℕ → Finset ℕ → Prop}
     exact Finset.le_sup (Finset.mem_powerset.2 hHF)
   exact hg H hHF n (by omega) hQH
 
+/-- **The per-deletion window core.**  For any deletion with cofinal
+failing targets: at every window, one exact marker subset
+`S ⊆ B ∩ [0, W]` recurs as the small part of minimal failing hubs.
+The enemy''s per-deletion guardian structure is canonical over OUR
+marker alphabet — the window analysis the constant-vs-log gap
+blocked, now unconditional. -/
+theorem per_deletion_window_core {A B : Set ℕ}
+    [DecidablePred (· ∈ B)]
+    (hfailB : ∀ N, ∃ n, N ≤ n ∧
+      ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = n →
+        x ∈ B ∨ y ∈ B ∨ z ∈ B) (W : ℕ) :
+    ∃ S ⊆ (Finset.range (W + 1)).filter (· ∈ B),
+      ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+        IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        H ⊆ (Finset.range (n + 1)).filter (· ∈ B) ∧
+        H ∩ Finset.range (W + 1) =
+          S ∩ Finset.range (W + 1) := by
+  classical
+  have hQ : ∀ N, ∃ n, N ≤ n ∧ ∃ S,
+      S ⊆ (Finset.range (W + 1)).filter (· ∈ B) ∧
+      (∃ H : Finset ℕ, IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        H ⊆ (Finset.range (n + 1)).filter (· ∈ B) ∧
+        H ∩ Finset.range (W + 1) = S ∩ Finset.range (W + 1)) := by
+    intro N
+    obtain ⟨n, hn, hdead⟩ := hfailB N
+    have hhub := failing_hub_subset_deletion (A := A) (B := B) hdead
+    obtain ⟨H, hHsub, hHhub, hHmin⟩ := exists_minimal_hub hhub
+    refine ⟨n, hn, H ∩ Finset.range (W + 1), ?_, H, hHhub, hHmin, ?_, ?_⟩
+    · intro x hx
+      obtain ⟨hxH, hxW⟩ := Finset.mem_inter.1 hx
+      have := hHsub hxH
+      obtain ⟨hxn, hxB⟩ := Finset.mem_filter.1 this
+      exact Finset.mem_filter.2 ⟨hxW, hxB⟩
+    · exact hHsub
+    · rw [Finset.inter_assoc, Finset.inter_self]
+  obtain ⟨S, hSF, hrec⟩ := cofinal_subset_pigeonhole
+    (Q := fun n S => ∃ H : Finset ℕ, IsRepHub A n H ∧
+      (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      H ⊆ (Finset.range (n + 1)).filter (· ∈ B) ∧
+      H ∩ Finset.range (W + 1) = S ∩ Finset.range (W + 1))
+    (F := (Finset.range (W + 1)).filter (· ∈ B)) hQ
+  exact ⟨S, hSF, hrec⟩
+
 end Erdos881
