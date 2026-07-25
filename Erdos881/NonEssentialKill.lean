@@ -1713,4 +1713,145 @@ theorem fixed_pair_v_engine_feed {A : Set ℕ} {N₀ c w w' : ℕ}
     hc hc0 hcL hwA hw'A hww hwc hLc hLw hLw'
     (fun i j hij => hLL i j hij)
 
+
+
+
+/-- Generic doubling-growth sequence extraction: any cofinal predicate
+family yields a sequence with prescribed growth, carrying the
+predicate at every term. -/
+theorem generic_growth_sequence {v s : ℕ} (D : ℕ → Prop)
+    (hrec : ∀ N, ∃ m, N ≤ m ∧ D m) :
+    ∃ M : ℕ → ℕ, (∀ k, D (M k)) ∧
+      (∀ k, 2 * M k + v + 1 ≤ M (k + 1)) ∧ s ≤ M 0 := by
+  classical
+  choose f hf1 hf2 using hrec
+  set M : ℕ → ℕ := fun k =>
+    Nat.rec (f s) (fun _ prev => f (2 * prev + v + 1)) k with hM
+  have hMs : ∀ k, M (k + 1) = f (2 * M k + v + 1) := fun _ => rfl
+  refine ⟨M, fun k => ?_, fun k => ?_, hf1 s⟩
+  · cases k with
+    | zero => exact hf2 s
+    | succ k => exact hf2 (2 * M k + v + 1)
+  · have := hf1 (2 * M k + v + 1)
+    have hs : M (k + 1) = f (2 * M k + v + 1) := hMs k
+    omega
+
+/-- **The fixed-pair composition.**  From cofinal v-corep targets:
+either all four channels realize v on a common infinite index set and
+the engine kills, or some family is pinned to the u-channel — the
+structured offset data for the remaining routes. -/
+theorem fixed_pair_composition {A : Set ℕ} {N₀ u v c w w' : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hu0 : 0 < u) (huv : u < v)
+    (hrec : ∀ N, ∃ m, N ≤ m ∧ IsPairDestroyer A u v m ∧ m - v ∈ A)
+    (hc : c ∈ A) (hc0 : 0 < c) (hcu : c ≠ u) (hcv : c ≠ v)
+    (hwA : w ∈ A) (hw'A : w' ∈ A) (hww : w + w' = 2 * c)
+    (hwc : w ≠ c) (hwu : w ≠ u) (hwv : w ≠ v)
+    (hw'u : w' ≠ u) (hw'v : w' ≠ v) :
+    (∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n) ∨
+    (∃ M : ℕ → ℕ, (∀ k, IsPairDestroyer A u v (M k) ∧ M k - v ∈ A) ∧
+      ∃ T : Set ℕ, T.Infinite ∧
+        ((∀ j ∈ T, ∀ k ∈ T, j < k → M k - u - (M j - v) ∈ A) ∨
+         (∀ k ∈ T, M k - u - c ∈ A) ∨
+         (∀ k ∈ T, M k - u - w ∈ A) ∨
+         (∀ k ∈ T, M k - u - w' ∈ A))) := by
+  classical
+  set Q := u + v + N₀ + 2 * c + 3 with hQ
+  set D : ℕ → Prop := fun m => (IsPairDestroyer A u v m ∧ m - v ∈ A)
+    ∧ Q + v ≤ m with hD
+  obtain ⟨M, hMD, hgrow, hM0⟩ :=
+    generic_growth_sequence (v := v) (s := 0) D (fun N => by
+      obtain ⟨m, hm, h1, h2⟩ := hrec (N + Q + v)
+      exact ⟨m, by omega, ⟨h1, h2⟩, by omega⟩)
+  have hM : ∀ k, IsPairDestroyer A u v (M k) ∧ M k - v ∈ A :=
+    fun k => (hMD k).1
+  have hMQ : ∀ k, Q ≤ M k - v := fun k => by
+    have := (hMD k).2
+    omega
+  have hbig : ∀ k, u + v + N₀ < M k - v := fun k => by
+    have := hMQ k
+    omega
+  -- LL channel Ramsey
+  obtain ⟨S, hSinf, hSchan⟩ :=
+    fixed_pair_channel_ramsey hcov M hM hgrow hbig huv
+  rcases hSchan with hLLv | hLLu
+  · -- LL is v-mono: split the three points
+    have hMk : ∀ k, IsPairDestroyer A u v (M k) := fun k => (hM k).1
+    obtain ⟨T₁, hT₁S, hT₁inf, hc₁⟩ :=
+      fixed_pair_point_channel hcov M S hMk hc hcu hcv
+        (fun k => by have := hMQ k; omega) hSinf
+    rcases hc₁ with hcv₁ | hcu₁
+    · obtain ⟨T₂, hT₂T₁, hT₂inf, hc₂⟩ :=
+        fixed_pair_point_channel hcov M T₁ hMk hwA hwu hwv
+          (fun k => by have := hMQ k; omega) hT₁inf
+      rcases hc₂ with hwv₂ | hwu₂
+      · obtain ⟨T₃, hT₃T₂, hT₃inf, hc₃⟩ :=
+          fixed_pair_point_channel hcov M T₂ hMk hw'A hw'u hw'v
+            (fun k => by have := hMQ k; omega) hT₂inf
+        rcases hc₃ with hw'v₃ | hw'u₃
+        · -- ALL-V: the engine fires
+          left
+          obtain ⟨L, hLmono, hLA, hLgrow, hLL, hLwit⟩ :=
+            fixed_pair_v_channel_family M T₃ hM hgrow
+              (fun k => by have := hMQ k; omega) hT₃inf
+              (fun j hj k hk hjk =>
+                hLLv j (hT₁S (hT₂T₁ (hT₃T₂ hj)))
+                  k (hT₁S (hT₂T₁ (hT₃T₂ hk))) hjk)
+          obtain ⟨ψ, hψmono, hψT⟩ := infinite_subset_mono_enum hT₃inf
+          -- rebuild the four families on the enumeration of T₃
+          refine fixed_pair_v_engine_feed
+            (fun i => M (ψ i) - v) h0 hcov ?_ ?_ hc hc0 ?_
+            hwA hw'A hww hwc ?_ ?_ ?_ ?_
+          · intro i j hij
+            have h1 : ψ i < ψ j := hψmono hij
+            have hMmono : StrictMono M := by
+              apply strictMono_nat_of_lt_succ
+              intro k
+              have := hgrow k
+              omega
+            have h2 : M (ψ i) < M (ψ j) := hMmono h1
+            have h5 := hMQ (ψ i)
+            show M (ψ i) - v < M (ψ j) - v
+            omega
+          · intro i
+            have h1 : ψ i < ψ (i + 1) := hψmono (by omega)
+            have hMmono : StrictMono M := by
+              apply strictMono_nat_of_lt_succ
+              intro k
+              have := hgrow k
+              omega
+            have h3 := hgrow (ψ i)
+            have h4 : M (ψ i + 1) ≤ M (ψ (i + 1)) :=
+              hMmono.monotone (by omega)
+            have h5 := hMQ (ψ i)
+            show 2 * (M (ψ i) - v) < M (ψ (i + 1)) - v
+            omega
+          · have := hMQ (ψ 0)
+            show c + N₀ < M (ψ 0) - v
+            omega
+          · intro i
+            have h := hcv₁ (ψ i) (hT₂T₁ (hT₃T₂ (hψT i)))
+            show M (ψ i) - v - c ∈ A
+            exact h
+          · intro i
+            have h := hwv₂ (ψ i) (hT₃T₂ (hψT i))
+            show M (ψ i) - v - w ∈ A
+            exact h
+          · intro i
+            have h := hw'v₃ (ψ i) (hψT i)
+            show M (ψ i) - v - w' ∈ A
+            exact h
+          · intro i j hij
+            have h1 : ψ i < ψ j := hψmono hij
+            exact hLLv (ψ i) (hT₁S (hT₂T₁ (hT₃T₂ (hψT i))))
+              (ψ j) (hT₁S (hT₂T₁ (hT₃T₂ (hψT j)))) h1
+        · exact Or.inr ⟨M, hM, T₃, hT₃inf,
+            Or.inr (Or.inr (Or.inr hw'u₃))⟩
+      · exact Or.inr ⟨M, hM, T₂, hT₂inf,
+          Or.inr (Or.inr (Or.inl hwu₂))⟩
+    · exact Or.inr ⟨M, hM, T₁, hT₁inf, Or.inr (Or.inl hcu₁)⟩
+  · exact Or.inr ⟨M, hM, S, hSinf, Or.inl hLLu⟩
+
 end Erdos881
