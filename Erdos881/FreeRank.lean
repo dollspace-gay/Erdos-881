@@ -2926,4 +2926,48 @@ theorem hereditarilyFree_iff_uniform {A : Set ℕ} {N₀ : ℕ}
     exact ⟨x, hx, y, hy, z, hz, hsum, fun h => hxB (hP x h),
       fun h => hyB (hP y h), fun h => hzB (hP z h)⟩
 
+/-- **The Sidon door, full circle.**  A globally pair-bounded
+covering set is never a counterexample: the branch template
+supplies a hereditarily free set, and the characterization
+converts it into a surviving deletion.  The constructive
+counterpart of `r2_unbounded_of_hfail`, composed end to end. -/
+theorem sidon_not_counterexample {A : Set ℕ} {N₀ C : ℕ}
+    [DecidablePred (· ∈ A)]
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hC : ∀ v, N₀ ≤ v → ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A)).card ≤ C) :
+    ¬(∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) := by
+  intro hfail
+  exact (hfail_iff_no_hereditarily_free h0 hcov).1 hfail
+    (sidon_has_branch h0 hcov hC)
+
+/-- Pair-level uniformity: hereditary pair-freeness equals uniform
+whole-set pair avoidance. -/
+theorem hereditarilyPairFree_iff_uniform {A : Set ℕ} {N₀ : ℕ}
+    {B : Set ℕ} (hBinf : B.Infinite)
+    (hBpos : ∀ b ∈ B, b ∈ A ∧ 0 < b) :
+    HereditarilyPairFree A N₀ B ↔
+    ∀ m, N₀ ≤ m → ∃ x ∈ A, ∃ y ∈ A, x + y = m ∧
+      x ∉ B ∧ y ∉ B := by
+  classical
+  constructor
+  · rintro ⟨-, -, hfree⟩ m hm
+    obtain ⟨x, hx, y, hy, hsum, hxP, hyP⟩ :=
+      hfree ((Finset.range (m + 1)).filter (fun b => b ∈ B))
+        (fun h hh => (Finset.mem_filter.1 hh).2) m hm
+    have havoid : ∀ w, w ≤ m →
+        w ∉ (Finset.range (m + 1)).filter (fun b => b ∈ B) →
+        w ∉ B := by
+      intro w hwm hwP hwB
+      exact hwP (Finset.mem_filter.2
+        ⟨Finset.mem_range.2 (by omega), hwB⟩)
+    exact ⟨x, hx, y, hy, hsum, havoid x (by omega) hxP,
+      havoid y (by omega) hyP⟩
+  · intro huni
+    refine ⟨hBinf, hBpos, fun P hP m hm => ?_⟩
+    obtain ⟨x, hx, y, hy, hsum, hxB, hyB⟩ := huni m hm
+    exact ⟨x, hx, y, hy, hsum, fun h => hxB (hP x h),
+      fun h => hyB (hP y h)⟩
+
 end Erdos881
