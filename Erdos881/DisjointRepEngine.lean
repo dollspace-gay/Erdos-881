@@ -6662,4 +6662,63 @@ theorem rep_pair_clique_or_triple_teams {A : Set ℕ} {N₀ : ℕ}
         exact hhub
     · exact hge
 
+/-- **Clique rows must march.**  In a rep-pair clique, no cofinal
+family of rows can keep a single stable target served by unboundedly
+many columns: a stable row target `n` eventually sees columns
+`e j > n`, which cannot be parts of any representation, so every
+representation is forced onto the row element alone — a positive
+singleton hub.  Cofinally many such rows contradict the
+private-stream kill.  The clique''s target array escapes upward on
+almost every row. -/
+theorem clique_rows_march {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (e : ℕ → ℕ) (hemono : StrictMono e) (hepos : ∀ i, 0 < e i) :
+    ¬(∀ X, ∃ i, X ≤ i ∧ ∃ n, N₀ ≤ n ∧ ∀ J, ∃ j, J ≤ j ∧ i < j ∧
+      IsRepHub A n {e i, e j}) := by
+  intro hstable
+  refine singleton_hubs_refuted h0 hcov hanchor hfail ?_
+  intro N
+  obtain ⟨i, hNi, n, hnN₀, hrow⟩ := hstable N
+  -- a column beyond the target
+  obtain ⟨j, hJj, hij, hhub⟩ := hrow (n + 1)
+  have hejn : n < e j := by
+    have h1 : n + 1 ≤ j := hJj
+    have h2 : j ≤ e j := hemono.le_apply
+    omega
+  -- every representation must hit the row element
+  have hsing : IsRepHub A n {e i} := by
+    intro x hx y hy z hz hsum
+    rcases hhub x hx y hy z hz hsum with h | h | h
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact Or.inl (Finset.mem_singleton.2 h')
+      · have := Finset.mem_singleton.1 h'
+        omega
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact Or.inr (Or.inl (Finset.mem_singleton.2 h'))
+      · have := Finset.mem_singleton.1 h'
+        omega
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact Or.inr (Or.inr (Finset.mem_singleton.2 h'))
+      · have := Finset.mem_singleton.1 h'
+        omega
+  -- the row element sits below its target via a hit representation
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hnN₀
+  have hein : e i ≤ n := by
+    rcases hsing x hx y hy 0 h0 (by omega) with h | h | h
+    · have := Finset.mem_singleton.1 h
+      omega
+    · have := Finset.mem_singleton.1 h
+      omega
+    · have := Finset.mem_singleton.1 h
+      have := hepos i
+      omega
+  have hNei : N ≤ n := by
+    have h1 : i ≤ e i := hemono.le_apply
+    omega
+  exact ⟨n, hNei, e i, hepos i, hsing⟩
+
 end Erdos881
