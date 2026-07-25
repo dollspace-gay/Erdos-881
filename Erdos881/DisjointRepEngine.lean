@@ -1749,4 +1749,95 @@ theorem cofinal_bounded_pairHubs_of_minimality {A : Set ℕ} {N₀ : ℕ}
   obtain ⟨H, hHcard, hHhub⟩ := pairHub_of_no_disjointPairReps hno
   exact ⟨n, hn, H, hHcard, hHhub⟩
 
+/-- Predicate-generic stable core: the budget descent works for any
+hub notion. -/
+theorem stable_core_generic {C : ℕ} (Hub : ℕ → Finset ℕ → Prop) :
+    ∀ d S,
+    (∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ C ∧ Hub n H ∧
+      S ⊆ H ∧ H.card ≤ S.card + d) →
+    ∃ S' : Finset ℕ, S ⊆ S' ∧
+      ∀ W N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ C ∧
+        Hub n H ∧ S' ⊆ H ∧
+        ∀ h ∈ H, h ∉ S' → W < h := by
+  classical
+  intro d
+  induction d with
+  | zero =>
+    intro S hfam
+    refine ⟨S, Finset.Subset.refl S, fun W N => ?_⟩
+    obtain ⟨n, hn, H, hcard, hhub, hSH, hbud⟩ := hfam N
+    refine ⟨n, hn, H, hcard, hhub, hSH, fun h hhH hhS => ?_⟩
+    exfalso
+    have hHS : H = S := Finset.Subset.antisymm
+      (by
+        by_contra hns
+        obtain ⟨x, hxH, hxS⟩ := Finset.not_subset.1 hns
+        have h1 : S.card < H.card := Finset.card_lt_card
+          (Finset.ssubset_iff_of_subset hSH |>.2 ⟨x, hxH, hxS⟩)
+        omega) hSH
+    rw [hHS] at hhH
+    exact hhS hhH
+  | succ d ih =>
+    intro S hfam
+    by_cases hstable : ∀ W N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+        H.card ≤ C ∧ Hub n H ∧ S ⊆ H ∧
+        ∀ h ∈ H, h ∉ S → W < h
+    · exact ⟨S, Finset.Subset.refl S, hstable⟩
+    · push_neg at hstable
+      obtain ⟨W₁, N₁, hW₁⟩ := hstable
+      rcases cofinal_dichotomy
+        (fun n H' => ∃ H : Finset ℕ, H.card ≤ C ∧ Hub n H ∧
+          S ⊆ H ∧ H.card ≤ S.card + (d + 1) ∧ H' = H \ S)
+        (fun N => by
+          obtain ⟨n, hn, H, hcard, hhub, hSH, hbud⟩ := hfam N
+          exact ⟨n, hn, H \ S, H, hcard, hhub, hSH, hbud, rfl⟩) W₁
+        with ⟨h, hhW, hper⟩ | hlarge
+      · obtain ⟨S', hS'sub, hS'split⟩ := ih (insert h S) (fun N => by
+          obtain ⟨n, hn, H', ⟨H, hcard, hhub, hSH, hbud, hH'⟩, hhH'⟩ :=
+            hper N
+          subst hH'
+          have hhH : h ∈ H := (Finset.mem_sdiff.1 hhH').1
+          have hhS : h ∉ S := (Finset.mem_sdiff.1 hhH').2
+          refine ⟨n, hn, H, hcard, hhub, ?_, ?_⟩
+          · intro x hx
+            rcases Finset.mem_insert.1 hx with hxh | hxS
+            · rw [hxh]; exact hhH
+            · exact hSH hxS
+          · have : (insert h S).card = S.card + 1 :=
+              Finset.card_insert_of_notMem hhS
+            omega)
+        exact ⟨S', Finset.Subset.trans (Finset.subset_insert h S) hS'sub,
+          hS'split⟩
+      · exfalso
+        obtain ⟨n, hn, H', ⟨H, hcard, hhub, hSH, hbud, hH'⟩, hlargeH⟩ :=
+          hlarge N₁
+        subst hH'
+        obtain ⟨h, hhH, hhS, hhW⟩ := hW₁ n hn H hcard hhub hSH
+        have := hlargeH h (Finset.mem_sdiff.2 ⟨hhH, hhS⟩)
+        omega
+
+/-- **The canonical 2-destroyer core.**  From minimality alone: one
+fixed finite set `S₂` such that at every window, cofinally many
+targets have ALL their pair representations through `S₂` plus
+elements above the window.  The 2-destruction mandate the legacy
+campaign assumed (recurring destroyer pairs, guardian teams) is now
+DERIVED, canonical, and stable across all scales — the order-2 rail
+of the digit recursion. -/
+theorem stable_pair_core_of_minimality {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hmin : ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) :
+    ∃ K, ∃ S : Finset ℕ, ∀ W N, ∃ n, N ≤ n ∧
+      ∃ H : Finset ℕ, H.card ≤ 2 * (K - 1) ∧ IsPairHub A n H ∧
+      S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h := by
+  classical
+  obtain ⟨K, hK⟩ := cofinal_bounded_pairHubs_of_minimality hcov hmin
+  obtain ⟨S, -, hsplit⟩ := stable_core_generic
+    (C := 2 * (K - 1)) (fun n H => IsPairHub A n H)
+    (2 * (K - 1)) ∅ (fun N => by
+      obtain ⟨n, hn, H, hcard, hhub⟩ := hK N
+      exact ⟨n, hn, H, hcard, hhub, Finset.empty_subset _,
+        by simpa using hcard⟩)
+  exact ⟨K, S, hsplit⟩
+
 end Erdos881
