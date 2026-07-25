@@ -1105,4 +1105,79 @@ theorem perfect_world_small_sets_free {A : Set ℕ} {N₀ : ℕ}
   exact RepFree.mono Finset.subset_union_left
     (hfree (H ∪ T) hUmem hUcard)
 
+/-- **Perfect worlds have root rank exactly `d`.**  The free
+`d`-subsets certify rank `≥ d`; a free `(d+1)`-set would contradict
+completeness of the hub hypergraph, capping the rank at `d`.  The
+first exact rank computation in the framework — and since every
+infinite subsequence of a perfect world is a perfect world at the
+same level, perfect worlds are rank-stable: no intra-world pool
+operation can drop the rank.  The descent must engage the outside. -/
+theorem perfect_world_rank {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {e : ℕ → ℕ} {d : ℕ} (hemono : StrictMono e)
+    (heA : ∀ j, e j ∈ A) (hepos : ∀ j, 0 < e j)
+    (hfree : ∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e i = h) → S.card = d →
+      RepFree A N₀ S)
+    (hhub : ∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e i = h) →
+      S.card = d + 1 → ¬RepFree A N₀ S) :
+    ((poolFreeStep_wf h0 hcov hfail (Set.range e)).apply ∅).rank
+      = (d : Ordinal.{0}) := by
+  classical
+  apply le_antisymm
+  · -- rank ≤ d: a free (d+1)-set from the pool would contradict hhub
+    by_contra hgt
+    push_neg at hgt
+    have hge : ((d + 1 : ℕ) : Ordinal.{0}) ≤
+        ((poolFreeStep_wf h0 hcov hfail (Set.range e)).apply
+          ∅).rank := by
+      have h1 : ((d : ℕ) : Ordinal.{0}) <
+          ((poolFreeStep_wf h0 hcov hfail (Set.range e)).apply
+            ∅).rank := hgt
+      have h2 : ((d + 1 : ℕ) : Ordinal.{0}) =
+          Order.succ ((d : ℕ) : Ordinal.{0}) := by
+        rw [Nat.cast_succ, Ordinal.add_one_eq_succ]
+      rw [h2]
+      exact Order.succ_le_of_lt h1
+    obtain ⟨Q, hQnode, hQpool, hQcard⟩ := rank_ge_imp_free_set
+      h0 hcov hfail (d + 1) ∅
+      ⟨fun h hh => absurd hh (Finset.notMem_empty h), by
+        intro m hm
+        obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
+        exact ⟨x, hx, y, hy, 0, h0, by omega,
+          Finset.notMem_empty x, Finset.notMem_empty y,
+          Finset.notMem_empty 0⟩⟩
+      (fun h hh => absurd hh (Finset.notMem_empty h)) hge
+    refine hhub Q ?_ (by simpa using hQcard) hQnode.2
+    intro h hh
+    exact hQpool h hh
+  · -- rank ≥ d: any free d-subset of the stream certifies it
+    rcases Nat.eq_zero_or_pos d with hd0 | hdpos
+    · subst hd0
+      simp
+    · -- build a free d-set: the first d stream values
+      set S := (Finset.range d).image e with hS
+      have hSmem : ∀ h ∈ S, ∃ i, e i = h := by
+        intro h hh
+        obtain ⟨j, -, hjh⟩ := Finset.mem_image.1 hh
+        exact ⟨j, hjh⟩
+      have hScard : S.card = d := by
+        rw [hS, Finset.card_image_of_injective _ hemono.injective,
+          Finset.card_range]
+      have hSfree : RepFree A N₀ S := hfree S hSmem hScard
+      have hSnode : FreeNode A N₀ S := by
+        refine ⟨?_, hSfree⟩
+        intro h hh
+        obtain ⟨i, hi⟩ := hSmem h hh
+        rw [← hi]
+        exact ⟨heA i, hepos i⟩
+      have hSpool : ∀ h ∈ S, h ∈ Set.range e := by
+        intro h hh
+        obtain ⟨i, hi⟩ := hSmem h hh
+        exact ⟨i, hi⟩
+      have := free_set_card_le_rank h0 hcov hfail hSnode hSpool
+      rw [hScard] at this
+      exact this
+
 end Erdos881
