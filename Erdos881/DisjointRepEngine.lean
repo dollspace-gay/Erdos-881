@@ -3413,21 +3413,21 @@ theorem dodge_or_trap {A : Set ℕ} {N0 : ℕ}
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ F : Finset ℕ, (∀ h ∈ F, h ∈ A) ∧ ∃ X, ∀ a ∈ A, X ≤ a →
-      ∃ n, ∃ H : Finset ℕ, IsRepHub A n H ∧ a ∈ H ∧
+      ∃ n, N0 ≤ n ∧ ∃ H : Finset ℕ, IsRepHub A n H ∧ a ∈ H ∧
         ∀ h ∈ H, h ∈ F ∨ h = a := by
   classical
   by_contra hnotrap
   push_neg at hnotrap
   have hpick : ∀ (F : Finset ℕ) (X : ℕ), ∃ a, a ∈ A ∧ X ≤ a ∧
       ((∀ h ∈ F, h ∈ A) →
-        ¬∃ n, ∃ H : Finset ℕ, IsRepHub A n H ∧ a ∈ H ∧
+        ¬∃ n, N0 ≤ n ∧ ∃ H : Finset ℕ, IsRepHub A n H ∧ a ∈ H ∧
           ∀ h ∈ H, h ∈ F ∨ h = a) := by
     intro F X
     by_cases hFA : ∀ h ∈ F, h ∈ A
     · obtain ⟨a, ha, hXa, hno⟩ := hnotrap F hFA X
       refine ⟨a, ha, hXa, fun _ => ?_⟩
-      rintro ⟨n, H, hhub, haH, hsub⟩
-      obtain ⟨h, hhH, hhF, hha⟩ := hno n H hhub haH
+      rintro ⟨n, hnN, H, hhub, haH, hsub⟩
+      obtain ⟨h, hhH, hhF, hha⟩ := hno n hnN H hhub haH
       rcases hsub h hhH with h' | h'
       · exact hhF h'
       · exact hha h'
@@ -3479,17 +3479,17 @@ theorem dodge_or_trap {A : Set ℕ} {N0 : ℕ}
         exact Finset.subset_insert _ _
       · have hjk1 : j = k + 1 := by omega
         rw [hjk1]
-  have hinv : ∀ j, ¬∃ n, ∃ H : Finset ℕ, IsRepHub A n H ∧
+  have hinv : ∀ j, ¬∃ n, N0 ≤ n ∧ ∃ H : Finset ℕ, IsRepHub A n H ∧
       H.Nonempty ∧ ∀ h ∈ H, h ∈ (st j).2 := by
     intro j
     induction j with
     | zero =>
-      rintro ⟨n, H, hhub, ⟨x, hx⟩, hsub⟩
+      rintro ⟨n, hnN, H, hhub, ⟨x, hx⟩, hsub⟩
       have hx0 : x = pick ∅ 0 := by
         have := hsub x hx
         rw [hst0] at this
         exact Finset.mem_singleton.1 this
-      refine hpickdodge ∅ 0 (by simp) ⟨n, H, hhub, ?_, ?_⟩
+      refine hpickdodge ∅ 0 (by simp) ⟨n, hnN, H, hhub, ?_, ?_⟩
       · rw [← hx0]
         exact hx
       · intro h hh
@@ -3497,17 +3497,17 @@ theorem dodge_or_trap {A : Set ℕ} {N0 : ℕ}
         rw [hst0] at this
         exact Or.inr (Finset.mem_singleton.1 this)
     | succ j ih =>
-      rintro ⟨n, H, hhub, hne, hsub⟩
+      rintro ⟨n, hnN, H, hhub, hne, hsub⟩
       by_cases haH : pick (st j).2 ((st j).1 + 1) ∈ H
       · refine hpickdodge (st j).2 ((st j).1 + 1) (hPA j)
-          ⟨n, H, hhub, haH, ?_⟩
+          ⟨n, hnN, H, hhub, haH, ?_⟩
         intro h hh
         have := hsub h hh
         rw [hstS j] at this
         rcases Finset.mem_insert.1 this with h' | h'
         · exact Or.inr h'
         · exact Or.inl h'
-      · refine ih ⟨n, H, hhub, hne, ?_⟩
+      · refine ih ⟨n, hnN, H, hhub, hne, ?_⟩
         intro h hh
         have := hsub h hh
         rw [hstS j] at this
@@ -3563,7 +3563,7 @@ theorem dodge_or_trap {A : Set ℕ} {N0 : ℕ}
         if hh' : h' ∈ H then stg h' hh' else 0) hh
       simpa [hh] using this
     exact hchain (stg h hh) J h1 (hstg h hh)
-  exact hinv J ⟨n, H, hhub, hHne, hHsub⟩
+  exact hinv J ⟨n, hnN, H, hhub, hHne, hHsub⟩
 
 theorem dodge_or_trap_pool {P A : Set ℕ} {N0 : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N0)
@@ -3571,21 +3571,21 @@ theorem dodge_or_trap_pool {P A : Set ℕ} {N0 : ℕ}
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ F : Finset ℕ, (∀ h ∈ F, h ∈ P) ∧ ∃ X, ∀ a ∈ P, X ≤ a →
-      ∃ n, ∃ H : Finset ℕ, IsRepHub A n H ∧ a ∈ H ∧
+      ∃ n, N0 ≤ n ∧ ∃ H : Finset ℕ, IsRepHub A n H ∧ a ∈ H ∧
         ∀ h ∈ H, h ∈ F ∨ h = a := by
   classical
   by_contra hnotrap
   push_neg at hnotrap
   have hpick : ∀ (F : Finset ℕ) (X : ℕ), ∃ a, a ∈ P ∧ X ≤ a ∧
       ((∀ h ∈ F, h ∈ P) →
-        ¬∃ n, ∃ H : Finset ℕ, IsRepHub A n H ∧ a ∈ H ∧
+        ¬∃ n, N0 ≤ n ∧ ∃ H : Finset ℕ, IsRepHub A n H ∧ a ∈ H ∧
           ∀ h ∈ H, h ∈ F ∨ h = a) := by
     intro F X
     by_cases hFA : ∀ h ∈ F, h ∈ P
     · obtain ⟨a, ha, hXa, hno⟩ := hnotrap F hFA X
       refine ⟨a, ha, hXa, fun _ => ?_⟩
-      rintro ⟨n, H, hhub, haH, hsub⟩
-      obtain ⟨h, hhH, hhF, hha⟩ := hno n H hhub haH
+      rintro ⟨n, hnN, H, hhub, haH, hsub⟩
+      obtain ⟨h, hhH, hhF, hha⟩ := hno n hnN H hhub haH
       rcases hsub h hhH with h' | h'
       · exact hhF h'
       · exact hha h'
@@ -3637,17 +3637,17 @@ theorem dodge_or_trap_pool {P A : Set ℕ} {N0 : ℕ}
         exact Finset.subset_insert _ _
       · have hjk1 : j = k + 1 := by omega
         rw [hjk1]
-  have hinv : ∀ j, ¬∃ n, ∃ H : Finset ℕ, IsRepHub A n H ∧
+  have hinv : ∀ j, ¬∃ n, N0 ≤ n ∧ ∃ H : Finset ℕ, IsRepHub A n H ∧
       H.Nonempty ∧ ∀ h ∈ H, h ∈ (st j).2 := by
     intro j
     induction j with
     | zero =>
-      rintro ⟨n, H, hhub, ⟨x, hx⟩, hsub⟩
+      rintro ⟨n, hnN, H, hhub, ⟨x, hx⟩, hsub⟩
       have hx0 : x = pick ∅ 0 := by
         have := hsub x hx
         rw [hst0] at this
         exact Finset.mem_singleton.1 this
-      refine hpickdodge ∅ 0 (by simp) ⟨n, H, hhub, ?_, ?_⟩
+      refine hpickdodge ∅ 0 (by simp) ⟨n, hnN, H, hhub, ?_, ?_⟩
       · rw [← hx0]
         exact hx
       · intro h hh
@@ -3655,17 +3655,17 @@ theorem dodge_or_trap_pool {P A : Set ℕ} {N0 : ℕ}
         rw [hst0] at this
         exact Or.inr (Finset.mem_singleton.1 this)
     | succ j ih =>
-      rintro ⟨n, H, hhub, hne, hsub⟩
+      rintro ⟨n, hnN, H, hhub, hne, hsub⟩
       by_cases haH : pick (st j).2 ((st j).1 + 1) ∈ H
       · refine hpickdodge (st j).2 ((st j).1 + 1) (hstP j)
-          ⟨n, H, hhub, haH, ?_⟩
+          ⟨n, hnN, H, hhub, haH, ?_⟩
         intro h hh
         have := hsub h hh
         rw [hstS j] at this
         rcases Finset.mem_insert.1 this with h' | h'
         · exact Or.inr h'
         · exact Or.inl h'
-      · refine ih ⟨n, H, hhub, hne, ?_⟩
+      · refine ih ⟨n, hnN, H, hhub, hne, ?_⟩
         intro h hh
         have := hsub h hh
         rw [hstS j] at this
@@ -3721,7 +3721,7 @@ theorem dodge_or_trap_pool {P A : Set ℕ} {N0 : ℕ}
         if hh' : h' ∈ H then stg h' hh' else 0) hh
       simpa [hh] using this
     exact hchain (stg h hh) J h1 (hstg h hh)
-  exact hinv J ⟨n, H, hhub, hHne, hHsub⟩
+  exact hinv J ⟨n, hnN, H, hhub, hHne, hHsub⟩
 
 
 /-- Level extractor: above any threshold, a counterexample yields a
@@ -3732,7 +3732,7 @@ theorem trap_level {A : Set ℕ} {N0 : ℕ}
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∀ Y, ∃ (F : Finset ℕ) (X : ℕ),
       (∀ h ∈ F, h ∈ A ∧ Y ≤ h) ∧ Y ≤ X ∧
-      ∀ a ∈ A, X ≤ a → ∃ n, ∃ H : Finset ℕ,
+      ∀ a ∈ A, X ≤ a → ∃ n, N0 ≤ n ∧ ∃ H : Finset ℕ,
         IsRepHub A n H ∧ a ∈ H ∧ ∀ h ∈ H, h ∈ F ∨ h = a := by
   intro Y
   have hPA : {a | a ∈ A ∧ Y ≤ a} ⊆ A := fun a ha => ha.1
@@ -3764,7 +3764,7 @@ theorem trap_tower {A : Set ℕ} {N0 : ℕ}
       (∀ i, Y i ≤ X i) ∧
       (∀ i, X i < Y (i + 1)) ∧
       (∀ i, ∀ h ∈ F i, h < Y (i + 1)) ∧
-      (∀ i, ∀ a ∈ A, X i ≤ a → ∃ n, ∃ H : Finset ℕ,
+      (∀ i, ∀ a ∈ A, X i ≤ a → ∃ n, N0 ≤ n ∧ ∃ H : Finset ℕ,
         IsRepHub A n H ∧ a ∈ H ∧ ∀ h ∈ H, h ∈ F i ∨ h = a) := by
   classical
   choose Ft Xt hFt hXt htrapt using trap_level h0 hcov hfail
