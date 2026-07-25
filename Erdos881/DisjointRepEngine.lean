@@ -3176,4 +3176,18 @@ theorem parent_double_exclusion {A : Set ℕ} {w a : ℕ}
   have := h4 (a - w) hdiff (by omega) (by omega) (by omega)
   rwa [hval] at this
 
+/-- **The reach dichotomy.**  Every forest edge with difference in
+`A` either stays within the boundary band `(w, 3w]` or excludes the
+parent''s double.  The threshold 3 is the moat''s own constant
+(`2y > t` at `y = a - w` gives `a > 3w`) — and base-3 blocks sit
+exactly on it: `3^k = 2(3^{k-1} + ⋯ + 1) + 1`.  The base of the
+digit tower is the order of the problem: order-3 representation
+forces ternary strata. -/
+theorem child_reach_dichotomy {A : Set ℕ} {w a : ℕ}
+    (hown : OwnsTarget A a (a + w)) (hdiff : a - w ∈ A) :
+    a ≤ 3 * w ∨ 2 * w ∉ A := by
+  rcases Nat.lt_or_ge (3 * w) a with h | h
+  · exact Or.inr (parent_double_exclusion hown hdiff h)
+  · exact Or.inl h
+
 end Erdos881
