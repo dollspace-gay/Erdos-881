@@ -1491,4 +1491,133 @@ theorem stream_pair_classification (A : Set ℕ) (N₀ : ℕ)
       · exact ⟨f, hf, Or.inl hguard⟩
       · exact ⟨f, hf, Or.inr ⟨d, hd1, hfree', hnf'⟩⟩
 
+/-- **The order-3 stream classification, hypothesis-free.**  Any
+monotone stream over any set refines into wide rep-freedom, total
+private guardianship (each element a singleton rep-hub owner), or a
+perfect rep-crystal.  Under the counterexample interfaces the
+middle branch dies by the stream kill, recovering the conditional
+descent. -/
+theorem stream_rep_classification (A : Set ℕ) (N₀ : ℕ)
+    (e : ℕ → ℕ) (hemono : StrictMono e) :
+    (∀ n, ∃ S : Finset ℕ, (∀ h ∈ S, ∃ i, e i = h) ∧ S.card = n ∧
+      RepFree A N₀ S) ∨
+    ∃ f : ℕ → ℕ, StrictMono f ∧
+      ((∀ i, ¬RepFree A N₀ {e (f i)}) ∨
+      (∃ d, 1 ≤ d ∧
+        (∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e (f i) = h) →
+          S.card = d → RepFree A N₀ S) ∧
+        (∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e (f i) = h) →
+          S.card = d + 1 → ¬RepFree A N₀ S))) := by
+  classical
+  by_cases hwide : ∀ n, ∃ S : Finset ℕ,
+      (∀ h ∈ S, ∃ i, e i = h) ∧ S.card = n ∧ RepFree A N₀ S
+  · exact Or.inl hwide
+  · right
+    push_neg at hwide
+    obtain ⟨n, hn⟩ := hwide
+    rcases Nat.lt_or_ge n 2 with hn2 | hn2
+    · refine ⟨id, fun i j hij => hij, Or.inl ?_⟩
+      intro i
+      rcases Nat.eq_zero_or_pos n with hn0 | hnpos
+      · subst hn0
+        have hempt : ¬RepFree A N₀ (∅ : Finset ℕ) := by
+          intro hfree
+          exact absurd hfree (hn ∅ (fun h hh =>
+            absurd hh (Finset.notMem_empty h)) rfl)
+        intro hfree
+        exact hempt (RepFree.mono (Finset.empty_subset _) hfree)
+      · have hn1 : n = 1 := by omega
+        subst hn1
+        intro hfree
+        exact hn {e (id i)} (fun h hh =>
+          ⟨i, (Finset.mem_singleton.1 hh).symm⟩)
+          (Finset.card_singleton _) hfree
+    · -- run an inline descent at level n − 1 (mirror of
+      -- pair_clique_descent with the floor kept as a branch)
+      suffices hdesc : ∀ (d : ℕ) (e' : ℕ → ℕ), 1 ≤ d →
+          StrictMono e' →
+          (∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e' i = h) →
+            S.card = d + 1 → ¬RepFree A N₀ S) →
+          ∃ f : ℕ → ℕ, StrictMono f ∧
+            ((∀ i, ¬RepFree A N₀ {e' (f i)}) ∨
+            (∃ d', 1 ≤ d' ∧
+              (∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e' (f i) = h) →
+                S.card = d' → RepFree A N₀ S) ∧
+              (∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e' (f i) = h) →
+                S.card = d' + 1 → ¬RepFree A N₀ S))) by
+        obtain ⟨f, hf, hout⟩ := hdesc (n - 1) e (by omega) hemono
+          (by
+            intro S hSmem hScard hfree
+            exact hn S hSmem (by omega) hfree)
+        exact ⟨f, hf, hout⟩
+      intro d
+      induction d using Nat.strong_induction_on with
+      | _ d ihd =>
+        intro e' hd1 hemono' hnonfree
+        obtain ⟨r, rfl⟩ : ∃ r, d = r + 1 := ⟨d - 1, by omega⟩
+        set c : (Fin (r + 1) → ℕ) → Bool := fun t =>
+          if RepFree A N₀ (Finset.univ.image (fun i => e' (t i)))
+          then true else false with hc
+        have hciff : ∀ t : Fin (r + 1) → ℕ, c t = true ↔
+            RepFree A N₀
+              (Finset.univ.image (fun i => e' (t i))) := by
+          intro t
+          by_cases h : RepFree A N₀
+            (Finset.univ.image (fun i => e' (t i)))
+          · simp [hc, h]
+          · simp [hc, h]
+        obtain ⟨f₁, hf₁, bt, hhom⟩ := infinite_ramsey_tuples r c
+        rcases Bool.eq_false_or_eq_true bt with hbt | hbt
+        · subst hbt
+          refine ⟨f₁, hf₁, Or.inr ⟨r + 1, by omega, ?_, ?_⟩⟩
+          · intro S hSmem hScard
+            obtain ⟨u, humono, huim⟩ := sorted_indices_of_card
+              (fun i j hij => hemono' (hf₁ hij)) hScard hSmem
+            have h1 := hhom u humono
+            rw [hciff] at h1
+            have h2 : (Finset.univ.image
+                fun i => e' (f₁ (u i))) = S := huim
+            rw [h2] at h1
+            exact h1
+          · intro S hSmem hScard
+            refine hnonfree S ?_ hScard
+            intro h hh
+            obtain ⟨i, hi⟩ := hSmem h hh
+            exact ⟨f₁ i, hi⟩
+        · subst hbt
+          have hallnonfree : ∀ S : Finset ℕ,
+              (∀ h ∈ S, ∃ i, e' (f₁ i) = h) → S.card = r + 1 →
+              ¬RepFree A N₀ S := by
+            intro S hSmem hScard hfree
+            obtain ⟨u, humono, huim⟩ := sorted_indices_of_card
+              (fun i j hij => hemono' (hf₁ hij)) hScard hSmem
+            have h1 := hhom u humono
+            have h2 : c (fun i => f₁ (u i)) = true := by
+              rw [hciff]
+              have h3 : (Finset.univ.image
+                  fun i => e' (f₁ (u i))) = S := huim
+              rw [h3]
+              exact hfree
+            rw [h1] at h2
+            exact Bool.false_ne_true h2
+          rcases Nat.lt_or_ge r 1 with hr0 | hr1
+          · have hr0' : r = 0 := by omega
+            subst hr0'
+            refine ⟨f₁, hf₁, Or.inl ?_⟩
+            intro i
+            refine hallnonfree {e' (f₁ i)} ?_
+              (Finset.card_singleton _)
+            intro h hh
+            exact ⟨i, (Finset.mem_singleton.1 hh).symm⟩
+          · obtain ⟨f₂, hf₂, hout⟩ := ihd r (by omega)
+              (fun i => e' (f₁ i)) hr1
+              (fun i j hij => hemono' (hf₁ hij))
+              (by
+                intro S hSmem hScard
+                exact hallnonfree S hSmem (by omega))
+            rcases hout with hguard | ⟨d', hd'1, hfree', hnf'⟩
+            · exact ⟨f₁ ∘ f₂, hf₁.comp hf₂, Or.inl hguard⟩
+            · exact ⟨f₁ ∘ f₂, hf₁.comp hf₂, Or.inr
+                ⟨d', hd'1, hfree', hnf'⟩⟩
+
 end Erdos881
