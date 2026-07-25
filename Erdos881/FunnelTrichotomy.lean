@@ -509,6 +509,44 @@ theorem zero_guardian_hole {A : Set ℕ} {N₀ m₁ m₂ m₃ x y z : ℕ}
   rcases h3.2 (m₁ - x) hw₁ (m₂ - y) hw₂ z hz hsum with h | h | h <;>
     omega
 
+/-- A singleton private guardian is a pair destroyer with itself. -/
+theorem IsPrivateTriple.isPairDestroyer_self {A : Set ℕ} {u m : ℕ}
+    (h : IsPrivateTriple A u m) : IsPairDestroyer A u u m := by
+  refine ⟨h.1, ?_⟩
+  intro x hx y hy z hz hsum
+  rcases h.2 x hx y hy z hz hsum with h' | h' | h' <;> tauto
+
+/-- **Link A is exactly diffuse exclusion.**  If every infinite
+deletion breaks the order-three basis (the counterexample property)
+and no infinite zero-free deletion set realizes the diffuse branch
+cofinally, then the cofinal pair-funnel interface holds: the
+trichotomy's other two branches are funnels.  This converts the
+remaining content of Link A into the formal statement `hnodiffuse`. -/
+theorem hasCofinalPairFunnels_of_diffuse_free {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hnodiffuse : ∀ B ⊆ A, 0 ∉ B → B.Infinite → ∃ N, ∀ m, N ≤ m →
+      ¬ (∃ y ∈ A, ∃ z ∈ A, y + z = m ∧ (y ∈ B ∨ z ∈ B) ∧
+        ∃ x' ∈ A, ∃ y' ∈ A, ∃ z' ∈ A, x' + y' + z' = m ∧
+          (y ∈ B → x' ≠ y ∧ y' ≠ y ∧ z' ≠ y) ∧
+          (z ∈ B → x' ≠ z ∧ y' ≠ z ∧ z' ≠ z))) :
+    HasCofinalPairFunnels A := by
+  intro B hBA hBinf N
+  set B' := B \ {0} with hB'
+  have hB'A : B' ⊆ A := fun x hx => hBA hx.1
+  have hB'inf : B'.Infinite := hBinf.diff (Set.finite_singleton 0)
+  have h0B' : 0 ∉ B' := fun h => h.2 rfl
+  obtain ⟨N₁, hN₁⟩ := hnodiffuse B' hB'A h0B' hB'inf
+  obtain ⟨m, hm, htri⟩ :=
+    cofinal_funnel_trichotomy_of_deletionFailure h0 h0B' hcov
+      (hfail B' hB'A hB'inf) (max N N₁)
+  rcases htri with ⟨u, huB, _, hpriv⟩ | ⟨u, huB, v, hvB, hdes⟩ | hdiff
+  · exact ⟨m, le_trans (le_max_left _ _) hm, u, huB.1, u, huB.1,
+      hpriv.isPairDestroyer_self⟩
+  · exact ⟨m, le_trans (le_max_left _ _) hm, u, huB.1, v, hvB.1, hdes⟩
+  · exact absurd hdiff (hN₁ m (le_trans (le_max_right _ _) hm))
+
 /-- **The zero residue, packaged.**  If zero guards cofinally, then
 for any pair of separated targets: the lower target is not an
 element, the gap between targets is not an element, and every
@@ -525,8 +563,8 @@ theorem zero_residue_structure {A : Set ℕ} {N₀ : ℕ}
       (x + N₀ ≤ m₁ → x < m₁ → (m₂ - m₁ ∉ A ∧ (0 < m₁ → m₁ ∉ A))) := by
   intro N
   obtain ⟨m₁, hm₁N, h1⟩ := hres N
-  obtain ⟨m₂, hm₂N, h2⟩ := hres (m₁ + N₀)
-  refine ⟨m₁, m₂, hm₁N, hm₂N, h1, h2, ?_⟩
+  obtain ⟨m₂, hm₂N, h2⟩ := hres (m₁ + N₀ + 1)
+  refine ⟨m₁, m₂, hm₁N, by omega, h1, h2, ?_⟩
   intro hxm hxlt
   constructor
   · intro hd
