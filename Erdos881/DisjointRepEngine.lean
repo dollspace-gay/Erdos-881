@@ -3724,4 +3724,68 @@ theorem dodge_or_trap_pool {P A : Set ℕ} {N0 : ℕ}
   exact hinv J ⟨n, H, hhub, hHne, hHsub⟩
 
 
+/-- Level extractor: above any threshold, a counterexample yields a
+trap living entirely above that threshold. -/
+theorem trap_level {A : Set ℕ} {N0 : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N0)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∀ Y, ∃ (F : Finset ℕ) (X : ℕ),
+      (∀ h ∈ F, h ∈ A ∧ Y ≤ h) ∧ Y ≤ X ∧
+      ∀ a ∈ A, X ≤ a → ∃ n, ∃ H : Finset ℕ,
+        IsRepHub A n H ∧ a ∈ H ∧ ∀ h ∈ H, h ∈ F ∨ h = a := by
+  intro Y
+  have hPA : {a | a ∈ A ∧ Y ≤ a} ⊆ A := fun a ha => ha.1
+  have hunb : ∀ X, ∃ p ∈ {a | a ∈ A ∧ Y ≤ a}, X ≤ p := by
+    intro X
+    obtain ⟨a, ha, hXa⟩ := pairCovers_unbounded hcov (max X Y)
+    exact ⟨a, ⟨ha, le_trans (le_max_right _ _) hXa⟩,
+      le_trans (le_max_left _ _) hXa⟩
+  obtain ⟨F, hFP, X, htrap⟩ :=
+    dodge_or_trap_pool (P := {a | a ∈ A ∧ Y ≤ a}) h0 hcov hPA hunb hfail
+  refine ⟨F, max X Y, fun h hh => ⟨(hFP h hh).1, (hFP h hh).2⟩,
+    le_max_right _ _, ?_⟩
+  intro a ha hXa
+  exact htrap a ⟨ha, le_trans (le_max_right _ _) hXa⟩
+    (le_trans (le_max_left _ _) hXa)
+
+/-- **THE TRAP TOWER.**  A counterexample carries an infinite tower
+of pairwise-separated finite traps: at every level a finite set
+`F i`, entirely above the previous level''s data, such that every
+element of `A` beyond the level threshold completes a hub over
+`F i`.  The enemy''s unavoidability stratifies into disjoint finite
+stages — the transversal analysis across stages is next. -/
+theorem trap_tower {A : Set ℕ} {N0 : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N0)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ (Y : ℕ → ℕ) (F : ℕ → Finset ℕ) (X : ℕ → ℕ),
+      (∀ i, ∀ h ∈ F i, h ∈ A ∧ Y i ≤ h) ∧
+      (∀ i, Y i ≤ X i) ∧
+      (∀ i, X i < Y (i + 1)) ∧
+      (∀ i, ∀ h ∈ F i, h < Y (i + 1)) ∧
+      (∀ i, ∀ a ∈ A, X i ≤ a → ∃ n, ∃ H : Finset ℕ,
+        IsRepHub A n H ∧ a ∈ H ∧ ∀ h ∈ H, h ∈ F i ∨ h = a) := by
+  classical
+  choose Ft Xt hFt hXt htrapt using trap_level h0 hcov hfail
+  set Y : ℕ → ℕ := fun i =>
+    Nat.rec (N0 + 1) (fun _ prev =>
+      max (Xt prev) ((Ft prev).sup id) + 1) i with hY
+  have hYS : ∀ i, Y (i + 1) = max (Xt (Y i)) ((Ft (Y i)).sup id) + 1 :=
+    fun _ => rfl
+  refine ⟨Y, fun i => Ft (Y i), fun i => Xt (Y i),
+    fun i => hFt (Y i), fun i => hXt (Y i), ?_, ?_,
+    fun i => htrapt (Y i)⟩
+  · intro i
+    show Xt (Y i) < Y (i + 1)
+    rw [hYS i]
+    have := Nat.le_max_left (Xt (Y i)) ((Ft (Y i)).sup id)
+    omega
+  · intro i h hh
+    show h < Y (i + 1)
+    rw [hYS i]
+    have h1 : h ≤ (Ft (Y i)).sup id := Finset.le_sup (f := id) hh
+    have h2 := Nat.le_max_right (Xt (Y i)) ((Ft (Y i)).sup id)
+    omega
+
 end Erdos881
