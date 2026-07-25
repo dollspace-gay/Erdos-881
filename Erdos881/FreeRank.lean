@@ -2338,4 +2338,202 @@ theorem hfail_iff_freeStep_wf {A : Set ℕ} {N₀ : ℕ}
   (hfail_iff_no_hereditarily_free h0 hcov).trans
     freeStep_wf_iff_no_hereditarilyFree.symm
 
+/-- Hereditarily pair-free sets: all finite subsets pair-free —
+exactly the deletions that leave order 2 alive. -/
+def HereditarilyPairFree (A : Set ℕ) (N₀ : ℕ) (B : Set ℕ) : Prop :=
+  B.Infinite ∧ (∀ b ∈ B, b ∈ A ∧ 0 < b) ∧
+  ∀ P : Finset ℕ, (∀ h ∈ P, h ∈ B) → PairFree A N₀ P
+
+/-- **The pair characterization.**  Elementwise ℵ₀-minimality is
+equivalent to the absence of an infinite hereditarily pair-free
+subset. -/
+theorem hmin_iff_no_hereditarilyPairFree {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀) :
+    (∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) ↔
+    ¬∃ B : Set ℕ, HereditarilyPairFree A N₀ B := by
+  classical
+  constructor
+  · rintro hmin ⟨B, hBinf, hBpos, hBfree⟩
+    have hBA : B ⊆ A := fun b hb => (hBpos b hb).1
+    refine hmin B hBA hBinf ⟨N₀, fun m hm => ?_⟩
+    have hfree := hBfree ((Finset.range (m + 1)).filter
+      (fun b => b ∈ B))
+      (fun h hh => (Finset.mem_filter.1 hh).2)
+    obtain ⟨x, hx, y, hy, hxy, hxP, hyP⟩ := hfree m hm
+    have havoid : ∀ w, w ≤ m →
+        w ∉ (Finset.range (m + 1)).filter (fun b => b ∈ B) →
+        w ∉ B := by
+      intro w hwm hwP hwB
+      exact hwP (Finset.mem_filter.2
+        ⟨Finset.mem_range.2 (by omega), hwB⟩)
+    exact ⟨x, hx, y, hy, havoid x (by omega) hxP,
+      havoid y (by omega) hyP, hxy⟩
+  · intro hno B hBA hBinf hbasis
+    obtain ⟨N₁, hN₁⟩ := hbasis
+    set B' := {b ∈ B | 0 < b ∧ N₁ + 1 ≤ b} with hB'
+    have hB'inf : B'.Infinite := by
+      have h1 : B ⊆ B' ∪ {b | b ≤ N₁} := by
+        intro b hb
+        rcases Nat.lt_or_ge b (N₁ + 1) with h | h
+        · exact Or.inr (by
+            simp only [Set.mem_setOf_eq]
+            omega)
+        · exact Or.inl ⟨hb, by omega, h⟩
+      by_contra hfin
+      rw [Set.not_infinite] at hfin
+      exact hBinf (Set.Finite.subset
+        (hfin.union (Set.finite_le_nat _)) h1)
+    have hnother : ¬HereditarilyPairFree A N₀ B' :=
+      fun h => hno ⟨B', h⟩
+    rw [HereditarilyPairFree] at hnother
+    push_neg at hnother
+    obtain ⟨Q, hQB', hQnotfree⟩ := hnother hB'inf
+      (fun b hb => ⟨hBA hb.1, hb.2.1⟩)
+    rw [PairFree] at hQnotfree
+    push_neg at hQnotfree
+    obtain ⟨n, hn, halln⟩ := hQnotfree
+    have hhub : IsPairHub A n Q := by
+      intro x hx y hy hsum
+      by_contra hmiss
+      push_neg at hmiss
+      obtain ⟨h1, h2⟩ := hmiss
+      exact h2 (halln x hx y hy hsum h1)
+    obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hn
+    have hn₁ : N₁ ≤ n := by
+      rcases hhub x hx y hy hxy with h | h
+      · have := (hQB' x h).2.2
+        omega
+      · have := (hQB' y h).2.2
+        omega
+    obtain ⟨x', hx', y', hy', hx'B, hy'B, hxy'⟩ := hN₁ n hn₁
+    rcases hhub x' hx' y' hy' hxy' with h | h
+    · exact hx'B ((hQB' _ h).1)
+    · exact hy'B ((hQB' _ h).1)
+
+/-- **The pair tree and its witness are one** (combinatorial). -/
+theorem pairFreeStep_wf_iff_no_hereditarilyPairFree
+    {A : Set ℕ} {N₀ : ℕ} :
+    WellFounded (PairFreeStep A N₀) ↔
+    ¬∃ B : Set ℕ, HereditarilyPairFree A N₀ B := by
+  classical
+  constructor
+  · rintro hwf ⟨B, hBinf, hBpos, hBfree⟩
+    rw [wellFounded_iff_isEmpty_descending_chain] at hwf
+    have hpick : ∀ X : ℕ, ∃ b ∈ B, X < b := by
+      intro X
+      obtain ⟨b, hb, hXb⟩ := hBinf.exists_gt X
+      exact ⟨b, hb, hXb⟩
+    choose nx hnxB hnxgt using hpick
+    set e : ℕ → ℕ := fun j =>
+      Nat.rec (nx 0) (fun _ prev => nx prev) j with he
+    have heS : ∀ j, e (j + 1) = nx (e j) := fun _ => rfl
+    have heB : ∀ j, e j ∈ B := by
+      intro j
+      cases j with
+      | zero => exact hnxB 0
+      | succ j =>
+        rw [heS]
+        exact hnxB _
+    have hemono : StrictMono e := by
+      apply strictMono_nat_of_lt_succ
+      intro j
+      rw [heS]
+      exact hnxgt (e j)
+    set f : ℕ → Finset ℕ := fun n => (Finset.range n).image e
+      with hf
+    have hfnode : ∀ n, PairFreeNode A N₀ (f n) := by
+      intro n
+      have hsub : ∀ h ∈ f n, h ∈ B := by
+        intro h hh
+        obtain ⟨j, -, hj⟩ := Finset.mem_image.1 hh
+        rw [← hj]
+        exact heB j
+      exact ⟨fun h hh => hBpos h (hsub h hh), hBfree (f n) hsub⟩
+    have hfstep : ∀ n, PairFreeStep A N₀ (f (n + 1)) (f n) := by
+      intro n
+      have hins : f (n + 1) = insert (e n) (f n) := by
+        show (Finset.range (n + 1)).image e = _
+        rw [Finset.range_add_one, Finset.image_insert]
+      refine ⟨hfnode n, hfnode (n + 1), e n,
+        (hBpos _ (heB n)).1, (hBpos _ (heB n)).2, ?_, hins⟩
+      intro h hh
+      obtain ⟨j, hj, hjh⟩ := Finset.mem_image.1 hh
+      have hj' : j < n := Finset.mem_range.1 hj
+      rw [← hjh]
+      exact hemono hj'
+    exact hwf.false ⟨f, hfstep⟩
+  · intro hno
+    rw [wellFounded_iff_isEmpty_descending_chain]
+    constructor
+    rintro ⟨f, hf⟩
+    have hbmem : ∀ n, ∃ b, b ∈ A ∧ 0 < b ∧ (∀ h ∈ f n, h < b) ∧
+        f (n + 1) = insert b (f n) := fun n => (hf n).2.2
+    choose b hbA hbpos hbmax hbins using hbmem
+    have hbin : ∀ n, b n ∈ f (n + 1) := by
+      intro n
+      rw [hbins n]
+      exact Finset.mem_insert_self _ _
+    have hchain' : ∀ m n, m ≤ n → f m ⊆ f n := by
+      intro m n hmn
+      induction n with
+      | zero =>
+        have h0 : m = 0 := by omega
+        subst h0
+        exact Finset.Subset.refl _
+      | succ n ih =>
+        rcases Nat.lt_or_ge m (n + 1) with h | h
+        · refine Finset.Subset.trans (ih (by omega)) ?_
+          rw [hbins n]
+          exact Finset.subset_insert _ _
+        · have h1 : m = n + 1 := by omega
+          subst h1
+          exact Finset.Subset.refl _
+    have hbmono : StrictMono b := by
+      apply strictMono_nat_of_lt_succ
+      intro n
+      exact hbmax (n + 1) (b n) (hbin n)
+    refine hno ⟨{x | ∃ n, x ∈ f n}, ?_, ?_, ?_⟩
+    · have hsub : Set.range b ⊆ {x | ∃ n, x ∈ f n} := by
+        rintro x ⟨n, rfl⟩
+        exact ⟨n + 1, hbin n⟩
+      exact Set.Infinite.mono hsub
+        (Set.infinite_range_of_injective hbmono.injective)
+    · rintro x ⟨n, hxn⟩
+      exact (hf n).1.1 x hxn
+    · intro P hP
+      choose st hst using hP
+      set N := P.sup (fun h => if hh : h ∈ P then st h hh else 0)
+        with hN
+      have hPN : ∀ h ∈ P, h ∈ f N := by
+        intro h hh
+        have h1 : st h hh ≤ N := by
+          have := Finset.le_sup (f := fun h' =>
+            if hh' : h' ∈ P then st h' hh' else 0) hh
+          simpa [hh] using this
+        exact hchain' (st h hh) N h1 (hst h hh)
+      exact PairFree.mono hPN (hf N).1.2
+
+/-- **THE TWO-TREE FORMULATION.**  A counterexample to Erdős 881
+(k = 2) is exactly a covering set with `0` whose pair tree AND rep
+tree are BOTH well-founded.  The problem: can two nested freeness
+trees over one basis both be well-founded? -/
+theorem counterexample_iff_both_trees_wf {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) :
+    ((∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) ∧
+    (∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)) ↔
+    (WellFounded (PairFreeStep A N₀) ∧
+      WellFounded (FreeStep A N₀)) := by
+  constructor
+  · rintro ⟨hmin, hfail⟩
+    exact ⟨pairFreeStep_wf_iff_no_hereditarilyPairFree.2
+      ((hmin_iff_no_hereditarilyPairFree hcov).1 hmin),
+      (hfail_iff_freeStep_wf h0 hcov).1 hfail⟩
+  · rintro ⟨hwf₂, hwf₃⟩
+    exact ⟨(hmin_iff_no_hereditarilyPairFree hcov).2
+      (pairFreeStep_wf_iff_no_hereditarilyPairFree.1 hwf₂),
+      (hfail_iff_freeStep_wf h0 hcov).2 hwf₃⟩
+
 end Erdos881
