@@ -183,4 +183,22 @@ theorem cantor_sieve_complete {v : ℕ} (hv : ¬IsCantor v) (hv1 : 1 ≤ v) :
     exact hch this
   · omega
 
+/-- **THE CANTOR FIXED POINT.**  A positive number is OUTSIDE the
+Cantor set exactly when it is some owner''s moat value: the set is
+precisely the complement of its own forest''s sieve.
+`co-C = Sieve(C)`, as one theorem — the model of the classification:
+a universally-owned covering world IS the fixed point of its own
+exclusion laws, and the ternary world realizes it. -/
+theorem cantor_fixed_point {v : ℕ} (hv1 : 1 ≤ v) :
+    (¬IsCantor v) ↔
+    ∃ a t z, OwnsTarget CSet a t ∧ z ∈ CSet ∧
+      2 * z > t ∧ z < t ∧ z ≠ a ∧ t - z = v := by
+  constructor
+  · intro hv
+    exact cantor_sieve_complete hv hv1
+  · rintro ⟨a, t, z, hown, hz, hbig, hlt, hza, hval⟩ hvC
+    have := hown.2.2.2 z hz hbig hlt hza
+    rw [hval] at this
+    exact this hvC
+
 end Erdos881Cantor
