@@ -2508,4 +2508,48 @@ threshold exactly at universality. -/
 def UniversalOwnership (A : Set ℕ) (Ns : ℕ) : Prop :=
   ∀ a ∈ A, Ns ≤ a → ∃ n, OwnsTarget A a n
 
+/-- **The ownership chain.**  Under universal ownership every element
+descends to the base through ownership steps: the sequence of
+completions `a > s(a) > s²(a) > …` — the digit-expansion object of
+the classification, existing unconditionally once ownership is
+universal.  Its coherence across elements is the digit-forcing
+conjecture; its existence is now a theorem. -/
+theorem ownership_chain {A : Set ℕ} {Ns : ℕ}
+    (huniv : UniversalOwnership A Ns) :
+    ∀ a ∈ A, ∃ k, ∃ c : ℕ → ℕ, c 0 = a ∧
+      (∀ i ≤ k, c i ∈ A) ∧
+      (∀ i < k, ∃ n, OwnsTarget A (c i) n ∧ c (i + 1) = n - c i) ∧
+      c k < Ns := by
+  intro a
+  induction a using Nat.strong_induction_on with
+  | _ a ih =>
+    intro haA
+    by_cases hlt : a < Ns
+    · exact ⟨0, fun _ => a, rfl, fun i hi => by
+        cases Nat.le_zero.1 hi
+        exact haA, fun i hi => absurd hi (by omega), hlt⟩
+    · push_neg at hlt
+      obtain ⟨n, hown⟩ := huniv a haA hlt
+      obtain ⟨hsA, hslt⟩ := hown.chain_step
+      obtain ⟨k, c, hc0, hcA, hcstep, hcend⟩ := ih (n - a) hslt hsA
+      refine ⟨k + 1, fun i => if i = 0 then a else c (i - 1), by simp,
+        ?_, ?_, ?_⟩
+      · intro i hi
+        by_cases hi0 : i = 0
+        · simpa [hi0] using haA
+        · simp only [if_neg hi0]
+          exact hcA (i - 1) (by omega)
+      · intro i hi
+        by_cases hi0 : i = 0
+        · subst hi0
+          refine ⟨n, hown, ?_⟩
+          simp [hc0]
+        · simp only [if_neg hi0, if_neg (by omega : ¬i + 1 = 0)]
+          obtain ⟨m, hm, hstep⟩ := hcstep (i - 1) (by omega)
+          refine ⟨m, hm, ?_⟩
+          have h1 : i + 1 - 1 = i - 1 + 1 := by omega
+          rw [h1, hstep]
+      · simp only [if_neg (by omega : ¬k + 1 = 0)]
+        simpa using hcend
+
 end Erdos881
