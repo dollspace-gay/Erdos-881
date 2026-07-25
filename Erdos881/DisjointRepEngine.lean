@@ -5927,4 +5927,51 @@ theorem r2_unbounded_of_hfail {A : Set ℕ} {N₀ : ℕ}
     omega
   · omega
 
+/-- **THE COUNTEREXAMPLE PORTRAIT.**  Everything the session proved
+about a counterexample to Erdős 881 (k = 2), in one statement, from
+covering + `0 ∈ A` + anchors + minimality + order-3 failure:
+
+1. CENTRAL ADMINISTRATION: one NONEMPTY POSITIVE fixed core `S*`;
+   cofinally many rotating guardians `b` with minimal order-3 hubs
+   EXACTLY `S* ∪ {b}`.
+2. FULL EMPLOYMENT: beyond one threshold, EVERY basis element
+   simultaneously pair-guards a personal target `t ≥ b` over a
+   fixed pair-free envelope and rep-guards a personal target
+   `m ≥ b` over a fixed rep-free envelope.
+3. SIDON STREETS: cofinally many targets carry order-2
+   representation count bounded by one constant.
+4. BLOWN AVENUES: the order-2 representation count is UNBOUNDED —
+   the enemy can never be globally Sidon.
+
+A minimal order-2 basis failing order-3 survival under every
+infinite deletion must be all four at once, forever. -/
+theorem counterexample_portrait {A : Set ℕ} {N₀ : ℕ}
+    [DecidablePred (· ∈ A)]
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hmin : ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∃ S : Finset ℕ, S.Nonempty ∧ (∀ h ∈ S, h ∈ A ∧ 0 < h) ∧
+      ∀ X, ∃ b, b ∈ A ∧ X ≤ b ∧ b ∉ S ∧
+        ∃ m, N₀ ≤ m ∧ ∃ H : Finset ℕ, IsRepHub A m H ∧
+          (∀ h ∈ H, ¬IsRepHub A m (H \ {h})) ∧ H = insert b S) ∧
+    (∃ P₂ P₃ : Finset ℕ, PairFree A N₀ P₂ ∧ RepFree A N₀ P₃ ∧
+      ∃ X, ∀ b ∈ A, X ≤ b →
+        (∃ t, N₀ ≤ t ∧ b ≤ t ∧
+          ∀ x ∈ A, ∀ y ∈ A, x + y = t →
+            x ∈ insert b P₂ ∨ y ∈ insert b P₂) ∧
+        (∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsRepHub A m (insert b P₃))) ∧
+    (∃ C, ∀ N, ∃ m, N ≤ m ∧
+      ((Finset.range (m + 1)).filter
+        (fun x => x ∈ A ∧ (m - x) ∈ A)).card ≤ C) ∧
+    (∀ C N, ∃ v, N ≤ v ∧ C ≤ ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A)).card) :=
+  ⟨canonical_flood_pos_of_hfail h0 hcov hanchor hfail,
+   double_flood_of_counterexample h0 hcov hmin hfail,
+   constant_sidon_of_hfail h0 hcov hfail,
+   r2_unbounded_of_hfail h0 hcov hfail⟩
+
 end Erdos881
