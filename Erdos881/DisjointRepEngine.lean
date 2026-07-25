@@ -7589,4 +7589,34 @@ theorem union_deletion_trichotomy {A B₁ B₂ : Set ℕ} {N₀ : ℕ}
         (le_max_left _ _) (le_max_right _ _)) hn) H hhub hmin hcard
       exact hhB (hall1 h hh)
 
+/-- **Three columns per pair-clique target, singleton version.**
+If `{u}` never hubs a late target (u is not a private guardian),
+then any target admits at most three partners `w` making `{u, w}` a
+hub: the `u`-avoiding representation pins them.  In a pair-clique
+world over private-free elements, every row's column map is at most
+3-to-1. -/
+theorem three_partners_per_pair_target {A : Set ℕ} {N₀ n u : ℕ}
+    (hpf : ¬∃ m, N₀ ≤ m ∧ IsRepHub A m {u}) (hn : N₀ ≤ n) :
+    ∃ x₀ y₀ z₀, ∀ w, IsRepHub A n {u, w} →
+      w = x₀ ∨ w = y₀ ∨ w = z₀ := by
+  classical
+  have hnohub : ¬IsRepHub A n {u} := fun h => hpf ⟨n, hn, h⟩
+  rw [IsRepHub] at hnohub
+  push_neg at hnohub
+  obtain ⟨x, hx, y, hy, z, hz, hsum, hxu, hyu, hzu⟩ := hnohub
+  refine ⟨x, y, z, fun w hhub => ?_⟩
+  have hxu' : x ≠ u := fun h => hxu (by simp [h])
+  have hyu' : y ≠ u := fun h => hyu (by simp [h])
+  have hzu' : z ≠ u := fun h => hzu (by simp [h])
+  rcases hhub x hx y hy z hz hsum with h | h | h
+  · rcases Finset.mem_insert.1 h with h1 | h1
+    · exact absurd h1 hxu'
+    · exact Or.inl (Finset.mem_singleton.1 h1).symm
+  · rcases Finset.mem_insert.1 h with h1 | h1
+    · exact absurd h1 hyu'
+    · exact Or.inr (Or.inl (Finset.mem_singleton.1 h1).symm)
+  · rcases Finset.mem_insert.1 h with h1 | h1
+    · exact absurd h1 hzu'
+    · exact Or.inr (Or.inr (Finset.mem_singleton.1 h1).symm)
+
 end Erdos881
