@@ -1633,4 +1633,60 @@ theorem fixed_pair_v_channel_family {A : Set ℕ} {u v : ℕ}
   · intro i j hij
     exact hchan (φ i) (hφS i) (φ j) (hφS j) (hφmono hij)
 
+
+/-- Two-color pigeonhole for infinite sets. -/
+theorem infinite_two_color {S P : Set ℕ} (hS : S.Infinite) :
+    (S ∩ P).Infinite ∨ (S \ P).Infinite := by
+  by_contra h
+  push Not at h
+  obtain ⟨h1, h2⟩ := h
+  exact hS (by
+    have : S ⊆ (S ∩ P) ∪ (S \ P) := by
+      intro x hx
+      by_cases hxP : x ∈ P
+      · exact Or.inl ⟨hx, hxP⟩
+      · exact Or.inr ⟨hx, hxP⟩
+    exact Set.Finite.subset (h1.union h2) this)
+
+/-- **Point-channel splitting.**  Along any infinite index set of the
+level sequence, a fixed reflected point's fork channel is constant on
+an infinite subset.  Composable over finitely many points. -/
+theorem fixed_pair_point_channel {A : Set ℕ} {N₀ u v z₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (M : ℕ → ℕ) (S : Set ℕ)
+    (hM : ∀ k, IsPairDestroyer A u v (M k))
+    (hz : z₀ ∈ A) (hzu : z₀ ≠ u) (hzv : z₀ ≠ v)
+    (hb : ∀ k, z₀ + N₀ ≤ M k)
+    (hSinf : S.Infinite) :
+    ∃ T ⊆ S, T.Infinite ∧
+      ((∀ k ∈ T, M k - v - z₀ ∈ A) ∨ (∀ k ∈ T, M k - u - z₀ ∈ A)) := by
+  have hfork : ∀ k, M k - v - z₀ ∈ A ∨ M k - u - z₀ ∈ A := by
+    intro k
+    obtain ⟨y, hy, z, hz', hyz⟩ := hcov (M k - z₀) (by have := hb k; omega)
+    rcases (hM k).2 z₀ hz y hy z hz' (by have := hb k; omega) with
+      h | h | h | h | h | h
+    · exact absurd h hzu
+    · exact Or.inr (by
+        have : z = M k - u - z₀ := by omega
+        exact this ▸ hz')
+    · exact Or.inr (by
+        have : y = M k - u - z₀ := by omega
+        exact this ▸ hy)
+    · exact absurd h hzv
+    · exact Or.inl (by
+        have : z = M k - v - z₀ := by omega
+        exact this ▸ hz')
+    · exact Or.inl (by
+        have : y = M k - v - z₀ := by omega
+        exact this ▸ hy)
+  rcases infinite_two_color (P := {k | M k - v - z₀ ∈ A}) hSinf with
+    h | h
+  · exact ⟨S ∩ {k | M k - v - z₀ ∈ A}, Set.inter_subset_left, h,
+      Or.inl fun k hk => hk.2⟩
+  · refine ⟨S \ {k | M k - v - z₀ ∈ A}, Set.diff_subset, h,
+      Or.inr fun k hk => ?_⟩
+    rcases hfork k with h' | h'
+    · exact absurd h' hk.2
+    · exact h'
+
 end Erdos881
