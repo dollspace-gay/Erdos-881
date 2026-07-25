@@ -2201,4 +2201,25 @@ theorem stable_pair_core_of_minimality_pool {A P : Set ℕ}
         by simpa using hcard⟩)
   exact ⟨K, S, hsplit⟩
 
+/-- **Destruction sharpens on descent.**  With deletions drawn from
+the pool `P`, a two-destroyed target''s mixed pairs (one part outside
+`P`) must be hit on the pool side: the out-of-pool part is immune.
+Level-two forks are single-channel — the descent gains strength as
+it goes down. -/
+theorem mixed_pair_destruction_sharpens {A P B : Set ℕ} {t : ℕ}
+    (hPA : P ⊆ A) (hB : B ⊆ P)
+    (hdest : ∀ x ∈ A, ∀ y ∈ A, x + y = t → x ∈ B ∨ y ∈ B) :
+    ∀ p ∈ P, ∀ q ∈ A, q ∉ P → p + q = t → p ∈ B := by
+  intro p hp q hq hqP hpq
+  rcases hdest p (hPA hp) q hq hpq with h | h
+  · exact h
+  · exact absurd (hB h) hqP
+
+/-- Pure pool pairs inherit destruction verbatim. -/
+theorem pool_pair_destruction {A P B : Set ℕ} {t : ℕ}
+    (hPA : P ⊆ A)
+    (hdest : ∀ x ∈ A, ∀ y ∈ A, x + y = t → x ∈ B ∨ y ∈ B) :
+    ∀ p ∈ P, ∀ p' ∈ P, p + p' = t → p ∈ B ∨ p' ∈ B :=
+  fun p hp p' hp' hpp' => hdest p (hPA hp) p' (hPA hp') hpp'
+
 end Erdos881
