@@ -3254,4 +3254,18 @@ theorem block_domination {A : Set ℕ} {w a : ℕ}
   have h1 : a < a + w := hown.1
   omega
 
+/-- **Covering permits no doubling gaps.**  Every window `(x, 2x+N₀]`
+contains an element: the pair for `2x + N₀ + 1` needs a big part.
+The coverage side of the alphabet pincer — scale ratios are bounded,
+while reach bounds them below: the tower''s ratio is squeezed to the
+ternary value from both sides. -/
+theorem covering_gap_bound {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀) :
+    ∀ x, ∃ a ∈ A, x < a ∧ a ≤ 2 * x + N₀ + 1 := by
+  intro x
+  obtain ⟨p, hp, q, hq, hpq⟩ := hcov (2 * x + N₀ + 1) (by omega)
+  rcases Nat.lt_or_ge x p with h | h
+  · exact ⟨p, hp, h, by omega⟩
+  · refine ⟨q, hq, by omega, by omega⟩
+
 end Erdos881
