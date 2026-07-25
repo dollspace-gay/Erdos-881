@@ -2274,4 +2274,23 @@ theorem level2_corep {A P B : Set ℕ} {N₀ b t : ℕ}
     rw [hxv] at hx
     exact ⟨by omega, hx⟩
 
+/-- **Level-2 rigidity is free.**  A destroyed double in a
+single-marker pool window is automatically doubling-rigid: every
+representation must route through the marker, and the complement of
+the marker in its own double is itself.  What required the full
+alignment machinery at level 1 is definitional at level 2 — the
+P/D split machinery (predecessor bans, chain kills) then applies
+immediately at the emergent modulus. -/
+theorem level2_rigidity_free {A P B : Set ℕ} {b : ℕ}
+    (hB : B ⊆ P)
+    (honly : ∀ x ∈ B, x ≤ 2 * b → x = b)
+    (hdest : ∀ x ∈ A, ∀ y ∈ A, x + y = 2 * b → x ∈ B ∨ y ∈ B) :
+    ∀ x ∈ A, ∀ y ∈ A, x + y = 2 * b → x = b ∧ y = b := by
+  intro x hx y hy hxy
+  rcases hdest x hx y hy hxy with h | h
+  · have hxb : x = b := honly x h (by omega)
+    omega
+  · have hyb : y = b := honly y h (by omega)
+    omega
+
 end Erdos881
