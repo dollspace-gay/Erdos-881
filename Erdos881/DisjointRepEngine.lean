@@ -5656,4 +5656,148 @@ theorem routing_dichotomy_of_hfail {A : Set ℕ} {N₀ : ℕ}
     omega
   exact ⟨S, hSne, hSpos, flood_routing_dichotomy h0 hcov h0S hcanon⟩
 
+/-- **THE PAIR FLOOD FROM MINIMALITY ALONE.**  A structure theorem
+for EVERY ℵ₀-minimal order-2 covering set — no counterexample
+hypothesis anywhere: there is one finite pair-free envelope `P`
+such that every large basis element `b` pair-guards a personal
+target `t ≥ b` (all order-2 representations of `t` route through
+`P ∪ {b}`).  A never-stalling pair dodge would build an infinite
+deletion leaving every late target a surviving pair — an order-2
+basis after deletion, contradicting minimality.  Sanity model: in
+the Cantor world every element `c` pair-guards its double `2c`
+with empty envelope. -/
+theorem pair_flood_of_minimality {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hmin : ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) :
+    ∃ P : Finset ℕ, PairFree A N₀ P ∧ ∃ X, ∀ b ∈ A, X ≤ b →
+      ∃ t, N₀ ≤ t ∧ b ≤ t ∧
+        ∀ x ∈ A, ∀ y ∈ A, x + y = t →
+          x ∈ insert b P ∨ y ∈ insert b P := by
+  classical
+  by_contra hno
+  push_neg at hno
+  have hfree0 : PairFree A N₀ ∅ := by
+    intro m hm
+    obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
+    exact ⟨x, hx, y, hy, hxy, Finset.notMem_empty x,
+      Finset.notMem_empty y⟩
+  have hpick : ∀ (P : Finset ℕ) (X : ℕ), ∃ b, b ∈ A ∧ X ≤ b ∧
+      (PairFree A N₀ P → ∀ m, N₀ ≤ m → b ≤ m →
+        ∃ x ∈ A, ∃ y ∈ A, x + y = m ∧
+          x ∉ insert b P ∧ y ∉ insert b P) := by
+    intro P X
+    by_cases hfree : PairFree A N₀ P
+    · obtain ⟨b, hbA, hXb, hbgood⟩ := hno P hfree X
+      exact ⟨b, hbA, hXb, fun _ => hbgood⟩
+    · obtain ⟨b, hbA, hXb⟩ := pairCovers_unbounded hcov X
+      exact ⟨b, hbA, hXb, fun h => absurd h hfree⟩
+  choose pick hpickA hpickge hpickfree using hpick
+  set st : ℕ → ℕ × Finset ℕ := fun j =>
+    Nat.rec (pick ∅ 1, {pick ∅ 1})
+      (fun _ prev => (pick prev.2 (prev.1 + 1),
+        insert (pick prev.2 (prev.1 + 1)) prev.2)) j with hst
+  have hstS : ∀ j, st (j + 1) = (pick (st j).2 ((st j).1 + 1),
+      insert (pick (st j).2 ((st j).1 + 1)) (st j).2) := fun _ => rfl
+  have hfreeS : ∀ j, PairFree A N₀ (st j).2 := by
+    intro j
+    induction j with
+    | zero =>
+      show PairFree A N₀ (insert (pick ∅ 1) ∅)
+      exact pairFree_insert hfree0 (hpickfree ∅ 1 hfree0)
+    | succ j ih =>
+      rw [show (st (j + 1)).2 =
+          insert (pick (st j).2 ((st j).1 + 1)) (st j).2 from
+        by rw [hstS]]
+      exact pairFree_insert ih (hpickfree (st j).2 ((st j).1 + 1) ih)
+  have hlastge : ∀ j, j + 1 ≤ (st j).1 := by
+    intro j
+    induction j with
+    | zero => simpa using hpickge ∅ 1
+    | succ j ih =>
+      have h1 : (st (j + 1)).1 = pick (st j).2 ((st j).1 + 1) := by
+        rw [hstS]
+      have h2 := hpickge (st j).2 ((st j).1 + 1)
+      omega
+  have hchain : ∀ i j, i ≤ j → (st i).2 ⊆ (st j).2 := by
+    intro i j hij
+    induction j with
+    | zero =>
+      have h0' : i = 0 := by omega
+      subst h0'
+      exact Finset.Subset.refl _
+    | succ j ih =>
+      rcases Nat.lt_or_ge i (j + 1) with h' | h'
+      · refine Finset.Subset.trans (ih (by omega)) ?_
+        rw [hstS]
+        exact Finset.subset_insert _ _
+      · have h1 : i = j + 1 := by omega
+        subst h1
+        exact Finset.Subset.refl _
+  have hlastmem : ∀ j, (st j).1 ∈ (st j).2 := by
+    intro j
+    cases j with
+    | zero => exact Finset.mem_singleton_self _
+    | succ j =>
+      rw [hstS]
+      exact Finset.mem_insert_self _ _
+  have hlaststep : ∀ j, (st j).1 < (st (j + 1)).1 := by
+    intro j
+    have h1 : (st (j + 1)).1 = pick (st j).2 ((st j).1 + 1) := by
+      rw [hstS]
+    have h2 := hpickge (st j).2 ((st j).1 + 1)
+    omega
+  have hlastmono : StrictMono (fun j => (st j).1) :=
+    strictMono_nat_of_lt_succ hlaststep
+  set B : Set ℕ := Set.range (fun j => (st j).1) with hB
+  have hBA : B ⊆ A := by
+    rintro x ⟨j, rfl⟩
+    show (st j).1 ∈ A
+    cases j with
+    | zero => exact hpickA ∅ 1
+    | succ j =>
+      rw [show (st (j + 1)).1 = pick (st j).2 ((st j).1 + 1) from
+        by rw [hstS]]
+      exact hpickA _ _
+  have hBinf : B.Infinite :=
+    Set.infinite_range_of_injective hlastmono.injective
+  refine hmin B hBA hBinf ⟨N₀, fun m hm => ?_⟩
+  obtain ⟨x, hx, y, hy, hxy, hxP, hyP⟩ := hfreeS m m hm
+  have havoid : ∀ w, w ≤ m → w ∉ (st m).2 → w ∉ B := by
+    intro w hwm hwP
+    rintro ⟨i, hi⟩
+    have hi' : (st i).1 = w := hi
+    rcases Nat.lt_or_ge m i with h' | h'
+    · have := hlastge i
+      omega
+    · exact hwP (by
+        rw [← hi']
+        exact hchain i m h' (hlastmem i))
+  exact ⟨x, hx, y, hy, havoid x (by omega) hxP,
+    havoid y (by omega) hyP, hxy⟩
+
+/-- **THE DOUBLE FLOOD.**  In a counterexample the two rails align
+on the SAME guardian: beyond one threshold, every basis element `b`
+simultaneously pair-guards a target `t_b ≥ b` over `P₂ ∪ {b}`
+(from minimality) and rep-guards a target `m_b ≥ b` over `P₃ ∪ {b}`
+(from order-3 failure).  Every large element of the enemy carries
+both duties at once — the full portrait of the enemy''s workforce. -/
+theorem double_flood_of_counterexample {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hmin : ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ P₂ P₃ : Finset ℕ, PairFree A N₀ P₂ ∧ RepFree A N₀ P₃ ∧
+      ∃ X, ∀ b ∈ A, X ≤ b →
+        (∃ t, N₀ ≤ t ∧ b ≤ t ∧
+          ∀ x ∈ A, ∀ y ∈ A, x + y = t →
+            x ∈ insert b P₂ ∨ y ∈ insert b P₂) ∧
+        (∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsRepHub A m (insert b P₃)) := by
+  obtain ⟨P₂, hP₂free, X₂, h₂⟩ := pair_flood_of_minimality hcov hmin
+  obtain ⟨P₃, hP₃free, X₃, h₃⟩ := rep_flood_of_hfail h0 hcov hfail
+  exact ⟨P₂, P₃, hP₂free, hP₃free, max X₂ X₃, fun b hb hXb =>
+    ⟨h₂ b hb (le_trans (le_max_left _ _) hXb),
+     h₃ b hb (le_trans (le_max_right _ _) hXb)⟩⟩
+
 end Erdos881
