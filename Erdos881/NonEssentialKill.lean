@@ -990,4 +990,28 @@ theorem erdos881_grand_assembly₅ {A : Set ℕ} {N₀ : ℕ}
       · exact absurd hpriv
           (hN₂ v m (le_trans (le_max_right _ _) hm) hv0)
 
+
+/-- **Witness levels repel translates.**  If every representation of
+`u + L` passes through `u`, then no anchor `c` with `u + c ∈ A` can
+have `L - c ∈ A` (unless `L = u + c`): the witness's unique
+decomposition forbids the cross pairing. -/
+theorem witness_level_translate_exit {A : Set ℕ} {u L c : ℕ}
+    (hwit : ∀ y ∈ A, ∀ z ∈ A, y + z = u + L → y = u ∨ z = u)
+    (hcL : c ≤ L) (hLuc : L ≠ u + c) (hc0 : 0 < c)
+    (huc : u + c ∈ A) (hLc : L - c ∈ A) :
+    False := by
+  rcases hwit (L - c) hLc (u + c) huc (by omega) with h | h <;> omega
+
+/-- **Witness levels repel each other's differences.**  Two witness
+levels of the same guard cannot have their `u`-shifted difference in
+`A`: the witness ladder is Sidon-like. -/
+theorem witness_levels_difference_exit {A : Set ℕ} {u L₁ L₂ : ℕ}
+    (hwit₂ : ∀ y ∈ A, ∀ z ∈ A, y + z = u + L₂ → y = u ∨ z = u)
+    (hL₁A : L₁ ∈ A) (hlt : L₁ < L₂) (hL₁u : L₁ ≠ u)
+    (hmem : u + L₂ - L₁ ∈ A) :
+    False := by
+  rcases hwit₂ (u + L₂ - L₁) hmem L₁ hL₁A (by omega) with h | h
+  · omega
+  · exact hL₁u h
+
 end Erdos881
