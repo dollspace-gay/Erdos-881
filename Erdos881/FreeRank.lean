@@ -513,4 +513,42 @@ theorem exists_strict_pair_rank {A : Set ℕ} {N₀ : ℕ}
   exact ⟨fun P => (hwf.apply P).rank,
     fun P Q h => Acc.rank_lt_of_rel (hwf.apply P) h⟩
 
+/-- The pool-relative freeness tree: picks restricted to a pool. -/
+def PoolFreeStep (A : Set ℕ) (N₀ : ℕ) (P₀ : Set ℕ)
+    (Q P : Finset ℕ) : Prop :=
+  FreeStep A N₀ Q P ∧ ∀ h ∈ Q, h ∈ P₀
+
+/-- Every pool tree is well-founded, as a subrelation of the full
+freeness tree. -/
+theorem poolFreeStep_wf {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (P₀ : Set ℕ) : WellFounded (PoolFreeStep A N₀ P₀) :=
+  Subrelation.wf (fun h => h.1) (freeStep_wf h0 hcov hfail)
+
+/-- **THE REDUCTION.**  No sequence of pools can have strictly
+descending root ranks: ordinal descent terminates.  Consequently,
+if any verified pool operation (removing an envelope, passing to
+guardians, passing to coreps, …) is ever shown to STRICTLY drop the
+pool tree's root rank along its own iterates, the counterexample is
+refuted outright and Erdős 881 (k = 2) is solved positively.  The
+entire remaining problem is compressed into finding one
+rank-dropping operation. -/
+theorem no_pool_rank_descent {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (pools : ℕ → Set ℕ) :
+    ¬∀ k, (((poolFreeStep_wf h0 hcov hfail (pools (k + 1))).apply
+        ∅).rank <
+      ((poolFreeStep_wf h0 hcov hfail (pools k)).apply ∅).rank) := by
+  intro hdesc
+  have hempty : IsEmpty {f : ℕ → Ordinal.{0} //
+      ∀ n, f (n + 1) < f n} := by
+    rw [← wellFounded_iff_isEmpty_descending_chain]
+    exact Ordinal.lt_wf
+  exact hempty.false ⟨fun k =>
+    ((poolFreeStep_wf h0 hcov hfail (pools k)).apply ∅).rank, hdesc⟩
+
 end Erdos881
