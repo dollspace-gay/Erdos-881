@@ -3115,4 +3115,116 @@ theorem exists_absolute_leaf {A : Set ℕ} {N₀ : ℕ}
       exact ⟨Q, hQnode, Finset.Subset.trans
         (Finset.subset_insert _ _) hQsub, hQmax⟩
 
+/-- Strict-superset relation on pair-free nodes. -/
+def PairSup (A : Set ℕ) (N₀ : ℕ) (Q P : Finset ℕ) : Prop :=
+  PairFreeNode A N₀ P ∧ PairFreeNode A N₀ Q ∧ P ⊂ Q
+
+/-- Order-2 mirror of `freeSup_wf`: under elementwise minimality
+alone, no infinite ascending inclusion-chain of pair-free sets. -/
+theorem pairSup_wf {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hmin : ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) :
+    WellFounded (PairSup A N₀) := by
+  classical
+  have hno := (hmin_iff_no_hereditarilyPairFree hcov).1 hmin
+  rw [wellFounded_iff_isEmpty_descending_chain]
+  constructor
+  rintro ⟨f, hf⟩
+  have hchain : ∀ n, f n ⊂ f (n + 1) := fun n => (hf n).2.2
+  have hchain' : ∀ m n, m ≤ n → f m ⊆ f n := by
+    intro m n hmn
+    induction n with
+    | zero =>
+      have h0' : m = 0 := by omega
+      subst h0'
+      exact Finset.Subset.refl _
+    | succ n ih =>
+      rcases Nat.lt_or_ge m (n + 1) with h | h
+      · exact Finset.Subset.trans (ih (by omega))
+          (hchain n).subset
+      · have h1 : m = n + 1 := by omega
+        subst h1
+        exact Finset.Subset.refl _
+  have hcard : ∀ n, n ≤ (f n).card := by
+    intro n
+    induction n with
+    | zero => omega
+    | succ n ih =>
+      have := Finset.card_lt_card (hchain n)
+      omega
+  refine hno ⟨{x | ∃ n, x ∈ f n}, ?_, ?_, ?_⟩
+  · intro hfin
+    obtain ⟨F, hF⟩ := Set.Finite.exists_finset_coe hfin
+    have hsub : ∀ n, f n ⊆ F := by
+      intro n x hx
+      have h1 : x ∈ {x | ∃ n, x ∈ f n} := ⟨n, hx⟩
+      rw [← hF] at h1
+      exact h1
+    have h1 := Finset.card_le_card (hsub (F.card + 1))
+    have h2 := hcard (F.card + 1)
+    omega
+  · rintro x ⟨n, hxn⟩
+    exact (hf n).1.1 x hxn
+  · intro P hP
+    choose st hst using hP
+    set N := P.sup (fun h => if hh : h ∈ P then st h hh else 0)
+      with hN
+    have hPN : ∀ h ∈ P, h ∈ f N := by
+      intro h hh
+      have h1 : st h hh ≤ N := by
+        have := Finset.le_sup (f := fun h' =>
+          if hh' : h' ∈ P then st h' hh' else 0) hh
+        simpa [hh] using this
+      exact hchain' (st h hh) N h1 (hst h hh)
+    exact PairFree.mono hPN (hf N).1.2
+
+/-- **The order-2 absolute flood** — a structure theorem for EVERY
+elementwise-minimal order-2 covering set, no counterexample
+hypothesis: each pair-free node extends to an inclusion-maximal
+pair-free envelope over which every outside positive basis element
+is a pair-guardian. -/
+theorem exists_absolute_pair_leaf {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hmin : ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n)
+    (P : Finset ℕ) (hP : PairFreeNode A N₀ P) :
+    ∃ Q : Finset ℕ, PairFreeNode A N₀ Q ∧ P ⊆ Q ∧
+      ∀ b ∈ A, 0 < b → b ∉ Q →
+        ∃ m, N₀ ≤ m ∧ IsPairHub A m (insert b Q) := by
+  classical
+  have hwf := pairSup_wf hcov hmin
+  revert hP
+  induction P using hwf.induction with
+  | _ P ih =>
+    intro hP
+    by_cases hmax : ∀ b ∈ A, 0 < b → b ∉ P →
+        ¬PairFreeNode A N₀ (insert b P)
+    · refine ⟨P, hP, Finset.Subset.refl P, ?_⟩
+      intro b hbA hbpos hbP
+      have hnot := hmax b hbA hbpos hbP
+      have hnotfree : ¬PairFree A N₀ (insert b P) := by
+        intro hfree
+        refine hnot ⟨?_, hfree⟩
+        intro h hh
+        rcases Finset.mem_insert.1 hh with h' | h'
+        · rw [h']
+          exact ⟨hbA, hbpos⟩
+        · exact hP.1 h h'
+      rw [PairFree] at hnotfree
+      push_neg at hnotfree
+      obtain ⟨m, hm, hall⟩ := hnotfree
+      refine ⟨m, hm, ?_⟩
+      intro x hx y hy hsum
+      by_cases hxin : x ∈ insert b P
+      · exact Or.inl hxin
+      · exact Or.inr (hall x hx y hy hsum hxin)
+    · push_neg at hmax
+      obtain ⟨b, hbA, hbpos, hbP, hbfree⟩ := hmax
+      have hstep : PairSup A N₀ (insert b P) P :=
+        ⟨hP, hbfree, Finset.ssubset_insert hbP⟩
+      obtain ⟨Q, hQnode, hQsub, hQmax⟩ := ih _ hstep hbfree
+      exact ⟨Q, hQnode, Finset.Subset.trans
+        (Finset.subset_insert _ _) hQsub, hQmax⟩
+
 end Erdos881
