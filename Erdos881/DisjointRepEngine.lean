@@ -1284,4 +1284,37 @@ theorem doubling_rigidity_of_service {A B : Set ℕ} {n b s₀ : ℕ}
   have h2b : n - s₀ = 2 * b := by omega
   rcases halign s₀ hs₀ x hx y hy (by omega) with h | h <;> omega
 
+/-- **Rigidity is reflection-freeness.**  An element''s double has the
+unique representation `(x, x)` exactly when `A` contains no symmetric
+pair around `x`: the reflection of `A` through `x` meets `A` only at
+`x` itself.  The convergence''s rigidity interface, in the campaign''s
+mirror vocabulary. -/
+theorem doubling_rigid_iff_reflection_free {A : Set ℕ} {x : ℕ}
+    (hx : x ∈ A) :
+    (∀ a ∈ A, ∀ b ∈ A, a + b = 2 * x → a = x ∧ b = x) ↔
+    (∀ w, 0 < w → w ≤ x → ¬(x - w ∈ A ∧ x + w ∈ A)) := by
+  constructor
+  · intro hrig w hw hwx ⟨hlo, hhi⟩
+    have := hrig (x - w) hlo (x + w) hhi (by omega)
+    omega
+  · intro hfree a ha b hb hab
+    rcases Nat.lt_trichotomy a x with h | h | h
+    · exfalso
+      exact hfree (x - a) (by omega) (by omega)
+        ⟨by
+          have hxa : x - (x - a) = a := by omega
+          rwa [hxa], by
+          have hxb : x + (x - a) = b := by omega
+          rwa [hxb]⟩
+    · omega
+    · exfalso
+      exact hfree (a - x) (by omega) (by omega)
+        ⟨by
+          have hxa : x - (a - x) = 2 * x - a := by omega
+          rw [hxa]
+          have hxb : 2 * x - a = b := by omega
+          rwa [hxb], by
+          have hxa : x + (a - x) = a := by omega
+          rwa [hxa]⟩
+
 end Erdos881
