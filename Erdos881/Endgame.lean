@@ -118,4 +118,16 @@ theorem endgame_classification₃ (A : Set ℕ) (N₀ : ℕ)
           S.card = d + 1 → ¬RepFree A N₀ S))) :=
   stream_rep_classification A N₀ e hemono
 
+/-- **THE CHARACTERIZATION** — the problem in one sentence: the
+counterexample condition is equivalent to the absence of an
+infinite hereditarily rep-free subset.  Erdős 881 (k = 2) asks
+exactly whether every ℵ₀-minimal exact order-2 basis contains an
+infinite set all of whose finite subsets are rep-free. -/
+theorem endgame_characterization {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) :
+    (∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) ↔
+    ¬∃ B : Set ℕ, HereditarilyFree A N₀ B :=
+  hfail_iff_no_hereditarily_free h0 hcov
+
 end Erdos881

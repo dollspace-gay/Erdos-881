@@ -167,3 +167,19 @@ clique world.
 counting via sparsification; infinite-rank pools are wide-not-tall
 free families.  The compressed open question remains the
 rank-dropping operation.
+
+## 8. THE CHARACTERIZATION (18:20)
+
+**Theorem (`hfail_iff_no_hereditarily_free`).**  For covering `A`
+with `0 ∈ A`: the counterexample condition holds iff `A` has NO
+infinite hereditarily rep-free subset (a set all of whose finite
+subsets are rep-free — equivalently, a surviving deletion).
+
+**Erdős 881 (k = 2), equivalent form:** does every ℵ₀-minimal
+exact order-2 basis contain an infinite hereditarily rep-free set?
+
+The whole campaign now organizes around this sentence: the floods
+are the stalled certificates of hereditary-freeness attempts, the
+crystals are its local obstructions, the rank measures how far
+freeness extends, and the adaptive toolkit (immunity, location)
+describes where obstructions can and cannot sit.
