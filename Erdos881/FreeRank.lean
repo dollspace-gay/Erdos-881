@@ -3000,4 +3000,119 @@ theorem exists_maximal_free_node {A : Set ℕ} {N₀ : ℕ}
         _ = R := hReq.symm
         _ ⊆ Q := hRQ
 
+/-- The strict-superset relation on free nodes. -/
+def FreeSup (A : Set ℕ) (N₀ : ℕ) (Q P : Finset ℕ) : Prop :=
+  FreeNode A N₀ P ∧ FreeNode A N₀ Q ∧ P ⊂ Q
+
+/-- **No infinite ascending inclusion-chains of free sets**: their
+union would be an infinite hereditarily free set.  Stronger than
+tree well-foundedness — insertions anywhere, not just at the top. -/
+theorem freeSup_wf {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    WellFounded (FreeSup A N₀) := by
+  classical
+  have hno := (hfail_iff_no_hereditarily_free h0 hcov).1 hfail
+  rw [wellFounded_iff_isEmpty_descending_chain]
+  constructor
+  rintro ⟨f, hf⟩
+  have hchain : ∀ n, f n ⊂ f (n + 1) := fun n => (hf n).2.2
+  have hchain' : ∀ m n, m ≤ n → f m ⊆ f n := by
+    intro m n hmn
+    induction n with
+    | zero =>
+      have h0' : m = 0 := by omega
+      subst h0'
+      exact Finset.Subset.refl _
+    | succ n ih =>
+      rcases Nat.lt_or_ge m (n + 1) with h | h
+      · exact Finset.Subset.trans (ih (by omega))
+          (hchain n).subset
+      · have h1 : m = n + 1 := by omega
+        subst h1
+        exact Finset.Subset.refl _
+  have hcard : ∀ n, n ≤ (f n).card := by
+    intro n
+    induction n with
+    | zero => omega
+    | succ n ih =>
+      have := Finset.card_lt_card (hchain n)
+      omega
+  refine hno ⟨{x | ∃ n, x ∈ f n}, ?_, ?_, ?_⟩
+  · -- infinite: cards grow without bound
+    intro hfin
+    obtain ⟨F, hF⟩ := Set.Finite.exists_finset_coe hfin
+    have hsub : ∀ n, f n ⊆ F := by
+      intro n x hx
+      have h1 : x ∈ {x | ∃ n, x ∈ f n} := ⟨n, hx⟩
+      rw [← hF] at h1
+      exact h1
+    have h1 := Finset.card_le_card (hsub (F.card + 1))
+    have h2 := hcard (F.card + 1)
+    omega
+  · rintro x ⟨n, hxn⟩
+    exact (hf n).1.1 x hxn
+  · intro P hP
+    choose st hst using hP
+    set N := P.sup (fun h => if hh : h ∈ P then st h hh else 0)
+      with hN
+    have hPN : ∀ h ∈ P, h ∈ f N := by
+      intro h hh
+      have h1 : st h hh ≤ N := by
+        have := Finset.le_sup (f := fun h' =>
+          if hh' : h' ∈ P then st h' hh' else 0) hh
+        simpa [hh] using this
+      exact hchain' (st h hh) N h1 (hst h hh)
+    exact RepFree.mono hPN (hf N).1.2
+
+/-- **THE ABSOLUTE FLOOD.**  Every free node extends to an
+inclusion-maximal free set — a fixed finite free envelope over
+which EVERY positive basis element outside it, small or large, is
+a guardian: adding any one of them creates a hub.  The strongest
+stall form: one canonical envelope, total guardianship. -/
+theorem exists_absolute_leaf {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (P : Finset ℕ) (hP : FreeNode A N₀ P) :
+    ∃ Q : Finset ℕ, FreeNode A N₀ Q ∧ P ⊆ Q ∧
+      ∀ b ∈ A, 0 < b → b ∉ Q →
+        ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b Q) := by
+  classical
+  have hwf := freeSup_wf h0 hcov hfail
+  revert hP
+  induction P using hwf.induction with
+  | _ P ih =>
+    intro hP
+    by_cases hmax : ∀ b ∈ A, 0 < b → b ∉ P →
+        ¬FreeNode A N₀ (insert b P)
+    · refine ⟨P, hP, Finset.Subset.refl P, ?_⟩
+      intro b hbA hbpos hbP
+      have hnot := hmax b hbA hbpos hbP
+      have hnotfree : ¬RepFree A N₀ (insert b P) := by
+        intro hfree
+        refine hnot ⟨?_, hfree⟩
+        intro h hh
+        rcases Finset.mem_insert.1 hh with h' | h'
+        · rw [h']
+          exact ⟨hbA, hbpos⟩
+        · exact hP.1 h h'
+      rw [RepFree] at hnotfree
+      push_neg at hnotfree
+      obtain ⟨m, hm, hall⟩ := hnotfree
+      refine ⟨m, hm, ?_⟩
+      intro x hx y hy z hz hsum
+      by_contra hmiss
+      push_neg at hmiss
+      obtain ⟨h1, h2, h3⟩ := hmiss
+      exact h3 (hall x hx y hy z hz hsum h1 h2)
+    · push_neg at hmax
+      obtain ⟨b, hbA, hbpos, hbP, hbfree⟩ := hmax
+      have hstep : FreeSup A N₀ (insert b P) P :=
+        ⟨hP, hbfree, Finset.ssubset_insert hbP⟩
+      obtain ⟨Q, hQnode, hQsub, hQmax⟩ := ih _ hstep hbfree
+      exact ⟨Q, hQnode, Finset.Subset.trans
+        (Finset.subset_insert _ _) hQsub, hQmax⟩
+
 end Erdos881
