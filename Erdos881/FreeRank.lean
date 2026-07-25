@@ -741,4 +741,51 @@ theorem free_set_card_le_rank {A : Set ℕ} {N₀ : ℕ}
   rw [h0pre] at this
   exact this
 
+/-- **Rank-to-size.**  Conversely, rank at least `n` above a node
+yields a free pool superset with `n` more elements: below `ω`, the
+pool tree's root rank IS the supremum of free-set cardinalities.
+The ordinal invariant is arithmetic in its finite regime. -/
+theorem rank_ge_imp_free_set {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {P₀ : Set ℕ} :
+    ∀ (n : ℕ) (P : Finset ℕ), FreeNode A N₀ P → (∀ h ∈ P, h ∈ P₀) →
+      ((n : ℕ) : Ordinal.{0}) ≤
+        ((poolFreeStep_wf h0 hcov hfail P₀).apply P).rank →
+      ∃ Q : Finset ℕ, FreeNode A N₀ Q ∧ (∀ h ∈ Q, h ∈ P₀) ∧
+        Q.card = P.card + n := by
+  classical
+  set hwf := poolFreeStep_wf h0 hcov hfail P₀ with hhwf
+  intro n
+  induction n with
+  | zero =>
+    intro P hPnode hPpool _
+    exact ⟨P, hPnode, hPpool, by omega⟩
+  | succ n ih =>
+    intro P hPnode hPpool hrank
+    have hpos : ((n : ℕ) : Ordinal.{0}) < (hwf.apply P).rank := by
+      have h1 : ((n : ℕ) : Ordinal.{0}) <
+          ((n + 1 : ℕ) : Ordinal.{0}) := by
+        exact_mod_cast Nat.lt_succ_self n
+      exact lt_of_lt_of_le h1 hrank
+    rw [Acc.rank_eq] at hpos
+    rw [Ordinal.lt_iSup_iff] at hpos
+    obtain ⟨⟨C, hC⟩, hlt⟩ := hpos
+    have hCrank : ((n : ℕ) : Ordinal.{0}) ≤
+        (hwf.apply C).rank := by
+      have h1 := Order.lt_succ_iff.1 hlt
+      exact h1
+    have hCnode : FreeNode A N₀ C := hC.1.2.1
+    have hCpool : ∀ h ∈ C, h ∈ P₀ := hC.2
+    obtain ⟨Q, hQnode, hQpool, hQcard⟩ := ih C hCnode hCpool hCrank
+    obtain ⟨-, -, b, hbA, hbpos, hbmax, hCeq⟩ := hC.1
+    have hbP : b ∉ P := fun h => by
+      have := hbmax b h
+      omega
+    have hCcard : C.card = P.card + 1 := by
+      rw [hCeq]
+      rw [Finset.card_insert_of_notMem hbP]
+    exact ⟨Q, hQnode, hQpool, by omega⟩
+
 end Erdos881
