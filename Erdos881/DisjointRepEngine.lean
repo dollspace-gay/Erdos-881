@@ -1115,4 +1115,37 @@ theorem pipeline_entry_of_tight_pair {A : Set ℕ} {N₀ : ℕ} {S : Finset ℕ}
     pairDestroyer_of_pair_hub h0 hcov (le_trans (le_max_right _ _) hn)
       hhub⟩
 
+/-- **The team-translate equivalence.**  For a team-hubbed target
+whose team survives the deletion, order-3 failure under `B` is
+EXACTLY simultaneous order-2 destruction of every team translate:
+`n` dies iff for each `s ∈ S`, every 2-representation of `n - s`
+meets `B`.  The tight-team branch is therefore the simultaneous
+translate-destruction problem — the guardian-bridge territory, with
+the counting vise applying per translate. -/
+theorem team_target_fails_iff {A B : Set ℕ} {n : ℕ} {S : Finset ℕ}
+    (hhub : IsRepHub A n S) (hSA : ∀ s ∈ S, s ∈ A)
+    (hBS : ∀ s ∈ S, s ∉ B) (hSn : ∀ s ∈ S, s ≤ n) :
+    (∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = n →
+      x ∈ B ∨ y ∈ B ∨ z ∈ B) ↔
+    (∀ s ∈ S, ∀ x ∈ A, ∀ y ∈ A, x + y = n - s →
+      x ∈ B ∨ y ∈ B) := by
+  constructor
+  · intro hdead s hs x hx y hy hxy
+    have hsn : s ≤ n := hSn s hs
+    rcases hdead s (hSA s hs) x hx y hy (by omega) with h | h | h
+    · exact absurd h (hBS s hs)
+    · exact Or.inl h
+    · exact Or.inr h
+  · intro htrans x hx y hy z hz hsum
+    rcases hhub x hx y hy z hz hsum with h | h | h
+    · rcases htrans x h y hy z hz (by omega) with h' | h'
+      · exact Or.inr (Or.inl h')
+      · exact Or.inr (Or.inr h')
+    · rcases htrans y h x hx z hz (by omega) with h' | h'
+      · exact Or.inl h'
+      · exact Or.inr (Or.inr h')
+    · rcases htrans z h x hx y hy (by omega) with h' | h'
+      · exact Or.inl h'
+      · exact Or.inr (Or.inl h')
+
 end Erdos881
