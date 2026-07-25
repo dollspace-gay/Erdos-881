@@ -1388,4 +1388,22 @@ theorem no_total_doubles_service {A : Set ℕ} {N₀ Ns d : ℕ}
   have := hrig (b - d) hb1 (by omega) b hbA (b - 2 * d) hb2 (by omega)
   omega
 
+/-- **Service exclusion.**  A unique service fiber bars every third
+element: if `b + q` has exactly the representation `(b, q)`, then for
+any `a ∈ A` other than `b` and `q`, the complement `b + q - a` is not
+in `A`.  Each served marker punches `|A ∩ window|`-many holes into
+`A` at the service scale — the partner-mode''s accumulating cost
+against covering density. -/
+theorem service_exclusion {A : Set ℕ} {b q : ℕ}
+    (hb : b ∈ A) (hq : q ∈ A)
+    (huniq : ∀ p ∈ A, ∀ r ∈ A, p + r = b + q →
+      (p = b ∧ r = q) ∨ (p = q ∧ r = b))
+    {a : ℕ} (ha : a ∈ A) (hab : a ≠ b) (haq : a ≠ q)
+    (hale : a ≤ b + q) :
+    b + q - a ∉ A := by
+  intro hmem
+  rcases huniq a ha (b + q - a) hmem (by omega) with ⟨h1, _⟩ | ⟨h1, _⟩
+  · exact hab h1
+  · exact haq h1
+
 end Erdos881
