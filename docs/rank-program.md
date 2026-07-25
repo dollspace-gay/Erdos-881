@@ -84,6 +84,19 @@ it.  Candidate operations, with status:
    descent would compare barrier ranks across ground streams.
    Heavy machinery; Mathlib support unclear.
 
+## STATUS UPDATE (2026-07-25 17:00): the framework is FORMAL
+
+`Erdos881/FreeRank.lean` now contains: `freeStep_wf`,
+`exists_strict_rank`, the leaf law, the stalled zone (hereditary,
+shallow, nonempty via the flood), `root_rank_dichotomy`, pool trees
+(`poolFreeStep_wf`), **THE REDUCTION** (`no_pool_rank_descent`: one
+strictly rank-dropping pool operation solves the problem),
+`rank_le_of_subrel` + `pool_rank_mono` (weak monotonicity), and
+`pool_rank_pos` (the stream kill gives rank ≥ 1).  Order-2 port:
+every minimal basis carries an ordinal invariant
+(`exists_strict_pair_rank`).  The open question is now exactly:
+WHICH pool operation is strictly rank-dropping along its iterates?
+
 ## Recommendation for the next session
 
 (a) Formalize the disjoint-envelope iteration (finite level-k
