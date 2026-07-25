@@ -1326,4 +1326,169 @@ theorem pair_rank_le_rep_rank {A : Set ℕ} {N₀ : ℕ}
     ((freeStep_wf h0 hcov hfail).apply P).rank :=
   rank_le_of_subrel (fun _ _ h => freeStep_of_pairFreeStep h0 h) _ _
 
+/-- Pair-hub-freeness of a set is exactly pair-freeness. -/
+theorem pairFree_iff_no_pairHub {A : Set ℕ} {N₀ : ℕ}
+    {S : Finset ℕ} :
+    PairFree A N₀ S ↔ ¬∃ m, N₀ ≤ m ∧ IsPairHub A m S := by
+  constructor
+  · rintro hfree ⟨m, hm, hhub⟩
+    obtain ⟨x, hx, y, hy, hs, hxS, hyS⟩ := hfree m hm
+    rcases hhub x hx y hy hs with h | h
+    · exact hxS h
+    · exact hyS h
+  · intro hno m hm
+    by_contra hall
+    push_neg at hall
+    refine hno ⟨m, hm, ?_⟩
+    intro x hx y hy hs
+    by_contra hmiss
+    push_neg at hmiss
+    obtain ⟨h1, h2⟩ := hmiss
+    exact h2 (hall x hx y hy hs h1)
+
+/-- **The pair clique descent, for every minimal basis.**  Along
+any stream whose `(d+1)`-subsets are all non-pair-free, Ramsey at
+each arity yields one of: a subsequence every element of which
+2-guards a target of its own (the order-2 floor is a legal world,
+not a contradiction), or a PERFECT PAIR-CRYSTAL — all `d'`-subsets
+pair-free, all `(d'+1)`-subsets pair-hubs — at some level
+`1 ≤ d' ≤ d`. -/
+theorem pair_clique_descent {A : Set ℕ} {N₀ : ℕ} :
+    ∀ (d : ℕ) (e : ℕ → ℕ), 1 ≤ d → StrictMono e →
+    (∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e i = h) → S.card = d + 1 →
+      ¬PairFree A N₀ S) →
+    ∃ f : ℕ → ℕ, StrictMono f ∧
+      ((∀ i, ¬PairFree A N₀ {e (f i)}) ∨
+      (∃ d', 1 ≤ d' ∧ d' ≤ d ∧
+        (∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e (f i) = h) →
+          S.card = d' → PairFree A N₀ S) ∧
+        (∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e (f i) = h) →
+          S.card = d' + 1 → ¬PairFree A N₀ S))) := by
+  classical
+  intro d
+  induction d using Nat.strong_induction_on with
+  | _ d ihd =>
+    intro e hd1 hemono hnonfree
+    obtain ⟨r, rfl⟩ : ∃ r, d = r + 1 := ⟨d - 1, by omega⟩
+    set c : (Fin (r + 1) → ℕ) → Bool := fun t =>
+      if PairFree A N₀ (Finset.univ.image (fun i => e (t i)))
+      then true else false with hc
+    have hciff : ∀ t : Fin (r + 1) → ℕ, c t = true ↔
+        PairFree A N₀ (Finset.univ.image (fun i => e (t i))) := by
+      intro t
+      by_cases h : PairFree A N₀
+        (Finset.univ.image (fun i => e (t i)))
+      · simp [hc, h]
+      · simp [hc, h]
+    obtain ⟨f₁, hf₁, bt, hhom⟩ := infinite_ramsey_tuples r c
+    rcases Bool.eq_false_or_eq_true bt with hbt | hbt
+    · -- perfect pair-crystal at level r + 1
+      subst hbt
+      refine ⟨f₁, hf₁, Or.inr ⟨r + 1, by omega, le_refl _, ?_, ?_⟩⟩
+      · intro S hSmem hScard
+        obtain ⟨u, humono, huim⟩ := sorted_indices_of_card
+          (fun i j hij => hemono (hf₁ hij)) hScard hSmem
+        have h1 := hhom u humono
+        rw [hciff] at h1
+        have h2 : (Finset.univ.image fun i => e (f₁ (u i))) = S :=
+          huim
+        rw [h2] at h1
+        exact h1
+      · intro S hSmem hScard
+        refine hnonfree S ?_ hScard
+        intro h hh
+        obtain ⟨i, hi⟩ := hSmem h hh
+        exact ⟨f₁ i, hi⟩
+    · subst hbt
+      have hallnonfree : ∀ S : Finset ℕ,
+          (∀ h ∈ S, ∃ i, e (f₁ i) = h) → S.card = r + 1 →
+          ¬PairFree A N₀ S := by
+        intro S hSmem hScard hfree
+        obtain ⟨u, humono, huim⟩ := sorted_indices_of_card
+          (fun i j hij => hemono (hf₁ hij)) hScard hSmem
+        have h1 := hhom u humono
+        have h2 : c (fun i => f₁ (u i)) = true := by
+          rw [hciff]
+          have h3 : (Finset.univ.image fun i => e (f₁ (u i))) = S :=
+            huim
+          rw [h3]
+          exact hfree
+        rw [h1] at h2
+        exact Bool.false_ne_true h2
+      rcases Nat.lt_or_ge r 1 with hr0 | hr1
+      · -- r = 0: every refined singleton 2-guards — the legal floor
+        have hr0' : r = 0 := by omega
+        subst hr0'
+        refine ⟨f₁, hf₁, Or.inl ?_⟩
+        intro i
+        refine hallnonfree {e (f₁ i)} ?_ (Finset.card_singleton _)
+        intro h hh
+        exact ⟨i, by rw [Finset.mem_singleton.1 hh]⟩
+      · obtain ⟨f₂, hf₂, hout⟩ := ihd r (by omega)
+          (fun i => e (f₁ i)) hr1
+          (fun i j hij => hemono (hf₁ hij))
+          (by
+            intro S hSmem hScard
+            exact hallnonfree S hSmem (by omega))
+        rcases hout with hguard | ⟨d', hd'1, hd'le, hfree', hnf'⟩
+        · exact ⟨f₁ ∘ f₂, hf₁.comp hf₂, Or.inl hguard⟩
+        · exact ⟨f₁ ∘ f₂, hf₁.comp hf₂, Or.inr
+            ⟨d', hd'1, by omega, hfree', hnf'⟩⟩
+
+/-- **The stream classification, hypothesis-free.**  Any strictly
+monotone stream, over any set whatsoever, refines into one of three
+order-2 worlds: WIDE FREEDOM (pair-free subsets of every size),
+TOTAL GUARDIANSHIP (an infinite subsequence each of whose elements
+pair-guards a target of its own), or a PERFECT PAIR-CRYSTAL (a
+level `d ≥ 1` with all `d`-subsets pair-free and all
+`(d+1)`-subsets pair-hubs).  Pure combinatorics of the pair-freeness
+lattice; every minimal basis and every counterexample stream falls
+under it. -/
+theorem stream_pair_classification (A : Set ℕ) (N₀ : ℕ)
+    (e : ℕ → ℕ) (hemono : StrictMono e) :
+    (∀ n, ∃ S : Finset ℕ, (∀ h ∈ S, ∃ i, e i = h) ∧ S.card = n ∧
+      PairFree A N₀ S) ∨
+    ∃ f : ℕ → ℕ, StrictMono f ∧
+      ((∀ i, ¬PairFree A N₀ {e (f i)}) ∨
+      (∃ d, 1 ≤ d ∧
+        (∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e (f i) = h) →
+          S.card = d → PairFree A N₀ S) ∧
+        (∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e (f i) = h) →
+          S.card = d + 1 → ¬PairFree A N₀ S))) := by
+  classical
+  by_cases hwide : ∀ n, ∃ S : Finset ℕ,
+      (∀ h ∈ S, ∃ i, e i = h) ∧ S.card = n ∧ PairFree A N₀ S
+  · exact Or.inl hwide
+  · right
+    push_neg at hwide
+    obtain ⟨n, hn⟩ := hwide
+    rcases Nat.lt_or_ge n 2 with hn2 | hn2
+    · -- n ≤ 1: every singleton is non-free (directly, or via ∅)
+      refine ⟨id, fun i j hij => hij, Or.inl ?_⟩
+      intro i
+      rcases Nat.eq_zero_or_pos n with hn0 | hnpos
+      · subst hn0
+        have hempt : ¬PairFree A N₀ (∅ : Finset ℕ) := by
+          intro hfree
+          exact absurd hfree (hn ∅ (fun h hh =>
+            absurd hh (Finset.notMem_empty h)) rfl)
+        intro hfree
+        exact hempt (PairFree.mono (Finset.empty_subset _) hfree)
+      · have hn1 : n = 1 := by omega
+        subst hn1
+        intro hfree
+        exact hn {e (id i)} (fun h hh =>
+          ⟨i, (Finset.mem_singleton.1 hh).symm⟩)
+          (Finset.card_singleton _) hfree
+    · -- n ≥ 2: run the descent at level n − 1
+      have hnonfree : ∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e i = h) →
+          S.card = (n - 1) + 1 → ¬PairFree A N₀ S := by
+        intro S hSmem hScard hfree
+        exact hn S hSmem (by omega) hfree
+      obtain ⟨f, hf, hout⟩ := pair_clique_descent (n - 1) e
+        (by omega) hemono hnonfree
+      rcases hout with hguard | ⟨d, hd1, -, hfree', hnf'⟩
+      · exact ⟨f, hf, Or.inl hguard⟩
+      · exact ⟨f, hf, Or.inr ⟨d, hd1, hfree', hnf'⟩⟩
+
 end Erdos881
