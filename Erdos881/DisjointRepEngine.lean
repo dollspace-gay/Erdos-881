@@ -1185,4 +1185,24 @@ theorem disjointReps_le_hits {A B : Set ℕ} {n K : ℕ}
       | 2 => omega
     exact hle (g i)
 
+/-- **The alignment demand.**  If a team-hubbed target fails under a
+deletion whose only member below the target is the single marker `b`,
+then `b` privately owns EVERY team translate: each `n - s` has all
+its 2-representations through `b`.  This is the supply the enemy must
+stock, for every choice of marker, at every scale — and the lab
+census finds it only in digit-rigid (carry-repairable) structures. -/
+theorem alignment_of_single_marker_failure {A B : Set ℕ} {n b : ℕ}
+    {S : Finset ℕ}
+    (hhub : IsRepHub A n S) (hSA : ∀ s ∈ S, s ∈ A)
+    (hBS : ∀ s ∈ S, s ∉ B) (hSn : ∀ s ∈ S, s ≤ n)
+    (hdead : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = n →
+      x ∈ B ∨ y ∈ B ∨ z ∈ B)
+    (honly : ∀ x ∈ B, x ≤ n → x = b) :
+    ∀ s ∈ S, ∀ x ∈ A, ∀ y ∈ A, x + y = n - s → x = b ∨ y = b := by
+  intro s hs x hx y hy hxy
+  have htrans := (team_target_fails_iff hhub hSA hBS hSn).1 hdead
+  rcases htrans s hs x hx y hy hxy with h | h
+  · exact Or.inl (honly x h (by omega))
+  · exact Or.inr (honly y h (by omega))
+
 end Erdos881
