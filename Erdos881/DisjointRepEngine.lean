@@ -2852,4 +2852,25 @@ theorem zero_payment_gap_bound {A : Set ℕ} {a t p q : ℕ}
   have h4 : t < 2 * a := hown.2.1
   omega
 
+/-- **No five zero-payers in an octave.**  Two disjoint straddling
+triples each span more than half the octave floor — together they
+overfill the octave.  Zero-payment owners number at most four per
+octave; covering density (√-supply per octave) therefore forces
+PAYING owners cofinally: the optimization lower bound, modulo the
+final density count. -/
+theorem no_five_zero_payers {A : Set ℕ} {X : ℕ}
+    {x₁ x₂ x₃ x₄ x₅ t₂ t₄ : ℕ}
+    (h₁ : x₁ ∈ A) (h₃ : x₃ ∈ A) (h₅ : x₅ ∈ A)
+    (ho₂ : OwnsTarget A x₂ t₂) (ho₄ : OwnsTarget A x₄ t₄)
+    (hp₂ : ∀ y ∈ A, 2 * y > t₂ → y < t₂ → y = x₂)
+    (hp₄ : ∀ y ∈ A, 2 * y > t₄ → y < t₄ → y = x₄)
+    (hord : x₁ < x₂ ∧ x₂ < x₃ ∧ x₃ < x₄ ∧ x₄ < x₅)
+    (hoct : X < x₁ ∧ x₅ < 2 * X) :
+    False := by
+  obtain ⟨h12, h23, h34, h45⟩ := hord
+  obtain ⟨hX1, hX5⟩ := hoct
+  have hb₂ := zero_payment_gap_bound ho₂ hp₂ h₁ h12 h₃ h23
+  have hb₄ := zero_payment_gap_bound ho₄ hp₄ h₃ h34 h₅ h45
+  omega
+
 end Erdos881
