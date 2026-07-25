@@ -7737,4 +7737,44 @@ theorem failing_fan_saturated {A B : Set ℕ} {m : ℕ}
   · exact Or.inr h
   · exact absurd h hzB
 
+/-- **The disjoint-deletion cap: three, never four.**  A single
+covered target cannot fail simultaneously for four pairwise
+disjoint deletions: one representation has only three parts, and
+each part lies in at most one of the four sets.  Failing-target
+families of pairwise disjoint deletions are ≤3-wise intersecting —
+forcing at least `k/3` distinct failures among any `k` disjoint
+deletions' witnesses. -/
+theorem failing_cap_disjoint_deletions {A : Set ℕ} {N₀ m : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (hm : N₀ ≤ m)
+    (B : Fin 4 → Set ℕ)
+    (hdisj : ∀ i j, i ≠ j → ∀ x, x ∈ B i → x ∉ B j)
+    (hdead : ∀ i, ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = m →
+      x ∈ B i ∨ y ∈ B i ∨ z ∈ B i) :
+    False := by
+  classical
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
+  -- the parts of one fixed representation
+  set part : Fin 3 → ℕ := ![x, y, 0] with hpart
+  have hpartA : ∀ s, part s ∈ A := by
+    intro s
+    fin_cases s
+    · exact hx
+    · exact hy
+    · exact h0
+  have hslot : ∀ i : Fin 4, ∃ s : Fin 3, part s ∈ B i := by
+    intro i
+    rcases hdead i x hx y hy 0 h0 (by omega) with h | h | h
+    · exact ⟨0, h⟩
+    · exact ⟨1, h⟩
+    · exact ⟨2, h⟩
+  choose s hs using hslot
+  have hcard : Fintype.card (Fin 3) < Fintype.card (Fin 4) := by
+    simp
+  obtain ⟨i, j, hij, hsij⟩ :=
+    Fintype.exists_ne_map_eq_of_card_lt s hcard
+  have h1 : part (s i) ∈ B i := hs i
+  have h2 : part (s j) ∈ B j := hs j
+  rw [hsij] at h1
+  exact hdisj j i (fun h => hij h.symm) _ h2 h1
+
 end Erdos881
