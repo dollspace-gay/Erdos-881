@@ -1261,4 +1261,44 @@ theorem deletion_dichotomy_of_anchors {A B : Set ℕ} {N₀ : ℕ}
     · exact ⟨m, le_trans (le_max_left _ _) hm, Or.inl h⟩
     · exact ⟨m, le_trans (le_max_left _ _) hm, Or.inr h⟩
 
+
+/-- **Fixed-pair corep dichotomy.**  A pair with cofinal destroyed
+targets has one of its two corep channels realized cofinally: the
+first step of the recurring-pair kill. -/
+theorem fixed_pair_corep_dichotomy {A : Set ℕ} {N₀ u v : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hu0 : 0 < u) (huv : u < v)
+    (hcof : ∀ N, ∃ m, N ≤ m ∧ IsPairDestroyer A u v m) :
+    (∀ N, ∃ m, N ≤ m ∧ IsPairDestroyer A u v m ∧ m - u ∈ A) ∨
+    (∀ N, ∃ m, N ≤ m ∧ IsPairDestroyer A u v m ∧ m - v ∈ A) := by
+  have hcorep : ∀ m, N₀ ≤ m → IsPairDestroyer A u v m →
+      m - u ∈ A ∨ m - v ∈ A := by
+    intro m hm hdes
+    obtain ⟨y, hy, z, hz, hyz⟩ := hcov m hm
+    rcases hdes.2 0 h0 y hy z hz (by omega) with h | h | h | h | h | h
+    · omega
+    · exact Or.inl (by
+        have : z = m - u := by omega
+        exact this ▸ hz)
+    · exact Or.inl (by
+        have : y = m - u := by omega
+        exact this ▸ hy)
+    · omega
+    · exact Or.inr (by
+        have : z = m - v := by omega
+        exact this ▸ hz)
+    · exact Or.inr (by
+        have : y = m - v := by omega
+        exact this ▸ hy)
+  by_cases hleft : ∀ N, ∃ m, N ≤ m ∧ IsPairDestroyer A u v m ∧
+      m - u ∈ A
+  · exact Or.inl hleft
+  · push Not at hleft
+    obtain ⟨N₁, hN₁⟩ := hleft
+    refine Or.inr fun N => ?_
+    obtain ⟨m, hm, hdes⟩ := hcof (max N (max N₁ N₀))
+    rcases hcorep m (by omega) hdes with h | h
+    · exact absurd h (hN₁ m (by omega) hdes)
+    · exact ⟨m, by omega, hdes, h⟩
+
 end Erdos881
