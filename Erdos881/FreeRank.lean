@@ -1233,4 +1233,55 @@ theorem perfect_world_sidon_targets {A : Set ℕ} {N₀ : ℕ}
   have := pair_count_of_hub h0 hhub h0S
   omega
 
+/-- **Deletions inside a perfect world are answered at full
+uniformity.**  Any infinite deletion drawn from a level-`d` perfect
+world has cofinal failing targets whose minimal hubs — made of
+deleted elements — have cardinality at least `d + 1`: subsets of
+size `≤ d` are free and cannot hub.  The crystal's team supply
+runs exactly at its uniformity level. -/
+theorem perfect_world_deletion_hubs_card {A B : Set ℕ} {N₀ : ℕ}
+    [DecidablePred (· ∈ B)]
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B' ⊆ A, B'.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B') 3)
+    {e : ℕ → ℕ} {d : ℕ} (hemono : StrictMono e)
+    (heA : ∀ j, e j ∈ A) (hepos : ∀ j, 0 < e j)
+    (hfree : ∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e i = h) → S.card = d →
+      RepFree A N₀ S)
+    (hBsub : B ⊆ Set.range e) (hBinf : B.Infinite) :
+    ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      d + 1 ≤ H.card ∧ ∀ h ∈ H, h ∈ B := by
+  classical
+  have hBA : B ⊆ A := fun x hx => by
+    obtain ⟨j, rfl⟩ := hBsub hx
+    exact heA j
+  have h0B : 0 ∉ B := by
+    intro h
+    obtain ⟨j, hj⟩ := hBsub h
+    have h1 : e j = 0 := hj
+    have := hepos j
+    omega
+  have hteams := guardian_team_hubs_of_deletion h0 hcov hanchor
+    hfail hBA hBinf h0B
+  intro N
+  obtain ⟨n, hn, H, hhub, hmin, hcard2, hHB⟩ := hteams (max N N₀)
+  refine ⟨n, le_trans (le_max_left _ _) hn, H, hhub, hmin, ?_, hHB⟩
+  by_contra hlt
+  push_neg at hlt
+  have hHmem : ∀ h ∈ H, ∃ i, e i = h := by
+    intro h hh
+    obtain ⟨j, hj⟩ := hBsub (hHB h hh)
+    exact ⟨j, hj⟩
+  have hHfree : RepFree A N₀ H :=
+    perfect_world_small_sets_free hemono hfree hHmem (by omega)
+  obtain ⟨x, hx, y, hy, z, hz, hsum, hxH, hyH, hzH⟩ :=
+    hHfree n (le_trans (le_max_right _ _) hn)
+  rcases hhub x hx y hy z hz hsum with h | h | h
+  · exact hxH h
+  · exact hyH h
+  · exact hzH h
+
 end Erdos881
