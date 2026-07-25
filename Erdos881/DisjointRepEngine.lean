@@ -3241,4 +3241,17 @@ theorem split_children_inject {w a b : ℕ}
     left
     omega
 
+/-- **Block domination.**  A reachy forest edge''s block (the
+difference) exceeds twice the parent — twice everything below it in
+the chain.  Chains of reachy edges therefore produce DOMINATED
+expansions: each block more than double the remaining sum, the
+classical characterization of canonical (greedy, unique) digit
+expansions.  The chain differences are the digits; reach is
+canonicity. -/
+theorem block_domination {A : Set ℕ} {w a : ℕ}
+    (hown : OwnsTarget A a (a + w)) (hreach : 3 * w < a) :
+    2 * w < a - w := by
+  have h1 : a < a + w := hown.1
+  omega
+
 end Erdos881
