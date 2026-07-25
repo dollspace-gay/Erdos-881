@@ -8146,4 +8146,120 @@ theorem witness_translate_immune {A B : Set ℕ} {N₀ t : ℕ}
       _ ≤ _ := hblow
   exact disjoint_pairs_of_r2 hr2
 
+/-- Total pair-count double-count: summing the order-2 counts over
+a window is bounded by the square of the element count. -/
+theorem sum_pair_counts_le_sq {A : Set ℕ} {Y : ℕ}
+    [DecidablePred (· ∈ A)] :
+    ∑ v ∈ Finset.range (Y + 1),
+      ((Finset.range (v + 1)).filter
+        (fun x => x ∈ A ∧ (v - x) ∈ A)).card ≤
+    ((Finset.range (Y + 1)).filter (· ∈ A)).card *
+    ((Finset.range (Y + 1)).filter (· ∈ A)).card := by
+  classical
+  set W := (Finset.range (Y + 1)).filter (· ∈ A) with hW
+  set T := (Finset.range (Y + 1)).biUnion (fun v =>
+    ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A)).image (fun x => (v, x)))
+    with hT
+  have hTcard : T.card = ∑ v ∈ Finset.range (Y + 1),
+      ((Finset.range (v + 1)).filter
+        (fun x => x ∈ A ∧ (v - x) ∈ A)).card := by
+    rw [hT, Finset.card_biUnion]
+    · refine Finset.sum_congr rfl (fun v _ => ?_)
+      rw [Finset.card_image_of_injective]
+      intro x x' hxx'
+      exact congrArg Prod.snd hxx'
+    · intro v _ v' _ hvv'
+      simp only [Function.onFun]
+      rw [Finset.disjoint_left]
+      intro p hp hp'
+      obtain ⟨x, -, hxp⟩ := Finset.mem_image.1 hp
+      obtain ⟨x', -, hxp'⟩ := Finset.mem_image.1 hp'
+      have h1 : v = p.1 := by rw [← hxp]
+      have h2 : v' = p.1 := by rw [← hxp']
+      exact hvv' (by omega)
+  have hinj := Finset.card_le_card_of_injOn
+    (f := fun p : ℕ × ℕ => (p.2, p.1 - p.2))
+    (s := T) (t := W ×ˢ W)
+    (by
+      intro p hp
+      obtain ⟨v, hv, hpv⟩ := Finset.mem_biUnion.1 hp
+      obtain ⟨x, hx, hxp⟩ := Finset.mem_image.1 hpv
+      obtain ⟨hxr, hxA, hvxA⟩ := Finset.mem_filter.1 hx
+      have hvY : v ≤ Y := by
+        have := Finset.mem_range.1 hv
+        omega
+      have hxv : x ≤ v := by
+        have := Finset.mem_range.1 hxr
+        omega
+      have hval : (fun p : ℕ × ℕ => (p.2, p.1 - p.2)) p =
+          (x, v - x) := by
+        rw [← hxp]
+      rw [hval]
+      refine Finset.mem_product.2 ⟨?_, ?_⟩
+      · exact Finset.mem_filter.2
+          ⟨Finset.mem_range.2 (by omega), hxA⟩
+      · exact Finset.mem_filter.2
+          ⟨Finset.mem_range.2 (by omega), hvxA⟩)
+    (by
+      intro p hp p' hp' heq
+      have hpT : p ∈ T := by simpa using hp
+      have hpT' : p' ∈ T := by simpa using hp'
+      rw [hT] at hpT hpT'
+      obtain ⟨v, hv, hpv⟩ := Finset.mem_biUnion.1 hpT
+      obtain ⟨x, hx, hxp⟩ := Finset.mem_image.1 hpv
+      obtain ⟨v', hv', hpv'⟩ := Finset.mem_biUnion.1 hpT'
+      obtain ⟨x', hx', hxp'⟩ := Finset.mem_image.1 hpv'
+      have hxv : x ≤ v := by
+        have := Finset.mem_range.1 (Finset.mem_filter.1 hx).1
+        omega
+      have hxv' : x' ≤ v' := by
+        have := Finset.mem_range.1 (Finset.mem_filter.1 hx').1
+        omega
+      have hval : (fun p : ℕ × ℕ => (p.2, p.1 - p.2)) p =
+          (x, v - x) := by
+        rw [← hxp]
+      have hval' : (fun p : ℕ × ℕ => (p.2, p.1 - p.2)) p' =
+          (x', v' - x') := by
+        rw [← hxp']
+      rw [hval, hval'] at heq
+      have h1 : x = x' := congrArg Prod.fst heq
+      have h2 : v - x = v' - x' := congrArg Prod.snd heq
+      have h3 : v = v' := by omega
+      rw [← hxp, ← hxp', h1, h3])
+  rw [hTcard] at hinj
+  calc ∑ v ∈ Finset.range (Y + 1), _ = _ := rfl
+    _ ≤ (W ×ˢ W).card := hinj
+    _ = W.card * W.card := Finset.card_product _ _
+
+/-- **The blown set is sparse** (Markov): points with pair-count at
+least `K` number at most `|A ∩ [0,Y]|² / K` in any window. -/
+theorem blown_count_bound {A : Set ℕ} {Y K : ℕ}
+    [DecidablePred (· ∈ A)] :
+    K * ((Finset.range (Y + 1)).filter (fun v =>
+      K ≤ ((Finset.range (v + 1)).filter
+        (fun x => x ∈ A ∧ (v - x) ∈ A)).card)).card ≤
+    ((Finset.range (Y + 1)).filter (· ∈ A)).card *
+    ((Finset.range (Y + 1)).filter (· ∈ A)).card := by
+  classical
+  set Blown := (Finset.range (Y + 1)).filter (fun v =>
+    K ≤ ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A)).card) with hBl
+  have h1 : K * Blown.card ≤ ∑ v ∈ Blown,
+      ((Finset.range (v + 1)).filter
+        (fun x => x ∈ A ∧ (v - x) ∈ A)).card := by
+    have := Finset.card_nsmul_le_sum Blown
+      (fun v => ((Finset.range (v + 1)).filter
+        (fun x => x ∈ A ∧ (v - x) ∈ A)).card) K
+      (fun v hv => (Finset.mem_filter.1 hv).2)
+    simpa [Nat.mul_comm] using this
+  have h2 : ∑ v ∈ Blown, ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A)).card ≤
+      ∑ v ∈ Finset.range (Y + 1),
+        ((Finset.range (v + 1)).filter
+          (fun x => x ∈ A ∧ (v - x) ∈ A)).card :=
+    Finset.sum_le_sum_of_subset (Finset.filter_subset _ _)
+  have h3 := sum_pair_counts_le_sq (A := A) (Y := Y)
+  omega
+
 end Erdos881
