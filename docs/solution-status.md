@@ -311,3 +311,26 @@ guardian-team configurations all previous arcs studied. Open
 branches: exact-pair recurrence (→ fixed-pair pipeline), half-fixed
 pairs (S = 1 + rotating), all-large coreps (S = 0), plus the
 matching/identity acquisition and diffuse exclusion.
+
+## THE STABLE CORE (2026-07-25 00:45, commits d82b614+)
+
+`stable_core_of_hfail` — machine-verified: a counterexample has ONE
+fixed finite guardian set S* such that at EVERY window, cofinally
+many targets carry minimal hubs = S* ∪ {elements above the window},
+each hub member owning a private witness. The enemy's entire
+order-3 failure concentrates on a single finite team plus
+level-scale escorts, at all scales simultaneously.
+
+The endgame is now a two-branch tree on S*:
+- **S* = ∅**: `large_team_shadow_of_empty_core` — both 3-reps AND
+  2-reps of cofinal targets confine to bounded rotating teams above
+  every window (the order-2 shadow via 0 ∉ H). Level-scale
+  destroyer teams: counting-vise + team-rigidity territory.
+- **S* ≠ ∅**: eternal guardians — fixed elements in cofinal minimal
+  hubs at all scales, with necessity witnesses. Essential-element /
+  fixed-guardian-with-escorts territory.
+
+Both branches land on partially-killed configurations with verified
+machinery pointing at them. The remaining open work: finish either
+branch (plus matching acquisition and diffuse exclusion for the
+legacy tree).

@@ -154,3 +154,18 @@ only it can serve — a personal fingerprint the hunt can track.
 In short: the enemy no longer gets to choose its shape. Its own
 definition drives it into the pair-guardian corner, where most of
 our verified weapons already point.
+
+## One team to guard them all (00:45)
+
+The bottleneck story sharpened again, and the machine has checked
+every step: the enemy doesn't just need bottleneck doors — it needs
+ONE fixed little team of keys that shows up in bottleneck after
+bottleneck, at every scale, forever, each teammate holding a
+private opening only it can serve. Everything else in any
+bottleneck is a far-away helper that drifts upward and away.
+
+And if the fixed team is EMPTY — all helpers, no permanent staff —
+then even the two-key game at those doors runs through the same
+drifting helpers, which is precisely the roaming-guard pattern our
+counting walls were built against. Either way the enemy is now
+pinned between two named corners, both already half-conquered.
