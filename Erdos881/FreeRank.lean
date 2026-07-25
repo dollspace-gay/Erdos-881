@@ -2871,4 +2871,27 @@ theorem hmin_tuple_of_hfail {A : Set ℕ} {N₀ : ℕ}
   obtain ⟨v, hv, -⟩ := hN₁ N₁ (le_refl _)
   exact ⟨v 0, hv 0⟩
 
+/-- Hereditary freeness passes to infinite subsets: branches
+contain branches. -/
+theorem HereditarilyFree.mono {A B B' : Set ℕ} {N₀ : ℕ}
+    (hB : HereditarilyFree A N₀ B) (hsub : B' ⊆ B)
+    (hinf : B'.Infinite) : HereditarilyFree A N₀ B' :=
+  ⟨hinf, fun b hb => hB.2.1 b (hsub hb),
+    fun P hP => hB.2.2 P (fun h hh => hsub (hP h hh))⟩
+
+/-- Hereditary freeness survives removing finitely many elements:
+branches are tail-robust. -/
+theorem HereditarilyFree.diff_finite {A B : Set ℕ} {N₀ : ℕ}
+    {S : Set ℕ} (hB : HereditarilyFree A N₀ B) (hS : S.Finite) :
+    HereditarilyFree A N₀ (B \ S) :=
+  hB.mono Set.diff_subset (hB.1.diff hS)
+
+/-- The union of a branch with any subset of another branch need
+not be free — but a branch always yields branches above any
+threshold: the tail form used by deletion arguments. -/
+theorem HereditarilyFree.tail {A B : Set ℕ} {N₀ : ℕ}
+    (hB : HereditarilyFree A N₀ B) (X : ℕ) :
+    HereditarilyFree A N₀ (B \ {b | b ≤ X}) :=
+  hB.diff_finite (Set.finite_le_nat X)
+
 end Erdos881
