@@ -133,6 +133,52 @@ lemma isCantor_eq_zero_of_digits {a j : ℕ} (hlt : a < 3 ^ j)
     have := ih hq hqz
     omega
 
+/-- Digit reconstruction: a number below `3^j` whose base-3 digits are
+a single 1 at position `k < j` equals `3^k`. -/
+lemma digit_single {x k j : ℕ} (hlt : x < 3 ^ j) (hk : k < j)
+    (hd1 : x / 3 ^ k % 3 = 1)
+    (hz : ∀ i, i < j → i ≠ k → x / 3 ^ i % 3 = 0) : x = 3 ^ k := by
+  induction j generalizing x k with
+  | zero => omega
+  | succ j ih =>
+    have hshift : ∀ i, x / 3 / 3 ^ i = x / 3 ^ (i + 1) := by
+      intro i
+      rw [pow_succ, Nat.mul_comm (3 ^ i) 3, ← Nat.div_div_eq_div_mul]
+    have hqlt : x / 3 < 3 ^ j := by
+      have h1 : x < 3 * 3 ^ j := by
+        rw [pow_succ, Nat.mul_comm] at hlt; exact hlt
+      omega
+    rcases Nat.eq_zero_or_pos k with hk0 | hkpos
+    · subst hk0
+      have h0 : x % 3 = 1 := by simpa using hd1
+      have hqz : x / 3 = 0 := by
+        refine isCantor_eq_zero_of_digits hqlt ?_
+        intro i hi
+        rw [hshift i]
+        exact hz (i + 1) (by omega) (by omega)
+      have := Nat.div_add_mod x 3
+      simp only [pow_zero]
+      omega
+    · have h0 : x % 3 = 0 := by
+        have := hz 0 (by omega) (by omega)
+        simpa using this
+      have hd1' : x / 3 / 3 ^ (k - 1) % 3 = 1 := by
+        rw [hshift (k - 1)]
+        have hkk : k - 1 + 1 = k := by omega
+        rwa [hkk]
+      have hz' : ∀ i, i < j → i ≠ k - 1 → x / 3 / 3 ^ i % 3 = 0 := by
+        intro i hi hik
+        rw [hshift i]
+        exact hz (i + 1) (by omega) (by omega)
+      have hq := ih hqlt (by omega) hd1' hz'
+      have hpow : 3 ^ k = 3 * 3 ^ (k - 1) := by
+        have h1 : 3 ^ ((k - 1) + 1) = 3 ^ (k - 1) * 3 := pow_succ 3 (k - 1)
+        have h2 : k - 1 + 1 = k := by omega
+        rw [h2] at h1
+        omega
+      have := Nat.div_add_mod x 3
+      omega
+
 /-- Rigidity: two Cantor numbers cannot sum to a pure power unless one
 of them is zero — 2-representations of `3^k` are trivial. -/
 theorem cantor_two_rep_rigid {a b k : ℕ} (ha : IsCantor a)
@@ -411,6 +457,106 @@ theorem cantor_carry_repair (k : ℕ) (hk : 3 ≤ k) :
     rwa [Nat.mul_comm] at this
   · exact not_pure_of_scaled thirteen_not_pure
   · exact not_pure_of_scaled ten_not_pure
+  · exact not_pure_of_scaled four_not_pure
+  · have h1 : 3 ^ ((k - 3) + 3) = 3 ^ (k - 3) * 3 ^ 3 := pow_add 3 (k - 3) 3
+    have h2 : k - 3 + 3 = k := by omega
+    rw [h2] at h1
+    have h3 : (3 : ℕ) ^ 3 = 27 := by norm_num
+    rw [h1, h3]
+    ring
+
+/-- The doubled powers `2·3^k` are the *other* casualties: their unique
+2-representation is `3^k + 3^k`, both parts deleted. -/
+theorem cantor_doubles_destroyed (k : ℕ) :
+    ¬∃ a b, IsCantor a ∧ IsCantor b ∧ (∀ j, a ≠ 3 ^ j) ∧
+      (∀ j, b ≠ 3 ^ j) ∧ a + b = 2 * 3 ^ k := by
+  rintro ⟨a, b, ha, hb, hpa, hpb, hab⟩
+  -- digits add without carries, so both parts carry digit 1 at k and
+  -- nothing elsewhere: a = b = 3^k, both pure.
+  have hdig : ∀ i, i ≠ k → a / 3 ^ i % 3 = 0 ∧ b / 3 ^ i % 3 = 0 := by
+    intro i hik
+    have h1 := isCantor_add_digit ha hb i
+    rw [hab] at h1
+    rcases Nat.lt_or_ge i k with h | h
+    · have h2 : 2 * 3 ^ k / 3 ^ i = 2 * 3 ^ (k - i) := by
+        have hsplit : 3 ^ k = 3 ^ (k - i) * 3 ^ i := by
+          rw [← pow_add]; congr 1; omega
+        rw [hsplit, ← Nat.mul_assoc,
+          Nat.mul_div_cancel _ (pow3_pos i)]
+      have h3 : k - i = (k - i - 1) + 1 := by omega
+      rw [h2, h3, pow_succ] at h1
+      have h4 : 2 * (3 ^ (k - i - 1) * 3) % 3 = 0 := by
+        rw [← Nat.mul_assoc]
+        simp [Nat.mul_mod]
+      omega
+    · have hik' : k < i := by omega
+      have h2 : 2 * 3 ^ k < 3 ^ i := by
+        have hstep : 3 ^ (k + 1) ≤ 3 ^ i := Nat.pow_le_pow_right (by norm_num) (by omega)
+        rw [pow_succ] at hstep
+        have := pow3_pos k
+        omega
+      rw [Nat.div_eq_of_lt h2] at h1
+      simp only [Nat.zero_mod] at h1
+      omega
+  have hk := isCantor_add_digit ha hb k
+  rw [hab] at hk
+  have hkk : 2 * 3 ^ k / 3 ^ k % 3 = 2 := by
+    rw [Nat.mul_div_cancel _ (pow3_pos k)]
+  rw [hkk] at hk
+  have hda : a / 3 ^ k % 3 = 1 := by
+    have := ha k; have := hb k; omega
+  have hlta : a < 3 ^ (k + 1) := by
+    have h1 : 3 ^ (k + 1) = 3 ^ k * 3 := pow_succ 3 k
+    have := pow3_pos k
+    omega
+  have hae : a = 3 ^ k :=
+    digit_single hlta (by omega) hda (fun i _ hik => (hdig i hik).1)
+  exact hpa k hae
+
+/-- 37 = 1101₃ is a Cantor number. -/
+lemma isCantor_37 : IsCantor 37 := by
+  intro i
+  match i with
+  | 0 => norm_num
+  | 1 => norm_num
+  | 2 => norm_num
+  | 3 => norm_num
+  | (j + 4) =>
+    have h81 : (81 : ℕ) ≤ 3 ^ (j + 4) := by
+      calc (81 : ℕ) = 3 ^ 4 := by norm_num
+        _ ≤ 3 ^ (j + 4) := Nat.pow_le_pow_right (by norm_num) (by omega)
+    have : 37 / 3 ^ (j + 4) = 0 := Nat.div_eq_of_lt (by omega)
+    simp [this]
+
+lemma thirtyseven_not_pure : ¬∃ t, (37 : ℕ) = 3 ^ t := by
+  rintro ⟨t, ht⟩
+  match t with
+  | 0 => norm_num at ht
+  | 1 => norm_num at ht
+  | 2 => norm_num at ht
+  | 3 => norm_num at ht
+  | (s + 4) =>
+    have : 81 ≤ 3 ^ (s + 4) := by
+      calc (81 : ℕ) = 3 ^ 4 := by norm_num
+        _ ≤ 3 ^ (s + 4) := Nat.pow_le_pow_right (by norm_num) (by omega)
+    omega
+
+/-- **Carry repair of the doubled casualties**: `2·3^k = (13+37+4)·3^(k-3)`
+with all parts Cantor and non-pure. -/
+theorem cantor_carry_repair_double (k : ℕ) (hk : 3 ≤ k) :
+    ∃ x y z, IsCantor x ∧ IsCantor y ∧ IsCantor z ∧
+      (∀ j, x ≠ 3 ^ j) ∧ (∀ j, y ≠ 3 ^ j) ∧ (∀ j, z ≠ 3 ^ j) ∧
+      x + y + z = 2 * 3 ^ k := by
+  refine ⟨13 * 3 ^ (k - 3), 37 * 3 ^ (k - 3), 4 * 3 ^ (k - 3),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · have := isCantor_shift (k - 3) isCantor_13
+    rwa [Nat.mul_comm] at this
+  · have := isCantor_shift (k - 3) isCantor_37
+    rwa [Nat.mul_comm] at this
+  · have := isCantor_shift (k - 3) isCantor_4
+    rwa [Nat.mul_comm] at this
+  · exact not_pure_of_scaled thirteen_not_pure
+  · exact not_pure_of_scaled thirtyseven_not_pure
   · exact not_pure_of_scaled four_not_pure
   · have h1 : 3 ^ ((k - 3) + 3) = 3 ^ (k - 3) * 3 ^ 3 := pow_add 3 (k - 3) 3
     have h2 : k - 3 + 3 = k := by omega
