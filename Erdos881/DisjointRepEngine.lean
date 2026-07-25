@@ -2552,4 +2552,24 @@ theorem ownership_chain {A : Set ℕ} {Ns : ℕ}
       · simp only [if_neg (by omega : ¬k + 1 = 0)]
         simpa using hcend
 
+/-- **Ownership bans the reflection.**  An owned target excludes the
+entire reflected copy of `A` below its completion: for every element
+`s'` strictly inside `(0, n - a)`, the value `n - s'` is not in `A`
+— else it would be a second big fiber.  Each owner punches a
+structured, `A`-shaped hole system just below its target; owners at
+scale `k` thereby constrain `A` at scale `k - 1` near completions.
+The two-scale coupling of the coherence conjecture, as one
+identity. -/
+theorem ownership_bans_reflection {A : Set ℕ} {a n : ℕ}
+    (hown : OwnsTarget A a n) :
+    ∀ s' ∈ A, 0 < s' → s' < n - a → n - s' ∉ A := by
+  obtain ⟨h1, h2, h3, h4⟩ := hown
+  intro s' hs' h0 hlt hmem
+  have hbig : 2 * (n - s') > n := by omega
+  have hne : n - s' ≠ a := by omega
+  have := h4 (n - s') hmem hbig (by omega) hne
+  have hval : n - (n - s') = s' := by omega
+  rw [hval] at this
+  exact this hs'
+
 end Erdos881
