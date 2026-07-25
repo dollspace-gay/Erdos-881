@@ -453,3 +453,17 @@ guarantee logs. Every sound total-repair engine and every
 structural forcing built tonight lives on one side of this gap;
 the enemy lives in the sliver between. Routes recorded: bootstrap
 hub-shrinking, slow-deletion diagonalization, log-budget Ramsey.
+
+## The single remaining statement (2026-07-25 01:50, night's end)
+
+Per-deletion tree complete (super-geometric deletions): escape
+branch dead by singleton collapse + stream kill; failures need
+prefix guardians with recurring exact cores over OUR marker
+alphabet. Every route of the entire night — matching, alignment,
+service, window-SAT, escape — terminates at one statement:
+
+  INFINITE PER-ELEMENT GUARDING SUPPLY + COVERING ⟹ DIGIT-LIKE.
+
+Digit-like structures verifiably satisfy Erdős 881's conclusion
+(carry repair). Proving that one classification closes the
+problem; every supporting wall is machine-verified.
