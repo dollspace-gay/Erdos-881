@@ -7432,4 +7432,41 @@ theorem team_card_escalation_three {A : Set ℕ} {N₀ : ℕ}
             exact hhub
       · exact hge
 
+/-- Domination at arity four: if the triple `{u, v, w}` never hubs
+a late target but `{u, v, w, z}` hubs `n`, then `z ≤ n`. -/
+theorem team_target_dominates₄ {A : Set ℕ} {N₀ n u v w z : ℕ}
+    (htf : ¬∃ m, N₀ ≤ m ∧ IsRepHub A m {u, v, w})
+    (hn : N₀ ≤ n) (hhub : IsRepHub A n {u, v, w, z}) :
+    z ≤ n := by
+  by_contra hgt
+  push_neg at hgt
+  refine htf ⟨n, hn, ?_⟩
+  intro x hx y hy z' hz' hsum
+  have hmem4 : ∀ q, q ∈ ({u, v, w, z} : Finset ℕ) →
+      q = u ∨ q = v ∨ q = w ∨ q = z := by
+    intro q hq
+    rcases Finset.mem_insert.1 hq with h1 | h1
+    · exact Or.inl h1
+    rcases Finset.mem_insert.1 h1 with h2 | h2
+    · exact Or.inr (Or.inl h2)
+    rcases Finset.mem_insert.1 h2 with h3 | h3
+    · exact Or.inr (Or.inr (Or.inl h3))
+    · exact Or.inr (Or.inr (Or.inr (Finset.mem_singleton.1 h3)))
+  rcases hhub x hx y hy z' hz' hsum with h | h | h
+  · rcases hmem4 x h with h1 | h1 | h1 | h1
+    · exact Or.inl (by simp [h1])
+    · exact Or.inl (by simp [h1])
+    · exact Or.inl (by simp [h1])
+    · omega
+  · rcases hmem4 y h with h1 | h1 | h1 | h1
+    · exact Or.inr (Or.inl (by simp [h1]))
+    · exact Or.inr (Or.inl (by simp [h1]))
+    · exact Or.inr (Or.inl (by simp [h1]))
+    · omega
+  · rcases hmem4 z' h with h1 | h1 | h1 | h1
+    · exact Or.inr (Or.inr (by simp [h1]))
+    · exact Or.inr (Or.inr (by simp [h1]))
+    · exact Or.inr (Or.inr (by simp [h1]))
+    · omega
+
 end Erdos881
