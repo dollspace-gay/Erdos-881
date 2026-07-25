@@ -2713,4 +2713,24 @@ theorem consecutive_owner_dichotomy {A : Set ℕ} {a a' n : ℕ}
     exact strip_reflection hown a' ha' haa' hlt
   · exact Or.inl h
 
+/-- **Completion isolation.**  In completion coordinates the moat is
+two-sided: `s ± δ ∉ A` for every near-difference `δ` of the owner —
+downward by strip elements, upward by mid-window elements.  Each
+completion sits alone in `A`, insulated by its owner''s local
+difference structure: the working form of the squeeze. -/
+theorem completion_isolation {A : Set ℕ} {a n : ℕ}
+    (hown : OwnsTarget A a n) :
+    (∀ y ∈ A, a < y → y < n → (n - a) - (y - a) ∉ A) ∧
+    (∀ y ∈ A, 2 * y > n → y < a → (n - a) + (a - y) ∉ A) := by
+  have h1 := hown.1
+  constructor
+  · intro y hy hay hyn
+    have hval : (n - a) - (y - a) = n - y := by omega
+    rw [hval]
+    exact strip_reflection hown y hy hay hyn
+  · intro y hy hbig hya
+    have hval : (n - a) + (a - y) = n - y := by omega
+    rw [hval]
+    exact midwindow_reflection hown y hy hbig hya
+
 end Erdos881
