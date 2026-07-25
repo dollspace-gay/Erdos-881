@@ -2776,4 +2776,41 @@ theorem midwindow_demand_injection {A : Set ℕ} {y a₁ n₁ a₂ n₂ : ℕ}
     omega
   omega
 
+/-- **The column bound.**  The number of owners holding a fixed
+mid-element `y` is at most the co-`A` room below `y`-scale: distinct
+owners'' demands inject into `co-A ∩ (0, y)`.  The octave incidence
+matrix has verified column bounds — the density constraint the
+octave aggregation sums. -/
+theorem midwindow_column_bound {A : Set ℕ} [DecidablePred (· ∈ A)]
+    {y : ℕ} (hy : y ∈ A) (O : Finset ℕ) (t : ℕ → ℕ)
+    (hOA : ∀ a ∈ O, a ∈ A)
+    (howns : ∀ a ∈ O, OwnsTarget A a (t a))
+    (hmid : ∀ a ∈ O, 2 * y > t a ∧ y < a) :
+    O.card ≤ ((Finset.Ioo 0 y).filter (· ∉ A)).card := by
+  classical
+  apply Finset.card_le_card_of_injOn (fun a => t a - y)
+  · intro a ha
+    obtain ⟨hbig, hya⟩ := hmid a ha
+    have hown := howns a ha
+    have h1 : a < t a := hown.1
+    show t a - y ∈ (Finset.Ioo 0 y).filter (· ∉ A)
+    refine Finset.mem_filter.2 ⟨Finset.mem_Ioo.2 ⟨by omega, by omega⟩, ?_⟩
+    exact midwindow_reflection hown y hy hbig hya
+  · intro a₁ ha₁ a₂ ha₂ heq
+    have heq' : t a₁ - y = t a₂ - y := heq
+    by_contra hne
+    obtain ⟨hb₁, hy₁⟩ := hmid a₁ ha₁
+    obtain ⟨hb₂, hy₂⟩ := hmid a₂ ha₂
+    have h₁ := howns a₁ ha₁
+    have h₂ := howns a₂ ha₂
+    have hgt₁ : y < t a₁ := by
+      have := h₁.1
+      omega
+    have hgt₂ : y < t a₂ := by
+      have := h₂.1
+      omega
+    have htt : t a₁ = t a₂ := by omega
+    rw [htt] at h₁
+    exact hne (h₁.unique_owner (hOA a₁ ha₁) (hOA a₂ ha₂) h₂)
+
 end Erdos881
