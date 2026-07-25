@@ -928,4 +928,40 @@ theorem stable_core_of_hfail {A : Set ℕ} {N₀ : ℕ}
         by simpa using le_trans (Finset.card_le_card hH'sub) hcard⟩)
   exact ⟨K, S, hsplit⟩
 
+/-- **The order-2 shadow.**  A hub avoiding `0` confines the target's
+2-representations as well: `(x, y, 0)` is a 3-representation, and with
+`0 ∉ H` the hit must land on `x` or `y`.  All-large hubs therefore
+force order-2 destroyer structure at level scale — the pair-funnel
+stream, with the verified counting vise waiting. -/
+theorem two_rep_shadow_of_large_hub {A : Set ℕ} {n : ℕ} {H : Finset ℕ}
+    (h0 : 0 ∈ A) (hhub : IsRepHub A n H) (hlarge : ∀ h ∈ H, 0 < h) :
+    ∀ x ∈ A, ∀ y ∈ A, x + y = n → x ∈ H ∨ y ∈ H := by
+  intro x hx y hy hxy
+  rcases hhub x hx y hy 0 h0 (by omega) with h | h | h
+  · exact Or.inl h
+  · exact Or.inr h
+  · exact absurd (hlarge 0 h) (by omega)
+
+/-- The stable core's empty case, packaged: if the stable core is
+empty then at every window cofinally many targets have BOTH their
+3-reps and their 2-reps confined to a bounded set of elements above
+the window — rotating level-scale destroyer teams. -/
+theorem large_team_shadow_of_empty_core {A : Set ℕ} {N₀ K : ℕ}
+    (h0 : 0 ∈ A)
+    (hsplit : ∀ W N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      H.card ≤ 3 * (K - 1) ∧ IsRepHub A n H ∧
+      (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      (∅ : Finset ℕ) ⊆ H ∧ ∀ h ∈ H, h ∉ (∅ : Finset ℕ) → W < h) :
+    ∀ W N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      H.card ≤ 3 * (K - 1) ∧ (∀ h ∈ H, W < h) ∧
+      (∀ x ∈ A, ∀ y ∈ A, x + y = n → x ∈ H ∨ y ∈ H) ∧
+      IsRepHub A n H := by
+  intro W N
+  obtain ⟨n, hn, H, hcard, hhub, hmin, -, hrest⟩ := hsplit W N
+  have hlargeW : ∀ h ∈ H, W < h := fun h hh =>
+    hrest h hh (Finset.notMem_empty h)
+  refine ⟨n, hn, H, hcard, hlargeW, ?_, hhub⟩
+  exact two_rep_shadow_of_large_hub h0 hhub
+    (fun h hh => by have := hlargeW h hh; omega)
+
 end Erdos881
