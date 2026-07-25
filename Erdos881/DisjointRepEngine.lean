@@ -349,4 +349,45 @@ theorem cofinal_bounded_hubs_of_hfail {A : Set ℕ} {N₀ : ℕ}
   obtain ⟨H, hHcard, hHhub⟩ := hub_of_no_disjointReps hno
   exact ⟨n, hn, H, hHcard, hHhub⟩
 
+/-- **Hub dichotomy** (tower extraction, step one).  Given cofinal
+bounded-card hub targets and any window `[0, W]`: either some fixed
+element `h ≤ W` belongs to hubs cofinally (a persistent guardian), or
+hubs avoiding `[0, W]` entirely occur cofinally (level-like hubs).
+Iterating consumes the small part of the hubs element by element. -/
+theorem hub_dichotomy {A : Set ℕ} {C : ℕ}
+    (hhub : ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ C ∧ IsRepHub A n H)
+    (W : ℕ) :
+    (∃ h, h ≤ W ∧ ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ C ∧
+      IsRepHub A n H ∧ h ∈ H) ∨
+    (∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ C ∧ IsRepHub A n H ∧
+      ∀ h ∈ H, W < h) := by
+  classical
+  by_cases hmeet : ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ C ∧
+      IsRepHub A n H ∧ ∃ h ∈ H, h ≤ W
+  · left
+    by_contra hnoper
+    push_neg at hnoper
+    have hex : ∀ h, ∃ Nh, h ≤ W → ∀ n, Nh ≤ n →
+        ∀ H : Finset ℕ, H.card ≤ C → IsRepHub A n H → h ∉ H := by
+      intro h
+      by_cases hh : h ≤ W
+      · obtain ⟨N, hN⟩ := hnoper h hh
+        exact ⟨N, fun _ => hN⟩
+      · exact ⟨0, fun h' => absurd h' hh⟩
+    choose g hg using hex
+    obtain ⟨n, hn, H, hcard, hhubH, h₀, hh₀H, hh₀W⟩ :=
+      hmeet ((Finset.range (W + 1)).sup g)
+    have hgle : g h₀ ≤ (Finset.range (W + 1)).sup g :=
+      Finset.le_sup (Finset.mem_range.2 (by omega))
+    exact hg h₀ hh₀W n (by omega) H hcard hhubH hh₀H
+  · right
+    push_neg at hmeet
+    obtain ⟨N₀, hN₀⟩ := hmeet
+    intro N
+    obtain ⟨n, hn, H, hcard, hhubH⟩ := hhub (max N N₀)
+    refine ⟨n, le_trans (le_max_left _ _) hn, H, hcard, hhubH, ?_⟩
+    intro h hh
+    have := hN₀ n (le_trans (le_max_right _ _) hn) H hcard hhubH h hh
+    omega
+
 end Erdos881
