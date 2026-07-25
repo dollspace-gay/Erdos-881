@@ -7777,4 +7777,71 @@ theorem failing_cap_disjoint_deletions {A : Set ℕ} {N₀ m : ℕ}
   rw [hsij] at h1
   exact hdisj j i (fun h => hij h.symm) _ h2 h1
 
+/-- **Witness multiplication.**  `k` pairwise disjoint deletions
+force, beyond every threshold, a system of failing targets whose
+fibers have size at most three: at least `⌈k/3⌉` DISTINCT
+simultaneous failures.  The first verified device that scales
+failure counts with the number of deletions — the enemy can still
+stagger the witnesses upward, but never merge more than three. -/
+theorem disjoint_deletions_many_failures {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (k : ℕ) (B : Fin k → Set ℕ)
+    (hBA : ∀ i, B i ⊆ A) (hBinf : ∀ i, (B i).Infinite)
+    (hdisj : ∀ i j, i ≠ j → ∀ x, x ∈ B i → x ∉ B j)
+    (N : ℕ) :
+    ∃ t : Fin k → ℕ,
+      (∀ i, N ≤ t i ∧ N₀ ≤ t i ∧
+        ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = t i →
+          x ∈ B i ∨ y ∈ B i ∨ z ∈ B i) ∧
+      ∀ v, (Finset.univ.filter (fun i : Fin k => t i = v)).card
+        ≤ 3 := by
+  classical
+  have hpick : ∀ i : Fin k, ∃ m, N ≤ m ∧ N₀ ≤ m ∧
+      ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = m →
+        x ∈ B i ∨ y ∈ B i ∨ z ∈ B i := by
+    intro i
+    have hnb := hfail (B i) (hBA i) (hBinf i)
+    rw [IsExactTupleAsymptoticBasis] at hnb
+    push_neg at hnb
+    obtain ⟨m, hm, hnorep⟩ := hnb (max N N₀)
+    refine ⟨m, le_trans (le_max_left _ _) hm,
+      le_trans (le_max_right _ _) hm, ?_⟩
+    intro x hx y hy z hz hsum
+    by_contra hall
+    push_neg at hall
+    obtain ⟨hxB, hyB, hzB⟩ := hall
+    refine hnorep ![x, y, z] ?_
+      (by simp [Fin.sum_univ_three]; omega)
+    intro s
+    match s with
+    | 0 => exact ⟨hx, hxB⟩
+    | 1 => exact ⟨hy, hyB⟩
+    | 2 => exact ⟨hz, hzB⟩
+  choose t ht1 ht2 ht3 using hpick
+  refine ⟨t, fun i => ⟨ht1 i, ht2 i, ht3 i⟩, ?_⟩
+  intro v
+  by_contra hbig
+  push_neg at hbig
+  obtain ⟨F, hFsub, hFcard⟩ := Finset.exists_subset_card_eq
+    (show 4 ≤ (Finset.univ.filter
+      (fun i : Fin k => t i = v)).card from hbig)
+  set g := F.orderEmbOfFin hFcard with hg
+  have hgfib : ∀ s : Fin 4, t (g s) = v := by
+    intro s
+    have h1 : (g s : Fin k) ∈ F := F.orderEmbOfFin_mem hFcard s
+    have h2 := hFsub h1
+    exact (Finset.mem_filter.1 h2).2
+  refine failing_cap_disjoint_deletions h0 hcov (ht2 (g 0))
+    (fun s => B (g s)) ?_ ?_
+  · intro i j hij x hxi
+    refine hdisj (g i) (g j) (fun h => hij (g.injective h)) x hxi
+  · intro s
+    have h1 := ht3 (g s)
+    have h2 : t (g s) = t (g 0) := by
+      rw [hgfib s, hgfib 0]
+    rw [← h2]
+    exact h1
+
 end Erdos881
