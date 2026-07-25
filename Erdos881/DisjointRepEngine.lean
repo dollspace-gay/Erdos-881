@@ -4878,4 +4878,110 @@ theorem pair_flood_of_hfail {A : Set ℕ} {N₀ : ℕ}
   | 1 => exact ⟨hy, hyB⟩
   | 2 => exact ⟨h0, h0B⟩
 
+/-- Every pair hub contains a minimal pair hub. -/
+theorem exists_minimal_pairHub {A : Set ℕ} {n : ℕ} {H : Finset ℕ}
+    (hhub : IsPairHub A n H) :
+    ∃ H' ⊆ H, IsPairHub A n H' ∧
+      ∀ h ∈ H', ¬IsPairHub A n (H' \ {h}) := by
+  classical
+  revert hhub
+  induction H using Finset.strongInduction with
+  | _ H ih =>
+    intro hhub
+    by_cases hmin : ∀ h ∈ H, ¬IsPairHub A n (H \ {h})
+    · exact ⟨H, Finset.Subset.refl H, hhub, hmin⟩
+    · push_neg at hmin
+      obtain ⟨h, hhH, hsub⟩ := hmin
+      have hss : H \ {h} ⊂ H :=
+        Finset.sdiff_ssubset (Finset.singleton_subset_iff.2 hhH)
+          (Finset.singleton_nonempty h)
+      obtain ⟨H', hH'sub, hH'hub, hH'min⟩ := ih (H \ {h}) hss hsub
+      exact ⟨H', Finset.Subset.trans hH'sub Finset.sdiff_subset,
+        hH'hub, hH'min⟩
+
+/-- **THE PAIR FLOOD, CANONICAL.**  Pigeonholing the unconditional
+pair flood inside its free envelope: one exact core `S* ⊆ P` recurs
+— cofinally many basis elements `b` carry MINIMAL pair hubs EXACTLY
+`S* ∪ {b}` at targets `m ≥ b`.  The rotator `b` is always necessary
+(a hub inside the free `P` alone would contradict freeness), so the
+counterexample''s order-2 protection is one fixed finite core plus
+one rotating personal guardian, exactly, cofinally, r₂-bounded. -/
+theorem pair_flood_canonical {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ P S : Finset ℕ, S ⊆ P ∧ PairFree A N₀ P ∧
+      ∀ X, ∃ b, b ∈ A ∧ X ≤ b ∧ b ∉ S ∧
+        ∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsPairHub A m (insert b S) ∧
+          ∀ h ∈ insert b S,
+            ¬IsPairHub A m (insert b S \ {h}) := by
+  classical
+  obtain ⟨P, hPfree, X₀, hflood⟩ := pair_flood_of_hfail h0 hcov hfail
+  have hQ : ∀ N, ∃ x, N ≤ x ∧ ∃ S, S ⊆ P ∧
+      (x ∈ A ∧ x ∉ S ∧ ∃ m, N₀ ≤ m ∧ x ≤ m ∧
+        IsPairHub A m (insert x S) ∧
+        ∀ h ∈ insert x S, ¬IsPairHub A m (insert x S \ {h})) := by
+    intro N
+    obtain ⟨b, hbA, hXb⟩ := pairCovers_unbounded hcov (max N X₀)
+    obtain ⟨m, hmN, hbm, hhub⟩ := hflood b hbA
+      (le_trans (le_max_right _ _) hXb)
+    obtain ⟨H', hH'sub, hH'hub, hH'min⟩ := exists_minimal_pairHub hhub
+    have hbH' : b ∈ H' := by
+      by_contra hbH'
+      have hH'P : H' ⊆ P := by
+        intro h hh
+        rcases Finset.mem_insert.1 (hH'sub hh) with h' | h'
+        · exact absurd (h' ▸ hh) hbH'
+        · exact h'
+      obtain ⟨x, hx, y, hy, hxy, hxP, hyP⟩ := hPfree m hmN
+      rcases hH'hub x hx y hy hxy with h' | h'
+      · exact hxP (hH'P h')
+      · exact hyP (hH'P h')
+    have hSsub : H'.erase b ⊆ P := by
+      intro h hh
+      obtain ⟨hne, hhH'⟩ := Finset.mem_erase.1 hh
+      rcases Finset.mem_insert.1 (hH'sub hhH') with h' | h'
+      · exact absurd h' hne
+      · exact h'
+    have hbS : b ∉ H'.erase b := Finset.notMem_erase b H'
+    have hH'eq : H' = insert b (H'.erase b) :=
+      (Finset.insert_erase hbH').symm
+    refine ⟨b, le_trans (le_max_left _ _) hXb, H'.erase b, hSsub,
+      hbA, hbS, m, hmN, hbm, ?_, ?_⟩
+    · rw [← hH'eq]
+      exact hH'hub
+    · rw [← hH'eq]
+      exact hH'min
+  obtain ⟨S, hSP, hrec⟩ := cofinal_subset_pigeonhole
+    (Q := fun x S => x ∈ A ∧ x ∉ S ∧ ∃ m, N₀ ≤ m ∧ x ≤ m ∧
+      IsPairHub A m (insert x S) ∧
+      ∀ h ∈ insert x S, ¬IsPairHub A m (insert x S \ {h}))
+    (F := P) hQ
+  refine ⟨P, S, hSP, hPfree, fun X => ?_⟩
+  obtain ⟨b, hXb, hbA, hbS, hdata⟩ := hrec X
+  exact ⟨b, hbA, hXb, hbS, hdata⟩
+
+/-- **CONSTANT SIDON FROM `hfail` ALONE.**  The pair flood''s targets
+have all pair components inside `(P ∪ {b}) ∪ (m − (P ∪ {b}))`:
+cofinally many targets with `r₂(m) ≤ 2·(|P| + 1)` — one constant.
+Together with `constant_sidon_of_minimality`, BOTH rails of the
+counterexample force constant-Sidon streams, unconditionally. -/
+theorem constant_sidon_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    [DecidablePred (· ∈ A)]
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ C, ∀ N, ∃ m, N ≤ m ∧
+      ((Finset.range (m + 1)).filter
+        (fun x => x ∈ A ∧ (m - x) ∈ A)).card ≤ C := by
+  classical
+  obtain ⟨P, hPfree, X₀, hflood⟩ := pair_flood_of_hfail h0 hcov hfail
+  refine ⟨2 * (P.card + 1), fun N => ?_⟩
+  obtain ⟨b, hbA, hXb⟩ := pairCovers_unbounded hcov (max N X₀)
+  obtain ⟨m, hmN, hbm, hhub⟩ := hflood b hbA
+    (le_trans (le_max_right _ _) hXb)
+  have hcount := pair_count_of_pairHub hhub
+  have hcard : (insert b P).card ≤ P.card + 1 := Finset.card_insert_le b P
+  exact ⟨m, le_trans (le_trans (le_max_left _ _) hXb) hbm, by omega⟩
+
 end Erdos881
