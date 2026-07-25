@@ -2222,4 +2222,19 @@ theorem pool_pair_destruction {A P B : Set ℕ} {t : ℕ}
     ∀ p ∈ P, ∀ p' ∈ P, p + p' = t → p ∈ B ∨ p' ∈ B :=
   fun p hp p' hp' hpp' => hdest p (hPA hp) p' (hPA hp') hpp'
 
+/-- **Single-marker mixed exclusion.**  In a single-marker pool
+window, a two-destroyed target admits NO mixed pair away from the
+marker: `t` avoids `(P ∖ {b}) + (A ∖ P)` entirely.  At level two the
+alignment demand is not a dichotomy but a direct structural ban —
+the target''s mixed fiber collapses onto the marker alone. -/
+theorem single_marker_mixed_exclusion {A P B : Set ℕ} {b t : ℕ}
+    (hPA : P ⊆ A) (hB : B ⊆ P)
+    (honly : ∀ x ∈ B, x ≤ t → x = b)
+    (hdest : ∀ x ∈ A, ∀ y ∈ A, x + y = t → x ∈ B ∨ y ∈ B) :
+    ∀ p ∈ P, p ≠ b → ∀ q ∈ A, q ∉ P → p + q ≠ t := by
+  intro p hp hpb q hq hqP hpq
+  have hpB : p ∈ B :=
+    mixed_pair_destruction_sharpens hPA hB hdest p hp q hq hqP hpq
+  exact hpb (honly p hpB (by omega))
+
 end Erdos881
