@@ -1214,4 +1214,51 @@ theorem zero_guarded_iff_primitive {A : Set ℕ} {N₀ n : ℕ}
     push Not at hne
     exact hprim ⟨y, hy, z, hz, hyz, by omega, by omega⟩
 
+
+/-- **The trichotomy collapses to a dichotomy.**  For any zero-free
+infinite deletion set of positive elements, the singleton-funnel
+branch cannot recur cofinally: a cofinal singleton stream feeds the
+rotating-guardian kill and contradicts counterexamplehood.  Beyond
+some bound, every destroyed target of every such deletion realizes a
+pair funnel or the diffuse branch. -/
+theorem deletion_dichotomy_of_anchors {A B : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ C ⊆ A, C.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ C) 3)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hBA : B ⊆ A) (h0B : 0 ∉ B) (hBpos : ∀ b ∈ B, 0 < b)
+    (hBinf : B.Infinite) :
+    ∀ N, ∃ m, N ≤ m ∧
+      ((∃ u ∈ B, ∃ v ∈ B, IsPairDestroyer A u v m) ∨
+      (∃ y ∈ A, ∃ z ∈ A, y + z = m ∧ (y ∈ B ∨ z ∈ B) ∧
+        ∃ x' ∈ A, ∃ y' ∈ A, ∃ z' ∈ A, x' + y' + z' = m ∧
+          (y ∈ B → x' ≠ y ∧ y' ≠ y ∧ z' ≠ y) ∧
+          (z ∈ B → x' ≠ z ∧ y' ≠ z ∧ z' ≠ z))) := by
+  by_cases hsing : ∀ N, ∃ m, N ≤ m ∧
+      ∃ u ∈ B, u ∈ A ∧ IsPrivateTriple A u m
+  · -- cofinal singleton funnels: the stream kill fires
+    exfalso
+    have hstream : ∀ N, ∃ a m, N ≤ m ∧ 0 < a ∧
+        IsPrivateTriple A a m := by
+      intro N
+      obtain ⟨m, hm, u, huB, huA, hpriv⟩ := hsing N
+      exact ⟨u, m, hm, hBpos u huB, hpriv⟩
+    obtain ⟨C, hCA, hCinf, hsurv⟩ :=
+      surviving_deletion_of_cofinal_privateStream h0 hcov hstream
+        hanchor
+    exact hfail C hCA hCinf (exactTupleBasis_diff_of_survival hsurv)
+  · push Not at hsing
+    obtain ⟨N₁, hN₁⟩ := hsing
+    intro N
+    obtain ⟨m, hm, htri⟩ :=
+      cofinal_funnel_trichotomy_of_deletionFailure h0 h0B hcov
+        (hfail B hBA hBinf) (max N N₁)
+    rcases htri with h | h | h
+    · obtain ⟨u, huB, huA, hpriv⟩ := h
+      exact absurd hpriv
+        (hN₁ m (le_trans (le_max_right _ _) hm) u huB huA)
+    · exact ⟨m, le_trans (le_max_left _ _) hm, Or.inl h⟩
+    · exact ⟨m, le_trans (le_max_left _ _) hm, Or.inr h⟩
+
 end Erdos881
