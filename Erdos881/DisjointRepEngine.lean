@@ -2425,4 +2425,50 @@ theorem escape_singleton_of_supergeometric {b : ℕ → ℕ}
     rw [hj, hj₀] at *
     omega
 
+/-- **The per-deletion capstone.**  Against a super-geometric
+deletion, every failing target''s minimal hub either reaches into the
+prefix (a marker at or below `√n` — the guardian branch) or is a
+single marker (the escape branch, fed to the stream kill).  The
+composed endpoint of the night: the enemy''s defenses against each
+deletion are our prefix markers or a lone escapee, nothing else. -/
+theorem per_deletion_dichotomy_final {A : Set ℕ} {b : ℕ → ℕ}
+    (hsg : ∀ j k, j < k → b j * b j < b k)
+    {n : ℕ}
+    (hdead : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = n →
+      (∃ j, x = b j) ∨ (∃ j, y = b j) ∨ (∃ j, z = b j))
+    (hrep : ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = n) :
+    ∃ H : Finset ℕ, IsRepHub A n H ∧
+      (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      (∀ h ∈ H, (∃ j, h = b j) ∧ h ≤ n) ∧
+      ((∃ h ∈ H, h * h ≤ n) ∨ (∃ h₀, H = {h₀})) := by
+  classical
+  have hdead' : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = n →
+      x ∈ {m | ∃ j, m = b j} ∨ y ∈ {m | ∃ j, m = b j} ∨
+      z ∈ {m | ∃ j, m = b j} := hdead
+  have hhub := failing_hub_subset_deletion
+    (B := {m | ∃ j, m = b j}) hdead'
+  obtain ⟨H, hHsub, hHhub, hHmin⟩ := exists_minimal_hub hhub
+  have hHB : ∀ h ∈ H, (∃ j, h = b j) ∧ h ≤ n := by
+    intro h hh
+    have := hHsub hh
+    obtain ⟨hr, hm⟩ := Finset.mem_filter.1 this
+    exact ⟨hm, by
+      have := Finset.mem_range.1 hr
+      omega⟩
+  refine ⟨H, hHhub, hHmin, hHB, ?_⟩
+  by_cases hesc : ∀ h ∈ H, n < h * h
+  · right
+    have hne : H.Nonempty := by
+      obtain ⟨x, hx, y, hy, z, hz, hsum⟩ := hrep
+      rcases hHhub x hx y hy z hz hsum with h | h | h
+      · exact ⟨x, h⟩
+      · exact ⟨y, h⟩
+      · exact ⟨z, h⟩
+    exact escape_singleton_of_supergeometric hsg
+      (fun h hh => (hHB h hh).1) (fun h hh => (hHB h hh).2) hesc hne
+  · left
+    push_neg at hesc
+    obtain ⟨h, hh, hhn⟩ := hesc
+    exact ⟨h, hh, hhn⟩
+
 end Erdos881
