@@ -45,6 +45,28 @@ minimality + membership.
   `r₂(n) ≤ 2(log₃ n + 1)`.  Sound quantitative replacement for
   everything the trap was supposed to do.
 
+**THE KILL HOUR (15:10–15:20)**:
+- `pair_flood_of_minimality`: the pair flood holds for EVERY
+  ℵ₀-minimal order-2 covering set — a structure theorem needing no
+  counterexample at all.
+- `double_flood_of_counterexample`: both rails align on the SAME
+  guardian — every large element guards at both orders at once.
+- `two_guardians_per_pair_target` / `three_guardians_per_rep_target`:
+  one envelope-avoiding representation pins all guardians of a
+  target to its parts — the guardian→target maps are ≤2-to-1 and
+  ≤3-to-1.
+- **`r2_unbounded_of_hfail` — THE SIDON DOOR CLOSED**: rep flood →
+  fan blowup → √-growth forces `r₂` unbounded in any
+  counterexample.  Erdős–Turán holds for 881-counterexamples.  The
+  enemy's `r₂` must oscillate between a constant (its flood
+  targets) and infinity (its blown hub-translates) forever.
+- `counterexample_portrait`: the four-part structure theorem in one
+  statement (central administration / full employment / Sidon
+  streets / blown avenues).
+- `guardian_team_hubs_of_deletion`: every 0-free deletion's late
+  failing targets carry minimal hubs of card ≥ 2 made of deleted
+  elements — the legacy team hypothesis, derived.
+
 **THE FLOOD IS UNCONDITIONAL (15:05, the landmark hour)**:
 `rep_flood_of_hfail` — the SAME dodge trick at order 3: hfail
 yields one finite REP-FREE envelope `P` such that EVERY large basis
