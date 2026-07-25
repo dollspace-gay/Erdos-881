@@ -3286,4 +3286,20 @@ theorem shared_block_parent_sieve {A : Set ℕ} {b w w' : ℕ}
   have hval : b + w + w - (b + w') = 2 * w - w' := by omega
   rwa [hval] at h
 
+/-- **The master block sieve.**  In block coordinates, every owner
+excludes every same-window element: `b + 2w - b' - w' ∉ A`.  All
+coherence laws are specializations (equal blocks: the parent sieve;
+equal parents: the star law).  Offsets between in-use blocks are
+sieved by every parent pair below them — the offset lattice is
+forced into the sieve''s sparse complement: coherence. -/
+theorem cross_block_exclusion {A : Set ℕ} {b w b' w' : ℕ}
+    (hown : OwnsTarget A (b + w) (b + w + w))
+    (ha' : b' + w' ∈ A)
+    (hbig : 2 * (b' + w') > b + w + w)
+    (hlt : b' + w' < b + w + w) (hne : b' + w' ≠ b + w) :
+    b + 2 * w - b' - w' ∉ A := by
+  have h := star_exclusion (w := w) (a := b + w) hown ha' hbig hlt hne
+  have hval : b + w + w - (b' + w') = b + 2 * w - b' - w' := by omega
+  rwa [hval] at h
+
 end Erdos881
