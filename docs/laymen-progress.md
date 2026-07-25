@@ -137,3 +137,20 @@ some fixed small size are FORCED, straight from the enemy's
 definition. The hunt now has a single shape to chase: tiny key
 clusters that infinitely many doors all depend on. The walls built
 for pairs are being widened to fit.
+
+## The bottleneck hunt comes home (00:40)
+
+Tonight's new engine kept going. We proved the machine-checked
+chain all the way down: any enemy keyring must have infinitely many
+bottleneck doors; each bottleneck's key cluster splits into a fixed
+tiny core plus far-away rotating helpers; the core can't be empty,
+can't be the zero key, can't be any single key — every one of those
+cases dies against walls we had already built and verified. The
+smallest possible core is a PAIR of keys, exactly the shape the
+whole guardian-pair campaign was built to fight. And inside any
+leanest bottleneck cluster, every key holds a private opening that
+only it can serve — a personal fingerprint the hunt can track.
+
+In short: the enemy no longer gets to choose its shape. Its own
+definition drives it into the pair-guardian corner, where most of
+our verified weapons already point.

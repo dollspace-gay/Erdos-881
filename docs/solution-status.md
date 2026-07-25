@@ -291,3 +291,23 @@ targets in every buildable covering structure.
 Escalation plan: hub tower extraction (iterated pigeonhole →
 fixed small hub part + level-like large part), then the |S|-fold
 generalization of the fixed-pair machinery.
+
+## The hub tree completed (2026-07-25 00:40)
+
+DisjointRepEngine.lean now derives, from raw hfail + interfaces,
+machine-verified with zero sorries:
+
+1. Bounded disjoint reps (V10) → bounded hubs → window-split tower
+   (fixed core S per window, rest large) — `team_configuration_of_hfail`.
+2. Small cores are dead: empty (covering), zero singleton
+   (zero-residue kill), positive singleton (stream kill) —
+   `hub_card_ge_two_of_hfail`. THE PAIR IS THE BASE CASE.
+3. Minimal hubs exist and every element owns a private witness
+   (`minimal_hub_necessity`) — the guardian structure from first
+   principles. Exact-pair hubs are pair destroyers.
+
+The campaign tree is now rooted: hfail itself forces the
+guardian-team configurations all previous arcs studied. Open
+branches: exact-pair recurrence (→ fixed-pair pipeline), half-fixed
+pairs (S = 1 + rotating), all-large coreps (S = 0), plus the
+matching/identity acquisition and diffuse exclusion.
