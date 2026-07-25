@@ -169,3 +169,21 @@ then even the two-key game at those doors runs through the same
 drifting helpers, which is precisely the roaming-guard pattern our
 counting walls were built against. Either way the enemy is now
 pinned between two named corners, both already half-conquered.
+
+## The enemy must arm its own opponent (01:00)
+
+Tonight's last verified chain is the strangest and maybe the most
+important: every time the enemy's fortress defeats one of our key
+removals, the defeat itself FORCES new keys into the enemy's own
+keyring — a perfect mirror-copy of its guardian team, stamped at a
+predictable position, at every scale, for every removal we try.
+And those forced copies then collide with the very exclusiveness
+the enemy was defending: each pair of stamped copies creates a
+grid of forbidden overlaps it must dodge, forever.
+
+The machine has checked both halves: the stamping is mandatory,
+and the collisions are real. What remains is bookkeeping the
+avalanche — every dodge spawns more stamps, every stamp more
+dodges. That's next session's hunt, with tonight's census showing
+only digit-style keyrings can even attempt the dodge — and those
+pick their own locks.
