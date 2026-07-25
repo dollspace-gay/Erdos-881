@@ -3159,4 +3159,21 @@ theorem star_exclusion {A : Set ℕ} {w a b : ℕ}
   obtain ⟨h1, h2, h3, h4⟩ := hown
   exact h4 b hb hbig (by omega) hba
 
+/-- **The parent-double exclusion.**  If a child reaches beyond three
+times its parent and their difference stays in `A`, the parent''s
+double must leave `A`: the difference tests the target''s moat and
+reflects to `2w`.  Parents in reachy use are double-free — exactly
+the Cantor dodge (doubles carry digit 2) — and the enemy''s doubling
+supply can never live on such parents: the forest and the doubling
+interface split `A`. -/
+theorem parent_double_exclusion {A : Set ℕ} {w a : ℕ}
+    (hown : OwnsTarget A a (a + w))
+    (hdiff : a - w ∈ A) (hreach : 3 * w < a) :
+    2 * w ∉ A := by
+  obtain ⟨h1, h2, h3, h4⟩ := hown
+  have hw1 : 1 ≤ w := by omega
+  have hval : a + w - (a - w) = 2 * w := by omega
+  have := h4 (a - w) hdiff (by omega) (by omega) (by omega)
+  rwa [hval] at this
+
 end Erdos881
