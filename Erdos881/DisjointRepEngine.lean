@@ -20,6 +20,7 @@ disjoint-rep growth; size-≤2 rep covers simply do not exist).
 -/
 
 import Erdos881.TeamGraphRamsey
+import Erdos881.InfiniteRamsey
 import Erdos881.AdditiveSupports
 import Erdos881.RotatingGuardianEndgame
 import Erdos881.FunnelTrichotomy
@@ -6564,5 +6565,101 @@ theorem counterexample_portrait' {A : Set ℕ} {N₀ : ℕ}
       (fun x => x ∈ A ∧ (v - x) ∈ A)).card) :=
   counterexample_portrait h0 hcov hanchor
     (minimality_elementwise_of_tuple hmin) hfail
+
+/-- **REP-PAIR CLIQUE OR TRIPLE TEAMS.**  The first Ramsey harvest
+on the hub hypergraph: along any increasing positive ground stream
+in `A`, either an infinite subsequence forms a REP-PAIR CLIQUE —
+every pair of its members jointly hubs some late target — or an
+infinite subsequence is pair-hub-free, and then every minimal team
+hub inside it (supplied cofinally by
+`guardian_team_hubs_of_deletion`) has at least THREE members.
+Team-card escalation, step one. -/
+theorem rep_pair_clique_or_triple_teams {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (b : ℕ → ℕ) (hmono : StrictMono b)
+    (hbA : ∀ j, b j ∈ A) (hbpos : ∀ j, 0 < b j) :
+    ∃ f : ℕ → ℕ, StrictMono f ∧
+      ((∀ i j, i < j → ∃ n, N₀ ≤ n ∧
+        IsRepHub A n {b (f i), b (f j)}) ∨
+      (∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+        IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        3 ≤ H.card ∧
+        ∀ h ∈ H, h ∈ Set.range (fun i => b (f i)))) := by
+  classical
+  set c : ℕ → ℕ → Bool := fun i j =>
+    if ∃ n, N₀ ≤ n ∧ IsRepHub A n {b i, b j} then true else false
+    with hc
+  have hciff : ∀ i j, c i j = true ↔
+      ∃ n, N₀ ≤ n ∧ IsRepHub A n {b i, b j} := by
+    intro i j
+    by_cases h : ∃ n, N₀ ≤ n ∧ IsRepHub A n {b i, b j}
+    · simp [hc, h]
+    · simp [hc, h]
+  obtain ⟨f, hfmono, bcol, hhom⟩ := infinite_ramsey_pairs c
+  refine ⟨f, hfmono, ?_⟩
+  rcases Bool.eq_false_or_eq_true bcol with hbc | hbc
+  · -- clique branch
+    left
+    subst hbc
+    intro i j hij
+    have h1 := hhom i j hij
+    exact (hciff (f i) (f j)).1 h1
+  · -- pair-hub-free branch: teams have card ≥ 3
+    right
+    subst hbc
+    have hcomp : StrictMono (fun i => b (f i)) :=
+      fun i j hij => hmono (hfmono hij)
+    have hBA : Set.range (fun i => b (f i)) ⊆ A := by
+      rintro x ⟨i, rfl⟩
+      exact hbA (f i)
+    have hBinf : (Set.range (fun i => b (f i))).Infinite :=
+      Set.infinite_range_of_injective hcomp.injective
+    have h0B : 0 ∉ Set.range (fun i => b (f i)) := by
+      rintro ⟨i, hi⟩
+      have h1 : b (f i) = 0 := hi
+      have := hbpos (f i)
+      omega
+    have hnopair : ∀ i j, i < j →
+        ¬∃ m, N₀ ≤ m ∧ IsRepHub A m {b (f i), b (f j)} := by
+      intro i j hij hex
+      have h1 := (hciff (f i) (f j)).2 hex
+      rw [hhom i j hij] at h1
+      exact Bool.false_ne_true h1
+    have hteams := guardian_team_hubs_of_deletion h0 hcov hanchor
+      hfail hBA hBinf h0B
+    intro N
+    obtain ⟨n, hn, H, hhub, hmin, hcard2, hHB⟩ := hteams (max N N₀)
+    have hnN₀ : N₀ ≤ n := le_trans (le_max_right _ _) hn
+    refine ⟨n, le_trans (le_max_left _ _) hn, H, hhub, hmin, ?_, hHB⟩
+    rcases Nat.lt_or_ge H.card 3 with hlt | hge
+    · exfalso
+      have hcard : H.card = 2 := by omega
+      obtain ⟨u, v, huv, hHuv⟩ := Finset.card_eq_two.1 hcard
+      obtain ⟨i, hi⟩ := hHB u (hHuv ▸ Finset.mem_insert_self u {v})
+      obtain ⟨j, hj⟩ := hHB v (hHuv ▸ Finset.mem_insert_of_mem
+        (Finset.mem_singleton_self v))
+      have hi' : b (f i) = u := hi
+      have hj' : b (f j) = v := hj
+      have hij : i ≠ j := by
+        intro h
+        rw [h, hj'] at hi'
+        exact huv hi'.symm
+      rcases Nat.lt_or_ge i j with hlt' | hge'
+      · refine hnopair i j hlt' ⟨n, hnN₀, ?_⟩
+        have hpair : ({b (f i), b (f j)} : Finset ℕ) = H := by
+          rw [hi', hj', hHuv]
+        rw [hpair]
+        exact hhub
+      · have hlt'' : j < i := by omega
+        refine hnopair j i hlt'' ⟨n, hnN₀, ?_⟩
+        have hpair : ({b (f j), b (f i)} : Finset ℕ) = H := by
+          rw [hi', hj', hHuv, Finset.pair_comm]
+        rw [hpair]
+        exact hhub
+    · exact hge
 
 end Erdos881
