@@ -1205,4 +1205,35 @@ theorem alignment_of_single_marker_failure {A B : Set ℕ} {n b : ℕ}
   · exact Or.inl (honly x h (by omega))
   · exact Or.inr (honly y h (by omega))
 
+/-- **Forced supply: reversed team translates.**  Covering makes the
+aligned marker's representations exist, not just exclusive: a failing
+team target in a single-marker window forces `n - s - b ∈ A` for
+every team member — the set `A` must contain the reversed team
+translate `(n - b) - S` outright.  The enemy's own failure mandate
+stocks `A` with team-patterned blocks at every scale, for every
+marker choice: the self-interaction constraints these blocks create
+against the privateness demand are the closing front. -/
+theorem reversed_translate_of_alignment {A B : Set ℕ} {N₀ n b : ℕ}
+    {S : Finset ℕ}
+    (hcov : PairCovers A N₀)
+    (hhub : IsRepHub A n S) (hSA : ∀ s ∈ S, s ∈ A)
+    (hBS : ∀ s ∈ S, s ∉ B) (hSn : ∀ s ∈ S, s + N₀ ≤ n)
+    (hdead : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = n →
+      x ∈ B ∨ y ∈ B ∨ z ∈ B)
+    (honly : ∀ x ∈ B, x ≤ n → x = b) :
+    ∀ s ∈ S, n - s - b ∈ A := by
+  intro s hs
+  have halign := alignment_of_single_marker_failure hhub hSA hBS
+    (fun s hs => by have := hSn s hs; omega) hdead honly
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov (n - s) (by
+    have := hSn s hs
+    omega)
+  rcases halign s hs x hx y hy hxy with h | h
+  · have hyv : y = n - s - b := by omega
+    rw [← hyv]
+    exact hy
+  · have hxv : x = n - s - b := by omega
+    rw [← hxv]
+    exact hx
+
 end Erdos881
