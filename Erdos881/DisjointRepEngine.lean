@@ -3379,4 +3379,27 @@ theorem richness_gives_reflection {A : Set ℕ} {b X : ℕ}
   intro a ha hXa hab hane
   refine ⟨a, ha, 2 * b - a, hrich a ha hXa hab, by omega, hane⟩
 
+/-- **The exact failure characterization.**  A target fails under a
+deletion IF AND ONLY IF one of its hubs lies inside the deletion:
+hubs inside `B` kill every representation; conversely the part of
+`B` below a failing target IS such a hub.  `hfail` is precisely the
+statement that every infinite deletion contains hubs cofinally — the
+problem becomes hypergraph unavoidability, exactly. -/
+theorem fails_iff_hub_subset {A B : Set ℕ} {n : ℕ}
+    [DecidablePred (· ∈ B)] :
+    (∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = n →
+      x ∈ B ∨ y ∈ B ∨ z ∈ B) ↔
+    ∃ H : Finset ℕ, IsRepHub A n H ∧ ∀ h ∈ H, h ∈ B := by
+  constructor
+  · intro hdead
+    refine ⟨(Finset.range (n + 1)).filter (· ∈ B),
+      failing_hub_subset_deletion hdead, ?_⟩
+    intro h hh
+    exact (Finset.mem_filter.1 hh).2
+  · rintro ⟨H, hhub, hHB⟩ x hx y hy z hz hsum
+    rcases hhub x hx y hy z hz hsum with h | h | h
+    · exact Or.inl (hHB x h)
+    · exact Or.inr (Or.inl (hHB y h))
+    · exact Or.inr (Or.inr (hHB z h))
+
 end Erdos881
