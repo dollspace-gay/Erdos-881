@@ -1483,4 +1483,26 @@ theorem recurring_equal_guard_kill {A : Set ℕ} {N₀ u c : ℕ}
   obtain ⟨m, hm, hdes⟩ := hrec N
   exact ⟨m, hm, hdes.privateTriple_of_eq⟩
 
+
+/-- **Level-sequence extraction for a fixed pair.**  From cofinal
+`v`-corep targets, a strictly growing sequence of destroyed targets
+with element levels and doubling growth — the substrate for the
+channel-Ramsey step. -/
+theorem fixed_pair_level_sequence {A : Set ℕ} {u v : ℕ}
+    (hrec : ∀ N, ∃ m, N ≤ m ∧ IsPairDestroyer A u v m ∧ m - v ∈ A) :
+    ∃ M : ℕ → ℕ, (∀ k, IsPairDestroyer A u v (M k) ∧ M k - v ∈ A) ∧
+      (∀ k, 2 * M k + v + 1 ≤ M (k + 1)) := by
+  classical
+  choose f hf1 hf2 using hrec
+  set M : ℕ → ℕ := fun k =>
+    Nat.rec (f 0) (fun _ prev => f (2 * prev + v + 1)) k with hM
+  have hMs : ∀ k, M (k + 1) = f (2 * M k + v + 1) := fun _ => rfl
+  refine ⟨M, fun k => ?_, fun k => ?_⟩
+  · cases k with
+    | zero => exact hf2 0
+    | succ k => exact hf2 (2 * M k + v + 1)
+  · have := hf1 (2 * M k + v + 1)
+    have hs : M (k + 1) = f (2 * M k + v + 1) := hMs k
+    omega
+
 end Erdos881
