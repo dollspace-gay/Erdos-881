@@ -2614,4 +2614,30 @@ theorem ownsTarget_pairHub {A : Set ℕ} {a n : ℕ}
       rw [hval] at this
       exact this hy
 
+/-- **Strip reflection.**  Elements strictly between an owner and its
+target reflect into co-`A`: each strip inhabitant sends one demand
+into the small scale.  The squeeze''s dichotomy: empty strips force
+gap-domination (`s(a) ≤ gap(a)`, the recursive gap-hierarchy of
+digit towers); inhabited strips cascade small co-`A` demands at
+knife-edge density. -/
+theorem strip_reflection {A : Set ℕ} {a n : ℕ}
+    (hown : OwnsTarget A a n) :
+    ∀ y ∈ A, a < y → y < n → n - y ∉ A := by
+  obtain ⟨h1, h2, h3, h4⟩ := hown
+  intro y hy hay hyn
+  exact h4 y hy (by omega) (by omega) (by omega)
+
+/-- **Gap domination.**  If the strip is empty, the target hides in
+the gap: the completion is bounded by the distance to the next
+element — the digit-tower gap hierarchy, per owner. -/
+theorem gap_domination_of_empty_strip {A : Set ℕ} {a n a' : ℕ}
+    (hown : OwnsTarget A a n)
+    (hstrip : ∀ y ∈ A, a < y → y < n → False)
+    (ha' : a' ∈ A) (haa' : a < a') (h0 : 0 ∈ A) :
+    n - a ≤ a' - a := by
+  by_contra hlt
+  push_neg at hlt
+  have hn' : a' < n := by omega
+  exact hstrip a' ha' haa' hn'
+
 end Erdos881
