@@ -465,4 +465,65 @@ theorem surviving_deletion_of_pairRedundant_edges
       L j ≠ pm (b (κ k)) - u - pv (b (κ k))
     exact ⟨by omega, by omega, by omega, by omega⟩
 
+/-- **The grand assembly, second form.**  With the hugging splice the
+clique escape shrinks again: beyond some bound, every destroyer of an
+eligible 2-redundant vertex's edges must hug (`m < 3v`) *and* certify
+joint essentiality of its pair.  For a 2-redundant `u` that means all
+high partners are essential in `A \ {u}` — a finite set by Grekos-type
+counting (Open Link B1, literature). -/
+theorem erdos881_grand_assembly' {A : Set ℕ} {N₀ : ℕ}
+    (hA : A.Infinite) (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfunnel : HasCofinalPairFunnels A)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g) :
+    (∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n) ∨
+    (∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m) ∨
+    (∃ L, L ⊆ A ∧ L.Infinite ∧ L.Pairwise (TeamEdge A) ∧
+      ∀ u ∈ L, 0 < u → N₀ ≤ u → ∀ N₁, N₁ ≤ u →
+        TwoRedundant A u N₁ → ∀ N₂, N₂ ≤ u →
+        ∃ K, ∀ v m, K < v → u < v → v ≤ m →
+          IsPairDestroyer A u v m →
+          m < 3 * v ∧ ¬ TwoRedundantPair A u v N₂) := by
+  rcases infinite_teamClique_or_cofinal_privatePairs hA hfunnel with
+    ⟨L, hLA, hLinf, hLcl⟩ | ⟨L, hLA, hLinf, hstream⟩
+  · by_cases hhug : ∀ u ∈ L, 0 < u → N₀ ≤ u → ∀ N₁, N₁ ≤ u →
+        TwoRedundant A u N₁ → ∀ N₂, N₂ ≤ u →
+        ∃ K, ∀ v m, K < v → u < v → v ≤ m →
+          IsPairDestroyer A u v m →
+          m < 3 * v ∧ ¬ TwoRedundantPair A u v N₂
+    · exact Or.inr (Or.inr ⟨L, hLA, hLinf, hLcl, hhug⟩)
+    · push Not at hhug
+      obtain ⟨u, huL, hu0, huN₀, N₁, hN₁u, hred, N₂, hN₂u, hmix⟩ := hhug
+      obtain ⟨c, hc, hc0, hcu, w, hwA, w', hw'A, hww, hwc, hwu, hw'u⟩ :=
+        hanchor u
+      by_cases hcl : ∀ K, ∃ v m, K < v ∧ u < v ∧ 3 * v ≤ m ∧
+          IsPairDestroyer A u v m
+      · exact Or.inl (surviving_deletion_of_clear_pinned_edges h0 hcov
+          hred hu0 huN₀ hN₁u hcl hc hc0 hcu
+          ⟨w, hwA, w', hw'A, hww, hwc, hwu, hw'u⟩)
+      · push Not at hcl
+        obtain ⟨K₀, hK₀⟩ := hcl
+        refine Or.inl (surviving_deletion_of_pairRedundant_edges h0 hcov
+          hu0 huN₀ hN₂u (fun K => ?_) hc hc0 hcu
+          ⟨w, hwA, w', hw'A, hww, hwc, hwu, hw'u⟩)
+        obtain ⟨v, m, hKv, huv, hvm, hdes, hbad⟩ := hmix (max K K₀)
+        have hK : K < v := lt_of_le_of_lt (le_max_left _ _) hKv
+        have hK₀v : K₀ < v := lt_of_le_of_lt (le_max_right _ _) hKv
+        rcases Nat.lt_or_ge m (3 * v) with hm3 | hm3
+        · exact ⟨v, m, hK, huv, hvm, hbad hm3, hdes⟩
+        · exact absurd hdes (hK₀ v m hK₀v huv hm3)
+  · by_cases hz : ∀ N, ∃ a m, N ≤ m ∧ 0 < a ∧ IsPrivateTriple A a m
+    · exact Or.inl
+        (surviving_deletion_of_cofinal_privateStream h0 hcov hz hanchor)
+    · push Not at hz
+      obtain ⟨N₂, hN₂⟩ := hz
+      refine Or.inr (Or.inl fun N => ?_)
+      obtain ⟨v, hvL, m, hm, hpriv⟩ := hstream (max N N₂)
+      rcases Nat.eq_zero_or_pos v with hv0 | hv0
+      · exact ⟨m, le_trans (le_max_left _ _) hm, hv0 ▸ hpriv⟩
+      · exact absurd hpriv
+          (hN₂ v m (le_trans (le_max_right _ _) hm) hv0)
+
 end Erdos881
