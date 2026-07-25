@@ -32,3 +32,4 @@ import Erdos881.UnboundedMirrorGaps
 import Erdos881.TeamGraphRamsey
 import Erdos881.PinnedMirror
 import Erdos881.SeparatedTriangle
+import Erdos881.FunnelTrichotomy

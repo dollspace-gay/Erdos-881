@@ -12,10 +12,19 @@ that A∖B is not an exact order-3 basis for any infinite B ⊆ A.
 1. **Funnels.** Every destroyed target's support family is hit by the
    deleted set; the funnel is a minimal transversal. Funnels of sizes
    1, 2, 3 all occur cofinally in the wild (digit bases; census parts
-   5–8). Reduction of general counterexamples to *bounded* funnel size
-   via free-set/sunflower thinning: **OPEN** (Phase 3b; interface
-   `HasCofinalPairFunnels` in `TeamGraphRamsey.lean`; size-3 analog
-   would use `infinite_tripleRamsey_nat`).
+   5–8). **The funnel trichotomy is now VERIFIED**
+   (`FunnelTrichotomy.lean`): because any single representation's
+   `B`-part is a transversal candidate, every destroyed target of any
+   `B` (0 ∉ B) carries a singleton funnel from `B`, a pair funnel from
+   `B`, or two representations with disjoint `B`-parts — cofinally so
+   whenever deleting `B` breaks the order-three basis
+   (`cofinal_funnel_trichotomy_of_deletionFailure`).  What remains
+   **OPEN** of Link A is exactly the exclusion of the third
+   (hereditarily diffuse) regime along some thinning: an infinite `B₀`
+   all of whose infinite subsets see only disjoint-support destruction
+   beyond some point.  (Interface `HasCofinalPairFunnels` in
+   `TeamGraphRamsey.lean`; size-3 layer via
+   `infinite_tripleRamsey_nat`.)
 2. **Ramsey dichotomy** (`infinite_teamClique_or_cofinal_privatePairs`,
    `TeamGraphRamsey.lean`): **VERIFIED.** Cofinal pair funnels force an
    infinite team-graph clique or an infinite stream of singleton
