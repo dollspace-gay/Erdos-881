@@ -5184,4 +5184,21 @@ theorem pair_flood_cascade {A : Set ℕ} {N₀ : ℕ}
     pair_flood_pool h0 hcov hGA h0G hunb hfail
   exact ⟨S, hunb, P', hP'G, hP'free, X', hcascade⟩
 
+/-- **Singleton guardians live outside every free set.**  If all
+pair representations of some late target use `b`, then every
+pair-free set excludes `b`.  Consequence: in an empty-core flood
+the cascade envelopes are forced empty — the singleton world is
+totally self-isolating (and is exactly the near-Sidon regime that
+unique-representation targets realize for free). -/
+theorem singleton_pair_guardian_notMem_free {A : Set ℕ}
+    {N₀ b m : ℕ} {Q : Finset ℕ}
+    (hfree : PairFree A N₀ Q) (hm : N₀ ≤ m)
+    (hall : ∀ x ∈ A, ∀ y ∈ A, x + y = m → x = b ∨ y = b) :
+    b ∉ Q := by
+  intro hbQ
+  obtain ⟨x, hx, y, hy, hxy, hxQ, hyQ⟩ := hfree m hm
+  rcases hall x hx y hy hxy with h | h
+  · exact hxQ (h ▸ hbQ)
+  · exact hyQ (h ▸ hbQ)
+
 end Erdos881

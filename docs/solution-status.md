@@ -45,6 +45,26 @@ minimality + membership.
   `r₂(n) ≤ 2(log₃ n + 1)`.  Sound quantitative replacement for
   everything the trap was supposed to do.
 
+**THE PAIR FLOOD ARC (15:00, unconditional, the sound trap found)**:
+- `pair_flood_of_hfail`: hfail yields ONE finite pair-free envelope
+  `P` such that EVERY large basis element `b` pair-guards a
+  personal target `m ≥ b`: all order-2 reps of `m` route through
+  `P ∪ {b}`.  Constant card; junk-proof; only covering + 0 ∈ A.
+  Key: pair-hub-ness is up-monotone, so dodge freeness is a
+  one-line invariant, and 0-padding turns surviving pair reps into
+  order-3 reps.
+- `pair_flood_canonical`: exact core `S* ⊆ P`; hubs EXACTLY
+  `S* ∪ {b}`, `b` always necessary (freeness of `P`).
+- `constant_sidon_of_hfail` + `constant_sidon_of_minimality`: BOTH
+  rails force constant-Sidon streams, unconditionally.
+- `pair_flood_pool` + `pair_flood_cascade`: sound descent — the
+  level-2 envelope is MADE OF GUARDIANS.
+- `singleton_pair_guardian_notMem_free`: empty-core guardians live
+  outside every free set; cascade envelopes then vanish.  CAVEAT:
+  the empty-core (singleton) world is realized by unique-rep
+  targets of any Sidon-like basis — it cannot die from order-2
+  structure alone; the kill must couple back to order-3 poverty.
+
 **Open frontier**: kill or constrain each trichotomy branch.
 (T): recurring destroyer pair at card 2, unkilled beyond.
 (F): two routing regimes to kill; 0 ∈ S* sliver.
