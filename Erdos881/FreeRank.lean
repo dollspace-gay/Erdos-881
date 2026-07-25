@@ -2209,4 +2209,133 @@ theorem hfail_iff_no_hereditarily_free {A : Set ℕ} {N₀ : ℕ}
     · exact (hv 1).2 ((hQB' _ h).1)
     · exact (hv 2).2 ((hQB' _ h).1)
 
+/-- **The tree and the witness are one.**  Purely combinatorially
+(no covering, no failure hypothesis): the freeness tree is
+well-founded exactly when no infinite hereditarily free set
+exists.  A descending chain's union is hereditarily free
+(downward closure); a hereditarily free set's sorted prefixes are
+a descending chain. -/
+theorem freeStep_wf_iff_no_hereditarilyFree {A : Set ℕ} {N₀ : ℕ} :
+    WellFounded (FreeStep A N₀) ↔
+    ¬∃ B : Set ℕ, HereditarilyFree A N₀ B := by
+  classical
+  constructor
+  · -- WF kills hereditarily free sets: their prefixes descend
+    rintro hwf ⟨B, hBinf, hBpos, hBfree⟩
+    rw [wellFounded_iff_isEmpty_descending_chain] at hwf
+    -- enumerate B increasingly
+    have hpick : ∀ X : ℕ, ∃ b ∈ B, X < b := by
+      intro X
+      obtain ⟨b, hb, hXb⟩ := hBinf.exists_gt X
+      exact ⟨b, hb, hXb⟩
+    choose nx hnxB hnxgt using hpick
+    set e : ℕ → ℕ := fun j =>
+      Nat.rec (nx 0) (fun _ prev => nx prev) j with he
+    have heS : ∀ j, e (j + 1) = nx (e j) := fun _ => rfl
+    have heB : ∀ j, e j ∈ B := by
+      intro j
+      cases j with
+      | zero => exact hnxB 0
+      | succ j =>
+        rw [heS]
+        exact hnxB _
+    have hemono : StrictMono e := by
+      apply strictMono_nat_of_lt_succ
+      intro j
+      rw [heS]
+      exact hnxgt (e j)
+    set f : ℕ → Finset ℕ := fun n => (Finset.range n).image e
+      with hf
+    have hfnode : ∀ n, FreeNode A N₀ (f n) := by
+      intro n
+      have hsub : ∀ h ∈ f n, h ∈ B := by
+        intro h hh
+        obtain ⟨j, -, hj⟩ := Finset.mem_image.1 hh
+        rw [← hj]
+        exact heB j
+      exact ⟨fun h hh => hBpos h (hsub h hh), hBfree (f n) hsub⟩
+    have hfstep : ∀ n, FreeStep A N₀ (f (n + 1)) (f n) := by
+      intro n
+      have hins : f (n + 1) = insert (e n) (f n) := by
+        show (Finset.range (n + 1)).image e = _
+        rw [Finset.range_add_one, Finset.image_insert]
+      refine ⟨hfnode n, hfnode (n + 1), e n,
+        (hBpos _ (heB n)).1, (hBpos _ (heB n)).2, ?_, hins⟩
+      intro h hh
+      obtain ⟨j, hj, hjh⟩ := Finset.mem_image.1 hh
+      have hj' : j < n := Finset.mem_range.1 hj
+      rw [← hjh]
+      exact hemono hj'
+    exact hwf.false ⟨f, hfstep⟩
+  · -- no hereditarily free set: chains terminate
+    intro hno
+    rw [wellFounded_iff_isEmpty_descending_chain]
+    constructor
+    rintro ⟨f, hf⟩
+    -- the chain's union is hereditarily free
+    have hbmem : ∀ n, ∃ b, b ∈ A ∧ 0 < b ∧ (∀ h ∈ f n, h < b) ∧
+        f (n + 1) = insert b (f n) := fun n => (hf n).2.2
+    choose b hbA hbpos hbmax hbins using hbmem
+    have hbin : ∀ n, b n ∈ f (n + 1) := by
+      intro n
+      rw [hbins n]
+      exact Finset.mem_insert_self _ _
+    have hchain : ∀ n, f n ⊆ f (n + 1) := by
+      intro n
+      rw [hbins n]
+      exact Finset.subset_insert _ _
+    have hchain' : ∀ m n, m ≤ n → f m ⊆ f n := by
+      intro m n hmn
+      induction n with
+      | zero =>
+        have h0 : m = 0 := by omega
+        subst h0
+        exact Finset.Subset.refl _
+      | succ n ih =>
+        rcases Nat.lt_or_ge m (n + 1) with h | h
+        · exact Finset.Subset.trans (ih (by omega)) (hchain n)
+        · have h1 : m = n + 1 := by omega
+          subst h1
+          exact Finset.Subset.refl _
+    have hbmono : StrictMono b := by
+      apply strictMono_nat_of_lt_succ
+      intro n
+      exact hbmax (n + 1) (b n) (hbin n)
+    set U : Set ℕ := {x | ∃ n, x ∈ f n} with hU
+    refine hno ⟨U, ?_, ?_, ?_⟩
+    · -- infinite via the strictly monotone picks
+      have hsub : Set.range b ⊆ U := by
+        rintro x ⟨n, rfl⟩
+        exact ⟨n + 1, hbin n⟩
+      exact Set.Infinite.mono hsub
+        (Set.infinite_range_of_injective hbmono.injective)
+    · rintro x ⟨n, hxn⟩
+      exact (hf n).1.1 x hxn
+    · intro P hP
+      -- P is finite, so it sits inside one stage
+      have hstage : ∀ h ∈ P, ∃ n, h ∈ f n := hP
+      choose st hst using hstage
+      set N := P.sup (fun h => if hh : h ∈ P then st h hh else 0)
+        with hN
+      have hPN : ∀ h ∈ P, h ∈ f N := by
+        intro h hh
+        have h1 : st h hh ≤ N := by
+          have := Finset.le_sup (f := fun h' =>
+            if hh' : h' ∈ P then st h' hh' else 0) hh
+          simpa [hh] using this
+        exact hchain' (st h hh) N h1 (hst h hh)
+      exact RepFree.mono hPN (hf N).1.2
+
+/-- **The triangle.**  Counterexample-hood IS tree
+well-foundedness: with covering and `0 ∈ A`, order-3 failure under
+every infinite deletion, absence of hereditarily free sets, and
+well-foundedness of the freeness tree are one property. -/
+theorem hfail_iff_freeStep_wf {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) :
+    (∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) ↔
+    WellFounded (FreeStep A N₀) :=
+  (hfail_iff_no_hereditarily_free h0 hcov).trans
+    freeStep_wf_iff_no_hereditarilyFree.symm
+
 end Erdos881
