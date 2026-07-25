@@ -1365,4 +1365,27 @@ theorem translate_destruction_of_double_failure {A B : Set ℕ}
   · exact Or.inr h
   · exact absurd h hcB
 
+/-- **The doubles-mode chain kill.**  If every late element is
+doubles-served — rigid with its `d`-predecessor present (the
+`(b, b-d)` alignment) — the chain `b, b-d, b-2d` forms a symmetric
+pair around its interior point, violating that point''s own rigidity.
+One of the enemy''s two service modes is impossible outright: service
+must route through partners `q ≠ b`, whose forced `d`-pairs are
+exactly the matching leaf''s demand.  The two remaining leaves share
+one supply. -/
+theorem no_total_doubles_service {A : Set ℕ} {N₀ Ns d : ℕ}
+    (hcov : PairCovers A N₀) (hd : 0 < d)
+    (hchain : ∀ b ∈ A, Ns ≤ b → b - d ∈ A)
+    (hrig : ∀ b ∈ A, Ns ≤ b →
+      ∀ p ∈ A, ∀ q ∈ A, p + q = 2 * b → p = b ∧ q = b) :
+    False := by
+  obtain ⟨b, hbA, hbge⟩ := pairCovers_unbounded hcov (Ns + 2 * d)
+  have hb1 : b - d ∈ A := hchain b hbA (by omega)
+  have hb2 : b - 2 * d ∈ A := by
+    have := hchain (b - d) hb1 (by omega)
+    have hbd : b - d - d = b - 2 * d := by omega
+    rwa [hbd] at this
+  have := hrig (b - d) hb1 (by omega) b hbA (b - 2 * d) hb2 (by omega)
+  omega
+
 end Erdos881
