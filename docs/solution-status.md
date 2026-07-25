@@ -425,3 +425,17 @@ re-running the rails inside the structured parts to force digit 2,
 3, … (the full tower), whose carry-repair
 (cantor_rigidity_conflict) then contradicts hfail. Everything else
 is machine-verified.
+
+## Correction (2026-07-25 01:40, self-audit)
+
+The service/alignment/P-D chain (all *verified* as stated) is
+CONDITIONAL: its single-marker window hypothesis is not yet derived
+from hfail — geometric deletions have log-many markers below their
+failing targets, and hfail doesn't promise failures in the single-
+marker stretch. Unconditionally derived from hfail remain: the
+canonical hub tree, the stable core and canonical shape, the
+eliminations, and the team-translate equivalence. Priority zero
+next session: the multi-marker (log-budget) service analysis — the
+dominant-marker candidate fix (geometric gaps make the nearest
+marker dominate the translate scale) may rescue the chain nearly
+verbatim.
