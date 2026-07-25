@@ -5201,4 +5201,162 @@ theorem singleton_pair_guardian_notMem_free {A : Set ℕ}
   · exact hxQ (h ▸ hbQ)
   · exact hyQ (h ▸ hbQ)
 
+/-- Triple-freeness: every late target keeps a 3-representation
+avoiding `P`.  The order-3 dodge invariant; junk envelopes are
+precisely the non-free sets (any set containing `0` fails freeness
+against 0-padded representations it blocks). -/
+def RepFree (A : Set ℕ) (N₀ : ℕ) (P : Finset ℕ) : Prop :=
+  ∀ m, N₀ ≤ m → ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = m ∧
+    x ∉ P ∧ y ∉ P ∧ z ∉ P
+
+/-- Freeness extends below the newcomer for free: parts of a small
+target cannot equal the large new element. -/
+lemma repFree_insert {A : Set ℕ} {N₀ : ℕ} {P : Finset ℕ} {b : ℕ}
+    (hfree : RepFree A N₀ P)
+    (hb : ∀ m, N₀ ≤ m → b ≤ m →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = m ∧
+        x ∉ insert b P ∧ y ∉ insert b P ∧ z ∉ insert b P) :
+    RepFree A N₀ (insert b P) := by
+  intro m hm
+  rcases Nat.lt_or_ge m b with hmb | hmb
+  · obtain ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩ := hfree m hm
+    refine ⟨x, hx, y, hy, z, hz, hxyz, ?_, ?_, ?_⟩ <;>
+      · intro hmem
+        rcases Finset.mem_insert.1 hmem with h' | h'
+        · omega
+        · first
+          | exact hxP h'
+          | exact hyP h'
+          | exact hzP h'
+  · exact hb m hm hmb
+
+/-- **THE REP FLOOD, UNCONDITIONAL.**  The theorem the campaign''s
+assumed configurations were reaching for, with no interface beyond
+covering and `0 ∈ A`: a counterexample yields ONE finite rep-free
+envelope `P` and a threshold beyond which EVERY basis element `b`
+personally guards a target `m ≥ b` at ORDER 3 — every
+3-representation of `m` routes through `P ∪ {b}`.  Constant
+cardinality; the freeness of `P` is the recorded non-vacuity (junk
+envelopes are never free).  Proof: the rep dodge; if it never
+stalls, all parts of a late target''s surviving representation lie
+below the target and hence inside the stalled prefix''s shadow, so
+the built deletion leaves every late target represented, refuting
+`hfail` directly. -/
+theorem rep_flood_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ P : Finset ℕ, RepFree A N₀ P ∧ ∃ X, ∀ b ∈ A, X ≤ b →
+      ∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsRepHub A m (insert b P) := by
+  classical
+  by_contra hno
+  push_neg at hno
+  have hfree0 : RepFree A N₀ ∅ := by
+    intro m hm
+    obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
+    exact ⟨x, hx, y, hy, 0, h0, by omega, Finset.notMem_empty x,
+      Finset.notMem_empty y, Finset.notMem_empty 0⟩
+  have hpick : ∀ (P : Finset ℕ) (X : ℕ), ∃ b, b ∈ A ∧ X ≤ b ∧
+      (RepFree A N₀ P → ∀ m, N₀ ≤ m → b ≤ m →
+        ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = m ∧
+          x ∉ insert b P ∧ y ∉ insert b P ∧ z ∉ insert b P) := by
+    intro P X
+    by_cases hfree : RepFree A N₀ P
+    · obtain ⟨b, hbA, hXb, hbgood⟩ := hno P hfree X
+      refine ⟨b, hbA, hXb, fun _ m hm hbm => ?_⟩
+      have hnh := hbgood m hm hbm
+      rw [IsRepHub] at hnh
+      push_neg at hnh
+      obtain ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩ := hnh
+      exact ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩
+    · obtain ⟨b, hbA, hXb⟩ := pairCovers_unbounded hcov X
+      exact ⟨b, hbA, hXb, fun h => absurd h hfree⟩
+  choose pick hpickA hpickge hpickfree using hpick
+  set st : ℕ → ℕ × Finset ℕ := fun j =>
+    Nat.rec (pick ∅ 1, {pick ∅ 1})
+      (fun _ prev => (pick prev.2 (prev.1 + 1),
+        insert (pick prev.2 (prev.1 + 1)) prev.2)) j with hst
+  have hstS : ∀ j, st (j + 1) = (pick (st j).2 ((st j).1 + 1),
+      insert (pick (st j).2 ((st j).1 + 1)) (st j).2) := fun _ => rfl
+  have hfreeS : ∀ j, RepFree A N₀ (st j).2 := by
+    intro j
+    induction j with
+    | zero =>
+      show RepFree A N₀ (insert (pick ∅ 1) ∅)
+      exact repFree_insert hfree0 (hpickfree ∅ 1 hfree0)
+    | succ j ih =>
+      rw [show (st (j + 1)).2 =
+          insert (pick (st j).2 ((st j).1 + 1)) (st j).2 from
+        by rw [hstS]]
+      exact repFree_insert ih (hpickfree (st j).2 ((st j).1 + 1) ih)
+  have hlastge : ∀ j, j + 1 ≤ (st j).1 := by
+    intro j
+    induction j with
+    | zero => simpa using hpickge ∅ 1
+    | succ j ih =>
+      have h1 : (st (j + 1)).1 = pick (st j).2 ((st j).1 + 1) := by
+        rw [hstS]
+      have h2 := hpickge (st j).2 ((st j).1 + 1)
+      omega
+  have hchain : ∀ i j, i ≤ j → (st i).2 ⊆ (st j).2 := by
+    intro i j hij
+    induction j with
+    | zero =>
+      have h0' : i = 0 := by omega
+      subst h0'
+      exact Finset.Subset.refl _
+    | succ j ih =>
+      rcases Nat.lt_or_ge i (j + 1) with h' | h'
+      · refine Finset.Subset.trans (ih (by omega)) ?_
+        rw [hstS]
+        exact Finset.subset_insert _ _
+      · have h1 : i = j + 1 := by omega
+        subst h1
+        exact Finset.Subset.refl _
+  have hlastmem : ∀ j, (st j).1 ∈ (st j).2 := by
+    intro j
+    cases j with
+    | zero => exact Finset.mem_singleton_self _
+    | succ j =>
+      rw [hstS]
+      exact Finset.mem_insert_self _ _
+  have hlaststep : ∀ j, (st j).1 < (st (j + 1)).1 := by
+    intro j
+    have h1 : (st (j + 1)).1 = pick (st j).2 ((st j).1 + 1) := by
+      rw [hstS]
+    have h2 := hpickge (st j).2 ((st j).1 + 1)
+    omega
+  have hlastmono : StrictMono (fun j => (st j).1) :=
+    strictMono_nat_of_lt_succ hlaststep
+  set B : Set ℕ := Set.range (fun j => (st j).1) with hB
+  have hBA : B ⊆ A := by
+    rintro x ⟨j, rfl⟩
+    show (st j).1 ∈ A
+    cases j with
+    | zero => exact hpickA ∅ 1
+    | succ j =>
+      rw [show (st (j + 1)).1 = pick (st j).2 ((st j).1 + 1) from
+        by rw [hstS]]
+      exact hpickA _ _
+  have hBinf : B.Infinite :=
+    Set.infinite_range_of_injective hlastmono.injective
+  refine hfail B hBA hBinf ⟨N₀, fun m hm => ?_⟩
+  obtain ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩ := hfreeS m m hm
+  have havoid : ∀ w, w ≤ m → w ∉ (st m).2 → w ∉ B := by
+    intro w hwm hwP
+    rintro ⟨i, hi⟩
+    have hi' : (st i).1 = w := hi
+    rcases Nat.lt_or_ge m i with h' | h'
+    · have := hlastge i
+      omega
+    · exact hwP (by
+        rw [← hi']
+        exact hchain i m h' (hlastmem i))
+  refine ⟨![x, y, z], ?_, by simp [Fin.sum_univ_three]; omega⟩
+  intro i
+  match i with
+  | 0 => exact ⟨hx, havoid x (by omega) hxP⟩
+  | 1 => exact ⟨hy, havoid y (by omega) hyP⟩
+  | 2 => exact ⟨hz, havoid z (by omega) hzP⟩
+
 end Erdos881
