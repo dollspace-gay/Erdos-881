@@ -4707,4 +4707,175 @@ theorem covering_sqrt_lower {A : Set ℕ} {N₀ n : ℕ}
   rw [Nat.card_Icc, Finset.card_product] at hcard
   exact hcard
 
+/-- Pair-freeness: every late target keeps a pair representation
+avoiding `P`.  Up-monotone in `P`-complement: the dodge invariant. -/
+def PairFree (A : Set ℕ) (N₀ : ℕ) (P : Finset ℕ) : Prop :=
+  ∀ m, N₀ ≤ m → ∃ x ∈ A, ∃ y ∈ A, x + y = m ∧ x ∉ P ∧ y ∉ P
+
+/-- Freeness extends below the new element for free: parts of a
+small target cannot equal the large newcomer. -/
+lemma pairFree_insert {A : Set ℕ} {N₀ : ℕ} {P : Finset ℕ} {b : ℕ}
+    (hfree : PairFree A N₀ P)
+    (hb : ∀ m, N₀ ≤ m → b ≤ m → ∃ x ∈ A, ∃ y ∈ A, x + y = m ∧
+      x ∉ insert b P ∧ y ∉ insert b P) :
+    PairFree A N₀ (insert b P) := by
+  intro m hm
+  rcases Nat.lt_or_ge m b with hmb | hmb
+  · obtain ⟨x, hx, y, hy, hxy, hxP, hyP⟩ := hfree m hm
+    refine ⟨x, hx, y, hy, hxy, ?_, ?_⟩
+    · intro hmem
+      rcases Finset.mem_insert.1 hmem with h' | h'
+      · omega
+      · exact hxP h'
+    · intro hmem
+      rcases Finset.mem_insert.1 hmem with h' | h'
+      · omega
+      · exact hyP h'
+  · exact hb m hm hmb
+
+/-- **THE PAIR FLOOD, UNCONDITIONAL.**  The sound trap, found: a
+counterexample yields ONE finite pair-free envelope `P` and a
+threshold beyond which EVERY basis element `b` personally
+pair-guards a target `m ≥ b`: every order-2 representation of `m`
+routes through `P ∪ {b}`.
+
+Why this cannot be junk: `P ∪ {b}` has constant cardinality, and a
+target all of whose pair representations pass through a
+constant-size set is `r₂`-bounded — for `A = ℕ` (or any rep-rich
+set) no such target exists at all.  Why it is forced: pair-hub-ness
+is up-monotone, so the transversal-free finite sets form a tree the
+counterexample must make well-founded — if the pair dodge never
+stalled, its infinite deletion `B` would leave every late target a
+pair representation avoiding all of `B` (parts below the target
+only meet picks below the target, which sit inside the stalled
+prefix), and `(x, y, 0)` would 3-represent every late target in
+`A ∖ B`, refuting `hfail`.  No stable-core detour, no interfaces
+beyond covering and `0 ∈ A`: THE FLOOD IS UNCONDITIONAL AT ORDER 2. -/
+theorem pair_flood_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ P : Finset ℕ, PairFree A N₀ P ∧ ∃ X, ∀ b ∈ A, X ≤ b →
+      ∃ m, N₀ ≤ m ∧ b ≤ m ∧
+        ∀ x ∈ A, ∀ y ∈ A, x + y = m →
+          x ∈ insert b P ∨ y ∈ insert b P := by
+  classical
+  by_contra hno
+  push_neg at hno
+  have hfree0 : PairFree A N₀ ∅ := by
+    intro m hm
+    obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
+    exact ⟨x, hx, y, hy, hxy, Finset.notMem_empty x,
+      Finset.notMem_empty y⟩
+  have hpick : ∀ (P : Finset ℕ) (X : ℕ), ∃ b, b ∈ A ∧ X ≤ b ∧
+      (PairFree A N₀ P → ∀ m, N₀ ≤ m → b ≤ m →
+        ∃ x ∈ A, ∃ y ∈ A, x + y = m ∧
+          x ∉ insert b P ∧ y ∉ insert b P) := by
+    intro P X
+    by_cases hfree : PairFree A N₀ P
+    · obtain ⟨b, hbA, hXb, hbgood⟩ := hno P hfree X
+      exact ⟨b, hbA, hXb, fun _ => hbgood⟩
+    · obtain ⟨b, hbA, hXb⟩ := pairCovers_unbounded hcov X
+      exact ⟨b, hbA, hXb, fun h => absurd h hfree⟩
+  choose pick hpickA hpickge hpickfree using hpick
+  set st : ℕ → ℕ × Finset ℕ := fun j =>
+    Nat.rec (pick ∅ 1, {pick ∅ 1})
+      (fun _ prev => (pick prev.2 (prev.1 + 1),
+        insert (pick prev.2 (prev.1 + 1)) prev.2)) j with hst
+  have hstS : ∀ j, st (j + 1) = (pick (st j).2 ((st j).1 + 1),
+      insert (pick (st j).2 ((st j).1 + 1)) (st j).2) := fun _ => rfl
+  have hfreeS : ∀ j, PairFree A N₀ (st j).2 := by
+    intro j
+    induction j with
+    | zero =>
+      show PairFree A N₀ (insert (pick ∅ 1) ∅)
+      exact pairFree_insert hfree0 (hpickfree ∅ 1 hfree0)
+    | succ j ih =>
+      rw [show (st (j + 1)).2 =
+          insert (pick (st j).2 ((st j).1 + 1)) (st j).2 from
+        by rw [hstS]]
+      exact pairFree_insert ih (hpickfree (st j).2 ((st j).1 + 1) ih)
+  have hlastge : ∀ j, j + 1 ≤ (st j).1 := by
+    intro j
+    induction j with
+    | zero => simpa using hpickge ∅ 1
+    | succ j ih =>
+      have h1 : (st (j + 1)).1 = pick (st j).2 ((st j).1 + 1) := by
+        rw [hstS]
+      have h2 := hpickge (st j).2 ((st j).1 + 1)
+      omega
+  have hchain : ∀ i j, i ≤ j → (st i).2 ⊆ (st j).2 := by
+    intro i j hij
+    induction j with
+    | zero =>
+      have h0' : i = 0 := by omega
+      subst h0'
+      exact Finset.Subset.refl _
+    | succ j ih =>
+      rcases Nat.lt_or_ge i (j + 1) with h' | h'
+      · refine Finset.Subset.trans (ih (by omega)) ?_
+        rw [hstS]
+        exact Finset.subset_insert _ _
+      · have h1 : i = j + 1 := by omega
+        subst h1
+        exact Finset.Subset.refl _
+  have hlastmem : ∀ j, (st j).1 ∈ (st j).2 := by
+    intro j
+    cases j with
+    | zero => exact Finset.mem_singleton_self _
+    | succ j =>
+      rw [hstS]
+      exact Finset.mem_insert_self _ _
+  have hlaststep : ∀ j, (st j).1 < (st (j + 1)).1 := by
+    intro j
+    have h1 : (st (j + 1)).1 = pick (st j).2 ((st j).1 + 1) := by
+      rw [hstS]
+    have h2 := hpickge (st j).2 ((st j).1 + 1)
+    omega
+  have hlastmono : StrictMono (fun j => (st j).1) :=
+    strictMono_nat_of_lt_succ hlaststep
+  set B : Set ℕ := Set.range (fun j => (st j).1) with hB
+  have hBA : B ⊆ A := by
+    rintro x ⟨j, rfl⟩
+    show (st j).1 ∈ A
+    cases j with
+    | zero => exact hpickA ∅ 1
+    | succ j =>
+      rw [show (st (j + 1)).1 = pick (st j).2 ((st j).1 + 1) from
+        by rw [hstS]]
+      exact hpickA _ _
+  have hBinf : B.Infinite :=
+    Set.infinite_range_of_injective hlastmono.injective
+  refine hfail B hBA hBinf ⟨N₀, fun m hm => ?_⟩
+  obtain ⟨x, hx, y, hy, hxy, hxP, hyP⟩ := hfreeS m m hm
+  have hxB : x ∉ B := by
+    rintro ⟨i, hi⟩
+    have hi' : (st i).1 = x := hi
+    rcases Nat.lt_or_ge m i with h' | h'
+    · have := hlastge i
+      omega
+    · exact hxP (by
+        rw [← hi']
+        exact hchain i m h' (hlastmem i))
+  have hyB : y ∉ B := by
+    rintro ⟨i, hi⟩
+    have hi' : (st i).1 = y := hi
+    rcases Nat.lt_or_ge m i with h' | h'
+    · have := hlastge i
+      omega
+    · exact hyP (by
+        rw [← hi']
+        exact hchain i m h' (hlastmem i))
+  have h0B : (0 : ℕ) ∉ B := by
+    rintro ⟨i, hi⟩
+    have hi' : (st i).1 = 0 := hi
+    have := hlastge i
+    omega
+  refine ⟨![x, y, 0], ?_, by simp [Fin.sum_univ_three]; omega⟩
+  intro i
+  match i with
+  | 0 => exact ⟨hx, hxB⟩
+  | 1 => exact ⟨hy, hyB⟩
+  | 2 => exact ⟨h0, h0B⟩
+
 end Erdos881
