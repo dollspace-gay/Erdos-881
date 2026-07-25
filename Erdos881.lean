@@ -38,3 +38,4 @@ import Erdos881.TwoLevelDestroyers
 import Erdos881.FixedGuardianEndgame
 import Erdos881.RotatingGuardianEndgame
 import Erdos881.CliqueSplice
+import Erdos881.HuggingSplice

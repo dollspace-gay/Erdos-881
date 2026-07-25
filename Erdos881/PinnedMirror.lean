@@ -121,6 +121,54 @@ theorem IsPairDestroyer.double_pin_desert {A : Set ℕ} {N₀ u v m x : ℕ}
   have h := hdes.2 s hs t ht (m - v - x) hmv (by omega)
   omega
 
+/-- **Sharp pinning.**  The room hypothesis of `pinned` was a blunt
+sufficient condition: the third part `m - u - x` only has to differ
+from the two guards, which excludes exactly the two diagonal values of
+`x`.  The `u`-channel dies for every other `x`. -/
+theorem IsPairDestroyer.pinned_sharp {A : Set ℕ} {u v m x s t : ℕ}
+    (hdes : IsPairDestroyer A u v m)
+    (hs : s ∈ A) (ht : t ∈ A) (hsum : s + t = u + x)
+    (hsu : s ≠ u) (hsv : s ≠ v) (htu : t ≠ u) (htv : t ≠ v)
+    (hxm : u + x ≤ m)
+    (hd1 : m ≠ 2 * u + x) (hd2 : m ≠ u + v + x)
+    (hw : m - u - x ∈ A) :
+    False := by
+  have h := hdes.2 s hs t ht (m - u - x) hw (by omega)
+  omega
+
+/-- **Sharp pinned mirror.**  Away from the guards and the two
+diagonals, an avoiding representation of `u + x` forces the
+`v`-channel outright — no room hypothesis, so this covers hugging
+targets (`m < 3v`) as well. -/
+theorem IsPairDestroyer.pinned_mirror_sharp {A : Set ℕ} {N₀ u v m x : ℕ}
+    (hcov : PairCovers A N₀)
+    (hdes : IsPairDestroyer A u v m)
+    (hx : x ∈ A) (hxu : x ≠ u) (hxv : x ≠ v) (hxm : x + N₀ ≤ m)
+    (hxum : u + x ≤ m)
+    (hrep : ∃ s ∈ A, ∃ t ∈ A,
+      s + t = u + x ∧ s ≠ u ∧ s ≠ v ∧ t ≠ u ∧ t ≠ v)
+    (hd1 : m ≠ 2 * u + x) (hd2 : m ≠ u + v + x) :
+    m - v - x ∈ A := by
+  obtain ⟨s, hs, t, ht, hst, hsu, hsv, htu, htv⟩ := hrep
+  obtain ⟨y, hy, z, hz, hyz⟩ := hcov (m - x) (by omega)
+  rcases hdes.2 x hx y hy z hz (by omega) with h | h | h | h | h | h
+  · exact absurd h hxu
+  · have hw : m - u - x ∈ A := by
+      have hz' : z = m - u - x := by omega
+      exact hz' ▸ hz
+    exact (hdes.pinned_sharp hs ht hst hsu hsv htu htv hxum hd1 hd2
+      hw).elim
+  · have hw : m - u - x ∈ A := by
+      have hy' : y = m - u - x := by omega
+      exact hy' ▸ hy
+    exact (hdes.pinned_sharp hs ht hst hsu hsv htu htv hxum hd1 hd2
+      hw).elim
+  · exact absurd h hxv
+  · have hz' : z = m - v - x := by omega
+    exact hz' ▸ hz
+  · have hy' : y = m - v - x := by omega
+    exact hy' ▸ hy
+
 /-- `u` is *2-redundant above `N₁`*: every integer from `N₁` on has a
 two-term representation avoiding `u`.  Equivalently, `A \ {u}` is still
 an asymptotic order-two covering set.  By Erdős–Graham/Grekos, all but
@@ -242,6 +290,34 @@ theorem IsPairDestroyer.sharp_hugging_of_pairRedundant
   obtain ⟨w₃, hw₃, hw₃l, hw₃r⟩ :=
     hwin ((m - 2 * v - 1) / 9) (by omega) (by omega) (by omega)
   omega
+
+/-- **The hugging level.**  A jointly 2-redundant pair's destroyed
+target — however tightly it hugs — carries a mirror at the level
+`m - v` defined on the *full* range up to `m - u`, with only the
+guards and the two diagonals as defects.  With `x = 0` the level
+itself is an element. -/
+theorem TwoRedundantPair.hugging_level {A : Set ℕ} {N₀ N₂ u v m : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hpair : TwoRedundantPair A u v N₂)
+    (hdes : IsPairDestroyer A u v m)
+    (hu0 : 0 < u) (huv : u < v) (hvm : v ≤ m)
+    (hN₂ : N₂ ≤ u) (hN₀ : N₀ ≤ u)
+    (hd0 : m ≠ 2 * u) (hd0' : m ≠ u + v) :
+    m - v ∈ A ∧ ∀ x ∈ A, x ≠ u → x ≠ v → u + x ≤ m →
+      m ≠ 2 * u + x → m ≠ u + v + x → m - v - x ∈ A := by
+  constructor
+  · obtain ⟨s, hs, t, ht, hst, hsu, hsv, htu, htv⟩ :=
+      hpair u (by omega)
+    have h := hdes.pinned_mirror_sharp hcov h0 (by omega) (by omega)
+      (by omega) (by omega)
+      ⟨s, hs, t, ht, by omega, hsu, hsv, htu, htv⟩
+      (by omega) (by omega)
+    simpa using h
+  · intro x hx hxu hxv hxum hd1 hd2
+    obtain ⟨s, hs, t, ht, hst, hsu, hsv, htu, htv⟩ :=
+      hpair (u + x) (by omega)
+    exact hdes.pinned_mirror_sharp hcov hx hxu hxv (by omega) hxum
+      ⟨s, hs, t, ht, hst, hsu, hsv, htu, htv⟩ hd1 hd2
 
 /-- **Pinned levels compose to a forward translation.**  Two clear
 pinned edges of the same 2-redundant guard, the second window wide
