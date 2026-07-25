@@ -513,6 +513,73 @@ theorem cantor_doubles_destroyed (k : ℕ) :
     digit_single hlta (by omega) hda (fun i _ hik => (hdig i hik).1)
   exact hpa k hae
 
+/-- Two numbers agreeing on all base-3 digits below a common bound are
+equal. -/
+lemma eq_of_digits {a x j : ℕ} (ha : a < 3 ^ j) (hx : x < 3 ^ j)
+    (h : ∀ i, i < j → a / 3 ^ i % 3 = x / 3 ^ i % 3) : a = x := by
+  induction j generalizing a x with
+  | zero => omega
+  | succ j ih =>
+    have h0 : a % 3 = x % 3 := by simpa using h 0 (by omega)
+    have hqa : a / 3 < 3 ^ j := by
+      have : a < 3 * 3 ^ j := by rw [pow_succ, Nat.mul_comm] at ha; exact ha
+      omega
+    have hqx : x / 3 < 3 ^ j := by
+      have : x < 3 * 3 ^ j := by rw [pow_succ, Nat.mul_comm] at hx; exact hx
+      omega
+    have hq : ∀ i, i < j → a / 3 / 3 ^ i % 3 = x / 3 / 3 ^ i % 3 := by
+      intro i hi
+      have hsh : ∀ c : ℕ, c / 3 / 3 ^ i = c / 3 ^ (i + 1) := by
+        intro c
+        rw [pow_succ, Nat.mul_comm (3 ^ i) 3, ← Nat.div_div_eq_div_mul]
+      rw [hsh, hsh]
+      exact h (i + 1) (by omega)
+    have := ih hqa hqx hq
+    have hda := Nat.div_add_mod a 3
+    have hdx := Nat.div_add_mod x 3
+    omega
+
+/-- **Doubling rigidity**: the only Cantor 2-representation of `2x`
+(`x` Cantor) is `x + x`.  Every element's double is privately owned. -/
+theorem cantor_double_unique {x a b : ℕ} (hx : IsCantor x)
+    (ha : IsCantor a) (hb : IsCantor b) (hab : a + b = 2 * x) :
+    a = x ∧ b = x := by
+  have hxx : x + x = 2 * x := by ring
+  -- digits of a + b and of x + x agree
+  have hdig : ∀ i, a / 3 ^ i % 3 + b / 3 ^ i % 3 = 2 * (x / 3 ^ i % 3) := by
+    intro i
+    have h1 := isCantor_add_digit ha hb i
+    have h2 := isCantor_add_digit hx hx i
+    rw [hab] at h1
+    rw [hxx] at h2
+    omega
+  have hbound : ∃ j, a < 3 ^ j ∧ b < 3 ^ j ∧ x < 3 ^ j := by
+    refine ⟨a + b + x + 1, ?_, ?_, ?_⟩ <;>
+      have := Nat.lt_pow_self (by norm_num : 1 < 3) (n := a + b + x + 1) <;>
+      omega
+  obtain ⟨j, hja, hjb, hjx⟩ := hbound
+  have haeq : a = x := by
+    refine eq_of_digits hja hjx ?_
+    intro i _
+    have h1 := hdig i
+    have h2 := ha i
+    have h3 := hb i
+    have h4 := hx i
+    omega
+  refine ⟨haeq, by omega⟩
+
+/-- **ℵ₀-minimality of the Cantor basis**: deleting any infinite subset
+`B` destroys order 2 — for every `b ∈ B`, the target `2b` loses its
+unique representation `(b, b)`.  Together with `cantor_pair_basis`
+this makes `C` a minimal order-2 basis in the exact sense of
+Erdős 881's hypothesis. -/
+theorem cantor_minimal {B : Set ℕ} (hB : ∀ b ∈ B, IsCantor b) (b : ℕ)
+    (hb : b ∈ B) :
+    ¬∃ p q, IsCantor p ∧ IsCantor q ∧ p ∉ B ∧ q ∉ B ∧ p + q = 2 * b := by
+  rintro ⟨p, q, hp, hq, hpB, _, hpq⟩
+  obtain ⟨hpb, _⟩ := cantor_double_unique (hB b hb) hp hq hpq
+  exact hpB (hpb ▸ hb)
+
 /-- 37 = 1101₃ is a Cantor number. -/
 lemma isCantor_37 : IsCantor 37 := by
   intro i
