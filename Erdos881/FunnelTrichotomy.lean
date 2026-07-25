@@ -340,6 +340,64 @@ theorem anchor_abundance_of_two_packages {A : Set ℕ}
     exact ⟨c₁, hc₁, hc₁0, by omega, w₁, hw₁, w₁', hw₁',
       hs₁, hn₁, by omega, by omega⟩
 
+/-- **Concentration.**  If the undeleted elements below a destroyed
+target outnumber `n` copies of the deleted prefix, some single
+deleted element `u` serves more than `n` of the fork routes: for each
+such `x`, the landing point `m - x - u` falls back into `B` or plants
+the two-destroyed cross-sum `u + x`.  This is the pigeonhole that
+converts the fork trichotomy into density statements against the
+diffuse regime. -/
+theorem DestroyedBySet.concentration {A B : Set ℕ}
+    [DecidablePred (· ∈ A)] [DecidablePred (· ∈ B)] {N₀ m n : ℕ}
+    (hcov : PairCovers A N₀)
+    (hdes : DestroyedBySet A B m)
+    (hcard : ((Finset.range (m + 1)).filter fun b => b ∈ B).card * n <
+      ((Finset.range (m + 1)).filter
+        fun x => x ∈ A ∧ x ∉ B ∧ x + N₀ ≤ m).card) :
+    ∃ u ∈ B, ∃ S : Finset ℕ, n < S.card ∧
+      ∀ x ∈ S, x ∈ A ∧ x ∉ B ∧ x + N₀ ≤ m ∧
+        (m - x - u ∈ B ∨
+          (m - x - u ∈ A ∧ TwoDestroyedBySet A B (u + x))) := by
+  classical
+  set X := (Finset.range (m + 1)).filter
+    fun x => x ∈ A ∧ x ∉ B ∧ x + N₀ ≤ m with hX
+  set T := (Finset.range (m + 1)).filter fun b => b ∈ B with hT
+  have hpick : ∀ x ∈ X, ∃ u, u ∈ B ∧ u ≤ m - x ∧
+      (m - x - u ∈ B ∨
+        (m - x - u ∈ A ∧ TwoDestroyedBySet A B (u + x))) := by
+    intro x hx
+    simp only [hX, Finset.mem_filter, Finset.mem_range] at hx
+    obtain ⟨u, huB, hum, hland⟩ :=
+      hdes.fork_trichotomy_elt hcov hx.2.1 hx.2.2.1 hx.2.2.2
+    exact ⟨u, huB, hum, hland⟩
+  choose f hfB hfle hfland using hpick
+  -- total function for the pigeonhole
+  let g : ℕ → ℕ := fun x => if hx : x ∈ X then f x hx else 0
+  have hmaps : ∀ x ∈ X, g x ∈ T := by
+    intro x hx
+    simp only [g, dif_pos hx]
+    simp only [hT, Finset.mem_filter, Finset.mem_range]
+    have h1 := hfB x hx
+    have h2 := hfle x hx
+    have hx' := hx
+    simp only [hX, Finset.mem_filter, Finset.mem_range] at hx'
+    exact ⟨by omega, h1⟩
+  obtain ⟨u, huT, hufib⟩ :=
+    Finset.exists_lt_card_fiber_of_mul_lt_card_of_maps_to hmaps hcard
+  refine ⟨u, by
+      simp only [hT, Finset.mem_filter] at huT
+      exact huT.2, X.filter fun x => g x = u, hufib, ?_⟩
+  intro x hx
+  simp only [Finset.mem_filter] at hx
+  obtain ⟨hxX, hgx⟩ := hx
+  have hx' := hxX
+  simp only [hX, Finset.mem_filter, Finset.mem_range] at hx'
+  have hland := hfland x hxX
+  have hgeq : f x hxX = u := by
+    simpa [g, dif_pos hxX] using hgx
+  rw [hgeq] at hland
+  exact ⟨hx'.2.1, hx'.2.2.1, hx'.2.2.2, hland⟩
+
 /-- **Zero-guarded targets repel element differences.**  If every
 representation of both `m₁ < m₂` passes through `0`, then `m₂ - m₁`
 cannot be an element: the mirror of any positive `x` below `m₁`
