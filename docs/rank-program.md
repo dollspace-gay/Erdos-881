@@ -148,3 +148,16 @@ route to the full solution currently visible.
 ω-boundary (grade filtration + diagonal deletion, staged); the
 relative theory above finite-rank extensions; Nash-Williams
 barriers over the arity-general Ramsey (now fully available).
+
+## THE ADAPTIVE CONCLUSION (2026-07-25, 18:15)
+
+Static counting cannot cross the enemy's scale-staggering: witness
+placement is asymptotically free (cofinality is cheap by the
+problem's nature), even though witnesses are confined to sparse
+immune-set translates and multiply under disjoint deletions.  The
+final proof must therefore be ADAPTIVE: a priority-method
+construction of a single deletion whose stages react to the
+enemy's witness behaviour and herd it into prepared traps.  The
+dodge state machines are the formal vehicle; the requirements list
+and trap primitive are sketched in the battle plan.  This is the
+program's endgame design.
