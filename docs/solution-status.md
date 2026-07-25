@@ -239,3 +239,33 @@ contradiction-mining campaign hunts must therefore be non-Cantor in
 an essential way, while the campaign's verified interfaces already
 force it to be Cantor-LIKE (2-rep poverty, AP3-free fork images) —
 the pincer the remaining leaves must close.
+
+## Endgame map after the Cantor arc (2026-07-24 00:20)
+
+Open leaves, with tonight's dodge analysis folded in:
+
+1. **Recurring-pair matching** (the only open leaf of the fixed-pair
+   kill; everything else verified through ENGINE V9).  Image-only
+   kills are now PROVEN impossible: for Ramsey color e = d the
+   adversary parity-dodges V9's identities per residue class mod d;
+   for e = 0 the image must be AP3-free, and AP3-free + covering +
+   cofinal fixed-pair destruction is realizable (Cantor windows,
+   pair (1,4), targets 3^k+5).  The leaf's true closure must couple
+   the matching to hfail: a Cantor-like window structure admits
+   carry repairs (verified: cantor_rigidity_conflict), so the enemy
+   needs digit-rigid windows WITHOUT carry-repairable deletions —
+   candidate theorem: 'fixed-pair unique-rep rigidity at cofinal
+   scales ⟹ some marker deletion is order-3 repaired' (the general
+   carry lemma). Lab first: build any 2-basis with fixed-pair
+   destruction whose marker deletions all fail order 3 — if none
+   exists, the general carry lemma is true and kills the leaf.
+2. **Link A (diffuse exclusion)** — unchanged.
+3. **B1 vertex classes** (primitive / essential-starved) — unchanged.
+4. **Supply (hdb + hnz)** — near-trivial, unchanged.
+
+Verified tonight: PinnedMirror sharp pinning; SeparatedTriangle
+refutation; zero-residue elimination (capstone at 3 interfaces);
+trichotomy→dichotomy; complete B1 case tree; fixed-pair pipeline
+(corep dichotomy → fork pigeonhole → channel Ramsey → point splits →
+composition) + engines V2–V9; the Cantor instance
+(erdos881_cantor_full_instance) and the rigidity conflict.
