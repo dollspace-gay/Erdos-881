@@ -3913,4 +3913,43 @@ theorem tower_teams_card {A : Set ℕ} {N0 C : ℕ} {Y : ℕ → ℕ}
   have := Finset.card_pos.2 hHne
   omega
 
+/-- **Tower teams start at two.**  The fixed team size cannot be one:
+cofinal positive singleton hubs are private triples and die by the
+verified stream kill.  Under the interfaces, the tower-team world
+has teams of size at least two — the destroyer-team supply at the
+pipeline''s doorstep. -/
+theorem tower_teams_ge_two {A : Set ℕ} {N0 C : ℕ} {Y : ℕ → ℕ}
+    {F : ℕ → Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N0)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hY1 : 1 ≤ Y 0)
+    (hFA : ∀ i, ∀ h ∈ F i, h ∈ A ∧ Y i ≤ h)
+    (hYmono : ∀ i, Y i < Y (i + 1))
+    (hCb : ∀ i, (F i).card ≤ C)
+    (hteams : ∀ i, ∃ n, N0 ≤ n ∧ Y i ≤ n ∧ ∃ H : Finset ℕ,
+      (∀ h ∈ H, h ∈ F i) ∧ H.Nonempty ∧ IsRepHub A n H ∧
+      ∀ h ∈ H, ¬IsRepHub A n (H \ {h})) :
+    ∃ c, 2 ≤ c ∧ ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      H.card = c ∧ IsRepHub A n H ∧
+      (∀ h ∈ H, h ∈ A ∧ 0 < h) ∧
+      ∀ h ∈ H, ¬IsRepHub A n (H \ {h}) := by
+  obtain ⟨c, hc1, hcof⟩ :=
+    tower_teams_card (N0 := N0) hY1 hFA hYmono hCb hteams
+  rcases Nat.lt_or_ge c 2 with hc2 | hc2
+  · exfalso
+    have hc1' : c = 1 := by omega
+    subst hc1'
+    refine singleton_hubs_refuted h0 hcov hanchor hfail ?_
+    intro N
+    obtain ⟨n, hnN, H, hHc, hHne, hhub, hpos, hmin⟩ := hcof N
+    obtain ⟨a, rfl⟩ := Finset.card_eq_one.1 hHc
+    refine ⟨n, hnN, a, ?_, hhub⟩
+    exact (hpos a (Finset.mem_singleton_self a)).2
+  · refine ⟨c, hc2, fun N => ?_⟩
+    obtain ⟨n, hnN, H, hHc, hHne, hhub, hpos, hmin⟩ := hcof N
+    exact ⟨n, hnN, H, hHc, hhub, hpos, hmin⟩
+
 end Erdos881
