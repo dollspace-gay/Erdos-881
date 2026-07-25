@@ -7619,4 +7619,38 @@ theorem three_partners_per_pair_target {A : Set ℕ} {N₀ n u : ℕ}
     · exact absurd h1 hzu'
     · exact Or.inr (Or.inr (Finset.mem_singleton.1 h1).symm)
 
+/-- **Disjoint representations inject into any hub.**  Each member
+of a pairwise-disjoint family of representations must hit the hub,
+and full disjointness makes those hits pairwise distinct: so the
+number of disjoint representations never exceeds the hub's
+cardinality.  Converse-quantitative partner of
+`hub_of_no_disjointReps`: hubs of card `c` forbid `c + 1` disjoint
+representations, so bounded hubs and bounded disjointness are one
+phenomenon.  In particular every perfect-world target — hubbed by
+a `(d+1)`-set — carries at most `d + 1` pairwise-disjoint
+representations. -/
+theorem disjoint_reps_le_hub_card {A : Set ℕ} {n K : ℕ}
+    {H : Finset ℕ}
+    (hhub : IsRepHub A n H) (hdis : HasDisjointTripleReps A n K) :
+    K ≤ H.card := by
+  classical
+  obtain ⟨P, hPA, hPsum, hPdis⟩ := hdis
+  have hslot : ∀ i : Fin K, ∃ k : Fin 3, P i k ∈ H := by
+    intro i
+    rcases hhub (P i 0) (hPA i 0) (P i 1) (hPA i 1) (P i 2)
+      (hPA i 2) (hPsum i) with h | h | h
+    · exact ⟨0, h⟩
+    · exact ⟨1, h⟩
+    · exact ⟨2, h⟩
+  choose k hk using hslot
+  have hcard := Finset.card_le_card_of_injOn
+    (f := fun i : Fin K => P i (k i))
+    (s := Finset.univ) (t := H)
+    (fun i _ => hk i)
+    (by
+      intro i hi j hj heq
+      by_contra hne
+      exact hPdis i j (k i) (k j) hne heq)
+  simpa using hcard
+
 end Erdos881
