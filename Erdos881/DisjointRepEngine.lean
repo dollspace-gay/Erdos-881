@@ -6039,4 +6039,147 @@ theorem guardian_team_hubs_of_deletion {A B : Set ℕ} {N₀ : ℕ}
   exact ⟨n, le_trans (le_max_left _ _) hnN, H', hH'hub, hH'min,
     hcard2, hH'B⟩
 
+/-- Blowup instances of the rep flood: a hub target `m` guarded by
+`b` over `P`, whose translate by `h₀ ∈ P ∪ {b}` carries at least
+`C` pair representations. -/
+def BlowupAt (A : Set ℕ) (N₀ : ℕ) (P : Finset ℕ)
+    [DecidablePred (· ∈ A)] (C m b h₀ : ℕ) : Prop :=
+  b ∈ A ∧ N₀ ≤ m ∧ b ≤ m ∧ IsRepHub A m (insert b P) ∧
+  h₀ ∈ insert b P ∧
+  C ≤ ((Finset.range (m - h₀ + 1)).filter
+    (fun x => x ∈ A ∧ (m - h₀ - x) ∈ A)).card
+
+/-- Blowup instances exist beyond every bound: the quantitative core
+of `r2_unbounded_of_hfail`, with the offset data retained. -/
+theorem blowup_supply_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    [DecidablePred (· ∈ A)]
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ P : Finset ℕ, RepFree A N₀ P ∧
+      ∀ C N, ∃ m b h₀, N ≤ m ∧ BlowupAt A N₀ P C m b h₀ := by
+  classical
+  obtain ⟨P, hPfree, X₀, hflood⟩ := rep_flood_of_hfail h0 hcov hfail
+  refine ⟨P, hPfree, fun C N => ?_⟩
+  set c := P.card + 1 with hc
+  have hcpos : 0 < c := by omega
+  set C₀ := max C N with hC₀
+  set D := c * (C₀ + 1) + c + 2 * N₀ + 2 with hD
+  have hD1 : 1 ≤ D := by omega
+  obtain ⟨b, hbA, hXb⟩ := pairCovers_unbounded hcov
+    (max X₀ ((D + 2 * N₀) * (D + 2 * N₀)))
+  obtain ⟨m, hmN, hbm, hhub⟩ := hflood b hbA
+    (le_trans (le_max_left _ _) hXb)
+  have hexp : (D + 2 * N₀) * (D + 2 * N₀) =
+      D * D + 4 * (D * N₀) + 4 * (N₀ * N₀) := by ring
+  have hDN : N₀ ≤ D * N₀ := by
+    have h1 : 1 * N₀ ≤ D * N₀ := Nat.mul_le_mul_right N₀ hD1
+    omega
+  have hmbig : (D + 2 * N₀) * (D + 2 * N₀) ≤ m :=
+    le_trans (le_trans (le_max_right _ _) hXb) hbm
+  have h2N₀m : 2 * N₀ ≤ m := by omega
+  have hsqrt := covering_sqrt_lower (A := A) (N₀ := N₀)
+    (n := m - N₀) hcov (by omega)
+  set F := (Finset.range (m - N₀ + 1)).filter (· ∈ A) with hF
+  have hDF : D * D ≤ F.card * F.card := by omega
+  have hDFle : D ≤ F.card := by
+    have h1 := Nat.sqrt_le_sqrt hDF
+    rw [Nat.sqrt_eq, Nat.sqrt_eq] at h1
+    exact h1
+  set H := insert b P with hH
+  have hHcard : H.card ≤ c := by
+    have := Finset.card_insert_le b P
+    omega
+  have hHpos : 0 < H.card :=
+    Finset.card_pos.2 ⟨b, Finset.mem_insert_self b P⟩
+  set W' := (Finset.range (m - N₀ + 1)).filter
+    (fun w => w ∈ A ∧ w ∉ H) with hW'
+  have hsub : F \ H ⊆ W' := by
+    intro x hx
+    obtain ⟨hxF, hxH⟩ := Finset.mem_sdiff.1 hx
+    obtain ⟨hxr, hxA⟩ := Finset.mem_filter.1 hxF
+    exact Finset.mem_filter.2 ⟨hxr, hxA, hxH⟩
+  have hW'card : D - c ≤ W'.card := by
+    have h1 := Finset.le_card_sdiff H F
+    have h2 := Finset.card_le_card hsub
+    omega
+  obtain ⟨h₀, hh₀, hblow⟩ := hub_fan_blowup hcov hhub
+    ⟨b, Finset.mem_insert_self b P⟩ hmN
+  have hquot : C₀ + 1 ≤ W'.card / H.card := by
+    have h1 : C₀ + 1 ≤ W'.card / c := by
+      rw [Nat.le_div_iff_mul_le hcpos]
+      have h2 : (C₀ + 1) * c = c * (C₀ + 1) := Nat.mul_comm _ _
+      omega
+    have h2 : W'.card / c ≤ W'.card / H.card :=
+      Nat.div_le_div_left hHcard hHpos
+    omega
+  have hle := le_trans hquot hblow
+  have hmN' : N ≤ m := by
+    have h1 : N ≤ C₀ + 1 := by omega
+    have h2 : C₀ + 1 ≤ D := by
+      have h3 : 1 * (C₀ + 1) ≤ c * (C₀ + 1) :=
+        Nat.mul_le_mul_right (C₀ + 1) hcpos
+      omega
+    have h3 : D ≤ D * D := Nat.le_mul_of_pos_left D (by omega)
+    omega
+  exact ⟨m, b, h₀, hmN', hbA, hmN, hbm, hhub, hh₀, by omega⟩
+
+/-- **THE BLOWUP OFFSET DICHOTOMY.**  Where do the blown translates
+sit?  Pigeonholing the offsets over the finite envelope: either ONE
+FIXED envelope element `s₀` carries blowups beyond every bound —
+Sidon flood-target and blown translate at fixed distance `s₀`,
+cofinally — or the blowups ride the ROTATING COREP `m − b` itself. -/
+theorem blowup_offset_dichotomy {A : Set ℕ} {N₀ : ℕ}
+    [DecidablePred (· ∈ A)]
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ P : Finset ℕ, RepFree A N₀ P ∧
+      ((∃ s₀ ∈ P, ∀ C N, ∃ m b, N ≤ m ∧
+        BlowupAt A N₀ P C m b s₀) ∨
+      (∀ C N, ∃ m b, N ≤ m ∧ BlowupAt A N₀ P C m b b)) := by
+  classical
+  obtain ⟨P, hPfree, hsupply⟩ := blowup_supply_of_hfail h0 hcov hfail
+  refine ⟨P, hPfree, ?_⟩
+  by_cases hcorep : ∀ C N, ∃ m b, N ≤ m ∧ BlowupAt A N₀ P C m b b
+  · exact Or.inr hcorep
+  · left
+    push_neg at hcorep
+    obtain ⟨C₁, N₁, hblock⟩ := hcorep
+    by_contra hnos
+    push_neg at hnos
+    have hex : ∀ s, ∃ Cs Ns, s ∈ P →
+        ∀ m b, Ns ≤ m → ¬BlowupAt A N₀ P Cs m b s := by
+      intro s
+      by_cases hs : s ∈ P
+      · obtain ⟨Cs, Ns, hCs⟩ := hnos s hs
+        exact ⟨Cs, Ns, fun _ => hCs⟩
+      · exact ⟨0, 0, fun h => absurd h hs⟩
+    choose Cf Nf hCf using hex
+    set Cmax := max C₁ (P.sup Cf) with hCmax
+    set Nmax := max N₁ (P.sup Nf) with hNmax
+    obtain ⟨m, b, h₀, hmN, hblow⟩ := hsupply Cmax Nmax
+    have hCle : ∀ s ∈ P, Cf s ≤ Cmax := by
+      intro s hs
+      have := Finset.le_sup (f := Cf) hs
+      omega
+    have hNle : ∀ s ∈ P, Nf s ≤ Nmax := by
+      intro s hs
+      have := Finset.le_sup (f := Nf) hs
+      omega
+    have hmono : ∀ C' , C' ≤ Cmax → BlowupAt A N₀ P Cmax m b h₀ →
+        BlowupAt A N₀ P C' m b h₀ := by
+      intro C' hC' hB
+      obtain ⟨h1, h2, h3, h4, h5, h6⟩ := hB
+      exact ⟨h1, h2, h3, h4, h5, by omega⟩
+    rcases Finset.mem_insert.1 hblow.2.2.2.2.1 with hb | hP
+    · subst hb
+      exact hblock m h₀ (by
+        have := le_max_left C₁ (P.sup Cf)
+        have := le_max_right N₁ (P.sup Nf)
+        omega) (hmono C₁ (le_max_left _ _) hblow)
+    · exact hCf h₀ hP m b (by
+        have := hNle h₀ hP
+        omega) (hmono (Cf h₀) (hCle h₀ hP) hblow)
+
 end Erdos881
