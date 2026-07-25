@@ -108,10 +108,21 @@ repaired by freeness (junk envelopes are never free).
   targets of any Sidon-like basis — it cannot die from order-2
   structure alone; the kill must couple back to order-3 poverty.
 
-**Open frontier**: kill or constrain each trichotomy branch.
-(T): recurring destroyer pair at card 2, unkilled beyond.
-(F): two routing regimes to kill; 0 ∈ S* sliver.
-(R): fresh branch, pair shadow applies when 0 ∉ S.
+**Open frontier (post-flood, 15:30)**: the configuration space is
+now fully verified and SMALL — see docs/flood-structure-theorem.md
+for the complete statement list.  Everything local is mutually
+consistent (near-Sidon minimal bases realize the order-2 half); a
+contradiction needs an OVERLAP-FORCER between two verified
+configurations.  The two known overlap-forcer types: (1) window
+counting — blocked, Sidon-points are not scarce (B₂[g] bases);
+(2) algebraic identity — the sum-rigidity laws
+(shared targets = guardian sums) and the offset dichotomy (blowups
+at FIXED distance s₀ from Sidon flood-targets, or at the rotating
+corep) are the live leads.  Rank program: freeness trees are
+well-founded (free_prefixes_die_of_hfail,
+pair_free_prefixes_die_of_minimality); the floods are the stalled
+nodes; an ordinal-rank descent across pool-relativized floods is
+the structural route.  0 ∈ S* sliver: CLOSED (positive pool).
 
 ---
 

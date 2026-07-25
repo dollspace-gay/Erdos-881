@@ -277,3 +277,35 @@ The enemy has been pushed from "could be anything" to "must run a
 rigid committee system we fully understand."  What remains is to
 show the committee system itself collapses — the two endgame
 branches are the last rooms of the maze.
+
+## 2026-07-25 late afternoon — The portrait, the closed door, and the tree
+
+After the master key, the afternoon delivered four more blows:
+
+1. **The double shift.** Not only must every large key be a
+   guardian at the triple-lock level — the same key must ALSO
+   guard a door at the pair-lock level, both jobs at once, forever.
+
+2. **No sharing.** Two guardians can only ever share a door if the
+   door's number is exactly the sum of the two guardians.  Sharing
+   is total exposure; the enemy's workforce is essentially
+   one-key-one-door.
+
+3. **The Sidon door slammed shut.**  The enemy kept trying to be a
+   "perfect thin keyring" (every door having barely one pair of
+   keys — the mathematician's word is Sidon).  We proved that is
+   IMPOSSIBLE: any counterexample must contain doors with
+   arbitrarily many key-pairs.  Yet its guarded doors must stay
+   thin.  The enemy is condemned to be thin and thick at once,
+   in different places, forever — a very strange animal.
+
+4. **The tree.**  All of this came from one master picture: the
+   "innocent lists" of keys form a tree, and against a
+   counterexample every branch of that tree must die at a finite
+   height.  Where a branch dies, a guardian is born.  The next
+   campaign climbs this tree with a ranking system — if we can
+   show the ranks must descend forever, no counterexample can
+   exist, and the problem is solved.
+
+Score for the day: ~40 new verified theorems, two emptied walls
+demolished honestly, one master structure theorem, zero sorries.
