@@ -6721,4 +6721,117 @@ theorem clique_rows_march {A : Set ℕ} {N₀ : ℕ}
     omega
   exact ⟨n, hNei, e i, hepos i, hsing⟩
 
+/-- **The injective flood.**  Ramsey against the sharer law: from
+the pair flood one extracts an infinite strictly-monotone guardian
+sequence whose personal targets are PAIRWISE DISTINCT — the
+guardian→target map, made injective.  (All-sharing is impossible:
+three guardians of one target would exceed the two-sharer cap.) -/
+theorem injective_pair_flood {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ P : Finset ℕ, PairFree A N₀ P ∧
+      ∃ (g : ℕ → ℕ) (t : ℕ → ℕ), StrictMono g ∧
+        (∀ k, g k ∈ A) ∧ (∀ k l, k ≠ l → t k ≠ t l) ∧
+        ∀ k, N₀ ≤ t k ∧ g k ≤ t k ∧
+          ∀ x ∈ A, ∀ y ∈ A, x + y = t k →
+            x ∈ insert (g k) P ∨ y ∈ insert (g k) P := by
+  classical
+  obtain ⟨P, hPfree, X₀, hflood⟩ := pair_flood_of_hfail h0 hcov hfail
+  -- ground stream of large elements with chosen targets
+  have hpick : ∀ X : ℕ, ∃ a, a ∈ A ∧ X < a := by
+    intro X
+    obtain ⟨a, ha, hXa⟩ := pairCovers_unbounded hcov (X + 1)
+    exact ⟨a, ha, by omega⟩
+  choose nx hnxA hnxgt using hpick
+  set base : ℕ → ℕ := fun k =>
+    Nat.rec (nx (max X₀ (P.sup id))) (fun _ prev => nx prev) k
+    with hbase
+  have hbaseS : ∀ k, base (k + 1) = nx (base k) := fun _ => rfl
+  have hbaseA : ∀ k, base k ∈ A := by
+    intro k
+    cases k with
+    | zero => exact hnxA _
+    | succ k =>
+      rw [hbaseS]
+      exact hnxA _
+  have hbasemono : StrictMono base := by
+    apply strictMono_nat_of_lt_succ
+    intro k
+    rw [hbaseS]
+    exact hnxgt (base k)
+  have hbaseX : ∀ k, X₀ ≤ base k := by
+    intro k
+    have h1 : base 0 = nx (max X₀ (P.sup id)) := rfl
+    have h2 : max X₀ (P.sup id) < base 0 := by
+      rw [h1]
+      exact hnxgt _
+    have h3 : base 0 ≤ base k := hbasemono.monotone (Nat.zero_le k)
+    have := le_max_left X₀ (P.sup id)
+    omega
+  have hbaseP : ∀ k, base k ∉ P := by
+    intro k hkP
+    have h1 : base k ≤ P.sup id := Finset.le_sup (f := id) hkP
+    have h2 : max X₀ (P.sup id) < base 0 := hnxgt _
+    have h3 : base 0 ≤ base k := hbasemono.monotone (Nat.zero_le k)
+    have := le_max_right X₀ (P.sup id)
+    omega
+  -- chosen targets
+  have htarget : ∀ k, ∃ m, N₀ ≤ m ∧ base k ≤ m ∧
+      ∀ x ∈ A, ∀ y ∈ A, x + y = m →
+        x ∈ insert (base k) P ∨ y ∈ insert (base k) P :=
+    fun k => hflood (base k) (hbaseA k) (hbaseX k)
+  choose tg htgN htgge htghub using htarget
+  -- Ramsey on target equality
+  set c : ℕ → ℕ → Bool := fun k l =>
+    if tg k = tg l then true else false with hc
+  obtain ⟨f, hfmono, bcol, hhom⟩ := infinite_ramsey_pairs c
+  rcases Bool.eq_false_or_eq_true bcol with hbc | hbc
+  · -- all-sharing: three guardians on one target, impossible
+    exfalso
+    subst hbc
+    have h01 := hhom 0 1 (by omega)
+    have h02 := hhom 0 2 (by omega)
+    have heq01 : tg (f 0) = tg (f 1) := by
+      by_contra hne
+      simp [hc, hne] at h01
+    have heq02 : tg (f 0) = tg (f 2) := by
+      by_contra hne
+      simp [hc, hne] at h02
+    obtain ⟨x₀, y₀, hpin⟩ := two_guardians_per_pair_target hPfree
+      (htgN (f 0)) (t := tg (f 0))
+    have hg01 : base (f 0) ≠ base (f 1) :=
+      fun h => absurd (hbasemono.injective h)
+        (by have := hfmono (by omega : (0:ℕ) < 1); omega)
+    have hg02 : base (f 0) ≠ base (f 2) :=
+      fun h => absurd (hbasemono.injective h)
+        (by have := hfmono (by omega : (0:ℕ) < 2); omega)
+    have hg12 : base (f 1) ≠ base (f 2) :=
+      fun h => absurd (hbasemono.injective h)
+        (by have := hfmono (by omega : (1:ℕ) < 2); omega)
+    have hp0 := hpin (base (f 0)) (hbaseP (f 0)) (htghub (f 0))
+    have hp1 := hpin (base (f 1)) (hbaseP (f 1))
+      (heq01 ▸ htghub (f 1))
+    have hp2 := hpin (base (f 2)) (hbaseP (f 2))
+      (heq02 ▸ htghub (f 2))
+    rcases hp0 with h | h <;> rcases hp1 with h' | h' <;>
+      rcases hp2 with h'' | h'' <;>
+      first
+        | exact hg01 (h.trans h'.symm)
+        | exact hg02 (h.trans h''.symm)
+        | exact hg12 (h'.trans h''.symm)
+  · -- no sharing on the subsequence: injective targets
+    subst hbc
+    refine ⟨P, hPfree, fun k => base (f k), fun k => tg (f k),
+      fun k l hkl => hbasemono (hfmono hkl),
+      fun k => hbaseA (f k), ?_, fun k =>
+        ⟨htgN (f k), htgge (f k), htghub (f k)⟩⟩
+    intro k l hkl heq
+    rcases Nat.lt_or_ge k l with h' | h'
+    · have := hhom k l h'
+      simp [hc, heq] at this
+    · have hlk : l < k := by omega
+      have := hhom l k hlk
+      simp [hc, heq.symm] at this
+
 end Erdos881
