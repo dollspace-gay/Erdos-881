@@ -1401,4 +1401,27 @@ theorem spread_pairs_extraction {A B : Set ℕ}
   exact hN₁ m (le_trans (le_max_right _ _) hm) (u, v) hmem huB hvB
     hdes
 
+
+/-- **Spread pairs have unbounded guards.**  Taking the finite set to
+be all pairs with small components, the escape case produces
+destroying pairs with a guard above every bound — late targets are
+always served by fresh, high guards. -/
+theorem spread_pairs_unbounded_guards {A B : Set ℕ}
+    (hpf : ∀ N, ∃ m, N ≤ m ∧ ∃ u ∈ B, ∃ v ∈ B,
+      IsPairDestroyer A u v m)
+    (hesc : ∀ F : Finset (ℕ × ℕ), ∃ N, ∀ m, N ≤ m →
+      ∀ p ∈ F, p.1 ∈ B → p.2 ∈ B →
+        ¬ IsPairDestroyer A p.1 p.2 m) :
+    ∀ K N, ∃ m, N ≤ m ∧ ∃ u ∈ B, ∃ v ∈ B,
+      IsPairDestroyer A u v m ∧ (K < u ∨ K < v) := by
+  intro K N
+  obtain ⟨m, hm, u, huB, v, hvB, hdes, hfresh⟩ :=
+    spread_pairs_extraction hpf hesc
+      ((Finset.range (K + 1)) ×ˢ (Finset.range (K + 1))) N
+  refine ⟨m, hm, u, huB, v, hvB, hdes, ?_⟩
+  by_contra hsmall
+  push Not at hsmall
+  exact hfresh (Finset.mem_product.mpr
+    ⟨Finset.mem_range.mpr (by omega), Finset.mem_range.mpr (by omega)⟩)
+
 end Erdos881
