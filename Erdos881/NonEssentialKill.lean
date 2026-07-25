@@ -1505,4 +1505,73 @@ theorem fixed_pair_level_sequence {A : Set ℕ} {u v : ℕ}
     have hs : M (k + 1) = f (2 * M k + v + 1) := hMs k
     omega
 
+
+/-- **The channel Ramsey.**  Coloring index pairs by the realized
+fork channel of lower levels through higher targets, the repo's
+infinite pair Ramsey yields an infinite index set with a constant
+channel: the mono-channel substrate for the offset engine. -/
+theorem fixed_pair_channel_ramsey {A : Set ℕ} {N₀ u v : ℕ}
+    (hcov : PairCovers A N₀)
+    (M : ℕ → ℕ)
+    (hM : ∀ k, IsPairDestroyer A u v (M k) ∧ M k - v ∈ A)
+    (hgrow : ∀ k, 2 * M k + v + 1 ≤ M (k + 1))
+    (hbig : ∀ k, u + v + N₀ < M k - v)
+    (huv : u < v) :
+    ∃ S : Set ℕ, S.Infinite ∧
+      ((∀ j ∈ S, ∀ k ∈ S, j < k → M k - v - (M j - v) ∈ A) ∨
+       (∀ j ∈ S, ∀ k ∈ S, j < k → M k - u - (M j - v) ∈ A)) := by
+  classical
+  have hmono : StrictMono M := by
+    apply strictMono_nat_of_lt_succ
+    intro k
+    have := hgrow k
+    omega
+  have hfork : ∀ j k, j < k →
+      M k - v - (M j - v) ∈ A ∨ M k - u - (M j - v) ∈ A := by
+    intro j k hjk
+    have hdj := hM j
+    have hdk := hM k
+    have hb := hbig j
+    have hmk : M j < M k := hmono hjk
+    have hg : 2 * M j + v + 1 ≤ M k := by
+      have h1 : M (j + 1) ≤ M k := hmono.monotone (by omega)
+      have := hgrow j
+      omega
+    obtain ⟨y, hy, z, hz, hyz⟩ := hcov (M k - (M j - v)) (by omega)
+    rcases hdk.1.2 (M j - v) hdj.2 y hy z hz (by omega) with
+      h | h | h | h | h | h
+    · exact absurd h (by have := hbig j; omega)
+    · exact Or.inr (by
+        have : z = M k - u - (M j - v) := by omega
+        exact this ▸ hz)
+    · exact Or.inr (by
+        have : y = M k - u - (M j - v) := by omega
+        exact this ▸ hy)
+    · exact absurd h (by have := hbig j; omega)
+    · exact Or.inl (by
+        have : z = M k - v - (M j - v) := by omega
+        exact this ▸ hz)
+    · exact Or.inl (by
+        have : y = M k - v - (M j - v) := by omega
+        exact this ▸ hy)
+  set R : ℕ → ℕ → Prop := fun a b =>
+    M (max a b) - v - (M (min a b) - v) ∈ A with hR
+  have hsymm : Symmetric R := by
+    intro a b h
+    simpa [hR, max_comm, min_comm] using h
+  rcases infinite_pairRamsey_nat (Set.infinite_univ (α := ℕ)) R hsymm
+    with ⟨L, -, hLinf, hLcl⟩ | ⟨L, -, hLinf, hLcl⟩
+  · refine ⟨L, hLinf, Or.inl fun j hj k hk hjk => ?_⟩
+    have := hLcl hj hk (by omega)
+    simpa [hR, max_eq_right (le_of_lt hjk),
+      min_eq_left (le_of_lt hjk)] using this
+  · refine ⟨L, hLinf, Or.inr fun j hj k hk hjk => ?_⟩
+    have hnR := hLcl hj hk (by omega)
+    have hnotv : ¬ (M k - v - (M j - v) ∈ A) := by
+      simpa [hR, max_eq_right (le_of_lt hjk),
+        min_eq_left (le_of_lt hjk)] using hnR
+    rcases hfork j k hjk with h | h
+    · exact absurd h hnotv
+    · exact h
+
 end Erdos881
