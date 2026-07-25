@@ -200,4 +200,24 @@ theorem endgame_final_form {A : Set ℕ} {N₀ : ℕ}
     WellFounded (FreeStep A N₀) :=
   counterexample_iff_rep_tree_wf h0 hcov
 
+/-- **Full-circle sanity.**  The characterization correctly
+classifies the verified instance: the Cantor basis is NOT a
+counterexample, because its pure powers are a hereditarily free
+branch.  The abstract machinery and the concrete world agree. -/
+theorem cantor_not_counterexample :
+    ¬(∀ B ⊆ Erdos881Cantor.CantorSet, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis
+        (Erdos881Cantor.CantorSet \ B) 3) := by
+  have h0 : (0 : ℕ) ∈ Erdos881Cantor.CantorSet := by
+    show Erdos881Cantor.IsCantor 0
+    intro i
+    simp [Nat.zero_div]
+  have hcov : PairCovers Erdos881Cantor.CantorSet (3 ^ 7) := by
+    intro n _
+    obtain ⟨a, b, ha, hb, hab⟩ := Erdos881Cantor.cantor_pair_basis n
+    exact ⟨a, ha, b, hb, hab⟩
+  intro hfail
+  exact (hfail_iff_no_hereditarily_free h0 hcov).1 hfail
+    ⟨Erdos881Cantor.PurePowers, cantor_powers_hereditarilyFree⟩
+
 end Erdos881
