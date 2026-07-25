@@ -2676,4 +2676,21 @@ theorem midwindow_reflection {A : Set ℕ} {a n : ℕ}
   intro y hy hbig hya
   exact h4 y hy hbig (by omega) (by omega)
 
+/-- **Cross-owner exclusion** — the first multi-owner constraint.
+Overlapping owners bar each other''s target-differences from `A`:
+the later owner sits in the earlier strip, the earlier owner in the
+later mid-window.  Pairs of owners cannot coexist without punching
+paired holes at the small scale — the pairwise skeleton of the
+octave-sum inequality. -/
+theorem cross_owner_exclusion {A : Set ℕ} {a₁ a₂ n₁ n₂ : ℕ}
+    (h₁ : OwnsTarget A a₁ n₁) (h₂ : OwnsTarget A a₂ n₂)
+    (ha : a₁ < a₂) (ha₁ : a₁ ∈ A) (ha₂ : a₂ ∈ A) :
+    (a₂ < n₁ → n₁ - a₂ ∉ A) ∧
+    (2 * a₁ > n₂ → n₂ - a₁ ∉ A) := by
+  constructor
+  · intro hlt
+    exact strip_reflection h₁ a₂ ha₂ ha hlt
+  · intro hbig
+    exact midwindow_reflection h₂ a₁ ha₁ hbig ha
+
 end Erdos881
