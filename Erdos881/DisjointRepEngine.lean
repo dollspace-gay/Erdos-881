@@ -3565,4 +3565,163 @@ theorem dodge_or_trap {A : Set ℕ} {N0 : ℕ}
     exact hchain (stg h hh) J h1 (hstg h hh)
   exact hinv J ⟨n, H, hhub, hHne, hHsub⟩
 
+theorem dodge_or_trap_pool {P A : Set ℕ} {N0 : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N0)
+    (hPA : P ⊆ A) (hunb : ∀ X, ∃ p ∈ P, X ≤ p)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ F : Finset ℕ, (∀ h ∈ F, h ∈ P) ∧ ∃ X, ∀ a ∈ P, X ≤ a →
+      ∃ n, ∃ H : Finset ℕ, IsRepHub A n H ∧ a ∈ H ∧
+        ∀ h ∈ H, h ∈ F ∨ h = a := by
+  classical
+  by_contra hnotrap
+  push_neg at hnotrap
+  have hpick : ∀ (F : Finset ℕ) (X : ℕ), ∃ a, a ∈ P ∧ X ≤ a ∧
+      ((∀ h ∈ F, h ∈ P) →
+        ¬∃ n, ∃ H : Finset ℕ, IsRepHub A n H ∧ a ∈ H ∧
+          ∀ h ∈ H, h ∈ F ∨ h = a) := by
+    intro F X
+    by_cases hFA : ∀ h ∈ F, h ∈ P
+    · obtain ⟨a, ha, hXa, hno⟩ := hnotrap F hFA X
+      refine ⟨a, ha, hXa, fun _ => ?_⟩
+      rintro ⟨n, H, hhub, haH, hsub⟩
+      obtain ⟨h, hhH, hhF, hha⟩ := hno n H hhub haH
+      rcases hsub h hhH with h' | h'
+      · exact hhF h'
+      · exact hha h'
+    · obtain ⟨a, ha, hXa⟩ := hunb X
+      exact ⟨a, ha, hXa, fun h => absurd h hFA⟩
+  choose pick hpickA hpickge hpickdodge using hpick
+  set st : ℕ → ℕ × Finset ℕ := fun j =>
+    Nat.rec (pick ∅ 0, {pick ∅ 0})
+      (fun _ prev => (pick prev.2 (prev.1 + 1),
+        insert (pick prev.2 (prev.1 + 1)) prev.2)) j with hst
+  have hstS : ∀ j, st (j + 1) = (pick (st j).2 ((st j).1 + 1),
+      insert (pick (st j).2 ((st j).1 + 1)) (st j).2) := fun _ => rfl
+  have hst0 : st 0 = (pick ∅ 0, {pick ∅ 0}) := rfl
+  have hstP : ∀ j, ∀ h ∈ (st j).2, h ∈ P := by
+    intro j
+    induction j with
+    | zero =>
+      intro h hh
+      rw [hst0] at hh
+      have he : h = pick ∅ 0 := Finset.mem_singleton.1 hh
+      rw [he]
+      exact hpickA ∅ 0
+    | succ j ih =>
+      intro h hh
+      rw [hstS j] at hh
+      rcases Finset.mem_insert.1 hh with h' | h'
+      · rw [h']
+        exact hpickA _ _
+      · exact ih h h'
+  have hlastmem : ∀ j, (st j).1 ∈ (st j).2 := by
+    intro j
+    cases j with
+    | zero =>
+      rw [hst0]
+      exact Finset.mem_singleton_self _
+    | succ j =>
+      rw [hstS j]
+      exact Finset.mem_insert_self _ _
+  have hchain : ∀ j k, j ≤ k → (st j).2 ⊆ (st k).2 := by
+    intro j k hjk
+    induction k with
+    | zero =>
+      have hj0 : j = 0 := by omega
+      rw [hj0]
+    | succ k ih =>
+      rcases Nat.lt_or_ge j (k + 1) with h | h
+      · refine Finset.Subset.trans (ih (by omega)) ?_
+        rw [hstS k]
+        exact Finset.subset_insert _ _
+      · have hjk1 : j = k + 1 := by omega
+        rw [hjk1]
+  have hinv : ∀ j, ¬∃ n, ∃ H : Finset ℕ, IsRepHub A n H ∧
+      H.Nonempty ∧ ∀ h ∈ H, h ∈ (st j).2 := by
+    intro j
+    induction j with
+    | zero =>
+      rintro ⟨n, H, hhub, ⟨x, hx⟩, hsub⟩
+      have hx0 : x = pick ∅ 0 := by
+        have := hsub x hx
+        rw [hst0] at this
+        exact Finset.mem_singleton.1 this
+      refine hpickdodge ∅ 0 (by simp) ⟨n, H, hhub, ?_, ?_⟩
+      · rw [← hx0]
+        exact hx
+      · intro h hh
+        have := hsub h hh
+        rw [hst0] at this
+        exact Or.inr (Finset.mem_singleton.1 this)
+    | succ j ih =>
+      rintro ⟨n, H, hhub, hne, hsub⟩
+      by_cases haH : pick (st j).2 ((st j).1 + 1) ∈ H
+      · refine hpickdodge (st j).2 ((st j).1 + 1) (hstP j)
+          ⟨n, H, hhub, haH, ?_⟩
+        intro h hh
+        have := hsub h hh
+        rw [hstS j] at this
+        rcases Finset.mem_insert.1 this with h' | h'
+        · exact Or.inr h'
+        · exact Or.inl h'
+      · refine ih ⟨n, H, hhub, hne, ?_⟩
+        intro h hh
+        have := hsub h hh
+        rw [hstS j] at this
+        rcases Finset.mem_insert.1 this with h' | h'
+        · exact absurd (h' ▸ hh) haH
+        · exact h'
+  set B : Set ℕ := {x | ∃ j, x ∈ (st j).2} with hB
+  have hBA : B ⊆ A := by
+    rintro x ⟨j, hj⟩
+    exact hPA (hstP j x hj)
+  have hBinf : B.Infinite := by
+    have hmono : StrictMono fun j => (st j).1 := by
+      apply strictMono_nat_of_lt_succ
+      intro j
+      have h1 := hpickge (st j).2 ((st j).1 + 1)
+      have h2 : (st (j+1)).1 = pick (st j).2 ((st j).1 + 1) := by
+        rw [hstS j]
+      show (st j).1 < (st (j+1)).1
+      omega
+    apply Set.infinite_of_injective_forall_mem
+      (f := fun j => (st j).1) hmono.injective
+    intro j
+    exact ⟨j, hlastmem j⟩
+  have hnb := hfail B hBA hBinf
+  rw [IsExactTupleAsymptoticBasis] at hnb
+  push_neg at hnb
+  obtain ⟨n, hnN, hnorep⟩ := hnb N0
+  have hdead : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = n →
+      x ∈ B ∨ y ∈ B ∨ z ∈ B := by
+    intro x hx y hy z hz hsum
+    by_contra hall
+    push_neg at hall
+    obtain ⟨hxB, hyB, hzB⟩ := hall
+    refine hnorep ![x, y, z] ?_ (by simpa [Fin.sum_univ_three] using hsum)
+    intro i
+    match i with
+    | 0 => exact ⟨hx, hxB⟩
+    | 1 => exact ⟨hy, hyB⟩
+    | 2 => exact ⟨hz, hzB⟩
+  have hdec : DecidablePred (· ∈ B) := fun _ => Classical.propDecidable _
+  have hhub := failing_hub_subset_deletion (B := B) hdead
+  set H : Finset ℕ := (Finset.range (n + 1)).filter (· ∈ B) with hH
+  have hHne : H.Nonempty := hub_nonempty_of_covering h0 hcov hnN hhub
+  have hstage : ∀ h ∈ H, ∃ j, h ∈ (st j).2 := by
+    intro h hh
+    exact (Finset.mem_filter.1 hh).2
+  choose stg hstg using hstage
+  set J := H.sup (fun h => if hh : h ∈ H then stg h hh else 0) with hJ
+  have hHsub : ∀ h ∈ H, h ∈ (st J).2 := by
+    intro h hh
+    have h1 : stg h hh ≤ J := by
+      have := Finset.le_sup (f := fun h' =>
+        if hh' : h' ∈ H then stg h' hh' else 0) hh
+      simpa [hh] using this
+    exact hchain (stg h hh) J h1 (hstg h hh)
+  exact hinv J ⟨n, H, hhub, hHne, hHsub⟩
+
+
 end Erdos881
