@@ -596,4 +596,45 @@ theorem zero_residue_structure {A : Set ℕ} {N₀ : ℕ}
     exact zero_guardian_target_not_elt hcov h1 h2 (by omega)
       (by omega) hm₁A hm₁0 hx hx0 hxm hxlt
 
+
+/-- **Gaps between zero-targets carry translate pairs.**  The gap
+`d = m₂ - m₁` is covered, its parts are both positive (else the gap
+or the target would be an element), and the higher mirror lifts one
+part: some `z ∈ A` with `0 < z < d` has `m₁ + z ∈ A` as well.  The
+zero residue must populate `A ∩ (A - m₁)` inside every gap. -/
+theorem zero_gap_interior_element {A : Set ℕ} {N₀ m₁ m₂ x : ℕ}
+    (hcov : PairCovers A N₀)
+    (h1 : IsPrivateTriple A 0 m₁) (h2 : IsPrivateTriple A 0 m₂)
+    (hlt : m₁ < m₂) (hgap : m₁ + N₀ ≤ m₂)
+    (hx : x ∈ A) (hx0 : 0 < x) (hxm : x + N₀ ≤ m₁) (hxlt : x < m₁) :
+    ∃ z ∈ A, 0 < z ∧ z < m₂ - m₁ ∧ m₁ + z ∈ A := by
+  obtain ⟨y, hy, z, hz, hyz⟩ := hcov (m₂ - m₁) (by omega)
+  -- neither part can vanish
+  have hy0 : 0 < y := by
+    rcases Nat.eq_zero_or_pos y with h | h
+    · exfalso
+      have hzd : z = m₂ - m₁ := by omega
+      exact zero_guardian_no_element_gap hcov h1 h2 hlt hx hx0 hxm
+        hxlt (hzd ▸ hz)
+    · exact h
+  have hz0 : 0 < z := by
+    rcases Nat.eq_zero_or_pos z with h | h
+    · exfalso
+      have hyd : y = m₂ - m₁ := by omega
+      exact zero_guardian_no_element_gap hcov h1 h2 hlt hx hx0 hxm
+        hxlt (hyd ▸ hy)
+    · exact h
+  -- lift the y-part through the higher mirror
+  obtain ⟨y₂, hy₂, z₂, hz₂, hyz₂⟩ := hcov (m₂ - y) (by omega)
+  have hlift : m₂ - y ∈ A := by
+    rcases h2.2 y hy y₂ hy₂ z₂ hz₂ (by omega) with h | h | h
+    · omega
+    · have : z₂ = m₂ - y := by omega
+      exact this ▸ hz₂
+    · have : y₂ = m₂ - y := by omega
+      exact this ▸ hy₂
+  refine ⟨z, hz, hz0, by omega, ?_⟩
+  have : m₁ + z = m₂ - y := by omega
+  exact this ▸ hlift
+
 end Erdos881
