@@ -4215,4 +4215,235 @@ theorem flood_routing_dichotomy {A : Set ℕ} {N0 : ℕ} {S : Finset ℕ}
     exact ⟨n, hn, hnN0, a, ha, ha0, haS, hcorep, hall,
       H, hhub, hmin, hHeq⟩
 
+/-- **VACUITY CERTIFICATE for the plain trap.**  The conclusion of
+`dodge_or_trap` is satisfiable WITHOUT `hfail`: the junk envelope
+`F := A ∩ [0, N0]` hubs the target `N0` outright (every part of
+every representation of `N0` lies under it), and then every element
+`a` completes `F ∪ {a}` trivially.  The bare trap therefore carries
+no information about a counterexample; content requires the
+minimality-and-membership guarded flood form, or explicit hub
+cardinality bounds.  Recorded so no future work leans on it. -/
+theorem trap_conclusion_trivial {A : Set ℕ} {N0 : ℕ}
+    (h0 : 0 ∈ A) :
+    ∃ F : Finset ℕ, (∀ h ∈ F, h ∈ A) ∧ ∃ X, ∀ a ∈ A, X ≤ a →
+      ∃ n, N0 ≤ n ∧ ∃ H : Finset ℕ, IsRepHub A n H ∧ a ∈ H ∧
+        ∀ h ∈ H, h ∈ F ∨ h = a := by
+  classical
+  refine ⟨(Finset.range (N0 + 1)).filter (· ∈ A), ?_, 0, ?_⟩
+  · intro h hh
+    exact (Finset.mem_filter.1 hh).2
+  · intro a ha _
+    refine ⟨N0, le_refl _,
+      insert a ((Finset.range (N0 + 1)).filter (· ∈ A)), ?_,
+      Finset.mem_insert_self _ _, ?_⟩
+    · intro x hx y hy z hz hsum
+      refine Or.inl (Finset.mem_insert.2 (Or.inr ?_))
+      exact Finset.mem_filter.2 ⟨Finset.mem_range.2 (by omega), hx⟩
+    · intro h hh
+      rcases Finset.mem_insert.1 hh with h' | h'
+      · exact Or.inr h'
+      · exact Or.inl h'
+
+/-- **VACUITY CERTIFICATE for the un-carded tower branch.**  The
+tower-teams disjunct of `grand_dichotomy` — floors, marching
+targets, minimal nonempty hubs and all — is satisfiable WITHOUT
+`hfail`: at floor `Y`, any target `n ≥ 3·Y + N0` has every
+representation carrying a part in `[Y, n]` (three parts below `Y`
+cannot reach the sum), so `A ∩ [Y, n]` is a hub and minimalizes
+inside itself.  Without a hub-cardinality bound the tower branch
+says nothing about the enemy: the constant-vs-log wall IS the
+missing cardinality bound. -/
+theorem tower_branch_trivial {A : Set ℕ} {N0 : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N0) :
+    ∃ (Y : ℕ → ℕ) (F : ℕ → Finset ℕ),
+      (∀ i, ∀ h ∈ F i, h ∈ A ∧ Y i ≤ h) ∧
+      (∀ i, Y i < Y (i + 1)) ∧
+      ∀ i, ∃ n, N0 ≤ n ∧ Y i ≤ n ∧ ∃ H : Finset ℕ,
+        (∀ h ∈ H, h ∈ F i) ∧ H.Nonempty ∧ IsRepHub A n H ∧
+        ∀ h ∈ H, ¬IsRepHub A n (H \ {h}) := by
+  classical
+  refine ⟨fun i => i + 1,
+    fun i => (Finset.range (3 * (i + 1) + N0 + 1)).filter
+      (fun h => h ∈ A ∧ i + 1 ≤ h), ?_,
+    fun i => by show i + 1 < i + 1 + 1; omega, ?_⟩
+  · intro i h hh
+    exact (Finset.mem_filter.1 hh).2
+  · intro i
+    have hbig : IsRepHub A (3 * (i + 1) + N0)
+        ((Finset.range (3 * (i + 1) + N0 + 1)).filter
+          (fun h => h ∈ A ∧ i + 1 ≤ h)) := by
+      intro x hx y hy z hz hsum
+      rcases Nat.lt_or_ge x (i + 1) with hxl | hxg
+      · rcases Nat.lt_or_ge y (i + 1) with hyl | hyg
+        · exact Or.inr (Or.inr (Finset.mem_filter.2
+            ⟨Finset.mem_range.2 (by omega), hz, by omega⟩))
+        · exact Or.inr (Or.inl (Finset.mem_filter.2
+            ⟨Finset.mem_range.2 (by omega), hy, hyg⟩))
+      · exact Or.inl (Finset.mem_filter.2
+          ⟨Finset.mem_range.2 (by omega), hx, hxg⟩)
+    obtain ⟨H', hH'sub, hH'hub, hH'min⟩ := exists_minimal_hub hbig
+    have hH'ne : H'.Nonempty := hub_nonempty_of_covering h0 hcov
+      (by omega) hH'hub
+    exact ⟨3 * (i + 1) + N0, by omega,
+      by show i + 1 ≤ 3 * (i + 1) + N0; omega, H',
+      fun h hh => hH'sub hh, hH'ne, hH'hub, hH'min⟩
+
+/-- **THE FORCED PAIR SHADOW.**  The sound content of the trap: what
+a counterexample REALLY yields against any chosen 0-free infinite
+deletion `B` is cofinally many targets whose EVERY order-2
+representation routes through `B` — the representation
+`(x, n − x, 0)` must die, and `0 ∉ B`. -/
+theorem forced_pair_shadow_of_hfail {A B : Set ℕ}
+    (h0 : 0 ∈ A)
+    (hfail : ∀ B' ⊆ A, B'.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B') 3)
+    (hBA : B ⊆ A) (hBinf : B.Infinite) (h0B : 0 ∉ B) :
+    ∀ N, ∃ n, N ≤ n ∧
+      ∀ x ∈ A, ∀ y ∈ A, x + y = n → x ∈ B ∨ y ∈ B := by
+  intro N
+  have hnb := hfail B hBA hBinf
+  rw [IsExactTupleAsymptoticBasis] at hnb
+  push_neg at hnb
+  obtain ⟨n, hnN, hnorep⟩ := hnb N
+  refine ⟨n, hnN, ?_⟩
+  intro x hx y hy hxy
+  by_contra hall
+  push_neg at hall
+  obtain ⟨hxB, hyB⟩ := hall
+  refine hnorep ![x, y, 0] ?_ (by simp [Fin.sum_univ_three]; omega)
+  intro i
+  match i with
+  | 0 => exact ⟨hx, hxB⟩
+  | 1 => exact ⟨hy, hyB⟩
+  | 2 => exact ⟨h0, h0B⟩
+
+/-- Counting form of a pair shadow: the order-2 components at `n`
+live in `(B ∩ [0,n]) ∪ (n − (B ∩ [0,n]))`. -/
+theorem pair_count_of_shadow {A B : Set ℕ}
+    [DecidablePred (· ∈ A)] [DecidablePred (· ∈ B)] {n : ℕ}
+    (hshadow : ∀ x ∈ A, ∀ y ∈ A, x + y = n → x ∈ B ∨ y ∈ B) :
+    ((Finset.range (n + 1)).filter
+      (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤
+      2 * ((Finset.range (n + 1)).filter (· ∈ B)).card := by
+  classical
+  set Bn := (Finset.range (n + 1)).filter (· ∈ B) with hBn
+  have hsub : (Finset.range (n + 1)).filter
+      (fun x => x ∈ A ∧ (n - x) ∈ A) ⊆
+      Bn ∪ Bn.image (fun h => n - h) := by
+    intro x hx
+    obtain ⟨hxr, hxA, hnxA⟩ := Finset.mem_filter.1 hx
+    have hxn : x ≤ n := by
+      have := Finset.mem_range.1 hxr
+      omega
+    rcases hshadow x hxA (n - x) hnxA (by omega) with h | h
+    · exact Finset.mem_union_left _ (Finset.mem_filter.2 ⟨hxr, h⟩)
+    · refine Finset.mem_union_right _
+        (Finset.mem_image.2 ⟨n - x, ?_, by omega⟩)
+      exact Finset.mem_filter.2 ⟨Finset.mem_range.2 (by omega), h⟩
+  have h1 := Finset.card_le_card hsub
+  have h2 := Finset.card_union_le Bn (Bn.image (fun h => n - h))
+  have h3 : (Bn.image (fun h => n - h)).card ≤ Bn.card :=
+    Finset.card_image_le
+  omega
+
+/-- **THE LOG WALL, from the sound side.**  A counterexample admits
+a geometric deletion `b 0 < b 1 < ⋯` inside `A` with `3^j ≤ b j`,
+against which cofinally many targets have their ENTIRE order-2 life
+routed through the deletion; at those targets the order-2
+representation count is at most `2·(log₃ n + 1)`.  The enemy is
+forced to be log-Sidon cofinally — no interfaces beyond covering,
+and no vacuity: this is the true quantitative content the trap was
+after. -/
+theorem log_sidon_of_hfail {A : Set ℕ} {N0 : ℕ}
+    [DecidablePred (· ∈ A)]
+    (h0 : 0 ∈ A) (hcov : PairCovers A N0)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ b : ℕ → ℕ, StrictMono b ∧ (∀ j, b j ∈ A) ∧
+      (∀ j, 3 ^ j ≤ b j) ∧
+      ∀ N, ∃ n, N ≤ n ∧
+        (∀ x ∈ A, ∀ y ∈ A, x + y = n →
+          x ∈ Set.range b ∨ y ∈ Set.range b) ∧
+        ((Finset.range (n + 1)).filter
+          (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤
+          2 * (Nat.log 3 n + 1) := by
+  classical
+  have hpick : ∀ X : ℕ, ∃ a, a ∈ A ∧ X ≤ a := by
+    intro X
+    obtain ⟨a, ha, hXa⟩ := pairCovers_unbounded hcov X
+    exact ⟨a, ha, hXa⟩
+  choose f hfA hfge using hpick
+  set b : ℕ → ℕ := fun j =>
+    Nat.rec (f 1) (fun _ prev => f (3 * prev + 1)) j with hb
+  have hbS : ∀ j, b (j + 1) = f (3 * b j + 1) := fun _ => rfl
+  have hb0 : b 0 = f 1 := rfl
+  have hbA : ∀ j, b j ∈ A := by
+    intro j
+    cases j with
+    | zero => exact hfA 1
+    | succ j => rw [hbS]; exact hfA _
+  have hb1 : 1 ≤ b 0 := by
+    rw [hb0]
+    exact hfge 1
+  have hbgrow : ∀ j, 3 * b j < b (j + 1) := by
+    intro j
+    have := hfge (3 * b j + 1)
+    rw [hbS]
+    omega
+  have hbpow : ∀ j, 3 ^ j ≤ b j := by
+    intro j
+    induction j with
+    | zero => simpa using hb1
+    | succ j ih =>
+      have h1 := hbgrow j
+      have h3 : 3 ^ (j + 1) = 3 * 3 ^ j := by ring
+      omega
+  have hbmono : StrictMono b := by
+    apply strictMono_nat_of_lt_succ
+    intro j
+    have h1 := hbgrow j
+    have h2 : 1 ≤ 3 ^ j := Nat.one_le_pow _ _ (by norm_num)
+    have h3 := hbpow j
+    omega
+  have hBA : Set.range b ⊆ A := by
+    rintro x ⟨j, rfl⟩
+    exact hbA j
+  have hBinf : (Set.range b).Infinite :=
+    Set.infinite_range_of_injective hbmono.injective
+  have h0B : 0 ∉ Set.range b := by
+    rintro ⟨j, hj⟩
+    have h1 : 1 ≤ 3 ^ j := Nat.one_le_pow _ _ (by norm_num)
+    have h2 := hbpow j
+    omega
+  refine ⟨b, hbmono, hbA, hbpow, ?_⟩
+  intro N
+  obtain ⟨n, hnN, hshadow⟩ :=
+    forced_pair_shadow_of_hfail h0 hfail hBA hBinf h0B N
+  refine ⟨n, hnN, hshadow, ?_⟩
+  have hBn : ((Finset.range (n + 1)).filter (· ∈ Set.range b)).card ≤
+      Nat.log 3 n + 1 := by
+    have hsub : (Finset.range (n + 1)).filter (· ∈ Set.range b) ⊆
+        (Finset.range (Nat.log 3 n + 1)).image b := by
+      intro x hx
+      obtain ⟨hxr, hxB⟩ := Finset.mem_filter.1 hx
+      obtain ⟨j, hj⟩ := hxB
+      have hxn : x ≤ n := by
+        have := Finset.mem_range.1 hxr
+        omega
+      have hx1 : 1 ≤ x := by
+        have h1 : 1 ≤ 3 ^ j := Nat.one_le_pow _ _ (by norm_num)
+        have h2 := hbpow j
+        omega
+      have hjn : 3 ^ j ≤ n := le_trans (hbpow j) (by omega)
+      have hjlog : j ≤ Nat.log 3 n :=
+        (Nat.pow_le_iff_le_log (by norm_num) (by omega)).1 hjn
+      exact Finset.mem_image.2 ⟨j, Finset.mem_range.2 (by omega), hj⟩
+    have h1 := Finset.card_le_card hsub
+    have h2 : ((Finset.range (Nat.log 3 n + 1)).image b).card ≤
+        Nat.log 3 n + 1 :=
+      le_trans Finset.card_image_le (by simp)
+    omega
+  have hcount := pair_count_of_shadow (B := Set.range b) hshadow
+  omega
+
 end Erdos881
