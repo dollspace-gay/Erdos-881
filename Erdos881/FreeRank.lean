@@ -1894,4 +1894,37 @@ theorem cofinite_free_singletons {A : Set ℕ} {N₀ : ℕ}
       omega
   exact ⟨m, by omega, b, hbpos, hhub⟩
 
+/-- **The ω-room dichotomy.**  An infinite-rank pool either has an
+infinite-rank CHILD (a wide element: one singleton already carries
+infinite freedom above it) or its root rank is exactly `ω` — the
+singleton ranks are finite but unbounded, and the elements are
+graded by a finite rank function.  Infinite rank never hides: it
+is witnessed one element down, or the pool sits exactly at the
+first limit. -/
+theorem root_omega_dichotomy {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {P₀ : Set ℕ}
+    (hroot : Ordinal.omega0 ≤
+      ((poolFreeStep_wf h0 hcov hfail P₀).apply ∅).rank) :
+    (∃ C : Finset ℕ, PoolFreeStep A N₀ P₀ C ∅ ∧
+      Ordinal.omega0 ≤
+        ((poolFreeStep_wf h0 hcov hfail P₀).apply C).rank) ∨
+    ((poolFreeStep_wf h0 hcov hfail P₀).apply ∅).rank =
+      Ordinal.omega0 := by
+  classical
+  set hwf := poolFreeStep_wf h0 hcov hfail P₀ with hhwf
+  by_cases hwide : ∃ C : Finset ℕ, PoolFreeStep A N₀ P₀ C ∅ ∧
+      Ordinal.omega0 ≤ (hwf.apply C).rank
+  · exact Or.inl hwide
+  · right
+    push_neg at hwide
+    apply le_antisymm _ hroot
+    rw [Acc.rank_eq]
+    apply Ordinal.iSup_le
+    rintro ⟨C, hC⟩
+    have h1 : (hwf.apply C).rank < Ordinal.omega0 := hwide C hC
+    exact Order.succ_le_of_lt h1
+  
 end Erdos881
