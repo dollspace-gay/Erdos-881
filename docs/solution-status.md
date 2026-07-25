@@ -108,6 +108,16 @@ clique of ineligible vertices (all 2-essential, or all below `N₀`)
 escapes vacuously — B1 covers the essential case; small vertices are
 finitely many.
 
+## The capstone
+
+`erdos881_interfaces_refute_counterexample` (`Capstone.lean`): the
+four remaining interfaces — no cofinal diffuse destruction (Link A),
+anchor abundance, no cofinal zero-guardianship, no infinite clique of
+self-scale 2-guardians (Link B1) — jointly refute counterexamplehood.
+Link A's funnel interface is now itself a theorem
+(`hasCofinalPairFunnels_of_diffuse_free`): its entire content is the
+`hnodiffuse` hypothesis.
+
 ## Assessment
 
 The problem's positive direction (YES for k = 2) is now reduced,
