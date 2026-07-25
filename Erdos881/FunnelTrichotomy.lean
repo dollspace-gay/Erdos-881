@@ -302,6 +302,44 @@ theorem cofinal_funnel_trichotomy_of_deletionFailure
   exact ⟨m, le_trans (le_max_left _ _) hmN,
     hdes.funnel_trichotomy h0 h0B hcov hm₀⟩
 
+/-- Order-three destruction shadows to order two: with `0` undeleted,
+a destroyed target is also two-destroyed.  Consequently the
+counterexample's demand *at order two* — every infinite deletion
+two-destroys cofinally — is exactly the ℵ₀-minimality hypothesis of
+Erdős 881, granted for free: the whole content of the problem lives
+in whether positive three-term representations can repair the
+mandated two-destruction. -/
+theorem DestroyedBySet.twoDestroyed {A B : Set ℕ} {m : ℕ}
+    (hdes : DestroyedBySet A B m) (h0 : 0 ∈ A) (h0B : 0 ∉ B) :
+    TwoDestroyedBySet A B m := by
+  intro y hy z hz hyz
+  rcases hdes.2 0 h0 y hy z hz (by omega) with h | h | h
+  · exact absurd h h0B
+  · exact Or.inl h
+  · exact Or.inr h
+
+/-- **Anchor supply from two disjoint packages.**  Two anchor packages
+with disjoint supports dodge any single prescribed value. -/
+theorem anchor_abundance_of_two_packages {A : Set ℕ}
+    {c₁ w₁ w₁' c₂ w₂ w₂' : ℕ}
+    (h₁ : c₁ ∈ A ∧ 0 < c₁ ∧ w₁ ∈ A ∧ w₁' ∈ A ∧
+      w₁ + w₁' = 2 * c₁ ∧ w₁ ≠ c₁)
+    (h₂ : c₂ ∈ A ∧ 0 < c₂ ∧ w₂ ∈ A ∧ w₂' ∈ A ∧
+      w₂ + w₂' = 2 * c₂ ∧ w₂ ≠ c₂)
+    (hdisj : c₁ ≠ c₂ ∧ c₁ ≠ w₂ ∧ c₁ ≠ w₂' ∧ w₁ ≠ c₂ ∧ w₁ ≠ w₂ ∧
+      w₁ ≠ w₂' ∧ w₁' ≠ c₂ ∧ w₁' ≠ w₂ ∧ w₁' ≠ w₂') :
+    ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g := by
+  intro g
+  obtain ⟨hc₁, hc₁0, hw₁, hw₁', hs₁, hn₁⟩ := h₁
+  obtain ⟨hc₂, hc₂0, hw₂, hw₂', hs₂, hn₂⟩ := h₂
+  by_cases hg : g = c₁ ∨ g = w₁ ∨ g = w₁'
+  · exact ⟨c₂, hc₂, hc₂0, by omega, w₂, hw₂, w₂', hw₂',
+      hs₂, hn₂, by omega, by omega⟩
+  · push Not at hg
+    exact ⟨c₁, hc₁, hc₁0, by omega, w₁, hw₁, w₁', hw₁',
+      hs₁, hn₁, by omega, by omega⟩
+
 /-- **Zero-guarded targets repel element differences.**  If every
 representation of both `m₁ < m₂` passes through `0`, then `m₂ - m₁`
 cannot be an element: the mirror of any positive `x` below `m₁`
