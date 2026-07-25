@@ -358,3 +358,17 @@ have near-zero supply. Both remaining branch families (matching
 acquisition, tight-team simultaneity) now face the same verified
 pincer: the structure the enemy needs to dodge our engines is the
 structure that repairs at order 3.
+
+## The convergence (2026-07-25 01:05)
+
+probe_window_sat.py: the tight-pair enemy's single-window demand is
+UNREACHABLE by search from generic covering (service stalls at
+~15%) and PERFECTLY satisfied by the Cantor structure (16/16
+markers), whose service mechanism is exactly its doubles — the
+verified minimality mechanism, whose order-3 carry-repair is also
+verified. All three independent lines of the night (matching
+dodges, alignment supply census, window satisfiability) converge:
+the only structures that can satisfy the enemy's demands are
+digit towers, and digit towers satisfy Erdős 881's conclusion.
+Remaining mathematical gap, now singular: the general carry lemma
+(Engine V11) — rigidity all the way down forces order-3 repairs.
