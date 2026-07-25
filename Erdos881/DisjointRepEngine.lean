@@ -1148,4 +1148,41 @@ theorem team_target_fails_iff {A B : Set ℕ} {n : ℕ} {S : Finset ℕ}
       · exact Or.inl h'
       · exact Or.inr (Or.inl h')
 
+/-- **Disjoint representations inject into the deletion.**  If a
+target fails under `B` (every representation meets `B`), any family of
+`K` pairwise-disjoint representations selects `K` distinct elements of
+`B` below the target.  The per-target quantitative heart of Engine
+V10, standalone: failing targets can never out-multiply the deletion
+below them. -/
+theorem disjointReps_le_hits {A B : Set ℕ} {n K : ℕ}
+    (hdead : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = n →
+      x ∈ B ∨ y ∈ B ∨ z ∈ B)
+    (hdis : HasDisjointTripleReps A n K) :
+    ∃ f : Fin K → ℕ, Function.Injective f ∧
+      ∀ i, f i ∈ B ∧ f i ≤ n := by
+  classical
+  obtain ⟨P, hPA, hPsum, hPdisj⟩ := hdis
+  have hhit : ∀ i : Fin K, ∃ k : Fin 3, P i k ∈ B := by
+    intro i
+    rcases hdead (P i 0) (hPA i 0) (P i 1) (hPA i 1) (P i 2) (hPA i 2)
+      (hPsum i) with h | h | h
+    · exact ⟨0, h⟩
+    · exact ⟨1, h⟩
+    · exact ⟨2, h⟩
+  choose g hg using hhit
+  refine ⟨fun i => P i (g i), ?_, ?_⟩
+  · intro i j hij
+    by_contra hne
+    exact hPdisj i j (g i) (g j) hne hij
+  · intro i
+    refine ⟨hg i, ?_⟩
+    have hle : ∀ k, P i k ≤ n := by
+      intro k
+      have hs := hPsum i
+      match k with
+      | 0 => omega
+      | 1 => omega
+      | 2 => omega
+    exact hle (g i)
+
 end Erdos881
