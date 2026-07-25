@@ -4550,4 +4550,51 @@ theorem stable_core_trichotomy {A : Set ℕ} {N₀ : ℕ}
       right
       exact ⟨S, c, hge2, hsplit⟩
 
+/-- Pair-hub counting: order-2 components live in `H ∪ (n − H)`,
+with no zero caveat — the pair hub IS the order-2 transversal. -/
+theorem pair_count_of_pairHub {A : Set ℕ} [DecidablePred (· ∈ A)]
+    {n : ℕ} {H : Finset ℕ} (hhub : IsPairHub A n H) :
+    ((Finset.range (n + 1)).filter
+      (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * H.card := by
+  classical
+  have hsub : (Finset.range (n + 1)).filter
+      (fun x => x ∈ A ∧ (n - x) ∈ A) ⊆
+      H ∪ H.image (fun h => n - h) := by
+    intro x hx
+    obtain ⟨hxr, hxA, hnxA⟩ := Finset.mem_filter.1 hx
+    have hxn : x ≤ n := by
+      have := Finset.mem_range.1 hxr
+      omega
+    rcases hhub x hxA (n - x) hnxA (by omega) with h | h
+    · exact Finset.mem_union_left _ h
+    · exact Finset.mem_union_right _
+        (Finset.mem_image.2 ⟨n - x, h, by omega⟩)
+  have h1 := Finset.card_le_card hsub
+  have h2 := Finset.card_union_le H (H.image (fun h => n - h))
+  have h3 : (H.image (fun h => n - h)).card ≤ H.card :=
+    Finset.card_image_le
+  omega
+
+/-- **CONSTANT SIDON FROM MINIMALITY ALONE.**  Every ℵ₀-minimal
+order-2 covering set carries a cofinal stream of targets whose
+order-2 representation count is bounded by ONE constant — twice the
+canonical pair-hub card.  The minimality half of Erdős 881 already
+forces any minimal basis to be essentially Sidon along a stream,
+with no counterexample hypothesis anywhere. -/
+theorem constant_sidon_of_minimality {A : Set ℕ} {N₀ : ℕ}
+    [DecidablePred (· ∈ A)]
+    (hcov : PairCovers A N₀)
+    (hmin : ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) :
+    ∃ C, ∀ N, ∃ n, N ≤ n ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ C := by
+  classical
+  obtain ⟨K, S, c, hcK, hsplit⟩ :=
+    stable_pair_core_card_of_minimality hcov hmin
+  refine ⟨2 * c, fun N => ?_⟩
+  obtain ⟨n, hn, H, hcard, hhub, -, -⟩ := hsplit 0 N
+  have := pair_count_of_pairHub hhub
+  exact ⟨n, hn, by omega⟩
+
 end Erdos881
