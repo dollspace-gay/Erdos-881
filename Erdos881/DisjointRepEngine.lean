@@ -964,4 +964,89 @@ theorem large_team_shadow_of_empty_core {A : Set ℕ} {N₀ K : ℕ}
   exact two_rep_shadow_of_large_hub h0 hhub
     (fun h hh => by have := hlargeW h hh; omega)
 
+/-- Cofinal pigeonhole over a bounded value: some value recurs
+cofinally. -/
+theorem cofinal_value_pigeonhole {C : ℕ} (P : ℕ → ℕ → Prop)
+    (hP : ∀ N, ∃ n, N ≤ n ∧ ∃ c, c ≤ C ∧ P n c) :
+    ∃ c, c ≤ C ∧ ∀ N, ∃ n, N ≤ n ∧ P n c := by
+  classical
+  by_contra hno
+  push_neg at hno
+  have hex : ∀ c, ∃ Nc, c ≤ C → ∀ n, Nc ≤ n → ¬P n c := by
+    intro c
+    by_cases hc : c ≤ C
+    · obtain ⟨N, hN⟩ := hno c hc
+      exact ⟨N, fun _ => hN⟩
+    · exact ⟨0, fun h => absurd h hc⟩
+  choose g hg using hex
+  set NS := (Finset.range (C + 1)).sup g with hNS
+  obtain ⟨n, hn, c, hc, hPc⟩ := hP NS
+  have h2 : g c ≤ NS := by
+    rw [hNS]
+    exact Finset.le_sup (Finset.mem_range.2 (by omega))
+  exact hg c hc n (by omega) hPc
+
+/-- **The canonical hub shape.**  On top of the stable core: a single
+hub cardinality `c*` recurs at every window (cardinality classes are
+downward-closed in the window, so the cofinally-recurring class works
+everywhere).  A counterexample's failure thus concentrates on minimal
+hubs of one fixed size, one fixed core, and level-scale escorts. -/
+theorem stable_core_card_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ K S c, c ≤ 3 * (K - 1) ∧
+      ∀ W N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+        H.card = c ∧ IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h := by
+  classical
+  obtain ⟨K, S, hsplit⟩ := stable_core_of_hfail hcov hfail
+  -- the set of cards recurring cofinally at window W
+  set Good : ℕ → ℕ → Prop := fun W c =>
+    ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card = c ∧ IsRepHub A n H ∧
+      (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h with hGood
+  have hdown : ∀ W W' c, W ≤ W' → Good W' c → Good W c := by
+    intro W W' c hWW' hg N
+    obtain ⟨n, hn, H, hcard, hhub, hmin, hSH, hrest⟩ := hg N
+    exact ⟨n, hn, H, hcard, hhub, hmin, hSH,
+      fun h hh hhS => by have := hrest h hh hhS; omega⟩
+  have hperW : ∀ W, ∃ c, c ≤ 3 * (K - 1) ∧ Good W c := by
+    intro W
+    have hP : ∀ N, ∃ n, N ≤ n ∧ ∃ c, c ≤ 3 * (K - 1) ∧
+        (∃ H : Finset ℕ, H.card = c ∧ IsRepHub A n H ∧
+          (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+          S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h) := by
+      intro N
+      obtain ⟨n, hn, H, hcard, hhub, hmin, hSH, hrest⟩ := hsplit W N
+      exact ⟨n, hn, H.card, hcard, H, rfl, hhub, hmin, hSH, hrest⟩
+    obtain ⟨c, hc, hcof⟩ := cofinal_value_pigeonhole
+      (P := fun n c => ∃ H : Finset ℕ, H.card = c ∧ IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h) hP
+    exact ⟨c, hc, hcof⟩
+  -- pigeonhole the card across windows; downward closure finishes
+  by_contra hno
+  push_neg at hno
+  have hex : ∀ c, ∃ Wc, c ≤ 3 * (K - 1) → ¬Good Wc c := by
+    intro c
+    by_cases hc : c ≤ 3 * (K - 1)
+    · obtain ⟨W, hW⟩ := hno K S c hc
+      refine ⟨W, fun _ => ?_⟩
+      intro hgood
+      obtain ⟨N, hN⟩ := hW
+      obtain ⟨n, hn, H, hcard, hhub, hmin, hSH, hrest⟩ := hgood N
+      obtain ⟨h, hh, hhS, hhW⟩ := hN n hn H hcard hhub hmin hSH
+      have := hrest h hh hhS
+      omega
+    · exact ⟨0, fun h => absurd h hc⟩
+  choose gW hgW using hex
+  set WS := (Finset.range (3 * (K - 1) + 1)).sup gW with hWS
+  obtain ⟨c, hc, hgood⟩ := hperW WS
+  have h2 : gW c ≤ WS := by
+    rw [hWS]
+    exact Finset.le_sup (Finset.mem_range.2 (by omega))
+  exact hgW c hc (hdown (gW c) WS c h2 hgood)
+
 end Erdos881
