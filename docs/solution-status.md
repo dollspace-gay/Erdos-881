@@ -126,6 +126,28 @@ The arity ladder is mechanical now (quadruple Ramsey +
 card ≥ 5; dominations at arities 3 and 4); the ω-limit needs
 barriers.
 
+**THE FINAL FORM + BRANCH TEMPLATE (18:40)**: the day's summit.
+`hfail_iff_no_hereditarily_free` (the characterization) →
+`freeStep_wf_iff_no_hereditarilyFree` (the triangle, combinatorial)
+→ `counterexample_iff_rep_tree_wf` (THE COLLAPSE: minimality is a
+subtree consequence; also in original vocabulary via
+`basis3_of_basis2` + `hmin_tuple_of_hfail`).  FINAL FORM:
+
+  Erdős 881 (k = 2) ⟺ no 2-covering set containing 0 has a
+  well-founded rep-freeness tree ⟺ every such set contains an
+  infinite hereditarily rep-free subset.
+
+Concrete branches: `cantor_powers_hereditarilyFree` (the verified
+instance) and **`sidon_has_branch`** (THE BRANCH TEMPLATE: under
+any global pair-count bound, an explicit geometric subset is a
+branch — candidates beat window fibers; the constructive Sidon
+door).  The adaptive toolkit (immunity, count-to-disjointness,
+witness location, saturation, witness multiplication, the
+3-never-4 cap) bounds where branch obstructions can sit.  Open
+core: extend the template past bounded pair-counts (blown-fiber
+terms are the exact obstruction = the enemy's hubs), or the
+priority construction.  All of it in `Endgame.lean`.
+
 **THE BLOCK TRICHOTOMY (17:20)**: `infinite_ramsey_tuples` —
 INFINITE RAMSEY AT EVERY ARITY (induction on arity over the anchor
 recursion; `tuple_step` needs only propext) — plus
