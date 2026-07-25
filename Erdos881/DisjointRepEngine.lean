@@ -22,6 +22,7 @@ disjoint-rep growth; size-≤2 rep covers simply do not exist).
 import Erdos881.TeamGraphRamsey
 import Erdos881.AdditiveSupports
 import Erdos881.RotatingGuardianEndgame
+import Erdos881.FunnelTrichotomy
 
 namespace Erdos881
 
@@ -580,5 +581,44 @@ theorem team_configuration_of_hfail {A : Set ℕ} {N₀ : ℕ}
   obtain ⟨K, hK⟩ := cofinal_bounded_hubs_of_hfail hcov hfail
   refine ⟨K, fun W => ?_⟩
   exact hub_window_split (fun N => hK N) W
+
+/-- **The pair is the true base case.**  Under the counterexample
+interfaces (covering, doubling supply, anchor supply, order-3 failure
+for every infinite deletion), all sufficiently late representation
+hubs have at least two elements: empty hubs die by covering,
+zero-singletons by the zero-residue kill, positive singletons by the
+private-stream kill. -/
+theorem hub_card_ge_two_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hdb : {c | c ∈ A ∧ 2 * c ∈ A ∧ 0 < c}.Infinite)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ N, ∀ n, N ≤ n → ∀ H : Finset ℕ, IsRepHub A n H → 2 ≤ H.card := by
+  classical
+  have hzero := not_zero_residue_of_doubling hcov hdb
+  push_neg at hzero
+  obtain ⟨Nz, hNz⟩ := hzero
+  have hpos := singleton_hubs_refuted h0 hcov hanchor hfail
+  push_neg at hpos
+  obtain ⟨Np, hNp⟩ := hpos
+  refine ⟨max N₀ (max Nz Np), fun n hn H hhub => ?_⟩
+  have hn₀ : N₀ ≤ n := le_trans (le_max_left _ _) hn
+  have hnz : Nz ≤ n := le_trans (le_trans (le_max_left _ _)
+    (le_max_right _ _)) hn
+  have hnp : Np ≤ n := le_trans (le_trans (le_max_right _ _)
+    (le_max_right _ _)) hn
+  by_contra hlt
+  push_neg at hlt
+  interval_cases hc : H.card
+  · obtain ⟨x, hx⟩ := hub_nonempty_of_covering h0 hcov hn₀ hhub
+    have := Finset.card_pos.2 ⟨x, hx⟩
+    omega
+  · obtain ⟨a, rfl⟩ := Finset.card_eq_one.1 hc
+    rcases Nat.eq_zero_or_pos a with ha0 | hapos
+    · subst ha0
+      exact hNz n hnz (privateTriple_of_singleton_hub h0 hcov hn₀ hhub)
+    · exact hNp n hnp a hapos hhub
 
 end Erdos881
