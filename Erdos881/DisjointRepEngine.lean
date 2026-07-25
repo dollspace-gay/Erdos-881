@@ -2866,7 +2866,7 @@ theorem no_five_zero_payers {A : Set ℕ} {X : ℕ}
     (hp₂ : ∀ y ∈ A, 2 * y > t₂ → y < t₂ → y = x₂)
     (hp₄ : ∀ y ∈ A, 2 * y > t₄ → y < t₄ → y = x₄)
     (hord : x₁ < x₂ ∧ x₂ < x₃ ∧ x₃ < x₄ ∧ x₄ < x₅)
-    (hoct : X < x₁ ∧ x₅ < 2 * X) :
+    (hoct : X < x₁ ∧ x₅ ≤ 2 * X) :
     False := by
   obtain ⟨h12, h23, h34, h45⟩ := hord
   obtain ⟨hX1, hX5⟩ := hoct
@@ -2972,5 +2972,115 @@ theorem octave_rich_of_covering {A : Set ℕ} [DecidablePred (· ∈ A)]
   have hjQ : j ≤ j ^ 2 := by nlinarith
   have hN : N₀ ≤ j := by omega
   omega
+
+/-- **Paying owners in rich octaves.**  In any octave holding five
+elements above the universality threshold, some owner PAYS.  Zero
+payment across the octave would overfill it via the giant-gap
+bound. -/
+theorem paying_owner_in_rich_octave {A : Set ℕ}
+    [DecidablePred (. ∈ A)] {Ns X : ℕ}
+    (huniv : UniversalOwnership A Ns) (hXNs : Ns ≤ X)
+    (hcard : 5 ≤ ((Finset.Ioc X (2 * X)).filter (. ∈ A)).card) :
+    ∃ a t y, a ∈ A ∧ X < a ∧ OwnsTarget A a t ∧
+      y ∈ A ∧ 2 * y > t ∧ y < t ∧ y ≠ a := by
+  classical
+  set F := (Finset.Ioc X (2 * X)).filter (. ∈ A) with hF
+  have hne0 : F.Nonempty := Finset.card_pos.1 (by omega)
+  set x1 := F.min' hne0 with hx1
+  have hm1 : x1 ∈ F := F.min'_mem hne0
+  set F1 := F.erase x1 with hFa
+  have hc1 : F1.card = F.card - 1 := Finset.card_erase_of_mem hm1
+  have hne1 : F1.Nonempty := Finset.card_pos.1 (by omega)
+  set x2 := F1.min' hne1 with hx2
+  have hm2a : x2 ∈ F1 := F1.min'_mem hne1
+  have hm2 : x2 ∈ F := Finset.mem_of_mem_erase hm2a
+  have h12 : x1 < x2 := by
+    have hle := F.min'_le x2 hm2
+    have hne := Finset.ne_of_mem_erase hm2a
+    omega
+  set F2 := F1.erase x2 with hFb
+  have hc2 : F2.card = F1.card - 1 := Finset.card_erase_of_mem hm2a
+  have hne2 : F2.Nonempty := Finset.card_pos.1 (by omega)
+  set x3 := F2.min' hne2 with hx3
+  have hm3b : x3 ∈ F2 := F2.min'_mem hne2
+  have hm3a : x3 ∈ F1 := Finset.mem_of_mem_erase hm3b
+  have hm3 : x3 ∈ F := Finset.mem_of_mem_erase hm3a
+  have h23 : x2 < x3 := by
+    have hle := F1.min'_le x3 hm3a
+    have hne := Finset.ne_of_mem_erase hm3b
+    omega
+  set F3 := F2.erase x3 with hFc
+  have hc3 : F3.card = F2.card - 1 := Finset.card_erase_of_mem hm3b
+  have hne3 : F3.Nonempty := Finset.card_pos.1 (by omega)
+  set x4 := F3.min' hne3 with hx4
+  have hm4c : x4 ∈ F3 := F3.min'_mem hne3
+  have hm4b : x4 ∈ F2 := Finset.mem_of_mem_erase hm4c
+  have hm4a : x4 ∈ F1 := Finset.mem_of_mem_erase hm4b
+  have hm4 : x4 ∈ F := Finset.mem_of_mem_erase hm4a
+  have h34 : x3 < x4 := by
+    have hle := F2.min'_le x4 hm4b
+    have hne := Finset.ne_of_mem_erase hm4c
+    omega
+  set F4 := F3.erase x4 with hFd
+  have hc4 : F4.card = F3.card - 1 := Finset.card_erase_of_mem hm4c
+  have hne4 : F4.Nonempty := Finset.card_pos.1 (by omega)
+  set x5 := F4.min' hne4 with hx5
+  have hm5d : x5 ∈ F4 := F4.min'_mem hne4
+  have hm5c : x5 ∈ F3 := Finset.mem_of_mem_erase hm5d
+  have hm5 : x5 ∈ F := Finset.mem_of_mem_erase
+    (Finset.mem_of_mem_erase (Finset.mem_of_mem_erase hm5c))
+  have h45 : x4 < x5 := by
+    have hle := F3.min'_le x5 hm5c
+    have hne := Finset.ne_of_mem_erase hm5d
+    omega
+  have hFmem : ∀ x, x ∈ F → x ∈ A ∧ X < x ∧ x ≤ 2 * X := by
+    intro x hx
+    rw [hF] at hx
+    obtain ⟨hI, hA⟩ := Finset.mem_filter.1 hx
+    obtain ⟨h1, h2⟩ := Finset.mem_Ioc.1 hI
+    exact ⟨hA, h1, h2⟩
+  obtain ⟨hA1, hX1, hU1⟩ := hFmem x1 hm1
+  obtain ⟨hA2, hX2, hU2⟩ := hFmem x2 hm2
+  obtain ⟨hA3, hX3, hU3⟩ := hFmem x3 hm3
+  obtain ⟨hA4, hX4, hU4⟩ := hFmem x4 hm4
+  obtain ⟨hA5, hX5, hU5⟩ := hFmem x5 hm5
+  obtain ⟨t2, ho2⟩ := huniv x2 hA2 (by omega)
+  obtain ⟨t4, ho4⟩ := huniv x4 hA4 (by omega)
+  by_contra hno
+  push_neg at hno
+  have hp2 : ∀ y ∈ A, 2 * y > t2 → y < t2 → y = x2 := by
+    intro y hy hby hyt
+    exact hno x2 t2 y hA2 hX2 ho2 hy hby hyt
+  have hp4 : ∀ y ∈ A, 2 * y > t4 → y < t4 → y = x4 := by
+    intro y hy hby hyt
+    exact hno x4 t4 y hA4 hX4 ho4 hy hby hyt
+  exact no_five_zero_payers hA1 hA3 hA5 ho2 ho4 hp2 hp4
+    ⟨h12, h23, h34, h45⟩ ⟨hX1, hU5⟩
+
+/-- **THE OPTIMIZATION LOWER BOUND.**  Covering plus universal
+ownership force PAYING owners beyond every bound: rich octaves are
+cofinal, and rich octaves cannot be all-zero-payment.  The enemy
+cannot live payment-free — the co-`A` demand cascade is unavoidable,
+completing the payment side of the squeeze.  What remains of the
+classification is only the payment-capacity recursion. -/
+theorem paying_owners_cofinal {A : Set ℕ} [DecidablePred (· ∈ A)]
+    {N₀ Ns : ℕ} (hcov : PairCovers A N₀)
+    (huniv : UniversalOwnership A Ns) :
+    ∀ M, ∃ a t y, M ≤ a ∧ a ∈ A ∧ OwnsTarget A a t ∧
+      y ∈ A ∧ 2 * y > t ∧ y < t ∧ y ≠ a := by
+  intro M
+  obtain ⟨k, hk, hrich⟩ := octave_rich_of_covering hcov (M + Ns)
+  have hpow : M + Ns < 2 ^ k := by
+    have h1 : M + Ns < 2 ^ (M + Ns) := Nat.lt_two_pow_self
+    have h2 : 2 ^ (M + Ns) ≤ 2 ^ k :=
+      Nat.pow_le_pow_right (by norm_num) hk
+    omega
+  have hrich' : 5 ≤ ((Finset.Ioc (2 ^ k) (2 * 2 ^ k)).filter
+      (· ∈ A)).card := by
+    have hpk : (2 : ℕ) ^ (k + 1) = 2 * 2 ^ k := by ring
+    rwa [hpk] at hrich
+  obtain ⟨a, t, y, haA, haX, hown, hyA, hby, hyt, hya⟩ :=
+    paying_owner_in_rich_octave (X := 2 ^ k) huniv (by omega) hrich'
+  exact ⟨a, t, y, by omega, haA, hown, hyA, hby, hyt, hya⟩
 
 end Erdos881
