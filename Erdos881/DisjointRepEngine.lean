@@ -6834,4 +6834,190 @@ theorem injective_pair_flood {A : Set ℕ} {N₀ : ℕ}
       have := hhom l k hlk
       simp [hc, heq.symm] at this
 
+/-- Sorted-index normalization for a three-element set of values of
+a strictly monotone sequence. -/
+lemma sorted_indices_of_card_three {e : ℕ → ℕ} (hmono : StrictMono e)
+    {H : Finset ℕ} (hcard : H.card = 3)
+    (hmem : ∀ h ∈ H, ∃ i, e i = h) :
+    ∃ i j k, i < j ∧ j < k ∧ ({e i, e j, e k} : Finset ℕ) = H := by
+  classical
+  obtain ⟨u, v, w, huv, huw, hvw, hHuvw⟩ := Finset.card_eq_three.1 hcard
+  obtain ⟨iu, hiu⟩ := hmem u (hHuvw ▸ by simp)
+  obtain ⟨iv, hiv⟩ := hmem v (hHuvw ▸ by simp)
+  obtain ⟨iw, hiw⟩ := hmem w (hHuvw ▸ by simp)
+  have hij : iu ≠ iv := fun h => huv (by rw [← hiu, ← hiv, h])
+  have hik : iu ≠ iw := fun h => huw (by rw [← hiu, ← hiw, h])
+  have hjk : iv ≠ iw := fun h => hvw (by rw [← hiv, ← hiw, h])
+  rcases Nat.lt_trichotomy iu iv with h1 | h1 | h1 <;>
+    [skip; exact absurd h1 hij; skip] <;>
+  rcases Nat.lt_trichotomy iv iw with h2 | h2 | h2 <;>
+    [skip; exact absurd h2 hjk; skip; skip; exact absurd h2 hjk; skip] <;>
+  rcases Nat.lt_trichotomy iu iw with h3 | h3 | h3 <;>
+    first
+      | exact absurd h3 hik
+      | (first
+          | exact ⟨iu, iv, iw, h1, h2, by
+              rw [hiu, hiv, hiw, hHuvw]⟩
+          | exact ⟨iu, iw, iv, h3, by omega, by
+              rw [hiu, hiv, hiw, hHuvw]
+              ext z
+              simp
+              tauto⟩
+          | exact ⟨iw, iu, iv, by omega, h1, by
+              rw [hiu, hiv, hiw, hHuvw]
+              ext z
+              simp
+              tauto⟩
+          | exact ⟨iv, iu, iw, by omega, by omega, by
+              rw [hiu, hiv, hiw, hHuvw]
+              ext z
+              simp
+              tauto⟩
+          | exact ⟨iv, iw, iu, h2, by omega, by
+              rw [hiu, hiv, hiw, hHuvw]
+              ext z
+              simp
+              tauto⟩
+          | exact ⟨iw, iv, iu, by omega, by omega, by
+              rw [hiu, hiv, hiw, hHuvw]
+              ext z
+              simp
+              tauto⟩
+          | omega)
+
+/-- **TEAM-CARD ESCALATION, STEP TWO.**  Along any ground stream,
+Ramsey at arities two and three refines to a subsequence that is a
+rep-pair clique, a rep-triple clique, or hub-free at both arities —
+and in the last case every minimal team hub inside it has at least
+FOUR members.  The enemy admits no finite team-size bound that the
+Ramsey ladder cannot outclimb arity by arity. -/
+theorem team_card_escalation_two {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (b : ℕ → ℕ) (hmono : StrictMono b)
+    (hbA : ∀ j, b j ∈ A) (hbpos : ∀ j, 0 < b j) :
+    ∃ f : ℕ → ℕ, StrictMono f ∧
+      ((∀ i j, i < j → ∃ n, N₀ ≤ n ∧
+        IsRepHub A n {b (f i), b (f j)}) ∨
+      (∀ i j k, i < j → j < k → ∃ n, N₀ ≤ n ∧
+        IsRepHub A n {b (f i), b (f j), b (f k)}) ∨
+      (∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+        IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        4 ≤ H.card ∧
+        ∀ h ∈ H, h ∈ Set.range (fun i => b (f i)))) := by
+  classical
+  -- arity two
+  set c₂ : ℕ → ℕ → Bool := fun i j =>
+    if ∃ n, N₀ ≤ n ∧ IsRepHub A n {b i, b j} then true else false
+    with hc₂
+  have hc₂iff : ∀ i j, c₂ i j = true ↔
+      ∃ n, N₀ ≤ n ∧ IsRepHub A n {b i, b j} := by
+    intro i j
+    by_cases h : ∃ n, N₀ ≤ n ∧ IsRepHub A n {b i, b j}
+    · simp [hc₂, h]
+    · simp [hc₂, h]
+  obtain ⟨f₁, hf₁, b₂col, hhom₂⟩ := infinite_ramsey_pairs c₂
+  rcases Bool.eq_false_or_eq_true b₂col with hb₂ | hb₂
+  · -- pair clique
+    subst hb₂
+    exact ⟨f₁, hf₁, Or.inl (fun i j hij =>
+      (hc₂iff (f₁ i) (f₁ j)).1 (hhom₂ i j hij))⟩
+  · subst hb₂
+    -- arity three on the pair-free subsequence
+    set e : ℕ → ℕ := fun i => b (f₁ i) with he
+    have hemono : StrictMono e := fun i j hij => hmono (hf₁ hij)
+    set c₃ : ℕ → ℕ → ℕ → Bool := fun i j k =>
+      if ∃ n, N₀ ≤ n ∧ IsRepHub A n {e i, e j, e k} then true
+      else false with hc₃
+    have hc₃iff : ∀ i j k, c₃ i j k = true ↔
+        ∃ n, N₀ ≤ n ∧ IsRepHub A n {e i, e j, e k} := by
+      intro i j k
+      by_cases h : ∃ n, N₀ ≤ n ∧ IsRepHub A n {e i, e j, e k}
+      · simp [hc₃, h]
+      · simp [hc₃, h]
+    obtain ⟨f₂, hf₂, b₃col, hhom₃⟩ := infinite_ramsey_triples c₃
+    rcases Bool.eq_false_or_eq_true b₃col with hb₃ | hb₃
+    · -- triple clique on the composed subsequence
+      subst hb₃
+      refine ⟨f₁ ∘ f₂, hf₁.comp hf₂, Or.inr (Or.inl ?_)⟩
+      intro i j k hij hjk
+      exact (hc₃iff (f₂ i) (f₂ j) (f₂ k)).1 (hhom₃ i j k hij hjk)
+    · subst hb₃
+      refine ⟨f₁ ∘ f₂, hf₁.comp hf₂, Or.inr (Or.inr ?_)⟩
+      set g : ℕ → ℕ := fun i => b ((f₁ ∘ f₂) i) with hgdef
+      have hgmono : StrictMono g :=
+        fun i j hij => hmono (hf₁ (hf₂ hij))
+      have hBA : Set.range g ⊆ A := by
+        rintro x ⟨i, rfl⟩
+        exact hbA _
+      have hBinf : (Set.range g).Infinite :=
+        Set.infinite_range_of_injective hgmono.injective
+      have h0B : 0 ∉ Set.range g := by
+        rintro ⟨i, hi⟩
+        have h1 : b ((f₁ ∘ f₂) i) = 0 := hi
+        have := hbpos ((f₁ ∘ f₂) i)
+        omega
+      have hteams := guardian_team_hubs_of_deletion h0 hcov hanchor
+        hfail hBA hBinf h0B
+      intro N
+      obtain ⟨n, hn, H, hhub, hminH, hcard2, hHB⟩ := hteams (max N N₀)
+      have hnN₀ : N₀ ≤ n := le_trans (le_max_right _ _) hn
+      refine ⟨n, le_trans (le_max_left _ _) hn, H, hhub, hminH,
+        ?_, hHB⟩
+      rcases Nat.lt_or_ge H.card 4 with hlt | hge
+      · exfalso
+        rcases Nat.lt_or_ge H.card 3 with hlt2 | hge2
+        · -- card 2: pair colour was false
+          have hcard : H.card = 2 := by omega
+          obtain ⟨u, v, huv, hHuv⟩ := Finset.card_eq_two.1 hcard
+          obtain ⟨i, hi⟩ := hHB u (hHuv ▸ Finset.mem_insert_self _ _)
+          obtain ⟨j, hj⟩ := hHB v (hHuv ▸ Finset.mem_insert_of_mem
+            (Finset.mem_singleton_self v))
+          have hi' : b (f₁ (f₂ i)) = u := hi
+          have hj' : b (f₁ (f₂ j)) = v := hj
+          have hij : i ≠ j := by
+            intro h
+            rw [h, hj'] at hi'
+            exact huv hi'.symm
+          have hkill : ∀ i' j', i' < j' →
+              ¬∃ m, N₀ ≤ m ∧
+                IsRepHub A m {b (f₁ i'), b (f₁ j')} := by
+            intro i' j' hij' hex
+            have h1 := (hc₂iff (f₁ i') (f₁ j')).2 hex
+            rw [hhom₂ i' j' hij'] at h1
+            exact Bool.false_ne_true h1
+          rcases Nat.lt_or_ge i j with h' | h'
+          · refine hkill (f₂ i) (f₂ j) (hf₂ h') ⟨n, hnN₀, ?_⟩
+            have hpair : ({b (f₁ (f₂ i)), b (f₁ (f₂ j))} :
+                Finset ℕ) = H := by
+              rw [hi', hj', hHuv]
+            rw [hpair]
+            exact hhub
+          · have h'' : j < i := by omega
+            refine hkill (f₂ j) (f₂ i) (hf₂ h'') ⟨n, hnN₀, ?_⟩
+            have hpair : ({b (f₁ (f₂ j)), b (f₁ (f₂ i))} :
+                Finset ℕ) = H := by
+              rw [hi', hj', hHuv, Finset.pair_comm]
+            rw [hpair]
+            exact hhub
+        · -- card 3: triple colour was false
+          have hcard : H.card = 3 := by omega
+          have hmem : ∀ h ∈ H, ∃ i, g i = h := hHB
+          obtain ⟨i, j, k, hij, hjk, hset⟩ :=
+            sorted_indices_of_card_three hgmono hcard hmem
+          have hkill : ¬∃ m, N₀ ≤ m ∧
+              IsRepHub A m {e (f₂ i), e (f₂ j), e (f₂ k)} := by
+            intro hex
+            have h1 := (hc₃iff (f₂ i) (f₂ j) (f₂ k)).2 hex
+            rw [hhom₃ i j k hij hjk] at h1
+            exact Bool.false_ne_true h1
+          refine hkill ⟨n, hnN₀, ?_⟩
+          have hgg : ∀ l, e (f₂ l) = g l := fun _ => rfl
+          rw [hgg i, hgg j, hgg k, hset]
+          exact hhub
+      · exact hge
+
 end Erdos881
