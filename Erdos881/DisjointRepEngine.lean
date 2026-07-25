@@ -1434,4 +1434,35 @@ theorem service_sums_injective {A : Set ℕ} {b₁ q₁ b₂ q₂ : ℕ}
   · exact hne.1 h1
   · exact hne.2 h1
 
+/-- **Partner service bars the predecessor.**  If the twin service
+sum `b + q - d` has the unique fiber `(b, q - d)` with `q ≠ b`, then
+`b - d ∉ A`: a predecessor would complete `(q, b - d)` into a second
+representation.  With the chain kill this splits every late window:
+partner-served markers are predecessor-free, doubles-served markers
+have predecessors, and no `d`-chain reaches length three.  The
+enemy''s late structure is forced into the exact P/D digit-split the
+Cantor world realizes with digit₁ ∈ {0, 1}. -/
+theorem no_predecessor_of_partner_service {A : Set ℕ} {b q d : ℕ}
+    (hd : 0 < d) (hdb : d ≤ b) (hdq : d ≤ q) (hqb : q ≠ b)
+    (hq : q ∈ A) (hqd : q - d ∈ A)
+    (huniq : ∀ p ∈ A, ∀ r ∈ A, p + r = b + q - d →
+      (p = b ∧ r = q - d) ∨ (p = q - d ∧ r = b)) :
+    b - d ∉ A := by
+  intro hmem
+  rcases huniq q hq (b - d) hmem (by omega) with ⟨h1, h2⟩ | ⟨h1, h2⟩
+  · exact hqb h1
+  · omega
+
+/-- **No chains of length three.**  Two consecutive `d`-steps inside
+`A` put a symmetric pair around the middle element; if the middle is
+doubling-rigid the chain collapses.  Standalone form of the chain
+kill for the structure split. -/
+theorem no_three_chain_of_rigid_middle {A : Set ℕ} {x d : ℕ}
+    (hd : 0 < d)
+    (hx : x ∈ A) (hxu : x + d ∈ A) (hxd : x + 2 * d ∈ A)
+    (hrig : ∀ p ∈ A, ∀ r ∈ A, p + r = 2 * (x + d) → p = x + d ∧ r = x + d) :
+    False := by
+  have := hrig x hx (x + 2 * d) hxd (by ring)
+  omega
+
 end Erdos881
