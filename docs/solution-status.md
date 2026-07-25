@@ -126,6 +126,19 @@ sets repel element translates (`essential_witness_repels_translate`)
 and their witnesses are never elements with two-point supports
 (`escape_vertex_witness`).
 
+## The cross-edge program (next)
+
+The W-aligned enemy's forced families (`anchor_fork_forced`: translates
+`m_k - u - C_u` below every edge top; ladders `L_k ∈ A` with
+`u`-translate exits) live near the partner tops `v_k` — exactly where
+the deserts of the partners' own edges `(v_i, v_j)` sit
+(`IsPairDestroyer.desert`: `A ∩ (m' - v_i, m' - N₀) ⊆ {v_i, v_j}`).
+Every clique pair is simultaneously constrained, so the `(v_i, v_j)`
+targets must dodge windows around every `u`-forced point, for every
+`u` below them, at every scale.  The composition of
+`anchor_fork_forced` with the partners' deserts — quantified over the
+whole clique — is the queued kill for the W-aligned escape.
+
 ## The earlier capstone
 
 `erdos881_interfaces_refute_counterexample` (`Capstone.lean`): the
