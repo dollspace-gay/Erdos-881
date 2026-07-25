@@ -2585,4 +2585,33 @@ theorem OwnsTarget.not_mem {A : Set ℕ} {a n : ℕ}
   rw [hval] at this
   exact this h0
 
+/-- **Ownership is the singleton 2-hub** (up to the midpoint): every
+pair representation of an owned target passes through its owner or
+sits exactly at the half.  The classification wall and the order-2
+rail''s tight singleton case are the same object — the ring of the
+night''s theory closes. -/
+theorem ownsTarget_pairHub {A : Set ℕ} {a n : ℕ}
+    (hown : OwnsTarget A a n) :
+    ∀ x ∈ A, ∀ y ∈ A, x + y = n → x = a ∨ y = a ∨ 2 * x = n := by
+  obtain ⟨h1, h2, h3, h4⟩ := hown
+  intro x hx y hy hxy
+  rcases Nat.lt_trichotomy (2 * x) n with hlt | heq | hgt
+  · -- y is the big side
+    by_cases hya : y = a
+    · exact Or.inr (Or.inl hya)
+    · exfalso
+      have := h4 y hy (by omega) (by omega) hya
+      have hval : n - y = x := by omega
+      rw [hval] at this
+      exact this hx
+  · exact Or.inr (Or.inr heq)
+  · -- x is the big side
+    by_cases hxa : x = a
+    · exact Or.inl hxa
+    · exfalso
+      have := h4 x hx (by omega) (by omega) hxa
+      have hval : n - x = y := by omega
+      rw [hval] at this
+      exact this hy
+
 end Erdos881
