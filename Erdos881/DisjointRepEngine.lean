@@ -831,4 +831,101 @@ theorem team_configuration_minimal_of_hfail {A : Set ℕ} {N₀ : ℕ}
     hH'hub, hH'min, Finset.empty_subset _,
     by simpa using le_trans (Finset.card_le_card hH'sub) hcard⟩
 
+/-- Stable-core descent: either the current core already splits at
+every window, or some window forces the core to grow — and growth is
+budget-bounded. -/
+theorem stable_core_aux {A : Set ℕ} {C : ℕ}
+    (R : ℕ → Finset ℕ → Prop) :
+    ∀ d S,
+    (∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ C ∧ IsRepHub A n H ∧
+      R n H ∧ S ⊆ H ∧ H.card ≤ S.card + d) →
+    ∃ S' : Finset ℕ, S ⊆ S' ∧
+      ∀ W N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ C ∧
+        IsRepHub A n H ∧ R n H ∧ S' ⊆ H ∧
+        ∀ h ∈ H, h ∉ S' → W < h := by
+  classical
+  intro d
+  induction d with
+  | zero =>
+    intro S hfam
+    refine ⟨S, Finset.Subset.refl S, fun W N => ?_⟩
+    obtain ⟨n, hn, H, hcard, hhub, hR, hSH, hbud⟩ := hfam N
+    refine ⟨n, hn, H, hcard, hhub, hR, hSH, fun h hhH hhS => ?_⟩
+    exfalso
+    have hHS : H = S := Finset.Subset.antisymm
+      (by
+        by_contra hns
+        obtain ⟨x, hxH, hxS⟩ := Finset.not_subset.1 hns
+        have h1 : S.card < H.card := Finset.card_lt_card
+          (Finset.ssubset_iff_of_subset hSH |>.2 ⟨x, hxH, hxS⟩)
+        omega) hSH
+    rw [hHS] at hhH
+    exact hhS hhH
+  | succ d ih =>
+    intro S hfam
+    by_cases hstable : ∀ W N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+        H.card ≤ C ∧ IsRepHub A n H ∧ R n H ∧ S ⊆ H ∧
+        ∀ h ∈ H, h ∉ S → W < h
+    · exact ⟨S, Finset.Subset.refl S, hstable⟩
+    · push_neg at hstable
+      obtain ⟨W₁, N₁, hW₁⟩ := hstable
+      rcases cofinal_dichotomy
+        (fun n H' => ∃ H : Finset ℕ, H.card ≤ C ∧ IsRepHub A n H ∧
+          R n H ∧ S ⊆ H ∧ H.card ≤ S.card + (d + 1) ∧ H' = H \ S)
+        (fun N => by
+          obtain ⟨n, hn, H, hcard, hhub, hR, hSH, hbud⟩ := hfam N
+          exact ⟨n, hn, H \ S, H, hcard, hhub, hR, hSH, hbud, rfl⟩) W₁
+        with ⟨h, hhW, hper⟩ | hlarge
+      · -- growth at W₁
+        obtain ⟨S', hS'sub, hS'split⟩ := ih (insert h S) (fun N => by
+          obtain ⟨n, hn, H', ⟨H, hcard, hhub, hR, hSH, hbud, hH'⟩, hhH'⟩ :=
+            hper N
+          subst hH'
+          have hhH : h ∈ H := (Finset.mem_sdiff.1 hhH').1
+          have hhS : h ∉ S := (Finset.mem_sdiff.1 hhH').2
+          refine ⟨n, hn, H, hcard, hhub, hR, ?_, ?_⟩
+          · intro x hx
+            rcases Finset.mem_insert.1 hx with hxh | hxS
+            · rw [hxh]; exact hhH
+            · exact hSH hxS
+          · have : (insert h S).card = S.card + 1 :=
+              Finset.card_insert_of_notMem hhS
+            omega)
+        exact ⟨S', Finset.Subset.trans (Finset.subset_insert h S) hS'sub,
+          hS'split⟩
+      · -- but the right branch contradicts the failing window
+        exfalso
+        obtain ⟨n, hn, H', ⟨H, hcard, hhub, hR, hSH, hbud, hH'⟩, hlargeH⟩ :=
+          hlarge N₁
+        subst hH'
+        obtain ⟨h, hhH, hhS, hhW⟩ := hW₁ n hn H hcard hhub hR hSH
+        have := hlargeH h (Finset.mem_sdiff.2 ⟨hhH, hhS⟩)
+        omega
+
+/-- **THE STABLE CORE.**  A counterexample has one fixed guardian set
+`S*` such that at EVERY window, cofinally many targets carry minimal
+hubs consisting of `S*` plus elements above the window.  The enemy's
+entire order-3 failure concentrates, at all scales simultaneously, on
+a single finite team of guardians and their level-scale escorts. -/
+theorem stable_core_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ K, ∃ S : Finset ℕ, ∀ W N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      H.card ≤ 3 * (K - 1) ∧ IsRepHub A n H ∧
+      (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h := by
+  classical
+  obtain ⟨K, hK⟩ := cofinal_bounded_hubs_of_hfail hcov hfail
+  obtain ⟨S, -, hsplit⟩ := stable_core_aux
+    (A := A) (C := 3 * (K - 1))
+    (R := fun n H => ∀ h ∈ H, ¬IsRepHub A n (H \ {h}))
+    (3 * (K - 1)) ∅ (fun N => by
+      obtain ⟨n, hn, H, hcard, hhub⟩ := hK N
+      obtain ⟨H', hH'sub, hH'hub, hH'min⟩ := exists_minimal_hub hhub
+      exact ⟨n, hn, H', le_trans (Finset.card_le_card hH'sub) hcard,
+        hH'hub, hH'min, Finset.empty_subset _,
+        by simpa using le_trans (Finset.card_le_card hH'sub) hcard⟩)
+  exact ⟨K, S, hsplit⟩
+
 end Erdos881
