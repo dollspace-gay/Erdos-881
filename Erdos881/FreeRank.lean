@@ -551,4 +551,38 @@ theorem no_pool_rank_descent {A : Set ℕ} {N₀ : ℕ}
   exact hempty.false ⟨fun k =>
     ((poolFreeStep_wf h0 hcov hfail (pools k)).apply ∅).rank, hdesc⟩
 
+/-- Rank is monotone under subrelations: shrinking the tree never
+raises a node's rank.  (Not in Mathlib.) -/
+theorem rank_le_of_subrel {α : Type*} {r r' : α → α → Prop}
+    (hsub : ∀ ⦃x y⦄, r' x y → r x y) :
+    ∀ {a : α} (h : Acc r a) (h' : Acc r' a), h'.rank ≤ h.rank := by
+  intro a h
+  induction h with
+  | intro a ha ih =>
+    intro h'
+    rw [Acc.rank_eq, Acc.rank_eq]
+    apply Ordinal.iSup_le
+    rintro ⟨b, hb'⟩
+    have hb : r b a := hsub hb'
+    have h1 := ih b hb (h'.inv hb')
+    calc Order.succ ((h'.inv hb').rank)
+        ≤ Order.succ ((ha b hb).rank) := Order.succ_le_succ h1
+      _ ≤ _ := Ordinal.le_iSup
+          (fun c : {c // r c a} => Order.succ ((ha c.1 c.2).rank))
+          (⟨b, hb⟩ : {c // r c a})
+
+/-- **Pool ranks are monotone.**  A sub-pool's tree is a subtree,
+so its root rank never exceeds the larger pool's.  The reduction's
+open question is exactly: which verified pool operation makes this
+inequality STRICT along its own iterates? -/
+theorem pool_rank_mono {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {P₀ P₀' : Set ℕ} (hsub : P₀' ⊆ P₀) :
+    ((poolFreeStep_wf h0 hcov hfail P₀').apply ∅).rank ≤
+    ((poolFreeStep_wf h0 hcov hfail P₀).apply ∅).rank :=
+  rank_le_of_subrel
+    (fun _ _ h => ⟨h.1, fun a ha => hsub (h.2 a ha)⟩) _ _
+
 end Erdos881
