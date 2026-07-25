@@ -5359,4 +5359,74 @@ theorem rep_flood_of_hfail {A : Set ℕ} {N₀ : ℕ}
   | 1 => exact ⟨hy, havoid y (by omega) hyP⟩
   | 2 => exact ⟨hz, havoid z (by omega) hzP⟩
 
+/-- The rep flood with minimal hubs: the rotator is always necessary
+— the free envelope''s surviving representation can only be hit at
+`b`, so `b` sits in every minimalization. -/
+theorem rep_flood_minimal_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ P : Finset ℕ, RepFree A N₀ P ∧ ∀ X, ∃ b, b ∈ A ∧ X ≤ b ∧
+      ∃ m, N₀ ≤ m ∧ b ≤ m ∧ ∃ H : Finset ℕ, IsRepHub A m H ∧
+        (∀ h ∈ H, ¬IsRepHub A m (H \ {h})) ∧ b ∈ H ∧
+        ∀ h ∈ H, h ∈ P ∨ h = b := by
+  classical
+  obtain ⟨P, hPfree, X₀, hflood⟩ := rep_flood_of_hfail h0 hcov hfail
+  refine ⟨P, hPfree, fun X => ?_⟩
+  obtain ⟨b, hbA, hXb⟩ := pairCovers_unbounded hcov (max X X₀)
+  obtain ⟨m, hmN, hbm, hhub⟩ := hflood b hbA
+    (le_trans (le_max_right _ _) hXb)
+  obtain ⟨H', hH'sub, hH'hub, hH'min⟩ := exists_minimal_hub hhub
+  have hbH' : b ∈ H' := by
+    obtain ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩ := hPfree m hmN
+    rcases hH'hub x hx y hy z hz hxyz with h' | h' | h'
+    · rcases Finset.mem_insert.1 (hH'sub h') with h'' | h''
+      · exact h'' ▸ h'
+      · exact absurd h'' hxP
+    · rcases Finset.mem_insert.1 (hH'sub h') with h'' | h''
+      · exact h'' ▸ h'
+      · exact absurd h'' hyP
+    · rcases Finset.mem_insert.1 (hH'sub h') with h'' | h''
+      · exact h'' ▸ h'
+      · exact absurd h'' hzP
+  refine ⟨b, hbA, le_trans (le_max_left _ _) hXb, m, hmN, hbm,
+    H', hH'hub, hH'min, hbH', ?_⟩
+  intro h hh
+  rcases Finset.mem_insert.1 (hH'sub hh) with h' | h'
+  · exact Or.inr h'
+  · exact Or.inl h'
+
+/-- **THE CANONICAL FLOOD, UNCONDITIONAL.**  The full canonical
+configuration, derived end to end: a counterexample has ONE
+NONEMPTY fixed core `S*` and cofinally many rotating guardians `b`
+whose minimal order-3 hubs are EXACTLY `S* ∪ {b}`.  The envelope
+comes from the rep dodge, exactness from the subset pigeonhole,
+necessity of `b` from the envelope''s freeness, and the nonempty
+core from the private-stream kill.  Interfaces: covering, `0 ∈ A`,
+and the anchor supply — nothing else. -/
+theorem canonical_flood_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ S : Finset ℕ, S.Nonempty ∧
+      ∀ X, ∃ b, b ∈ A ∧ X ≤ b ∧ b ∉ S ∧
+        ∃ m, N₀ ≤ m ∧ ∃ H : Finset ℕ, IsRepHub A m H ∧
+          (∀ h ∈ H, ¬IsRepHub A m (H \ {h})) ∧
+          H = insert b S := by
+  classical
+  obtain ⟨P, hPfree, hstream⟩ := rep_flood_minimal_of_hfail h0 hcov hfail
+  have hflood : ∀ X, ∃ b, b ∈ A ∧ X ≤ b ∧
+      ∃ m, N₀ ≤ m ∧ ∃ H : Finset ℕ, IsRepHub A m H ∧
+        (∀ h ∈ H, ¬IsRepHub A m (H \ {h})) ∧ b ∈ H ∧
+        ∀ h ∈ H, h ∈ P ∨ h = b := by
+    intro X
+    obtain ⟨b, hbA, hXb, m, hmN, hbm, H, hhub, hmin, hbH, hsub⟩ :=
+      hstream X
+    exact ⟨b, hbA, hXb, m, hmN, H, hhub, hmin, hbH, hsub⟩
+  obtain ⟨S, hSP, hSne, hcanon⟩ :=
+    flood_canonical h0 hcov hanchor hfail hflood
+  exact ⟨S, hSne, hcanon⟩
+
 end Erdos881
