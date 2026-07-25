@@ -328,4 +328,192 @@ theorem surviving_deletion_of_flooredQuadDefects
     · exact ⟨x, hx, y, hy, 0, h0, hxB, hyB, h0B, by omega⟩
 
 
+theorem surviving_deletion_of_nonessential_edges
+    {A : Set ℕ} {N₀ N₁ u c : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hred : TwoRedundant A u N₁)
+    (hprim : ∃ s ∈ A, ∃ t ∈ A, s + t = u ∧ s ≠ u ∧ t ≠ u)
+    (hu0 : 0 < u)
+    (hsupply : ∀ K, ∃ v m, K < v ∧ u < v ∧ v ≤ m ∧
+      IsPairDestroyer A u v m)
+    (hc : c ∈ A) (h2c : 2 * c ∈ A) (hc0 : 0 < c)
+    (hcN : N₁ ≤ c) (hcu : c ≠ u) (h2cu : 2 * c ≠ u) :
+    ∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n := by
+  classical
+  choose pv pm hpK hpu hpvm hpdes using hsupply
+  set b : ℕ → ℕ := fun x =>
+    200 * (x + c + u + N₀ + N₁ + 3) with hb
+  set κ : ℕ → ℕ := fun k =>
+    Nat.rec (u + c + N₀ + N₁ + 1)
+      (fun _ p => pm (b p) - pv (b p)) k with hκ
+  set L : ℕ → ℕ := fun k => κ (k + 1) with hLdef
+  have hLeq : ∀ k, L k = pm (b (κ k)) - pv (b (κ k)) := fun _ => rfl
+  have hstep : ∀ k, 2 * κ k + 2 * c + 2 < L k ∧ L k ∈ A ∧
+      u < L k ∧
+      u < pv (b (κ k)) ∧ pv (b (κ k)) ≤ pm (b (κ k)) ∧
+      200 * (κ k + c + u + N₀ + N₁ + 3) < pv (b (κ k)) ∧
+      ∀ z ∈ A, (z = 0 ∨ N₁ ≤ z) → z ≠ u → z ≠ pv (b (κ k)) →
+        z ≠ pm (b (κ k)) - 2 * u →
+        z ≠ pm (b (κ k)) - u - pv (b (κ k)) →
+        z + N₀ + u < pv (b (κ k)) - u → L k - z ∈ A := by
+    intro k
+    have h1 := hpK (b (κ k))
+    have h2 := hpu (b (κ k))
+    have h3 := hpvm (b (κ k))
+    have h5 := hpdes (b (κ k))
+    have hbk : b (κ k) = 200 * (κ k + c + u + N₀ + N₁ + 3) := rfl
+    have h1' : 200 * (κ k + c + u + N₀ + N₁ + 3) < pv (b (κ k)) :=
+      lt_of_eq_of_lt hbk.symm h1
+    have hlow : ¬ (100 * ((pm (b (κ k)) - pv (b (κ k))) +
+        u + N₀ + N₁ + 3) ≤ pv (b (κ k))) :=
+      fun h => h5.level_lower_of_redundant' hcov hred hu0 h2 h3 h
+    have hLk : L k = pm (b (κ k)) - pv (b (κ k)) := hLeq k
+    have hLbig : 2 * κ k + 2 * c + 2 < L k := by
+      rw [hLk]; omega
+    have hLu : u < L k := by rw [hLk]; omega
+    have hLu' : u < pm (b (κ k)) - pv (b (κ k)) := by
+      have h := hLu
+      rw [hLk] at h
+      exact h
+    have hd1 : pm (b (κ k)) ≠ 2 * u := by omega
+    have hd2 : pm (b (κ k)) ≠ u + pv (b (κ k)) := by omega
+    refine ⟨hLbig, ?_, hLu, h2, h3, h1', ?_⟩
+    · rw [hLk]
+      have hcor := h5.redundant_edge_mirror'' h0 hcov hred hprim h2 h3
+        h0 (by omega) (Or.inl rfl) (by omega) (by omega) (by omega)
+      simpa using hcor
+    · intro z hz hzfl hzu hzv hzd1 hzd2 hzw
+      rw [hLk]
+      exact h5.redundant_edge_mirror'' h0 hcov hred hprim h2 h3
+        hz hzu (by omega) (by omega) (by omega) (by omega)
+  have hκmono : ∀ k, κ k < κ (k + 1) := by
+    intro k
+    have h1 := (hstep k).1
+    have h2 : L k = κ (k + 1) := rfl
+    omega
+  have hκK₀ : ∀ k, u + c + N₀ + N₁ + 1 ≤ κ k := by
+    intro k
+    induction k with
+    | zero => exact le_refl _
+    | succ k ih => have := hκmono k; omega
+  have hgrow : ∀ k, 2 * L k < L (k + 1) := by
+    intro k
+    have h1 := (hstep (k + 1)).1
+    have h2 : κ (k + 1) = L k := rfl
+    omega
+  have hmono : StrictMono L := by
+    apply strictMono_nat_of_lt_succ
+    intro k
+    have h1 := hgrow k
+    have h2 := (hstep k).1
+    omega
+  have hκle : ∀ i₂ i₁, i₁ ≤ i₂ → κ i₁ ≤ κ i₂ := by
+    intro i₂
+    induction i₂ with
+    | zero =>
+        intro i₁ h
+        have h0' : i₁ = 0 := by omega
+        subst h0'
+        exact le_refl _
+    | succ i₂ ih =>
+        intro i₁ h
+        rcases Nat.lt_or_ge i₁ (i₂ + 1) with h' | h'
+        · have hm := hκmono i₂
+          have h2 := ih i₁ (by omega)
+          omega
+        · have he : i₁ = i₂ + 1 := by omega
+          subst he
+          exact le_refl _
+  have hLκ : ∀ j k, j < k → L j ≤ κ k := by
+    intro j k hjk
+    have h1 : L j = κ (j + 1) := rfl
+    have := hκle k (j + 1) (by omega)
+    omega
+  have hvbig : ∀ k,
+      200 * (κ k + c + u + N₀ + N₁ + 3) < pv (b (κ k)) :=
+    fun k => (hstep k).2.2.2.2.2.1
+  refine surviving_deletion_of_flooredQuadDefects (F := N₁) L
+    (fun k => pv (b (κ k)) - u - u - N₀)
+    (fun _ => u) (fun k => pv (b (κ k)))
+    (fun k => pm (b (κ k)) - 2 * u)
+    (fun k => pm (b (κ k)) - u - pv (b (κ k)))
+    h0 hcov hmono ?_
+    (fun k => (hstep k).2.1) hgrow hc hc0 ?_ hcN ?_
+    (Or.inl rfl) (Or.inr (by omega)) ?_ ?_
+    h0 h2c (by omega) (by omega) ?_ ?_ ?_ ?_
+  · intro k z hz hzfl hz1 hz2 hz3 hz4 hzW
+    have h := (hstep k).2.2.2.2.2.2 z hz hzfl hz1 hz2 hz3 hz4
+    have hW : z + N₀ + u < pv (b (κ k)) - u := by
+      show z + N₀ + u < pv (b (κ k)) - u
+      have h1 := hvbig k
+      have hzW' : z + N₀ < pv (b (κ k)) - u - u - N₀ := hzW
+      omega
+    exact h hW
+  · have h1 := (hstep 0).1
+    have h2 := hκK₀ 0
+    omega
+  · have h1 := (hstep 0).1
+    have h2 := hκK₀ 0
+    show N₁ ≤ L 0
+    omega
+  · intro k
+    have h1 := hvbig k
+    show 2 * c + N₀ < pv (b (κ k)) - u - u - N₀
+    omega
+  · intro j k hjk
+    have h1 := hvbig k
+    have h3 := hLκ j k hjk
+    show L j + N₀ < pv (b (κ k)) - u - u - N₀
+    omega
+  · intro k
+    have h1 := hvbig k
+    have h2 := (hstep k).2.2.2.1
+    have h3 := (hstep k).2.2.2.2.1
+    have h5 := (hstep k).1
+    have h6 := hLeq k
+    have h7 := hκK₀ k
+    show c ≠ u ∧ c ≠ pv (b (κ k)) ∧
+      c ≠ pm (b (κ k)) - 2 * u ∧
+      c ≠ pm (b (κ k)) - u - pv (b (κ k))
+    exact ⟨hcu, by omega, by omega, by omega⟩
+  · intro k
+    have h1 := hvbig k
+    have h2 := (hstep k).2.2.2.1
+    have h3 := (hstep k).2.2.2.2.1
+    have h5 := (hstep k).1
+    have h6 := hLeq k
+    have h7 := hκK₀ k
+    show (0 : ℕ) ≠ u ∧ (0 : ℕ) ≠ pv (b (κ k)) ∧
+      (0 : ℕ) ≠ pm (b (κ k)) - 2 * u ∧
+      (0 : ℕ) ≠ pm (b (κ k)) - u - pv (b (κ k))
+    exact ⟨by omega, by omega, by omega, by omega⟩
+  · intro k
+    have h1 := hvbig k
+    have h2 := (hstep k).2.2.2.1
+    have h3 := (hstep k).2.2.2.2.1
+    have h5 := (hstep k).1
+    have h6 := hLeq k
+    have h7 := hκK₀ k
+    show 2 * c ≠ u ∧ 2 * c ≠ pv (b (κ k)) ∧
+      2 * c ≠ pm (b (κ k)) - 2 * u ∧
+      2 * c ≠ pm (b (κ k)) - u - pv (b (κ k))
+    exact ⟨h2cu, by omega, by omega, by omega⟩
+  · intro j k hjk
+    have h1 := hvbig k
+    have h2 := (hstep k).2.2.2.1
+    have h3 := (hstep k).2.2.2.2.1
+    have h5 := (hstep k).1
+    have h6 := hLeq k
+    have h7 := hLκ j k hjk
+    have h8 := (hstep j).1
+    have h9 := hκK₀ j
+    have h10 := (hstep j).2.2.1
+    show L j ≠ u ∧ L j ≠ pv (b (κ k)) ∧
+      L j ≠ pm (b (κ k)) - 2 * u ∧
+      L j ≠ pm (b (κ k)) - u - pv (b (κ k))
+    exact ⟨by omega, by omega, by omega, by omega⟩
+
+
 end Erdos881
