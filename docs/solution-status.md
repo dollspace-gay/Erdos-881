@@ -1,3 +1,40 @@
+# Erdős 881 (k=2) — Campaign State
+_Last full update: 2026-07-25 04:00 (the 12-hour session)_
+
+## CURRENT STATE, ONE SCREEN
+
+**The problem**: must a minimal order-2 basis contain an infinite
+subset whose deletion leaves an order-3 basis? The campaign mines a
+hypothetical counterexample for contradictions.
+
+**Verified tonight (~70 theorems, zero sorries, standard axioms)**:
+- The Cantor instance: a concrete minimal order-2 basis satisfying
+  the conclusion (carry-repair), with THE FIXED POINT
+  co-C = Sieve(C) proven as one iff.
+- The canonical enemy: from raw hypotheses, every counterexample
+  has canonical hub structure at both orders (two rails), a stable
+  guardian core, canonical cardinality, the P/D digit-split with
+  bipartite service, the payment theorems (no scale is
+  payment-free), and the per-deletion capstone (prefix guardians
+  or stream-killed singletons).
+- The forest/tower theory: ownership calculus, star/edge/sieve
+  exclusion laws, block domination, base-3 as the moat's own
+  constant, corrected covering (the recursion's inheritance), the
+  pool-restricted engine (moduli by descent).
+
+**The single remaining wall**: rails ⟹ universal doubling
+rigidity (the dodge-vs-richness dichotomy), then rigidity's local
+determination (lab: rigidity collapses the alternate space 16,861
+→ 26; rigid radius-2 sweep pending), then the verified
+carry-repair closes.
+
+**Dead routes (proven/measured, do not revisit)**: image-only
+matching (parity/Behrend dodges), pure counting telescopes (co-A
+reuse), single-window kernels (enumerated), local determination
+without rigidity (three ways).
+
+---
+
 # Erdős 881 (k = 2): solution status
 
 *Updated 2026-07-24, overnight campaign. VERIFIED = machine-checked in
