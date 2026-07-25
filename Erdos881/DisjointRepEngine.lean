@@ -1049,4 +1049,56 @@ theorem stable_core_card_of_hfail {A : Set ℕ} {N₀ : ℕ}
     exact Finset.le_sup (Finset.mem_range.2 (by omega))
   exact hgW c hc (hdown (gW c) WS c h2 hgood)
 
+/-- Tight core: when the canonical cardinality equals the core size,
+the hubs ARE the core — one fixed finite team hits every 3-rep of
+cofinally many targets. -/
+theorem recurring_team_of_tight_core {A : Set ℕ} {S : Finset ℕ} {c : ℕ}
+    (hsplit : ∀ W N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      H.card = c ∧ IsRepHub A n H ∧
+      (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h)
+    (hceq : c = S.card) :
+    ∀ N, ∃ n, N ≤ n ∧ IsRepHub A n S := by
+  intro N
+  obtain ⟨n, hn, H, hcard, hhub, hmin, hSH, hrest⟩ := hsplit 0 N
+  have hHS : S = H := Finset.eq_of_subset_of_card_le hSH (by omega)
+  rw [← hHS] at hhub
+  exact ⟨n, hn, hhub⟩
+
+/-- **The hub endgame.**  Full assembly of tonight's first-principles
+chain: under the counterexample interfaces there exist a fixed
+guardian core `S`, a fixed hub cardinality `c ≥ 2` with
+`S.card ≤ c`, such that at every window cofinally many targets carry
+minimal hubs of size exactly `c` containing `S` with everything else
+above the window — and if the core is tight (`c = S.card`), one fixed
+finite team `S` hubs cofinally many targets outright.  The enemy's
+shape is canonical; the branches are: tight team (fixed-pair pipeline
+for `c = 2`, team machinery for `c ≥ 3`) or genuine level-scale
+escorts (counting-vise territory, with the order-2 shadow when
+`S = ∅`). -/
+theorem hub_endgame_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hdb : {c | c ∈ A ∧ 2 * c ∈ A ∧ 0 < c}.Infinite)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ K S c, c ≤ 3 * (K - 1) ∧ 2 ≤ c ∧ S.card ≤ c ∧
+      (∀ W N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+        H.card = c ∧ IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h) ∧
+      (c = S.card → ∀ N, ∃ n, N ≤ n ∧ IsRepHub A n S) := by
+  obtain ⟨K, S, c, hcK, hsplit⟩ := stable_core_card_of_hfail hcov hfail
+  obtain ⟨N₂, hN₂⟩ := hub_card_ge_two_of_hfail h0 hcov hdb hanchor hfail
+  obtain ⟨n, hn, H, hcard, hhub, hmin, hSH, hrest⟩ := hsplit 0 N₂
+  have hc2 : 2 ≤ c := by
+    have := hN₂ n hn H hhub
+    omega
+  have hSc : S.card ≤ c := by
+    have := Finset.card_le_card hSH
+    omega
+  exact ⟨K, S, c, hcK, hc2, hSc, hsplit,
+    fun hceq => recurring_team_of_tight_core hsplit hceq⟩
+
 end Erdos881
