@@ -788,4 +788,96 @@ theorem rank_ge_imp_free_set {A : Set ℕ} {N₀ : ℕ}
       rw [Finset.card_insert_of_notMem hbP]
     exact ⟨Q, hQnode, hQpool, by omega⟩
 
+/-- Hub-freeness of a set is exactly rep-freeness: `S` is rep-free
+iff no late target has `S` as a full hub. -/
+theorem repFree_iff_no_hub {A : Set ℕ} {N₀ : ℕ} {S : Finset ℕ} :
+    RepFree A N₀ S ↔ ¬∃ m, N₀ ≤ m ∧ IsRepHub A m S := by
+  constructor
+  · rintro hfree ⟨m, hm, hhub⟩
+    obtain ⟨x, hx, y, hy, z, hz, hs, hxS, hyS, hzS⟩ := hfree m hm
+    rcases hhub x hx y hy z hz hs with h | h | h
+    · exact hxS h
+    · exact hyS h
+    · exact hzS h
+  · intro hno m hm
+    by_contra hall
+    push_neg at hall
+    refine hno ⟨m, hm, ?_⟩
+    intro x hx y hy z hz hs
+    by_contra hmiss
+    push_neg at hmiss
+    obtain ⟨h1, h2, h3⟩ := hmiss
+    exact h3 (hall x hx y hy z hz hs h1 h2)
+
+/-- **The ladder certifies rank.**  Along any ground stream inside
+a pool, the escalation either produces a clique (arity two or
+three) or hands the pool tree a rank certificate: a hub-free triple
+is a free 3-set, so the root rank is at least 3.  Every further
+Ramsey rung raises the certificate by one; low-rank pools force
+cliques at low arity. -/
+theorem escalation_rank_certificate {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {P₀ : Set ℕ}
+    (b : ℕ → ℕ) (hmono : StrictMono b)
+    (hbA : ∀ j, b j ∈ A) (hbpos : ∀ j, 0 < b j)
+    (hbpool : ∀ j, b j ∈ P₀) :
+    ∃ f : ℕ → ℕ, StrictMono f ∧
+      ((∀ i j, i < j → ∃ n, N₀ ≤ n ∧
+        IsRepHub A n {b (f i), b (f j)}) ∨
+      (∀ i j k, i < j → j < k → ∃ n, N₀ ≤ n ∧
+        IsRepHub A n {b (f i), b (f j), b (f k)}) ∨
+      (3 : Ordinal.{0}) ≤
+        ((poolFreeStep_wf h0 hcov hfail P₀).apply ∅).rank) := by
+  classical
+  obtain ⟨f, hf, hout⟩ := team_card_escalation_two' h0 hcov hanchor
+    hfail b hmono hbA hbpos
+  rcases hout with hcl | ⟨-, hcl⟩ | ⟨-, htf, -⟩
+  · exact ⟨f, hf, Or.inl hcl⟩
+  · exact ⟨f, hf, Or.inr (Or.inl hcl)⟩
+  · refine ⟨f, hf, Or.inr (Or.inr ?_)⟩
+    set S : Finset ℕ := {b (f 0), b (f 1), b (f 2)} with hS
+    have h01 : b (f 0) < b (f 1) := hmono (hf (by omega))
+    have h12 : b (f 1) < b (f 2) := hmono (hf (by omega))
+    have hSfree : RepFree A N₀ S :=
+      repFree_iff_no_hub.2 (htf 0 1 2 (by omega) (by omega))
+    have hSnode : FreeNode A N₀ S := by
+      refine ⟨?_, hSfree⟩
+      intro h hh
+      rw [hS] at hh
+      rcases Finset.mem_insert.1 hh with h' | h'
+      · rw [h']
+        exact ⟨hbA _, hbpos _⟩
+      rcases Finset.mem_insert.1 h' with h'' | h''
+      · rw [h'']
+        exact ⟨hbA _, hbpos _⟩
+      · rw [Finset.mem_singleton.1 h'']
+        exact ⟨hbA _, hbpos _⟩
+    have hSpool : ∀ h ∈ S, h ∈ P₀ := by
+      intro h hh
+      rw [hS] at hh
+      rcases Finset.mem_insert.1 hh with h' | h'
+      · rw [h']
+        exact hbpool _
+      rcases Finset.mem_insert.1 h' with h'' | h''
+      · rw [h'']
+        exact hbpool _
+      · rw [Finset.mem_singleton.1 h'']
+        exact hbpool _
+    have hScard : S.card = 3 := by
+      rw [hS, Finset.card_insert_of_notMem (by
+          simp only [Finset.mem_insert, Finset.mem_singleton]
+          push_neg
+          omega),
+        Finset.card_insert_of_notMem (by
+          simp only [Finset.mem_singleton]
+          omega),
+        Finset.card_singleton]
+    have := free_set_card_le_rank h0 hcov hfail hSnode hSpool
+    rw [hScard] at this
+    exact_mod_cast this
+
 end Erdos881
