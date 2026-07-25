@@ -159,4 +159,40 @@ theorem exists_strict_rank {A : Set ℕ} {N₀ : ℕ}
   exact ⟨fun P => (hwf.apply P).rank,
     fun P Q h => Acc.rank_lt_of_rel (hwf.apply P) h⟩
 
+/-- **The leaf law.**  For a free node `P` and an admissible new
+element `b`, the extension `P ∪ {b}` leaves the tree EXACTLY when
+`b` completes a rep hub over `P` at some late target: the boundary
+of the freeness tree consists precisely of the flood's hubs.  Rank
+measures distance to the hub boundary. -/
+theorem freeNode_extension_iff {A : Set ℕ} {N₀ : ℕ} {P : Finset ℕ}
+    {b : ℕ} (hP : FreeNode A N₀ P) (hbA : b ∈ A) (hbpos : 0 < b) :
+    ¬FreeNode A N₀ (insert b P) ↔
+      ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b P) := by
+  have hposins : ∀ h ∈ insert b P, h ∈ A ∧ 0 < h := by
+    intro h hh
+    rcases Finset.mem_insert.1 hh with h' | h'
+    · rw [h']
+      exact ⟨hbA, hbpos⟩
+    · exact hP.1 h h'
+  constructor
+  · intro hnot
+    have hnotfree : ¬RepFree A N₀ (insert b P) := by
+      intro hfree
+      exact hnot ⟨hposins, hfree⟩
+    rw [RepFree] at hnotfree
+    push_neg at hnotfree
+    obtain ⟨m, hm, hall⟩ := hnotfree
+    refine ⟨m, hm, ?_⟩
+    intro x hx y hy z hz hsum
+    by_contra hmiss
+    push_neg at hmiss
+    obtain ⟨hxm, hym, hzm⟩ := hmiss
+    exact hzm (hall x hx y hy z hz hsum hxm hym)
+  · rintro ⟨m, hm, hhub⟩ ⟨-, hfree⟩
+    obtain ⟨x, hx, y, hy, z, hz, hsum, hxP, hyP, hzP⟩ := hfree m hm
+    rcases hhub x hx y hy z hz hsum with h | h | h
+    · exact hxP h
+    · exact hyP h
+    · exact hzP h
+
 end Erdos881
