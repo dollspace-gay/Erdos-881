@@ -3402,12 +3402,12 @@ theorem fails_iff_hub_subset {A B : Set ℕ} {n : ℕ}
     · exact Or.inr (Or.inl (hHB y h))
     · exact Or.inr (Or.inr (hHB z h))
 
-/-- **DODGE OR TRAP.**  Either some finite prefix traps every late
-element (each completes a hub over the prefix), or the recursive
-dodge builds an infinite deletion containing no nonempty hub — and
-then no covered target ever fails.  A counterexample MUST trap:
-`hfail` reduces to one finite-prefix statement about the enemy's
-hub hypergraph. -/
+/-- **DODGE OR TRAP.**  CAUTION (2026-07-25 audit): this conclusion
+is TRIVIALLY SATISFIABLE without `hfail` — see
+`trap_conclusion_trivial` (junk envelope `A ∩ [0, N0]`).  Kept for
+the historical record; the SOUND replacements are the flood
+theorems (`rep_flood_of_hfail` etc.), whose stalled envelope
+carries the freeness certificate this statement lacks. -/
 theorem dodge_or_trap {A : Set ℕ} {N0 : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N0)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -3724,8 +3724,9 @@ theorem dodge_or_trap_pool {P A : Set ℕ} {N0 : ℕ}
   exact hinv J ⟨n, hnN, H, hhub, hHne, hHsub⟩
 
 
-/-- Level extractor: above any threshold, a counterexample yields a
-trap living entirely above that threshold. -/
+/-- Level extractor.  CAUTION (2026-07-25 audit): junk-satisfiable
+without `hfail` via the interval escape (`tower_branch_trivial`);
+see the flood theorems for the sound form. -/
 theorem trap_level {A : Set ℕ} {N0 : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N0)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -3749,12 +3750,11 @@ theorem trap_level {A : Set ℕ} {N0 : ℕ}
   exact htrap a ⟨ha, le_trans (le_max_right _ _) hXa⟩
     (le_trans (le_max_left _ _) hXa)
 
-/-- **THE TRAP TOWER.**  A counterexample carries an infinite tower
-of pairwise-separated finite traps: at every level a finite set
-`F i`, entirely above the previous level''s data, such that every
-element of `A` beyond the level threshold completes a hub over
-`F i`.  The enemy''s unavoidability stratifies into disjoint finite
-stages — the transversal analysis across stages is next. -/
+/-- **THE TRAP TOWER.**  CAUTION (2026-07-25 audit): the tower
+statement is junk-satisfiable without `hfail` (`tower_branch_trivial`
+— every representation of `n ≥ 3Y` carries a part `≥ Y`).  Kept for
+the record; content requires hub-cardinality bounds or the freeness
+certificate of the flood theorems. -/
 theorem trap_tower {A : Set ℕ} {N0 : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N0)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -3796,7 +3796,11 @@ derived) — or THE TOWER TEAMS — at every level a repful minimal
 nonempty hub inside that level''s finite trap, with targets marching
 to infinity (fixed-finite-team supply at all scales, derived).  The
 two long-assumed configurations of the campaign are now exhaustive
-and unconditional. -/
+and unconditional.  CAUTION (2026-07-25 audit): the TOWER branch of
+this disjunction is junk-satisfiable (`tower_branch_trivial`), so
+this dichotomy proves nothing when the flood branch fails; the
+sound successor is `stable_core_trichotomy` and, stronger, the
+unconditional `canonical_flood_pos_of_hfail`. -/
 theorem grand_dichotomy {A : Set ℕ} {N0 : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N0)
     (hfail : ∀ B ⊆ A, B.Infinite →
