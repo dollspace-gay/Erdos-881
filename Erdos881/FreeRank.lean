@@ -375,4 +375,142 @@ theorem root_rank_dichotomy (A : Set ℕ) (N₀ : ℕ) :
     obtain ⟨hxm, hym, hzm⟩ := hmiss
     exact hzm (hall x hx y hy z hz hsum hxm hym)
 
+/-- Pair-freeness node: order-2 version, for arbitrary minimal
+bases. -/
+def PairFreeNode (A : Set ℕ) (N₀ : ℕ) (P : Finset ℕ) : Prop :=
+  (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧ PairFree A N₀ P
+
+/-- Pair-freeness tree step. -/
+def PairFreeStep (A : Set ℕ) (N₀ : ℕ) (Q P : Finset ℕ) : Prop :=
+  PairFreeNode A N₀ P ∧ PairFreeNode A N₀ Q ∧
+  ∃ b, b ∈ A ∧ 0 < b ∧ (∀ h ∈ P, h < b) ∧ Q = insert b P
+
+/-- Pair-freeness is downward closed. -/
+theorem PairFree.mono {A : Set ℕ} {N₀ : ℕ} {P P' : Finset ℕ}
+    (hsub : P' ⊆ P) (hfree : PairFree A N₀ P) :
+    PairFree A N₀ P' := by
+  intro m hm
+  obtain ⟨x, hx, y, hy, hs, hxP, hyP⟩ := hfree m hm
+  exact ⟨x, hx, y, hy, hs, fun h => hxP (hsub h),
+    fun h => hyP (hsub h)⟩
+
+/-- **Every ℵ₀-minimal basis carries a well-founded pair-freeness
+tree** — no counterexample hypothesis anywhere.  Its ordinal rank
+is a new invariant of minimal bases. -/
+theorem pairFreeStep_wf {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hmin : ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) :
+    WellFounded (PairFreeStep A N₀) := by
+  classical
+  rw [wellFounded_iff_isEmpty_descending_chain]
+  constructor
+  rintro ⟨f, hf⟩
+  have hb : ∀ n, ∃ b, b ∈ A ∧ 0 < b ∧ (∀ h ∈ f n, h < b) ∧
+      f (n + 1) = insert b (f n) := fun n => (hf n).2.2
+  choose b hbA hbpos hbmax hbins using hb
+  have hbmem : ∀ n, b n ∈ f (n + 1) := by
+    intro n
+    rw [hbins n]
+    exact Finset.mem_insert_self _ _
+  have hbstep : ∀ n, b n < b (n + 1) := fun n =>
+    hbmax (n + 1) (b n) (hbmem n)
+  have hbmono : StrictMono b := strictMono_nat_of_lt_succ hbstep
+  set k₀ := (f 0).card with hk₀
+  set emb := (f 0).orderEmbOfFin rfl with hemb
+  set e : ℕ → ℕ := fun j =>
+    if h : j < k₀ then emb ⟨j, h⟩ else b (j - k₀) with he
+  have heval_lo : ∀ j (h : j < k₀), e j = emb ⟨j, h⟩ := by
+    intro j h
+    simp [he, h]
+  have heval_hi : ∀ j, k₀ ≤ j → e j = b (j - k₀) := by
+    intro j h
+    have h' : ¬j < k₀ := by omega
+    simp [he, h']
+  have hembf : ∀ (i : Fin k₀), emb i ∈ f 0 :=
+    fun i => (f 0).orderEmbOfFin_mem rfl i
+  have hb0big : ∀ x ∈ f 0, x < b 0 := hbmax 0
+  have hemono : StrictMono e := by
+    intro i j hij
+    rcases Nat.lt_or_ge j k₀ with hj | hj
+    · have hi : i < k₀ := by omega
+      rw [heval_lo i hi, heval_lo j hj]
+      exact emb.strictMono (by exact Fin.mk_lt_mk.2 hij)
+    · rcases Nat.lt_or_ge i k₀ with hi | hi
+      · rw [heval_lo i hi, heval_hi j hj]
+        have h1 : emb ⟨i, hi⟩ < b 0 := hb0big _ (hembf _)
+        have h2 : b 0 ≤ b (j - k₀) := hbmono.monotone (Nat.zero_le _)
+        omega
+      · rw [heval_hi i hi, heval_hi j hj]
+        exact hbmono (by omega)
+  have heA : ∀ j, e j ∈ A := by
+    intro j
+    rcases Nat.lt_or_ge j k₀ with h | h
+    · rw [heval_lo j h]
+      exact ((hf 0).1.1 _ (hembf _)).1
+    · rw [heval_hi j h]
+      exact hbA _
+  have hepos : ∀ j, 0 < e j := by
+    intro j
+    rcases Nat.lt_or_ge j k₀ with h | h
+    · rw [heval_lo j h]
+      exact ((hf 0).1.1 _ (hembf _)).2
+    · rw [heval_hi j h]
+      exact hbpos _
+  have hbase : (Finset.range k₀).image e = f 0 := by
+    ext x
+    constructor
+    · intro hx
+      obtain ⟨j, hj, hjx⟩ := Finset.mem_image.1 hx
+      have hj' : j < k₀ := Finset.mem_range.1 hj
+      rw [← hjx, heval_lo j hj']
+      exact hembf _
+    · intro hx
+      have hx' : x ∈ Set.range (emb : Fin k₀ → ℕ) := by
+        rw [Finset.range_orderEmbOfFin]
+        exact hx
+      obtain ⟨i, hi⟩ := hx'
+      refine Finset.mem_image.2 ⟨i.1, Finset.mem_range.2 i.2, ?_⟩
+      rw [heval_lo i.1 i.2]
+      simpa using hi
+  have hprefix : ∀ m, (Finset.range (k₀ + m)).image e = f m := by
+    intro m
+    induction m with
+    | zero => simpa using hbase
+    | succ m ih =>
+      have h1 : k₀ + (m + 1) = (k₀ + m) + 1 := by omega
+      rw [h1, Finset.range_add_one, Finset.image_insert, ih,
+        heval_hi (k₀ + m) (by omega),
+        show k₀ + m - k₀ = m from by omega, ← hbins m]
+  have hallfree : ∀ J, PairFree A N₀ ((Finset.range J).image e) := by
+    intro J
+    rcases Nat.lt_or_ge J k₀ with h | h
+    · refine PairFree.mono ?_ (hf 0).1.2
+      rw [← hbase]
+      intro x hx
+      obtain ⟨j, hj, hjx⟩ := Finset.mem_image.1 hx
+      exact Finset.mem_image.2 ⟨j, Finset.mem_range.2 (by
+        have := Finset.mem_range.1 hj
+        omega), hjx⟩
+    · have h1 : J = k₀ + (J - k₀) := by omega
+      rw [h1, hprefix (J - k₀)]
+      exact (hf (J - k₀)).1.2
+  exact pair_free_prefixes_die_of_minimality hcov hmin e hemono heA
+    hepos hallfree
+
+/-- **The order-2 rank of a minimal basis.**  Every ℵ₀-minimal
+order-2 covering set carries an ordinal-valued invariant: the rank
+of its pair-freeness tree, strictly decreasing along free
+extensions.  A structural invariant of ALL minimal bases, born from
+the Erdős 881 campaign. -/
+theorem exists_strict_pair_rank {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hmin : ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) :
+    ∃ ρ : Finset ℕ → Ordinal.{0},
+      ∀ P Q, PairFreeStep A N₀ Q P → ρ Q < ρ P := by
+  have hwf := pairFreeStep_wf hcov hmin
+  exact ⟨fun P => (hwf.apply P).rank,
+    fun P Q h => Acc.rank_lt_of_rel (hwf.apply P) h⟩
+
 end Erdos881
