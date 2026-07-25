@@ -334,3 +334,14 @@ Both branches land on partially-killed configurations with verified
 machinery pointing at them. The remaining open work: finish either
 branch (plus matching acquisition and diffuse exclusion for the
 legacy tree).
+
+## Final form of the night (00:50): the canonical enemy
+
+`hub_endgame_of_hfail` — everything a counterexample can be, in one
+verified statement: fixed guardian core S*, fixed hub size c* ≥ 2
+(≥ |S*|), minimal witnessed hubs of exactly that shape at every
+window cofinally; tight case = one recurring finite team (c* = 2
+enters the fixed-pair pipeline via `pipeline_entry_of_tight_pair`);
+escort case = rotating level-scale guards with the order-2 shadow
+when S* = ∅. DisjointRepEngine.lean: ~1100 lines, zero sorries,
+one night, raw hfail to canonical shape.
