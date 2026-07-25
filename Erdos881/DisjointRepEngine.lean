@@ -1347,4 +1347,22 @@ theorem not_reflectionLevel_of_rigid {A : Set ℕ} {N₀ x : ℕ}
   have := hrig z hzA (2 * x - z) hmir (by omega)
   omega
 
+/-- **The propagation base.**  If a double `2x` fails at order 3
+under `B`, then for EVERY surviving element `c`, the translate
+`2x - c` is 2-destroyed by `B`: the failure cascades one level down
+through each of our choices.  Engine V11''s descent iterates this
+against the covering supply of surviving `c`''s — each level of the
+cascade demands the full alignment supply anew. -/
+theorem translate_destruction_of_double_failure {A B : Set ℕ}
+    {x c : ℕ}
+    (hdead : ∀ p ∈ A, ∀ q ∈ A, ∀ r ∈ A, p + q + r = 2 * x →
+      p ∈ B ∨ q ∈ B ∨ r ∈ B)
+    (hc : c ∈ A) (hcB : c ∉ B) (hcx : c ≤ 2 * x) :
+    ∀ a ∈ A, ∀ b ∈ A, a + b = 2 * x - c → a ∈ B ∨ b ∈ B := by
+  intro a ha b hb hab
+  rcases hdead a ha b hb c hc (by omega) with h | h | h
+  · exact Or.inl h
+  · exact Or.inr h
+  · exact absurd h hcB
+
 end Erdos881
