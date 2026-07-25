@@ -1620,4 +1620,108 @@ theorem stream_rep_classification (A : Set ℕ) (N₀ : ℕ)
             · exact ⟨f₁ ∘ f₂, hf₁.comp hf₂, Or.inr
                 ⟨d', hd'1, hfree', hnf'⟩⟩
 
+/-- Rank-to-size with the superset recorded: rank `n` above a node
+yields a free pool SUPERSET with `n` more elements. -/
+theorem rank_ge_imp_free_superset {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {P₀ : Set ℕ} :
+    ∀ (n : ℕ) (P : Finset ℕ), FreeNode A N₀ P → (∀ h ∈ P, h ∈ P₀) →
+      ((n : ℕ) : Ordinal.{0}) ≤
+        ((poolFreeStep_wf h0 hcov hfail P₀).apply P).rank →
+      ∃ Q : Finset ℕ, FreeNode A N₀ Q ∧ (∀ h ∈ Q, h ∈ P₀) ∧
+        P ⊆ Q ∧ Q.card = P.card + n := by
+  classical
+  set hwf := poolFreeStep_wf h0 hcov hfail P₀ with hhwf
+  intro n
+  induction n with
+  | zero =>
+    intro P hPnode hPpool _
+    exact ⟨P, hPnode, hPpool, Finset.Subset.refl P, by omega⟩
+  | succ n ih =>
+    intro P hPnode hPpool hrank
+    have hpos : ((n : ℕ) : Ordinal.{0}) < (hwf.apply P).rank := by
+      have h1 : ((n : ℕ) : Ordinal.{0}) <
+          ((n + 1 : ℕ) : Ordinal.{0}) := by
+        exact_mod_cast Nat.lt_succ_self n
+      exact lt_of_lt_of_le h1 hrank
+    rw [Acc.rank_eq] at hpos
+    rw [Ordinal.lt_iSup_iff] at hpos
+    obtain ⟨⟨C, hC⟩, hlt⟩ := hpos
+    have hCrank : ((n : ℕ) : Ordinal.{0}) ≤
+        (hwf.apply C).rank := by
+      have h1 := Order.lt_succ_iff.1 hlt
+      exact h1
+    have hCnode : FreeNode A N₀ C := hC.1.2.1
+    have hCpool : ∀ h ∈ C, h ∈ P₀ := hC.2
+    obtain ⟨Q, hQnode, hQpool, hCQ, hQcard⟩ :=
+      ih C hCnode hCpool hCrank
+    obtain ⟨-, -, b, hbA, hbpos, hbmax, hCeq⟩ := hC.1
+    have hbP : b ∉ P := fun h => by
+      have := hbmax b h
+      omega
+    have hCcard : C.card = P.card + 1 := by
+      rw [hCeq]
+      rw [Finset.card_insert_of_notMem hbP]
+    have hPC : P ⊆ C := by
+      rw [hCeq]
+      exact Finset.subset_insert _ _
+    exact ⟨Q, hQnode, hQpool, Finset.Subset.trans hPC hCQ,
+      by omega⟩
+
+/-- **Stalled nodes have finite rank, quantitatively.**  Any free
+superset of a stalled node lives inside the stall window: a fresh
+element `≥ X` would make `P ∪ {q}` free by downward closure,
+contradicting the stall.  Hence the node's rank in ANY pool tree is
+at most `|A ∩ [0, X)|`.  The flood's envelopes are finitely ranked
+in every pool at once. -/
+theorem stalled_pool_rank_bound {A : Set ℕ} {N₀ X : ℕ}
+    [DecidablePred (· ∈ A)]
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {P₀ : Set ℕ} {P : Finset ℕ}
+    (hst : Stalled A N₀ X P) (hPpool : ∀ h ∈ P, h ∈ P₀) :
+    ((poolFreeStep_wf h0 hcov hfail P₀).apply P).rank ≤
+      (((Finset.range X).filter (· ∈ A)).card : Ordinal.{0}) := by
+  classical
+  set W := ((Finset.range X).filter (· ∈ A)).card with hW
+  by_contra hgt
+  push_neg at hgt
+  have hge : ((W + 1 : ℕ) : Ordinal.{0}) ≤
+      ((poolFreeStep_wf h0 hcov hfail P₀).apply P).rank := by
+    have h2 : ((W + 1 : ℕ) : Ordinal.{0}) =
+        Order.succ ((W : ℕ) : Ordinal.{0}) := by
+      rw [Nat.cast_succ, Ordinal.add_one_eq_succ]
+    rw [h2]
+    exact Order.succ_le_of_lt hgt
+  obtain ⟨Q, hQnode, hQpool, hPQ, hQcard⟩ :=
+    rank_ge_imp_free_superset h0 hcov hfail (W + 1) P hst.1
+      hPpool hge
+  -- every fresh element sits below the stall threshold
+  have hfresh : ∀ q ∈ Q, q ∉ P → q < X := by
+    intro q hq hqP
+    by_contra hqX
+    push_neg at hqX
+    have hqA : q ∈ A := (hQnode.1 q hq).1
+    have hqpos : 0 < q := (hQnode.1 q hq).2
+    refine hst.2 q hqA hqpos hqX ?_
+    refine RepFree.mono ?_ hQnode.2
+    intro x hx
+    rcases Finset.mem_insert.1 hx with h | h
+    · rw [h]
+      exact hq
+    · exact hPQ h
+  -- count: Q ∖ P injects into the window
+  have hsub : Q \ P ⊆ (Finset.range X).filter (· ∈ A) := by
+    intro q hq
+    obtain ⟨hqQ, hqP⟩ := Finset.mem_sdiff.1 hq
+    exact Finset.mem_filter.2 ⟨Finset.mem_range.2
+      (hfresh q hqQ hqP), (hQnode.1 q hqQ).1⟩
+  have h1 := Finset.card_le_card hsub
+  have h2 : (Q \ P).card = Q.card - P.card := by
+    rw [Finset.card_sdiff, Finset.inter_eq_left.mpr hPQ]
+  omega
+
 end Erdos881
