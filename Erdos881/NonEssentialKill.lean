@@ -1689,4 +1689,28 @@ theorem fixed_pair_point_channel {A : Set ℕ} {N₀ u v z₀ : ℕ}
     · exact absurd h' hk.2
     · exact h'
 
+
+/-- **The all-v engine feed.**  A level sequence from a fixed pair
+whose four reflection families all realize the v-channel feeds engine
+V6 directly: the fixed-pair configuration with all-v channels forces
+a surviving deletion. -/
+theorem fixed_pair_v_engine_feed {A : Set ℕ} {N₀ c w w' : ℕ}
+    (L : ℕ → ℕ)
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hmono : StrictMono L)
+    (hgrow : ∀ k, 2 * L k < L (k + 1))
+    (hc : c ∈ A) (hc0 : 0 < c) (hcL : c + N₀ < L 0)
+    (hwA : w ∈ A) (hw'A : w' ∈ A) (hww : w + w' = 2 * c)
+    (hwc : w ≠ c)
+    (hLc : ∀ k, L k - c ∈ A)
+    (hLw : ∀ k, L k - w ∈ A)
+    (hLw' : ∀ k, L k - w' ∈ A)
+    (hLL : ∀ i j, i < j → L j - L i ∈ A) :
+    ∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n :=
+  surviving_deletion_of_reflectionFamilies L h0 hcov hmono hgrow
+    hc hc0 hcL hwA hw'A hww hwc hLc hLw hLw'
+    (fun i j hij => hLL i j hij)
+
 end Erdos881
