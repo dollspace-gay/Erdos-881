@@ -1574,4 +1574,63 @@ theorem fixed_pair_channel_ramsey {A : Set ℕ} {N₀ u v : ℕ}
     · exact absurd h hnotv
     · exact h
 
+
+/-- Monotone enumeration of an infinite set of naturals. -/
+theorem infinite_subset_mono_enum {S : Set ℕ} (hS : S.Infinite) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ k, φ k ∈ S := by
+  classical
+  have hnext : ∀ K, ∃ s, s ∈ S ∧ K < s := fun K => by
+    obtain ⟨s, hs, hKs⟩ := hS.exists_gt K
+    exact ⟨s, hs, hKs⟩
+  choose f hfS hfK using hnext
+  set φ : ℕ → ℕ := fun k =>
+    Nat.rec (f 0) (fun _ prev => f prev) k with hφ
+  have hφs : ∀ k, φ (k + 1) = f (φ k) := fun _ => rfl
+  refine ⟨φ, strictMono_nat_of_lt_succ fun k => ?_, fun k => ?_⟩
+  · have := hfK (φ k)
+    have hs : φ (k + 1) = f (φ k) := hφs k
+    omega
+  · cases k with
+    | zero => exact hfS 0
+    | succ k => exact hfS (φ k)
+
+/-- **The mono-channel subsequence (v-channel case).**  Composing the
+level sequence with the Ramsey set's enumeration yields levels with
+doubling growth whose pairwise differences all lie in `A` — engine
+V6's L−L reflection family, delivered. -/
+theorem fixed_pair_v_channel_family {A : Set ℕ} {u v : ℕ}
+    (M : ℕ → ℕ) (S : Set ℕ)
+    (hM : ∀ k, IsPairDestroyer A u v (M k) ∧ M k - v ∈ A)
+    (hgrow : ∀ k, 2 * M k + v + 1 ≤ M (k + 1))
+    (hMv : ∀ k, v < M k)
+    (hSinf : S.Infinite)
+    (hchan : ∀ j ∈ S, ∀ k ∈ S, j < k → M k - v - (M j - v) ∈ A) :
+    ∃ L : ℕ → ℕ, StrictMono L ∧ (∀ i, L i ∈ A) ∧
+      (∀ i, 2 * L i < L (i + 1)) ∧
+      (∀ i j, i < j → L j - L i ∈ A) ∧
+      (∀ i, ∃ m, IsPairDestroyer A u v m ∧ m - v = L i) := by
+  obtain ⟨φ, hφmono, hφS⟩ := infinite_subset_mono_enum hSinf
+  have hMmono : StrictMono M := by
+    apply strictMono_nat_of_lt_succ
+    intro k
+    have := hgrow k
+    omega
+  refine ⟨fun i => M (φ i) - v, ?_, fun i => (hM (φ i)).2, ?_, ?_,
+    fun i => ⟨M (φ i), (hM (φ i)).1, rfl⟩⟩
+  · intro i j hij
+    have h1 : φ i < φ j := hφmono hij
+    have h2 : M (φ i) < M (φ j) := hMmono h1
+    have h5 := hMv (φ i)
+    show M (φ i) - v < M (φ j) - v
+    omega
+  · intro i
+    have h1 : φ i < φ (i + 1) := hφmono (by omega)
+    have h3 := hgrow (φ i)
+    have h4 : M (φ i + 1) ≤ M (φ (i + 1)) := hMmono.monotone (by omega)
+    have h5 := hMv (φ i)
+    show 2 * (M (φ i) - v) < M (φ (i + 1)) - v
+    omega
+  · intro i j hij
+    exact hchan (φ i) (hφS i) (φ j) (hφS j) (hφmono hij)
+
 end Erdos881
