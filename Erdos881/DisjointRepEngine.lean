@@ -2733,4 +2733,20 @@ theorem completion_isolation {A : Set ℕ} {a n : ℕ}
     rw [hval]
     exact midwindow_reflection hown y hy hbig hya
 
+/-- **Completion mutual avoidance** — the difference-splitting seed.
+One owner''s completion can never land in another owner''s isolation
+zone: completion values avoid all strip-reflected positions of every
+other owner.  Completion-differences and owner-differences separate
+into disjoint additive layers — the coherence mechanism: iterated
+over octaves, the layer hierarchy is the digit system. -/
+theorem completion_mutual_avoidance {A : Set ℕ} {a₁ n₁ a₂ n₂ : ℕ}
+    (h₁ : OwnsTarget A a₁ n₁) (h₂ : OwnsTarget A a₂ n₂) :
+    ∀ y ∈ A, a₁ < y → y < n₁ →
+      n₂ - a₂ ≠ (n₁ - a₁) - (y - a₁) := by
+  intro y hy hay hyn heq
+  have hs₂ : n₂ - a₂ ∈ A := h₂.chain_step.1
+  have hban := (completion_isolation h₁).1 y hy hay hyn
+  rw [← heq] at hban
+  exact hban hs₂
+
 end Erdos881
