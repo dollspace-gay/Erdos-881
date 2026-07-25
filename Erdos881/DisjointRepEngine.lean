@@ -2640,4 +2640,28 @@ theorem gap_domination_of_empty_strip {A : Set ℕ} {a n a' : ℕ}
   have hn' : a' < n := by omega
   exact hstrip a' ha' haa' hn'
 
+/-- **The strip counting inequality.**  The reflection injects each
+owner''s strip population into the co-`A` room below its completion:
+`|A ∩ (a, n)| ≤ |co-A ∩ (0, n - a)|`.  The per-owner quantitative
+squeeze; octave sums of these are the multi-owner counting frontier. -/
+theorem strip_card_le {A : Set ℕ} [DecidablePred (· ∈ A)] {a n : ℕ}
+    (hown : OwnsTarget A a n) :
+    ((Finset.Ioo a n).filter (· ∈ A)).card ≤
+      ((Finset.Ioo 0 (n - a)).filter (· ∉ A)).card := by
+  apply Finset.card_le_card_of_injOn (fun y => n - y)
+  · intro y hy
+    obtain ⟨hyI, hyA⟩ := Finset.mem_filter.1 hy
+    obtain ⟨hay, hyn⟩ := Finset.mem_Ioo.1 hyI
+    show n - y ∈ (Finset.Ioo 0 (n - a)).filter (· ∉ A)
+    refine Finset.mem_filter.2 ⟨Finset.mem_Ioo.2
+      ⟨by omega, by omega⟩, ?_⟩
+    exact strip_reflection hown y hyA hay hyn
+  · intro y₁ hy₁ y₂ hy₂ heq
+    obtain ⟨hy₁I, _⟩ := Finset.mem_filter.1 hy₁
+    obtain ⟨_, hy₁n⟩ := Finset.mem_Ioo.1 hy₁I
+    obtain ⟨hy₂I, _⟩ := Finset.mem_filter.1 hy₂
+    obtain ⟨_, hy₂n⟩ := Finset.mem_Ioo.1 hy₂I
+    have heq' : n - y₁ = n - y₂ := heq
+    omega
+
 end Erdos881
