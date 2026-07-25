@@ -391,3 +391,37 @@ canonical, both derived from Erdős 881's raw hypotheses:
 The final wall is the rails' interaction (the second digit and
 beyond). DisjointRepEngine.lean: ~1950 lines, zero sorries, one
 session.
+
+## THE COMPLETE TWO-RAIL CASE TREE (2026-07-25 01:25, final form)
+
+Both rails verified from raw hypotheses; every branch lands on
+named machinery:
+
+**Order-2 rail** (minimality ⟹ canonical (S₂, c₂) pair-hubs):
+- c₂ = |S₂| = 1: one universal 2-guardian a; cofinal a-private
+  sums = the doubles/service regime (U-density supply through a).
+  Vise-consistent; the alignment/service theorems constrain it.
+- c₂ = |S₂| = 2: THE RECURRING DESTROYER PAIR {u,v}, derived
+  (legacy_twoDestruction_of_tight_core) → the entire
+  PinnedMirror/fork/funnel arsenal engages with d = v−u; the P/D
+  split is the first digit.
+- c₂ > |S₂|: rotating 2-escorts above every window — level-scale
+  2-destroyer teams (TwoLevelDestroyers vise territory).
+
+**Order-3 rail** (hfail ⟹ canonical (S₃, c₃) rep-hubs):
+- c₃ = |S₃| tight: recurring team; c₃ = 2 → fixed-pair pipeline
+  (V2–V9 + open matching); c₃ ≥ 3 → team-translate simultaneity
+  (alignment demand, forced blocks, block self-interaction).
+- escorts (c₃ > |S₃|): rotating guards; S₃ = ∅ has the order-2
+  shadow (2-reps confined) → pair-funnels.
+
+**Cross-rail structure** (verified): P/D split with bipartite
+service wiring; chains ≤ 2; doubles-mode dead; rigidity =
+reflection-freeness; rigid markers erase mirror levels; service
+sums = injective valley points (U-density in co-A).
+
+**The one remaining wall**: the digit recursion's upper rungs —
+re-running the rails inside the structured parts to force digit 2,
+3, … (the full tower), whose carry-repair
+(cantor_rigidity_conflict) then contradicts hfail. Everything else
+is machine-verified.
