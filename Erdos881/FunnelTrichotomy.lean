@@ -112,6 +112,43 @@ theorem DestroyedBySet.funnel_trichotomy {A B : Set ℕ} {N₀ m : ℕ}
         y', hy', z', hz', hsum',
         fun hyB' => absurd hyB' hyB, fun _ => ⟨h1, h2, h3⟩⟩)
 
+/-- **Diffuse destruction pairs up deletion elements.**  In the third
+branch of the trichotomy the second representation still meets `B` —
+necessarily outside the first representation's `B`-part.  So a target
+without singleton or pair funnels from `B` yields two *distinct*
+`B`-elements serving it through representations with disjoint
+`B`-parts: the raw pairs for a Ramsey argument on the diffuse
+regime. -/
+theorem DestroyedBySet.diffuse_witness_pair {A B : Set ℕ} {N₀ m : ℕ}
+    (h0 : 0 ∈ A) (h0B : 0 ∉ B)
+    (hcov : PairCovers A N₀)
+    (hdes : DestroyedBySet A B m) (hm : N₀ ≤ m)
+    (hsing : ¬ ∃ u ∈ B, u ∈ A ∧ IsPrivateTriple A u m)
+    (hpair : ¬ ∃ u ∈ B, ∃ v ∈ B, IsPairDestroyer A u v m) :
+    ∃ b₁ ∈ B, ∃ b₂ ∈ B, b₁ ≠ b₂ ∧ b₁ ∈ A ∧ b₂ ∈ A ∧ b₁ ≤ m ∧ b₂ ≤ m := by
+  rcases hdes.funnel_trichotomy h0 h0B hcov hm with h | h | h
+  · exact absurd h hsing
+  · exact absurd h hpair
+  obtain ⟨y, hy, z, hz, hyz, hB, x', hx', y', hy', z', hz', hsum',
+    havoidy, havoidz⟩ := h
+  obtain ⟨b₂, hb₂B, hb₂A, hb₂rep⟩ :
+      ∃ b₂ ∈ B, b₂ ∈ A ∧ (b₂ = x' ∨ b₂ = y' ∨ b₂ = z') := by
+    rcases hdes.2 x' hx' y' hy' z' hz' hsum' with h' | h' | h'
+    · exact ⟨x', h', hx', Or.inl rfl⟩
+    · exact ⟨y', h', hy', Or.inr (Or.inl rfl)⟩
+    · exact ⟨z', h', hz', Or.inr (Or.inr rfl)⟩
+  rcases hB with hyB | hzB
+  · have hne : b₂ ≠ y := by
+      obtain ⟨e1, e2, e3⟩ := havoidy hyB
+      rcases hb₂rep with rfl | rfl | rfl <;> assumption
+    exact ⟨y, hyB, b₂, hb₂B, hne.symm, hy, hb₂A, by omega,
+      by rcases hb₂rep with rfl | rfl | rfl <;> omega⟩
+  · have hne : b₂ ≠ z := by
+      obtain ⟨e1, e2, e3⟩ := havoidz hzB
+      rcases hb₂rep with rfl | rfl | rfl <;> assumption
+    exact ⟨z, hzB, b₂, hb₂B, hne.symm, hz, hb₂A, by omega,
+      by rcases hb₂rep with rfl | rfl | rfl <;> omega⟩
+
 /-- **Cofinal trichotomy from deletion failure.**  If deleting `B`
 (not containing zero) breaks the exact order-three basis property,
 then arbitrarily late targets realize the funnel trichotomy.  A
