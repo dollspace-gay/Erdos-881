@@ -3190,4 +3190,24 @@ theorem child_reach_dichotomy {A : Set ℕ} {w a : ℕ}
   · exact Or.inr (parent_double_exclusion hown hdiff h)
   · exact Or.inl h
 
+/-- **The edge exclusion law**, unified.  Along any forest edge away
+from the exact points `a = 2w, 3w`: the difference and the parent''s
+double cannot both lie in `A`.  Reachy edges exclude the double
+(`parent_double_exclusion`); boundary edges test the double in the
+moat and exclude the difference.  One law, both regimes — in the
+ternary model both sides exit by digit-2, on the nose. -/
+theorem edge_exclusion_law {A : Set ℕ} {w a : ℕ}
+    (hown : OwnsTarget A a (a + w))
+    (hne2 : a ≠ 2 * w) (hne3 : a ≠ 3 * w) :
+    ¬((a - w) ∈ A ∧ 2 * w ∈ A) := by
+  rintro ⟨hd, h2w⟩
+  have h1 : a < a + w := hown.1
+  rcases Nat.lt_or_ge (3 * w) a with h | h
+  · exact parent_double_exclusion hown hd h h2w
+  · obtain ⟨g1, g2, g3, g4⟩ := hown
+    have := g4 (2 * w) h2w (by omega) (by omega) (by omega)
+    have hval : a + w - 2 * w = a - w := by omega
+    rw [hval] at this
+    exact this hd
+
 end Erdos881
