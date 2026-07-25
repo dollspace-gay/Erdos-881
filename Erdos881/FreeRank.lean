@@ -342,4 +342,37 @@ theorem stalled_exists_of_hfail {A : Set ℕ} {N₀ : ℕ}
   · exact hyP h
   · exact hzP h
 
+/-- **The root-rank dichotomy.**  Either free sets have unbounded
+cardinality — every free set is reachable by a chain from the empty
+node (freeness is downward closed), so the tree has arbitrarily
+long chains and the root's ordinal rank is at least `ω` — or there
+is a uniform bound `D` and EVERY set of `D + 1` positive basis
+elements is a rep hub of some late target: universal hubbing at one
+fixed size.  (The second branch collides with the Ramsey ladder's
+hub-free subsequences arity by arity.) -/
+theorem root_rank_dichotomy (A : Set ℕ) (N₀ : ℕ) :
+    (∀ n, ∃ P : Finset ℕ, FreeNode A N₀ P ∧ n ≤ P.card) ∨
+    (∃ D, ∀ S : Finset ℕ, (∀ h ∈ S, h ∈ A ∧ 0 < h) →
+      S.card = D + 1 → ∃ m, N₀ ≤ m ∧ IsRepHub A m S) := by
+  classical
+  by_cases hub : ∀ n, ∃ P : Finset ℕ, FreeNode A N₀ P ∧ n ≤ P.card
+  · exact Or.inl hub
+  · right
+    push_neg at hub
+    obtain ⟨D, hD⟩ := hub
+    refine ⟨D, fun S hSpos hScard => ?_⟩
+    have hnotfree : ¬RepFree A N₀ S := by
+      intro hfree
+      have := hD S ⟨hSpos, hfree⟩
+      omega
+    rw [RepFree] at hnotfree
+    push_neg at hnotfree
+    obtain ⟨m, hm, hall⟩ := hnotfree
+    refine ⟨m, hm, ?_⟩
+    intro x hx y hy z hz hsum
+    by_contra hmiss
+    push_neg at hmiss
+    obtain ⟨hxm, hym, hzm⟩ := hmiss
+    exact hzm (hall x hx y hy z hz hsum hxm hym)
+
 end Erdos881
