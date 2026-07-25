@@ -3083,4 +3083,16 @@ theorem paying_owners_cofinal {A : Set ℕ} [DecidablePred (· ∈ A)]
     paying_owner_in_rich_octave (X := 2 ^ k) huniv (by omega) hrich'
   exact ⟨a, t, y, by omega, haA, hown, hyA, hby, hyt, hya⟩
 
+/-- **The payment demand.**  A paying witness contributes a fresh
+co-`A` point strictly inside the lower half of the target: the
+ledger entry each cofinal payer writes.  With the block-pigeonhole
+(every five consecutive owners contain a payer) the ledger gains
+`⌊octave-count / 5⌋` entries per octave — the telescope''s input. -/
+theorem payment_demand {A : Set ℕ} {a t y : ℕ}
+    (hown : OwnsTarget A a t)
+    (hy : y ∈ A) (hby : 2 * y > t) (hyt : y < t) (hya : y ≠ a) :
+    t - y ∉ A ∧ 0 < t - y ∧ 2 * (t - y) < t := by
+  obtain ⟨h1, h2, h3, h4⟩ := hown
+  exact ⟨h4 y hy hby (by omega) hya, by omega, by omega⟩
+
 end Erdos881
