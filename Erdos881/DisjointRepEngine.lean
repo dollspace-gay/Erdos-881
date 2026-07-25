@@ -7854,4 +7854,54 @@ theorem Saturated.mono {A B B' : Set ℕ} {v : ℕ}
   · exact Or.inl (hBB' h)
   · exact Or.inr (hBB' h)
 
+/-- **Immunity: disjoint pair wealth defeats sparse deletions.**
+A target with `K` pairwise-disjoint pair representations survives
+(at order 3, via 0-padding) any deletion whose window below it has
+fewer than `K` elements: each deleted element kills at most one
+disjoint pair, so a pair survives untouched.  Immune targets can
+never be failing witnesses of sparse deletions — the trap
+primitive of the adaptive program. -/
+theorem immune_survives_sparse {A B : Set ℕ} {v K : ℕ}
+    [DecidablePred (· ∈ B)]
+    (h0 : 0 ∈ A) (h0B : 0 ∉ B)
+    (hK : HasDisjointPairReps A v K)
+    (hsparse : ((Finset.range (v + 1)).filter (· ∈ B)).card < K) :
+    ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = v ∧
+      x ∉ B ∧ y ∉ B ∧ z ∉ B := by
+  classical
+  obtain ⟨P, hPA, hPsum, hPdis⟩ := hK
+  -- pairs killed by B inject into the deleted window
+  by_contra hall
+  push_neg at hall
+  have hkill : ∀ i : Fin K, ∃ s : Fin 2, P i s ∈ B := by
+    intro i
+    by_contra hno
+    push_neg at hno
+    have h0' : P i 0 ∉ B := hno 0
+    have h1' : P i 1 ∉ B := hno 1
+    have hmem := hall (P i 0) (hPA i 0) (P i 1) (hPA i 1) 0 h0
+      (by have := hPsum i; omega) h0' h1'
+    exact h0B hmem
+  choose s hs using hkill
+  have hcard := Finset.card_le_card_of_injOn
+    (f := fun i : Fin K => P i (s i))
+    (s := Finset.univ)
+    (t := (Finset.range (v + 1)).filter (· ∈ B))
+    (by
+      intro i _
+      show P i (s i) ∈ (Finset.range (v + 1)).filter (· ∈ B)
+      have h1 : P i (s i) ≤ v := by
+        have hb : ∀ k : Fin 2, P i k ≤ v := by
+          rw [Fin.forall_fin_two]
+          constructor <;> (have := hPsum i; omega)
+        exact hb (s i)
+      exact Finset.mem_filter.2 ⟨Finset.mem_range.2 (by omega),
+        hs i⟩)
+    (by
+      intro i _ j _ heq
+      by_contra hne
+      exact hPdis i j (s i) (s j) hne heq)
+  simp only [Finset.card_univ, Fintype.card_fin] at hcard
+  omega
+
 end Erdos881
