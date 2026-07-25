@@ -5845,4 +5845,86 @@ theorem three_guardians_per_rep_target {A : Set ℕ} {N₀ m : ℕ}
     · exact Or.inr (Or.inr h'.symm)
     · exact absurd h' hzP
 
+/-- **THE SIDON DOOR IS CLOSED: `r₂` is unbounded in any
+counterexample.**  Erdős–Turán holds for Erdős-881 counterexamples,
+unconditionally: the rep flood hands every large element a hub
+target `m`, the fan blowup forces some hub translate `m − h` to
+carry at least `(√m − c)/c` pair representations, and square-root
+growth of a covering set makes that quantity exceed any bound.  A
+counterexample can NEVER be globally Sidon-like — while its flood
+targets are simultaneously forced to be essentially Sidon: the
+enemy's pair-multiplicity must oscillate between `≤ 2(|P|+1)` and
+`∞` forever. -/
+theorem r2_unbounded_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    [DecidablePred (· ∈ A)]
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∀ C N, ∃ v, N ≤ v ∧ C ≤ ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A)).card := by
+  classical
+  intro C N
+  obtain ⟨P, hPfree, X₀, hflood⟩ := rep_flood_of_hfail h0 hcov hfail
+  set c := P.card + 1 with hc
+  have hcpos : 0 < c := by omega
+  set C₀ := max C N with hC₀
+  set D := c * (C₀ + 1) + c + 2 * N₀ + 2 with hD
+  have hD1 : 1 ≤ D := by omega
+  obtain ⟨b, hbA, hXb⟩ := pairCovers_unbounded hcov
+    (max X₀ ((D + 2 * N₀) * (D + 2 * N₀)))
+  obtain ⟨m, hmN, hbm, hhub⟩ := hflood b hbA
+    (le_trans (le_max_left _ _) hXb)
+  have hexp : (D + 2 * N₀) * (D + 2 * N₀) =
+      D * D + 4 * (D * N₀) + 4 * (N₀ * N₀) := by ring
+  have hDN : N₀ ≤ D * N₀ := by
+    have h1 : 1 * N₀ ≤ D * N₀ := Nat.mul_le_mul_right N₀ hD1
+    omega
+  have hmbig : (D + 2 * N₀) * (D + 2 * N₀) ≤ m :=
+    le_trans (le_trans (le_max_right _ _) hXb) hbm
+  have h2N₀m : 2 * N₀ ≤ m := by omega
+  have hsqrt := covering_sqrt_lower (A := A) (N₀ := N₀)
+    (n := m - N₀) hcov (by omega)
+  set F := (Finset.range (m - N₀ + 1)).filter (· ∈ A) with hF
+  have hDF : D * D ≤ F.card * F.card := by omega
+  have hDFle : D ≤ F.card := by
+    have h1 := Nat.sqrt_le_sqrt hDF
+    rw [Nat.sqrt_eq, Nat.sqrt_eq] at h1
+    exact h1
+  set H := insert b P with hH
+  have hHcard : H.card ≤ c := by
+    have := Finset.card_insert_le b P
+    omega
+  have hHpos : 0 < H.card :=
+    Finset.card_pos.2 ⟨b, Finset.mem_insert_self b P⟩
+  set W' := (Finset.range (m - N₀ + 1)).filter
+    (fun w => w ∈ A ∧ w ∉ H) with hW'
+  have hsub : F \ H ⊆ W' := by
+    intro x hx
+    obtain ⟨hxF, hxH⟩ := Finset.mem_sdiff.1 hx
+    obtain ⟨hxr, hxA⟩ := Finset.mem_filter.1 hxF
+    exact Finset.mem_filter.2 ⟨hxr, hxA, hxH⟩
+  have hW'card : D - c ≤ W'.card := by
+    have h1 := Finset.le_card_sdiff H F
+    have h2 := Finset.card_le_card hsub
+    omega
+  obtain ⟨h₀, hh₀, hblow⟩ := hub_fan_blowup hcov hhub
+    ⟨b, Finset.mem_insert_self b P⟩ hmN
+  have hquot : C₀ + 1 ≤ W'.card / H.card := by
+    have h1 : C₀ + 1 ≤ W'.card / c := by
+      rw [Nat.le_div_iff_mul_le hcpos]
+      have h2 : (C₀ + 1) * c = c * (C₀ + 1) := Nat.mul_comm _ _
+      omega
+    have h2 : W'.card / c ≤ W'.card / H.card :=
+      Nat.div_le_div_left hHcard hHpos
+    omega
+  have hle := le_trans hquot hblow
+  refine ⟨m - h₀, ?_, ?_⟩
+  · have hcardle : ((Finset.range (m - h₀ + 1)).filter
+        (fun x => x ∈ A ∧ (m - h₀ - x) ∈ A)).card ≤ m - h₀ + 1 := by
+      have h1 := Finset.card_filter_le (Finset.range (m - h₀ + 1))
+        (fun x => x ∈ A ∧ (m - h₀ - x) ∈ A)
+      simpa using h1
+    omega
+  · omega
+
 end Erdos881
