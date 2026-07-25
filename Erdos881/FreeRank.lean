@@ -1284,4 +1284,46 @@ theorem perfect_world_deletion_hubs_card {A B : Set ℕ} {N₀ : ℕ}
   · exact hyH h
   · exact hzH h
 
+/-- Pair-freeness implies rep-freeness for 0-free sets: a surviving
+pair padded with `0` is a surviving triple. -/
+theorem repFree_of_pairFree {A : Set ℕ} {N₀ : ℕ} {P : Finset ℕ}
+    (h0 : 0 ∈ A) (h0P : 0 ∉ P) (hfree : PairFree A N₀ P) :
+    RepFree A N₀ P := by
+  intro m hm
+  obtain ⟨x, hx, y, hy, hxy, hxP, hyP⟩ := hfree m hm
+  exact ⟨x, hx, y, hy, 0, h0, by omega, hxP, hyP, h0P⟩
+
+/-- The order-2 tree embeds in the order-3 tree: every pair-free
+step is a rep-free step (nodes have positive elements, so `0` never
+occurs). -/
+theorem freeStep_of_pairFreeStep {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) {Q P : Finset ℕ}
+    (h : PairFreeStep A N₀ Q P) : FreeStep A N₀ Q P := by
+  obtain ⟨⟨hPpos, hPfree⟩, ⟨hQpos, hQfree⟩, b, hbA, hbpos, hbmax,
+    hQeq⟩ := h
+  have h0P : 0 ∉ P := fun hh => by
+    have := (hPpos 0 hh).2
+    omega
+  have h0Q : 0 ∉ Q := fun hh => by
+    have := (hQpos 0 hh).2
+    omega
+  exact ⟨⟨hPpos, repFree_of_pairFree h0 h0P hPfree⟩,
+    ⟨hQpos, repFree_of_pairFree h0 h0Q hQfree⟩,
+    b, hbA, hbpos, hbmax, hQeq⟩
+
+/-- **Cross-order rank comparison.**  In a counterexample the
+order-2 rank (an invariant of the minimal basis alone) never
+exceeds the order-3 rank: the pair tree is a subtree of the rep
+tree.  Two ordinal invariants, one inequality. -/
+theorem pair_rank_le_rep_rank {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hmin : ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (P : Finset ℕ) :
+    ((pairFreeStep_wf hcov hmin).apply P).rank ≤
+    ((freeStep_wf h0 hcov hfail).apply P).rank :=
+  rank_le_of_subrel (fun _ _ h => freeStep_of_pairFreeStep h0 h) _ _
+
 end Erdos881
