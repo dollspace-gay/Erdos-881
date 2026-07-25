@@ -4030,4 +4030,79 @@ theorem flood_canonical {A : Set ℕ} {N0 : ℕ} {F : Finset ℕ}
     have haS : x ∉ S := fun haS => haF (hSF haS)
     exact ⟨x, ha, hxN, haS, n, hnN, H, hhub, hmin, hHeq⟩
 
+/-- **The pair shadow.**  With `0 ∈ A` and `0 ∉ H`, a rep hub for `n`
+is in particular a transversal of the order-2 representations: the
+representation `(x, n − x, 0)` must be hit, and `0` is not in the
+hub, so every pair representation routes through the hub. -/
+theorem pair_shadow_of_hub {A : Set ℕ} {n : ℕ} {H : Finset ℕ}
+    (h0 : 0 ∈ A) (hhub : IsRepHub A n H) (h0H : 0 ∉ H) :
+    ∀ x ∈ A, ∀ y ∈ A, x + y = n → x ∈ H ∨ y ∈ H := by
+  intro x hx y hy hxy
+  rcases hhub x hx y hy 0 h0 (by omega) with h | h | h
+  · exact Or.inl h
+  · exact Or.inr h
+  · exact absurd h h0H
+
+/-- **The pair-count collapse.**  A 0-free hub bounds the order-2
+representation count of its target: pair-rep components live in
+`H ∪ (n − H)`, so there are at most `2·|H|` of them.  Constant-size
+hubs force essentially-Sidon targets. -/
+theorem pair_count_of_hub {A : Set ℕ} {n : ℕ} {H : Finset ℕ}
+    [DecidablePred (· ∈ A)]
+    (h0 : 0 ∈ A) (hhub : IsRepHub A n H) (h0H : 0 ∉ H) :
+    ((Finset.range (n + 1)).filter
+      (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * H.card := by
+  classical
+  have hsub : (Finset.range (n + 1)).filter
+      (fun x => x ∈ A ∧ (n - x) ∈ A) ⊆
+      H ∪ H.image (fun h => n - h) := by
+    intro x hx
+    obtain ⟨hxr, hxA, hnxA⟩ := Finset.mem_filter.1 hx
+    have hxn : x ≤ n := by
+      have := Finset.mem_range.1 hxr
+      omega
+    rcases pair_shadow_of_hub h0 hhub h0H x hxA (n - x) hnxA
+        (by omega) with h | h
+    · exact Finset.mem_union_left _ h
+    · exact Finset.mem_union_right _
+        (Finset.mem_image.2 ⟨n - x, h, by omega⟩)
+  have h1 := Finset.card_le_card hsub
+  have h2 := Finset.card_union_le H (H.image (fun h => n - h))
+  have h3 : (H.image (fun h => n - h)).card ≤ H.card :=
+    Finset.card_image_le
+  omega
+
+/-- **The flood''s order-2 shadow.**  In the canonical flood with a
+0-free core, cofinally many targets have ALL pair representations
+routed through the fixed core plus the rotating guardian, hence
+order-2 representation count at most `2·(|S| + 1)`.  The flood is
+an essentially-Sidon stream with fixed routing. -/
+theorem flood_pair_shadow {A : Set ℕ} {N0 : ℕ} {S : Finset ℕ}
+    [DecidablePred (· ∈ A)]
+    (h0 : 0 ∈ A) (h0S : 0 ∉ S)
+    (hcanon : ∀ X, ∃ a, a ∈ A ∧ X ≤ a ∧ a ∉ S ∧
+      ∃ n, N0 ≤ n ∧ ∃ H : Finset ℕ, IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        H = insert a S) :
+    ∀ X, ∃ a, a ∈ A ∧ X ≤ a ∧ 0 < a ∧ ∃ n, N0 ≤ n ∧
+      (∀ x ∈ A, ∀ y ∈ A, x + y = n →
+        x ∈ insert a S ∨ y ∈ insert a S) ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * (S.card + 1) := by
+  intro X
+  obtain ⟨a, ha, hXa, haS, n, hnN, H, hhub, hmin, hHeq⟩ :=
+    hcanon (max X 1)
+  have ha1 : 1 ≤ a := le_trans (le_max_right _ _) hXa
+  subst hHeq
+  have h0H : 0 ∉ insert a S := by
+    intro h
+    rcases Finset.mem_insert.1 h with h' | h'
+    · omega
+    · exact h0S h'
+  have hcard : (insert a S).card ≤ S.card + 1 :=
+    Finset.card_insert_le a S
+  have hb := pair_count_of_hub h0 hhub h0H
+  exact ⟨a, ha, le_trans (le_max_left _ _) hXa, by omega, n, hnN,
+    pair_shadow_of_hub h0 hhub h0H, by omega⟩
+
 end Erdos881
