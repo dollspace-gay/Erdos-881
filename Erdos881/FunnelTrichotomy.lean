@@ -207,6 +207,69 @@ theorem DestroyedBySet.translate_two_support_card_le
     _ = 2 * T.card := by
         rw [Finset.sum_const, smul_eq_mul, Nat.mul_comm]
 
+/-- `n` is two-destroyed by the set `B`: every two-term representation
+meets it. -/
+def TwoDestroyedBySet (A B : Set ℕ) (n : ℕ) : Prop :=
+  ∀ y ∈ A, ∀ z ∈ A, y + z = n → y ∈ B ∨ z ∈ B
+
+/-- An undeleted element is never two-destroyed: its zero-augmented
+representation avoids `B`. -/
+theorem not_twoDestroyedBySet_of_mem_diff {A B : Set ℕ} {n : ℕ}
+    (h0 : 0 ∈ A) (h0B : 0 ∉ B) (hn : n ∈ A) (hnB : n ∉ B) :
+    ¬ TwoDestroyedBySet A B n := fun h => by
+  rcases h 0 h0 n hn (by omega) with h' | h'
+  · exact h0B h'
+  · exact hnB h'
+
+/-- **The elementwise fork trichotomy.**  Every undeleted element `x`
+below a destroyed target routes through some `u ∈ B`, and the landing
+point `m - x - u` either falls back into `B` or is an element whose
+cross-sum `u + x` is itself two-destroyed by `B` — otherwise an
+avoiding representation of `u + x` would resurrect the target.  This
+is the sharp pinning mechanism at set level: every deleted element
+that serves a diffuse target plants two-destroyed values, the raw
+material for density arguments against the diffuse regime. -/
+theorem DestroyedBySet.fork_trichotomy_elt {A B : Set ℕ} {N₀ m x : ℕ}
+    (hcov : PairCovers A N₀)
+    (hdes : DestroyedBySet A B m)
+    (hx : x ∈ A) (hxB : x ∉ B) (hxm : x + N₀ ≤ m) :
+    ∃ u ∈ B, u ≤ m - x ∧
+      (m - x - u ∈ B ∨
+        (m - x - u ∈ A ∧ TwoDestroyedBySet A B (u + x))) := by
+  obtain ⟨y, hy, z, hz, hyz⟩ := hcov (m - x) (by omega)
+  have hside := hdes.shadow hx hxB hy hz (by omega)
+  rcases hside with hyB | hzB
+  · refine ⟨y, hyB, by omega, ?_⟩
+    by_cases hzB : z ∈ B
+    · exact Or.inl (by
+        have : m - x - y = z := by omega
+        exact this ▸ hzB)
+    · refine Or.inr ⟨by
+        have : m - x - y = z := by omega
+        exact this ▸ hz, ?_⟩
+      intro s hs t ht hst
+      by_contra hne
+      push Not at hne
+      rcases hdes.2 s hs t ht z hz (by omega) with h | h | h
+      · exact hne.1 h
+      · exact hne.2 h
+      · exact hzB h
+  · refine ⟨z, hzB, by omega, ?_⟩
+    by_cases hyB : y ∈ B
+    · exact Or.inl (by
+        have : m - x - z = y := by omega
+        exact this ▸ hyB)
+    · refine Or.inr ⟨by
+        have : m - x - z = y := by omega
+        exact this ▸ hy, ?_⟩
+      intro s hs t ht hst
+      by_contra hne
+      push Not at hne
+      rcases hdes.2 s hs t ht y hy (by omega) with h | h | h
+      · exact hne.1 h
+      · exact hne.2 h
+      · exact hyB h
+
 /-- **Cofinal trichotomy from deletion failure.**  If deleting `B`
 (not containing zero) breaks the exact order-three basis property,
 then arbitrarily late targets realize the funnel trichotomy.  A
@@ -238,5 +301,29 @@ theorem cofinal_funnel_trichotomy_of_deletionFailure
       (fun ⟨v, hv, hs⟩ => hno v hv hs)
   exact ⟨m, le_trans (le_max_left _ _) hmN,
     hdes.funnel_trichotomy h0 h0B hcov hm₀⟩
+
+/-- **Zero-guarded targets repel element differences.**  If every
+representation of both `m₁ < m₂` passes through `0`, then `m₂ - m₁`
+cannot be an element: the mirror of any positive `x` below `m₁`
+would combine with the difference into a positive representation of
+`m₂`.  The zero-guardian residue therefore forces the whole cofinal
+target family to have an `A`-free difference set. -/
+theorem zero_guardian_no_element_gap {A : Set ℕ} {N₀ m₁ m₂ x : ℕ}
+    (hcov : PairCovers A N₀)
+    (h1 : IsPrivateTriple A 0 m₁) (h2 : IsPrivateTriple A 0 m₂)
+    (hlt : m₁ < m₂)
+    (hx : x ∈ A) (hx0 : 0 < x) (hxm : x + N₀ ≤ m₁) (hxlt : x < m₁)
+    (hd : m₂ - m₁ ∈ A) :
+    False := by
+  obtain ⟨y, hy, z, hz, hyz⟩ := hcov (m₁ - x) (by omega)
+  have hw : m₁ - x ∈ A := by
+    rcases h1.2 x hx y hy z hz (by omega) with h | h | h
+    · omega
+    · have : z = m₁ - x := by omega
+      exact this ▸ hz
+    · have : y = m₁ - x := by omega
+      exact this ▸ hy
+  rcases h2.2 x hx (m₁ - x) hw (m₂ - m₁) hd (by omega) with h | h | h <;>
+    omega
 
 end Erdos881
