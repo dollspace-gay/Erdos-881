@@ -182,4 +182,22 @@ theorem endgame_two_trees {A : Set ℕ} {N₀ : ℕ}
       WellFounded (FreeStep A N₀)) :=
   counterexample_iff_both_trees_wf h0 hcov
 
+/-- **THE FINAL FORM.**  One tree decides everything: the full
+counterexample condition is equivalent to well-foundedness of the
+rep-freeness tree alone (minimality is a subtree consequence).
+Erdős 881 (k = 2), modulo the standing `0 ∈ A` interface:
+
+  IS THERE a 2-covering set containing 0 whose rep-freeness tree
+  is well-founded?
+
+No such set ⟺ the answer to Erdős 881 (k = 2) is YES. -/
+theorem endgame_final_form {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) :
+    ((∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) ∧
+    (∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)) ↔
+    WellFounded (FreeStep A N₀) :=
+  counterexample_iff_rep_tree_wf h0 hcov
+
 end Erdos881

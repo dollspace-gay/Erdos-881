@@ -189,3 +189,20 @@ The equivalence extends to a triangle: counterexample-hood ⟺ no
 hereditarily free set ⟺ well-foundedness of the freeness tree
 (the last leg purely combinatorial).  The rank framework is thus
 not a model of the problem — it IS the problem.
+
+## 9. THE FINAL FORM (18:30)
+
+**`counterexample_iff_rep_tree_wf` / `endgame_final_form`.**  The
+two characterizations collapse: minimality is a subtree consequence
+(the pair tree embeds in the rep tree), so the FULL counterexample
+condition — minimality and universal order-3 failure together — is
+equivalent to well-foundedness of one relation:
+
+  Erdős 881 (k = 2) ⟺ no 2-covering set containing 0 has a
+  well-founded rep-freeness tree
+  ⟺ every such set contains an infinite hereditarily rep-free
+  subset (an infinite branch).
+
+Everything the campaign verified is now literally a study of this
+one tree: its stalls (floods), its finite-rank pockets (crystals),
+its boundary (ω-nodes), its immune zones, and its Cantor branch.
