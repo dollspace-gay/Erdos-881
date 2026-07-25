@@ -697,4 +697,48 @@ theorem minimal_hub_necessity {A : Set ℕ} {n : ℕ} {H : Finset ℕ}
     · have := hcz (hzg ▸ hgH)
       omega
 
+/-- **Exact-pair recurrence.**  Cofinal pair hubs inside a fixed
+window recur: some single pair carries hubs cofinally (pigeonhole
+over the finitely many pairs). -/
+theorem recurring_pair_of_bounded_pair_hubs {A : Set ℕ} {W : ℕ}
+    (hpairs : ∀ N, ∃ n, N ≤ n ∧ ∃ u v, u ≤ W ∧ v ≤ W ∧
+      IsRepHub A n {u, v}) :
+    ∃ u v, u ≤ W ∧ v ≤ W ∧ ∀ N, ∃ n, N ≤ n ∧ IsRepHub A n {u, v} := by
+  classical
+  by_contra hno
+  push_neg at hno
+  have hex : ∀ u v, ∃ Nuv, u ≤ W → v ≤ W → ∀ n, Nuv ≤ n →
+      ¬IsRepHub A n {u, v} := by
+    intro u v
+    by_cases hu : u ≤ W
+    · by_cases hv : v ≤ W
+      · obtain ⟨N, hN⟩ := hno u v hu hv
+        exact ⟨N, fun _ _ => hN⟩
+      · exact ⟨0, fun _ h => absurd h hv⟩
+    · exact ⟨0, fun h => absurd h hu⟩
+  choose g hg using hex
+  set NS := (Finset.range (W + 1)).sup fun u =>
+    (Finset.range (W + 1)).sup (g u) with hNS
+  obtain ⟨n, hn, u, v, hu, hv, hhub⟩ := hpairs NS
+  have h2 : g u v ≤ (Finset.range (W + 1)).sup (g u) :=
+    Finset.le_sup (b := v) (Finset.mem_range.2 (by omega : v < W + 1))
+  have h3 : (Finset.range (W + 1)).sup (g u) ≤ NS := by
+    rw [hNS]
+    exact Finset.le_sup (f := fun x => (Finset.range (W + 1)).sup (g x))
+      (b := u) (Finset.mem_range.2 (by omega : u < W + 1))
+  exact hg u v hu hv n (le_trans (le_trans h2 h3) hn) hhub
+
+/-- **Pipeline entry.**  Cofinal windowed pair hubs hand the
+fixed-pair pipeline its recurring destroyer pair. -/
+theorem pipeline_entry_of_bounded_pair_hubs {A : Set ℕ} {N₀ W : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hpairs : ∀ N, ∃ n, N ≤ n ∧ ∃ u v, u ≤ W ∧ v ≤ W ∧
+      IsRepHub A n {u, v}) :
+    ∃ u v, ∀ N, ∃ n, N ≤ n ∧ IsPairDestroyer A u v n := by
+  obtain ⟨u, v, _, _, hrec⟩ := recurring_pair_of_bounded_pair_hubs hpairs
+  refine ⟨u, v, fun N => ?_⟩
+  obtain ⟨n, hn, hhub⟩ := hrec (max N N₀)
+  exact ⟨n, le_trans (le_max_left _ _) hn,
+    pairDestroyer_of_pair_hub h0 hcov (le_trans (le_max_right _ _) hn) hhub⟩
+
 end Erdos881
