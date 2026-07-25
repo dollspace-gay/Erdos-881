@@ -229,3 +229,21 @@ guaranteed rate. We have the tax bill (verified), the tax rate
 launder the payments (measured all night, with the digit economy's
 self-defeat verified since midnight). One audit remains: tallying
 the ledger down the scales. That is the whole of what's left.
+
+## The mirror proof and the last filter (04:00)
+
+Deep in the night, two more things became certain. First: the
+clean-number keyring's deepest secret is now a theorem — a number
+is missing from the keyring exactly when one of the forest's
+guardians personally excludes it. The keyring is precisely the
+shadow of its own guard-system, proven both directions.
+
+Second: hunting for other keyrings obeying the same local laws, we
+found thousands — until we added the one filter the problem's own
+rules keep pointing at (every key must own its double outright).
+That filter kills all but twenty-six candidates, and the true
+keyring stands among them. The machine is now checking whether the
+twenty-five pretenders can survive growing one more ring. Every
+law used in the filter is already verified; what remains is
+proving the problem's rules FORCE the filter — one lemma-shaped
+wall, approached from five verified directions.
