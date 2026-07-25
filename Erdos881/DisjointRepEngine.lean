@@ -3364,4 +3364,19 @@ theorem failing_double_fiber_bound {A B : Set ℕ} {b : ℕ}
   · exact Or.inr h
   · exact absurd h h0B
 
+/-- **Richness is reflection.**  If every window element completes to
+a fixed double (the dodge-failure at one center), the center carries
+symmetric pairs — it is doubling-NON-rigid, and the window is
+one-sidedly mirror-symmetric about it.  The richness horn of the
+final dichotomy produces mirror structure: near-periodic windows,
+the verified mirror bridge''s territory.  Both horns now end at
+verified kill machinery — dodge → rigidity → digits → carry kill;
+richness → mirrors → reflection-level kill. -/
+theorem richness_gives_reflection {A : Set ℕ} {b X : ℕ}
+    (hrich : ∀ a ∈ A, X ≤ a → a < 2 * b → 2 * b - a ∈ A) :
+    ∀ a ∈ A, X ≤ a → a < 2 * b → a ≠ b →
+      ∃ p ∈ A, ∃ q ∈ A, p + q = 2 * b ∧ p ≠ b := by
+  intro a ha hXa hab hane
+  refine ⟨a, ha, 2 * b - a, hrich a ha hXa hab, by omega, hane⟩
+
 end Erdos881
