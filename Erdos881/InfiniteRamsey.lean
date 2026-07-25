@@ -713,4 +713,44 @@ theorem infinite_ramsey_tuples :
     rw [hEhom k u humono]
     exact hGt (g 0)
 
+/-- The value set of a strictly monotone `Fin n`-tuple has
+cardinality `n`. -/
+theorem tuple_finset_card {n : ℕ} (v : Fin n → ℕ)
+    (hv : StrictMono v) :
+    (Finset.univ.image v).card = n := by
+  rw [Finset.card_image_of_injective _ hv.injective,
+    Finset.card_univ, Fintype.card_fin]
+
+/-- Sorted-index normalization, general arity: an `n`-element set of
+values of a strictly monotone sequence is the value set of a
+strictly monotone index tuple. -/
+theorem sorted_indices_of_card {e : ℕ → ℕ} (hmono : StrictMono e)
+    {Q : Finset ℕ} {n : ℕ} (hcard : Q.card = n)
+    (hmem : ∀ h ∈ Q, ∃ i, e i = h) :
+    ∃ u : Fin n → ℕ, StrictMono u ∧
+      Finset.univ.image (fun i => e (u i)) = Q := by
+  classical
+  set emb := Q.orderEmbOfFin hcard with hemb
+  have hembQ : ∀ (i : Fin n), emb i ∈ Q :=
+    fun i => Q.orderEmbOfFin_mem hcard i
+  have hpre : ∀ i : Fin n, ∃ j, e j = emb i :=
+    fun i => hmem (emb i) (hembQ i)
+  choose u hu using hpre
+  have humono : StrictMono u := by
+    intro i j hij
+    have h1 : emb i < emb j := emb.strictMono hij
+    rw [← hu i, ← hu j] at h1
+    exact hmono.lt_iff_lt.1 h1
+  refine ⟨u, humono, ?_⟩
+  have hsub : Finset.univ.image (fun i => e (u i)) ⊆ Q := by
+    intro x hx
+    obtain ⟨i, -, hix⟩ := Finset.mem_image.1 hx
+    rw [← hix, hu i]
+    exact hembQ i
+  have hcard2 : (Finset.univ.image (fun i => e (u i))).card = n := by
+    have h1 : StrictMono (fun i : Fin n => e (u i)) :=
+      fun i j hij => hmono (humono hij)
+    exact tuple_finset_card _ h1
+  exact Finset.eq_of_subset_of_card_le hsub (by omega)
+
 end Erdos881
