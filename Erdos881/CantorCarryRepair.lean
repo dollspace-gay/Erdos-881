@@ -632,6 +632,311 @@ theorem cantor_carry_repair_double (k : ℕ) (hk : 3 ≤ k) :
     rw [h1, h3]
     ring
 
+
+/-- Digits of a pure power: a single 1 at its exponent. -/
+lemma pow_digit (j i : ℕ) : 3 ^ j / 3 ^ i % 3 = if i = j then 1 else 0 := by
+  rcases Nat.lt_trichotomy i j with h | h | h
+  · rw [if_neg (by omega)]
+    have h3 : 3 ^ j / 3 ^ i = 3 ^ (j - i) := by
+      rw [Nat.pow_div (Nat.le_of_lt h) (by norm_num)]
+    rw [h3]
+    have h4 : j - i = (j - i - 1) + 1 := by omega
+    rw [h4, pow_succ]
+    simp [Nat.mul_mod]
+  · subst h
+    rw [if_pos rfl, Nat.div_self (pow3_pos i)]
+  · rw [if_neg (by omega),
+      Nat.div_eq_of_lt (Nat.pow_lt_pow_right (by norm_num) h)]
+
+/-- Digits of a shifted number. -/
+lemma shift_digit (n m i : ℕ) :
+    3 ^ m * n / 3 ^ i % 3 = if i < m then 0 else n / 3 ^ (i - m) % 3 := by
+  rcases Nat.lt_or_ge i m with h | h
+  · rw [if_pos h]
+    have h2 : 3 ^ m * n / 3 ^ i = 3 ^ (m - i) * n := by
+      have h5 : 3 ^ m = 3 ^ i * 3 ^ (m - i) := by
+        rw [← pow_add]; congr 1; omega
+      rw [h5, Nat.mul_assoc, Nat.mul_div_cancel_left _ (pow3_pos i)]
+    rw [h2]
+    have h4 : m - i = (m - i - 1) + 1 := by omega
+    rw [h4, pow_succ]
+    have h6 : 3 ^ (m - i - 1) * 3 * n = 3 * (3 ^ (m - i - 1) * n) := by ring
+    rw [h6]
+    simp [Nat.mul_mod_right]
+  · rw [if_neg (by omega)]
+    have h2 : 3 ^ i = 3 ^ m * 3 ^ (i - m) := by
+      rw [← pow_add]; congr 1; omega
+    rw [h2, ← Nat.div_div_eq_div_mul,
+      Nat.mul_div_cancel_left _ (pow3_pos m)]
+
+/-- Addition of digit-disjoint Cantor numbers is Cantor. -/
+lemma isCantor_add_disjoint {p q : ℕ} (hp : IsCantor p) (hq : IsCantor q)
+    (hd : ∀ i, p / 3 ^ i % 3 = 0 ∨ q / 3 ^ i % 3 = 0) :
+    IsCantor (p + q) := by
+  intro i
+  have h1 := isCantor_add_digit hp hq i
+  have h2 := hp i
+  have h3 := hq i
+  rcases hd i with h | h <;> omega
+
+/-- A number with digit 1 at `p` that differs from `3^p` is not a pure
+power. -/
+lemma not_pure_of_extra {x p : ℕ} (hdig : x / 3 ^ p % 3 = 1)
+    (hne : x ≠ 3 ^ p) : ∀ j, x ≠ 3 ^ j := by
+  intro j hx
+  subst hx
+  have h := pow_digit j p
+  by_cases hpj : p = j
+  · exact hne (by rw [hpj])
+  · rw [if_neg hpj] at h
+    omega
+
+/-- A set digit bounds the number from below. -/
+lemma pow_le_of_digit {x p : ℕ} (hd : x / 3 ^ p % 3 = 1) : 3 ^ p ≤ x := by
+  by_contra hlt
+  rw [Nat.div_eq_of_lt (by omega)] at hd
+  norm_num at hd
+
+lemma not_pure_zero : ∀ j, (0 : ℕ) ≠ 3 ^ j := by
+  intro j
+  have := pow3_pos j
+  omega
+
+/-- Scaled non-purity, shift-on-the-left form. -/
+lemma not_pure_of_scaled' {c m : ℕ} (hc : ¬∃ t, c = 3 ^ t) (j : ℕ) :
+    3 ^ m * c ≠ 3 ^ j := by
+  rw [Nat.mul_comm]
+  exact not_pure_of_scaled hc j
+
+/-- Clearing a set digit: digits of `x - 3^p` when `x` is Cantor with
+digit 1 at `p`. -/
+lemma sub_pow_digit {x p : ℕ} (hx : IsCantor x) (hd : x / 3 ^ p % 3 = 1) :
+    ∀ i, (x - 3 ^ p) / 3 ^ i % 3 = if i = p then 0 else x / 3 ^ i % 3 := by
+  induction p generalizing x with
+  | zero =>
+    intro i
+    have h1 : x % 3 = 1 := by simpa using hd
+    rcases i with _ | i
+    · rw [if_pos rfl]
+      simp only [pow_zero, Nat.div_one]
+      omega
+    · rw [if_neg (by omega)]
+      have hx1 : x - 3 ^ 0 = 3 * (x / 3) := by
+        have := Nat.div_add_mod x 3
+        simp only [pow_zero]
+        omega
+      rw [hx1]
+      have hstep : 3 * (x / 3) / 3 ^ (i + 1) = x / 3 / 3 ^ i := by
+        rw [pow_succ, Nat.mul_comm (3 ^ i) 3, ← Nat.div_div_eq_div_mul,
+          Nat.mul_div_cancel_left _ (by norm_num : (0:ℕ) < 3)]
+      rw [hstep]
+      have hnd : x / 3 ^ (i + 1) = x / 3 / 3 ^ i := by
+        rw [pow_succ, Nat.mul_comm (3 ^ i) 3, ← Nat.div_div_eq_div_mul]
+      rw [hnd]
+  | succ p ihp =>
+    intro i
+    have hq : IsCantor (x / 3) := by
+      intro k
+      have hnd : x / 3 / 3 ^ k = x / 3 ^ (k + 1) := by
+        rw [pow_succ, Nat.mul_comm (3 ^ k) 3, ← Nat.div_div_eq_div_mul]
+      rw [hnd]; exact hx (k + 1)
+    have hdq : x / 3 / 3 ^ p % 3 = 1 := by
+      have hnd : x / 3 / 3 ^ p = x / 3 ^ (p + 1) := by
+        rw [pow_succ, Nat.mul_comm (3 ^ p) 3, ← Nat.div_div_eq_div_mul]
+      rw [hnd]; exact hd
+    have hge : 3 ^ p ≤ x / 3 := pow_le_of_digit hdq
+    have hsub : x - 3 ^ (p + 1) = 3 * (x / 3 - 3 ^ p) + x % 3 := by
+      have h2 := Nat.div_add_mod x 3
+      have h3 : 3 ^ (p + 1) = 3 * 3 ^ p := by
+        rw [pow_succ]; ring
+      omega
+    rw [hsub]
+    rcases i with _ | i
+    · rw [if_neg (by omega)]
+      simp only [pow_zero, Nat.div_one]
+      omega
+    · have h30 : (3 * (x / 3 - 3 ^ p) + x % 3) / 3 = x / 3 - 3 ^ p := by
+        omega
+      have hstep : (3 * (x / 3 - 3 ^ p) + x % 3) / 3 ^ (i + 1)
+          = (x / 3 - 3 ^ p) / 3 ^ i := by
+        rw [pow_succ, Nat.mul_comm (3 ^ i) 3, ← Nat.div_div_eq_div_mul, h30]
+      rw [hstep, ihp hq hdq i]
+      have hnd : x / 3 / 3 ^ i = x / 3 ^ (i + 1) := by
+        rw [pow_succ, Nat.mul_comm (3 ^ i) 3, ← Nat.div_div_eq_div_mul]
+      by_cases hip : i = p
+      · rw [if_pos hip, if_pos (by omega)]
+      · rw [if_neg hip, if_neg (by omega), hnd]
+
+/-- Every nonzero Cantor number has a digit equal to 1 somewhere. -/
+lemma exists_digit_one : ∀ {m : ℕ}, IsCantor m → m ≠ 0 →
+    ∃ v, m / 3 ^ v % 3 = 1 := by
+  intro m
+  induction m using Nat.strong_induction_on with
+  | _ m ih =>
+    intro hm h0
+    have h3 : m % 3 ≤ 1 := by simpa using hm 0
+    rcases Nat.eq_zero_or_pos (m % 3) with hz | hpz
+    · have hq0 : m / 3 ≠ 0 := by
+        intro hq
+        have := Nat.div_add_mod m 3
+        omega
+      have hqc : IsCantor (m / 3) := by
+        intro k
+        have hnd : m / 3 / 3 ^ k = m / 3 ^ (k + 1) := by
+          rw [pow_succ, Nat.mul_comm (3 ^ k) 3, ← Nat.div_div_eq_div_mul]
+        rw [hnd]; exact hm (k + 1)
+      have hlt : m / 3 < m := Nat.div_lt_self (by omega) (by norm_num)
+      obtain ⟨v, hv⟩ := ih (m / 3) hlt hqc hq0
+      refine ⟨v + 1, ?_⟩
+      have hnd : m / 3 ^ (v + 1) = m / 3 / 3 ^ v := by
+        rw [pow_succ, Nat.mul_comm (3 ^ v) 3, ← Nat.div_div_eq_div_mul]
+      rw [hnd]; exact hv
+    · refine ⟨0, ?_⟩
+      simp only [pow_zero, Nat.div_one]
+      omega
+
+/-- Digit formula for the complementary layer: digit `d` becomes
+`d - min d 1`. -/
+lemma complement_digit (n : ℕ) :
+    ∀ i, (n - layer n) / 3 ^ i % 3
+      = n / 3 ^ i % 3 - min (n / 3 ^ i % 3) 1 := by
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    intro i
+    rcases Nat.eq_zero_or_pos n with h | h
+    · subst h; simp [layer_zero, Nat.zero_div]
+    · have hq : n / 3 < n := Nat.div_lt_self h (by norm_num)
+      have hrec : n - layer n = 3 * (n / 3 - layer (n / 3))
+          + (n % 3 - min (n % 3) 1) := by
+        have h1 := layer_eq n h
+        have h2 := Nat.div_add_mod n 3
+        have h3 := layer_le (n / 3)
+        have h4 : min (n % 3) 1 ≤ n % 3 := Nat.min_le_left _ _
+        have h5 : layer n ≤ n := layer_le n
+        omega
+      rcases i with _ | i
+      · rw [hrec]
+        simp only [pow_zero, Nat.div_one]
+        omega
+      · rw [hrec]
+        have h30 : (3 * (n / 3 - layer (n / 3)) + (n % 3 - min (n % 3) 1)) / 3
+            = n / 3 - layer (n / 3) := by omega
+        have hstep : (3 * (n / 3 - layer (n / 3)) + (n % 3 - min (n % 3) 1))
+            / 3 ^ (i + 1) = (n / 3 - layer (n / 3)) / 3 ^ i := by
+          rw [pow_succ, Nat.mul_comm (3 ^ i) 3, ← Nat.div_div_eq_div_mul, h30]
+        have hnd : n / 3 ^ (i + 1) = n / 3 / 3 ^ i := by
+          rw [pow_succ, Nat.mul_comm (3 ^ i) 3, ← Nat.div_div_eq_div_mul]
+        rw [hstep, ih (n / 3) hq i, hnd]
+
+/-- 12 = 110₃, 28 = 1001₃, 39 = 1110₃, 40 = 1111₃ are Cantor. -/
+lemma isCantor_12 : IsCantor 12 := by
+  intro i
+  match i with
+  | 0 => norm_num
+  | 1 => norm_num
+  | 2 => norm_num
+  | (j + 3) =>
+    have h27 : (27 : ℕ) ≤ 3 ^ (j + 3) := by
+      calc (27 : ℕ) = 3 ^ 3 := by norm_num
+        _ ≤ 3 ^ (j + 3) := Nat.pow_le_pow_right (by norm_num) (by omega)
+    have : 12 / 3 ^ (j + 3) = 0 := Nat.div_eq_of_lt (by omega)
+    simp [this]
+
+lemma isCantor_28 : IsCantor 28 := by
+  intro i
+  match i with
+  | 0 => norm_num
+  | 1 => norm_num
+  | 2 => norm_num
+  | 3 => norm_num
+  | (j + 4) =>
+    have h81 : (81 : ℕ) ≤ 3 ^ (j + 4) := by
+      calc (81 : ℕ) = 3 ^ 4 := by norm_num
+        _ ≤ 3 ^ (j + 4) := Nat.pow_le_pow_right (by norm_num) (by omega)
+    have : 28 / 3 ^ (j + 4) = 0 := Nat.div_eq_of_lt (by omega)
+    simp [this]
+
+lemma isCantor_39 : IsCantor 39 := by
+  intro i
+  match i with
+  | 0 => norm_num
+  | 1 => norm_num
+  | 2 => norm_num
+  | 3 => norm_num
+  | (j + 4) =>
+    have h81 : (81 : ℕ) ≤ 3 ^ (j + 4) := by
+      calc (81 : ℕ) = 3 ^ 4 := by norm_num
+        _ ≤ 3 ^ (j + 4) := Nat.pow_le_pow_right (by norm_num) (by omega)
+    have : 39 / 3 ^ (j + 4) = 0 := Nat.div_eq_of_lt (by omega)
+    simp [this]
+
+lemma isCantor_40 : IsCantor 40 := by
+  intro i
+  match i with
+  | 0 => norm_num
+  | 1 => norm_num
+  | 2 => norm_num
+  | 3 => norm_num
+  | (j + 4) =>
+    have h81 : (81 : ℕ) ≤ 3 ^ (j + 4) := by
+      calc (81 : ℕ) = 3 ^ 4 := by norm_num
+        _ ≤ 3 ^ (j + 4) := Nat.pow_le_pow_right (by norm_num) (by omega)
+    have : 40 / 3 ^ (j + 4) = 0 := Nat.div_eq_of_lt (by omega)
+    simp [this]
+
+lemma twelve_not_pure : ¬∃ t, (12 : ℕ) = 3 ^ t := by
+  rintro ⟨t, ht⟩
+  match t with
+  | 0 => norm_num at ht
+  | 1 => norm_num at ht
+  | 2 => norm_num at ht
+  | (s + 3) =>
+    have : 27 ≤ 3 ^ (s + 3) := by
+      calc (27 : ℕ) = 3 ^ 3 := by norm_num
+        _ ≤ 3 ^ (s + 3) := Nat.pow_le_pow_right (by norm_num) (by omega)
+    omega
+
+lemma twentyeight_not_pure : ¬∃ t, (28 : ℕ) = 3 ^ t := by
+  rintro ⟨t, ht⟩
+  match t with
+  | 0 => norm_num at ht
+  | 1 => norm_num at ht
+  | 2 => norm_num at ht
+  | 3 => norm_num at ht
+  | (s + 4) =>
+    have : 81 ≤ 3 ^ (s + 4) := by
+      calc (81 : ℕ) = 3 ^ 4 := by norm_num
+        _ ≤ 3 ^ (s + 4) := Nat.pow_le_pow_right (by norm_num) (by omega)
+    omega
+
+lemma thirtynine_not_pure : ¬∃ t, (39 : ℕ) = 3 ^ t := by
+  rintro ⟨t, ht⟩
+  match t with
+  | 0 => norm_num at ht
+  | 1 => norm_num at ht
+  | 2 => norm_num at ht
+  | 3 => norm_num at ht
+  | (s + 4) =>
+    have : 81 ≤ 3 ^ (s + 4) := by
+      calc (81 : ℕ) = 3 ^ 4 := by norm_num
+        _ ≤ 3 ^ (s + 4) := Nat.pow_le_pow_right (by norm_num) (by omega)
+    omega
+
+lemma forty_not_pure : ¬∃ t, (40 : ℕ) = 3 ^ t := by
+  rintro ⟨t, ht⟩
+  match t with
+  | 0 => norm_num at ht
+  | 1 => norm_num at ht
+  | 2 => norm_num at ht
+  | 3 => norm_num at ht
+  | (s + 4) =>
+    have : 81 ≤ 3 ^ (s + 4) := by
+      calc (81 : ℕ) = 3 ^ 4 := by norm_num
+        _ ≤ 3 ^ (s + 4) := Nat.pow_le_pow_right (by norm_num) (by omega)
+    omega
+
+lemma isCantor_10' : IsCantor 10 := isCantor_10
+
 /-- The Erdős 881 mechanism in one statement: the Cantor basis covers
 ℕ at order 2, the power deletion is fatal to order 2 at every scale,
 and order 3 repairs every casualty. -/
@@ -643,5 +948,408 @@ theorem cantor_demonstrator :
       (∀ j, x ≠ 3 ^ j) ∧ (∀ j, y ≠ 3 ^ j) ∧ (∀ j, z ≠ 3 ^ j) ∧
       x + y + z = 3 ^ k) :=
   ⟨cantor_pair_basis, cantor_powers_destroyed, cantor_carry_repair⟩
+
+
+
+/-- **The surviving deletion, in full**: after removing all pure powers
+from the Cantor basis, order 3 still covers every `n ≥ 3^7`. -/
+theorem cantor_deletion_order_three (n : ℕ) (hn : 3 ^ 7 ≤ n) :
+    ∃ x y z, IsCantor x ∧ IsCantor y ∧ IsCantor z ∧
+      (∀ j, x ≠ 3 ^ j) ∧ (∀ j, y ≠ 3 ^ j) ∧ (∀ j, z ≠ 3 ^ j) ∧
+      x + y + z = n := by
+  classical
+  have h37 : (3 : ℕ) ^ 7 = 2187 := by norm_num
+  have hlay := layer_le n
+  have hc1 : IsCantor (layer n) := isCantor_layer n
+  have hc2 : IsCantor (n - layer n) := isCantor_complement n
+  by_cases hz2 : n - layer n = 0
+  · -- no 2-digits: n itself is Cantor
+    have hnl : layer n = n := by omega
+    have hnc : IsCantor n := hnl ▸ hc1
+    by_cases hpure : ∃ a, n = 3 ^ a
+    · obtain ⟨a, ha⟩ := hpure
+      have ha3 : 3 ≤ a := by
+        by_contra hlt
+        have h1 : n ≤ 3 ^ 2 := by
+          rw [ha]; exact Nat.pow_le_pow_right (by norm_num) (by omega)
+        have h2 : (3 : ℕ) ^ 2 = 9 := by norm_num
+        omega
+      obtain ⟨x, y, z, hx, hy, hz, hpx, hpy, hpz, hs⟩ :=
+        cantor_carry_repair a ha3
+      exact ⟨x, y, z, hx, hy, hz, hpx, hpy, hpz, by rw [ha]; exact hs⟩
+    · push_neg at hpure
+      exact ⟨n, 0, 0, hnc, isCantor_zero, isCantor_zero, hpure,
+        not_pure_zero, not_pure_zero, by omega⟩
+  · by_cases hp2 : ∃ b, n - layer n = 3 ^ b
+    · obtain ⟨b, hb⟩ := hp2
+      have hdb : n / 3 ^ b % 3 = 2 := by
+        have h1 := complement_digit n b
+        rw [hb] at h1
+        have h2 := pow_digit b b
+        rw [if_pos rfl] at h2
+        omega
+      have hg1b : layer n / 3 ^ b % 3 = 1 := by
+        have h1 := layer_digit n b
+        rw [hdb] at h1
+        simpa using h1
+      have honesd := sub_pow_digit hc1 hg1b
+      have honesc : IsCantor (layer n - 3 ^ b) := by
+        intro i
+        rw [honesd i]
+        by_cases hib : i = b
+        · rw [if_pos hib]; omega
+        · rw [if_neg hib]; exact hc1 i
+      have hg1ge : 3 ^ b ≤ layer n := pow_le_of_digit hg1b
+      by_cases hones0 : layer n - 3 ^ b = 0
+      · -- n = 2 * 3^b: the doubled-power casualty
+        have hn2 : n = 2 * 3 ^ b := by omega
+        have hb3 : 3 ≤ b := by
+          by_contra hlt
+          have h1 : 3 ^ b ≤ 3 ^ 2 :=
+            Nat.pow_le_pow_right (by norm_num) (by omega)
+          have h2 : (3 : ℕ) ^ 2 = 9 := by norm_num
+          omega
+        obtain ⟨x, y, z, hx, hy, hz, hpx, hpy, hpz, hs⟩ :=
+          cantor_carry_repair_double b hb3
+        exact ⟨x, y, z, hx, hy, hz, hpx, hpy, hpz, by rw [hn2]; exact hs⟩
+      · obtain ⟨v, hv⟩ := exists_digit_one honesc hones0
+        have honesb : (layer n - 3 ^ b) / 3 ^ b % 3 = 0 := by
+          have h1 := honesd b
+          rwa [if_pos rfl] at h1
+        have hvb : v ≠ b := by
+          intro hvb
+          rw [hvb, honesb] at hv
+          omega
+        have hrestd := sub_pow_digit honesc hv
+        have hrestc : IsCantor (layer n - 3 ^ b - 3 ^ v) := by
+          intro i
+          rw [hrestd i]
+          by_cases hiv : i = v
+          · rw [if_pos hiv]; omega
+          · rw [if_neg hiv]; exact honesc i
+        have hvge : 3 ^ v ≤ layer n - 3 ^ b := pow_le_of_digit hv
+        by_cases hrest0 : layer n - 3 ^ b - 3 ^ v = 0
+        · -- n = 2*3^b + 3^v: the constant menu
+          have hnval : n = 2 * 3 ^ b + 3 ^ v := by omega
+          rcases Nat.lt_or_ge v b with hvb' | hbv'
+          · -- v < b: b dominant
+            have hb7 : 7 ≤ b := by
+              by_contra hlt
+              have h1 : 3 ^ b ≤ 3 ^ 6 :=
+                Nat.pow_le_pow_right (by norm_num) (by omega)
+              have h2 : 3 ^ v ≤ 3 ^ 5 :=
+                Nat.pow_le_pow_right (by norm_num) (by omega)
+              have h3 : (3 : ℕ) ^ 6 = 729 := by norm_num
+              have h4 : (3 : ℕ) ^ 5 = 243 := by norm_num
+              omega
+            have hu : 3 ^ b = 3 ^ (b - 3) * 27 := by
+              have h1 : 3 ^ (b - 3 + 3) = 3 ^ (b - 3) * 3 ^ 3 :=
+                pow_add 3 (b - 3) 3
+              have h2 : b - 3 + 3 = b := by omega
+              rw [h2] at h1
+              have h3 : (3 : ℕ) ^ 3 = 27 := by norm_num
+              rw [h3] at h1
+              exact h1
+            have hmenu : v ≤ b - 4 ∨ v = b - 3 ∨ v = b - 2 ∨ v = b - 1 := by
+              omega
+            rcases hmenu with hm4 | hm3 | hm2 | hm1
+            · -- absorb 3^v into the 4-part: (13u, 37u, 4u + 3^v)
+              refine ⟨3 ^ (b - 3) * 13, 3 ^ (b - 3) * 37,
+                3 ^ (b - 3) * 4 + 3 ^ v,
+                isCantor_shift _ isCantor_13, isCantor_shift _ isCantor_37,
+                ?_, not_pure_of_scaled' thirteen_not_pure,
+                not_pure_of_scaled' thirtyseven_not_pure, ?_, ?_⟩
+              · refine isCantor_add_disjoint (isCantor_shift _ isCantor_4)
+                  (isCantor_pow v) ?_
+                intro i
+                by_cases hiv : i = v
+                · left
+                  rw [shift_digit, if_pos (by omega)]
+                · right
+                  rw [pow_digit, if_neg hiv]
+              · have hd4 : 3 ^ (b - 3) * 4 / 3 ^ v % 3 = 0 := by
+                  rw [shift_digit, if_pos (by omega)]
+                have h1 := isCantor_add_digit (isCantor_shift (b - 3) isCantor_4)
+                  (isCantor_pow v) v
+                have h2 := pow_digit v v
+                rw [if_pos rfl] at h2
+                have hdig : (3 ^ (b - 3) * 4 + 3 ^ v) / 3 ^ v % 3 = 1 := by
+                  omega
+                refine not_pure_of_extra hdig ?_
+                have h5 : 3 ^ v ≤ 3 ^ (b - 3) :=
+                  Nat.pow_le_pow_right (by norm_num) (by omega)
+                have h6 := pow3_pos (b - 3)
+                omega
+              · omega
+            · -- v = b-3: (39u, 12u, 4u) with 39+12+4 = 55 = 54+1
+              have hvA : 3 ^ v = 3 ^ (b - 3) := by rw [hm3]
+              exact ⟨3 ^ (b - 3) * 39, 3 ^ (b - 3) * 12, 3 ^ (b - 3) * 4,
+                isCantor_shift _ isCantor_39, isCantor_shift _ isCantor_12,
+                isCantor_shift _ isCantor_4,
+                not_pure_of_scaled' thirtynine_not_pure,
+                not_pure_of_scaled' twelve_not_pure,
+                not_pure_of_scaled' four_not_pure, by omega⟩
+            · -- v = b-2: (13u, 40u, 4u) with 13+40+4 = 57 = 54+3
+              have hw : 3 ^ (b - 2) = 3 ^ (b - 3) * 3 := by
+                have h1 : 3 ^ (b - 3 + 1) = 3 ^ (b - 3) * 3 :=
+                  pow_succ 3 (b - 3)
+                have h2 : b - 3 + 1 = b - 2 := by omega
+                rw [h2] at h1
+                exact h1
+              have hvA : 3 ^ v = 3 ^ (b - 3) * 3 := by rw [hm2]; exact hw
+              exact ⟨3 ^ (b - 3) * 13, 3 ^ (b - 3) * 40, 3 ^ (b - 3) * 4,
+                isCantor_shift _ isCantor_13, isCantor_shift _ isCantor_40,
+                isCantor_shift _ isCantor_4,
+                not_pure_of_scaled' thirteen_not_pure,
+                not_pure_of_scaled' forty_not_pure,
+                not_pure_of_scaled' four_not_pure, by omega⟩
+            · -- v = b-1: (13w, 4w, 4w) with 13+4+4 = 21 = 18+3, w = 3^(b-2)
+              have hw9 : 3 ^ b = 3 ^ (b - 2) * 9 := by
+                have h1 : 3 ^ (b - 2 + 2) = 3 ^ (b - 2) * 3 ^ 2 :=
+                  pow_add 3 (b - 2) 2
+                have h2 : b - 2 + 2 = b := by omega
+                rw [h2] at h1
+                have h3 : (3 : ℕ) ^ 2 = 9 := by norm_num
+                rw [h3] at h1
+                exact h1
+              have hw3 : 3 ^ (b - 1) = 3 ^ (b - 2) * 3 := by
+                have h1 : 3 ^ (b - 2 + 1) = 3 ^ (b - 2) * 3 :=
+                  pow_succ 3 (b - 2)
+                have h2 : b - 2 + 1 = b - 1 := by omega
+                rw [h2] at h1
+                exact h1
+              have hvA : 3 ^ v = 3 ^ (b - 2) * 3 := by rw [hm1]; exact hw3
+              exact ⟨3 ^ (b - 2) * 13, 3 ^ (b - 2) * 4, 3 ^ (b - 2) * 4,
+                isCantor_shift _ isCantor_13, isCantor_shift _ isCantor_4,
+                isCantor_shift _ isCantor_4,
+                not_pure_of_scaled' thirteen_not_pure,
+                not_pure_of_scaled' four_not_pure,
+                not_pure_of_scaled' four_not_pure, by omega⟩
+          · -- b < v: v dominant
+            have hbv : b < v := by omega
+            have hv7 : 7 ≤ v := by
+              by_contra hlt
+              have h1 : 3 ^ v ≤ 3 ^ 6 :=
+                Nat.pow_le_pow_right (by norm_num) (by omega)
+              have h2 : 3 ^ b ≤ 3 ^ 5 :=
+                Nat.pow_le_pow_right (by norm_num) (by omega)
+              have h3 : (3 : ℕ) ^ 6 = 729 := by norm_num
+              have h4 : (3 : ℕ) ^ 5 = 243 := by norm_num
+              omega
+            have hmenu : v = b + 1 ∨ v = b + 2 ∨ v = b + 3 ∨ b + 4 ≤ v := by
+              omega
+            rcases hmenu with hm1 | hm2 | hm3 | hm4
+            · -- v = b+1: (13w, 28w, 4w), 45 = 18+27, w = 3^(b-2)
+              have hw9 : 3 ^ b = 3 ^ (b - 2) * 9 := by
+                have h1 : 3 ^ (b - 2 + 2) = 3 ^ (b - 2) * 3 ^ 2 :=
+                  pow_add 3 (b - 2) 2
+                have h2 : b - 2 + 2 = b := by omega
+                rw [h2] at h1
+                have h3 : (3 : ℕ) ^ 2 = 9 := by norm_num
+                rw [h3] at h1
+                exact h1
+              have hw27 : 3 ^ v = 3 ^ (b - 2) * 27 := by
+                have h1 : 3 ^ (b - 2 + 3) = 3 ^ (b - 2) * 3 ^ 3 :=
+                  pow_add 3 (b - 2) 3
+                have h2 : b - 2 + 3 = b + 1 := by omega
+                rw [h2] at h1
+                have h3 : (3 : ℕ) ^ 3 = 27 := by norm_num
+                rw [h3] at h1
+                rw [hm1]
+                exact h1
+              exact ⟨3 ^ (b - 2) * 13, 3 ^ (b - 2) * 28, 3 ^ (b - 2) * 4,
+                isCantor_shift _ isCantor_13, isCantor_shift _ isCantor_28,
+                isCantor_shift _ isCantor_4,
+                not_pure_of_scaled' thirteen_not_pure,
+                not_pure_of_scaled' twentyeight_not_pure,
+                not_pure_of_scaled' four_not_pure, by omega⟩
+            · -- v = b+2: (13t, 10t, 10t), 33 = 6+27, t = 3^(b-1)
+              have ht3 : 3 ^ b = 3 ^ (b - 1) * 3 := by
+                have h1 : 3 ^ (b - 1 + 1) = 3 ^ (b - 1) * 3 :=
+                  pow_succ 3 (b - 1)
+                have h2 : b - 1 + 1 = b := by omega
+                rw [h2] at h1
+                exact h1
+              have ht27 : 3 ^ v = 3 ^ (b - 1) * 27 := by
+                have h1 : 3 ^ (b - 1 + 3) = 3 ^ (b - 1) * 3 ^ 3 :=
+                  pow_add 3 (b - 1) 3
+                have h2 : b - 1 + 3 = b + 2 := by omega
+                rw [h2] at h1
+                have h3 : (3 : ℕ) ^ 3 = 27 := by norm_num
+                rw [h3] at h1
+                rw [hm2]
+                exact h1
+              exact ⟨3 ^ (b - 1) * 13, 3 ^ (b - 1) * 10, 3 ^ (b - 1) * 10,
+                isCantor_shift _ isCantor_13, isCantor_shift _ isCantor_10,
+                isCantor_shift _ isCantor_10,
+                not_pure_of_scaled' thirteen_not_pure,
+                not_pure_of_scaled' ten_not_pure,
+                not_pure_of_scaled' ten_not_pure, by omega⟩
+            · -- v = b+3: (13s, 12s, 4s), 29 = 2+27, s = 3^b
+              have hs27 : 3 ^ v = 3 ^ b * 27 := by
+                have h1 : 3 ^ (b + 3) = 3 ^ b * 3 ^ 3 := pow_add 3 b 3
+                have h3 : (3 : ℕ) ^ 3 = 27 := by norm_num
+                rw [h3] at h1
+                rw [hm3]
+                exact h1
+              exact ⟨3 ^ b * 13, 3 ^ b * 12, 3 ^ b * 4,
+                isCantor_shift _ isCantor_13, isCantor_shift _ isCantor_12,
+                isCantor_shift _ isCantor_4,
+                not_pure_of_scaled' thirteen_not_pure,
+                not_pure_of_scaled' twelve_not_pure,
+                not_pure_of_scaled' four_not_pure, by omega⟩
+            · -- v ≥ b+4: split 3^v, absorb 3^b twice:
+              -- (13w + 3^b, 10w + 3^b, 4w), w = 3^(v-3)
+              have hw27 : 3 ^ v = 3 ^ (v - 3) * 27 := by
+                have h1 : 3 ^ (v - 3 + 3) = 3 ^ (v - 3) * 3 ^ 3 :=
+                  pow_add 3 (v - 3) 3
+                have h2 : v - 3 + 3 = v := by omega
+                rw [h2] at h1
+                have h3 : (3 : ℕ) ^ 3 = 27 := by norm_num
+                rw [h3] at h1
+                exact h1
+              have hdisj13 : ∀ i : ℕ, 3 ^ (v - 3) * 13 / 3 ^ i % 3 = 0 ∨
+                  3 ^ b / 3 ^ i % 3 = 0 := by
+                intro i
+                by_cases hib : i = b
+                · left
+                  rw [shift_digit, if_pos (by omega)]
+                · right
+                  rw [pow_digit, if_neg hib]
+              have hdisj10 : ∀ i : ℕ, 3 ^ (v - 3) * 10 / 3 ^ i % 3 = 0 ∨
+                  3 ^ b / 3 ^ i % 3 = 0 := by
+                intro i
+                by_cases hib : i = b
+                · left
+                  rw [shift_digit, if_pos (by omega)]
+                · right
+                  rw [pow_digit, if_neg hib]
+              have hnp13 : ∀ j, 3 ^ (v - 3) * 13 + 3 ^ b ≠ 3 ^ j := by
+                have hd0 : 3 ^ (v - 3) * 13 / 3 ^ b % 3 = 0 := by
+                  rw [shift_digit, if_pos (by omega)]
+                have h1 := isCantor_add_digit
+                  (isCantor_shift (v - 3) isCantor_13) (isCantor_pow b) b
+                have h2 := pow_digit b b
+                rw [if_pos rfl] at h2
+                have hdig : (3 ^ (v - 3) * 13 + 3 ^ b) / 3 ^ b % 3 = 1 := by
+                  omega
+                refine not_pure_of_extra hdig ?_
+                have h6 := pow3_pos (v - 3)
+                omega
+              have hnp10 : ∀ j, 3 ^ (v - 3) * 10 + 3 ^ b ≠ 3 ^ j := by
+                have hd0 : 3 ^ (v - 3) * 10 / 3 ^ b % 3 = 0 := by
+                  rw [shift_digit, if_pos (by omega)]
+                have h1 := isCantor_add_digit
+                  (isCantor_shift (v - 3) isCantor_10) (isCantor_pow b) b
+                have h2 := pow_digit b b
+                rw [if_pos rfl] at h2
+                have hdig : (3 ^ (v - 3) * 10 + 3 ^ b) / 3 ^ b % 3 = 1 := by
+                  omega
+                refine not_pure_of_extra hdig ?_
+                have h6 := pow3_pos (v - 3)
+                omega
+              exact ⟨3 ^ (v - 3) * 13 + 3 ^ b, 3 ^ (v - 3) * 10 + 3 ^ b,
+                3 ^ (v - 3) * 4,
+                isCantor_add_disjoint (isCantor_shift _ isCantor_13)
+                  (isCantor_pow b) hdisj13,
+                isCantor_add_disjoint (isCantor_shift _ isCantor_10)
+                  (isCantor_pow b) hdisj10,
+                isCantor_shift _ isCantor_4,
+                hnp13, hnp10, not_pure_of_scaled' four_not_pure, by omega⟩
+        · -- generic split: (3^b + 3^v, 3^b + rest, 0)
+          have hrestb : (layer n - 3 ^ b - 3 ^ v) / 3 ^ b % 3 = 0 := by
+            have h1 := hrestd b
+            rw [if_neg (fun h => hvb h.symm)] at h1
+            rw [h1]
+            exact honesb
+          have hxc : IsCantor (3 ^ b + 3 ^ v) := by
+            refine isCantor_add_disjoint (isCantor_pow b) (isCantor_pow v) ?_
+            intro i
+            by_cases hib : i = b
+            · right
+              rw [pow_digit, if_neg (by omega)]
+            · left
+              rw [pow_digit, if_neg hib]
+          have hyc : IsCantor (3 ^ b + (layer n - 3 ^ b - 3 ^ v)) := by
+            refine isCantor_add_disjoint (isCantor_pow b) hrestc ?_
+            intro i
+            by_cases hib : i = b
+            · right
+              rw [hib]
+              exact hrestb
+            · left
+              rw [pow_digit, if_neg hib]
+          have hxnp : ∀ j, 3 ^ b + 3 ^ v ≠ 3 ^ j := by
+            have h1 := isCantor_add_digit (isCantor_pow b) (isCantor_pow v) b
+            have h2 := pow_digit b b
+            rw [if_pos rfl] at h2
+            have h3 := pow_digit v b
+            rw [if_neg (fun h => hvb h.symm)] at h3
+            have hdig : (3 ^ b + 3 ^ v) / 3 ^ b % 3 = 1 := by omega
+            refine not_pure_of_extra hdig ?_
+            have h6 := pow3_pos v
+            omega
+          have hynp : ∀ j, 3 ^ b + (layer n - 3 ^ b - 3 ^ v) ≠ 3 ^ j := by
+            have h1 := isCantor_add_digit (isCantor_pow b) hrestc b
+            have h2 := pow_digit b b
+            rw [if_pos rfl] at h2
+            have hdig : (3 ^ b + (layer n - 3 ^ b - 3 ^ v)) / 3 ^ b % 3 = 1 := by
+              omega
+            refine not_pure_of_extra hdig ?_
+            omega
+          exact ⟨3 ^ b + 3 ^ v, 3 ^ b + (layer n - 3 ^ b - 3 ^ v), 0,
+            hxc, hyc, isCantor_zero, hxnp, hynp, not_pure_zero, by omega⟩
+    · -- the 2-digit part is composite: (layer n, n - layer n, 0)
+      have hg1np : ∀ j, layer n ≠ 3 ^ j := by
+        intro a hga
+        have hd : ∀ i, i ≠ a → n / 3 ^ i % 3 = 0 := by
+          intro i hia
+          have h1 := layer_digit n i
+          rw [hga] at h1
+          have h2 := pow_digit a i
+          rw [if_neg hia] at h2
+          omega
+        have hg2z : ∀ i, i ≠ a → (n - layer n) / 3 ^ i % 3 = 0 := by
+          intro i hia
+          have h1 := complement_digit n i
+          rw [hd i hia] at h1
+          simpa using h1
+        have hbnd : n - layer n < 3 ^ (n - layer n + a + 1) := by
+          have h1 : n - layer n < 3 ^ (n - layer n) :=
+            Nat.lt_pow_self (by norm_num) (n := n - layer n)
+          have h2 : 3 ^ (n - layer n) ≤ 3 ^ (n - layer n + a + 1) :=
+            Nat.pow_le_pow_right (by norm_num) (by omega)
+          omega
+        rcases Nat.eq_zero_or_pos ((n - layer n) / 3 ^ a % 3) with hza | hpa
+        · refine hz2 (isCantor_eq_zero_of_digits hbnd ?_)
+          intro i _
+          by_cases hia : i = a
+          · rwa [hia]
+          · exact hg2z i hia
+        · have h1 : (n - layer n) / 3 ^ a % 3 = 1 := by
+            have := hc2 a
+            omega
+          refine hp2 ⟨a, digit_single hbnd (by omega) h1 ?_⟩
+          intro i _ hia
+          exact hg2z i hia
+      exact ⟨layer n, n - layer n, 0, hc1, hc2, isCantor_zero, hg1np,
+        fun j h => hp2 ⟨j, h⟩, not_pure_zero, by omega⟩
+
+/-- **A complete verified Erdős 881 instance.**  The Cantor set is an
+order-2 basis of ℕ; it is ℵ₀-minimal — deleting ANY infinite subset
+destroys order 2 (each deleted element's double loses its unique
+representation); yet deleting the infinite set of pure powers leaves an
+asymptotic order-3 basis.  This realizes the conclusion pattern of
+Erdős 881 (k = 2) end to end on a concrete minimal basis. -/
+theorem erdos881_cantor_instance :
+    (∀ n, ∃ a b, IsCantor a ∧ IsCantor b ∧ a + b = n) ∧
+    (∀ B : Set ℕ, (∀ b ∈ B, IsCantor b) → ∀ b ∈ B,
+      ¬∃ p q, IsCantor p ∧ IsCantor q ∧ p ∉ B ∧ q ∉ B ∧ p + q = 2 * b) ∧
+    (∀ k, IsCantor (3 ^ k)) ∧
+    (∀ n, 3 ^ 7 ≤ n → ∃ x y z, IsCantor x ∧ IsCantor y ∧ IsCantor z ∧
+      (∀ j, x ≠ 3 ^ j) ∧ (∀ j, y ≠ 3 ^ j) ∧ (∀ j, z ≠ 3 ^ j) ∧
+      x + y + z = n) :=
+  ⟨cantor_pair_basis, fun _ hB b hb => cantor_minimal hB b hb,
+    isCantor_pow, cantor_deletion_order_three⟩
 
 end Erdos881Cantor
