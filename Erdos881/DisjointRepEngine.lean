@@ -1957,4 +1957,57 @@ theorem legacy_twoDestruction_of_tight_core {A : Set ℕ}
   · exact Or.inr (Or.inl h)
   · exact Or.inr (Or.inr h)
 
+/-- **Corrected covering: the recursion''s inheritance.**  In the
+rigid regime, every late element is a predecessor-free element plus a
+correction in `{0, d}` (chains stop at length two), so the
+predecessor-free part `P` covers every late target up to a correction
+in `{0, d, 2d}`.  This is the covering-like property `P` inherits —
+the missing design piece of the digit recursion: the next level''s
+analysis runs on `P` with corrected covering exactly as this level
+ran on `A` with covering. -/
+theorem corrected_covering_of_rigidity {A : Set ℕ} {N₀ Ns d : ℕ}
+    (hd : 0 < d) (hcov : PairCovers A N₀)
+    (hrig : ∀ x ∈ A, Ns ≤ x →
+      ∀ p ∈ A, ∀ r ∈ A, p + r = 2 * x → p = x ∧ r = x) :
+    ∀ n, N₀ ≤ n → ∃ p ∈ A, ∃ p' ∈ A,
+      (d ≤ p → p - d ∈ A → p - d < Ns + d) ∧
+      (d ≤ p' → p' - d ∈ A → p' - d < Ns + d) ∧
+      ∃ ε, (ε = 0 ∨ ε = d ∨ ε = 2 * d) ∧ p + p' + ε = n := by
+  intro n hn
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hn
+  -- decompose one element: itself, or its predecessor plus d
+  have hdec : ∀ z ∈ A, ∃ p ∈ A, ∃ ε, (ε = 0 ∨ ε = d) ∧ p + ε = z ∧
+      (d ≤ p → p - d ∈ A → p - d < Ns + d) := by
+    intro z hz
+    by_cases hzd : d ≤ z ∧ z - d ∈ A ∧ Ns + d ≤ z - d
+    · obtain ⟨hdz, hzdA, hzNs⟩ := hzd
+      refine ⟨z - d, hzdA, d, Or.inr rfl, by omega, ?_⟩
+      intro hdp hpd
+      -- a further predecessor gives a three-chain through z - d
+      exfalso
+      have hmid : Ns ≤ z - d := by omega
+      refine no_three_chain_of_rigid_middle (A := A) (x := z - 2 * d)
+        hd ?_ ?_ ?_ ?_
+      · have h1 : z - d - d = z - 2 * d := by omega
+        rwa [h1] at hpd
+      · have h1 : z - 2 * d + d = z - d := by omega
+        rwa [h1]
+      · have h1 : z - 2 * d + 2 * d = z := by omega
+        rwa [h1]
+      · have h1 : z - 2 * d + d = z - d := by omega
+        rw [h1]
+        exact hrig (z - d) hzdA hmid
+    · push_neg at hzd
+      refine ⟨z, hz, 0, Or.inl rfl, by omega, ?_⟩
+      intro hdz hzdA
+      by_contra hbig
+      push_neg at hbig
+      exact absurd hbig (by
+        have := hzd hdz hzdA
+        omega)
+  obtain ⟨p, hp, ε₁, hε₁, hpε₁, hpfree⟩ := hdec x hx
+  obtain ⟨p', hp', ε₂, hε₂, hpε₂, hpfree'⟩ := hdec y hy
+  refine ⟨p, hp, p', hp', hpfree, hpfree', ε₁ + ε₂, ?_, by omega⟩
+  rcases hε₁ with h1 | h1 <;> rcases hε₂ with h2 | h2 <;> omega
+
 end Erdos881
