@@ -6459,4 +6459,62 @@ theorem pair_flood_two_envelopes {A : Set ℕ} {N₀ : ℕ}
   · exact hf₁ b ⟨hbA, hb1, hbE₀⟩
       (le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hXb)
 
+/-- **The hub-server dichotomy.**  Under any 0-free infinite
+deletion, the team supply splits: either ONE fixed deleted element
+serves minimal team hubs at cofinally many failing targets (a
+hub-server — a fixed element necessary at infinitely many fresh
+targets), or the teams escape every window (hubs made of deleted
+elements all beyond any bound, cofinally).  The concrete dichotomy
+the rank program's deletion-feedback route runs on. -/
+theorem hub_server_dichotomy {A B : Set ℕ} {N₀ : ℕ}
+    [DecidablePred (· ∈ B)]
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B' ⊆ A, B'.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B') 3)
+    (hBA : B ⊆ A) (hBinf : B.Infinite) (h0B : 0 ∉ B) :
+    (∃ b ∈ B, ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      2 ≤ H.card ∧ (∀ h ∈ H, h ∈ B) ∧ b ∈ H) ∨
+    (∀ W N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      2 ≤ H.card ∧ (∀ h ∈ H, h ∈ B) ∧ ∀ h ∈ H, W < h) := by
+  classical
+  have hteams := guardian_team_hubs_of_deletion h0 hcov hanchor
+    hfail hBA hBinf h0B
+  set Q : ℕ → Finset ℕ → Prop := fun n H =>
+    IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+    2 ≤ H.card ∧ ∀ h ∈ H, h ∈ B with hQdef
+  have hQ : ∀ N, ∃ n, N ≤ n ∧ ∃ H, Q n H := by
+    intro N
+    obtain ⟨n, hn, H, h1, h2, h3, h4⟩ := hteams N
+    exact ⟨n, hn, H, h1, h2, h3, h4⟩
+  by_cases hserv : ∃ b, ∀ N, ∃ n, N ≤ n ∧ ∃ H, Q n H ∧ b ∈ H
+  · left
+    obtain ⟨b, hb⟩ := hserv
+    have hbB : b ∈ B := by
+      obtain ⟨n, -, H, hQH, hbH⟩ := hb 0
+      have hinst : IsRepHub A n H ∧
+          (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+          2 ≤ H.card ∧ ∀ h ∈ H, h ∈ B := hQH
+      exact hinst.2.2.2 b hbH
+    refine ⟨b, hbB, fun N => ?_⟩
+    obtain ⟨n, hn, H, hQH, hbH⟩ := hb N
+    have hinst : IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        2 ≤ H.card ∧ ∀ h ∈ H, h ∈ B := hQH
+    exact ⟨n, hn, H, hinst.1, hinst.2.1, hinst.2.2.1,
+      hinst.2.2.2, hbH⟩
+  · right
+    intro W N
+    rcases cofinal_dichotomy Q hQ W with ⟨b, hbW, hper⟩ | havoid
+    · exact absurd ⟨b, hper⟩ hserv
+    · obtain ⟨n, hn, H, hQH, hbig⟩ := havoid N
+      have hinst : IsRepHub A n H ∧
+          (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+          2 ≤ H.card ∧ ∀ h ∈ H, h ∈ B := hQH
+      exact ⟨n, hn, H, hinst.1, hinst.2.1, hinst.2.2.1,
+        hinst.2.2.2, hbig⟩
+
 end Erdos881
