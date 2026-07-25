@@ -1189,4 +1189,29 @@ theorem erdos881_grand_assembly₆ {A : Set ℕ} {N₀ : ℕ}
       · exact absurd hpriv
           (hN₂ v m (le_trans (le_max_right _ _) hm) hv0)
 
+
+/-- **Zero-guarded targets are exactly the primitives.**  A covered
+target whose every two-term representation passes through zero must
+itself be a primitive element, and conversely.  The primitive clique
+class and full 2-essentiality of zero are one phenomenon. -/
+theorem zero_guarded_iff_primitive {A : Set ℕ} {N₀ n : ℕ}
+    (hcov : PairCovers A N₀) (hn : N₀ ≤ n) (hn0 : 0 < n) :
+    (∀ y ∈ A, ∀ z ∈ A, y + z = n → y = 0 ∨ z = 0) ↔
+    (n ∈ A ∧ ¬ ∃ s ∈ A, ∃ t ∈ A, s + t = n ∧ 0 < s ∧ 0 < t) := by
+  constructor
+  · intro hguard
+    obtain ⟨y, hy, z, hz, hyz⟩ := hcov n hn
+    constructor
+    · rcases hguard y hy z hz hyz with h | h
+      · have : z = n := by omega
+        exact this ▸ hz
+      · have : y = n := by omega
+        exact this ▸ hy
+    · rintro ⟨s, hs, t, ht, hst, hs0, ht0⟩
+      rcases hguard s hs t ht hst with h | h <;> omega
+  · rintro ⟨hnA, hprim⟩ y hy z hz hyz
+    by_contra hne
+    push Not at hne
+    exact hprim ⟨y, hy, z, hz, hyz, by omega, by omega⟩
+
 end Erdos881
