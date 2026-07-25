@@ -5800,4 +5800,49 @@ theorem double_flood_of_counterexample {A : Set ℕ} {N₀ : ℕ}
     ⟨h₂ b hb (le_trans (le_max_left _ _) hXb),
      h₃ b hb (le_trans (le_max_right _ _) hXb)⟩⟩
 
+/-- **At most two guardians per pair-target.**  One envelope-avoiding
+pair representation of `t` pins every possible pair-guardian of `t`
+to its two parts: the guardian→target map of the pair flood is at
+most 2-to-1.  With every large basis element on duty, the enemy
+needs (at least) one fresh Sidon target for every two elements —
+the workforce cannot share. -/
+theorem two_guardians_per_pair_target {A : Set ℕ} {N₀ t : ℕ}
+    {P : Finset ℕ}
+    (hfree : PairFree A N₀ P) (ht : N₀ ≤ t) :
+    ∃ x₀ y₀, ∀ b, b ∉ P →
+      (∀ x ∈ A, ∀ y ∈ A, x + y = t →
+        x ∈ insert b P ∨ y ∈ insert b P) →
+      b = x₀ ∨ b = y₀ := by
+  obtain ⟨x₀, hx₀, y₀, hy₀, hxy, hxP, hyP⟩ := hfree t ht
+  refine ⟨x₀, y₀, fun b hbP hguard => ?_⟩
+  rcases hguard x₀ hx₀ y₀ hy₀ hxy with h | h
+  · rcases Finset.mem_insert.1 h with h' | h'
+    · exact Or.inl h'.symm
+    · exact absurd h' hxP
+  · rcases Finset.mem_insert.1 h with h' | h'
+    · exact Or.inr h'.symm
+    · exact absurd h' hyP
+
+/-- **At most three guardians per rep-target.**  The order-3
+analogue: one envelope-avoiding triple pins every rep-guardian of
+`m` to its three parts. -/
+theorem three_guardians_per_rep_target {A : Set ℕ} {N₀ m : ℕ}
+    {P : Finset ℕ}
+    (hfree : RepFree A N₀ P) (hm : N₀ ≤ m) :
+    ∃ x₀ y₀ z₀, ∀ b, b ∉ P →
+      IsRepHub A m (insert b P) →
+      b = x₀ ∨ b = y₀ ∨ b = z₀ := by
+  obtain ⟨x₀, hx₀, y₀, hy₀, z₀, hz₀, hxyz, hxP, hyP, hzP⟩ := hfree m hm
+  refine ⟨x₀, y₀, z₀, fun b hbP hguard => ?_⟩
+  rcases hguard x₀ hx₀ y₀ hy₀ z₀ hz₀ hxyz with h | h | h
+  · rcases Finset.mem_insert.1 h with h' | h'
+    · exact Or.inl h'.symm
+    · exact absurd h' hxP
+  · rcases Finset.mem_insert.1 h with h' | h'
+    · exact Or.inr (Or.inl h'.symm)
+    · exact absurd h' hyP
+  · rcases Finset.mem_insert.1 h with h' | h'
+    · exact Or.inr (Or.inr h'.symm)
+    · exact absurd h' hzP
+
 end Erdos881
