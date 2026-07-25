@@ -101,3 +101,22 @@ three-key crew. The fortress proves these two demands fight each
 other: the same rigidity that starves pairs is exactly what makes
 triples roll over. The enemy's last hiding place demands a material
 that is stiff and soft at the same time.
+
+## A whole world where the answer is YES (00:00)
+
+We didn't just watch the fortress pick its own lock — we certified
+the entire story, end to end, in the machine. The clean-number
+keyring is now a fully verified world where Erdős's question has
+its hoped-for answer: it opens every door with two keys; removing
+ANY infinite bundle of keys breaks the two-key game (every removed
+key owned a private door — its own double); and yet removing the
+marker keys leaves a keyring that opens every door with three keys,
+using the carry trick at every scale. Hypothesis, destruction, and
+three-key repair: the exact pattern the problem asks about, alive
+and checked line by line.
+
+What this buys the hunt: the imagined enemy keyring must starve the
+two-key game the way clean numbers do — our earlier walls force
+that — but it must ALSO avoid the carry trick that clean numbers
+can't help but offer. Stiff and soft at once. Every wall we build
+now squeezes that contradiction tighter.

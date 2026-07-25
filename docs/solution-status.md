@@ -213,3 +213,29 @@ for every achievable T = 2·(realized value)+e. For e=d a per-class
 parity pattern dodges V9's identities; for e=0 the image must be
 AP3-free (Behrend-type) — realizable as a 2-basis but then
 carry-repairable at order 3.
+
+## VERIFIED 881 INSTANCE (2026-07-24 00:00, commit 7945673)
+
+`erdos881_cantor_instance` (CantorCarryRepair.lean, zero sorries):
+the Cantor basis C realizes the full Erdős 881 (k=2) pattern:
+
+1. **Order-2 basis**: every n ∈ ℕ is a sum of two members of C
+   (`cantor_pair_basis`, constructive layer split).
+2. **ℵ₀-minimal**: deleting ANY infinite B ⊆ C destroys order 2 —
+   for each deleted b, the target 2b has unique representation
+   (b, b) by no-carry rigidity (`cantor_double_unique`,
+   `cantor_minimal`). This is exactly the minimality hypothesis of
+   Erdős 881.
+3. **Order-3 survival**: deleting the infinite set of pure powers
+   {3^k} leaves an asymptotic order-3 basis — every n ≥ 3^7 is a
+   sum of three non-pure members (`cantor_deletion_order_three`,
+   full digit case tree with carry-constant menu).
+
+So the first machine-verified nontrivial minimal order-2 basis
+answers Erdős 881's question POSITIVELY for itself: the required
+infinite B exists (the pure powers). The problem asks whether every
+minimal basis behaves this way; the counterexample structure the
+contradiction-mining campaign hunts must therefore be non-Cantor in
+an essential way, while the campaign's verified interfaces already
+force it to be Cantor-LIKE (2-rep poverty, AP3-free fork images) —
+the pincer the remaining leaves must close.
