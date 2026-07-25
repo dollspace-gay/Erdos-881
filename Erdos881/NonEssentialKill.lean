@@ -569,4 +569,45 @@ theorem erdos881_grand_assembly₄ {A : Set ℕ} {N₀ : ℕ}
       · exact absurd hpriv
           (hN₂ v m (le_trans (le_max_right _ _) hm) hv0)
 
+/-- A primitive element is two-guarded by zero: its only two-term
+representation is `0 + u`. -/
+theorem primitive_zero_guarded {A : Set ℕ} {u : ℕ}
+    (hu0 : 0 < u)
+    (hprim : ¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u ∧ s ≠ u ∧ t ≠ u) :
+    ∀ y ∈ A, ∀ z ∈ A, y + z = u → y = 0 ∨ z = 0 := by
+  intro y hy z hz hyz
+  by_contra hne
+  push Not at hne
+  exact hprim ⟨y, hy, z, hz, hyz, by omega, by omega⟩
+
+/-- **The primitive escape is zero-loaded**: an infinite set of
+positive primitives makes zero fully 2-essential — every threshold
+has a witness whose every representation passes through zero. -/
+theorem zero_essential_of_infinite_primitives {A L : Set ℕ}
+    (hL : L.Infinite) (hLA : L ⊆ A)
+    (hprims : ∀ u ∈ L, 0 < u ∧
+      ¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u ∧ s ≠ u ∧ t ≠ u) :
+    ∀ N, ¬ TwoRedundant A 0 N := by
+  intro N hred
+  obtain ⟨u, huL, huN⟩ := hL.exists_gt N
+  obtain ⟨hu0, hprim⟩ := hprims u huL
+  obtain ⟨s, hs, t, ht, hst, hs0, ht0⟩ := hred u (by omega)
+  rcases primitive_zero_guarded hu0 hprim s hs t ht hst with h | h
+  · exact hs0 h
+  · exact ht0 h
+
+/-- **Essential vertices repel element translates**: if every
+two-term representation of some `n ≥ u + c` must pass through `u`,
+and `u + c ∈ A`, then the representation `0 + (u + c)` of `u + c`
+would dodge `u` — so a vertex whose necessity witnesses include
+`u + c` forces `u + c ∉ A` whenever `c ∈ A` is positive... stated
+directly: a witness at `u + c` with `u + c ∈ A` and `0 ∈ A` is
+contradictory. -/
+theorem essential_witness_repels_translate {A : Set ℕ} {u c : ℕ}
+    (h0 : 0 ∈ A) (hu0 : 0 < u) (hc0 : 0 < c)
+    (hwit : ∀ y ∈ A, ∀ z ∈ A, y + z = u + c → y = u ∨ z = u)
+    (hmem : u + c ∈ A) :
+    False := by
+  rcases hwit 0 h0 (u + c) hmem (by omega) with h | h <;> omega
+
 end Erdos881
