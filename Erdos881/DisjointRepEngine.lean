@@ -4105,4 +4105,114 @@ theorem flood_pair_shadow {A : Set ℕ} {N0 : ℕ} {S : Finset ℕ}
   exact ⟨a, ha, le_trans (le_max_left _ _) hXa, by omega, n, hnN,
     pair_shadow_of_hub h0 hhub h0H, by omega⟩
 
+/-- **The flood routing dichotomy.**  Canonical flood targets route
+all pair representations through `S ∪ {a}`.  Cofinally, one of two
+regimes recurs: a FIXED CORE COREP — one recurring `s ∈ S` with
+`n − s ∈ A` at cofinally many canonical targets — or the VANISHING
+GUARDIAN PAIR-HUB — cofinally many canonical targets whose EVERY
+pair representation uses the rotating guardian itself, which is then
+a singleton hub for its target''s entire order-2 life. -/
+theorem flood_routing_dichotomy {A : Set ℕ} {N0 : ℕ} {S : Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N0) (h0S : 0 ∉ S)
+    (hcanon : ∀ X, ∃ a, a ∈ A ∧ X ≤ a ∧ a ∉ S ∧
+      ∃ n, N0 ≤ n ∧ ∃ H : Finset ℕ, IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧ H = insert a S) :
+    (∃ s ∈ S, ∀ X, ∃ n, X ≤ n ∧ N0 ≤ n ∧ (∃ w ∈ A, s + w = n) ∧
+      ∃ a, a ∈ A ∧ 0 < a ∧ a ∉ S ∧ ∃ H : Finset ℕ,
+        IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        H = insert a S) ∨
+    (∀ X, ∃ n, X ≤ n ∧ N0 ≤ n ∧ ∃ a, a ∈ A ∧ 0 < a ∧ a ∉ S ∧
+      (∃ w ∈ A, a + w = n) ∧
+      (∀ x ∈ A, ∀ y ∈ A, x + y = n → x = a ∨ y = a) ∧
+      ∃ H : Finset ℕ, IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧ H = insert a S) := by
+  classical
+  set Q : ℕ → Finset ℕ → Prop := fun n T =>
+    (N0 ≤ n ∧ ∃ a, a ∈ A ∧ 0 < a ∧ a ∉ S ∧ ∃ H : Finset ℕ,
+      IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      H = insert a S) ∧
+    T = S.filter (fun s => ∃ w ∈ A, s + w = n) with hQdef
+  have hQ : ∀ N, ∃ n, N ≤ n ∧ ∃ T, Q n T := by
+    intro N
+    obtain ⟨a, ha, hNa, haS, n, hnN, H, hhub, hmin, hHeq⟩ :=
+      hcanon (max N 1)
+    have ha1 : 1 ≤ a := le_trans (le_max_right _ _) hNa
+    have haH : a ∈ H := by
+      rw [hHeq]
+      exact Finset.mem_insert_self a S
+    obtain ⟨x, hx, y, hy, z, hz, hsum, hhit, -⟩ :=
+      minimal_hub_necessity hhub hmin a haH
+    have han : a ≤ n := by
+      rcases hhit with h' | h' | h' <;> omega
+    have hNn : N ≤ n :=
+      le_trans (le_trans (le_max_left N 1) hNa) han
+    exact ⟨n, hNn, S.filter (fun s => ∃ w ∈ A, s + w = n),
+      ⟨hnN, a, ha, by omega, haS, H, hhub, hmin, hHeq⟩, rfl⟩
+  rcases cofinal_dichotomy Q hQ (S.sup id) with
+    ⟨s, hsW, hper⟩ | havoid
+  · left
+    obtain ⟨n₀, hn₀, T₀, hQT₀, hsT₀⟩ := hper 0
+    have hinst₀ : (N0 ≤ n₀ ∧ ∃ a, a ∈ A ∧ 0 < a ∧ a ∉ S ∧
+        ∃ H : Finset ℕ, IsRepHub A n₀ H ∧
+          (∀ h ∈ H, ¬IsRepHub A n₀ (H \ {h})) ∧ H = insert a S) ∧
+        T₀ = S.filter (fun s' => ∃ w ∈ A, s' + w = n₀) := hQT₀
+    have hsS : s ∈ S := by
+      have := hinst₀.2 ▸ hsT₀
+      exact (Finset.mem_filter.1 this).1
+    refine ⟨s, hsS, fun X => ?_⟩
+    obtain ⟨n, hn, T, hQT, hsT⟩ := hper X
+    have hinst : (N0 ≤ n ∧ ∃ a, a ∈ A ∧ 0 < a ∧ a ∉ S ∧
+        ∃ H : Finset ℕ, IsRepHub A n H ∧
+          (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧ H = insert a S) ∧
+        T = S.filter (fun s' => ∃ w ∈ A, s' + w = n) := hQT
+    obtain ⟨⟨hnN0, a, ha, ha0, haS, H, hhub, hmin, hHeq⟩, hTeq⟩ := hinst
+    have hsw : ∃ w ∈ A, s + w = n := by
+      have := hTeq ▸ hsT
+      exact (Finset.mem_filter.1 this).2
+    obtain ⟨w, hw, hswn⟩ := hsw
+    exact ⟨n, hn, hnN0, ⟨w, hw, hswn⟩, a, ha, ha0, haS,
+      H, hhub, hmin, hHeq⟩
+  · right
+    intro X
+    obtain ⟨n, hn, T, hQT, hbig⟩ := havoid X
+    have hinst : (N0 ≤ n ∧ ∃ a, a ∈ A ∧ 0 < a ∧ a ∉ S ∧
+        ∃ H : Finset ℕ, IsRepHub A n H ∧
+          (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧ H = insert a S) ∧
+        T = S.filter (fun s' => ∃ w ∈ A, s' + w = n) := hQT
+    obtain ⟨⟨hnN0, a, ha, ha0, haS, H, hhub, hmin, hHeq⟩, hTeq⟩ := hinst
+    -- the filter is empty: no core element has a corep at n
+    have hnoS : ∀ s ∈ S, ¬∃ w ∈ A, s + w = n := by
+      intro s hsS hsw
+      have hsT : s ∈ T := by
+        rw [hTeq]
+        exact Finset.mem_filter.2 ⟨hsS, hsw⟩
+      have hlt := hbig s hsT
+      have hle : s ≤ S.sup id := Finset.le_sup (f := id) hsS
+      omega
+    have h0H : 0 ∉ H := by
+      rw [hHeq]
+      intro hmem
+      rcases Finset.mem_insert.1 hmem with h' | h'
+      · omega
+      · exact h0S h'
+    have hshadow := pair_shadow_of_hub h0 hhub h0H
+    have hall : ∀ x ∈ A, ∀ y ∈ A, x + y = n → x = a ∨ y = a := by
+      intro x hx y hy hxy
+      rcases hshadow x hx y hy hxy with hmem | hmem
+      · rw [hHeq] at hmem
+        rcases Finset.mem_insert.1 hmem with h' | h'
+        · exact Or.inl h'
+        · exact absurd ⟨y, hy, hxy⟩ (hnoS x h')
+      · rw [hHeq] at hmem
+        rcases Finset.mem_insert.1 hmem with h' | h'
+        · exact Or.inr h'
+        · exact absurd ⟨x, hx, by omega⟩ (hnoS y h')
+    obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hnN0
+    have hcorep : ∃ w ∈ A, a + w = n := by
+      rcases hall x hx y hy hxy with h' | h'
+      · exact ⟨y, hy, by omega⟩
+      · exact ⟨x, hx, by omega⟩
+    exact ⟨n, hn, hnN0, a, ha, ha0, haS, hcorep, hall,
+      H, hhub, hmin, hHeq⟩
+
 end Erdos881
