@@ -1862,4 +1862,36 @@ theorem crossing_edge_exists {A : Set ℕ} {N₀ X : ℕ}
   · rw [hkey]
     exact hfin'
 
+/-- **Cofinitely many singletons are free.**  Beyond one threshold,
+no positive basis element is a private guardian: an infinite supply
+of non-free singletons would give cofinal positive singleton hubs
+(hub targets dominate their guardians), which the private-stream
+kill forbids.  Every element of the enemy's tail opens the freeness
+tree. -/
+theorem cofinite_free_singletons {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ X, ∀ b ∈ A, X ≤ b → 0 < b → RepFree A N₀ {b} := by
+  classical
+  by_contra hno
+  push_neg at hno
+  refine singleton_hubs_refuted h0 hcov hanchor hfail ?_
+  intro N
+  obtain ⟨b, hbA, hNb, hbpos, hnotfree⟩ := hno N
+  rw [repFree_iff_no_hub, not_not] at hnotfree
+  obtain ⟨m, hm, hhub⟩ := hnotfree
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
+  have hbm : b ≤ m := by
+    rcases hhub x hx y hy 0 h0 (by omega) with h | h | h
+    · have := Finset.mem_singleton.1 h
+      omega
+    · have := Finset.mem_singleton.1 h
+      omega
+    · have := Finset.mem_singleton.1 h
+      omega
+  exact ⟨m, by omega, b, hbpos, hhub⟩
+
 end Erdos881
