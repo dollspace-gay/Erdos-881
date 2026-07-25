@@ -3210,4 +3210,35 @@ theorem edge_exclusion_law {A : Set ℕ} {w a : ℕ}
     rw [hval] at this
     exact this hd
 
+/-- **The edge tax.**  Every forest edge away from the exact points
+pays a co-`A` point: the parent''s double (split edges — shared
+across the star, paid once) or the edge''s own difference (non-split
+edges — distinct per child).  No edge is free. -/
+theorem edge_tax {A : Set ℕ} {w a : ℕ}
+    (hown : OwnsTarget A a (a + w))
+    (hne2 : a ≠ 2 * w) (hne3 : a ≠ 3 * w) :
+    2 * w ∉ A ∨ a - w ∉ A := by
+  by_contra h
+  push_neg at h
+  exact edge_exclusion_law hown hne2 hne3 ⟨h.2, h.1⟩
+
+/-- **Split differences inject.**  Distinct split children of one
+parent have distinct differences, all in `A`: the star''s split part
+embeds into `A` below the children — each difference is itself an
+element with its own chain.  The expansion recursion lives here:
+`a = (a - w) + w` with `a - w ∈ A` dominant, and the tower unfolds
+along split chains. -/
+theorem split_children_inject {w a b : ℕ}
+    (hab : a ≠ b) : a - w ≠ b - w ∨ a ≤ w ∨ b ≤ w := by
+  rcases Nat.lt_or_ge w a with ha | ha
+  · rcases Nat.lt_or_ge w b with hb | hb
+    · left
+      omega
+    · right
+      right
+      omega
+  · right
+    left
+    omega
+
 end Erdos881
