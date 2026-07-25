@@ -119,7 +119,10 @@ sharer law), `clique_rows_march`, `team_target_dominates` +
 `clique_targets_dominate` (choice-free: clique targets ≥ largest
 member under exported freeness), `hub_server_dichotomy`,
 `pair_flood_two_envelopes` (double duty over disjoint envelopes).
-The arity ladder is mechanical now; the ω-limit needs barriers.
+The arity ladder is mechanical now (quadruple Ramsey +
+`team_card_escalation_three`: cliques at arity ≤ 4 or teams of
+card ≥ 5; dominations at arities 3 and 4); the ω-limit needs
+barriers.
 
 **Open frontier (post-flood, 15:30)**: the configuration space is
 now fully verified and SMALL — see docs/flood-structure-theorem.md
