@@ -76,3 +76,28 @@ holes. It survives only as an extremely rigid, strange structure.
 No lab experiment, random or adversarial, has ever produced a seed of
 the surviving enemies. Everything guardian-shaped is dead, and the
 death certificates are machine-checked.
+
+## The lock that picks itself (2026-07-24, after midnight)
+
+We built the enemy's dream fortress to see if it could exist: a
+keyring where every key is a "clean" number (base-3 digits only 0
+or 1). This fortress genuinely starves the two-key game — remove
+the special marker keys and certain doors can never be opened with
+two keys again. Perfect destruction, at every scale, forever. And
+the fork patterns it shows the repair crew are exactly the
+"spread-out" patterns our matching engine cannot latch onto. It
+looked like the perfect enemy.
+
+Then we watched it pick its own lock. With THREE keys, a new trick
+exists that two keys can never do: three 1-digits in the same
+position roll over — a carry, like 9+9+9 crossing into the tens
+column. Every door the marker-deletion sealed opens again with
+three ordinary, non-marker keys: 27 = 13+10+4, and the same recipe
+scaled up forever. The machine has checked every step of this.
+
+Why this matters: the enemy needs two things at once — rigid enough
+digits to starve the two-key game, and no carry-tricks for the
+three-key crew. The fortress proves these two demands fight each
+other: the same rigidity that starves pairs is exactly what makes
+triples roll over. The enemy's last hiding place demands a material
+that is stiff and soft at the same time.

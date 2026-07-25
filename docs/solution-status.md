@@ -178,3 +178,38 @@ big, small, fixed, rotating — is formally dead.  The negative
 direction would need a counterexample built entirely from
 hereditarily diffuse destruction or ineligible-vertex cliques, for
 which the lab finds no seed whatsoever.
+
+## The Cantor demonstrator (2026-07-24, verified)
+
+`Erdos881/CantorCarryRepair.lean` — the 881 repair mechanism on a
+concrete basis, machine-verified end to end:
+
+- `cantor_pair_basis`: the base-3 digit-{0,1} numbers ("Cantor basis"
+  C) form an order-2 basis of ALL of ℕ (constructive layer split).
+- `cantor_powers_destroyed` / `cantor_doubles_destroyed`: deleting the
+  pure powers {3^k} removes EVERY 2-representation of 3^k and of
+  2·3^k, at every scale (no-carry rigidity: digit-{0,1} numbers add
+  without carries, so 2-reps of single-digit targets are trivial).
+- `cantor_carry_repair` / `cantor_carry_repair_double`: order 3
+  repairs every casualty — 3^k = (13+10+4)·3^(k-3) and
+  2·3^k = (13+37+4)·3^(k-3), all parts in C, none a pure power.
+  The third summand unlocks base-3 carries (1+1+1 = 3) that order 2
+  cannot produce.
+
+Significance for the recurring-pair leaf: the lab showed the leaf's
+"AP3-free fork image" residue is realizable by exactly these digit
+structures (AP3-free + interval sumset + cofinal fixed-pair
+destruction, e.g. pair (1,4) destroying 3^k+5 with reps
+{(1,3^k+4),(4,3^k+1)}), so no counting kill exists — but such
+structures are NOT 881-counterexamples: the very rigidity that
+starves order 2 hands order 3 its carry repairs. The enemy must be
+simultaneously digit-rigid (to dodge the matching) and carry-poor
+(to satisfy hfail) — the Cantor case proves these pull in opposite
+directions.
+
+Open matching residue (exact form): adversary must fork-2-color
+every A-window so no v-v pair sums to T, mixed to T+d, u-u to T+2d,
+for every achievable T = 2·(realized value)+e. For e=d a per-class
+parity pattern dodges V9's identities; for e=0 the image must be
+AP3-free (Behrend-type) — realizable as a 2-basis but then
+carry-repairable at order 3.
