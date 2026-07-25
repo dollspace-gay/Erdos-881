@@ -157,4 +157,15 @@ theorem cantor_powers_hereditarilyFree :
       obtain ⟨k, hk⟩ := hP z hmem
       exact hpz k hk
 
+/-- **THE TRIANGLE**: order-3 failure under every deletion, absence
+of hereditarily free sets, and well-foundedness of the freeness
+tree are one property.  Erdős 881 (k = 2) asks whether every
+minimal basis's freeness tree has an infinite branch. -/
+theorem endgame_triangle {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) :
+    (∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) ↔
+    WellFounded (FreeStep A N₀) :=
+  hfail_iff_freeStep_wf h0 hcov
+
 end Erdos881

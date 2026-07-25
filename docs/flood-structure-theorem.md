@@ -183,3 +183,9 @@ are the stalled certificates of hereditary-freeness attempts, the
 crystals are its local obstructions, the rank measures how far
 freeness extends, and the adaptive toolkit (immunity, location)
 describes where obstructions can and cannot sit.
+
+**Addendum to §8 (`hfail_iff_freeStep_wf`, `endgame_triangle`).**
+The equivalence extends to a triangle: counterexample-hood ⟺ no
+hereditarily free set ⟺ well-foundedness of the freeness tree
+(the last leg purely combinatorial).  The rank framework is thus
+not a model of the problem — it IS the problem.
