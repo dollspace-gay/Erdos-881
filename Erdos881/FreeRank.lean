@@ -1992,4 +1992,80 @@ theorem omega_node_exists {A : Set ℕ} {N₀ : ℕ}
     exact Ordinal.lt_wf.not_lt_min S hmemC hlt
   · exact ⟨R₀, heq⟩
 
+/-- **The ω-node's grade filtration.**  At a node of rank exactly
+`ω`, extensions of every finite rank exist beyond every bound: if
+large extensions were capped at rank `k`, the finitely many small
+ones would cap the supremum below `ω`.  The grades
+`ρ(b) = rank(R ∪ {b})` are finite, unbounded, with infinite nested
+fibers of empty intersection — the boundary node is graded. -/
+theorem omega_node_children_unbounded {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {P₀ : Set ℕ} {R : Finset ℕ}
+    (hR : ((poolFreeStep_wf h0 hcov hfail P₀).apply R).rank =
+      Ordinal.omega0) :
+    ∀ (k X : ℕ), ∃ b, X ≤ b ∧
+      PoolFreeStep A N₀ P₀ (insert b R) R ∧
+      ((k : ℕ) : Ordinal.{0}) ≤
+        ((poolFreeStep_wf h0 hcov hfail P₀).apply
+          (insert b R)).rank := by
+  classical
+  set hwf := poolFreeStep_wf h0 hcov hfail P₀ with hhwf
+  intro k X
+  by_contra hno
+  push_neg at hno
+  have hchildlt : ∀ C, PoolFreeStep A N₀ P₀ C R →
+      (hwf.apply C).rank < Ordinal.omega0 := by
+    intro C hC
+    have := Acc.rank_lt_of_rel (hwf.apply R) hC
+    rw [hR] at this
+    exact this
+  set g : ℕ → ℕ := fun b =>
+    if h : PoolFreeStep A N₀ P₀ (insert b R) R then
+      (Ordinal.lt_omega0.1 (hchildlt _ h)).choose
+    else 0 with hg
+  have hgspec : ∀ b (h : PoolFreeStep A N₀ P₀ (insert b R) R),
+      (hwf.apply (insert b R)).rank = ((g b : ℕ) : Ordinal.{0}) := by
+    intro b h
+    have h1 : g b = (Ordinal.lt_omega0.1 (hchildlt _ h)).choose := by
+      simp [hg, dif_pos h]
+    rw [h1]
+    exact (Ordinal.lt_omega0.1 (hchildlt _ h)).choose_spec
+  set K := max k ((Finset.range X).sup g) + 1 with hK
+  have hbound : (hwf.apply R).rank ≤ ((K : ℕ) : Ordinal.{0}) := by
+    rw [Acc.rank_eq]
+    apply Ordinal.iSup_le
+    rintro ⟨C, hC⟩
+    obtain ⟨-, -, b, hbA, hbpos, hbmax, hCeq⟩ := hC.1
+    have hCstep : PoolFreeStep A N₀ P₀ (insert b R) R := by
+      rw [← hCeq]
+      exact hC
+    rcases Nat.lt_or_ge b X with hbX | hbX
+    · -- window child: capped by the finite sup
+      have h1 : (hwf.apply C).rank = ((g b : ℕ) : Ordinal.{0}) := by
+        rw [hCeq]
+        exact hgspec b hCstep
+      have h2 : g b ≤ (Finset.range X).sup g :=
+        Finset.le_sup (Finset.mem_range.2 hbX)
+      have h3 : g b + 1 ≤ K := by omega
+      calc Order.succ ((hwf.apply C).rank)
+          = ((g b + 1 : ℕ) : Ordinal.{0}) := by
+            rw [h1, Nat.cast_succ, Ordinal.add_one_eq_succ]
+        _ ≤ ((K : ℕ) : Ordinal.{0}) := by exact_mod_cast h3
+    · -- large child: capped by k
+      have h1 : (hwf.apply (insert b R)).rank <
+          ((k : ℕ) : Ordinal.{0}) := hno b hbX hCstep
+      have h2 : (hwf.apply C).rank < ((k : ℕ) : Ordinal.{0}) := by
+        rw [hCeq]
+        exact h1
+      have h3 : k ≤ K := by omega
+      calc Order.succ ((hwf.apply C).rank)
+          ≤ ((k : ℕ) : Ordinal.{0}) := Order.succ_le_of_lt h2
+        _ ≤ ((K : ℕ) : Ordinal.{0}) := by exact_mod_cast h3
+  rw [hR] at hbound
+  exact absurd hbound (by
+    push_neg
+    exact Ordinal.nat_lt_omega0 K)
+
 end Erdos881
