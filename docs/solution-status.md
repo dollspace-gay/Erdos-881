@@ -516,3 +516,14 @@ windows), but the final argument is the coherence classification
 itself, now to be attacked with every structural input of the
 night. The problem's core is, and was, exactly that
 classification.
+
+## THE CANTOR FIXED POINT + THE LOCALITY BOUNDARY (03:15)
+
+`cantor_fixed_point` (verified): a positive number is outside the
+Cantor set exactly when it is some forest-owner's moat value —
+co-C = Sieve(C) as one iff, the classification's model half
+complete. And the boundary is now definitive: exhaustive and
+randomized searches show the local laws admit alternate fixed
+points at every tested radius. The uniqueness — hence Erdős 881
+itself — lives exactly in the global rails' selection power, with
+everything below them machine-verified.
