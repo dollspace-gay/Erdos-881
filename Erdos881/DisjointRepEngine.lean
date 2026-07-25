@@ -6182,4 +6182,19 @@ theorem blowup_offset_dichotomy {A : Set ℕ} {N₀ : ℕ}
         have := hNle h₀ hP
         omega) (hmono (Cf h₀) (hCle h₀ hP) hblow)
 
+/-- **The pair-owner reflection desert.**  When one element owns a
+target's entire order-2 life, the target's reflection of `A` misses
+`A` everywhere except at the owner and its corep: for any element
+`z` other than the owner whose complement part is not the owner
+either, `n − z` is a non-element.  Feeding two rotating guardians
+into each other's deserts forbids entire shifted difference sets. -/
+theorem pair_owner_reflection_desert {A : Set ℕ} {n a z : ℕ}
+    (hall : ∀ x ∈ A, ∀ y ∈ A, x + y = n → x = a ∨ y = a)
+    (hz : z ∈ A) (hzn : z ≤ n) (hza : z ≠ a) (hnza : n - z ≠ a) :
+    n - z ∉ A := by
+  intro hmem
+  rcases hall z hz (n - z) hmem (by omega) with h | h
+  · exact hza h
+  · exact hnza h
+
 end Erdos881
