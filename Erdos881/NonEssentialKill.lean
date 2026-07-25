@@ -1424,4 +1424,43 @@ theorem spread_pairs_unbounded_guards {A B : Set ℕ}
   exact hfresh (Finset.mem_product.mpr
     ⟨Finset.mem_range.mpr (by omega), Finset.mem_range.mpr (by omega)⟩)
 
+
+/-- **Low guards recur or escape.**  Normalizing pairs by `symm`, the
+spread supply either concentrates on one recurring low guard with
+unbounded partners — exactly the per-vertex supply the assembly kills
+consume — or both guards escape every bound. -/
+theorem spread_min_guard_dichotomy {A B : Set ℕ}
+    (hsup : ∀ N, ∃ m, N ≤ m ∧ ∃ u ∈ B, ∃ v ∈ B, u ≤ v ∧
+      IsPairDestroyer A u v m) :
+    (∃ u ∈ B, ∀ N, ∃ m, N ≤ m ∧ ∃ v ∈ B, u ≤ v ∧
+      IsPairDestroyer A u v m) ∨
+    (∀ K N, ∃ m, N ≤ m ∧ ∃ u ∈ B, ∃ v ∈ B, K < u ∧ u ≤ v ∧
+      IsPairDestroyer A u v m) := by
+  by_cases hrec : ∃ u ∈ B, ∀ N, ∃ m, N ≤ m ∧ ∃ v ∈ B, u ≤ v ∧
+      IsPairDestroyer A u v m
+  · exact Or.inl hrec
+  · push Not at hrec
+    right
+    have hbnd : ∀ u, ∃ Nu, ∀ m, Nu ≤ m → u ∈ B →
+        ¬ ∃ v ∈ B, u ≤ v ∧ IsPairDestroyer A u v m := by
+      intro u
+      by_cases huB : u ∈ B
+      · obtain ⟨Nu, hNu⟩ := hrec u huB
+        exact ⟨Nu, fun m hm _ => by
+          rintro ⟨v, hvB, huv, hdes⟩
+          exact hNu m hm v hvB huv hdes⟩
+      · exact ⟨0, fun m _ hb => absurd hb huB⟩
+    choose Nu hNu using hbnd
+    intro K N
+    obtain ⟨m, hm, u, huB, v, hvB, huv, hdes⟩ :=
+      hsup (max N ((Finset.range (K + 1)).sup Nu))
+    refine ⟨m, le_trans (le_max_left _ _) hm, u, huB, v, hvB, ?_,
+      huv, hdes⟩
+    by_contra hsmall
+    push Not at hsmall
+    have hbound : Nu u ≤ m :=
+      le_trans (le_trans (Finset.le_sup
+        (Finset.mem_range.mpr (by omega))) (le_max_right _ _)) hm
+    exact hNu u m hbound huB ⟨v, hvB, huv, hdes⟩
+
 end Erdos881
