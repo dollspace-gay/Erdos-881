@@ -345,3 +345,21 @@ And hovering over both rooms: the reduction theorem.  If any
 verified operation can be shown to strictly shrink the tower's
 rank each time it is applied, there is no enemy at all and the
 problem is solved.  One question left.  Everything machine-checked.
+
+## 2026-07-25 night — The three-key law and the last gap
+
+Late-evening finds: no door can be sealed against four separate
+key-confiscations at once (a door opens with three keys, and three
+keys cannot belong to four disjoint confiscations) — so taking
+away many disjoint key-sets forces the enemy to sacrifice many
+DIFFERENT doors, at least one per three confiscations.  And every
+sacrificed door drags its whole "fan" of neighbours into an
+additively thin region we can count.
+
+What remains — and it is now exactly one thing — is that the
+enemy may schedule its sacrificed doors at wildly different
+heights, each fitting its own local budget.  One verified way to
+force those sacrifices into a shared window, or one counting law
+that makes even scattered sacrifices collide, finishes the
+problem.  Everything encircling that single gap is machine-checked
+mathematics now.

@@ -7844,4 +7844,14 @@ theorem disjoint_deletions_many_failures {A : Set ℕ} {N₀ : ℕ}
     rw [← h2]
     exact h1
 
+/-- Saturation is monotone in the deletion: sub-deletions of one
+mother set share the mother's saturated budget. -/
+theorem Saturated.mono {A B B' : Set ℕ} {v : ℕ}
+    (hBB' : B ⊆ B') (hsat : Saturated A B v) :
+    Saturated A B' v := by
+  intro x hx y hy hxy
+  rcases hsat x hx y hy hxy with h | h
+  · exact Or.inl (hBB' h)
+  · exact Or.inr (hBB' h)
+
 end Erdos881
