@@ -3095,4 +3095,28 @@ theorem payment_demand {A : Set ℕ} {a t y : ℕ}
   obtain ⟨h1, h2, h3, h4⟩ := hown
   exact ⟨h4 y hy hby (by omega) hya, by omega, by omega⟩
 
+/-- **A payer among every five.**  Any five ordered octave elements
+contain a paying owner at the second or fourth position: the block
+pigeonhole that upgrades one payer per octave to a constant fraction
+of the octave population — the ledger telescope''s rate. -/
+theorem payer_in_five {A : Set ℕ} {Ns X x₁ x₂ x₃ x₄ x₅ : ℕ}
+    (huniv : UniversalOwnership A Ns) (hXNs : Ns ≤ X)
+    (h₁ : x₁ ∈ A) (h₂ : x₂ ∈ A) (h₃ : x₃ ∈ A) (h₄ : x₄ ∈ A)
+    (h₅ : x₅ ∈ A)
+    (hord : x₁ < x₂ ∧ x₂ < x₃ ∧ x₃ < x₄ ∧ x₄ < x₅)
+    (hoct : X < x₁ ∧ x₅ ≤ 2 * X) :
+    ∃ a t y, (a = x₂ ∨ a = x₄) ∧ OwnsTarget A a t ∧
+      y ∈ A ∧ 2 * y > t ∧ y < t ∧ y ≠ a := by
+  obtain ⟨t₂, ho₂⟩ := huniv x₂ h₂ (by omega)
+  obtain ⟨t₄, ho₄⟩ := huniv x₄ h₄ (by omega)
+  by_contra hno
+  push_neg at hno
+  have hp₂ : ∀ y ∈ A, 2 * y > t₂ → y < t₂ → y = x₂ := by
+    intro y hy hby hyt
+    exact hno x₂ t₂ y (Or.inl rfl) ho₂ hy hby hyt
+  have hp₄ : ∀ y ∈ A, 2 * y > t₄ → y < t₄ → y = x₄ := by
+    intro y hy hby hyt
+    exact hno x₄ t₄ y (Or.inr rfl) ho₄ hy hby hyt
+  exact no_five_zero_payers h₁ h₃ h₅ ho₂ ho₄ hp₂ hp₄ hord hoct
+
 end Erdos881
