@@ -3952,4 +3952,82 @@ theorem tower_teams_ge_two {A : Set ℕ} {N0 C : ℕ} {Y : ℕ → ℕ}
     obtain ⟨n, hnN, H, hHc, hHne, hhub, hpos, hmin⟩ := hcof N
     exact ⟨n, hnN, H, hHc, hhub, hpos, hmin⟩
 
+/-- **The flood''s canonical form.**  Subset-pigeonholing the flood
+inside its fixed finite envelope: one exact core `S* ⊆ F` recurs, so
+cofinally many elements carry minimal hubs EXACTLY `S* ∪ {a}` — the
+half-fixed configuration in canonical form.  With the stream kill,
+the empty core dies: under the interfaces the flood has a nonempty
+fixed core plus one rotating necessary guardian.  Constant-sized
+everywhere; no log anywhere. -/
+theorem flood_canonical {A : Set ℕ} {N0 : ℕ} {F : Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N0)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hflood : ∀ X, ∃ a, a ∈ A ∧ X ≤ a ∧
+      ∃ n, N0 ≤ n ∧ ∃ H : Finset ℕ, IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧ a ∈ H ∧
+        ∀ h ∈ H, h ∈ F ∨ h = a) :
+    ∃ S : Finset ℕ, (∀ h ∈ S, h ∈ F) ∧ S.Nonempty ∧
+      ∀ X, ∃ a, a ∈ A ∧ X ≤ a ∧ a ∉ S ∧
+        ∃ n, N0 ≤ n ∧ ∃ H : Finset ℕ, IsRepHub A n H ∧
+          (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+          H = insert a S := by
+  classical
+  -- pigeonhole the F-part of the flood hubs
+  have hQ : ∀ X, ∃ x, X ≤ x ∧ ∃ S, S ⊆ F ∧
+      (∃ a, a ∈ A ∧ x = a ∧ a ∉ F ∧
+        ∃ n, N0 ≤ n ∧ ∃ H : Finset ℕ, IsRepHub A n H ∧
+          (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧ a ∈ H ∧
+          H = insert a S) := by
+    intro X
+    set XF := max X ((F.sup id) + 1) with hXF
+    obtain ⟨a, ha, hXa, n, hnN, H, hhub, hmin, haH, hsub⟩ := hflood XF
+    have haF : a ∉ F := by
+      intro haF
+      have h1 : a ≤ F.sup id := Finset.le_sup (f := id) haF
+      have h2 : (F.sup id) + 1 ≤ a :=
+        le_trans (le_max_right _ _) hXa
+      omega
+    refine ⟨a, le_trans (le_max_left _ _) hXa, H.erase a, ?_, a, ha,
+      rfl, haF, n, hnN, H, hhub, hmin, haH, ?_⟩
+    · intro h hh
+      obtain ⟨hne, hhH⟩ := Finset.mem_erase.1 hh
+      rcases hsub h hhH with h' | h'
+      · exact h'
+      · exact absurd h' hne
+    · exact (Finset.insert_erase haH).symm
+  obtain ⟨S, hSF, hrec⟩ := cofinal_subset_pigeonhole
+    (Q := fun x S => ∃ a, a ∈ A ∧ x = a ∧ a ∉ F ∧
+      ∃ n, N0 ≤ n ∧ ∃ H : Finset ℕ, IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧ a ∈ H ∧
+        H = insert a S)
+    (F := F) (by
+      intro N
+      obtain ⟨x, hx, S, hSF, hdata⟩ := hQ N
+      exact ⟨x, hx, S, hSF, hdata⟩)
+  -- kill the empty core by the stream kill
+  rcases S.eq_empty_or_nonempty with hSe | hSne
+  · exfalso
+    subst hSe
+    refine singleton_hubs_refuted h0 hcov hanchor hfail ?_
+    intro N
+    obtain ⟨x, hxN, a, ha, heq, haF, n, hnN, H, hhub, hmin, haH, hHeq⟩ :=
+      hrec (max N 1)
+    subst heq
+    have hHa : H = {x} := by simpa using hHeq
+    rw [hHa] at hhub hmin haH
+    obtain ⟨x', hx', y', hy', z', hz', hsum, hhit, -⟩ :=
+      minimal_hub_necessity hhub hmin x haH
+    have han : x ≤ n := by
+      rcases hhit with h' | h' | h' <;> omega
+    exact ⟨n, by omega, x, by omega, hhub⟩
+  · refine ⟨S, fun h hh => hSF hh, hSne, fun X => ?_⟩
+    obtain ⟨x, hxN, a, ha, heq, haF, n, hnN, H, hhub, hmin, haH, hHeq⟩ :=
+      hrec X
+    subst heq
+    have haS : x ∉ S := fun haS => haF (hSF haS)
+    exact ⟨x, ha, hxN, haS, n, hnN, H, hhub, hmin, hHeq⟩
+
 end Erdos881
