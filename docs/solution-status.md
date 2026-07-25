@@ -108,7 +108,25 @@ clique of ineligible vertices (all 2-essential, or all below `N₀`)
 escapes vacuously — B1 covers the essential case; small vertices are
 finitely many.
 
-## The capstone
+## The sharpest capstone
+
+`erdos881_interfaces_refute_counterexample'` (`Capstone.lean`) +
+`erdos881_grand_assembly₄` (`NonEssentialKill.lean`): with **doubling
+supply** (infinitely many `c` with `c, 2c ∈ A`) and **one nonzero
+package**, the interfaces are: no cofinal diffuse destruction
+(Link A), no cofinal zero-guardianship, and no infinite clique of
+vertices each **primitive or fully 2-essential**.  The pointwise kill
+(`surviving_deletion_of_nonessential_edges`) eliminates every vertex
+that is 2-redundant at any threshold and non-primitive: floored
+engine, doubling anchors `(c, 0, 2c)`, zero-reflections free,
+corep via non-primitivity.  Verified constraints on the survivors:
+an infinite primitive clique makes zero fully 2-essential
+(`zero_essential_of_infinite_primitives`); essential vertices' witness
+sets repel element translates (`essential_witness_repels_translate`)
+and their witnesses are never elements with two-point supports
+(`escape_vertex_witness`).
+
+## The earlier capstone
 
 `erdos881_interfaces_refute_counterexample` (`Capstone.lean`): the
 four remaining interfaces — no cofinal diffuse destruction (Link A),
