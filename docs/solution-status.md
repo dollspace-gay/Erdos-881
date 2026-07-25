@@ -124,6 +124,20 @@ The arity ladder is mechanical now (quadruple Ramsey +
 card ≥ 5; dominations at arities 3 and 4); the ω-limit needs
 barriers.
 
+**THE BLOCK TRICHOTOMY (17:20)**: `infinite_ramsey_tuples` —
+INFINITE RAMSEY AT EVERY ARITY (induction on arity over the anchor
+recursion; `tuple_step` needs only propext) — plus
+`sorted_indices_of_card` / `tuple_finset_card` (general
+tuple↔Finset bridges), `clique_descent`, and
+**`rank_lt_omega_perfect_clique`**: a pool of finite root rank
+contains a PERFECT CLIQUE WORLD — an infinite subsequence and a
+level `d ≥ 1` with every `d`-subset free and every `(d+1)`-subset
+a full hub of a late target; `perfect_world_small_sets_free` makes
+its hub hypergraph exactly `(d+1)`-uniform.  Every counterexample
+pool is therefore INFINITE-RANK or a PERFECT CLIQUE WORLD.  The
+rank program's descent instrument, the reduction, monotonicity,
+positivity, and both regime endpoints are now all machine-checked.
+
 **THE RANK IS FORMAL (16:55, FreeRank.lean)**: the rank program's
 centerpiece is now an object.  `FreeNode`/`FreeStep` (the freeness
 tree), `freeStep_wf` (well-founded in any counterexample — chains

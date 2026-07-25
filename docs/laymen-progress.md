@@ -323,3 +323,25 @@ into.  The ladder climbs one arity at a time; the top of the
 ladder — all arities at once — is guarded by a known technical
 obstacle (the "diagonal leak") whose remedy is mapped out for the
 next campaign.
+
+## 2026-07-25 evening, part two — The full ladder and the two final rooms
+
+The Ramsey ladder now reaches EVERY height (one theorem for all
+arities — permanent mathematics beyond this problem), and the rank
+machinery built this evening turned the whole campaign into a
+two-room endgame.  Every possible enemy keyring now lives in one of
+exactly two rooms, both fully mapped:
+
+**Room one — the infinite tower**: the enemy's "innocent lists"
+tree has infinite depth-rank, wide but never tall (no infinite
+branch survives — that much is proven).
+
+**Room two — the perfect crystal**: somewhere inside the enemy
+there is an infinite family of keys so symmetric it looks
+machine-made: every group of d keys is harmless, every group of
+d+1 keys jointly seals some door, no exceptions, ever.
+
+And hovering over both rooms: the reduction theorem.  If any
+verified operation can be shown to strictly shrink the tower's
+rank each time it is applied, there is no enemy at all and the
+problem is solved.  One question left.  Everything machine-checked.
