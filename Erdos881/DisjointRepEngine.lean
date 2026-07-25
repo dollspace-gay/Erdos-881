@@ -2293,4 +2293,51 @@ theorem level2_rigidity_free {A P B : Set ℕ} {b : ℕ}
   · have hyb : y = b := honly y h (by omega)
     omega
 
+/-- **Failing hubs live inside the deletion.**  A target failing
+under `B` has every representation routed through `B`, so the part
+of `B` below it is itself a rep-hub: the enemy''s guardians for
+`B`-failures are OUR markers.  The tower pigeonholes can therefore
+run over subsets of the finite set `B ∩ [0, W]` — a finite alphabet
+per window regardless of hub cardinality growth: the constant-vs-log
+gap dissolves at the window-split step. -/
+theorem failing_hub_subset_deletion {A B : Set ℕ} {n : ℕ}
+    [DecidablePred (· ∈ B)]
+    (hdead : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = n →
+      x ∈ B ∨ y ∈ B ∨ z ∈ B) :
+    IsRepHub A n ((Finset.range (n + 1)).filter (· ∈ B)) := by
+  intro x hx y hy z hz hsum
+  rcases hdead x hx y hy z hz hsum with h | h | h
+  · exact Or.inl (Finset.mem_filter.2
+      ⟨Finset.mem_range.2 (by omega), h⟩)
+  · exact Or.inr (Or.inl (Finset.mem_filter.2
+      ⟨Finset.mem_range.2 (by omega), h⟩))
+  · exact Or.inr (Or.inr (Finset.mem_filter.2
+      ⟨Finset.mem_range.2 (by omega), h⟩))
+
+/-- **Finite-alphabet window pigeonhole.**  For a cofinal family of
+finite witness sets all contained in one fixed finite set, some exact
+subset recurs cofinally — direct pigeonhole over the powerset, no
+cardinality budget needed.  This is the tower step for
+deletion-contained hubs. -/
+theorem cofinal_subset_pigeonhole {Q : ℕ → Finset ℕ → Prop}
+    {F : Finset ℕ}
+    (hQ : ∀ N, ∃ n, N ≤ n ∧ ∃ H, H ⊆ F ∧ Q n H) :
+    ∃ S ⊆ F, ∀ N, ∃ n, N ≤ n ∧ Q n S := by
+  classical
+  by_contra hno
+  push_neg at hno
+  have hex : ∀ S : Finset ℕ, ∃ NS, S ⊆ F → ∀ n, NS ≤ n → ¬Q n S := by
+    intro S
+    by_cases hS : S ⊆ F
+    · obtain ⟨N, hN⟩ := hno S hS
+      exact ⟨N, fun _ => hN⟩
+    · exact ⟨0, fun h => absurd h hS⟩
+  choose g hg using hex
+  set NS := F.powerset.sup g with hNS
+  obtain ⟨n, hn, H, hHF, hQH⟩ := hQ NS
+  have hgle : g H ≤ NS := by
+    rw [hNS]
+    exact Finset.le_sup (Finset.mem_powerset.2 hHF)
+  exact hg H hHF n (by omega) hQH
+
 end Erdos881
