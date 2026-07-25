@@ -124,6 +124,22 @@ The arity ladder is mechanical now (quadruple Ramsey +
 card ≥ 5; dominations at arities 3 and 4); the ω-limit needs
 barriers.
 
+**THE RANK IS FORMAL (16:55, FreeRank.lean)**: the rank program's
+centerpiece is now an object.  `FreeNode`/`FreeStep` (the freeness
+tree), `freeStep_wf` (well-founded in any counterexample — chains
+glue into monotone sequences with free prefixes), `exists_strict_rank`
+(ordinal rank strictly decreasing along extensions),
+`freeNode_extension_iff` (THE LEAF LAW: the tree's boundary is
+exactly the hubs), `Stalled` + `Stalled.of_step` (trapped stays
+trapped) + `stalled_chain_bound` (stalled zones are shallow:
+chains ≤ |A ∩ [0, X)|), `stalled_exists_of_hfail` (the flood IS a
+stalled node), `root_rank_dichotomy` (free cards unbounded — root
+rank ≥ ω — or universal hubbing at one size), and the ORDER-2 PORT:
+`pairFreeStep_wf` + `exists_strict_pair_rank` — every ℵ₀-minimal
+basis carries an ordinal invariant, no counterexample needed.
+Plus `union_deletion_trichotomy` (splitting deletions: concentration
+or straddling teams — two structures pinned to one target).
+
 **Open frontier (post-flood, 15:30)**: the configuration space is
 now fully verified and SMALL — see docs/flood-structure-theorem.md
 for the complete statement list.  Everything local is mutually
