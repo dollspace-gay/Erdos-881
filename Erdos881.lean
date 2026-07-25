@@ -43,3 +43,4 @@ import Erdos881.RedundantVertexKill
 import Erdos881.Capstone
 import Erdos881.NonEssentialKill
 import Erdos881.CantorCarryRepair
+import Erdos881.CantorInstance
