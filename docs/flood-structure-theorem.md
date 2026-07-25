@@ -125,3 +125,45 @@ analysis inside one geometric ground stream (transversal barriers,
 ordinal rank); (c) coupling the two personal targets of one
 guardian.  The problem's difficulty is now concentrated in a small,
 fully-verified configuration space.
+
+## 7. Addendum (evening block): the rank framework and the trichotomy
+
+All verified in `Erdos881/FreeRank.lean` and
+`Erdos881/InfiniteRamsey.lean`:
+
+**Infinite Ramsey, every arity** (`infinite_ramsey_tuples`): every
+two-colouring of the strictly monotone (r+1)-tuples of ℕ admits an
+infinite homogeneous subsequence.  (Pairs/triples/quadruples also
+available standalone.)
+
+**The freeness tree**: nodes are finite rep-free sets of positive
+basis elements; steps insert one larger element.  Verified:
+well-foundedness (`freeStep_wf`), ordinal rank with strict decrease
+(`exists_strict_rank`), the leaf law (boundary = hubs,
+`freeNode_extension_iff`), hereditary shallow stalled zones
+(`Stalled.of_step`, `stalled_chain_bound`), existence of stalled
+nodes from the flood (`stalled_exists_of_hfail`), pool trees as
+subrelations (`poolFreeStep_wf`), rank monotonicity
+(`rank_le_of_subrel`, `pool_rank_mono`), rank positivity
+(`pool_rank_pos`), size↔rank in the finite regime
+(`free_set_card_le_rank`, `rank_ge_imp_free_set`), and ladder
+certificates (`escalation_rank_certificate`).
+
+**THE REDUCTION** (`no_pool_rank_descent`): no pool sequence has
+strictly descending root ranks; hence any verified pool operation
+strictly dropping the root rank along its iterates refutes the
+counterexample and solves Erdős 881 (k = 2) positively.
+
+**THE TRICHOTOMY** (`rank_lt_omega_perfect_clique` +
+`clique_descent`): a pool of finite root rank contains a PERFECT
+CLIQUE WORLD — an infinite subsequence and a level d ≥ 1 with every
+d-subset free and every (d+1)-subset a full hub; its hub hypergraph
+is exactly (d+1)-uniform (`perfect_world_small_sets_free`).  Thus
+every counterexample pool is infinite-rank or contains a perfect
+clique world.
+
+**Status of the two rooms**: perfect worlds are hfail-self-serving
+(their own pair-hubs pay every within-world deletion) and resist
+counting via sparsification; infinite-rank pools are wide-not-tall
+free families.  The compressed open question remains the
+rank-dropping operation.
