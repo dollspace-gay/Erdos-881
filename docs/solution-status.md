@@ -79,13 +79,17 @@ and `TwoDestroyedBySet`-avoidance for undeleted elements.  Lab: the
 diffuse regime never occurs in the wild (`probe_counting_vise.py`:
 zero destroyed targets for sparse deletions in all models).
 
-**Link B1 (Grekos finiteness).**  The clique escape requires, for
-each eligible 2-redundant vertex `u`, infinitely many partners
-essential in `A \ {u}`.  Literature (Erdős–Graham 1980, Grekos) makes
-such sets finite; formalization open.  Verified support:
-`TwoLevelDestroyers.lean` (a genuinely pair-2-destroyed target has
-exactly two representations and at most six destroying pairs — the
-double-count core).
+**Link B1 (self-scale guardians).**  The clique escape is an
+infinite clique of vertices each two-guarding a witness at or above
+its own scale (`escape_vertex_witness`).  Full 2-essentiality
+(cofinal witnesses) is finite by Grekos-type counting (literature);
+the self-scale form is weaker — it is exactly the behavior of
+Erdős–Nathanson block bases at order two, so what must be excluded is
+the order-three team-clique structure on top of it (lab: cross-scale
+team stacking among tight-chained guards dies by coverage flooding —
+the old T3 experiments).  Verified support: `TwoLevelDestroyers.lean`
+(a genuinely pair-2-destroyed target has exactly two representations
+and at most six destroying pairs).
 
 **The zero residue.**  Cofinal `IsPrivateTriple A 0 m`.  Verified
 squeezes: the target family's differences are never elements
