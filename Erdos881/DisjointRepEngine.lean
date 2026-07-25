@@ -4597,4 +4597,114 @@ theorem constant_sidon_of_minimality {A : Set ℕ} {N₀ : ℕ}
   have := pair_count_of_pairHub hhub
   exact ⟨n, hn, by omega⟩
 
+/-- **The translate bridge.**  An order-3 rep hub at `n` is an
+order-2 PAIR hub at every basis translate `n − w`, `w ∈ A ∖ H`,
+`w ≤ n`: constant-size order-3 protection makes entire translate
+fans essentially Sidon (`pair_count_of_pairHub` applies at each). -/
+theorem pairHub_of_translate {A : Set ℕ} {n w : ℕ} {H : Finset ℕ}
+    (hhub : IsRepHub A n H) (hwA : w ∈ A) (hwH : w ∉ H)
+    (hwn : w ≤ n) :
+    IsPairHub A (n - w) H := by
+  intro x hx y hy hxy
+  rcases hhub x hx y hy w hwA (by omega) with h | h | h
+  · exact Or.inl h
+  · exact Or.inr h
+  · exact absurd h hwH
+
+/-- **THE FAN BLOWUP.**  A hub target has a translate BY A HUB
+ELEMENT with enormous order-2 multiplicity: every basis element
+`w ≤ n − N₀` outside `H` routes the pair life of `n − w` through
+`H`, and pigeonholing those routes over the `|H|` members hands one
+member `h` at least `|A∖H ∩ [0, n−N₀]| / |H|` distinct pair
+representations of `n − h`.  Sidon on the fan, blowup on the hub
+translate — both forced by one hub. -/
+theorem hub_fan_blowup {A : Set ℕ} {N₀ n : ℕ} {H : Finset ℕ}
+    [DecidablePred (· ∈ A)]
+    (hcov : PairCovers A N₀) (hhub : IsRepHub A n H)
+    (hHne : H.Nonempty) (hn : N₀ ≤ n) :
+    ∃ h ∈ H,
+      ((Finset.range (n - N₀ + 1)).filter
+        (fun w => w ∈ A ∧ w ∉ H)).card / H.card ≤
+      ((Finset.range (n - h + 1)).filter
+        (fun x => x ∈ A ∧ (n - h - x) ∈ A)).card := by
+  classical
+  set W' := (Finset.range (n - N₀ + 1)).filter
+    (fun w => w ∈ A ∧ w ∉ H) with hW'
+  have hchoice : ∀ w : ℕ, ∃ h, h ∈ H ∧
+      (w ∈ W' → h + w ≤ n ∧ (n - w - h) ∈ A) := by
+    intro w
+    by_cases hw : w ∈ W'
+    · obtain ⟨hwr, hwA, hwH⟩ := Finset.mem_filter.1 hw
+      have hwle : w ≤ n - N₀ := by
+        have := Finset.mem_range.1 hwr
+        omega
+      obtain ⟨x, hx, y, hy, hxy⟩ := hcov (n - w) (by omega)
+      rcases hhub x hx y hy w hwA (by omega) with h' | h' | h'
+      · refine ⟨x, h', fun _ => ⟨by omega, ?_⟩⟩
+        have hyx : n - w - x = y := by omega
+        rw [hyx]
+        exact hy
+      · refine ⟨y, h', fun _ => ⟨by omega, ?_⟩⟩
+        have hxy' : n - w - y = x := by omega
+        rw [hxy']
+        exact hx
+      · exact absurd h' hwH
+    · exact ⟨hHne.choose, hHne.choose_spec, fun h => absurd h hw⟩
+  choose g hgH hgW using hchoice
+  obtain ⟨h₀, hh₀, hfib⟩ :=
+    Finset.exists_le_card_fiber_of_mul_le_card_of_maps_to
+      (f := g) (s := W') (t := H) (fun w _ => hgH w) hHne
+      (by
+        calc H.card * (W'.card / H.card)
+            = W'.card / H.card * H.card := Nat.mul_comm _ _
+          _ ≤ W'.card := Nat.div_mul_le_self _ _)
+  refine ⟨h₀, hh₀, le_trans hfib (Finset.card_le_card ?_)⟩
+  intro w hw
+  have hwW' : w ∈ W' := (Finset.mem_filter.1 hw).1
+  have hgw : g w = h₀ := (Finset.mem_filter.1 hw).2
+  obtain ⟨hle, hmem⟩ := hgW w hwW'
+  obtain ⟨hwr, hwA, hwH⟩ := Finset.mem_filter.1 hwW'
+  refine Finset.mem_filter.2 ⟨Finset.mem_range.2 (by omega), hwA, ?_⟩
+  have heq : n - h₀ - w = n - w - g w := by
+    rw [hgw]
+    omega
+  rw [heq]
+  exact hmem
+
+/-- Covering forces square-root growth: `[N₀, n]` maps injectively
+(by its sum) into ordered pairs from `A ∩ [0, n]`, so
+`|A ∩ [0,n]|² ≥ n + 1 − N₀`.  Feeds the fan blowup: hub targets
+have translates with `r₂ ≥ (√n − |H|)/|H|`. -/
+theorem covering_sqrt_lower {A : Set ℕ} {N₀ n : ℕ}
+    [DecidablePred (· ∈ A)]
+    (hcov : PairCovers A N₀) (hn : N₀ ≤ n) :
+    n + 1 - N₀ ≤ ((Finset.range (n + 1)).filter (· ∈ A)).card *
+      ((Finset.range (n + 1)).filter (· ∈ A)).card := by
+  classical
+  set F := (Finset.range (n + 1)).filter (· ∈ A) with hF
+  have hchoice : ∀ m : ℕ, ∃ q : ℕ × ℕ,
+      (m ∈ Finset.Icc N₀ n → q.1 ∈ F ∧ q.2 ∈ F ∧ q.1 + q.2 = m) := by
+    intro m
+    by_cases hm : m ∈ Finset.Icc N₀ n
+    · obtain ⟨hm1, hm2⟩ := Finset.mem_Icc.1 hm
+      obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm1
+      refine ⟨(x, y), fun _ => ⟨?_, ?_, hxy⟩⟩
+      · exact Finset.mem_filter.2 ⟨Finset.mem_range.2 (by omega), hx⟩
+      · exact Finset.mem_filter.2 ⟨Finset.mem_range.2 (by omega), hy⟩
+    · exact ⟨(0, 0), fun h => absurd h hm⟩
+  choose q hq using hchoice
+  have hmaps : ∀ m ∈ Finset.Icc N₀ n, q m ∈ F ×ˢ F := by
+    intro m hm
+    obtain ⟨h1, h2, -⟩ := hq m hm
+    exact Finset.mem_product.2 ⟨h1, h2⟩
+  have hinj : Set.InjOn q (Finset.Icc N₀ n) := by
+    intro m₁ hm₁ m₂ hm₂ heq
+    obtain ⟨-, -, hs1⟩ := hq m₁ (by simpa using hm₁)
+    obtain ⟨-, -, hs2⟩ := hq m₂ (by simpa using hm₂)
+    rw [heq] at hs1
+    omega
+  have hcard := Finset.card_le_card_of_injOn q hmaps hinj
+  rw [Nat.card_Icc, Finset.card_product] at hcard
+  exact hcard
+
 end Erdos881
