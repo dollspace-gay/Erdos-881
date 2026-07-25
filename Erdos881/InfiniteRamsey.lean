@@ -476,4 +476,241 @@ theorem infinite_ramsey_quadruples (c : ℕ → ℕ → ℕ → ℕ → Bool) :
     (hgmono hkl)]
   exact hgt i
 
+/-- Base case for the general-arity theorem: 1-tuples, i.e. a plain
+colouring of ℕ, admits an infinite monochromatic subsequence. -/
+theorem infinite_ramsey_singletons (c : (Fin 1 → ℕ) → Bool) :
+    ∃ f : ℕ → ℕ, StrictMono f ∧ ∃ bt : Bool,
+      ∀ g : Fin 1 → ℕ, StrictMono g →
+        c (fun i => f (g i)) = bt := by
+  classical
+  set e : ℕ → Bool := fun n => c (fun _ => n) with he
+  have htag : ∃ bt : Bool, {n | e n = bt}.Infinite := by
+    by_contra hno
+    push_neg at hno
+    have h1 : {n | e n = true}.Finite := by
+      simpa [Set.not_infinite] using hno true
+    have h2 : {n | e n = false}.Finite := by
+      simpa [Set.not_infinite] using hno false
+    have hsplit : (Set.univ : Set ℕ) ⊆ {n | e n = true} ∪
+        {n | e n = false} := by
+      intro n _
+      rcases Bool.eq_false_or_eq_true (e n) with h | h
+      · exact Or.inl h
+      · exact Or.inr h
+    exact Set.infinite_univ (Set.Finite.subset (h1.union h2) hsplit)
+  obtain ⟨bt, hbt⟩ := htag
+  have hpick : ∀ X : ℕ, ∃ n, X < n ∧ e n = bt := by
+    intro X
+    obtain ⟨n, hn, hnX⟩ := hbt.exists_gt X
+    exact ⟨n, hnX, hn⟩
+  choose nxt hnxt henxt using hpick
+  set f : ℕ → ℕ := fun i =>
+    Nat.rec (nxt 0) (fun _ prev => nxt prev) i with hf
+  have hfS : ∀ i, f (i + 1) = nxt (f i) := fun _ => rfl
+  have hfmono : StrictMono f := by
+    apply strictMono_nat_of_lt_succ
+    intro i
+    rw [hfS]
+    exact hnxt (f i)
+  have hft : ∀ i, e (f i) = bt := by
+    intro i
+    cases i with
+    | zero => exact henxt 0
+    | succ i =>
+      rw [hfS]
+      exact henxt (f i)
+  refine ⟨f, hfmono, bt, fun g _ => ?_⟩
+  have h1 : (fun i : Fin 1 => f (g i)) = fun _ => f (g 0) := by
+    funext i
+    have : i = 0 := Fin.fin_one_eq_zero i
+    rw [this]
+  rw [h1]
+  exact hft (g 0)
+
+/-- The general pre-homogeneous step: from an arity-`(r+1)` Ramsey
+oracle, an anchor, and a pool, produce the homogeneous refinement:
+a subsequence of the pool, above the anchor, on which all
+anchor-headed `(r+2)`-tuples receive one colour. -/
+theorem tuple_step {r : ℕ}
+    (ramseyR : ∀ c' : (Fin (r + 1) → ℕ) → Bool,
+      ∃ f : ℕ → ℕ, StrictMono f ∧ ∃ bt : Bool,
+        ∀ t : Fin (r + 1) → ℕ, StrictMono t →
+          c' (fun i => f (t i)) = bt)
+    (c : (Fin (r + 2) → ℕ) → Bool) (a : ℕ)
+    (E : ℕ → ℕ) (hE : StrictMono E) (hEa : ∀ i, a < E i) :
+    ∃ (F : ℕ → ℕ) (bt : Bool), StrictMono F ∧
+      (∀ i, ∃ i', F i = E i') ∧ (∀ i, a < F i) ∧
+      ∀ t : Fin (r + 1) → ℕ, StrictMono t →
+        c (Fin.cons a (fun i => F (t i))) = bt := by
+  obtain ⟨f, hf, bt, hhom⟩ :=
+    ramseyR (fun t => c (Fin.cons a (fun i => E (t i))))
+  refine ⟨E ∘ f, bt, hE.comp hf, fun i => ⟨f i, rfl⟩,
+    fun i => hEa _, ?_⟩
+  intro t ht
+  exact hhom t ht
+
+/-- **INFINITE RAMSEY, EVERY ARITY, TWO COLOURS.**  For every `r`
+and every colouring of the strictly monotone `(r+1)`-tuples of
+naturals there is an infinite subsequence on which the colour is
+constant.  By induction on arity: the anchor recursion over the
+arity-`r` oracle, with the anchor drawn from the homogeneous
+subsequence itself. -/
+theorem infinite_ramsey_tuples :
+    ∀ (r : ℕ) (c : (Fin (r + 1) → ℕ) → Bool),
+    ∃ f : ℕ → ℕ, StrictMono f ∧ ∃ bt : Bool,
+      ∀ g : Fin (r + 1) → ℕ, StrictMono g →
+        c (fun i => f (g i)) = bt := by
+  intro r
+  induction r with
+  | zero => exact infinite_ramsey_singletons
+  | succ r ih =>
+    intro c
+    classical
+    have hstep_ex : ∀ (a : ℕ) (E : ℕ → ℕ), StrictMono E →
+        (∀ i, a < E i) →
+        ∃ (F : ℕ → ℕ) (bt : Bool), StrictMono F ∧
+          (∀ i, ∃ i', F i = E i') ∧ (∀ i, a < F i) ∧
+          ∀ t : Fin (r + 1) → ℕ, StrictMono t →
+            c (Fin.cons a (fun i => F (t i))) = bt :=
+      fun a E hE hEa => tuple_step ih c a E hE hEa
+    choose Ff btf hFmono hFsub hFa hFhom using hstep_ex
+    set st : ℕ → {p : ℕ × (ℕ → ℕ) //
+        StrictMono p.2 ∧ ∀ i, p.1 < p.2 i} := fun k =>
+      Nat.rec ⟨((0 : ℕ), fun i => i + 1),
+          fun _ _ h => Nat.succ_lt_succ h, fun i => Nat.succ_pos i⟩
+        (fun _ q => ⟨(Ff q.1.1 q.1.2 q.2.1 q.2.2 0,
+            fun i => Ff q.1.1 q.1.2 q.2.1 q.2.2 (i + 1)),
+          fun i j hij => hFmono q.1.1 q.1.2 q.2.1 q.2.2
+            (Nat.succ_lt_succ hij),
+          fun i => hFmono q.1.1 q.1.2 q.2.1 q.2.2
+            (Nat.succ_pos i)⟩) k with hst
+    set Efull : ℕ → ℕ → ℕ := fun k =>
+      Ff (st k).1.1 (st k).1.2 (st k).2.1 (st k).2.2 with hEfull
+    have hstS : ∀ k, (st (k + 1)).1 =
+        (Efull k 0, fun i => Efull k (i + 1)) := fun _ => rfl
+    set t : ℕ → Bool := fun k =>
+      btf (st k).1.1 (st k).1.2 (st k).2.1 (st k).2.2 with ht
+    have hEmono : ∀ k, StrictMono (Efull k) :=
+      fun k => hFmono _ _ _ _
+    have hEsub : ∀ k i, ∃ i', Efull k i = (st k).1.2 i' :=
+      fun k i => hFsub _ _ _ _ i
+    have hEa : ∀ k i, (st k).1.1 < Efull k i :=
+      fun k i => hFa _ _ _ _ i
+    have hEhom : ∀ k (u : Fin (r + 1) → ℕ), StrictMono u →
+        c (Fin.cons (st k).1.1 (fun i => Efull k (u i))) = t k :=
+      fun k u hu => hFhom _ _ _ _ u hu
+    have hanchor1 : ∀ k, (st (k + 1)).1.1 = Efull k 0 :=
+      fun k => congrArg Prod.fst (hstS k)
+    have hpool1 : ∀ k, (st (k + 1)).1.2 = fun i => Efull k (i + 1) :=
+      fun k => congrArg Prod.snd (hstS k)
+    have hanchorlt : ∀ k, (st k).1.1 < (st (k + 1)).1.1 := by
+      intro k
+      rw [hanchor1 k]
+      exact hEa k 0
+    have hamono : StrictMono (fun k => (st k).1.1) :=
+      strictMono_nat_of_lt_succ hanchorlt
+    have hpoolsub : ∀ k i, ∃ i',
+        (st (k + 1)).1.2 i = (st k).1.2 i' := by
+      intro k i
+      rw [hpool1 k]
+      exact hEsub k (i + 1)
+    have hchain : ∀ k j, k ≤ j → ∀ i, ∃ i',
+        (st j).1.2 i = (st k).1.2 i' := by
+      intro k j hkj
+      induction j with
+      | zero =>
+        have h0 : k = 0 := by omega
+        subst h0
+        exact fun i => ⟨i, rfl⟩
+      | succ j ihj =>
+        rcases Nat.lt_or_ge k (j + 1) with h' | h'
+        · intro i
+          obtain ⟨i₁, hi₁⟩ := hpoolsub j i
+          obtain ⟨i', hi'⟩ := ihj (by omega) i₁
+          exact ⟨i', by rw [hi₁, hi']⟩
+        · have h1 : k = j + 1 := by omega
+          subst h1
+          exact fun i => ⟨i, rfl⟩
+    -- later anchors are Efull-values of every earlier stage
+    have hanchorE : ∀ k l, k < l → ∃ γ,
+        (st l).1.1 = Efull k γ := by
+      intro k l hkl
+      obtain ⟨l', rfl⟩ : ∃ l', l = l' + 1 := ⟨l - 1, by omega⟩
+      rcases Nat.eq_or_lt_of_le (Nat.succ_le_of_lt hkl) with heq | hlt
+      · have h1 : k = l' := by omega
+        subst h1
+        exact ⟨0, hanchor1 k⟩
+      · -- k + 1 ≤ l' : anchor of l'+1 is an Efull l' value, chain
+        have h1 : (st (l' + 1)).1.1 = Efull l' 0 := hanchor1 l'
+        obtain ⟨i₁, hi₁⟩ := hEsub l' 0
+        obtain ⟨i₂, hi₂⟩ := hchain (k + 1) l' (by omega) i₁
+        have h2 : (st (k + 1)).1.2 i₂ = Efull k (i₂ + 1) := by
+          rw [hpool1 k]
+        exact ⟨i₂ + 1, by rw [h1, hi₁, hi₂, h2]⟩
+    -- pigeonhole the tags and extract
+    have htag : ∃ b : Bool, {k | t k = b}.Infinite := by
+      by_contra hno
+      push_neg at hno
+      have h1 : {k | t k = true}.Finite := by
+        simpa [Set.not_infinite] using hno true
+      have h2 : {k | t k = false}.Finite := by
+        simpa [Set.not_infinite] using hno false
+      have hsplit : (Set.univ : Set ℕ) ⊆ {k | t k = true} ∪
+          {k | t k = false} := by
+        intro k _
+        rcases Bool.eq_false_or_eq_true (t k) with h | h
+        · exact Or.inl h
+        · exact Or.inr h
+      exact Set.infinite_univ
+        (Set.Finite.subset (h1.union h2) hsplit)
+    obtain ⟨b, hb⟩ := htag
+    have hpick : ∀ X : ℕ, ∃ k, X < k ∧ t k = b := by
+      intro X
+      obtain ⟨k, hk, hkX⟩ := hb.exists_gt X
+      exact ⟨k, hkX, hk⟩
+    choose nxt hnxt htnxt using hpick
+    set G : ℕ → ℕ := fun i =>
+      Nat.rec (nxt 0) (fun _ prev => nxt prev) i with hG
+    have hGS : ∀ i, G (i + 1) = nxt (G i) := fun _ => rfl
+    have hGmono : StrictMono G := by
+      apply strictMono_nat_of_lt_succ
+      intro i
+      rw [hGS]
+      exact hnxt (G i)
+    have hGt : ∀ i, t (G i) = b := by
+      intro i
+      cases i with
+      | zero => exact htnxt 0
+      | succ i =>
+        rw [hGS]
+        exact htnxt (G i)
+    refine ⟨fun i => (st (G i)).1.1,
+      fun i j hij => hamono (hGmono hij), b, ?_⟩
+    intro g hg
+    set k := G (g 0) with hk
+    have hmemE : ∀ i : Fin (r + 1), ∃ γ,
+        (st (G (g i.succ))).1.1 = Efull k γ := by
+      intro i
+      refine hanchorE k (G (g i.succ)) ?_
+      exact hGmono (hg (Fin.succ_pos i))
+    choose u hu using hmemE
+    have humono : StrictMono u := by
+      intro i j hij
+      have h1 : (st (G (g i.succ))).1.1 <
+          (st (G (g j.succ))).1.1 :=
+        hamono (hGmono (hg (Fin.succ_lt_succ_iff.2 hij)))
+      rw [hu i, hu j] at h1
+      exact (hEmono k).lt_iff_lt.1 h1
+    have htuple : (fun i : Fin (r + 2) => (st (G (g i))).1.1) =
+        Fin.cons (st k).1.1 (fun i => Efull k (u i)) := by
+      funext i
+      refine Fin.cases ?_ ?_ i
+      · rw [Fin.cons_zero]
+      · intro i
+        rw [Fin.cons_succ]
+        exact hu i
+    rw [htuple]
+    rw [hEhom k u humono]
+    exact hGt (g 0)
+
 end Erdos881
