@@ -1045,4 +1045,38 @@ theorem witness_branch_level_mem {A : Set ℕ} {N₀ u v m : ℕ}
     rcases hwit 0 h0 (u + (m - v)) hmem (by omega) with h | h <;>
       omega
 
+
+/-- **Anchor forks are forced to the `u`-side.**  For a W-aligned
+edge (witness at `u + (m - v)`), any anchor `c` with `u + c ∈ A` has
+its `v`-channel excluded by the translate exit, so the `u`-channel is
+forced: `m - u - c ∈ A`.  The W-aligned enemy must deposit a full
+translate of `{c ∈ A : u + c ∈ A}` below each edge top. -/
+theorem anchor_fork_forced {A : Set ℕ} {N₀ u v m c : ℕ}
+    (hcov : PairCovers A N₀)
+    (hdes : IsPairDestroyer A u v m)
+    (hwit : ∀ y ∈ A, ∀ z ∈ A, y + z = u + (m - v) → y = u ∨ z = u)
+    (hcA : c ∈ A) (hucA : u + c ∈ A)
+    (hc0 : 0 < c) (hcu : c ≠ u) (hcv : c ≠ v)
+    (hcm : c + N₀ ≤ m) (hcL : c ≤ m - v) (hLuc : m - v ≠ u + c)
+    (hvm : v ≤ m) :
+    m - u - c ∈ A := by
+  obtain ⟨y, hy, z, hz, hyz⟩ := hcov (m - c) (by omega)
+  rcases hdes.2 c hcA y hy z hz (by omega) with h | h | h | h | h | h
+  · exact absurd h hcu
+  · have hz' : z = m - u - c := by omega
+    exact hz' ▸ hz
+  · have hy' : y = m - u - c := by omega
+    exact hy' ▸ hy
+  · exact absurd h hcv
+  · have hz' : z = m - v - c := by omega
+    exact absurd (hz' ▸ hz)
+      (fun hmem => witness_level_translate_exit hwit hcL hLuc hc0
+        hucA (by
+          have : m - v - c = m - v - c := rfl
+          exact hmem))
+  · have hy' : y = m - v - c := by omega
+    exact absurd (hy' ▸ hy)
+      (fun hmem => witness_level_translate_exit hwit hcL hLuc hc0
+        hucA hmem)
+
 end Erdos881
