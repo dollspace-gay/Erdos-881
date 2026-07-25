@@ -1463,4 +1463,24 @@ theorem spread_min_guard_dichotomy {A B : Set ℕ}
         (Finset.mem_range.mpr (by omega))) (le_max_right _ _)) hm
     exact hNu u m hbound huB ⟨v, hvB, huv, hdes⟩
 
+
+/-- **Recurring equal guards die.**  The diagonal case of the
+recurring-low-guard branch (`u = v`) collapses to a fixed singleton
+guardian with cofinal targets — killed by the rotating-guardian
+engine. -/
+theorem recurring_equal_guard_kill {A : Set ℕ} {N₀ u c : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hu0 : 0 < u)
+    (hrec : ∀ N, ∃ m, N ≤ m ∧ IsPairDestroyer A u u m)
+    (hc : c ∈ A) (hc0 : 0 < c) (hca : c ≠ u)
+    (hw : ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ u ∧ w' ≠ u) :
+    ∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n := by
+  refine surviving_deletion_of_cofinal_fixedGuardian' h0 hcov hu0
+    (fun N => ?_) hc hc0 hca hw
+  obtain ⟨m, hm, hdes⟩ := hrec N
+  exact ⟨m, hm, hdes.privateTriple_of_eq⟩
+
 end Erdos881
