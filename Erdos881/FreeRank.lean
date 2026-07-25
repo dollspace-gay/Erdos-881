@@ -2068,4 +2068,53 @@ theorem omega_node_children_unbounded {A : Set ℕ} {N₀ : ℕ}
     push_neg
     exact Ordinal.nat_lt_omega0 K)
 
+/-- **The diagonal through the grades.**  From a rank-`ω` node,
+extract a strictly monotone sequence of admissible extensions whose
+grades climb without bound: `rank(R ∪ {b j}) ≥ j`.  The first
+deletion candidate whose members carry unbounded relative freedom —
+the staged object for the boundary attack. -/
+theorem omega_node_diagonal {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {P₀ : Set ℕ} {R : Finset ℕ}
+    (hR : ((poolFreeStep_wf h0 hcov hfail P₀).apply R).rank =
+      Ordinal.omega0) :
+    ∃ b : ℕ → ℕ, StrictMono b ∧
+      (∀ j, PoolFreeStep A N₀ P₀ (insert (b j) R) R) ∧
+      ∀ j, ((j : ℕ) : Ordinal.{0}) ≤
+        ((poolFreeStep_wf h0 hcov hfail P₀).apply
+          (insert (b j) R)).rank := by
+  classical
+  have hpick := omega_node_children_unbounded h0 hcov hfail hR
+  have hpick' : ∀ (k X : ℕ), ∃ b, X ≤ b ∧
+      (PoolFreeStep A N₀ P₀ (insert b R) R ∧
+      ((k : ℕ) : Ordinal.{0}) ≤
+        ((poolFreeStep_wf h0 hcov hfail P₀).apply
+          (insert b R)).rank) := by
+    intro k X
+    obtain ⟨b, h1, h2, h3⟩ := hpick k X
+    exact ⟨b, h1, h2, h3⟩
+  choose pk hpkX hpkdata using hpick'
+  set b : ℕ → ℕ := fun j =>
+    Nat.rec (pk 0 0) (fun j prev => pk (j + 1) (prev + 1)) j with hb
+  have hbS : ∀ j, b (j + 1) = pk (j + 1) (b j + 1) := fun _ => rfl
+  have hbmono : StrictMono b := by
+    apply strictMono_nat_of_lt_succ
+    intro j
+    have h1 := hpkX (j + 1) (b j + 1)
+    rw [hbS]
+    omega
+  have hbdata : ∀ j, PoolFreeStep A N₀ P₀ (insert (b j) R) R ∧
+      ((j : ℕ) : Ordinal.{0}) ≤
+        ((poolFreeStep_wf h0 hcov hfail P₀).apply
+          (insert (b j) R)).rank := by
+    intro j
+    cases j with
+    | zero => exact hpkdata 0 0
+    | succ j =>
+      rw [hbS]
+      exact hpkdata (j + 1) (b j + 1)
+  exact ⟨b, hbmono, fun j => (hbdata j).1, fun j => (hbdata j).2⟩
+
 end Erdos881
