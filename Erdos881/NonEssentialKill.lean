@@ -931,4 +931,63 @@ theorem surviving_deletion_of_avoidable_levels
     exact hmirror k (L j) hsj.2.1 (by omega) (by omega)
       ⟨s, hs, t, ht, by omega, hsu, htu⟩ (by omega) (by omega)
 
+
+/-- **The grand assembly, fifth form.**  The clique escape at its
+sharpest: every positive vertex is primitive, or has no doubling
+anchor with avoidable cross-sums, or is **W-aligned** — beyond some
+bound every destroyer of its edges has a bounded level or an
+unavoidable cross-sum.  Redundancy plays no role anywhere. -/
+theorem erdos881_grand_assembly₅ {A : Set ℕ} {N₀ : ℕ}
+    (hA : A.Infinite) (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfunnel : HasCofinalPairFunnels A)
+    (hdb : {c | c ∈ A ∧ 2 * c ∈ A ∧ 0 < c}.Infinite)
+    (hnz : ∃ c ∈ A, 0 < c ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ 0 < w ∧ 0 < w') :
+    (∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n) ∨
+    (∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m) ∨
+    (∃ L, L ⊆ A ∧ L.Infinite ∧ L.Pairwise (TeamEdge A) ∧
+      ∀ u ∈ L, 0 < u →
+        (¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u ∧ s ≠ u ∧ t ≠ u) ∨
+        (∀ c, c ∈ A → 2 * c ∈ A → u < c →
+          (¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u + c ∧ s ≠ u ∧ t ≠ u) ∨
+          (¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u + 2 * c ∧ s ≠ u ∧ t ≠ u)) ∨
+        (∃ K, ∀ v m, K < v → u < v → v ≤ m →
+          IsPairDestroyer A u v m →
+          m - v ≤ K ∨
+          ¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u + (m - v) ∧ s ≠ u ∧ t ≠ u)) := by
+  rcases infinite_teamClique_or_cofinal_privatePairs hA hfunnel with
+    ⟨L, hLA, hLinf, hLcl⟩ | ⟨L, hLA, hLinf, hstream⟩
+  · by_cases hesc : ∀ u ∈ L, 0 < u →
+        (¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u ∧ s ≠ u ∧ t ≠ u) ∨
+        (∀ c, c ∈ A → 2 * c ∈ A → u < c →
+          (¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u + c ∧ s ≠ u ∧ t ≠ u) ∨
+          (¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u + 2 * c ∧ s ≠ u ∧ t ≠ u)) ∨
+        (∃ K, ∀ v m, K < v → u < v → v ≤ m →
+          IsPairDestroyer A u v m →
+          m - v ≤ K ∨
+          ¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u + (m - v) ∧ s ≠ u ∧ t ≠ u)
+    · exact Or.inr (Or.inr ⟨L, hLA, hLinf, hLcl, hesc⟩)
+    · push Not at hesc
+      obtain ⟨u, huL, hu0, hprim, hanch, halign⟩ := hesc
+      obtain ⟨cc, hccA, h2cc, hccu, hacc, ha2cc⟩ := hanch
+      refine Or.inl (surviving_deletion_of_avoidable_levels h0 hcov
+        hprim hu0 hccA (by omega) (by omega) hacc h2cc (by omega)
+        ha2cc (fun K => ?_))
+      obtain ⟨v, m, hKv, huv, hvm, hdes, hlev, hav⟩ := halign K
+      exact ⟨v, m, hKv, huv, hvm, by omega, hdes, hav⟩
+  · have hanchor := anchor_abundance_of_doubling h0 hdb hnz
+    by_cases hz : ∀ N, ∃ a m, N ≤ m ∧ 0 < a ∧ IsPrivateTriple A a m
+    · exact Or.inl
+        (surviving_deletion_of_cofinal_privateStream h0 hcov hz hanchor)
+    · push Not at hz
+      obtain ⟨N₂, hN₂⟩ := hz
+      refine Or.inr (Or.inl fun N => ?_)
+      obtain ⟨v, hvL, m, hm, hpriv⟩ := hstream (max N N₂)
+      rcases Nat.eq_zero_or_pos v with hv0 | hv0
+      · exact ⟨m, le_trans (le_max_left _ _) hm, hv0 ▸ hpriv⟩
+      · exact absurd hpriv
+          (hN₂ v m (le_trans (le_max_right _ _) hm) hv0)
+
 end Erdos881
