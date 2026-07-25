@@ -509,4 +509,31 @@ theorem zero_guardian_hole {A : Set ℕ} {N₀ m₁ m₂ m₃ x y z : ℕ}
   rcases h3.2 (m₁ - x) hw₁ (m₂ - y) hw₂ z hz hsum with h | h | h <;>
     omega
 
+/-- **The zero residue, packaged.**  If zero guards cofinally, then
+for any pair of separated targets: the lower target is not an
+element, the gap between targets is not an element, and every
+mirror-window sum combination is barred from being a positive
+element.  The residue is an extremely rigid object: cofinal
+non-element targets with an `A`-free difference set carving
+positive-sumset holes. -/
+theorem zero_residue_structure {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hres : ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m)
+    (x : ℕ) (hx : x ∈ A) (hx0 : 0 < x) :
+    ∀ N, ∃ m₁ m₂, N ≤ m₁ ∧ m₁ + N₀ ≤ m₂ ∧
+      IsPrivateTriple A 0 m₁ ∧ IsPrivateTriple A 0 m₂ ∧
+      (x + N₀ ≤ m₁ → x < m₁ → (m₂ - m₁ ∉ A ∧ (0 < m₁ → m₁ ∉ A))) := by
+  intro N
+  obtain ⟨m₁, hm₁N, h1⟩ := hres N
+  obtain ⟨m₂, hm₂N, h2⟩ := hres (m₁ + N₀)
+  refine ⟨m₁, m₂, hm₁N, hm₂N, h1, h2, ?_⟩
+  intro hxm hxlt
+  constructor
+  · intro hd
+    exact zero_guardian_no_element_gap hcov h1 h2 (by omega)
+      hx hx0 hxm hxlt hd
+  · intro hm₁0 hm₁A
+    exact zero_guardian_target_not_elt hcov h1 h2 (by omega)
+      (by omega) hm₁A hm₁0 hx hx0 hxm hxlt
+
 end Erdos881
