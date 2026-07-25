@@ -2237,4 +2237,41 @@ theorem single_marker_mixed_exclusion {A P B : Set ℕ} {b t : ℕ}
     mixed_pair_destruction_sharpens hPA hB hdest p hp q hq hqP hpq
   exact hpb (honly p hpB (by omega))
 
+/-- **Outside pairs are banned.**  A two-destroyed target under a
+pool deletion admits no representation with both parts outside the
+pool: nothing there can be hit.  Destroyed targets avoid
+`(A ∖ P) + (A ∖ P)` outright. -/
+theorem no_outside_pairs_of_destroyed {A P B : Set ℕ} {t : ℕ}
+    (hB : B ⊆ P)
+    (hdest : ∀ x ∈ A, ∀ y ∈ A, x + y = t → x ∈ B ∨ y ∈ B) :
+    ∀ q ∈ A, q ∉ P → ∀ q' ∈ A, q' ∉ P → q + q' ≠ t := by
+  intro q hq hqP q' hq' hq'P hqq'
+  rcases hdest q hq q' hq' hqq' with h | h
+  · exact hqP (hB h)
+  · exact hq'P (hB h)
+
+/-- **The level-2 corep.**  In a single-marker pool window, every
+representation shape of a destroyed target routes through the marker
+— outside pairs are banned, mixed pairs collapse onto it, pure pairs
+hit it — so covering forces `t - b ∈ A`.  The reversed-block supply
+regenerates one level down, from bans instead of dichotomies. -/
+theorem level2_corep {A P B : Set ℕ} {N₀ b t : ℕ}
+    (hcov : PairCovers A N₀) (htN : N₀ ≤ t)
+    (hPA : P ⊆ A) (hB : B ⊆ P)
+    (honly : ∀ x ∈ B, x ≤ t → x = b)
+    (hdest : ∀ x ∈ A, ∀ y ∈ A, x + y = t → x ∈ B ∨ y ∈ B) :
+    b ≤ t ∧ t - b ∈ A := by
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov t htN
+  rcases hdest x hx y hy hxy with h | h
+  · have hxb : x = b := honly x h (by omega)
+    subst hxb
+    have hyv : y = t - x := by omega
+    rw [hyv] at hy
+    exact ⟨by omega, hy⟩
+  · have hyb : y = b := honly y h (by omega)
+    subst hyb
+    have hxv : x = t - y := by omega
+    rw [hxv] at hx
+    exact ⟨by omega, hx⟩
+
 end Erdos881
