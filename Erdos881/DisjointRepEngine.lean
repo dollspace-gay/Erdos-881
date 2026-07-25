@@ -621,4 +621,80 @@ theorem hub_card_ge_two_of_hfail {A : Set ℕ} {N₀ : ℕ}
       exact hNz n hnz (privateTriple_of_singleton_hub h0 hcov hn₀ hhub)
     · exact hNp n hnp a hapos hhub
 
+/-- An exact-pair hub is a pair destroyer. -/
+theorem pairDestroyer_of_pair_hub {A : Set ℕ} {N₀ n u v : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (hn : N₀ ≤ n)
+    (hhub : IsRepHub A n {u, v}) : IsPairDestroyer A u v n := by
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hn
+  refine ⟨⟨x, hx, y, hy, 0, h0, by omega⟩, ?_⟩
+  have hmem : ∀ w, w ∈ ({u, v} : Finset ℕ) → w = u ∨ w = v := by
+    intro w hw
+    rcases Finset.mem_insert.1 hw with h' | h'
+    · exact Or.inl h'
+    · exact Or.inr (Finset.mem_singleton.1 h')
+  intro x' hx' y' hy' z' hz' hsum
+  rcases hhub x' hx' y' hy' z' hz' hsum with h | h | h <;>
+    rcases hmem _ h with h' | h' <;> tauto
+
+/-- Every hub contains a minimal hub. -/
+theorem exists_minimal_hub {A : Set ℕ} {n : ℕ} {H : Finset ℕ}
+    (hhub : IsRepHub A n H) :
+    ∃ H' ⊆ H, IsRepHub A n H' ∧
+      ∀ h ∈ H', ¬IsRepHub A n (H' \ {h}) := by
+  classical
+  revert hhub
+  induction H using Finset.strongInduction with
+  | _ H ih =>
+    intro hhub
+    by_cases hmin : ∀ h ∈ H, ¬IsRepHub A n (H \ {h})
+    · exact ⟨H, Finset.Subset.refl H, hhub, hmin⟩
+    · push_neg at hmin
+      obtain ⟨h, hhH, hsub⟩ := hmin
+      have hss : H \ {h} ⊂ H :=
+        Finset.sdiff_ssubset (Finset.singleton_subset_iff.2 hhH)
+          (Finset.singleton_nonempty h)
+      obtain ⟨H', hH'sub, hH'hub, hH'min⟩ := ih (H \ {h}) hss hsub
+      exact ⟨H', Finset.Subset.trans hH'sub Finset.sdiff_subset,
+        hH'hub, hH'min⟩
+
+/-- **Necessity witnesses.**  Every element of a minimal hub owns a
+representation meeting the hub only at that element: each hub member
+is a genuine guardian with a private witness. -/
+theorem minimal_hub_necessity {A : Set ℕ} {n : ℕ} {H : Finset ℕ}
+    (hhub : IsRepHub A n H)
+    (hmin : ∀ h ∈ H, ¬IsRepHub A n (H \ {h})) :
+    ∀ h ∈ H, ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = n ∧
+      (x = h ∨ y = h ∨ z = h) ∧
+      (∀ g ∈ H, g ≠ h → x ≠ g ∧ y ≠ g ∧ z ≠ g) := by
+  intro h hhH
+  have hnot := hmin h hhH
+  rw [IsRepHub] at hnot
+  push_neg at hnot
+  obtain ⟨x, hx, y, hy, z, hz, hsum, hxH, hyH, hzH⟩ := hnot
+  have hcx : x ∈ H → x = h := by
+    intro hxH'
+    by_contra hne
+    exact hxH (Finset.mem_sdiff.2 ⟨hxH', Finset.notMem_singleton.2 hne⟩)
+  have hcy : y ∈ H → y = h := by
+    intro hyH'
+    by_contra hne
+    exact hyH (Finset.mem_sdiff.2 ⟨hyH', Finset.notMem_singleton.2 hne⟩)
+  have hcz : z ∈ H → z = h := by
+    intro hzH'
+    by_contra hne
+    exact hzH (Finset.mem_sdiff.2 ⟨hzH', Finset.notMem_singleton.2 hne⟩)
+  refine ⟨x, hx, y, hy, z, hz, hsum, ?_, ?_⟩
+  · rcases hhub x hx y hy z hz hsum with hw | hw | hw
+    · exact Or.inl (hcx hw)
+    · exact Or.inr (Or.inl (hcy hw))
+    · exact Or.inr (Or.inr (hcz hw))
+  · refine fun g hgH hgh => ⟨fun hxg => hgh ?_, fun hyg => hgh ?_,
+      fun hzg => hgh ?_⟩
+    · have := hcx (hxg ▸ hgH)
+      omega
+    · have := hcy (hyg ▸ hgH)
+      omega
+    · have := hcz (hzg ▸ hgH)
+      omega
+
 end Erdos881
