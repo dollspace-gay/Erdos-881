@@ -637,4 +637,53 @@ theorem zero_gap_interior_element {A : Set ℕ} {N₀ m₁ m₂ x : ℕ}
   have : m₁ + z = m₂ - y := by omega
   exact this ▸ hlift
 
+
+/-- **Zero mirrors preserve primitivity.**  The mirror `m - p` of a
+primitive through a zero-guarded target is an element with no
+positive two-term representation — else the parts would assemble a
+positive representation of `m`.  The primitive set is mirror-closed
+around every zero target. -/
+theorem zero_mirror_primitive {A : Set ℕ} {N₀ m p : ℕ}
+    (hcov : PairCovers A N₀)
+    (hm : IsPrivateTriple A 0 m)
+    (hp : p ∈ A) (hp0 : 0 < p) (hpm : p + N₀ ≤ m)
+    (hprim : ¬ ∃ s ∈ A, ∃ t ∈ A, s + t = p ∧ 0 < s ∧ 0 < t) :
+    (m - p ∈ A) ∧
+    ¬ ∃ s ∈ A, ∃ t ∈ A, s + t = m - p ∧ 0 < s ∧ 0 < t := by
+  obtain ⟨y, hy, z, hz, hyz⟩ := hcov (m - p) (by omega)
+  have hmem : m - p ∈ A := by
+    rcases hm.2 p hp y hy z hz (by omega) with h | h | h
+    · omega
+    · have : z = m - p := by omega
+      exact this ▸ hz
+    · have : y = m - p := by omega
+      exact this ▸ hy
+  refine ⟨hmem, ?_⟩
+  rintro ⟨s, hs, t, ht, hst, hs0, ht0⟩
+  rcases hm.2 p hp s hs t ht (by omega) with h | h | h <;> omega
+
+/-- **Two zero targets translate primitives.**  Composing the mirrors
+of two zero-guarded targets pushes every windowed primitive up by the
+gap: the primitive set is translation-closed under `m₂ - m₁` on the
+window.  Iterated over a cofinal zero residue, the primitives form
+arithmetic-progression-like ladders — full structure for a future
+periodicity kill. -/
+theorem zero_targets_translate_primitives {A : Set ℕ} {N₀ m₁ m₂ p : ℕ}
+    (hcov : PairCovers A N₀)
+    (h1 : IsPrivateTriple A 0 m₁) (h2 : IsPrivateTriple A 0 m₂)
+    (hlt : m₁ < m₂)
+    (hp : p ∈ A) (hp0 : 0 < p) (hpm : p + N₀ ≤ m₁) (hplt : p < m₁)
+    (hgap : m₁ + N₀ ≤ m₂)
+    (hprim : ¬ ∃ s ∈ A, ∃ t ∈ A, s + t = p ∧ 0 < s ∧ 0 < t) :
+    (p + (m₂ - m₁) ∈ A) ∧
+    ¬ ∃ s ∈ A, ∃ t ∈ A, s + t = p + (m₂ - m₁) ∧ 0 < s ∧ 0 < t := by
+  obtain ⟨hq, hqprim⟩ :=
+    zero_mirror_primitive hcov h1 hp hp0 hpm hprim
+  have hq0 : 0 < m₁ - p := by omega
+  have hqm : (m₁ - p) + N₀ ≤ m₂ := by omega
+  obtain ⟨hr, hrprim⟩ :=
+    zero_mirror_primitive hcov h2 hq hq0 hqm hqprim
+  have he : m₂ - (m₁ - p) = p + (m₂ - m₁) := by omega
+  exact ⟨he ▸ hr, he ▸ hrprim⟩
+
 end Erdos881
