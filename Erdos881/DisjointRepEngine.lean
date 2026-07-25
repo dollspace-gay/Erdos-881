@@ -21,6 +21,7 @@ disjoint-rep growth; size-≤2 rep covers simply do not exist).
 
 import Erdos881.TeamGraphRamsey
 import Erdos881.AdditiveSupports
+import Erdos881.RotatingGuardianEndgame
 
 namespace Erdos881
 
@@ -507,5 +508,77 @@ theorem hub_window_split {A : Set ℕ} {C : ℕ}
   refine hub_window_split_aux W C ∅ (by simp) fun N => ?_
   obtain ⟨n, hn, H, hcard, hhub'⟩ := hhub N
   exact ⟨n, hn, H, hcard, hhub', Finset.empty_subset _, by simpa using hcard⟩
+
+/-- With `0 ∈ A` and covering, late targets always have 3-reps, so
+hubs are nonempty. -/
+theorem hub_nonempty_of_covering {A : Set ℕ} {N₀ n : ℕ} {H : Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (hn : N₀ ≤ n)
+    (hhub : IsRepHub A n H) : H.Nonempty := by
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hn
+  rcases hhub x hx y hy 0 h0 (by omega) with h | h | h
+  · exact ⟨x, h⟩
+  · exact ⟨y, h⟩
+  · exact ⟨0, h⟩
+
+/-- A singleton hub is exactly a private triple. -/
+theorem privateTriple_of_singleton_hub {A : Set ℕ} {N₀ n a : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (hn : N₀ ≤ n)
+    (hhub : IsRepHub A n {a}) : IsPrivateTriple A a n := by
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hn
+  refine ⟨⟨x, hx, y, hy, 0, h0, by omega⟩, ?_⟩
+  intro x' hx' y' hy' z' hz' hsum
+  rcases hhub x' hx' y' hy' z' hz' hsum with h | h | h
+  · exact Or.inl (Finset.mem_singleton.1 h)
+  · exact Or.inr (Or.inl (Finset.mem_singleton.1 h))
+  · exact Or.inr (Or.inr (Finset.mem_singleton.1 h))
+
+/-- **Positive singleton hubs are refuted**: cofinal positive
+singleton-hub targets feed the verified private-stream kill, whose
+surviving deletion contradicts `hfail`.  The hub tower's core cannot
+collapse to a single positive guardian. -/
+theorem singleton_hubs_refuted {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ¬(∀ N, ∃ n, N ≤ n ∧ ∃ a, 0 < a ∧ IsRepHub A n {a}) := by
+  intro hsing
+  have hstream : ∀ N, ∃ a m, N ≤ m ∧ 0 < a ∧ IsPrivateTriple A a m := by
+    intro N
+    obtain ⟨n, hn, a, ha, hhub⟩ := hsing (max N N₀)
+    exact ⟨a, n, le_trans (le_max_left _ _) hn, ha,
+      privateTriple_of_singleton_hub h0 hcov
+        (le_trans (le_max_right _ _) hn) hhub⟩
+  obtain ⟨B, hBsub, hBinf, hsurv⟩ :=
+    surviving_deletion_of_cofinal_privateStream h0 hcov hstream hanchor
+  refine hfail B hBsub hBinf ⟨N₀, fun n hn => ?_⟩
+  obtain ⟨x, hx, y, hy, z, hz, hxB, hyB, hzB, hsum⟩ := hsurv n hn
+  refine ⟨![x, y, z], ?_, ?_⟩
+  · intro i
+    match i with
+    | 0 => exact ⟨hx, hxB⟩
+    | 1 => exact ⟨hy, hyB⟩
+    | 2 => exact ⟨hz, hzB⟩
+  · simpa [Fin.sum_univ_three] using hsum
+
+/-- **The team configuration from first principles.**  A
+counterexample (covering + order-3 failure against every infinite
+deletion) has a fixed hub bound `K` such that at EVERY window `[0, W]`
+some fixed core `S ⊆ [0, W]` persists in the hubs of cofinally many
+targets while all remaining hub elements exceed `W`.  Nonemptiness and
+the singleton refutation then leave: |core ∪ large-part| ≥ 2 with
+either a fixed multi-element guardian core (team territory) or
+level-scale rotating guards (corep territory). -/
+theorem team_configuration_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ K, ∀ W, ∃ S : Finset ℕ, S ⊆ Finset.range (W + 1) ∧
+      ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ 3 * (K - 1) ∧
+        IsRepHub A n H ∧ S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h := by
+  obtain ⟨K, hK⟩ := cofinal_bounded_hubs_of_hfail hcov hfail
+  refine ⟨K, fun W => ?_⟩
+  exact hub_window_split (fun N => hK N) W
 
 end Erdos881
