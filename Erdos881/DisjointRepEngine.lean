@@ -23,6 +23,7 @@ import Erdos881.TeamGraphRamsey
 import Erdos881.AdditiveSupports
 import Erdos881.RotatingGuardianEndgame
 import Erdos881.FunnelTrichotomy
+import Erdos881.MirrorPeriodicity
 
 namespace Erdos881
 
@@ -1316,5 +1317,34 @@ theorem doubling_rigid_iff_reflection_free {A : Set ℕ} {x : ℕ}
           rwa [hxb], by
           have hxa : x + (a - x) = a := by omega
           rwa [hxa]⟩
+
+/-- **Rigid markers kill reflection levels at their doubles.**  A
+doubling-rigid element admits no reflection level at `2x`: covering
+supplies a fiber element besides `x`, and level symmetry would
+complete it to a forbidden symmetric pair.  Tonight''s rigidity
+interface meets the verified mirror bridge: the enemy needs rigid
+markers everywhere, and every rigid marker erases a mirror level —
+while the bridge kills any enemy whose surviving mirror levels keep
+bounded gaps. -/
+theorem not_reflectionLevel_of_rigid {A : Set ℕ} {N₀ x : ℕ}
+    (hcov : PairCovers A N₀)
+    (hrig : ∀ a ∈ A, ∀ b ∈ A, a + b = 2 * x → a = x ∧ b = x)
+    (hx2 : 2 ≤ x) (hxN : N₀ + 1 ≤ 2 * x - 1) :
+    ¬IsReflectionLevel A (2 * x) := by
+  intro hlev
+  obtain ⟨p, hp, q, hq, hpq⟩ := hcov (2 * x - 1) (by omega)
+  -- some fiber element of 2x - 1 lies in (0, 2x) and differs from x
+  have hz : ∃ z ∈ A, 0 < z ∧ z < 2 * x ∧ z ≠ x := by
+    rcases Nat.eq_zero_or_pos p with hp0 | hp0
+    · exact ⟨q, hq, by omega, by omega, by omega⟩
+    · rcases Nat.eq_zero_or_pos q with hq0 | hq0
+      · exact ⟨p, hp, by omega, by omega, by omega⟩
+      · by_cases hpx : p = x
+        · exact ⟨q, hq, by omega, by omega, by omega⟩
+        · exact ⟨p, hp, by omega, by omega, hpx⟩
+  obtain ⟨z, hzA, hz0, hzlt, hzx⟩ := hz
+  have hmir : 2 * x - z ∈ A := (hlev z hz0 hzlt).1 hzA
+  have := hrig z hzA (2 * x - z) hmir (by omega)
+  omega
 
 end Erdos881
