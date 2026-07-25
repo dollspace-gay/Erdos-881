@@ -2572,4 +2572,17 @@ theorem ownership_bans_reflection {A : Set ℕ} {a n : ℕ}
   rw [hval] at this
   exact this hs'
 
+/-- Owned targets are co-`A` points: membership would make the target
+its own big fiber with the zero partner.  With `unique_owner`, owners
+inject into the complement — the formal dual of the U-density
+interface. -/
+theorem OwnsTarget.not_mem {A : Set ℕ} {a n : ℕ}
+    (h0 : 0 ∈ A) (h : OwnsTarget A a n) : n ∉ A := by
+  obtain ⟨h1, h2, h3, h4⟩ := h
+  intro hn
+  have := h4 n hn (by omega) (le_refl n) (by omega)
+  have hval : n - n = 0 := by omega
+  rw [hval] at this
+  exact this h0
+
 end Erdos881
