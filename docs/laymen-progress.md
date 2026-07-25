@@ -363,3 +363,22 @@ force those sacrifices into a shared window, or one counting law
 that makes even scattered sacrifices collide, finishes the
 problem.  Everything encircling that single gap is machine-checked
 mathematics now.
+
+## 2026-07-25 night, part two — The problem in one sentence
+
+Tonight the whole campaign folded into a single question, proven
+equivalent to the original in both directions by the machine:
+
+  "Does every minimal keyring contain an infinite family of keys
+   so harmless that no finite handful of them ever jointly seals
+   a door?"
+
+If yes — always — the problem is solved (such a family IS the
+deletion that survives).  The enemy, if it exists, is exactly a
+keyring where every infinite family eventually seals something.
+Every wall built these two days now stands around this sentence:
+the guardian committees are what failed attempts at such families
+leave behind; the crystals are the local roadblocks; the rank
+measures how far harmlessness extends; and the immunity laws show
+whole neighbourhoods where roadblocks cannot stand.  One question,
+two attack tracks, all scaffolding machine-checked.
