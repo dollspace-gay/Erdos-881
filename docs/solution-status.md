@@ -6,8 +6,9 @@ neither. This document supersedes all earlier versions.*
 
 ## The grand assembly (VERIFIED)
 
-`erdos881_grand_assembly'` (`HuggingSplice.lean`) is the sharpest
-verified statement of the campaign.  For any `A` with `0 ∈ A`,
+`erdos881_grand_assembly''` (`RedundantVertexKill.lean`) is the
+sharpest verified statement of the campaign — superseding the earlier
+forms.  For any `A` with `0 ∈ A`,
 `PairCovers A N₀`, cofinal pair funnels (Link A's interface), and
 anchor abundance:
 
@@ -15,10 +16,12 @@ anchor abundance:
 > order-3-represents every large target — so `A` is *not* a
 > counterexample),
 > **or** zero privately guards arbitrarily late targets,
-> **or** an infinite team clique survives in which every eligible
-> 2-redundant vertex is confined: beyond some bound, every destroyer
-> of its edges hugs (`m < 3v`) *and* certifies that its pair is
-> jointly 2-essential.
+> **or** an infinite team clique survives **all of whose positive,
+> above-threshold vertices fail 2-redundancy at every threshold up to
+> their own scale** — an infinite clique of self-scale 2-guardians
+> (`escape_vertex_witness`: each such vertex two-guards a witness
+> `n ≥ u` with support exactly `{u, n-u}`), the Grekos-type
+> configuration of Open Link B1.
 
 Everything else is dead, by the following verified kills.
 
@@ -37,7 +40,18 @@ Everything else is dead, by the following verified kills.
    whose clear edges (`3v ≤ m`) reach arbitrarily high partners runs
    the windowed engine: windows outgrow levels by partner choice.
    (Level hitting — the old B3 interface — is no longer needed.)
-3. **Pair-redundant clique edges at any altitude**
+3. **ALL edges of any 2-redundant vertex** — the total clique kill
+   (`RedundantVertexKill.lean`).  Single redundancy suffices: the
+   avoiding representation of `u + x` dodges the partner free below
+   the window, the upper desert and level lower bound need no joint
+   hypothesis, truncation makes the out-of-window mirror promise
+   vacuous, and the quad-defect engine runs on any destroyer supply.
+   No hugging, clearance, or joint-redundancy hypothesis remains.
+   (Known limit: the corep pin needs the redundancy threshold
+   `N₁ ≤ u`; vertices redundant only at higher thresholds are not yet
+   killed — this is exactly why the escape says "at every threshold
+   up to its own scale".)
+4. **Pair-redundant clique edges at any altitude**
    (`HuggingSplice.lean`).  Sharp pinning (`pinned_mirror_sharp`)
    needs no room — only two diagonal exclusions — so a jointly
    2-redundant pair's target carries a full-range mirror at `m - v`
@@ -45,7 +59,7 @@ Everything else is dead, by the following verified kills.
    (`level_lower_of_pairRedundant`: otherwise a covering window
    starves in the upper desert), and the quad-defect engine runs.
    **Hugging is no refuge.**
-4. **Naive separated triangles** (`SeparatedTriangle.lean`): refuted
+5. **Naive separated triangles** (`SeparatedTriangle.lean`): refuted
    by explicit witness — guard separation alone kills nothing.
 
 ## What remains open
