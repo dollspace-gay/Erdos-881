@@ -2749,4 +2749,31 @@ theorem completion_mutual_avoidance {A : Set ℕ} {a₁ n₁ a₂ n₂ : ℕ}
   rw [← heq] at hban
   exact hban hs₂
 
+/-- **Mid-window demand injection** — the incidence seed.  For a
+fixed mid-element `y`, distinct owners holding `y` in their
+mid-windows pay DISTINCT co-`A` demands (targets are injective, so
+the demands `n - y` separate).  Unconditional — gap domination does
+not exempt an owner from mid-window payments.  The per-`y` column of
+the octave incidence count. -/
+theorem midwindow_demand_injection {A : Set ℕ} {y a₁ n₁ a₂ n₂ : ℕ}
+    (hy : y ∈ A) (ha₁ : a₁ ∈ A) (ha₂ : a₂ ∈ A)
+    (h₁ : OwnsTarget A a₁ n₁) (h₂ : OwnsTarget A a₂ n₂)
+    (hb₁ : 2 * y > n₁) (hs₁ : y < a₁)
+    (hb₂ : 2 * y > n₂) (hs₂ : y < a₂)
+    (hne : a₁ ≠ a₂) :
+    n₁ - y ∉ A ∧ n₂ - y ∉ A ∧ n₁ - y ≠ n₂ - y := by
+  refine ⟨midwindow_reflection h₁ y hy hb₁ hs₁,
+    midwindow_reflection h₂ y hy hb₂ hs₂, ?_⟩
+  have hnn : n₁ ≠ n₂ := by
+    intro h
+    subst h
+    exact hne (h₁.unique_owner ha₁ ha₂ h₂ ▸ rfl)
+  have hy₁ : y < n₁ := by
+    obtain ⟨g1, _, _, _⟩ := h₁
+    omega
+  have hy₂ : y < n₂ := by
+    obtain ⟨g1, _, _, _⟩ := h₂
+    omega
+  omega
+
 end Erdos881
