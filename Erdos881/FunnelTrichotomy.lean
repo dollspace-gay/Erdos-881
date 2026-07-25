@@ -712,4 +712,40 @@ theorem cofinal_primitives_of_zero_residue {A : Set ℕ} {N₀ p : ℕ}
           hqA hq0 (by omega) (by omega) (by omega) hqprim
       exact ⟨q + (m₂ - m₁), by omega, hmem, by omega, hprim'⟩
 
+
+/-- **Window elements of zero targets are primitive.**  A positive
+two-term representation of a window element assembles, with the
+mirror, a positive three-term representation of the target —
+forbidden.  So every window element is primitive. -/
+theorem zero_target_window_primitive {A : Set ℕ} {N₀ m a : ℕ}
+    (hcov : PairCovers A N₀)
+    (hm : IsPrivateTriple A 0 m)
+    (ha : a ∈ A) (ha0 : 0 < a) (ham : a + N₀ ≤ m) (halt : a < m) :
+    ¬ ∃ s ∈ A, ∃ t ∈ A, s + t = a ∧ 0 < s ∧ 0 < t := by
+  rintro ⟨s, hs, t, ht, hst, hs0, ht0⟩
+  obtain ⟨y, hy, z, hz, hyz⟩ := hcov (m - a) (by omega)
+  have hmir : m - a ∈ A := by
+    rcases hm.2 a ha y hy z hz (by omega) with h | h | h
+    · omega
+    · have : z = m - a := by omega
+      exact this ▸ hz
+    · have : y = m - a := by omega
+      exact this ▸ hy
+  rcases hm.2 s hs t ht (m - a) hmir (by omega) with h | h | h <;> omega
+
+/-- **The zero residue forces a sum-free base.**  Under cofinal zero
+guardianship, no positive element has a positive two-term
+representation: `A⁺ + A⁺` misses `A` entirely.  Combined with
+covering this pins the residue to sum-free modular skeletons
+(`Z_g = R ∪ (R + R)` partitions with `R` sum-free, e.g. `±1 mod 5`). -/
+theorem zero_residue_sum_free {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hres : ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m) :
+    ∀ a ∈ A, 0 < a →
+      ¬ ∃ s ∈ A, ∃ t ∈ A, s + t = a ∧ 0 < s ∧ 0 < t := by
+  intro a ha ha0
+  obtain ⟨m, hm, hpriv⟩ := hres (a + N₀ + 1)
+  exact zero_target_window_primitive hcov hpriv ha ha0 (by omega)
+    (by omega)
+
 end Erdos881
