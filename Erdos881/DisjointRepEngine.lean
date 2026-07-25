@@ -7260,4 +7260,176 @@ theorem separated_pair_flood {A : Set ℕ} {N₀ : ℕ}
     have h4 : f j ≤ g₀ (f j) := hg₀mono.le_apply
     omega
 
+/-- Sorted-index normalization for a four-element set of values of
+a strictly monotone sequence, via the order embedding of `Fin 4`. -/
+lemma sorted_indices_of_card_four {e : ℕ → ℕ} (hmono : StrictMono e)
+    {H : Finset ℕ} (hcard : H.card = 4)
+    (hmem : ∀ h ∈ H, ∃ i, e i = h) :
+    ∃ i j k l, i < j ∧ j < k ∧ k < l ∧
+      ({e i, e j, e k, e l} : Finset ℕ) = H := by
+  classical
+  set F := H.orderEmbOfFin hcard with hF
+  obtain ⟨i₀, hi₀⟩ := hmem (F 0) (Finset.orderEmbOfFin_mem H hcard 0)
+  obtain ⟨i₁, hi₁⟩ := hmem (F 1) (Finset.orderEmbOfFin_mem H hcard 1)
+  obtain ⟨i₂, hi₂⟩ := hmem (F 2) (Finset.orderEmbOfFin_mem H hcard 2)
+  obtain ⟨i₃, hi₃⟩ := hmem (F 3) (Finset.orderEmbOfFin_mem H hcard 3)
+  have hlt01 : F 0 < F 1 := F.strictMono (by decide)
+  have hlt12 : F 1 < F 2 := F.strictMono (by decide)
+  have hlt23 : F 2 < F 3 := F.strictMono (by decide)
+  have h01 : i₀ < i₁ := hmono.lt_iff_lt.1 (by rw [hi₀, hi₁]; exact hlt01)
+  have h12 : i₁ < i₂ := hmono.lt_iff_lt.1 (by rw [hi₁, hi₂]; exact hlt12)
+  have h23 : i₂ < i₃ := hmono.lt_iff_lt.1 (by rw [hi₂, hi₃]; exact hlt23)
+  refine ⟨i₀, i₁, i₂, i₃, h01, h12, h23, ?_⟩
+  have hsub : ({e i₀, e i₁, e i₂, e i₃} : Finset ℕ) ⊆ H := by
+    intro z hz
+    rcases Finset.mem_insert.1 hz with h | h
+    · rw [h, hi₀]; exact Finset.orderEmbOfFin_mem H hcard 0
+    rcases Finset.mem_insert.1 h with h | h
+    · rw [h, hi₁]; exact Finset.orderEmbOfFin_mem H hcard 1
+    rcases Finset.mem_insert.1 h with h | h
+    · rw [h, hi₂]; exact Finset.orderEmbOfFin_mem H hcard 2
+    · rw [Finset.mem_singleton.1 h, hi₃]
+      exact Finset.orderEmbOfFin_mem H hcard 3
+  have hne : e i₀ ≠ e i₁ ∧ e i₀ ≠ e i₂ ∧ e i₀ ≠ e i₃ ∧
+      e i₁ ≠ e i₂ ∧ e i₁ ≠ e i₃ ∧ e i₂ ≠ e i₃ := by
+    rw [hi₀, hi₁, hi₂, hi₃]
+    have h02 : F 0 < F 2 := lt_trans hlt01 hlt12
+    have h03 : F 0 < F 3 := lt_trans h02 hlt23
+    have h13 : F 1 < F 3 := lt_trans hlt12 hlt23
+    exact ⟨ne_of_lt hlt01, ne_of_lt h02, ne_of_lt h03,
+      ne_of_lt hlt12, ne_of_lt h13, ne_of_lt hlt23⟩
+  have hcard4 : ({e i₀, e i₁, e i₂, e i₃} : Finset ℕ).card = 4 := by
+    obtain ⟨n01, n02, n03, n12, n13, n23⟩ := hne
+    rw [Finset.card_insert_of_notMem (by simp [n01, n02, n03]),
+      Finset.card_insert_of_notMem (by simp [n12, n13]),
+      Finset.card_insert_of_notMem (by simp [n23]),
+      Finset.card_singleton]
+  exact Finset.eq_of_subset_of_card_le hsub (by omega)
+
+/-- **TEAM-CARD ESCALATION, STEP THREE.**  The ladder climbs to
+arity four: any ground stream refines to a clique at some arity in
+{2, 3, 4} (with freeness below it recorded), or a triply hub-free
+subsequence whose minimal team hubs all have at least FIVE members. -/
+theorem team_card_escalation_three {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (b : ℕ → ℕ) (hmono : StrictMono b)
+    (hbA : ∀ j, b j ∈ A) (hbpos : ∀ j, 0 < b j) :
+    ∃ f : ℕ → ℕ, StrictMono f ∧
+      ((∀ i j, i < j → ∃ n, N₀ ≤ n ∧
+        IsRepHub A n {b (f i), b (f j)}) ∨
+      (∀ i j k, i < j → j < k → ∃ n, N₀ ≤ n ∧
+        IsRepHub A n {b (f i), b (f j), b (f k)}) ∨
+      (∀ i j k l, i < j → j < k → k < l → ∃ n, N₀ ≤ n ∧
+        IsRepHub A n {b (f i), b (f j), b (f k), b (f l)}) ∨
+      (∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+        IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        5 ≤ H.card ∧
+        ∀ h ∈ H, h ∈ Set.range (fun i => b (f i)))) := by
+  classical
+  obtain ⟨f₀, hf₀, hout⟩ := team_card_escalation_two' h0 hcov
+    hanchor hfail b hmono hbA hbpos
+  rcases hout with hcl | ⟨hpf, hcl⟩ | ⟨hpf, htf, hteam⟩
+  · exact ⟨f₀, hf₀, Or.inl hcl⟩
+  · exact ⟨f₀, hf₀, Or.inr (Or.inl hcl)⟩
+  · -- doubly free: colour quadruples
+    set e : ℕ → ℕ := fun i => b (f₀ i) with he
+    have hemono : StrictMono e := fun i j hij => hmono (hf₀ hij)
+    set c₄ : ℕ → ℕ → ℕ → ℕ → Bool := fun i j k l =>
+      if ∃ n, N₀ ≤ n ∧ IsRepHub A n {e i, e j, e k, e l} then true
+      else false with hc₄
+    have hc₄iff : ∀ i j k l, c₄ i j k l = true ↔
+        ∃ n, N₀ ≤ n ∧ IsRepHub A n {e i, e j, e k, e l} := by
+      intro i j k l
+      by_cases h : ∃ n, N₀ ≤ n ∧ IsRepHub A n {e i, e j, e k, e l}
+      · simp [hc₄, h]
+      · simp [hc₄, h]
+    obtain ⟨f₄, hf₄, b₄col, hhom₄⟩ := infinite_ramsey_quadruples c₄
+    rcases Bool.eq_false_or_eq_true b₄col with hb₄ | hb₄
+    · -- quadruple clique
+      subst hb₄
+      refine ⟨f₀ ∘ f₄, hf₀.comp hf₄, Or.inr (Or.inr (Or.inl ?_))⟩
+      intro i j k l hij hjk hkl
+      exact (hc₄iff (f₄ i) (f₄ j) (f₄ k) (f₄ l)).1
+        (hhom₄ i j k l hij hjk hkl)
+    · subst hb₄
+      have hqf : ∀ i j k l, i < j → j < k → k < l →
+          ¬∃ n, N₀ ≤ n ∧ IsRepHub A n
+            {e (f₄ i), e (f₄ j), e (f₄ k), e (f₄ l)} := by
+        intro i j k l hij hjk hkl hex
+        have h1 := (hc₄iff (f₄ i) (f₄ j) (f₄ k) (f₄ l)).2 hex
+        rw [hhom₄ i j k l hij hjk hkl] at h1
+        exact Bool.false_ne_true h1
+      refine ⟨f₀ ∘ f₄, hf₀.comp hf₄, Or.inr (Or.inr (Or.inr ?_))⟩
+      set g : ℕ → ℕ := fun i => b ((f₀ ∘ f₄) i) with hgdef
+      have hgmono : StrictMono g :=
+        fun i j hij => hmono (hf₀ (hf₄ hij))
+      have hBA : Set.range g ⊆ A := by
+        rintro x ⟨i, rfl⟩
+        exact hbA _
+      have hBinf : (Set.range g).Infinite :=
+        Set.infinite_range_of_injective hgmono.injective
+      have h0B : 0 ∉ Set.range g := by
+        rintro ⟨i, hi⟩
+        have h1 : b ((f₀ ∘ f₄) i) = 0 := hi
+        have := hbpos ((f₀ ∘ f₄) i)
+        omega
+      have hteams := guardian_team_hubs_of_deletion h0 hcov hanchor
+        hfail hBA hBinf h0B
+      intro N
+      obtain ⟨n, hn, H, hhub, hminH, hcard2, hHB⟩ :=
+        hteams (max N N₀)
+      have hnN₀ : N₀ ≤ n := le_trans (le_max_right _ _) hn
+      refine ⟨n, le_trans (le_max_left _ _) hn, H, hhub, hminH,
+        ?_, hHB⟩
+      rcases Nat.lt_or_ge H.card 5 with hlt | hge
+      · exfalso
+        rcases Nat.lt_or_ge H.card 3 with hlt2 | hge2
+        · have hcard : H.card = 2 := by omega
+          obtain ⟨u, v, huv, hHuv⟩ := Finset.card_eq_two.1 hcard
+          obtain ⟨i, hi⟩ := hHB u
+            (hHuv ▸ Finset.mem_insert_self _ _)
+          obtain ⟨j, hj⟩ := hHB v (hHuv ▸ Finset.mem_insert_of_mem
+            (Finset.mem_singleton_self v))
+          have hi' : g i = u := hi
+          have hj' : g j = v := hj
+          have hij : i ≠ j := by
+            intro h
+            rw [h, hj'] at hi'
+            exact huv hi'.symm
+          rcases Nat.lt_or_ge i j with h' | h'
+          · refine hpf (f₄ i) (f₄ j) (hf₄ h') ⟨n, hnN₀, ?_⟩
+            have hpair : ({g i, g j} : Finset ℕ) = H := by
+              rw [hi', hj', hHuv]
+            rw [show ({b (f₀ (f₄ i)), b (f₀ (f₄ j))} :
+              Finset ℕ) = H from hpair]
+            exact hhub
+          · have h'' : j < i := by omega
+            refine hpf (f₄ j) (f₄ i) (hf₄ h'') ⟨n, hnN₀, ?_⟩
+            have hpair : ({g j, g i} : Finset ℕ) = H := by
+              rw [hi', hj', hHuv, Finset.pair_comm]
+            rw [show ({b (f₀ (f₄ j)), b (f₀ (f₄ i))} :
+              Finset ℕ) = H from hpair]
+            exact hhub
+        · rcases Nat.lt_or_ge H.card 4 with hlt3 | hge3
+          · have hcard : H.card = 3 := by omega
+            obtain ⟨i, j, k, hij, hjk, hset⟩ :=
+              sorted_indices_of_card_three hgmono hcard hHB
+            refine htf (f₄ i) (f₄ j) (f₄ k) (hf₄ hij) (hf₄ hjk)
+              ⟨n, hnN₀, ?_⟩
+            rw [show ({b (f₀ (f₄ i)), b (f₀ (f₄ j)),
+              b (f₀ (f₄ k))} : Finset ℕ) = H from hset]
+            exact hhub
+          · have hcard : H.card = 4 := by omega
+            obtain ⟨i, j, k, l, hij, hjk, hkl, hset⟩ :=
+              sorted_indices_of_card_four hgmono hcard hHB
+            refine hqf i j k l hij hjk hkl ⟨n, hnN₀, ?_⟩
+            rw [show ({e (f₄ i), e (f₄ j), e (f₄ k), e (f₄ l)} :
+              Finset ℕ) = H from hset]
+            exact hhub
+      · exact hge
+
 end Erdos881
