@@ -7199,4 +7199,19 @@ theorem team_card_escalation_two' {A : Set ℕ} {N₀ : ℕ}
           exact hhub
       · exact hge
 
+/-- **Clique targets march with their columns.**  In the
+triple-clique branch of the escalation, every hub target of the
+clique triple `{b(f i), b(f j), b(f k)}` is at least `b(f k)`:
+combining the exported pair-freeness with the domination law.  The
+2-dimensional target array of any surviving triple clique escapes
+along every column at linear speed. -/
+theorem clique_targets_dominate {A : Set ℕ} {N₀ : ℕ}
+    {b : ℕ → ℕ} {f : ℕ → ℕ}
+    (hpf : ∀ i j, i < j → ¬∃ n, N₀ ≤ n ∧
+      IsRepHub A n {b (f i), b (f j)})
+    {i j k n : ℕ} (hij : i < j) (hjk : j < k)
+    (hn : N₀ ≤ n) (hhub : IsRepHub A n {b (f i), b (f j), b (f k)}) :
+    b (f k) ≤ n :=
+  team_target_dominates (hpf i j hij) hn hhub
+
 end Erdos881
