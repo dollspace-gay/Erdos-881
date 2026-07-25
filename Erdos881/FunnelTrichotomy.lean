@@ -326,4 +326,26 @@ theorem zero_guardian_no_element_gap {A : Set ℕ} {N₀ m₁ m₂ x : ℕ}
   rcases h2.2 x hx (m₁ - x) hw (m₂ - m₁) hd (by omega) with h | h | h <;>
     omega
 
+/-- **Zero-guarded targets are never elements** (once separated): an
+element target `m₁ ∈ A` would put the difference `m₂ - m₁` into `A`
+by the mirror of the higher target, contradicting
+`zero_guardian_no_element_gap`.  The zero residue is thus confined to
+cofinal *non-element* targets with an `A`-free difference set. -/
+theorem zero_guardian_target_not_elt {A : Set ℕ} {N₀ m₁ m₂ x : ℕ}
+    (hcov : PairCovers A N₀)
+    (h1 : IsPrivateTriple A 0 m₁) (h2 : IsPrivateTriple A 0 m₂)
+    (hlt : m₁ < m₂) (hsep : m₁ + N₀ ≤ m₂)
+    (hm₁A : m₁ ∈ A) (hm₁0 : 0 < m₁)
+    (hx : x ∈ A) (hx0 : 0 < x) (hxm : x + N₀ ≤ m₁) (hxlt : x < m₁) :
+    False := by
+  obtain ⟨y, hy, z, hz, hyz⟩ := hcov (m₂ - m₁) (by omega)
+  have hd : m₂ - m₁ ∈ A := by
+    rcases h2.2 m₁ hm₁A y hy z hz (by omega) with h | h | h
+    · omega
+    · have : z = m₂ - m₁ := by omega
+      exact this ▸ hz
+    · have : y = m₂ - m₁ := by omega
+      exact this ▸ hy
+  exact zero_guardian_no_element_gap hcov h1 h2 hlt hx hx0 hxm hxlt hd
+
 end Erdos881
