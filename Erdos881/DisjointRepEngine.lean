@@ -6308,4 +6308,38 @@ theorem free_prefixes_die_of_hfail {A : Set ℕ} {N₀ : ℕ}
   | 1 => exact ⟨hy, havoid y (by omega) hyP⟩
   | 2 => exact ⟨hz, havoid z (by omega) hzP⟩
 
+/-- **Well-foundedness at order 2, from minimality alone.**  In any
+ℵ₀-minimal order-2 covering set, no infinite increasing positive
+sequence keeps all its finite prefixes pair-free: the pair-free
+tree is well-founded for EVERY minimal basis, counterexample or
+not.  Minimality IS a well-foundedness statement. -/
+theorem pair_free_prefixes_die_of_minimality {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hmin : ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n)
+    (b : ℕ → ℕ) (hmono : StrictMono b)
+    (hbA : ∀ j, b j ∈ A) (hbpos : ∀ j, 0 < b j) :
+    ¬∀ J, PairFree A N₀ ((Finset.range J).image b) := by
+  intro hfree
+  classical
+  have hBA : Set.range b ⊆ A := by
+    rintro x ⟨j, rfl⟩
+    exact hbA j
+  have hBinf : (Set.range b).Infinite :=
+    Set.infinite_range_of_injective hmono.injective
+  have hidx : ∀ j, j ≤ b j := fun j => hmono.le_apply
+  refine hmin (Set.range b) hBA hBinf ⟨N₀, fun m hm => ?_⟩
+  obtain ⟨x, hx, y, hy, hxy, hxP, hyP⟩ := hfree (m + 1) m hm
+  have havoid : ∀ w, w ≤ m →
+      w ∉ (Finset.range (m + 1)).image b → w ∉ Set.range b := by
+    intro w hwm hwP
+    rintro ⟨i, hi⟩
+    rcases Nat.lt_or_ge i (m + 1) with h' | h'
+    · exact hwP (Finset.mem_image.2 ⟨i, Finset.mem_range.2 h', hi⟩)
+    · have h1 := hidx i
+      have h2 : b i = w := hi
+      omega
+  exact ⟨x, hx, y, hy, havoid x (by omega) hxP,
+    havoid y (by omega) hyP, hxy⟩
+
 end Erdos881
