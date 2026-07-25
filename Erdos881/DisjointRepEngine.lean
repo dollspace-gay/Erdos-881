@@ -8093,4 +8093,57 @@ theorem disjoint_pairs_of_r2 {A : Set ℕ} {v K : ℕ}
     (le_trans hcount (Finset.card_le_card hsub))
   exact ⟨P, h1, h2, h3⟩
 
+/-- **The witness-location law.**  Every failing witness of a
+0-free deletion carries, at distance some deleted element, a
+translate with quantified disjoint-pair wealth: the fan pigeonhole
+hands one hub element a `1/(4|hub|)` share of the fan as disjoint
+pairs.  By `immune_survives_sparse` that translate is permanently
+immune to every deletion sparser than the share — witnesses live
+one deleted-step away from immunity, forever. -/
+theorem witness_translate_immune {A B : Set ℕ} {N₀ t : ℕ}
+    [DecidablePred (· ∈ A)] [DecidablePred (· ∈ B)]
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (ht : N₀ ≤ t)
+    (hdead : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = t →
+      x ∈ B ∨ y ∈ B ∨ z ∈ B) :
+    ∃ β, β ∈ B ∧ β ≤ t ∧ ∀ K : ℕ,
+      4 * K ≤ ((Finset.range (t - N₀ + 1)).filter
+          (fun w => w ∈ A ∧ w ∉ B)).card /
+        ((Finset.range (t + 1)).filter (· ∈ B)).card →
+      HasDisjointPairReps A (t - β) K := by
+  classical
+  set H := (Finset.range (t + 1)).filter (· ∈ B) with hH
+  have hhub : IsRepHub A t H := failing_hub_subset_deletion hdead
+  have hHne : H.Nonempty := hub_nonempty_of_covering h0 hcov ht hhub
+  obtain ⟨β, hβH, hblow⟩ := hub_fan_blowup hcov hhub hHne ht
+  obtain ⟨hβr, hβB⟩ := Finset.mem_filter.1 hβH
+  have hβt : β ≤ t := by
+    have := Finset.mem_range.1 hβr
+    omega
+  refine ⟨β, hβB, hβt, fun K hK => ?_⟩
+  -- identify the two fan filters: ∉ H equals ∉ B below the window
+  have hfans : ((Finset.range (t - N₀ + 1)).filter
+      (fun w => w ∈ A ∧ w ∉ B)).card ≤
+      ((Finset.range (t - N₀ + 1)).filter
+        (fun w => w ∈ A ∧ w ∉ H)).card := by
+    apply Finset.card_le_card
+    intro w hw
+    obtain ⟨hwr, hwA, hwB⟩ := Finset.mem_filter.1 hw
+    refine Finset.mem_filter.2 ⟨hwr, hwA, ?_⟩
+    intro hwH
+    exact hwB (Finset.mem_filter.1 hwH).2
+  have hquot : ((Finset.range (t - N₀ + 1)).filter
+      (fun w => w ∈ A ∧ w ∉ B)).card / H.card ≤
+      ((Finset.range (t - N₀ + 1)).filter
+        (fun w => w ∈ A ∧ w ∉ H)).card / H.card :=
+    Nat.div_le_div_right hfans
+  have hr2 : 4 * K ≤ ((Finset.range (t - β + 1)).filter
+      (fun x => x ∈ A ∧ (t - β - x) ∈ A)).card := by
+    calc 4 * K
+        ≤ ((Finset.range (t - N₀ + 1)).filter
+            (fun w => w ∈ A ∧ w ∉ B)).card / H.card := hK
+      _ ≤ ((Finset.range (t - N₀ + 1)).filter
+            (fun w => w ∈ A ∧ w ∉ H)).card / H.card := hquot
+      _ ≤ _ := hblow
+  exact disjoint_pairs_of_r2 hr2
+
 end Erdos881
