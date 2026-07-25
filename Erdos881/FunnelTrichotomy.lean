@@ -386,4 +386,37 @@ theorem zero_guardian_target_not_elt {A : Set ℕ} {N₀ m₁ m₂ x : ℕ}
       exact this ▸ hy
   exact zero_guardian_no_element_gap hcov h1 h2 hlt hx hx0 hxm hxlt hd
 
+/-- **Three zero-guarded targets carve holes.**  Mirrors of the two
+lower targets combine into positive parts, so the balance
+`m₃ - (m₁ - x) - (m₂ - y)` can never be a positive element: the zero
+residue forces `A⁺` to avoid `m₃ - m₁ - m₂` plus the whole sumset of
+the two mirror windows. -/
+theorem zero_guardian_hole {A : Set ℕ} {N₀ m₁ m₂ m₃ x y z : ℕ}
+    (hcov : PairCovers A N₀)
+    (h1 : IsPrivateTriple A 0 m₁) (h2 : IsPrivateTriple A 0 m₂)
+    (h3 : IsPrivateTriple A 0 m₃)
+    (hx : x ∈ A) (hx0 : 0 < x) (hxm : x + N₀ ≤ m₁) (hxlt : x < m₁)
+    (hy : y ∈ A) (hy0 : 0 < y) (hym : y + N₀ ≤ m₂) (hylt : y < m₂)
+    (hz : z ∈ A) (hz0 : 0 < z)
+    (hsum : (m₁ - x) + (m₂ - y) + z = m₃) :
+    False := by
+  obtain ⟨y₁, hy₁, z₁, hz₁, hyz₁⟩ := hcov (m₁ - x) (by omega)
+  have hw₁ : m₁ - x ∈ A := by
+    rcases h1.2 x hx y₁ hy₁ z₁ hz₁ (by omega) with h | h | h
+    · omega
+    · have : z₁ = m₁ - x := by omega
+      exact this ▸ hz₁
+    · have : y₁ = m₁ - x := by omega
+      exact this ▸ hy₁
+  obtain ⟨y₂, hy₂, z₂, hz₂, hyz₂⟩ := hcov (m₂ - y) (by omega)
+  have hw₂ : m₂ - y ∈ A := by
+    rcases h2.2 y hy y₂ hy₂ z₂ hz₂ (by omega) with h | h | h
+    · omega
+    · have : z₂ = m₂ - y := by omega
+      exact this ▸ hz₂
+    · have : y₂ = m₂ - y := by omega
+      exact this ▸ hy₂
+  rcases h3.2 (m₁ - x) hw₁ (m₂ - y) hw₂ z hz hsum with h | h | h <;>
+    omega
+
 end Erdos881
