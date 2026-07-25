@@ -24,6 +24,7 @@ import Erdos881.AdditiveSupports
 import Erdos881.RotatingGuardianEndgame
 import Erdos881.FunnelTrichotomy
 import Erdos881.MirrorPeriodicity
+import Erdos881.LevelHubs
 
 namespace Erdos881
 
@@ -2871,6 +2872,105 @@ theorem no_five_zero_payers {A : Set ℕ} {X : ℕ}
   obtain ⟨hX1, hX5⟩ := hoct
   have hb₂ := zero_payment_gap_bound ho₂ hp₂ h₁ h12 h₃ h23
   have hb₄ := zero_payment_gap_bound ho₄ hp₄ h₃ h34 h₅ h45
+  omega
+
+/-- Exponential beats cubic: `D³ ≤ 2^D` from 10 on. -/
+lemma cube_le_two_pow {D : ℕ} (hD : 10 ≤ D) : D ^ 3 ≤ 2 ^ D := by
+  induction D with
+  | zero => omega
+  | succ D ih =>
+    rcases Nat.lt_or_ge D 10 with h | h
+    · have h9 : D = 9 := by omega
+      subst h9
+      norm_num
+    · have h1 := ih h
+      have h2 : (D + 1) ^ 3 ≤ 2 * D ^ 3 := by
+        have h3 : 3 * D ^ 2 + 3 * D + 1 ≤ D ^ 3 := by
+          nlinarith
+        nlinarith
+      calc (D + 1) ^ 3 ≤ 2 * D ^ 3 := h2
+        _ ≤ 2 * 2 ^ D := by omega
+        _ = 2 ^ (D + 1) := by ring
+
+/-- **Rich octaves are cofinal.**  Covering''s √-supply cannot live in
+octaves of four: if every late octave held at most four elements, the
+count up to `2^D` would grow linearly in `D` while the covering vise
+demands `2^D` below its square.  Exponential beats quadratic: some
+octave beyond every bound holds at least five elements. -/
+theorem octave_rich_of_covering {A : Set ℕ} [DecidablePred (· ∈ A)]
+    {N₀ : ℕ} (hcov : PairCovers A N₀) :
+    ∀ k₀, ∃ k, k₀ ≤ k ∧
+      5 ≤ ((Finset.Ioc (2 ^ k) (2 ^ (k + 1))).filter (· ∈ A)).card := by
+  intro k₀
+  by_contra hno
+  push_neg at hno
+  -- octave counts ≤ 4 beyond k₀
+  have hoct : ∀ k, k₀ ≤ k →
+      ((Finset.Ioc (2 ^ k) (2 ^ (k + 1))).filter (· ∈ A)).card ≤ 4 := by
+    intro k hk
+    have := hno k hk
+    omega
+  set cnt : ℕ → ℕ := fun k =>
+    ((Finset.range (2 ^ k + 1)).filter (· ∈ A)).card with hcnt
+  have hstep : ∀ k, k₀ ≤ k → cnt (k + 1) ≤ cnt k + 4 := by
+    intro k hk
+    have hsplit : Finset.range (2 ^ (k + 1) + 1) =
+        Finset.range (2 ^ k + 1) ∪ Finset.Ioc (2 ^ k) (2 ^ (k + 1)) := by
+      apply Finset.ext
+      intro x
+      simp only [Finset.mem_range, Finset.mem_union, Finset.mem_Ioc]
+      have h1 : 2 ^ k < 2 ^ (k + 1) := by
+        have h2 : (2:ℕ) ^ (k + 1) = 2 * 2 ^ k := by ring
+        have h3 : 0 < 2 ^ k := Nat.two_pow_pos k
+        omega
+      omega
+    have hcard : cnt (k + 1) ≤ cnt k +
+        ((Finset.Ioc (2 ^ k) (2 ^ (k + 1))).filter (· ∈ A)).card := by
+      rw [hcnt]
+      simp only
+      rw [hsplit, Finset.filter_union]
+      exact Finset.card_union_le _ _
+    have := hoct k hk
+    omega
+  have hlin : ∀ j, cnt (k₀ + j) ≤ cnt k₀ + 4 * j := by
+    intro j
+    induction j with
+    | zero => simp
+    | succ j ih =>
+      have h1 := hstep (k₀ + j) (by omega)
+      have h2 : k₀ + (j + 1) = (k₀ + j) + 1 := by omega
+      rw [h2]
+      omega
+  -- the vise at W := 2^(k₀+j)
+  have hvise : ∀ j, 2 ^ (k₀ + j) + 1 - N₀ ≤ (cnt k₀ + 4 * j) ^ 2 := by
+    intro j
+    have hW : N₀ ≤ 2 ^ (k₀ + j) ∨ 2 ^ (k₀ + j) < N₀ := by omega
+    rcases hW with hW | hW
+    · have h1 := pairCovers_card_lower (W := 2 ^ (k₀ + j)) hcov hW
+      have h2 := hlin j
+      have h3 : ((Finset.range (2 ^ (k₀ + j) + 1)).filter
+          (· ∈ A)).card ≤ cnt k₀ + 4 * j := h2
+      calc 2 ^ (k₀ + j) + 1 - N₀ ≤
+          ((Finset.range (2 ^ (k₀ + j) + 1)).filter (· ∈ A)).card ^ 2 := h1
+        _ ≤ (cnt k₀ + 4 * j) ^ 2 := Nat.pow_le_pow_left h3 2
+    · omega
+  -- exponential beats the quadratic: contradiction at large j
+  set C := cnt k₀ + N₀ + 5 with hC
+  have hbig : ∃ j, 72 ≤ j ∧ C ≤ j ∧ k₀ ≤ j :=
+    ⟨72 + C + k₀, by omega, by omega, by omega⟩
+  obtain ⟨j, hj72, hjC, hjk⟩ := hbig
+  have h1 := hvise j
+  have hquad : (cnt k₀ + 4 * j) ^ 2 ≤ 25 * j ^ 2 := by
+    have h5j : cnt k₀ + 4 * j ≤ 5 * j := by omega
+    calc (cnt k₀ + 4 * j) ^ 2 ≤ (5 * j) ^ 2 := Nat.pow_le_pow_left h5j 2
+      _ = 25 * j ^ 2 := by ring
+  have hcube : 50 * j ^ 2 ≤ j ^ 3 := by nlinarith
+  have hpow := cube_le_two_pow (D := j) (by omega)
+  have hexp : 2 ^ j ≤ 2 ^ (k₀ + j) := Nat.pow_le_pow_right (by norm_num)
+    (by omega)
+  have hQ1 : 1 ≤ j ^ 2 := by nlinarith
+  have hjQ : j ≤ j ^ 2 := by nlinarith
+  have hN : N₀ ≤ j := by omega
   omega
 
 end Erdos881
