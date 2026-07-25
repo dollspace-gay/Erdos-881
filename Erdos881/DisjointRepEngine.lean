@@ -7469,4 +7469,48 @@ theorem team_target_dominates₄ {A : Set ℕ} {N₀ n u v w z : ℕ}
     · exact Or.inr (Or.inr (by simp [h1]))
     · omega
 
+/-- **Three columns per clique target.**  If the pair `{u, v}` never
+hubs a late target, then any target `n` admits at most three
+third-members `w` completing `{u, v, w}` to a hub of `n`: a
+representation of `n` avoiding `u` and `v` exists, and every such
+`w` must be one of its three parts.  In a pair-free triple clique
+the column map is at most 3-to-1 onto its targets. -/
+theorem three_columns_per_clique_target {A : Set ℕ} {N₀ n u v : ℕ}
+    (hpf : ¬∃ m, N₀ ≤ m ∧ IsRepHub A m {u, v}) (hn : N₀ ≤ n) :
+    ∃ x₀ y₀ z₀, ∀ w, IsRepHub A n {u, v, w} →
+      w = x₀ ∨ w = y₀ ∨ w = z₀ := by
+  classical
+  have hnohub : ¬IsRepHub A n {u, v} := fun h => hpf ⟨n, hn, h⟩
+  rw [IsRepHub] at hnohub
+  push_neg at hnohub
+  obtain ⟨x, hx, y, hy, z, hz, hsum, hxuv, hyuv, hzuv⟩ := hnohub
+  refine ⟨x, y, z, fun w hhub => ?_⟩
+  have hmem3 : ∀ q, q ∈ ({u, v, w} : Finset ℕ) →
+      q = u ∨ q = v ∨ q = w := by
+    intro q hq
+    rcases Finset.mem_insert.1 hq with h1 | h1
+    · exact Or.inl h1
+    rcases Finset.mem_insert.1 h1 with h2 | h2
+    · exact Or.inr (Or.inl h2)
+    · exact Or.inr (Or.inr (Finset.mem_singleton.1 h2))
+  have hxuv' : x ≠ u ∧ x ≠ v := by
+    constructor <;> intro h <;> exact hxuv (by simp [h])
+  have hyuv' : y ≠ u ∧ y ≠ v := by
+    constructor <;> intro h <;> exact hyuv (by simp [h])
+  have hzuv' : z ≠ u ∧ z ≠ v := by
+    constructor <;> intro h <;> exact hzuv (by simp [h])
+  rcases hhub x hx y hy z hz hsum with h | h | h
+  · rcases hmem3 x h with h1 | h1 | h1
+    · exact absurd h1 hxuv'.1
+    · exact absurd h1 hxuv'.2
+    · exact Or.inl h1.symm
+  · rcases hmem3 y h with h1 | h1 | h1
+    · exact absurd h1 hyuv'.1
+    · exact absurd h1 hyuv'.2
+    · exact Or.inr (Or.inl h1.symm)
+  · rcases hmem3 z h with h1 | h1 | h1
+    · exact absurd h1 hzuv'.1
+    · exact absurd h1 hzuv'.2
+    · exact Or.inr (Or.inr h1.symm)
+
 end Erdos881
