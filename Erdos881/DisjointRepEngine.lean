@@ -7904,4 +7904,193 @@ theorem immune_survives_sparse {A B : Set ℕ} {v K : ℕ}
   simp only [Finset.card_univ, Fintype.card_fin] at hcard
   omega
 
+/-- Greedy extraction with an avoid-set: from `4K` unblocked pair
+components, `K` pairwise-disjoint pairs avoiding the blocked set. -/
+theorem disjoint_pairs_extract {A : Set ℕ} {v : ℕ}
+    [DecidablePred (· ∈ A)] :
+    ∀ (K : ℕ) (U : Finset ℕ),
+    4 * K ≤ ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A ∧ x ∉ U ∧ (v - x) ∉ U)).card →
+    ∃ P : Fin K → Fin 2 → ℕ,
+      (∀ i k, P i k ∈ A) ∧ (∀ i, P i 0 + P i 1 = v) ∧
+      (∀ i j k l, i ≠ j → P i k ≠ P j l) ∧
+      (∀ i k, P i k ∉ U) := by
+  classical
+  intro K
+  induction K with
+  | zero =>
+    intro U _
+    refine ⟨fun i => absurd i.2 (by omega), ?_, ?_, ?_, ?_⟩ <;>
+      · intro i
+        exact absurd i.2 (by omega)
+  | succ K ih =>
+    intro U hcard
+    set F := (Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A ∧ x ∉ U ∧ (v - x) ∉ U) with hFd
+    have hFne : F.Nonempty := by
+      rw [← Finset.card_pos]
+      omega
+    obtain ⟨x₀, hx₀⟩ := hFne
+    obtain ⟨hx₀r, hx₀A, hx₀A', hx₀U, hx₀U'⟩ := Finset.mem_filter.1 hx₀
+    have hx₀v : x₀ ≤ v := by
+      have := Finset.mem_range.1 hx₀r
+      omega
+    set U' := insert x₀ (insert (v - x₀) U) with hU'
+    have hstep : 4 * K ≤ ((Finset.range (v + 1)).filter
+        (fun x => x ∈ A ∧ (v - x) ∈ A ∧ x ∉ U' ∧
+          (v - x) ∉ U')).card := by
+      have hsub : F \ ({x₀, v - x₀} ∪
+          ({x₀, v - x₀} : Finset ℕ).image (fun b => v - b)) ⊆
+          (Finset.range (v + 1)).filter
+            (fun x => x ∈ A ∧ (v - x) ∈ A ∧ x ∉ U' ∧
+              (v - x) ∉ U') := by
+        intro x hx
+        obtain ⟨hxF, hxbl⟩ := Finset.mem_sdiff.1 hx
+        obtain ⟨hxr, hxA, hxA', hxU, hxU'⟩ := Finset.mem_filter.1 hxF
+        have hxv : x ≤ v := by
+          have := Finset.mem_range.1 hxr
+          omega
+        rw [Finset.mem_union] at hxbl
+        push_neg at hxbl
+        obtain ⟨hxb1, hxb2⟩ := hxbl
+        have hxx₀ : x ≠ x₀ ∧ x ≠ v - x₀ := by
+          constructor <;> intro h <;>
+            exact hxb1 (by simp [h])
+        have hvxx₀ : v - x ≠ x₀ ∧ v - x ≠ v - x₀ := by
+          constructor <;> intro h
+          · exact hxb2 (Finset.mem_image.2
+              ⟨v - x₀, by simp, by omega⟩)
+          · exact hxb2 (Finset.mem_image.2
+              ⟨x₀, by simp, by omega⟩)
+        refine Finset.mem_filter.2 ⟨hxr, hxA, hxA', ?_, ?_⟩
+        · rw [hU']
+          intro hmem
+          rcases Finset.mem_insert.1 hmem with h | h
+          · exact hxx₀.1 h
+          rcases Finset.mem_insert.1 h with h | h
+          · exact hxx₀.2 h
+          · exact hxU h
+        · rw [hU']
+          intro hmem
+          rcases Finset.mem_insert.1 hmem with h | h
+          · exact hvxx₀.1 h
+          rcases Finset.mem_insert.1 h with h | h
+          · exact hvxx₀.2 h
+          · exact hxU' h
+      have h1 := Finset.card_le_card hsub
+      have h2 := Finset.le_card_sdiff ({x₀, v - x₀} ∪
+        ({x₀, v - x₀} : Finset ℕ).image (fun b => v - b)) F
+      have h3 : (({x₀, v - x₀} : Finset ℕ) ∪
+          ({x₀, v - x₀} : Finset ℕ).image (fun b => v - b)).card
+          ≤ 4 := by
+        have hb1 : ({x₀, v - x₀} : Finset ℕ).card ≤ 2 :=
+          le_trans (Finset.card_insert_le _ _) (by simp)
+        have hb2 := Finset.card_image_le
+          (s := ({x₀, v - x₀} : Finset ℕ)) (f := fun b => v - b)
+        have := Finset.card_union_le ({x₀, v - x₀} : Finset ℕ)
+          (({x₀, v - x₀} : Finset ℕ).image (fun b => v - b))
+        omega
+      omega
+    obtain ⟨P', hP'A, hP'sum, hP'dis, hP'U⟩ := ih U' hstep
+    set newpair : Fin 2 → ℕ := ![x₀, v - x₀] with hnp
+    have hnpmem : ∀ k : Fin 2, newpair k = x₀ ∨
+        newpair k = v - x₀ := by
+      intro k
+      fin_cases k
+      · exact Or.inl rfl
+      · exact Or.inr rfl
+    set P : Fin (K + 1) → Fin 2 → ℕ :=
+      Fin.cases newpair (fun j => P' j) with hP
+    have hPzero : P 0 = newpair := rfl
+    have hPsucc : ∀ j : Fin K, P j.succ = P' j := fun j => rfl
+    refine ⟨P, ?_, ?_, ?_, ?_⟩
+    · intro i k
+      refine Fin.cases ?_ ?_ i
+      · rw [hPzero]
+        fin_cases k
+        · exact hx₀A
+        · exact hx₀A'
+      · intro j
+        rw [hPsucc]
+        exact hP'A j k
+    · intro i
+      refine Fin.cases ?_ ?_ i
+      · rw [hPzero]
+        show x₀ + (v - x₀) = v
+        omega
+      · intro j
+        rw [hPsucc]
+        exact hP'sum j
+    · have hkey : ∀ i j k l, P i k = P j l → i = j := by
+        intro i j k l
+        refine Fin.cases ?_ ?_ i <;> [skip; intro i'] <;>
+          refine Fin.cases ?_ ?_ j <;> [skip; intro j'; skip;
+            intro j']
+        · intro _
+          rfl
+        · rw [hPzero, hPsucc]
+          intro heq
+          exfalso
+          have hin : P' j' l ∈ U' := by
+            rcases hnpmem k with h | h
+            · rw [hU', ← heq, h]
+              exact Finset.mem_insert_self _ _
+            · rw [hU', ← heq, h]
+              exact Finset.mem_insert_of_mem
+                (Finset.mem_insert_self _ _)
+          exact hP'U j' l hin
+        · rw [hPsucc, hPzero]
+          intro heq
+          exfalso
+          have hin : P' i' k ∈ U' := by
+            rcases hnpmem l with h | h
+            · rw [hU', heq, h]
+              exact Finset.mem_insert_self _ _
+            · rw [hU', heq, h]
+              exact Finset.mem_insert_of_mem
+                (Finset.mem_insert_self _ _)
+          exact hP'U i' k hin
+        · rw [hPsucc, hPsucc]
+          intro heq
+          by_contra hne
+          exact hP'dis i' j' k l
+            (fun h => hne (congrArg Fin.succ h)) heq
+      exact fun i j k l hij heq => hij (hkey i j k l heq)
+    · intro i k
+      refine Fin.cases ?_ ?_ i
+      · rw [hPzero]
+        rcases hnpmem k with h | h
+        · rw [h]
+          exact hx₀U
+        · rw [h]
+          exact hx₀U'
+      · intro j
+        rw [hPsucc]
+        intro hmem
+        refine hP'U j k ?_
+        rw [hU']
+        exact Finset.mem_insert_of_mem (Finset.mem_insert_of_mem hmem)
+
+/-- **Count to disjointness.**  Order-2 multiplicity `≥ 4K` yields
+`K` pairwise-disjoint pair representations: blown targets are
+immune (`immune_survives_sparse`). -/
+theorem disjoint_pairs_of_r2 {A : Set ℕ} {v K : ℕ}
+    [DecidablePred (· ∈ A)]
+    (hcount : 4 * K ≤ ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A)).card) :
+    HasDisjointPairReps A v K := by
+  classical
+  have hsub : (Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A) ⊆
+      (Finset.range (v + 1)).filter
+        (fun x => x ∈ A ∧ (v - x) ∈ A ∧ x ∉ (∅ : Finset ℕ) ∧
+          (v - x) ∉ (∅ : Finset ℕ)) := by
+    intro x hx
+    obtain ⟨h1, h2, h3⟩ := Finset.mem_filter.1 hx
+    exact Finset.mem_filter.2 ⟨h1, h2, h3,
+      Finset.notMem_empty _, Finset.notMem_empty _⟩
+  obtain ⟨P, h1, h2, h3, -⟩ := disjoint_pairs_extract K ∅
+    (le_trans hcount (Finset.card_le_card hsub))
+  exact ⟨P, h1, h2, h3⟩
+
 end Erdos881
