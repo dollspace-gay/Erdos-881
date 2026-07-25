@@ -168,4 +168,18 @@ theorem endgame_triangle {A : Set ℕ} {N₀ : ℕ}
     WellFounded (FreeStep A N₀) :=
   hfail_iff_freeStep_wf h0 hcov
 
+/-- **THE TWO-TREE FORMULATION** — the problem in its purest form:
+a counterexample is exactly a covering set with `0` whose pair
+tree and rep tree are both well-founded.  Erdős 881 (k = 2): can
+two nested freeness trees over one basis both be well-founded? -/
+theorem endgame_two_trees {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) :
+    ((∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) ∧
+    (∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)) ↔
+    (WellFounded (PairFreeStep A N₀) ∧
+      WellFounded (FreeStep A N₀)) :=
+  counterexample_iff_both_trees_wf h0 hcov
+
 end Erdos881
