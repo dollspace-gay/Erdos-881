@@ -97,4 +97,27 @@ theorem erdos881_cantor_full_instance :
   ⟨cantorSet_basis_two, fun _ hsub hinf => cantorSet_minimal_two hsub hinf,
     purePowers_subset, purePowers_infinite, cantorSet_deletion_basis_three⟩
 
+/-- The Cantor set is AP3-free: no nondegenerate three-term arithmetic
+progression relation `x + y = 2w` exists among its members.  This is
+precisely the property a recurring-pair counterexample needs its fork
+images to have (the e = 0 matching dodge). -/
+theorem cantorSet_ap3_free {x y w : ℕ} (hx : IsCantor x) (hy : IsCantor y)
+    (hw : IsCantor w) (hxyw : x + y = 2 * w) : x = w ∧ y = w :=
+  cantor_double_unique hw hx hy hxyw
+
+/-- **The rigidity conflict**: one and the same structure is AP3-free
+(so it dodges the e = 0 matching engine at every scale forever) and
+carry-repairable at order 3 (so it can never satisfy the
+counterexample's order-3 failure `hfail`).  The recurring-pair
+adversary needs the first property while avoiding the second — the
+Cantor world proves the two pull in opposite directions. -/
+theorem cantor_rigidity_conflict :
+    (∀ x y w : ℕ, IsCantor x → IsCantor y → IsCantor w →
+      x + y = 2 * w → x = w ∧ y = w) ∧
+    (∀ k, 3 ≤ k → ∃ x y z, IsCantor x ∧ IsCantor y ∧ IsCantor z ∧
+      (∀ j, x ≠ 3 ^ j) ∧ (∀ j, y ≠ 3 ^ j) ∧ (∀ j, z ≠ 3 ^ j) ∧
+      x + y + z = 3 ^ k) :=
+  ⟨fun _ _ _ hx hy hw h => cantorSet_ap3_free hx hy hw h,
+    cantor_carry_repair⟩
+
 end Erdos881Cantor
