@@ -345,3 +345,16 @@ enters the fixed-pair pipeline via `pipeline_entry_of_tight_pair`);
 escort case = rotating level-scale guards with the order-2 shadow
 when S* = ∅. DisjointRepEngine.lean: ~1100 lines, zero sorries,
 one night, raw hfail to canonical shape.
+
+## Supply census closes the night (00:55)
+
+probe_private_supply.py: the alignment supply required by
+tight-team simultaneity (recurring differences across elements'
+private-2-target lists at every scale) exists ONLY in digit-rigid
+structures — Cantor's recurring differences are exactly the powers
+of 3 — and digit-rigid structures are carry-repairable
+(cantor_rigidity_conflict, verified). Generic covering structures
+have near-zero supply. Both remaining branch families (matching
+acquisition, tight-team simultaneity) now face the same verified
+pincer: the structure the enemy needs to dodge our engines is the
+structure that repairs at order 3.
