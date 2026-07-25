@@ -4446,4 +4446,108 @@ theorem log_sidon_of_hfail {A : Set ℕ} {N0 : ℕ}
   have hcount := pair_count_of_shadow (B := Set.range b) hshadow
   omega
 
+/-- **THE SOUND FLOOD.**  When the stable-core canonical shape has
+exactly one rotating slot (`c = |S| + 1`), the flood hypothesis of
+`flood_canonical` holds verbatim with envelope `S` — derived from
+the V10 bounded-hub stream, immune to the trap vacuities: hubs here
+have EXACT card `c`, minimality, and an arbitrarily high rotator. -/
+theorem flood_of_singleton_rotator {A : Set ℕ} {N₀ : ℕ}
+    {S : Finset ℕ} {c : ℕ}
+    (hsplit : ∀ W N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      H.card = c ∧ IsRepHub A n H ∧
+      (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h)
+    (hc : c = S.card + 1) :
+    ∀ X, ∃ a, a ∈ A ∧ X ≤ a ∧ a ∉ S ∧
+      ∃ n, N₀ ≤ n ∧ ∃ H : Finset ℕ, IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧ H = insert a S := by
+  intro X
+  obtain ⟨n, hn, H, hcard, hhub, hmin, hSH, hrest⟩ := hsplit X N₀
+  have hsd : (H \ S).card = 1 := by
+    rw [Finset.card_sdiff, Finset.inter_eq_left.mpr hSH]
+    omega
+  obtain ⟨a, ha⟩ := Finset.card_eq_one.1 hsd
+  have hamem : a ∈ H \ S := ha ▸ Finset.mem_singleton_self a
+  have haH : a ∈ H := (Finset.mem_sdiff.1 hamem).1
+  have haS : a ∉ S := (Finset.mem_sdiff.1 hamem).2
+  have hHeq : H = insert a S := by
+    have h1 : H \ S ∪ S = H := Finset.sdiff_union_of_subset hSH
+    rw [← h1, ha, Finset.singleton_union]
+  have hXa : X < a := hrest a haH haS
+  obtain ⟨x, hx, y, hy, z, hz, hsum, hhit, -⟩ :=
+    minimal_hub_necessity hhub hmin a haH
+  have haA : a ∈ A := by
+    rcases hhit with h' | h' | h'
+    · exact h' ▸ hx
+    · exact h' ▸ hy
+    · exact h' ▸ hz
+  exact ⟨a, haA, by omega, haS, n, hn, H, hhub, hmin, hHeq⟩
+
+/-- **THE SOUND TRICHOTOMY.**  The V10 stable-core shape splits a
+counterexample three ways by its rotating-slot count `c − |S|`:
+
+* TIGHT TEAM — `c = |S|`: one fixed finite team of size `≥ 2` hubs
+  cofinally many targets;
+* THE FLOOD — `c = |S| + 1`: one rotating guardian over the stable
+  core, which collapses (`flood_canonical`) to the canonical exact
+  form: a NONEMPTY fixed core `S*` with cofinal minimal hubs
+  EXACTLY `S* ∪ {a}`, plus the stream kill on the empty core;
+* MULTI-ROTATION — `c ≥ |S| + 2`: cofinal minimal hubs of exact
+  card `c` carrying at least two arbitrarily high members over the
+  fixed core.
+
+This replaces the vacuous trap dichotomy: every branch is
+card-exact and minimality-guarded, inherited from the V10
+bounded-hub stream.  No junk instantiation reaches any of them. -/
+theorem stable_core_trichotomy {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hdb : {c | c ∈ A ∧ 2 * c ∈ A ∧ 0 < c}.Infinite)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∃ S : Finset ℕ, 2 ≤ S.card ∧
+      ∀ N, ∃ n, N ≤ n ∧ IsRepHub A n S) ∨
+    (∃ S' : Finset ℕ, S'.Nonempty ∧
+      ∀ X, ∃ a, a ∈ A ∧ X ≤ a ∧ a ∉ S' ∧
+        ∃ n, N₀ ≤ n ∧ ∃ H : Finset ℕ, IsRepHub A n H ∧
+          (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+          H = insert a S') ∨
+    (∃ S : Finset ℕ, ∃ c, S.card + 2 ≤ c ∧
+      ∀ W N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+        H.card = c ∧ IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h) := by
+  obtain ⟨K, S, c, hcK, hc2, hSc, hsplit, hteam⟩ :=
+    hub_endgame_of_hfail h0 hcov hdb hanchor hfail
+  rcases Nat.lt_or_ge c (S.card + 1) with hlt | hge
+  · left
+    have hceq : c = S.card := by omega
+    exact ⟨S, by omega, hteam hceq⟩
+  · rcases Nat.lt_or_ge c (S.card + 2) with hlt2 | hge2
+    · right
+      left
+      have hceq : c = S.card + 1 := by omega
+      have hflood : ∀ X, ∃ a, a ∈ A ∧ X ≤ a ∧
+          ∃ n, N₀ ≤ n ∧ ∃ H : Finset ℕ, IsRepHub A n H ∧
+            (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧ a ∈ H ∧
+            ∀ h ∈ H, h ∈ S ∨ h = a := by
+        intro X
+        obtain ⟨a, haA, hXa, haS, n, hn, H, hhub, hmin, hHeq⟩ :=
+          flood_of_singleton_rotator (N₀ := N₀) hsplit hceq X
+        refine ⟨a, haA, hXa, n, hn, H, hhub, hmin, ?_, ?_⟩
+        · rw [hHeq]
+          exact Finset.mem_insert_self a S
+        · intro h hh
+          rw [hHeq] at hh
+          rcases Finset.mem_insert.1 hh with h' | h'
+          · exact Or.inr h'
+          · exact Or.inl h'
+      obtain ⟨S', hS'S, hS'ne, hcanon⟩ :=
+        flood_canonical h0 hcov hanchor hfail hflood
+      exact ⟨S', hS'ne, hcanon⟩
+    · right
+      right
+      exact ⟨S, c, hge2, hsplit⟩
+
 end Erdos881
