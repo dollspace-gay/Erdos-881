@@ -1262,4 +1262,26 @@ theorem block_self_interaction {A B₁ : Set ℕ} {N₀ n₁ n₂ b₁ b₂ : �
   exact halign s hs (n₂ - b₂ - s') (hblock₂ s' hs')
     (n₁ - s - (n₂ - b₂ - s')) hmem (by omega)
 
+/-- **Doubles service is doubling rigidity.**  When the failing
+target sits at `n = 2b + s₀` (the marker served through its own
+double, the only mechanism the window census finds), the alignment
+demand says exactly that `b`''s double has the unique representation
+`(b, b)` — the Cantor minimality mechanism, forced.  The convergence,
+in one statement: the enemy''s service supply IS doubling rigidity,
+and doubling rigidity is the carry-repairable structure. -/
+theorem doubling_rigidity_of_service {A B : Set ℕ} {n b s₀ : ℕ}
+    {S : Finset ℕ}
+    (hhub : IsRepHub A n S) (hSA : ∀ s ∈ S, s ∈ A)
+    (hBS : ∀ s ∈ S, s ∉ B) (hSn : ∀ s ∈ S, s ≤ n)
+    (hdead : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = n →
+      x ∈ B ∨ y ∈ B ∨ z ∈ B)
+    (honly : ∀ x ∈ B, x ≤ n → x = b)
+    (hs₀ : s₀ ∈ S) (hn : n = 2 * b + s₀) :
+    ∀ x ∈ A, ∀ y ∈ A, x + y = 2 * b → x = b ∧ y = b := by
+  intro x hx y hy hxy
+  have halign := alignment_of_single_marker_failure hhub hSA hBS hSn
+    hdead honly
+  have h2b : n - s₀ = 2 * b := by omega
+  rcases halign s₀ hs₀ x hx y hy (by omega) with h | h <;> omega
+
 end Erdos881
