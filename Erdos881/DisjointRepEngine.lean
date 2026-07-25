@@ -5429,4 +5429,231 @@ theorem canonical_flood_of_hfail {A : Set ℕ} {N₀ : ℕ}
     flood_canonical h0 hcov hanchor hfail hflood
   exact ⟨S, hSne, hcanon⟩
 
+/-- **THE REP FLOOD, POOL-RELATIVE.**  The rep dodge with picks from
+any unbounded pool `P₀ ⊆ A ∖ {0}`: the stalled envelope is MADE OF
+POOL ELEMENTS and every large pool element guards a personal
+order-3 target over it.  With `P₀ := A ∖ {0}` this puts the
+envelope — hence the canonical core — inside the positive part of
+`A`, unblocking the routing dichotomy''s zero caveat for free. -/
+theorem rep_flood_pool {A P₀ : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hP₀A : P₀ ⊆ A) (h0P₀ : 0 ∉ P₀)
+    (hunb : ∀ X, ∃ p ∈ P₀, X ≤ p)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ P₀) ∧ RepFree A N₀ P ∧
+      ∃ X, ∀ b ∈ P₀, X ≤ b →
+        ∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsRepHub A m (insert b P) := by
+  classical
+  by_contra hno
+  push_neg at hno
+  have hfree0 : RepFree A N₀ ∅ := by
+    intro m hm
+    obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
+    exact ⟨x, hx, y, hy, 0, h0, by omega, Finset.notMem_empty x,
+      Finset.notMem_empty y, Finset.notMem_empty 0⟩
+  have hpick : ∀ (P : Finset ℕ) (X : ℕ), ∃ b, b ∈ P₀ ∧ X ≤ b ∧
+      ((∀ h ∈ P, h ∈ P₀) → RepFree A N₀ P →
+        ∀ m, N₀ ≤ m → b ≤ m →
+        ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = m ∧
+          x ∉ insert b P ∧ y ∉ insert b P ∧ z ∉ insert b P) := by
+    intro P X
+    by_cases hPP : (∀ h ∈ P, h ∈ P₀) ∧ RepFree A N₀ P
+    · obtain ⟨b, hbP, hXb, hbgood⟩ := hno P hPP.1 hPP.2 X
+      refine ⟨b, hbP, hXb, fun _ _ m hm hbm => ?_⟩
+      have hnh := hbgood m hm hbm
+      rw [IsRepHub] at hnh
+      push_neg at hnh
+      obtain ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩ := hnh
+      exact ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩
+    · obtain ⟨b, hbP, hXb⟩ := hunb X
+      exact ⟨b, hbP, hXb, fun h1 h2 => absurd ⟨h1, h2⟩ hPP⟩
+  choose pick hpickP hpickge hpickfree using hpick
+  set st : ℕ → ℕ × Finset ℕ := fun j =>
+    Nat.rec (pick ∅ 1, {pick ∅ 1})
+      (fun _ prev => (pick prev.2 (prev.1 + 1),
+        insert (pick prev.2 (prev.1 + 1)) prev.2)) j with hst
+  have hstS : ∀ j, st (j + 1) = (pick (st j).2 ((st j).1 + 1),
+      insert (pick (st j).2 ((st j).1 + 1)) (st j).2) := fun _ => rfl
+  have hsetP : ∀ j, ∀ h ∈ (st j).2, h ∈ P₀ := by
+    intro j
+    induction j with
+    | zero =>
+      intro h hh
+      have hh' : h = pick ∅ 1 := Finset.mem_singleton.1 hh
+      rw [hh']
+      exact hpickP ∅ 1
+    | succ j ih =>
+      intro h hh
+      rw [hstS] at hh
+      rcases Finset.mem_insert.1 hh with h' | h'
+      · rw [h']
+        exact hpickP _ _
+      · exact ih h h'
+  have hfreeS : ∀ j, RepFree A N₀ (st j).2 := by
+    intro j
+    induction j with
+    | zero =>
+      show RepFree A N₀ (insert (pick ∅ 1) ∅)
+      exact repFree_insert hfree0
+        (hpickfree ∅ 1 (fun h hh => absurd hh (Finset.notMem_empty h))
+          hfree0)
+    | succ j ih =>
+      rw [show (st (j + 1)).2 =
+          insert (pick (st j).2 ((st j).1 + 1)) (st j).2 from
+        by rw [hstS]]
+      exact repFree_insert ih
+        (hpickfree (st j).2 ((st j).1 + 1) (hsetP j) ih)
+  have hlastge : ∀ j, j + 1 ≤ (st j).1 := by
+    intro j
+    induction j with
+    | zero => simpa using hpickge ∅ 1
+    | succ j ih =>
+      have h1 : (st (j + 1)).1 = pick (st j).2 ((st j).1 + 1) := by
+        rw [hstS]
+      have h2 := hpickge (st j).2 ((st j).1 + 1)
+      omega
+  have hchain : ∀ i j, i ≤ j → (st i).2 ⊆ (st j).2 := by
+    intro i j hij
+    induction j with
+    | zero =>
+      have h0' : i = 0 := by omega
+      subst h0'
+      exact Finset.Subset.refl _
+    | succ j ih =>
+      rcases Nat.lt_or_ge i (j + 1) with h' | h'
+      · refine Finset.Subset.trans (ih (by omega)) ?_
+        rw [hstS]
+        exact Finset.subset_insert _ _
+      · have h1 : i = j + 1 := by omega
+        subst h1
+        exact Finset.Subset.refl _
+  have hlastmem : ∀ j, (st j).1 ∈ (st j).2 := by
+    intro j
+    cases j with
+    | zero => exact Finset.mem_singleton_self _
+    | succ j =>
+      rw [hstS]
+      exact Finset.mem_insert_self _ _
+  have hlaststep : ∀ j, (st j).1 < (st (j + 1)).1 := by
+    intro j
+    have h1 : (st (j + 1)).1 = pick (st j).2 ((st j).1 + 1) := by
+      rw [hstS]
+    have h2 := hpickge (st j).2 ((st j).1 + 1)
+    omega
+  have hlastmono : StrictMono (fun j => (st j).1) :=
+    strictMono_nat_of_lt_succ hlaststep
+  set B : Set ℕ := Set.range (fun j => (st j).1) with hB
+  have hBA : B ⊆ A := by
+    rintro x ⟨j, rfl⟩
+    show (st j).1 ∈ A
+    exact hP₀A (hsetP j _ (hlastmem j))
+  have hBinf : B.Infinite :=
+    Set.infinite_range_of_injective hlastmono.injective
+  refine hfail B hBA hBinf ⟨N₀, fun m hm => ?_⟩
+  obtain ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩ := hfreeS m m hm
+  have havoid : ∀ w, w ≤ m → w ∉ (st m).2 → w ∉ B := by
+    intro w hwm hwP
+    rintro ⟨i, hi⟩
+    have hi' : (st i).1 = w := hi
+    rcases Nat.lt_or_ge m i with h' | h'
+    · have := hlastge i
+      omega
+    · exact hwP (by
+        rw [← hi']
+        exact hchain i m h' (hlastmem i))
+  refine ⟨![x, y, z], ?_, by simp [Fin.sum_univ_three]; omega⟩
+  intro i
+  match i with
+  | 0 => exact ⟨hx, havoid x (by omega) hxP⟩
+  | 1 => exact ⟨hy, havoid y (by omega) hyP⟩
+  | 2 => exact ⟨hz, havoid z (by omega) hzP⟩
+
+/-- **THE CANONICAL FLOOD WITH POSITIVE CORE.**  Running the rep
+dodge in the positive pool puts the envelope — hence the exact
+core — inside the positive part of `A`: the zero-in-core sliver is
+closed structurally, before any case analysis. -/
+theorem canonical_flood_pos_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ S : Finset ℕ, S.Nonempty ∧ (∀ h ∈ S, h ∈ A ∧ 0 < h) ∧
+      ∀ X, ∃ b, b ∈ A ∧ X ≤ b ∧ b ∉ S ∧
+        ∃ m, N₀ ≤ m ∧ ∃ H : Finset ℕ, IsRepHub A m H ∧
+          (∀ h ∈ H, ¬IsRepHub A m (H \ {h})) ∧
+          H = insert b S := by
+  classical
+  have hunb : ∀ X, ∃ p ∈ {a | a ∈ A ∧ 0 < a}, X ≤ p := by
+    intro X
+    obtain ⟨a, ha, hXa⟩ := pairCovers_unbounded hcov (max X 1)
+    exact ⟨a, ⟨ha, by
+      have := le_trans (le_max_right _ _) hXa
+      omega⟩, le_trans (le_max_left _ _) hXa⟩
+  obtain ⟨P, hPpos, hPfree, X₀, hstall⟩ :=
+    rep_flood_pool (P₀ := {a | a ∈ A ∧ 0 < a}) h0 hcov
+      (fun a ha => ha.1) (fun h => by have := h.2; omega) hunb hfail
+  have hflood : ∀ X, ∃ b, b ∈ A ∧ X ≤ b ∧
+      ∃ m, N₀ ≤ m ∧ ∃ H : Finset ℕ, IsRepHub A m H ∧
+        (∀ h ∈ H, ¬IsRepHub A m (H \ {h})) ∧ b ∈ H ∧
+        ∀ h ∈ H, h ∈ P ∨ h = b := by
+    intro X
+    obtain ⟨p, hp, hXp⟩ := hunb (max X X₀)
+    obtain ⟨m, hmN, hbm, hhub⟩ := hstall p hp
+      (le_trans (le_max_right _ _) hXp)
+    obtain ⟨H', hH'sub, hH'hub, hH'min⟩ := exists_minimal_hub hhub
+    have hbH' : p ∈ H' := by
+      obtain ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩ := hPfree m hmN
+      rcases hH'hub x hx y hy z hz hxyz with h' | h' | h'
+      · rcases Finset.mem_insert.1 (hH'sub h') with h'' | h''
+        · exact h'' ▸ h'
+        · exact absurd h'' hxP
+      · rcases Finset.mem_insert.1 (hH'sub h') with h'' | h''
+        · exact h'' ▸ h'
+        · exact absurd h'' hyP
+      · rcases Finset.mem_insert.1 (hH'sub h') with h'' | h''
+        · exact h'' ▸ h'
+        · exact absurd h'' hzP
+    refine ⟨p, hp.1, le_trans (le_max_left _ _) hXp, m, hmN,
+      H', hH'hub, hH'min, hbH', ?_⟩
+    intro h hh
+    rcases Finset.mem_insert.1 (hH'sub hh) with h' | h'
+    · exact Or.inr h'
+    · exact Or.inl h'
+  obtain ⟨S, hSP, hSne, hcanon⟩ :=
+    flood_canonical h0 hcov hanchor hfail hflood
+  exact ⟨S, hSne, fun h hh => hPpos h (hSP h hh), hcanon⟩
+
+/-- **THE ROUTING DICHOTOMY, UNCONDITIONAL.**  Every counterexample
+(covering, `0 ∈ A`, anchors) carries a nonempty positive fixed core
+`S*` with exact rotating hubs, and cofinally lives in one of two
+order-2 regimes: a FIXED CORE ELEMENT owns coreps at cofinally many
+canonical targets, or the ROTATING GUARDIAN owns its target''s
+entire order-2 life.  The campaign''s endgame, derived end to end
+from first principles. -/
+theorem routing_dichotomy_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ S : Finset ℕ, S.Nonempty ∧ (∀ h ∈ S, h ∈ A ∧ 0 < h) ∧
+      ((∃ s ∈ S, ∀ X, ∃ n, X ≤ n ∧ N₀ ≤ n ∧ (∃ w ∈ A, s + w = n) ∧
+        ∃ a, a ∈ A ∧ 0 < a ∧ a ∉ S ∧ ∃ H : Finset ℕ,
+          IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+          H = insert a S) ∨
+      (∀ X, ∃ n, X ≤ n ∧ N₀ ≤ n ∧ ∃ a, a ∈ A ∧ 0 < a ∧ a ∉ S ∧
+        (∃ w ∈ A, a + w = n) ∧
+        (∀ x ∈ A, ∀ y ∈ A, x + y = n → x = a ∨ y = a) ∧
+        ∃ H : Finset ℕ, IsRepHub A n H ∧
+          (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧ H = insert a S)) := by
+  obtain ⟨S, hSne, hSpos, hcanon⟩ :=
+    canonical_flood_pos_of_hfail h0 hcov hanchor hfail
+  have h0S : 0 ∉ S := by
+    intro h
+    have := (hSpos 0 h).2
+    omega
+  exact ⟨S, hSne, hSpos, flood_routing_dichotomy h0 hcov h0S hcanon⟩
+
 end Erdos881
