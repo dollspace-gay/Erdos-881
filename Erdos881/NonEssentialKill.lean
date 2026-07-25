@@ -1104,4 +1104,89 @@ theorem cross_edge_catch {A : Set ℕ} {N₀ u v₁ v₂ m₂ m' c : ℕ}
   have h := hdes'.desert hcov hv₁0 hv₁₂ hp hlow hhigh
   omega
 
+
+/-- **The grand assembly, sixth form** — the combined sharpest escape:
+every positive clique vertex is **primitive**, or **fully 2-essential
+and additionally anchor-starved or W-aligned**.  Non-essential
+vertices die by the pointwise kill regardless of their edges;
+essential ones die unless starved or aligned. -/
+theorem erdos881_grand_assembly₆ {A : Set ℕ} {N₀ : ℕ}
+    (hA : A.Infinite) (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfunnel : HasCofinalPairFunnels A)
+    (hdb : {c | c ∈ A ∧ 2 * c ∈ A ∧ 0 < c}.Infinite)
+    (hnz : ∃ c ∈ A, 0 < c ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ 0 < w ∧ 0 < w') :
+    (∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n) ∨
+    (∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m) ∨
+    (∃ L, L ⊆ A ∧ L.Infinite ∧ L.Pairwise (TeamEdge A) ∧
+      ∀ u ∈ L, 0 < u →
+        (¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u ∧ s ≠ u ∧ t ≠ u) ∨
+        ((∀ N₁, ¬ TwoRedundant A u N₁) ∧
+          ((∀ c, c ∈ A → 2 * c ∈ A → u < c →
+            (¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u + c ∧ s ≠ u ∧ t ≠ u) ∨
+            (¬ ∃ s ∈ A, ∃ t ∈ A,
+              s + t = u + 2 * c ∧ s ≠ u ∧ t ≠ u)) ∨
+          (∃ K, ∀ v m, K < v → u < v → v ≤ m →
+            IsPairDestroyer A u v m →
+            m - v ≤ K ∨
+            ¬ ∃ s ∈ A, ∃ t ∈ A,
+              s + t = u + (m - v) ∧ s ≠ u ∧ t ≠ u)))) := by
+  rcases infinite_teamClique_or_cofinal_privatePairs hA hfunnel with
+    ⟨L, hLA, hLinf, hLcl⟩ | ⟨L, hLA, hLinf, hstream⟩
+  · by_cases hesc : ∀ u ∈ L, 0 < u →
+        (¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u ∧ s ≠ u ∧ t ≠ u) ∨
+        ((∀ N₁, ¬ TwoRedundant A u N₁) ∧
+          ((∀ c, c ∈ A → 2 * c ∈ A → u < c →
+            (¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u + c ∧ s ≠ u ∧ t ≠ u) ∨
+            (¬ ∃ s ∈ A, ∃ t ∈ A,
+              s + t = u + 2 * c ∧ s ≠ u ∧ t ≠ u)) ∨
+          (∃ K, ∀ v m, K < v → u < v → v ≤ m →
+            IsPairDestroyer A u v m →
+            m - v ≤ K ∨
+            ¬ ∃ s ∈ A, ∃ t ∈ A,
+              s + t = u + (m - v) ∧ s ≠ u ∧ t ≠ u)))
+    · exact Or.inr (Or.inr ⟨L, hLA, hLinf, hLcl, hesc⟩)
+    · push Not at hesc
+      obtain ⟨u, huL, hu0, hprim, hrest⟩ := hesc
+      by_cases hred : ∃ N₁, TwoRedundant A u N₁
+      · -- non-essential: the pointwise kill
+        obtain ⟨N₁, hredN⟩ := hred
+        obtain ⟨c, hcmem, hcg⟩ := hdb.exists_gt (max N₁ u)
+        obtain ⟨hcA, h2cA, hc0⟩ := hcmem
+        refine Or.inl (surviving_deletion_of_nonessential_edges h0
+          hcov hredN hprim hu0 (fun K => ?_) hcA h2cA hc0
+          (le_of_lt (lt_of_le_of_lt (le_max_left _ _) hcg))
+          (by have := lt_of_le_of_lt (le_max_right _ _) hcg; omega)
+          (by have := lt_of_le_of_lt (le_max_right _ _) hcg; omega))
+        obtain ⟨v, hvL, hv⟩ := hLinf.exists_gt (max K u)
+        have hKv : K < v := lt_of_le_of_lt (le_max_left _ _) hv
+        have huv : u < v := lt_of_le_of_lt (le_max_right _ _) hv
+        obtain ⟨-, m, hum, hvm, hdes⟩ := hLcl huL hvL (by omega)
+        exact ⟨v, m, hKv, huv, hvm, hdes⟩
+      · -- essential: the avoidable-levels kill
+        push Not at hred
+        have hess : ∀ N₁, ¬ TwoRedundant A u N₁ := hred
+        have hWneg := hrest hess
+        obtain ⟨hanch, halign⟩ := hWneg
+        obtain ⟨cc, hccA, h2cc, hccu, hacc, ha2cc⟩ := hanch
+        refine Or.inl (surviving_deletion_of_avoidable_levels h0 hcov
+          hprim hu0 hccA (by omega) (by omega) hacc h2cc (by omega)
+          ha2cc (fun K => ?_))
+        obtain ⟨v, m, hKv, huv, hvm, hdes, hlev, hav⟩ := halign K
+        exact ⟨v, m, hKv, huv, hvm, by omega, hdes, hav⟩
+  · have hanchor := anchor_abundance_of_doubling h0 hdb hnz
+    by_cases hz : ∀ N, ∃ a m, N ≤ m ∧ 0 < a ∧ IsPrivateTriple A a m
+    · exact Or.inl
+        (surviving_deletion_of_cofinal_privateStream h0 hcov hz hanchor)
+    · push Not at hz
+      obtain ⟨N₂, hN₂⟩ := hz
+      refine Or.inr (Or.inl fun N => ?_)
+      obtain ⟨v, hvL, m, hm, hpriv⟩ := hstream (max N N₂)
+      rcases Nat.eq_zero_or_pos v with hv0 | hv0
+      · exact ⟨m, le_trans (le_max_left _ _) hm, hv0 ▸ hpriv⟩
+      · exact absurd hpriv
+          (hN₂ v m (le_trans (le_max_right _ _) hm) hv0)
+
 end Erdos881
