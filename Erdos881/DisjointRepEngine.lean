@@ -2693,4 +2693,24 @@ theorem cross_owner_exclusion {A : Set ℕ} {a₁ a₂ n₁ n₂ : ℕ}
   · intro hbig
     exact midwindow_reflection h₂ a₁ ha₁ hbig ha
 
+/-- **The consecutive-owner dichotomy.**  For any owner and any later
+element: the completion fits inside the distance to it, or the
+completion has no predecessor at that distance — it differs from the
+distance by a co-`A` value.  Unconditional, per consecutive pair: the
+completions are gap-dominated or gap-predecessor-free.  The P/D split
+re-emerges with the LOCAL GAPS as moduli: the digit recursion''s
+moduli are the gap structure itself. -/
+theorem consecutive_owner_dichotomy {A : Set ℕ} {a a' n : ℕ}
+    (hown : OwnsTarget A a n) (ha' : a' ∈ A) (haa' : a < a') :
+    n - a ≤ a' - a ∨
+    (a' - a < n - a ∧ (n - a) - (a' - a) ∉ A) := by
+  rcases Nat.lt_or_ge (a' - a) (n - a) with h | h
+  · right
+    refine ⟨h, ?_⟩
+    have hlt : a' < n := by omega
+    have hval : n - a' = (n - a) - (a' - a) := by omega
+    rw [← hval]
+    exact strip_reflection hown a' ha' haa' hlt
+  · exact Or.inl h
+
 end Erdos881
