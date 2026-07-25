@@ -775,4 +775,160 @@ theorem surviving_deletion_of_reflectionFamilies
 
 
 
+
+/-- **The avoidable-levels kill.**  Even a fully 2-essential guard
+dies if its edges supply *grown levels with avoidable cross-sums*:
+non-primitivity gives the coreps, the anchor points `u + c, u + 2c`
+and the per-level cross-sums `u + (m - v)` carry avoiding
+representations, and the reflection-family engine runs.  The final
+escape is thus a **W-alignment** property: beyond every bound, every
+edge of every vertex has a bounded level or an unavoidable
+cross-sum. -/
+theorem surviving_deletion_of_avoidable_levels
+    {A : Set ℕ} {N₀ u c : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hprim : ∃ s ∈ A, ∃ t ∈ A, s + t = u ∧ s ≠ u ∧ t ≠ u)
+    (hu0 : 0 < u)
+    (hc : c ∈ A) (hc0 : 0 < c) (hcu : c ≠ u)
+    (hac : ∃ s ∈ A, ∃ t ∈ A, s + t = u + c ∧ s ≠ u ∧ t ≠ u)
+    (h2c : 2 * c ∈ A) (h2cu : 2 * c ≠ u)
+    (ha2c : ∃ s ∈ A, ∃ t ∈ A, s + t = u + 2 * c ∧ s ≠ u ∧ t ≠ u)
+    (hsupply : ∀ K, ∃ v m, K < v ∧ u < v ∧ v ≤ m ∧ K < m - v ∧
+      IsPairDestroyer A u v m ∧
+      ∃ s ∈ A, ∃ t ∈ A, s + t = u + (m - v) ∧ s ≠ u ∧ t ≠ u) :
+    ∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n := by
+  classical
+  choose pv pm hpK hpu hpvm hpL hpdes hpav using hsupply
+  set b : ℕ → ℕ := fun x => 2 * x + u + 2 * c + N₀ + 2 with hb
+  set κ : ℕ → ℕ := fun k =>
+    Nat.rec (u + 2 * c + N₀ + 2)
+      (fun _ p => pm (b p) - pv (b p)) k with hκ
+  set L : ℕ → ℕ := fun k => κ (k + 1) with hLdef
+  have hLeq : ∀ k, L k = pm (b (κ k)) - pv (b (κ k)) := fun _ => rfl
+  -- the generic mirror at level k
+  have hmirror : ∀ k, ∀ z ∈ A, z ≠ u → z + u + N₀ + 1 < pv (b (κ k)) →
+      (∃ s ∈ A, ∃ t ∈ A, s + t = u + z ∧ s ≠ u ∧ t ≠ u) →
+      pm (b (κ k)) ≠ 2 * u + z →
+      pm (b (κ k)) ≠ u + pv (b (κ k)) + z →
+      L k - z ∈ A := by
+    intro k z hz hzu hzw hrep hd1 hd2
+    obtain ⟨s, hs, t, ht, hst, hsu, htu⟩ := hrep
+    have h2 := hpu (b (κ k))
+    have h3 := hpvm (b (κ k))
+    have h5 := hpdes (b (κ k))
+    have hLk : L k = pm (b (κ k)) - pv (b (κ k)) := hLeq k
+    rw [hLk]
+    exact h5.pinned_mirror_sharp hcov hz hzu (by omega) (by omega)
+      (by omega)
+      ⟨s, hs, t, ht, hst, hsu, by omega, htu, by omega⟩ hd1 hd2
+  -- level facts
+  have hstep : ∀ k, 2 * κ k + u + 2 * c + N₀ + 2 < L k ∧ L k ∈ A ∧
+      b (κ k) < pv (b (κ k)) := by
+    intro k
+    have h1 := hpK (b (κ k))
+    have h2 := hpu (b (κ k))
+    have h3 := hpvm (b (κ k))
+    have h4 := hpL (b (κ k))
+    have h5 := hpdes (b (κ k))
+    have hbk : b (κ k) = 2 * κ k + u + 2 * c + N₀ + 2 := rfl
+    have hLk : L k = pm (b (κ k)) - pv (b (κ k)) := hLeq k
+    have hLbig : 2 * κ k + u + 2 * c + N₀ + 2 < L k := by
+      rw [hLk]; omega
+    refine ⟨hLbig, ?_, h1⟩
+    obtain ⟨s, hs, t, ht, hst, hsu, htu⟩ := hprim
+    have hcor := hmirror k 0 h0 (by omega) (by omega)
+      ⟨s, hs, t, ht, by omega, hsu, htu⟩ (by omega) (by omega)
+    simpa using hcor
+  have hκmono : ∀ k, κ k < κ (k + 1) := by
+    intro k
+    have h1 := (hstep k).1
+    have h2 : L k = κ (k + 1) := rfl
+    omega
+  have hκK₀ : ∀ k, u + 2 * c + N₀ + 2 ≤ κ k := by
+    intro k
+    induction k with
+    | zero => exact le_refl _
+    | succ k ih => have := hκmono k; omega
+  have hgrow : ∀ k, 2 * L k < L (k + 1) := by
+    intro k
+    have h1 := (hstep (k + 1)).1
+    have h2 : κ (k + 1) = L k := rfl
+    omega
+  have hmono : StrictMono L := by
+    apply strictMono_nat_of_lt_succ
+    intro k
+    have h1 := hgrow k
+    have h2 := (hstep k).1
+    omega
+  have hκle : ∀ i₂ i₁, i₁ ≤ i₂ → κ i₁ ≤ κ i₂ := by
+    intro i₂
+    induction i₂ with
+    | zero =>
+        intro i₁ h
+        have h0' : i₁ = 0 := by omega
+        subst h0'
+        exact le_refl _
+    | succ i₂ ih =>
+        intro i₁ h
+        rcases Nat.lt_or_ge i₁ (i₂ + 1) with h' | h'
+        · have hm := hκmono i₂
+          have h2 := ih i₁ (by omega)
+          omega
+        · have he : i₁ = i₂ + 1 := by omega
+          subst he
+          exact le_refl _
+  have hLκ : ∀ j k, j < k → L j ≤ κ k := by
+    intro j k hjk
+    have h1 : L j = κ (j + 1) := rfl
+    have := hκle k (j + 1) (by omega)
+    omega
+  refine surviving_deletion_of_reflectionFamilies L h0 hcov hmono
+    hgrow hc hc0 ?_ h0 h2c (by omega) (by omega) ?_ ?_ ?_ ?_
+  · have h1 := (hstep 0).1
+    have h2 := hκK₀ 0
+    omega
+  -- hLc
+  · intro k
+    have hs := hstep k
+    have h2 := hpu (b (κ k))
+    have h3 := hpvm (b (κ k))
+    have hκb := hκK₀ k
+    have hbk : b (κ k) = 2 * κ k + u + 2 * c + N₀ + 2 := rfl
+    have hLk : L k = pm (b (κ k)) - pv (b (κ k)) := hLeq k
+    exact hmirror k c hc hcu (by omega)
+      hac (by omega) (by omega)
+  -- hLw (w = 0)
+  · intro k
+    have hs := hstep k
+    have h := hs.2.1
+    simpa using h
+  -- hLw' (w' = 2c)
+  · intro k
+    have hs := hstep k
+    have h2 := hpu (b (κ k))
+    have h3 := hpvm (b (κ k))
+    have hκb := hκK₀ k
+    have hbk : b (κ k) = 2 * κ k + u + 2 * c + N₀ + 2 := rfl
+    have hLk : L k = pm (b (κ k)) - pv (b (κ k)) := hLeq k
+    exact hmirror k (2 * c) h2c h2cu (by omega)
+      ha2c (by omega) (by omega)
+  -- hLL
+  · intro j k hjk
+    have hsj := hstep j
+    have hsk := hstep k
+    have h2 := hpu (b (κ k))
+    have h3 := hpvm (b (κ k))
+    have hκb := hκK₀ k
+    have hLjκ := hLκ j k hjk
+    have hLj := hLeq j
+    have hbk : b (κ k) = 2 * κ k + u + 2 * c + N₀ + 2 := rfl
+    have hLk : L k = pm (b (κ k)) - pv (b (κ k)) := hLeq k
+    have hκbj := hκK₀ j
+    have hav := hpav (b (κ j))
+    obtain ⟨s, hs, t, ht, hst, hsu, htu⟩ := hav
+    exact hmirror k (L j) hsj.2.1 (by omega) (by omega)
+      ⟨s, hs, t, ht, by omega, hsu, htu⟩ (by omega) (by omega)
+
 end Erdos881
