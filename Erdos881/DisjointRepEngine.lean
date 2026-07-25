@@ -6342,4 +6342,61 @@ theorem pair_free_prefixes_die_of_minimality {A : Set ℕ} {N₀ : ℕ}
   exact ⟨x, hx, y, hy, havoid x (by omega) hxP,
     havoid y (by omega) hyP, hxy⟩
 
+/-- **The corep offset dichotomy.**  In a guardian-owned pair
+stream (each target `a + w` has all its order-2 life through `a`),
+either the corep offset pigeonholes to ONE fixed `w₀` — cofinally
+many guardians own the target `a + w₀` at fixed distance — or the
+coreps run away beyond every bound. -/
+theorem corep_offset_dichotomy {A : Set ℕ} {N₀ : ℕ}
+    (hstream : ∀ X, ∃ a w, a ∈ A ∧ w ∈ A ∧ X ≤ a ∧ N₀ ≤ a + w ∧
+      ∀ x ∈ A, ∀ y ∈ A, x + y = a + w → x = a ∨ y = a) :
+    (∃ w₀, w₀ ∈ A ∧ ∀ X, ∃ a, a ∈ A ∧ X ≤ a ∧ N₀ ≤ a + w₀ ∧
+      ∀ x ∈ A, ∀ y ∈ A, x + y = a + w₀ → x = a ∨ y = a) ∨
+    (∀ W X, ∃ a w, a ∈ A ∧ w ∈ A ∧ X ≤ a ∧ W < w ∧ N₀ ≤ a + w ∧
+      ∀ x ∈ A, ∀ y ∈ A, x + y = a + w → x = a ∨ y = a) := by
+  classical
+  by_cases hbnd : ∃ W, ∀ X, ∃ a w, a ∈ A ∧ w ∈ A ∧ X ≤ a ∧ w ≤ W ∧
+      N₀ ≤ a + w ∧ ∀ x ∈ A, ∀ y ∈ A, x + y = a + w → x = a ∨ y = a
+  · left
+    obtain ⟨W, hW⟩ := hbnd
+    obtain ⟨w₀, hw₀W, hcof⟩ := cofinal_value_pigeonhole
+      (P := fun a w => a ∈ A ∧ w ∈ A ∧ N₀ ≤ a + w ∧
+        ∀ x ∈ A, ∀ y ∈ A, x + y = a + w → x = a ∨ y = a)
+      (fun N => by
+        obtain ⟨a, w, ha, hw, hXa, hwW, hNn, hall⟩ := hW N
+        exact ⟨a, hXa, w, hwW, ha, hw, hNn, hall⟩)
+    have hw₀A : w₀ ∈ A := by
+      obtain ⟨a, -, -, hw, -, -⟩ := hcof 0
+      exact hw
+    refine ⟨w₀, hw₀A, fun X => ?_⟩
+    obtain ⟨a, hXa, ha, hw, hNn, hall⟩ := hcof X
+    exact ⟨a, ha, hXa, hNn, hall⟩
+  · right
+    push_neg at hbnd
+    intro W X
+    obtain ⟨X', hX'⟩ := hbnd W
+    obtain ⟨a, w, ha, hw, hXa, hNn, hall⟩ := hstream (max X X')
+    have hwW : W < w := by
+      by_contra hle
+      push_neg at hle
+      obtain ⟨x, hx, y, hy, hxy, hxa, hya⟩ :=
+        hX' a w ha hw (le_trans (le_max_right _ _) hXa) hle hNn
+      rcases hall x hx y hy hxy with h | h
+      · exact hxa h
+      · exact hya h
+    exact ⟨a, w, ha, hw, le_trans (le_max_left _ _) hXa, hwW, hNn,
+      hall⟩
+
+/-- **The guardian difference desert.**  In the fixed-offset regime,
+any second element inside the window — in particular any OTHER
+guardian — reflects to a non-element: `a + w₀ − a' ∉ A` whenever
+`a' ≠ a, w₀`.  The shifted difference set of the guardian family
+avoids `A` wholesale. -/
+theorem guardian_difference_desert {A : Set ℕ} {w₀ a a' : ℕ}
+    (hall : ∀ x ∈ A, ∀ y ∈ A, x + y = a + w₀ → x = a ∨ y = a)
+    (ha' : a' ∈ A) (hle : a' ≤ a + w₀) (hne : a' ≠ a)
+    (hnw : a' ≠ w₀) :
+    a + w₀ - a' ∉ A :=
+  pair_owner_reflection_desert hall ha' hle hne (by omega)
+
 end Erdos881
