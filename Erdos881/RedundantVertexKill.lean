@@ -401,4 +401,36 @@ theorem erdos881_grand_assembly'' {A : Set ℕ} {N₀ : ℕ}
       · exact absurd hpriv
           (hN₂ v m (le_trans (le_max_right _ _) hm) hv0)
 
+/-- **The escape vertices are self-scale 2-guardians.**  A vertex
+failing 2-redundancy at its own scale has a witness `n ≥ u` whose
+every two-term representation passes through `u`; its corep `n - u`
+is an element and the entire two-support is `{u, n - u}`.  The final
+clique escape of `erdos881_grand_assembly''` is therefore an infinite
+clique of elements each two-guarding a target at or above its own
+scale — the Grekos-type configuration of Open Link B1. -/
+theorem escape_vertex_witness {A : Set ℕ} {N₀ u : ℕ}
+    (hcov : PairCovers A N₀)
+    (hu : ¬ TwoRedundant A u u) (huN : N₀ ≤ u) :
+    ∃ n, u ≤ n ∧ n - u ∈ A ∧
+      ∀ y ∈ A, y ≤ n → n - y ∈ A → y = u ∨ y = n - u := by
+  rw [TwoRedundant] at hu
+  push Not at hu
+  obtain ⟨n, hn, hno⟩ := hu
+  have hall : ∀ y ∈ A, ∀ z ∈ A, y + z = n → y = u ∨ z = u := by
+    intro y hy z hz hyz
+    by_cases hyu : y = u
+    · exact Or.inl hyu
+    · exact Or.inr (hno y hy z hz hyz hyu)
+  obtain ⟨y, hy, z, hz, hyz⟩ := hcov n (by omega)
+  refine ⟨n, hn, ?_, ?_⟩
+  · rcases hall y hy z hz hyz with h | h
+    · have : z = n - u := by omega
+      exact this ▸ hz
+    · have : y = n - u := by omega
+      exact this ▸ hy
+  · intro y' hy' hy'n hny'
+    rcases hall y' hy' (n - y') hny' (by omega) with h | h
+    · exact Or.inl h
+    · exact Or.inr (by omega)
+
 end Erdos881
