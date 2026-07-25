@@ -3119,4 +3119,29 @@ theorem payer_in_five {A : Set ℕ} {Ns X x₁ x₂ x₃ x₄ x₅ : ℕ}
     exact hno x₄ t₄ y (Or.inr rfl) ho₄ hy hby hyt
   exact no_five_zero_payers h₁ h₃ h₅ ho₂ ho₄ hp₂ hp₄ hord hoct
 
+/-- **The ownership forest.**  Universal ownership yields a parent
+function: every late element has a canonical completion — smaller,
+in `A`, with their sum uniquely fibered.  The chain forest flows to
+the base; its cross-tree coherence (carry-compatibility of shared
+tails) is the classification''s final object, modeled on the verified
+Cantor calculus where the forest is exactly base-3 expansion. -/
+theorem ownership_forest {A : Set ℕ} {Ns : ℕ}
+    (huniv : UniversalOwnership A Ns) :
+    ∃ parent : ℕ → ℕ, ∀ a ∈ A, Ns ≤ a →
+      parent a ∈ A ∧ parent a < a ∧
+      OwnsTarget A a (a + parent a) := by
+  classical
+  choose f hf using huniv
+  refine ⟨fun a => if h : a ∈ A ∧ Ns ≤ a then f a h.1 h.2 - a else 0,
+    fun a haA haNs => ?_⟩
+  have hown := hf a haA haNs
+  have h1 : a < f a haA haNs := hown.1
+  have h2 : f a haA haNs < 2 * a := hown.2.1
+  have h3 : f a haA haNs - a ∈ A := hown.2.2.1
+  simp only [dif_pos (And.intro haA haNs)]
+  refine ⟨h3, by omega, ?_⟩
+  have hval : a + (f a haA haNs - a) = f a haA haNs := by omega
+  rw [hval]
+  exact hown
+
 end Erdos881
