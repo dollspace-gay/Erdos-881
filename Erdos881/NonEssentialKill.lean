@@ -1854,4 +1854,158 @@ theorem fixed_pair_composition {A : Set ℕ} {N₀ u v c w w' : ℕ}
     · exact Or.inr ⟨M, hM, T₁, hT₁inf, Or.inr (Or.inl hcu₁)⟩
   · exact Or.inr ⟨M, hM, S, hSinf, Or.inl hLLu⟩
 
+
+/-- **Engine V9: generalized constants.**  The reflection-family
+engine with a shifted L-L family (`+ e`) and free point-family values
+tied only by the two repair identities — kills every channel pattern
+of the fixed-pair configuration. -/
+theorem surviving_deletion_of_shiftedFamilies
+    {A : Set ℕ} {N₀ a₁ a₂ a₄ a₅ e V : ℕ} (L : ℕ → ℕ)
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hmono : StrictMono L)
+    (hgrow : ∀ k, 2 * L k < L (k + 1))
+    (hid1 : a₂ = a₁ + e) (hid2 : a₄ + a₅ = 2 * a₁ + e)
+    (ha₁ : 0 < a₁) (ha₅₁ : a₅ ≠ a₁)
+    (hbV : a₁ ≤ V ∧ a₂ ≤ V ∧ a₄ ≤ V ∧ a₅ ≤ V ∧ e ≤ V)
+    (hVL : 4 * V + N₀ + 2 < L 0)
+    (h₁ : ∀ k, L k - a₁ ∈ A)
+    (h₂ : ∀ j k, j < k → L k - L j + e ∈ A)
+    (h₃ : ∀ k, L k - a₂ ∈ A)
+    (h₄ : ∀ k, L k - a₄ ∈ A)
+    (h₅ : ∀ k, L k - a₅ ∈ A) :
+    ∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n := by
+  classical
+  obtain ⟨hb₁, hb₂, hb₄, hb₅, hbe⟩ := hbV
+  have hdiff : ∀ i j, i < j → L 0 + L i < L j :=
+    fun i j h => geometric_level_separation hmono hgrow h
+  have hVk : ∀ k, 4 * V + N₀ + 2 < L k := by
+    intro k
+    have := hmono.monotone (Nat.zero_le k)
+    omega
+  set f : ℕ → ℕ := fun k => L (2 * k + 2) - a₁ with hfdef
+  have hfA : ∀ k, f k ∈ A := fun k => h₁ _
+  have hfinj : Function.Injective f := by
+    intro i j hij
+    simp only [hfdef] at hij
+    have h1 : L (2 * i + 2) = L (2 * j + 2) := by
+      have := hVk (2 * i + 2); have := hVk (2 * j + 2); omega
+    have := hmono.injective h1
+    omega
+  have hBsub : Set.range f ⊆ A := by rintro t ⟨k, rfl⟩; exact hfA k
+  have h0B : (0 : ℕ) ∉ Set.range f := by
+    rintro ⟨r, hr⟩
+    simp only [hfdef] at hr
+    have := hVk (2 * r + 2)
+    omega
+  -- shifted level-differences dodge B
+  have hgapB : ∀ i j, j < i → L i - L j + e ∉ Set.range f := by
+    rintro i j hji ⟨r, hr⟩
+    simp only [hfdef] at hr
+    have hLj : L j < L i := hmono hji
+    have hE : L (2 * r + 2) + L j = L i + e + a₁ := by
+      have := hVk (2 * r + 2); omega
+    rcases Nat.lt_trichotomy i (2 * r + 2) with h | h | h
+    · have := hdiff i (2 * r + 2) h
+      have h0' := hVk 0
+      omega
+    · subst h
+      have := hVk j
+      omega
+    · have h2 : L (2 * r + 2) ≤ L (i - 1) := hmono.monotone (by omega)
+      have h3 : L j ≤ L (i - 1) := hmono.monotone (by omega)
+      have h4 := hgrow (i - 1)
+      have h5 : i - 1 + 1 = i := by omega
+      rw [h5] at h4
+      have h0' := hVk 0
+      omega
+  -- odd-level point values dodge B by parity/separation
+  have hoddB : ∀ k t, t ≤ 2 * V → Odd k → L k - t ∉ Set.range f := by
+    rintro k t htV ⟨ko, hko⟩ ⟨r, hr⟩
+    simp only [hfdef] at hr
+    have hE : L (2 * r + 2) + t = L k + a₁ := by
+      have := hVk (2 * r + 2); have := hVk k; omega
+    rcases Nat.lt_trichotomy k (2 * r + 2) with h | h | h
+    · have := hdiff k (2 * r + 2) h
+      have h0' := hVk 0
+      omega
+    · omega
+    · have := hdiff (2 * r + 2) k h
+      have h0' := hVk 0
+      omega
+  -- even-level values dodge B unless the value is a₁
+  have hevenB : ∀ k t, t ≤ 2 * V → t ≠ a₁ → L k - t ∉ Set.range f := by
+    rintro k t htV hta ⟨r, hr⟩
+    simp only [hfdef] at hr
+    have hE : L (2 * r + 2) + t = L k + a₁ := by
+      have := hVk (2 * r + 2); have := hVk k; omega
+    rcases Nat.lt_trichotomy k (2 * r + 2) with h | h | h
+    · have := hdiff k (2 * r + 2) h
+      have h0' := hVk 0
+      omega
+    · subst h
+      omega
+    · have := hdiff (2 * r + 2) k h
+      have h0' := hVk 0
+      omega
+  refine ⟨Set.range f, hBsub, Set.infinite_range_of_injective hfinj, ?_⟩
+  intro n hn
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hn
+  by_cases hxB : x ∈ Set.range f
+  · obtain ⟨i, hix⟩ := hxB
+    simp only [hfdef] at hix
+    by_cases hyB : y ∈ Set.range f
+    · obtain ⟨j, hjy⟩ := hyB
+      simp only [hfdef] at hjy
+      rcases le_total j i with hji | hij
+      · have hp₁ : L (2 * i + 2) - L (2 * j + 1) + e ∈ A :=
+          h₂ (2 * j + 1) (2 * i + 2) (by omega)
+        have hp₂ : L (2 * j + 1) - a₄ ∈ A := h₄ (2 * j + 1)
+        have hp₃ : L (2 * j + 2) - a₅ ∈ A := h₅ (2 * j + 2)
+        refine ⟨_, hp₁, _, hp₂, _, hp₃,
+          hgapB (2 * i + 2) (2 * j + 1) (by omega),
+          hoddB (2 * j + 1) a₄ (by omega) ⟨j, by omega⟩,
+          hevenB (2 * j + 2) a₅ (by omega) ha₅₁, ?_⟩
+        have hb1 : L (2 * j + 1) ≤ L (2 * i + 2) :=
+          hmono.monotone (by omega)
+        have := hVk (2 * i + 2); have := hVk (2 * j + 2)
+        have := hVk (2 * j + 1)
+        omega
+      · have hp₁ : L (2 * j + 2) - L (2 * i + 1) + e ∈ A :=
+          h₂ (2 * i + 1) (2 * j + 2) (by omega)
+        have hp₂ : L (2 * i + 1) - a₄ ∈ A := h₄ (2 * i + 1)
+        have hp₃ : L (2 * i + 2) - a₅ ∈ A := h₅ (2 * i + 2)
+        refine ⟨_, hp₁, _, hp₂, _, hp₃,
+          hgapB (2 * j + 2) (2 * i + 1) (by omega),
+          hoddB (2 * i + 1) a₄ (by omega) ⟨i, by omega⟩,
+          hevenB (2 * i + 2) a₅ (by omega) ha₅₁, ?_⟩
+        have hb1 : L (2 * i + 1) ≤ L (2 * j + 2) :=
+          hmono.monotone (by omega)
+        have := hVk (2 * i + 2); have := hVk (2 * j + 2)
+        have := hVk (2 * i + 1)
+        omega
+    · have hp₁ : L (2 * i + 1) - a₂ ∈ A := h₃ (2 * i + 1)
+      have hp₂ : L (2 * i + 2) - L (2 * i + 1) + e ∈ A :=
+        h₂ (2 * i + 1) (2 * i + 2) (by omega)
+      refine ⟨_, hp₁, _, hp₂, y, hy,
+        hoddB (2 * i + 1) a₂ (by omega) ⟨i, by omega⟩,
+        hgapB (2 * i + 2) (2 * i + 1) (by omega), hyB, ?_⟩
+      have hb1 : L (2 * i + 1) ≤ L (2 * i + 2) := hmono.monotone (by omega)
+      have := hVk (2 * i + 1); have := hVk (2 * i + 2)
+      omega
+  · by_cases hyB : y ∈ Set.range f
+    · obtain ⟨j, hjy⟩ := hyB
+      simp only [hfdef] at hjy
+      have hp₁ : L (2 * j + 1) - a₂ ∈ A := h₃ (2 * j + 1)
+      have hp₂ : L (2 * j + 2) - L (2 * j + 1) + e ∈ A :=
+        h₂ (2 * j + 1) (2 * j + 2) (by omega)
+      refine ⟨_, hp₁, _, hp₂, x, hx,
+        hoddB (2 * j + 1) a₂ (by omega) ⟨j, by omega⟩,
+        hgapB (2 * j + 2) (2 * j + 1) (by omega), hxB, ?_⟩
+      have hb1 : L (2 * j + 1) ≤ L (2 * j + 2) := hmono.monotone (by omega)
+      have := hVk (2 * j + 1); have := hVk (2 * j + 2)
+      omega
+    · exact ⟨x, hx, y, hy, 0, h0, hxB, hyB, h0B, by omega⟩
+
 end Erdos881
