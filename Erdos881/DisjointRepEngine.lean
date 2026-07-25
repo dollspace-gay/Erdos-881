@@ -6517,4 +6517,52 @@ theorem hub_server_dichotomy {A B : Set ℕ} {N₀ : ℕ}
       exact ⟨n, hn, H, hinst.1, hinst.2.1, hinst.2.2.1,
         hinst.2.2.2, hbig⟩
 
+/-- Adapter: problem-native ℵ₀-minimality (no infinite deletion
+leaves an exact order-2 tuple basis) implies the elementwise
+minimality the flood machinery consumes. -/
+theorem minimality_elementwise_of_tuple {A : Set ℕ}
+    (hmin : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 2) :
+    ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n := by
+  rintro B hBA hBinf ⟨N₁, hN₁⟩
+  refine hmin B hBA hBinf ⟨N₁, fun n hn => ?_⟩
+  obtain ⟨x, hx, y, hy, hxB, hyB, hxy⟩ := hN₁ n hn
+  refine ⟨![x, y], ?_, by simpa [Fin.sum_univ_two] using hxy⟩
+  intro i
+  match i with
+  | 0 => exact ⟨hx, hxB⟩
+  | 1 => exact ⟨hy, hyB⟩
+
+/-- **THE COUNTEREXAMPLE PORTRAIT, PROBLEM-NATIVE FORM.**  The full
+structure theorem with both hypotheses stated exactly as in Erdős
+881 (k = 2): `A` is ℵ₀-minimal as an exact order-2 tuple basis, and
+no infinite deletion leaves an exact order-3 tuple basis. -/
+theorem counterexample_portrait' {A : Set ℕ} {N₀ : ℕ}
+    [DecidablePred (· ∈ A)]
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hmin : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 2)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∃ S : Finset ℕ, S.Nonempty ∧ (∀ h ∈ S, h ∈ A ∧ 0 < h) ∧
+      ∀ X, ∃ b, b ∈ A ∧ X ≤ b ∧ b ∉ S ∧
+        ∃ m, N₀ ≤ m ∧ ∃ H : Finset ℕ, IsRepHub A m H ∧
+          (∀ h ∈ H, ¬IsRepHub A m (H \ {h})) ∧ H = insert b S) ∧
+    (∃ P₂ P₃ : Finset ℕ, PairFree A N₀ P₂ ∧ RepFree A N₀ P₃ ∧
+      ∃ X, ∀ b ∈ A, X ≤ b →
+        (∃ t, N₀ ≤ t ∧ b ≤ t ∧
+          ∀ x ∈ A, ∀ y ∈ A, x + y = t →
+            x ∈ insert b P₂ ∨ y ∈ insert b P₂) ∧
+        (∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsRepHub A m (insert b P₃))) ∧
+    (∃ C, ∀ N, ∃ m, N ≤ m ∧
+      ((Finset.range (m + 1)).filter
+        (fun x => x ∈ A ∧ (m - x) ∈ A)).card ≤ C) ∧
+    (∀ C N, ∃ v, N ≤ v ∧ C ≤ ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A)).card) :=
+  counterexample_portrait h0 hcov hanchor
+    (minimality_elementwise_of_tuple hmin) hfail
+
 end Erdos881
