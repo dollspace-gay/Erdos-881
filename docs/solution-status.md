@@ -45,6 +45,27 @@ minimality + membership.
   `r₂(n) ≤ 2(log₃ n + 1)`.  Sound quantitative replacement for
   everything the trap was supposed to do.
 
+**THE FLOOD IS UNCONDITIONAL (15:05, the landmark hour)**:
+`rep_flood_of_hfail` — the SAME dodge trick at order 3: hfail
+yields one finite REP-FREE envelope `P` such that EVERY large basis
+element `b` guards a personal order-3 target `m ≥ b` (all
+3-representations through `P ∪ {b}`).  Then, end to end:
+- `rep_flood_minimal_of_hfail`: the rotator survives
+  minimalization (freeness pins it);
+- `rep_flood_pool`: envelope made of pool elements — run in the
+  positive pool, the core is positive (zero sliver closed
+  structurally);
+- `canonical_flood_pos_of_hfail`: NONEMPTY POSITIVE fixed core
+  `S*`, cofinal rotating guardians, minimal hubs EXACTLY
+  `S* ∪ {b}`;
+- `routing_dichotomy_of_hfail`: cofinally, either one fixed core
+  element owns coreps, or the rotating guardian owns its target''s
+  entire order-2 life.
+The configuration the whole campaign assumed as hypothesis is now
+a THEOREM from covering + 0 + anchors.  The stable-core trichotomy
+and V10 remain as complementary structure; the trap vacuities are
+repaired by freeness (junk envelopes are never free).
+
 **THE PAIR FLOOD ARC (15:00, unconditional, the sound trap found)**:
 - `pair_flood_of_hfail`: hfail yields ONE finite pair-free envelope
   `P` such that EVERY large basis element `b` pair-guards a

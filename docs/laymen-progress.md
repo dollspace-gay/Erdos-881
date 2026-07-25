@@ -247,3 +247,33 @@ twenty-five pretenders can survive growing one more ring. Every
 law used in the filter is already verified; what remains is
 proving the problem's rules FORCE the filter — one lemma-shaped
 wall, approached from five verified directions.
+
+## 2026-07-25 afternoon — The master key, and the day the fortress audited itself
+
+Today had two faces.  First, the audit: we discovered that one of
+last night's proudest walls — the "trap tower" — was real stone but
+enclosing no prisoner: its statement could be satisfied by ANY
+keyring, enemy or not.  We proved that emptiness formally (two
+certificate theorems), tore the narrative down honestly, and found
+that the older, humbler machinery had been sound all along.
+
+Then, the master key.  The repaired trap idea — "keep a list of
+locks such that every door still has a key avoiding the list" —
+turned out to work perfectly if one records the list's INNOCENCE
+(its freeness) as part of the theorem.  With that one fix, the
+whole campaign's dreamed-of configuration became a proven fact:
+
+**Any would-be counterexample must appoint, above some height,
+EVERY single one of its keys as a personal guardian of some door,
+and all those guardianships share one fixed, finite, nonempty
+committee (the core S*).**  Every door a guardian protects is
+protected by exactly the committee plus that one rotating guardian
+— nothing more, nothing less.  And each such door leads to one of
+two endgames we can now attack separately: either one committee
+member hands out door-keys forever, or each rotating guardian
+personally owns every pair-key of its own door.
+
+The enemy has been pushed from "could be anything" to "must run a
+rigid committee system we fully understand."  What remains is to
+show the committee system itself collapses — the two endgame
+branches are the last rooms of the maze.
