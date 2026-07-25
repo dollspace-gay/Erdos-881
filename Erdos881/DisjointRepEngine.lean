@@ -2813,4 +2813,43 @@ theorem midwindow_column_bound {A : Set ℕ} [DecidablePred (· ∈ A)]
     rw [htt] at h₁
     exact hne (h₁.unique_owner (hOA a₁ ha₁) (hOA a₂ ha₂) h₂)
 
+/-- **The zero-payment squeeze.**  An owner paying nothing (big
+window empty besides itself) forces its neighbors far away: every
+predecessor is at most half the target, every successor at least the
+target.  Zero-payment owners sit in giant-gap valleys. -/
+theorem zero_payment_squeeze {A : Set ℕ} {a t : ℕ}
+    (hown : OwnsTarget A a t)
+    (hpay : ∀ y ∈ A, 2 * y > t → y < t → y = a) :
+    (∀ y ∈ A, y < a → 2 * y ≤ t) ∧ (∀ y ∈ A, a < y → t ≤ y) := by
+  have h1 : a < t := hown.1
+  have h2 : t < 2 * a := hown.2.1
+  constructor
+  · intro y hy hya
+    by_contra hgt
+    push_neg at hgt
+    have := hpay y hy hgt (by omega)
+    omega
+  · intro y hy hay
+    by_contra hlt
+    push_neg at hlt
+    have := hpay y hy (by omega) hlt
+    omega
+
+/-- **Giant gaps around zero-payment owners.**  Any predecessor and
+successor of a zero-payment owner straddle more than half the owner:
+`a⁺ - a⁻ > a / 2`.  Summed over an octave this caps zero-payment
+owner counts at a constant — covering density then forces payments
+cofinally: the optimization lower bound''s heart. -/
+theorem zero_payment_gap_bound {A : Set ℕ} {a t p q : ℕ}
+    (hown : OwnsTarget A a t)
+    (hpay : ∀ y ∈ A, 2 * y > t → y < t → y = a)
+    (hp : p ∈ A) (hplt : p < a) (hq : q ∈ A) (hqgt : a < q) :
+    2 * (q - p) > a := by
+  obtain ⟨hpred, hsucc⟩ := zero_payment_squeeze hown hpay
+  have h1 := hpred p hp hplt
+  have h2 := hsucc q hq hqgt
+  have h3 : a < t := hown.1
+  have h4 : t < 2 * a := hown.2.1
+  omega
+
 end Erdos881
