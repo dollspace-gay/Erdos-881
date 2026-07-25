@@ -6399,4 +6399,64 @@ theorem guardian_difference_desert {A : Set ℕ} {w₀ a a' : ℕ}
     a + w₀ - a' ∉ A :=
   pair_owner_reflection_desert hall ha' hle hne (by omega)
 
+/-- **Disjoint envelopes: the double duty.**  Removing the first
+stalled envelope from the pool and re-running the dodge yields a
+SECOND envelope disjoint from the first — and every sufficiently
+large element outside the first envelope guards two targets over
+the two disjoint envelopes simultaneously.  The finite level-2
+instance of the simultaneous-duty load; iterates to any level. -/
+theorem pair_flood_two_envelopes {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ E₀ E₁ : Finset ℕ, (∀ h ∈ E₀, h ∈ A ∧ 0 < h) ∧
+      (∀ h ∈ E₁, h ∈ A ∧ 0 < h) ∧
+      (∀ h ∈ E₁, h ∉ E₀) ∧
+      PairFree A N₀ E₀ ∧ PairFree A N₀ E₁ ∧
+      ∃ X, ∀ b ∈ A, X ≤ b → b ∉ E₀ →
+        (∃ t, N₀ ≤ t ∧ b ≤ t ∧
+          ∀ x ∈ A, ∀ y ∈ A, x + y = t →
+            x ∈ insert b E₀ ∨ y ∈ insert b E₀) ∧
+        (∃ t, N₀ ≤ t ∧ b ≤ t ∧
+          ∀ x ∈ A, ∀ y ∈ A, x + y = t →
+            x ∈ insert b E₁ ∨ y ∈ insert b E₁) := by
+  classical
+  have hpos : ∀ X : ℕ, ∃ p ∈ {a | a ∈ A ∧ 0 < a}, X ≤ p := by
+    intro X
+    obtain ⟨a, ha, hXa⟩ := pairCovers_unbounded hcov (max X 1)
+    refine ⟨a, ⟨ha, ?_⟩, le_trans (le_max_left _ _) hXa⟩
+    have := le_trans (le_max_right _ _) hXa
+    omega
+  obtain ⟨E₀, hE₀P, hE₀free, X₀, hf₀⟩ :=
+    pair_flood_pool (P₀ := {a | a ∈ A ∧ 0 < a}) h0 hcov
+      (fun a ha => ha.1) (fun h => by have := h.2; omega) hpos hfail
+  have hpos' : ∀ X : ℕ,
+      ∃ p ∈ {a | a ∈ A ∧ 0 < a ∧ a ∉ E₀}, X ≤ p := by
+    intro X
+    obtain ⟨a, ha, hXa⟩ := pairCovers_unbounded hcov
+      (max (max X 1) ((E₀.sup id) + 1))
+    have h1 : (E₀.sup id) + 1 ≤ a := le_trans (le_max_right _ _) hXa
+    have h2 : 1 ≤ a :=
+      le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hXa
+    refine ⟨a, ⟨ha, by omega, fun haE => ?_⟩,
+      le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hXa⟩
+    have h3 : a ≤ E₀.sup id := Finset.le_sup (f := id) haE
+    omega
+  obtain ⟨E₁, hE₁P, hE₁free, X₁, hf₁⟩ :=
+    pair_flood_pool (P₀ := {a | a ∈ A ∧ 0 < a ∧ a ∉ E₀}) h0 hcov
+      (fun a ha => ha.1) (fun h => by have := h.2.1; omega) hpos'
+      hfail
+  refine ⟨E₀, E₁, fun h hh => hE₀P h hh,
+    fun h hh => ⟨(hE₁P h hh).1, (hE₁P h hh).2.1⟩,
+    fun h hh => (hE₁P h hh).2.2, hE₀free, hE₁free,
+    max (max X₀ X₁) 1, fun b hbA hXb hbE₀ => ?_⟩
+  have hb1 : 0 < b := by
+    have := le_trans (le_max_right _ _) hXb
+    omega
+  constructor
+  · exact hf₀ b ⟨hbA, hb1⟩
+      (le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hXb)
+  · exact hf₁ b ⟨hbA, hb1, hbE₀⟩
+      (le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hXb)
+
 end Erdos881
