@@ -686,4 +686,30 @@ theorem zero_targets_translate_primitives {A : Set ℕ} {N₀ m₁ m₂ p : ℕ}
   have he : m₂ - (m₁ - p) = p + (m₂ - m₁) := by omega
   exact ⟨he ▸ hr, he ▸ hrprim⟩
 
+
+/-- **One primitive amplifies to cofinally many.**  Under a cofinal
+zero residue, a single windowed primitive generates primitives above
+every bound: each pair of fresh zero targets pushes the current
+primitive up by their gap.  Combined with
+`zero_guarded_iff_primitive`, the zero residue plus one primitive
+makes zero fully 2-essential. -/
+theorem cofinal_primitives_of_zero_residue {A : Set ℕ} {N₀ p : ℕ}
+    (hcov : PairCovers A N₀)
+    (hres : ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m)
+    (hp : p ∈ A) (hp0 : 0 < p)
+    (hprim : ¬ ∃ s ∈ A, ∃ t ∈ A, s + t = p ∧ 0 < s ∧ 0 < t) :
+    ∀ K, ∃ q, K ≤ q ∧ q ∈ A ∧ 0 < q ∧
+      ¬ ∃ s ∈ A, ∃ t ∈ A, s + t = q ∧ 0 < s ∧ 0 < t := by
+  intro K
+  induction K with
+  | zero => exact ⟨p, Nat.zero_le _, hp, hp0, hprim⟩
+  | succ K ih =>
+      obtain ⟨q, hKq, hqA, hq0, hqprim⟩ := ih
+      obtain ⟨m₁, hm₁, h1⟩ := hres (q + N₀ + 1)
+      obtain ⟨m₂, hm₂, h2⟩ := hres (m₁ + N₀ + 1)
+      obtain ⟨hmem, hprim'⟩ :=
+        zero_targets_translate_primitives hcov h1 h2 (by omega)
+          hqA hq0 (by omega) (by omega) (by omega) hqprim
+      exact ⟨q + (m₂ - m₁), by omega, hmem, by omega, hprim'⟩
+
 end Erdos881
