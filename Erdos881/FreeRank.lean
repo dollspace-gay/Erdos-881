@@ -2536,4 +2536,32 @@ theorem counterexample_iff_both_trees_wf {A : Set ℕ} {N₀ : ℕ}
       (pairFreeStep_wf_iff_no_hereditarilyPairFree.1 hwf₂),
       (hfail_iff_freeStep_wf h0 hcov).2 hwf₃⟩
 
+/-- The pair tree inherits well-foundedness from the rep tree: it
+is a subrelation (`freeStep_of_pairFreeStep`). -/
+theorem pairFreeStep_wf_of_freeStep_wf {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hwf : WellFounded (FreeStep A N₀)) :
+    WellFounded (PairFreeStep A N₀) :=
+  Subrelation.wf (fun {_ _} h => freeStep_of_pairFreeStep h0 h) hwf
+
+/-- **THE COLLAPSE: one tree decides everything.**  For a covering
+set with `0`, the full counterexample condition — minimality AND
+universal order-3 failure — is equivalent to well-foundedness of
+the rep tree ALONE: the pair tree is a subtree, so minimality
+comes free.  Erdős 881 (k = 2), final form: IS THERE a covering
+set with `0` whose rep-freeness tree is well-founded?  (If no such
+set exists, the answer to the problem is yes.) -/
+theorem counterexample_iff_rep_tree_wf {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) :
+    ((∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) ∧
+    (∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)) ↔
+    WellFounded (FreeStep A N₀) := by
+  rw [counterexample_iff_both_trees_wf h0 hcov]
+  constructor
+  · rintro ⟨-, hwf₃⟩
+    exact hwf₃
+  · intro hwf₃
+    exact ⟨pairFreeStep_wf_of_freeStep_wf h0 hwf₃, hwf₃⟩
+
 end Erdos881
