@@ -310,4 +310,36 @@ theorem stalled_chain_bound {A : Set ℕ} {N₀ X : ℕ}
       exact hinj i j hi' hj' heq')
   simpa using hcard
 
+/-- **The flood is a stalled node.**  The positive-pool rep flood
+hands the freeness tree an explicit stalled node: its envelope is
+free with positive basis elements, and every large positive element
+completes a hub over it, killing the extension.  Together with
+`stalled_chain_bound` and `exists_strict_rank`: a counterexample's
+freeness tree contains a hereditarily-trapped, finite-depth zone,
+and the flood's guardians patrol its boundary. -/
+theorem stalled_exists_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ X P, Stalled A N₀ X P := by
+  classical
+  have hunb : ∀ X : ℕ, ∃ p ∈ {a | a ∈ A ∧ 0 < a}, X ≤ p := by
+    intro X
+    obtain ⟨a, ha, hXa⟩ := pairCovers_unbounded hcov (max X 1)
+    refine ⟨a, ⟨ha, ?_⟩, le_trans (le_max_left _ _) hXa⟩
+    have := le_trans (le_max_right _ _) hXa
+    omega
+  obtain ⟨P, hPpos, hPfree, X, hstall⟩ :=
+    rep_flood_pool (P₀ := {a | a ∈ A ∧ 0 < a}) h0 hcov
+      (fun a ha => ha.1) (fun h => by have := h.2; omega) hunb hfail
+  refine ⟨X, P, ⟨fun h hh => ⟨(hPpos h hh).1, (hPpos h hh).2⟩,
+    hPfree⟩, ?_⟩
+  intro b hbA hbpos hXb hfree
+  obtain ⟨m, hmN, hbm, hhub⟩ := hstall b ⟨hbA, hbpos⟩ hXb
+  obtain ⟨x, hx, y, hy, z, hz, hsum, hxP, hyP, hzP⟩ := hfree m hmN
+  rcases hhub x hx y hy z hz hsum with h | h | h
+  · exact hxP h
+  · exact hyP h
+  · exact hzP h
+
 end Erdos881
