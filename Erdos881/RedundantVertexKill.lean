@@ -433,4 +433,28 @@ theorem escape_vertex_witness {A : Set ℕ} {N₀ u : ℕ}
     · exact Or.inl h
     · exact Or.inr (by omega)
 
+/-- **The final conditional theorem.**  Modulo the three remaining
+open interfaces — cofinal pair funnels (Link A), no infinite clique of
+self-scale 2-guardians (Link B1, the Grekos configuration), and no
+cofinal zero-guardianship — plus anchor abundance, every counterexample
+structure admits a surviving infinite deletion: the positive answer to
+Erdős 881 (k = 2). -/
+theorem erdos881_positive_conditional {A : Set ℕ} {N₀ : ℕ}
+    (hA : A.Infinite) (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfunnel : HasCofinalPairFunnels A)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hzero : ¬ ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m)
+    (hB1 : ¬ ∃ L, L ⊆ A ∧ L.Infinite ∧ L.Pairwise (TeamEdge A) ∧
+      ∀ u ∈ L, 0 < u → N₀ ≤ u → ∀ N₁, N₁ ≤ u →
+        ¬ TwoRedundant A u N₁) :
+    ∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n := by
+  rcases erdos881_grand_assembly'' hA h0 hcov hfunnel hanchor with
+    h | h | h
+  · exact h
+  · exact absurd h hzero
+  · exact absurd h hB1
+
 end Erdos881
