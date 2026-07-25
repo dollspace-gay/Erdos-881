@@ -37,3 +37,4 @@ import Erdos881.LevelHubs
 import Erdos881.TwoLevelDestroyers
 import Erdos881.FixedGuardianEndgame
 import Erdos881.RotatingGuardianEndgame
+import Erdos881.CliqueSplice
