@@ -6261,4 +6261,47 @@ theorem shared_rep_target_is_sum3 {A : Set ℕ} {N₀ m b₁ b₂ b₃ : ℕ}
   rcases hp₁ with h1 | h1 | h1 <;> rcases hp₂ with h2 | h2 | h2 <;>
     rcases hp₃ with h3 | h3 | h3 <;> omega
 
+/-- **WELL-FOUNDEDNESS OF FREENESS.**  Against a counterexample, NO
+infinite increasing positive sequence in `A` keeps all its finite
+prefixes rep-free: freeness must die at some finite stage along
+every branch.  This is the tree the ordinal-rank program climbs:
+the rep-free finite subsets of `A`, ordered by end-extension, form
+a well-founded tree whose every leaf hands a guardian its personal
+hub (the stall).  The dodge theorems are the traversal; this is the
+tree itself. -/
+theorem free_prefixes_die_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (b : ℕ → ℕ) (hmono : StrictMono b)
+    (hbA : ∀ j, b j ∈ A) (hbpos : ∀ j, 0 < b j) :
+    ¬∀ J, RepFree A N₀ ((Finset.range J).image b) := by
+  intro hfree
+  classical
+  set B : Set ℕ := Set.range b with hB
+  have hBA : B ⊆ A := by
+    rintro x ⟨j, rfl⟩
+    exact hbA j
+  have hBinf : B.Infinite :=
+    Set.infinite_range_of_injective hmono.injective
+  have hidx : ∀ j, j ≤ b j := fun j => hmono.le_apply
+  refine hfail B hBA hBinf ⟨N₀, fun m hm => ?_⟩
+  obtain ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩ :=
+    hfree (m + 1) m hm
+  have havoid : ∀ w, w ≤ m →
+      w ∉ (Finset.range (m + 1)).image b → w ∉ B := by
+    intro w hwm hwP
+    rintro ⟨i, hi⟩
+    rcases Nat.lt_or_ge i (m + 1) with h' | h'
+    · exact hwP (Finset.mem_image.2 ⟨i, Finset.mem_range.2 h', hi⟩)
+    · have h1 := hidx i
+      have h2 : (fun j => b j) i = w := hi
+      omega
+  refine ⟨![x, y, z], ?_, by simp [Fin.sum_univ_three]; omega⟩
+  intro i
+  match i with
+  | 0 => exact ⟨hx, havoid x (by omega) hxP⟩
+  | 1 => exact ⟨hy, havoid y (by omega) hyP⟩
+  | 2 => exact ⟨hz, havoid z (by omega) hzP⟩
+
 end Erdos881
