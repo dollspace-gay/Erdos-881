@@ -2178,4 +2178,27 @@ theorem cofinal_bounded_pairHubs_of_minimality_pool {A P : Set ℕ}
   obtain ⟨H, hHcard, hHhub⟩ := pairHub_of_no_disjointPairReps hno
   exact ⟨n, hn, H, hHcard, hHhub⟩
 
+/-- **The level-descent API, complete.**  Pool-restricted minimality
+yields a stable canonical core: applied with `P` = the
+predecessor-free part of the previous level, this is the next
+level''s fixed guardian team, whose tight-pair difference is the next
+modulus.  Iterating descends the digit tower rung by rung. -/
+theorem stable_pair_core_of_minimality_pool {A P : Set ℕ}
+    (hPA : P ⊆ A) (hunb : ∀ X, ∃ p ∈ P, X ≤ p)
+    (hmin : ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) :
+    ∃ K, ∃ S : Finset ℕ, ∀ W N, ∃ n, N ≤ n ∧
+      ∃ H : Finset ℕ, H.card ≤ 2 * (K - 1) ∧ IsPairHub A n H ∧
+      S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h := by
+  classical
+  obtain ⟨K, hK⟩ := cofinal_bounded_pairHubs_of_minimality_pool hPA
+    hunb hmin
+  obtain ⟨S, -, hsplit⟩ := stable_core_generic
+    (C := 2 * (K - 1)) (fun n H => IsPairHub A n H)
+    (2 * (K - 1)) ∅ (fun N => by
+      obtain ⟨n, hn, H, hcard, hhub⟩ := hK N
+      exact ⟨n, hn, H, hcard, hhub, Finset.empty_subset _,
+        by simpa using hcard⟩)
+  exact ⟨K, S, hsplit⟩
+
 end Erdos881
