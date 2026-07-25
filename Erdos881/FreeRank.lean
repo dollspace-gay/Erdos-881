@@ -1927,4 +1927,69 @@ theorem root_omega_dichotomy {A : Set ℕ} {N₀ : ℕ}
     have h1 : (hwf.apply C).rank < Ordinal.omega0 := hwide C hC
     exact Order.succ_le_of_lt h1
   
+/-- The node-level ω-dichotomy: same as at the root. -/
+theorem node_omega_dichotomy {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {P₀ : Set ℕ} (R : Finset ℕ)
+    (hR : Ordinal.omega0 ≤
+      ((poolFreeStep_wf h0 hcov hfail P₀).apply R).rank) :
+    (∃ C : Finset ℕ, PoolFreeStep A N₀ P₀ C R ∧
+      Ordinal.omega0 ≤
+        ((poolFreeStep_wf h0 hcov hfail P₀).apply C).rank) ∨
+    ((poolFreeStep_wf h0 hcov hfail P₀).apply R).rank =
+      Ordinal.omega0 := by
+  classical
+  set hwf := poolFreeStep_wf h0 hcov hfail P₀ with hhwf
+  by_cases hwide : ∃ C : Finset ℕ, PoolFreeStep A N₀ P₀ C R ∧
+      Ordinal.omega0 ≤ (hwf.apply C).rank
+  · exact Or.inl hwide
+  · right
+    push_neg at hwide
+    apply le_antisymm _ hR
+    rw [Acc.rank_eq]
+    apply Ordinal.iSup_le
+    rintro ⟨C, hC⟩
+    exact Order.succ_le_of_lt (hwide C hC)
+
+/-- **THE ω-NODE EXISTS.**  Every infinite-rank pool tree contains
+a node of rank EXACTLY `ω`: descend along wide children (each step
+strictly decreases the rank, so the descent halts), and where it
+halts the node dichotomy pins the rank at the first limit.  The
+ω-node is the boundary where the infinite-rank room meets the
+finite-rank (crystal) regime: all its extensions have finite,
+unbounded freedom. -/
+theorem omega_node_exists {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {P₀ : Set ℕ}
+    (hroot : Ordinal.omega0 ≤
+      ((poolFreeStep_wf h0 hcov hfail P₀).apply ∅).rank) :
+    ∃ R : Finset ℕ,
+      ((poolFreeStep_wf h0 hcov hfail P₀).apply R).rank =
+        Ordinal.omega0 := by
+  classical
+  set hwf := poolFreeStep_wf h0 hcov hfail P₀ with hhwf
+  set S : Set Ordinal.{0} :=
+    {o | ∃ R : Finset ℕ, (hwf.apply R).rank = o ∧
+      Ordinal.omega0 ≤ o} with hS
+  have hSne : S.Nonempty :=
+    ⟨(hwf.apply ∅).rank, ∅, rfl, hroot⟩
+  obtain ⟨R₀, hR₀rank, hR₀ge⟩ := Ordinal.lt_wf.min_mem S hSne
+  rcases node_omega_dichotomy h0 hcov hfail R₀
+    (by rw [hR₀rank]; exact hR₀ge) with ⟨C, hC, hCge⟩ | heq
+  · exfalso
+    have hmemC : (hwf.apply C).rank ∈ S := ⟨C, rfl, hCge⟩
+    have hlt : (hwf.apply C).rank <
+        Ordinal.lt_wf.min S ⟨_, hmemC⟩ := by
+      have h1 : Ordinal.lt_wf.min S ⟨_, hmemC⟩ =
+          Ordinal.lt_wf.min S hSne := by
+        congr 1
+      rw [h1, ← hR₀rank]
+      exact Acc.rank_lt_of_rel _ hC
+    exact Ordinal.lt_wf.not_lt_min S hmemC hlt
+  · exact ⟨R₀, heq⟩
+
 end Erdos881
