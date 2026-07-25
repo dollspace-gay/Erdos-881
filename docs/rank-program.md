@@ -106,3 +106,45 @@ multiplicity under a fixed deletion.  It is a concrete dichotomy
 both of whose branches are usable.
 (c) Only then evaluate whether any rank closes; do not repeat the
 twelve dead kill-routes (list in v11-battle-plan memory).
+
+## SESSION II SYNTHESIS (2026-07-25 evening): the frontier, exactly
+
+Everything below is verified except where marked OPEN.
+
+**The complete verified landscape.**  Streams classify (both
+orders, hypothesis-free) into wide / total-guardian / crystal;
+under the interfaces, order-3 total-guardianship dies, leaving per
+pool: infinite rank or crystals.  Infinite-rank pools contain a
+canonical ω-node (graded, with a diagonal of unboundedly free
+extensions); crystals are rank-exact, rank-stable, (d+1)-uniform,
+Sidon-targeted, fully dominated, with ≤3-pinned sharing.  Stalled
+nodes are finitely ranked in every pool at once; narrowing elements
+exist wherever rank is infinite.  One rank-dropping pool operation
+would finish the problem (`no_pool_rank_descent`).
+
+**The saturation lever** (`Saturated`, `saturated_mem_add`,
+`saturated_count_bound`, `failing_fan_saturated`): failing targets
+force √m-sized fans into the additively thin set Sat(B) ⊆ B + A.
+At a single target this recovers the fan blowup (factor-|H| slack;
+no contradiction).  The genuinely OPEN needle:
+
+**The multi-target energy question.**  Distinct failing targets
+m ≠ m′ of one deletion have fans that are shifted copies m − A,
+m′ − A of the same set; forcing them into one thin Sat(B) requires
+either near-disjoint placement (consuming the |Sat| budget at rate
+√Y per target) or heavy fan overlap (requiring m − m′ ∈ A − A with
+high multiplicity — additive energy the near-Sidon enemy lacks).
+Cofinality alone demands only ~log Y failing targets below Y, which
+fits the budget; no verified statement yet FORCES failure density.
+Candidate forcing devices: aggregating over many deletions (the
+union-deletion trichotomy pins straddling teams to shared targets);
+the rep flood's per-element targets m_b (every large b, so ≥ |A|
+targets — but these need not fail under any given B).  Closing the
+gap between "cofinally many failures" and "densely many failures",
+or showing the energy bound bites at density log, is the cleanest
+route to the full solution currently visible.
+
+**Alternative routes still open**: the rank-drop operation at the
+ω-boundary (grade filtration + diagonal deletion, staged); the
+relative theory above finite-rank extensions; Nash-Williams
+barriers over the arity-general Ramsey (now fully available).
