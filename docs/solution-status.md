@@ -1,5 +1,7 @@
 # Erdős 881 (k=2) — Campaign State
-_Last full update: 2026-07-25 14:45 (the sound-trichotomy audit)_
+_Last full update: 2026-07-25 17:40.  Lean entry point for the
+final statements: `Erdos881/Endgame.lean` (the portrait, the
+reduction, the two rooms, the universal classifications)._
 
 ## CURRENT STATE, ONE SCREEN
 
