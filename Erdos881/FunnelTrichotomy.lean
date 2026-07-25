@@ -820,4 +820,27 @@ theorem sumfree_element_triple {A : Set ℕ} {N₀ n x : ℕ}
     exact ⟨s, hs, t, ht, hs0, ht0, by omega⟩
   · omega
 
+
+/-- **THE ZERO RESIDUE IS DOUBLING-STARVED.**  Sum-freeness forbids
+`c` and `2c` coexisting in `A⁺`: the pair `c + c` would be a positive
+representation of the element `2c`.  Doubling supply therefore
+refutes cofinal zero-guardianship outright. -/
+theorem zero_residue_no_doubling {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hres : ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m) :
+    ¬ ∃ c, c ∈ A ∧ 2 * c ∈ A ∧ 0 < c := by
+  rintro ⟨c, hc, h2c, hc0⟩
+  exact zero_residue_sum_free hcov hres (2 * c) h2c (by omega)
+    ⟨c, hc, c, hc, by omega, hc0, hc0⟩
+
+/-- Doubling supply kills the zero residue. -/
+theorem not_zero_residue_of_doubling {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hdb : {c | c ∈ A ∧ 2 * c ∈ A ∧ 0 < c}.Infinite) :
+    ¬ ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m := by
+  intro hres
+  obtain ⟨c, hcmem, -⟩ := hdb.exists_gt 0
+  exact zero_residue_no_doubling hcov hres
+    ⟨c, hcmem.1, hcmem.2.1, hcmem.2.2⟩
+
 end Erdos881
