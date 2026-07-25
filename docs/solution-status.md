@@ -1,5 +1,5 @@
 # Erdős 881 (k=2) — Campaign State
-_Last full update: 2026-07-25 04:00 (the 12-hour session)_
+_Last full update: 2026-07-25 14:45 (the sound-trichotomy audit)_
 
 ## CURRENT STATE, ONE SCREEN
 
@@ -7,31 +7,48 @@ _Last full update: 2026-07-25 04:00 (the 12-hour session)_
 subset whose deletion leaves an order-3 basis? The campaign mines a
 hypothetical counterexample for contradictions.
 
-**Verified tonight (~70 theorems, zero sorries, standard axioms)**:
-- The Cantor instance: a concrete minimal order-2 basis satisfying
-  the conclusion (carry-repair), with THE FIXED POINT
-  co-C = Sieve(C) proven as one iff.
-- The canonical enemy: from raw hypotheses, every counterexample
-  has canonical hub structure at both orders (two rails), a stable
-  guardian core, canonical cardinality, the P/D digit-split with
-  bipartite service, the payment theorems (no scale is
-  payment-free), and the per-deletion capstone (prefix guardians
-  or stream-killed singletons).
-- The forest/tower theory: ownership calculus, star/edge/sieve
-  exclusion laws, block domination, base-3 as the moat's own
-  constant, corrected covering (the recursion's inheritance), the
-  pool-restricted engine (moduli by descent).
+**THE 14:35 AUDIT (major, honest, formalized)**: the dodge/trap
+block (`dodge_or_trap`, `trap_level`, `trap_tower`, and the tower
+branch of `grand_dichotomy`) is TRUE BUT VACUOUS — its conclusions
+are satisfiable without `hfail`.  Two in-repo certificates prove
+this: `trap_conclusion_trivial` (junk envelope `A ∩ [0,N0]`) and
+`tower_branch_trivial` (interval escape: every rep of `n ≥ 3Y`
+carries a part `≥ Y`).  Nothing built ON those statements survives
+as content EXCEPT the minimality-guarded flood branch.  Do not
+build on the bare trap shape; content requires card bounds +
+minimality + membership.
 
-**The single remaining wall**: rails ⟹ universal doubling
-rigidity (the dodge-vs-richness dichotomy), then rigidity's local
-determination (lab: rigidity collapses the alternate space 16,861
-→ 26; rigid radius-2 sweep pending), then the verified
-carry-repair closes.
+**THE SOUND SPINE (all verified, standard axioms)**:
+- `cofinal_bounded_hubs_of_hfail` (V10): cofinal targets with
+  card-bounded hubs — real, since fat junk hubs are excluded by the
+  card bound.
+- `stable_core_card_of_hfail` / `hub_endgame_of_hfail`: exact
+  recurring card `c ≥ 2`, stable core `S ⊆ H`, rest arbitrarily
+  high, cofinally.
+- **`stable_core_trichotomy` (NEW)**: every counterexample is
+  (T) TIGHT TEAM `c = |S|`: one fixed team of size ≥ 2 hubs
+  cofinal targets (pipeline entry at card 2);
+  (F) THE FLOOD `c = |S|+1`: canonical nonempty fixed core `S*`
+  with cofinal minimal hubs EXACTLY `S* ∪ {a}`, rotating guardian
+  (`flood_of_singleton_rotator` + `flood_canonical`; empty core
+  dies by the stream kill);
+  (R) MULTI-ROTATION `c ≥ |S|+2`: exact-card hubs with ≥ 2
+  arbitrarily high members over the fixed core.
+- **The pair shadow (NEW)**: a 0-free hub is a transversal of the
+  target's order-2 reps (`pair_shadow_of_hub`), so flood targets
+  are essentially-Sidon: `r₂(n) ≤ 2(|S*|+1)` cofinally
+  (`flood_pair_shadow`), with the routing dichotomy
+  (`flood_routing_dichotomy`): a recurring fixed-core corep, or the
+  rotating guardian owns its target's entire order-2 life.
+- **The log wall (NEW, unconditional)**: `log_sidon_of_hfail` — a
+  geometric deletion forces cofinal targets with
+  `r₂(n) ≤ 2(log₃ n + 1)`.  Sound quantitative replacement for
+  everything the trap was supposed to do.
 
-**Dead routes (proven/measured, do not revisit)**: image-only
-matching (parity/Behrend dodges), pure counting telescopes (co-A
-reuse), single-window kernels (enumerated), local determination
-without rigidity (three ways).
+**Open frontier**: kill or constrain each trichotomy branch.
+(T): recurring destroyer pair at card 2, unkilled beyond.
+(F): two routing regimes to kill; 0 ∈ S* sliver.
+(R): fresh branch, pair shadow applies when 0 ∉ S.
 
 ---
 
