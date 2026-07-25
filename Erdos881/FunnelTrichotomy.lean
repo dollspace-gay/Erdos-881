@@ -748,4 +748,32 @@ theorem zero_residue_sum_free {A : Set ℕ} {N₀ : ℕ}
   exact zero_target_window_primitive hcov hpriv ha ha0 (by omega)
     (by omega)
 
+
+/-- **The zero residue partitions the integers exactly.**  Sum-freeness
+plus covering: from `N₀` on, the elements of `A` are exactly the
+numbers with no positive pair representation — `A⁺ + A⁺` is precisely
+the complement of `A`.  The residue's base is an exact
+complement-partition structure (Beatty/modular skeletons). -/
+theorem zero_residue_exact_partition {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hres : ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m) :
+    ∀ n, N₀ ≤ n →
+      (n ∈ A ↔ ¬ ∃ s ∈ A, ∃ t ∈ A, s + t = n ∧ 0 < s ∧ 0 < t) := by
+  intro n hn
+  constructor
+  · intro hnA
+    rcases Nat.eq_zero_or_pos n with hn0 | hn0
+    · rintro ⟨s, hs, t, ht, hst, hs0, ht0⟩
+      omega
+    · exact zero_residue_sum_free hcov hres n hnA hn0
+  · intro hnorep
+    obtain ⟨y, hy, z, hz, hyz⟩ := hcov n hn
+    rcases Nat.eq_zero_or_pos y with hy0 | hy0
+    · have : z = n := by omega
+      exact this ▸ hz
+    · rcases Nat.eq_zero_or_pos z with hz0 | hz0
+      · have : y = n := by omega
+        exact this ▸ hy
+      · exact absurd ⟨y, hy, z, hz, hyz, hy0, hz0⟩ hnorep
+
 end Erdos881
