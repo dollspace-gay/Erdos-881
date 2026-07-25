@@ -108,7 +108,26 @@ clique of ineligible vertices (all 2-essential, or all below `N₀`)
 escapes vacuously — B1 covers the essential case; small vertices are
 finitely many.
 
-## The sharpest capstone
+## THE CAPSTONE: THREE INTERFACES (seventh form)
+
+`erdos881_interfaces_refute_counterexample₇` (`Capstone.lean`).  The
+zero residue is **derived away**: cofinal zero-guardianship forces
+`A⁺` sum-free (`zero_residue_sum_free`), sum-freeness forbids
+doubling elements, and doubling supply is already an interface — so
+the residue refutes itself (`not_zero_residue_of_doubling`).  Along
+the way the residue's full structure was verified: exact partition
+`A⁺+A⁺ = co-A`, automatic ℵ₀-minimality, guaranteed positive triples,
+primitive translation ladders.
+
+**The three remaining interfaces:**
+1. **Link A** — no cofinal diffuse destruction (`hnodiffuse`);
+2. **Link B1** — no infinite clique of vertices each primitive, or
+   fully 2-essential and anchor-starved-or-W-aligned;
+3. **Supply** — infinitely many doubling elements plus one nonzero
+   unbalanced package (near-trivial; fails only for globally
+   sum-free-at-doubles structures).
+
+## The earlier sharpest capstone
 
 `erdos881_interfaces_refute_counterexample'` (`Capstone.lean`) +
 `erdos881_grand_assembly₄` (`NonEssentialKill.lean`): with **doubling
