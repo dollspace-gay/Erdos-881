@@ -439,3 +439,17 @@ next session: the multi-marker (log-budget) service analysis — the
 dominant-marker candidate fix (geometric gaps make the nearest
 marker dominate the translate scale) may rescue the chain nearly
 verbatim.
+
+## The problem's core, in final form (2026-07-25 01:50)
+
+After the night's full excavation: Erdős 881 (k=2)'s difficulty is
+exactly the CONSTANT-vs-LOG hub gap. Unconditionally verified:
+every counterexample has cofinal constant-size rep-hubs (canonical
+tree, B-independent), and per every geometric deletion B its
+failing targets carry O(log)-size B-relative hubs (injection
+lemma). The refutation machinery (towers, stable cores,
+pigeonholes) runs on constants; the per-deletion failures only
+guarantee logs. Every sound total-repair engine and every
+structural forcing built tonight lives on one side of this gap;
+the enemy lives in the sliver between. Routes recorded: bootstrap
+hub-shrinking, slow-deletion diagonalization, log-budget Ramsey.
