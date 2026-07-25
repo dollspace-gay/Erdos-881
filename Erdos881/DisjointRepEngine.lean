@@ -7513,4 +7513,80 @@ theorem three_columns_per_clique_target {A : Set ℕ} {N₀ n u v : ℕ}
     · exact absurd h1 hzuv'.2
     · exact Or.inr (Or.inr h1.symm)
 
+/-- **THE UNION-DELETION TRICHOTOMY.**  Splitting a deletion in two
+forces the enemy's hand cofinally: minimal team hubs against the
+union either concentrate inside the first piece, concentrate inside
+the second, or genuinely straddle both — and a straddling minimal
+hub makes members of BOTH pieces necessary at one shared target.
+The first verified device that pins two chosen structures to a
+single target. -/
+theorem union_deletion_trichotomy {A B₁ B₂ : Set ℕ} {N₀ : ℕ}
+    [DecidablePred (· ∈ B₁)] [DecidablePred (· ∈ B₂)]
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (h1A : B₁ ⊆ A) (h2A : B₂ ⊆ A) (h1inf : B₁.Infinite)
+    (h01 : 0 ∉ B₁) (h02 : 0 ∉ B₂) :
+    (∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      2 ≤ H.card ∧ (∀ h ∈ H, h ∈ B₁)) ∨
+    (∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      2 ≤ H.card ∧ (∀ h ∈ H, h ∈ B₂)) ∨
+    (∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      2 ≤ H.card ∧ (∀ h ∈ H, h ∈ B₁ ∪ B₂) ∧
+      (∃ h ∈ H, h ∈ B₁) ∧ ∃ h ∈ H, h ∈ B₂) := by
+  classical
+  have hUA : B₁ ∪ B₂ ⊆ A := Set.union_subset h1A h2A
+  have hUinf : (B₁ ∪ B₂).Infinite := h1inf.mono Set.subset_union_left
+  have h0U : 0 ∉ B₁ ∪ B₂ := by
+    intro h
+    rcases h with h | h
+    · exact h01 h
+    · exact h02 h
+  have hteams := guardian_team_hubs_of_deletion h0 hcov hanchor
+    hfail hUA hUinf h0U
+  -- three-way cofinal pigeonhole on the hub's piece profile
+  by_cases hc1 : ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      2 ≤ H.card ∧ ∀ h ∈ H, h ∈ B₁
+  · exact Or.inl hc1
+  by_cases hc2 : ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      2 ≤ H.card ∧ ∀ h ∈ H, h ∈ B₂
+  · exact Or.inr (Or.inl hc2)
+  · refine Or.inr (Or.inr ?_)
+    push_neg at hc1 hc2
+    obtain ⟨N₁, hN₁⟩ := hc1
+    obtain ⟨N₂, hN₂⟩ := hc2
+    intro N
+    obtain ⟨n, hn, H, hhub, hmin, hcard, hHU⟩ :=
+      hteams (max N (max N₁ N₂))
+    refine ⟨n, le_trans (le_max_left _ _) hn, H, hhub, hmin,
+      hcard, hHU, ?_, ?_⟩
+    · -- some member in B₁: else all in B₂, contradicting hc2
+      by_contra hno1
+      push_neg at hno1
+      have hall2 : ∀ h ∈ H, h ∈ B₂ := by
+        intro h hh
+        rcases hHU h hh with h' | h'
+        · exact absurd h' (hno1 h hh)
+        · exact h'
+      obtain ⟨h, hh, hhB⟩ := hN₂ n (le_trans (le_trans
+        (le_max_right _ _) (le_max_right _ _)) hn) H hhub hmin hcard
+      exact hhB (hall2 h hh)
+    · by_contra hno2
+      push_neg at hno2
+      have hall1 : ∀ h ∈ H, h ∈ B₁ := by
+        intro h hh
+        rcases hHU h hh with h' | h'
+        · exact h'
+        · exact absurd h' (hno2 h hh)
+      obtain ⟨h, hh, hhB⟩ := hN₁ n (le_trans (le_trans
+        (le_max_left _ _) (le_max_right _ _)) hn) H hhub hmin hcard
+      exact hhB (hall1 h hh)
+
 end Erdos881
