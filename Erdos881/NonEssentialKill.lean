@@ -1079,4 +1079,29 @@ theorem anchor_fork_forced {A : Set ℕ} {N₀ u v m c : ℕ}
       (fun hmem => witness_level_translate_exit hwit hcL hLuc hc0
         hucA hmem)
 
+
+/-- **The cross-edge catch.**  A `u`-forced point (from
+`anchor_fork_forced`) landing in the desert of a partners' edge
+`(v₁, v₂)` is contradictory: the forced translate collides with the
+partner desert.  The W-aligned clique's targets must dodge windows
+around every forced point of every lower vertex. -/
+theorem cross_edge_catch {A : Set ℕ} {N₀ u v₁ v₂ m₂ m' c : ℕ}
+    (hcov : PairCovers A N₀)
+    (hdes₂ : IsPairDestroyer A u v₂ m₂)
+    (hwit : ∀ y ∈ A, ∀ z ∈ A, y + z = u + (m₂ - v₂) → y = u ∨ z = u)
+    (hdes' : IsPairDestroyer A v₁ v₂ m')
+    (hcA : c ∈ A) (hucA : u + c ∈ A)
+    (hc0 : 0 < c) (hcu : c ≠ u) (hcv : c ≠ v₂)
+    (hcm : c + N₀ ≤ m₂) (hcL : c ≤ m₂ - v₂) (hLuc : m₂ - v₂ ≠ u + c)
+    (hv₂m : v₂ ≤ m₂)
+    (hv₁0 : 0 < v₁) (hv₁₂ : v₁ < v₂)
+    (hpv₁ : v₁ < m₂ - u - c) (hpv₂ : m₂ - u - c ≠ v₂)
+    (hlow : m' < v₁ + (m₂ - u - c))
+    (hhigh : (m₂ - u - c) + N₀ ≤ m') :
+    False := by
+  have hp := anchor_fork_forced hcov hdes₂ hwit hcA hucA hc0 hcu hcv
+    hcm hcL hLuc hv₂m
+  have h := hdes'.desert hcov hv₁0 hv₁₂ hp hlow hhigh
+  omega
+
 end Erdos881
