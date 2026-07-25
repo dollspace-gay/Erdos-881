@@ -880,4 +880,182 @@ theorem escalation_rank_certificate {A : Set ℕ} {N₀ : ℕ}
     rw [hScard] at this
     exact_mod_cast this
 
+/-- **The clique descent.**  Along any stream whose `(d+1)`-subsets
+are all non-free, Ramsey at arity `d` either yields a subsequence
+with ALL `d`-subsets free — a perfect clique world at level `d` —
+or pushes the freeness level down and recurses; the level-1 floor
+is barred by the private-stream kill.  Some perfect level
+`1 ≤ d' ≤ d` always exists. -/
+theorem clique_descent {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∀ (d : ℕ) (e : ℕ → ℕ), 1 ≤ d → StrictMono e →
+    (∀ j, e j ∈ A) → (∀ j, 0 < e j) →
+    (∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e i = h) → S.card = d + 1 →
+      ¬RepFree A N₀ S) →
+    ∃ (d' : ℕ) (f : ℕ → ℕ), 1 ≤ d' ∧ d' ≤ d ∧ StrictMono f ∧
+      (∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e (f i) = h) → S.card = d' →
+        RepFree A N₀ S) ∧
+      (∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e (f i) = h) →
+        S.card = d' + 1 → ¬RepFree A N₀ S) := by
+  classical
+  intro d
+  induction d using Nat.strong_induction_on with
+  | _ d ihd =>
+    intro e hd1 hemono heA hepos hnonfree
+    obtain ⟨r, rfl⟩ : ∃ r, d = r + 1 := ⟨d - 1, by omega⟩
+    set c : (Fin (r + 1) → ℕ) → Bool := fun t =>
+      if RepFree A N₀ (Finset.univ.image (fun i => e (t i)))
+      then true else false with hc
+    have hciff : ∀ t : Fin (r + 1) → ℕ, c t = true ↔
+        RepFree A N₀ (Finset.univ.image (fun i => e (t i))) := by
+      intro t
+      by_cases h : RepFree A N₀
+        (Finset.univ.image (fun i => e (t i)))
+      · simp [hc, h]
+      · simp [hc, h]
+    obtain ⟨f₁, hf₁, bt, hhom⟩ := infinite_ramsey_tuples r c
+    rcases Bool.eq_false_or_eq_true bt with hbt | hbt
+    · -- all (r+1)-subsets of the refined stream are free: perfect
+      subst hbt
+      refine ⟨r + 1, f₁, by omega, le_refl _, hf₁, ?_, ?_⟩
+      · intro S hSmem hScard
+        obtain ⟨u, humono, huim⟩ := sorted_indices_of_card
+          (fun i j hij => hemono (hf₁ hij)) hScard hSmem
+        have h1 := hhom u humono
+        rw [hciff] at h1
+        have h2 : (Finset.univ.image fun i => e (f₁ (u i))) = S :=
+          huim
+        rw [h2] at h1
+        exact h1
+      · intro S hSmem hScard
+        refine hnonfree S ?_ hScard
+        intro h hh
+        obtain ⟨i, hi⟩ := hSmem h hh
+        exact ⟨f₁ i, hi⟩
+    · -- all (r+1)-subsets of the refined stream are non-free
+      subst hbt
+      have hallnonfree : ∀ S : Finset ℕ,
+          (∀ h ∈ S, ∃ i, e (f₁ i) = h) → S.card = r + 1 →
+          ¬RepFree A N₀ S := by
+        intro S hSmem hScard hfree
+        obtain ⟨u, humono, huim⟩ := sorted_indices_of_card
+          (fun i j hij => hemono (hf₁ hij)) hScard hSmem
+        have h1 := hhom u humono
+        have h2 : c (fun i => f₁ (u i)) = true := by
+          rw [hciff]
+          have h3 : (Finset.univ.image fun i => e (f₁ (u i))) = S :=
+            huim
+          rw [h3]
+          exact hfree
+        rw [h1] at h2
+        exact Bool.false_ne_true h2
+      rcases Nat.lt_or_ge r 1 with hr0 | hr1
+      · -- r = 0: every refined singleton is non-free: stream kill
+        exfalso
+        have hr0' : r = 0 := by omega
+        subst hr0'
+        refine singleton_hubs_refuted h0 hcov hanchor hfail ?_
+        intro N
+        set v := e (f₁ N) with hv
+        have hvpos : 0 < v := hepos _
+        have hnf : ¬RepFree A N₀ {v} := by
+          refine hallnonfree {v} ?_ (Finset.card_singleton v)
+          intro h hh
+          exact ⟨N, by rw [Finset.mem_singleton.1 hh]⟩
+        rw [repFree_iff_no_hub, not_not] at hnf
+        obtain ⟨m, hm, hhub⟩ := hnf
+        obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
+        have hvm : v ≤ m := by
+          rcases hhub x hx y hy 0 h0 (by omega) with h | h | h
+          · have := Finset.mem_singleton.1 h
+            omega
+          · have := Finset.mem_singleton.1 h
+            omega
+          · have := Finset.mem_singleton.1 h
+            omega
+        have hNv : N ≤ v := by
+          have h1 : N ≤ f₁ N := hf₁.le_apply
+          have h2 : f₁ N ≤ e (f₁ N) := hemono.le_apply
+          omega
+        exact ⟨m, by omega, v, hvpos, hhub⟩
+      · -- recurse one level down on the refined stream
+        obtain ⟨d', f₂, hd'1, hd'le, hf₂, hfree', hnonfree'⟩ :=
+          ihd r (by omega) (fun i => e (f₁ i)) hr1
+            (fun i j hij => hemono (hf₁ hij))
+            (fun j => heA _) (fun j => hepos _)
+            (by
+              intro S hSmem hScard
+              exact hallnonfree S hSmem (by omega))
+        refine ⟨d', f₁ ∘ f₂, hd'1, by omega, hf₁.comp hf₂, ?_, ?_⟩
+        · intro S hSmem hScard
+          exact hfree' S hSmem hScard
+        · intro S hSmem hScard
+          exact hnonfree' S hSmem hScard
+
+/-- **LOW RANK FORCES A PERFECT CLIQUE WORLD.**  If a stream's pool
+tree has finite root rank, some subsequence and level `d ≥ 1`
+realize the perfect configuration: every `d`-subset is free and
+every `(d+1)`-subset is a full hub of some late target.  With the
+reduction (`no_pool_rank_descent`) this completes the block's
+trichotomy: a counterexample's pools are either infinite-rank or
+perfect clique worlds — and the descent to the perfect world is
+itself the rank analysis the program called for. -/
+theorem rank_lt_omega_perfect_clique {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (b : ℕ → ℕ) (hbmono : StrictMono b)
+    (hbA : ∀ j, b j ∈ A) (hbpos : ∀ j, 0 < b j)
+    (hrank : ((poolFreeStep_wf h0 hcov hfail
+      (Set.range b)).apply ∅).rank < Ordinal.omega0) :
+    ∃ (d : ℕ) (f : ℕ → ℕ), 1 ≤ d ∧ StrictMono f ∧
+      (∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, b (f i) = h) → S.card = d →
+        RepFree A N₀ S) ∧
+      (∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, b (f i) = h) →
+        S.card = d + 1 → ∃ m, N₀ ≤ m ∧ IsRepHub A m S) := by
+  classical
+  obtain ⟨D, hD⟩ := Ordinal.lt_omega0.1 hrank
+  have hDpos : 1 ≤ D := by
+    have h1 := pool_rank_pos h0 hcov hanchor hfail
+      (P₀ := Set.range b) (by rintro x ⟨j, rfl⟩; exact hbA j)
+      (by rintro ⟨j, hj⟩
+          have h2 : b j = 0 := hj
+          have := hbpos j
+          omega)
+      (by intro X
+          refine ⟨b X, ⟨X, rfl⟩, ?_⟩
+          exact hbmono.le_apply)
+    rw [hD] at h1
+    exact_mod_cast h1
+  have hnonfree : ∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, b i = h) →
+      S.card = D + 1 → ¬RepFree A N₀ S := by
+    intro S hSmem hScard hfree
+    have hSnode : FreeNode A N₀ S := by
+      refine ⟨?_, hfree⟩
+      intro h hh
+      obtain ⟨i, hi⟩ := hSmem h hh
+      rw [← hi]
+      exact ⟨hbA i, hbpos i⟩
+    have hSpool : ∀ h ∈ S, h ∈ Set.range b := by
+      intro h hh
+      obtain ⟨i, hi⟩ := hSmem h hh
+      exact ⟨i, hi⟩
+    have h1 := free_set_card_le_rank h0 hcov hfail hSnode hSpool
+    rw [hScard, hD] at h1
+    have h2 : D + 1 ≤ D := by exact_mod_cast h1
+    omega
+  obtain ⟨d, f, hd1, hdle, hf, hfree, hnf⟩ := clique_descent h0 hcov
+    hanchor hfail D b hDpos hbmono hbA hbpos hnonfree
+  refine ⟨d, f, hd1, hf, hfree, ?_⟩
+  intro S hSmem hScard
+  have h1 := hnf S hSmem hScard
+  rw [repFree_iff_no_hub, not_not] at h1
+  exact h1
+
 end Erdos881
