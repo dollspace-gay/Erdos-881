@@ -3144,4 +3144,19 @@ theorem ownership_forest {A : Set ℕ} {Ns : ℕ}
   rw [hval]
   exact hown
 
+/-- **The star exclusion law.**  Children of a common parent (the
+star of `w`) exclude each other''s shifted differences: for siblings
+`a, b` with the scale to test, `a + w - b ∉ A`.  Star differences
+shifted by the parent exit `A` — the forest''s first coherence law,
+the vocabulary of the final induction (in the Cantor model, stars
+are digit-shifted block families and the exclusions land on carry
+positions). -/
+theorem star_exclusion {A : Set ℕ} {w a b : ℕ}
+    (hown : OwnsTarget A a (a + w))
+    (hb : b ∈ A) (hbig : 2 * b > a + w) (hlt : b < a + w)
+    (hba : b ≠ a) :
+    a + w - b ∉ A := by
+  obtain ⟨h1, h2, h3, h4⟩ := hown
+  exact h4 b hb hbig (by omega) hba
+
 end Erdos881
