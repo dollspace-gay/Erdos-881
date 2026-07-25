@@ -3302,4 +3302,18 @@ theorem cross_block_exclusion {A : Set ℕ} {b w b' w' : ℕ}
   have hval : b + w + w - (b' + w') = b + 2 * w - b' - w' := by omega
   rwa [hval] at h
 
+/-- **The boundary exclusion.**  Boundary-band edges are sieved by
+the parent''s triple: if `3w ∈ A`, the band value `a - 2w` exits.
+The band `(w, 3w]` — where reach fails — carries its own exclusion
+family through the tri-multiples: no hiding place is law-free. -/
+theorem boundary_exclusion {A : Set ℕ} {w a : ℕ}
+    (hown : OwnsTarget A a (a + w))
+    (h3w : 3 * w ∈ A) (hlow : 2 * w ≤ a) (hhigh : a < 5 * w)
+    (hne : a ≠ 3 * w) :
+    a - 2 * w ∉ A := by
+  obtain ⟨h1, h2, h3, h4⟩ := hown
+  have h := h4 (3 * w) h3w (by omega) (by omega) (by omega)
+  have hval : a + w - 3 * w = a - 2 * w := by omega
+  rwa [hval] at h
+
 end Erdos881
