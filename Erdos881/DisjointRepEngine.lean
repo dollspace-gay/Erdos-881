@@ -1236,4 +1236,30 @@ theorem reversed_translate_of_alignment {A B : Set ℕ} {N₀ n b : ℕ}
     rw [← hxv]
     exact hx
 
+/-- **Block self-interaction.**  Two single-marker failures force two
+reversed team blocks into `A`; the first target's privateness then
+constrains every cross-difference: whenever a second-block element
+completes a 2-representation of a first-target translate, it must
+pass through the first marker.  These are the accumulating dodge
+constraints — `|S|²` per marker pair, at every scale, against the
+enemy's own forced supply.  The precise closing front of the
+tight-team branch. -/
+theorem block_self_interaction {A B₁ : Set ℕ} {N₀ n₁ n₂ b₁ b₂ : ℕ}
+    {S : Finset ℕ}
+    (hcov : PairCovers A N₀)
+    (hhub₁ : IsRepHub A n₁ S) (hSA : ∀ s ∈ S, s ∈ A)
+    (hBS₁ : ∀ s ∈ S, s ∉ B₁) (hSn₁ : ∀ s ∈ S, s + N₀ ≤ n₁)
+    (hdead₁ : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = n₁ →
+      x ∈ B₁ ∨ y ∈ B₁ ∨ z ∈ B₁)
+    (honly₁ : ∀ x ∈ B₁, x ≤ n₁ → x = b₁)
+    (hblock₂ : ∀ s ∈ S, n₂ - b₂ - s ∈ A) :
+    ∀ s ∈ S, ∀ s' ∈ S, n₂ - b₂ - s' ≤ n₁ - s →
+      n₁ - s - (n₂ - b₂ - s') ∈ A →
+      (n₂ - b₂ - s' = b₁ ∨ n₁ - s - (n₂ - b₂ - s') = b₁) := by
+  intro s hs s' hs' hle hmem
+  have halign := alignment_of_single_marker_failure hhub₁ hSA hBS₁
+    (fun t ht => by have := hSn₁ t ht; omega) hdead₁ honly₁
+  exact halign s hs (n₂ - b₂ - s') (hblock₂ s' hs')
+    (n₁ - s - (n₂ - b₂ - s')) hmem (by omega)
+
 end Erdos881
