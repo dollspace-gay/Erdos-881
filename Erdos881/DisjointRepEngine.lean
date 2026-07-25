@@ -2010,4 +2010,172 @@ theorem corrected_covering_of_rigidity {A : Set ℕ} {N₀ Ns d : ℕ}
   refine ⟨p, hp, p', hp', hpfree, hpfree', ε₁ + ε₂, ?_, by omega⟩
   rcases hε₁ with h1 | h1 <;> rcases hε₂ with h2 | h2 <;> omega
 
+/-- **Pool-restricted order-2 engine.**  The deletion engine only
+needs an unbounded marker pool: restricting `B` to any unbounded
+`P ⊆ A` re-runs the argument verbatim.  Applied to the
+predecessor-free part, the machinery descends a level. -/
+theorem surviving_pair_deletion_of_disjointPairReps_pool {A P : Set ℕ}
+    (hPA : P ⊆ A)
+    (hunb : ∀ X, ∃ p ∈ P, X ≤ p)
+    (hdis : ∀ K, ∃ N, ∀ n, N ≤ n → HasDisjointPairReps A n K) :
+    ∃ B ⊆ P, B.Infinite ∧ ∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n := by
+  classical
+  choose N hN using hdis
+  set Nt : ℕ → ℕ := fun K =>
+    Nat.rec (N 0 + 1) (fun k prev => max (N (k + 1)) prev + 1) K with hNt
+  have hNtS : ∀ k, Nt (k + 1) = max (N (k + 1)) (Nt k) + 1 :=
+    fun _ => rfl
+  have hNtmono : ∀ k, Nt k < Nt (k + 1) := by
+    intro k
+    rw [hNtS k]
+    have := Nat.le_max_right (N (k + 1)) (Nt k)
+    omega
+  have hNtge : ∀ k, N k ≤ Nt k := by
+    intro k
+    cases k with
+    | zero => simp [hNt]
+    | succ k =>
+      rw [hNtS k]
+      have := Nat.le_max_left (N (k + 1)) (Nt k)
+      omega
+  choose f hfP hfge using hunb
+  set b : ℕ → ℕ := fun k =>
+    Nat.rec (f (Nt 2)) (fun k prev => f (max (Nt (k + 3)) (prev + 1))) k
+    with hbdef
+  have hbS : ∀ k, b (k + 1) = f (max (Nt (k + 3)) (b k + 1)) :=
+    fun _ => rfl
+  have hbP : ∀ k, b k ∈ P := by
+    intro k
+    cases k with
+    | zero => exact hfP (Nt 2)
+    | succ k =>
+      rw [hbS k]
+      exact hfP _
+  have hbge : ∀ k, Nt (k + 2) ≤ b k := by
+    intro k
+    cases k with
+    | zero => exact hfge (Nt 2)
+    | succ k =>
+      show Nt (k + 3) ≤ b (k + 1)
+      rw [hbS k]
+      have h1 := hfge (max (Nt (k + 3)) (b k + 1))
+      have h2 := Nat.le_max_left (Nt (k + 3)) (b k + 1)
+      omega
+  have hbmono : ∀ k, b k < b (k + 1) := by
+    intro k
+    rw [hbS k]
+    have h1 := hfge (max (Nt (k + 3)) (b k + 1))
+    have h2 := Nat.le_max_right (Nt (k + 3)) (b k + 1)
+    omega
+  have hbstrict : StrictMono b := strictMono_nat_of_lt_succ hbmono
+  refine ⟨Set.range b, ?_, ?_, Nt 2, ?_⟩
+  · rintro x ⟨k, rfl⟩
+    exact hbP k
+  · apply Set.infinite_of_injective_forall_mem
+      (f := b) hbstrict.injective
+    intro k
+    exact ⟨k, rfl⟩
+  · intro n hn
+    have hexceed : ∃ j, n < b j := by
+      refine ⟨n + 1, ?_⟩
+      have h1 : Nt (n + 3) ≤ b (n + 1) := hbge (n + 1)
+      have h2 : n + 3 ≤ Nt (n + 3) := by
+        have h3 : ∀ m, m ≤ Nt m := by
+          intro m
+          induction m with
+          | zero => omega
+          | succ m ih =>
+            have := hNtmono m
+            omega
+        exact h3 (n + 3)
+      omega
+    set K := Nat.find hexceed with hK
+    have hKspec : n < b K := Nat.find_spec hexceed
+    have hKmin : ∀ j, j < K → b j ≤ n := by
+      intro j hj
+      have := Nat.find_min hexceed hj
+      omega
+    have hnN : N (K + 1) ≤ n := by
+      rcases Nat.eq_zero_or_pos K with hK0 | hKpos
+      · rw [hK0]
+        show N 1 ≤ n
+        have h1 := hNtge 1
+        have h2 : Nt 1 < Nt 2 := hNtmono 1
+        omega
+      · have h1 := hKmin (K - 1) (by omega)
+        have h2 := hbge (K - 1)
+        have h3 : K - 1 + 2 = K + 1 := by omega
+        rw [h3] at h2
+        have h4 := hNtge (K + 1)
+        omega
+    obtain ⟨Pm, hPA', hPsum, hPdisj⟩ := hN (K + 1) n hnN
+    by_contra hall
+    push_neg at hall
+    have hhit : ∀ i : Fin (K + 1), ∃ j, j < K ∧ ∃ k, Pm i k = b j := by
+      intro i
+      have h0 := hPA' i 0
+      have h1 := hPA' i 1
+      by_contra hnone
+      push_neg at hnone
+      have hfree : ∀ k, Pm i k ∉ Set.range b := by
+        intro k
+        rintro ⟨j, hj⟩
+        have hj' : b j = Pm i k := hj
+        have hle : Pm i k ≤ n := by
+          have hs := hPsum i
+          match k with
+          | 0 => omega
+          | 1 => omega
+        have hjK : j < K := by
+          by_contra hge
+          have h3 : b K ≤ b j := hbstrict.monotone (by omega)
+          omega
+        exact hnone j hjK k hj'.symm
+      exact absurd (hPsum i)
+        (hall (Pm i 0) h0 (Pm i 1) h1 (hfree 0) (hfree 1))
+    choose g hgK hghit using hhit
+    have hginj : Function.Injective g := by
+      intro i i' hgii
+      by_contra hne
+      obtain ⟨k, hk⟩ := hghit i
+      obtain ⟨k', hk'⟩ := hghit i'
+      have : Pm i k = Pm i' k' := by rw [hk, hgii, hk']
+      exact hPdisj i i' k k' hne this
+    have hcard : K + 1 ≤ K := by
+      let g' : Fin (K + 1) → Fin K := fun i => ⟨g i, hgK i⟩
+      have hg'inj : Function.Injective g' := by
+        intro i i' h
+        apply hginj
+        have := congrArg Fin.val h
+        simpa using this
+      have := Fintype.card_le_of_injective g' hg'inj
+      simpa using this
+    omega
+
+/-- **The second modulus exists.**  Restricting deletions to any
+unbounded pool `P ⊆ A` (in particular the predecessor-free part),
+minimality still forces canonical pair-hubs — and the stable core of
+the restricted analysis carries the next level''s canonical
+difference.  The digit recursion''s moduli emerge by pool
+restriction, level by level. -/
+theorem cofinal_bounded_pairHubs_of_minimality_pool {A P : Set ℕ}
+    (hPA : P ⊆ A) (hunb : ∀ X, ∃ p ∈ P, X ≤ p)
+    (hmin : ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) :
+    ∃ K, ∀ N, ∃ n, N ≤ n ∧
+      ∃ H : Finset ℕ, H.card ≤ 2 * (K - 1) ∧ IsPairHub A n H := by
+  classical
+  have hnodis : ¬∀ K, ∃ N, ∀ n, N ≤ n → HasDisjointPairReps A n K := by
+    intro hdis
+    obtain ⟨B, hBsub, hBinf, N₁, hN₁⟩ :=
+      surviving_pair_deletion_of_disjointPairReps_pool hPA hunb hdis
+    exact hmin B (fun x hx => hPA (hBsub hx)) hBinf ⟨N₁, hN₁⟩
+  push_neg at hnodis
+  obtain ⟨K, hK⟩ := hnodis
+  refine ⟨K, fun N => ?_⟩
+  obtain ⟨n, hn, hno⟩ := hK N
+  obtain ⟨H, hHcard, hHhub⟩ := pairHub_of_no_disjointPairReps hno
+  exact ⟨n, hn, H, hHcard, hHhub⟩
+
 end Erdos881
