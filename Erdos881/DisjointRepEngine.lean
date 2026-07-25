@@ -216,4 +216,103 @@ theorem surviving_deletion_of_disjointReps {A : Set ℕ} {N₀ : ℕ}
       simpa using this
     omega
 
+/-- A hub set for `n`: a finite set of values meeting every exact
+3-representation of `n` over `A`. -/
+def IsRepHub (A : Set ℕ) (n : ℕ) (H : Finset ℕ) : Prop :=
+  ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = n →
+    x ∈ H ∨ y ∈ H ∨ z ∈ H
+
+/-- **Hub extraction.**  A target without `K` pairwise-disjoint
+3-representations has a hub set of at most `3·(K-1)` values: the parts
+of a maximal disjoint family meet every representation.  Together with
+Engine V10 this reduces a counterexample's order-3 failure to
+*cofinal bounded-hub targets* — the constant-size generalization of
+the fixed-pair configuration. -/
+theorem hub_of_no_disjointReps {A : Set ℕ} {n K : ℕ}
+    (hno : ¬HasDisjointTripleReps A n K) :
+    ∃ H : Finset ℕ, H.card ≤ 3 * (K - 1) ∧ IsRepHub A n H := by
+  classical
+  have h0 : HasDisjointTripleReps A n 0 :=
+    ⟨fun i => Fin.elim0 i, fun i => Fin.elim0 i, fun i => Fin.elim0 i,
+      fun i => Fin.elim0 i⟩
+  -- boundary crossing: a maximal achievable family size J < K
+  have hcross : ∃ J, J < K ∧ HasDisjointTripleReps A n J ∧
+      ¬HasDisjointTripleReps A n (J + 1) := by
+    by_contra hnc
+    push_neg at hnc
+    have hall : ∀ J, J ≤ K → HasDisjointTripleReps A n J := by
+      intro J hJ
+      induction J with
+      | zero => exact h0
+      | succ J ih => exact hnc J (by omega) (ih (by omega))
+    exact hno (hall K (le_refl K))
+  obtain ⟨J, hJK, ⟨P, hPA, hPsum, hPdisj⟩, hJmax⟩ := hcross
+  refine ⟨(Finset.univ : Finset (Fin J × Fin 3)).image
+    (fun p => P p.1 p.2), ?_, ?_⟩
+  · calc ((Finset.univ : Finset (Fin J × Fin 3)).image
+        (fun p => P p.1 p.2)).card
+        ≤ (Finset.univ : Finset (Fin J × Fin 3)).card :=
+          Finset.card_image_le
+      _ = 3 * J := by simp [Finset.card_univ, Nat.mul_comm]
+      _ ≤ 3 * (K - 1) := by omega
+  · intro x hx y hy z hz hsum
+    by_contra hnot
+    push_neg at hnot
+    obtain ⟨hxH, hyH, hzH⟩ := hnot
+    have hmem : ∀ i k, P i k ∈ (Finset.univ :
+        Finset (Fin J × Fin 3)).image (fun p => P p.1 p.2) := by
+      intro i k
+      exact Finset.mem_image.2 ⟨(i, k), Finset.mem_univ _, rfl⟩
+    set R : Fin 3 → ℕ := ![x, y, z] with hR
+    have hRA : ∀ k, R k ∈ A := by
+      intro k
+      match k with
+      | 0 => exact hx
+      | 1 => exact hy
+      | 2 => exact hz
+    have hRH : ∀ k, R k ∉ (Finset.univ :
+        Finset (Fin J × Fin 3)).image (fun p => P p.1 p.2) := by
+      intro k
+      match k with
+      | 0 => exact hxH
+      | 1 => exact hyH
+      | 2 => exact hzH
+    have hRsum : R 0 + R 1 + R 2 = n := hsum
+    -- extend the maximal family: contradiction
+    refine hJmax ⟨fun i k =>
+      if h : (i : ℕ) < J then P ⟨i, h⟩ k else R k, ?_, ?_, ?_⟩
+    · intro i k
+      by_cases h : (i : ℕ) < J
+      · simpa [h] using hPA ⟨i, h⟩ k
+      · simpa [h] using hRA k
+    · intro i
+      by_cases h : (i : ℕ) < J
+      · simpa [h] using hPsum ⟨i, h⟩
+      · simpa [h] using hRsum
+    · intro i j k l hij
+      by_cases hi : (i : ℕ) < J
+      · by_cases hj : (j : ℕ) < J
+        · have hne : (⟨(i : ℕ), hi⟩ : Fin J) ≠ ⟨(j : ℕ), hj⟩ := by
+            intro h
+            apply hij
+            have := congrArg Fin.val h
+            exact Fin.ext (by simpa using this)
+          simpa [hi, hj] using hPdisj ⟨i, hi⟩ ⟨j, hj⟩ k l hne
+        · simp only [dif_pos hi, dif_neg hj]
+          intro h
+          exact hRH l (h ▸ hmem ⟨i, hi⟩ k)
+      · by_cases hj : (j : ℕ) < J
+        · simp only [dif_neg hi, dif_pos hj]
+          intro h
+          exact hRH k (h.symm ▸ hmem ⟨j, hj⟩ l)
+        · exfalso
+          apply hij
+          have hiJ : (i : ℕ) = J := by
+            have := i.isLt
+            omega
+          have hjJ : (j : ℕ) = J := by
+            have := j.isLt
+            omega
+          exact Fin.ext (by omega)
+
 end Erdos881
