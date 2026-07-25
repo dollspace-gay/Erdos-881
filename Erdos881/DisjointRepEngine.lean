@@ -2385,4 +2385,44 @@ theorem per_deletion_window_core {A B : Set ℕ}
     (F := (Finset.range (W + 1)).filter (· ∈ B)) hQ
   exact ⟨S, hSF, hrec⟩
 
+/-- **Super-geometric escape collapse.**  If the deletion''s markers
+grow super-geometrically (each beyond the square of the last), a
+failing hub that has escaped past `√n` can contain at most one
+marker: two escapees would straddle the square gap.  Escaped hubs
+are singletons — and singleton hubs are private triples, which the
+verified stream kill refutes.  The escape branch of the per-deletion
+dichotomy dies at matched scale. -/
+theorem escape_singleton_of_supergeometric {b : ℕ → ℕ}
+    (hsg : ∀ j k, j < k → b j * b j < b k)
+    {n : ℕ} {H : Finset ℕ}
+    (hHB : ∀ h ∈ H, ∃ j, h = b j)
+    (hHn : ∀ h ∈ H, h ≤ n)
+    (hesc : ∀ h ∈ H, n < h * h)
+    (hne : H.Nonempty) :
+    ∃ h₀, H = {h₀} := by
+  classical
+  obtain ⟨h₀, hh₀⟩ := hne
+  refine ⟨h₀, ?_⟩
+  apply Finset.eq_singleton_iff_unique_mem.2
+  refine ⟨hh₀, fun h hh => ?_⟩
+  by_contra hne'
+  obtain ⟨j, hj⟩ := hHB h hh
+  obtain ⟨j₀, hj₀⟩ := hHB h₀ hh₀
+  have hjj : j ≠ j₀ := by
+    intro h'
+    apply hne'
+    rw [hj, hj₀, h']
+  rcases Nat.lt_or_ge j j₀ with hlt | hge
+  · have := hsg j j₀ hlt
+    have h1 := hesc h hh
+    have h2 := hHn h₀ hh₀
+    rw [hj, hj₀] at *
+    omega
+  · have hlt' : j₀ < j := by omega
+    have := hsg j₀ j hlt'
+    have h1 := hesc h₀ hh₀
+    have h2 := hHn h hh
+    rw [hj, hj₀] at *
+    omega
+
 end Erdos881
