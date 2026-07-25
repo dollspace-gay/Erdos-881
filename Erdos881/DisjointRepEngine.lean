@@ -741,4 +741,94 @@ theorem pipeline_entry_of_bounded_pair_hubs {A : Set ℕ} {N₀ W : ℕ}
   exact ⟨n, le_trans (le_max_left _ _) hn,
     pairDestroyer_of_pair_hub h0 hcov (le_trans (le_max_right _ _) hn) hhub⟩
 
+/-- Side-predicate tower: the window split carries any extra property
+`R` of the hub family through unchanged. -/
+theorem hub_window_split_aux' {A : Set ℕ} {C : ℕ}
+    (R : ℕ → Finset ℕ → Prop) (W : ℕ) :
+    ∀ d S, S ⊆ Finset.range (W + 1) →
+    (∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ C ∧ IsRepHub A n H ∧
+      R n H ∧ S ⊆ H ∧ H.card ≤ S.card + d) →
+    ∃ S' : Finset ℕ, S' ⊆ Finset.range (W + 1) ∧
+      ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ C ∧ IsRepHub A n H ∧
+        R n H ∧ S' ⊆ H ∧ ∀ h ∈ H, h ∉ S' → W < h := by
+  classical
+  intro d
+  induction d with
+  | zero =>
+    intro S hSW hfam
+    refine ⟨S, hSW, fun N => ?_⟩
+    obtain ⟨n, hn, H, hcard, hhub, hR, hSH, hbud⟩ := hfam N
+    refine ⟨n, hn, H, hcard, hhub, hR, hSH, fun h hhH hhS => ?_⟩
+    exfalso
+    have hHS : H = S := Finset.Subset.antisymm
+      (by
+        by_contra hns
+        obtain ⟨x, hxH, hxS⟩ := Finset.not_subset.1 hns
+        have h1 : S.card < H.card := Finset.card_lt_card
+          (Finset.ssubset_iff_of_subset hSH |>.2 ⟨x, hxH, hxS⟩)
+        omega) hSH
+    rw [hHS] at hhH
+    exact hhS hhH
+  | succ d ih =>
+    intro S hSW hfam
+    rcases cofinal_dichotomy
+      (fun n H' => ∃ H : Finset ℕ, H.card ≤ C ∧ IsRepHub A n H ∧
+        R n H ∧ S ⊆ H ∧ H.card ≤ S.card + (d + 1) ∧ H' = H \ S)
+      (fun N => by
+        obtain ⟨n, hn, H, hcard, hhub, hR, hSH, hbud⟩ := hfam N
+        exact ⟨n, hn, H \ S, H, hcard, hhub, hR, hSH, hbud, rfl⟩) W
+      with ⟨h, hhW, hper⟩ | hlarge
+    · refine ih (insert h S) ?_ ?_
+      · intro x hx
+        rcases Finset.mem_insert.1 hx with hxh | hxS
+        · exact Finset.mem_range.2 (by omega)
+        · exact hSW hxS
+      · intro N
+        obtain ⟨n, hn, H', ⟨H, hcard, hhub, hR, hSH, hbud, hH'⟩, hhH'⟩ :=
+          hper N
+        subst hH'
+        have hhH : h ∈ H := (Finset.mem_sdiff.1 hhH').1
+        have hhS : h ∉ S := (Finset.mem_sdiff.1 hhH').2
+        refine ⟨n, hn, H, hcard, hhub, hR, ?_, ?_⟩
+        · intro x hx
+          rcases Finset.mem_insert.1 hx with hxh | hxS
+          · rw [hxh]; exact hhH
+          · exact hSH hxS
+        · have : (insert h S).card = S.card + 1 :=
+            Finset.card_insert_of_notMem hhS
+          omega
+    · refine ⟨S, hSW, fun N => ?_⟩
+      obtain ⟨n, hn, H', ⟨H, hcard, hhub, hR, hSH, hbud, hH'⟩, hlargeH⟩ :=
+        hlarge N
+      subst hH'
+      refine ⟨n, hn, H, hcard, hhub, hR, hSH, fun h hhH hhS => ?_⟩
+      exact hlargeH h (Finset.mem_sdiff.2 ⟨hhH, hhS⟩)
+
+/-- **The minimal team configuration.**  From covering + hfail: a
+fixed hub bound and, at every window, a persistent core `S` inside
+MINIMAL hubs whose remaining elements all exceed the window — and
+every element of such a hub owns a private witness
+(`minimal_hub_necessity`).  The strongest launching interface for the
+guardian-team escalation. -/
+theorem team_configuration_minimal_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ K, ∀ W, ∃ S : Finset ℕ, S ⊆ Finset.range (W + 1) ∧
+      ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ 3 * (K - 1) ∧
+        IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h := by
+  classical
+  obtain ⟨K, hK⟩ := cofinal_bounded_hubs_of_hfail hcov hfail
+  refine ⟨K, fun W => ?_⟩
+  refine hub_window_split_aux'
+    (R := fun n H => ∀ h ∈ H, ¬IsRepHub A n (H \ {h})) W
+    (3 * (K - 1)) ∅ (by simp) fun N => ?_
+  obtain ⟨n, hn, H, hcard, hhub⟩ := hK N
+  obtain ⟨H', hH'sub, hH'hub, hH'min⟩ := exists_minimal_hub hhub
+  exact ⟨n, hn, H', le_trans (Finset.card_le_card hH'sub) hcard,
+    hH'hub, hH'min, Finset.empty_subset _,
+    by simpa using le_trans (Finset.card_le_card hH'sub) hcard⟩
+
 end Erdos881
