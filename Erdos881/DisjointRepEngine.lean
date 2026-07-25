@@ -6197,4 +6197,68 @@ theorem pair_owner_reflection_desert {A : Set ℕ} {n a z : ℕ}
   · exact hza h
   · exact hnza h
 
+/-- **Shared pair-targets are guardian sums.**  If two distinct
+guardians pair-guard the same target over one free envelope, the
+envelope-avoiding pair IS the guardian pair: `t = b + b'`, and the
+target's only envelope-free order-2 life is the two guardians
+summing to it.  Sharing is total exposure. -/
+theorem shared_pair_target_is_sum {A : Set ℕ} {N₀ t b b' : ℕ}
+    {P : Finset ℕ}
+    (hfree : PairFree A N₀ P) (ht : N₀ ≤ t) (hbb' : b ≠ b')
+    (hg : ∀ x ∈ A, ∀ y ∈ A, x + y = t →
+      x ∈ insert b P ∨ y ∈ insert b P)
+    (hg' : ∀ x ∈ A, ∀ y ∈ A, x + y = t →
+      x ∈ insert b' P ∨ y ∈ insert b' P) :
+    t = b + b' := by
+  obtain ⟨x, hx, y, hy, hxy, hxP, hyP⟩ := hfree t ht
+  have h1 : x = b ∨ y = b := by
+    rcases hg x hx y hy hxy with h | h
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact Or.inl h'
+      · exact absurd h' hxP
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact Or.inr h'
+      · exact absurd h' hyP
+  have h2 : x = b' ∨ y = b' := by
+    rcases hg' x hx y hy hxy with h | h
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact Or.inl h'
+      · exact absurd h' hxP
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact Or.inr h'
+      · exact absurd h' hyP
+  rcases h1 with h1 | h1 <;> rcases h2 with h2 | h2 <;> omega
+
+/-- **Shared rep-targets of three guardians are triple sums.**  If
+three pairwise-distinct guardians rep-guard the same target over
+one free envelope, the envelope-avoiding triple IS the guardian
+triple: `m = b₁ + b₂ + b₃`. -/
+theorem shared_rep_target_is_sum3 {A : Set ℕ} {N₀ m b₁ b₂ b₃ : ℕ}
+    {P : Finset ℕ}
+    (hfree : RepFree A N₀ P) (hm : N₀ ≤ m)
+    (h12 : b₁ ≠ b₂) (h13 : b₁ ≠ b₃) (h23 : b₂ ≠ b₃)
+    (hg₁ : IsRepHub A m (insert b₁ P))
+    (hg₂ : IsRepHub A m (insert b₂ P))
+    (hg₃ : IsRepHub A m (insert b₃ P)) :
+    m = b₁ + b₂ + b₃ := by
+  obtain ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩ := hfree m hm
+  have hpin : ∀ b, IsRepHub A m (insert b P) →
+      x = b ∨ y = b ∨ z = b := by
+    intro b hg
+    rcases hg x hx y hy z hz hxyz with h | h | h
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact Or.inl h'
+      · exact absurd h' hxP
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact Or.inr (Or.inl h')
+      · exact absurd h' hyP
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact Or.inr (Or.inr h')
+      · exact absurd h' hzP
+  have hp₁ := hpin b₁ hg₁
+  have hp₂ := hpin b₂ hg₂
+  have hp₃ := hpin b₃ hg₃
+  rcases hp₁ with h1 | h1 | h1 <;> rcases hp₂ with h2 | h2 | h2 <;>
+    rcases hp₃ with h3 | h3 | h3 <;> omega
+
 end Erdos881
