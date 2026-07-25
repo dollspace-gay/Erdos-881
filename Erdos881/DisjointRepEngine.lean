@@ -7214,4 +7214,50 @@ theorem clique_targets_dominate {A : Set ℕ} {N₀ : ℕ}
     b (f k) ≤ n :=
   team_target_dominates (hpf i j hij) hn hhub
 
+/-- **THE SEPARATED LADDER.**  The injective flood refines to full
+alternation: guardians and their personal targets interleave in
+strict order, `g 0 ≤ t 0 < g 1 ≤ t 1 < g 2 ≤ ⋯`.  (The
+non-separated Ramsey colour is impossible outright: a single row
+would need unboundedly many guardians below one target.)  The
+flood in ladder form — the geometry the endgame deletions run on. -/
+theorem separated_pair_flood {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ P : Finset ℕ, PairFree A N₀ P ∧
+      ∃ (g t : ℕ → ℕ), StrictMono g ∧ (∀ k, g k ∈ A) ∧
+        (∀ k, t k < g (k + 1)) ∧
+        ∀ k, N₀ ≤ t k ∧ g k ≤ t k ∧
+          ∀ x ∈ A, ∀ y ∈ A, x + y = t k →
+            x ∈ insert (g k) P ∨ y ∈ insert (g k) P := by
+  classical
+  obtain ⟨P, hPfree, g₀, t₀, hg₀mono, hg₀A, hinj, hdata⟩ :=
+    injective_pair_flood h0 hcov hfail
+  set c : ℕ → ℕ → Bool := fun k l =>
+    if t₀ k < g₀ l then true else false with hc
+  obtain ⟨f, hfmono, bcol, hhom⟩ := infinite_ramsey_pairs c
+  rcases Bool.eq_false_or_eq_true bcol with hbc | hbc
+  · -- separated
+    subst hbc
+    refine ⟨P, hPfree, fun k => g₀ (f k), fun k => t₀ (f k),
+      fun k l hkl => hg₀mono (hfmono hkl),
+      fun k => hg₀A (f k), ?_, fun k => hdata (f k)⟩
+    intro k
+    have h1 := hhom k (k + 1) (by omega)
+    by_cases h : t₀ (f k) < g₀ (f (k + 1))
+    · exact h
+    · exfalso
+      simp [hc, h] at h1
+  · -- non-separation is impossible
+    exfalso
+    subst hbc
+    set j := t₀ (f 0) + 1 with hj
+    have h1 := hhom 0 j (by omega)
+    have h2 : ¬t₀ (f 0) < g₀ (f j) := by
+      intro h
+      simp [hc, h] at h1
+    have h3 : j ≤ f j := hfmono.le_apply
+    have h4 : f j ≤ g₀ (f j) := hg₀mono.le_apply
+    omega
+
 end Erdos881
