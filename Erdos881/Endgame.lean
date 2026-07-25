@@ -22,6 +22,7 @@ The state of the problem after 2026-07-25:
 -/
 
 import Erdos881.FreeRank
+import Erdos881.CantorInstance
 
 namespace Erdos881
 
@@ -129,5 +130,31 @@ theorem endgame_characterization {A : Set ℕ} {N₀ : ℕ}
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) ↔
     ¬∃ B : Set ℕ, HereditarilyFree A N₀ B :=
   hfail_iff_no_hereditarily_free h0 hcov
+
+/-- **The Cantor witness, in the characterization's language.**
+The pure powers form an infinite hereditarily rep-free subset of
+the Cantor basis: every late target keeps a power-free triple
+(carry repair), hence a triple avoiding any finite subset of the
+powers.  The positive side of Erdős 881, realized concretely. -/
+theorem cantor_powers_hereditarilyFree :
+    HereditarilyFree Erdos881Cantor.CantorSet (3 ^ 7)
+      Erdos881Cantor.PurePowers := by
+  refine ⟨Erdos881Cantor.purePowers_infinite, ?_, ?_⟩
+  · rintro b ⟨k, rfl⟩
+    exact ⟨Erdos881Cantor.purePowers_subset ⟨k, rfl⟩,
+      pow_pos (by norm_num) k⟩
+  · intro P hP m hm
+    obtain ⟨x, y, z, hx, hy, hz, hpx, hpy, hpz, hs⟩ :=
+      Erdos881Cantor.cantor_deletion_order_three m hm
+    refine ⟨x, hx, y, hy, z, hz, hs, ?_, ?_, ?_⟩
+    · intro hmem
+      obtain ⟨k, hk⟩ := hP x hmem
+      exact hpx k hk
+    · intro hmem
+      obtain ⟨k, hk⟩ := hP y hmem
+      exact hpy k hk
+    · intro hmem
+      obtain ⟨k, hk⟩ := hP z hmem
+      exact hpz k hk
 
 end Erdos881
