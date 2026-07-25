@@ -505,3 +505,14 @@ routing; digit routing has verified carry-repair contradicting
 hfail. Everything else — two canonical rails, the per-deletion
 capstone, the ownership calculus, the payment theorems — is
 machine-checked, zero sorries, standard axioms.
+
+## Telescope audit (02:32)
+
+Honest correction: the ledger telescope cannot close by pure
+counting — co-A entries are reusable across payers, and the
+fiber-clearing identity balances at the knife-edge. The payment
+theorems stand as structural inputs (cofinal inhabited big
+windows), but the final argument is the coherence classification
+itself, now to be attacked with every structural input of the
+night. The problem's core is, and was, exactly that
+classification.
