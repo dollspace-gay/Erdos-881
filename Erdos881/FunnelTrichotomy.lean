@@ -149,6 +149,64 @@ theorem DestroyedBySet.diffuse_witness_pair {A B : Set ℕ} {N₀ m : ℕ}
     exact ⟨z, hzB, b₂, hb₂B, hne.symm, hz, hb₂A, by omega,
       by rcases hb₂rep with rfl | rfl | rfl <;> omega⟩
 
+/-- **The counting vise.**  Every member of the translated family of a
+destroyed target is two-representation-poor: the two-support of
+`m - x` (for any representation part `x ∈ A \ B`) lives inside
+`B ∪ ((m - x) - B)`, so its size is at most twice the number of
+deletion elements below `m`.  A sparse deletion set therefore forces
+all its destroyed targets — and their entire `A \ B`-translate
+families — to be nearly uniquely representable.  (`x = 0` gives the
+bound for the destroyed target itself.) -/
+theorem DestroyedBySet.translate_two_support_card_le
+    {A B : Set ℕ} [DecidablePred (· ∈ A)] [DecidablePred (· ∈ B)]
+    {m x : ℕ}
+    (hdes : DestroyedBySet A B m)
+    (hx : x ∈ A) (hxB : x ∉ B) :
+    ((Finset.range (m + 1)).filter
+        fun y => y ∈ A ∧ x + y ≤ m ∧ m - x - y ∈ A).card ≤
+      2 * ((Finset.range (m + 1)).filter fun b => b ∈ B).card := by
+  set S := (Finset.range (m + 1)).filter
+    fun y => y ∈ A ∧ x + y ≤ m ∧ m - x - y ∈ A with hS
+  set T := (Finset.range (m + 1)).filter fun b => b ∈ B with hT
+  set g : ℕ → ℕ := fun y => if y ∈ B then y else m - x - y with hg
+  have hmem : ∀ y ∈ S, g y ∈ T := by
+    intro y hy
+    simp only [hS, Finset.mem_filter, Finset.mem_range] at hy
+    obtain ⟨hyr, hyA, hxy, hyz⟩ := hy
+    have hside := hdes.shadow hx hxB hyA hyz (by omega)
+    simp only [hT, hg, Finset.mem_filter, Finset.mem_range]
+    by_cases hyB : y ∈ B
+    · rw [if_pos hyB]
+      exact ⟨hyr, hyB⟩
+    · rw [if_neg hyB]
+      rcases hside with h | h
+      · exact absurd h hyB
+      · exact ⟨by omega, h⟩
+  have hfiber : ∀ b ∈ T, (S.filter fun y => g y = b).card ≤ 2 := by
+    intro b _hb
+    have hsub : (S.filter fun y => g y = b) ⊆ {b, m - x - b} := by
+      intro y hy
+      simp only [hS, hg, Finset.mem_filter, Finset.mem_range] at hy
+      obtain ⟨⟨hyr, hyA, hxy, hyz⟩, hgy⟩ := hy
+      simp only [Finset.mem_insert, Finset.mem_singleton]
+      by_cases hyB : y ∈ B
+      · rw [if_pos hyB] at hgy
+        exact Or.inl hgy
+      · rw [if_neg hyB] at hgy
+        right
+        omega
+    calc (S.filter fun y => g y = b).card
+        ≤ ({b, m - x - b} : Finset ℕ).card := Finset.card_le_card hsub
+      _ ≤ 2 := by
+          refine le_trans (Finset.card_insert_le _ _) ?_
+          simp
+  calc S.card
+      = ∑ b ∈ T, (S.filter fun y => g y = b).card :=
+        Finset.card_eq_sum_card_fiberwise hmem
+    _ ≤ ∑ _b ∈ T, 2 := Finset.sum_le_sum hfiber
+    _ = 2 * T.card := by
+        rw [Finset.sum_const, smul_eq_mul, Nat.mul_comm]
+
 /-- **Cofinal trichotomy from deletion failure.**  If deleting `B`
 (not containing zero) breaks the exact order-three basis property,
 then arbitrarily late targets realize the funnel trichotomy.  A
