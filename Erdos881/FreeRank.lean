@@ -1180,4 +1180,57 @@ theorem perfect_world_rank {A : Set ℕ} {N₀ : ℕ}
       rw [hScard] at this
       exact this
 
+/-- **Every member of a perfect-world hub is below its target.**
+Removing any one member leaves a free `d`-set, whose avoiding
+representation must hit the removed member alone: each member
+personally participates, so the target dominates them all. -/
+theorem perfect_world_target_dominates_all {A : Set ℕ} {N₀ : ℕ}
+    {e : ℕ → ℕ} {d : ℕ} (hemono : StrictMono e)
+    (hfree : ∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e i = h) → S.card = d →
+      RepFree A N₀ S)
+    {S : Finset ℕ} (hSmem : ∀ h ∈ S, ∃ i, e i = h)
+    (hScard : S.card = d + 1)
+    {m : ℕ} (hm : N₀ ≤ m) (hhub : IsRepHub A m S) :
+    ∀ s ∈ S, s ≤ m := by
+  intro s hs
+  have herase : (S.erase s).card ≤ d := by
+    have := Finset.card_erase_of_mem hs
+    omega
+  have heraseF : RepFree A N₀ (S.erase s) :=
+    perfect_world_small_sets_free hemono hfree
+      (fun h hh => hSmem h (Finset.mem_of_mem_erase hh)) herase
+  obtain ⟨x, hx, y, hy, z, hz, hsum, hxE, hyE, hzE⟩ := heraseF m hm
+  rcases hhub x hx y hy z hz hsum with h | h | h
+  · have hxs : x = s := by
+      by_contra hne
+      exact hxE (Finset.mem_erase.2 ⟨hne, h⟩)
+    omega
+  · have hys : y = s := by
+      by_contra hne
+      exact hyE (Finset.mem_erase.2 ⟨hne, h⟩)
+    omega
+  · have hzs : z = s := by
+      by_contra hne
+      exact hzE (Finset.mem_erase.2 ⟨hne, h⟩)
+    omega
+
+/-- **Perfect-world targets are uniformly Sidon.**  Hubs are 0-free
+(their members are positive stream values), so the pair shadow
+bounds every hub target's order-2 count by `2(d + 2)`. -/
+theorem perfect_world_sidon_targets {A : Set ℕ} {N₀ : ℕ}
+    [DecidablePred (· ∈ A)]
+    (h0 : 0 ∈ A) {e : ℕ → ℕ} {d : ℕ} (hepos : ∀ j, 0 < e j)
+    {S : Finset ℕ} (hSmem : ∀ h ∈ S, ∃ i, e i = h)
+    (hScard : S.card = d + 1)
+    {m : ℕ} (hhub : IsRepHub A m S) :
+    ((Finset.range (m + 1)).filter
+      (fun x => x ∈ A ∧ (m - x) ∈ A)).card ≤ 2 * (d + 1) := by
+  have h0S : 0 ∉ S := by
+    intro h
+    obtain ⟨i, hi⟩ := hSmem 0 h
+    have := hepos i
+    omega
+  have := pair_count_of_hub h0 hhub h0S
+  omega
+
 end Erdos881
