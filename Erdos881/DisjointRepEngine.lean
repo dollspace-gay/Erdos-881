@@ -1917,4 +1917,44 @@ theorem recurring_destroyer_pair_of_tight_core {A : Set ℕ}
     · exact Or.inr (Or.inr (Or.inl h'))
     · exact Or.inr (Or.inr (Or.inr (Finset.mem_singleton.1 h')))
 
+/-- **The rails'' interaction bridge.**  The canonical order-2 hub is
+definitionally the legacy campaign''s `TwoDestroyedBySet`: the new
+first-principles tree and the old funnel/pinning machinery speak the
+same language. -/
+theorem pairHub_iff_twoDestroyed {A : Set ℕ} {n : ℕ} {H : Finset ℕ} :
+    IsPairHub A n H ↔ TwoDestroyedBySet A (↑H) n := by
+  constructor
+  · intro h y hy z hz hyz
+    rcases h y hy z hz hyz with h' | h'
+    · exact Or.inl (Finset.mem_coe.2 h')
+    · exact Or.inr (Finset.mem_coe.2 h')
+  · intro h x hx y hy hxy
+    rcases h x hx y hy hxy with h' | h'
+    · exact Or.inl (Finset.mem_coe.1 h')
+    · exact Or.inr (Finset.mem_coe.1 h')
+
+/-- **Legacy entry from raw minimality.**  In the tight two-element
+case the canonical order-2 core hands the legacy machinery its exact
+fuel: cofinally many targets two-destroyed by one fixed pair.  The
+pinning, fork, and funnel arsenal — built downstream of this shape as
+an assumption — now runs on a theorem. -/
+theorem legacy_twoDestruction_of_tight_core {A : Set ℕ}
+    {S : Finset ℕ} {c : ℕ}
+    (hsplit : ∀ W N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      H.card = c ∧ IsPairHub A n H ∧
+      S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h)
+    (hceq : c = S.card) (hS2 : S.card = 2) :
+    ∃ u v, u ≠ v ∧ ∀ N, ∃ n, N ≤ n ∧
+      TwoDestroyedBySet A {u, v} n := by
+  obtain ⟨u, v, huv, hrec⟩ :=
+    recurring_destroyer_pair_of_tight_core hsplit hceq hS2
+  refine ⟨u, v, huv, fun N => ?_⟩
+  obtain ⟨n, hn, hdest⟩ := hrec N
+  refine ⟨n, hn, fun y hy z hz hyz => ?_⟩
+  rcases hdest y hy z hz hyz with h | h | h | h
+  · exact Or.inl (Or.inl h)
+  · exact Or.inl (Or.inr h)
+  · exact Or.inr (Or.inl h)
+  · exact Or.inr (Or.inr h)
+
 end Erdos881
