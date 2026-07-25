@@ -309,3 +309,17 @@ After the master key, the afternoon delivered four more blows:
 
 Score for the day: ~40 new verified theorems, two emptied walls
 demolished honestly, one master structure theorem, zero sorries.
+
+## 2026-07-25 evening — The ladder
+
+We built a brand-new tool from scratch (the infinite Ramsey
+theorem, at two strengths) and used it to climb: any infinite
+collection of the enemy's keys can be refined so that either every
+pair of keys jointly guards a door (and then those doors must race
+upward at least as fast as the keys themselves), or every trio
+does, or the enemy is forced to field guard-teams of four or more.
+Each rung of the ladder is another shape the enemy cannot escape
+into.  The ladder climbs one arity at a time; the top of the
+ladder — all arities at once — is guarded by a known technical
+obstacle (the "diagonal leak") whose remedy is mapped out for the
+next campaign.

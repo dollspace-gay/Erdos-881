@@ -108,6 +108,19 @@ repaired by freeness (junk envelopes are never free).
   targets of any Sidon-like basis — it cannot die from order-2
   structure alone; the kill must couple back to order-3 poverty.
 
+**THE RAMSEY LADDER (16:05)**: `InfiniteRamsey.lean` — infinite
+Ramsey for pairs AND triples (not in Mathlib; anchor recursion with
+the new anchor drawn from the homogeneous subsequence).  Harvests:
+`rep_pair_clique_or_triple_teams`, `team_card_escalation_two(')`
+(any ground stream refines to pair-clique / triple-clique-with-
+pair-freeness / doubly-free with teams of card ≥ 4),
+`injective_pair_flood` (guardian→target map made injective via the
+sharer law), `clique_rows_march`, `team_target_dominates` +
+`clique_targets_dominate` (choice-free: clique targets ≥ largest
+member under exported freeness), `hub_server_dichotomy`,
+`pair_flood_two_envelopes` (double duty over disjoint envelopes).
+The arity ladder is mechanical now; the ω-limit needs barriers.
+
 **Open frontier (post-flood, 15:30)**: the configuration space is
 now fully verified and SMALL — see docs/flood-structure-theorem.md
 for the complete statement list.  Everything local is mutually
