@@ -2970,4 +2970,34 @@ theorem hereditarilyPairFree_iff_uniform {A : Set ℕ} {N₀ : ℕ}
     exact ⟨x, hx, y, hy, hsum, fun h => hxB (hP x h),
       fun h => hyB (hP y h)⟩
 
+/-- **Maximal free nodes exist above every node.**  Well-founded
+induction: extend until no step remains.  Every leaf is totally
+stalled — every larger positive basis element completes a hub over
+it at once (threshold `max P + 1`, sharper than the flood's
+abstract threshold).  Under `hfail` the tree is a forest of stalls
+all the way up. -/
+theorem exists_maximal_free_node {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (P : Finset ℕ) (hP : FreeNode A N₀ P) :
+    ∃ Q : Finset ℕ, FreeNode A N₀ Q ∧ P ⊆ Q ∧
+      ∀ R : Finset ℕ, ¬FreeStep A N₀ R Q := by
+  classical
+  have hwf := freeStep_wf h0 hcov hfail
+  revert hP
+  induction P using hwf.induction with
+  | _ P ih =>
+    intro hP
+    by_cases hmax : ∀ R : Finset ℕ, ¬FreeStep A N₀ R P
+    · exact ⟨P, hP, Finset.Subset.refl P, hmax⟩
+    · push_neg at hmax
+      obtain ⟨R, hR⟩ := hmax
+      obtain ⟨Q, hQnode, hRQ, hQmax⟩ := ih R hR hR.2.1
+      refine ⟨Q, hQnode, ?_, hQmax⟩
+      obtain ⟨-, -, b, -, -, -, hReq⟩ := hR
+      calc P ⊆ insert b P := Finset.subset_insert _ _
+        _ = R := hReq.symm
+        _ ⊆ Q := hRQ
+
 end Erdos881
