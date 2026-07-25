@@ -2664,4 +2664,16 @@ theorem strip_card_le {A : Set ℕ} [DecidablePred (· ∈ A)] {a n : ℕ}
     have heq' : n - y₁ = n - y₂ := heq
     omega
 
+/-- **Mid-window reflection.**  The moat''s other half: big-fiber
+elements BELOW the owner also reflect into co-`A`.  Equivalently the
+completion''s translate by every near-difference at the owner avoids
+`A`: `s + (a - y) ∉ A` — the constraint that links completions to
+local difference structure, the gap-branch''s coherence mechanism. -/
+theorem midwindow_reflection {A : Set ℕ} {a n : ℕ}
+    (hown : OwnsTarget A a n) :
+    ∀ y ∈ A, 2 * y > n → y < a → n - y ∉ A := by
+  obtain ⟨h1, h2, h3, h4⟩ := hown
+  intro y hy hbig hya
+  exact h4 y hy hbig (by omega) (by omega)
+
 end Erdos881
