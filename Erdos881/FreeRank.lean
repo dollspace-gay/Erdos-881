@@ -2817,4 +2817,58 @@ theorem sidon_has_branch {A : Set ℕ} {N₀ C : ℕ}
       obtain ⟨j, hj⟩ := hP z hzP
       exact (havoid j (by omega)).2.2 hj.symm
 
+/-- Converse adapter: elementwise minimality implies tuple-form
+minimality (a surviving tuple basis provides elementwise pairs). -/
+theorem minimality_tuple_of_elementwise {A : Set ℕ}
+    (hmin : ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) :
+    ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 2 := by
+  rintro B hBA hBinf ⟨N₁, hN₁⟩
+  refine hmin B hBA hBinf ⟨N₁, fun n hn => ?_⟩
+  obtain ⟨v, hv, hvsum⟩ := hN₁ n hn
+  have hsum2 : v 0 + v 1 = n := by
+    have := hvsum
+    simpa [Fin.sum_univ_two] using this
+  exact ⟨v 0, (hv 0).1, v 1, (hv 1).1, (hv 0).2, (hv 1).2, hsum2⟩
+
+/-- **Order-2 survival implies order-3 survival**: translate every
+late target through one fixed remaining element.  Hence universal
+order-3 failure implies minimality outright — in the original
+tuple vocabulary, with no zero hypothesis. -/
+theorem basis3_of_basis2 {S : Set ℕ}
+    (hS : IsExactTupleAsymptoticBasis S 2) (hne : S.Nonempty) :
+    IsExactTupleAsymptoticBasis S 3 := by
+  obtain ⟨N₁, hN₁⟩ := hS
+  obtain ⟨z₀, hz₀⟩ := hne
+  refine ⟨N₁ + z₀, fun n hn => ?_⟩
+  obtain ⟨v, hv, hvsum⟩ := hN₁ (n - z₀) (by omega)
+  have hsum2 : v 0 + v 1 = n - z₀ := by
+    have := hvsum
+    simpa [Fin.sum_univ_two] using this
+  refine ⟨![v 0, v 1, z₀], ?_, ?_⟩
+  · intro i
+    fin_cases i
+    · exact hv 0
+    · exact hv 1
+    · exact hz₀
+  · simp [Fin.sum_univ_three]
+    omega
+
+/-- **The collapse in the original vocabulary**: universal order-3
+failure implies ℵ₀-minimality (tuple form), because an order-2
+surviving deletion would survive at order 3 by translation. -/
+theorem hmin_tuple_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 2 := by
+  intro B hBA hBinf hbasis2
+  refine hfail B hBA hBinf (basis3_of_basis2 hbasis2 ?_)
+  -- the surviving order-2 basis is nonempty: it represents targets
+  obtain ⟨N₁, hN₁⟩ := hbasis2
+  obtain ⟨v, hv, -⟩ := hN₁ N₁ (le_refl _)
+  exact ⟨v 0, hv 0⟩
+
 end Erdos881
