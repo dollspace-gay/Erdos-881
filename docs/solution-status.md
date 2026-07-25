@@ -480,3 +480,28 @@ difference-splitting seed). The coherence conjecture now reads:
 per-octave difference structure splits into disjoint owner and
 completion layers; the layer hierarchy is the digit system. All
 seeds verified; the aggregation and octave induction remain.
+
+## THE PAYMENT THEOREMS (2026-07-25 02:30 — the night's summit)
+
+Machine-verified in the final hours, the squeeze's payment side in
+full:
+
+- `zero_payment_squeeze` + `zero_payment_gap_bound`: payment-free
+  owners repel all neighbors past half their target — giant-gap
+  valleys only.
+- `no_five_zero_payers`: five zero-payers overfill their octave.
+- `cube_le_two_pow` + `octave_rich_of_covering`: covering's
+  √-supply cannot live in octaves of four — rich octaves cofinal.
+- `paying_owner_in_rich_octave` + `paying_owners_cofinal`:
+  **THE OPTIMIZATION LOWER BOUND** — the enemy cannot live
+  payment-free at any scale.
+- `payment_demand` + `payer_in_five`: each payer writes a fresh
+  co-A ledger entry below half its target, at rate ≥ 1 per five
+  octave elements.
+
+Remaining single computation: THE LEDGER TELESCOPE — control entry
+multiplicity across payers and scales; overflow forces digit
+routing; digit routing has verified carry-repair contradicting
+hfail. Everything else — two canonical rails, the per-deletion
+capstone, the ownership calculus, the payment theorems — is
+machine-checked, zero sorries, standard axioms.

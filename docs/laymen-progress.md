@@ -215,3 +215,17 @@ rung, the enemy is forced to spell out digits, and we have already
 proven both that the first rung holds and that a full digit tower
 picks its own lock. What's left is walking the stairs formally —
 big work, but of a kind we now know exactly how to do.
+
+## The tax that cannot be dodged (02:30)
+
+The night's last theorems proved the enemy must pay taxes. Every
+guardian that guards for free pushes its neighbors so far away
+that five free-riders can't fit in one district — and the machine
+proved the districts must be crowded (the two-key promise forces
+it). So in district after district, forever, someone pays: a real,
+checkable hole punched in the keyring at a smaller scale, at a
+guaranteed rate. We have the tax bill (verified), the tax rate
+(verified), and the fact that only the digit-tower economy can
+launder the payments (measured all night, with the digit economy's
+self-defeat verified since midnight). One audit remains: tallying
+the ledger down the scales. That is the whole of what's left.
