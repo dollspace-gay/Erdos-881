@@ -1406,4 +1406,32 @@ theorem service_exclusion {A : Set ℕ} {b q : ℕ}
   · exact hab h1
   · exact haq h1
 
+/-- **Service sums avoid `A`.**  With `0 ∈ A`, a unique service fiber
+forces its sum out of `A`: else `(0, s)` would be a second
+representation.  Every served marker contributes a valley point. -/
+theorem service_sum_not_mem {A : Set ℕ} {b q : ℕ}
+    (h0 : 0 ∈ A) (hb : b ∈ A) (hq : q ∈ A) (hb0 : 0 < b) (hq0 : 0 < q)
+    (huniq : ∀ p ∈ A, ∀ r ∈ A, p + r = b + q →
+      (p = b ∧ r = q) ∨ (p = q ∧ r = b)) :
+    b + q ∉ A := by
+  intro hmem
+  rcases huniq 0 h0 (b + q) hmem (by omega) with ⟨h1, _⟩ | ⟨h1, _⟩ <;>
+    omega
+
+/-- **Service sums are injective across markers.**  Distinct served
+markers have distinct service sums: a shared sum would give the
+shared fiber two representations.  Hence unique-fiber values are at
+least as plentiful as served markers at every scale — the enemy needs
+the unique-fiber set `U` to track `A`''s own density, cofinally. -/
+theorem service_sums_injective {A : Set ℕ} {b₁ q₁ b₂ q₂ : ℕ}
+    (hb₁ : b₁ ∈ A) (hq₁ : q₁ ∈ A) (hb₂ : b₂ ∈ A) (hq₂ : q₂ ∈ A)
+    (huniq₁ : ∀ p ∈ A, ∀ r ∈ A, p + r = b₁ + q₁ →
+      (p = b₁ ∧ r = q₁) ∨ (p = q₁ ∧ r = b₁))
+    (hne : b₂ ≠ b₁ ∧ b₂ ≠ q₁) :
+    b₁ + q₁ ≠ b₂ + q₂ := by
+  intro heq
+  rcases huniq₁ b₂ hb₂ q₂ hq₂ (by omega) with ⟨h1, _⟩ | ⟨h1, _⟩
+  · exact hne.1 h1
+  · exact hne.2 h1
+
 end Erdos881
