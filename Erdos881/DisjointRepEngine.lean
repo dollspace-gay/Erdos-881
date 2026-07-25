@@ -4984,4 +4984,204 @@ theorem constant_sidon_of_hfail {A : Set ℕ} {N₀ : ℕ}
   have hcard : (insert b P).card ≤ P.card + 1 := Finset.card_insert_le b P
   exact ⟨m, le_trans (le_trans (le_max_left _ _) hXb) hbm, by omega⟩
 
+/-- **THE PAIR FLOOD, POOL-RELATIVE.**  The pair dodge restricted to
+picks from any unbounded pool `P₀ ⊆ A ∖ {0}`: the stalled envelope
+`P` consists of POOL elements, and every large POOL element `b`
+pair-guards a target `m ≥ b` over `P ∪ {b}`.  The sound descent
+tool: rerunning the flood inside its own guardian supply yields
+envelopes made of guardians — junk cannot enter a proper pool. -/
+theorem pair_flood_pool {A P₀ : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hP₀A : P₀ ⊆ A) (h0P₀ : 0 ∉ P₀)
+    (hunb : ∀ X, ∃ p ∈ P₀, X ≤ p)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ P₀) ∧ PairFree A N₀ P ∧
+      ∃ X, ∀ b ∈ P₀, X ≤ b →
+        ∃ m, N₀ ≤ m ∧ b ≤ m ∧
+          ∀ x ∈ A, ∀ y ∈ A, x + y = m →
+            x ∈ insert b P ∨ y ∈ insert b P := by
+  classical
+  by_contra hno
+  push_neg at hno
+  have hfree0 : PairFree A N₀ ∅ := by
+    intro m hm
+    obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
+    exact ⟨x, hx, y, hy, hxy, Finset.notMem_empty x,
+      Finset.notMem_empty y⟩
+  have hpick : ∀ (P : Finset ℕ) (X : ℕ), ∃ b, b ∈ P₀ ∧ X ≤ b ∧
+      ((∀ h ∈ P, h ∈ P₀) → PairFree A N₀ P →
+        ∀ m, N₀ ≤ m → b ≤ m →
+        ∃ x ∈ A, ∃ y ∈ A, x + y = m ∧
+          x ∉ insert b P ∧ y ∉ insert b P) := by
+    intro P X
+    by_cases hPP : (∀ h ∈ P, h ∈ P₀) ∧ PairFree A N₀ P
+    · obtain ⟨b, hbP, hXb, hbgood⟩ := hno P hPP.1 hPP.2 X
+      exact ⟨b, hbP, hXb, fun _ _ => hbgood⟩
+    · obtain ⟨b, hbP, hXb⟩ := hunb X
+      refine ⟨b, hbP, hXb, fun h1 h2 => absurd ⟨h1, h2⟩ hPP⟩
+  choose pick hpickP hpickge hpickfree using hpick
+  set st : ℕ → ℕ × Finset ℕ := fun j =>
+    Nat.rec (pick ∅ 1, {pick ∅ 1})
+      (fun _ prev => (pick prev.2 (prev.1 + 1),
+        insert (pick prev.2 (prev.1 + 1)) prev.2)) j with hst
+  have hstS : ∀ j, st (j + 1) = (pick (st j).2 ((st j).1 + 1),
+      insert (pick (st j).2 ((st j).1 + 1)) (st j).2) := fun _ => rfl
+  have hsetP : ∀ j, ∀ h ∈ (st j).2, h ∈ P₀ := by
+    intro j
+    induction j with
+    | zero =>
+      intro h hh
+      have hh' : h = pick ∅ 1 := Finset.mem_singleton.1 hh
+      rw [hh']
+      exact hpickP ∅ 1
+    | succ j ih =>
+      intro h hh
+      rw [hstS] at hh
+      rcases Finset.mem_insert.1 hh with h' | h'
+      · rw [h']
+        exact hpickP _ _
+      · exact ih h h'
+  have hfreeS : ∀ j, PairFree A N₀ (st j).2 := by
+    intro j
+    induction j with
+    | zero =>
+      show PairFree A N₀ (insert (pick ∅ 1) ∅)
+      exact pairFree_insert hfree0
+        (hpickfree ∅ 1 (fun h hh => absurd hh (Finset.notMem_empty h))
+          hfree0)
+    | succ j ih =>
+      rw [show (st (j + 1)).2 =
+          insert (pick (st j).2 ((st j).1 + 1)) (st j).2 from
+        by rw [hstS]]
+      exact pairFree_insert ih
+        (hpickfree (st j).2 ((st j).1 + 1) (hsetP j) ih)
+  have hlastge : ∀ j, j + 1 ≤ (st j).1 := by
+    intro j
+    induction j with
+    | zero => simpa using hpickge ∅ 1
+    | succ j ih =>
+      have h1 : (st (j + 1)).1 = pick (st j).2 ((st j).1 + 1) := by
+        rw [hstS]
+      have h2 := hpickge (st j).2 ((st j).1 + 1)
+      omega
+  have hchain : ∀ i j, i ≤ j → (st i).2 ⊆ (st j).2 := by
+    intro i j hij
+    induction j with
+    | zero =>
+      have h0' : i = 0 := by omega
+      subst h0'
+      exact Finset.Subset.refl _
+    | succ j ih =>
+      rcases Nat.lt_or_ge i (j + 1) with h' | h'
+      · refine Finset.Subset.trans (ih (by omega)) ?_
+        rw [hstS]
+        exact Finset.subset_insert _ _
+      · have h1 : i = j + 1 := by omega
+        subst h1
+        exact Finset.Subset.refl _
+  have hlastmem : ∀ j, (st j).1 ∈ (st j).2 := by
+    intro j
+    cases j with
+    | zero => exact Finset.mem_singleton_self _
+    | succ j =>
+      rw [hstS]
+      exact Finset.mem_insert_self _ _
+  have hlaststep : ∀ j, (st j).1 < (st (j + 1)).1 := by
+    intro j
+    have h1 : (st (j + 1)).1 = pick (st j).2 ((st j).1 + 1) := by
+      rw [hstS]
+    have h2 := hpickge (st j).2 ((st j).1 + 1)
+    omega
+  have hlastmono : StrictMono (fun j => (st j).1) :=
+    strictMono_nat_of_lt_succ hlaststep
+  set B : Set ℕ := Set.range (fun j => (st j).1) with hB
+  have hBA : B ⊆ A := by
+    rintro x ⟨j, rfl⟩
+    show (st j).1 ∈ A
+    exact hP₀A (hsetP j _ (hlastmem j))
+  have hBinf : B.Infinite :=
+    Set.infinite_range_of_injective hlastmono.injective
+  refine hfail B hBA hBinf ⟨N₀, fun m hm => ?_⟩
+  obtain ⟨x, hx, y, hy, hxy, hxP, hyP⟩ := hfreeS m m hm
+  have hxB : x ∉ B := by
+    rintro ⟨i, hi⟩
+    have hi' : (st i).1 = x := hi
+    rcases Nat.lt_or_ge m i with h' | h'
+    · have := hlastge i
+      omega
+    · exact hxP (by
+        rw [← hi']
+        exact hchain i m h' (hlastmem i))
+  have hyB : y ∉ B := by
+    rintro ⟨i, hi⟩
+    have hi' : (st i).1 = y := hi
+    rcases Nat.lt_or_ge m i with h' | h'
+    · have := hlastge i
+      omega
+    · exact hyP (by
+        rw [← hi']
+        exact hchain i m h' (hlastmem i))
+  have h0B : (0 : ℕ) ∉ B := by
+    rintro ⟨i, hi⟩
+    have hi' : (st i).1 = 0 := hi
+    have := hlastge i
+    omega
+  refine ⟨![x, y, 0], ?_, by simp [Fin.sum_univ_three]; omega⟩
+  intro i
+  match i with
+  | 0 => exact ⟨hx, hxB⟩
+  | 1 => exact ⟨hy, hyB⟩
+  | 2 => exact ⟨h0, h0B⟩
+
+/-- The rotating guardians of a canonical pair flood with core `S`:
+elements carrying a minimal pair hub `S ∪ {b}` at some personal
+target `m ≥ b`. -/
+def PairFloodGuardians (A : Set ℕ) (N₀ : ℕ) (S : Finset ℕ) : Set ℕ :=
+  {b | b ∈ A ∧ b ∉ S ∧ 0 < b ∧ ∃ m, N₀ ≤ m ∧ b ≤ m ∧
+    IsPairHub A m (insert b S) ∧
+    ∀ h ∈ insert b S, ¬IsPairHub A m (insert b S \ {h})}
+
+/-- **THE GUARDIAN CASCADE, ORDER 2.**  Rerunning the pair flood
+inside its own guardian supply: the canonical core `S*` has an
+unbounded guardian set `G`, and the pool flood on `G` yields a
+SECOND envelope `P′` MADE OF GUARDIANS — every large guardian `b`
+pair-guards a second target `m′ ≥ b` whose entire order-2 life
+routes through fellow guardians `P′` plus `b` itself.  Every
+element of `P′` carries the double structure: its own `S* ∪ {g}`
+hub AND membership in the level-two envelope.  Sound self-similar
+descent with no vacuity at any level. -/
+theorem pair_flood_cascade {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ S : Finset ℕ,
+      (∀ X, ∃ b ∈ PairFloodGuardians A N₀ S, X ≤ b) ∧
+      ∃ P' : Finset ℕ,
+        (∀ h ∈ P', h ∈ PairFloodGuardians A N₀ S) ∧
+        PairFree A N₀ P' ∧
+        ∃ X', ∀ b ∈ PairFloodGuardians A N₀ S, X' ≤ b →
+          ∃ m, N₀ ≤ m ∧ b ≤ m ∧
+            ∀ x ∈ A, ∀ y ∈ A, x + y = m →
+              x ∈ insert b P' ∨ y ∈ insert b P' := by
+  classical
+  obtain ⟨P, S, hSP, hPfree, hstream⟩ :=
+    pair_flood_canonical h0 hcov hfail
+  have hunb : ∀ X, ∃ b ∈ PairFloodGuardians A N₀ S, X ≤ b := by
+    intro X
+    obtain ⟨b, hbA, hXb, hbS, m, hmN, hbm, hhub, hmin⟩ :=
+      hstream (max X 1)
+    refine ⟨b, ⟨hbA, hbS, ?_, m, hmN, hbm, hhub, hmin⟩,
+      le_trans (le_max_left _ _) hXb⟩
+    have := le_trans (le_max_right _ _) hXb
+    omega
+  have hGA : PairFloodGuardians A N₀ S ⊆ A := fun b hb => hb.1
+  have h0G : 0 ∉ PairFloodGuardians A N₀ S := by
+    intro h
+    have := h.2.2.1
+    omega
+  obtain ⟨P', hP'G, hP'free, X', hcascade⟩ :=
+    pair_flood_pool h0 hcov hGA h0G hunb hfail
+  exact ⟨S, hunb, P', hP'G, hP'free, X', hcascade⟩
+
 end Erdos881
