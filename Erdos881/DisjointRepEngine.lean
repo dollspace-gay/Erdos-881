@@ -7653,4 +7653,88 @@ theorem disjoint_reps_le_hub_card {A : Set ℕ} {n K : ℕ}
       exact hPdis i j (k i) (k j) hne heq)
   simpa using hcard
 
+/-- `B`-saturation: every order-2 representation of `v` meets `B`.
+Failing targets force their entire translate fan into the
+saturated set. -/
+def Saturated (A B : Set ℕ) (v : ℕ) : Prop :=
+  ∀ x ∈ A, ∀ y ∈ A, x + y = v → x ∈ B ∨ y ∈ B
+
+/-- **Saturated points live in `B + A`.**  A covered saturated
+point has a pair meeting `B`, so it decomposes as a `B`-element
+plus an `A`-element: the saturated set is additively thin whenever
+`B` is. -/
+theorem saturated_mem_add {A B : Set ℕ} {N₀ v : ℕ}
+    (hcov : PairCovers A N₀) (hv : N₀ ≤ v)
+    (hsat : Saturated A B v) :
+    ∃ β ∈ B, ∃ a ∈ A, β + a = v := by
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov v hv
+  rcases hsat x hx y hy hxy with h | h
+  · exact ⟨x, h, y, hy, hxy⟩
+  · exact ⟨y, h, x, hx, by omega⟩
+
+open Classical in
+/-- **The saturation count bound.**  In any window, saturated
+points inject into `B`-window × `A`-window pairs: there are at
+most `|B ∩ [0,Y]| · |A ∩ [0,Y]|` of them.  Sparse deletions have
+additively sparse saturated sets. -/
+theorem saturated_count_bound {A B : Set ℕ} {N₀ Y : ℕ}
+    [DecidablePred (· ∈ A)] [DecidablePred (· ∈ B)]
+    (hcov : PairCovers A N₀) :
+    ((Finset.range (Y + 1)).filter
+      (fun v => N₀ ≤ v ∧ Saturated A B v)).card ≤
+    ((Finset.range (Y + 1)).filter (· ∈ B)).card *
+    ((Finset.range (Y + 1)).filter (· ∈ A)).card := by
+  classical
+  have hchoice : ∀ v : ℕ, ∃ p : ℕ × ℕ,
+      (v ∈ (Finset.range (Y + 1)).filter
+        (fun v => N₀ ≤ v ∧ Saturated A B v) →
+      p.1 ∈ B ∧ p.2 ∈ A ∧ p.1 + p.2 = v) := by
+    intro v
+    by_cases hv : v ∈ (Finset.range (Y + 1)).filter
+      (fun v => N₀ ≤ v ∧ Saturated A B v)
+    · obtain ⟨hvr, hvN, hvsat⟩ := Finset.mem_filter.1 hv
+      obtain ⟨β, hβ, a, ha, hba⟩ := saturated_mem_add hcov hvN hvsat
+      exact ⟨(β, a), fun _ => ⟨hβ, ha, hba⟩⟩
+    · exact ⟨(0, 0), fun h => absurd h hv⟩
+  choose p hp using hchoice
+  have hcard := Finset.card_le_card_of_injOn p
+    (t := ((Finset.range (Y + 1)).filter (· ∈ B)) ×ˢ
+      ((Finset.range (Y + 1)).filter (· ∈ A)))
+    (by
+      intro v hv
+      obtain ⟨hβ, ha, hba⟩ := hp v hv
+      have hvY : v ≤ Y := by
+        have := Finset.mem_range.1 (Finset.mem_filter.1 hv).1
+        omega
+      refine Finset.mem_product.2 ⟨?_, ?_⟩
+      · exact Finset.mem_filter.2 ⟨Finset.mem_range.2 (by omega), hβ⟩
+      · exact Finset.mem_filter.2 ⟨Finset.mem_range.2 (by omega), ha⟩)
+    (by
+      intro v hv w hw heq
+      obtain ⟨-, -, hv2⟩ := hp v (by simpa using hv)
+      obtain ⟨-, -, hw2⟩ := hp w (by simpa using hw)
+      rw [heq] at hv2
+      omega)
+  calc ((Finset.range (Y + 1)).filter
+      (fun v => N₀ ≤ v ∧ Saturated A B v)).card
+      ≤ _ := hcard
+    _ = _ := Finset.card_product _ _
+
+/-- **Failing targets saturate their fans.**  If every
+3-representation of `m` meets `B` (with `0 ∉ B`), then every
+translate `m − z` by an undeleted element is `B`-saturated: the
+enemy must fit `≈ |A ∩ [0, m]|` fan points inside the additively
+thin saturated set at every failing target of every deletion. -/
+theorem failing_fan_saturated {A B : Set ℕ} {m : ℕ}
+    (_h0B : 0 ∉ B)
+    (hdead : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = m →
+      x ∈ B ∨ y ∈ B ∨ z ∈ B)
+    {z : ℕ} (hz : z ∈ A) (hzB : z ∉ B) (hzm : z ≤ m) :
+    Saturated A B (m - z) := by
+  intro x hx y hy hxy
+  rcases hdead x hx y hy z hz (by omega) with h | h | h
+  · exact Or.inl h
+  · exact Or.inr h
+  · exact absurd h hzB
+
 end Erdos881
