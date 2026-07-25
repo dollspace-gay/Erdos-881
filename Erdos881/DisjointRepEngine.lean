@@ -3858,4 +3858,59 @@ theorem grand_dichotomy {A : Set ℕ} {N0 : ℕ}
       have hh₀Y : Y i ≤ h₀ := (hFA i h₀ (hH'F h₀ hh₀)).2
       exact ⟨n, hnN, by omega, H', hH'F, ⟨h₀, hh₀⟩, hH'hub, hH'min⟩
 
+/-- **Team-branch collapse.**  Pigeonholing hub cardinalities across
+tower levels: the tower teams contain cofinal minimal hubs of one
+fixed size `c ≥ 1`, all elements positive.  Positive singletons
+(`c = 1`) feed the verified stream kill; the surviving branch starts
+at `c = 2` — cofinal destroyer teams of one fixed size, the
+pipeline''s entry, derived. -/
+theorem tower_teams_card {A : Set ℕ} {N0 C : ℕ} {Y : ℕ → ℕ}
+    {F : ℕ → Finset ℕ}
+    (hY1 : 1 ≤ Y 0)
+    (hFA : ∀ i, ∀ h ∈ F i, h ∈ A ∧ Y i ≤ h)
+    (hYmono : ∀ i, Y i < Y (i + 1))
+    (hCb : ∀ i, (F i).card ≤ C)
+    (hteams : ∀ i, ∃ n, N0 ≤ n ∧ Y i ≤ n ∧ ∃ H : Finset ℕ,
+      (∀ h ∈ H, h ∈ F i) ∧ H.Nonempty ∧ IsRepHub A n H ∧
+      ∀ h ∈ H, ¬IsRepHub A n (H \ {h})) :
+    ∃ c, 1 ≤ c ∧ ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      H.card = c ∧ H.Nonempty ∧ IsRepHub A n H ∧
+      (∀ h ∈ H, h ∈ A ∧ 0 < h) ∧
+      ∀ h ∈ H, ¬IsRepHub A n (H \ {h}) := by
+  classical
+  have hmono : StrictMono Y := strictMono_nat_of_lt_succ hYmono
+  have hY1i : ∀ i, 1 ≤ Y i := by
+    intro i
+    have h0 : Y 0 ≤ Y i := hmono.monotone (Nat.zero_le i)
+    omega
+  have hYunb : ∀ N, ∃ i, N ≤ Y i := by
+    intro N
+    refine ⟨N, ?_⟩
+    have := hmono.le_apply (x := N)
+    omega
+  have hP : ∀ N, ∃ n, N ≤ n ∧ ∃ c, c ≤ C ∧
+      (∃ H : Finset ℕ, H.card = c ∧ H.Nonempty ∧ IsRepHub A n H ∧
+        (∀ h ∈ H, h ∈ A ∧ 0 < h) ∧
+        ∀ h ∈ H, ¬IsRepHub A n (H \ {h})) := by
+    intro N
+    obtain ⟨i, hiN⟩ := hYunb N
+    obtain ⟨n, hnN, hnY, H, hHF, hHne, hhub, hmin⟩ := hteams i
+    have hcard : H.card ≤ C := by
+      calc H.card ≤ (F i).card :=
+        Finset.card_le_card (fun h hh => hHF h hh)
+        _ ≤ C := hCb i
+    refine ⟨n, by omega, H.card, hcard, H, rfl, hHne, hhub, ?_, hmin⟩
+    intro h hh
+    have h1 := hFA i h (hHF h hh)
+    have h2 := hY1i i
+    exact ⟨h1.1, by omega⟩
+  obtain ⟨c, hc, hcof⟩ := cofinal_value_pigeonhole
+    (P := fun n c => ∃ H : Finset ℕ, H.card = c ∧ H.Nonempty ∧
+      IsRepHub A n H ∧ (∀ h ∈ H, h ∈ A ∧ 0 < h) ∧
+      ∀ h ∈ H, ¬IsRepHub A n (H \ {h})) hP
+  refine ⟨c, ?_, hcof⟩
+  obtain ⟨n, -, H, hHc, hHne, -⟩ := hcof 0
+  have := Finset.card_pos.2 hHne
+  omega
+
 end Erdos881
