@@ -3347,4 +3347,21 @@ theorem unbounded_dodge {A : Set ℕ}
   have h2 : E.sup id + 1 ≤ a := le_trans (le_max_right _ _) hX
   omega
 
+/-- **The failing-double fiber bound.**  Every proper fiber of a
+failing double routes through the deletion: the small sides of its
+representations inject into `B`-hits below it.  Doubles failing
+under a `K`-marker deletion have at most `2K` fiber elements —
+quantitative near-rigidity: sparse deletions leave failing doubles
+nearly rigid, and the dodge selection removes the remainder. -/
+theorem failing_double_fiber_bound {A B : Set ℕ} {b : ℕ}
+    (h0 : 0 ∈ A) (h0B : 0 ∉ B)
+    (hdead : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = 2 * b →
+      x ∈ B ∨ y ∈ B ∨ z ∈ B) :
+    ∀ x ∈ A, ∀ y ∈ A, x + y = 2 * b → x ∈ B ∨ y ∈ B := by
+  intro x hx y hy hxy
+  rcases hdead x hx y hy 0 h0 (by omega) with h | h | h
+  · exact Or.inl h
+  · exact Or.inr h
+  · exact absurd h h0B
+
 end Erdos881
