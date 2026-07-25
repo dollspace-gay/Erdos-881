@@ -7020,4 +7020,41 @@ theorem team_card_escalation_two {A : Set ℕ} {N₀ : ℕ}
           exact hhub
       · exact hge
 
+/-- **Team targets dominate their members, pair-free version.**  If
+the pair `{u, v}` never hubs a late target but the triple
+`{u, v, w}` hubs `n`, then `w ≤ n`: a member beyond the target
+would be unhittable, collapsing the triple hub onto the banned
+pair.  In pair-free worlds, triple-clique targets march at least as
+fast as their largest member. -/
+theorem team_target_dominates {A : Set ℕ} {N₀ n u v w : ℕ}
+    (hpf : ¬∃ m, N₀ ≤ m ∧ IsRepHub A m {u, v})
+    (hn : N₀ ≤ n) (hhub : IsRepHub A n {u, v, w}) :
+    w ≤ n := by
+  by_contra hgt
+  push_neg at hgt
+  refine hpf ⟨n, hn, ?_⟩
+  intro x hx y hy z hz hsum
+  rcases hhub x hx y hy z hz hsum with h | h | h
+  · rcases Finset.mem_insert.1 h with h' | h'
+    · exact Or.inl (Finset.mem_insert.2 (Or.inl h'))
+    · rcases Finset.mem_insert.1 h' with h'' | h''
+      · exact Or.inl (Finset.mem_insert.2 (Or.inr (by
+          simpa using h'')))
+      · have := Finset.mem_singleton.1 h''
+        omega
+  · rcases Finset.mem_insert.1 h with h' | h'
+    · exact Or.inr (Or.inl (Finset.mem_insert.2 (Or.inl h')))
+    · rcases Finset.mem_insert.1 h' with h'' | h''
+      · exact Or.inr (Or.inl (Finset.mem_insert.2 (Or.inr (by
+          simpa using h''))))
+      · have := Finset.mem_singleton.1 h''
+        omega
+  · rcases Finset.mem_insert.1 h with h' | h'
+    · exact Or.inr (Or.inr (Finset.mem_insert.2 (Or.inl h')))
+    · rcases Finset.mem_insert.1 h' with h'' | h''
+      · exact Or.inr (Or.inr (Finset.mem_insert.2 (Or.inr (by
+          simpa using h''))))
+      · have := Finset.mem_singleton.1 h''
+        omega
+
 end Erdos881
