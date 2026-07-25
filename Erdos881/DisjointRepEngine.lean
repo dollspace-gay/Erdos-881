@@ -1101,4 +1101,18 @@ theorem hub_endgame_of_hfail {A : Set ℕ} {N₀ : ℕ}
   exact ⟨K, S, c, hcK, hc2, hSc, hsplit,
     fun hceq => recurring_team_of_tight_core hsplit hceq⟩
 
+/-- The tight-pair leaf, explicit: a tight core of size two hands the
+fixed-pair pipeline its recurring destroyer pair. -/
+theorem pipeline_entry_of_tight_pair {A : Set ℕ} {N₀ : ℕ} {S : Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hteam : ∀ N, ∃ n, N ≤ n ∧ IsRepHub A n S)
+    (hS2 : S.card = 2) :
+    ∃ u v, u ≠ v ∧ ∀ N, ∃ n, N ≤ n ∧ IsPairDestroyer A u v n := by
+  obtain ⟨u, v, huv, rfl⟩ := Finset.card_eq_two.1 hS2
+  refine ⟨u, v, huv, fun N => ?_⟩
+  obtain ⟨n, hn, hhub⟩ := hteam (max N N₀)
+  exact ⟨n, le_trans (le_max_left _ _) hn,
+    pairDestroyer_of_pair_hub h0 hcov (le_trans (le_max_right _ _) hn)
+      hhub⟩
+
 end Erdos881
