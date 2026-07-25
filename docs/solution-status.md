@@ -467,3 +467,16 @@ service, window-SAT, escape — terminates at one statement:
 Digit-like structures verifiably satisfy Erdős 881's conclusion
 (carry repair). Proving that one classification closes the
 problem; every supporting wall is machine-verified.
+
+## The squeeze's working suite (2026-07-25 02:10)
+
+Verified in the night's final stretch: the complete per-owner and
+per-pair constraint system of the classification — mid-window
+reflection, the strip counting atom, cross-owner exclusion, the
+consecutive-owner dichotomy (the gaps are the moduli), completion
+isolation (each completion sits alone, insulated by its owner's
+difference structure), and completion mutual avoidance (the
+difference-splitting seed). The coherence conjecture now reads:
+per-octave difference structure splits into disjoint owner and
+completion layers; the layer hierarchy is the digit system. All
+seeds verified; the aggregation and octave induction remain.
