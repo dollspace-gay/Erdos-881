@@ -655,4 +655,90 @@ theorem pool_rank_pos {A : Set ℕ} {N₀ : ℕ}
     ((poolFreeStep_wf h0 hcov hfail P₀).apply ∅) hstep
   exact lt_of_le_of_lt (zero_le _) hlt
 
+/-- **Size-to-rank.**  A free pool set of cardinality `n` puts `n`
+below the pool tree's root rank: its sorted prefixes form a free
+chain of length `n` from the empty node.  Hub-free sets from the
+Ramsey ladder are rank certificates, and unbounded free
+cardinalities force root rank `≥ ω`. -/
+theorem free_set_card_le_rank {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {P₀ : Set ℕ} {Q : Finset ℕ}
+    (hQnode : FreeNode A N₀ Q) (hQpool : ∀ h ∈ Q, h ∈ P₀) :
+    (Q.card : Ordinal.{0}) ≤
+      ((poolFreeStep_wf h0 hcov hfail P₀).apply ∅).rank := by
+  classical
+  set hwf := poolFreeStep_wf h0 hcov hfail P₀ with hhwf
+  set n := Q.card with hn
+  set emb := Q.orderEmbOfFin hn.symm with hemb
+  set e : ℕ → ℕ := fun j => if h : j < n then emb ⟨j, h⟩ else 0
+    with he
+  have heval : ∀ j (h : j < n), e j = emb ⟨j, h⟩ := by
+    intro j h
+    simp [he, h]
+  have hembQ : ∀ (i : Fin n), emb i ∈ Q :=
+    fun i => Q.orderEmbOfFin_mem hn.symm i
+  set pre : ℕ → Finset ℕ := fun i => (Finset.range i).image e
+    with hpre
+  have hpresub : ∀ i, i ≤ n → pre i ⊆ Q := by
+    intro i hin x hx
+    obtain ⟨j, hj, hjx⟩ := Finset.mem_image.1 hx
+    have hj' : j < n := by
+      have := Finset.mem_range.1 hj
+      omega
+    rw [← hjx, heval j hj']
+    exact hembQ _
+  have hprenode : ∀ i, i ≤ n → FreeNode A N₀ (pre i) := by
+    intro i hin
+    exact ⟨fun h hh => hQnode.1 h (hpresub i hin hh),
+      RepFree.mono (hpresub i hin) hQnode.2⟩
+  have hprestep : ∀ i, i < n →
+      PoolFreeStep A N₀ P₀ (pre (i + 1)) (pre i) := by
+    intro i hin
+    have hstep1 : pre (i + 1) = insert (e i) (pre i) := by
+      show (Finset.range (i + 1)).image e =
+        insert (e i) ((Finset.range i).image e)
+      rw [Finset.range_add_one, Finset.image_insert]
+    refine ⟨⟨hprenode i (by omega), ?_, e i, ?_, ?_, ?_, hstep1⟩,
+      fun h hh => hQpool h (hpresub (i + 1) (by omega) hh)⟩
+    · exact hprenode (i + 1) (by omega)
+    · rw [heval i hin]
+      exact (hQnode.1 _ (hembQ _)).1
+    · rw [heval i hin]
+      exact (hQnode.1 _ (hembQ _)).2
+    · intro h hh
+      obtain ⟨j, hj, hjx⟩ := Finset.mem_image.1 hh
+      have hj' : j < i := Finset.mem_range.1 hj
+      have hjn : j < n := by omega
+      rw [← hjx, heval j hjn, heval i hin]
+      exact emb.strictMono (Fin.mk_lt_mk.2 hj')
+  -- downward induction on remaining depth
+  have hrank : ∀ d i, i + d ≤ n →
+      ((d : ℕ) : Ordinal.{0}) ≤ (hwf.apply (pre i)).rank := by
+    intro d
+    induction d with
+    | zero =>
+      intro i _
+      simp
+    | succ d ih =>
+      intro i hin
+      have hin' : i < n := by omega
+      have hlt := Acc.rank_lt_of_rel (hwf.apply (pre i))
+        (hprestep i hin')
+      have hih := ih (i + 1) (by omega)
+      have h1 : ((d : ℕ) : Ordinal.{0}) <
+          (hwf.apply (pre i)).rank := lt_of_le_of_lt hih hlt
+      have h2 : ((d + 1 : ℕ) : Ordinal.{0}) =
+          Order.succ ((d : ℕ) : Ordinal.{0}) := by
+        rw [Nat.cast_succ, Ordinal.add_one_eq_succ]
+      rw [h2]
+      exact Order.succ_le_of_lt h1
+  have h0pre : pre 0 = ∅ := by
+    show (Finset.range 0).image e = ∅
+    simp
+  have := hrank n 0 (by omega)
+  rw [h0pre] at this
+  exact this
+
 end Erdos881
