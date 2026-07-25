@@ -20,6 +20,7 @@ disjoint-rep growth; size-≤2 rep covers simply do not exist).
 -/
 
 import Erdos881.TeamGraphRamsey
+import Erdos881.AdditiveSupports
 
 namespace Erdos881
 
@@ -314,5 +315,38 @@ theorem hub_of_no_disjointReps {A : Set ℕ} {n K : ℕ}
             have := j.isLt
             omega
           exact Fin.ext (by omega)
+
+/-- **The hub reduction.**  A counterexample's order-3 failure against
+every infinite deletion forces cofinal targets carrying constant-size
+representation hubs: some fixed `K` bounds a hub for infinitely many
+targets.  This is the fixed-pair configuration generalized to fixed
+finite hub size, derived from first principles (Engine V10 +
+hub extraction) — the entry point for team-machinery escalation. -/
+theorem cofinal_bounded_hubs_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ K, ∀ N, ∃ n, N ≤ n ∧
+      ∃ H : Finset ℕ, H.card ≤ 3 * (K - 1) ∧ IsRepHub A n H := by
+  classical
+  have hnodis : ¬∀ K, ∃ N, ∀ n, N ≤ n → HasDisjointTripleReps A n K := by
+    intro hdis
+    obtain ⟨B, hBsub, hBinf, N₁, hN₁⟩ :=
+      surviving_deletion_of_disjointReps hcov hdis
+    refine hfail B hBsub hBinf ⟨N₁, fun n hn => ?_⟩
+    obtain ⟨x, hx, y, hy, z, hz, hxB, hyB, hzB, hsum⟩ := hN₁ n hn
+    refine ⟨![x, y, z], ?_, ?_⟩
+    · intro i
+      match i with
+      | 0 => exact ⟨hx, hxB⟩
+      | 1 => exact ⟨hy, hyB⟩
+      | 2 => exact ⟨hz, hzB⟩
+    · simpa [Fin.sum_univ_three] using hsum
+  push_neg at hnodis
+  obtain ⟨K, hK⟩ := hnodis
+  refine ⟨K, fun N => ?_⟩
+  obtain ⟨n, hn, hno⟩ := hK N
+  obtain ⟨H, hHcard, hHhub⟩ := hub_of_no_disjointReps hno
+  exact ⟨n, hn, H, hHcard, hHhub⟩
 
 end Erdos881
