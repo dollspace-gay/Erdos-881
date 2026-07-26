@@ -303,3 +303,19 @@ hub_fan_blowup as-is; window pair mass — sum_pair_counts_le_sq
 as-is; the staggering schedule — new), then tighten constants
 until one side wins or the enemy's schedule is forced unique and
 attacked structurally.
+
+## R4 LADDER-WORLD LAB (20:49; probe_ladder_world.py)
+
+Explicit R4 worlds exist in finite windows: |A| = 187 on [0,4000]
+carries 20 pure-Q streets + all rungs + all b-pairs + full
+coverage.  Scaling strains coverage (holes 0 → 4 → 18 as the
+ladder densifies toward ~√Y/3 streets), so DENSE ladders are
+incompatible with covering — but R4 only needs unboundedly many
+rungs, and geometric spacing (L ~ log Y) never strains.  The
+street ladder is a genuine refuge: the four-rooms theorem is a
+classification, not yet a kill.  The refuge's cost profile is now
+measured: each street consumes an anti-diagonal of pairing
+freedom; the covering budget absorbs ~√Y/3 of them per window.
+A real R4 counterexample must ALSO pay shells, floods, blowups
+and minimality on top — the combined budget is the next lab
+question.
