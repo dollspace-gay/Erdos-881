@@ -3915,4 +3915,58 @@ theorem stratified_tax_portrait {A : Set ℕ} {N₀ : ℕ}
     depth_tax_of_hfail h0 hcov hanchor hfail hdisj hguard
   exact ⟨Q, X, hne, hmem, hfree, hdisj, hguard, hX⟩
 
+/-- **THE SIX-LEVEL CAP.**  Seven pairwise disjoint envelopes with
+seven DISTINCT guardians can never hub one common target: a
+representation has three parts, each lying in at most one envelope
+(disjointness) and equal to at most one guardian (injectivity), so
+a rep covers at most six of the seven demands.  Unlike the
+rotation cap there is no ownership escape — distinct guardians
+kill it.  One target therefore serves at most six shell-levels of
+distinct-guardian duty.  Hypothesis-free pigeonhole. -/
+theorem seven_level_hub_impossible {A : Set ℕ} {m : ℕ}
+    {Q : Fin 7 → Finset ℕ} {b : Fin 7 → ℕ}
+    (hdisj : ∀ i j, i ≠ j → Disjoint (Q i) (Q j))
+    (hbinj : Function.Injective b)
+    (hrep : ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = m)
+    (hhub : ∀ i, IsRepHub A m (insert (b i) (Q i))) :
+    False := by
+  classical
+  obtain ⟨x, hx, y, hy, z, hz, hsum⟩ := hrep
+  have hpick : ∀ i : Fin 7, ∃ pm : Fin 3 × Fin 2,
+      (pm.2 = 0 ∧
+        (if pm.1 = 0 then x else if pm.1 = 1 then y else z)
+          ∈ Q i) ∨
+      (pm.2 = 1 ∧
+        (if pm.1 = 0 then x else if pm.1 = 1 then y else z)
+          = b i) := by
+    intro i
+    rcases hhub i x hx y hy z hz hsum with h | h | h
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact ⟨(0, 1), Or.inr ⟨rfl, by simpa using h'⟩⟩
+      · exact ⟨(0, 0), Or.inl ⟨rfl, by simpa using h'⟩⟩
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact ⟨(1, 1), Or.inr ⟨rfl, by simpa using h'⟩⟩
+      · exact ⟨(1, 0), Or.inl ⟨rfl, by simpa using h'⟩⟩
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact ⟨(2, 1), Or.inr ⟨rfl, by simpa using h'⟩⟩
+      · exact ⟨(2, 0), Or.inl ⟨rfl, by simpa using h'⟩⟩
+  choose pk hpk using hpick
+  have hcard : ¬Function.Injective pk := by
+    intro hinj
+    have := Fintype.card_le_of_injective pk hinj
+    simp at this
+  rw [Function.not_injective_iff] at hcard
+  obtain ⟨i, j, hpij, hij⟩ := hcard
+  have h1 := hpk i
+  have h2 := hpk j
+  rw [hpij] at h1
+  rcases h1 with ⟨hm1, hin1⟩ | ⟨hm1, heq1⟩ <;>
+    rcases h2 with ⟨hm2, hin2⟩ | ⟨hm2, heq2⟩
+  · exact (Finset.disjoint_left.1 (hdisj i j hij)) hin1 hin2
+  · rw [hm1] at hm2
+    exact absurd hm2 (by decide)
+  · rw [hm1] at hm2
+    exact absurd hm2 (by decide)
+  · exact hij (hbinj (heq1 ▸ heq2 ▸ rfl))
+
 end Erdos881
