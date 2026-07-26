@@ -16166,4 +16166,53 @@ theorem poor_stream_of_hfail {A : Set ℕ} {N₀ : ℕ}
   rw [hFcard] at hpoor
   omega
 
+open Classical in
+/-- **The poor stream's canonical hubs.**  Each bounded-wealth
+target carries its COMPLETE low-part set as a canonical pair
+hub: card ≤ L, every member a genuine low part, and — unlike
+the flood's envelope hubs — COMPLETE: every low part of n
+belongs to it.  Cofinal complete bounded pair hubs, from the
+oscillation theorem alone.  Completeness is the extra the
+envelope supply never had: rigidity and uniqueness arguments
+downstream consume exactly this. -/
+theorem poor_stream_canonical_hubs {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ L, ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      H.card ≤ L ∧ IsPairHub A n H ∧
+      (∀ h ∈ H, h ∈ A ∧ (n - h) ∈ A ∧ 2 * h ≤ n) ∧
+      (∀ x, 2 * x ≤ n → x ∈ A → (n - x) ∈ A → x ∈ H) := by
+  obtain ⟨L, hL⟩ := poor_stream_of_hfail h0 hcov hfail
+  refine ⟨L, fun N => ?_⟩
+  obtain ⟨n, hn, hpoor⟩ := hL N
+  set H := (Finset.range (n + 1)).filter
+    (fun x => x ∈ A ∧ (n - x) ∈ A ∧ 2 * x ≤ n) with hH
+  refine ⟨n, hn, H, ?_, ?_, ?_, ?_⟩
+  · refine le_trans (Finset.card_le_card ?_) hpoor
+    intro x hx
+    rw [hH, Finset.mem_filter] at hx
+    rw [Finset.mem_filter]
+    exact ⟨hx.1, hx.2.1, hx.2.2.1⟩
+  · intro x hx y hy hxy
+    rcases Nat.le_total x y with hc | hc
+    · left
+      rw [hH, Finset.mem_filter, Finset.mem_range]
+      refine ⟨by omega, hx, ?_, by omega⟩
+      have he : n - x = y := by omega
+      rw [he]
+      exact hy
+    · right
+      rw [hH, Finset.mem_filter, Finset.mem_range]
+      refine ⟨by omega, hy, ?_, by omega⟩
+      have he : n - y = x := by omega
+      rw [he]
+      exact hx
+  · intro h hh
+    rw [hH, Finset.mem_filter] at hh
+    exact hh.2
+  · intro x hxle hxA hxpA
+    rw [hH, Finset.mem_filter, Finset.mem_range]
+    exact ⟨by omega, hxA, hxpA, hxle⟩
+
 end Erdos881
