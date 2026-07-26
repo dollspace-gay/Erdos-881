@@ -13285,4 +13285,45 @@ theorem mixed_channel_descends {A : Set ℕ} {v : ℕ}
       omega
   omega
 
+open Classical in
+/-- **THE TOTAL DRAIN.**  Every counterexample's pair riches
+provably reappear one 2-adic level down: in the half-world H₀,
+the shifted half-world H₁, or the cross-structure between them.
+The channel pigeonhole picks the direction; the three counting
+edges carry the wealth.  No 2-adic level can hold the canonical
+core's blowups — the tree drains forever. -/
+theorem the_total_drain {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∀ C N, ∃ w, N ≤ w ∧ C ≤
+      ((Finset.range (w + 1)).filter
+        (fun y => 2 * y ∈ A ∧ 2 * (w - y) ∈ A)).card) ∨
+    (∀ C N, ∃ w, N ≤ w ∧ C ≤
+      ((Finset.range (w + 1)).filter
+        (fun y => 2 * y + 1 ∈ A ∧
+          2 * (w - y) + 1 ∈ A)).card) ∨
+    (∀ C N, ∃ w, N ≤ w ∧ C ≤
+      ((Finset.range (w + 1)).filter
+        (fun y => 2 * y ∈ A ∧
+          2 * (w - y) + 1 ∈ A)).card) := by
+  rcases r2_channel_blowup h0 hcov hfail with hee | hoo | hmx
+  · exact Or.inl (ee_blowup_descends hee)
+  · exact Or.inr (Or.inl (oo_blowup_descends hoo))
+  · refine Or.inr (Or.inr ?_)
+    intro C N
+    obtain ⟨v, hvN, hvC⟩ := hmx (2 * C + 1) (2 * N + 1)
+    have hvne : ((Finset.range (v + 1)).filter
+        (fun x => x ∈ A ∧ (v - x) ∈ A ∧
+          x % 2 ≠ (v - x) % 2)).Nonempty :=
+      Finset.card_pos.1 (by omega)
+    obtain ⟨x₀, hx₀⟩ := hvne
+    rw [Finset.mem_filter] at hx₀
+    have hvodd : v % 2 = 1 := by
+      obtain ⟨hr, _, _, hm⟩ := hx₀
+      rw [Finset.mem_range] at hr
+      omega
+    have hdesc := mixed_channel_descends (A := A) hvodd
+    exact ⟨(v - 1) / 2, by omega, by omega⟩
+
 end Erdos881
