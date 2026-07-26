@@ -447,3 +447,26 @@ the clique branch the fan blowup cannot land on the clique square
 (r₂ = 1 there): either blown translates dodge S + S or teams have
 size ≥ √n/2 — the dodge is enemy-controlled (liberty), so this is
 a location law, not a kill.
+
+## 19. THE CUBE DICHOTOMY (21:14)
+
+**`cube_avoidance_ramsey`** — the problem in miniature, order 3:
+every covering set carries an ascending positive sequence T
+inside a family R with either every triple sum T i + T j + T k
+representable AVOIDING R (the T-deletion leaves its own
+3-parameter sum cube alive; failing targets must dodge the cube —
+the order-3 negative placement law), or every representation of
+every triple sum routed through R (the enemy's dream realized on
+one sequence).  The full Ramsey cascade now stands:
+`unique_sum_ramsey` → `ramsey_trichotomy_of_covering` (order 2) →
+`cube_avoidance_ramsey` (order 3), all pure combinatorics.
+
+**The ω-diagonal (designed, next session).**  Self-avoidance at
+arity r is inherited by subsequences, and `infinite_ramsey_tuples`
+covers every arity: nesting the dichotomy over r = 2, 3, 4, …
+and diagonalizing yields either one sequence self-avoiding at ALL
+arities simultaneously (its every sumset survives its own
+deletion) or a sequence routed at some fixed arity.  The distance
+from the all-arities survivor to a full surviving deletion — its
+sumsets versus all late targets — is the cleanest remaining
+statement of the whole problem.
