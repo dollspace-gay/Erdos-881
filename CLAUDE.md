@@ -62,3 +62,18 @@ robustness/Cantor, and their mixed-regime gap).  Alternative
 routes: rank-drop op (`no_pool_rank_descent`), mass accounting
 (seal-cost/blowup constants), adaptive program.  The user (Doll) steers via
 metaphors and cannot answer technical questions; read the code.
+
+## Build quirk (2026-07-25)
+
+`lake build Erdos881` occasionally reports success while
+`Erdos881/Endgame.olean` is stale (mtime race after a fresh edit);
+`#print axioms` then fails with unknown constant.  Fix: run
+`lake build Erdos881.Endgame` explicitly and re-check.
+
+## FreeRank.lean section map (night block additions)
+
+Absolute floods → shells/stratification → cap suite → depth tax →
+higher caps + conflict law → robustness branch → reflection
+ledger → street dichotomy + four rooms → ladder mining →
+classical-minimality interface → Ramsey cascade → omega pinch.
+Search for `/-! ##` to navigate.

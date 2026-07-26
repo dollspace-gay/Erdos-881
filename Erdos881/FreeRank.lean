@@ -3000,6 +3000,9 @@ theorem exists_maximal_free_node {A : Set ℕ} {N₀ : ℕ}
         _ = R := hReq.symm
         _ ⊆ Q := hRQ
 
+
+/-! ## Night block 2026-07-25: the absolute floods -/
+
 /-- The strict-superset relation on free nodes. -/
 def FreeSup (A : Set ℕ) (N₀ : ℕ) (Q P : Finset ℕ) : Prop :=
   FreeNode A N₀ P ∧ FreeNode A N₀ Q ∧ P ⊂ Q
@@ -3255,6 +3258,9 @@ theorem absolute_leaf_personal_target {A : Set ℕ} {N₀ : ℕ}
   · exact ⟨by omega, x, hx, z, hz, hxQ, hzQ, by omega⟩
   · exact ⟨by omega, x, hx, y, hy, hxQ, hyQ, by omega⟩
 
+
+/-! ## The cap suite (hypothesis-free pigeonholes) -/
+
 /-- **Three-never-four for rotating envelope-hubs.**  A rep has
 three parts, so a b-avoiding rep meets at most three pairwise
 disjoint envelopes.  If one target carries hubs `insert b Qᵢ`
@@ -3310,6 +3316,9 @@ theorem four_disjoint_hubs_singleton {A : Set ℕ} {m b : ℕ}
   have h2 := hpk j
   rw [hpij] at h1
   exact (Finset.disjoint_left.1 (hdisj i j hij)) h1 h2
+
+
+/-! ## Shells: pool leaves and the stratification -/
 
 /-- Pool form of the absolute flood: within any pool of positive
 basis elements, every free set of pool elements extends to a
@@ -3690,6 +3699,9 @@ theorem shell_endgame {A : Set ℕ} {N₀ : ℕ}
       hdisj hguard
   exact ⟨Q, X, hne, hmem, hfree, hdisj, hguard, hX⟩
 
+
+/-! ## The depth tax -/
+
 /-- **Depth forces scale** (hypothesis-free pigeonhole).  An
 element with guardian duties at k+1 pairwise disjoint shells
 either owns some target outright, or one of its duty targets
@@ -3914,6 +3926,9 @@ theorem stratified_tax_portrait {A : Set ℕ} {N₀ : ℕ}
   obtain ⟨X, hX⟩ :=
     depth_tax_of_hfail h0 hcov hanchor hfail hdisj hguard
   exact ⟨Q, X, hne, hmem, hfree, hdisj, hguard, hX⟩
+
+
+/-! ## Higher caps and the conflict law -/
 
 /-- **THE SIX-LEVEL CAP.**  Seven pairwise disjoint envelopes with
 seven DISTINCT guardians can never hub one common target: a
@@ -4209,6 +4224,9 @@ theorem conflict_targets_fragile {A : Set ℕ} {N₀ : ℕ}
   have h2 := Finset.card_union_le (Q j) (Q k)
   omega
 
+
+/-! ## The robustness branch mechanism -/
+
 /-- **THE ROBUSTNESS BRANCH.**  If disjoint-representation counts
 grow uniformly (for every C, all large targets carry C pairwise
 disjoint representations), then a hereditarily free infinite set
@@ -4399,6 +4417,9 @@ theorem fragile_supply_of_hfail {A : Set ℕ} {N₀ : ℕ}
   push_neg at hno
   exact (hfail_iff_no_hereditarily_free h0 hcov).1 hfail
     (robustness_gives_hereditarily_free h0 hcov hno)
+
+
+/-! ## The reflection ledger -/
 
 /-- **The seal-cost inequality** (ledger line (i) of the
 mass-accounting program).  To seal an envelope S at a target m by
@@ -4626,6 +4647,9 @@ theorem double_reflection_supply_of_hfail {A : Set ℕ} {N₀ : ℕ}
     have haW := hVW ha
     have haA := (hWmem a haW).1
     exact ⟨haA, ⟨x, hxA, by omega⟩, ⟨x', hx'A, by omega⟩⟩
+
+
+/-! ## The street dichotomy and the four rooms -/
 
 /-- **THE STREET DICHOTOMY.**  Three flood streets, one shared
 window, the reflection engine applied twice: either two of the
@@ -5351,6 +5375,9 @@ theorem counterexample_four_rooms {A : Set ℕ} {N₀ : ℕ}
         hesc N S
       exact ⟨n, hNn, hblown, b₂, hb₂A, b₃, hb₃A, rest⟩
 
+
+/-! ## Mining the street ladder -/
+
 /-- **The rotator drops out of the ladder.**  In the street
 ladder (room R4), taking the basis pair beyond the mirror point
 puts the street strictly below the rotator: s = n + b₃ − b₂ < b₃
@@ -5490,6 +5517,9 @@ theorem translation_room_teams {A : Set ℕ} {N₀ δ : ℕ}
   intro h hh
   have := hmem h hh
   exact ⟨this.1, this.2.1, this.2.2⟩
+
+
+/-! ## The classical-minimality interface -/
 
 /-- **The essential element's private stream.**  Erdős 881's own
 hypothesis — A is a MINIMAL basis, every element essential — has
@@ -5804,6 +5834,9 @@ theorem hmin_of_essential {A : Set ℕ}
   obtain ⟨x, hx, y, hy, hxB, hyB, hxy⟩ := hN₁ n hn
   exact ⟨x, hx, y, hy, fun h => hxB (h ▸ hbB),
     fun h => hyB (h ▸ hbB), hxy⟩
+
+
+/-! ## The Ramsey cascade -/
 
 /-- **The unique-sum Ramsey dichotomy.**  Any covering set
 contains an infinite ascending subsequence whose pairwise sums
@@ -6175,6 +6208,9 @@ theorem survival_of_complete_avoiding {A : Set ℕ} {N₂ : ℕ}
   obtain ⟨x, hx, y, hy, z, hz, hxT, hyT, hzT, hxyz⟩ :=
     havoid S hST
   exact ⟨x, hx, y, hy, z, hz, hxT, hyT, hzT, by omega⟩
+
+
+/-! ## The omega pinch -/
 
 /-- **THE ω-AVOIDANCE DICHOTOMY.**  Homogenizing the
 self-avoidance colouring at EVERY arity (nested subsequences,
