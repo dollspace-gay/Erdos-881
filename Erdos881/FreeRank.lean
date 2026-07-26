@@ -7136,4 +7136,46 @@ theorem lockstep_lane_guardianship {A : Set ℕ} {N₀ : ℕ}
       hmem' hymem
   exact hguard (σ (T + t)) (y k t') hyA hypos havoid
 
+/-- **The highway tax.**  Composing the depth tax with lockstep
+membership: every sufficiently large column value at spine time
+t pays a guardian duty at height at least N₀ + (T + t − 1)/3.
+The s-lane highway carries linearly growing duty heights on a
+fixed-width structure — the quantitative burden of the lockstep
+branch. -/
+theorem highway_tax {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {Q : ℕ → Finset ℕ} {σ : ℕ ↪o ℕ} {T s : ℕ}
+    {y : Fin s → ℕ → ℕ}
+    (hmem : ∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h)
+    (hdisj : ∀ j k, j < k → Disjoint (Q j) (Q k))
+    (hguard : ∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
+      ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k)))
+    (hy : ∀ k t, y k t ∈ Q (σ (T + t))) :
+    ∃ X, ∀ (k : Fin s) (t : ℕ), X ≤ y k t → 1 ≤ T + t →
+      ∃ j, j < σ (T + t) ∧ ∃ m, N₀ + (T + t - 1) / 3 ≤ m ∧
+        N₀ ≤ m ∧ IsRepHub A m (insert (y k t) (Q j)) := by
+  obtain ⟨X, hX⟩ := depth_tax_of_hfail h0 hcov hanchor hfail
+    hdisj hguard
+  refine ⟨X, ?_⟩
+  intro k t hXy hTt
+  have hymem := hy k t
+  have hyA := (hmem _ _ hymem).1
+  have hypos := (hmem _ _ hymem).2
+  have hσge : T + t ≤ σ (T + t) := σ.strictMono.le_apply
+  have havoid : ∀ j, j ≤ σ (T + t) - 1 → y k t ∉ Q j := by
+    intro j hj hmem'
+    have hjlt : j < σ (T + t) := by omega
+    exact (Finset.disjoint_left.1 (hdisj j (σ (T + t)) hjlt))
+      hmem' hymem
+  obtain ⟨j, hj, m, hm₁, hm₂, hhub⟩ :=
+    hX (σ (T + t) - 1) (y k t) hyA hXy hypos havoid
+  refine ⟨j, by omega, m, ?_, hm₂, hhub⟩
+  have hdiv : (T + t - 1) / 3 ≤ (σ (T + t) - 1) / 3 :=
+    Nat.div_le_div_right (by omega)
+  omega
+
 end Erdos881
