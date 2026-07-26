@@ -1,3 +1,26 @@
+# SUMSET COMPLETENESS: LAB-TRUE, THE FINAL REDUCTION (2026-07-26)
+
+LAB (scripts/probe_completeness.py): W_T + A is TAIL-COMPLETE
+in every candidate world at every threshold (T = 8/16/32) —
+zero uncovered integers, minimum server counts 2-152, median
+~400.  Every integer has multiple wealthy servers.
+
+THE FINAL REDUCTION (via `failing_avoids_wealthy_translates`):
+if in every counterexample world, for some threshold family,
+the wealthy sumset W_C(n) + (A minus D) contains a tail with
+more than |D|-many servers per target, then no cofinal failing
+stream exists and hfail dies.  Erdos 881 k=2 is REDUCED to a
+sumset-completeness statement about the oscillation theorem's
+own wealthy stream — a single, sharply-posed additive-
+combinatorics conjecture, lab-true in all 6 campaigns,
+supported by every verified law of the session.
+
+The enemy's only remaining hope: worlds where the wealthy
+stream is so sparse and so misaligned with A that its sumset
+misses cofinally many integers — while surviving oscillation,
+rigidity, the density law, the dodge, forced mixing, and the
+width law simultaneously.  The corridor is one conjecture wide.
+
 # THE MASTER LAW — TWENTY-THIRD SUMMIT, SESSION CAPSTONE (2026-07-26)
 
 `endgame_master_law` (Endgame.lean, standard axioms): every
