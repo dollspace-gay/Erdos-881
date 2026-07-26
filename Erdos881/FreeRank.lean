@@ -7681,6 +7681,32 @@ theorem four_disjoint_full_hubs_impossible {A : Set ℕ} {m : ℕ}
   rw [hpij] at h1
   exact (Finset.disjoint_left.1 (hdisj i j hij)) h1 h2
 
+/-- A free set is a full hub of no target: freeness hands the
+target a representation avoiding the set, hub-ness forbids it.
+The fundamental exclusion between the two sides of the game. -/
+theorem free_set_never_hub {A : Set ℕ} {N₀ m : ℕ}
+    {P : Finset ℕ} (hfree : RepFree A N₀ P) (hm : N₀ ≤ m)
+    (hhub : IsRepHub A m P) : False := by
+  obtain ⟨x, hx, y, hy, z, hz, hsum, hxP, hyP, hzP⟩ := hfree m hm
+  rcases hhub x hx y hy z hz hsum with h | h | h
+  · exact hxP h
+  · exact hyP h
+  · exact hzP h
+
+/-- **Stall windows are wide, and stall defence is cross-shell.**
+Any stall window contained in a single (free) shell would be a
+free full hub — impossible.  Since consecutive spine values lie
+in distinct shells, every stall window of the spine stream has
+length at least two, and more generally every sub-hub of every
+stall window must straddle at least two shells: the enemy's
+defence against its own spine is intrinsically a cross-shell
+phenomenon, exactly where the conflict law and the caps live. -/
+theorem stall_window_not_in_shell {A : Set ℕ} {N₀ m : ℕ}
+    {Q : Finset ℕ} {W : Finset ℕ}
+    (hQfree : RepFree A N₀ Q) (hWQ : W ⊆ Q) (hm : N₀ ≤ m)
+    (hhub : IsRepHub A m W) : False :=
+  free_set_never_hub (RepFree.mono hWQ hQfree) hm hhub
+
 /-- **The spine stall stream.**  Playing consecutive shifts of
 the spine yields pairwise disjoint stall WINDOWS — finite blocks
 of consecutive lineage values, each a full hub at its own
@@ -7698,7 +7724,7 @@ theorem spine_stall_stream {A : Set ℕ} {N₀ : ℕ}
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
     ∃ st len : ℕ → ℕ, ∃ tgt : ℕ → ℕ,
-      (∀ i, 1 ≤ len i) ∧
+      (∀ i, 2 ≤ len i) ∧
       (∀ i, st (i + 1) = st i + len i) ∧
       (∀ i, N₀ ≤ tgt i ∧ IsRepHub A (tgt i)
         ((Finset.range (len i)).image (fun j => x (st i + j)))) ∧
@@ -7708,8 +7734,9 @@ theorem spine_stall_stream {A : Set ℕ} {N₀ : ℕ}
     spine_stalls_hereditarily h0 hcov hanchor hfail
   have hxA : ∀ t, x t ∈ A ∧ 0 < x t :=
     fun t => hQmem _ _ (hxmem t)
-  -- one stall window starting at any position
-  have hwin : ∀ s : ℕ, ∃ J m, 1 ≤ J ∧ N₀ ≤ m ∧
+  -- one stall window starting at any position; the free-shell
+  -- exclusion forces width ≥ 2
+  have hwin : ∀ s : ℕ, ∃ J m, 2 ≤ J ∧ N₀ ≤ m ∧
       IsRepHub A m ((Finset.range J).image
         (fun j => x (s + j))) := by
     intro s
@@ -7717,17 +7744,25 @@ theorem spine_stall_stream {A : Set ℕ} {N₀ : ℕ}
       (fun a b hab => by
         show s + a < s + b
         omega)
-    rcases Nat.eq_zero_or_pos J with hJ | hJ
-    · -- empty window is a hub: target has no reps avoiding ∅ —
-      -- impossible since covering provides a rep; extract the
-      -- contradiction to bump to J = 1
+    match hJm : J with
+    | 0 =>
       exfalso
-      subst hJ
       obtain ⟨u, hu, v, hv, huv⟩ := hcov m hm
       have h3 : u + v + 0 = m := by omega
       rcases hhub u hu v hv 0 h0 h3 with h | h | h <;>
         simp at h
-    · exact ⟨J, m, hJ, hm, hhub⟩
+    | 1 =>
+      exfalso
+      have hW1 : ((Finset.range 1).image
+          (fun j => x (s + j))) = {x s} := by
+        rw [Finset.range_one, Finset.image_singleton]
+        simp
+      rw [hW1] at hhub
+      exact stall_window_not_in_shell (hQfree (σ s))
+        (Finset.singleton_subset_iff.2 (by
+          simpa using hxmem s)) hm hhub
+    | (J' + 2) =>
+      exact ⟨J' + 2, m, by omega, hm, hhub⟩
   choose Jf mf hJf hmf hhubf using hwin
   -- consecutive windows by recursion
   obtain ⟨st, hst0, hsts⟩ : ∃ st : ℕ → ℕ, st 0 = 0 ∧
@@ -7848,31 +7883,5 @@ theorem spine_stall_stream {A : Set ℕ} {N₀ : ℕ}
   rw [Finset.mem_image] at hv
   obtain ⟨i, _, hi⟩ := hv
   exact ⟨i, hi⟩
-
-/-- A free set is a full hub of no target: freeness hands the
-target a representation avoiding the set, hub-ness forbids it.
-The fundamental exclusion between the two sides of the game. -/
-theorem free_set_never_hub {A : Set ℕ} {N₀ m : ℕ}
-    {P : Finset ℕ} (hfree : RepFree A N₀ P) (hm : N₀ ≤ m)
-    (hhub : IsRepHub A m P) : False := by
-  obtain ⟨x, hx, y, hy, z, hz, hsum, hxP, hyP, hzP⟩ := hfree m hm
-  rcases hhub x hx y hy z hz hsum with h | h | h
-  · exact hxP h
-  · exact hyP h
-  · exact hzP h
-
-/-- **Stall windows are wide, and stall defence is cross-shell.**
-Any stall window contained in a single (free) shell would be a
-free full hub — impossible.  Since consecutive spine values lie
-in distinct shells, every stall window of the spine stream has
-length at least two, and more generally every sub-hub of every
-stall window must straddle at least two shells: the enemy's
-defence against its own spine is intrinsically a cross-shell
-phenomenon, exactly where the conflict law and the caps live. -/
-theorem stall_window_not_in_shell {A : Set ℕ} {N₀ m : ℕ}
-    {Q : Finset ℕ} {W : Finset ℕ}
-    (hQfree : RepFree A N₀ Q) (hWQ : W ⊆ Q) (hm : N₀ ≤ m)
-    (hhub : IsRepHub A m W) : False :=
-  free_set_never_hub (RepFree.mono hWQ hQfree) hm hhub
 
 end Erdos881
