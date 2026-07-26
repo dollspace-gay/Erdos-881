@@ -7107,4 +7107,33 @@ theorem lockstep_one_lane_clique {A : Set ℕ} {N₀ : ℕ}
   rw [← h1]
   exact hhub
 
+/-- **Lane guardianship.**  On the lockstep highway every later
+column value guards every earlier spine shell: the duty ledger
+of the s-lane enemy is indexed by (lane, later time, earlier
+time), every entry a hub of uniform size s + 1.  General-s form
+of the one-lane clique. -/
+theorem lockstep_lane_guardianship {A : Set ℕ} {N₀ : ℕ}
+    {Q : ℕ → Finset ℕ} {σ : ℕ ↪o ℕ} {T s : ℕ}
+    {y : Fin s → ℕ → ℕ}
+    (hmem : ∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h)
+    (hdisj : ∀ j k, j < k → Disjoint (Q j) (Q k))
+    (hguard : ∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
+      ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k)))
+    (hy : ∀ k t, y k t ∈ Q (σ (T + t))) :
+    ∀ (k : Fin s) (t t' : ℕ), t < t' →
+      ∃ m, N₀ ≤ m ∧
+        IsRepHub A m (insert (y k t') (Q (σ (T + t)))) := by
+  intro k t t' htt
+  have hymem := hy k t'
+  have hyA := (hmem _ _ hymem).1
+  have hypos := (hmem _ _ hymem).2
+  have havoid : ∀ j, j ≤ σ (T + t) → y k t' ∉ Q j := by
+    intro j hj hmem'
+    have hσlt : σ (T + t) < σ (T + t') :=
+      σ.strictMono (by omega)
+    have hjlt : j < σ (T + t') := by omega
+    exact (Finset.disjoint_left.1 (hdisj j (σ (T + t')) hjlt))
+      hmem' hymem
+  exact hguard (σ (T + t)) (y k t') hyA hypos havoid
+
 end Erdos881
