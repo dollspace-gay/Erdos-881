@@ -6024,4 +6024,52 @@ theorem surviving_sum_square {A : Set ℕ} {g : ℕ → ℕ}
   exact ⟨x, hx, y, hy, 0, h0, hsub x hxr, hsub y hyr, h0r,
     by omega⟩
 
+/-- **THE RAMSEY TRICHOTOMY.**  Every covering set contains an
+infinite ascending positive sequence T of one of three kinds:
+
+  (C1) a Sidon CLIQUE — every pairwise sum is a two-element pair
+       hub {T i, T j} (unique decomposition);
+  (C2) a SELF-AVOIDING sequence — every pairwise sum retains a
+       representation avoiding all of T, so no sum-square target
+       can fail under the T-deletion (negative placement law);
+  (C3) an R-ROUTED sequence — some positive basis family R ⊇ T
+       carries every decomposition of every pairwise sum.
+
+Pure combinatorics over covering + 0 ∈ A; two nested infinite
+Ramsey passes. -/
+theorem ramsey_trichotomy_of_covering {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) :
+    ∃ T : ℕ → ℕ, StrictMono T ∧ (∀ i, T i ∈ A) ∧
+      (∀ i, 0 < T i) ∧
+      ((∀ i j, i < j →
+          IsPairHub A (T i + T j) ({T i, T j} : Finset ℕ)) ∨
+       (∀ i j, i < j → ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+          x ∉ Set.range T ∧ y ∉ Set.range T ∧
+          z ∉ Set.range T ∧ x + y + z = T i + T j) ∨
+       (∃ R : Set ℕ, (∀ w ∈ R, w ∈ A ∧ 0 < w) ∧
+          (∀ i, T i ∈ R) ∧
+          ∀ i j, i < j → ∀ x ∈ A, ∀ y ∈ A,
+            x + y = T i + T j → x ∈ R ∨ y ∈ R)) := by
+  classical
+  obtain ⟨g, hgmono, hgA, hgpos, hbranch⟩ :=
+    unique_sum_ramsey hcov
+  rcases hbranch with huniq | hindep
+  · exact ⟨g, hgmono, hgA, hgpos,
+      Or.inl (all_unique_pair_hubs huniq)⟩
+  · obtain ⟨f, hfmono, halt⟩ :=
+      independent_alternatives_ramsey g hgmono hgA hgpos
+    rcases halt with hyes | hno
+    · refine ⟨g ∘ f, hgmono.comp hfmono, fun i => hgA _,
+        fun i => hgpos _, Or.inr (Or.inl ?_)⟩
+      exact surviving_sum_square h0 hgpos hyes
+    · refine ⟨g ∘ f, hgmono.comp hfmono, fun i => hgA _,
+        fun i => hgpos _, Or.inr (Or.inr
+          ⟨Set.range g, ?_, ?_, ?_⟩)⟩
+      · rintro w ⟨k, rfl⟩
+        exact ⟨hgA k, hgpos k⟩
+      · intro i
+        exact ⟨f i, rfl⟩
+      · intro i j hij x hx y hy hxy
+        exact hno i j hij x hx y hy hxy
+
 end Erdos881
