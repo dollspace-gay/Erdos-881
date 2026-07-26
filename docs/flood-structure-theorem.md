@@ -619,3 +619,12 @@ honest grid statement: either many infinite classes (wide
 obligation rows, spread by the cap) or few (the basis is
 two-scale-aligned at that modulus).  Alignment again, at every
 modulus: the grid is a dichotomy engine, not a width bound.
+
+**Grid capstone (`residue_width_dichotomy`,
+`grid_pressure_or_alignment`, 22:40).**  At every modulus the
+enemy spreads — four infinite classes whose obligation streams
+no represented target can serve simultaneously — or aligns, its
+tail concentrating in ≤ 3 classes.  Every modulus interrogates
+the enemy: the grid is now a fully formal, infinitely-indexed
+family of spread-or-align dichotomies, the alignment battle
+line's machine-checked opening book.
