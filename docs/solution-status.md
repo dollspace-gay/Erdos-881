@@ -1,3 +1,26 @@
+# UPDATE (2026-07-26, cont. 6): THE CASCADE'S TWO AXIOMS
+
+`deletion_failure_slices` + `deletion_failure_double_slice`
+(both verified): at any deletion's failure targets, (1) every
+survivor-slice is pair-hubbed by the deleted set, and (2) the
+survivor set is SUM-FREE against every slice — every A-element
+of n − s − S is deleted.  These are the cascade's working
+axioms; the open step is the counting/structural pressure that
+shows some B's demand is unmeetable (the lab says almost every
+B qualifies in hall worlds).
+
+**JUNK FLAG (audit)**: `odd_deletion_obligation` is trivially
+witnessed by odd targets (an all-even triple cannot sum to an
+odd n), so its conclusion carries no information beyond parity;
+treat it as the obligation METHOD's illustration only, not as
+structure.  Deletion candidates must keep the survivor set
+parity-complete (and residue-complete) — the canonical grid's
+old lesson, now sharpened by the slice laws.
+
+All verified, zero sorries, standard axioms.
+
+---
+
 # UPDATE (2026-07-26, cont. 5): THE TRANSLATE LAWS — UNCONDITIONAL
 
 **Arc 25 — the walk kills and the laws.**
