@@ -5649,4 +5649,136 @@ theorem unique_pair_graph_infinite_degree {A : Set ℕ} {N₀ : ℕ}
           huniq x hx y hy (by omega)⟩
       · exact hVm c' h
 
+/-- **Matched deletions field matched teams.**  Classical
+minimality supplies an INFINITE matching of unique-sum pairs
+(components strictly ascending); deleting all its vertices forces
+— by the team supply — cofinal failing targets carrying minimal
+hubs of size ≥ 2 made entirely of matched vertices.  Every team
+member is half of a unique-decomposition pair: the enemy must
+defend with elements that each carry a private target of their
+own.  First contact between the classical-minimality graph and
+the order-3 machinery. -/
+theorem matched_deletion_teams {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hess : ∀ a ∈ A, 0 < a → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ≠ a ∧ y ≠ a ∧ x + y = n) :
+    ∃ P : ℕ → ℕ × ℕ,
+      (∀ i, (P i).1 ∈ A ∧ (P i).2 ∈ A ∧ 0 < (P i).1 ∧
+        0 < (P i).2 ∧
+        ∀ x ∈ A, ∀ y ∈ A, x + y = (P i).1 + (P i).2 →
+          (x = (P i).1 ∧ y = (P i).2) ∨
+          (x = (P i).2 ∧ y = (P i).1)) ∧
+      (∀ i, max (P i).1 (P i).2 < min (P (i + 1)).1
+        (P (i + 1)).2) ∧
+      ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+        IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        2 ≤ H.card ∧ ∀ h ∈ H, ∃ i,
+          h = (P i).1 ∨ h = (P i).2 := by
+  classical
+  have hstep : ∀ M : ℕ, ∃ b c : ℕ, b ∈ A ∧ c ∈ A ∧ M < b ∧
+      M < c ∧ ∀ x ∈ A, ∀ y ∈ A, x + y = b + c →
+        (x = b ∧ y = c) ∨ (x = c ∧ y = b) := by
+    intro M
+    obtain ⟨b, hbA, hbge⟩ := pairCovers_unbounded hcov (M + 1)
+    have hbpos : 0 < b := by omega
+    obtain ⟨m, hm, c, hcA, hbc, huniq⟩ :=
+      essential_private_pair_stream hcov (hess b hbA hbpos)
+        (b + M + N₀ + 1)
+    exact ⟨b, c, hbA, hcA, by omega, by omega,
+      fun x hx y hy hxy => huniq x hx y hy (by omega)⟩
+  choose fb fc hfbA hfcA hfbM hfcM hfuniq using hstep
+  obtain ⟨g, hg0, hgs⟩ : ∃ g : ℕ → ℕ × ℕ,
+      g 0 = (fb 0, fc 0) ∧
+      ∀ i, g (i + 1) =
+        (fb (max (g i).1 (g i).2), fc (max (g i).1 (g i).2)) :=
+    ⟨fun i => Nat.rec (fb 0, fc 0)
+      (fun _ p => (fb (max p.1 p.2), fc (max p.1 p.2))) i,
+      rfl, fun _ => rfl⟩
+  have hgood : ∀ i, (g i).1 ∈ A ∧ (g i).2 ∈ A ∧ 0 < (g i).1 ∧
+      0 < (g i).2 ∧
+      ∀ x ∈ A, ∀ y ∈ A, x + y = (g i).1 + (g i).2 →
+        (x = (g i).1 ∧ y = (g i).2) ∨
+        (x = (g i).2 ∧ y = (g i).1) := by
+    intro i
+    cases i with
+    | zero =>
+      rw [hg0]
+      exact ⟨hfbA 0, hfcA 0, hfbM 0, hfcM 0, hfuniq 0⟩
+    | succ i =>
+      rw [hgs]
+      refine ⟨hfbA _, hfcA _, ?_, ?_, hfuniq _⟩
+      · have := hfbM (max (g i).1 (g i).2)
+        omega
+      · have := hfcM (max (g i).1 (g i).2)
+        omega
+  have hinc : ∀ i, max (g i).1 (g i).2 <
+      min (g (i + 1)).1 (g (i + 1)).2 := by
+    intro i
+    rw [hgs]
+    have h1 := hfbM (max (g i).1 (g i).2)
+    have h2 := hfcM (max (g i).1 (g i).2)
+    simp only [lt_min_iff]
+    constructor
+    · exact h1
+    · exact h2
+  set B : Set ℕ := {x | ∃ i, x = (g i).1 ∨ x = (g i).2} with hB
+  haveI : DecidablePred (· ∈ B) := Classical.decPred _
+  have hBA : B ⊆ A := by
+    rintro x ⟨i, h | h⟩
+    · rw [h]
+      exact (hgood i).1
+    · rw [h]
+      exact (hgood i).2.1
+  have h0B : 0 ∉ B := by
+    rintro ⟨i, h | h⟩
+    · have := (hgood i).2.2.1
+      omega
+    · have := (hgood i).2.2.2.1
+      omega
+  have hmono : ∀ i j, i < j → (g i).1 < (g j).1 := by
+    intro i j hij
+    induction j with
+    | zero => omega
+    | succ j ihj =>
+      have h1 := hinc j
+      have h3 : (g j).1 ≤ max (g j).1 (g j).2 :=
+        le_max_left _ _
+      have h4 : min (g (j+1)).1 (g (j+1)).2 ≤ (g (j+1)).1 :=
+        min_le_left _ _
+      rw [lt_min_iff] at h1
+      rcases Nat.lt_or_ge i j with h | h
+      · have h2 := ihj h
+        omega
+      · have hij' : i = j := by omega
+        subst hij'
+        omega
+  have hBinf : B.Infinite := by
+    have hinj : Function.Injective (fun i => (g i).1) := by
+      intro i j hij
+      by_contra hne
+      simp only at hij
+      rcases Nat.lt_or_ge i j with h | h
+      · have := hmono i j h
+        omega
+      · have h' : j < i := by omega
+        have := hmono j i h'
+        omega
+    have hsub : Set.range (fun i => (g i).1) ⊆ B := by
+      rintro x ⟨i, rfl⟩
+      exact ⟨i, Or.inl rfl⟩
+    exact Set.Infinite.mono hsub
+      (Set.infinite_range_of_injective hinj)
+  refine ⟨g, hgood, hinc, ?_⟩
+  intro N
+  obtain ⟨n, hn, H, hhub, hminH, hcard, hmem⟩ :=
+    guardian_team_hubs_of_deletion h0 hcov hanchor hfail
+      hBA hBinf h0B N
+  refine ⟨n, hn, H, hhub, hminH, hcard, ?_⟩
+  intro h hh
+  exact hmem h hh
+
 end Erdos881
