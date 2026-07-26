@@ -6573,4 +6573,52 @@ theorem pair_hub_corep_confined {A : Set ℕ} {s : ℕ}
   · exact absurd h haH
   · exact h
 
+/-! ## Nash-Williams: chaining the shell antichain -/
+
+/-- **The shell Higman chain.**  The first Nash-Williams step of
+the chaining program: the enemy's shells, read as sorted lists,
+form a sequence in the Higman well-quasi-order (lists over ℕ
+under pointwise-≤ sublist embedding), so an infinite subsequence
+of shells is a CHAIN — each shell embeds, dominated pointwise,
+into every later one.  The enemy's antichain of freedoms carries
+a canonical infinite ascending spine; converting this
+embedding-chain into a freeness chain is the remaining distance
+to a branch. -/
+theorem shell_higman_chain {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ Q : ℕ → Finset ℕ,
+      (∀ k, (Q k).Nonempty) ∧
+      (∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h) ∧
+      (∀ k, RepFree A N₀ (Q k)) ∧
+      (∀ j k, j < k → Disjoint (Q j) (Q k)) ∧
+      (∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
+        ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) ∧
+      ∃ σ : ℕ ↪o ℕ, ∀ m n, m ≤ n →
+        List.SublistForall₂ (· ≤ ·)
+          ((Q (σ m)).sort (· ≤ ·)) ((Q (σ n)).sort (· ≤ ·)) := by
+  classical
+  obtain ⟨Q, hne, hmem, hfree, hdisj, hguard⟩ :=
+    absolute_shell_stratification h0 hcov hanchor hfail
+  haveI hwqo : WellQuasiOrderedLE ℕ :=
+    wellQuasiOrderedLE_iff_wellFoundedLT.mpr inferInstance
+  have hpwo : (Set.univ : Set ℕ).PartiallyWellOrderedOn
+      (· ≤ ·) :=
+    Set.isPWO_of_wellQuasiOrderedLE _
+  haveI hrefl : IsRefl (List ℕ)
+      (List.SublistForall₂ ((· ≤ ·) : ℕ → ℕ → Prop)) :=
+    ⟨fun l => Std.Refl.refl l⟩
+  haveI hpre : IsPreorder (List ℕ)
+      (List.SublistForall₂ ((· ≤ ·) : ℕ → ℕ → Prop)) := ⟨⟩
+  have hlists :=
+    Set.PartiallyWellOrderedOn.partiallyWellOrderedOn_sublistForall₂
+      (· ≤ ·) hpwo
+  obtain ⟨σ, hσ⟩ := hlists.exists_monotone_subseq
+    (f := fun k => (Q k).sort (· ≤ ·))
+    (fun k x _ => Set.mem_univ x)
+  exact ⟨Q, hne, hmem, hfree, hdisj, hguard, σ, hσ⟩
+
 end Erdos881
