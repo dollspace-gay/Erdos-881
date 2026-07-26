@@ -4051,4 +4051,95 @@ theorem eighteen_level_cap {A : Set ℕ} {m : ℕ}
     · intro i
       exact hhub (c i)
 
+/-- **The shell-conflict degree cap.**  Shells pairwise conflict:
+by inclusion-maximality any two shells union to a non-free set,
+so each pair owns a conflict target whose representations all
+meet the union.  But conflicts are 3-bounded per (shell, target):
+a free shell admits a rep of the target avoiding it, and that rep
+must then meet every conflict partner — three parts, so at most
+three pairwise disjoint partners.  A fifth is impossible. -/
+theorem five_shell_conflict_impossible {A : Set ℕ} {N₀ m : ℕ}
+    {Q : Fin 5 → Finset ℕ}
+    (hdisj : ∀ i j, i ≠ j → Disjoint (Q i) (Q j))
+    (hfree : RepFree A N₀ (Q 0))
+    (hm : N₀ ≤ m)
+    (hhub : ∀ i : Fin 4, IsRepHub A m (Q 0 ∪ Q i.succ)) :
+    False := by
+  classical
+  obtain ⟨x, hx, y, hy, z, hz, hsum, hxQ, hyQ, hzQ⟩ := hfree m hm
+  have hhit : ∀ i : Fin 4, x ∈ Q i.succ ∨ y ∈ Q i.succ ∨
+      z ∈ Q i.succ := by
+    intro i
+    rcases hhub i x hx y hy z hz hsum with h | h | h
+    · rcases Finset.mem_union.1 h with h' | h'
+      · exact absurd h' hxQ
+      · exact Or.inl h'
+    · rcases Finset.mem_union.1 h with h' | h'
+      · exact absurd h' hyQ
+      · exact Or.inr (Or.inl h')
+    · rcases Finset.mem_union.1 h with h' | h'
+      · exact absurd h' hzQ
+      · exact Or.inr (Or.inr h')
+  have hpick : ∀ i : Fin 4, ∃ p : Fin 3,
+      (if p = 0 then x else if p = 1 then y else z)
+        ∈ Q i.succ := by
+    intro i
+    rcases hhit i with h | h | h
+    · exact ⟨0, by simpa using h⟩
+    · exact ⟨1, by simpa using h⟩
+    · exact ⟨2, by simpa using h⟩
+  choose pk hpk using hpick
+  have hcard : ¬Function.Injective pk := by
+    intro hinj
+    have := Fintype.card_le_of_injective pk hinj
+    simp at this
+  rw [Function.not_injective_iff] at hcard
+  obtain ⟨i, j, hpij, hij⟩ := hcard
+  have h1 := hpk i
+  have h2 := hpk j
+  rw [hpij] at h1
+  have hne : i.succ ≠ j.succ := fun h =>
+    hij (Fin.succ_injective 4 h)
+  exact (Finset.disjoint_left.1 (hdisj i.succ j.succ hne)) h1 h2
+
+/-- Hub-ness is up-monotone in the envelope. -/
+theorem IsRepHub.mono {A : Set ℕ} {m : ℕ} {H H' : Finset ℕ}
+    (hsub : H ⊆ H') (h : IsRepHub A m H) : IsRepHub A m H' := by
+  intro x hx y hy z hz hsum
+  rcases h x hx y hy z hz hsum with h' | h' | h'
+  · exact Or.inl (hsub h')
+  · exact Or.inr (Or.inl (hsub h'))
+  · exact Or.inr (Or.inr (hsub h'))
+
+/-- **Shells pairwise conflict.**  Any member of a later shell is
+a guardian of any earlier one, so every pair of shells owns a
+conflict target whose representations all meet the union of the
+two.  With `five_shell_conflict_impossible` this pins the conflict
+graph at every target: max degree ≤ 3 (hence ≤ 9 shell-pairs per
+target, cover number ≤ 3). -/
+theorem shell_pairs_conflict {A : Set ℕ} {N₀ : ℕ}
+    {Q : ℕ → Finset ℕ}
+    (hne : ∀ k, (Q k).Nonempty)
+    (hmem : ∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h)
+    (hdisj : ∀ j k, j < k → Disjoint (Q j) (Q k))
+    (hguard : ∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
+      ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) :
+    ∀ j k, j < k → ∃ m, N₀ ≤ m ∧
+      IsRepHub A m (Q j ∪ Q k) := by
+  intro j k hjk
+  obtain ⟨b, hb⟩ := hne k
+  have hbA := (hmem k b hb).1
+  have hbpos := (hmem k b hb).2
+  have hbavoid : ∀ j', j' ≤ j → b ∉ Q j' := by
+    intro j' hj' hmem'
+    exact (Finset.disjoint_left.1 (hdisj j' k (by omega)))
+      hmem' hb
+  obtain ⟨m, hm, hhub⟩ := hguard j b hbA hbpos hbavoid
+  refine ⟨m, hm, IsRepHub.mono ?_ hhub⟩
+  intro w hw
+  rcases Finset.mem_insert.1 hw with h' | h'
+  · rw [h']
+    exact Finset.mem_union_right _ hb
+  · exact Finset.mem_union_left _ h'
+
 end Erdos881
