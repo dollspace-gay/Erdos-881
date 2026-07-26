@@ -14256,4 +14256,60 @@ theorem saturated_drain_diagonal {A : Set ℕ} {N₀ Y ε : ℕ}
   exact saturated_kills_antidiagonal hpar hp hq hS1 hT1
     (hblow 1)
 
+open Classical in
+/-- **THE DRAIN LANDS ON THE CANONICAL HALF-WORLD.**  In a
+saturated counterexample the drain's first step is not merely
+diagonal: both channels are PINNED to the saturation parity ε,
+so the level-1 cross-system is the single set
+{x | ε + 2x ∈ A} — exactly the half-world onto which the parity
+fork descends covering and mixed failure.  Wealth, covering,
+and the descended interface now live on ONE set: the cascade's
+three descent tracks converge at level one. -/
+theorem saturated_drain_pinned {A : Set ℕ} {N₀ Y ε : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hpar : ∀ a ∈ A, Y < a → a % 2 = ε) :
+    ∃ S T : ℕ → Set ℕ, S 0 = A ∧ T 0 = A ∧
+      (∀ k, ∃ p q, p < 2 ∧ q < 2 ∧
+        S (k + 1) = {y | 2 * y + p ∈ S k} ∧
+        T (k + 1) = {y | 2 * y + q ∈ T k}) ∧
+      (∀ k, ∀ C N, ∃ v, N ≤ v ∧ C ≤
+        ((Finset.range (v + 1)).filter
+          (fun x => x ∈ S k ∧ (v - x) ∈ T k)).card) ∧
+      ∀ p q, p < 2 → q < 2 →
+        S 1 = {y | 2 * y + p ∈ S 0} →
+        T 1 = {y | 2 * y + q ∈ T 0} →
+        p = ε ∧ q = ε ∧ S 1 = {x : ℕ | ε + 2 * x ∈ A} ∧
+          T 1 = {x : ℕ | ε + 2 * x ∈ A} := by
+  obtain ⟨S, T, hS0, hT0, hstep, hblow⟩ :=
+    the_omega_drain h0 hcov hfail
+  refine ⟨S, T, hS0, hT0, hstep, hblow, ?_⟩
+  intro p q hp hq hS1 hT1
+  rw [hS0] at hS1
+  rw [hT0] at hT1
+  have hpq := saturated_kills_antidiagonal hpar hp hq hS1 hT1
+    (hblow 1)
+  have hSinf : (S 1).Infinite :=
+    (cross_blowup_infinite (hblow 1)).1
+  obtain ⟨y, hyS, hyY⟩ := hSinf.exists_gt Y
+  have hyA : 2 * y + p ∈ A := by
+    rw [hS1] at hyS
+    exact hyS
+  have hppar : p = ε := by
+    have h2 := hpar (2 * y + p) hyA (by omega)
+    omega
+  have hqpar : q = ε := by omega
+  refine ⟨hppar, hqpar, ?_, ?_⟩
+  · rw [hS1, hppar]
+    ext z
+    simp only [Set.mem_setOf_eq]
+    have he : 2 * z + ε = ε + 2 * z := by ring
+    rw [he]
+  · rw [hT1, hqpar]
+    ext z
+    simp only [Set.mem_setOf_eq]
+    have he : 2 * z + ε = ε + 2 * z := by ring
+    rw [he]
+
 end Erdos881
