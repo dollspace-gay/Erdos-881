@@ -5426,4 +5426,22 @@ theorem ladder_shadow_concentrates {A : Set ℕ} {N₀ : ℕ}
   have hsup : Δf q₀ ≤ Q.sup Δf := Finset.le_sup hq₀Q
   exact hΔf q₀ hq₀Q d (by omega) hN hhub hbp a₀ ha₀A ha₀
 
+/-- **The ladder difference desert.**  A rung reflection
+a = n + d − q* (large, hence outside Q) crossed with a higher
+rung's pure street forces the translated difference out of the
+basis: if q* + (d' − d) ∈ A it must lie in the finite Q.  So for
+every large rung, the translated rung-differences avoid A with at
+most |Q| exceptions — the ladder digs deserts at its own
+difference set. -/
+theorem ladder_difference_desert {A : Set ℕ} {Q : Finset ℕ}
+    {q n d d' a : ℕ}
+    (ha : q + a = n + d) (haA : a ∈ A) (haQ : a ∉ Q)
+    (hhub' : IsPairHub A (n + d') Q) (hdd : d ≤ d')
+    (hy : q + (d' - d) ∈ A) :
+    q + (d' - d) ∈ Q := by
+  have hpair : a + (q + (d' - d)) = n + d' := by omega
+  rcases hhub' a haA _ hy hpair with h | h
+  · exact absurd h haQ
+  · exact h
+
 end Erdos881
