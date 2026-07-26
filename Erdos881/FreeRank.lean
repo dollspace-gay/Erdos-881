@@ -11705,4 +11705,25 @@ theorem free_tower_singleton_levels {A : Set ℕ}
   rw [h1] at hmir
   exact ⟨by omega, hmir, hdead⟩
 
+/-- **Pair-hub corep.**  A singleton pair hub's target donates
+its level: the covering pair of m must route through p, so
+L' = m − p is a basis member.  The free tower's levels are
+genuine material, exactly as the g₀-tower's coreps were. -/
+theorem pair_hub_corep {A : Set ℕ} {N₀ m p : ℕ}
+    (hcov : PairCovers A N₀) (hm : N₀ ≤ m)
+    (hpair : IsPairHub A m ({p} : Finset ℕ)) :
+    p ≤ m ∧ m - p ∈ A := by
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
+  rcases hpair x hx y hy hxy with h | h
+  · rw [Finset.mem_singleton] at h
+    subst h
+    have h1 : m - x = y := by omega
+    rw [h1]
+    exact ⟨by omega, hy⟩
+  · rw [Finset.mem_singleton] at h
+    subst h
+    have h1 : m - y = x := by omega
+    rw [h1]
+    exact ⟨by omega, hx⟩
+
 end Erdos881
