@@ -3969,4 +3969,86 @@ theorem seven_level_hub_impossible {A : Set ℕ} {m : ℕ}
     exact absurd hm2 (by decide)
   · exact hij (hbinj (heq1 ▸ heq2 ▸ rfl))
 
+/-- **THE 18-LEVEL ABSOLUTE CAP.**  Nineteen shell-duties at one
+target force singleton ownership: if any guardian value serves
+four of the levels, the rotation cap hands it the target; if all
+fibers have size at most three, at least seven distinct guardian
+values appear and `seven_level_hub_impossible` rules the
+configuration out entirely.  So one target carries at most 18
+envelope-hubs over pairwise disjoint envelopes, unless some
+guardian owns it outright.  Hypothesis-free. -/
+theorem eighteen_level_cap {A : Set ℕ} {m : ℕ}
+    {Q : Fin 19 → Finset ℕ} {b : Fin 19 → ℕ}
+    (hdisj : ∀ i j, i ≠ j → Disjoint (Q i) (Q j))
+    (hb : ∀ i j, b i ∉ Q j)
+    (hrep : ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = m)
+    (hhub : ∀ i, IsRepHub A m (insert (b i) (Q i))) :
+    ∃ i, IsRepHub A m {b i} := by
+  classical
+  by_cases hfib : ∃ v ∈ Finset.univ.image b,
+      4 ≤ (Finset.univ.filter (fun i => b i = v)).card
+  · obtain ⟨v, hv, hvc⟩ := hfib
+    obtain ⟨t, hts, htc⟩ := Finset.exists_subset_card_eq hvc
+    let e := t.orderIsoOfFin htc
+    have hbv : ∀ i : Fin 4, b (e i : Fin 19) = v := by
+      intro i
+      have h1 := hts (e i).2
+      rw [Finset.mem_filter] at h1
+      exact h1.2
+    have hown : IsRepHub A m {v} := by
+      refine four_disjoint_hubs_singleton
+        (Q := fun i => Q (e i : Fin 19)) ?_ ?_ ?_
+      · intro i j hij
+        exact hdisj _ _
+          (fun heq => hij (e.injective (Subtype.ext heq)))
+      · intro i
+        rw [← hbv i]
+        exact hb _ _
+      · intro i
+        have h1 := hhub (e i : Fin 19)
+        rw [hbv i] at h1
+        exact h1
+    obtain ⟨i0, hi0⟩ : ∃ i : Fin 19, b i = v := by
+      rw [Finset.mem_image] at hv
+      obtain ⟨i, _, hi⟩ := hv
+      exact ⟨i, hi⟩
+    rw [← hi0] at hown
+    exact ⟨i0, hown⟩
+  · exfalso
+    push_neg at hfib
+    have hcount : (Finset.univ : Finset (Fin 19)).card ≤
+        3 * (Finset.univ.image b).card := by
+      refine Finset.card_le_mul_card_image (f := b)
+        Finset.univ 3 ?_
+      intro v hv
+      have h1 := hfib v hv
+      omega
+    have h19 : (Finset.univ : Finset (Fin 19)).card = 19 := by
+      simp
+    have h7 : 7 ≤ (Finset.univ.image b).card := by omega
+    obtain ⟨t, hts, htc⟩ := Finset.exists_subset_card_eq h7
+    let e := t.orderIsoOfFin htc
+    have hpre : ∀ i : Fin 7, ∃ i' : Fin 19,
+        b i' = (e i : ℕ) := by
+      intro i
+      have h1 := hts (e i).2
+      rw [Finset.mem_image] at h1
+      obtain ⟨i', _, hi'⟩ := h1
+      exact ⟨i', hi'⟩
+    choose c hc using hpre
+    refine seven_level_hub_impossible (A := A) (m := m)
+      (Q := fun i => Q (c i)) (b := fun i => b (c i))
+      ?_ ?_ hrep ?_
+    · intro i j hij
+      refine hdisj _ _ (fun heq => hij ?_)
+      apply e.injective
+      apply Subtype.ext
+      rw [← hc i, ← hc j, heq]
+    · intro i j hij
+      have hij' : b (c i) = b (c j) := hij
+      rw [hc i, hc j] at hij'
+      exact e.injective (Subtype.ext hij')
+    · intro i
+      exact hhub (c i)
+
 end Erdos881
