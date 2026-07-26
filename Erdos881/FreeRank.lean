@@ -7339,4 +7339,32 @@ theorem no_anchor_doubles_thin {A : Set ℕ} {g₀ c : ℕ}
     omega
   omega
 
+/-- Sharpening the no-anchor branch: the router g₀ is a basis
+element, or every double is PURELY CENTRAL — 2c decomposes only
+as c + c, and the whole basis is self-married: each element owns
+the unique-decomposition target 2c at the explicit position
+family 2·A.  Carry-free worlds (Cantor) realize the central
+branch exactly. -/
+theorem no_anchor_central_or_member {A : Set ℕ} {g₀ : ℕ}
+    (hroute : ∀ c ∈ A, 0 < c → c ≠ g₀ →
+      IsPairHub A (2 * c) ({c, g₀} : Finset ℕ)) :
+    (g₀ ∈ A) ∨
+    (∀ c ∈ A, 0 < c → c ≠ g₀ → ∀ w ∈ A, ∀ w' ∈ A,
+      w + w' = 2 * c → w = c ∧ w' = c) := by
+  classical
+  by_cases hg : g₀ ∈ A
+  · exact Or.inl hg
+  · right
+    intro c hcA hcpos hcg w hw w' hw' hsum
+    rcases hroute c hcA hcpos hcg w hw w' hw' hsum with h | h
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact ⟨h', by omega⟩
+      · rw [Finset.mem_singleton] at h'
+        exact absurd (h' ▸ hw) hg
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · have hwc : w = c := by omega
+        exact ⟨hwc, by omega⟩
+      · rw [Finset.mem_singleton] at h'
+        exact absurd (h' ▸ hw') hg
+
 end Erdos881
