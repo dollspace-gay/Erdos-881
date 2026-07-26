@@ -220,4 +220,29 @@ theorem cantor_not_counterexample :
   exact (hfail_iff_no_hereditarily_free h0 hcov).1 hfail
     ⟨Erdos881Cantor.PurePowers, cantor_powers_hereditarilyFree⟩
 
+/-- **THE SHELL ENDGAME** (re-export).  The counterexample's
+positive elements stratify into infinitely many disjoint nonempty
+free shells with hierarchical total guardianship; every large
+element avoiding all shells guards at unbounded scales (the
+bounded/singleton-owner corner feeds the rotating-guardian kill
+and is dead).  Two shapes remain: perfect stratification, or an
+infinite crowd of infinitely-employed eternal survivors. -/
+theorem endgame_shells {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ Q : ℕ → Finset ℕ, ∃ X,
+      (∀ k, (Q k).Nonempty) ∧
+      (∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h) ∧
+      (∀ k, RepFree A N₀ (Q k)) ∧
+      (∀ j k, j < k → Disjoint (Q j) (Q k)) ∧
+      (∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
+        ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) ∧
+      (∀ b ∈ A, X ≤ b → 0 < b → (∀ j, b ∉ Q j) →
+        ∀ Y, ∃ k, ∃ m, Y ≤ m ∧ N₀ ≤ m ∧
+          IsRepHub A m (insert b (Q k))) :=
+  shell_endgame h0 hcov hanchor hfail
+
 end Erdos881

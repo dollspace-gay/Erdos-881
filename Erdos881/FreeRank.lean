@@ -3659,4 +3659,35 @@ theorem shell_survivors_unbounded_targets {A : Set ℕ} {N₀ : ℕ}
   | 1 => exact ⟨hy, hyB⟩
   | 2 => exact ⟨hz, hzB⟩
 
+/-- **THE SHELL ENDGAME.**  Composition of the stratification and
+the singleton-owner kill: a counterexample's positive elements
+split into infinitely many disjoint nonempty free shells with
+hierarchical total guardianship, and every sufficiently large
+element avoiding all shells guards at UNBOUNDED scales.  So the
+enemy is either a perfect stratification (finitely many eternal
+survivors) or carries an infinite crowd of infinitely-employed
+survivors — no third shape exists. -/
+theorem shell_endgame {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ Q : ℕ → Finset ℕ, ∃ X,
+      (∀ k, (Q k).Nonempty) ∧
+      (∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h) ∧
+      (∀ k, RepFree A N₀ (Q k)) ∧
+      (∀ j k, j < k → Disjoint (Q j) (Q k)) ∧
+      (∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
+        ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) ∧
+      (∀ b ∈ A, X ≤ b → 0 < b → (∀ j, b ∉ Q j) →
+        ∀ Y, ∃ k, ∃ m, Y ≤ m ∧ N₀ ≤ m ∧
+          IsRepHub A m (insert b (Q k))) := by
+  obtain ⟨Q, hne, hmem, hfree, hdisj, hguard⟩ :=
+    absolute_shell_stratification h0 hcov hanchor hfail
+  obtain ⟨X, hX⟩ :=
+    shell_survivors_unbounded_targets h0 hcov hanchor hfail
+      hdisj hguard
+  exact ⟨Q, X, hne, hmem, hfree, hdisj, hguard, hX⟩
+
 end Erdos881
