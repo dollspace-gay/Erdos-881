@@ -12837,4 +12837,70 @@ theorem rank_room_chain {A : Set ℕ} {N₀ : ℕ}
   obtain ⟨σ, hσ⟩ := finset_stream_higman Q
   exact ⟨Q, σ, hne, hmat, hfreeQ, hdisj, hcard, hσ⟩
 
+/-- **THE RANK ROOM'S SPINE.**  The corridor walked: the rank
+branch's own chain threads a strictly increasing canonical
+lineage through its own disjoint free shells — the spine,
+reproduced from bare rank supply with no oracle.  The rank
+refuge now contains the street program's starting object built
+from its own material. -/
+theorem rank_room_spine {A : Set ℕ} {N₀ : ℕ}
+    (hfree : ∀ c, ∃ P : Finset ℕ,
+      (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧ RepFree A N₀ P ∧
+      c ≤ P.card) :
+    ∃ Q : ℕ → Finset ℕ, ∃ σ : ℕ ↪o ℕ, ∃ x : ℕ → ℕ,
+      (∀ k, RepFree A N₀ (Q k)) ∧
+      (∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h) ∧
+      (∀ j k, j < k → Disjoint (Q j) (Q k)) ∧
+      (∀ k, k + 1 ≤ (Q k).card) ∧
+      StrictMono x ∧ (∀ t, x t ∈ Q (σ t)) := by
+  classical
+  obtain ⟨Q, σ, hne, hmat, hfreeQ, hdisj, hcard, hσ⟩ :=
+    rank_room_chain hfree
+  have hstep : ∀ t v, v ∈ Q (σ t) → ∃ w ∈ Q (σ (t + 1)),
+      v < w := by
+    intro t v hv
+    have hchain := hσ t (t + 1) (by omega)
+    obtain ⟨l', hf₂, hsub⟩ := List.sublistForall₂_iff.1 hchain
+    have hvL : v ∈ (Q (σ t)).sort (· ≤ ·) := by
+      rw [Finset.mem_sort]
+      exact hv
+    obtain ⟨w, hwl', hvw⟩ := forall₂_mem_partner hf₂ v hvL
+    have hwL : w ∈ (Q (σ (t + 1))).sort (· ≤ ·) :=
+      hsub.mem hwl'
+    have hwQ : w ∈ Q (σ (t + 1)) := by
+      rw [← Finset.mem_sort (α := ℕ) (· ≤ ·)]
+      exact hwL
+    have hvne : v ≠ w := by
+      intro heq
+      have h1 : σ t < σ (t + 1) := σ.strictMono (by omega)
+      exact (Finset.disjoint_left.1 (hdisj _ _ h1)) hv
+        (heq ▸ hwQ)
+    exact ⟨w, hwQ, by omega⟩
+  obtain ⟨v₀, hv₀⟩ := hne (σ 0)
+  have hpick : ∀ t v, ∃ w, v ∈ Q (σ t) →
+      w ∈ Q (σ (t + 1)) ∧ v < w := by
+    intro t v
+    by_cases hv : v ∈ Q (σ t)
+    · obtain ⟨w, hw, hvw⟩ := hstep t v hv
+      exact ⟨w, fun _ => ⟨hw, hvw⟩⟩
+    · exact ⟨0, fun h => absurd h hv⟩
+  choose W hW using hpick
+  obtain ⟨x, hx0, hxs⟩ : ∃ x : ℕ → ℕ, x 0 = v₀ ∧
+      ∀ t, x (t + 1) = W t (x t) :=
+    ⟨fun t => Nat.rec v₀ (fun t' v => W t' v) t, rfl,
+      fun _ => rfl⟩
+  have hxmem : ∀ t, x t ∈ Q (σ t) := by
+    intro t
+    induction t with
+    | zero => rw [hx0]; exact hv₀
+    | succ t ih =>
+      rw [hxs]
+      exact (hW t (x t) ih).1
+  have hxmono : StrictMono x := by
+    apply strictMono_nat_of_lt_succ
+    intro t
+    rw [hxs]
+    exact (hW t (x t) (hxmem t)).2
+  exact ⟨Q, σ, x, hfreeQ, hmat, hdisj, hcard, hxmono, hxmem⟩
+
 end Erdos881
