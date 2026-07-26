@@ -13601,4 +13601,73 @@ theorem cross_channel_split {S T : Set ℕ}
       (fun x => x ∈ S ∧ (v - x) ∈ T ∧ x % 2 = 1 ∧
         (v - x) % 2 = 1))
   omega
+open Classical in
+/-- **The generic cross-descent.**  All four edges at once: the
+(p, q)-parity channel of a cross-system (S, T) injects into the
+cross-system of the (p, q)-children at the reduced target.
+With the split, the drain machinery is closed under iteration:
+cross-systems all the way down. -/
+theorem cross_channel_descends {S T : Set ℕ} {p q : ℕ}
+    (hp : p < 2) (hq : q < 2) {v : ℕ}
+    (hv : v % 2 = (p + q) % 2) :
+    ((Finset.range (v + 1)).filter
+      (fun x => x ∈ S ∧ (v - x) ∈ T ∧ x % 2 = p ∧
+        (v - x) % 2 = q)).card ≤
+    ((Finset.range ((v - p - q) / 2 + 1)).filter
+      (fun y => 2 * y + p ∈ S ∧
+        2 * ((v - p - q) / 2 - y) + q ∈ T)).card := by
+  apply Finset.card_le_card_of_injOn (fun x => x / 2)
+  · intro x hx
+    simp only [Finset.mem_coe, Finset.mem_filter,
+      Finset.mem_range] at hx
+    obtain ⟨hxr, hxS, hxT, hxp, hxq⟩ := hx
+    simp only [Finset.mem_coe, Finset.mem_filter,
+      Finset.mem_range]
+    refine ⟨by omega, ?_, ?_⟩
+    · have h1 : 2 * (x / 2) + p = x := by omega
+      rw [h1]
+      exact hxS
+    · have h1 : 2 * ((v - p - q) / 2 - x / 2) + q = v - x := by
+        omega
+      rw [h1]
+      exact hxT
+  · intro a ha b hb hab
+    simp only [Finset.mem_coe, Finset.mem_filter,
+      Finset.mem_range] at ha hb
+    obtain ⟨_, _, _, hap, _⟩ := ha
+    obtain ⟨_, _, _, hbp, _⟩ := hb
+    have hab' : a / 2 = b / 2 := hab
+    omega
+
+open Classical in
+/-- **The generic cross-blowup descends.**  If the
+(p, q)-channel of a cross-system carries unbounded counts, the
+(p, q)-child cross-system inherits them: the drain's induction
+step, complete for all four edges. -/
+theorem cross_blowup_descends {S T : Set ℕ} {p q : ℕ}
+    (hp : p < 2) (hq : q < 2)
+    (hch : ∀ C N, ∃ v, N ≤ v ∧ C ≤
+      ((Finset.range (v + 1)).filter
+        (fun x => x ∈ S ∧ (v - x) ∈ T ∧ x % 2 = p ∧
+          (v - x) % 2 = q)).card) :
+    ∀ C N, ∃ w, N ≤ w ∧ C ≤
+      ((Finset.range (w + 1)).filter
+        (fun y => 2 * y + p ∈ S ∧
+          2 * (w - y) + q ∈ T)).card := by
+  intro C N
+  obtain ⟨v, hvN, hvC⟩ := hch (C + 1) (2 * N + 2)
+  have hvne : ((Finset.range (v + 1)).filter
+      (fun x => x ∈ S ∧ (v - x) ∈ T ∧ x % 2 = p ∧
+        (v - x) % 2 = q)).Nonempty :=
+    Finset.card_pos.1 (by omega)
+  obtain ⟨x₀, hx₀⟩ := hvne
+  rw [Finset.mem_filter] at hx₀
+  have hvpar : v % 2 = (p + q) % 2 := by
+    obtain ⟨hr, _, _, hxp, hxq⟩ := hx₀
+    rw [Finset.mem_range] at hr
+    omega
+  have hdesc := cross_channel_descends (S := S) (T := T)
+    hp hq hvpar
+  exact ⟨(v - p - q) / 2, by omega, by omega⟩
+
 end Erdos881
