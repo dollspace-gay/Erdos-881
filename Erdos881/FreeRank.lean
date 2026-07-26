@@ -7270,4 +7270,34 @@ theorem lockstep_uniform_streets {A : Set ℕ} {N₀ : ℕ}
   rw [← hi]
   exact hmf₂ i
 
+/-- **The anchor dichotomy** (integrity rescue for the
+anchor-conditioned arcs).  Lab audit shows carry-free worlds
+(Cantor) have NO anchors: every double 2c decomposes centrally
+only.  This theorem makes the failure mode itself a weapon:
+either anchors exist — and the entire shell/spine/encirclement
+machinery applies — or some single element g₀ routes every
+noncentral decomposition of every double: EVERY double 2c is a
+two-element pair hub {c, g₀}, a universal crystal-like family at
+the explicit positions 2·A.  No counterexample escapes both. -/
+theorem anchor_dichotomy {A : Set ℕ} :
+    (∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g) ∨
+    (∃ g₀, ∀ c ∈ A, 0 < c → c ≠ g₀ →
+      IsPairHub A (2 * c) ({c, g₀} : Finset ℕ)) := by
+  classical
+  by_cases h : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g
+  · exact Or.inl h
+  · right
+    push_neg at h
+    obtain ⟨g₀, hg₀⟩ := h
+    refine ⟨g₀, fun c hcA hcpos hcg w hw w' hw' hsum => ?_⟩
+    have h1 := hg₀ c hcA hcpos hcg w hw w' hw' hsum
+    by_cases hwc : w = c
+    · exact Or.inl (by simp [hwc])
+    · have h2 := h1 hwc
+      by_cases hwg : w = g₀
+      · exact Or.inl (by simp [hwg])
+      · exact Or.inr (by simp [h2 hwg])
+
 end Erdos881
