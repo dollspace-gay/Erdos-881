@@ -451,4 +451,24 @@ theorem endgame_spine {A : Set ℕ} {N₀ : ℕ}
   ⟨spine_stalls_hereditarily h0 hcov hanchor hfail,
     root_rank_omega_or_lockstep h0 hcov hanchor hfail⟩
 
+/-- **THE FINAL FORK** (re-export; where the campaign now
+stands).  Every counterexample funds free sets of every size —
+root rank ≥ ω — or runs a located uniform-width hub street on
+its own canonical spine.  Erdős 881's remaining content is the
+defeat of these two explicit configurations. -/
+theorem endgame_final_fork {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
+      RepFree A N₀ P ∧ c ≤ P.card) ∨
+    (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+      ∃ L, ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+        ∀ v ∈ V, N₀ ≤ v ∧ ∃ s J, 2 ≤ J ∧ J ≤ L ∧
+          IsRepHub A v ((Finset.range J).image
+            (fun j => x (s + j)))) :=
+  the_final_fork h0 hcov hanchor hfail
+
 end Erdos881

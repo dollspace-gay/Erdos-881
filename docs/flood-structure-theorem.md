@@ -664,3 +664,14 @@ The night ends with the enemy pinned on its own material:
 INFINITE RANK or a UNIFORM-WIDTH DEFENCE of every point of the
 canonical spine.  Both branches are now narrow, explicit, and
 fully instrumented.  The next session opens here.
+
+## 27. THE FINAL FORK (23:00; where the campaign stands)
+
+**`the_final_fork` / `endgame_final_fork`.**  The compression of
+the entire night: every counterexample funds FREE SETS OF EVERY
+SIZE (root rank ≥ ω) or runs a LOCATED UNIFORM-WIDTH HUB STREET
+on its own canonical spine — unboundedly many distinct targets,
+each fully hubbed by 2..L consecutive lineage values at known
+positions, uniformly fragile, taxed, capped, and self-similar
+under thinning.  Erdős 881 (k = 2), after this night, is the
+defeat of these two explicit configurations.
