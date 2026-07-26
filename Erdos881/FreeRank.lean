@@ -8360,4 +8360,285 @@ theorem the_final_fork_welded {A : Set ℕ} {N₀ : ℕ}
       exact h1
     exact ⟨hvN, s, J, hJ2, hJL, hpair, by omega⟩
 
+/-! ## The street trichotomy: fixed hall or marching windows -/
+
+/-- **Street position dichotomy.**  A street whose targets each
+carry a positioned certificate either re-forms with all positions
+under one fixed bound (the bounded hall) or re-forms beyond every
+position bound (the marching street).  Generic in the certificate:
+the splitting argument only counts near- and far-certified
+targets. -/
+theorem street_position_dichotomy {W : ℕ → ℕ → Prop}
+    (hstreet : ∀ K : ℕ, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ v ∈ V, ∃ s, W v s) :
+    (∃ S₀, ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ v ∈ V, ∃ s, s ≤ S₀ ∧ W v s) ∨
+    (∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ v ∈ V, ∃ s, S₀ ≤ s ∧ W v s) := by
+  classical
+  by_cases hb : ∃ S₀, ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ v ∈ V, ∃ s, s ≤ S₀ ∧ W v s
+  · exact Or.inl hb
+  · right
+    intro S₀ K
+    have hnP : ¬∀ K', ∃ V : Finset ℕ, K' ≤ V.card ∧
+        ∀ v ∈ V, ∃ s, s ≤ S₀ ∧ W v s :=
+      fun hall => hb ⟨S₀, hall⟩
+    obtain ⟨K₀, hK₀⟩ := not_forall.mp hnP
+    obtain ⟨V, hVcard, hV⟩ := hstreet (K₀ + K)
+    set Vfar := V.filter (fun v => ∃ s, S₀ ≤ s ∧ W v s) with hVfar
+    by_cases hcard : K ≤ Vfar.card
+    · refine ⟨Vfar, hcard, ?_⟩
+      intro v hv
+      rw [hVfar, Finset.mem_filter] at hv
+      exact hv.2
+    · exfalso
+      apply hK₀
+      refine ⟨V \ Vfar, ?_, ?_⟩
+      · have h2 : (V \ Vfar).card =
+            V.card - (Vfar ∩ V).card := Finset.card_sdiff
+        have h3 : (Vfar ∩ V).card ≤ Vfar.card :=
+          Finset.card_le_card Finset.inter_subset_left
+        omega
+      · intro v hv
+        rw [Finset.mem_sdiff] at hv
+        obtain ⟨hvV, hvnf⟩ := hv
+        obtain ⟨s, hWs⟩ := hV v hvV
+        refine ⟨s, ?_, hWs⟩
+        by_contra hgt
+        exact hvnf (by
+          rw [hVfar, Finset.mem_filter]
+          exact ⟨hvV, s, by omega, hWs⟩)
+
+/-- **The window sits below its target.**  A covered target's
+pair-hub window cannot start above the target: the guaranteed
+pair donates a part inside the window, and parts are at most the
+sum.  Marching windows drag their targets up with them. -/
+theorem street_window_below_target {A : Set ℕ} {N₀ : ℕ}
+    {x : ℕ → ℕ} {v s J : ℕ} (hcov : PairCovers A N₀)
+    (hxmono : StrictMono x) (hvN : N₀ ≤ v)
+    (hhub : IsPairHub A v ((Finset.range J).image
+      (fun j => x (s + j)))) :
+    x s ≤ v := by
+  obtain ⟨a, haA, b, hbA, hab⟩ := hcov v hvN
+  have hwin : ∀ y ∈ (Finset.range J).image (fun j => x (s + j)),
+      x s ≤ y := by
+    intro y hy
+    rw [Finset.mem_image] at hy
+    obtain ⟨j, _, hjy⟩ := hy
+    rw [← hjy]
+    exact hxmono.monotone (by omega)
+  rcases hhub a haA b hbA hab with h | h
+  · exact le_trans (hwin a h) (by omega)
+  · exact le_trans (hwin b h) (by omega)
+
+/-- **The bounded street has a fixed hall.**  Windows drawn from a
+bounded position range with widths at most L form a finite pool;
+double pigeonhole (fibers per size, then stabilization over the
+pool) hands one SINGLE window that pair-hubs unboundedly many
+targets: a fixed finite hall through which infinitely many
+targets route their entire pair life. -/
+theorem bounded_street_fixed_hall {A : Set ℕ} {N₀ : ℕ}
+    {x : ℕ → ℕ} {L S₀ : ℕ}
+    (hnear : ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ v ∈ V, ∃ s, s ≤ S₀ ∧ N₀ ≤ v ∧ ∃ J, 2 ≤ J ∧ J ≤ L ∧
+        IsPairHub A v ((Finset.range J).image
+          (fun j => x (s + j)))) :
+    ∃ H : Finset ℕ, H.card ≤ L ∧ ∀ K, ∃ V : Finset ℕ,
+      K ≤ V.card ∧ ∀ v ∈ V, N₀ ≤ v ∧ IsPairHub A v H := by
+  classical
+  set box : Finset (ℕ × ℕ) :=
+    (Finset.range (S₀ + 1)) ×ˢ (Finset.range (L + 1)) with hbox
+  have hstep1 : ∀ K, ∃ p ∈ box, ∃ V' : Finset ℕ, K ≤ V'.card ∧
+      ∀ v ∈ V', N₀ ≤ v ∧ IsPairHub A v
+        ((Finset.range p.2).image (fun j => x (p.1 + j))) := by
+    intro K
+    obtain ⟨V, hVcard, hV⟩ := hnear (box.card * K + 1)
+    have hVtot : ∀ v, ∃ p : ℕ × ℕ, v ∈ V →
+        p.1 ≤ S₀ ∧ 2 ≤ p.2 ∧ p.2 ≤ L ∧ N₀ ≤ v ∧
+        IsPairHub A v ((Finset.range p.2).image
+          (fun j => x (p.1 + j))) := by
+      intro v
+      by_cases hvV : v ∈ V
+      · obtain ⟨s, hs, hvN, J, hJ2, hJL, hhub⟩ := hV v hvV
+        exact ⟨(s, J), fun _ => ⟨hs, hJ2, hJL, hvN, hhub⟩⟩
+      · exact ⟨(0, 2), fun h => absurd h hvV⟩
+    choose pf hpf using hVtot
+    have hmaps : ∀ v ∈ V, pf v ∈ box := by
+      intro v hvV
+      obtain ⟨h1, h2, h3, _, _⟩ := hpf v hvV
+      rw [hbox, Finset.mem_product]
+      exact ⟨Finset.mem_range.2 (by omega),
+        Finset.mem_range.2 (by omega)⟩
+    have hlt : box.card * K < V.card := by omega
+    obtain ⟨p, hpbox, hfiber⟩ :=
+      Finset.exists_lt_card_fiber_of_mul_lt_card_of_maps_to
+        hmaps hlt
+    refine ⟨p, hpbox, V.filter (fun v => pf v = p),
+      by omega, ?_⟩
+    intro v hv
+    rw [Finset.mem_filter] at hv
+    obtain ⟨hvV, hfv⟩ := hv
+    obtain ⟨_, _, _, hvN, hhub⟩ := hpf v hvV
+    rw [hfv] at hhub
+    exact ⟨hvN, hhub⟩
+  have hstab : ∃ p ∈ box, ∀ K, ∃ V' : Finset ℕ,
+      K ≤ V'.card ∧ ∀ v ∈ V', N₀ ≤ v ∧ IsPairHub A v
+        ((Finset.range p.2).image (fun j => x (p.1 + j))) := by
+    by_contra hno
+    have hKp : ∀ p : ℕ × ℕ, ∃ Kp, p ∈ box →
+        ¬(∃ V' : Finset ℕ, Kp ≤ V'.card ∧ ∀ v ∈ V', N₀ ≤ v ∧
+          IsPairHub A v ((Finset.range p.2).image
+            (fun j => x (p.1 + j)))) := by
+      intro p
+      by_cases hpbox : p ∈ box
+      · have h1 : ¬∀ K, ∃ V' : Finset ℕ, K ≤ V'.card ∧
+            ∀ v ∈ V', N₀ ≤ v ∧ IsPairHub A v
+              ((Finset.range p.2).image (fun j => x (p.1 + j))) :=
+          fun hall => hno ⟨p, hpbox, hall⟩
+        obtain ⟨Kp, hKp'⟩ := not_forall.mp h1
+        exact ⟨Kp, fun _ => hKp'⟩
+      · exact ⟨0, fun h => absurd h hpbox⟩
+    choose Kf hKf using hKp
+    obtain ⟨p, hpbox, V', hV'card, hV'⟩ := hstep1 (box.sup Kf)
+    exact hKf p hpbox ⟨V',
+      le_trans (Finset.le_sup (f := Kf) hpbox) hV'card, hV'⟩
+  obtain ⟨p, hpbox, hall⟩ := hstab
+  refine ⟨(Finset.range p.2).image (fun j => x (p.1 + j)),
+    ?_, hall⟩
+  have h1 := Finset.card_image_le (s := Finset.range p.2)
+    (f := fun j => x (p.1 + j))
+  rw [Finset.card_range] at h1
+  rw [hbox, Finset.mem_product] at hpbox
+  have h2 := Finset.mem_range.1 hpbox.2
+  omega
+
+/-- **The fixed hall's popular shift.**  A single finite hall
+pair-hubbing unboundedly many covered targets concentrates them
+further: pigeonhole over the hall's members hands ONE element h
+such that unboundedly many targets v sit on the translate h + A —
+the hall's traffic runs through one door. -/
+theorem fixed_hall_popular_shift {A : Set ℕ} {N₀ : ℕ}
+    {H : Finset ℕ} (hcov : PairCovers A N₀)
+    (hhall : ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ v ∈ V, N₀ ≤ v ∧ IsPairHub A v H) :
+    ∃ h ∈ H, ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ v ∈ V, N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧ IsPairHub A v H := by
+  classical
+  have hstep1 : ∀ K, ∃ h ∈ H, ∃ V' : Finset ℕ, K ≤ V'.card ∧
+      ∀ v ∈ V', N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧
+        IsPairHub A v H := by
+    intro K
+    obtain ⟨V, hVcard, hV⟩ := hhall (H.card * K + 1)
+    have hVtot : ∀ v, ∃ h, v ∈ V →
+        h ∈ H ∧ h ≤ v ∧ v - h ∈ A := by
+      intro v
+      by_cases hvV : v ∈ V
+      · obtain ⟨hvN, hhub⟩ := hV v hvV
+        obtain ⟨a, haA, b, hbA, hab⟩ := hcov v hvN
+        rcases hhub a haA b hbA hab with hmem | hmem
+        · refine ⟨a, fun _ => ⟨hmem, by omega, ?_⟩⟩
+          have hb : v - a = b := by omega
+          rw [hb]; exact hbA
+        · refine ⟨b, fun _ => ⟨hmem, by omega, ?_⟩⟩
+          have ha : v - b = a := by omega
+          rw [ha]; exact haA
+      · exact ⟨0, fun h => absurd h hvV⟩
+    choose hf hhf using hVtot
+    have hmaps : ∀ v ∈ V, hf v ∈ H :=
+      fun v hvV => (hhf v hvV).1
+    have hlt : H.card * K < V.card := by omega
+    obtain ⟨h, hhH, hfiber⟩ :=
+      Finset.exists_lt_card_fiber_of_mul_lt_card_of_maps_to
+        hmaps hlt
+    refine ⟨h, hhH, V.filter (fun v => hf v = h), by omega, ?_⟩
+    intro v hv
+    rw [Finset.mem_filter] at hv
+    obtain ⟨hvV, hfv⟩ := hv
+    obtain ⟨_, hle, hsub⟩ := hhf v hvV
+    rw [hfv] at hle hsub
+    exact ⟨(hV v hvV).1, hle, hsub, (hV v hvV).2⟩
+  by_contra hno
+  have hKh : ∀ h : ℕ, ∃ Kh, h ∈ H → ¬(∃ V : Finset ℕ,
+      Kh ≤ V.card ∧ ∀ v ∈ V, N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧
+        IsPairHub A v H) := by
+    intro h
+    by_cases hhH : h ∈ H
+    · have h1 : ¬∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+          ∀ v ∈ V, N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧
+            IsPairHub A v H :=
+        fun hall => hno ⟨h, hhH, hall⟩
+      obtain ⟨Kh, hKh'⟩ := not_forall.mp h1
+      exact ⟨Kh, fun _ => hKh'⟩
+    · exact ⟨0, fun hh => absurd hh hhH⟩
+  choose Kf hKf using hKh
+  obtain ⟨h, hhH, V', hV'card, hV'⟩ := hstep1 (H.sup Kf)
+  exact hKf h hhH ⟨V',
+    le_trans (Finset.le_sup (f := Kf) hhH) hV'card, hV'⟩
+
+/-- **THE STREET TRICHOTOMY.**  The welded fork's street branch
+splits by window position: every anchored counterexample funds
+root rank ≥ ω, or routes unboundedly many targets' ENTIRE pair
+life through one FIXED finite hall — with one hall element h
+serving as the door: unboundedly many targets on the translate
+h + A — or runs a MARCHING street: pair-hub windows of width
+2..L beyond every spine position, each window below its own
+target.  Three explicit configurations; nothing else survives. -/
+theorem the_street_trichotomy {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
+      RepFree A N₀ P ∧ c ≤ P.card) ∨
+    (∃ H : Finset ℕ, ∃ h ∈ H, ∀ K, ∃ V : Finset ℕ,
+      K ≤ V.card ∧ ∀ v ∈ V, N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧
+        IsPairHub A v H) ∨
+    (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+      ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+        ∀ v ∈ V, N₀ ≤ v ∧ ∃ s, S₀ ≤ s ∧ x s ≤ v ∧
+          ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairHub A v
+            ((Finset.range J).image (fun j => x (s + j)))) := by
+  rcases the_final_fork_welded h0 hcov hanchor hfail with
+    hrank | ⟨x, hxmono, hxA, L, hstreet⟩
+  · exact Or.inl hrank
+  · have hstreet' : ∀ K : ℕ, ∃ V : Finset ℕ, K ≤ V.card ∧
+        ∀ v ∈ V, ∃ s, N₀ ≤ v ∧ ∃ J, 2 ≤ J ∧ J ≤ L ∧
+          IsPairHub A v ((Finset.range J).image
+            (fun j => x (s + j))) := by
+      intro K
+      obtain ⟨V, hVcard, hV⟩ := hstreet K
+      refine ⟨V, hVcard, ?_⟩
+      intro v hv
+      obtain ⟨hvN, s, J, hJ2, hJL, hhub, _⟩ := hV v hv
+      exact ⟨s, hvN, J, hJ2, hJL, hhub⟩
+    rcases street_position_dichotomy
+      (W := fun v s => N₀ ≤ v ∧ ∃ J, 2 ≤ J ∧ J ≤ L ∧
+        IsPairHub A v ((Finset.range J).image
+          (fun j => x (s + j)))) hstreet' with
+      ⟨S₀, hnear⟩ | hfar
+    · have hnear' : ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+          ∀ v ∈ V, ∃ s, s ≤ S₀ ∧ N₀ ≤ v ∧ ∃ J, 2 ≤ J ∧ J ≤ L ∧
+            IsPairHub A v ((Finset.range J).image
+              (fun j => x (s + j))) := by
+        intro K
+        obtain ⟨V, hVcard, hV⟩ := hnear K
+        refine ⟨V, hVcard, ?_⟩
+        intro v hv
+        obtain ⟨s, hs, hvN, J, hJ2, hJL, hhub⟩ := hV v hv
+        exact ⟨s, hs, hvN, J, hJ2, hJL, hhub⟩
+      obtain ⟨H, hHcard, hhall⟩ := bounded_street_fixed_hall hnear'
+      obtain ⟨h, hhH, hpop⟩ := fixed_hall_popular_shift hcov hhall
+      exact Or.inr (Or.inl ⟨H, h, hhH, hpop⟩)
+    · refine Or.inr (Or.inr ⟨x, hxmono, hxA, L, ?_⟩)
+      intro S₀ K
+      obtain ⟨V, hVcard, hV⟩ := hfar S₀ K
+      refine ⟨V, hVcard, ?_⟩
+      intro v hv
+      obtain ⟨s, hSs, hvN, J, hJ2, hJL, hhub⟩ := hV v hv
+      exact ⟨hvN, s, hSs,
+        street_window_below_target hcov hxmono hvN hhub,
+        J, hJ2, hJL, hhub⟩
+
 end Erdos881
