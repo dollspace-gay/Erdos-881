@@ -58,9 +58,13 @@ mirror halls), or R4 (street ladder — positions pinned at n + d,
 pure-Q streets, arithmetic rung family, difference deserts).
 Also: shell stratification + depth tax + rotation/6/18-level caps
 + conflict law; three branch mechanisms (counting/Sidon,
-robustness/Cantor, and their mixed-regime gap).  Alternative
-routes: rank-drop op (`no_pool_rank_descent`), mass accounting
-(seal-cost/blowup constants), adaptive program.  The user (Doll) steers via
+robustness/Cantor, and their mixed-regime gap); the anchor
+trichotomy (anchored / g₀-routed / central-AP3-free); the
+canonical grid.  SUMMIT: `endgame_final_fork` — every
+counterexample funds root rank ≥ ω or runs a located
+uniform-width hub street on its own canonical spine
+(Nash-Williams spine machinery, FreeRank tail).  Next session
+opens at the fork's two branches.  The user (Doll) steers via
 metaphors and cannot answer technical questions; read the code.
 
 ## Build quirk (2026-07-25)
