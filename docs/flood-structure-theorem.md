@@ -297,3 +297,30 @@ Status: the caps quantify REUSE exhaustively; placement remains
 enemy-free (target liberty).  The ledger is complete; the missing
 piece is unchanged — one verified upper-bound device on target
 placement.
+
+## 13. THE REFLECTION LEDGER (20:19)
+
+**Seal cost (`seal_cost_of_disjoint_avoiding`).**  Sealing an
+envelope at a target by deletion costs one deleted element per
+pairwise disjoint envelope-avoiding representation (deletion form
+of the matching–cover duality).
+
+**Common-reflection supply (`two_hubs_common_reflection`).**  Two
+hub targets fan-route any shared window through their envelopes;
+pigeonholing the envelope pair (h, h') hands one pair a
+proportional sub-window V with m − h − a ∈ A AND m' − h' − a ∈ A
+for every a ∈ V.
+
+**Double-reflection supply (`double_reflection_supply_of_hfail`).**
+Composing with the rep flood and the covering √-window: at EVERY
+size K a counterexample carries two reflection points u, u' and K
+elements a ∈ A with u − a ∈ A and u' − a ∈ A simultaneously.
+Distinct points: K-fold difference multiplicity at the fixed
+offset u' − u.  Equal points: K-fold sum concentration through a
+shared window.  The reflection points are located: u ∈ (m − P) ∪
+{m − b}, u' ∈ (m' − P) ∪ {m' − b'} — the rotator-corep option is
+the AFFINE CORNER (m_b = b + n schedules), which the T-street
+joint pigeonhole turns into: difference blowup at some offset OR
+an affine flood m_b = b + n with all difference-translates
+n + (b − b') being constant-Sidon streets.  Formalizing the
+T-street classification is queued for the next session.
