@@ -318,4 +318,103 @@ theorem endgame_omega_pinch {A : Set ℕ} {N₀ : ℕ}
               x ∈ R ∨ y ∈ R ∨ z ∈ R)) :=
   omega_avoidance_dichotomy hcov
 
+open Classical in
+/-- **THE ENCIRCLEMENT.**  Everything the campaign has proven
+about a counterexample to Erdős 881 (k = 2), as one simultaneous
+configuration.  Under the full interface — 0 ∈ A, covering,
+anchors, universal order-3 failure, and the problem's own
+classical minimality — the counterexample must simultaneously:
+
+  (1) stratify into infinitely many disjoint nonempty free
+      shells with hierarchical total guardianship and pay the
+      linear depth tax;
+  (2) live in one of the four rooms (fixed-offset difference
+      blowup, growing offsets, scattered mirror halls, or the
+      pinned street ladder);
+  (3) field guardian teams drawn entirely from an infinite
+      ascending matching of its own unique-sum marriages;
+  (4) contain an ascending sequence whose tail subset-sum
+      semigroup survives its own deletion at every arity, or is
+      routed at a fixed arity (the ω-pinch);
+  (5) keep some fixed fragility level recurring cofinally; and
+  (6) let r₂ blow up beyond every bound.
+
+Each pillar is separately verified; this theorem is their
+simultaneous existence.  Every known world fails at least one
+pillar's downstream consequences; the enemy must thread all six
+forever. -/
+theorem the_encirclement {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hess : ∀ a ∈ A, 0 < a → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ≠ a ∧ y ≠ a ∧ x + y = n) :
+    -- (1) shells and the depth tax
+    (∃ Q : ℕ → Finset ℕ, ∃ X,
+      (∀ k, (Q k).Nonempty) ∧
+      (∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h) ∧
+      (∀ k, RepFree A N₀ (Q k)) ∧
+      (∀ j k, j < k → Disjoint (Q j) (Q k)) ∧
+      (∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
+        ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) ∧
+      (∀ k, ∀ b ∈ A, X ≤ b → 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
+        ∃ j, j ≤ k ∧ ∃ m, N₀ + k / 3 ≤ m ∧ N₀ ≤ m ∧
+          IsRepHub A m (insert b (Q j)))) ∧
+    -- (2) the four rooms
+    (∃ Q : Finset ℕ, RepFree A N₀ Q ∧
+      ((∃ δ, 1 ≤ δ ∧ ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+          ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A) ∨
+       (∀ Δ K, ∃ δ, Δ < δ ∧ ∃ V : Finset ℕ, K ≤ V.card ∧
+          ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A) ∨
+       (∃ K₀, ∀ N S, ∃ n, N < n ∧
+          (∃ V : Finset ℕ, K₀ ≤ V.card ∧
+            ∀ a ∈ V, a ∈ A ∧ ∃ x ∈ A, x + a = n) ∧
+          ∃ b₂ ∈ A, ∃ b₃ ∈ A, S ≤ b₂ ∧ b₂ < b₃ ∧
+            ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
+              IsPairHub A s (insert b₃ Q)) ∨
+       (∃ n, ∀ Δ S, ∃ b₂ ∈ A, ∃ b₃ ∈ A, S ≤ b₂ ∧ b₂ < b₃ ∧
+          Δ < b₃ - b₂ ∧ ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
+            IsPairHub A s (insert b₃ Q)))) ∧
+    -- (3) marriage-network teams
+    (∃ P : ℕ → ℕ × ℕ,
+      (∀ i, (P i).1 ∈ A ∧ (P i).2 ∈ A ∧ 0 < (P i).1 ∧
+        0 < (P i).2 ∧
+        ∀ x ∈ A, ∀ y ∈ A, x + y = (P i).1 + (P i).2 →
+          (x = (P i).1 ∧ y = (P i).2) ∨
+          (x = (P i).2 ∧ y = (P i).1)) ∧
+      (∀ i, max (P i).1 (P i).2 < min (P (i + 1)).1
+        (P (i + 1)).2) ∧
+      ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+        IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        2 ≤ H.card ∧ ∀ h ∈ H, ∃ i,
+          h = (P i).1 ∨ h = (P i).2) ∧
+    -- (4) the ω-pinch
+    (∃ T : ℕ → ℕ, StrictMono T ∧ (∀ i, T i ∈ A) ∧
+      (∀ i, 0 < T i) ∧
+      ∃ R : Set ℕ, (∀ w ∈ R, w ∈ A ∧ 0 < w) ∧
+        (∀ i, T i ∈ R) ∧
+        ((∀ r : ℕ, ∀ k : Fin (r + 1) → ℕ, StrictMono k →
+            (∀ i, r + 1 ≤ k i) →
+            ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+              x ∉ R ∧ y ∉ R ∧ z ∉ R ∧
+              x + y + z = ∑ i, T (k i)) ∨
+         (∃ r : ℕ, ∀ k : Fin (r + 1) → ℕ, StrictMono k →
+            (∀ i, r + 1 ≤ k i) →
+            ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+              x + y + z = ∑ i, T (k i) →
+              x ∈ R ∨ y ∈ R ∨ z ∈ R))) ∧
+    -- (5) cofinal fragility
+    (∃ C, ∀ H, ∃ m, H ≤ m ∧ ¬HasDisjointTripleReps A m C) ∧
+    -- (6) unbounded r₂
+    (∀ C N, ∃ v, N ≤ v ∧ C ≤ ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A)).card) := by
+  refine ⟨stratified_tax_portrait h0 hcov hanchor hfail,
+    counterexample_four_rooms h0 hcov hfail,
+    matched_deletion_teams h0 hcov hanchor hfail hess,
+    omega_avoidance_dichotomy hcov,
+    fragile_supply_of_hfail h0 hcov hfail,
+    r2_unbounded_of_hfail h0 hcov hfail⟩
+
 end Erdos881
