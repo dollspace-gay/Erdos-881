@@ -5953,4 +5953,75 @@ theorem clique_or_independent_teams {A : Set ℕ} {N₀ : ℕ}
     exact ⟨i, hi.symm⟩
   · exact Or.inl hindep
 
+/-- **Second-order Ramsey on the independent branch.**  Given an
+ascending sequence in A, colour index pairs by whether the sum
+g i + g j has a decomposition avoiding the whole range of g.
+Homogenizing yields a subsequence g' = g ∘ f with: every pairwise
+sum has a range-avoiding alternative (so the sum square SURVIVES
+deleting the subsequence — its targets cannot be failing targets
+of that deletion), or no pairwise sum has one (every
+decomposition of the sum square routes through the range). -/
+theorem independent_alternatives_ramsey {A : Set ℕ}
+    (g : ℕ → ℕ) (hgmono : StrictMono g) (hgA : ∀ i, g i ∈ A)
+    (hgpos : ∀ i, 0 < g i) :
+    ∃ f : ℕ → ℕ, StrictMono f ∧
+      ((∀ i j, i < j → ∃ x ∈ A, ∃ y ∈ A,
+          x ∉ Set.range g ∧ y ∉ Set.range g ∧
+          x + y = g (f i) + g (f j)) ∨
+       (∀ i j, i < j → ∀ x ∈ A, ∀ y ∈ A,
+          x + y = g (f i) + g (f j) →
+          x ∈ Set.range g ∨ y ∈ Set.range g)) := by
+  classical
+  set c : ℕ → ℕ → Bool := fun i j =>
+    decide (∃ x ∈ A, ∃ y ∈ A, x ∉ Set.range g ∧
+      y ∉ Set.range g ∧ x + y = g i + g j) with hc
+  obtain ⟨f, hfmono, b, hfb⟩ := infinite_ramsey_pairs c
+  refine ⟨f, hfmono, ?_⟩
+  cases b with
+  | true =>
+    left
+    intro i j hij
+    have h1 := hfb i j hij
+    rw [hc] at h1
+    simpa using of_decide_eq_true h1
+  | false =>
+    right
+    intro i j hij x hx y hy hxy
+    have h1 := hfb i j hij
+    rw [hc] at h1
+    have h2 := of_decide_eq_false h1
+    by_contra hno
+    push_neg at hno
+    exact h2 (by
+      exact ⟨x, hx, y, hy, hno.1, hno.2, hxy⟩)
+
+/-- **The surviving sum square.**  In the avoiding-alternatives
+branch, the pairwise sums of the subsequence retain 0-padded
+representations avoiding the subsequence itself: no sum-square
+target can be a failing target of the subsequence's deletion.
+The first verified NEGATIVE placement law for failures — an
+infinite 2-parameter region failures must avoid. -/
+theorem surviving_sum_square {A : Set ℕ} {g : ℕ → ℕ}
+    (h0 : 0 ∈ A) (hgpos : ∀ i, 0 < g i) {f : ℕ → ℕ}
+    (halt : ∀ i j, i < j → ∃ x ∈ A, ∃ y ∈ A,
+      x ∉ Set.range g ∧ y ∉ Set.range g ∧
+      x + y = g (f i) + g (f j)) :
+    ∀ i j, i < j → ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+      x ∉ Set.range (g ∘ f) ∧ y ∉ Set.range (g ∘ f) ∧
+      z ∉ Set.range (g ∘ f) ∧
+      x + y + z = g (f i) + g (f j) := by
+  intro i j hij
+  obtain ⟨x, hx, y, hy, hxr, hyr, hxy⟩ := halt i j hij
+  have hsub : ∀ w, w ∉ Set.range g → w ∉ Set.range (g ∘ f) := by
+    intro w hw hmem
+    obtain ⟨k, hk⟩ := hmem
+    exact hw ⟨f k, hk⟩
+  have h0r : (0 : ℕ) ∉ Set.range (g ∘ f) := by
+    rintro ⟨k, hk⟩
+    have := hgpos (f k)
+    simp only [Function.comp] at hk
+    omega
+  exact ⟨x, hx, y, hy, 0, h0, hsub x hxr, hsub y hyr, h0r,
+    by omega⟩
+
 end Erdos881
