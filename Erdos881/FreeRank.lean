@@ -17964,4 +17964,120 @@ theorem spike_census_of_hfail {A : Set ℕ} {N₀ : ℕ}
     service_breakdown_of_hfail h0 hcov hfail B hBA hBinf N
   exact ⟨n, hn, breakdown_pigeonhole hbd⟩
 
+open Classical in
+/-- **THE REPAIR LEMMA** (the constructive engine).  A deletion
+survives at order 3 as soon as two LOCAL conditions hold:
+
+  (1) every deleted element splits into two survivors
+      (b = u + v with u, v ∈ A ∖ B), and
+  (2) every sum of two deleted elements is served by a
+      surviving triple.
+
+No global hypothesis about failing targets, no anchor, no
+minimality: a covered target's guaranteed pair is repaired
+in place — pad with 0, or split whichever part was deleted.
+This is the campaign's first CONSTRUCTIVE criterion: it does
+not constrain a hypothetical counterexample, it builds the
+deletion the problem asks for. -/
+theorem deletion_criterion {A B : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (h0B : 0 ∉ B) (hcov : PairCovers A N₀)
+    (hsplit : ∀ b ∈ B, ∃ u ∈ A, ∃ v ∈ A,
+      u ∉ B ∧ v ∉ B ∧ u + v = b)
+    (hboth : ∀ x ∈ B, ∀ y ∈ B, N₀ ≤ x + y →
+      ∃ p ∈ A, ∃ q ∈ A, ∃ r ∈ A,
+        p ∉ B ∧ q ∉ B ∧ r ∉ B ∧ p + q + r = x + y) :
+    IsExactTupleAsymptoticBasis (A \ B) 3 := by
+  refine ⟨N₀, fun n hn => ?_⟩
+  obtain ⟨x, hxA, y, hyA, hxy⟩ := hcov n hn
+  by_cases hxB : x ∈ B
+  · by_cases hyB : y ∈ B
+    · -- both parts deleted: the served triple
+      obtain ⟨p, hpA, q, hqA, r, hrA, hpB, hqB, hrB, hsum⟩ :=
+        hboth x hxB y hyB (by omega)
+      refine ⟨![p, q, r], ?_, ?_⟩
+      · intro i
+        match i with
+        | 0 => exact ⟨hpA, hpB⟩
+        | 1 => exact ⟨hqA, hqB⟩
+        | 2 => exact ⟨hrA, hrB⟩
+      · have he : p + q + r = n := by omega
+        simpa [Fin.sum_univ_three] using he
+    · -- x deleted, y survives: split x
+      obtain ⟨u, huA, v, hvA, huB, hvB, huv⟩ := hsplit x hxB
+      refine ⟨![u, v, y], ?_, ?_⟩
+      · intro i
+        match i with
+        | 0 => exact ⟨huA, huB⟩
+        | 1 => exact ⟨hvA, hvB⟩
+        | 2 => exact ⟨hyA, hyB⟩
+      · have he : u + v + y = n := by omega
+        simpa [Fin.sum_univ_three] using he
+  · by_cases hyB : y ∈ B
+    · -- y deleted, x survives: split y
+      obtain ⟨u, huA, v, hvA, huB, hvB, huv⟩ := hsplit y hyB
+      refine ⟨![x, u, v], ?_, ?_⟩
+      · intro i
+        match i with
+        | 0 => exact ⟨hxA, hxB⟩
+        | 1 => exact ⟨huA, huB⟩
+        | 2 => exact ⟨hvA, hvB⟩
+      · have he : x + u + v = n := by omega
+        simpa [Fin.sum_univ_three] using he
+    · -- both survive: pad with zero
+      refine ⟨![x, y, 0], ?_, ?_⟩
+      · intro i
+        match i with
+        | 0 => exact ⟨hxA, hxB⟩
+        | 1 => exact ⟨hyA, hyB⟩
+        | 2 => exact ⟨h0, h0B⟩
+      · have he : x + y + 0 = n := by omega
+        simpa [Fin.sum_univ_three] using he
+
+open Classical in
+/-- **THE CONSTRUCTION THEOREM.**  A strictly increasing
+sequence of positive basis elements, each splitting into two
+elements off the sequence, whose pairwise sums are each served
+by a triple off the sequence, IS the deletion Erdős 881 asks
+for: its range is an infinite subset of A whose removal leaves
+an exact asymptotic basis of order 3. -/
+theorem deletion_exists_of_construction {A : Set ℕ} {N₀ : ℕ}
+    {b : ℕ → ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hbA : ∀ k, b k ∈ A) (hbpos : ∀ k, 0 < b k)
+    (hbmono : StrictMono b)
+    (hsplit : ∀ k, ∃ u ∈ A, ∃ v ∈ A,
+      (∀ j, u ≠ b j) ∧ (∀ j, v ≠ b j) ∧ u + v = b k)
+    (hboth : ∀ i j, N₀ ≤ b i + b j →
+      ∃ p ∈ A, ∃ q ∈ A, ∃ r ∈ A,
+        (∀ k, p ≠ b k) ∧ (∀ k, q ≠ b k) ∧ (∀ k, r ≠ b k) ∧
+        p + q + r = b i + b j) :
+    ∃ B ⊆ A, B.Infinite ∧
+      IsExactTupleAsymptoticBasis (A \ B) 3 := by
+  refine ⟨Set.range b, ?_, Set.infinite_range_of_injective
+    hbmono.injective, ?_⟩
+  · rintro x ⟨k, rfl⟩
+    exact hbA k
+  · have h0B : (0 : ℕ) ∉ Set.range b := by
+      rintro ⟨k, hk⟩
+      have := hbpos k
+      omega
+    refine deletion_criterion h0 h0B hcov ?_ ?_
+    · rintro x ⟨k, rfl⟩
+      obtain ⟨u, huA, v, hvA, hu, hv, huv⟩ := hsplit k
+      refine ⟨u, huA, v, hvA, ?_, ?_, huv⟩
+      · rintro ⟨j, hj⟩
+        exact hu j hj.symm
+      · rintro ⟨j, hj⟩
+        exact hv j hj.symm
+    · rintro x ⟨i, rfl⟩ y ⟨j, rfl⟩ hN
+      obtain ⟨p, hpA, q, hqA, r, hrA, hp, hq, hr, hsum⟩ :=
+        hboth i j hN
+      refine ⟨p, hpA, q, hqA, r, hrA, ?_, ?_, ?_, hsum⟩
+      · rintro ⟨k, hk⟩
+        exact hp k hk.symm
+      · rintro ⟨k, hk⟩
+        exact hq k hk.symm
+      · rintro ⟨k, hk⟩
+        exact hr k hk.symm
+
 end Erdos881

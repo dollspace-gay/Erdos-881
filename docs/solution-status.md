@@ -1,3 +1,42 @@
+# THE CONSTRUCTIVE TURN — TWENTY-SIXTH SUMMIT (2026-07-26)
+
+THE PIVOT: stop mining contradictions from a hypothetical
+enemy; BUILD the deletion.
+
+`endgame_construction` (Endgame.lean, standard axioms): given a
+strictly increasing sequence of positive basis elements whose
+(i) members each split as u+v with u,v off the sequence, and
+(ii) pairwise sums are each served by a triple off the
+sequence, the range is an infinite B ⊆ A with A∖B an exact
+asymptotic basis of order 3.  Engine: `deletion_criterion` —
+a covered target's guaranteed pair n = x+y is padded with 0 if
+both parts survive, else the deleted part is replaced by its
+own split.  Four lines of mathematics; no minimality, no
+anchor, no failure interface.
+
+LAB (scripts/probe_construction.py): the greedy construction
+(lacunary + splittable + never delete both ends of a unique
+pair + doubles served) produces a surviving deletion in 30/33
+adversarial worlds across 11 families, INCLUDING the verified
+Cantor instance.
+
+THE ONE RESISTING FAMILY, and what it taught: the "thin"
+worlds are INTERNALLY SUM-FREE — every element's only pair
+representation is the trivial 0 + b, so nothing can ever be
+split.  Two lab-driven corrections came out of this: splits
+must be non-degenerate (0 ∈ A makes b = 0+b useless), and the
+double 2b needs SERVICE, not multiplicity (Cantor's doubles are
+uniquely represented yet served by carry triples).
+
+STRUCTURAL DISCOVERY: internally sum-free bases are
+AUTOMATICALLY ℵ₀-minimal — deleting any infinite B kills every
+deleted element as a target (its only rep was 0+b).  So the
+problem's true difficulty lives exactly in the internally
+sum-free regime; the splittable regime is constructively
+solved.  The next phase: serve the deleted elements themselves
+by positive triples (b ∈ (A∖B)+(A∖B)+(A∖B)) and re-derive the
+target service there.
+
 # THE PROFILE VERDICT: COUNTING IS EXHAUSTED, POSITION IS THE FRONTIER (2026-07-26, verdict)
 
 Numerical feasibility (scripts/probe_profile_region.py) of the

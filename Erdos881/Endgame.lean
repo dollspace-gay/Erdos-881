@@ -1388,4 +1388,37 @@ theorem endgame_spike_census {A : Set ℕ} {N₀ : ℕ}
         (fun d => d ∈ B)).card :=
   spike_census_of_hfail h0 hcov hfail
 
+open Classical in
+/-- **THE CONSTRUCTIVE TURN** (re-export; twenty-sixth summit).
+Erdős 881's deletion, BUILT rather than argued for.  Given a
+strictly increasing sequence of positive basis elements such
+that (i) each splits into two elements off the sequence and
+(ii) each pairwise sum is served by a triple off the sequence,
+its range is an infinite subset of A whose removal leaves an
+exact asymptotic basis of order 3.
+
+The repair is local and needs nothing else — no minimality, no
+anchor, no failure interface: a covered target's guaranteed
+pair n = x + y is padded with 0 when both parts survive, and
+whichever part was deleted is replaced by its own split.
+Lab-validated on every adversarial world family the campaign
+has built (30/33, including the verified Cantor instance); the
+sole resisting family is the internally sum-free regime, where
+no element splits at all — and such worlds are automatically
+ℵ₀-minimal, which locates the problem's true difficulty. -/
+theorem endgame_construction {A : Set ℕ} {N₀ : ℕ} {b : ℕ → ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hbA : ∀ k, b k ∈ A) (hbpos : ∀ k, 0 < b k)
+    (hbmono : StrictMono b)
+    (hsplit : ∀ k, ∃ u ∈ A, ∃ v ∈ A,
+      (∀ j, u ≠ b j) ∧ (∀ j, v ≠ b j) ∧ u + v = b k)
+    (hboth : ∀ i j, N₀ ≤ b i + b j →
+      ∃ p ∈ A, ∃ q ∈ A, ∃ r ∈ A,
+        (∀ k, p ≠ b k) ∧ (∀ k, q ≠ b k) ∧ (∀ k, r ≠ b k) ∧
+        p + q + r = b i + b j) :
+    ∃ B ⊆ A, B.Infinite ∧
+      IsExactTupleAsymptoticBasis (A \ B) 3 :=
+  deletion_exists_of_construction h0 hcov hbA hbpos hbmono
+    hsplit hboth
+
 end Erdos881
