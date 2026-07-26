@@ -5862,4 +5862,36 @@ theorem unique_sum_ramsey {A : Set ℕ} {N₀ : ℕ}
     have h2 := of_decide_eq_false h1
     simpa using h2
 
+/-- All-unique branch, hub form: each pairwise sum is a
+two-element pair hub — a 2-parameter family of maximally fragile
+targets, far denser than the one-parameter street ladder. -/
+theorem all_unique_pair_hubs {A : Set ℕ} {g : ℕ → ℕ}
+    (huniq : ∀ i j, i < j → ∀ x ∈ A, ∀ y ∈ A,
+      x + y = g i + g j →
+      (x = g i ∧ y = g j) ∨ (x = g j ∧ y = g i)) :
+    ∀ i j, i < j →
+      IsPairHub A (g i + g j) ({g i, g j} : Finset ℕ) := by
+  intro i j hij x hx y hy hxy
+  rcases huniq i j hij x hx y hy hxy with ⟨h1, _⟩ | ⟨h1, _⟩
+  · exact Or.inl (by simp [h1])
+  · exact Or.inl (by simp [h1])
+
+/-- All-unique branch is Sidon: distinct index pairs give
+distinct sums, since a coincidence would hand one sum two
+decompositions and uniqueness forbids it. -/
+theorem all_unique_is_sidon {A : Set ℕ} {g : ℕ → ℕ}
+    (hmono : StrictMono g) (hgA : ∀ i, g i ∈ A)
+    (huniq : ∀ i j, i < j → ∀ x ∈ A, ∀ y ∈ A,
+      x + y = g i + g j →
+      (x = g i ∧ y = g j) ∨ (x = g j ∧ y = g i)) :
+    ∀ i j k l, i < j → k < l →
+      g i + g j = g k + g l → i = k ∧ j = l := by
+  intro i j k l hij hkl heq
+  have h1 := huniq i j hij (g k) (hgA k) (g l) (hgA l) heq.symm
+  rcases h1 with ⟨h2, h3⟩ | ⟨h2, h3⟩
+  · exact ⟨(hmono.injective h2).symm, (hmono.injective h3).symm⟩
+  · have hik : k = j := hmono.injective h2
+    have hjl : l = i := hmono.injective h3
+    omega
+
 end Erdos881
