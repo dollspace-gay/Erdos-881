@@ -47,34 +47,27 @@ basis.  Method: contradiction-mining a hypothetical counterexample
   state block at top; dead routes listed there — do not revisit
   them.
 
-## Current frontier (2026-07-26, night)
+## Current frontier (2026-07-26, session close)
 
-FIFTEEN SUMMITS in Endgame.lean; newest = `endgame_width_band`:
-Erdős 881's residue as ONE fork, per infinite positive subset B
-of any counterexample — BOUNDED BAND (width-≤C committees
-cofinally, each target pointwise pair-poor r₂ ≤ 2C: hereditary
-poor streets vs the pinned unbounded wealth of
-`drain_wealth_addresses`) or ESCALATION (wider-than-C minimal
-committees cofinally, privately witnessed, sub-committees
-certified unable to pair-hub their member's translates:
-freeness towers).  Supporting suite: universal committee law
-(hfail alone), committee size floor (≥ 2, anchored),
-`endgame_forced_mixing` (Cantor endpoint DEAD — 2-adic
-convergence contradicts covering), `endgame_self_similar`
-(mixing world = full sub-instance + lifted interface),
-`two_adic_width_law` (support width ~2^(j/2) forced), exclusion
-suite (residue/poverty/sumset/bilinear/3-deletion), room II
-taxes (doubles poor, wealth dodges doubles).  Route prunings:
-pure threading impossible; covering doesn't descend through
-mixing steps; naive bypass false (class-chaining is cofinal —
-the gap is class-vs-sparse-set).  Labs: 52/52, 268/268 — no
-world ever defends.  NEXT: (1) bounded horn vs wealth at
-B := drain-tower material (same-set collision); (2) escalating
-horn: match translate-freeness certificates to translate-pinned
-blockers (door/ladder lemmas); (3) room II anchor hole vs
-fixed-guardian mirrors (RotatingGuardianEndgame ~line 238).
-The user (Doll) steers via metaphors and cannot answer
-technical questions; read the code.
+TWENTY-FIVE SUMMITS in Endgame.lean.  The day's arc: forced
+mixing (Cantor endpoint DEAD), self-similar mixing worlds, the
+exclusion suite, the width law; then the unconditional layer —
+OSCILLATION (liminf r2 < ∞ by the sparse-spacing diagonal),
+canonical cores, drift fork, rigidity trichotomy, teams; the
+steering suite (vertex covers, the disjoint dodge); fan poverty
+→ reflected embedding → THE DENSITY LAW; the reduction:
+`endgame_service_breakdown` (881 ⟺ no world sustains total
+wealthy-service breakdown vs every deletion; one wealthy server
+saves a target); THE MASTER LAW; the Mathlib bridge (additive
+energy, PR arsenal reachable); cascade + telescope + closed
+two-scale + SPIKE CENSUS (α + W ≤ n + slack at failing scales).
+PROFILE VERDICT: the counting books are consistent (feasible
+to ~0.9 density) — counting is EXHAUSTED; POSITION is the
+frontier.  Read docs/positional-program.md (phase opener,
+targets + assets) and memory UPDATES 55–74.  Labs: 347/347
+survivals.  Do not retry: pure threading, naive bypass,
+infinitely-many-mixing-levels, further counting refinements.
+The user (Doll) steers via metaphors; read the code.
 
 ## Build quirk (2026-07-25)
 
