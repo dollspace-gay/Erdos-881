@@ -8005,4 +8005,100 @@ theorem stall_width_or_rank {A : Set ℕ} {N₀ : ℕ}
               (ne_of_lt (hxmono (by omega)))
       omega
 
+/-- **Width or rank, along every subsequence.**  The fork holds
+on every strictly monotone reindexing of the spine: unbounded
+free sets (root rank ≥ ω), or a uniform width bound for the
+minimal stall windows of THAT subsequence.  Since hub-windows
+are up-monotone, the narrow branch makes every L-block of the
+subsequence a full hub — and the constructor may then recurse on
+sparser subsequences: the narrow branch is self-similar, and the
+recursion is now formally available at every level. -/
+theorem stall_width_or_rank_along {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+    ∀ τ : ℕ → ℕ, StrictMono τ →
+      ((∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
+        RepFree A N₀ P ∧ c ≤ P.card) ∨
+      (∃ L, ∀ s : ℕ, ∃ J m, 2 ≤ J ∧ J ≤ L ∧ N₀ ≤ m ∧
+        IsRepHub A m ((Finset.range J).image
+          (fun j => x (τ (s + j)))))) := by
+  classical
+  obtain ⟨Q, σ, x, hxmono, hxmem, hQfree, hQmem, hstall⟩ :=
+    spine_stalls_hereditarily h0 hcov hanchor hfail
+  have hxA : ∀ t, x t ∈ A ∧ 0 < x t :=
+    fun t => hQmem _ _ (hxmem t)
+  refine ⟨x, hxmono, hxA, ?_⟩
+  intro τ hτ
+  set Pred : ℕ → ℕ → Prop := fun s J => ∃ m, N₀ ≤ m ∧
+    IsRepHub A m ((Finset.range J).image
+      (fun j => x (τ (s + j)))) with hPred
+  have hne : ∀ s, ∃ J, Pred s J := by
+    intro s
+    obtain ⟨J, m, hm, hhub⟩ := hstall (fun j => τ (s + j))
+      (fun a b hab => hτ (by omega))
+    exact ⟨J, m, hm, hhub⟩
+  have hJdef : ∀ s, Pred s (Nat.find (hne s)) :=
+    fun s => Nat.find_spec (hne s)
+  have hJmin : ∀ s J', J' < Nat.find (hne s) → ¬Pred s J' :=
+    fun s J' h => Nat.find_min (hne s) h
+  have hJ2 : ∀ s, 2 ≤ Nat.find (hne s) := by
+    intro s
+    by_contra hlt
+    push_neg at hlt
+    interval_cases h : (Nat.find (hne s))
+    · obtain ⟨m, hm, hhub⟩ := hJdef s
+      rw [h] at hhub
+      obtain ⟨u, hu, v, hv, huv⟩ := hcov m hm
+      have h3 : u + v + 0 = m := by omega
+      rcases hhub u hu v hv 0 h0 h3 with hh | hh | hh <;>
+        simp at hh
+    · obtain ⟨m, hm, hhub⟩ := hJdef s
+      rw [h] at hhub
+      have hW1 : ((Finset.range 1).image
+          (fun j => x (τ (s + j)))) = {x (τ s)} := by
+        rw [Finset.range_one, Finset.image_singleton]
+        simp
+      rw [hW1] at hhub
+      exact stall_window_not_in_shell (hQfree (σ (τ s)))
+        (Finset.singleton_subset_iff.2 (by
+          simpa using hxmem (τ s))) hm hhub
+  by_cases hbnd : ∃ L, ∀ s, Nat.find (hne s) ≤ L
+  · right
+    obtain ⟨L, hL⟩ := hbnd
+    refine ⟨L, fun s => ?_⟩
+    obtain ⟨m, hm, hhub⟩ := hJdef s
+    exact ⟨Nat.find (hne s), m, hJ2 s, hL s, hm, hhub⟩
+  · left
+    push_neg at hbnd
+    intro c
+    obtain ⟨s, hs⟩ := hbnd (c + 1)
+    have hfree' : RepFree A N₀ ((Finset.range (c + 1)).image
+        (fun j => x (τ (s + j)))) := by
+      rw [repFree_iff_forall_not_hub]
+      intro m hm hhub
+      exact hJmin s (c + 1) (by omega) ⟨m, hm, hhub⟩
+    refine ⟨(Finset.range (c + 1)).image
+      (fun j => x (τ (s + j))), ?_, hfree', ?_⟩
+    · intro h hh
+      rw [Finset.mem_image] at hh
+      obtain ⟨j, _, hj⟩ := hh
+      rw [← hj]
+      exact hxA _
+    · have hcard : ((Finset.range (c + 1)).image
+          (fun j => x (τ (s + j)))).card = c + 1 := by
+        rw [Finset.card_image_of_injOn]
+        · exact Finset.card_range _
+        · intro a _ b _ hab
+          by_contra hne'
+          rcases Nat.lt_or_ge a b with hl | hl
+          · exact absurd hab
+              (ne_of_lt (hxmono (hτ (by omega))))
+          · exact absurd hab.symm
+              (ne_of_lt (hxmono (hτ (by omega))))
+      omega
+
 end Erdos881
