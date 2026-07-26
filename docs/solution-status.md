@@ -783,3 +783,58 @@ translation teams; R4 ladder mining (pure streets, concentrated
 shadow, difference deserts); ladder-world labs (R4 realizable
 with geometric rungs; strain at √Y/3 density).  Zero sorries
 throughout; standard axioms.
+
+## NIGHT INDEX — 2026-07-25 evening block (16:41 → ~00:41)
+
+~140 commits, ~50 new verified theorems, zero sorries, all
+standard axioms.  The complete arc list, in order:
+
+1. ABSOLUTE FLOODS: freeSup_wf, pairSup_wf, exists_absolute_leaf
+   (+ _pool, pair version = standalone ℵ₀-minimal-basis theorem),
+   absolute_leaf_personal_target.
+2. SHELLS: absolute_shell_stratification, shell_endgame,
+   endgame_shells, stratified_tax_portrait; depth tax
+   (shell_depth_forces_scale, depth_tax_of_hfail);
+   eternal_survivor_dichotomy, shell_survivors_unbounded_targets.
+3. CAP SUITE: four_disjoint_hubs_singleton,
+   three_disjoint_pair_hubs_singleton, seven_level_hub_impossible,
+   eighteen_level_cap, five_shell_conflict_impossible,
+   four_shell_pair_conflict_impossible, shell_pairs_conflict,
+   IsRepHub.mono.
+4. ROBUSTNESS: robustness_gives_hereditarily_free,
+   fragile_supply_of_hfail, duty/conflict_targets_fragile;
+   Cantor uniformly robust (probe), mechanism unification.
+5. REFLECTION LEDGER: seal_cost_of_disjoint_avoiding,
+   two_hubs_common_reflection, double_reflection_supply_of_hfail.
+6. THE FOUR ROOMS: street_dichotomy_of_hfail (+_uniform),
+   difference_blowup_or_affine_corners, nat_param_stabilize,
+   affine_corner_fixed_or_scattered,
+   fixed_hall_extracts_difference, fixed_offset_or_growing,
+   counterexample_four_rooms, endgame_four_rooms.
+7. LADDER MINING: street_ladder_pure,
+   ladder_shadow_concentrates, ladder_difference_desert;
+   ladder-world labs.
+8. CLASSICAL MINIMALITY (881's own hypothesis, first use):
+   essential_private_pair_stream, shared_private_target_is_sum,
+   unique_pair_graph_infinite_degree,
+   disjoint_unique_pairs_of_essential, matched_deletion_teams,
+   hmin_of_essential, translation_room_teams.
+9. RAMSEY CASCADE: unique_sum_ramsey, all_unique_pair_hubs,
+   all_unique_is_sidon, clique_or_independent_teams,
+   independent_alternatives_ramsey, surviving_sum_square,
+   ramsey_trichotomy_of_covering, cube_avoidance_ramsey,
+   endgame_ramsey_trichotomy.
+10. THE ω-PINCH: omega_avoidance_dichotomy, endgame_omega_pinch,
+    survival_of_complete_avoiding,
+    complete_families_blocked_of_hfail,
+    subset_sum_complete_of_small_gaps; greedy probe (0.9 density,
+    97% coverage); the circle closed honestly — self-avoidance is
+    the entire content.
+
+STATUS: Erdős 881 (k = 2) remains open.  Every local attack
+tonight terminated in configurations the enemy can satisfy;
+every reformulation is provably equivalent to the original.  The
+remaining programs, ranked: (i) the 90/10 partition battle line
+(counting vs structure at every scale); (ii) mass-accounting
+constants; (iii) Abel-summation automatic-completeness; (iv)
+Nash-Williams barriers; (v) the adaptive/priority construction.

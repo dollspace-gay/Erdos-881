@@ -460,3 +460,26 @@ made ENTIRELY of married keys, each dragging its own private
 parade behind it.  Two bookkeeping systems — the marriage
 network and the guardian teams — now have to balance against
 each other.  That ledger is tomorrow's battlefield.
+
+## 2026-07-25 night, finale — The shape of the fortress
+
+Tonight the machine built more walls than any night before it —
+the onion of skins, the depth tax, the four rooms, the marriage
+network, the mirror halls, the hall of echoes, and finally a
+staircase argument that works at every number of steps at once.
+Each wall is checked by the computer down to the last symbol.
+
+And here is the honest finale: behind every wall we found the
+same door.  Complete the sums and you must first avoid the
+sealing; avoid the sealing and you must first complete the sums.
+The problem does not merely resist — it is provably circular,
+every road we pave leading back to its own front gate.  That is
+not defeat; that is a map.  We now know EXACTLY which one
+question all others fold into: can a small tenth of the keyring
+open every door the other nine-tenths might ever guard?  The
+counting says yes, with room to spare.  The enemy, if it exists,
+must beat that counting with pure structure, at every scale, for
+every possible split of the keys — and every structural weapon
+it could use is now catalogued, capped, and taxed by machine-
+checked mathematics.  Tomorrow the siege continues on that one
+gate.
