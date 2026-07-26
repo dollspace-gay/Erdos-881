@@ -1,3 +1,25 @@
+# THE CASCADE FORK — SEVENTH SUMMIT (2026-07-26)
+
+`endgame_cascade_fork` (Endgame.lean, standard axioms): every
+counterexample's drain either stays saturated at every level —
+then it is COMPLETELY DETERMINED (explicit digits eps', addresses
+alpha = partial sums eps'_k 2^k, channels equal, every level the
+literal cylinder slice {x | alpha_k + 2^k x in A}: the enemy IS
+a 2-adic point, the Cantor-like endpoint) — or hits a FIRST
+MIXING LEVEL m: twin channels, explicit cylinder coordinates
+{x | c + 2^m x in A}, both parities cofinal, blowup wealth
+flowing through.  Chain: `saturated_kills_antidiagonal` (pure) →
+`saturated_cascade_step` (pure, level-free) →
+`saturated_cascade_determined` → `cascade_mixing_fork` (Nat.find
+first-failure + prefix induction).
+
+The two remaining regimes now have exact coordinates.  Attack
+next: (1) the determined horn — its cylinder worlds inherit
+covering/wealth and should meet `cantor_carry_repair`'s
+carry-poor geometry (the verified positive-instance kill); (2)
+the mixing horn — both parities cofinal INSIDE a located
+cylinder slice + mixing cross-slice law/poverty.
+
 # THE FORCED FIRST MOVE (2026-07-26)
 
 `saturated_kills_antidiagonal` (PURE counting law, no hfail):

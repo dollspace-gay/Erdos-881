@@ -757,4 +757,37 @@ theorem endgame_poor_street {A : Set ℕ} {N₀ : ℕ}
     exact ⟨hvN, street_is_sidon_poor h0
       (fun t => (hxA t).2) hJL hhub⟩
 
+open Classical in
+/-- **THE CASCADE FORK** (re-export; seventh summit).  Every
+counterexample's wealth drain either stays saturated at every
+2-adic level — and is then COMPLETELY DETERMINED: explicit
+binary digits ε', explicit addresses α, both channels equal,
+every level literally the α-cylinder slice {x | α k + 2^k x ∈ A}
+of the root basis (the enemy IS a 2-adic point, the Cantor-like
+endpoint) — or hits a FIRST MIXING LEVEL m: a twin-channel
+world that is an explicit cylinder slice {x | c + 2^m x ∈ A}
+with BOTH parities cofinal and blowup wealth flowing through
+it.  Total determination or located mixing: the two remaining
+regimes of Erdős 881, now with exact coordinates. -/
+theorem endgame_cascade_fork {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ S T : ℕ → Set ℕ, S 0 = A ∧ T 0 = A ∧
+      (∀ k, ∃ p q, p < 2 ∧ q < 2 ∧
+        S (k + 1) = {y | 2 * y + p ∈ S k} ∧
+        T (k + 1) = {y | 2 * y + q ∈ T k}) ∧
+      (∀ k, ∀ C N, ∃ v, N ≤ v ∧ C ≤
+        ((Finset.range (v + 1)).filter
+          (fun x => x ∈ S k ∧ (v - x) ∈ T k)).card) ∧
+      ((∃ ε' α : ℕ → ℕ, α 0 = 0 ∧
+          (∀ k, ε' k < 2 ∧ α (k + 1) = α k + 2 ^ k * ε' k) ∧
+          (∀ k, S k = T k) ∧
+          (∀ k, S k = {x : ℕ | α k + 2 ^ k * x ∈ A})) ∨
+        (∃ m c, S m = T m ∧
+          S m = {x : ℕ | c + 2 ^ m * x ∈ A} ∧
+          (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 0) ∧
+          (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 1))) :=
+  cascade_mixing_fork h0 hcov hfail
+
 end Erdos881

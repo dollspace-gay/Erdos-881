@@ -14436,4 +14436,104 @@ theorem saturated_cascade_determined {A : Set ℕ} {N₀ : ℕ}
   simp only [Set.mem_setOf_eq]
   exact hlift k x
 
+open Classical in
+/-- **THE CASCADE FORK.**  Every counterexample's drain either
+stays saturated forever — and is then a fully DETERMINED 2-adic
+point (explicit digits, every level a cylinder slice of A) — or
+hits a FIRST MIXING LEVEL m: a world S m that is itself an
+explicit cylinder slice {x | c + 2^m x ∈ A}, equal to its twin
+channel, carrying blowup wealth (ambient conjunct), with BOTH
+parities cofinal.  The mixed-regime entry point now has exact
+coordinates: depth m, address c, and a wealth stream flowing
+through it. -/
+theorem cascade_mixing_fork {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ S T : ℕ → Set ℕ, S 0 = A ∧ T 0 = A ∧
+      (∀ k, ∃ p q, p < 2 ∧ q < 2 ∧
+        S (k + 1) = {y | 2 * y + p ∈ S k} ∧
+        T (k + 1) = {y | 2 * y + q ∈ T k}) ∧
+      (∀ k, ∀ C N, ∃ v, N ≤ v ∧ C ≤
+        ((Finset.range (v + 1)).filter
+          (fun x => x ∈ S k ∧ (v - x) ∈ T k)).card) ∧
+      ((∃ ε' α : ℕ → ℕ, α 0 = 0 ∧
+          (∀ k, ε' k < 2 ∧ α (k + 1) = α k + 2 ^ k * ε' k) ∧
+          (∀ k, S k = T k) ∧
+          (∀ k, S k = {x : ℕ | α k + 2 ^ k * x ∈ A})) ∨
+        (∃ m c, S m = T m ∧
+          S m = {x : ℕ | c + 2 ^ m * x ∈ A} ∧
+          (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 0) ∧
+          (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 1))) := by
+  obtain ⟨S, T, hS0, hT0, hstep, hblow, hdet⟩ :=
+    saturated_cascade_determined h0 hcov hfail
+  refine ⟨S, T, hS0, hT0, hstep, hblow, ?_⟩
+  by_cases hsat : ∀ k, ∃ Y ε, ∀ a ∈ S k, Y < a → a % 2 = ε
+  · exact Or.inl (hdet hsat)
+  · right
+    have hP : ∃ k, ¬∃ Y ε, ∀ a ∈ S k, Y < a → a % 2 = ε :=
+      not_forall.mp hsat
+    set m := Nat.find hP with hm
+    have hPm : ¬∃ Y ε, ∀ a ∈ S m, Y < a → a % 2 = ε :=
+      Nat.find_spec hP
+    have htot : ∀ j, ∃ Y ε, j < m →
+        ∀ a ∈ S j, Y < a → a % 2 = ε := by
+      intro j
+      by_cases hj : j < m
+      · obtain ⟨Y, ε, h⟩ := not_not.mp (Nat.find_min hP hj)
+        exact ⟨Y, ε, fun _ => h⟩
+      · exact ⟨0, 0, fun h => absurd h hj⟩
+    choose Yf εf hf using htot
+    set α : ℕ → ℕ := fun k =>
+      Nat.rec 0 (fun k' acc => acc + 2 ^ k' * εf k') k with hα
+    have hα0 : α 0 = 0 := rfl
+    have hαS : ∀ k, α (k + 1) = α k + 2 ^ k * εf k :=
+      fun _ => rfl
+    have hchain : ∀ j, j ≤ m → S j = T j ∧
+        S j = {x : ℕ | α j + 2 ^ j * x ∈ A} := by
+      intro j
+      induction j with
+      | zero =>
+        intro _
+        refine ⟨by rw [hS0, hT0], ?_⟩
+        rw [hS0]
+        ext z
+        simp only [Set.mem_setOf_eq]
+        have he : α 0 + 2 ^ 0 * z = z := by
+          rw [hα0]
+          simp
+        rw [he]
+      | succ j ih =>
+        intro hjm
+        obtain ⟨heqj, hcylj⟩ := ih (by omega)
+        obtain ⟨p, q, hp, hq, hS1, hT1⟩ := hstep j
+        rw [← heqj] at hT1
+        have hres := saturated_cascade_step
+          (hf j (by omega)) hp hq hS1 hT1 (hblow (j + 1))
+        refine ⟨by rw [hres.2.2.1, hres.2.2.2], ?_⟩
+        rw [hres.2.2.1]
+        ext z
+        simp only [Set.mem_setOf_eq]
+        rw [hcylj]
+        simp only [Set.mem_setOf_eq]
+        have he : α j + 2 ^ j * (εf j + 2 * z) =
+            α (j + 1) + 2 ^ (j + 1) * z := by
+          rw [hαS j, pow_succ]
+          ring
+        rw [he]
+    obtain ⟨heqm, hcylm⟩ := hchain m le_rfl
+    refine ⟨m, α m, heqm, hcylm, ?_, ?_⟩
+    · intro N
+      by_contra hcon
+      apply hPm
+      refine ⟨N, 1, fun a ha hNa => ?_⟩
+      by_contra hne
+      exact hcon ⟨a, by omega, ha, by omega⟩
+    · intro N
+      by_contra hcon
+      apply hPm
+      refine ⟨N, 0, fun a ha hNa => ?_⟩
+      by_contra hne
+      exact hcon ⟨a, by omega, ha, by omega⟩
+
 end Erdos881
