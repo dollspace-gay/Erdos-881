@@ -5395,4 +5395,35 @@ theorem street_ladder_pure {A : Set ℕ} {N₀ : ℕ}
     rw [h1]
     exact hb₃A⟩, hshadow⟩
 
+/-- **The ladder shadow concentrates.**  The pure ladder's shadow
+elements q ∈ Q are finitely many, so ONE q* serves unboundedly
+many rungs: the set {n + d − q*} is an infinite subset of A that
+is a translate of the realized-difference family — an arithmetic
+copy of the ladder inside the basis itself, alongside a basis
+pair at each difference d. -/
+theorem ladder_shadow_concentrates {A : Set ℕ} {N₀ : ℕ}
+    {Q : Finset ℕ} {n : ℕ}
+    (hladder : ∀ Δ, ∃ d, Δ < d ∧ N₀ ≤ n + d ∧
+      IsPairHub A (n + d) Q ∧ (∃ b ∈ A, b + d ∈ A) ∧
+      (∃ q ∈ Q, ∃ a ∈ A, q + a = n + d)) :
+    ∃ q ∈ Q, ∀ Δ, ∃ d, Δ < d ∧ N₀ ≤ n + d ∧
+      IsPairHub A (n + d) Q ∧ (∃ b ∈ A, b + d ∈ A) ∧
+      (∃ a ∈ A, q + a = n + d) := by
+  classical
+  by_contra hno
+  push_neg at hno
+  have hDf : ∀ q, ∃ Δq, q ∈ Q → ∀ d, Δq < d → N₀ ≤ n + d →
+      IsPairHub A (n + d) Q → (∃ b ∈ A, b + d ∈ A) →
+      ∀ a ∈ A, q + a ≠ n + d := by
+    intro q
+    by_cases hq : q ∈ Q
+    · obtain ⟨Δq, hΔq⟩ := hno q hq
+      exact ⟨Δq, fun _ => hΔq⟩
+    · exact ⟨0, fun h => absurd h hq⟩
+  choose Δf hΔf using hDf
+  obtain ⟨d, hd, hN, hhub, hbp, q₀, hq₀Q, a₀, ha₀A, ha₀⟩ :=
+    hladder (Q.sup Δf)
+  have hsup : Δf q₀ ≤ Q.sup Δf := Finset.le_sup hq₀Q
+  exact hΔf q₀ hq₀Q d (by omega) hN hhub hbp a₀ ha₀A ha₀
+
 end Erdos881
