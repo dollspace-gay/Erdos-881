@@ -417,4 +417,38 @@ theorem the_encirclement {A : Set ℕ} {N₀ : ℕ}
     fragile_supply_of_hfail h0 hcov hfail,
     r2_unbounded_of_hfail h0 hcov hfail⟩
 
+/-- **THE SPINE** (re-export; the night's second monument beside
+`the_encirclement`).  Under the full counterexample interface a
+canonical strictly increasing sequence threads the enemy's own
+shells (Nash-Williams/Higman on the shell antichain), every
+subsequence of it forces a stall hub of spine elements, and the
+endgame forks: infinite root rank, or the lockstep highway. -/
+theorem endgame_spine {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∃ Q : ℕ → Finset ℕ, ∃ σ : ℕ ↪o ℕ, ∃ x : ℕ → ℕ,
+      StrictMono x ∧ (∀ t, x t ∈ Q (σ t)) ∧
+      (∀ k, RepFree A N₀ (Q k)) ∧
+      (∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h) ∧
+      ∀ τ : ℕ → ℕ, StrictMono τ →
+        ∃ J m, N₀ ≤ m ∧
+          IsRepHub A m ((Finset.range J).image (fun t =>
+            x (τ t)))) ∧
+    ((Ordinal.omega0 ≤
+      ((poolFreeStep_wf h0 hcov hfail Set.univ).apply ∅).rank) ∨
+    (∃ Q : ℕ → Finset ℕ, ∃ σ : ℕ ↪o ℕ, ∃ T s : ℕ,
+      (∀ k, RepFree A N₀ (Q k)) ∧
+      (∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h) ∧
+      (∀ j k, j < k → Disjoint (Q j) (Q k)) ∧
+      1 ≤ s ∧
+      (∀ t, T ≤ t → (Q (σ t)).card = s) ∧
+      (∀ t, T ≤ t → List.Forall₂ (· ≤ ·)
+        ((Q (σ t)).sort (· ≤ ·))
+        ((Q (σ (t + 1))).sort (· ≤ ·))))) :=
+  ⟨spine_stalls_hereditarily h0 hcov hanchor hfail,
+    root_rank_omega_or_lockstep h0 hcov hanchor hfail⟩
+
 end Erdos881
