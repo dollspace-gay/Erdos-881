@@ -544,3 +544,29 @@ uniformly fragile targets, ≤ 3 sharers per shell-target, ≤ 18
 shells per target, tax-line heights.  The highway versus the
 ledger is next session's lockstep endgame; the ω-rank branch is
 its sibling.
+
+## 23. THE ANCHOR AUDIT (22:16) — honesty and rescue
+
+**Audit (probe_anchor.py).**  The Cantor world has NO anchors:
+carry-freeness makes every double 2c central-only (all 64
+positives in-window), so `hanchor` fails for every g.  Every
+anchor-conditioned theorem — the rotating-guardian kill,
+cofinite free singletons, the shell stratification, the depth
+tax, the spine arc, `the_encirclement`'s pillars (1) and (3) —
+silently excludes carry-free worlds.  (Anchor-free theorems are
+unaffected: the four rooms, the ω-pinch, r₂-unbounded, the cap
+suite, the floods.)
+
+**Rescue (`anchor_dichotomy`, `no_anchor_doubles_thin`).**  The
+failure mode is itself a weapon: either anchors exist and the
+whole machinery applies, or a single g₀ routes every noncentral
+double-decomposition — every double 2c is a two-element pair
+hub {c, g₀}, giving r₂ ≤ 3 at the EXPLICIT one-parameter family
+2·A, and (with anchor-free r₂-unboundedness) blown targets avoid
+the doubled basis entirely.  No counterexample escapes both
+branches: anchored enemies face the shells and the spine;
+anchor-free enemies carry a universal pinned crystal family at
+their own doubles.  Next session: mine the g₀-branch (the
+universal double-hub family against the conflict law and the
+caps — g₀ is ONE element serving every double, the strongest
+concentration the campaign has ever forced).
