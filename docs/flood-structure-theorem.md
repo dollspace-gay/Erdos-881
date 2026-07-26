@@ -534,3 +534,13 @@ highway with the cap suite — s is a FIXED finite constant
 carrying the entire freedom supply of the enemy beyond the
 stabilization point, and every duty, conflict, and tax law now
 applies to a bounded-width object.
+
+**Addendum (`lockstep_columns`, 22:01).**  The lockstep branch
+is now a function: s strictly increasing columns whose values
+tile every late spine shell exactly.  Every later column value
+guards every earlier shell (hierarchical guardianship), so the
+s-lane highway carries a duty ledger of uniform width s + 1 —
+uniformly fragile targets, ≤ 3 sharers per shell-target, ≤ 18
+shells per target, tax-line heights.  The highway versus the
+ledger is next session's lockstep endgame; the ω-rank branch is
+its sibling.
