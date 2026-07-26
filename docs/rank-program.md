@@ -550,3 +550,20 @@ If ladder: adapt engine with windowed levels.  If no ladder
 (AP3-free at p): the free tower merges into central-tail
 geometry — and the two remaining rooms begin to look like ONE:
 midpoint-free worlds vs rank-omega.
+
+
+## The parity escape at the affine desert (2026-07-26, honest)
+
+theta(z) = 2L' - p - 2z is always congruent to p mod 2, so the
+no-ladder affine desert constrains only the p-parity class; the
+enemy parks the window's basis mass on the other parity with
+L' = b + g - p even (mirror preserves single-parity windows when
+L' is even).  The SAME two-channel escape as the central
+branch's order-3 residue.  Emerging picture: every defense the
+enemy has left is 2-adic/parity-layered midpoint-free — the
+enemy converges to Cantor-shape, and the verified Cantor
+instance is NOT a counterexample (robustness).  The formal
+bridge to hunt: parity-layered midpoint-free tower worlds have
+growing disjoint triple reps (Cantor does), feeding
+robustness_gives_hereditarily_free.  Window mass for all such
+arguments: `window_populated`.
