@@ -11602,4 +11602,39 @@ theorem near_diagonal_stabilized {A : Set ℕ} {G : ℕ}
   rw [hmbg] at hmA hrep hpair
   exact hKf g hgG b (by omega) hbA hmA hrep hpair
 
+/-- **Face I, honestly split** (junk-test repair).  P-centred
+membership is vacuous for basis elements with NO positive pair
+at all, so face I splits: either cofinally many members carry a
+genuine positive pair with ALL positive pairs through the
+envelope, or the basis has cofinally many PRIMITIVE elements —
+members that are not sums of two positive members.  Both horns
+carry real information; neither is allowed to hide behind the
+other. -/
+theorem face_one_split {A : Set ℕ} {P : Finset ℕ}
+    (hface : ∀ N, ∃ b, N ≤ b ∧ b ∈ A ∧ ∀ x ∈ A, ∀ y ∈ A,
+      0 < x → 0 < y → x + y = b → x ∈ P ∨ y ∈ P) :
+    (∀ N, ∃ b, N ≤ b ∧ b ∈ A ∧
+      (∃ x ∈ A, ∃ y ∈ A, 0 < x ∧ 0 < y ∧ x + y = b) ∧
+      (∀ x ∈ A, ∀ y ∈ A, 0 < x → 0 < y → x + y = b →
+        x ∈ P ∨ y ∈ P)) ∨
+    (∀ N, ∃ b, N ≤ b ∧ b ∈ A ∧
+      ∀ x ∈ A, ∀ y ∈ A, 0 < x → 0 < y → x + y ≠ b) := by
+  classical
+  by_cases hIa : ∀ N, ∃ b, N ≤ b ∧ b ∈ A ∧
+      (∃ x ∈ A, ∃ y ∈ A, 0 < x ∧ 0 < y ∧ x + y = b) ∧
+      (∀ x ∈ A, ∀ y ∈ A, 0 < x → 0 < y → x + y = b →
+        x ∈ P ∨ y ∈ P)
+  · exact Or.inl hIa
+  · right
+    obtain ⟨NA, hNA⟩ := not_forall.mp hIa
+    intro N
+    obtain ⟨b, hNb, hbA, hcen⟩ := hface (N + NA)
+    by_cases hpos : ∃ x ∈ A, ∃ y ∈ A, 0 < x ∧ 0 < y ∧
+        x + y = b
+    · exact absurd ⟨b, by omega, hbA, hpos, hcen⟩ hNA
+    · push_neg at hpos
+      refine ⟨b, by omega, hbA, ?_⟩
+      intro x hx y hy hx0 hy0 hxy
+      exact hpos x hx y hy hx0 hy0 hxy
+
 end Erdos881
