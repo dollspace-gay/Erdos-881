@@ -14179,4 +14179,81 @@ theorem street_is_sidon_poor {A : Set ℕ} {L m s J : ℕ}
     exact hJL
   omega
 
+open Classical in
+/-- **SATURATION KILLS THE ANTIDIAGONAL.**  In a single-parity
+world, a cross-system one level down with blowing-up cross-pair
+wealth cannot mix its parities: antidiagonal channels (p ≠ q)
+manufacture ODD wealthy targets w = 2v + 1 in root coordinates,
+and the saturated odd hall caps every odd target at 2Y + 2
+ordered pair representations.  A pure counting law — no hfail
+hypothesis at all. -/
+theorem saturated_kills_antidiagonal {A : Set ℕ} {Y ε : ℕ}
+    (hpar : ∀ a ∈ A, Y < a → a % 2 = ε)
+    {S1 T1 : Set ℕ} {p q : ℕ} (hp : p < 2) (hq : q < 2)
+    (hS1 : S1 = {y | 2 * y + p ∈ A})
+    (hT1 : T1 = {y | 2 * y + q ∈ A})
+    (hblow : ∀ C N, ∃ v, N ≤ v ∧ C ≤
+      ((Finset.range (v + 1)).filter
+        (fun x => x ∈ S1 ∧ (v - x) ∈ T1)).card) :
+    p = q := by
+  by_contra hne
+  have hpq : p + q = 1 := by omega
+  obtain ⟨v, hvN, hvc⟩ := hblow (2 * Y + 3) (Y + 1)
+  set w := 2 * v + p + q with hw
+  have hcap := global_parity_odd_ordered_cap hpar w
+    (by omega) (by omega)
+  have hinj : ((Finset.range (v + 1)).filter
+      (fun x => x ∈ S1 ∧ (v - x) ∈ T1)).card ≤
+      ((Finset.range (w + 1)).filter
+        (fun z => z ∈ A ∧ (w - z) ∈ A)).card := by
+    apply Finset.card_le_card_of_injOn (fun x => 2 * x + p)
+    · intro x hx
+      simp only [Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range] at hx
+      obtain ⟨hxv, hxS, hxT⟩ := hx
+      rw [hS1, Set.mem_setOf_eq] at hxS
+      rw [hT1, Set.mem_setOf_eq] at hxT
+      simp only [Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range]
+      refine ⟨by omega, hxS, ?_⟩
+      have he : w - (2 * x + p) = 2 * (v - x) + q := by omega
+      rw [he]
+      exact hxT
+    · intro a ha b hb hab
+      have hab' : 2 * a + p = 2 * b + p := hab
+      omega
+  omega
+
+open Classical in
+/-- **THE DRAIN'S FIRST MOVE IS FORCED.**  In a saturated
+(single-parity) counterexample, the ω-drain cannot open with an
+antidiagonal step: every valid parity pair for its first
+cross-system is DIAGONAL (p = q).  The enemy's wealth must
+descend along the doubled channel — the first confirmed forced
+move of the descent dynamics, and the entry step of the
+saturated cascade toward Cantor-like worlds. -/
+theorem saturated_drain_diagonal {A : Set ℕ} {N₀ Y ε : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hpar : ∀ a ∈ A, Y < a → a % 2 = ε) :
+    ∃ S T : ℕ → Set ℕ, S 0 = A ∧ T 0 = A ∧
+      (∀ k, ∃ p q, p < 2 ∧ q < 2 ∧
+        S (k + 1) = {y | 2 * y + p ∈ S k} ∧
+        T (k + 1) = {y | 2 * y + q ∈ T k}) ∧
+      (∀ k, ∀ C N, ∃ v, N ≤ v ∧ C ≤
+        ((Finset.range (v + 1)).filter
+          (fun x => x ∈ S k ∧ (v - x) ∈ T k)).card) ∧
+      ∀ p q, p < 2 → q < 2 →
+        S 1 = {y | 2 * y + p ∈ S 0} →
+        T 1 = {y | 2 * y + q ∈ T 0} → p = q := by
+  obtain ⟨S, T, hS0, hT0, hstep, hblow⟩ :=
+    the_omega_drain h0 hcov hfail
+  refine ⟨S, T, hS0, hT0, hstep, hblow, ?_⟩
+  intro p q hp hq hS1 hT1
+  rw [hS0] at hS1
+  rw [hT0] at hT1
+  exact saturated_kills_antidiagonal hpar hp hq hS1 hT1
+    (hblow 1)
+
 end Erdos881

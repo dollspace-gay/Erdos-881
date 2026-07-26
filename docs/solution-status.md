@@ -1,3 +1,18 @@
+# THE FORCED FIRST MOVE (2026-07-26)
+
+`saturated_kills_antidiagonal` (PURE counting law, no hfail):
+in a single-parity world, a level-1 cross-system with blowing
+cross-pair wealth cannot mix parities — antidiagonal channels
+(p ≠ q) make odd wealthy targets w = 2v+1, and
+`global_parity_odd_ordered_cap` caps every odd target at 2Y+2.
+`saturated_drain_diagonal`: in saturated counterexamples the
+ω-drain's first step is FORCED DIAGONAL (p = q) — the first
+confirmed forced move of the descent dynamics.  Saturated
+enemies must send wealth down the doubled channel; iterating
+this through the half-world descent (needs the MIXED parity
+fork — racing-lane work) is the saturated-cascade road toward
+Cantor-like worlds, where `cantor_carry_repair` kills.
+
 # THE POOR STREET — SIXTH SUMMIT (2026-07-26)
 
 `endgame_poor_street` (Endgame.lean, standard axioms): every
