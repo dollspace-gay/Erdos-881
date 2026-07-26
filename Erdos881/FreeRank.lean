@@ -11812,4 +11812,45 @@ theorem personal_fragility {A : Set ℕ} {N₀ : ℕ}
     Finset.card_insert_le _ _
   omega
 
+/-- **The parity fringe law.**  A single-parity window cannot
+pair-cover odd-parity targets internally: window-window sums
+are even.  Every pair of an odd target in range has its minor
+part in the low fringe [0, Y].  The parity defence buys the
+enemy the affine desert but chains its odd targets to a finite
+fringe. -/
+theorem parity_window_fringe {A : Set ℕ} {Y X ε : ℕ}
+    (hpar : ∀ a ∈ A, Y < a → a ≤ X → a % 2 = ε) :
+    ∀ n, n ≤ X → n % 2 = 1 →
+      ∀ x ∈ A, ∀ y ∈ A, x + y = n → x ≤ Y ∨ y ≤ Y := by
+  intro n hnX hodd x hx y hy hxy
+  by_contra hno
+  push_neg at hno
+  have h1 := hpar x hx (by omega) (by omega)
+  have h2 := hpar y hy (by omega) (by omega)
+  omega
+
+/-- **The fringe partner law.**  With covering, every odd
+target in a single-parity window's range has a pair through the
+fringe: some x ≤ Y in A with n − x ∈ A.  The basis is trapped
+within Y + 1 of every odd target — near-syndetic structure, the
+opening of the completeness road (`subset_sum_complete_of_
+small_gaps` → the completeness pinch). -/
+theorem parity_window_partner {A : Set ℕ} {N₀ Y X ε : ℕ}
+    (hcov : PairCovers A N₀)
+    (hpar : ∀ a ∈ A, Y < a → a ≤ X → a % 2 = ε) :
+    ∀ n, N₀ ≤ n → n ≤ X → n % 2 = 1 →
+      ∃ x ∈ A, x ≤ Y ∧ n - x ∈ A := by
+  intro n hnN hnX hodd
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hnN
+  rcases parity_window_fringe hpar n hnX hodd x hx y hy hxy
+    with h | h
+  · refine ⟨x, hx, h, ?_⟩
+    have h1 : n - x = y := by omega
+    rw [h1]
+    exact hy
+  · refine ⟨y, hy, h, ?_⟩
+    have h1 : n - y = x := by omega
+    rw [h1]
+    exact hx
+
 end Erdos881
