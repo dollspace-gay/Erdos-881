@@ -5815,6 +5815,7 @@ sides are deletion fodder for the classical-minimality program. -/
 theorem unique_sum_ramsey {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀) :
     ∃ g : ℕ → ℕ, StrictMono g ∧ (∀ i, g i ∈ A) ∧
+      (∀ i, 0 < g i) ∧
       ((∀ i j, i < j → ∀ x ∈ A, ∀ y ∈ A, x + y = g i + g j →
           (x = g i ∧ y = g j) ∨ (x = g j ∧ y = g i)) ∨
        (∀ i j, i < j →
@@ -5844,9 +5845,16 @@ theorem unique_sum_ramsey {A : Set ℕ} {N₀ : ℕ}
   set c : ℕ → ℕ → Bool := fun i j =>
     decide (∀ x ∈ A, ∀ y ∈ A, x + y = e i + e j →
       (x = e i ∧ y = e j) ∨ (x = e j ∧ y = e i)) with hc
+  have hepos : ∀ i, 0 < e i := by
+    intro i
+    have h1 : e 0 ≤ e i := hemono.le_iff_le.2 (Nat.zero_le i)
+    have h2 : 0 < e 0 := by
+      rw [he0]
+      exact lt_of_le_of_lt (Nat.zero_le 0) (hFgt 0)
+    omega
   obtain ⟨f, hfmono, b, hfb⟩ := infinite_ramsey_pairs c
   refine ⟨fun i => e (f i), hemono.comp hfmono, fun i => heA _,
-    ?_⟩
+    fun i => hepos _, ?_⟩
   cases b with
   | true =>
     left
@@ -5893,5 +5901,56 @@ theorem all_unique_is_sidon {A : Set ℕ} {g : ℕ → ℕ}
   · have hik : k = j := hmono.injective h2
     have hjl : l = i := hmono.injective h3
     omega
+
+/-- **Clique teams or an independent set.**  Composing the
+unique-sum Ramsey dichotomy with the team supply: a
+counterexample either contains an infinite ascending sequence
+with NO unique pairwise sums (the independent set), or an
+infinite Sidon clique whose deletion forces cofinal minimal teams
+drawn from the clique — teams whose members' own pairwise sums
+are unique-decomposition targets.  The enemy defends the clique's
+2-parameter fragile family with defenders married inside it. -/
+theorem clique_or_independent_teams {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ g : ℕ → ℕ, StrictMono g ∧ (∀ i, g i ∈ A) ∧
+      ((∀ i j, i < j →
+          ¬(∀ x ∈ A, ∀ y ∈ A, x + y = g i + g j →
+            (x = g i ∧ y = g j) ∨ (x = g j ∧ y = g i))) ∨
+       ((∀ i j, i < j →
+          IsPairHub A (g i + g j) ({g i, g j} : Finset ℕ)) ∧
+        ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+          IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+          2 ≤ H.card ∧ ∀ h ∈ H, ∃ i, h = g i)) := by
+  classical
+  obtain ⟨g, hgmono, hgA, hgpos, hbranch⟩ :=
+    unique_sum_ramsey hcov
+  refine ⟨g, hgmono, hgA, ?_⟩
+  rcases hbranch with huniq | hindep
+  · right
+    refine ⟨all_unique_pair_hubs huniq, ?_⟩
+    set B : Set ℕ := Set.range g with hB
+    haveI : DecidablePred (· ∈ B) := Classical.decPred _
+    have hBA : B ⊆ A := by
+      rintro x ⟨i, rfl⟩
+      exact hgA i
+    have h0B : 0 ∉ B := by
+      rintro ⟨i, hi⟩
+      have := hgpos i
+      omega
+    have hBinf : B.Infinite :=
+      Set.infinite_range_of_injective hgmono.injective
+    intro N
+    obtain ⟨n, hn, H, hhub, hminH, hcard, hmem⟩ :=
+      guardian_team_hubs_of_deletion h0 hcov hanchor hfail
+        hBA hBinf h0B N
+    refine ⟨n, hn, H, hhub, hminH, hcard, ?_⟩
+    intro h hh
+    obtain ⟨i, hi⟩ := hmem h hh
+    exact ⟨i, hi.symm⟩
+  · exact Or.inl hindep
 
 end Erdos881
