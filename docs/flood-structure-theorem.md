@@ -231,3 +231,35 @@ of Q forces the guardian into every Q-avoiding representation of
 its target: b ≤ m_b and m_b = b + y + z with y, z ∈ A ∖ Q.  So the
 sharer laws make b ↦ m_b ≤3-to-1 on ALL of A⁺ ∖ Q, and every
 target is Sidon over the one envelope (pair shadow).
+
+## 11. THE SHELL ENDGAME (19:13)
+
+Iterating pool absolute leaves (`exists_absolute_leaf_pool`)
+stratifies the counterexample (`absolute_shell_stratification`,
+`shell_endgame` / `endgame_shells`): infinitely many pairwise
+disjoint NONEMPTY free shells Q₀, Q₁, …, each inclusion-maximal in
+the pool its predecessors leave, so every positive element outside
+shells 0..k guards shell k.  A shell-(k+1) member guards shells
+0..k; an eternal survivor guards every level.
+
+**The rotation cap (`four_disjoint_hubs_singleton`).**  A rep has
+three parts: one target cannot carry hubs through four disjoint
+b-free envelopes unless b owns it outright (every rep uses b).
+Hypothesis-free pigeonhole.
+
+**The survivor dichotomy (`eternal_survivor_dichotomy`).**
+Each eternal survivor has unbounded personal targets, or owns one
+target as a private singleton.
+
+**The corner dies (`shell_survivors_unbounded_targets`).**  Owners
+own at their own scale, so unboundedly large owners would form a
+cofinal private-triple stream — killed by the rotating-guardian
+endgame.  Hence beyond one threshold every eternal survivor is
+INFINITELY EMPLOYED: it guards at unboundedly large targets over
+the disjoint shell family.
+
+**Two enemy shapes remain.**  Either eternal survivors are finite
+— the shells tile A⁺ up to a finite set (perfect stratification:
+the fractal/Cantor-like picture) — or infinitely many survivors
+each guard at unbounded scales across infinitely many disjoint
+free envelopes.
