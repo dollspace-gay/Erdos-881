@@ -60,7 +60,13 @@ Also: shell stratification + depth tax + rotation/6/18-level caps
 + conflict law; three branch mechanisms (counting/Sidon,
 robustness/Cantor, and their mixed-regime gap); the anchor
 trichotomy (anchored / g₀-routed / central-AP3-free); the
-canonical grid.  SUMMIT (post-fork block): `endgame_collapsed_trichotomy` —
+canonical grid.  SUMMIT: `endgame_final_dichotomy` — TWO ROOMS, no anchor
+condition: every counterexample drives the FOUR LANES (rank ω /
+door / ghost street / member street) or lives in the CENTRAL
+TAIL.  Enabled by the StreamSurvives oracle refactor (anchor
+supply consumed at exactly one interface; almost-anchored worlds
+implement it via the g₀-tower self-kill `g0_tower_killed`).
+Previous summit: `endgame_collapsed_trichotomy` —
 NO anchor hypothesis: every counterexample is ANCHORED (four
 lanes: rank ω / fixed hall + door / ghost street / member
 street), ALMOST-ANCHORED (member g₀, ladder 2c−g₀ ∈ A, anchors

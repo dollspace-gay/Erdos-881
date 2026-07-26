@@ -1,3 +1,38 @@
+# UPDATE (2026-07-26): THE FINAL DICHOTOMY — TWO ROOMS
+
+**Arc 21 — the stream-kill oracle refactor.**  Audit finding:
+the entire modern chain consumes anchor supply through EXACTLY
+two lines — the two `hanchor` applications inside
+`surviving_deletion_of_cofinal_privateStream`.  Refactor: new
+interface `StreamSurvives A N₀` (every cofinal positive private
+stream yields a surviving deletion); all 53 chain hypotheses
+re-typed (mechanical sed, zero variants); implemented on both
+sides: `streamSurvives_of_anchor` (rotating/fixed kills) and
+`streamSurvives_of_almost_anchored` (the g₀-tower self-kill).
+
+**`the_final_dichotomy` / `endgame_final_dichotomy`** — the new
+summit.  Every counterexample world (0 ∈ A, covering, hfail):
+
+- FOUR LANES: root rank ≥ ω, or fixed hall + door, or ghost
+  street, or member street — now running in anchored AND
+  almost-anchored worlds alike; or
+- CENTRAL TAIL: thresholded total pinning + automatic
+  minimality + midpoint-freeness.
+
+The anchor wall is gone from the final statement.  Five explicit
+verified configurations remain: rank, door, ghosts, members,
+Salem–Spencer tail.
+
+**Remaining program.**  (1) Kill lanes: door (fixed hall
+counting?), ghosts, members (difference-blind stream /
+completeness pinch), rank ω (the deep branch).  (2) Kill the
+central tail: order-3 residue channels (parity escape + midpoint
+gap); note Cantor LIVES in the central tail and is NOT a
+counterexample — the tail kill must use hfail, not just
+structure.  All verified, zero sorries, standard axioms.
+
+---
+
 # UPDATE (2026-07-26, small hours): THE TOWER KILLS ITSELF
 
 **Arc 20 — the g₀-hole and its plug.**  The almost-anchored
