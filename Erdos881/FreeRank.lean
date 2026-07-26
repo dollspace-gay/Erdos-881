@@ -12028,4 +12028,56 @@ theorem pair_fiber_hub_bound {A : Set ℕ} {u v m : ℕ}
       exact hfib h hh)
   omega
 
+/-- **The odd channel's parity law.**  If the basis is single-
+parity beyond Y, every pair of every odd target beyond 2Y has
+its minor part in the OPPOSITE-parity fringe: two large parts
+sum evenly, and the large partner fixes the fringe part's
+parity.  Not a cofinal family — every odd target at once. -/
+theorem global_parity_odd_fringe {A : Set ℕ} {Y ε : ℕ}
+    (hpar : ∀ a ∈ A, Y < a → a % 2 = ε) :
+    ∀ n, 2 * Y < n → n % 2 = 1 →
+      ∀ x ∈ A, ∀ y ∈ A, x + y = n →
+        (x ≤ Y ∧ x % 2 ≠ ε) ∨ (y ≤ Y ∧ y % 2 ≠ ε) := by
+  intro n hnY hodd x hx y hy hxy
+  rcases Nat.lt_or_ge Y x with hxY | hxY
+  · rcases Nat.lt_or_ge Y y with hyY | hyY
+    · have h1 := hpar x hx hxY
+      have h2 := hpar y hy hyY
+      omega
+    · have h1 := hpar x hx hxY
+      right
+      constructor
+      · omega
+      · omega
+  · have hyY : Y < y := by omega
+    have h2 := hpar y hy hyY
+    left
+    constructor
+    · omega
+    · omega
+
+open Classical in
+/-- **THE ODD CHANNEL IS A HALL.**  Globally single-parity
+worlds hand their ENTIRE odd channel to one finite hall: the
+opposite-parity fringe F* pair-hubs every odd target beyond 2Y.
+This is the door configuration at total saturation — no
+placement liberty, no dodging, every odd target at once — and
+it caps r₂ on the whole odd channel at |F*| ≤ Y + 1, forcing
+all of the canonical core's r₂-blowups onto the even channel,
+one 2-adic level down. -/
+theorem global_parity_odd_hall {A : Set ℕ} {Y ε : ℕ}
+    (hpar : ∀ a ∈ A, Y < a → a % 2 = ε) :
+    ∀ n, 2 * Y < n → n % 2 = 1 →
+      IsPairHub A n ((Finset.range (Y + 1)).filter
+        (fun x => x ∈ A ∧ x % 2 ≠ ε)) := by
+  intro n hnY hodd x hx y hy hxy
+  rcases global_parity_odd_fringe hpar n hnY hodd x hx y hy
+    hxy with ⟨h1, h2⟩ | ⟨h1, h2⟩
+  · left
+    rw [Finset.mem_filter, Finset.mem_range]
+    exact ⟨by omega, hx, h2⟩
+  · right
+    rw [Finset.mem_filter, Finset.mem_range]
+    exact ⟨by omega, hy, h2⟩
+
 end Erdos881
