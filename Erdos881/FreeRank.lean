@@ -5608,4 +5608,45 @@ theorem disjoint_unique_pairs_of_essential {A : Set ℕ} {N₀ : ℕ}
         have hij' : (i : ℕ) < (j : ℕ) := hij
         omega
 
+/-- **Infinite degree in the unique-sum graph.**  Every essential
+element has unboundedly many companions: distinct private targets
+give distinct companions c = m − b, so the graph whose edges are
+unique-decomposition sums has all degrees infinite.  With
+`shared_private_target_is_sum` (edges meet only at forced sums)
+and `disjoint_unique_pairs_of_essential` (infinite matchings),
+the classical-minimality hypothesis carries a complete graph
+theory. -/
+theorem unique_pair_graph_infinite_degree {A : Set ℕ} {N₀ : ℕ}
+    {b : ℕ} (hcov : PairCovers A N₀)
+    (hess : ¬∃ N₁, ∀ n, N₁ ≤ n → ∃ x ∈ A, ∃ y ∈ A,
+      x ≠ b ∧ y ≠ b ∧ x + y = n) :
+    ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ c ∈ V, c ∈ A ∧
+        ∀ x ∈ A, ∀ y ∈ A, x + y = b + c →
+          (x = b ∧ y = c) ∨ (x = c ∧ y = b) := by
+  classical
+  intro K
+  induction K with
+  | zero =>
+    exact ⟨∅, le_refl 0, fun c hc =>
+      absurd hc (Finset.notMem_empty c)⟩
+  | succ K ih =>
+    obtain ⟨V, hVc, hVm⟩ := ih
+    obtain ⟨m, hm, c, hcA, hbc, huniq⟩ :=
+      essential_private_pair_stream hcov hess
+        (b + V.sup id + 1)
+    have hcV : c ∉ V := by
+      intro hmem
+      have h1 : c ≤ V.sup id := Finset.le_sup (f := id) hmem
+      omega
+    refine ⟨insert c V, ?_, ?_⟩
+    · rw [Finset.card_insert_of_notMem hcV]
+      omega
+    · intro c' hc'
+      rcases Finset.mem_insert.1 hc' with h | h
+      · subst h
+        exact ⟨hcA, fun x hx y hy hxy =>
+          huniq x hx y hy (by omega)⟩
+      · exact hVm c' h
+
 end Erdos881
