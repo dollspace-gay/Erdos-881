@@ -12903,4 +12903,88 @@ theorem rank_room_spine {A : Set ℕ} {N₀ : ℕ}
     exact (hW t (x t) (hxmem t)).2
   exact ⟨Q, σ, x, hfreeQ, hmat, hdisj, hcard, hxmono, hxmem⟩
 
+/-- **Chain or width.**  The final fork's rank branch,
+strengthened at its source: the stall windows' minimality kills
+every shorter width at the same base, so the rank supply is
+CHAIN-REACHABLE — ascending windows all of whose initial
+segments are free.  The rank room's supply is not loose free
+sets but genuine FreeStep chains of every length: the prefix-
+freeness gap of the corridor closes at the fork itself. -/
+theorem stall_chain_or_rank {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : StreamSurvives A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∀ c : ℕ, ∃ y : ℕ → ℕ, StrictMono y ∧
+      (∀ t, y t ∈ A ∧ 0 < y t) ∧
+      ∀ j, j ≤ c → RepFree A N₀
+        ((Finset.range j).image y)) ∨
+    (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+      ∃ L, ∀ s : ℕ, ∃ J m, 2 ≤ J ∧ J ≤ L ∧ N₀ ≤ m ∧
+        IsRepHub A m ((Finset.range J).image
+          (fun j => x (s + j)))) := by
+  classical
+  obtain ⟨Q, σ, x, hxmono, hxmem, hQfree, hQmem, hstall⟩ :=
+    spine_stalls_hereditarily h0 hcov hanchor hfail
+  have hxA : ∀ t, x t ∈ A ∧ 0 < x t :=
+    fun t => hQmem _ _ (hxmem t)
+  set Pred : ℕ → ℕ → Prop := fun s J => ∃ m, N₀ ≤ m ∧
+    IsRepHub A m ((Finset.range J).image (fun j => x (s + j)))
+    with hPred
+  have hne : ∀ s, ∃ J, Pred s J := by
+    intro s
+    obtain ⟨J, m, hm, hhub⟩ := hstall (fun j => s + j)
+      (fun a b hab => by
+        show s + a < s + b
+        omega)
+    exact ⟨J, m, hm, hhub⟩
+  have hJmin : ∀ s J', J' < Nat.find (hne s) → ¬Pred s J' :=
+    fun s J' h => Nat.find_min (hne s) h
+  by_cases hbnd : ∃ L, ∀ s, Nat.find (hne s) ≤ L
+  · right
+    obtain ⟨L, hL⟩ := hbnd
+    have hJdef : ∀ s, Pred s (Nat.find (hne s)) :=
+      fun s => Nat.find_spec (hne s)
+    have hJ2 : ∀ s, 2 ≤ Nat.find (hne s) := by
+      intro s
+      by_contra hlt
+      push_neg at hlt
+      interval_cases h : (Nat.find (hne s))
+      · obtain ⟨m, hm, hhub⟩ := hJdef s
+        rw [h] at hhub
+        obtain ⟨u, hu, v, hv, huv⟩ := hcov m hm
+        have h3 : u + v + 0 = m := by omega
+        rcases hhub u hu v hv 0 h0 h3 with hh | hh | hh <;>
+          simp at hh
+      · obtain ⟨m, hm, hhub⟩ := hJdef s
+        rw [h] at hhub
+        have hW1 : ((Finset.range 1).image
+            (fun j => x (s + j))) = {x s} := by
+          rw [Finset.range_one, Finset.image_singleton]
+          simp
+        rw [hW1] at hhub
+        exact stall_window_not_in_shell (hQfree (σ s))
+          (Finset.singleton_subset_iff.2 (by
+            simpa using hxmem s)) hm hhub
+    refine ⟨x, hxmono, hxA, L, fun s => ?_⟩
+    obtain ⟨m, hm, hhub⟩ := hJdef s
+    exact ⟨Nat.find (hne s), m, hJ2 s, hL s, hm, hhub⟩
+  · left
+    push_neg at hbnd
+    intro c
+    obtain ⟨s, hs⟩ := hbnd (c + 1)
+    refine ⟨fun i => x (s + i), ?_, fun t => hxA _, ?_⟩
+    · intro a b hab
+      exact hxmono (by omega)
+    · intro j hj
+      rcases Nat.eq_zero_or_pos j with h0j | h0j
+      · subst h0j
+        intro m hm
+        obtain ⟨u, hu, v, hv, huv⟩ := hcov m hm
+        exact ⟨u, hu, v, hv, 0, h0, by omega,
+          by simp, by simp, by simp⟩
+      · rw [repFree_iff_forall_not_hub]
+        intro m hm hhub
+        exact hJmin s j (by omega) ⟨m, hm, hhub⟩
+
 end Erdos881
