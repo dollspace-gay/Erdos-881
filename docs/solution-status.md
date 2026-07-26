@@ -1,3 +1,30 @@
+# THE FAN POVERTY LAW — TWENTY-FIRST SUMMIT (2026-07-26, night)
+
+`endgame_fan_poverty` (Endgame.lean, standard axioms; from the
+tuple-failure alone — no 0, no covering, no anchor): a target
+failing at order 3 against D has its ENTIRE non-deleted
+translate fan uniformly poor — every x in A∖D below n gives
+r2(n-x) <= 2|D cap [0,n]| + 2.  Via `wealthy_pair_survives`
+(pair-form survival, hypothesis-free counting).
+
+CONSEQUENCES NOW IN REACH:
+- One failing target = a blanket poverty requirement across
+  ~|A cap [0,n]| >= sqrt(n) translates at once (covering
+  growth), all forced near-Sidon when D is log-sparse.
+- The failing stream must avoid w + (A minus D) for every
+  sufficiently wealthy w: failure lives OFF the sumset of the
+  wealth stream with nearly all of A.
+- Composition targets: (a) drain-pinned wealthy targets w:
+  failing n avoid w + (A∖D) — with w in pinned cylinders and
+  A's forced 2-adic width, these sumsets are enormous; (b) the
+  poor stream's density: fans of failing targets must embed in
+  the poor set — the poor set must be sqrt-dense reflected-A-
+  rich; collide with oscillation bookkeeping.
+
+Twenty-one summits.  The order-3 quantifier has finally been
+made to PAY: fan poverty is strictly stronger than everything
+the pair-level exclusion suite provided.
+
 # THREE-ROOMS LAB + THE ERDOS-TURAN WALL (2026-07-26, night)
 
 LAB (scripts/probe_three_rooms.py): 27/27 deletions survive in

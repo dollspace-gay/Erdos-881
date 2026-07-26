@@ -16631,4 +16631,125 @@ theorem disjoint_matching_dodge {A : Set ℕ} {nseq x₁ x₂ : ℕ → ℕ}
     have := hDV k (nseq k - x₂ k) hmem (by simp)
     exact (hne k).2 this
 
+open Classical in
+/-- **Wealthy targets keep a clean pair** (pair-form of
+`wealthy_target_survives`; no zero hypotheses needed).  If a
+target's pair wealth exceeds twice the deletion's local mass
+plus two, some pair avoids the deletion entirely. -/
+theorem wealthy_pair_survives {A D : Set ℕ} {v : ℕ}
+    (hwealth : 2 * ((Finset.range (v + 1)).filter
+        (fun x => x ∈ D)).card + 2 <
+      ((Finset.range (v + 1)).filter
+        (fun x => x ∈ A ∧ (v - x) ∈ A)).card) :
+    ∃ x, x ∈ A ∧ (v - x) ∈ A ∧ x ≤ v ∧ x ∉ D ∧
+      (v - x) ∉ D := by
+  set Full := (Finset.range (v + 1)).filter
+    (fun x => x ∈ A ∧ (v - x) ∈ A) with hFull
+  set DF := (Finset.range (v + 1)).filter
+    (fun x => x ∈ D) with hDF
+  set Bad := Full.filter
+    (fun x => x ∈ D ∨ (v - x) ∈ D) with hBad
+  have hBadsub : Bad ⊆ DF ∪ (Finset.range (v + 1)).filter
+      (fun x => (v - x) ∈ D) := by
+    intro x hx
+    rw [hBad, Finset.mem_filter] at hx
+    obtain ⟨hxF, hxor⟩ := hx
+    rw [hFull, Finset.mem_filter] at hxF
+    rcases hxor with h | h
+    · exact Finset.mem_union_left _
+        (Finset.mem_filter.2 ⟨hxF.1, h⟩)
+    · exact Finset.mem_union_right _
+        (Finset.mem_filter.2 ⟨hxF.1, h⟩)
+  have hrefl : ((Finset.range (v + 1)).filter
+      (fun x => (v - x) ∈ D)).card ≤ DF.card := by
+    apply Finset.card_le_card_of_injOn (fun x => v - x)
+    · intro x hx
+      simp only [Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range] at hx
+      simp only [hDF, Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range]
+      exact ⟨by omega, hx.2⟩
+    · intro a ha b hb hab
+      simp only [Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range] at ha hb
+      have hab' : v - a = v - b := hab
+      omega
+  have hBadcard : Bad.card ≤ 2 * DF.card := by
+    have h1 := Finset.card_le_card hBadsub
+    have h2 := Finset.card_union_le DF
+      ((Finset.range (v + 1)).filter (fun x => (v - x) ∈ D))
+    omega
+  have hex : (Full \ Bad).Nonempty := by
+    rw [Finset.nonempty_iff_ne_empty]
+    intro hemp
+    have hsub : Full ⊆ Bad := by
+      intro x hx
+      by_contra hxB
+      have hmem : x ∈ Full \ Bad :=
+        Finset.mem_sdiff.2 ⟨hx, hxB⟩
+      rw [hemp] at hmem
+      exact absurd hmem (Finset.notMem_empty x)
+    have := Finset.card_le_card hsub
+    omega
+  obtain ⟨x, hx⟩ := hex
+  rw [Finset.mem_sdiff] at hx
+  obtain ⟨hxF, hxB⟩ := hx
+  have hxF' := hxF
+  rw [hFull, Finset.mem_filter, Finset.mem_range] at hxF'
+  obtain ⟨hxv, hxA, hvxA⟩ := hxF'
+  have hxnotor : ¬(x ∈ D ∨ (v - x) ∈ D) := by
+    intro h
+    exact hxB (Finset.mem_filter.2 ⟨hxF, h⟩)
+  exact ⟨x, hxA, hvxA, by omega,
+    fun h => hxnotor (Or.inl h),
+    fun h => hxnotor (Or.inr h)⟩
+
+open Classical in
+/-- **THE FAN POVERTY LAW.**  A target failing at order 3
+against a deletion has its ENTIRE non-deleted translate fan
+uniformly poor: for every x ∈ A ∖ D below n, the translate
+n − x has pair wealth at most twice the deletion's mass below
+n plus two — else a clean pair of n − x completes a surviving
+triple through x.  One failing target taxes the wealth of
+|A ∖ D| ∩ [0,n] many translates at once: failure is no longer
+a local event but a blanket poverty requirement across the
+fan, and the fan must avoid the entire wealth stream. -/
+theorem fan_poverty_of_failing {A D : Set ℕ} {n : ℕ}
+    (hfailn : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D) →
+      ∑ i, v i ≠ n) :
+    ∀ x, x ∈ A → x ∉ D → x ≤ n →
+      ((Finset.range (n - x + 1)).filter
+        (fun y => y ∈ A ∧ (n - x - y) ∈ A)).card ≤
+      2 * ((Finset.range (n + 1)).filter
+        (fun d => d ∈ D)).card + 2 := by
+  intro x hxA hxD hxn
+  by_contra hrich
+  push Not at hrich
+  have hmono : ((Finset.range (n - x + 1)).filter
+      (fun d => d ∈ D)).card ≤
+      ((Finset.range (n + 1)).filter
+        (fun d => d ∈ D)).card := by
+    apply Finset.card_le_card
+    intro d hd
+    rw [Finset.mem_filter, Finset.mem_range] at hd
+    rw [Finset.mem_filter, Finset.mem_range]
+    exact ⟨by omega, hd.2⟩
+  have hwealth : 2 * ((Finset.range (n - x + 1)).filter
+      (fun d => d ∈ D)).card + 2 <
+      ((Finset.range (n - x + 1)).filter
+        (fun y => y ∈ A ∧ (n - x - y) ∈ A)).card := by
+    omega
+  obtain ⟨y, hyA, hyxA, hyle, hyD, hyxD⟩ :=
+    wealthy_pair_survives hwealth
+  have hmem : ∀ i, (![x, y, n - x - y] : Fin 3 → ℕ) i ∈
+      A \ D := by
+    intro i
+    match i with
+    | 0 => exact ⟨hxA, hxD⟩
+    | 1 => exact ⟨hyA, hyD⟩
+    | 2 => exact ⟨hyxA, hyxD⟩
+  have hsum0 : x + y + (n - x - y) = n := by omega
+  exact hfailn ![x, y, n - x - y] hmem
+    (by simpa [Fin.sum_univ_three] using hsum0)
+
 end Erdos881

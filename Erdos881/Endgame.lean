@@ -1209,4 +1209,28 @@ theorem endgame_rigidity_teams {A : Set ℕ} {N₀ : ℕ}
       ∀ x, x ≤ W → ¬(x ∈ A ∧ (n - x) ∈ A ∧ 2 * x ≤ n)) :=
   rigidity_trichotomy_teams h0 hcov hanchor hfail
 
+open Classical in
+/-- **THE FAN POVERTY LAW** (re-export; twenty-first summit).
+A target failing at order 3 against any deletion D has its
+ENTIRE non-deleted translate fan uniformly poor: every
+x ∈ A ∖ D below n gives a translate n − x of pair wealth at
+most 2·|D ∩ [0,n]| + 2.  One failing target is a blanket
+poverty requirement on |A ∖ D| ∩ [0,n] translates
+simultaneously — with D log-sparse, the fan (of size ≳ √n by
+covering growth) must consist ENTIRELY of near-Sidon targets,
+and must avoid every wealthy target of the oscillation
+theorem's unbounded stream: n ∉ w + (A ∖ D) for every
+sufficiently wealthy w.  Failure is not a local event; it is
+a global poverty blanket, and the enemy must weave one over
+every sparse deletion's cofinal failing family forever. -/
+theorem endgame_fan_poverty {A D : Set ℕ} {n : ℕ}
+    (hfailn : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D) →
+      ∑ i, v i ≠ n) :
+    ∀ x, x ∈ A → x ∉ D → x ≤ n →
+      ((Finset.range (n - x + 1)).filter
+        (fun y => y ∈ A ∧ (n - x - y) ∈ A)).card ≤
+      2 * ((Finset.range (n + 1)).filter
+        (fun d => d ∈ D)).card + 2 :=
+  fan_poverty_of_failing hfailn
+
 end Erdos881
