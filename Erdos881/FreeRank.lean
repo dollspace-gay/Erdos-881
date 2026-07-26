@@ -17540,4 +17540,102 @@ theorem energy_upper_half_floor {A : Set ℕ} (n : ℕ) :
       (2 * n + 1) * Finset.addEnergy Af Af := hfloor
     _ ≤ (2 * n + 1) * _ := Nat.mul_le_mul_left _ hEle
 
+open Classical Pointwise in
+/-- **THE CASCADE LAW** (the three-source funding equation).
+At every scale n and every poverty threshold C:
+
+  α⁴ ≤ (2n+1)·((n+1)·C² + W_C·α² + upperΣ)
+
+— the covering demand α⁴ must be funded by exactly three
+sources: poor noise (≤ C² per target), in-window spikes (W_C
+wealthy targets, each also a service wall), or upper-half
+energy (the NEXT window's funding problem).  Pure counting.
+Every counterexample must route this budget at every scale
+forever, with its spikes doubling as walls against its own
+failing streams and its upper-half transfers compounding into
+the next scale's demand: the energy cascade, as one
+inequality. -/
+theorem cascade_law {A : Set ℕ} (n C : ℕ) :
+    (((Finset.range (n + 1)).filter
+      (fun x => x ∈ A)).card) ^ 2 *
+    (((Finset.range (n + 1)).filter
+      (fun x => x ∈ A)).card) ^ 2 ≤
+    (2 * n + 1) * ((n + 1) * C ^ 2 +
+      ((Finset.range (n + 1)).filter (fun m =>
+        C < ((Finset.range (m + 1)).filter
+          (fun y => y ∈ A ∧ (m - y) ∈ A)).card)).card *
+      (((Finset.range (n + 1)).filter
+        (fun x => x ∈ A)).card) ^ 2 +
+      ((((Finset.range (n + 1)).filter (fun x => x ∈ A)) +
+        ((Finset.range (n + 1)).filter (fun x => x ∈ A))).filter
+          (fun a => n < a)).sum (fun a =>
+        (((((Finset.range (n + 1)).filter (fun x => x ∈ A)) ×ˢ
+           ((Finset.range (n + 1)).filter (fun x => x ∈ A))).filter
+          (fun xy => xy.1 + xy.2 = a)).card) ^ 2)) := by
+  set Af := (Finset.range (n + 1)).filter (fun x => x ∈ A)
+    with hAf
+  set r2f : ℕ → ℕ := fun m => ((Finset.range (m + 1)).filter
+    (fun y => y ∈ A ∧ (m - y) ∈ A)).card with hr2f
+  set Wf := (Finset.range (n + 1)).filter
+    (fun m => C < r2f m) with hWf
+  have hfloor := energy_upper_half_floor (A := A) n
+  have hsplit := Finset.sum_filter_add_sum_filter_not
+    (Finset.range (n + 1)) (fun m => C < r2f m)
+    (fun m => r2f m ^ 2)
+  have hsplit2 : Wf.sum (fun m => r2f m ^ 2) +
+      ((Finset.range (n + 1)).filter
+        (fun m => ¬C < r2f m)).sum (fun m => r2f m ^ 2) =
+      (Finset.range (n + 1)).sum (fun m => r2f m ^ 2) :=
+    hsplit
+  have hr2le : ∀ m, m ≤ n → r2f m ≤ Af.card := by
+    intro m hm
+    rw [hr2f]
+    apply Finset.card_le_card
+    intro x hx
+    rw [Finset.mem_filter, Finset.mem_range] at hx
+    rw [hAf, Finset.mem_filter, Finset.mem_range]
+    exact ⟨by omega, hx.2.1⟩
+  have hwealthy_sum : Wf.sum (fun m => r2f m ^ 2) ≤
+      Wf.card * Af.card ^ 2 := by
+    rw [← smul_eq_mul]
+    apply Finset.sum_le_card_nsmul
+    intro m hm
+    rw [hWf, Finset.mem_filter, Finset.mem_range] at hm
+    exact Nat.pow_le_pow_left (hr2le m (by omega)) 2
+  have hpoor_sum : ((Finset.range (n + 1)).filter
+      (fun m => ¬C < r2f m)).sum (fun m => r2f m ^ 2) ≤
+      (n + 1) * C ^ 2 := by
+    have h1 : ((Finset.range (n + 1)).filter
+        (fun m => ¬C < r2f m)).sum (fun m => r2f m ^ 2) ≤
+        ((Finset.range (n + 1)).filter
+          (fun m => ¬C < r2f m)).card * C ^ 2 := by
+      rw [← smul_eq_mul]
+      apply Finset.sum_le_card_nsmul
+      intro m hm
+      rw [Finset.mem_filter] at hm
+      exact Nat.pow_le_pow_left (by omega) 2
+    have h2 : ((Finset.range (n + 1)).filter
+        (fun m => ¬C < r2f m)).card ≤ n + 1 := by
+      have := Finset.card_filter_le (Finset.range (n + 1))
+        (fun m => ¬C < r2f m)
+      rw [Finset.card_range] at this
+      exact this
+    have h3 : ((Finset.range (n + 1)).filter
+        (fun m => ¬C < r2f m)).card * C ^ 2 ≤
+        (n + 1) * C ^ 2 := Nat.mul_le_mul_right _ h2
+    omega
+  have hwindow : (Finset.range (n + 1)).sum
+      (fun m => r2f m ^ 2) ≤
+      (n + 1) * C ^ 2 + Wf.card * Af.card ^ 2 := by
+    omega
+  have hfloor2 : Af.card ^ 2 * Af.card ^ 2 ≤
+      (2 * n + 1) * ((Finset.range (n + 1)).sum
+        (fun m => r2f m ^ 2) +
+      ((Af + Af).filter (fun a => n < a)).sum (fun a =>
+        (((Af ×ˢ Af).filter
+          (fun xy => xy.1 + xy.2 = a)).card) ^ 2)) := hfloor
+  refine le_trans hfloor2 ?_
+  apply Nat.mul_le_mul_left
+  omega
+
 end Erdos881

@@ -1,3 +1,23 @@
+# THE CASCADE LAW (2026-07-26, final)
+
+`cascade_law` (pure counting, standard axioms): at every scale
+n and threshold C,
+
+  alpha^4 <= (2n+1) * ((n+1)C^2 + W_C*alpha^2 + upperSum)
+
+— the covering demand funded by exactly three sources: poor
+noise, in-window spikes (each also a service wall via
+`served_targets_never_fail`), or upper-half energy (the next
+scale's demand).  Built on the Mathlib bridge
+(`window_energy_le_addEnergy`, `mathlib_energy_floor`,
+`energy_upper_half_floor`).
+
+The enemy's budget routing at every scale forever, as one
+inequality.  The multiscale analysis of this law — how upper-
+half transfers compound across dyadic scales against the
+spike/wall duality — is the energy-cascade program, the
+freshest road at the ET wall.
+
 # SUMSET COMPLETENESS: LAB-TRUE, THE FINAL REDUCTION (2026-07-26)
 
 LAB (scripts/probe_completeness.py): W_T + A is TAIL-COMPLETE
