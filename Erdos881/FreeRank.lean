@@ -4440,4 +4440,100 @@ theorem seal_cost_of_disjoint_avoiding {A : Set ℕ} {m K : ℕ}
   rw [Finset.card_univ, Fintype.card_fin] at h1
   exact h1
 
+/-- **The common-reflection supply.**  Two hub targets route every
+window element through their envelopes (fan routing), and
+pigeonholing the envelope pair hands one (h, h') a proportional
+sub-window V reflecting through BOTH points m − h and m' − h':
+for a ∈ V, both (m − h) − a and (m' − h') − a lie in A.  The
+caller splits on m − h = m' − h' (sum multiplicity at one point)
+versus ≠ (difference multiplicity at the fixed offset) — the
+engine of the difference-blowup program. -/
+theorem two_hubs_common_reflection {A : Set ℕ} {N₀ m m' : ℕ}
+    {H H' : Finset ℕ} (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hm : N₀ ≤ m) (hm' : N₀ ≤ m')
+    (hhub : IsRepHub A m H) (hhub' : IsRepHub A m' H')
+    (W : Finset ℕ)
+    (hW : ∀ a ∈ W, a ∈ A ∧ a ∉ H ∧ a ∉ H' ∧
+      a + N₀ ≤ m ∧ a + N₀ ≤ m') :
+    ∃ h ∈ H, ∃ h' ∈ H', ∃ V ⊆ W,
+      W.card ≤ H.card * H'.card * V.card ∧
+      ∀ a ∈ V, (∃ x ∈ A, x + h + a = m) ∧
+        (∃ x' ∈ A, x' + h' + a = m') := by
+  classical
+  -- envelopes are nonempty: the padded covering pair is a rep
+  have hHne : H.Nonempty := by
+    obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
+    rcases hhub x hx y hy 0 h0 (by omega) with h | h | h
+    · exact ⟨x, h⟩
+    · exact ⟨y, h⟩
+    · exact ⟨0, h⟩
+  have hH'ne : H'.Nonempty := by
+    obtain ⟨x, hx, y, hy, hxy⟩ := hcov m' hm'
+    rcases hhub' x hx y hy 0 h0 (by omega) with h | h | h
+    · exact ⟨x, h⟩
+    · exact ⟨y, h⟩
+    · exact ⟨0, h⟩
+  -- fan routing at each street
+  have hroute : ∀ a, ∃ hh xx, a ∈ W →
+      hh ∈ H ∧ xx ∈ A ∧ xx + hh + a = m := by
+    intro a
+    by_cases haW : a ∈ W
+    · obtain ⟨haA, haH, haH', ham, ham'⟩ := hW a haW
+      obtain ⟨x, hx, y, hy, hxy⟩ := hcov (m - a) (by omega)
+      have hsum : a + x + y = m := by omega
+      rcases hhub a haA x hx y hy hsum with h | h | h
+      · exact absurd h haH
+      · exact ⟨x, y, fun _ => ⟨h, hy, by omega⟩⟩
+      · exact ⟨y, x, fun _ => ⟨h, hx, by omega⟩⟩
+    · exact ⟨hHne.choose, 0, fun hc => absurd hc haW⟩
+  have hroute' : ∀ a, ∃ hh xx, a ∈ W →
+      hh ∈ H' ∧ xx ∈ A ∧ xx + hh + a = m' := by
+    intro a
+    by_cases haW : a ∈ W
+    · obtain ⟨haA, haH, haH', ham, ham'⟩ := hW a haW
+      obtain ⟨x, hx, y, hy, hxy⟩ := hcov (m' - a) (by omega)
+      have hsum : a + x + y = m' := by omega
+      rcases hhub' a haA x hx y hy hsum with h | h | h
+      · exact absurd h haH'
+      · exact ⟨x, y, fun _ => ⟨h, hy, by omega⟩⟩
+      · exact ⟨y, x, fun _ => ⟨h, hx, by omega⟩⟩
+    · exact ⟨hH'ne.choose, 0, fun hc => absurd hc haW⟩
+  choose f p hfp using hroute
+  choose f' p' hf'p' using hroute'
+  have hmaps : ∀ a ∈ W, (f a, f' a) ∈ H ×ˢ H' := by
+    intro a ha
+    rw [Finset.mem_product]
+    exact ⟨(hfp a ha).1, (hf'p' a ha).1⟩
+  obtain ⟨b₀, hb₀mem, hb₀max⟩ :=
+    Finset.exists_max_image (H ×ˢ H')
+      (fun b => (W.filter (fun a => (f a, f' a) = b)).card)
+      ⟨(hHne.choose, hH'ne.choose), Finset.mem_product.2
+        ⟨hHne.choose_spec, hH'ne.choose_spec⟩⟩
+  obtain ⟨h₀, h₀'⟩ := b₀
+  have hh₀ : h₀ ∈ H ∧ h₀' ∈ H' := Finset.mem_product.1 hb₀mem
+  set V := W.filter (fun a => (f a, f' a) = (h₀, h₀')) with hV
+  have hcount : W.card ≤ H.card * H'.card * V.card := by
+    have h5 := Finset.card_le_mul_card_image_of_maps_to hmaps
+      V.card
+      (fun b hb => hb₀max b hb)
+    rw [Finset.card_product] at h5
+    calc W.card ≤ V.card * (H.card * H'.card) := h5
+      _ = H.card * H'.card * V.card := by ring
+  refine ⟨h₀, hh₀.1, h₀', hh₀.2, V, Finset.filter_subset _ _,
+    hcount, ?_⟩
+  intro a ha
+  rw [hV, Finset.mem_filter] at ha
+  obtain ⟨haW, haeq⟩ := ha
+  have heq1 : f a = h₀ := by
+    have := congrArg Prod.fst haeq
+    simpa using this
+  have heq2 : f' a = h₀' := by
+    have := congrArg Prod.snd haeq
+    simpa using this
+  constructor
+  · obtain ⟨_, hpA, hpsum⟩ := hfp a haW
+    exact ⟨p a, hpA, by rw [← heq1]; exact hpsum⟩
+  · obtain ⟨_, hpA, hpsum⟩ := hf'p' a haW
+    exact ⟨p' a, hpA, by rw [← heq2]; exact hpsum⟩
+
 end Erdos881
