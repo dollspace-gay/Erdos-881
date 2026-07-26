@@ -12376,4 +12376,28 @@ theorem saturated_popular_fringe {A : Set ℕ} {N₀ Y ε : ℕ}
     rw [h4] at h3
     exact h3 hx
 
+/-- **Two-level descent: the mod-4 cylinder.**  If the world is
+single-parity and its half-world is single-parity again, the
+large basis elements live in ONE residue class mod 4.  Each
+descent level halves the enemy's residue freedom; k levels pin
+a 2^k-cylinder, forcing gaps ≥ 2^k beyond growing thresholds —
+the quantitative Cantor calibration of infinitely descending
+worlds. -/
+theorem two_level_descent {A : Set ℕ} {Y₀ Y₁ ε₀ ε₁ : ℕ}
+    (hε₀ : ε₀ < 2) (hε₁ : ε₁ < 2)
+    (hpar₀ : ∀ a ∈ A, Y₀ < a → a % 2 = ε₀)
+    (hpar₁ : ∀ a' ∈ {x : ℕ | ε₀ + 2 * x ∈ A}, Y₁ < a' →
+      a' % 2 = ε₁) :
+    ∀ a ∈ A, Y₀ + ε₀ + 2 * Y₁ < a →
+      a % 4 = ε₀ + 2 * ε₁ := by
+  intro a ha hbig
+  have h0 := hpar₀ a ha (by omega)
+  have hmem : (a - ε₀) / 2 ∈ {x : ℕ | ε₀ + 2 * x ∈ A} := by
+    show ε₀ + 2 * ((a - ε₀) / 2) ∈ A
+    have he : ε₀ + 2 * ((a - ε₀) / 2) = a := by omega
+    rw [he]
+    exact ha
+  have h1 := hpar₁ _ hmem (by omega)
+  omega
+
 end Erdos881
