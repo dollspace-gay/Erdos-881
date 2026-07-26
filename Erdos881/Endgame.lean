@@ -932,4 +932,31 @@ theorem endgame_two_streams {A : Set ℕ} {N₀ : ℕ}
               B'))).card + 2 :=
   mixing_failure_addresses h0 hcov hfail
 
+open Classical in
+/-- **THE UNIVERSAL PREFIX-HUB LAW** (re-export; twelfth
+summit).  The cleanest single statement of what failure costs
+the enemy: EVERY infinite positive subset B of the basis is
+owed a cofinal stream of targets at which B's own prefix
+B ∩ [0,n] is an order-2 hub — every pair representation of the
+target routes through B — and consequently the target's entire
+pair wealth is capped at 2·|B ∩ [0,n]|.  Hypotheses: 0 ∈ A and
+the failure interface alone (no covering needed).  All the
+session's exclusion, residue, sumset, and poverty laws are
+instances or refinements of this one obligation, and the load
+ledger's question is whether the enemy can pay it to every
+subset simultaneously.  The lab (320/320 surviving deletions)
+says it cannot. -/
+theorem endgame_universal_hub {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∀ B ⊆ A, 0 ∉ B → B.Infinite → ∀ N, ∃ n, N ≤ n ∧
+      IsPairHub A n ((Finset.range (n + 1)).filter
+        (fun x => x ∈ B)) ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤
+      2 * ((Finset.range (n + 1)).filter
+        (fun x => x ∈ B)).card :=
+  universal_prefix_hub_law (N₀ := N₀) h0 hfail
+
 end Erdos881

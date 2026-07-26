@@ -15564,4 +15564,100 @@ theorem same_class_overlap_pinned {A D₁ D₂ : Set ℕ}
     _ = (c + c) % 2 ^ j := by rw [← Nat.add_mod]
     _ = (2 * c) % 2 ^ j := by ring_nf
 
+open Classical in
+/-- **Pair hubs cap full wealth** (pair-hub form of
+`repHub_caps_pair_wealth`).  An order-2 hub caps the target's
+ENTIRE ordered pair count at twice its size: low half injects,
+high half reflects. -/
+theorem pairHub_caps_wealth {A : Set ℕ} {w : ℕ}
+    {H : Finset ℕ} (hhub : IsPairHub A w H) :
+    ((Finset.range (w + 1)).filter
+      (fun x => x ∈ A ∧ (w - x) ∈ A)).card ≤ 2 * H.card := by
+  have hlow := pair_hub_pair_count hhub
+  set Low := (Finset.range (w + 1)).filter
+    (fun a => a ∈ A ∧ (w - a) ∈ A ∧ 2 * a ≤ w) with hLow
+  set High := (Finset.range (w + 1)).filter
+    (fun a => a ∈ A ∧ (w - a) ∈ A ∧ w < 2 * a) with hHigh
+  have hsub : (Finset.range (w + 1)).filter
+      (fun x => x ∈ A ∧ (w - x) ∈ A) ⊆ Low ∪ High := by
+    intro a ha
+    rw [Finset.mem_filter, Finset.mem_range] at ha
+    obtain ⟨hav, haA, hwaA⟩ := ha
+    rcases Nat.lt_or_ge w (2 * a) with hc | hc
+    · exact Finset.mem_union_right _ (Finset.mem_filter.2
+        ⟨Finset.mem_range.2 hav, haA, hwaA, hc⟩)
+    · exact Finset.mem_union_left _ (Finset.mem_filter.2
+        ⟨Finset.mem_range.2 hav, haA, hwaA, hc⟩)
+  have hHL : High.card ≤ Low.card := by
+    apply Finset.card_le_card_of_injOn (fun a => w - a)
+    · intro a ha
+      simp only [hHigh, Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range] at ha
+      obtain ⟨hav, haA, hwaA, hc⟩ := ha
+      simp only [hLow, Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range]
+      have he : w - (w - a) = a := by omega
+      rw [he]
+      exact ⟨by omega, hwaA, haA, by omega⟩
+    · intro a ha b hb hab
+      simp only [hHigh, Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range] at ha hb
+      have hab' : w - a = w - b := hab
+      omega
+  have h1 := Finset.card_le_card hsub
+  have h2 := Finset.card_union_le Low High
+  omega
+
+open Classical in
+/-- **THE UNIVERSAL PREFIX-HUB LAW.**  In a counterexample,
+EVERY infinite positive subset B of the basis manufactures its
+own cofinal stream of targets at which B's prefix B ∩ [0,n] is
+an order-2 hub: the 0-pad turns any B-avoiding pair into a
+B-avoiding triple.  Corollary at each such target:
+r₂(n) ≤ 2·|B ∩ [0,n]|.  This is the root of the exclusion
+suite and the entry lemma of the load ledger — the enemy owes
+every infinite positive subset of itself a cofinal
+prefix-hubbed poverty stream. -/
+theorem universal_prefix_hub_law {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∀ B ⊆ A, 0 ∉ B → B.Infinite → ∀ N, ∃ n, N ≤ n ∧
+      IsPairHub A n ((Finset.range (n + 1)).filter
+        (fun x => x ∈ B)) ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤
+      2 * ((Finset.range (n + 1)).filter
+        (fun x => x ∈ B)).card := by
+  intro B hBA h0B hBinf N
+  have hnot := hfail B hBA hBinf
+  simp only [IsExactTupleAsymptoticBasis, not_exists,
+    not_forall] at hnot
+  obtain ⟨n, hn, hnrep⟩ := hnot N
+  have hfailn : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ B) →
+      ∑ i, v i ≠ n := by
+    intro v hv hs
+    exact hnrep v ⟨hv, hs⟩
+  have hhub : IsPairHub A n ((Finset.range (n + 1)).filter
+      (fun x => x ∈ B)) := by
+    intro x hx y hy hxy
+    by_cases hxB : x ∈ B
+    · exact Or.inl (Finset.mem_filter.2
+        ⟨Finset.mem_range.2 (by omega), hxB⟩)
+    · by_cases hyB : y ∈ B
+      · exact Or.inr (Finset.mem_filter.2
+          ⟨Finset.mem_range.2 (by omega), hyB⟩)
+      · exfalso
+        have hmem : ∀ i, (![x, y, 0] : Fin 3 → ℕ) i ∈
+            A \ B := by
+          intro i
+          match i with
+          | 0 => exact ⟨hx, hxB⟩
+          | 1 => exact ⟨hy, hyB⟩
+          | 2 => exact ⟨h0, h0B⟩
+        have hsum0 : x + y + 0 = n := by omega
+        exact hfailn ![x, y, 0] hmem
+          (by simpa [Fin.sum_univ_three] using hsum0)
+  exact ⟨n, hn, hhub, pairHub_caps_wealth hhub⟩
+
 end Erdos881

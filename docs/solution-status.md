@@ -1,3 +1,19 @@
+# THE UNIVERSAL PREFIX-HUB LAW — TWELFTH SUMMIT (2026-07-26)
+
+`endgame_universal_hub` (Endgame.lean, standard axioms;
+hypotheses 0 in A + hfail ONLY — no covering): every infinite
+positive B subseteq A is owed a cofinal stream of targets at
+which B's own prefix is an order-2 hub, with pair wealth capped
+at 2|B cap [0,n]|.  The root obligation: all of today's
+exclusion/residue/sumset/poverty laws are instances.
+
+THE LEDGER QUESTION in final form: can one set A pay a cofinal
+prefix-hub stream to EVERY infinite positive subset of itself,
+while pair-covering, with support width 2^(j/2) at every 2-adic
+depth, wealth pinned to nested towers, streets poor, forced
+mixing, and its Cantor endpoint dead?  The lab's 320 worlds say
+no.  The proof of that no is what remains of Erdos 881 k=2.
+
 # THE 2-ADIC WIDTH LAW (2026-07-26)
 
 `two_adic_width_law` (standard axioms, pure — only PairCovers):
