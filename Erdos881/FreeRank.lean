@@ -16329,4 +16329,36 @@ theorem poor_drift_fork {A : Set ℕ} {N₀ : ℕ}
         htail⟩ := hS N'
       exact ⟨n, hn, H, hcard, hpair, hmem, hcomp, hSH huS⟩
 
+open Classical in
+/-- **THE DRIFT HORN DIGS DESERTS.**  On the total-drift horn
+of the drift fork, the poor stream's targets sit in translate
+deserts: for every window W, cofinally many poor targets n
+have n − x ∉ A for EVERY basis element x ∈ [1, W] (with
+2x ≤ n) — because the complete canonical hub contains all low
+parts and all its members exceed W.  The R4 street ladder's
+difference-desert geometry, now derived UNCONDITIONALLY on the
+drift horn: the enemy's small elements are simultaneously
+useless for an entire cofinal target family. -/
+theorem drift_horn_deserts {A : Set ℕ} {L : ℕ}
+    (hdrift : ∀ W N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      H.card ≤ L ∧ IsPairHub A n H ∧
+      (∀ h ∈ H, h ∈ A ∧ (n - h) ∈ A ∧ 2 * h ≤ n) ∧
+      (∀ x, 2 * x ≤ n → x ∈ A → (n - x) ∈ A → x ∈ H) ∧
+      ∀ h ∈ H, W < h) :
+    ∀ W N, ∃ n, N ≤ n ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * L ∧
+      ∀ x, x ∈ A → 1 ≤ x → x ≤ W → 2 * x ≤ n →
+        (n - x) ∉ A := by
+  intro W N
+  obtain ⟨n, hn, H, hcard, hpair, hmem, hcomp, htail⟩ :=
+    hdrift W N
+  refine ⟨n, hn, ?_, ?_⟩
+  · have hcap := pairHub_caps_wealth hpair
+    omega
+  · intro x hxA hx1 hxW hxle hnxA
+    have hxH : x ∈ H := hcomp x hxle hxA hnxA
+    have := htail x hxH
+    omega
+
 end Erdos881
