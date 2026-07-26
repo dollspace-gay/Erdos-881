@@ -14536,4 +14536,106 @@ theorem cascade_mixing_fork {A : Set ℕ} {N₀ : ℕ}
       by_contra hne
       exact hcon ⟨a, by omega, ha, by omega⟩
 
+open Classical in
+/-- **2-ADIC CONVERGENCE KILLS COVERING.**  A set whose tail
+concentrates into a single residue class mod 2^k FOR EVERY k
+cannot pair-cover: pick K with 2^(K−1) beyond the mod-2 head
+size; large-large sums have pinned parity, small-large sums
+land in at most |head| residue classes mod 2^K, so some
+wrong-parity class mod 2^K contains cofinally many uncovered
+targets.  Pure counting — no hfail, no basis theory.  This is
+the blade that empties the determined cascade horn. -/
+theorem two_adic_convergence_kills_covering {A : Set ℕ}
+    {N₀ : ℕ} (hcov : PairCovers A N₀)
+    (hconv : ∀ k, ∃ Y ρ, ρ < 2 ^ k ∧ ∀ a ∈ A, Y < a →
+      ∃ z, a = ρ + 2 ^ k * z) : False := by
+  obtain ⟨Y1, ρ1, hρ1, hpar⟩ := hconv 1
+  set K := Y1 + 3 with hK
+  obtain ⟨YK, ρK, hρK, hcK⟩ := hconv K
+  set H := (Finset.range (Y1 + 1)).filter (fun a => a ∈ A)
+    with hH
+  set F := H.image (fun a => (a + ρK) % 2 ^ K) with hF
+  set bpar := (ρ1 + ρK + 1) % 2 with hbpar
+  set Cand := (Finset.range (Y1 + 2)).image
+    (fun t => 2 * t + bpar) with hCand
+  have hCandCard : Cand.card = Y1 + 2 := by
+    rw [hCand, Finset.card_image_of_injOn
+      (fun x _ y _ hxy => by omega)]
+    exact Finset.card_range _
+  have hFcard : F.card ≤ Y1 + 1 := by
+    refine le_trans Finset.card_image_le ?_
+    rw [hH]
+    refine le_trans (Finset.card_filter_le _ _) ?_
+    rw [Finset.card_range]
+  have hex : (Cand \ F).Nonempty := by
+    rw [Finset.nonempty_iff_ne_empty]
+    intro hemp
+    have hsub : Cand ⊆ F := by
+      intro x hx
+      by_contra hxF
+      have hmem : x ∈ Cand \ F := Finset.mem_sdiff.2 ⟨hx, hxF⟩
+      rw [hemp] at hmem
+      exact absurd hmem (Finset.notMem_empty x)
+    have := Finset.card_le_card hsub
+    omega
+  obtain ⟨r, hr⟩ := hex
+  rw [Finset.mem_sdiff] at hr
+  obtain ⟨hrC, hrF⟩ := hr
+  rw [hCand, Finset.mem_image] at hrC
+  obtain ⟨t, htr, hrt⟩ := hrC
+  rw [Finset.mem_range] at htr
+  have hpow2 : Y1 + 2 < 2 ^ (Y1 + 2) :=
+    Nat.lt_pow_self (by omega)
+  have hKsplit : 2 ^ K = 2 * 2 ^ (Y1 + 2) := by
+    rw [hK, pow_succ]
+    ring
+  have hbp2 : bpar < 2 := by
+    rw [hbpar]
+    omega
+  have hrK : r < 2 ^ K := by omega
+  set M := N₀ + Y1 + YK + ρK + 5 with hM
+  set n := r + 2 ^ K * M with hn
+  have hPK : 0 < 2 ^ K := pow_pos (by omega) K
+  have hMle : M ≤ 2 ^ K * M := Nat.le_mul_of_pos_left M hPK
+  have h2K : 2 ≤ 2 ^ K := by omega
+  have h2M : 2 * M ≤ 2 ^ K * M := mul_le_mul_right' h2K M
+  obtain ⟨u, huA, v, hvA, huv⟩ := hcov n (by omega)
+  have key : ∀ u v, u ∈ A → v ∈ A → u + v = n → u ≤ v →
+      False := by
+    intro u v huA hvA huv hule
+    have hvM : M ≤ v := by omega
+    obtain ⟨zv, hzv⟩ := hcK v hvA (by omega)
+    rcases Nat.lt_or_ge Y1 u with hu1 | hu1
+    · obtain ⟨zu, hzu⟩ := hpar u huA hu1
+      have h21 : (2:ℕ) ^ 1 = 2 := by norm_num
+      rw [h21] at hzu
+      have hzv2 : 2 ^ K * zv = 2 * (2 ^ (Y1 + 2) * zv) := by
+        rw [hKsplit]
+        ring
+      have hnM2 : 2 ^ K * M = 2 * (2 ^ (Y1 + 2) * M) := by
+        rw [hKsplit]
+        ring
+      omega
+    · have hru : (u + ρK) % 2 ^ K = r := by
+        have h1 : u + v = (u + ρK) + 2 ^ K * zv := by omega
+        have h2 : (u + ρK + 2 ^ K * zv) % 2 ^ K =
+            (u + ρK) % 2 ^ K := Nat.add_mul_mod_self_left _ _ _
+        have h3 : (r + 2 ^ K * M) % 2 ^ K = r % 2 ^ K :=
+          Nat.add_mul_mod_self_left _ _ _
+        have h4 : r % 2 ^ K = r := Nat.mod_eq_of_lt hrK
+        rw [hn] at huv
+        rw [← huv] at h3
+        rw [h1] at h3
+        rw [h2] at h3
+        rw [h4] at h3
+        exact h3
+      apply hrF
+      rw [hF, Finset.mem_image]
+      refine ⟨u, ?_, hru⟩
+      rw [hH, Finset.mem_filter, Finset.mem_range]
+      exact ⟨by omega, huA⟩
+  rcases Nat.le_total u v with h | h
+  · exact key u v huA hvA huv h
+  · exact key v u hvA huA (by omega) h
+
 end Erdos881
