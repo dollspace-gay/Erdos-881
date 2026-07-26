@@ -3690,4 +3690,155 @@ theorem shell_endgame {A : Set ℕ} {N₀ : ℕ}
       hdisj hguard
   exact ⟨Q, X, hne, hmem, hfree, hdisj, hguard, hX⟩
 
+/-- **Depth forces scale** (hypothesis-free pigeonhole).  An
+element with guardian duties at k+1 pairwise disjoint shells
+either owns some target outright, or one of its duty targets
+already sits at height N₀ + k/3: at most three duties can share a
+target value without triggering `four_disjoint_hubs_singleton`,
+so k+1 duties cannot all hide below the tax line. -/
+theorem shell_depth_forces_scale {A : Set ℕ} {N₀ : ℕ}
+    {Q : ℕ → Finset ℕ} {k b : ℕ}
+    (hdisj : ∀ j k', j < k' → Disjoint (Q j) (Q k'))
+    (hguard : ∀ j, j ≤ k → ∃ m, N₀ ≤ m ∧
+      IsRepHub A m (insert b (Q j)))
+    (hb : ∀ j, j ≤ k → b ∉ Q j) :
+    (∃ m, N₀ ≤ m ∧ IsRepHub A m {b}) ∨
+    (∃ j, j ≤ k ∧ ∃ m, N₀ + k / 3 ≤ m ∧ N₀ ≤ m ∧
+      IsRepHub A m (insert b (Q j))) := by
+  classical
+  have hg : ∀ j, ∃ m, N₀ ≤ m ∧
+      (j ≤ k → IsRepHub A m (insert b (Q j))) := by
+    intro j
+    by_cases hj : j ≤ k
+    · obtain ⟨m, h1, h2⟩ := hguard j hj
+      exact ⟨m, h1, fun _ => h2⟩
+    · exact ⟨N₀, le_refl _, fun h => absurd h hj⟩
+  choose m hm₁ hm₂ using hg
+  by_cases hbig : ∃ j, j ≤ k ∧ N₀ + k / 3 ≤ m j
+  · right
+    obtain ⟨j, hj, hbigj⟩ := hbig
+    exact ⟨j, hj, m j, hbigj, hm₁ j, hm₂ j hj⟩
+  · left
+    push_neg at hbig
+    have hmaps : ∀ j ∈ Finset.range (k + 1),
+        m j ∈ Finset.Ico N₀ (N₀ + k / 3) := by
+      intro j hj
+      rw [Finset.mem_range] at hj
+      rw [Finset.mem_Ico]
+      exact ⟨hm₁ j, hbig j (by omega)⟩
+    have hlt : (Finset.Ico N₀ (N₀ + k / 3)).card * 3 <
+        (Finset.range (k + 1)).card := by
+      rw [Nat.card_Ico, Finset.card_range]
+      omega
+    obtain ⟨v, hvt, hfib⟩ :=
+      Finset.exists_lt_card_fiber_of_mul_lt_card_of_maps_to
+        hmaps hlt
+    set s := (Finset.range (k + 1)).filter (fun j => m j = v)
+      with hs
+    have hcard4 : 4 ≤ s.card := hfib
+    obtain ⟨t, hts, htcard⟩ := Finset.exists_subset_card_eq hcard4
+    let e := t.orderIsoOfFin htcard
+    have hmem' : ∀ i : Fin 4, (e i : ℕ) ∈ s := fun i => hts (e i).2
+    have hjk : ∀ i : Fin 4, (e i : ℕ) ≤ k := by
+      intro i
+      have h1 := hmem' i
+      rw [hs, Finset.mem_filter, Finset.mem_range] at h1
+      omega
+    have hval : ∀ i : Fin 4, m (e i : ℕ) = v := by
+      intro i
+      have h1 := hmem' i
+      rw [hs, Finset.mem_filter] at h1
+      exact h1.2
+    have hinj : ∀ i j : Fin 4, i ≠ j → (e i : ℕ) ≠ (e j : ℕ) := by
+      intro i j hij hne
+      exact hij (e.injective (Subtype.ext hne))
+    have hNv : N₀ ≤ v := by
+      have h1 := hm₁ (e 0 : ℕ)
+      rw [hval 0] at h1
+      exact h1
+    refine ⟨v, hNv, ?_⟩
+    refine four_disjoint_hubs_singleton
+      (Q := fun i => Q (e i : ℕ)) ?_ ?_ ?_
+    · intro i j hij
+      rcases Nat.lt_or_ge (e i : ℕ) (e j : ℕ) with h | h
+      · exact hdisj _ _ h
+      · have hne := hinj i j hij
+        have h' : (e j : ℕ) < (e i : ℕ) := by omega
+        exact (hdisj _ _ h').symm
+    · intro i
+      exact hb _ (hjk i)
+    · intro i
+      have h1 := hm₂ (e i : ℕ) (hjk i)
+      rw [hval i] at h1
+      exact h1
+
+/-- **THE DEPTH TAX.**  Under hfail and anchors, beyond one
+threshold every element clear of shells 0..k — a depth-(k+1)
+shell member or an eternal survivor — carries a guardian duty at
+height at least N₀ + k/3.  Ownership cannot pay the tax at
+unbounded sizes (owners at their own scale form a cofinal private
+stream, and the rotating-guardian kill fires).  Depth in the
+stratification forces employment at linear scale; this
+quantitatively strengthens `shell_survivors_unbounded_targets`. -/
+theorem depth_tax_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {Q : ℕ → Finset ℕ}
+    (hdisj : ∀ j k, j < k → Disjoint (Q j) (Q k))
+    (hguard : ∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
+      ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) :
+    ∃ X, ∀ k, ∀ b ∈ A, X ≤ b → 0 < b →
+      (∀ j, j ≤ k → b ∉ Q j) →
+      ∃ j, j ≤ k ∧ ∃ m, N₀ + k / 3 ≤ m ∧ N₀ ≤ m ∧
+        IsRepHub A m (insert b (Q j)) := by
+  classical
+  by_contra hno
+  push_neg at hno
+  have hstream : ∀ N, ∃ a m', N ≤ m' ∧ 0 < a ∧
+      IsPrivateTriple A a m' := by
+    intro N
+    obtain ⟨k, b, hbA, hbX, hbpos, hbQ, hbdd⟩ := hno N
+    have hg : ∀ j, j ≤ k → ∃ m, N₀ ≤ m ∧
+        IsRepHub A m (insert b (Q j)) := by
+      intro j hj
+      exact hguard j b hbA hbpos (fun j' hj' => hbQ j' (by omega))
+    rcases shell_depth_forces_scale hdisj hg
+      (fun j hj => hbQ j hj) with hown | hbig
+    · obtain ⟨m, hm, hhub⟩ := hown
+      obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
+      have h3 : x + y + 0 = m := by omega
+      have hbm : b ≤ m := by
+        rcases hhub x hx y hy 0 h0 h3 with h | h | h
+        · have hxb : x = b := by simpa using h
+          omega
+        · have hyb : y = b := by simpa using h
+          omega
+        · have h0b : (0 : ℕ) = b := by simpa using h
+          omega
+      refine ⟨b, m, by omega, hbpos,
+        ⟨x, hx, y, hy, 0, h0, h3⟩, ?_⟩
+      intro x' hx' y' hy' z' hz' hsum
+      rcases hhub x' hx' y' hy' z' hz' hsum with h | h | h
+      · exact Or.inl (by simpa using h)
+      · exact Or.inr (Or.inl (by simpa using h))
+      · exact Or.inr (Or.inr (by simpa using h))
+    · obtain ⟨j, hj, m, h1, h2, h3⟩ := hbig
+      exact absurd h3 (hbdd j hj m h1 h2)
+  obtain ⟨B, hBA, hBinf, hsurv⟩ :=
+    surviving_deletion_of_cofinal_privateStream h0 hcov hstream
+      hanchor
+  refine hfail B hBA hBinf ⟨N₀, ?_⟩
+  intro n hn
+  obtain ⟨x, hx, y, hy, z, hz, hxB, hyB, hzB, hsum⟩ := hsurv n hn
+  refine ⟨![x, y, z], ?_, by
+    simpa [Fin.sum_univ_three] using hsum⟩
+  intro i
+  match i with
+  | 0 => exact ⟨hx, hxB⟩
+  | 1 => exact ⟨hy, hyB⟩
+  | 2 => exact ⟨hz, hzB⟩
+
 end Erdos881
