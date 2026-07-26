@@ -586,3 +586,22 @@ rank machinery.  Emerging final form of the whole problem:
 EVERYTHING funnels to rank-omega/2-adic descent vs the ladder
 engines.  Next formal target: the parity-descent step (tower
 laws descend to the half-set), connecting to FreeStep rank.
+
+
+## The completeness-road audit (2026-07-26, honest)
+
+The enumeration build was audited BEFORE building: with the
+syndetic window, A-onwards is subset-sum complete essentially by
+coverage (2-element subset sums realize every covered target),
+so completeness was never the obstruction — exactly as the
+completeness-circle audit recorded weeks ago: SELF-AVOIDANCE is
+the entire content of the pinch, and the omega-dichotomy's
+routed branch reproduces the HALL.  The parity/syndetic road's
+real yield is therefore: (1) the parity defence costs the enemy
+LINEAR density on defended windows (`parity_window_syndetic`),
+destroying Sidon-sparseness there; (2) all roads reconverge on
+two cores — the hall/avoidance core and rank-omega/descent.
+The night's map is bidirectionally confirmed: the funnel
+reaches the same two cores from the flood side that the
+final-form reduction reached from the rank side.  These two
+cores ARE Erdos 881.
