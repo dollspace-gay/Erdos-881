@@ -10536,4 +10536,135 @@ theorem door_two_good_deep_killed {A : Set ℕ}
     (fun k => (hprops k).2.2.2.1) hMlaw
     (fun k => (hprops k).2.2.2.2) hdlaw
 
+/-! ## The walk kills: AP3 midpoint deletion -/
+
+/-- **The AP3 midpoint engine.**  Cofinally many three-term
+arithmetic progressions with one fixed common difference c ∈ A
+force a surviving deletion: delete the midpoints along a
+geometric subsequence; a deleted part in a pair is replaced by
+stepping down (m − c) + c, a doubly-deleted pair by stepping
+one midpoint down and the other up, (m − c) + (m' + c).  No
+counterexample carries a cofinal fixed-difference AP3 family
+through its own basis — the first unconditional AP kill,
+consistent with the central branch's forced AP3-freeness. -/
+theorem ap3_deletion_engine {A : Set ℕ} {N₀ c : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hcA : c ∈ A) (hcpos : 0 < c)
+    (hap : ∀ V, ∃ m, V ≤ m ∧ m - c ∈ A ∧ m ∈ A ∧
+      m + c ∈ A) :
+    ∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n := by
+  classical
+  have hsup : ∀ V, ∃ m, V < m ∧ m - c ∈ A ∧ m ∈ A ∧
+      m + c ∈ A := by
+    intro V
+    obtain ⟨m, h1, h2, h3, h4⟩ := hap (V + 1)
+    exact ⟨m, by omega, h2, h3, h4⟩
+  choose nx hnx1 hnx2 hnx3 hnx4 using hsup
+  set m : ℕ → ℕ := fun k =>
+    Nat.rec (nx (c + N₀ + 1)) (fun _ p => nx (2 * p + c)) k
+    with hm
+  have hm0 : m 0 = nx (c + N₀ + 1) := rfl
+  have hms : ∀ k, m (k + 1) = nx (2 * m k + c) := fun _ => rfl
+  have hbase : c + N₀ + 1 < m 0 := by
+    rw [hm0]
+    exact hnx1 _
+  have hgrow : ∀ k, 2 * m k + c < m (k + 1) := by
+    intro k
+    rw [hms]
+    exact hnx1 _
+  have hmono : StrictMono m := by
+    apply strictMono_nat_of_lt_succ
+    intro k
+    have h1 := hgrow k
+    omega
+  have hbk : ∀ k, c + N₀ + 1 < m k := by
+    intro k
+    have := hmono.monotone (Nat.zero_le k)
+    omega
+  have hprops : ∀ k, m k - c ∈ A ∧ m k ∈ A ∧ m k + c ∈ A := by
+    intro k
+    cases k with
+    | zero =>
+      rw [hm0]
+      exact ⟨hnx2 _, hnx3 _, hnx4 _⟩
+    | succ k =>
+      rw [hms]
+      exact ⟨hnx2 _, hnx3 _, hnx4 _⟩
+  have hsepk : ∀ a b, a < b → 2 * m a + c < m b := by
+    intro a b hab
+    have h1 := hgrow a
+    have h2 : m (a + 1) ≤ m b := by
+      rcases Nat.lt_or_ge (a + 1) b with h | h
+      · exact le_of_lt (hmono h)
+      · have h3 : a + 1 = b := by omega
+        rw [h3]
+    omega
+  set f : ℕ → ℕ := fun k => m k with hf
+  have hBsub : Set.range f ⊆ A := by
+    rintro w ⟨k, rfl⟩
+    exact (hprops k).2.1
+  have hfinj : Function.Injective f :=
+    fun i j hij => hmono.injective hij
+  have h0B : (0 : ℕ) ∉ Set.range f := by
+    rintro ⟨r, hr⟩
+    simp only [hf] at hr
+    have := hbk r
+    omega
+  have hcB : c ∉ Set.range f := by
+    rintro ⟨r, hr⟩
+    simp only [hf] at hr
+    have := hbk r
+    omega
+  have hdownB : ∀ k, m k - c ∉ Set.range f := by
+    rintro k ⟨r, hr⟩
+    simp only [hf] at hr
+    rcases Nat.lt_trichotomy r k with h | h | h
+    · have h1 := hsepk r k h
+      have h2 := hbk r
+      have h3 := hbk k
+      omega
+    · rw [h] at hr
+      have := hbk k
+      omega
+    · have h1 : m k < m r := hmono h
+      have h2 := hbk k
+      omega
+  have hupB : ∀ k, m k + c ∉ Set.range f := by
+    rintro k ⟨r, hr⟩
+    simp only [hf] at hr
+    rcases Nat.lt_trichotomy r k with h | h | h
+    · have h1 : m r < m k := hmono h
+      omega
+    · rw [h] at hr
+      omega
+    · have h1 := hsepk k r h
+      have h2 := hbk k
+      omega
+  refine ⟨Set.range f, hBsub,
+    Set.infinite_range_of_injective hfinj, ?_⟩
+  intro n hn
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hn
+  by_cases hxB : x ∈ Set.range f
+  · obtain ⟨i, hix⟩ := hxB
+    simp only [hf] at hix
+    by_cases hyB : y ∈ Set.range f
+    · obtain ⟨j, hjy⟩ := hyB
+      simp only [hf] at hjy
+      have h1 := hbk i
+      have h2 := hbk j
+      exact ⟨m i - c, (hprops i).1, m j + c, (hprops j).2.2,
+        0, h0, hdownB i, hupB j, h0B, by omega⟩
+    · have h1 := hbk i
+      exact ⟨m i - c, (hprops i).1, c, hcA, y, hy,
+        hdownB i, hcB, hyB, by omega⟩
+  · by_cases hyB : y ∈ Set.range f
+    · obtain ⟨j, hjy⟩ := hyB
+      simp only [hf] at hjy
+      have h1 := hbk j
+      exact ⟨m j - c, (hprops j).1, c, hcA, x, hx,
+        hdownB j, hcB, hxB, by omega⟩
+    · exact ⟨x, hx, y, hy, 0, h0, hxB, hyB, h0B, by omega⟩
+
 end Erdos881
