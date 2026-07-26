@@ -12158,4 +12158,37 @@ theorem r2_witnesses_even {A : Set ℕ} {N₀ Y ε : ℕ}
     (by omega) h1
   omega
 
+/-- **The half-world covers.**  In a single-parity world the
+even channel descends: every pair of an even target has both
+parts ≡ ε (the large partner forces the fringe part's parity
+too), so the half-world A' = {x : ε + 2x ∈ A} inherits order-2
+covering at half scale.  The 2-adic descent's first rung,
+formal: each defended level hands the game to its half-world
+intact. -/
+theorem half_world_covers {A : Set ℕ} {N₀ Y ε : ℕ}
+    (hε : ε < 2)
+    (hcov : PairCovers A N₀)
+    (hpar : ∀ a ∈ A, Y < a → a % 2 = ε) :
+    PairCovers {x : ℕ | ε + 2 * x ∈ A} (N₀ + 2 * Y + 2) := by
+  intro n' hn'
+  obtain ⟨x, hx, y, hy, hxy⟩ :=
+    hcov (2 * n' + 2 * ε) (by omega)
+  have hxpar : x % 2 = ε := by
+    rcases Nat.lt_or_ge Y x with h | h
+    · exact hpar x hx h
+    · have hyY : Y < y := by omega
+      have h2 := hpar y hy hyY
+      omega
+  have hypar : y % 2 = ε := by omega
+  have hex : ε + 2 * ((x - ε) / 2) = x := by omega
+  have hey : ε + 2 * ((y - ε) / 2) = y := by omega
+  refine ⟨(x - ε) / 2, ?_, (y - ε) / 2, ?_, ?_⟩
+  · show ε + 2 * ((x - ε) / 2) ∈ A
+    rw [hex]
+    exact hx
+  · show ε + 2 * ((y - ε) / 2) ∈ A
+    rw [hey]
+    exact hy
+  · omega
+
 end Erdos881
