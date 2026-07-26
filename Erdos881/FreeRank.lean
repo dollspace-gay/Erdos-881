@@ -11934,4 +11934,98 @@ theorem parity_window_linear_density {A : Set ℕ}
   rw [Finset.card_range] at hcard
   exact hcard
 
+open Classical in
+/-- **Dense windows concentrate pairs.**  If a window carries
+enough basis elements, some target in the doubled range
+collects more than K window-pairs: the pair square outnumbers
+the available sums.  Dense regions manufacture pair-rich
+targets. -/
+theorem dense_window_high_pairs {A : Set ℕ} {u v K : ℕ}
+    (hlt : 2 * (v - u) * K <
+      (((Finset.Ioc u v).filter (· ∈ A)).card) ^ 2) :
+    ∃ m, 2 * u < m ∧ m ≤ 2 * v ∧
+      K < ((((Finset.Ioc u v).filter (· ∈ A)) ×ˢ
+        ((Finset.Ioc u v).filter (· ∈ A))).filter
+          (fun q => q.1 + q.2 = m)).card := by
+  set W := (Finset.Ioc u v).filter (· ∈ A) with hW
+  have hmaps : ∀ q ∈ W ×ˢ W,
+      q.1 + q.2 ∈ Finset.Ioc (2 * u) (2 * v) := by
+    intro q hq
+    rw [Finset.mem_product] at hq
+    obtain ⟨h1, h2⟩ := hq
+    rw [hW, Finset.mem_filter, Finset.mem_Ioc] at h1 h2
+    rw [Finset.mem_Ioc]
+    omega
+  have hcard : (Finset.Ioc (2 * u) (2 * v)).card * K <
+      (W ×ˢ W).card := by
+    rw [Nat.card_Ioc]
+    have h2 : 2 * v - 2 * u = 2 * (v - u) := by omega
+    rw [h2, Finset.card_product]
+    have h1 : W.card * W.card = W.card ^ 2 := by ring
+    omega
+  obtain ⟨m, hm, hfib⟩ :=
+    Finset.exists_lt_card_fiber_of_mul_lt_card_of_maps_to
+      hmaps hcard
+  rw [Finset.mem_Ioc] at hm
+  exact ⟨m, hm.1, hm.2, hfib⟩
+
+open Classical in
+/-- **Pair-rich targets are hub-immune.**  A target with more
+than 2|H| ordered window-pairs cannot be pair-hubbed by H:
+every ordered pair donates its hub part, and each hub element
+serves at most two ordered pairs.  Dense windows therefore
+defeat every small hall on their doubled range — the halls'
+targets are forced OUT of the sums of every dense window. -/
+theorem pair_fiber_hub_bound {A : Set ℕ} {u v m : ℕ}
+    {H : Finset ℕ} (hhub : IsPairHub A m H) :
+    ((((Finset.Ioc u v).filter (· ∈ A)) ×ˢ
+      ((Finset.Ioc u v).filter (· ∈ A))).filter
+        (fun q => q.1 + q.2 = m)).card ≤ 2 * H.card := by
+  set W := (Finset.Ioc u v).filter (· ∈ A) with hW
+  set F := (W ×ˢ W).filter (fun q => q.1 + q.2 = m) with hF
+  have hmaps : ∀ q ∈ F, (if q.1 ∈ H then q.1 else q.2) ∈ H := by
+    intro q hq
+    rw [hF, Finset.mem_filter, Finset.mem_product] at hq
+    obtain ⟨⟨h1, h2⟩, h3⟩ := hq
+    rw [hW, Finset.mem_filter] at h1 h2
+    by_cases hq1 : q.1 ∈ H
+    · rw [if_pos hq1]
+      exact hq1
+    · rw [if_neg hq1]
+      rcases hhub q.1 h1.2 q.2 h2.2 h3 with h | h
+      · exact absurd h hq1
+      · exact h
+  have hfib : ∀ h ∈ H, (F.filter
+      (fun q => (if q.1 ∈ H then q.1 else q.2) = h)).card ≤ 2 := by
+    intro h hh
+    have hsub : F.filter
+        (fun q => (if q.1 ∈ H then q.1 else q.2) = h) ⊆
+        {(h, m - h), (m - h, h)} := by
+      intro q hq
+      rw [Finset.mem_filter] at hq
+      obtain ⟨hqF, hqh⟩ := hq
+      rw [hF, Finset.mem_filter] at hqF
+      obtain ⟨_, h3⟩ := hqF
+      by_cases hq1 : q.1 ∈ H
+      · rw [if_pos hq1] at hqh
+        have hq2 : q.2 = m - h := by omega
+        rw [Finset.mem_insert]
+        exact Or.inl (Prod.ext hqh hq2)
+      · rw [if_neg hq1] at hqh
+        have hq2 : q.1 = m - h := by omega
+        rw [Finset.mem_insert, Finset.mem_singleton]
+        exact Or.inr (Prod.ext hq2 hqh)
+    have h1 := Finset.card_le_card hsub
+    have h2 : ({(h, m - h), (m - h, h)} :
+        Finset (ℕ × ℕ)).card ≤ 2 := by
+      apply le_trans (Finset.card_insert_le _ _)
+      rw [Finset.card_singleton]
+    omega
+  have hcount := Finset.card_le_mul_card_image_of_maps_to
+    (f := fun q => if q.1 ∈ H then q.1 else q.2)
+    (s := F) (t := H) hmaps 2 (by
+      intro h hh
+      exact hfib h hh)
+  omega
+
 end Erdos881
