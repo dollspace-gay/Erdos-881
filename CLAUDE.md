@@ -60,7 +60,13 @@ Also: shell stratification + depth tax + rotation/6/18-level caps
 + conflict law; three branch mechanisms (counting/Sidon,
 robustness/Cantor, and their mixed-regime gap); the anchor
 trichotomy (anchored / g₀-routed / central-AP3-free); the
-canonical grid.  SUMMIT: `endgame_final_dichotomy` — TWO ROOMS, no anchor
+canonical grid.  NEWEST LAWS: `endgame_translate_laws` — UNCONDITIONAL: no
+basis element's translate (single or in pairs) eventually
+captures A (walk kills: `ap3_deletion_engine`,
+`good_two_walk_killed`).  The door's good horn is EMPTY; strong
+horn is ambient law.  k ≥ 3 set-translate law open (wandering
+wall).
+SUMMIT: `endgame_final_dichotomy` — TWO ROOMS, no anchor
 condition: every counterexample drives the FOUR LANES (rank ω /
 door / ghost street / member street) or lives in the CENTRAL
 TAIL.  Enabled by the StreamSurvives oracle refactor (anchor
