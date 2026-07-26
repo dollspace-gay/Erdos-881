@@ -4916,4 +4916,61 @@ theorem fixed_offset_or_growing {A : Set ℕ}
     · push_neg at hle
       exact ⟨δ₀, hle, V₀, by omega, hV₀m⟩
 
+/-- An affine corner at blown point n and size S: a K₀-fold
+reflected point coupled to two basis elements beyond S and a pair
+street at the difference translate (s + b₂ = n + b₃). -/
+def AffineCorner (A : Set ℕ) (N₀ K₀ n S : ℕ) : Prop :=
+  (∃ V : Finset ℕ, K₀ ≤ V.card ∧
+    ∀ a ∈ V, a ∈ A ∧ ∃ x ∈ A, x + a = n) ∧
+  ∃ Q : Finset ℕ, RepFree A N₀ Q ∧ ∃ b₂ ∈ A, ∃ b₃ ∈ A,
+    S ≤ b₂ ∧ b₂ < b₃ ∧ ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
+      IsPairHub A s (insert b₃ Q)
+
+/-- Corners are antitone in the size threshold. -/
+theorem AffineCorner.anti {A : Set ℕ} {N₀ K₀ n S S' : ℕ}
+    (hSS : S ≤ S') (h : AffineCorner A N₀ K₀ n S') :
+    AffineCorner A N₀ K₀ n S := by
+  obtain ⟨hV, Q, hQ, b₂, hb₂, b₃, hb₃, hS, hlt, rest⟩ := h
+  exact ⟨hV, Q, hQ, b₂, hb₂, b₃, hb₃, by omega, hlt, rest⟩
+
+/-- Generic stabilize-or-escape for size-antitone ℕ-parametrized
+families: a parameter valid beyond every size either stabilizes
+(one value works at all sizes) or escapes (arbitrarily large
+values occur at every size). -/
+theorem nat_param_stabilize {C : ℕ → ℕ → Prop}
+    (hanti : ∀ n S S', S ≤ S' → C n S' → C n S)
+    (hex : ∀ S, ∃ n, C n S) :
+    (∃ n, ∀ S, C n S) ∨ (∀ N S, ∃ n, N < n ∧ C n S) := by
+  classical
+  by_cases hstab : ∃ n, ∀ S, C n S
+  · exact Or.inl hstab
+  · push_neg at hstab
+    choose Sf hSf using hstab
+    right
+    intro N S
+    set Ssup := max S ((Finset.range (N + 1)).sup Sf) with hSsup
+    obtain ⟨n₀, hn₀⟩ := hex Ssup
+    by_cases hle : n₀ ≤ N
+    · exfalso
+      have h1 : Sf n₀ ≤ Ssup := by
+        have h2 : Sf n₀ ≤ (Finset.range (N + 1)).sup Sf :=
+          Finset.le_sup (Finset.mem_range.2 (by omega))
+        omega
+      exact hSf n₀ (hanti n₀ (Sf n₀) Ssup h1 hn₀)
+    · push_neg at hle
+      exact ⟨n₀, hle, hanti n₀ S Ssup (le_max_left _ _) hn₀⟩
+
+/-- **The mirror hall splits.**  In the affine-corner branch the
+blown reflection point either STABILIZES — one fixed n serves
+corners beyond every size: an infinite affine family clustered at
+a single mirror point — or SCATTERS: arbitrarily large blown
+points, each with its own affine corner, at every size. -/
+theorem affine_corner_fixed_or_scattered {A : Set ℕ}
+    {N₀ K₀ : ℕ}
+    (hcorner : ∀ S, ∃ n, AffineCorner A N₀ K₀ n S) :
+    (∃ n, ∀ S, AffineCorner A N₀ K₀ n S) ∨
+    (∀ N S, ∃ n, N < n ∧ AffineCorner A N₀ K₀ n S) :=
+  nat_param_stabilize
+    (fun _ _ _ hSS h => AffineCorner.anti hSS h) hcorner
+
 end Erdos881
