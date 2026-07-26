@@ -4400,4 +4400,44 @@ theorem fragile_supply_of_hfail {A : Set ℕ} {N₀ : ℕ}
   exact (hfail_iff_no_hereditarily_free h0 hcov).1 hfail
     (robustness_gives_hereditarily_free h0 hcov hno)
 
+/-- **The seal-cost inequality** (ledger line (i) of the
+mass-accounting program).  To seal an envelope S at a target m by
+deleting D — making every surviving representation meet S — costs
+at least one deleted element per pairwise disjoint S-avoiding
+representation: each such rep must lose a part to D, and
+disjointness makes those parts distinct.  Deletion-form of
+`disjoint_reps_le_hub_card`. -/
+theorem seal_cost_of_disjoint_avoiding {A : Set ℕ} {m K : ℕ}
+    {S D : Finset ℕ} (P : Fin K → Fin 3 → ℕ)
+    (hPA : ∀ i k, P i k ∈ A)
+    (hPsum : ∀ i, P i 0 + P i 1 + P i 2 = m)
+    (hPdis : ∀ i j k l, i ≠ j → P i k ≠ P j l)
+    (hPavoid : ∀ i k, P i k ∉ S)
+    (hseal : IsRepHub (A \ ↑D) m S) :
+    K ≤ D.card := by
+  classical
+  have hpick : ∀ i : Fin K, ∃ k : Fin 3, P i k ∈ D := by
+    intro i
+    by_contra hnone
+    push_neg at hnone
+    have hmem : ∀ k : Fin 3, P i k ∈ A \ ↑D := by
+      intro k
+      exact ⟨hPA i k, by simpa using hnone k⟩
+    rcases hseal (P i 0) (hmem 0) (P i 1) (hmem 1) (P i 2)
+      (hmem 2) (hPsum i) with h | h | h
+    · exact hPavoid i 0 h
+    · exact hPavoid i 1 h
+    · exact hPavoid i 2 h
+  choose pk hpk using hpick
+  have h1 := Finset.card_le_card_of_injOn
+    (f := fun i : Fin K => P i (pk i))
+    (s := Finset.univ) (t := D)
+    (fun i _ => hpk i)
+    (by
+      intro i _ j _ heq
+      by_contra hne
+      exact hPdis i j (pk i) (pk j) hne heq)
+  rw [Finset.card_univ, Fintype.card_fin] at h1
+  exact h1
+
 end Erdos881
