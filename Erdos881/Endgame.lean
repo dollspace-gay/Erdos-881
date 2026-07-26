@@ -1361,4 +1361,31 @@ theorem endgame_service_breakdown {A : Set ℕ} {N₀ : ℕ}
         (n - w) ∉ A ∨ (n - w) ∈ B :=
   service_breakdown_of_hfail h0 hcov hfail
 
+open Classical in
+/-- **THE SPIKE CENSUS** (re-export; twenty-fifth summit).
+In every counterexample, for every infinite deletion, at
+cofinally many scales the basis mass plus the wealthy-spike
+count packs into the scale: α(n) + W(n) ≤ n + 1 + 2·|B∩[0,n]|.
+Against the closed two-scale law — which requires spike mass
+W·α² to fund the covering demand α⁴ — the enemy keeps two
+account books that tax each other: the cascade demands spikes,
+the census makes every spike displace basis mass at its own
+failing scales.  The profile-region analysis now has its
+coupling constraint, machine-checked. -/
+theorem endgame_spike_census {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∀ B ⊆ A, B.Infinite → ∀ N, ∃ n, N ≤ n ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A)).card +
+      ((Finset.range (n + 1)).filter (fun w =>
+        2 * ((Finset.range (n + 1)).filter
+          (fun d => d ∈ B)).card + 2 <
+        ((Finset.range (w + 1)).filter
+          (fun y => y ∈ A ∧ (w - y) ∈ A)).card)).card ≤
+      n + 1 + 2 * ((Finset.range (n + 1)).filter
+        (fun d => d ∈ B)).card :=
+  spike_census_of_hfail h0 hcov hfail
+
 end Erdos881

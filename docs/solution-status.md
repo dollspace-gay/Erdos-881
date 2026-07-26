@@ -1,3 +1,27 @@
+# THE SPIKE CENSUS — TWENTY-FIFTH SUMMIT (2026-07-26, final)
+
+`endgame_spike_census` (Endgame.lean, standard axioms): in
+every counterexample, for every infinite deletion B, cofinally
+many scales satisfy
+
+  alpha(n) + W(n) <= n + 1 + 2|B cap [0,n]|
+
+— at breakdown targets the surviving basis and the REFLECTED
+SPIKES are disjoint subsets of [0,n] (each would serve the
+other), so they pack (`breakdown_pigeonhole`).
+
+THE TWO BOOKS: the closed two-scale law demands W*alpha^2-scale
+spike mass to fund alpha^4; the census makes every spike
+displace basis mass at failing scales.  The profile region now
+has both its funding constraint and its coupling constraint,
+machine-checked.  The remaining calculation: whether any
+profile (alpha_k, W_k) survives both books plus sqrt-growth
+plus oscillation across all dyadic towers — the sharpest and
+final quantitative form of Erdos 881 k=2 this campaign has
+produced.
+
+Twenty-five summits.
+
 # THE CASCADE LAW (2026-07-26, final)
 
 `cascade_law` (pure counting, standard axioms): at every scale

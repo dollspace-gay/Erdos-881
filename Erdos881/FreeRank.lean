@@ -17843,4 +17843,125 @@ theorem two_scale_closed {A : Set ℕ} (n C C' : ℕ) :
   have hrw : (2 * n + 1) = 2 * n + 1 := rfl
   omega
 
+open Classical in
+/-- **THE BREAKDOWN PIGEONHOLE** (the spike census law).  At a
+service-breakdown target, the surviving basis elements and the
+reflected wealthy spikes are DISJOINT subsets of [0, n] — each
+would serve the other — so their cardinalities pack:
+
+    α(n) + W(n) ≤ n + 1 + DF(n).
+
+Basis mass plus spike count cannot exceed the scale (plus
+deletion slack) at any breakdown target.  The first law
+COUPLING the two funding sources of the cascade: the enemy
+cannot be rich in basis and rich in spikes at the same
+failing scale. -/
+theorem breakdown_pigeonhole {A D : Set ℕ} {n : ℕ}
+    (hbd : ∀ w, w ≤ n →
+      2 * ((Finset.range (n + 1)).filter
+        (fun d => d ∈ D)).card + 2 <
+      ((Finset.range (w + 1)).filter
+        (fun y => y ∈ A ∧ (w - y) ∈ A)).card →
+      (n - w) ∉ A ∨ (n - w) ∈ D) :
+    ((Finset.range (n + 1)).filter
+      (fun x => x ∈ A)).card +
+    ((Finset.range (n + 1)).filter (fun w =>
+      2 * ((Finset.range (n + 1)).filter
+        (fun d => d ∈ D)).card + 2 <
+      ((Finset.range (w + 1)).filter
+        (fun y => y ∈ A ∧ (w - y) ∈ A)).card)).card ≤
+    n + 1 + 2 * ((Finset.range (n + 1)).filter
+      (fun d => d ∈ D)).card := by
+  set DF := (Finset.range (n + 1)).filter (fun d => d ∈ D)
+    with hDF
+  set Sf := (Finset.range (n + 1)).filter (fun w =>
+    2 * DF.card + 2 <
+    ((Finset.range (w + 1)).filter
+      (fun y => y ∈ A ∧ (w - y) ∈ A)).card) with hSf
+  set ADf := (Finset.range (n + 1)).filter
+    (fun x => x ∈ A ∧ x ∉ D) with hADf
+  set Rf := Sf.image (fun w => n - w) with hRf
+  have hRcard : Rf.card = Sf.card := by
+    rw [hRf]
+    apply Finset.card_image_of_injOn
+    intro a ha b hb hab
+    rw [Finset.mem_coe, hSf, Finset.mem_filter,
+      Finset.mem_range] at ha hb
+    have hab' : n - a = n - b := hab
+    omega
+  have hdisj : Disjoint ADf Rf := by
+    rw [Finset.disjoint_left]
+    intro x hxAD hxR
+    rw [hADf, Finset.mem_filter, Finset.mem_range] at hxAD
+    rw [hRf, Finset.mem_image] at hxR
+    obtain ⟨w, hwS, hwx⟩ := hxR
+    rw [hSf, Finset.mem_filter, Finset.mem_range] at hwS
+    have hbd' := hbd w (by omega) hwS.2
+    rw [hwx] at hbd'
+    rcases hbd' with h | h
+    · exact h hxAD.2.1
+    · exact hxAD.2.2 h
+  have hsub : ADf ∪ Rf ⊆ Finset.range (n + 1) := by
+    intro x hx
+    rcases Finset.mem_union.1 hx with h | h
+    · rw [hADf, Finset.mem_filter] at h
+      exact h.1
+    · rw [hRf, Finset.mem_image] at h
+      obtain ⟨w, hwS, hwx⟩ := h
+      rw [hSf, Finset.mem_filter, Finset.mem_range] at hwS
+      rw [Finset.mem_range]
+      omega
+  have hcard_union : ADf.card + Rf.card ≤ n + 1 := by
+    have h1 := Finset.card_le_card hsub
+    rw [Finset.card_union_of_disjoint hdisj,
+      Finset.card_range] at h1
+    exact h1
+  have hAD_lower : ((Finset.range (n + 1)).filter
+      (fun x => x ∈ A)).card ≤ ADf.card + DF.card := by
+    have hsub2 : (Finset.range (n + 1)).filter
+        (fun x => x ∈ A) ⊆ ADf ∪ DF := by
+      intro x hx
+      rw [Finset.mem_filter] at hx
+      by_cases hxD : x ∈ D
+      · exact Finset.mem_union_right _
+          (Finset.mem_filter.2 ⟨hx.1, hxD⟩)
+      · exact Finset.mem_union_left _
+          (Finset.mem_filter.2 ⟨hx.1, hx.2, hxD⟩)
+    have h1 := Finset.card_le_card hsub2
+    have h2 := Finset.card_union_le ADf DF
+    omega
+  show ((Finset.range (n + 1)).filter
+    (fun x => x ∈ A)).card + Sf.card ≤ n + 1 + 2 * DF.card
+  omega
+
+open Classical in
+/-- **THE SPIKE CENSUS LAW.**  In every counterexample, for
+every infinite deletion B, cofinally many scales n satisfy
+
+    α(n) + W(n) ≤ n + 1 + 2·|B ∩ [0,n]|
+
+— basis mass plus wealthy-spike count packs into the scale.
+Composed with the closed two-scale law (which needs W·α² LARGE
+to fund α⁴) the enemy is caught between two books: the cascade
+demands spikes, the census taxes them against its own basis
+mass, at cofinally many scales of every deletion, forever. -/
+theorem spike_census_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∀ B ⊆ A, B.Infinite → ∀ N, ∃ n, N ≤ n ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A)).card +
+      ((Finset.range (n + 1)).filter (fun w =>
+        2 * ((Finset.range (n + 1)).filter
+          (fun d => d ∈ B)).card + 2 <
+        ((Finset.range (w + 1)).filter
+          (fun y => y ∈ A ∧ (w - y) ∈ A)).card)).card ≤
+      n + 1 + 2 * ((Finset.range (n + 1)).filter
+        (fun d => d ∈ B)).card := by
+  intro B hBA hBinf N
+  obtain ⟨n, hn, hbd⟩ :=
+    service_breakdown_of_hfail h0 hcov hfail B hBA hBinf N
+  exact ⟨n, hn, breakdown_pigeonhole hbd⟩
+
 end Erdos881
