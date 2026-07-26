@@ -7503,4 +7503,41 @@ theorem canonical_deletion_obligation {A : Set ℕ} {N₀ : ℕ}
       Matrix.head_cons, Matrix.cons_val_two, Matrix.tail_cons]
     omega
 
+/-- **The grid cap.**  A representation has three parts and each
+part has one residue: at most three residue-class obligations
+per modulus can fire at a single target.  Four distinct classes
+mod m whose obligations all fire at n are impossible — the
+enemy's obligation schedule against the residue grid must spread
+across at least ⌈(width of A's residue support)/3⌉ distinct
+targets per modulus, cofinally.  Hypothesis-free pigeonhole. -/
+theorem grid_cap_three_classes {A : Set ℕ} {n m : ℕ}
+    {r : Fin 4 → ℕ}
+    (hrne : ∀ i j : Fin 4, i ≠ j → r i % m ≠ r j % m)
+    (hrep : ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = n)
+    (hfire : ∀ i : Fin 4, ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+      x + y + z = n →
+      x % m = r i % m ∨ y % m = r i % m ∨ z % m = r i % m) :
+    False := by
+  classical
+  obtain ⟨x, hx, y, hy, z, hz, hsum⟩ := hrep
+  have hpick : ∀ i : Fin 4, ∃ p : Fin 3,
+      (if p = 0 then x else if p = 1 then y else z) % m =
+        r i % m := by
+    intro i
+    rcases hfire i x hx y hy z hz hsum with h | h | h
+    · exact ⟨0, by simpa using h⟩
+    · exact ⟨1, by simpa using h⟩
+    · exact ⟨2, by simpa using h⟩
+  choose pk hpk using hpick
+  have hcard : ¬Function.Injective pk := by
+    intro hinj
+    have := Fintype.card_le_of_injective pk hinj
+    simp at this
+  rw [Function.not_injective_iff] at hcard
+  obtain ⟨i, j, hpij, hij⟩ := hcard
+  have h1 := hpk i
+  have h2 := hpk j
+  rw [hpij] at h1
+  exact hrne i j hij (h1 ▸ h2 ▸ rfl)
+
 end Erdos881
