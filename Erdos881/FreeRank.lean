@@ -9536,4 +9536,45 @@ theorem routed_tower_mirror_lock {A : Set ℕ} {N₀ g₀ c : ℕ}
     · rw [Finset.mem_singleton] at h'
       omega
 
+/-- **THE g₀-TOWER WORLD.**  The complete portrait of the
+anchor-hole.  In a routed world (member g₀, routing law, ladder)
+under hfail, cofinal positive singleton hubs force: g₀ is
+positive; cofinal tower levels L ∈ A each carrying the singleton
+pair hub {g₀} at g₀ + L, the full mirror law, AND the forced
+empty slot L − g₀ ∉ A (the mirror lock); and the global
+translate desert g₀ + z ∉ A for every positive z ∈ A ∖ {g₀}.
+The last singleton refuge of the almost-anchored branch is a
+near-symmetric tower, centred on one member, disjoint from its
+own translate, with exactly one reflection missing — at the
+router's own image. -/
+theorem the_g0_tower_world {A : Set ℕ} {N₀ g₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hroute : ∀ c ∈ A, 0 < c → c ≠ g₀ →
+      IsPairHub A (2 * c) ({c, g₀} : Finset ℕ))
+    (hladder : ∀ N, ∃ c ∈ A, N ≤ c ∧ c ≠ g₀ ∧ g₀ ≤ 2 * c ∧
+      (2 * c - g₀) ∈ A ∧ 2 * c - g₀ ≠ c)
+    (hanchor' : ∀ g, g ≠ g₀ → ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
+      ∃ w ∈ A, ∃ w' ∈ A,
+        w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hsing : ∀ N, ∃ n, N ≤ n ∧ ∃ a, 0 < a ∧ IsRepHub A n {a}) :
+    0 < g₀ ∧
+    (∀ K, ∃ L, K < L ∧ L ∈ A ∧ N₀ ≤ g₀ + L ∧
+      IsPairHub A (g₀ + L) ({g₀} : Finset ℕ) ∧
+      (∀ z ∈ A, z ≠ g₀ → z + N₀ < L → L - z ∈ A) ∧
+      L - g₀ ∉ A) ∧
+    (∀ z ∈ A, 0 < z → z ≠ g₀ → g₀ + z ∉ A) := by
+  obtain ⟨hg0, hstream⟩ := almost_anchored_singleton_hubs
+    h0 hcov hanchor' hfail hsing
+  have htower := g0_tower h0 hcov hg0 hstream
+  obtain ⟨c, hcA, hcN, hcg, hg2c, hqA, hqc⟩ := hladder 1
+  refine ⟨hg0, ?_, g0_translate_law hg0 htower⟩
+  intro K
+  obtain ⟨L, hKL, hLA, hLN, hhub, hmir⟩ :=
+    htower (K + 2 * c + g₀ + N₀ + 2)
+  exact ⟨L, by omega, hLA, hLN, hhub, hmir,
+    routed_tower_mirror_lock hroute hcA hcg hg2c hqA hqc hLA
+      (by omega) hmir⟩
+
 end Erdos881
