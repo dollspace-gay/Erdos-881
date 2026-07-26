@@ -15812,4 +15812,31 @@ theorem router_room_wealth_dodges_doubles {A : Set ℕ}
   rw [heq] at hwC
   omega
 
+open Classical in
+/-- **THE BAND TAX.**  If some subset B (positive material)
+supplies bounded-width committees cofinally — width ≤ C — then
+those committee targets form a cofinal family of UNIFORMLY POOR
+targets: r₂ ≤ 2C on the whole stream, by the 0-weld and the
+pair-hub wealth cap.  Holding the committee width in a bounded
+band anywhere in the subset lattice forces a poor street there;
+the band and the wealth stream can never share targets.  The
+width-band question's bounded horn pays this tax against
+`r2_unbounded_of_hfail` and `drain_wealth_addresses` at every
+single subset. -/
+theorem committee_band_tax {A B : Set ℕ} {C : ℕ}
+    (h0 : 0 ∈ A) (hBpos : ∀ b ∈ B, 0 < b)
+    (hfam : ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ C ∧
+      (∀ x ∈ H, x ∈ B) ∧ IsRepHub A n H) :
+    ∀ N, ∃ n, N ≤ n ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * C := by
+  intro N
+  obtain ⟨n, hn, H, hc, hHB, hhub⟩ := hfam N
+  have h0H : 0 ∉ H := by
+    intro h
+    have := hBpos 0 (hHB 0 h)
+    omega
+  have hcap := repHub_caps_pair_wealth h0 h0H hhub
+  exact ⟨n, hn, by omega⟩
+
 end Erdos881
