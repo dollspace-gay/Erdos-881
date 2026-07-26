@@ -871,3 +871,21 @@ the_encirclement pillars (1) and (3), endgame_spine.
 
 Every counterexample falls under: anchored (full machinery) OR
 g₀-routed OR central (total order-2 pinning).  No gap.
+
+## NIGHT INDEX, APPENDIX 2 (22:35) — the late arcs
+
+11. NASH-WILLIAMS/SPINE: shell_higman_chain, spine_lineage,
+    spine_stalls_hereditarily, spine_rank_or_lockstep (+',
+    +root_rank_omega_or_lockstep), lockstep_columns,
+    lockstep_lane_guardianship, highway_tax,
+    lockstep_one_lane_clique, lockstep_uniform_streets,
+    endgame_spine, the_encirclement.
+12. ANCHOR TRICHOTOMY: probe_anchor (Cantor anchor-free!),
+    anchor_dichotomy, no_anchor_doubles_thin,
+    no_anchor_central_or_member, central_branch_singleton_hubs,
+    central_branch_hmin, central_branch_no_three_AP (central =
+    Salem–Spencer), residue census (two-channel order-3 life).
+13. CANONICAL GRID: odd_deletion_obligation,
+    canonical_deletion_obligation, grid_cap_three_classes;
+    width-claim corrected (two-scale escape: the grid is a
+    per-modulus alignment dichotomy engine).
