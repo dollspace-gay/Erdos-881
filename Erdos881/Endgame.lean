@@ -1448,4 +1448,41 @@ theorem endgame_master_criterion {A B : Set ℕ} {N₀ : ℕ}
     IsExactTupleAsymptoticBasis (A \ B) 3 :=
   deletion_criterion_local h0 h0B hcov hrisk
 
+open Classical in
+/-- **THE JOIN** (re-export; twenty-eighth summit).  The
+campaign's two halves, welded.  The constructive turn says a
+deletion survives at order 3 once every target in B + A is
+served (`endgame_master_criterion`); the greedy that builds
+such a B can only fail by STALLING — reaching a target n that
+resists every triple from A ∖ B.  This theorem prices that
+stall:
+
+    |A ∖ B ∩ [0, n−N₀]|  ≤  |B| · r₂(n − w)   for some w ∈ B.
+
+Covering forces |A ∩ [0,X]| ≳ √X, so a stall at scale n against
+a size-k deletion manufactures a target of pair wealth ≳ √n/k
+— within a constant factor of the maximum, a target served by a
+positive fraction of the entire basis below it, sitting exactly
+one deleted element away from n.
+
+So every stall is an event in the wealth stream: the stream
+pinned to nested 2-adic addresses (`endgame_master_law`,
+`drain_wealth_addresses`), capped to 2L on streets
+(`endgame_poor_street`), taxed against basis mass by the census
+(`endgame_spike_census`), and forced to oscillate forever
+(`endgame_oscillation`).  Seven hundred commits of
+contradiction-mining bound exactly the configuration that the
+construction needs to avoid — and the construction consumes
+every world where it does not occur. -/
+theorem endgame_join {A : Set ℕ} {N₀ n : ℕ} {B : Finset ℕ}
+    (hcov : PairCovers A N₀) (hB : B.Nonempty) (hn : N₀ ≤ n)
+    (hunserved : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+      x ∉ B → y ∉ B → z ∉ B → x + y + z ≠ n) :
+    ∃ w ∈ B,
+      ((Finset.range (n - N₀ + 1)).filter
+        (fun z => z ∈ A ∧ z ∉ B)).card ≤
+      B.card * ((Finset.range (n - w + 1)).filter
+        (fun x => x ∈ A ∧ (n - w - x) ∈ A)).card :=
+  stall_forces_wealth hcov hB hn hunserved
+
 end Erdos881

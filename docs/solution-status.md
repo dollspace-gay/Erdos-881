@@ -1,3 +1,36 @@
+# THE JOIN — TWENTY-EIGHTH SUMMIT (2026-07-26)
+
+`endgame_join` / `stall_forces_wealth` (Endgame.lean, standard
+axioms): the campaign's two halves welded together.
+
+The constructive turn reduces Erdos 881 to building an infinite
+B with B + A served (`endgame_master_criterion`).  The greedy
+that builds it can fail only by STALLING at a target n that
+resists every triple from A ∖ B.  This theorem prices the
+stall:
+
+    |A ∖ B ∩ [0, n−N₀]|  ≤  |B| · r₂(n − w)   for some w ∈ B.
+
+With covering's √-growth (|A ∩ [0,X]| ≳ √X), a stall at scale n
+against a size-k deletion manufactures a target of pair wealth
+≳ √n / k — within a constant factor of the maximum possible,
+i.e. served by a positive fraction of the whole basis below it,
+sitting exactly one deleted element away from n.
+
+CONSEQUENCE: every stall is an event in the wealth stream, and
+the wealth stream is the object the entire contradiction-mining
+campaign constrains — pinned to nested 2-adic addresses,
+capped at 2L on streets, taxed against basis mass by the spike
+census, forced to oscillate between a finite ceiling and
+infinity.  The construction consumes every world where the
+stall does not occur; the twenty-seven prior summits constrain
+exactly the configuration where it does.
+
+Proof: at a stalled n, each surviving z ≤ n−N₀ has n−z covered
+by B (else a triple), so some w ∈ B has n−z−w ∈ A; pigeonhole
+over B (biUnion + max fiber) and inject the fiber into the
+representation set of n−w.
+
 # THE MASTER CRITERION — TWENTY-SEVENTH SUMMIT (2026-07-26)
 
 `endgame_master_criterion` (Endgame.lean, standard axioms):

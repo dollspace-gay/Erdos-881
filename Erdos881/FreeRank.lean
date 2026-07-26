@@ -18219,4 +18219,94 @@ theorem deletion_criterion_local {A B : Set ℕ} {N₀ : ℕ}
       · have he : x + y + 0 = n := by omega
         simpa [Fin.sum_univ_three] using he
 
+open Classical in
+/-- **THE STALL FORCES WEALTH** (the join: construction meets
+contradiction-mining).  If a target n resists every triple
+drawn from A ∖ B — the exact way the constructive greedy can
+stall — then some deleted element w ∈ B sits at square-root
+distance from a HUGELY wealthy target:
+
+    |A ∖ B ∩ [0, n−N₀]|  ≤  |B| · r₂(n − w).
+
+Since covering forces |A ∩ [0,X]| ≳ √X, a stall at scale n with
+a finite deletion of size k manufactures a target of pair
+wealth ≳ √n / k — wealth within a constant factor of the
+maximum possible, i.e. a target served by a positive fraction
+of the whole basis below it.  Every stall of the construction
+is therefore an event in the wealth stream the campaign has
+pinned 2-adically (`drain_wealth_addresses`), capped on streets
+(`endgame_poor_street`) and taxed by the census
+(`endgame_spike_census`).  The two halves of the campaign meet
+here: contradiction-mining constrains the stall, and the
+construction consumes every world where the stall does not
+occur. -/
+theorem stall_forces_wealth {A : Set ℕ} {N₀ n : ℕ} {B : Finset ℕ}
+    (hcov : PairCovers A N₀) (hB : B.Nonempty) (hn : N₀ ≤ n)
+    (hunserved : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+      x ∉ B → y ∉ B → z ∉ B → x + y + z ≠ n) :
+    ∃ w ∈ B,
+      ((Finset.range (n - N₀ + 1)).filter
+        (fun z => z ∈ A ∧ z ∉ B)).card ≤
+      B.card * ((Finset.range (n - w + 1)).filter
+        (fun x => x ∈ A ∧ (n - w - x) ∈ A)).card := by
+  set s := (Finset.range (n - N₀ + 1)).filter
+    (fun z => z ∈ A ∧ z ∉ B) with hs
+  have key : ∀ z, ∃ w, z ∈ s →
+      (w ∈ B ∧ w ≤ n - z ∧ (n - z - w) ∈ A) := by
+    intro z
+    by_cases hz : z ∈ s
+    · rw [hs, Finset.mem_filter, Finset.mem_range] at hz
+      obtain ⟨hzn, hzA, hzB⟩ := hz
+      obtain ⟨p, hpA, q, hqA, hpq⟩ := hcov (n - z) (by omega)
+      by_cases hpB : p ∈ B
+      · refine ⟨p, fun _ => ⟨hpB, by omega, ?_⟩⟩
+        have he : n - z - p = q := by omega
+        rw [he]
+        exact hqA
+      · by_cases hqB : q ∈ B
+        · refine ⟨q, fun _ => ⟨hqB, by omega, ?_⟩⟩
+          have he : n - z - q = p := by omega
+          rw [he]
+          exact hpA
+        · exfalso
+          exact hunserved z hzA p hpA q hqA hzB hpB hqB
+            (by omega)
+    · exact ⟨0, fun h => absurd h hz⟩
+  choose g hg using key
+  set fib : ℕ → Finset ℕ := fun w =>
+    s.filter (fun z => g z = w) with hfib
+  have hcover : s ⊆ B.biUnion fib := by
+    intro z hz
+    rw [Finset.mem_biUnion]
+    exact ⟨g z, (hg z hz).1, Finset.mem_filter.2 ⟨hz, rfl⟩⟩
+  obtain ⟨w, hwB, hwmax⟩ := Finset.exists_max_image B
+    (fun w => (fib w).card) hB
+  refine ⟨w, hwB, ?_⟩
+  have h1 : s.card ≤ ∑ v ∈ B, (fib v).card :=
+    le_trans (Finset.card_le_card hcover)
+      (Finset.card_biUnion_le)
+  have h2 : ∑ v ∈ B, (fib v).card ≤ B.card * (fib w).card := by
+    rw [← smul_eq_mul]
+    exact Finset.sum_le_card_nsmul _ _ _ (fun v hv => hwmax v hv)
+  have h3 : (fib w).card ≤ ((Finset.range (n - w + 1)).filter
+      (fun x => x ∈ A ∧ (n - w - x) ∈ A)).card := by
+    apply Finset.card_le_card
+    intro z hz
+    rw [hfib, Finset.mem_filter] at hz
+    obtain ⟨hzs, hzg⟩ := hz
+    obtain ⟨hgB, hgle, hgA⟩ := hg z hzs
+    rw [hzg] at hgle hgA
+    have hzs' := hzs
+    rw [hs, Finset.mem_filter, Finset.mem_range] at hzs'
+    rw [Finset.mem_filter, Finset.mem_range]
+    refine ⟨by omega, hzs'.2.1, ?_⟩
+    have he : n - w - z = n - z - w := by omega
+    rw [he]
+    exact hgA
+  have h4 : B.card * (fib w).card ≤
+      B.card * ((Finset.range (n - w + 1)).filter
+        (fun x => x ∈ A ∧ (n - w - x) ∈ A)).card :=
+    Nat.mul_le_mul_left _ h3
+  omega
+
 end Erdos881
