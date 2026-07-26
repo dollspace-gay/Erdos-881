@@ -11108,6 +11108,7 @@ theorem flood_pair_guard {A : Set ℕ} {N₀ X : ℕ}
     (hflood : ∀ b ∈ A, X ≤ b → ∃ m, N₀ ≤ m ∧ b ≤ m ∧
       IsRepHub A m (insert b P)) :
     ∀ b ∈ A, X ≤ b → 0 < b → ∃ m, N₀ ≤ m ∧ b ≤ m ∧
+      IsRepHub A m (insert b P) ∧
       IsPairHub A m (insert b P) ∧
       ((Finset.range (m + 1)).filter
         (fun a => a ∈ A ∧ (m - a) ∈ A ∧ 2 * a ≤ m)).card ≤
@@ -11120,7 +11121,7 @@ theorem flood_pair_guard {A : Set ℕ} {N₀ X : ℕ}
     · omega
     · exact h0P h
   have hpair := pairHub_of_repHub h0 h0i hhub
-  refine ⟨m, hmN, hbm, hpair, ?_⟩
+  refine ⟨m, hmN, hbm, hhub, hpair, ?_⟩
   have h1 := pair_hub_pair_count hpair
   have h2 : (insert b P).card ≤ P.card + 1 :=
     Finset.card_insert_le _ _
@@ -11295,7 +11296,8 @@ theorem personal_pair_guard_of_hfail {A : Set ℕ} {N₀ : ℕ}
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ P : Finset ℕ, RepFree A N₀ P ∧ (0 : ℕ) ∉ P ∧
       ∃ X, ∀ b ∈ A, X ≤ b → 0 < b →
-      ∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsPairHub A m (insert b P) ∧
+      ∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsRepHub A m (insert b P) ∧
+      IsPairHub A m (insert b P) ∧
       ((Finset.range (m + 1)).filter
         (fun a => a ∈ A ∧ (m - a) ∈ A ∧ 2 * a ≤ m)).card ≤
         P.card + 1 := by
@@ -11317,7 +11319,8 @@ theorem pair_flood_ghost_or_center {A : Set ℕ} {N₀ : ℕ}
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ P : Finset ℕ, RepFree A N₀ P ∧ (0 : ℕ) ∉ P ∧
       ∃ X, ∀ b ∈ A, X ≤ b →
-      ∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsPairHub A m (insert b P) ∧
+      ∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsRepHub A m (insert b P) ∧
+      IsPairHub A m (insert b P) ∧
       ((Finset.range (m + 1)).filter
         (fun a => a ∈ A ∧ (m - a) ∈ A ∧ 2 * a ≤ m)).card ≤
         P.card + 1 ∧
@@ -11328,9 +11331,9 @@ theorem pair_flood_ghost_or_center {A : Set ℕ} {N₀ : ℕ}
   intro b hbA hXb
   have hbX : X ≤ b := le_trans (le_max_left _ _) hXb
   have hbP : P.sup id + 1 ≤ b := le_trans (le_max_right _ _) hXb
-  obtain ⟨m, hmN, hbm, hpair, hcount⟩ :=
+  obtain ⟨m, hmN, hbm, hrep, hpair, hcount⟩ :=
     hguard b hbA hbX (by omega)
-  refine ⟨m, hmN, hbm, hpair, hcount, ?_⟩
+  refine ⟨m, hmN, hbm, hrep, hpair, hcount, ?_⟩
   have h0i : (0 : ℕ) ∉ insert b P := by
     intro h
     rcases Finset.mem_insert.1 h with h | h
@@ -11370,8 +11373,10 @@ theorem the_pair_flood_funnel {A : Set ℕ} {N₀ : ℕ}
     ((∀ N, ∃ b, N ≤ b ∧ b ∈ A ∧ ∀ x ∈ A, ∀ y ∈ A,
         0 < x → 0 < y → x + y = b → x ∈ P ∨ y ∈ P) ∨
      (∀ N, ∃ b w, N ≤ b ∧ b ∈ A ∧ w ∈ A ∧ b + w ∉ A ∧
+        IsRepHub A (b + w) (insert b P) ∧
         IsPairHub A (b + w) (insert b P)) ∨
-     (∀ N, ∃ m, N ≤ m ∧ m ∉ A ∧ IsPairHub A m P)) := by
+     (∀ N, ∃ m b, N ≤ m ∧ N ≤ b ∧ b ∈ A ∧ m ∉ A ∧
+        IsRepHub A m (insert b P) ∧ IsPairHub A m P)) := by
   obtain ⟨P, hPfree, h0P, X, hguard⟩ :=
     pair_flood_ghost_or_center h0 hcov hfail
   refine ⟨P, hPfree, h0P, ?_⟩
@@ -11380,14 +11385,15 @@ theorem the_pair_flood_funnel {A : Set ℕ} {N₀ : ℕ}
   · exact Or.inl hI
   · obtain ⟨NA, hNA⟩ := not_forall.mp hI
     by_cases hII : ∀ N, ∃ b w, N ≤ b ∧ b ∈ A ∧ w ∈ A ∧
-        b + w ∉ A ∧ IsPairHub A (b + w) (insert b P)
+        b + w ∉ A ∧ IsRepHub A (b + w) (insert b P) ∧
+        IsPairHub A (b + w) (insert b P)
     · exact Or.inr (Or.inl hII)
     · obtain ⟨NB, hNB⟩ := not_forall.mp hII
       refine Or.inr (Or.inr ?_)
       intro N
       obtain ⟨b, hbA, hbig⟩ := pairCovers_unbounded hcov
         (X + NA + NB + N + 1)
-      obtain ⟨m, hmN, hbm, hpair, hcount, hplace⟩ :=
+      obtain ⟨m, hmN, hbm, hrep, hpair, hcount, hplace⟩ :=
         hguard b hbA (by omega)
       rcases hplace with hcen | hghost
       · exfalso
@@ -11406,14 +11412,18 @@ theorem the_pair_flood_funnel {A : Set ℕ} {N₀ : ℕ}
       · by_cases hbpart : m - b ∈ A
         · exfalso
           apply hNB
-          refine ⟨b, m - b, by omega, hbA, hbpart, ?_, ?_⟩
+          refine ⟨b, m - b, by omega, hbA, hbpart, ?_, ?_, ?_⟩
           · have h1 : b + (m - b) = m := by omega
             rw [h1]
             exact hghost
           · have h1 : b + (m - b) = m := by omega
             rw [h1]
+            exact hrep
+          · have h1 : b + (m - b) = m := by omega
+            rw [h1]
             exact hpair
-        · refine ⟨m, by omega, hghost, ?_⟩
+        · refine ⟨m, b, by omega, by omega, hbA, hghost,
+            hrep, ?_⟩
           intro x hx y hy hxy
           have hxm : x ≠ b := by
             intro h
