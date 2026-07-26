@@ -12987,4 +12987,83 @@ theorem stall_chain_or_rank {A : Set ℕ} {N₀ : ℕ}
         intro m hm hhub
         exact hJmin s j (by omega) ⟨m, hm, hhub⟩
 
+open Classical in
+/-- **The channel blowup.**  The canonical core's unbounded
+pair counts concentrate in one parity channel: even-even,
+odd-odd, or mixed.  Each channel is a door one level down the
+2-adic tree — ee and oo descend to half-world pair blowups,
+mixed to cross-pairs of the two half-sets.  The tree descent's
+opening pigeonhole. -/
+theorem r2_channel_blowup {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∀ C N, ∃ v, N ≤ v ∧ C ≤ ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A ∧ x % 2 = 0 ∧
+        (v - x) % 2 = 0)).card) ∨
+    (∀ C N, ∃ v, N ≤ v ∧ C ≤ ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A ∧ x % 2 = 1 ∧
+        (v - x) % 2 = 1)).card) ∨
+    (∀ C N, ∃ v, N ≤ v ∧ C ≤ ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A ∧
+        x % 2 ≠ (v - x) % 2)).card) := by
+  by_contra hno
+  push_neg at hno
+  obtain ⟨⟨C₁, N₁, h1⟩, ⟨C₂, N₂, h2⟩, ⟨C₃, N₃, h3⟩⟩ := hno
+  obtain ⟨v, hvN, hvC⟩ := r2_unbounded_of_hfail h0 hcov hfail
+    (C₁ + C₂ + C₃ + 3) (N₁ + N₂ + N₃)
+  have hs1 := h1 v (by omega)
+  have hs2 := h2 v (by omega)
+  have hs3 := h3 v (by omega)
+  have hsub : (Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A) ⊆
+      ((Finset.range (v + 1)).filter
+        (fun x => x ∈ A ∧ (v - x) ∈ A ∧ x % 2 = 0 ∧
+          (v - x) % 2 = 0)) ∪
+      ((Finset.range (v + 1)).filter
+        (fun x => x ∈ A ∧ (v - x) ∈ A ∧ x % 2 = 1 ∧
+          (v - x) % 2 = 1)) ∪
+      ((Finset.range (v + 1)).filter
+        (fun x => x ∈ A ∧ (v - x) ∈ A ∧
+          x % 2 ≠ (v - x) % 2)) := by
+    intro x hx
+    rw [Finset.mem_filter] at hx
+    obtain ⟨hxr, hxA, hxpA⟩ := hx
+    rcases Nat.mod_two_eq_zero_or_one x with he | ho
+    · rcases Nat.mod_two_eq_zero_or_one (v - x) with he' | ho'
+      · exact Finset.mem_union_left _
+          (Finset.mem_union_left _ (by
+            rw [Finset.mem_filter]
+            exact ⟨hxr, hxA, hxpA, he, he'⟩))
+      · exact Finset.mem_union_right _ (by
+          rw [Finset.mem_filter]
+          exact ⟨hxr, hxA, hxpA, by omega⟩)
+    · rcases Nat.mod_two_eq_zero_or_one (v - x) with he' | ho'
+      · exact Finset.mem_union_right _ (by
+          rw [Finset.mem_filter]
+          exact ⟨hxr, hxA, hxpA, by omega⟩)
+      · exact Finset.mem_union_left _
+          (Finset.mem_union_right _ (by
+            rw [Finset.mem_filter]
+            exact ⟨hxr, hxA, hxpA, ho, ho'⟩))
+  have hc := Finset.card_le_card hsub
+  have hu1 := Finset.card_union_le
+    (((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A ∧ x % 2 = 0 ∧
+        (v - x) % 2 = 0)) ∪
+     ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A ∧ x % 2 = 1 ∧
+        (v - x) % 2 = 1)))
+    ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A ∧
+        x % 2 ≠ (v - x) % 2))
+  have hu2 := Finset.card_union_le
+    ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A ∧ x % 2 = 0 ∧
+        (v - x) % 2 = 0))
+    ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A ∧ x % 2 = 1 ∧
+        (v - x) % 2 = 1))
+  omega
+
 end Erdos881
