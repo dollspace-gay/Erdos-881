@@ -6176,4 +6176,175 @@ theorem survival_of_complete_avoiding {A : Set ℕ} {N₂ : ℕ}
     havoid S hST
   exact ⟨x, hx, y, hy, z, hz, hxT, hyT, hzT, by omega⟩
 
+/-- **THE ω-AVOIDANCE DICHOTOMY.**  Homogenizing the
+self-avoidance colouring at EVERY arity (nested subsequences,
+one fixed base range R, diagonal extraction): every covering set
+contains an ascending positive sequence T inside a positive
+family R such that either every tail subset-sum of T (any arity)
+has a representation avoiding R — the deletion of T leaves its
+ENTIRE tail subset-sum semigroup alive, so failing targets dodge
+it at every arity — or some fixed arity r is fully routed
+through R.  Combined with `survival_of_complete_avoiding`, the
+only gap to a full solution is the density the diagonal loses. -/
+theorem omega_avoidance_dichotomy {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀) :
+    ∃ T : ℕ → ℕ, StrictMono T ∧ (∀ i, T i ∈ A) ∧
+      (∀ i, 0 < T i) ∧
+      ∃ R : Set ℕ, (∀ w ∈ R, w ∈ A ∧ 0 < w) ∧
+        (∀ i, T i ∈ R) ∧
+        ((∀ r : ℕ, ∀ k : Fin (r + 1) → ℕ, StrictMono k →
+            (∀ i, r + 1 ≤ k i) →
+            ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+              x ∉ R ∧ y ∉ R ∧ z ∉ R ∧
+              x + y + z = ∑ i, T (k i)) ∨
+         (∃ r : ℕ, ∀ k : Fin (r + 1) → ℕ, StrictMono k →
+            (∀ i, r + 1 ≤ k i) →
+            ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+              x + y + z = ∑ i, T (k i) →
+              x ∈ R ∨ y ∈ R ∨ z ∈ R)) := by
+  classical
+  -- base enumeration
+  have hstep0 : ∀ x : ℕ, ∃ a, a ∈ A ∧ x < a := by
+    intro x
+    obtain ⟨a, haA, hage⟩ := pairCovers_unbounded hcov (x + 1)
+    exact ⟨a, haA, by omega⟩
+  choose F0 hF0A hF0gt using hstep0
+  obtain ⟨e, he0, hes⟩ : ∃ e : ℕ → ℕ, e 0 = F0 0 ∧
+      ∀ i, e (i + 1) = F0 (e i) :=
+    ⟨fun i => Nat.rec (F0 0) (fun _ p => F0 p) i, rfl,
+      fun _ => rfl⟩
+  have heA : ∀ i, e i ∈ A := by
+    intro i
+    cases i with
+    | zero => rw [he0]; exact hF0A 0
+    | succ i => rw [hes]; exact hF0A (e i)
+  have hemono : StrictMono e := by
+    apply strictMono_nat_of_lt_succ
+    intro i
+    rw [hes]
+    exact hF0gt (e i)
+  have hepos : ∀ i, 0 < e i := by
+    intro i
+    have h1 : e 0 ≤ e i := hemono.le_iff_le.2 (Nat.zero_le i)
+    have h2 : 0 < e 0 := by
+      rw [he0]
+      exact lt_of_le_of_lt (Nat.zero_le 0) (hF0gt 0)
+    omega
+  -- the arity-r colouring pulled back through an index map
+  set col : (ℕ → ℕ) → (r : ℕ) → (Fin (r + 1) → ℕ) → Bool :=
+    fun φ r t => decide (∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+      x ∉ Set.range e ∧ y ∉ Set.range e ∧ z ∉ Set.range e ∧
+      x + y + z = ∑ i, e (φ (t i))) with hcol
+  have hstage : ∀ (φ : ℕ → ℕ) (r : ℕ),
+      ∃ fb : (ℕ → ℕ) × Bool, StrictMono fb.1 ∧
+        ∀ g : Fin (r + 1) → ℕ, StrictMono g →
+          col φ r (fun i => fb.1 (g i)) = fb.2 := by
+    intro φ r
+    obtain ⟨f, hf, b, hb⟩ := infinite_ramsey_tuples r (col φ r)
+    exact ⟨(f, b), hf, hb⟩
+  choose FB hFBmono hFBhom using hstage
+  obtain ⟨Φ, hΦ0, hΦs⟩ : ∃ Φ : ℕ → (ℕ → ℕ), Φ 0 = id ∧
+      ∀ r, Φ (r + 1) = Φ r ∘ (FB (Φ r) r).1 :=
+    ⟨fun r => Nat.rec id (fun r' φ => φ ∘ (FB φ r').1) r,
+      rfl, fun _ => rfl⟩
+  have hΦmono : ∀ r, StrictMono (Φ r) := by
+    intro r
+    induction r with
+    | zero => rw [hΦ0]; exact strictMono_id
+    | succ r ih =>
+      rw [hΦs]
+      exact ih.comp (hFBmono (Φ r) r)
+  -- splitting later stages over earlier ones
+  have hsplit : ∀ r m, r ≤ m → ∃ Ψ : ℕ → ℕ, StrictMono Ψ ∧
+      ∀ x, Φ m x = Φ r (Ψ x) := by
+    intro r m hrm
+    induction m, hrm using Nat.le_induction with
+    | base => exact ⟨id, strictMono_id, fun x => rfl⟩
+    | succ m hrm ih =>
+      obtain ⟨Ψ, hΨmono, hΨ⟩ := ih
+      refine ⟨Ψ ∘ (FB (Φ m) m).1,
+        hΨmono.comp (hFBmono (Φ m) m), ?_⟩
+      intro x
+      rw [hΦs]
+      exact hΨ ((FB (Φ m) m).1 x)
+  -- the diagonal
+  set ψ : ℕ → ℕ := fun k => Φ k k with hψ
+  have hψmono : StrictMono ψ := by
+    apply strictMono_nat_of_lt_succ
+    intro k
+    have h1 : Φ (k + 1) (k + 1) =
+        Φ k ((FB (Φ k) k).1 (k + 1)) := by
+      rw [hΦs]
+      rfl
+    have h2 : k + 1 ≤ (FB (Φ k) k).1 (k + 1) :=
+      (hFBmono (Φ k) k).le_apply
+    have h3 : Φ k (k) < Φ k ((FB (Φ k) k).1 (k + 1)) :=
+      (hΦmono k) (by omega)
+    show Φ k k < Φ (k + 1) (k + 1)
+    omega
+  -- homogeneity transported to the diagonal tail
+  have hdiag : ∀ r, ∀ k : Fin (r + 1) → ℕ, StrictMono k →
+      (∀ i, r + 1 ≤ k i) →
+      col id r (fun i => ψ (k i)) = (FB (Φ r) r).2 := by
+    intro r k hkmono hkge
+    -- write ψ (k i) = Φ (r+1) (w i) with w strictly monotone
+    have hw : ∀ i : Fin (r + 1), ∃ wv, ψ (k i) = Φ (r + 1) wv := by
+      intro i
+      obtain ⟨Ψ, hΨmono, hΨ⟩ := hsplit (r + 1) (k i) (hkge i)
+      exact ⟨Ψ (k i), by rw [hψ]; simp only; exact hΨ (k i)⟩
+    choose w hwspec using hw
+    have hwmono : StrictMono w := by
+      intro i j hij
+      have h1 : ψ (k i) < ψ (k j) := hψmono (hkmono hij)
+      rw [hwspec i, hwspec j] at h1
+      exact (hΦmono (r + 1)).lt_iff_lt.1 h1
+    have h2 := hFBhom (Φ r) r w hwmono
+    have h3 : ∀ i : Fin (r + 1),
+        Φ r ((FB (Φ r) r).1 (w i)) = ψ (k i) := by
+      intro i
+      have h4 : Φ r ((FB (Φ r) r).1 (w i)) = Φ (r + 1) (w i) := by
+        rw [hΦs]
+        rfl
+      rw [h4, ← hwspec i]
+    have h5 : (∑ i, e (Φ r ((FB (Φ r) r).1 (w i)))) =
+        ∑ i, e (ψ (k i)) := by
+      apply Finset.sum_congr rfl
+      intro i _
+      rw [h3 i]
+    have h6 : col id r (fun i => ψ (k i)) =
+        col (Φ r) r (fun i => (FB (Φ r) r).1 (w i)) := by
+      simp only [hcol, id_eq]
+      rw [← h5]
+    rw [h6]
+    exact h2
+  refine ⟨fun k => e (ψ k), hemono.comp hψmono,
+    fun k => heA _, fun k => hepos _,
+    Set.range e, ?_, fun k => ⟨ψ k, rfl⟩, ?_⟩
+  · rintro wv ⟨i, rfl⟩
+    exact ⟨heA i, hepos i⟩
+  by_cases hex : ∃ r, (FB (Φ r) r).2 = false
+  · right
+    obtain ⟨r, hr⟩ := hex
+    refine ⟨r, fun k hkmono hkge x hx y hy z hz hxyz => ?_⟩
+    have h1 := hdiag r k hkmono hkge
+    rw [hr] at h1
+    simp only [hcol, id_eq] at h1
+    have h2 := of_decide_eq_false h1
+    by_contra hno
+    push_neg at hno
+    exact h2 ⟨x, hx, y, hy, z, hz, hno.1, hno.2.1, hno.2.2,
+      hxyz⟩
+  · left
+    push_neg at hex
+    intro r k hkmono hkge
+    have h1 := hdiag r k hkmono hkge
+    have h2 : (FB (Φ r) r).2 = true := by
+      have := hex r
+      cases hb : (FB (Φ r) r).2
+      · exact absurd hb this
+      · rfl
+    rw [h2] at h1
+    simp only [hcol, id_eq] at h1
+    simpa using of_decide_eq_true h1
+
 end Erdos881
