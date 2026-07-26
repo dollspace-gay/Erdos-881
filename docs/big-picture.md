@@ -81,3 +81,16 @@ sequence threading the enemy's own shells.  The chaining program
 now has its raw spine, machine-checked.  The final distance is
 the interplay between lineage extension and the spine's own
 stall hubs — the adaptive game, now on canonical material.
+
+## Second postscript (23:58 block time, same night)
+
+The cascade continued past the door: `spine_stalls_hereditarily`
+set the game board (every spine subsequence forces a stall hub
+of spine elements, all subject to the cap suite), and
+`spine_rank_or_lockstep` / `root_rank_omega_or_lockstep` split
+the endgame in two: the root rank is infinite — the finite-rank
+room closes for good — or the enemy's shells eventually march as
+s parallel strictly increasing columns.  A fixed-width highway
+carrying an unbounded burden, versus a rank door already half
+shut.  The adaptive endgame now has a canonical board, canonical
+material, and a two-branch fork where both branches are narrow.
