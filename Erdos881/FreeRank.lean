@@ -11786,4 +11786,30 @@ theorem window_populated {A : Set ℕ} {N₀ : ℕ}
   rw [he] at hpow
   omega
 
+/-- **Personal fragility.**  The located form of the fragile
+supply: every large basis element personally guards a target
+with at most |P| + 1 disjoint triple representations.  The
+mixed regime's fragile half is not merely cofinal — it is
+pinned above every basis element, with one constant. -/
+theorem personal_fragility {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ P : Finset ℕ, RepFree A N₀ P ∧ (0 : ℕ) ∉ P ∧
+      ∃ X, ∀ b ∈ A, X ≤ b → 0 < b →
+      ∃ m, N₀ ≤ m ∧ b ≤ m ∧
+        ¬HasDisjointTripleReps A m (P.card + 2) := by
+  obtain ⟨P, hPfree, h0P, X, hguard⟩ :=
+    personal_pair_guard_of_hfail h0 hcov hfail
+  refine ⟨P, hPfree, h0P, X, ?_⟩
+  intro b hbA hXb hbpos
+  obtain ⟨m, hmN, hbm, hrep, hpair, hcount⟩ :=
+    hguard b hbA hXb hbpos
+  refine ⟨m, hmN, hbm, ?_⟩
+  intro hK
+  have h1 := disjoint_reps_le_hub_card hrep hK
+  have h2 : (insert b P).card ≤ P.card + 1 :=
+    Finset.card_insert_le _ _
+  omega
+
 end Erdos881
