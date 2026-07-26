@@ -7540,4 +7540,78 @@ theorem grid_cap_three_classes {A : Set ℕ} {n m : ℕ}
   rw [hpij] at h1
   exact hrne i j hij (h1 ▸ h2 ▸ rfl)
 
+/-- **The per-modulus width dichotomy** (the corrected grid
+law).  At every modulus m ≥ 1 a set either has four infinite
+residue classes — feeding four canonical obligations that the
+grid cap forces apart — or its tail concentrates in at most
+three classes: a two-scale-style alignment at that modulus.
+Pure classical combinatorics. -/
+theorem residue_width_dichotomy {A : Set ℕ} (m : ℕ)
+    (hm : 1 ≤ m) :
+    (∃ r : Fin 4 → ℕ, (∀ i j : Fin 4, i ≠ j →
+        r i % m ≠ r j % m) ∧
+      ∀ i, {a ∈ A | a % m = r i % m}.Infinite) ∨
+    (∃ R : Finset ℕ, R.card ≤ 3 ∧ ∃ X, ∀ a ∈ A, X ≤ a →
+      a % m ∈ R) := by
+  classical
+  set W := (Finset.range m).filter
+    (fun r => {a ∈ A | a % m = r}.Infinite) with hW
+  by_cases hcard : 4 ≤ W.card
+  · left
+    obtain ⟨t, hts, htc⟩ := Finset.exists_subset_card_eq hcard
+    let e := t.orderIsoOfFin htc
+    have hmemW : ∀ i : Fin 4, (e i : ℕ) ∈ W := fun i =>
+      hts (e i).2
+    have hlt : ∀ i : Fin 4, (e i : ℕ) < m := by
+      intro i
+      have h1 := hmemW i
+      rw [hW, Finset.mem_filter, Finset.mem_range] at h1
+      exact h1.1
+    have hmodself : ∀ i : Fin 4, (e i : ℕ) % m = (e i : ℕ) :=
+      fun i => Nat.mod_eq_of_lt (hlt i)
+    refine ⟨fun i => (e i : ℕ), ?_, ?_⟩
+    · intro i j hij
+      rw [hmodself i, hmodself j]
+      intro heq
+      exact hij (e.injective (Subtype.ext heq))
+    · intro i
+      have h1 := hmemW i
+      rw [hW, Finset.mem_filter] at h1
+      rw [hmodself i]
+      exact h1.2
+  · right
+    push_neg at hcard
+    refine ⟨W, by omega, ?_⟩
+    set F := (Finset.range m) \ W with hF
+    have hFfin : ∀ r ∈ F, {a ∈ A | a % m = r}.Finite := by
+      intro r hr
+      rw [hF, Finset.mem_sdiff] at hr
+      have h2 : ¬{a ∈ A | a % m = r}.Infinite := by
+        intro hinf
+        exact hr.2 (by
+          rw [hW, Finset.mem_filter]
+          exact ⟨hr.1, hinf⟩)
+      exact Set.not_infinite.1 h2
+    have hbdd : ∀ r, ∃ b, r ∈ F → ∀ a ∈ A, a % m = r →
+        a ≤ b := by
+      intro r
+      by_cases hr : r ∈ F
+      · obtain ⟨b, hb⟩ := (hFfin r hr).bddAbove
+        exact ⟨b, fun _ a haA hamod =>
+          hb (Set.mem_setOf.2 ⟨haA, hamod⟩)⟩
+      · exact ⟨0, fun h => absurd h hr⟩
+    choose Bf hBf using hbdd
+    refine ⟨(F.sup Bf) + 1, ?_⟩
+    intro a haA hX
+    have hrlt : a % m < m := Nat.mod_lt _ (by omega)
+    by_cases hin : a % m ∈ W
+    · exact hin
+    · exfalso
+      have hinF : a % m ∈ F := by
+        rw [hF, Finset.mem_sdiff]
+        exact ⟨Finset.mem_range.2 hrlt, hin⟩
+      have h1 := hBf (a % m) hinF a haA rfl
+      have h2 : Bf (a % m) ≤ F.sup Bf := Finset.le_sup hinF
+      omega
+
 end Erdos881
