@@ -1,3 +1,51 @@
+# UPDATE (2026-07-26): THE DESCENT ARC COMPLETE — SESSION CAP
+
+**Arcs 28-31 — the parity/descent suite** (all verified):
+
+- `global_parity_dichotomy` — the last splitter.
+- `global_parity_odd_fringe/_hall/_ordered_cap` — single-parity
+  worlds hand their ENTIRE odd channel to the finite
+  opposite-parity fringe: total door saturation, r₂ ≤ 2Y + 2 on
+  every odd target, no placement liberty (the campaign's first
+  immovable hall).
+- `r2_witnesses_even` — the canonical blowups forced onto the
+  even channel.
+- `half_world_covers`, `half_world_lift_channel`,
+  `half_world_lift_offchannel`, `descent_invariant` — covering
+  descends; survival ascends (2,3)-mixed; hfail DESCENDS.  The
+  recursion is armed (`endgame_parity_fork` exports the whole
+  package).
+- `saturated_fringe_nonempty`, `saturated_popular_fringe` — the
+  hall's door supply.
+- `two_level_descent`, `omega_descent_cylinder` — cylinder
+  pinning at every depth: descending worlds are ONE 2-adic lane.
+- `cylinder_sparsity`, `descent_threshold_race`,
+  `descent_depth_cost` — the lane priced: ≤ 1 element per 2^k,
+  thresholds ≥ 2^(k−2) − N₀ − 2 per depth: geometric racing,
+  closed form.
+
+**Correction recorded**: literal Cantor is a MIXING world (base-3
+digits produce both parities); the single-parity horn is a lone
+racing lane, more constrained than Cantor.  The Cantor
+generalization target belongs to the mixing horn.
+
+**THE THREE CORES** (all that remains of Erdős 881):
+1. MIXING-WORLD SURVIVAL — generalize `cantor_carry_repair`'s
+   surviving deletion to digit-rich mixing worlds.
+2. THE RACING LANE — terminate the single-parity ω-descent
+   (thresholds race geometrically; the mixed interface + hall
+   saturation at every level; termination ordinal = rank
+   machinery).
+3. RANK-ω — the compactness heart (`endgame_final_form`).
+
+Everything else is DEAD or REDUCED to these, bidirectionally
+verified.  Summit exports in Endgame.lean: final dichotomy,
+translate laws, collapsed trichotomy, parity fork.
+
+All verified, zero sorries, standard axioms.
+
+---
+
 # UPDATE (2026-07-26, cont. 9): FACE MAP COMPLETE + JUNK REPAIR
 
 Face III: `face_three_gap_dichotomy` (dead spectrum in the
