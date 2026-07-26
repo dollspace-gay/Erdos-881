@@ -9985,4 +9985,163 @@ theorem hall_weak_translate {A : Set ℕ} {N₀ M : ℕ}
     have h3 := hM h hhH
     omega
 
+/-- **The bounded street's fixed hall, order-3 form.**  The
+double pigeonhole re-run WITHOUT the weld: one single window
+REP-hubs unboundedly many targets, and the hall material is
+known positive basis elements. -/
+theorem bounded_street_fixed_hall_rep {A : Set ℕ} {N₀ : ℕ}
+    {x : ℕ → ℕ} {L S₀ : ℕ} (hxA : ∀ t, x t ∈ A ∧ 0 < x t)
+    (hnear : ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ v ∈ V, ∃ s, s ≤ S₀ ∧ N₀ ≤ v ∧ ∃ J, 2 ≤ J ∧ J ≤ L ∧
+        IsRepHub A v ((Finset.range J).image
+          (fun j => x (s + j)))) :
+    ∃ H : Finset ℕ, H.card ≤ L ∧ (∀ h ∈ H, h ∈ A ∧ 0 < h) ∧
+      ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+        ∀ v ∈ V, N₀ ≤ v ∧ IsRepHub A v H := by
+  classical
+  set box : Finset (ℕ × ℕ) :=
+    (Finset.range (S₀ + 1)) ×ˢ (Finset.range (L + 1)) with hbox
+  have hstep1 : ∀ K, ∃ p ∈ box, ∃ V' : Finset ℕ, K ≤ V'.card ∧
+      ∀ v ∈ V', N₀ ≤ v ∧ IsRepHub A v
+        ((Finset.range p.2).image (fun j => x (p.1 + j))) := by
+    intro K
+    obtain ⟨V, hVcard, hV⟩ := hnear (box.card * K + 1)
+    have hVtot : ∀ v, ∃ p : ℕ × ℕ, v ∈ V →
+        p.1 ≤ S₀ ∧ 2 ≤ p.2 ∧ p.2 ≤ L ∧ N₀ ≤ v ∧
+        IsRepHub A v ((Finset.range p.2).image
+          (fun j => x (p.1 + j))) := by
+      intro v
+      by_cases hvV : v ∈ V
+      · obtain ⟨s, hs, hvN, J, hJ2, hJL, hhub⟩ := hV v hvV
+        exact ⟨(s, J), fun _ => ⟨hs, hJ2, hJL, hvN, hhub⟩⟩
+      · exact ⟨(0, 2), fun h => absurd h hvV⟩
+    choose pf hpf using hVtot
+    have hmaps : ∀ v ∈ V, pf v ∈ box := by
+      intro v hvV
+      obtain ⟨h1, h2, h3, _, _⟩ := hpf v hvV
+      rw [hbox, Finset.mem_product]
+      exact ⟨Finset.mem_range.2 (by omega),
+        Finset.mem_range.2 (by omega)⟩
+    have hlt : box.card * K < V.card := by omega
+    obtain ⟨p, hpbox, hfiber⟩ :=
+      Finset.exists_lt_card_fiber_of_mul_lt_card_of_maps_to
+        hmaps hlt
+    refine ⟨p, hpbox, V.filter (fun v => pf v = p),
+      by omega, ?_⟩
+    intro v hv
+    rw [Finset.mem_filter] at hv
+    obtain ⟨hvV, hfv⟩ := hv
+    obtain ⟨_, _, _, hvN, hhub⟩ := hpf v hvV
+    rw [hfv] at hhub
+    exact ⟨hvN, hhub⟩
+  have hstab : ∃ p ∈ box, ∀ K, ∃ V' : Finset ℕ,
+      K ≤ V'.card ∧ ∀ v ∈ V', N₀ ≤ v ∧ IsRepHub A v
+        ((Finset.range p.2).image (fun j => x (p.1 + j))) := by
+    by_contra hno
+    have hKp : ∀ p : ℕ × ℕ, ∃ Kp, p ∈ box →
+        ¬(∃ V' : Finset ℕ, Kp ≤ V'.card ∧ ∀ v ∈ V', N₀ ≤ v ∧
+          IsRepHub A v ((Finset.range p.2).image
+            (fun j => x (p.1 + j)))) := by
+      intro p
+      by_cases hpbox : p ∈ box
+      · have h1 : ¬∀ K, ∃ V' : Finset ℕ, K ≤ V'.card ∧
+            ∀ v ∈ V', N₀ ≤ v ∧ IsRepHub A v
+              ((Finset.range p.2).image (fun j => x (p.1 + j))) :=
+          fun hall => hno ⟨p, hpbox, hall⟩
+        obtain ⟨Kp, hKp'⟩ := not_forall.mp h1
+        exact ⟨Kp, fun _ => hKp'⟩
+      · exact ⟨0, fun h => absurd h hpbox⟩
+    choose Kf hKf using hKp
+    obtain ⟨p, hpbox, V', hV'card, hV'⟩ := hstep1 (box.sup Kf)
+    exact hKf p hpbox ⟨V',
+      le_trans (Finset.le_sup (f := Kf) hpbox) hV'card, hV'⟩
+  obtain ⟨p, hpbox, hall⟩ := hstab
+  refine ⟨(Finset.range p.2).image (fun j => x (p.1 + j)),
+    ?_, ?_, hall⟩
+  · have h1 := Finset.card_image_le (s := Finset.range p.2)
+      (f := fun j => x (p.1 + j))
+    rw [Finset.card_range] at h1
+    rw [hbox, Finset.mem_product] at hpbox
+    have h2 := Finset.mem_range.1 hpbox.2
+    omega
+  · intro h hh
+    rw [Finset.mem_image] at hh
+    obtain ⟨j, _, hj⟩ := hh
+    rw [← hj]
+    exact hxA _
+
+/-- **THE DOOR WORLD.**  The final fork's street branch, in the
+bounded-window case, upgraded to full strength: a fixed hall H
+of 2..L known positive basis elements REP-hubbing and
+PAIR-hubbing unboundedly many targets, with a door h₀ ∈ H
+carrying unboundedly many of them onto h₀ + A.  Teamness
+(2 ≤ |H|) comes from the stream-kill oracle: a singleton hall
+would be a refuted cofinal singleton stream. -/
+theorem the_door_world {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (horacle : StreamSurvives A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {x : ℕ → ℕ} {L S₀ : ℕ} (hxA : ∀ t, x t ∈ A ∧ 0 < x t)
+    (hnear : ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ v ∈ V, ∃ s, s ≤ S₀ ∧ N₀ ≤ v ∧ ∃ J, 2 ≤ J ∧ J ≤ L ∧
+        IsRepHub A v ((Finset.range J).image
+          (fun j => x (s + j)))) :
+    ∃ H : Finset ℕ, 2 ≤ H.card ∧ H.card ≤ L ∧
+      (∀ h ∈ H, h ∈ A ∧ 0 < h) ∧
+      ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+        ∀ v ∈ V, N₀ ≤ v ∧ IsRepHub A v H ∧ IsPairHub A v H := by
+  classical
+  obtain ⟨H, hHL, hHmat, hall⟩ :=
+    bounded_street_fixed_hall_rep hxA hnear
+  have h0H : (0 : ℕ) ∉ H := by
+    intro h
+    exact absurd (hHmat 0 h).2 (by omega)
+  have hpair : ∀ v, IsRepHub A v H → IsPairHub A v H :=
+    fun v hrep => pairHub_of_repHub h0 h0H hrep
+  have hH2 : 2 ≤ H.card := by
+    by_contra hlt
+    rcases Nat.lt_or_ge H.card 1 with h1 | h1
+    · -- empty hall: covered targets have triples, hub empty impossible
+      have hcard0 : H.card = 0 := by omega
+      rw [Finset.card_eq_zero] at hcard0
+      obtain ⟨V, hVcard, hV⟩ := hall 1
+      have hVne : V.Nonempty := Finset.card_pos.1 (by omega)
+      obtain ⟨v, hvV⟩ := hVne
+      obtain ⟨hvN, hrep⟩ := hV v hvV
+      obtain ⟨h, hh⟩ := hub_nonempty_of_covering h0 hcov hvN hrep
+      rw [hcard0] at hh
+      exact absurd hh (Finset.notMem_empty h)
+    · -- singleton hall: refuted cofinal singleton stream
+      have hcard1 : H.card = 1 := by omega
+      obtain ⟨a, ha⟩ := Finset.card_eq_one.1 hcard1
+      have ha0 : 0 < a := by
+        have := (hHmat a (by rw [ha]; exact
+          Finset.mem_singleton_self a)).2
+        omega
+      refine singleton_hubs_refuted h0 hcov horacle hfail ?_
+      intro N
+      obtain ⟨V, hVcard, hV⟩ := hall (N + 1)
+      have hbig : ∃ v ∈ V, N ≤ v := by
+        by_contra hallv
+        have hsub : V ⊆ Finset.range N := by
+          intro v hv
+          rw [Finset.mem_range]
+          by_contra hge
+          exact hallv ⟨v, hv, by omega⟩
+        have h1 := Finset.card_le_card hsub
+        rw [Finset.card_range] at h1
+        omega
+      obtain ⟨v, hvV, hNv⟩ := hbig
+      obtain ⟨hvN, hrep⟩ := hV v hvV
+      rw [ha] at hrep
+      exact ⟨v, hNv, a, ha0, hrep⟩
+  refine ⟨H, hH2, hHL, hHmat, ?_⟩
+  intro K
+  obtain ⟨V, hVcard, hV⟩ := hall K
+  refine ⟨V, hVcard, ?_⟩
+  intro v hv
+  obtain ⟨hvN, hrep⟩ := hV v hv
+  exact ⟨hvN, hrep, hpair v hrep⟩
+
 end Erdos881
