@@ -5444,4 +5444,51 @@ theorem ladder_difference_desert {A : Set ℕ} {Q : Finset ℕ}
   · exact absurd h haQ
   · exact h
 
+/-- **Room R1 gets teams.**  In the translation room the δ-paired
+family {x : x, x + δ ∈ A} is infinite, so the team supply applies
+to it: beyond every bound some failing target carries a minimal
+hub of size ≥ 2 whose EVERY member has a δ-partner in the basis.
+The enemy's teams there are translation-coherent — each team
+shifts by δ into a family of fresh representations. -/
+theorem translation_room_teams {A : Set ℕ} {N₀ δ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hR1 : ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A) :
+    ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      2 ≤ H.card ∧ ∀ h ∈ H, h ∈ A ∧ h + δ ∈ A ∧ 0 < h := by
+  classical
+  set B : Set ℕ := {x | x ∈ A ∧ x + δ ∈ A ∧ 0 < x} with hB
+  haveI : DecidablePred (· ∈ B) := Classical.decPred _
+  have hBA : B ⊆ A := fun x hx => hx.1
+  have h0B : 0 ∉ B := fun hx => by
+    have := hx.2.2
+    omega
+  have hBinf : B.Infinite := by
+    intro hfin
+    obtain ⟨V, hVc, hVm⟩ := hR1 (hfin.toFinset.card + 2)
+    have hsub : V ⊆ insert 0 hfin.toFinset := by
+      intro x hx
+      rcases Nat.eq_zero_or_pos x with h | h
+      · subst h
+        exact Finset.mem_insert_self 0 _
+      · refine Finset.mem_insert_of_mem ?_
+        rw [Set.Finite.mem_toFinset]
+        exact ⟨(hVm x hx).1, (hVm x hx).2, h⟩
+    have h1 := Finset.card_le_card hsub
+    have h2 := Finset.card_insert_le 0 hfin.toFinset
+    omega
+  intro N
+  obtain ⟨n, hn, H, hhub, hmin, hcard, hmem⟩ :=
+    guardian_team_hubs_of_deletion h0 hcov hanchor hfail
+      hBA hBinf h0B N
+  refine ⟨n, hn, H, hhub, hmin, hcard, ?_⟩
+  intro h hh
+  have := hmem h hh
+  exact ⟨this.1, this.2.1, this.2.2⟩
+
 end Erdos881
