@@ -1,3 +1,31 @@
+# UPDATE (2026-07-26, cont. 3): THE GOOD-DEEP DOOR ENGINE
+
+**Arc 24 — the both-in-B wall breached in the deep horn.**
+`door_good_deep_engine`: given a geometric door stream with the
+four supplies — levels v − h₀ ∈ A, good-translated levels
+v − h₀ + h₁ ∈ A (forced in the good horn: the level's bad set
+is pinned to {h₀}, so its GOOD translate is h₁), deep partners
+v − h₀ − h₁ ∈ A, and the difference law — the deletion of the
+even levels SURVIVES.  The double-hit repair is
+(v_i − h₀ + h₁) + (v_{j+1} − v_j) + (v_j − h₀ − h₁): the h₁'s
+cancel, the sum closes with NO constraint between the hit
+indices, and parity/scale separate every part from the
+deletion.  Same architecture as the g₀-tower kill.
+
+**Door kill map (k = 2)** after this arc:
+- good horn + cofinal deep partners: DEAD (engine above;
+  assembly wrapper from the door world = next step: stream
+  extraction threading popular shift, goodness, deep-partner
+  refinement, difference law).
+- good horn + deep partners dying out: v − h₀ − h₁ ∉ A
+  eventually — a NEW forced non-membership to mine.
+- strong horn (all translates dead cofinally): tower-style
+  repair-pair analysis pending.
+
+All verified, zero sorries, standard axioms.
+
+---
+
 # UPDATE (2026-07-26, cont. 2): THE DOOR'S DIFFERENCE LADDER
 
 **Arc 23 — the two-member good horn.**
