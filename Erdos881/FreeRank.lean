@@ -11726,4 +11726,31 @@ theorem pair_hub_corep {A : Set ℕ} {N₀ m p : ℕ}
     rw [h1]
     exact ⟨by omega, hx⟩
 
+/-- **The no-ladder affine desert.**  If the enemy defends the
+free tower by total AP3-freeness at p (no ladder), the defence
+costs a new desert: every window element's mirror image is a
+large basis element c whose double-shift 2c − p must die, so
+the affine family 2L' − p − 2z is FORCED OUT of A across the
+window.  Midpoint-freeness at one point propagates, through the
+tower's own mirror, into a two-parameter exclusion zone. -/
+theorem no_ladder_affine_desert {A : Set ℕ}
+    {N₀ M₀ g b p T : ℕ}
+    (hcov : PairCovers A N₀) (hM : p ≤ M₀)
+    (hrep : IsRepHub A (b + g) (insert b {p}))
+    (hpair : IsPairHub A (b + g) ({p} : Finset ℕ))
+    (hnl : ∀ c ∈ A, T ≤ c → p ≤ 2 * c → 2 * c - p ∉ A) :
+    ∀ z ∈ A, M₀ < z → g < z → z + 2 * M₀ + N₀ + 1 ≤ b →
+      z + T + p ≤ b + g →
+      2 * (b + g - p) - 2 * z - p ∉ A := by
+  intro z hz h1 h2 h3 h4
+  obtain ⟨hle, hmir, hdead⟩ :=
+    free_tower_singleton_levels hcov hM hrep hpair z hz h1 h2 h3
+  have hcT : T ≤ (b + g - p) - z := by omega
+  have hp2c : p ≤ 2 * ((b + g - p) - z) := by omega
+  have hout := hnl _ hmir hcT hp2c
+  have he : 2 * ((b + g - p) - z) - p =
+      2 * (b + g - p) - 2 * z - p := by omega
+  rw [he] at hout
+  exact hout
+
 end Erdos881
