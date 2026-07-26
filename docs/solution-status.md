@@ -1,3 +1,23 @@
+# UPDATE (2026-07-26, cont. 4): GOOD-DEEP DOOR DEAD, ASSEMBLED
+
+`door_two_good_deep_killed` — no longer modulo anything: from
+(|H| = 2, eventually-good, cofinal deep-partner supply), a
+surviving deletion exists outright.  The stream extraction
+derives ghostliness, pins every level's good translate to h₁,
+threads the pairwise difference law, and feeds the good-deep
+engine.  Under hfail this horn of the door world is
+CONTRADICTORY.
+
+Door status (|H| = 2): good+deep DEAD.  Remaining: good without
+deep partners (forced law v − h₀ − h₁ ∉ A: the M-deletion
+engine kills the γ(M) = h₁ sub-case — designed, unformalized;
+the γ(M) = h₀ sub-case yields v + h₁ ∈ A members to mine);
+strong horn.  |H| ≥ 3: open (bad-set pinning is k = 2 specific).
+
+All verified, zero sorries, standard axioms.
+
+---
+
 # UPDATE (2026-07-26, cont. 3): THE GOOD-DEEP DOOR ENGINE
 
 **Arc 24 — the both-in-B wall breached in the deep horn.**
