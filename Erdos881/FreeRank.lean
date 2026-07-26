@@ -5781,4 +5781,28 @@ theorem matched_deletion_teams {A : Set ℕ} {N₀ : ℕ}
   intro h hh
   exact hmem h hh
 
+/-- **Classical minimality implies elementwise ℵ₀-minimality.**
+Deleting more can only break coverage harder: an infinite
+deletion contains a positive element, and the survivors are a
+subset of that element's own deletion, whose coverage already
+fails cofinally.  Every hmin-theorem in the repository is
+therefore available under Erdős 881's true hypothesis. -/
+theorem hmin_of_essential {A : Set ℕ}
+    (hess : ∀ a ∈ A, 0 < a → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ≠ a ∧ y ≠ a ∧ x + y = n) :
+    ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n := by
+  intro B hBA hBinf ⟨N₁, hN₁⟩
+  obtain ⟨b, hbB, hbpos⟩ : ∃ b ∈ B, 0 < b := by
+    obtain ⟨b, hb⟩ :=
+      (hBinf.diff (Set.finite_singleton 0)).nonempty
+    rw [Set.mem_diff, Set.mem_singleton_iff] at hb
+    refine ⟨b, hb.1, ?_⟩
+    have := hb.2
+    omega
+  refine hess b (hBA hbB) hbpos ⟨N₁, fun n hn => ?_⟩
+  obtain ⟨x, hx, y, hy, hxB, hyB, hxy⟩ := hN₁ n hn
+  exact ⟨x, hx, y, hy, fun h => hxB (h ▸ hbB),
+    fun h => hyB (h ▸ hbB), hxy⟩
+
 end Erdos881
