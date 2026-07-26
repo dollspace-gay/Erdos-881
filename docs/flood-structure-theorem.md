@@ -206,3 +206,28 @@ equivalent to well-foundedness of one relation:
 Everything the campaign verified is now literally a study of this
 one tree: its stalls (floods), its finite-rank pockets (crystals),
 its boundary (ω-nodes), its immune zones, and its Cantor branch.
+
+## 10. THE ABSOLUTE FLOOD (18:55–19:01)
+
+The tree-flood quantified over LARGE extensions.  Inclusion kills
+that restriction (`freeSup_wf`, `pairSup_wf`): an infinite
+ascending inclusion-chain of free sets — insertions anywhere, not
+just at the top — would union into an infinite hereditarily free
+set, i.e. a branch.  Hence:
+
+**Theorem (`exists_absolute_leaf`).**  Under hfail, every free
+node extends to an INCLUSION-MAXIMAL free envelope Q: every
+positive basis element outside Q — small or large — completes a
+hub over Q.  One canonical finite envelope, total guardianship.
+The enemy in one line: ∃ finite free Q with A⁺ ∖ Q ⊆ Guardians(Q).
+
+**Theorem (`exists_absolute_pair_leaf`).**  The order-2 version
+needs only elementwise minimality — a standalone structure theorem
+for EVERY ℵ₀-minimal exact order-2 basis: maximal pair-free
+envelopes exist and are totally pair-guarded.
+
+**Personal targets (`absolute_leaf_personal_target`).**  Freeness
+of Q forces the guardian into every Q-avoiding representation of
+its target: b ≤ m_b and m_b = b + y + z with y, z ∈ A ∖ Q.  So the
+sharer laws make b ↦ m_b ≤3-to-1 on ALL of A⁺ ∖ Q, and every
+target is Sidon over the one envelope (pair shadow).
