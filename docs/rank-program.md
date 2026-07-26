@@ -414,3 +414,16 @@ possesses arbitrarily large free shells along its own spine —
 combined with size↔rank in the finite regime this pushes spine
 pool ranks upward.  Next session: spine stall hubs (the game
 board, spine_stalls_hereditarily) versus the caps.
+
+## CENTRAL RESIDUE CENSUS (22:25; probe_central_residue.py)
+
+Cantor's doubles get their order-3 life through: parity-escape
+pairs (odd sum, ~50%), midpoint-gap pairs (even sum, midpoint
+outside A, ~48%), semi-diagonals (~2%) — and NO double relies on
+its 0-pad alone (0/127).  Midpoint-freeness confirmed at every
+tested double.  Covering forbids all-even bases (odd targets
+need odd parts), so the parity channel is always populated: the
+central world's order-3 residue is structurally two-channelled,
+and a central-branch kill must close parity-escape and
+midpoint-gap simultaneously.  Both channels feed the robustness
+mechanism (Cantor's min-R growth lives here).
