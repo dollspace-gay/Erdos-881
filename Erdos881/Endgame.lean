@@ -627,4 +627,27 @@ theorem endgame_final_dichotomy {A : Set ℕ} {N₀ : ℕ}
         a + d = g₀ ∨ a + d < C₀)) :=
   the_final_dichotomy h0 hcov hfail
 
+/-- **THE TRANSLATE LAWS** (re-export; unconditional).  In any
+counterexample world: no positive basis element's upward
+translate eventually captures the basis, and no PAIR of them
+does so jointly — arbitrarily large basis elements escape both
+translates simultaneously.  Proved by the walk kills: a
+captured tail yields a good-translate walk, which either
+repeats a colour consecutively at cofinal heights (cofinal
+fixed-difference AP3s, killed by midpoint deletion) or
+eventually alternates perfectly (killed by two-step shifting).
+The first laws of the campaign that hold with NO structural
+hypothesis beyond the counterexample interface itself. -/
+theorem endgame_translate_laws {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∀ c, c ∈ A → 0 < c →
+      ∀ Z₀, ∃ z, Z₀ ≤ z ∧ z ∈ A ∧ z + c ∉ A) ∧
+    (∀ h₀ h₁, h₀ ∈ A → h₁ ∈ A → 0 < h₀ → 0 < h₁ →
+      ∀ Z₀, ∃ z, Z₀ ≤ z ∧ z ∈ A ∧ z + h₀ ∉ A ∧ z + h₁ ∉ A) :=
+  ⟨fun c hcA hc => single_translate_law h0 hcov hfail hcA hc,
+   fun h₀ h₁ h₀A h₁A hh₀ hh₁ =>
+     pair_translate_law h0 hcov hfail h₀A h₁A hh₀ hh₁⟩
+
 end Erdos881
