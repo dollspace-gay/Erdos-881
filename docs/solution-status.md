@@ -1,3 +1,23 @@
+# THE MIXING WORLD — NINTH SUMMIT (2026-07-26)
+
+`endgame_mixing_world` (Endgame.lean, standard axioms): every
+counterexample owns a LOCATED COMPLETE mixing sub-instance — a
+cylinder world {x | c + 2^m x in A} that pair-covers beyond a
+threshold (covering descends the saturated prefix half-world by
+half-world via `half_world_covers`), carries unbounded pair
+wealth, has both parities cofinal, and is infinite.  The mixed
+regime is SELF-SIMILAR: the enemy reproduces the problem's own
+hypotheses one 2-adic window down.
+
+Not yet descending unconditionally: the failure interface (the
+(2,3)-mixed hfail descent — `descent_invariant` needs the
+saturated horn's single-parity structure, which the mixing
+world by definition lacks).  The remaining mathematical content
+of the cascade track: what replaces hfail inside a mixing
+world, i.e. the mixed-interface descent or a survival
+construction exploiting mixing (both parities cofinal = carry
+liberty = the Cantor instance's repair mechanism).
+
 # FORCED MIXING — EIGHTH SUMMIT, A COMPLETE BRANCH DEFEAT (2026-07-26)
 
 `endgame_forced_mixing` (Endgame.lean, standard axioms): THE

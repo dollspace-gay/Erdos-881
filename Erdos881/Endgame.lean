@@ -821,4 +821,36 @@ theorem endgame_forced_mixing {A : Set ℕ} {N₀ : ℕ}
         (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 1) :=
   cascade_forces_mixing h0 hcov hfail
 
+open Classical in
+/-- **THE MIXING WORLD** (re-export; ninth summit).  Every
+counterexample owns a LOCATED, COMPLETE mixing sub-instance:
+a cylinder world {x | c + 2^m x ∈ A} that simultaneously
+(i) pair-covers beyond a threshold — covering descends the
+saturated prefix half-world by half-world, (ii) carries
+unbounded cross-pair wealth, (iii) has both parities cofinal,
+and (iv) is infinite.  The enemy cannot avoid reproducing the
+problem's own hypotheses one 2-adic window down: the mixed
+regime is self-similar, in explicit coordinates.  All that
+does not descend unconditionally is the failure interface
+itself — the (2,3)-mixed descent — which is the last
+unformalized track of the cascade. -/
+theorem endgame_mixing_world {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ S T : ℕ → Set ℕ, S 0 = A ∧ T 0 = A ∧
+      (∀ k, ∃ p q, p < 2 ∧ q < 2 ∧
+        S (k + 1) = {y | 2 * y + p ∈ S k} ∧
+        T (k + 1) = {y | 2 * y + q ∈ T k}) ∧
+      (∀ k, ∀ C N, ∃ v, N ≤ v ∧ C ≤
+        ((Finset.range (v + 1)).filter
+          (fun x => x ∈ S k ∧ (v - x) ∈ T k)).card) ∧
+      ∃ m c, S m = T m ∧
+        S m = {x : ℕ | c + 2 ^ m * x ∈ A} ∧
+        (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 0) ∧
+        (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 1) ∧
+        (∃ N', PairCovers (S m) N') ∧
+        (S m).Infinite :=
+  mixing_world_complete h0 hcov hfail
+
 end Erdos881
