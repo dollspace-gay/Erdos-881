@@ -8201,4 +8201,32 @@ theorem narrow_located_street {A : Set ℕ} {N₀ : ℕ}
   rw [← hi]
   exact hhub (i * L)
 
+/-- **THE FINAL FORK.**  Every counterexample funds free sets of
+every size — root rank ≥ ω, the finite-rank room closed at the
+root — or runs a LOCATED uniform-width hub street on its own
+canonical spine: unboundedly many distinct targets, each fully
+hubbed by a window of 2..L consecutive lineage values at a known
+position.  The night's whole machinery — shells, spine, duality,
+caps — compressed into one two-branch sentence about known
+material.  Erdős 881's remaining content is the defeat of these
+two explicit configurations. -/
+theorem the_final_fork {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
+      RepFree A N₀ P ∧ c ≤ P.card) ∨
+    (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+      ∃ L, ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+        ∀ v ∈ V, N₀ ≤ v ∧ ∃ s J, 2 ≤ J ∧ J ≤ L ∧
+          IsRepHub A v ((Finset.range J).image
+            (fun j => x (s + j)))) := by
+  rcases stall_width_or_rank h0 hcov hanchor hfail with
+    hrank | ⟨x, hxmono, hxA, L, hnarrow⟩
+  · exact Or.inl hrank
+  · exact Or.inr ⟨x, hxmono, hxA, L,
+      narrow_located_street h0 hcov hxmono hnarrow⟩
+
 end Erdos881
