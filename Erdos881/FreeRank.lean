@@ -15091,4 +15091,88 @@ theorem mixing_world_interface {A : Set ℕ} {N₀ : ℕ}
     hmix0, hmix1, hcovm, hinfm,
     mixing_deletion_wounds_root hfail hcylm⟩
 
+open Classical in
+/-- **WEALTHY TARGETS SURVIVE SPARSE DELETIONS.**  If a
+target's pair wealth exceeds twice the deletion's mass below it
+(plus two), some pair avoids the deletion entirely and the
+0-weld finishes the triple: v = x + (v−x) + 0 with all three
+parts outside D.  Contrapositive — every failing target of a
+deletion is PAIR-POOR relative to the deletion's local mass.
+Combined with `drain_wealth_addresses`, the enemy's failure
+must live strictly off its own wealth stream: the 2-adically
+pinned wealthy targets can never be failing targets of any
+locally-sparse deletion.  This is the lab's 268/268 survival
+mechanism (probe_mixing_survival.py), formalized locally. -/
+theorem wealthy_target_survives {A D : Set ℕ} {v : ℕ}
+    (h0A : 0 ∈ A) (h0D : 0 ∉ D)
+    (hwealth : 2 * ((Finset.range (v + 1)).filter
+        (fun x => x ∈ D)).card + 2 <
+      ((Finset.range (v + 1)).filter
+        (fun x => x ∈ A ∧ (v - x) ∈ A)).card) :
+    ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x ∉ D ∧ y ∉ D ∧ z ∉ D ∧
+      x + y + z = v := by
+  set Full := (Finset.range (v + 1)).filter
+    (fun x => x ∈ A ∧ (v - x) ∈ A) with hFull
+  set DF := (Finset.range (v + 1)).filter
+    (fun x => x ∈ D) with hDF
+  set Bad := Full.filter
+    (fun x => x ∈ D ∨ (v - x) ∈ D) with hBad
+  have hBadsub : Bad ⊆ DF ∪ (Finset.range (v + 1)).filter
+      (fun x => (v - x) ∈ D) := by
+    intro x hx
+    rw [hBad, Finset.mem_filter] at hx
+    obtain ⟨hxF, hxor⟩ := hx
+    rw [hFull, Finset.mem_filter] at hxF
+    rcases hxor with h | h
+    · exact Finset.mem_union_left _
+        (Finset.mem_filter.2 ⟨hxF.1, h⟩)
+    · exact Finset.mem_union_right _
+        (Finset.mem_filter.2 ⟨hxF.1, h⟩)
+  have hrefl : ((Finset.range (v + 1)).filter
+      (fun x => (v - x) ∈ D)).card ≤ DF.card := by
+    apply Finset.card_le_card_of_injOn (fun x => v - x)
+    · intro x hx
+      simp only [Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range] at hx
+      simp only [hDF, Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range]
+      exact ⟨by omega, hx.2⟩
+    · intro a ha b hb hab
+      simp only [Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range] at ha hb
+      have hab' : v - a = v - b := hab
+      omega
+  have hBadcard : Bad.card ≤ 2 * DF.card := by
+    have h1 := Finset.card_le_card hBadsub
+    have h2 := Finset.card_union_le DF
+      ((Finset.range (v + 1)).filter (fun x => (v - x) ∈ D))
+    omega
+  have hex : (Full \ Bad).Nonempty := by
+    rw [Finset.nonempty_iff_ne_empty]
+    intro hemp
+    have hsub : Full ⊆ Bad := by
+      intro x hx
+      by_contra hxB
+      have hmem : x ∈ Full \ Bad :=
+        Finset.mem_sdiff.2 ⟨hx, hxB⟩
+      rw [hemp] at hmem
+      exact absurd hmem (Finset.notMem_empty x)
+    have := Finset.card_le_card hsub
+    omega
+  obtain ⟨x, hx⟩ := hex
+  rw [Finset.mem_sdiff] at hx
+  obtain ⟨hxF, hxB⟩ := hx
+  have hxF' := hxF
+  rw [hFull, Finset.mem_filter, Finset.mem_range] at hxF'
+  obtain ⟨hxv, hxA, hvxA⟩ := hxF'
+  have hxnotor : ¬(x ∈ D ∨ (v - x) ∈ D) := by
+    intro h
+    exact hxB (Finset.mem_filter.2 ⟨hxF, h⟩)
+  refine ⟨x, hxA, v - x, hvxA, 0, h0A, ?_, ?_, h0D,
+    by omega⟩
+  · intro h
+    exact hxnotor (Or.inl h)
+  · intro h
+    exact hxnotor (Or.inr h)
+
 end Erdos881

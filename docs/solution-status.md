@@ -1,3 +1,24 @@
+# THE MIXING LAB + WEALTHY TARGETS SURVIVE (2026-07-26)
+
+LAB (scripts/probe_mixing_survival.py): 268/268 cylinder-drawn
+deletions survive at order 3 across 67 (adversarial mixing
+world, cylinder, deletion family) combos — five world
+strategies including parity-starving and criticality-
+concentrating adversaries.  Mixing worlds cannot defend in the
+lab, matching hall worlds (52/52) and the Cantor instance.
+The evidence keeps pointing to answer YES for Erdos 881 k=2.
+
+FORMALIZED MECHANISM: `wealthy_target_survives` — a target
+whose pair wealth exceeds 2x the deletion's local mass + 2 has
+a full triple avoiding the deletion (pair off the deletion +
+the 0-weld).  Contrapositive: FAILING TARGETS ARE PAIR-POOR
+relative to the deletion's mass below them.  With
+`drain_wealth_addresses`: the enemy's failures must live
+strictly off its own 2-adically pinned wealth stream.  Next:
+turn this into the sub-instance kill — a deletion whose local
+mass grows slower than the wealth stream's concentration,
+positioned so every candidate failing target is wealthy.
+
 # THE SELF-SIMILAR ENEMY — TENTH SUMMIT (2026-07-26)
 
 `endgame_self_similar` (Endgame.lean, standard axioms): every
