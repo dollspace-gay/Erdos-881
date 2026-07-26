@@ -657,3 +657,30 @@ inside B (window-split machinery accepts card-bounded
 families), and the escalating-width horn via disjoint-witness
 growth (audit disjointness first — witnesses may share
 non-committee parts).
+
+
+## 2026-07-26 (close): the steering map — the sharpest kill plan
+
+REFORMULATION.  A target n fails a deletion D iff D hits every
+triple of n; the order-2 part says D is a VERTEX COVER of n's
+pair-matching M(n) (r2/2 pairwise-disjoint edges {x, n−x}).
+Poor targets carry small matchings.
+
+THE DELETER MOVES LAST.  A pre-commits; D is chosen knowing A.
+The disjoint-matching dodge: if a stream's matchings are
+pairwise vertex-disjoint with ≥ 2 edges each, a deletion
+placing at most one element in each vertex set hits no matching
+fully — the stream survives.  Hence the enemy's failing streams
+must SHARE matching vertices cofinally.  Shared LOW vertices
+are cores/doors — already captured by the rigidity trichotomy.
+The uncaught residue is shared HIGH vertices: a fixed high
+element serving many poor targets — a HIGH DOOR.
+
+THE ROAD (three formal steps to the kill):
+1. High-part cores: rerun the canonical-core/window-split
+   analysis on high parts (machinery is symmetric).
+2. The disjoint dodge, formalized.
+3. The sharing trichotomy: low doors / high doors / disjoint.
+If low and high sharing both die into door analyses and
+disjointness dies into the dodge, hfail is dead.  This is the
+sharpest end-to-end kill plan the campaign has produced.
