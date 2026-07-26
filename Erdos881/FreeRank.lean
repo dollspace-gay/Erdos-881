@@ -4536,4 +4536,95 @@ theorem two_hubs_common_reflection {A : Set ℕ} {N₀ m m' : ℕ}
   · obtain ⟨_, hpA, hpsum⟩ := hf'p' a haW
     exact ⟨p' a, hpA, by rw [← heq2]; exact hpsum⟩
 
+/-- **THE DOUBLE-REFLECTION SUPPLY.**  A counterexample carries,
+at every size K, two reflection points u, u' and K window
+elements reflecting through BOTH: a ∈ A with u − a ∈ A and
+u' − a ∈ A.  (Flood streets supply the hubs, the covering √-bound
+supplies the window, `two_hubs_common_reflection` pigeonholes.)
+If u ≠ u' this is K-fold difference multiplicity at the fixed
+offset u' − u; if u = u' it is K-fold sum concentration — but
+unlike bare r₂-blowup the SAME window works for both points,
+which is strictly more than two separate blowups. -/
+theorem double_reflection_supply_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∀ K, ∃ u u' : ℕ, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ a ∈ V, a ∈ A ∧ (∃ x ∈ A, x + a = u) ∧
+        (∃ x' ∈ A, x' + a = u') := by
+  classical
+  obtain ⟨P, hPfree, X, hflood⟩ := rep_flood_of_hfail h0 hcov hfail
+  intro K
+  set C := P.card + 1 with hC
+  set T := K * C * C + 2 * C + 1 with hT
+  -- street 1: a large guardian with its personal hub
+  obtain ⟨b, hbA, hbge⟩ :=
+    pairCovers_unbounded hcov (X + T * T + 2 * N₀ + 1)
+  obtain ⟨m, hm, hbm, hhub⟩ := hflood b hbA (by omega)
+  -- street 2: strictly beyond street 1
+  obtain ⟨b', hb'A, hb'ge⟩ := pairCovers_unbounded hcov (X + m + 1)
+  obtain ⟨m', hm', hb'm', hhub'⟩ := hflood b' hb'A (by omega)
+  -- the window: A-elements below street 1's horizon
+  haveI : DecidablePred (· ∈ A) := Classical.decPred _
+  set F := ((Finset.range (b - N₀ + 1)).filter (· ∈ A)) with hF
+  have hFcard : T ≤ F.card := by
+    have h1 := covering_sqrt_lower (A := A) (N₀ := N₀) hcov
+      (n := b - N₀) (by omega)
+    by_contra hlt
+    push_neg at hlt
+    have h2 : F.card * F.card < T * T :=
+      Nat.mul_lt_mul_of_lt_of_le hlt (le_of_lt hlt) (by omega)
+    rw [← hF] at h1
+    omega
+  set H := insert b P with hH
+  set H' := insert b' P with hH'
+  have hHc : H.card ≤ C := by
+    rw [hH, hC]
+    exact Finset.card_insert_le b P
+  have hH'c : H'.card ≤ C := by
+    rw [hH', hC]
+    exact Finset.card_insert_le b' P
+  set W := F \ (H ∪ H') with hW
+  have hWcard : K * C * C + 1 ≤ W.card := by
+    have h1 := Finset.card_le_card_sdiff_add_card (s := F)
+      (t := H ∪ H')
+    rw [← hW] at h1
+    have h2 : (H ∪ H').card ≤ 2 * C := by
+      have h3 := Finset.card_union_le H H'
+      omega
+    omega
+  have hWmem : ∀ a ∈ W, a ∈ A ∧ a ∉ H ∧ a ∉ H' ∧
+      a + N₀ ≤ m ∧ a + N₀ ≤ m' := by
+    intro a ha
+    rw [hW, Finset.mem_sdiff, Finset.mem_union] at ha
+    obtain ⟨haF, haHH⟩ := ha
+    rw [hF, Finset.mem_filter, Finset.mem_range] at haF
+    push_neg at haHH
+    refine ⟨haF.2, haHH.1, haHH.2, ?_, ?_⟩
+    · omega
+    · omega
+  obtain ⟨h₀, hh₀, h₀', hh₀', V, hVW, hcount, hVrefl⟩ :=
+    two_hubs_common_reflection h0 hcov hm hm' hhub hhub' W hWmem
+  refine ⟨m - h₀, m' - h₀', V, ?_, ?_⟩
+  · -- K ≤ V.card from the pigeonhole count
+    have h1 : H.card * H'.card ≤ C * C :=
+      Nat.mul_le_mul hHc hH'c
+    have h2 : H.card * H'.card * V.card ≤ C * C * V.card :=
+      Nat.mul_le_mul h1 (le_refl V.card)
+    by_contra hVK
+    push_neg at hVK
+    have hVK' : V.card + 1 ≤ K := hVK
+    have h3 : C * C * (V.card + 1) ≤ C * C * K :=
+      Nat.mul_le_mul (le_refl (C * C)) hVK'
+    rw [Nat.mul_add, Nat.mul_one] at h3
+    have h4 : K * C * C = C * C * K := by ring
+    omega
+  · intro a ha
+    obtain ⟨hx, hx'⟩ := hVrefl a ha
+    obtain ⟨x, hxA, hxeq⟩ := hx
+    obtain ⟨x', hx'A, hx'eq⟩ := hx'
+    have haW := hVW ha
+    have haA := (hWmem a haW).1
+    exact ⟨haA, ⟨x, hxA, by omega⟩, ⟨x', hx'A, by omega⟩⟩
+
 end Erdos881
