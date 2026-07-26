@@ -11481,4 +11481,40 @@ theorem pure_hall_singleton_form {A : Set ℕ} {N₀ p : ℕ}
   · rw [Finset.mem_singleton] at h
     exact Or.inr ⟨by omega, h⟩
 
+/-- **The two-level colour law.**  At a face-III target — rep
+hub P ∪ {b}, pair hub P alone — the defective mirror's colour
+ALWAYS has a dead translate, including when the colour is the
+rotator b itself: a live translate would recombine with the
+mirror image into a pair of m forced through the small envelope,
+which the size window forbids.  The rotator obeys the same
+translate discipline as the hall. -/
+theorem face_three_color_law {A : Set ℕ} {N₀ M₀ m b : ℕ}
+    {P : Finset ℕ}
+    (hcov : PairCovers A N₀) (hM : ∀ p ∈ P, p ≤ M₀)
+    (hrep : IsRepHub A m (insert b P))
+    (hpair : IsPairHub A m P)
+    {z : ℕ} (hz : z ∈ A) (hzM : M₀ < z) (hzb : z ≠ b)
+    (hsize : z + b + 2 * M₀ + N₀ + 1 ≤ m) :
+    ∃ h ∈ insert b P, h + z ≤ m ∧ m - z - h ∈ A ∧
+      z + h ∉ A := by
+  have hzH : z ∉ insert b P := by
+    intro h
+    rcases Finset.mem_insert.1 h with h1 | h1
+    · exact hzb h1
+    · have := hM z h1
+      omega
+  obtain ⟨h, hhH, hhz, hmir⟩ :=
+    hall_mirror hcov hrep hz hzH (by omega)
+  refine ⟨h, hhH, hhz, hmir, ?_⟩
+  intro hzhA
+  have hsum : (z + h) + (m - z - h) = m := by omega
+  rcases hpair (z + h) hzhA (m - z - h) hmir hsum with h1 | h1
+  · have h2 := hM _ h1
+    omega
+  · have h2 := hM _ h1
+    rcases Finset.mem_insert.1 hhH with h3 | h3
+    · omega
+    · have h4 := hM _ h3
+      omega
+
 end Erdos881
