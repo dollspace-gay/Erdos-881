@@ -11054,4 +11054,45 @@ theorem failure_slices_low_r2 {A B : Set ℕ}
     · exact Or.inr (hW b h (by omega))
   exact pair_hub_pair_count hhub
 
+open Classical in
+/-- **Covering density.**  An order-2 covering set has at least
+√X elements below X: the chosen pair of each covered target is
+an injection of [N₀, X] into the window's pair square.  The
+mass side of every cascade count. -/
+theorem covering_density {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀) :
+    ∀ X, N₀ ≤ X → X - N₀ + 1 ≤
+      (((Finset.range (X + 1)).filter (· ∈ A)).card) ^ 2 := by
+  intro X hX
+  have htot : ∀ n, ∃ x y, N₀ ≤ n →
+      x ∈ A ∧ y ∈ A ∧ x + y = n := by
+    intro n
+    by_cases hn : N₀ ≤ n
+    · obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hn
+      exact ⟨x, y, fun _ => ⟨hx, hy, hxy⟩⟩
+    · exact ⟨0, 0, fun h => absurd h hn⟩
+  choose xf yf hxy using htot
+  set Af := (Finset.range (X + 1)).filter (· ∈ A) with hAf
+  have hmaps : ∀ n ∈ Finset.Icc N₀ X,
+      (xf n, yf n) ∈ Af ×ˢ Af := by
+    intro n hn
+    rw [Finset.mem_Icc] at hn
+    obtain ⟨h1, h2, h3⟩ := hxy n hn.1
+    rw [Finset.mem_product, hAf, Finset.mem_filter,
+      Finset.mem_filter, Finset.mem_range, Finset.mem_range]
+    exact ⟨⟨by omega, h1⟩, ⟨by omega, h2⟩⟩
+  have hinj : Set.InjOn (fun n => (xf n, yf n))
+      (Finset.Icc N₀ X) := by
+    intro a ha b hb hab
+    rw [Finset.mem_coe, Finset.mem_Icc] at ha hb
+    obtain ⟨_, _, h3⟩ := hxy a ha.1
+    obtain ⟨_, _, h3'⟩ := hxy b hb.1
+    have h4 : xf a = xf b := congrArg Prod.fst hab
+    have h5 : yf a = yf b := congrArg Prod.snd hab
+    omega
+  have hcard := Finset.card_le_card_of_injOn _ hmaps hinj
+  rw [Nat.card_Icc, Finset.card_product] at hcard
+  have h6 : Af.card * Af.card = Af.card ^ 2 := by ring
+  omega
+
 end Erdos881
