@@ -769,3 +769,17 @@ branch (third branch mechanism; Cantor is uniformly robust) /
 fragility laws.  The enemy's remaining configuration space: the
 mixed fragile-blown regime, now further split into echo-hoarder
 vs mirror-hall.
+
+## CLASSICAL-MINIMALITY + RAMSEY ARCS (2026-07-25, 21:05)
+
+New verified interfaces for the TRUE 881 hypothesis (classical
+minimality, previously unused): essential_private_pair_stream,
+shared_private_target_is_sum, unique_pair_graph_infinite_degree,
+disjoint_unique_pairs_of_essential, matched_deletion_teams,
+hmin_of_essential (glue: classical ⟹ elementwise, all hmin
+machinery now applies), unique_sum_ramsey +
+all_unique_pair_hubs/all_unique_is_sidon.  Also this block: R1
+translation teams; R4 ladder mining (pure streets, concentrated
+shadow, difference deserts); ladder-world labs (R4 realizable
+with geometric rungs; strain at √Y/3 density).  Zero sorries
+throughout; standard axioms.

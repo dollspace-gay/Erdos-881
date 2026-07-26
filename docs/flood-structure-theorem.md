@@ -422,3 +422,19 @@ streams, and arbitrarily large matchings — supply the deletion
 game can consume.  Connecting this graph to the order-3 machinery
 (what happens at matched targets under matched deletions) is a
 fresh program that no earlier arc touched.
+
+## 18. THE UNIQUE-SUM RAMSEY DICHOTOMY (21:05)
+
+**`unique_sum_ramsey`** (any covering set, no minimality): an
+infinite ascending subsequence exists whose pairwise sums are ALL
+unique-decomposition targets or NONE are.  All-unique side
+(`all_unique_pair_hubs`, `all_unique_is_sidon`): an infinite
+Sidon configuration whose sums form a 2-PARAMETER family of
+two-element pair hubs — denser fragile supply than the street
+ladder.  None-unique side: every pairwise sum is 2-robust at
+order 2.  Combined with the classical-minimality graph
+(§17) and the team supply (`matched_deletion_teams`), the true
+881 configuration now has three interlocking combinatorial
+objects: the unique-sum marriage network, the homogeneous
+Ramsey subsequences, and the guardian teams that matched
+deletions must field.
