@@ -11853,4 +11853,26 @@ theorem parity_window_partner {A : Set ℕ} {N₀ Y X ε : ℕ}
     rw [h1]
     exact hx
 
+/-- **Parity windows force syndeticity.**  Under a single-parity
+window, the basis meets EVERY interval of length 2Y + 2 in the
+range: an odd target inside the interval donates its fringe
+partner.  The enemy's parity defence converts √-sparseness into
+bounded gaps — the exact input of the small-gaps completeness
+criterion. -/
+theorem parity_window_syndetic {A : Set ℕ} {N₀ Y X ε : ℕ}
+    (hcov : PairCovers A N₀)
+    (hpar : ∀ a ∈ A, Y < a → a ≤ X → a % 2 = ε) :
+    ∀ u, N₀ + Y ≤ u → u + 2 * Y + 2 ≤ X →
+      ∃ a ∈ A, u ≤ a ∧ a ≤ u + 2 * Y + 2 := by
+  intro u hu hX
+  rcases Nat.mod_two_eq_zero_or_one (u + Y + 1) with h | h
+  · obtain ⟨x, hx, hxY, hpart⟩ :=
+      parity_window_partner hcov hpar (u + Y + 2)
+        (by omega) (by omega) (by omega)
+    exact ⟨u + Y + 2 - x, hpart, by omega, by omega⟩
+  · obtain ⟨x, hx, hxY, hpart⟩ :=
+      parity_window_partner hcov hpar (u + Y + 1)
+        (by omega) (by omega) (by omega)
+    exact ⟨u + Y + 1 - x, hpart, by omega, by omega⟩
+
 end Erdos881
