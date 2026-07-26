@@ -488,3 +488,25 @@ between two verified statements:
   thinning destroys it.
 
 DENSITY VERSUS HOMOGENEITY, as one pair of Lean theorems.
+
+## 21. NASH-WILLIAMS: THE DOOR AND THE SPINE (21:50)
+
+**`shell_higman_chain`.**  The enemy's shells, read as sorted
+lists, live in Higman's well-quasi-order (Mathlib's
+Nash-Williams machinery): an infinite subsequence of shells is
+an embedding-CHAIN — each shell pointwise-dominated inside every
+later one.  The antichain of freedoms carries a canonical
+ascending spine.
+
+**`spine_lineage`.**  Consecutive embeddings compose into
+element lineages, and shell disjointness makes every step
+strict: a canonical strictly increasing sequence x with
+x t ∈ Q (σ t) — an infinite ascending skeleton threading the
+enemy's own free material, extracted with zero choices beyond
+the machinery's own.
+
+The chaining program is no longer a plan: the raw spine exists.
+Next: the spine's own stall (free_prefixes_die applied to x
+yields a hub of lineage elements), and the adaptive game on
+canonical material — lineage extension versus stall hubs.  This
+is where the next session begins.

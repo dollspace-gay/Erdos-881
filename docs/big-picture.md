@@ -70,3 +70,14 @@ antichain.  The enemy survives tonight only as a logical shadow
 living in the gaps between counting arguments — every wall of
 its fortress is now machine-checked, and every wall is made of
 the same stone it is forbidden to own.
+
+## Postscript (same night, 21:50)
+
+Two hours after this document was written, the door it pointed
+at was opened: `shell_higman_chain` applies Mathlib's
+Nash-Williams machinery to the shell antichain, and
+`spine_lineage` extracts the canonical strictly increasing
+sequence threading the enemy's own shells.  The chaining program
+now has its raw spine, machine-checked.  The final distance is
+the interplay between lineage extension and the spine's own
+stall hubs — the adaptive game, now on canonical material.
