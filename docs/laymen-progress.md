@@ -483,3 +483,33 @@ every possible split of the keys — and every structural weapon
 it could use is now catalogued, capped, and taxed by machine-
 checked mathematics.  Tomorrow the siege continues on that one
 gate.
+
+## 2026-07-25 night, the last hour — The braid and the fork
+
+After the finale was written, one more thing happened.  We had
+proven the enemy's keyring peels into infinite onion skins — and
+tonight the machine braided them.  A century-old piece of pure
+combinatorics (the theory of well-quasi-orders, the same
+mathematics that tames infinite trees) applies to the skins: an
+infinite run of them must nest, each skin fitting inside the
+next.  Following one key through the nesting gives THE SPINE — a
+single, canonical, ever-climbing thread of keys, built from the
+enemy's own harmless handfuls, chosen by no one.
+
+Then two theorems about the spine.  First: whatever infinite
+sub-thread of the spine you try to keep, the enemy must seal a
+door using ONLY keys from that thread — and every seal it posts
+obeys every cap, tax, and sharing law we proved earlier.  The
+endgame is now a board game on canonical pieces.  Second, the
+fork: the skins along the spine can only grow or freeze.  If
+they grow, the enemy contains harmless handfuls of every size,
+and one whole wing of its possible existence (the finite-rank
+wing) collapses at the root.  If they freeze at some width s,
+then from some point on the enemy's entire supply of harmlessness
+is exactly s climbing columns, marching in lockstep forever — a
+fixed-width highway that must somehow carry an ever-growing
+burden of duties.
+
+An encircled fortress, one gate, a canonical board, and a
+two-pronged fork where both prongs are narrow.  That is where
+the night ends and tomorrow begins.

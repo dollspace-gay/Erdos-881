@@ -838,3 +838,16 @@ remaining programs, ranked: (i) the 90/10 partition battle line
 (counting vs structure at every scale); (ii) mass-accounting
 constants; (iii) Abel-summation automatic-completeness; (iv)
 Nash-Williams barriers; (v) the adaptive/priority construction.
+
+## NIGHT INDEX, APPENDIX (22:03) — the drive-home cascade
+
+After the user's "bring it together": the_encirclement (six
+pillars, one theorem), docs/big-picture.md (the synthesis:
+theory closed, no-man's-land, self-avoidance is everything, the
+enemy's material is the constructor's), then the Nash-Williams
+arc: shell_higman_chain, spine_lineage,
+spine_stalls_hereditarily, spine_rank_or_lockstep,
+root_rank_omega_or_lockstep, lockstep_columns, endgame_spine.
+Entry points: Erdos881/Endgame.lean (the_encirclement,
+endgame_spine, endgame_four_rooms, endgame_omega_pinch,
+endgame_final_form).
