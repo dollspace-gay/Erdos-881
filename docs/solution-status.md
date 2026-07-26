@@ -889,3 +889,25 @@ g₀-routed OR central (total order-2 pinning).  No gap.
     canonical_deletion_obligation, grid_cap_three_classes;
     width-claim corrected (two-scale escape: the grid is a
     per-modulus alignment dichotomy engine).
+
+## AUDIT ADDENDUM (23:05) — the fork's anchor condition
+
+The Nash-Williams chain (spine → game board → width-or-rank →
+THE FINAL FORK) inherits the anchor hypothesis through the shell
+stratification.  The complete final picture is therefore a
+TRICHOTOMY of endgames:
+
+  ANCHORED counterexamples → the final fork (rank ≥ ω, or the
+  located uniform-width street on the spine);
+  g₀-ROUTED counterexamples → universal two-element double-hubs
+  through one basis element (concentration laws);
+  CENTRAL counterexamples → total order-2 pinning, automatic
+  minimality, AP3-freeness, two-channel order-3 residue.
+
+No counterexample escapes all three.  Building fork-analogues
+for the g₀-routed and central branches (their own spines exist
+if their own stratifications do — the absolute flood needed only
+h0/hcov/hfail, but shell NONEMPTINESS used anchors via
+cofinite_free_singletons) is a recorded next-session task: the
+central branch may admit a direct spine from its pinned
+structure instead.
