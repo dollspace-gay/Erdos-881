@@ -324,3 +324,27 @@ joint pigeonhole turns into: difference blowup at some offset OR
 an affine flood m_b = b + n with all difference-translates
 n + (b − b') being constant-Sidon streets.  Formalizing the
 T-street classification is queued for the next session.
+
+## 14. THE STREET DICHOTOMY (20:26)
+
+**`street_dichotomy_of_hfail` / `difference_blowup_or_affine_corners`.**
+Three flood streets and two passes of the reflection engine
+yield, at every K and beyond every size S:
+
+  (Diff) K-fold difference multiplicity: a fixed offset δ ≥ 1
+  with K elements x ∈ A, x + δ ∈ A; or
+
+  (Affine) all reflection points coincide at a K-fold blown point
+  n, size-forcing makes the flood affine there (m₂ = n + b₂,
+  m₃ = n + b₃), and the difference translate n + b₃ − b₂ is a
+  pair street through the third rotator.
+
+Split over all K: either difference multiplicity is UNBOUNDED —
+so B₂[g]-difference enemies die; Erdős–Turán closed the sum door,
+this closes the difference door — or the counterexample produces
+affine corners (blown point + affine flood + coupled street at
+the basis-difference translate) beyond every threshold.  The
+affine corner is the enemy's last reflection refuge; it couples a
+blown point, two basis elements, and a Sidon street in one linear
+equation s + b₂ = n + b₃, which no previously known theorem
+forced.
