@@ -6757,4 +6757,105 @@ theorem spine_stalls_hereditarily {A : Set ℕ} {N₀ : ℕ}
   obtain ⟨h1, h2, h3⟩ := hmiss
   exact h3 (hall a ha b hb c hc hsum h1 h2)
 
+/-- **RANK OR LOCKSTEP.**  Spine shell sizes are non-decreasing
+(sublist embeddings), so they are unbounded — the counterexample
+contains FREE SETS OF EVERY SIZE, forcing infinite root rank and
+closing the finite-rank room at the root — or eventually
+constant, and then equal-length sublist embeddings are FULL
+pointwise dominations: beyond some point the spine shells march
+in lockstep, the t-th shell's sorted list dominated coordinate
+by coordinate inside the (t+1)-st.  Either the rank door closes
+or the enemy's shells are s parallel strictly increasing
+columns. -/
+theorem spine_rank_or_lockstep {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
+      RepFree A N₀ P ∧ c ≤ P.card) ∨
+    (∃ Q : ℕ → Finset ℕ, ∃ σ : ℕ ↪o ℕ, ∃ T s : ℕ,
+      (∀ k, RepFree A N₀ (Q k)) ∧
+      (∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h) ∧
+      (∀ j k, j < k → Disjoint (Q j) (Q k)) ∧
+      1 ≤ s ∧
+      (∀ t, T ≤ t → (Q (σ t)).card = s) ∧
+      (∀ t, T ≤ t → List.Forall₂ (· ≤ ·)
+        ((Q (σ t)).sort (· ≤ ·))
+        ((Q (σ (t + 1))).sort (· ≤ ·)))) := by
+  classical
+  obtain ⟨Q, hne, hmem, hfree, hdisj, hguard, σ, hσ⟩ :=
+    shell_higman_chain h0 hcov hanchor hfail
+  have hmono : ∀ t t', t ≤ t' →
+      (Q (σ t)).card ≤ (Q (σ t')).card := by
+    intro t t' htt
+    obtain ⟨l', hf₂, hsub⟩ := List.sublistForall₂_iff.1
+      (hσ t t' htt)
+    have h1 : ((Q (σ t)).sort (· ≤ ·)).length = l'.length :=
+      hf₂.length_eq
+    have h2 := hsub.length_le
+    rw [Finset.length_sort] at h1
+    have h3 : ((Q (σ t')).sort (· ≤ ·)).length =
+        (Q (σ t')).card := Finset.length_sort _
+    omega
+  by_cases hunb : ∀ c, ∃ t, c ≤ (Q (σ t)).card
+  · left
+    intro c
+    obtain ⟨t, hc⟩ := hunb c
+    exact ⟨Q (σ t), hmem _, hfree _, hc⟩
+  · right
+    push_neg at hunb
+    obtain ⟨c₀, hc₀⟩ := hunb
+    -- monotone bounded: eventually constant
+    have hstab : ∃ T, ∀ t, T ≤ t →
+        (Q (σ t)).card = (Q (σ T)).card := by
+      by_contra hno
+      push_neg at hno
+      -- build a strictly climbing value chain, contradicting c₀
+      have hstep : ∀ T, ∃ t, T ≤ t ∧
+          (Q (σ T)).card < (Q (σ t)).card := by
+        intro T
+        obtain ⟨t, hTt, hne'⟩ := hno T
+        have := hmono T t hTt
+        exact ⟨t, hTt, by omega⟩
+      choose nxt hnxt₁ hnxt₂ using hstep
+      obtain ⟨g, hg0, hgs⟩ : ∃ g : ℕ → ℕ, g 0 = 0 ∧
+          ∀ k, g (k + 1) = nxt (g k) :=
+        ⟨fun k => Nat.rec 0 (fun _ p => nxt p) k, rfl,
+          fun _ => rfl⟩
+      have hclimb : ∀ k, k ≤ (Q (σ (g k))).card := by
+        intro k
+        induction k with
+        | zero => omega
+        | succ k ih =>
+          have h1 := hnxt₂ (g k)
+          rw [hgs]
+          omega
+      have := hclimb c₀
+      have := hc₀ (g c₀)
+      omega
+    obtain ⟨T, hT⟩ := hstab
+    refine ⟨Q, σ, T, (Q (σ T)).card, hfree, hmem, hdisj, ?_,
+      hT, ?_⟩
+    · have := hne (σ T)
+      have := Finset.card_pos.2 this
+      omega
+    · intro t hTt
+      obtain ⟨l', hf₂, hsub⟩ := List.sublistForall₂_iff.1
+        (hσ t (t + 1) (by omega))
+      have h1 : ((Q (σ t)).sort (· ≤ ·)).length = l'.length :=
+        hf₂.length_eq
+      have h2 : ((Q (σ t)).sort (· ≤ ·)).length =
+          (Q (σ t)).card := Finset.length_sort _
+      have h3 : ((Q (σ (t + 1))).sort (· ≤ ·)).length =
+          (Q (σ (t + 1))).card := Finset.length_sort _
+      have h4 := hT t hTt
+      have h5 := hT (t + 1) (by omega)
+      have hleq : l' = (Q (σ (t + 1))).sort (· ≤ ·) := by
+        apply hsub.eq_of_length_le
+        omega
+      rw [← hleq]
+      exact hf₂
+
 end Erdos881
