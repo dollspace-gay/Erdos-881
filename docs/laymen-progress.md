@@ -1,3 +1,62 @@
+# The night shift: from the address tree to the account books
+
+*2026-07-26, late night, for the keyring.  Machine-checked as
+always: zero gaps, standard foundations.*
+
+## What the night added, in plain words
+
+The morning proved the creature cannot hide on its address
+tree.  The night opened its account books.
+
+1. **Boom and bust is mandatory** (`endgame_oscillation`).
+   Count the two-key openings of each lock.  In any would-be
+   counterexample, some locks stay cheap forever (below a fixed
+   ceiling, infinitely often) while others get arbitrarily
+   expensive.  Neither stream may end.  Proof of the cheap
+   side: if all locks got expensive, a discard spaced thinner
+   than the price rise would have nowhere to fail.
+
+2. **The cheap locks are organized** — stable cores plus
+   marching tails at every scale (`endgame_canonical_core`),
+   ending in exactly three shapes: a fixed repeated difference,
+   a single doorman, or total desert (`endgame_rigidity_
+   trichotomy`) — the same three shapes the morning's room
+   analysis found by an entirely different road.
+
+3. **Spread-out defenses lose** (`disjoint_matching_dodge`).
+   If the failing locks' key-pairs never share keys, we pick
+   one key from every second lock as our discard: every lock
+   keeps an untouched pair.  The creature MUST reuse keys
+   across its failing locks — and reused keys become doormen,
+   which the trichotomy already catalogs.
+
+4. **One failing lock taxes thousands** (`endgame_fan_poverty`).
+   For a lock to fail our discard, every neighbor lock it can
+   reach through a surviving key must ALSO be cheap.  Failure
+   is not a local accident; it is a blanket poverty across a
+   square-root-sized fan.
+
+5. **The account books must balance** (`endgame_density_law`).
+   Adding it all up: at every failing lock, the number of
+   cheap locks must exceed the number of keys, AND the total
+   spending obeys a hard budget inequality.  First corollary:
+   a keyring containing all numbers up to n can never fail —
+   dense keyrings are mathematically incapable of being
+   counterexamples.
+
+## Where the creature now lives
+
+Squeezed between two walls: the FAT wall (dense = the account
+books don't balance) and the THIN wall (sparse = its failing
+locks need key-sharing patterns that collapse into doormen and
+deserts, in territory where even building a candidate is
+believed impossible — the same territory as the famous
+Erdos-Turan conjecture).  Twenty-two machine-checked summits
+stand around it.  Every lab world ever built — 347 discard
+tests across six campaigns — has survived every discard.
+
+The remaining mathematics: prove the corridor between the two
+walls is empty.
 # The day of the twelve laws, in plain language
 
 *2026-07-26, for the keyring. Everything marked "proved" is
