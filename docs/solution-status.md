@@ -1,3 +1,20 @@
+# THE REPAIR MINE + THREADING IMPOSSIBILITY (2026-07-26)
+
+Three drain exports: `cross_blowup_infinite` (both carriers
+infinite at every level), `drain_address_cluster` (nested 2-adic
+address tower inside A — junk-audited: the wealth concentration,
+not the bare tower, is the content), `drain_repair_mine` (repair
+quadruples a, a+δ, b, b−δ ∈ A, 2^k ∣ δ, every depth, every
+bound — Sidon-impossible, so genuine counting content).
+
+Strategic audit: core 4 (chain threading) is NOT closable by
+compactness/barrier arguments alone — the per-c chain supply is
+an hfail theorem, so threading it into an infinite chain would
+refute hfail from its own consequences.  The rank-branch kill
+must inject wealth/street/translate material.  The decisive
+target: a collision law putting drain wealth on the street's
+width-capped hub targets.
+
 # UPDATE (2026-07-26): THE ω-DRAIN — FIFTH SUMMIT
 
 **Arc 34 — the tree completed and globalized** (all verified):

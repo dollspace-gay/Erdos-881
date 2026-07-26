@@ -605,3 +605,37 @@ The night's map is bidirectionally confirmed: the funnel
 reaches the same two cores from the flood side that the
 final-form reduction reached from the rank side.  These two
 cores ARE Erdos 881.
+
+## 2026-07-26 — Threading impossibility audit + the repair mine
+
+**Route-pruning metatheorem (core 4).**  `endgame_final_form`
+says counterexample ⟺ WellFounded(FreeStep).  The chain branch
+of `stall_chain_or_rank` (per-c prefix-free chains) is a THEOREM
+of hfail.  Therefore no argument consuming only the per-c chain
+supply can produce an infinite FreeStep chain: that would refute
+WellFounded(FreeStep), i.e. derive False from facts consistent
+with hfail — impossible unless the derivation also consumes
+other hfail laws.  CONSEQUENCE: core 4 ("chain threading
+compactness") is NOT a compactness problem.  Galvin/Nash-Williams
+barrier machinery alone (absent from Mathlib anyway) cannot close
+it.  Any kill of the rank branch must inject cross-branch
+material: wealth laws, street poverty, translate laws.  Do not
+attempt pure threading again.
+
+**The corridor restated.**  `disjoint_reps_le_hub_card` bounds
+hub width below by disjoint-triple wealth, so a c-element free
+set's extension is blocked only by POOR targets (disjoint count
+≤ c+1).  The street branch is exactly the enemy's organized
+poverty supply; the rank branch dies iff poverty runs out at
+some level.  The decisive collision to hunt: force the drain's
+wealth ONTO the street's capped targets (same m), not merely
+cofinally interleaved.
+
+**New bricks.**  `cross_blowup_infinite` (drain carriers infinite
+at every level), `drain_address_cluster` (nested 2-adic address
+tower in root coordinates — JUNK-AUDITED: bare tower is König-
+pigeonhole for any infinite set; wealth concentration is the real
+content), `drain_repair_mine` (repair quadruples a, a+δ, b, b−δ
+⊆ A with 2^k ∣ δ at every depth k beyond every bound — Sidon
+sets have none; the translate-law/carry-repair fuel, now
+guaranteed 2-adically deep).  All standard axioms.
