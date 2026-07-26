@@ -15839,4 +15839,81 @@ theorem committee_band_tax {A B : Set ℕ} {C : ℕ}
   have hcap := repHub_caps_pair_wealth h0 h0H hhub
   exact ⟨n, hn, by omega⟩
 
+open Classical in
+/-- **COMMITTEE TRANSLATE FREENESS.**  A minimal committee's
+sub-committees are powerless on the translate fan: for every
+member h, the committee minus h does NOT pair-hub the translate
+n − h — h's private witness donates a pair of n − h avoiding
+all other members.  Minimal committees thus carry
+pair-freeness certificates for every one of their
+cardinality-(K−1) sub-committees: the escalating horn of the
+width band manufactures FREENESS material at scale, feeding
+the rank room rather than escaping it. -/
+theorem committee_translate_freeness {A : Set ℕ} {n : ℕ}
+    {H : Finset ℕ}
+    (hhub : IsRepHub A n H)
+    (hmin : ∀ h ∈ H, ¬IsRepHub A n (H \ {h})) :
+    ∀ h ∈ H, ¬IsPairHub A (n - h) (H \ {h}) := by
+  intro h hhH hpair
+  obtain ⟨x, hx, y, hy, z, hz, hsum, hmem, havoid⟩ :=
+    minimal_hub_necessity hhub hmin h hhH
+  have key : ∀ u v : ℕ, u ∈ A → v ∈ A → h + u + v = n →
+      u ∉ H \ {h} → v ∉ H \ {h} → False := by
+    intro u v hu hv hsum' hunot hvnot
+    rcases hpair u hu v hv (by omega) with hm | hm
+    · exact hunot hm
+    · exact hvnot hm
+  have hnot : ∀ g, g ∈ H → g ≠ h → x ≠ g ∧ y ≠ g ∧ z ≠ g :=
+    havoid
+  have hxn : x ∉ H \ {h} ∨ x = h := by
+    by_cases hxh : x = h
+    · exact Or.inr hxh
+    · left
+      intro hxH
+      rw [Finset.mem_sdiff, Finset.mem_singleton] at hxH
+      exact (hnot x hxH.1 hxH.2).1 rfl
+  have hyn : y ∉ H \ {h} ∨ y = h := by
+    by_cases hyh : y = h
+    · exact Or.inr hyh
+    · left
+      intro hyH
+      rw [Finset.mem_sdiff, Finset.mem_singleton] at hyH
+      exact (hnot y hyH.1 hyH.2).2.1 rfl
+  have hzn : z ∉ H \ {h} ∨ z = h := by
+    by_cases hzh : z = h
+    · exact Or.inr hzh
+    · left
+      intro hzH
+      rw [Finset.mem_sdiff, Finset.mem_singleton] at hzH
+      exact (hnot z hzH.1 hzH.2).2.2 rfl
+  have hhnot : (h : ℕ) ∉ H \ {h} := by
+    rw [Finset.mem_sdiff, Finset.mem_singleton]
+    intro hc
+    exact hc.2 rfl
+  rcases hmem with hxh | hyh | hzh
+  · rcases hyn with hyn' | hyh'
+    · rcases hzn with hzn' | hzh'
+      · exact key y z hy hz (by omega) hyn' hzn'
+      · exact key y z hy hz (by omega) hyn' (hzh' ▸ hhnot)
+    · rcases hzn with hzn' | hzh'
+      · exact key y z hy hz (by omega) (hyh' ▸ hhnot) hzn'
+      · exact key y z hy hz (by omega) (hyh' ▸ hhnot)
+          (hzh' ▸ hhnot)
+  · rcases hxn with hxn' | hxh'
+    · rcases hzn with hzn' | hzh'
+      · exact key x z hx hz (by omega) hxn' hzn'
+      · exact key x z hx hz (by omega) hxn' (hzh' ▸ hhnot)
+    · rcases hzn with hzn' | hzh'
+      · exact key x z hx hz (by omega) (hxh' ▸ hhnot) hzn'
+      · exact key x z hx hz (by omega) (hxh' ▸ hhnot)
+          (hzh' ▸ hhnot)
+  · rcases hxn with hxn' | hxh'
+    · rcases hyn with hyn' | hyh'
+      · exact key x y hx hy (by omega) hxn' hyn'
+      · exact key x y hx hy (by omega) hxn' (hyh' ▸ hhnot)
+    · rcases hyn with hyn' | hyh'
+      · exact key x y hx hy (by omega) (hxh' ▸ hhnot) hyn'
+      · exact key x y hx hy (by omega) (hxh' ▸ hhnot)
+          (hyh' ▸ hhnot)
+
 end Erdos881
