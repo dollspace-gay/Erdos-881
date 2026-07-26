@@ -1,3 +1,34 @@
+# UPDATE (2026-07-26, cont. 5): THE TRANSLATE LAWS — UNCONDITIONAL
+
+**Arc 25 — the walk kills and the laws.**
+
+- `ap3_deletion_engine` — cofinal fixed-difference AP3s through
+  the basis force a surviving deletion (midpoint deletion;
+  down-step and up-step repairs).
+- `good_two_walk_killed` — if every large basis element keeps a
+  good translate among two fixed positive basis elements, a
+  surviving deletion exists: the good-translate walk either
+  repeats a colour consecutively at cofinal heights (AP3 engine)
+  or eventually alternates perfectly (two-step sums constant,
+  every-fifth-element deletion, index arithmetic).
+- **`single_translate_law`** — UNCONDITIONAL: in any
+  counterexample, for EVERY positive basis element c, cofinally
+  many z ∈ A have z + c ∉ A.
+- **`pair_translate_law`** — UNCONDITIONAL: for every pair
+  (h₀, h₁), cofinally many z ∈ A have BOTH translates out.
+
+**Consequences.**  The door world's good horn is EMPTY under
+hfail — the strong horn is not a case but the law.  The
+good-horn arcs (difference law, good-deep engine, assembly) are
+subsumed: still true, now about a vacuous region.  The door
+kill reduces to: door world + ambient pair law → find the
+repair pair for the strong-horn engine.  The k ≥ 3 finite-set
+translate law is open (the walk's wandering wall).
+
+All verified, zero sorries, standard axioms.
+
+---
+
 # UPDATE (2026-07-26, cont. 4): GOOD-DEEP DOOR DEAD, ASSEMBLED
 
 `door_two_good_deep_killed` — no longer modulo anything: from
