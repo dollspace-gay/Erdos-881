@@ -639,3 +639,21 @@ content), `drain_repair_mine` (repair quadruples a, a+δ, b, b−δ
 ⊆ A with 2^k ∣ δ at every depth k beyond every bound — Sidon
 sets have none; the translate-law/carry-repair fuel, now
 guaranteed 2-adically deep).  All standard axioms.
+
+
+## 2026-07-26 (late): the singular core after fourteen summits
+
+Every remaining open front reduces to COMMITTEE-WIDTH CONTROL
+inside chosen subsets: the funnels link (width 2 in every B),
+the street branch (width <= L at packs), the class-vs-sparse
+gap (width |D cap [0,n]| prefixes), and room II's wall
+(width-2 {c,g0} double-hubs).  The committee floor proves
+width >= 2 hereditarily; the wealth caps prove width bounds
+tax the enemy's targets into poverty; the width-band question
+— can the enemy hold committee width in a bounded band
+against every subset forever — is the problem's residue.
+Two formalizable attacks queued: the drift-vs-window dichotomy
+inside B (window-split machinery accepts card-bounded
+families), and the escalating-width horn via disjoint-witness
+growth (audit disjointness first — witnesses may share
+non-committee parts).
