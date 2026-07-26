@@ -11024,4 +11024,34 @@ theorem deletion_failure_double_slice {A B : Set ℕ}
   · exact absurd h hs'B
   · exact h
 
+open Classical in
+/-- **The quantitative cascade law.**  At any deletion's failure
+targets, the ENTIRE survivor-slice spectrum is pair-poor: for
+every survivor s, the slice n − s has at most |W| unordered
+pairs, where W is any finite window catching the deleted
+elements below n.  A sparse deletion forces every slice of
+every failure target into uniform pair-poverty — the formal
+counterpart of the lab's finding, and the counting blade
+against the canonical core's unbounded r₂. -/
+theorem failure_slices_low_r2 {A B : Set ℕ}
+    (hfail : ∀ B' ⊆ A, B'.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B') 3)
+    (hBA : B ⊆ A) (hBinf : B.Infinite) :
+    ∀ N, ∃ n, N ≤ n ∧ ∀ s ∈ A, s ∉ B → s ≤ n →
+      ∀ W : Finset ℕ, (∀ b, b ∈ B → b ≤ n → b ∈ W) →
+      ((Finset.range (n - s + 1)).filter
+        (fun a => a ∈ A ∧ (n - s - a) ∈ A ∧
+          2 * a ≤ n - s)).card ≤ W.card := by
+  intro N
+  obtain ⟨n, hn, hslice⟩ :=
+    deletion_failure_slices hfail hBA hBinf N
+  refine ⟨n, hn, ?_⟩
+  intro s hs hsB hsn W hW
+  have hhub : IsPairHub A (n - s) W := by
+    intro a ha b hb hab
+    rcases hslice s hs hsB a ha b hb (by omega) with h | h
+    · exact Or.inl (hW a h (by omega))
+    · exact Or.inr (hW b h (by omega))
+  exact pair_hub_pair_count hhub
+
 end Erdos881
