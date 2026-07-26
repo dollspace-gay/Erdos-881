@@ -47,27 +47,34 @@ basis.  Method: contradiction-mining a hypothetical counterexample
   state block at top; dead routes listed there — do not revisit
   them.
 
-## Current frontier (2026-07-26)
+## Current frontier (2026-07-26, night)
 
-TEN SUMMITS in Endgame.lean: final dichotomy, translate laws,
-collapsed trichotomy, parity fork, omega drain, poor street
-(street targets' pair wealth capped at 2L via the 0-weld),
-cascade fork, FORCED MIXING (`endgame_forced_mixing` — the
-determined/Cantor-endpoint horn is EMPTY: 2-adic convergence
-contradicts covering, pure counting), mixing world, and THE
-SELF-SIMILAR ENEMY (`endgame_self_similar`): every
-counterexample owns a located cylinder world
-{x | c + 2^m x ∈ A} with covering + unbounded wealth + both
-parities cofinal + infinitude + lifted failure interface.
-Remaining open cores: (1) the mixing sub-instance (iterate the
-lifted interface, or survival-from-mixing generalizing
-cantor_carry_repair — WARNING: failing targets are global, not
-cylinder-local; naive projection fails); (2) upstream
-rank/street fork (poor street vs 2-adically pinned wealth —
-`drain_wealth_addresses`); (3) racing/mixed-interface fork.
-Threading (core 4) proven impossible from chain supply alone —
-do not retry pure compactness.  The user (Doll) steers via
-metaphors and cannot answer technical questions; read the code.
+FIFTEEN SUMMITS in Endgame.lean; newest = `endgame_width_band`:
+Erdős 881's residue as ONE fork, per infinite positive subset B
+of any counterexample — BOUNDED BAND (width-≤C committees
+cofinally, each target pointwise pair-poor r₂ ≤ 2C: hereditary
+poor streets vs the pinned unbounded wealth of
+`drain_wealth_addresses`) or ESCALATION (wider-than-C minimal
+committees cofinally, privately witnessed, sub-committees
+certified unable to pair-hub their member's translates:
+freeness towers).  Supporting suite: universal committee law
+(hfail alone), committee size floor (≥ 2, anchored),
+`endgame_forced_mixing` (Cantor endpoint DEAD — 2-adic
+convergence contradicts covering), `endgame_self_similar`
+(mixing world = full sub-instance + lifted interface),
+`two_adic_width_law` (support width ~2^(j/2) forced), exclusion
+suite (residue/poverty/sumset/bilinear/3-deletion), room II
+taxes (doubles poor, wealth dodges doubles).  Route prunings:
+pure threading impossible; covering doesn't descend through
+mixing steps; naive bypass false (class-chaining is cofinal —
+the gap is class-vs-sparse-set).  Labs: 52/52, 268/268 — no
+world ever defends.  NEXT: (1) bounded horn vs wealth at
+B := drain-tower material (same-set collision); (2) escalating
+horn: match translate-freeness certificates to translate-pinned
+blockers (door/ladder lemmas); (3) room II anchor hole vs
+fixed-guardian mirrors (RotatingGuardianEndgame ~line 238).
+The user (Doll) steers via metaphors and cannot answer
+technical questions; read the code.
 
 ## Build quirk (2026-07-25)
 
