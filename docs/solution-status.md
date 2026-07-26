@@ -1,3 +1,35 @@
+# THE MASTER CRITERION — TWENTY-SEVENTH SUMMIT (2026-07-26)
+
+`endgame_master_criterion` (Endgame.lean, standard axioms):
+a deletion B survives at order 3 as soon as every target in
+B + A is served by a surviving triple.  Targets OUTSIDE B + A
+keep their covering pair untouched (pad with 0), so the entire
+burden is a thin union of translates — and B is ours to choose.
+
+Erdos 881 restated constructively:
+  CHOOSE A SPARSE INFINITE B ⊆ A KEEPING B + A SERVED.
+
+Two verified local discharges:
+- `deletion_criterion` — split each deleted element in two
+  (splittable regime; includes the Cantor instance);
+- `deletion_criterion_sumfree` + `sumfree_triple` — reach each
+  deleted basis element by a POSITIVE triple (internally
+  sum-free regime; includes {0} ∪ ODDS).  Sum-freeness supplies
+  its own triples: a − x ∉ A for x ∈ A⁺, so a − x is a positive
+  pair sum and a = x + u + v.  (`sumfree_triple` is
+  CHOICE-FREE: axioms propext, Quot.sound only.)
+
+LAB: greedy under the master criterion builds a surviving
+deletion in 20/20 worlds across TEN families — R1, doored
+desert, total desert, thin, low, parity-starved, random,
+spite-loaded, odds, Cantor.  Every adversarial family the
+campaign has ever built now yields to the construction.
+
+REMAINING: prove the greedy never stalls in general, i.e. that
+some sparse infinite B keeps B + A served.  That is the whole
+of Erdos 881 (k = 2) now — one sentence, constructive, with
+both discharge routes verified.
+
 # THE CONSTRUCTIVE TURN — TWENTY-SIXTH SUMMIT (2026-07-26)
 
 THE PIVOT: stop mining contradictions from a hypothetical

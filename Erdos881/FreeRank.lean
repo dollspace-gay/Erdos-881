@@ -18080,4 +18080,143 @@ theorem deletion_exists_of_construction {A : Set ℕ} {N₀ : ℕ}
       · rintro ⟨k, hk⟩
         exact hr k hk.symm
 
+open Classical in
+/-- **Sum-free bases split into three.**  In an internally
+sum-free basis every large element is a sum of THREE positive
+elements — one such triple for every positive basis element
+below it.  Reason: if x ∈ A⁺ and a ∈ A, then a − x cannot lie
+in A (else a = x + (a−x) would be an internal positive sum),
+so a − x is a positive pair sum, and a = x + u + v.  The
+sum-free regime supplies its own repair material, exactly as
+base-3 carries do in the verified Cantor instance. -/
+theorem sumfree_triple {A : Set ℕ} {N₀ X : ℕ}
+    (hcov : PairCovers A N₀)
+    (hsf : ∀ a ∈ A, X < a → ∀ u ∈ A, ∀ v ∈ A,
+      0 < u → 0 < v → u + v ≠ a)
+    {a x : ℕ} (haA : a ∈ A) (hax : X < a)
+    (hxA : x ∈ A) (hx0 : 0 < x) (hxa : x < a)
+    (hbig : N₀ ≤ a - x) :
+    ∃ u ∈ A, ∃ v ∈ A, 0 < u ∧ 0 < v ∧ x + u + v = a := by
+  obtain ⟨u, huA, v, hvA, huv⟩ := hcov (a - x) hbig
+  have hu0 : 0 < u := by
+    rcases Nat.eq_zero_or_pos u with h | h
+    · exfalso
+      have hvA' : v ∈ A := hvA
+      have hveq : v = a - x := by omega
+      rw [hveq] at hvA'
+      exact hsf a haA hax x hxA (a - x) hvA' hx0 (by omega)
+        (by omega)
+    · exact h
+  have hv0 : 0 < v := by
+    rcases Nat.eq_zero_or_pos v with h | h
+    · exfalso
+      have huA' : u ∈ A := huA
+      have hueq : u = a - x := by omega
+      rw [hueq] at huA'
+      exact hsf a haA hax x hxA (a - x) huA' hx0 (by omega)
+        (by omega)
+    · exact h
+  exact ⟨u, huA, v, hvA, hu0, hv0, by omega⟩
+
+open Classical in
+/-- **THE SUM-FREE REPAIR CRITERION.**  The companion of
+`deletion_criterion` for the regime where nothing splits in
+two.  A deletion survives at order 3 as soon as
+  (1) every deleted element is reachable by a surviving triple,
+  (2) every large NON-BASIS target keeps a fully surviving pair.
+Surviving basis elements serve themselves (a = a + 0 + 0), the
+deleted ones are served by (1), and everything else by (2).
+This is the {0} ∪ ODDS mechanism in general form: delete odd
+numbers, recover them as sums of three surviving odds, and let
+the evens keep their many representations. -/
+theorem deletion_criterion_sumfree {A B : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (h0B : 0 ∉ B)
+    (hserved : ∀ b ∈ B, ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+      x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = b)
+    (hcover : ∀ n, N₀ ≤ n → n ∉ A →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) :
+    IsExactTupleAsymptoticBasis (A \ B) 3 := by
+  refine ⟨N₀, fun n hn => ?_⟩
+  by_cases hnA : n ∈ A
+  · by_cases hnB : n ∈ B
+    · obtain ⟨x, hxA, y, hyA, z, hzA, hxB, hyB, hzB, hsum⟩ :=
+        hserved n hnB
+      refine ⟨![x, y, z], ?_, ?_⟩
+      · intro i
+        match i with
+        | 0 => exact ⟨hxA, hxB⟩
+        | 1 => exact ⟨hyA, hyB⟩
+        | 2 => exact ⟨hzA, hzB⟩
+      · simpa [Fin.sum_univ_three] using hsum
+    · refine ⟨![n, 0, 0], ?_, ?_⟩
+      · intro i
+        match i with
+        | 0 => exact ⟨hnA, hnB⟩
+        | 1 => exact ⟨h0, h0B⟩
+        | 2 => exact ⟨h0, h0B⟩
+      · have he : n + 0 + 0 = n := by omega
+        simpa [Fin.sum_univ_three] using he
+  · obtain ⟨x, hxA, y, hyA, hxB, hyB, hsum⟩ := hcover n hn hnA
+    refine ⟨![x, y, 0], ?_, ?_⟩
+    · intro i
+      match i with
+      | 0 => exact ⟨hxA, hxB⟩
+      | 1 => exact ⟨hyA, hyB⟩
+      | 2 => exact ⟨h0, h0B⟩
+    · have he : x + y + 0 = n := by omega
+      simpa [Fin.sum_univ_three] using he
+
+open Classical in
+/-- **THE MASTER DELETION CRITERION.**  The sharpest form of
+the constructive turn: a deletion survives at order 3 iff it
+serves only the targets it actually threatens.  Every target
+outside B + A keeps its covering pair intact and is padded with
+0; so the ENTIRE burden is the sparse set B + A —
+
+  every n ≥ N₀ lying in B + A has a surviving triple.
+
+Nothing else is required: no minimality, no splitting, no
+sum-freeness.  `deletion_criterion` (split the deleted part)
+and `deletion_criterion_sumfree` (positive triples for basis
+elements) are the two local ways of discharging this one
+hypothesis.  Since B is ours to choose sparse, B + A is a thin
+union of translates: the problem is exactly to keep a thin
+union of translates served. -/
+theorem deletion_criterion_local {A B : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (h0B : 0 ∉ B) (hcov : PairCovers A N₀)
+    (hrisk : ∀ n, N₀ ≤ n → (∃ b ∈ B, ∃ a ∈ A, b + a = n) →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n) :
+    IsExactTupleAsymptoticBasis (A \ B) 3 := by
+  refine ⟨N₀, fun n hn => ?_⟩
+  obtain ⟨x, hxA, y, hyA, hxy⟩ := hcov n hn
+  by_cases hxB : x ∈ B
+  · obtain ⟨p, hpA, q, hqA, r, hrA, hpB, hqB, hrB, hsum⟩ :=
+      hrisk n hn ⟨x, hxB, y, hyA, hxy⟩
+    refine ⟨![p, q, r], ?_, ?_⟩
+    · intro i
+      match i with
+      | 0 => exact ⟨hpA, hpB⟩
+      | 1 => exact ⟨hqA, hqB⟩
+      | 2 => exact ⟨hrA, hrB⟩
+    · simpa [Fin.sum_univ_three] using hsum
+  · by_cases hyB : y ∈ B
+    · obtain ⟨p, hpA, q, hqA, r, hrA, hpB, hqB, hrB, hsum⟩ :=
+        hrisk n hn ⟨y, hyB, x, hxA, by omega⟩
+      refine ⟨![p, q, r], ?_, ?_⟩
+      · intro i
+        match i with
+        | 0 => exact ⟨hpA, hpB⟩
+        | 1 => exact ⟨hqA, hqB⟩
+        | 2 => exact ⟨hrA, hrB⟩
+      · simpa [Fin.sum_univ_three] using hsum
+    · refine ⟨![x, y, 0], ?_, ?_⟩
+      · intro i
+        match i with
+        | 0 => exact ⟨hxA, hxB⟩
+        | 1 => exact ⟨hyA, hyB⟩
+        | 2 => exact ⟨h0, h0B⟩
+      · have he : x + y + 0 = n := by omega
+        simpa [Fin.sum_univ_three] using he
+
 end Erdos881

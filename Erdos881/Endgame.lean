@@ -1421,4 +1421,31 @@ theorem endgame_construction {A : Set ℕ} {N₀ : ℕ} {b : ℕ → ℕ}
   deletion_exists_of_construction h0 hcov hbA hbpos hbmono
     hsplit hboth
 
+open Classical in
+/-- **THE MASTER DELETION CRITERION** (re-export; twenty-seventh
+summit).  The constructive turn in its sharpest form: a
+deletion B survives at order 3 as soon as every target it
+actually threatens is served.  Targets outside B + A keep their
+covering pair untouched and are padded with 0, so the whole
+burden is the thin union of translates B + A — and B is ours to
+choose.  Erdős 881 becomes: choose a sparse infinite B ⊆ A
+keeping B + A served.
+
+Two local ways to discharge it, both verified:
+`deletion_criterion` splits each deleted element in two (the
+splittable regime, incl. the Cantor instance), and
+`deletion_criterion_sumfree` reaches each deleted basis element
+by a positive triple (the internally sum-free regime, incl.
+{0} ∪ ODDS, where `sumfree_triple` supplies the triples for
+free).  Lab: the greedy under this criterion builds a surviving
+deletion in 20/20 adversarial worlds across ten families —
+every family the campaign has ever constructed. -/
+theorem endgame_master_criterion {A B : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (h0B : 0 ∉ B) (hcov : PairCovers A N₀)
+    (hrisk : ∀ n, N₀ ≤ n → (∃ b ∈ B, ∃ a ∈ A, b + a = n) →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n) :
+    IsExactTupleAsymptoticBasis (A \ B) 3 :=
+  deletion_criterion_local h0 h0B hcov hrisk
+
 end Erdos881
