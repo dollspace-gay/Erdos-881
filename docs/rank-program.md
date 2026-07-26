@@ -494,3 +494,29 @@ started: `deletion_failure_slices`.  The open formal step is
 counting pressure: B must pair-hub every slice of every failure
 target; slices overlap across failure targets; quantify against
 B's own structure (the slice-hub cascade).
+
+
+## The cascade counting audit (2026-07-26)
+
+Composed `failure_slices_low_r2` + `r2_unbounded_of_hfail` (the
+supply IS cofinal: ∀ C N ∃ v ≥ N with pair-count ≥ C) +
+`covering_density`.  Findings, all checked by hand:
+
+1. High-r₂ targets are never survivor-slices of failure targets
+   (their pair count exceeds any sparse deletion's window), so
+   failure targets dodge v + S for every high-r₂ v.  The dodge
+   count is bounded by the deletion's window count — REAL
+   pressure, but it needs DENSITY of high-r₂ targets, and the
+   interface gives only cofinality.  The enemy's sparsity
+   refuge — threshold racing — reappears exactly as recorded.
+2. Triple-mass accounting dies differently: failure targets may
+   route unlimited triple mass through DELETED slices (those
+   triples contain a deleted part, consistent with failure), so
+   Σ-r₃ caps are uninformative.  Junk-shape; not formalized.
+3. Conclusion: the cascade cannot be closed by static counting.
+   It must be composed with the self-referential devices — the
+   flood (which forces per-element structure at EVERY basis
+   element, density-free) or the spine.  Next design: flood the
+   cascade — use rep_flood_of_hfail's per-b personal targets as
+   the slice family, so the slice indices are enemy material
+   rather than a static V.
