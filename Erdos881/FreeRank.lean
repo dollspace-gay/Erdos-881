@@ -13670,4 +13670,114 @@ theorem cross_blowup_descends {S T : Set ℕ} {p q : ℕ}
     hp hq hvpar
   exact ⟨(v - p - q) / 2, by omega, by omega⟩
 
+open Classical in
+/-- **THE ω-DRAIN.**  Every counterexample owns an infinite
+path through the 2-adic tree of cross-systems along which pair
+wealth persists at EVERY level: starting from (A, A), each
+level's split picks a parity square and the generic descent
+carries the blowup down, forever.  The enemy's riches trace an
+infinite 2-adic address — the formal shadow of the Cantor
+cascade, extracted from hfail alone. -/
+theorem the_omega_drain {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ S T : ℕ → Set ℕ, S 0 = A ∧ T 0 = A ∧
+      (∀ k, ∃ p q, p < 2 ∧ q < 2 ∧
+        S (k + 1) = {y | 2 * y + p ∈ S k} ∧
+        T (k + 1) = {y | 2 * y + q ∈ T k}) ∧
+      ∀ k C N, ∃ v, N ≤ v ∧ C ≤
+        ((Finset.range (v + 1)).filter
+          (fun x => x ∈ S k ∧ (v - x) ∈ T k)).card := by
+  have hstep : ∀ S T : Set ℕ,
+      (∀ C N, ∃ v, N ≤ v ∧ C ≤ ((Finset.range (v + 1)).filter
+        (fun x => x ∈ S ∧ (v - x) ∈ T)).card) →
+      ∃ p q, p < 2 ∧ q < 2 ∧
+        ∀ C N, ∃ v, N ≤ v ∧ C ≤
+          ((Finset.range (v + 1)).filter
+            (fun x => x ∈ {y | 2 * y + p ∈ S} ∧
+              (v - x) ∈ {y | 2 * y + q ∈ T})).card := by
+    intro S T h
+    have hconv : ∀ (p q : ℕ),
+        (∀ C N, ∃ w, N ≤ w ∧ C ≤
+          ((Finset.range (w + 1)).filter
+            (fun y => 2 * y + p ∈ S ∧
+              2 * (w - y) + q ∈ T)).card) →
+        (∀ C N, ∃ v, N ≤ v ∧ C ≤
+          ((Finset.range (v + 1)).filter
+            (fun x => x ∈ {y | 2 * y + p ∈ S} ∧
+              (v - x) ∈ {y | 2 * y + q ∈ T})).card) := by
+      intro p q hh C N
+      obtain ⟨w, hw, hc⟩ := hh C N
+      refine ⟨w, hw, ?_⟩
+      have he : (Finset.range (w + 1)).filter
+          (fun y => 2 * y + p ∈ S ∧ 2 * (w - y) + q ∈ T) =
+          (Finset.range (w + 1)).filter
+          (fun x => x ∈ {y | 2 * y + p ∈ S} ∧
+            (w - x) ∈ {y | 2 * y + q ∈ T}) := by
+        apply Finset.filter_congr
+        intro x _
+        simp [Set.mem_setOf_eq]
+      rw [← he]
+      exact hc
+    rcases cross_channel_split h with h1 | h1 | h1 | h1
+    · exact ⟨0, 0, by omega, by omega, hconv 0 0
+        (cross_blowup_descends (by omega) (by omega) h1)⟩
+    · exact ⟨0, 1, by omega, by omega, hconv 0 1
+        (cross_blowup_descends (by omega) (by omega) h1)⟩
+    · exact ⟨1, 0, by omega, by omega, hconv 1 0
+        (cross_blowup_descends (by omega) (by omega) h1)⟩
+    · exact ⟨1, 1, by omega, by omega, hconv 1 1
+        (cross_blowup_descends (by omega) (by omega) h1)⟩
+  have hroot : ∀ C N, ∃ v, N ≤ v ∧ C ≤
+      ((Finset.range (v + 1)).filter
+        (fun x => x ∈ A ∧ (v - x) ∈ A)).card :=
+    fun C N => r2_unbounded_of_hfail h0 hcov hfail C N
+  set Blow : Set ℕ × Set ℕ → Prop := fun ST =>
+    ∀ C N, ∃ v, N ≤ v ∧ C ≤
+      ((Finset.range (v + 1)).filter
+        (fun x => x ∈ ST.1 ∧ (v - x) ∈ ST.2)).card with hBlow
+  have hstep' : ∀ ST : Set ℕ × Set ℕ, Blow ST →
+      ∃ ST' : Set ℕ × Set ℕ, (∃ p q, p < 2 ∧ q < 2 ∧
+        ST'.1 = {y | 2 * y + p ∈ ST.1} ∧
+        ST'.2 = {y | 2 * y + q ∈ ST.2}) ∧ Blow ST' := by
+    rintro ⟨S, T⟩ hB
+    obtain ⟨p, q, hp, hq, hB'⟩ := hstep S T hB
+    exact ⟨({y | 2 * y + p ∈ S}, {y | 2 * y + q ∈ T}),
+      ⟨p, q, hp, hq, rfl, rfl⟩, hB'⟩
+  have hnext : ∀ ST : Set ℕ × Set ℕ, ∃ ST' : Set ℕ × Set ℕ,
+      Blow ST → ((∃ p q, p < 2 ∧ q < 2 ∧
+        ST'.1 = {y | 2 * y + p ∈ ST.1} ∧
+        ST'.2 = {y | 2 * y + q ∈ ST.2}) ∧ Blow ST') := by
+    intro ST
+    by_cases hB : Blow ST
+    · obtain ⟨ST', h1, h2⟩ := hstep' ST hB
+      exact ⟨ST', fun _ => ⟨h1, h2⟩⟩
+    · exact ⟨ST, fun h => absurd h hB⟩
+  choose nx hnx using hnext
+  set st : ℕ → Set ℕ × Set ℕ := fun k =>
+    Nat.rec (A, A) (fun _ prev => nx prev) k with hst
+  have hstS : ∀ k, st (k + 1) = nx (st k) := fun _ => rfl
+  have hB : ∀ k, Blow (st k) := by
+    intro k
+    induction k with
+    | zero => exact hroot
+    | succ k ih =>
+      rw [hstS]
+      exact (hnx (st k) ih).2
+  refine ⟨fun k => (st k).1, fun k => (st k).2, rfl, rfl,
+    ?_, ?_⟩
+  · intro k
+    have h1 := (hnx (st k) (hB k)).1
+    obtain ⟨p, q, hp, hq, h2, h3⟩ := h1
+    refine ⟨p, q, hp, hq, ?_, ?_⟩
+    · show (st (k + 1)).1 = _
+      rw [hstS]
+      exact h2
+    · show (st (k + 1)).2 = _
+      rw [hstS]
+      exact h3
+  · intro k
+    exact hB k
+
 end Erdos881
