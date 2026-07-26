@@ -12547,4 +12547,55 @@ theorem descent_threshold_race {A : Set ℕ} {N₀ k c T : ℕ}
     Nat.pow_le_pow_left hle 2
   omega
 
+/-- **The depth cost.**  Descent thresholds grow geometrically:
+a level-k cylinder needs its threshold within N₀ + 2 of
+2^(k−2).  Instantiating the race at X = 4^(k−1): the enemy pays
+an exponential threshold for every level of parity defence —
+the racing lane's speed limit, in closed form. -/
+theorem descent_depth_cost {A : Set ℕ} {N₀ k c T : ℕ}
+    (hcov : PairCovers A N₀)
+    (hcyl : ∀ a ∈ A, T < a → ∃ a', a = c + 2 ^ k * a')
+    (hk : 2 ≤ k) (hN : N₀ < 2 ^ (k - 1)) :
+    2 ^ (k - 2) ≤ T + N₀ + 2 := by
+  have hX : (2 : ℕ) ^ (2 * k - 2) = 2 ^ k * 2 ^ (k - 2) := by
+    rw [← pow_add]
+    congr 1
+    omega
+  have hb : (2 : ℕ) ^ (2 * k - 2) = (2 ^ (k - 1)) ^ 2 := by
+    rw [← pow_mul]
+    congr 1
+    omega
+  have hNX : N₀ ≤ 2 ^ (2 * k - 2) := by
+    have h1 : (2 : ℕ) ^ (k - 1) ≤ 2 ^ (2 * k - 2) :=
+      Nat.pow_le_pow_right (by omega) (by omega)
+    omega
+  have hrace := descent_threshold_race hcov hcyl
+    (2 ^ (2 * k - 2)) hNX
+  have hdiv : (2 : ℕ) ^ (2 * k - 2) / 2 ^ k = 2 ^ (k - 2) := by
+    rw [hX]
+    exact Nat.mul_div_cancel_left _ (pow_pos (by omega) k)
+  rw [hdiv] at hrace
+  by_contra hlt
+  push_neg at hlt
+  set a := T + 2 ^ (k - 2) + 2 with ha
+  set b := (2 : ℕ) ^ (k - 1) with hbdef
+  have hsplit : b = 2 * 2 ^ (k - 2) := by
+    rw [hbdef]
+    rw [show k - 1 = (k - 2) + 1 from by omega, pow_succ]
+    ring
+  have hab : a + N₀ < b := by omega
+  set d := b - N₀ - 1 with hd
+  have hbd : b = d + N₀ + 1 := by omega
+  have hle : a ≤ d := by omega
+  have h1 : a ^ 2 ≤ d ^ 2 := Nat.pow_le_pow_left hle 2
+  have he : (d + N₀ + 1) ^ 2 =
+      d ^ 2 + 2 * d * (N₀ + 1) + (N₀ + 1) ^ 2 := by ring
+  have h2 : b ^ 2 = d ^ 2 + 2 * d * (N₀ + 1) +
+      (N₀ + 1) ^ 2 := by
+    rw [hbd]
+    exact he
+  have h3 : (N₀ + 1) ^ 2 = N₀ * N₀ + 2 * N₀ + 1 := by ring
+  rw [← hb] at h2
+  omega
+
 end Erdos881
