@@ -13326,4 +13326,65 @@ theorem the_total_drain {A : Set ℕ} {N₀ : ℕ}
     have hdesc := mixed_channel_descends (A := A) hvodd
     exact ⟨(v - 1) / 2, by omega, by omega⟩
 
+/-- **The covering channel split.**  Every even target's pair
+has equal parities, so it descends whole: the half target is
+H₀-pair-covered or the shifted half target is H₁-pair-covered.
+Coverage, like wealth, cannot stay at one 2-adic level. -/
+theorem even_target_channel_split {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀) :
+    ∀ n, N₀ ≤ n → n % 2 = 0 →
+      (∃ y y', 2 * y ∈ A ∧ 2 * y' ∈ A ∧ y + y' = n / 2) ∨
+      (∃ y y', 2 * y + 1 ∈ A ∧ 2 * y' + 1 ∈ A ∧
+        y + y' + 1 = n / 2) := by
+  intro n hn hne
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hn
+  rcases Nat.mod_two_eq_zero_or_one x with hxe | hxo
+  · have hye : y % 2 = 0 := by omega
+    left
+    refine ⟨x / 2, y / 2, ?_, ?_, by omega⟩
+    · have h1 : 2 * (x / 2) = x := by omega
+      rw [h1]
+      exact hx
+    · have h1 : 2 * (y / 2) = y := by omega
+      rw [h1]
+      exact hy
+  · have hyo : y % 2 = 1 := by omega
+    right
+    refine ⟨x / 2, y / 2, ?_, ?_, by omega⟩
+    · have h1 : 2 * (x / 2) + 1 = x := by omega
+      rw [h1]
+      exact hx
+    · have h1 : 2 * (y / 2) + 1 = y := by omega
+      rw [h1]
+      exact hy
+
+/-- **The odd channel crosses.**  Every odd target's pair is
+mixed, descending to a CROSS pair of the two half-worlds:
+2y + (2y' + 1) = n.  The tree's covering laws are total:
+every target's coverage lives one level down, in a channel. -/
+theorem odd_target_cross_split {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀) :
+    ∀ n, N₀ ≤ n → n % 2 = 1 →
+      ∃ y y', 2 * y ∈ A ∧ 2 * y' + 1 ∈ A ∧
+        y + y' = (n - 1) / 2 := by
+  intro n hn hno
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hn
+  rcases Nat.mod_two_eq_zero_or_one x with hxe | hxo
+  · have hyo : y % 2 = 1 := by omega
+    refine ⟨x / 2, y / 2, ?_, ?_, by omega⟩
+    · have h1 : 2 * (x / 2) = x := by omega
+      rw [h1]
+      exact hx
+    · have h1 : 2 * (y / 2) + 1 = y := by omega
+      rw [h1]
+      exact hy
+  · have hye : y % 2 = 0 := by omega
+    refine ⟨y / 2, x / 2, ?_, ?_, by omega⟩
+    · have h1 : 2 * (y / 2) = y := by omega
+      rw [h1]
+      exact hy
+    · have h1 : 2 * (x / 2) + 1 = x := by omega
+      rw [h1]
+      exact hx
+
 end Erdos881
