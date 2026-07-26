@@ -9478,4 +9478,62 @@ theorem almost_anchored_singleton_hubs {A : Set ℕ} {N₀ g₀ : ℕ}
     · simpa [Fin.sum_univ_three] using hsum
   · exact htower
 
+/-- **The g₀-translate law.**  The tower alone — no routing
+needed — forces A off its own g₀-translate: for any positive
+z ∈ A other than g₀, the value g₀ + z is OUT of A.  Otherwise
+some high tower level L would pair g₀ + z with the mirror L − z
+and hand its private target a second pair, breaking the
+singleton hub.  A ∩ (A + g₀) ⊆ {g₀, 2g₀}: the door element's
+translate is a desert. -/
+theorem g0_translate_law {A : Set ℕ} {N₀ g₀ : ℕ}
+    (hg0 : 0 < g₀)
+    (htower : ∀ K, ∃ L, K < L ∧ L ∈ A ∧ N₀ ≤ g₀ + L ∧
+      IsPairHub A (g₀ + L) ({g₀} : Finset ℕ) ∧
+      ∀ z ∈ A, z ≠ g₀ → z + N₀ < L → L - z ∈ A) :
+    ∀ z ∈ A, 0 < z → z ≠ g₀ → g₀ + z ∉ A := by
+  intro z hzA hz0 hzg hmem
+  obtain ⟨L, hKL, hLA, hLN, hhub, hmir⟩ :=
+    htower (z + N₀ + g₀ + 1)
+  have hmzA : L - z ∈ A := hmir z hzA hzg (by omega)
+  rcases hhub (g₀ + z) hmem (L - z) hmzA (by omega) with h | h
+  · rw [Finset.mem_singleton] at h
+    omega
+  · rw [Finset.mem_singleton] at h
+    omega
+
+/-- **The g₀-mirror lock.**  In a ROUTED world the tower's one
+missing reflection is forced missing: at every sufficiently
+high tower level L the slot L − g₀ is OUT of A.  Otherwise the
+mirrors of a fixed ladder anchor c and its route partner
+q = 2c − g₀ would give the double 2(L − c) the noncentral
+g₀-free decomposition (L − q) + (L − g₀), which routing forbids.
+The tower is near-symmetric with exactly one empty slot — at
+the router's own mirror. -/
+theorem routed_tower_mirror_lock {A : Set ℕ} {N₀ g₀ c : ℕ}
+    (hroute : ∀ c' ∈ A, 0 < c' → c' ≠ g₀ →
+      IsPairHub A (2 * c') ({c', g₀} : Finset ℕ))
+    (hcA : c ∈ A) (hcg : c ≠ g₀) (hg2c : g₀ ≤ 2 * c)
+    (hqA : (2 * c - g₀) ∈ A) (hqc : 2 * c - g₀ ≠ c)
+    {L : ℕ} (hLA : L ∈ A) (hLbig : 2 * c + g₀ + N₀ + 1 < L)
+    (hmir : ∀ z ∈ A, z ≠ g₀ → z + N₀ < L → L - z ∈ A) :
+    L - g₀ ∉ A := by
+  intro hLg
+  have hmc : L - c ∈ A := hmir c hcA hcg (by omega)
+  have hmq : L - (2 * c - g₀) ∈ A :=
+    hmir (2 * c - g₀) hqA (by omega) (by omega)
+  have hsum : (L - (2 * c - g₀)) + (L - g₀) = 2 * (L - c) := by
+    omega
+  have hown : 0 < L - c := by omega
+  have hog : L - c ≠ g₀ := by omega
+  rcases hroute (L - c) hmc hown hog
+    (L - (2 * c - g₀)) hmq (L - g₀) hLg hsum with h | h
+  · rcases Finset.mem_insert.1 h with h' | h'
+    · omega
+    · rw [Finset.mem_singleton] at h'
+      omega
+  · rcases Finset.mem_insert.1 h with h' | h'
+    · omega
+    · rw [Finset.mem_singleton] at h'
+      omega
+
 end Erdos881
