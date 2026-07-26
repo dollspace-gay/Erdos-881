@@ -5491,4 +5491,42 @@ theorem translation_room_teams {A : Set ℕ} {N₀ δ : ℕ}
   have := hmem h hh
   exact ⟨this.1, this.2.1, this.2.2⟩
 
+/-- **The essential element's private stream.**  Erdős 881's own
+hypothesis — A is a MINIMAL basis, every element essential — has
+been under-used: essentiality of b at order 2 means deleting b
+breaks coverage cofinally, i.e. b owns a cofinal stream of
+targets whose EVERY pair decomposition uses b.  At each such
+target the decomposition is unique: m = b + c with c ∈ A, and no
+other pair exists.  Every element of the true 881 configuration
+owns infinitely many unique-representation targets. -/
+theorem essential_private_pair_stream {A : Set ℕ} {N₀ : ℕ}
+    {b : ℕ} (hcov : PairCovers A N₀)
+    (hess : ¬∃ N₁, ∀ n, N₁ ≤ n → ∃ x ∈ A, ∃ y ∈ A,
+      x ≠ b ∧ y ≠ b ∧ x + y = n) :
+    ∀ N, ∃ m, N ≤ m ∧ ∃ c ∈ A, b + c = m ∧
+      ∀ x ∈ A, ∀ y ∈ A, x + y = m →
+        (x = b ∧ y = c) ∨ (x = c ∧ y = b) := by
+  push_neg at hess
+  intro N
+  obtain ⟨m, hm, hall⟩ := hess (N + N₀)
+  obtain ⟨x₀, hx₀, y₀, hy₀, hxy₀⟩ := hcov m (by omega)
+  have hb₀ : x₀ = b ∨ y₀ = b := by
+    by_contra hno
+    push_neg at hno
+    exact hall x₀ hx₀ y₀ hy₀ hno.1 hno.2 hxy₀
+  have hc : ∃ c ∈ A, b + c = m := by
+    rcases hb₀ with h | h
+    · exact ⟨y₀, hy₀, by omega⟩
+    · exact ⟨x₀, hx₀, by omega⟩
+  obtain ⟨c, hcA, hbc⟩ := hc
+  refine ⟨m, by omega, c, hcA, hbc, ?_⟩
+  intro x hx y hy hxy
+  have hbxy : x = b ∨ y = b := by
+    by_contra hno
+    push_neg at hno
+    exact hall x hx y hy hno.1 hno.2 hxy
+  rcases hbxy with h | h
+  · exact Or.inl ⟨h, by omega⟩
+  · exact Or.inr ⟨by omega, h⟩
+
 end Erdos881
