@@ -12721,4 +12721,120 @@ theorem finset_stream_higman (Q : ℕ → Finset ℕ) :
     (fun k x _ => Set.mem_univ x)
   exact ⟨σ, hσ⟩
 
+/-- **THE RANK ROOM'S OWN CHAIN.**  From the four lanes' rank
+branch alone — free positive envelopes of every size — the rank
+room builds its own nonempty disjoint growing shell stream and
+walks it through the detached Nash-Williams door: a sorted-list
+Higman chain of the room's own free material, no oracle, no
+stratification.  The spine program's entry interface,
+reproduced inside the rank refuge: the third core is a corridor
+toward the street machinery, not a separate room. -/
+theorem rank_room_chain {A : Set ℕ} {N₀ : ℕ}
+    (hfree : ∀ c, ∃ P : Finset ℕ,
+      (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧ RepFree A N₀ P ∧
+      c ≤ P.card) :
+    ∃ Q : ℕ → Finset ℕ, ∃ σ : ℕ ↪o ℕ,
+      (∀ k, (Q k).Nonempty) ∧
+      (∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h) ∧
+      (∀ k, RepFree A N₀ (Q k)) ∧
+      (∀ j k, j < k → Disjoint (Q j) (Q k)) ∧
+      (∀ k, k + 1 ≤ (Q k).card) ∧
+      ∀ m n, m ≤ n → List.SublistForall₂ (· ≤ ·)
+        ((Q (σ m)).sort (· ≤ ·))
+        ((Q (σ n)).sort (· ≤ ·)) := by
+  classical
+  have hdodge : ∀ (F : Finset ℕ) (c : ℕ), ∃ P : Finset ℕ,
+      (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧ RepFree A N₀ P ∧
+      c ≤ P.card ∧ Disjoint P F := by
+    intro F c
+    obtain ⟨P, hmat, hPfree, hPc⟩ := hfree (c + F.card)
+    refine ⟨P \ F, fun h hh => hmat h (Finset.mem_sdiff.1 hh).1,
+      RepFree.mono Finset.sdiff_subset hPfree, ?_,
+      Finset.sdiff_disjoint⟩
+    have h1 : P ⊆ (P \ F) ∪ F := by
+      intro x hx
+      by_cases hxF : x ∈ F
+      · exact Finset.mem_union_right _ hxF
+      · exact Finset.mem_union_left _
+          (Finset.mem_sdiff.2 ⟨hx, hxF⟩)
+    have h2 := Finset.card_le_card h1
+    have h3 := Finset.card_union_le (P \ F) F
+    omega
+  choose Pf hPf1 hPf2 hPf3 hPf4 using hdodge
+  set st : ℕ → Finset ℕ × Finset ℕ := fun k =>
+    Nat.rec (Pf ∅ 1, Pf ∅ 1)
+      (fun k prev => (Pf prev.2 (k + 2),
+        prev.2 ∪ Pf prev.2 (k + 2))) k with hst
+  have hstS : ∀ k, st (k + 1) =
+      (Pf (st k).2 (k + 2),
+       (st k).2 ∪ Pf (st k).2 (k + 2)) := fun _ => rfl
+  set Q : ℕ → Finset ℕ := fun k => (st k).1 with hQ
+  have hQ0 : Q 0 = Pf ∅ 1 := rfl
+  have hQS : ∀ k, Q (k + 1) = Pf (st k).2 (k + 2) :=
+    fun _ => rfl
+  have hcard : ∀ k, k + 1 ≤ (Q k).card := by
+    intro k
+    cases k with
+    | zero => exact hPf3 ∅ 1
+    | succ k =>
+      rw [hQS]
+      exact hPf3 _ _
+  have hacc : ∀ k, Q k ⊆ (st k).2 := by
+    intro k
+    cases k with
+    | zero => exact Finset.Subset.refl _
+    | succ k =>
+      rw [hQS, hstS]
+      exact Finset.subset_union_right
+  have haccmono : ∀ j k, j ≤ k → (st j).2 ⊆ (st k).2 := by
+    intro j k hjk
+    induction k with
+    | zero =>
+      have h0 : j = 0 := by omega
+      subst h0
+      exact Finset.Subset.refl _
+    | succ k ih =>
+      rcases Nat.lt_or_ge j (k + 1) with h | h
+      · refine Finset.Subset.trans (ih (by omega)) ?_
+        rw [hstS]
+        exact Finset.subset_union_left
+      · have h1 : j = k + 1 := by omega
+        subst h1
+        exact Finset.Subset.refl _
+  have hdisj : ∀ j k, j < k → Disjoint (Q j) (Q k) := by
+    intro j k hjk
+    have h1 : Q k = Pf (st (k - 1)).2 (k + 1) := by
+      have h5 := hQS (k - 1)
+      have he : k - 1 + 1 = k := by omega
+      have he2 : k - 1 + 2 = k + 1 := by omega
+      rw [he, he2] at h5
+      exact h5
+    have h2 : Disjoint (Pf (st (k - 1)).2 (k + 1))
+        (st (k - 1)).2 := hPf4 _ _
+    have h3 : Q j ⊆ (st (k - 1)).2 := by
+      have h4 : j ≤ k - 1 := by omega
+      exact Finset.Subset.trans (hacc j) (haccmono j (k - 1) h4)
+    rw [h1]
+    exact (Finset.disjoint_of_subset_right h3 h2).symm
+  have hmat : ∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h := by
+    intro k
+    cases k with
+    | zero => exact hPf1 ∅ 1
+    | succ k =>
+      rw [hQS]
+      exact hPf1 _ _
+  have hfreeQ : ∀ k, RepFree A N₀ (Q k) := by
+    intro k
+    cases k with
+    | zero => exact hPf2 ∅ 1
+    | succ k =>
+      rw [hQS]
+      exact hPf2 _ _
+  have hne : ∀ k, (Q k).Nonempty := by
+    intro k
+    have h1 := hcard k
+    exact Finset.card_pos.1 (by omega)
+  obtain ⟨σ, hσ⟩ := finset_stream_higman Q
+  exact ⟨Q, σ, hne, hmat, hfreeQ, hdisj, hcard, hσ⟩
+
 end Erdos881
