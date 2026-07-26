@@ -6858,4 +6858,40 @@ theorem spine_rank_or_lockstep {A : Set ℕ} {N₀ : ℕ}
       rw [← hleq]
       exact hf₂
 
+/-- **The fork, in rank form.**  Either the root rank of the full
+freeness tree is at least ω — free sets of every size exist, and
+the finite-rank room is closed at the root — or the spine goes
+lockstep.  Mechanical combination of `spine_rank_or_lockstep`
+with `free_set_card_le_rank`. -/
+theorem root_rank_omega_or_lockstep {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (Ordinal.omega0 ≤
+      ((poolFreeStep_wf h0 hcov hfail Set.univ).apply ∅).rank) ∨
+    (∃ Q : ℕ → Finset ℕ, ∃ σ : ℕ ↪o ℕ, ∃ T s : ℕ,
+      (∀ k, RepFree A N₀ (Q k)) ∧
+      (∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h) ∧
+      (∀ j k, j < k → Disjoint (Q j) (Q k)) ∧
+      1 ≤ s ∧
+      (∀ t, T ≤ t → (Q (σ t)).card = s) ∧
+      (∀ t, T ≤ t → List.Forall₂ (· ≤ ·)
+        ((Q (σ t)).sort (· ≤ ·))
+        ((Q (σ (t + 1))).sort (· ≤ ·)))) := by
+  rcases spine_rank_or_lockstep h0 hcov hanchor hfail with
+    hbig | hlock
+  · left
+    rw [Ordinal.omega0_le]
+    intro n
+    obtain ⟨P, hPmem, hPfree, hPc⟩ := hbig n
+    have h1 := free_set_card_le_rank h0 hcov hfail
+      (P₀ := Set.univ) ⟨hPmem, hPfree⟩
+      (fun h _ => Set.mem_univ h)
+    calc (n : Ordinal.{0}) ≤ (P.card : Ordinal.{0}) := by
+          exact_mod_cast Nat.cast_le.2 hPc
+      _ ≤ _ := h1
+  · exact Or.inr hlock
+
 end Erdos881
