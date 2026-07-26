@@ -6481,4 +6481,85 @@ theorem subset_sum_complete_of_small_gaps (t : ℕ → ℕ)
       · rw [Finset.sum_insert hnotmem, hsum]
         omega
 
+/-- **Bootstrap completeness.**  The offset form of the
+completeness criterion for real bases (which need not contain 1):
+if the first K₀+1 terms' subset sums cover an initial window
+[B, C₀], and each later term is at most one more than the
+interval already reachable, then subset sums cover [B, C₀ + tail
+sum] at every stage.  Interval-extension induction. -/
+theorem subset_sum_complete_of_bootstrap (t : ℕ → ℕ)
+    {B C₀ K₀ : ℕ} (hBC : B ≤ C₀)
+    (hinit : ∀ n, B ≤ n → n ≤ C₀ → ∃ S : Finset ℕ,
+      S ⊆ Finset.range (K₀ + 1) ∧ (∑ i ∈ S, t i) = n)
+    (hgap : ∀ k, K₀ < k → t k ≤ C₀ - B + 1 +
+      (∑ i ∈ Finset.Ico (K₀ + 1) k, t i)) :
+    ∀ K, K₀ ≤ K → ∀ n, B ≤ n →
+      n ≤ C₀ + (∑ i ∈ Finset.Ico (K₀ + 1) (K + 1), t i) →
+      ∃ S : Finset ℕ, S ⊆ Finset.range (K + 1) ∧
+        (∑ i ∈ S, t i) = n := by
+  intro K
+  induction K with
+  | zero =>
+    intro hK0 n hBn hn
+    have h1 : K₀ = 0 := by omega
+    subst h1
+    have h2 : Finset.Ico 1 1 = (∅ : Finset ℕ) := by
+      simp
+    rw [h2, Finset.sum_empty] at hn
+    exact hinit n hBn (by omega)
+  | succ K ih =>
+    intro hK0 n hBn hn
+    rcases Nat.lt_or_ge K₀ (K + 1) with hlt | hge
+    · -- K₀ ≤ K: the interval extends by t (K + 1)
+      have hK0K : K₀ ≤ K := by omega
+      have hsplit : (∑ i ∈ Finset.Ico (K₀ + 1) (K + 2), t i) =
+          (∑ i ∈ Finset.Ico (K₀ + 1) (K + 1), t i) +
+          t (K + 1) := by
+        rw [Finset.sum_Ico_succ_top (by omega)]
+      rw [hsplit] at hn
+      set CK := C₀ + (∑ i ∈ Finset.Ico (K₀ + 1) (K + 1), t i)
+        with hCK
+      by_cases hle : n ≤ CK
+      · obtain ⟨S, hS, hsum⟩ := ih hK0K n hBn (by omega)
+        refine ⟨S, ?_, hsum⟩
+        intro x hx
+        have := hS hx
+        rw [Finset.mem_range] at this ⊢
+        omega
+      · push_neg at hle
+        have hgap' := hgap (K + 1) (by omega)
+        have hrange : B ≤ n - t (K + 1) ∧
+            n - t (K + 1) ≤ CK := by
+          constructor
+          · omega
+          · omega
+        obtain ⟨S, hS, hsum⟩ := ih hK0K (n - t (K + 1))
+          hrange.1 (by omega)
+        have hnotmem : K + 1 ∉ S := by
+          intro hmem
+          have := hS hmem
+          rw [Finset.mem_range] at this
+          omega
+        refine ⟨insert (K + 1) S, ?_, ?_⟩
+        · intro x hx
+          rcases Finset.mem_insert.1 hx with h | h
+          · rw [h]
+            exact Finset.mem_range.2 (by omega)
+          · have := hS h
+            rw [Finset.mem_range] at this ⊢
+            omega
+        · rw [Finset.sum_insert hnotmem, hsum]
+          have ht : t (K + 1) ≤ n := by omega
+          omega
+    · -- K + 1 ≤ K₀: still inside the bootstrap window
+      have h2 : Finset.Ico (K₀ + 1) (K + 2) = (∅ : Finset ℕ) := by
+        apply Finset.Ico_eq_empty
+        omega
+      rw [h2, Finset.sum_empty] at hn
+      obtain ⟨S, hS, hsum⟩ := hinit n hBn (by omega)
+      refine ⟨S, ?_, hsum⟩
+      intro x hx
+      have := hS hx
+      rw [Finset.mem_range] at this ⊢
+      omega
 end Erdos881
