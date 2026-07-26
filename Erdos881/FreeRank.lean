@@ -7300,4 +7300,43 @@ theorem anchor_dichotomy {A : Set ℕ} :
       · exact Or.inl (by simp [hwg])
       · exact Or.inr (by simp [h2 hwg])
 
+open Classical in
+/-- **Anchor-free doubles are thin.**  In the no-anchor branch
+every double 2c has its entire pair life inside three explicit
+values {c, g₀, 2c − g₀}: r₂(2c) ≤ 3 uniformly, at the explicit
+one-parameter family of positions 2·A.  Combined with unbounded
+r₂ (anchor-free theorem), blown targets avoid the doubled basis
+entirely — the anchor-free enemy's blowups live off 2·A. -/
+theorem no_anchor_doubles_thin {A : Set ℕ} {g₀ c : ℕ}
+    (hhub : IsPairHub A (2 * c) ({c, g₀} : Finset ℕ)) :
+    ((Finset.range (2 * c + 1)).filter
+      (fun x => x ∈ A ∧ (2 * c - x) ∈ A)).card ≤ 3 := by
+  classical
+  have hsub : ((Finset.range (2 * c + 1)).filter
+      (fun x => x ∈ A ∧ (2 * c - x) ∈ A)) ⊆
+      ({c, g₀, 2 * c - g₀} : Finset ℕ) := by
+    intro x hx
+    rw [Finset.mem_filter, Finset.mem_range] at hx
+    obtain ⟨hxr, hxA, hxA'⟩ := hx
+    have hsum : x + (2 * c - x) = 2 * c := by omega
+    rcases hhub x hxA (2 * c - x) hxA' hsum with h | h
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · simp [h']
+      · rw [Finset.mem_singleton] at h'
+        simp [h']
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · have : x = c := by omega
+        simp [this]
+      · rw [Finset.mem_singleton] at h'
+        have : x = 2 * c - g₀ := by omega
+        simp [this]
+  have h1 := Finset.card_le_card hsub
+  have h2 : ({c, g₀, 2 * c - g₀} : Finset ℕ).card ≤ 3 := by
+    apply le_trans (Finset.card_insert_le _ _)
+    have h3 := Finset.card_insert_le g₀
+      ({2 * c - g₀} : Finset ℕ)
+    simp at h3 ⊢
+    omega
+  omega
+
 end Erdos881
