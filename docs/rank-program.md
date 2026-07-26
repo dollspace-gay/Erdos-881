@@ -240,3 +240,33 @@ cover.  Crystal candidates must be engineered mirror-first, on
 sparse Sidon streets; naive annealing cannot reach that geometry.
 Next lab iteration: seed with designed reflection structure
 (m − h* − A ⊆ A patterns) instead of random perturbation.
+
+## CRYSTAL HUNT v2 + THE SLACK PARADOX (19:50)
+
+Engineered hunt (probe_crystal2.py, coverage-enforced): in a
+near-Sidon covering base at Y = 600, hole-punching seals 1 of 669
+tail pairs.  Coverage duties protect nearly every element: each
+seal wants several removals, every removal threatens covered
+targets, and near-minimal bases have no slack.  This measures the
+covering-vs-uniqueness interference the theory predicted.
+
+**THE SLACK PARADOX (new attack angle, window-local).**  Sealing
+a pair (making it a full hub) at a fragile target requires
+removing/lacking the pair-avoiding representations — that costs
+density slack.  But slack in [0, Y] produces disjoint-rep
+robustness in [0, 3Y] (more elements, more completions), and
+robust targets cannot be sealed at all.  Both quantities are
+functions of the SAME window: unlike every counting law so far,
+this coupling is local and cannot be dodged by placing targets
+high.  Candidate quantitative form: seal-capacity(Y) ≤
+f(slack(Y)) while crystal/shell demand in [Y/2, Y] grows like
+(tail density)² — if f is subquadratic the mixed-regime enemy
+dies in every sufficiently slack window, and zero-slack windows
+feed the counting branch (near-Sidon ⟹ sidon_has_branch
+machinery).  PRIORITY for next session: measure seal-capacity vs
+slack empirically across density regimes, then attempt the
+two-branch formal dichotomy (slack windows: robustness/sealing
+tension; slackless windows: counting branch).  Height-pinning
+helper: a genuine pair-hub needs m ≥ max(b, b'), so tail-pair
+demand is bounded-below in height — the first demand-side height
+pin in the whole program.
