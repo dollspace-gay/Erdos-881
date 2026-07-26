@@ -1,3 +1,42 @@
+# UPDATE (2026-07-26): THE CORRIDOR AND THE CHAIN FORK
+
+**Arcs 32-33 — the rank room opened** (all verified):
+
+- `free_sets_dodge`, `free_disjoint_stream` — the rank branch's
+  bare supply self-organizes: dodging any finite obstruction,
+  pairwise-disjoint growing shells.
+- `finset_stream_higman` — the Nash-Williams door DETACHED:
+  any finset sequence has a sorted-list Higman chain
+  subsequence, zero hypotheses.
+- `rank_room_chain`, `rank_room_spine` — the rank room builds
+  its own shell chain and threads its own strictly increasing
+  canonical lineage: the spine interface inside the rank
+  refuge, no oracle.
+- **`stall_chain_or_rank`** — the fork strengthened at source:
+  minimal stall windows kill every shorter width at the same
+  base, so the rank supply is ascending windows with ALL
+  initial segments free — FreeStep CHAINS of every length on
+  the canonical spine.  The corridor's prefix-freeness gap
+  closes at the fork itself.
+
+**The sharpest form of the compactness core**: FreeStep chains
+of every finite length, each riding one spine window, every
+initial segment free — versus ONE infinite hereditarily free
+chain (= a surviving deletion = the positive answer).  The
+between-window threading is the entire remaining gap; the
+chains-to-ordinal-rank bridge already exists in the codebase
+(the downward induction inside the root-rank theorems).
+
+THE REMAINING BATTLEFIELD (interconnected): the street/hall
+core under total saturation and ambient laws; the mixing-world
+survival (Cantor template); the racing lane's termination; and
+the chain-threading compactness gap — with the corridor now
+connecting the last to the first.
+
+All verified, zero sorries, standard axioms.
+
+---
+
 # UPDATE (2026-07-26): THE DESCENT ARC COMPLETE — SESSION CAP
 
 **Arcs 28-31 — the parity/descent suite** (all verified):
