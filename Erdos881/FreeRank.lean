@@ -9577,4 +9577,319 @@ theorem the_g0_tower_world {A : Set ℕ} {N₀ g₀ : ℕ}
     routed_tower_mirror_lock hroute hcA hcg hg2c hqA hqc hLA
       (by omega) hmir⟩
 
+/-- **The tower engine.**  Geometric levels carrying the
+g₀-defective mirror, a small anchor c with c-free g₀-free repair
+pair (u, u') of 2c + g₀, and the door g₀ itself as a member:
+the deletion {L(2k+2) − c} survives.  Double hits are repaired
+by (L − u) + (L' − u') + g₀, single hits by the c-mirror at the
+odd level, clean pairs by 0-padding. -/
+theorem g0_tower_engine {A : Set ℕ} {N₀ g₀ c u u' : ℕ}
+    (L : ℕ → ℕ)
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hmono : StrictMono L)
+    (hgrow : ∀ k, 2 * L k < L (k + 1))
+    (hTLk : ∀ k, 2 * c + g₀ + N₀ + 1 < L k)
+    (hmemL : ∀ k, L k ∈ A)
+    (hmirL : ∀ k, ∀ z ∈ A, z ≠ g₀ → z + N₀ < L k → L k - z ∈ A)
+    (hgA : g₀ ∈ A) (hcA : c ∈ A) (hcg : c ≠ g₀)
+    (huA : u ∈ A) (hu'A : u' ∈ A) (huu : u + u' = 2 * c + g₀)
+    (hug : u ≠ g₀) (hu'g : u' ≠ g₀) (huc : u ≠ c)
+    (hu'c : u' ≠ c) :
+    ∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n := by
+  classical
+  have hdiff : ∀ i j, i < j → L 0 + L i < L j :=
+    fun i j h => geometric_level_separation hmono hgrow h
+  set f : ℕ → ℕ := fun k => L (2 * k + 2) - c with hf
+  have hfA : ∀ k, f k ∈ A := by
+    intro k
+    have h1 := hTLk (2 * k + 2)
+    exact hmirL _ c hcA hcg (by omega)
+  have hfinj : Function.Injective f := by
+    intro i j hij
+    simp only [hf] at hij
+    have h1 := hTLk (2 * i + 2)
+    have h2 := hTLk (2 * j + 2)
+    have h3 : L (2 * i + 2) = L (2 * j + 2) := by omega
+    have h4 := hmono.injective h3
+    omega
+  have hBsub : Set.range f ⊆ A := by
+    rintro v ⟨k, rfl⟩
+    exact hfA k
+  have h0B : (0 : ℕ) ∉ Set.range f := by
+    rintro ⟨r, hr⟩
+    simp only [hf] at hr
+    have := hTLk (2 * r + 2)
+    omega
+  have hg₀B : g₀ ∉ Set.range f := by
+    rintro ⟨r, hr⟩
+    simp only [hf] at hr
+    have := hTLk (2 * r + 2)
+    omega
+  have hgapB : ∀ i j, j < i → L i - L j ∉ Set.range f := by
+    rintro i j hji ⟨r, hr⟩
+    simp only [hf] at hr
+    have hLj : L j < L i := hmono hji
+    have e : L (2 * r + 2) + L j = L i + c := by
+      have := hTLk (2 * r + 2); omega
+    rcases Nat.lt_trichotomy i (2 * r + 2) with h | h | h
+    · have h6 := hdiff i (2 * r + 2) h
+      have h7 := hTLk 0
+      omega
+    · rw [h] at e
+      have h6 := hTLk j
+      omega
+    · have h2 : L (2 * r + 2) ≤ L (i - 1) :=
+        hmono.monotone (by omega)
+      have h3 : L j ≤ L (i - 1) := hmono.monotone (by omega)
+      have h4 := hgrow (i - 1)
+      have h5 : i - 1 + 1 = i := by omega
+      rw [h5] at h4
+      omega
+  have hnearB : ∀ k v, v ≤ 2 * c + g₀ → v ≠ c →
+      L k - v ∉ Set.range f := by
+    rintro k v hvT hvc ⟨r, hr⟩
+    simp only [hf] at hr
+    have hvL : v < L k := by have := hTLk k; omega
+    have e : L (2 * r + 2) + v = L k + c := by
+      have := hTLk (2 * r + 2); omega
+    rcases Nat.lt_trichotomy k (2 * r + 2) with h | h | h
+    · have h6 := hdiff k (2 * r + 2) h
+      have h7 := hTLk k
+      have h8 := hTLk 0
+      omega
+    · rw [h] at e
+      omega
+    · have h6 := hdiff (2 * r + 2) k h
+      have h7 := hTLk 0
+      omega
+  refine ⟨Set.range f, hBsub,
+    Set.infinite_range_of_injective hfinj, ?_⟩
+  intro n hn
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hn
+  by_cases hxB : x ∈ Set.range f
+  · obtain ⟨i, hix⟩ := hxB
+    simp only [hf] at hix
+    by_cases hyB : y ∈ Set.range f
+    · obtain ⟨j, hjy⟩ := hyB
+      simp only [hf] at hjy
+      have hiT := hTLk (2 * i + 2)
+      have hjT := hTLk (2 * j + 2)
+      have hp₁A : L (2 * i + 2) - u ∈ A :=
+        hmirL _ u huA hug (by omega)
+      have hp₂A : L (2 * j + 2) - u' ∈ A :=
+        hmirL _ u' hu'A hu'g (by omega)
+      refine ⟨_, hp₁A, _, hp₂A, g₀, hgA,
+        hnearB (2 * i + 2) u (by omega) huc,
+        hnearB (2 * j + 2) u' (by omega) hu'c, hg₀B, ?_⟩
+      omega
+    · have hiT := hTLk (2 * i + 2)
+      have hoT := hTLk (2 * i + 1)
+      have hp₁A : L (2 * i + 1) - c ∈ A :=
+        hmirL _ c hcA hcg (by omega)
+      have hp₂A : L (2 * i + 2) - L (2 * i + 1) ∈ A := by
+        have h1 := hgrow (2 * i + 1)
+        have he : 2 * i + 1 + 1 = 2 * i + 2 := by omega
+        rw [he] at h1
+        exact hmirL (2 * i + 2) (L (2 * i + 1))
+          (hmemL (2 * i + 1)) (by omega) (by omega)
+      have hp₁B : L (2 * i + 1) - c ∉ Set.range f := by
+        rintro ⟨r, hr⟩
+        simp only [hf] at hr
+        have h1 := hTLk (2 * r + 2)
+        have h2 : L (2 * r + 2) = L (2 * i + 1) := by omega
+        have h3 := hmono.injective h2
+        omega
+      refine ⟨_, hp₁A, _, hp₂A, y, hy, hp₁B,
+        hgapB (2 * i + 2) (2 * i + 1) (by omega), hyB, ?_⟩
+      have h0' : 2 * i + 1 < 2 * i + 2 := by omega
+      have h1 := le_of_lt (hmono h0')
+      omega
+  · by_cases hyB : y ∈ Set.range f
+    · obtain ⟨j, hjy⟩ := hyB
+      simp only [hf] at hjy
+      have hjT := hTLk (2 * j + 2)
+      have hoT := hTLk (2 * j + 1)
+      have hp₁A : L (2 * j + 1) - c ∈ A :=
+        hmirL _ c hcA hcg (by omega)
+      have hp₂A : L (2 * j + 2) - L (2 * j + 1) ∈ A := by
+        have h1 := hgrow (2 * j + 1)
+        have he : 2 * j + 1 + 1 = 2 * j + 2 := by omega
+        rw [he] at h1
+        exact hmirL (2 * j + 2) (L (2 * j + 1))
+          (hmemL (2 * j + 1)) (by omega) (by omega)
+      have hp₁B : L (2 * j + 1) - c ∉ Set.range f := by
+        rintro ⟨r, hr⟩
+        simp only [hf] at hr
+        have h1 := hTLk (2 * r + 2)
+        have h2 : L (2 * r + 2) = L (2 * j + 1) := by omega
+        have h3 := hmono.injective h2
+        omega
+      refine ⟨_, hp₁A, _, hp₂A, x, hx, hp₁B,
+        hgapB (2 * j + 2) (2 * j + 1) (by omega), hxB, ?_⟩
+      have h0' : 2 * j + 1 < 2 * j + 2 := by omega
+      have h1 := le_of_lt (hmono h0')
+      omega
+    · exact ⟨x, hx, y, hy, 0, h0, hxB, hyB, h0B, by omega⟩
+
+/-- **THE TOWER KILLS ITSELF.**  The g₀-tower plus one ladder
+anchor forces a surviving deletion — no anchor dodging g₀
+needed.  The translate law (a consequence of the tower alone)
+forbids 2c ∈ A and c + g₀ ∈ A at a ladder anchor c, so EVERY
+pair of the covered target 2c + g₀ is automatically g₀-free and
+c-free — exactly the repair material the geometric extraction
+was missing.  The last refuge of the almost-anchored branch is
+self-contradictory. -/
+theorem g0_tower_killed {A : Set ℕ} {N₀ g₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (hg0 : 0 < g₀)
+    (hgA : g₀ ∈ A)
+    (htower : ∀ K, ∃ L, K < L ∧ L ∈ A ∧ N₀ ≤ g₀ + L ∧
+      IsPairHub A (g₀ + L) ({g₀} : Finset ℕ) ∧
+      ∀ z ∈ A, z ≠ g₀ → z + N₀ < L → L - z ∈ A)
+    {c : ℕ} (hcA : c ∈ A) (hcN : N₀ + g₀ + 1 ≤ c)
+    (hcg : c ≠ g₀) (hqA : (2 * c - g₀) ∈ A) :
+    ∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n := by
+  classical
+  have htrans := g0_translate_law hg0 htower
+  have hqpos : 0 < 2 * c - g₀ := by omega
+  have hqg : 2 * c - g₀ ≠ g₀ := by omega
+  have h2c : 2 * c ∉ A := by
+    have h1 := htrans (2 * c - g₀) hqA hqpos hqg
+    have h2 : g₀ + (2 * c - g₀) = 2 * c := by omega
+    rw [h2] at h1
+    exact h1
+  have hcg₀ : c + g₀ ∉ A := by
+    have h1 := htrans c hcA (by omega) hcg
+    have h2 : g₀ + c = c + g₀ := by omega
+    rw [h2] at h1
+    exact h1
+  obtain ⟨u, huA, u', hu'A, huu⟩ := hcov (2 * c + g₀) (by omega)
+  have hug : u ≠ g₀ := by
+    intro h
+    have h1 : u' = 2 * c := by omega
+    exact h2c (h1 ▸ hu'A)
+  have hu'g : u' ≠ g₀ := by
+    intro h
+    have h1 : u = 2 * c := by omega
+    exact h2c (h1 ▸ huA)
+  have huc : u ≠ c := by
+    intro h
+    have h1 : u' = c + g₀ := by omega
+    exact hcg₀ (h1 ▸ hu'A)
+  have hu'c : u' ≠ c := by
+    intro h
+    have h1 : u = c + g₀ := by omega
+    exact hcg₀ (h1 ▸ huA)
+  have hlev : ∀ K, ∃ M, K < M ∧ M ∈ A ∧
+      ∀ z ∈ A, z ≠ g₀ → z + N₀ < M → M - z ∈ A := by
+    intro K
+    obtain ⟨M, h1, h2, _, _, h5⟩ := htower K
+    exact ⟨M, h1, h2, h5⟩
+  choose next hnext hnextMem hnextMir using hlev
+  let L : ℕ → ℕ := fun k =>
+    Nat.rec (next (2 * c + g₀ + N₀ + 1))
+      (fun _ prev => next (2 * prev)) k
+  have hL0 : L 0 = next (2 * c + g₀ + N₀ + 1) := rfl
+  have hLs : ∀ k, L (k + 1) = next (2 * L k) := fun _ => rfl
+  have hgrow : ∀ k, 2 * L k < L (k + 1) := by
+    intro k
+    rw [hLs]
+    exact hnext (2 * L k)
+  have hTL : 2 * c + g₀ + N₀ + 1 < L 0 := by
+    rw [hL0]
+    exact hnext (2 * c + g₀ + N₀ + 1)
+  have hmono : StrictMono L := by
+    apply strictMono_nat_of_lt_succ
+    intro k
+    have h1 := hgrow k
+    have h2 : 0 < L k := by
+      induction k with
+      | zero => omega
+      | succ k ih => have := hgrow k; omega
+    omega
+  have hTLk : ∀ k, 2 * c + g₀ + N₀ + 1 < L k := by
+    intro k
+    have := hmono.monotone (Nat.zero_le k)
+    omega
+  have hmemL : ∀ k, L k ∈ A := by
+    intro k
+    cases k with
+    | zero => exact hnextMem (2 * c + g₀ + N₀ + 1)
+    | succ k => rw [hLs]; exact hnextMem (2 * L k)
+  have hmirL : ∀ k, ∀ z ∈ A, z ≠ g₀ → z + N₀ < L k →
+      L k - z ∈ A := by
+    intro k
+    cases k with
+    | zero => exact hnextMir (2 * c + g₀ + N₀ + 1)
+    | succ k => rw [hLs]; exact hnextMir (2 * L k)
+  exact g0_tower_engine L h0 hcov hmono hgrow hTLk hmemL hmirL
+    hgA hcA hcg huA hu'A huu hug hu'g huc hu'c
+
+/-- **The almost-anchored stream is killed outright.**  With the
+ladder supplying the anchor c and the tower supplying its own
+repair pair, the private-stream dichotomy's residual branch
+(the g₀-tower) is self-contradictory: EVERY cofinal positive
+private stream in an almost-anchored world yields a surviving
+deletion.  The g₀-hole is plugged at the stream level. -/
+theorem almost_anchored_stream_killed {A : Set ℕ} {N₀ g₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (hgA : g₀ ∈ A)
+    (hladder : ∀ N, ∃ c ∈ A, N ≤ c ∧ c ≠ g₀ ∧ g₀ ≤ 2 * c ∧
+      (2 * c - g₀) ∈ A ∧ 2 * c - g₀ ≠ c)
+    (hanchor' : ∀ g, g ≠ g₀ → ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
+      ∃ w ∈ A, ∃ w' ∈ A,
+        w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hstream : ∀ N, ∃ a m, N ≤ m ∧ 0 < a ∧
+      IsPrivateTriple A a m) :
+    ∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n := by
+  rcases almost_anchored_privateStream h0 hcov hstream hanchor'
+    with hsurv | ⟨hg0, hg₀stream⟩
+  · exact hsurv
+  · have htower := g0_tower h0 hcov hg0 hg₀stream
+    obtain ⟨c, hcA, hcN, hcg, hg2c, hqA, hqc⟩ :=
+      hladder (N₀ + g₀ + 1)
+    exact g0_tower_killed h0 hcov hg0 hgA htower hcA hcN hcg hqA
+
+/-- **Almost-anchored singleton hubs are refuted.**  The routed
+branch with cofinal routes now matches the anchored branch
+exactly: no counterexample world of either kind carries cofinal
+positive singleton rep-hubs.  The anchor wall's one hole admits
+nothing. -/
+theorem almost_anchored_singletons_refuted {A : Set ℕ}
+    {N₀ g₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (hgA : g₀ ∈ A)
+    (hladder : ∀ N, ∃ c ∈ A, N ≤ c ∧ c ≠ g₀ ∧ g₀ ≤ 2 * c ∧
+      (2 * c - g₀) ∈ A ∧ 2 * c - g₀ ≠ c)
+    (hanchor' : ∀ g, g ≠ g₀ → ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
+      ∃ w ∈ A, ∃ w' ∈ A,
+        w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ¬(∀ N, ∃ n, N ≤ n ∧ ∃ a, 0 < a ∧ IsRepHub A n {a}) := by
+  intro hsing
+  have hstream : ∀ N, ∃ a m, N ≤ m ∧ 0 < a ∧
+      IsPrivateTriple A a m := by
+    intro N
+    obtain ⟨n, hn, a, ha, hhub⟩ := hsing (max N N₀)
+    exact ⟨a, n, le_trans (le_max_left _ _) hn, ha,
+      privateTriple_of_singleton_hub h0 hcov
+        (le_trans (le_max_right _ _) hn) hhub⟩
+  obtain ⟨B, hBsub, hBinf, hsurv⟩ :=
+    almost_anchored_stream_killed h0 hcov hgA hladder hanchor'
+      hstream
+  refine hfail B hBsub hBinf ⟨N₀, fun n hn => ?_⟩
+  obtain ⟨x, hx, y, hy, z, hz, hxB, hyB, hzB, hsum⟩ :=
+    hsurv n hn
+  refine ⟨![x, y, z], ?_, ?_⟩
+  · intro i
+    match i with
+    | 0 => exact ⟨hx, hxB⟩
+    | 1 => exact ⟨hy, hyB⟩
+    | 2 => exact ⟨hz, hzB⟩
+  · simpa [Fin.sum_univ_three] using hsum
+
 end Erdos881
