@@ -18518,4 +18518,58 @@ theorem popular_difference_bound {A : Set ℕ} {X D : ℕ}
     U.card * ((∑ M ∈ T, (S M).card) + T.card * T.card * D)
   exact le_trans hcs hmul
 
+open Classical in
+/-- **Every large number is a basis element or splits.**  From
+covering alone: for d ≥ N₀ either d ∈ A, or d = u + v with
+u, v ∈ A both positive (a zero part would force d ∈ A).  The
+dichotomy behind the popular-difference payoff. -/
+theorem large_mem_or_splits {A : Set ℕ} {N₀ d : ℕ}
+    (hcov : PairCovers A N₀) (hd : N₀ ≤ d) :
+    d ∈ A ∨ ∃ u ∈ A, ∃ v ∈ A, 0 < u ∧ 0 < v ∧ u + v = d := by
+  obtain ⟨u, huA, v, hvA, huv⟩ := hcov d hd
+  rcases Nat.eq_zero_or_pos u with hu0 | hu0
+  · left
+    have he : v = d := by omega
+    rw [← he]
+    exact hvA
+  · rcases Nat.eq_zero_or_pos v with hv0 | hv0
+    · left
+      have he : u = d := by omega
+      rw [← he]
+      exact huA
+    · exact Or.inr ⟨u, huA, v, hvA, hu0, hv0, huv⟩
+
+open Classical in
+/-- **POPULAR DIFFERENCES REACH THEIR TARGETS.**  The chain's
+payoff, corrected by measurement.  A difference d realised by a
+basis pair (y, y+d) makes the LARGER element reachable from
+STRICTLY SMALLER basis elements in at most three parts:
+
+  d ∈ A   ⟹  y + d = y + d + 0     (two parts);
+  d ∉ A   ⟹  d = u + v positive, so y + d = y + u + v.
+
+Covering guarantees one of the two.  Strictly smaller parts are
+exactly what the greedy construction needs, since every later
+deletion is larger — so the parts protect themselves and only
+finitely many constraints are ever active.
+
+(The lab measured which horn fires: popular differences are
+USUALLY NOT basis elements — 0% in the odds world, where every
+difference of two odds is even, a parity obstruction that no
+argument can remove — but they split into two basis elements
+95–100% of the time.  The three-part horn is the real route;
+the two-part horn is the exception.) -/
+theorem difference_reaches_element {A : Set ℕ} {N₀ d y : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hd : N₀ ≤ d) (hd0 : 0 < d) (hy0 : 0 < y)
+    (hyA : y ∈ A) (hydA : y + d ∈ A) :
+    ∃ p ∈ A, ∃ q ∈ A, ∃ r ∈ A,
+      p + q + r = y + d ∧ p < y + d ∧ q < y + d ∧ r < y + d := by
+  rcases large_mem_or_splits hcov hd with hdA | ⟨u, huA, v, hvA,
+    hu0, hv0, huv⟩
+  · exact ⟨y, hyA, d, hdA, 0, h0, by omega, by omega, by omega,
+      by omega⟩
+  · exact ⟨y, hyA, u, huA, v, hvA, by omega, by omega, by omega,
+      by omega⟩
+
 end Erdos881

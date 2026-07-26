@@ -1,3 +1,38 @@
+# THE POPULAR-DIFFERENCE MEASUREMENT (2026-07-26)
+
+MEASURED (scripts/probe_popular_diff.py): are the differences
+produced by the STALL → WEALTH → SYMMETRY → TRANSLATION chain
+themselves basis elements?  The tempting route was to split
+b = d + (b−d) and feed `deletion_criterion`.
+
+ANSWER: NO, and structurally so.  Popular differences in A:
+R1 0%, thin 0%, odds 0%, spite 2%, DD 11%, random 31%, TD 37%,
+Cantor 57%.  Chain-produced differences (from pairs of the
+wealthiest targets): 0/15 in R1, thin, spite, odds; 4–7/15 in
+the looser worlds.  The odds world shows the obstruction is not
+a lab artifact: A = ODDS, every difference of two odds is EVEN,
+so d ∈ A is impossible in principle.  The two-part split route
+is DEAD as a general mechanism.
+
+BUT the same measurement found the real route: popular
+differences SPLIT into two basis elements 95–100% of the time
+(odds 100%, spite 100%, thin 98%, R1 97%, TD 96%, DD 95%,
+Cantor 85%).  And that is not luck — it is forced:
+
+`large_mem_or_splits` (verified): for d ≥ N₀, either d ∈ A or
+d = u + v with u, v ∈ A both positive.  Covering leaves no
+third option.
+
+`difference_reaches_element` (verified): hence a basis pair
+(y, y+d) makes y + d reachable from STRICTLY SMALLER basis
+elements in at most three parts — y + d + 0, or y + u + v.
+Strictly smaller parts are exactly what the greedy needs, since
+every later deletion is larger.
+
+So the chain feeds the SUM-FREE / master criterion route (serve
+each deleted element by a triple), not the two-part split
+criterion.  Corrected and verified.
+
 # THE POPULAR DIFFERENCE LAW — TWENTY-NINTH SUMMIT (2026-07-26)
 
 The chain from the join, completed and verified:
