@@ -14355,4 +14355,85 @@ theorem saturated_cascade_step {W : Set ℕ} {Y ε : ℕ}
     have he : 2 * z + ε = ε + 2 * z := by ring
     rw [he]
 
+open Classical in
+/-- **THE DETERMINED CASCADE.**  If saturation persists at every
+level of the drain, the counterexample's wealth stream is
+COMPLETELY DETERMINED: there are explicit binary digits ε' and
+addresses α (partial sums of ε'ₖ2^k) such that both channels
+coincide at every level and every level's world is literally the
+α-cylinder slice of the root basis — S k = {x | α k + 2^k x ∈ A}.
+The enemy under permanent saturation IS a 2-adic point: the
+Cantor-like endpoint of the descent, formalized.  Its only
+alternative is mixing at some finite level. -/
+theorem saturated_cascade_determined {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ S T : ℕ → Set ℕ, S 0 = A ∧ T 0 = A ∧
+      (∀ k, ∃ p q, p < 2 ∧ q < 2 ∧
+        S (k + 1) = {y | 2 * y + p ∈ S k} ∧
+        T (k + 1) = {y | 2 * y + q ∈ T k}) ∧
+      (∀ k, ∀ C N, ∃ v, N ≤ v ∧ C ≤
+        ((Finset.range (v + 1)).filter
+          (fun x => x ∈ S k ∧ (v - x) ∈ T k)).card) ∧
+      ((∀ k, ∃ Y ε, ∀ a ∈ S k, Y < a → a % 2 = ε) →
+        ∃ ε' α : ℕ → ℕ, α 0 = 0 ∧
+          (∀ k, ε' k < 2 ∧ α (k + 1) = α k + 2 ^ k * ε' k) ∧
+          (∀ k, S k = T k) ∧
+          (∀ k, S k = {x : ℕ | α k + 2 ^ k * x ∈ A})) := by
+  obtain ⟨S, T, hS0, hT0, hstep, hblow⟩ :=
+    the_omega_drain h0 hcov hfail
+  refine ⟨S, T, hS0, hT0, hstep, hblow, ?_⟩
+  intro hsat
+  choose Yf εf hparf using hsat
+  have hmain : ∀ k, S k = T k ∧ εf k < 2 ∧
+      S (k + 1) = {x : ℕ | εf k + 2 * x ∈ S k} ∧
+      T (k + 1) = {x : ℕ | εf k + 2 * x ∈ S k} := by
+    intro k
+    induction k with
+    | zero =>
+      have heq : S 0 = T 0 := by rw [hS0, hT0]
+      obtain ⟨p, q, hp, hq, hS1, hT1⟩ := hstep 0
+      rw [← heq] at hT1
+      have hres := saturated_cascade_step (hparf 0) hp hq
+        hS1 hT1 (hblow 1)
+      exact ⟨heq, by omega, hres.2.2.1, hres.2.2.2⟩
+    | succ k ih =>
+      obtain ⟨ihEq, ihε, ihS, ihT⟩ := ih
+      have heq1 : S (k + 1) = T (k + 1) := by rw [ihS, ihT]
+      obtain ⟨p, q, hp, hq, hS2, hT2⟩ := hstep (k + 1)
+      rw [← heq1] at hT2
+      have hres := saturated_cascade_step (hparf (k + 1)) hp hq
+        hS2 hT2 (hblow (k + 2))
+      exact ⟨heq1, by omega, hres.2.2.1, hres.2.2.2⟩
+  set α : ℕ → ℕ := fun k =>
+    Nat.rec 0 (fun k' acc => acc + 2 ^ k' * εf k') k with hα
+  have hα0 : α 0 = 0 := rfl
+  have hαS : ∀ k, α (k + 1) = α k + 2 ^ k * εf k :=
+    fun _ => rfl
+  have hlift : ∀ k x, x ∈ S k ↔ α k + 2 ^ k * x ∈ A := by
+    intro k
+    induction k with
+    | zero =>
+      intro x
+      have he : α 0 + 2 ^ 0 * x = x := by
+        rw [hα0]
+        simp
+      rw [he, hS0]
+    | succ k ih =>
+      intro x
+      rw [(hmain k).2.2.1, Set.mem_setOf_eq,
+        ih (εf k + 2 * x)]
+      have he : α k + 2 ^ k * (εf k + 2 * x) =
+          α (k + 1) + 2 ^ (k + 1) * x := by
+        rw [hαS k, pow_succ]
+        ring
+      rw [he]
+  refine ⟨εf, α, hα0,
+    fun k => ⟨(hmain k).2.1, hαS k⟩,
+    fun k => (hmain k).1, fun k => ?_⟩
+  ext x
+  simp only [Set.mem_setOf_eq]
+  exact hlift k x
+
 end Erdos881
