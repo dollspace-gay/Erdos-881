@@ -10973,7 +10973,7 @@ completion of every survivor is caught by B.  The lab shows
 this demand is unmeetable in hall worlds; formally it is the
 door to counting pressure: one deleted set must simultaneously
 hub every slice family of every failure target. -/
-theorem deletion_failure_slices {A B : Set ℕ} {N₀ : ℕ}
+theorem deletion_failure_slices {A B : Set ℕ}
     (hfail : ∀ B' ⊆ A, B'.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B') 3)
     (hBA : B ⊆ A) (hBinf : B.Infinite) :
@@ -11002,5 +11002,26 @@ theorem deletion_failure_slices {A B : Set ℕ} {N₀ : ℕ}
       Matrix.head_cons, Matrix.cons_val_two, Matrix.tail_cons]
     omega
   exact hnofail ![a, b, z] hmemb hsum3
+
+/-- **The double-slice law.**  The cascade's second axiom: at a
+failure target, the survivor set S = A ∖ B is SUM-FREE against
+every slice — no survivor pair completes any survivor to n.
+Every element of A landing in n − s − S is deleted; the
+survivors' three-fold sumset misses every failure target by
+exactly this mechanism, slice by slice. -/
+theorem deletion_failure_double_slice {A B : Set ℕ}
+    (hfail : ∀ B' ⊆ A, B'.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B') 3)
+    (hBA : B ⊆ A) (hBinf : B.Infinite) :
+    ∀ N, ∃ n, N ≤ n ∧ ∀ s ∈ A, s ∉ B → ∀ s' ∈ A, s' ∉ B →
+      ∀ w ∈ A, s + s' + w = n → w ∈ B := by
+  intro N
+  obtain ⟨n, hn, hslice⟩ :=
+    deletion_failure_slices hfail hBA hBinf N
+  refine ⟨n, hn, ?_⟩
+  intro s hs hsB s' hs' hs'B w hw hsum
+  rcases hslice s hs hsB s' hs' w hw (by omega) with h | h
+  · exact absurd h hs'B
+  · exact h
 
 end Erdos881
