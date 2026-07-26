@@ -1026,4 +1026,43 @@ theorem endgame_hereditary_teams {A : Set ℕ} {N₀ : ℕ}
   · exact Or.inr (Or.inl h)
   · exact Or.inr (Or.inr h)
 
+open Classical in
+/-- **THE WIDTH BAND** (re-export; fifteenth summit — the
+residue of Erdős 881 as one verified fork).  In anchored
+counterexample worlds, every infinite positive subset B runs
+exactly one of two regimes: a BOUNDED BAND — some width C
+works cofinally and every such committee target is
+simultaneously pair-poor (r₂ ≤ 2C pointwise): a hereditary
+poor street segregated forever from the pinned unbounded
+wealth — or ESCALATION — beyond every width, cofinal targets
+carry wider minimal committees from B, each member privately
+witnessed, each sub-committee formally unable to pair-hub its
+member's translate: unbounded freeness-certificate towers.
+Fourteen summits of structure feed the two horns; the
+remaining mathematics of Erdős 881 is that neither regime can
+actually be run forever. -/
+theorem endgame_width_band {A B : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : StreamSurvives A N₀)
+    (hfail : ∀ B' ⊆ A, B'.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B') 3)
+    (hBA : B ⊆ A) (hBpos : ∀ b ∈ B, 0 < b)
+    (hBinf : B.Infinite) :
+    (∃ C, ∀ N, ∃ n, N ≤ n ∧
+      (∃ H ⊆ (Finset.range (n + 1)).filter (fun x => x ∈ B),
+        H.card ≤ C ∧ 2 ≤ H.card ∧ IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h}))) ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * C) ∨
+    (∀ C N, ∃ n, N ≤ n ∧
+      ∃ H ⊆ (Finset.range (n + 1)).filter (fun x => x ∈ B),
+        C < H.card ∧ IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        (∀ h ∈ H, ¬IsPairHub A (n - h) (H \ {h})) ∧
+        ∀ h ∈ H, ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = n ∧
+          (x = h ∨ y = h ∨ z = h) ∧
+          ∀ g ∈ H, g ≠ h → x ≠ g ∧ y ≠ g ∧ z ≠ g) :=
+  endgame_width_band_local h0 hcov hanchor hfail hBA hBpos
+    hBinf
+
 end Erdos881

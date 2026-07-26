@@ -15916,4 +15916,76 @@ theorem committee_translate_freeness {A : Set ℕ} {n : ℕ}
       · exact key x y hx hy (by omega) (hxh' ▸ hhnot)
           (hyh' ▸ hhnot)
 
+open Classical in
+/-- **THE WIDTH BAND** (capstone of the committee program).
+In anchored counterexample worlds, every infinite positive
+subset B runs one of exactly two regimes:
+
+BOUNDED BAND — some width C works cofinally, and then every
+such committee target is simultaneously POOR (r₂ ≤ 2C,
+pointwise, by the 0-weld cap): a hereditary poor street,
+segregated forever from the unbounded pinned wealth stream; or
+
+ESCALATION — beyond every width C, cofinal targets carry
+minimal committees from B WIDER than C, every member privately
+witnessed, and every sub-committee formally unable to pair-hub
+its member's translate: freeness-certificate towers of
+unbounded width.
+
+Erdős 881's residue, stated as one verified fork. -/
+theorem endgame_width_band_local {A B : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : StreamSurvives A N₀)
+    (hfail : ∀ B' ⊆ A, B'.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B') 3)
+    (hBA : B ⊆ A) (hBpos : ∀ b ∈ B, 0 < b)
+    (hBinf : B.Infinite) :
+    (∃ C, ∀ N, ∃ n, N ≤ n ∧
+      (∃ H ⊆ (Finset.range (n + 1)).filter (fun x => x ∈ B),
+        H.card ≤ C ∧ 2 ≤ H.card ∧ IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h}))) ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * C) ∨
+    (∀ C N, ∃ n, N ≤ n ∧
+      ∃ H ⊆ (Finset.range (n + 1)).filter (fun x => x ∈ B),
+        C < H.card ∧ IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        (∀ h ∈ H, ¬IsPairHub A (n - h) (H \ {h})) ∧
+        ∀ h ∈ H, ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = n ∧
+          (x = h ∨ y = h ∨ z = h) ∧
+          ∀ g ∈ H, g ≠ h → x ≠ g ∧ y ≠ g ∧ z ≠ g) := by
+  by_cases hb : ∃ C, ∀ N, ∃ n, N ≤ n ∧
+      ∃ H ⊆ (Finset.range (n + 1)).filter (fun x => x ∈ B),
+        H.card ≤ C ∧ 2 ≤ H.card ∧ IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h}))
+  · left
+    obtain ⟨C, hC⟩ := hb
+    refine ⟨C, fun N => ?_⟩
+    obtain ⟨n, hn, H, hHsub, hHc, hH2, hHhub, hHmin⟩ := hC N
+    have h0H : 0 ∉ H := by
+      intro hmem
+      have := hHsub hmem
+      rw [Finset.mem_filter] at this
+      have := hBpos 0 this.2
+      omega
+    have hcap := repHub_caps_pair_wealth h0 h0H hHhub
+    exact ⟨n, hn, ⟨H, hHsub, hHc, hH2, hHhub, hHmin⟩,
+      by omega⟩
+  · right
+    push Not at hb
+    intro C N
+    obtain ⟨N₁, hN₁⟩ := hb C
+    obtain ⟨n, hn, H, hHsub, hH2, hHhub, hHmin, hHwit⟩ :=
+      committee_size_floor h0 hcov hanchor hfail B hBA hBpos
+        hBinf (max N N₁)
+    have hwide : C < H.card := by
+      rcases Nat.lt_or_ge C H.card with h | h
+      · exact h
+      · exfalso
+        obtain ⟨h', hh'H, hh'hub⟩ :=
+          hN₁ n (by omega) H hHsub h hH2 hHhub
+        exact hHmin h' hh'H hh'hub
+    exact ⟨n, by omega, H, hHsub, hwide, hHhub, hHmin,
+      committee_translate_freeness hHhub hHmin, hHwit⟩
+
 end Erdos881

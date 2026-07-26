@@ -1,3 +1,24 @@
+# THE WIDTH BAND — FIFTEENTH SUMMIT (2026-07-26)
+
+`endgame_width_band` (Endgame.lean, standard axioms): the
+residue of Erdos 881 as ONE verified fork.  In anchored worlds,
+every infinite positive subset B runs exactly one regime:
+
+BOUNDED BAND: some width C works cofinally, and every such
+committee target is pointwise pair-poor (r2 <= 2C) — a
+hereditary poor street, segregated from the pinned unbounded
+wealth stream forever; or
+
+ESCALATION: beyond every width, cofinal targets carry wider
+minimal committees from B — privately witnessed members,
+sub-committees certified unable to pair-hub their member's
+translates — unbounded freeness-certificate towers.
+
+Fifteen summits now stand.  What remains: neither regime can
+actually be sustained forever — the bounded horn against
+wealth/covering geometry, the escalating horn against the rank
+room fed by its own freeness certificates.
+
 # HEREDITARY TEAMS OR EXOTIC GEOMETRY — FOURTEENTH SUMMIT (2026-07-26)
 
 `endgame_hereditary_teams` (Endgame.lean, standard axioms,
