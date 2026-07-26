@@ -15760,4 +15760,26 @@ theorem committee_size_floor {A : Set ℕ} {N₀ : ℕ}
       exact hN₁ n (by omega) b (hBpos b hbB) (hb ▸ hHhub)
   · exact hc
 
+open Classical in
+/-- **THE ROUTER ROOM'S DOUBLES ARE UNIFORMLY POOR.**  In the
+g₀-routed geometry every noncentral double 2c is pair-hubbed by
+the two-element set {c, g₀}, so its ENTIRE pair count is capped
+at four.  Meanwhile `r2_unbounded_of_hfail` blows pair wealth
+up cofinally: in room II the wealthy targets must dodge every
+noncentral double of the basis forever — wealth lives only on
+odd targets, central doubles 2g₀, and non-doubles.  The router
+buys total routing at the price of total double-poverty. -/
+theorem router_room_doubles_poor {A : Set ℕ} {g₀ : ℕ}
+    (hroute : ∀ c ∈ A, 0 < c → c ≠ g₀ →
+      IsPairHub A (2 * c) ({c, g₀} : Finset ℕ)) :
+    ∀ c ∈ A, 0 < c → c ≠ g₀ →
+      ((Finset.range (2 * c + 1)).filter
+        (fun x => x ∈ A ∧ (2 * c - x) ∈ A)).card ≤ 4 := by
+  intro c hc hpos hne
+  have hcap := pairHub_caps_wealth (hroute c hc hpos hne)
+  have hcard : ({c, g₀} : Finset ℕ).card ≤ 2 := by
+    refine le_trans (Finset.card_insert_le c {g₀}) ?_
+    rw [Finset.card_singleton]
+  omega
+
 end Erdos881
