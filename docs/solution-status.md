@@ -851,3 +851,23 @@ root_rank_omega_or_lockstep, lockstep_columns, endgame_spine.
 Entry points: Erdos881/Endgame.lean (the_encirclement,
 endgame_spine, endgame_four_rooms, endgame_omega_pinch,
 endgame_final_form).
+
+## HYPOTHESIS AUDIT TABLE (22:20) — what needs anchors
+
+ANCHOR-FREE (apply to ALL counterexamples, incl. carry-free):
+four rooms, street dichotomy, reflection ledger, ω-pinch, cube
+dichotomy, Ramsey cascade, r₂-unbounded, floods, cap suite,
+conflict law, fragility/robustness suite, seal cost,
+completeness criteria, hmin_of_essential, classical-minimality
+suite (needs hess, not anchors), anchor trichotomy + central
+branch laws.
+
+ANCHOR-CONDITIONED (excluded in carry-free worlds; rescued by
+the anchor trichotomy's other branches): rotating-guardian kill,
+cofinite_free_singletons, shell stratification + depth tax +
+shell endgame, spine arc (Higman chain through highway tax),
+matched_deletion_teams, translation_room_teams,
+the_encirclement pillars (1) and (3), endgame_spine.
+
+Every counterexample falls under: anchored (full machinery) OR
+g₀-routed OR central (total order-2 pinning).  No gap.
