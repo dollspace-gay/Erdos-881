@@ -1,3 +1,28 @@
+# UPDATE (2026-07-26, cont. 9): FACE MAP COMPLETE + JUNK REPAIR
+
+Face III: `face_three_gap_dichotomy` (dead spectrum in the
+unbounded-gap horn: every large basis element translate-poor
+against face III's own material) + `near_diagonal_stabilized`
+(bounded horn: ONE offset g ≥ 1, cofinal fixed-offset ghosts,
+pure-P mirrors above g — the FREE TOWER: the g₀-tower minus
+routing; the tower kill's ladder has no substitute yet).
+
+Face I: **junk flag caught and repaired** — P-centredness is
+vacuous for additively primitive elements (no positive pair);
+`face_one_split` separates the horns: genuine-pair P-routing
+vs cofinal primitives.  Primitives are unique-pair targets with
+spouse 0 — another marriage-shaped horn.
+
+The counterexample's complete verified map: two rooms; three
+faces; face III split twice (gap regime × envelope size);
+face I split (routing vs primitivity); every region with named
+partial machinery; open cores: strong-horn repair pair, free
+tower ladder substitute, face II rotator escalation, rank-ω.
+
+All verified, zero sorries, standard axioms.
+
+---
+
 # UPDATE (2026-07-26, cont. 8): THE PAIR-FLOOD FUNNEL
 
 **Arc 27 — the funnel** (`the_pair_flood_funnel`).  Composing
