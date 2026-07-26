@@ -394,3 +394,31 @@ Room R4 is now the most constrained object in the program:
 explicit street positions, one fixed envelope, an arithmetic rung
 family inside A, and self-dug deserts — four simultaneous laws on
 one one-parameter family.
+
+## 17. THE CLASSICAL-MINIMALITY INTERFACE (20:57)
+
+Erdős 881 states A is a MINIMAL basis — every element essential —
+and until tonight the campaign only ever used the weaker
+ℵ₀-minimality that hfail forces.  The classical hypothesis now
+has its own verified interface:
+
+**`essential_private_pair_stream`.**  An essential element owns a
+cofinal stream of unique-decomposition targets m = b + c: every
+pair of m is exactly {b, c}.
+
+**`shared_private_target_is_sum`.**  Two essentials share a
+private target only at their mutual sum — the streams are almost
+disjoint.
+
+**`unique_pair_graph_infinite_degree` /
+`disjoint_unique_pairs_of_essential`.**  The unique-sum graph
+(edges = unique-decomposition sums) has all degrees infinite and
+carries K pairwise disjoint edges for every K, by height-forced
+fresh choice.
+
+The true 881 configuration therefore carries a canonical infinite
+graph of maximally fragile targets (r₂ = 1), almost-disjoint
+streams, and arbitrarily large matchings — supply the deletion
+game can consume.  Connecting this graph to the order-3 machinery
+(what happens at matched targets under matched deletions) is a
+fresh program that no earlier arc touched.
