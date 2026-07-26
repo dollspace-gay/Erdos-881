@@ -7681,4 +7681,172 @@ theorem four_disjoint_full_hubs_impossible {A : Set ℕ} {m : ℕ}
   rw [hpij] at h1
   exact (Finset.disjoint_left.1 (hdisj i j hij)) h1 h2
 
+/-- **The spine stall stream.**  Playing consecutive shifts of
+the spine yields pairwise disjoint stall WINDOWS — finite blocks
+of consecutive lineage values, each a full hub at its own
+target.  By the pure four-hub cap a target serves at most three
+disjoint windows, so the stream carries unboundedly many
+DISTINCT stall targets: the enemy's defence against its own
+spine is an infinite ledger of window-hubs with an infinite
+target street.  The racing-proof battlefield, fully
+formalized. -/
+theorem spine_stall_stream {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+    ∃ st len : ℕ → ℕ, ∃ tgt : ℕ → ℕ,
+      (∀ i, 1 ≤ len i) ∧
+      (∀ i, st (i + 1) = st i + len i) ∧
+      (∀ i, N₀ ≤ tgt i ∧ IsRepHub A (tgt i)
+        ((Finset.range (len i)).image (fun j => x (st i + j)))) ∧
+      (∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧ ∀ v ∈ V, ∃ i, tgt i = v) := by
+  classical
+  obtain ⟨Q, σ, x, hxmono, hxmem, hQfree, hQmem, hstall⟩ :=
+    spine_stalls_hereditarily h0 hcov hanchor hfail
+  have hxA : ∀ t, x t ∈ A ∧ 0 < x t :=
+    fun t => hQmem _ _ (hxmem t)
+  -- one stall window starting at any position
+  have hwin : ∀ s : ℕ, ∃ J m, 1 ≤ J ∧ N₀ ≤ m ∧
+      IsRepHub A m ((Finset.range J).image
+        (fun j => x (s + j))) := by
+    intro s
+    obtain ⟨J, m, hm, hhub⟩ := hstall (fun j => s + j)
+      (fun a b hab => by
+        show s + a < s + b
+        omega)
+    rcases Nat.eq_zero_or_pos J with hJ | hJ
+    · -- empty window is a hub: target has no reps avoiding ∅ —
+      -- impossible since covering provides a rep; extract the
+      -- contradiction to bump to J = 1
+      exfalso
+      subst hJ
+      obtain ⟨u, hu, v, hv, huv⟩ := hcov m hm
+      have h3 : u + v + 0 = m := by omega
+      rcases hhub u hu v hv 0 h0 h3 with h | h | h <;>
+        simp at h
+    · exact ⟨J, m, hJ, hm, hhub⟩
+  choose Jf mf hJf hmf hhubf using hwin
+  -- consecutive windows by recursion
+  obtain ⟨st, hst0, hsts⟩ : ∃ st : ℕ → ℕ, st 0 = 0 ∧
+      ∀ i, st (i + 1) = st i + Jf (st i) :=
+    ⟨fun i => Nat.rec 0 (fun _ p => p + Jf p) i, rfl,
+      fun _ => rfl⟩
+  refine ⟨x, hxmono, hxA, st, fun i => Jf (st i),
+    fun i => mf (st i), fun i => hJf _, hsts,
+    fun i => ⟨hmf _, hhubf _⟩, ?_⟩
+  -- distinct targets via the pure cap
+  intro K
+  set W : ℕ → Finset ℕ := fun i =>
+    (Finset.range (Jf (st i))).image (fun j => x (st i + j))
+    with hWdef
+  have hstmono : ∀ i, st i < st (i + 1) := by
+    intro i
+    rw [hsts]
+    have := hJf (st i)
+    omega
+  have hstmono' : ∀ i i', i < i' → st i < st i' := by
+    intro i i' hii
+    induction i' with
+    | zero => omega
+    | succ i' ih =>
+      have h1 := hstmono i'
+      rcases Nat.lt_or_ge i i' with h | h
+      · have := ih h
+        omega
+      · have : i = i' := by omega
+        subst this
+        omega
+  have hstJ : ∀ i i', i < i' → st i + Jf (st i) ≤ st i' := by
+    intro i i' hii
+    have h1 : st (i + 1) ≤ st i' := by
+      rcases Nat.lt_or_ge (i + 1) i' with h | h
+      · exact le_of_lt (hstmono' _ _ h)
+      · have : i + 1 = i' := by omega
+        subst this
+        exact le_refl _
+    rw [hsts] at h1
+    omega
+  have hWdisj : ∀ i i', i ≠ i' → Disjoint (W i) (W i') := by
+    intro i i' hii
+    -- wlog i < i'
+    rcases Nat.lt_or_ge i i' with h | h
+    · rw [Finset.disjoint_left]
+      intro a hai hai'
+      rw [hWdef] at hai hai'
+      simp only [Finset.mem_image, Finset.mem_range] at hai hai'
+      obtain ⟨j, hj, hja⟩ := hai
+      obtain ⟨j', hj', hja'⟩ := hai'
+      have hlt : st i + j < st i' + j' := by
+        have := hstJ i i' h
+        omega
+      have := hxmono hlt
+      omega
+    · have h' : i' < i := by omega
+      rw [Finset.disjoint_left]
+      intro a hai hai'
+      rw [hWdef] at hai hai'
+      simp only [Finset.mem_image, Finset.mem_range] at hai hai'
+      obtain ⟨j, hj, hja⟩ := hai
+      obtain ⟨j', hj', hja'⟩ := hai'
+      have hlt : st i' + j' < st i + j := by
+        have := hstJ i' i h'
+        omega
+      have := hxmono hlt
+      omega
+  -- fibers of tgt over windows are ≤ 3
+  have hfib : ∀ v ∈ (Finset.range (3 * K + 1)).image
+      (fun i => mf (st i)),
+      ((Finset.range (3 * K + 1)).filter
+        (fun i => mf (st i) = v)).card ≤ 3 := by
+    intro v hv
+    by_contra hbig
+    push_neg at hbig
+    have h4 : 4 ≤ ((Finset.range (3 * K + 1)).filter
+        (fun i => mf (st i) = v)).card := hbig
+    obtain ⟨t4, ht4s, ht4c⟩ := Finset.exists_subset_card_eq h4
+    let e := t4.orderIsoOfFin ht4c
+    have hemem : ∀ i : Fin 4, (e i : ℕ) ∈
+        (Finset.range (3 * K + 1)).filter
+          (fun i => mf (st i) = v) := fun i => ht4s (e i).2
+    have hval : ∀ i : Fin 4, mf (st (e i : ℕ)) = v := by
+      intro i
+      have h1 := hemem i
+      rw [Finset.mem_filter] at h1
+      exact h1.2
+    have heinj : ∀ i j : Fin 4, i ≠ j →
+        (e i : ℕ) ≠ (e j : ℕ) := by
+      intro i j hij heq
+      exact hij (e.injective (Subtype.ext heq))
+    have hvm : N₀ ≤ v := by
+      have h1 := hmf (st (e 0 : ℕ))
+      rw [hval 0] at h1
+      exact h1
+    obtain ⟨u, hu, w, hw, huw⟩ := hcov v hvm
+    refine four_disjoint_full_hubs_impossible
+      (H := fun i => W (e i : ℕ)) ?_
+      ⟨u, hu, w, hw, 0, h0, by omega⟩ ?_
+    · intro i j hij
+      exact hWdisj _ _ (fun h => hij
+        (e.injective (Subtype.ext h)))
+    · intro i
+      have h1 := hhubf (st (e i : ℕ))
+      rw [hval i] at h1
+      exact h1
+  have hcount := Finset.card_le_mul_card_image_of_maps_to
+    (f := fun i => mf (st i))
+    (s := Finset.range (3 * K + 1))
+    (t := (Finset.range (3 * K + 1)).image
+      (fun i => mf (st i)))
+    (fun i hi => Finset.mem_image_of_mem _ hi) 3 hfib
+  rw [Finset.card_range] at hcount
+  refine ⟨(Finset.range (3 * K + 1)).image
+    (fun i => mf (st i)), by omega, ?_⟩
+  intro v hv
+  rw [Finset.mem_image] at hv
+  obtain ⟨i, _, hi⟩ := hv
+  exact ⟨i, hi⟩
+
 end Erdos881
