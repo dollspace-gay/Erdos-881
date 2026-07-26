@@ -1,3 +1,29 @@
+# THE PROFILE VERDICT: COUNTING IS EXHAUSTED, POSITION IS THE FRONTIER (2026-07-26, verdict)
+
+Numerical feasibility (scripts/probe_profile_region.py) of the
+four verified books (sqrt-growth, two-scale funding, census,
+oscillation): FEASIBLE at every density fraction up to ~0.9;
+only full density dies (census).  The counting constraint
+system is consistent — no cheap cardinal contradiction exists
+in the current books.
+
+DIRECTIONAL CONCLUSION for the campaign: the labs' universal
+survival (347/347) is driven by POSITION, not cardinality —
+deletions dodge because the enemy cannot control WHERE its
+spikes, basis elements, and poor streams sit relative to each
+other, under the verified positional laws (residue chaining,
+2-adic address pinning, canonical cores, doors, the
+disjoint-matching dodge).  The remaining mathematics of Erdos
+881 k=2 is the POSITIONAL composition at the ET wall: proving
+that no arrangement — not just no counting profile — sustains
+total service breakdown against every deletion.  Counting
+refinements are exhausted as a route; the position-based
+assets are the inheritance for the next phase.
+
+Twenty-five summits, ~105 theorems today, the complete two-book
+system, and an honest map of exactly where the difficulty
+lives.
+
 # THE SPIKE CENSUS — TWENTY-FIFTH SUMMIT (2026-07-26, final)
 
 `endgame_spike_census` (Endgame.lean, standard axioms): in
