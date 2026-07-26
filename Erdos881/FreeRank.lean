@@ -15782,4 +15782,34 @@ theorem router_room_doubles_poor {A : Set ℕ} {g₀ : ℕ}
     rw [Finset.card_singleton]
   omega
 
+open Classical in
+/-- **ROOM II'S WEALTH DODGES ITS OWN DOUBLES.**  In the
+g₀-routed geometry, unbounded pair wealth
+(`r2_unbounded_of_hfail`) collides with uniform double-poverty
+(`router_room_doubles_poor`): beyond every bound there are
+targets of pair count ≥ 5, and none of them can be a
+noncentral double of the basis.  The router room's riches are
+permanently confined to odd targets, the central double, and
+non-doubles — while every noncentral double sits at pair count
+≤ 4 forever. -/
+theorem router_room_wealth_dodges_doubles {A : Set ℕ}
+    {N₀ g₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hroute : ∀ c ∈ A, 0 < c → c ≠ g₀ →
+      IsPairHub A (2 * c) ({c, g₀} : Finset ℕ)) :
+    ∀ N, ∃ w, N ≤ w ∧ 5 ≤
+      ((Finset.range (w + 1)).filter
+        (fun x => x ∈ A ∧ (w - x) ∈ A)).card ∧
+      ∀ c ∈ A, 0 < c → c ≠ g₀ → w ≠ 2 * c := by
+  intro N
+  obtain ⟨w, hwN, hwC⟩ :=
+    r2_unbounded_of_hfail h0 hcov hfail 5 N
+  refine ⟨w, hwN, hwC, ?_⟩
+  intro c hc hpos hne heq
+  have hpoor := router_room_doubles_poor hroute c hc hpos hne
+  rw [heq] at hwC
+  omega
+
 end Erdos881
