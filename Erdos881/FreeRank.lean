@@ -17262,4 +17262,48 @@ theorem wealthy_count_bound {A : Set ℕ} (n C : ℕ) :
         Wf.card * Af.card ^ 2) :=
       Nat.mul_le_mul_left _ htotal
 
+open Classical in
+/-- **Covering √-growth** (standalone).  A pair-covering set
+has |A ∩ [0,X]|² ≥ X − N₀ at every scale: each covered target
+donates a pair of elements below it, and the sum recovers the
+target, so the map is injective.  The floor that every profile
+analysis of the corridor stands on. -/
+theorem covering_sqrt_growth {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀) :
+    ∀ X, X ≤ ((Finset.range (X + 1)).filter
+      (fun x => x ∈ A)).card ^ 2 + N₀ := by
+  intro X
+  rcases Nat.lt_or_ge X N₀ with hXN | hXN
+  · omega
+  set Af := (Finset.range (X + 1)).filter (fun x => x ∈ A)
+    with hAf
+  have hpair : ∀ m, ∃ p : ℕ × ℕ, N₀ ≤ m →
+      p.1 ∈ A ∧ p.2 ∈ A ∧ p.1 + p.2 = m := by
+    intro m
+    by_cases hm : N₀ ≤ m
+    · obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
+      exact ⟨(x, y), fun _ => ⟨hx, hy, hxy⟩⟩
+    · exact ⟨(0, 0), fun h => absurd h hm⟩
+  choose f hf using hpair
+  have hinj : (Finset.Icc N₀ X).card ≤ (Af ×ˢ Af).card := by
+    apply Finset.card_le_card_of_injOn f
+    · intro m hm
+      have hm' := hm
+      rw [Finset.mem_coe, Finset.mem_Icc] at hm'
+      rw [Finset.mem_coe, Finset.mem_product]
+      obtain ⟨h1, h2, h3⟩ := hf m hm'.1
+      constructor
+      · rw [hAf, Finset.mem_filter, Finset.mem_range]
+        exact ⟨by omega, h1⟩
+      · rw [hAf, Finset.mem_filter, Finset.mem_range]
+        exact ⟨by omega, h2⟩
+    · intro a ha b hb hab
+      rw [Finset.mem_coe, Finset.mem_Icc] at ha hb
+      obtain ⟨-, -, h3a⟩ := hf a ha.1
+      obtain ⟨-, -, h3b⟩ := hf b hb.1
+      rw [hab] at h3a
+      omega
+  rw [Finset.card_product, Nat.card_Icc] at hinj
+  have hsq : Af.card * Af.card = Af.card ^ 2 := by ring
+  omega
 end Erdos881
