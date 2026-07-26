@@ -8229,4 +8229,135 @@ theorem the_final_fork {A : Set ℕ} {N₀ : ℕ}
   · exact Or.inr ⟨x, hxmono, hxA, L,
       narrow_located_street h0 hcov hxmono hnarrow⟩
 
+/-! ## The welded fork: the street is an order-2 object -/
+
+/-- **The 0-weld.**  Over a basis containing 0, any order-3 hub
+avoiding 0 is already an order-2 hub: pad each pair with the zero
+part.  Every hub made of positive material answers to the entire
+order-2 reflection engine. -/
+theorem pairHub_of_repHub {A : Set ℕ} {n : ℕ} {H : Finset ℕ}
+    (h0 : 0 ∈ A) (h0H : 0 ∉ H) (hhub : IsRepHub A n H) :
+    IsPairHub A n H := by
+  intro a ha b hb hab
+  rcases hhub a ha b hb 0 h0 (by omega) with h | h | h
+  · exact Or.inl h
+  · exact Or.inr h
+  · exact absurd h h0H
+
+open Classical in
+/-- **Pair-hub counting.**  An order-2 hub for v bounds the
+UNORDERED pair count of v by |H|: every pair donates a member to
+H, and distinct pairs donate distinct members (two low parts
+sharing a donated value forces both pairs to be the central one). -/
+theorem pair_hub_pair_count {A : Set ℕ} {v : ℕ} {H : Finset ℕ}
+    (hhub : IsPairHub A v H) :
+    ((Finset.range (v + 1)).filter
+      (fun a => a ∈ A ∧ (v - a) ∈ A ∧ 2 * a ≤ v)).card ≤ H.card := by
+  classical
+  apply Finset.card_le_card_of_injOn
+    (fun a => if a ∈ H then a else v - a)
+  · intro a hafil
+    simp only [Finset.mem_coe, Finset.mem_filter,
+      Finset.mem_range] at hafil
+    obtain ⟨hav, haA, hvaA, h2a⟩ := hafil
+    simp only [Finset.mem_coe]
+    by_cases haH : a ∈ H
+    · rw [if_pos haH]; exact haH
+    · rw [if_neg haH]
+      rcases hhub a haA (v - a) hvaA (by omega) with h | h
+      · exact absurd h haH
+      · exact h
+  · intro a ha a' ha' heq
+    simp only [Finset.mem_coe, Finset.mem_filter,
+      Finset.mem_range] at ha ha'
+    obtain ⟨hav, _, _, h2a⟩ := ha
+    obtain ⟨hav', _, _, h2a'⟩ := ha'
+    have heq' : (if a ∈ H then a else v - a) =
+        (if a' ∈ H then a' else v - a') := heq
+    by_cases haH : a ∈ H
+    · by_cases haH' : a' ∈ H
+      · rw [if_pos haH, if_pos haH'] at heq'; exact heq'
+      · rw [if_pos haH, if_neg haH'] at heq'; omega
+    · by_cases haH' : a' ∈ H
+      · rw [if_neg haH, if_pos haH'] at heq'; omega
+      · rw [if_neg haH, if_neg haH'] at heq'; omega
+
+/-- **The street desert.**  A located pair-hub window confines
+every pair of its target: one part lies inside the window's
+closed spine interval.  Outside [x s, x (s+J−1)] and its mirror
+[v − x (s+J−1), v − x s] the target's pair life is empty. -/
+theorem street_target_desert {A : Set ℕ} {v s J : ℕ} {x : ℕ → ℕ}
+    (hxmono : StrictMono x) (hJ : 1 ≤ J)
+    (hhub : IsPairHub A v ((Finset.range J).image
+      (fun j => x (s + j)))) :
+    ∀ a ∈ A, ∀ b ∈ A, a + b = v →
+      (x s ≤ a ∧ a ≤ x (s + J - 1)) ∨
+      (x s ≤ b ∧ b ≤ x (s + J - 1)) := by
+  intro a ha b hb hab
+  have hwin : ∀ y ∈ (Finset.range J).image (fun j => x (s + j)),
+      x s ≤ y ∧ y ≤ x (s + J - 1) := by
+    intro y hy
+    rw [Finset.mem_image] at hy
+    obtain ⟨j, hj, hjy⟩ := hy
+    rw [Finset.mem_range] at hj
+    constructor
+    · rw [← hjy]
+      exact hxmono.monotone (by omega)
+    · rw [← hjy]
+      exact hxmono.monotone (by omega)
+  rcases hhub a ha b hb hab with h | h
+  · exact Or.inl (hwin a h)
+  · exact Or.inr (hwin b h)
+
+open Classical in
+/-- **THE WELDED FORK.**  The final fork's street branch is an
+ORDER-2 object: the spine is positive material, so the 0-weld
+turns every street window into a pair hub, and each street
+target's ENTIRE pair life is caught by 2..L consecutive spine
+values — at most L unordered pair representations.  A
+counterexample funds root rank ≥ ω or runs a located
+uniform-width ORDER-2 street: unboundedly many targets with
+r₂ ≤ L and pair supply pinned to known spine windows.  The
+order-3 problem's remaining enemy lives at order 2. -/
+theorem the_final_fork_welded {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
+      RepFree A N₀ P ∧ c ≤ P.card) ∨
+    (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+      ∃ L, ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+        ∀ v ∈ V, N₀ ≤ v ∧ ∃ s J, 2 ≤ J ∧ J ≤ L ∧
+          IsPairHub A v ((Finset.range J).image
+            (fun j => x (s + j))) ∧
+          ((Finset.range (v + 1)).filter
+            (fun a => a ∈ A ∧ (v - a) ∈ A ∧ 2 * a ≤ v)).card
+            ≤ L) := by
+  rcases the_final_fork h0 hcov hanchor hfail with
+    hrank | ⟨x, hxmono, hxA, L, hstreet⟩
+  · exact Or.inl hrank
+  · refine Or.inr ⟨x, hxmono, hxA, L, ?_⟩
+    intro K
+    obtain ⟨V, hVcard, hV⟩ := hstreet K
+    refine ⟨V, hVcard, ?_⟩
+    intro v hv
+    obtain ⟨hvN, s, J, hJ2, hJL, hhub⟩ := hV v hv
+    have h0win : (0 : ℕ) ∉ (Finset.range J).image
+        (fun j => x (s + j)) := by
+      intro hmem
+      rw [Finset.mem_image] at hmem
+      obtain ⟨j, _, hj⟩ := hmem
+      exact (hxA (s + j)).2.ne' hj
+    have hpair := pairHub_of_repHub h0 h0win hhub
+    have hcount := pair_hub_pair_count (A := A) (v := v) hpair
+    have hcard : ((Finset.range J).image
+        (fun j => x (s + j))).card ≤ J := by
+      have h1 := Finset.card_image_le (s := Finset.range J)
+        (f := fun j => x (s + j))
+      rw [Finset.card_range] at h1
+      exact h1
+    exact ⟨hvN, s, J, hJ2, hJL, hpair, by omega⟩
+
 end Erdos881
