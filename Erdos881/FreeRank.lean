@@ -11753,4 +11753,37 @@ theorem no_ladder_affine_desert {A : Set ℕ}
   rw [he] at hout
   exact hout
 
+open Classical in
+/-- **Windows are populated.**  Coverage forces mass into every
+window: the count of basis elements in (Y, X] plus the trivial
+bound below Y squares to at least the covered range.  Keeps the
+free tower's mirror, translate, and desert laws non-vacuous on
+windows of width ≫ √X. -/
+theorem window_populated {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀) :
+    ∀ Y X, N₀ ≤ X → X - N₀ + 1 ≤
+      ((((Finset.range (X + 1)).filter (· ∈ A)).filter
+        (fun a => Y < a)).card + Y + 1) ^ 2 := by
+  intro Y X hX
+  have hd := covering_density hcov X hX
+  set AX := (Finset.range (X + 1)).filter (· ∈ A) with hAX
+  set W := AX.filter (fun a => Y < a) with hW
+  have hsplit : AX.card ≤ (Y + 1) + W.card := by
+    have hsub : AX ⊆ (Finset.range (Y + 1)) ∪ W := by
+      intro a ha
+      rcases Nat.lt_or_ge Y a with h | h
+      · exact Finset.mem_union_right _
+          (by rw [hW, Finset.mem_filter]; exact ⟨ha, h⟩)
+      · exact Finset.mem_union_left _
+          (Finset.mem_range.2 (by omega))
+    have h1 := Finset.card_le_card hsub
+    have h2 := Finset.card_union_le (Finset.range (Y + 1)) W
+    rw [Finset.card_range] at h2
+    omega
+  have hpow : AX.card ^ 2 ≤ ((Y + 1) + W.card) ^ 2 :=
+    Nat.pow_le_pow_left hsplit 2
+  have he : (Y + 1) + W.card = W.card + Y + 1 := by omega
+  rw [he] at hpow
+  omega
+
 end Erdos881
