@@ -3227,4 +3227,32 @@ theorem exists_absolute_pair_leaf {A : Set ℕ} {N₀ : ℕ}
       exact ⟨Q, hQnode, Finset.Subset.trans
         (Finset.subset_insert _ _) hQsub, hQmax⟩
 
+/-- Personal-target geometry at an absolute leaf: the envelope is
+free, so any envelope-avoiding representation of the hub target
+must use the new element itself — hence the target sits at or
+above its guardian, which appears as a part. -/
+theorem absolute_leaf_personal_target {A : Set ℕ} {N₀ : ℕ}
+    {Q : Finset ℕ} {b m : ℕ}
+    (hQ : FreeNode A N₀ Q) (hm : N₀ ≤ m)
+    (hhub : IsRepHub A m (insert b Q)) :
+    b ≤ m ∧ ∃ y ∈ A, ∃ z ∈ A, y ∉ Q ∧ z ∉ Q ∧ b + y + z = m := by
+  classical
+  obtain ⟨x, hx, y, hy, z, hz, hsum, hxQ, hyQ, hzQ⟩ := hQ.2 m hm
+  have hhit := hhub x hx y hy z hz hsum
+  have hxb : x = b ∨ y = b ∨ z = b := by
+    rcases hhit with h | h | h
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact Or.inl h'
+      · exact absurd h' hxQ
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact Or.inr (Or.inl h')
+      · exact absurd h' hyQ
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact Or.inr (Or.inr h')
+      · exact absurd h' hzQ
+  rcases hxb with rfl | rfl | rfl
+  · exact ⟨by omega, y, hy, z, hz, hyQ, hzQ, hsum⟩
+  · exact ⟨by omega, x, hx, z, hz, hxQ, hzQ, by omega⟩
+  · exact ⟨by omega, x, hx, y, hy, hxQ, hyQ, by omega⟩
+
 end Erdos881
