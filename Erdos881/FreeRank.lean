@@ -13872,4 +13872,129 @@ theorem drain_address_cluster {A : Set ℕ} {N₀ : ℕ}
   exact ⟨c k + 2 ^ k * y, by omega, (hlift k y).1 hyS,
     y, rfl⟩
 
+open Classical in
+/-- **THE REPAIR MINE.**  Root-coordinate export of the drain's
+wealth at count two: every counterexample contains, at every
+2-adic depth k and beyond every bound, a repair quadruple —
+a, a+δ, b, b−δ all in A with the SAME difference δ, 2^k ∣ δ,
+and matched sums a + b = (a+δ) + (b−δ).  A Sidon set has no
+repeated difference at all: this is counting content, not
+covering junk.  The raw material the translate-law and
+carry-repair engines consume, guaranteed at every depth of the
+2-adic tree. -/
+theorem drain_repair_mine {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∀ k C, ∃ a b δ : ℕ, 0 < δ ∧ 2 ^ k ∣ δ ∧ C ≤ a ∧ δ ≤ b ∧
+      a ∈ A ∧ a + δ ∈ A ∧ b ∈ A ∧ b - δ ∈ A := by
+  obtain ⟨S, T, hS0, hT0, hstep, hblow⟩ :=
+    the_omega_drain h0 hcov hfail
+  choose pf qf hpf hqf hSe hTe using hstep
+  set c : ℕ → ℕ := fun k =>
+    Nat.rec 0 (fun k' acc => acc + 2 ^ k' * pf k') k with hc
+  set d : ℕ → ℕ := fun k =>
+    Nat.rec 0 (fun k' acc => acc + 2 ^ k' * qf k') k with hd
+  have hc0 : c 0 = 0 := rfl
+  have hd0 : d 0 = 0 := rfl
+  have hcS : ∀ k, c (k + 1) = c k + 2 ^ k * pf k :=
+    fun _ => rfl
+  have hdS : ∀ k, d (k + 1) = d k + 2 ^ k * qf k :=
+    fun _ => rfl
+  have hliftS : ∀ k y, y ∈ S k ↔ c k + 2 ^ k * y ∈ A := by
+    intro k
+    induction k with
+    | zero =>
+      intro y
+      have he : c 0 + 2 ^ 0 * y = y := by
+        rw [hc0]
+        simp
+      rw [he, hS0]
+    | succ k ih =>
+      intro y
+      rw [hSe k, Set.mem_setOf_eq, ih (2 * y + pf k)]
+      have he : c k + 2 ^ k * (2 * y + pf k) =
+          c (k + 1) + 2 ^ (k + 1) * y := by
+        rw [hcS k, pow_succ]
+        ring
+      rw [he]
+  have hliftT : ∀ k y, y ∈ T k ↔ d k + 2 ^ k * y ∈ A := by
+    intro k
+    induction k with
+    | zero =>
+      intro y
+      have he : d 0 + 2 ^ 0 * y = y := by
+        rw [hd0]
+        simp
+      rw [he, hT0]
+    | succ k ih =>
+      intro y
+      rw [hTe k, Set.mem_setOf_eq, ih (2 * y + qf k)]
+      have he : d k + 2 ^ k * (2 * y + qf k) =
+          d (k + 1) + 2 ^ (k + 1) * y := by
+        rw [hdS k, pow_succ]
+        ring
+      rw [he]
+  intro k C
+  obtain ⟨v, hvN, hvc⟩ := hblow k (C + 2) 0
+  set F := (Finset.range (v + 1)).filter
+    (fun x => x ∈ S k ∧ (v - x) ∈ T k) with hF
+  have hcov2 : F ⊆ F.filter (fun x => C ≤ x) ∪
+      Finset.range C := by
+    intro x hxF
+    by_cases hxc : C ≤ x
+    · exact Finset.mem_union_left _
+        (Finset.mem_filter.2 ⟨hxF, hxc⟩)
+    · exact Finset.mem_union_right _
+        (Finset.mem_range.2 (by omega))
+  have hcard2 : 2 ≤ (F.filter (fun x => C ≤ x)).card := by
+    have h2 := Finset.card_le_card hcov2
+    have h3 := Finset.card_union_le
+      (F.filter (fun x => C ≤ x)) (Finset.range C)
+    have h4 : (Finset.range C).card = C := Finset.card_range C
+    omega
+  have h1lt : 1 < (F.filter (fun x => C ≤ x)).card := by omega
+  obtain ⟨x₁, hx₁, x₂, hx₂, hne⟩ := Finset.one_lt_card.1 h1lt
+  have key : ∀ x y : ℕ, x ∈ F.filter (fun x => C ≤ x) →
+      y ∈ F.filter (fun x => C ≤ x) → x < y →
+      ∃ a b δ : ℕ, 0 < δ ∧ 2 ^ k ∣ δ ∧ C ≤ a ∧ δ ≤ b ∧
+        a ∈ A ∧ a + δ ∈ A ∧ b ∈ A ∧ b - δ ∈ A := by
+    intro x y hx hy hxy
+    rw [Finset.mem_filter] at hx hy
+    obtain ⟨hxF, hxC⟩ := hx
+    obtain ⟨hyF, hyC⟩ := hy
+    rw [hF, Finset.mem_filter, Finset.mem_range] at hxF hyF
+    obtain ⟨hxv, hxS, hxT⟩ := hxF
+    obtain ⟨hyv, hyS, hyT⟩ := hyF
+    have hpow : 0 < 2 ^ k := pow_pos (by omega) k
+    refine ⟨c k + 2 ^ k * x, d k + 2 ^ k * (v - x),
+      2 ^ k * (y - x), Nat.mul_pos hpow (by omega),
+      ⟨y - x, rfl⟩, ?_, ?_, (hliftS k x).1 hxS, ?_,
+      (hliftT k (v - x)).1 hxT, ?_⟩
+    · have hle : x ≤ 2 ^ k * x :=
+        Nat.le_mul_of_pos_left x hpow
+      omega
+    · have h5 : y - x ≤ v - x := by omega
+      have h6 := Nat.mul_le_mul_left (2 ^ k) h5
+      omega
+    · have h7 : x + (y - x) = y := by omega
+      have h6 : 2 ^ k * y = 2 ^ k * x + 2 ^ k * (y - x) := by
+        rw [← Nat.mul_add, h7]
+      have hsum : c k + 2 ^ k * x + 2 ^ k * (y - x) =
+          c k + 2 ^ k * y := by omega
+      rw [hsum]
+      exact (hliftS k y).1 hyS
+    · have h9 : v - y + (y - x) = v - x := by omega
+      have h8 : 2 ^ k * (v - x) =
+          2 ^ k * (v - y) + 2 ^ k * (y - x) := by
+        rw [← Nat.mul_add, h9]
+      have h10 : d k + 2 ^ k * (v - x) - 2 ^ k * (y - x) =
+          d k + 2 ^ k * (v - y) := by omega
+      rw [h10]
+      exact (hliftT k (v - y)).1 hyT
+  have hne' : x₁ ≠ x₂ := hne
+  rcases lt_or_gt_of_ne hne' with hlt | hlt
+  · exact key x₁ x₂ hx₁ hx₂ hlt
+  · exact key x₂ x₁ hx₂ hx₁ hlt
+
 end Erdos881
