@@ -6562,4 +6562,15 @@ theorem subset_sum_complete_of_bootstrap (t : ℕ → ℕ)
       have := hS hx
       rw [Finset.mem_range] at this ⊢
       omega
+/-- Corep confinement at a pair street: any basis element outside
+the hub pairs with the street only through hub elements — its
+corep lands INSIDE the finite hub. -/
+theorem pair_hub_corep_confined {A : Set ℕ} {s : ℕ}
+    {H : Finset ℕ} (hhub : IsPairHub A s H) {a a' : ℕ}
+    (ha : a ∈ A) (haH : a ∉ H) (ha' : a' ∈ A)
+    (hsum : a + a' = s) : a' ∈ H := by
+  rcases hhub a ha a' ha' hsum with h | h
+  · exact absurd h haH
+  · exact h
+
 end Erdos881
