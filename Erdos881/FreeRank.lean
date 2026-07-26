@@ -11875,4 +11875,63 @@ theorem parity_window_syndetic {A : Set ℕ} {N₀ Y X ε : ℕ}
         (by omega) (by omega) (by omega)
     exact ⟨u + Y + 1 - x, hpart, by omega, by omega⟩
 
+open Classical in
+/-- **The parity defence costs linear density.**  A
+single-parity window contains at least one basis element per
+2Y + 3 integers: k disjoint blocks donate k distinct elements.
+Sidon-sparseness and the parity defence are incompatible on the
+same window — the enemy pays for every parity escape in
+density, and density is what all the counting engines eat. -/
+theorem parity_window_linear_density {A : Set ℕ}
+    {N₀ Y X ε : ℕ}
+    (hcov : PairCovers A N₀)
+    (hpar : ∀ a ∈ A, Y < a → a ≤ X → a % 2 = ε) :
+    ∀ u k, N₀ + Y ≤ u → u + k * (2 * Y + 3) ≤ X →
+      k ≤ ((Finset.Ioc u (u + k * (2 * Y + 3))).filter
+        (· ∈ A)).card := by
+  intro u k hu hX
+  have hblock : ∀ j, ∃ a, j < k →
+      a ∈ A ∧ u + j * (2 * Y + 3) < a ∧
+      a ≤ u + (j + 1) * (2 * Y + 3) := by
+    intro j
+    by_cases hj : j < k
+    · have h1 : (j + 1) * (2 * Y + 3) ≤ k * (2 * Y + 3) :=
+        Nat.mul_le_mul_right _ (by omega)
+      have h2 : j * (2 * Y + 3) + (2 * Y + 3) =
+          (j + 1) * (2 * Y + 3) := by ring
+      obtain ⟨a, haA, ha1, ha2⟩ :=
+        parity_window_syndetic hcov hpar
+          (u + j * (2 * Y + 3) + 1) (by omega) (by omega)
+      exact ⟨a, fun _ => ⟨haA, by omega, by omega⟩⟩
+    · exact ⟨0, fun h => absurd h hj⟩
+  choose af haf using hblock
+  have hmaps : ∀ j ∈ Finset.range k, af j ∈
+      (Finset.Ioc u (u + k * (2 * Y + 3))).filter (· ∈ A) := by
+    intro j hj
+    rw [Finset.mem_range] at hj
+    obtain ⟨h1, h2, h3⟩ := haf j hj
+    have h4 : (j + 1) * (2 * Y + 3) ≤ k * (2 * Y + 3) :=
+      Nat.mul_le_mul_right _ (by omega)
+    rw [Finset.mem_filter, Finset.mem_Ioc]
+    have h5 : 0 ≤ j * (2 * Y + 3) := Nat.zero_le _
+    exact ⟨⟨by omega, by omega⟩, h1⟩
+  have hinj : Set.InjOn af (Finset.range k) := by
+    intro i hi j hj hij
+    rw [Finset.mem_coe, Finset.mem_range] at hi hj
+    by_contra hne
+    obtain ⟨_, hi1, hi2⟩ := haf i hi
+    obtain ⟨_, hj1, hj2⟩ := haf j hj
+    rcases Nat.lt_or_ge i j with h | h
+    · have h1 : (i + 1) * (2 * Y + 3) ≤ j * (2 * Y + 3) :=
+        Nat.mul_le_mul_right _ (by omega)
+      omega
+    · have h2 : i ≠ j := hne
+      have h3 : j < i := by omega
+      have h1 : (j + 1) * (2 * Y + 3) ≤ i * (2 * Y + 3) :=
+        Nat.mul_le_mul_right _ (by omega)
+      omega
+  have hcard := Finset.card_le_card_of_injOn af hmaps hinj
+  rw [Finset.card_range] at hcard
+  exact hcard
+
 end Erdos881
