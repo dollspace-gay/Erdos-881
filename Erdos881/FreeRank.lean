@@ -12622,4 +12622,75 @@ theorem free_sets_dodge {A : Set ℕ} {N₀ : ℕ}
   have h3 := Finset.card_union_le (P \ F) F
   omega
 
+/-- **The free disjoint stream.**  From the rank branch's bare
+supply — free sets of every size — dodging builds an infinite
+PAIRWISE DISJOINT stream of growing free sets: the rank room
+carries its own shell stratification with no oracle and no
+covering hypothesis. -/
+theorem free_disjoint_stream {A : Set ℕ} {N₀ : ℕ}
+    (hfree : ∀ c, ∃ P : Finset ℕ, RepFree A N₀ P ∧
+      c ≤ P.card) :
+    ∃ Q : ℕ → Finset ℕ,
+      (∀ k, RepFree A N₀ (Q k) ∧ k ≤ (Q k).card) ∧
+      ∀ j k, j < k → Disjoint (Q j) (Q k) := by
+  classical
+  have hdodge := free_sets_dodge hfree
+  have hex : ∀ (F : Finset ℕ) (c : ℕ), ∃ P : Finset ℕ,
+      RepFree A N₀ P ∧ c ≤ P.card ∧ Disjoint P F :=
+    fun F c => hdodge F c
+  choose Pf hPf1 hPf2 hPf3 using hex
+  set st : ℕ → Finset ℕ × Finset ℕ := fun k =>
+    Nat.rec (Pf ∅ 0, Pf ∅ 0)
+      (fun k prev => (Pf prev.2 (k + 1),
+        prev.2 ∪ Pf prev.2 (k + 1))) k with hst
+  have hstS : ∀ k, st (k + 1) =
+      (Pf (st k).2 (k + 1),
+       (st k).2 ∪ Pf (st k).2 (k + 1)) := fun _ => rfl
+  set Q : ℕ → Finset ℕ := fun k => (st k).1 with hQ
+  have hQ0 : Q 0 = Pf ∅ 0 := rfl
+  have hQS : ∀ k, Q (k + 1) = Pf (st k).2 (k + 1) :=
+    fun _ => rfl
+  have hacc : ∀ k, Q k ⊆ (st k).2 := by
+    intro k
+    cases k with
+    | zero => exact Finset.Subset.refl _
+    | succ k =>
+      rw [hQS, hstS]
+      exact Finset.subset_union_right
+  have haccmono : ∀ j k, j ≤ k → (st j).2 ⊆ (st k).2 := by
+    intro j k hjk
+    induction k with
+    | zero =>
+      have h0 : j = 0 := by omega
+      subst h0
+      exact Finset.Subset.refl _
+    | succ k ih =>
+      rcases Nat.lt_or_ge j (k + 1) with h | h
+      · refine Finset.Subset.trans (ih (by omega)) ?_
+        rw [hstS]
+        exact Finset.subset_union_left
+      · have h1 : j = k + 1 := by omega
+        subst h1
+        exact Finset.Subset.refl _
+  refine ⟨Q, ?_, ?_⟩
+  · intro k
+    cases k with
+    | zero => exact ⟨(hPf1 ∅ 0), by omega⟩
+    | succ k =>
+      rw [hQS]
+      exact ⟨hPf1 _ _, hPf2 _ _⟩
+  · intro j k hjk
+    have h1 : Q (k) = Pf (st (k - 1)).2 (k) := by
+      have h5 := hQS (k - 1)
+      have he : k - 1 + 1 = k := by omega
+      rw [he] at h5
+      exact h5
+    have h2 : Disjoint (Pf (st (k - 1)).2 k) (st (k - 1)).2 :=
+      hPf3 _ _
+    have h3 : Q j ⊆ (st (k - 1)).2 := by
+      have h4 : j ≤ k - 1 := by omega
+      exact Finset.Subset.trans (hacc j) (haccmono j (k - 1) h4)
+    rw [h1]
+    exact (Finset.disjoint_of_subset_right h3 h2).symm
+
 end Erdos881
