@@ -7426,4 +7426,42 @@ theorem central_branch_no_three_AP {A : Set ℕ} {g₀ : ℕ}
     a haA (a + 2 * d) ha2dA hsum
   omega
 
+/-- **The first canonical obligation.**  The odd elements form
+an enemy-independent deletion: if they are infinite, hfail owes
+cofinal targets whose EVERY representation uses an odd basis
+element — the all-even sector must die cofinally.  Opening move
+of the canonical (residue-grid) deletion program. -/
+theorem odd_deletion_obligation {A : Set ℕ} {N₀ : ℕ}
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hodd : {a ∈ A | ¬2 ∣ a}.Infinite) :
+    ∀ N, ∃ n, N ≤ n ∧
+      ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = n →
+        ¬2 ∣ x ∨ ¬2 ∣ y ∨ ¬2 ∣ z := by
+  classical
+  intro N
+  set B : Set ℕ := {a ∈ A | ¬2 ∣ a} with hB
+  have hBA : B ⊆ A := fun a ha => ha.1
+  have hnb := hfail B hBA hodd
+  rw [IsExactTupleAsymptoticBasis] at hnb
+  push_neg at hnb
+  obtain ⟨n, hn, hnofail⟩ := hnb N
+  refine ⟨n, hn, ?_⟩
+  intro x hx y hy z hz hsum
+  by_contra hno
+  push_neg at hno
+  obtain ⟨hx2, hy2, hz2⟩ := hno
+  have hxB : x ∉ B := fun h => h.2 hx2
+  have hyB : y ∉ B := fun h => h.2 hy2
+  have hzB : z ∉ B := fun h => h.2 hz2
+  refine hnofail ![x, y, z] (fun i => ?_) ?_
+  · match i with
+    | 0 => exact ⟨hx, hxB⟩
+    | 1 => exact ⟨hy, hyB⟩
+    | 2 => exact ⟨hz, hzB⟩
+  · rw [Fin.sum_univ_three]
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one,
+      Matrix.head_cons, Matrix.cons_val_two, Matrix.tail_cons]
+    omega
+
 end Erdos881
