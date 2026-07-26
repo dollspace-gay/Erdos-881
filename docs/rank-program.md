@@ -178,3 +178,24 @@ be scheduled there.  Rotation caps at both orders
 (`four_disjoint_hubs_singleton`, 3 parts;
 `three_disjoint_pair_hubs_singleton`, 2 parts) are the
 hypothesis-free engines behind all of it.
+
+## CONFLICT PLACEMENT PROBE (19:33; scripts/probe_conflicts.py)
+
+Empirically the LEAST conflict target of shell-pair (j,k) is tiny
+— min Q_k to 2·min Q_k in every tested model — but this is
+honest-model behaviour, not forced: an adversary can make small
+targets D-robust (D pairwise disjoint reps beat every union of
+size < D), pushing conflicts high.  The price is the ROBUSTNESS
+TRADE-OFF, the sharpest open sub-question the shell arc leaves:
+
+  For a counterexample, blocking must happen at every level with
+  FINITE shells; if the enemy makes all targets in [N₀, H]
+  D-robust, then every conflict and every duty below H needs an
+  envelope of size ≥ D, while Engine V10 guarantees cofinal
+  BOUNDED hubs — so card-bounded blocking must recur cofinally
+  HIGH, and the low window becomes permanently free territory for
+  branch construction.  Formalizing "robust low windows are
+  hereditarily-free-friendly" vs "fragile low targets confine
+  conflicts" is the next dichotomy candidate: both branches are
+  usable (one feeds the branch template, the other pins placement
+  — the first crack in target liberty).
