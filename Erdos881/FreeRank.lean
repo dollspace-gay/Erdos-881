@@ -16557,4 +16557,78 @@ theorem rigidity_trichotomy_teams {A : Set ℕ} {N₀ : ℕ}
   · exact Or.inr (Or.inl h)
   · exact Or.inr (Or.inr h)
 
+open Classical in
+/-- **THE DISJOINT-MATCHING DODGE** (step two of the steering
+kill plan).  A target stream carrying two pair representations
+each, with pairwise-disjoint vertex sets across the stream, can
+always be dodged: choose one vertex from every second target's
+matching as the deletion — it is infinite basis material, yet
+every stream target keeps a representation pair completely
+outside it.  Pairwise-disjoint matchings are non-steering:
+no such stream can serve as a failing family.  The enemy's
+failing streams are FORCED to share matching vertices — and a
+fixed shared vertex is eventually a LOW part of later targets,
+returning all distant sharing to the rigidity trichotomy's
+jurisdiction. -/
+theorem disjoint_matching_dodge {A : Set ℕ} {nseq x₁ x₂ : ℕ → ℕ}
+    (hx₁A : ∀ k, x₁ k ∈ A) (hx₁pA : ∀ k, nseq k - x₁ k ∈ A)
+    (hx₂A : ∀ k, x₂ k ∈ A) (hx₂pA : ∀ k, nseq k - x₂ k ∈ A)
+    (hx₁le : ∀ k, x₁ k ≤ nseq k) (hx₂le : ∀ k, x₂ k ≤ nseq k)
+    (hpos : ∀ k, 0 < x₁ k)
+    (hne : ∀ k, x₂ k ≠ x₁ k ∧ nseq k - x₂ k ≠ x₁ k)
+    (hVdisj : ∀ j k, j ≠ k →
+      ∀ v, v ∈ ({x₁ j, nseq j - x₁ j, x₂ j, nseq j - x₂ j} :
+        Finset ℕ) →
+      v ∉ ({x₁ k, nseq k - x₁ k, x₂ k, nseq k - x₂ k} :
+        Finset ℕ)) :
+    ∃ D ⊆ A, D.Infinite ∧ 0 ∉ D ∧
+      ∀ k, ∃ y, y ∈ A ∧ (nseq k - y) ∈ A ∧ y ≤ nseq k ∧
+        y ∉ D ∧ (nseq k - y) ∉ D := by
+  set D : Set ℕ := Set.range (fun k => x₁ (2 * k)) with hD
+  have hDmem : ∀ v, v ∈ D → ∃ j, v = x₁ (2 * j) := by
+    intro v hv
+    rw [hD, Set.mem_range] at hv
+    obtain ⟨j, hj⟩ := hv
+    exact ⟨j, hj.symm⟩
+  have hDA : D ⊆ A := by
+    intro v hv
+    obtain ⟨j, hj⟩ := hDmem v hv
+    rw [hj]
+    exact hx₁A _
+  have hDinf : D.Infinite := by
+    rw [hD]
+    apply Set.infinite_range_of_injective
+    intro a b hab
+    by_contra hne'
+    have hab' : x₁ (2 * a) = x₁ (2 * b) := hab
+    have h2 : 2 * a ≠ 2 * b := by omega
+    have hnotin := hVdisj (2 * a) (2 * b) h2 (x₁ (2 * a))
+      (by simp)
+    refine hnotin ?_
+    rw [hab']
+    simp
+  have h0D : 0 ∉ D := by
+    intro hv
+    obtain ⟨j, hj⟩ := hDmem 0 hv
+    have := hpos (2 * j)
+    omega
+  have hDV : ∀ k, ∀ v, v ∈ D →
+      v ∈ ({x₁ k, nseq k - x₁ k, x₂ k, nseq k - x₂ k} :
+        Finset ℕ) → v = x₁ k := by
+    intro k v hvD hvV
+    obtain ⟨j, hj⟩ := hDmem v hvD
+    by_cases hjk : 2 * j = k
+    · rw [hj, hjk]
+    · exfalso
+      have := hVdisj (2 * j) k hjk v (by rw [hj]; simp)
+      exact this hvV
+  refine ⟨D, hDA, hDinf, h0D, fun k => ?_⟩
+  refine ⟨x₂ k, hx₂A k, hx₂pA k, hx₂le k, ?_, ?_⟩
+  · intro hmem
+    have := hDV k (x₂ k) hmem (by simp)
+    exact (hne k).1 this
+  · intro hmem
+    have := hDV k (nseq k - x₂ k) hmem (by simp)
+    exact (hne k).2 this
+
 end Erdos881
