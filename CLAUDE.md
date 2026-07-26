@@ -47,55 +47,26 @@ basis.  Method: contradiction-mining a hypothetical counterexample
   state block at top; dead routes listed there — do not revisit
   them.
 
-## Current frontier (2026-07-25, night)
+## Current frontier (2026-07-26)
 
-FINAL FORM: counterexample ⟺ WellFounded(FreeStep)
-(`endgame_final_form`); 881 ⟺ every 2-covering set ∋ 0 has an
-infinite hereditarily rep-free subset.  THE FOUR ROOMS
-(`endgame_four_rooms`): every counterexample is in R1 (fixed
-offset, A ∩ (A−δ) infinite), R2 (growing offsets), R3 (scattered
-mirror halls), or R4 (street ladder — positions pinned at n + d,
-pure-Q streets, arithmetic rung family, difference deserts).
-Also: shell stratification + depth tax + rotation/6/18-level caps
-+ conflict law; three branch mechanisms (counting/Sidon,
-robustness/Cantor, and their mixed-regime gap); the anchor
-trichotomy (anchored / g₀-routed / central-AP3-free); the
-canonical grid.  NEWEST EXPORT: `endgame_parity_fork` — mixing world ∨ the full
-saturated package (odd channel = one immovable finite hall,
-blowups forced even, half-world covering + descended hfail:
-the 2-adic recursion armed).  Descent suite:
-`omega_descent_cylinder` (infinitely descending worlds are
-2-adic/Cantor-caliber), `descent_invariant`, `half_world_covers`.
-Three true cores remain: Cantor carry-repair generalization to
-cylinder worlds, walk engines at mixing levels, rank-ω.
-NEWEST SUMMIT: `the_pair_flood_funnel` — every counterexample
-funnels via its own pair flood (`personal_pair_guard_of_hfail`,
-unconditional, density-free) into: P-centred members / rotator
-ghosts / the pure hall — over ONE fixed free 0-less envelope.
-Remaining core: the fixed-hall strong-horn problem + rank-ω.
-NEWEST LAWS: `endgame_translate_laws` — UNCONDITIONAL: no
-basis element's translate (single or in pairs) eventually
-captures A (walk kills: `ap3_deletion_engine`,
-`good_two_walk_killed`).  The door's good horn is EMPTY; strong
-horn is ambient law.  k ≥ 3 set-translate law open (wandering
-wall).
-SUMMIT: `endgame_final_dichotomy` — TWO ROOMS, no anchor
-condition: every counterexample drives the FOUR LANES (rank ω /
-door / ghost street / member street) or lives in the CENTRAL
-TAIL.  Enabled by the StreamSurvives oracle refactor (anchor
-supply consumed at exactly one interface; almost-anchored worlds
-implement it via the g₀-tower self-kill `g0_tower_killed`).
-Previous summit: `endgame_collapsed_trichotomy` —
-NO anchor hypothesis: every counterexample is ANCHORED (four
-lanes: rank ω / fixed hall + door / ghost street / member
-street), ALMOST-ANCHORED (member g₀, ladder 2c−g₀ ∈ A, anchors
-at every g ≠ g₀ — one hole), or CENTRAL-TAIL (thresholded
-pinning + auto-min + AP3-free).  Route in: 0-weld
-(`pairHub_of_repHub`), welded fork, street trichotomy, four
-lanes, member street verdict (`difference_blind_stream`!),
-`the_routed_collapse`.  Next: plug the g₀-hole (anchors-off-g₀
-through the private-stream chain) → trichotomy becomes
-dichotomy.  The user (Doll) steers via
+TEN SUMMITS in Endgame.lean: final dichotomy, translate laws,
+collapsed trichotomy, parity fork, omega drain, poor street
+(street targets' pair wealth capped at 2L via the 0-weld),
+cascade fork, FORCED MIXING (`endgame_forced_mixing` — the
+determined/Cantor-endpoint horn is EMPTY: 2-adic convergence
+contradicts covering, pure counting), mixing world, and THE
+SELF-SIMILAR ENEMY (`endgame_self_similar`): every
+counterexample owns a located cylinder world
+{x | c + 2^m x ∈ A} with covering + unbounded wealth + both
+parities cofinal + infinitude + lifted failure interface.
+Remaining open cores: (1) the mixing sub-instance (iterate the
+lifted interface, or survival-from-mixing generalizing
+cantor_carry_repair — WARNING: failing targets are global, not
+cylinder-local; naive projection fails); (2) upstream
+rank/street fork (poor street vs 2-adically pinned wealth —
+`drain_wealth_addresses`); (3) racing/mixed-interface fork.
+Threading (core 4) proven impossible from chain supply alone —
+do not retry pure compactness.  The user (Doll) steers via
 metaphors and cannot answer technical questions; read the code.
 
 ## Build quirk (2026-07-25)
