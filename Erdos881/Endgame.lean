@@ -1273,4 +1273,66 @@ theorem endgame_density_law {A D : Set ℕ} {n : ℕ}
       (fun x => x ∈ A)).card :=
   density_law_of_failing hfailn
 
+open Classical in
+/-- **THE MASTER LAW** (re-export; twenty-third summit — the
+session capstone).  Every counterexample to Erdős 881 (k = 2)
+simultaneously: (I) OSCILLATES — its pair-counting function
+runs bounded-wealth targets cofinally under a fixed ceiling
+while exceeding every bound cofinally; (II) runs one of three
+RIGIDITY geometries — a realized fixed difference, a doored
+desert, or a total desert; (III) pays the DENSITY LAW at
+cofinally many failing targets of every infinite deletion —
+poor populations exceeding surviving basis counts, and the
+energy inequality binding its density profile.  Hypotheses:
+0 ∈ A, order-2 covering, order-3 failure of every infinite
+deletion.  Nothing else.  The unconditional layer of the
+campaign, in one statement. -/
+theorem endgame_master_law {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ((∃ L, ∀ N, ∃ n, N ≤ n ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ L) ∧
+     (∀ C N, ∃ v, N ≤ v ∧ C ≤
+      ((Finset.range (v + 1)).filter
+        (fun x => x ∈ A ∧ (v - x) ∈ A)).card)) ∧
+    ((∃ d, 1 ≤ d ∧ ∀ N, ∃ a, N ≤ a ∧ a ∈ A ∧ a + d ∈ A) ∨
+     (∃ L u W, u ≤ W ∧ ∀ N, ∃ n, N ≤ n ∧
+       ((Finset.range (n + 1)).filter
+         (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * L ∧
+       (u ∈ A ∧ (n - u) ∈ A ∧ 2 * u ≤ n) ∧
+       ∀ x, x ≤ W → x ≠ u →
+         ¬(x ∈ A ∧ (n - x) ∈ A ∧ 2 * x ≤ n)) ∨
+     (∃ L, ∀ W N, ∃ n, N ≤ n ∧
+       ((Finset.range (n + 1)).filter
+         (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * L ∧
+       ∀ x, x ≤ W → ¬(x ∈ A ∧ (n - x) ∈ A ∧ 2 * x ≤ n))) ∧
+    (∀ B ⊆ A, B.Infinite → ∀ N, ∃ n, N ≤ n ∧
+      (((Finset.range (n + 1)).filter
+          (fun x => x ∈ A)).card -
+        ((Finset.range (n + 1)).filter
+          (fun d => d ∈ B)).card ≤
+       ((Finset.range (n + 1)).filter (fun m =>
+         ((Finset.range (m + 1)).filter
+           (fun y => y ∈ A ∧ (m - y) ∈ A)).card ≤
+         2 * ((Finset.range (n + 1)).filter
+           (fun d => d ∈ B)).card + 2)).card) ∧
+      ((Finset.range (n / 2 + 1)).filter
+          (fun x => x ∈ A)).card *
+        ((Finset.range (n / 2 + 1)).filter
+          (fun x => x ∈ A)).card +
+      ((Finset.range (n + 1)).filter (fun m =>
+        ((Finset.range (m + 1)).filter
+          (fun y => y ∈ A ∧ (m - y) ∈ A)).card ≤
+        2 * ((Finset.range (n + 1)).filter
+          (fun d => d ∈ B)).card + 2)).card *
+        (((Finset.range (n + 1)).filter
+          (fun x => x ∈ A)).card -
+         (2 * ((Finset.range (n + 1)).filter
+          (fun d => d ∈ B)).card + 2)) ≤
+      (n + 1) * ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A)).card) :=
+  the_master_law h0 hcov hfail
+
 end Erdos881

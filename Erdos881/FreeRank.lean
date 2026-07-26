@@ -16969,4 +16969,73 @@ theorem density_law_of_failing {A D : Set ℕ} {n : ℕ}
         _ ≤ (n + 1) * Af.card :=
             Nat.mul_le_mul_left _ hA2sub
 
+open Classical in
+/-- **THE MASTER LAW.**  One statement carrying the
+unconditional layer: every counterexample simultaneously
+(I) OSCILLATES — bounded-wealth targets cofinally, unbounded
+wealth cofinally; (II) runs one of the three RIGIDITY
+geometries — fixed difference, doored desert, or total
+desert; and (III) pays the DENSITY LAW at cofinally many
+failing targets of EVERY infinite positive deletion: the poor
+population exceeds the surviving basis count, and the energy
+inequality α₂² + P·(α−C) ≤ (n+1)·α binds.  From 0 ∈ A,
+covering, and the failure interface alone. -/
+theorem the_master_law {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ((∃ L, ∀ N, ∃ n, N ≤ n ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ L) ∧
+     (∀ C N, ∃ v, N ≤ v ∧ C ≤
+      ((Finset.range (v + 1)).filter
+        (fun x => x ∈ A ∧ (v - x) ∈ A)).card)) ∧
+    ((∃ d, 1 ≤ d ∧ ∀ N, ∃ a, N ≤ a ∧ a ∈ A ∧ a + d ∈ A) ∨
+     (∃ L u W, u ≤ W ∧ ∀ N, ∃ n, N ≤ n ∧
+       ((Finset.range (n + 1)).filter
+         (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * L ∧
+       (u ∈ A ∧ (n - u) ∈ A ∧ 2 * u ≤ n) ∧
+       ∀ x, x ≤ W → x ≠ u →
+         ¬(x ∈ A ∧ (n - x) ∈ A ∧ 2 * x ≤ n)) ∨
+     (∃ L, ∀ W N, ∃ n, N ≤ n ∧
+       ((Finset.range (n + 1)).filter
+         (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * L ∧
+       ∀ x, x ≤ W → ¬(x ∈ A ∧ (n - x) ∈ A ∧ 2 * x ≤ n))) ∧
+    (∀ B ⊆ A, B.Infinite → ∀ N, ∃ n, N ≤ n ∧
+      (((Finset.range (n + 1)).filter
+          (fun x => x ∈ A)).card -
+        ((Finset.range (n + 1)).filter
+          (fun d => d ∈ B)).card ≤
+       ((Finset.range (n + 1)).filter (fun m =>
+         ((Finset.range (m + 1)).filter
+           (fun y => y ∈ A ∧ (m - y) ∈ A)).card ≤
+         2 * ((Finset.range (n + 1)).filter
+           (fun d => d ∈ B)).card + 2)).card) ∧
+      ((Finset.range (n / 2 + 1)).filter
+          (fun x => x ∈ A)).card *
+        ((Finset.range (n / 2 + 1)).filter
+          (fun x => x ∈ A)).card +
+      ((Finset.range (n + 1)).filter (fun m =>
+        ((Finset.range (m + 1)).filter
+          (fun y => y ∈ A ∧ (m - y) ∈ A)).card ≤
+        2 * ((Finset.range (n + 1)).filter
+          (fun d => d ∈ B)).card + 2)).card *
+        (((Finset.range (n + 1)).filter
+          (fun x => x ∈ A)).card -
+         (2 * ((Finset.range (n + 1)).filter
+          (fun d => d ∈ B)).card + 2)) ≤
+      (n + 1) * ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A)).card) := by
+  refine ⟨⟨poor_stream_of_hfail h0 hcov hfail,
+    fun C N => r2_unbounded_of_hfail h0 hcov hfail C N⟩,
+    rigidity_trichotomy h0 hcov hfail, ?_⟩
+  intro B hBA hBinf N
+  have hnot := hfail B hBA hBinf
+  simp only [IsExactTupleAsymptoticBasis, not_exists,
+    not_forall] at hnot
+  obtain ⟨n, hn, hnrep⟩ := hnot N
+  have hfailn : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ B) →
+      ∑ i, v i ≠ n := fun v hv hs => hnrep v ⟨hv, hs⟩
+  exact ⟨n, hn, density_law_of_failing hfailn⟩
+
 end Erdos881

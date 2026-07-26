@@ -1,3 +1,18 @@
+# THE MASTER LAW — TWENTY-THIRD SUMMIT, SESSION CAPSTONE (2026-07-26)
+
+`endgame_master_law` (Endgame.lean, standard axioms): every
+counterexample to Erdos 881 k=2 simultaneously (I) OSCILLATES,
+(II) runs one of three RIGIDITY geometries, (III) pays the
+DENSITY LAW at cofinal failing targets of every infinite
+deletion.  Hypotheses: 0 in A, covering, hfail — nothing else.
+The unconditional layer in one exported statement.
+
+Twenty-three summits.  Session totals for 2026-07-26: ~70 new
+verified theorems, 9 new summits, 1 complete branch defeat,
+6 lab campaigns (347/347 survivals), the two-regime squeeze,
+and the master law.  All standard axioms, zero sorries,
+~716 commits.
+
 # THE DENSITY LAW — TWENTY-SECOND SUMMIT (2026-07-26, close)
 
 `endgame_density_law` (Endgame.lean, standard axioms; from the
