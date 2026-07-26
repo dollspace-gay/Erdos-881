@@ -3841,4 +3841,47 @@ theorem depth_tax_of_hfail {A : Set ℕ} {N₀ : ℕ}
   | 1 => exact ⟨hy, hyB⟩
   | 2 => exact ⟨hz, hzB⟩
 
+/-- Order-2 rotation cap: a pair has TWO parts, so three pairwise
+disjoint b-free envelope-hubs at one target already force
+singleton ownership at order 2.  Hypothesis-free. -/
+theorem three_disjoint_pair_hubs_singleton {A : Set ℕ} {m b : ℕ}
+    {Q : Fin 3 → Finset ℕ}
+    (hdisj : ∀ i j, i ≠ j → Disjoint (Q i) (Q j))
+    (hb : ∀ i, b ∉ Q i)
+    (hhub : ∀ i, IsPairHub A m (insert b (Q i))) :
+    IsPairHub A m {b} := by
+  classical
+  intro x hx y hy hsum
+  by_contra hmiss
+  push_neg at hmiss
+  obtain ⟨hxb, hyb⟩ := hmiss
+  have hxb' : x ≠ b := by simpa using hxb
+  have hyb' : y ≠ b := by simpa using hyb
+  have hhit : ∀ i : Fin 3, x ∈ Q i ∨ y ∈ Q i := by
+    intro i
+    rcases hhub i x hx y hy hsum with h | h
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact absurd h' hxb'
+      · exact Or.inl h'
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact absurd h' hyb'
+      · exact Or.inr h'
+  have hpick : ∀ i : Fin 3, ∃ p : Fin 2,
+      (if p = 0 then x else y) ∈ Q i := by
+    intro i
+    rcases hhit i with h | h
+    · exact ⟨0, by simpa using h⟩
+    · exact ⟨1, by simpa using h⟩
+  choose pk hpk using hpick
+  have hcard : ¬Function.Injective pk := by
+    intro hinj
+    have := Fintype.card_le_of_injective pk hinj
+    simp at this
+  rw [Function.not_injective_iff] at hcard
+  obtain ⟨i, j, hpij, hij⟩ := hcard
+  have h1 := hpk i
+  have h2 := hpk j
+  rw [hpij] at h1
+  exact (Finset.disjoint_left.1 (hdisj i j hij)) h1 h2
+
 end Erdos881

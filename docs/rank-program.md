@@ -161,3 +161,20 @@ enemy's witness behaviour and herd it into prepared traps.  The
 dodge state machines are the formal vehicle; the requirements list
 and trap primitive are sketched in the battle plan.  This is the
 program's endgame design.
+
+## SHELL PROBE (2026-07-25, 19:20; scripts/probe_shells.py)
+
+Truncated stratifications of NON-counterexamples are shallow and
+fat: 3–4 shells regardless of window size, the first shell
+absorbing a growing positive fraction (Cantor: 16/31/32 positives
+→ 4 shells, sizes ~[19,8,3,1]; greedy-B₂: 3 shells, first shell
+~3/4 of all elements).  A true counterexample must instead be
+INFINITELY DEEP with every shell finite and nonempty
+(`absolute_shell_stratification`) — depth is where the depth tax
+(`depth_tax_of_hfail`, height ≥ N₀ + k/3) starts to bite.  The
+tax is a LOCATION law for the adaptive program: obligations of
+deep elements must sit at predictably linear heights; traps can
+be scheduled there.  Rotation caps at both orders
+(`four_disjoint_hubs_singleton`, 3 parts;
+`three_disjoint_pair_hubs_singleton`, 2 parts) are the
+hypothesis-free engines behind all of it.
