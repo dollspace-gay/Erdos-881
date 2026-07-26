@@ -567,3 +567,22 @@ bridge to hunt: parity-layered midpoint-free tower worlds have
 growing disjoint triple reps (Cantor does), feeding
 robustness_gives_hereditarily_free.  Window mass for all such
 arguments: `window_populated`.
+
+
+## The robustness-bridge audit (2026-07-26, honest)
+
+The naive Cantor-convergence bridge FAILS: tower worlds have
+cofinal FRAGILE targets (personal_fragility — every large b
+guards a target with <= |P|+1 disjoint triple reps), so uniform
+robustness (the hypothesis of robustness_gives_hereditarily_free)
+is impossible in any counterexample.  Cantor is uniformly
+robust BECAUSE it has no towers; the enemy's parity-layered
+convergence is toward Cantor's RESIDUE geometry while keeping
+fragile towers — the mixed regime, precisely.  The real bridge
+must therefore be the 2-ADIC DESCENT: the parity escape pushes
+the enemy's game one layer down (A cap window single-parity =>
+half-scale replay); the descent's well-foundedness lives in the
+rank machinery.  Emerging final form of the whole problem:
+EVERYTHING funnels to rank-omega/2-adic descent vs the ladder
+engines.  Next formal target: the parity-descent step (tower
+laws descend to the half-set), connecting to FreeStep rank.
