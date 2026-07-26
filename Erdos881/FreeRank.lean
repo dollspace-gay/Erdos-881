@@ -14312,4 +14312,47 @@ theorem saturated_drain_pinned {A : Set ℕ} {N₀ Y ε : ℕ}
     have he : 2 * z + ε = ε + 2 * z := by ring
     rw [he]
 
+open Classical in
+/-- **THE SATURATED CASCADE STEP** (generic, hfail-free).  At
+ANY level of a cross-system descent: if the current world W is
+single-parity beyond Y with parity ε and the child system's
+cross-pair wealth blows up, then the child's parities are both
+PINNED to ε and both channels collapse onto the canonical
+half-world {x | ε + 2x ∈ W}.  Saturation determines the descent
+completely, level by level — the enemy's only escape from total
+determination is mixing (both parities cofinal) at some level.
+Subsumes `saturated_drain_pinned`'s level-1 case. -/
+theorem saturated_cascade_step {W : Set ℕ} {Y ε : ℕ}
+    (hpar : ∀ a ∈ W, Y < a → a % 2 = ε)
+    {S1 T1 : Set ℕ} {p q : ℕ} (hp : p < 2) (hq : q < 2)
+    (hS1 : S1 = {y | 2 * y + p ∈ W})
+    (hT1 : T1 = {y | 2 * y + q ∈ W})
+    (hblow : ∀ C N, ∃ v, N ≤ v ∧ C ≤
+      ((Finset.range (v + 1)).filter
+        (fun x => x ∈ S1 ∧ (v - x) ∈ T1)).card) :
+    p = ε ∧ q = ε ∧ S1 = {x : ℕ | ε + 2 * x ∈ W} ∧
+      T1 = {x : ℕ | ε + 2 * x ∈ W} := by
+  have hpq := saturated_kills_antidiagonal hpar hp hq hS1 hT1
+    hblow
+  have hSinf : S1.Infinite := (cross_blowup_infinite hblow).1
+  obtain ⟨y, hyS, hyY⟩ := hSinf.exists_gt Y
+  have hyW : 2 * y + p ∈ W := by
+    rw [hS1] at hyS
+    exact hyS
+  have hppar : p = ε := by
+    have h2 := hpar (2 * y + p) hyW (by omega)
+    omega
+  have hqpar : q = ε := by omega
+  refine ⟨hppar, hqpar, ?_, ?_⟩
+  · rw [hS1, hppar]
+    ext z
+    simp only [Set.mem_setOf_eq]
+    have he : 2 * z + ε = ε + 2 * z := by ring
+    rw [he]
+  · rw [hT1, hqpar]
+    ext z
+    simp only [Set.mem_setOf_eq]
+    have he : 2 * z + ε = ε + 2 * z := by ring
+    rw [he]
+
 end Erdos881
