@@ -531,4 +531,56 @@ theorem endgame_global_trichotomy {A : Set ℕ} {N₀ : ℕ}
         a + d = g₀ ∨ a + d = 0)) :=
   the_global_trichotomy h0 hcov hfail
 
+/-- **THE COLLAPSED TRICHOTOMY** (re-export; the campaign's
+current summit).  After the routed collapse the middle room of
+the global trichotomy is defeated as a separate case: every
+counterexample world is ANCHORED (four lanes), ALMOST-ANCHORED
+(a member router g₀ with the explicit infinite ladder
+2c − g₀ ∈ A and anchor supply at every value except g₀ — one
+hole in the anchor wall, at a known member), or CENTRAL-TAIL
+(explicitly thresholded total pinning, automatic minimality and
+midpoint-freeness, subsuming the pure central branch).  Two
+live geometries remain. -/
+theorem endgame_collapsed_trichotomy {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ((∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+        w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g) ∧
+      ((∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
+        RepFree A N₀ P ∧ c ≤ P.card) ∨
+      (∃ H : Finset ℕ, ∃ h ∈ H, ∀ K, ∃ V : Finset ℕ,
+        K ≤ V.card ∧ ∀ v ∈ V, N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧
+          IsPairHub A v H) ∨
+      (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+        ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+          ∀ v ∈ V, N₀ ≤ v ∧ v ∉ A ∧ ∃ s, S₀ ≤ s ∧ x s ≤ v ∧
+            ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairHub A v
+              ((Finset.range J).image (fun j => x (s + j)))) ∨
+      (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+        ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+          ∀ v ∈ V, N₀ ≤ v ∧ v ∈ A ∧ ∃ s, S₀ ≤ s ∧
+            ∃ J, 2 ≤ J ∧ J ≤ L ∧
+              v ∈ (Finset.range J).image (fun j => x (s + j)) ∧
+              IsPairHub A v ((Finset.range J).image
+                (fun j => x (s + j))) ∧
+              (∀ a ∈ A, ∀ b ∈ A, a + b = v →
+                a ≤ x (s + J - 1) - x s ∨
+                b ≤ x (s + J - 1) - x s)))) ∨
+    (∃ g₀, g₀ ∈ A ∧
+      (∀ N, ∃ c ∈ A, N ≤ c ∧ c ≠ g₀ ∧ g₀ ≤ 2 * c ∧
+        (2 * c - g₀) ∈ A ∧ 2 * c - g₀ ≠ c) ∧
+      (∀ g, g ≠ g₀ → ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
+        ∃ w ∈ A, ∃ w' ∈ A, w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧
+          w' ≠ g)) ∨
+    (∃ g₀ C₀, (∀ c ∈ A, C₀ ≤ c → c ≠ g₀ → ∀ w ∈ A, ∀ w' ∈ A,
+        w + w' = 2 * c → w = c ∧ w' = c) ∧
+      (∀ c ∈ A, C₀ ≤ c → c ≠ g₀ →
+        IsPairHub A (2 * c) ({c} : Finset ℕ)) ∧
+      (∀ B ⊆ A, B.Infinite → ¬∃ N₂, ∀ n, N₂ ≤ n →
+        ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) ∧
+      (∀ a d, 0 < d → a ∈ A → a + d ∈ A → a + 2 * d ∈ A →
+        a + d = g₀ ∨ a + d < C₀)) :=
+  the_collapsed_trichotomy h0 hcov hfail
+
 end Erdos881

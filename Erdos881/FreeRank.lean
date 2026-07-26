@@ -9066,4 +9066,178 @@ theorem the_global_trichotomy {A : Set ℕ} {N₀ : ℕ}
         central_branch_hmin hcentral,
         central_branch_no_three_AP hcentral⟩)
 
+/-! ## The routed collapse: branch II has no interior -/
+
+/-- **THE ROUTED COLLAPSE.**  The g₀-routed branch is not an
+independent room.  If the genuine g₀-routes persist cofinally,
+the world is ALMOST-ANCHORED: the explicit ladder 2c − g₀ ∈ A
+runs forever and full anchor supply holds at every value except
+g₀ itself.  If the routes die out, every sufficiently large
+double is purely central and the ENTIRE central suite applies
+beyond a threshold: total pinning, automatic minimality,
+midpoint-freeness.  Routed worlds are absorbed into the anchored
+frontier or the central branch; the trichotomy's middle room is
+defeated as a separate case. -/
+theorem the_routed_collapse {A : Set ℕ} {g₀ : ℕ} (hg : g₀ ∈ A)
+    (hroute : ∀ c ∈ A, 0 < c → c ≠ g₀ →
+      IsPairHub A (2 * c) ({c, g₀} : Finset ℕ)) :
+    ((∀ N, ∃ c ∈ A, N ≤ c ∧ c ≠ g₀ ∧ g₀ ≤ 2 * c ∧
+        (2 * c - g₀) ∈ A ∧ 2 * c - g₀ ≠ c) ∧
+      (∀ g, g ≠ g₀ → ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
+        ∃ w ∈ A, ∃ w' ∈ A, w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧
+          w' ≠ g)) ∨
+    (∃ C₀, (∀ c ∈ A, C₀ ≤ c → c ≠ g₀ → ∀ w ∈ A, ∀ w' ∈ A,
+        w + w' = 2 * c → w = c ∧ w' = c) ∧
+      (∀ c ∈ A, C₀ ≤ c → c ≠ g₀ →
+        IsPairHub A (2 * c) ({c} : Finset ℕ)) ∧
+      (∀ B ⊆ A, B.Infinite → ¬∃ N₂, ∀ n, N₂ ≤ n →
+        ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) ∧
+      (∀ a d, 0 < d → a ∈ A → a + d ∈ A → a + 2 * d ∈ A →
+        a + d = g₀ ∨ a + d < C₀)) := by
+  classical
+  by_cases hlad : ∀ N, ∃ c ∈ A, N ≤ c ∧ 0 < c ∧ c ≠ g₀ ∧
+      ∃ w ∈ A, ∃ w' ∈ A, w + w' = 2 * c ∧ w ≠ c
+  · left
+    have hlad' : ∀ N, ∃ c ∈ A, N ≤ c ∧ c ≠ g₀ ∧ g₀ ≤ 2 * c ∧
+        (2 * c - g₀) ∈ A ∧ 2 * c - g₀ ≠ c := by
+      intro N
+      obtain ⟨c, hcA, hN, hcpos, hcg, w, hwA, w', hw'A, hsum,
+        hwc⟩ := hlad N
+      have hw'c : w' ≠ c := by omega
+      have hg2c : g₀ ≤ 2 * c ∧ (2 * c - g₀) ∈ A := by
+        rcases hroute c hcA hcpos hcg w hwA w' hw'A hsum with
+          h | h
+        · rcases Finset.mem_insert.1 h with h' | h'
+          · exact absurd h' hwc
+          · rw [Finset.mem_singleton] at h'
+            subst h'
+            refine ⟨by omega, ?_⟩
+            have h2 : 2 * c - w = w' := by omega
+            rw [h2]
+            exact hw'A
+        · rcases Finset.mem_insert.1 h with h' | h'
+          · exact absurd h' hw'c
+          · rw [Finset.mem_singleton] at h'
+            subst h'
+            refine ⟨by omega, ?_⟩
+            have h2 : 2 * c - w' = w := by omega
+            rw [h2]
+            exact hwA
+      exact ⟨c, hcA, hN, hcg, hg2c.1, hg2c.2, by omega⟩
+    refine ⟨hlad', ?_⟩
+    intro g hgg
+    obtain ⟨c, hcA, hN, hcg, hg2c, hpA, hpc⟩ :=
+      hlad' (g + g₀ + 1)
+    exact ⟨c, hcA, by omega, by omega, g₀, hg, 2 * c - g₀,
+      hpA, by omega, by omega, by omega, by omega⟩
+  · right
+    obtain ⟨N₁, hN₁⟩ := not_forall.mp hlad
+    refine ⟨N₁ + g₀ + 1, ?_, ?_, ?_, ?_⟩
+    · intro c hcA hCc hcg w hwA w' hw'A hsum
+      by_cases hwc : w = c
+      · exact ⟨hwc, by omega⟩
+      · exact absurd ⟨c, hcA, by omega, by omega, hcg, w, hwA,
+          w', hw'A, hsum, hwc⟩ hN₁
+    · intro c hcA hCc hcg w hwA w' hw'A hsum
+      by_cases hwc : w = c
+      · exact Or.inl (by simp [hwc])
+      · exact absurd ⟨c, hcA, by omega, by omega, hcg, w, hwA,
+          w', hw'A, hsum, hwc⟩ hN₁
+    · rintro B hBA hBinf ⟨N₂, hN₂⟩
+      obtain ⟨b, hbB, hbgt⟩ := hBinf.exists_gt
+        (N₂ + N₁ + g₀ + 1)
+      have hbA := hBA hbB
+      obtain ⟨x, hx, y, hy, hxB, hyB, hxy⟩ :=
+        hN₂ (2 * b) (by omega)
+      have hxb : x = b := by
+        by_cases hwc : x = b
+        · exact hwc
+        · exact absurd ⟨b, hbA, by omega, by omega, by omega,
+            x, hx, y, hy, hxy, hwc⟩ hN₁
+      exact hxB (hxb ▸ hbB)
+    · intro a d hd haA hadA ha2dA
+      by_contra hno
+      push_neg at hno
+      obtain ⟨hgne, hC⟩ := hno
+      have hsum : a + (a + 2 * d) = 2 * (a + d) := by omega
+      have hac : a ≠ a + d := by omega
+      exact absurd ⟨a + d, hadA, by omega, by omega, hgne,
+        a, haA, a + 2 * d, ha2dA, hsum, hac⟩ hN₁
+
+/-- **THE COLLAPSED TRICHOTOMY.**  The global trichotomy after
+the routed collapse: the middle room is gone.  Every
+counterexample world (0 ∈ A, covering, hfail — nothing else) is
+
+I. ANCHORED: full anchor supply and the four lanes;
+
+II. ALMOST-ANCHORED: a basis member g₀ with the explicit
+   infinite ladder 2c − g₀ ∈ A and full anchor supply at every
+   value EXCEPT g₀ — one single hole in the anchor wall, at a
+   known member, with known ladder structure through it;
+
+III. CENTRAL-TAIL: beyond an explicit threshold every double is
+   purely central — total pinning, automatic minimality,
+   midpoint-freeness — subsuming the pure central branch at
+   threshold 1.
+
+Two live geometries remain: the anchored/almost-anchored fork
+frontier and the Salem–Spencer central tail. -/
+theorem the_collapsed_trichotomy {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ((∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+        w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g) ∧
+      ((∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
+        RepFree A N₀ P ∧ c ≤ P.card) ∨
+      (∃ H : Finset ℕ, ∃ h ∈ H, ∀ K, ∃ V : Finset ℕ,
+        K ≤ V.card ∧ ∀ v ∈ V, N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧
+          IsPairHub A v H) ∨
+      (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+        ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+          ∀ v ∈ V, N₀ ≤ v ∧ v ∉ A ∧ ∃ s, S₀ ≤ s ∧ x s ≤ v ∧
+            ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairHub A v
+              ((Finset.range J).image (fun j => x (s + j)))) ∨
+      (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+        ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+          ∀ v ∈ V, N₀ ≤ v ∧ v ∈ A ∧ ∃ s, S₀ ≤ s ∧
+            ∃ J, 2 ≤ J ∧ J ≤ L ∧
+              v ∈ (Finset.range J).image (fun j => x (s + j)) ∧
+              IsPairHub A v ((Finset.range J).image
+                (fun j => x (s + j))) ∧
+              (∀ a ∈ A, ∀ b ∈ A, a + b = v →
+                a ≤ x (s + J - 1) - x s ∨
+                b ≤ x (s + J - 1) - x s)))) ∨
+    (∃ g₀, g₀ ∈ A ∧
+      (∀ N, ∃ c ∈ A, N ≤ c ∧ c ≠ g₀ ∧ g₀ ≤ 2 * c ∧
+        (2 * c - g₀) ∈ A ∧ 2 * c - g₀ ≠ c) ∧
+      (∀ g, g ≠ g₀ → ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
+        ∃ w ∈ A, ∃ w' ∈ A, w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧
+          w' ≠ g)) ∨
+    (∃ g₀ C₀, (∀ c ∈ A, C₀ ≤ c → c ≠ g₀ → ∀ w ∈ A, ∀ w' ∈ A,
+        w + w' = 2 * c → w = c ∧ w' = c) ∧
+      (∀ c ∈ A, C₀ ≤ c → c ≠ g₀ →
+        IsPairHub A (2 * c) ({c} : Finset ℕ)) ∧
+      (∀ B ⊆ A, B.Infinite → ¬∃ N₂, ∀ n, N₂ ≤ n →
+        ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) ∧
+      (∀ a d, 0 < d → a ∈ A → a + d ∈ A → a + 2 * d ∈ A →
+        a + d = g₀ ∨ a + d < C₀)) := by
+  rcases the_global_trichotomy h0 hcov hfail with
+    ⟨hanch, hlanes⟩ | ⟨g₀, hg, hroute⟩ |
+    ⟨g₀, hcen, hhub, hmin, hap⟩
+  · exact Or.inl ⟨hanch, hlanes⟩
+  · rcases the_routed_collapse hg hroute with
+      ⟨hl, ha⟩ | ⟨C₀, h1, h2, h3, h4⟩
+    · exact Or.inr (Or.inl ⟨g₀, hg, hl, ha⟩)
+    · exact Or.inr (Or.inr ⟨g₀, C₀, h1, h2, h3, h4⟩)
+  · refine Or.inr (Or.inr ⟨g₀, 1, ?_, ?_, hmin, ?_⟩)
+    · intro c hcA hCc hcg
+      exact hcen c hcA (by omega) hcg
+    · intro c hcA hCc hcg
+      exact hhub c hcA (by omega) hcg
+    · intro a d hd h1 h2 h3
+      rcases hap a d hd h1 h2 h3 with h | h
+      · exact Or.inl h
+      · exact Or.inr (by omega)
+
 end Erdos881
