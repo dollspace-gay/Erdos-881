@@ -1,3 +1,29 @@
+# THE CANONICAL CORE — SEVENTEENTH SUMMIT (2026-07-26, night)
+
+`endgame_canonical_core` (Endgame.lean, standard axioms,
+UNCONDITIONAL): at every window W, a persistent core S of
+low-part material recurs inside the COMPLETE canonical hubs
+(card <= L) of cofinally many poor targets, every non-core
+member beyond the window.
+
+Tools: `pair_hub_window_split` — obtained FREE from the
+rep-hub splitter by the vacuous-world trick (instantiate its
+world at the empty set: rep-hubness trivializes, pair-hubness
+rides the side-predicate slot).  Composed with
+`poor_stream_canonical_hubs` (completeness from oscillation).
+
+The poor stream's low material = stable finite core + marching
+tails, at every scale.  Core members are universal low parts
+(u in A with n - u in A for cofinally many poor n).
+
+THE DRIFT FORK now has unconditional supply: either cores stay
+nonempty at all windows (a FIXED low element serves cofinally
+many poor targets through complete hubs => translate structure
+at a known member), or some window has empty core (all low
+material of cofinal poor targets marches wholly beyond every
+bound => pure drift, the completeness makes this a strong
+translation law on the poor stream).  Seventeen summits.
+
 # THE OSCILLATION THEOREM — SIXTEENTH SUMMIT (2026-07-26, night)
 
 `endgame_oscillation` (Endgame.lean, standard axioms): every

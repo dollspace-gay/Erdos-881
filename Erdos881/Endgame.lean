@@ -1092,4 +1092,30 @@ theorem endgame_oscillation {A : Set ℕ} {N₀ : ℕ}
   · intro C N
     exact r2_unbounded_of_hfail h0 hcov hfail C N
 
+open Classical in
+/-- **THE CANONICAL CORE** (re-export; seventeenth summit).
+The oscillation theorem's poor stream, organized: every
+counterexample has a bound L such that at every window W a
+persistent core S of low-part material recurs inside the
+COMPLETE canonical hubs (card ≤ L) of cofinally many poor
+targets, all non-core hub members marching beyond the window.
+Unconditional — from 0 ∈ A, covering, and the failure
+interface.  The enemy's poor stream is not amorphous: its low
+material is a stable finite core plus drift, at every scale,
+and the core's members are universal low parts (u ∈ A with
+n − u ∈ A for cofinally many poor n).  The drift fork — mine
+the recurring cores or the marching tails — now has its
+unconditional supply. -/
+theorem endgame_canonical_core {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ L, ∀ W, ∃ S : Finset ℕ, S ⊆ Finset.range (W + 1) ∧
+      ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ L ∧
+        IsPairHub A n H ∧
+        (∀ h ∈ H, h ∈ A ∧ (n - h) ∈ A ∧ 2 * h ≤ n) ∧
+        (∀ x, 2 * x ≤ n → x ∈ A → (n - x) ∈ A → x ∈ H) ∧
+        S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h :=
+  canonical_core_of_hfail h0 hcov hfail
+
 end Erdos881

@@ -16215,4 +16215,68 @@ theorem poor_stream_canonical_hubs {A : Set ℕ} {N₀ : ℕ}
     rw [hH, Finset.mem_filter, Finset.mem_range]
     exact ⟨by omega, hxA, hxpA, hxle⟩
 
+open Classical in
+/-- **Pair-hub window split** (free via the vacuous-world
+trick: `hub_window_split_aux'` never unfolds rep-hubness, so
+instantiating its world at ∅ makes that slot trivial and the
+side-predicate slot carries pair-hubness).  Any cofinal
+bounded-card pair-hub family splits at every window into a
+persistent core plus tails beyond the window. -/
+theorem pair_hub_window_split {A : Set ℕ} {C : ℕ} (W : ℕ)
+    (R : ℕ → Finset ℕ → Prop)
+    (hfam : ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ C ∧
+      IsPairHub A n H ∧ R n H) :
+    ∃ S : Finset ℕ, S ⊆ Finset.range (W + 1) ∧
+      ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ C ∧
+        IsPairHub A n H ∧ R n H ∧ S ⊆ H ∧
+        ∀ h ∈ H, h ∉ S → W < h := by
+  have hvac : ∀ (n : ℕ) (H : Finset ℕ),
+      IsRepHub (∅ : Set ℕ) n H := by
+    intro n H x hx
+    exact absurd hx (Set.notMem_empty x)
+  obtain ⟨S, hSW, hS⟩ := hub_window_split_aux'
+    (A := (∅ : Set ℕ)) (C := C)
+    (R := fun n H => IsPairHub A n H ∧ R n H) W C ∅
+    (by simp)
+    (fun N => by
+      obtain ⟨n, hn, H, hcard, hpair, hR⟩ := hfam N
+      exact ⟨n, hn, H, hcard, hvac n H, ⟨hpair, hR⟩,
+        Finset.empty_subset _, by simpa using hcard⟩)
+  refine ⟨S, hSW, fun N => ?_⟩
+  obtain ⟨n, hn, H, hcard, -, ⟨hpair, hR⟩, hSH, htail⟩ := hS N
+  exact ⟨n, hn, H, hcard, hpair, hR, hSH, htail⟩
+
+open Classical in
+/-- **THE CANONICAL CORE.**  Composing the oscillation
+theorem's canonical hubs with the pair-hub window split: every
+counterexample has a bound L such that at EVERY window W there
+is a persistent core S of low-part material — recurring inside
+the COMPLETE canonical hubs of cofinally many poor targets,
+with every non-core member beyond the window.  The poor
+stream's low material organizes into stable cores plus
+marching tails, unconditionally. -/
+theorem canonical_core_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ L, ∀ W, ∃ S : Finset ℕ, S ⊆ Finset.range (W + 1) ∧
+      ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ L ∧
+        IsPairHub A n H ∧
+        (∀ h ∈ H, h ∈ A ∧ (n - h) ∈ A ∧ 2 * h ≤ n) ∧
+        (∀ x, 2 * x ≤ n → x ∈ A → (n - x) ∈ A → x ∈ H) ∧
+        S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h := by
+  obtain ⟨L, hL⟩ := poor_stream_canonical_hubs h0 hcov hfail
+  refine ⟨L, fun W => ?_⟩
+  obtain ⟨S, hSW, hS⟩ := pair_hub_window_split W
+    (R := fun n H =>
+      (∀ h ∈ H, h ∈ A ∧ (n - h) ∈ A ∧ 2 * h ≤ n) ∧
+      (∀ x, 2 * x ≤ n → x ∈ A → (n - x) ∈ A → x ∈ H))
+    (fun N => by
+      obtain ⟨n, hn, H, hcard, hpair, hmem, hcomp⟩ := hL N
+      exact ⟨n, hn, H, hcard, hpair, hmem, hcomp⟩)
+  refine ⟨S, hSW, fun N => ?_⟩
+  obtain ⟨n, hn, H, hcard, hpair, ⟨hmem, hcomp⟩, hSH, htail⟩ :=
+    hS N
+  exact ⟨n, hn, H, hcard, hpair, hmem, hcomp, hSH, htail⟩
+
 end Erdos881
