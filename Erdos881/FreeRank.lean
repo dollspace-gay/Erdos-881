@@ -12080,4 +12080,82 @@ theorem global_parity_odd_hall {A : Set ℕ} {Y ε : ℕ}
     rw [Finset.mem_filter, Finset.mem_range]
     exact ⟨by omega, hy, h2⟩
 
+/-- **The global parity dichotomy** — the last splitter.
+Either the basis is eventually single-parity (the saturated
+odd-hall world) or both parity classes persist cofinally. -/
+theorem global_parity_dichotomy {A : Set ℕ} :
+    (∃ Y ε, ε < 2 ∧ ∀ a ∈ A, Y < a → a % 2 = ε) ∨
+    ((∀ N, ∃ a, N ≤ a ∧ a ∈ A ∧ a % 2 = 0) ∧
+     (∀ N, ∃ a, N ≤ a ∧ a ∈ A ∧ a % 2 = 1)) := by
+  classical
+  by_cases he : ∀ N, ∃ a, N ≤ a ∧ a ∈ A ∧ a % 2 = 0
+  · by_cases ho : ∀ N, ∃ a, N ≤ a ∧ a ∈ A ∧ a % 2 = 1
+    · exact Or.inr ⟨he, ho⟩
+    · left
+      obtain ⟨Y, hY⟩ := not_forall.mp ho
+      refine ⟨Y, 0, by omega, ?_⟩
+      intro a ha hYa
+      by_contra hodd
+      exact hY ⟨a, by omega, ha, by omega⟩
+  · left
+    obtain ⟨Y, hY⟩ := not_forall.mp he
+    refine ⟨Y, 1, by omega, ?_⟩
+    intro a ha hYa
+    by_contra heven
+    exact hY ⟨a, by omega, ha, by omega⟩
+
+open Classical in
+/-- **The odd channel's ordered pair cap.**  In single-parity
+worlds every odd target beyond 2Y has at most 2Y + 2 ordered
+pair representations: every pair part is in the fringe or
+mirrors into it. -/
+theorem global_parity_odd_ordered_cap {A : Set ℕ} {Y ε : ℕ}
+    (hpar : ∀ a ∈ A, Y < a → a % 2 = ε) :
+    ∀ n, 2 * Y < n → n % 2 = 1 →
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * Y + 2 := by
+  intro n h1 h2
+  have hsub : (Finset.range (n + 1)).filter
+      (fun x => x ∈ A ∧ (n - x) ∈ A) ⊆
+      (Finset.range (Y + 1)) ∪
+      (Finset.Ioc (n - Y - 1) n) := by
+    intro x hx
+    rw [Finset.mem_filter, Finset.mem_range] at hx
+    obtain ⟨hxn, hxA, hxpA⟩ := hx
+    rcases global_parity_odd_fringe hpar n h1 h2 x hxA
+      (n - x) hxpA (by omega) with ⟨ha, _⟩ | ⟨ha, _⟩
+    · exact Finset.mem_union_left _
+        (Finset.mem_range.2 (by omega))
+    · exact Finset.mem_union_right _
+        (Finset.mem_Ioc.2 (by omega))
+  have h3 := Finset.card_le_card hsub
+  have h4 := Finset.card_union_le (Finset.range (Y + 1))
+    (Finset.Ioc (n - Y - 1) n)
+  rw [Finset.card_range, Nat.card_Ioc] at h4
+  omega
+
+open Classical in
+/-- **The blowups are forced even.**  In single-parity worlds
+under hfail, the canonical core's unbounded-r₂ witnesses are
+eventually all EVEN: the saturated odd hall caps the odd
+channel, so the enemy's pair riches must live one 2-adic level
+down.  The descent has teeth. -/
+theorem r2_witnesses_even {A : Set ℕ} {N₀ Y ε : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hpar : ∀ a ∈ A, Y < a → a % 2 = ε) :
+    ∀ N, ∃ v, N ≤ v ∧ v % 2 = 0 ∧ 2 * Y + 3 ≤
+      ((Finset.range (v + 1)).filter
+        (fun x => x ∈ A ∧ (v - x) ∈ A)).card := by
+  intro N
+  obtain ⟨v, hvN, hvC⟩ := r2_unbounded_of_hfail h0 hcov hfail
+    (2 * Y + 3) (N + 2 * Y + 1)
+  refine ⟨v, by omega, ?_, hvC⟩
+  by_contra hodd
+  have h1 : v % 2 = 1 := by omega
+  have h2 := global_parity_odd_ordered_cap hpar v
+    (by omega) h1
+  omega
+
 end Erdos881
