@@ -60,7 +60,12 @@ Also: shell stratification + depth tax + rotation/6/18-level caps
 + conflict law; three branch mechanisms (counting/Sidon,
 robustness/Cantor, and their mixed-regime gap); the anchor
 trichotomy (anchored / g₀-routed / central-AP3-free); the
-canonical grid.  NEWEST LAWS: `endgame_translate_laws` — UNCONDITIONAL: no
+canonical grid.  NEWEST SUMMIT: `the_pair_flood_funnel` — every counterexample
+funnels via its own pair flood (`personal_pair_guard_of_hfail`,
+unconditional, density-free) into: P-centred members / rotator
+ghosts / the pure hall — over ONE fixed free 0-less envelope.
+Remaining core: the fixed-hall strong-horn problem + rank-ω.
+NEWEST LAWS: `endgame_translate_laws` — UNCONDITIONAL: no
 basis element's translate (single or in pairs) eventually
 captures A (walk kills: `ap3_deletion_engine`,
 `good_two_walk_killed`).  The door's good horn is EMPTY; strong

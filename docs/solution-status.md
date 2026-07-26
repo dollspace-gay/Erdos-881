@@ -1,3 +1,28 @@
+# UPDATE (2026-07-26, cont. 8): THE PAIR-FLOOD FUNNEL
+
+**Arc 27 — the funnel** (`the_pair_flood_funnel`).  Composing
+ghost-or-centre with two cofinality splits: every counterexample
+world funnels through its own pair flood into ONE of three
+cofinal configurations over ONE fixed free 0-less envelope P:
+
+I. P-CENTRED MEMBERS — cofinal basis elements whose every
+   positive pair routes through P;
+II. ROTATOR GHOSTS — cofinal b with partner w, sum b + w out of
+   A and pair-hubbed by P ∪ {b} (the canonical core-rotator);
+III. THE PURE HALL — cofinal ghosts pair-hubbed by P alone.
+
+The door is not a lane; it is a face of the flood.  Combined
+with the final dichotomy, the campaign's remaining core is:
+defeat faces I–III (fixed-hall analysis with the ambient
+translate laws) and the rank-ω room.  Face III with |P| = 1 is
+the marriage/unique-pair configuration; |P| = 2 is the door
+whose good horn is already empty; the general strong-horn hall
+is THE open combinatorial core.
+
+All verified, zero sorries, standard axioms.
+
+---
+
 # UPDATE (2026-07-26, cont. 7): THE PAIR FLOOD
 
 **Arc 26 — the flood welded, unconditional.**
