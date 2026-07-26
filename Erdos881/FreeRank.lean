@@ -4973,4 +4973,215 @@ theorem affine_corner_fixed_or_scattered {A : Set ℕ}
   nat_param_stabilize
     (fun _ _ _ hSS h => AffineCorner.anti hSS h) hcorner
 
+/-- Uniform-envelope form of the street dichotomy: ONE free
+envelope Q (the flood envelope) serves every K and S.  This is
+what the proof always produced; recording it makes the affine
+corners comparable across sizes. -/
+theorem street_dichotomy_uniform {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ Q : Finset ℕ, RepFree A N₀ Q ∧ ∀ K S,
+    (∃ δ, 1 ≤ δ ∧ ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A) ∨
+    (∃ n, (∃ V : Finset ℕ, K ≤ V.card ∧
+        ∀ a ∈ V, a ∈ A ∧ ∃ x ∈ A, x + a = n) ∧
+      ∃ b₂ ∈ A, ∃ b₃ ∈ A,
+        S ≤ b₂ ∧ b₂ < b₃ ∧ ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
+          IsPairHub A s (insert b₃ Q)) := by
+  classical
+  obtain ⟨P, hPfree, X, hflood⟩ := rep_flood_of_hfail h0 hcov hfail
+  refine ⟨P, hPfree, ?_⟩
+  intro K S
+  rcases Nat.eq_zero_or_pos K with hK0 | hK0
+  · left
+    refine ⟨1, le_refl 1, ∅, by simp [hK0], ?_⟩
+    intro x hx
+    exact absurd hx (Finset.notMem_empty x)
+  set C := P.card + 1 with hC
+  set D := C * C * C * C with hD
+  set T := K * D + 3 * C + 1 with hT
+  obtain ⟨b₁, hb₁A, hb₁ge⟩ :=
+    pairCovers_unbounded hcov (X + T * T + 2 * N₀ + 1)
+  obtain ⟨m₁, hm₁, hb₁m₁, hhub₁⟩ := hflood b₁ hb₁A (by omega)
+  obtain ⟨b₂, hb₂A, hb₂ge⟩ := pairCovers_unbounded hcov
+    (X + S + m₁ + P.sup id + N₀ + 1)
+  obtain ⟨m₂, hm₂, hb₂m₂, hhub₂⟩ := hflood b₂ hb₂A (by omega)
+  obtain ⟨b₃, hb₃A, hb₃ge⟩ := pairCovers_unbounded hcov
+    (X + m₂ + P.sup id + N₀ + 1)
+  obtain ⟨m₃, hm₃, hb₃m₃, hhub₃⟩ := hflood b₃ hb₃A (by omega)
+  haveI : DecidablePred (· ∈ A) := Classical.decPred _
+  set F := ((Finset.range (b₁ - N₀ + 1)).filter (· ∈ A)) with hF
+  have hFcard : T ≤ F.card := by
+    have h1 := covering_sqrt_lower (A := A) (N₀ := N₀) hcov
+      (n := b₁ - N₀) (by omega)
+    by_contra hlt
+    push_neg at hlt
+    have h2 : F.card * F.card < T * T :=
+      Nat.mul_lt_mul_of_lt_of_le hlt (le_of_lt hlt) (by omega)
+    rw [← hF] at h1
+    omega
+  set H₁ := insert b₁ P with hH₁
+  set H₂ := insert b₂ P with hH₂
+  set H₃ := insert b₃ P with hH₃
+  have hH₁c : H₁.card ≤ C := by
+    rw [hH₁, hC]; exact Finset.card_insert_le b₁ P
+  have hH₂c : H₂.card ≤ C := by
+    rw [hH₂, hC]; exact Finset.card_insert_le b₂ P
+  have hH₃c : H₃.card ≤ C := by
+    rw [hH₃, hC]; exact Finset.card_insert_le b₃ P
+  set W := F \ (H₁ ∪ H₂ ∪ H₃) with hW
+  have hWcard : K * D + 1 ≤ W.card := by
+    have h1 := Finset.card_le_card_sdiff_add_card (s := F)
+      (t := H₁ ∪ H₂ ∪ H₃)
+    rw [← hW] at h1
+    have h2 : (H₁ ∪ H₂ ∪ H₃).card ≤ 3 * C := by
+      have h3 := Finset.card_union_le (H₁ ∪ H₂) H₃
+      have h4 := Finset.card_union_le H₁ H₂
+      omega
+    omega
+  have hWmem : ∀ a ∈ W, a ∈ A ∧ a ∉ H₁ ∧ a ∉ H₂ ∧ a ∉ H₃ ∧
+      a + N₀ ≤ m₁ ∧ a + N₀ ≤ m₂ ∧ a + N₀ ≤ m₃ := by
+    intro a ha
+    rw [hW, Finset.mem_sdiff, Finset.mem_union,
+      Finset.mem_union] at ha
+    obtain ⟨haF, haH⟩ := ha
+    rw [hF, Finset.mem_filter, Finset.mem_range] at haF
+    push_neg at haH
+    exact ⟨haF.2, haH.1.1, haH.1.2, haH.2, by omega, by omega,
+      by omega⟩
+  obtain ⟨g₁, hg₁, g₂, hg₂, V₁, hV₁W, hcount₁, hrefl₁⟩ :=
+    two_hubs_common_reflection h0 hcov hm₁ hm₂ hhub₁ hhub₂ W
+      (fun a ha => ⟨(hWmem a ha).1, (hWmem a ha).2.1,
+        (hWmem a ha).2.2.1, (hWmem a ha).2.2.2.2.1,
+        (hWmem a ha).2.2.2.2.2.1⟩)
+  obtain ⟨g₁', hg₁', g₃, hg₃, V₂, hV₂V₁, hcount₂, hrefl₂⟩ :=
+    two_hubs_common_reflection h0 hcov hm₁ hm₃ hhub₁ hhub₃ V₁
+      (fun a ha => ⟨(hWmem a (hV₁W ha)).1,
+        (hWmem a (hV₁W ha)).2.1,
+        (hWmem a (hV₁W ha)).2.2.2.1,
+        (hWmem a (hV₁W ha)).2.2.2.2.1,
+        (hWmem a (hV₁W ha)).2.2.2.2.2.2⟩)
+  have hVK : K ≤ V₂.card := by
+    have e₁ : W.card ≤ C * C * V₁.card :=
+      le_trans hcount₁
+        (Nat.mul_le_mul (Nat.mul_le_mul hH₁c hH₂c)
+          (le_refl V₁.card))
+    have e₂ : V₁.card ≤ C * C * V₂.card :=
+      le_trans hcount₂
+        (Nat.mul_le_mul (Nat.mul_le_mul hH₁c hH₃c)
+          (le_refl V₂.card))
+    have e₃ : C * C * V₁.card ≤ C * C * (C * C * V₂.card) :=
+      Nat.mul_le_mul (le_refl (C * C)) e₂
+    have e₄ : C * C * (C * C * V₂.card) = D * V₂.card := by
+      rw [hD]; ring
+    by_contra hK
+    push_neg at hK
+    have hK' : V₂.card + 1 ≤ K := hK
+    have e₅ : D * (V₂.card + 1) ≤ D * K :=
+      Nat.mul_le_mul (le_refl D) hK'
+    rw [Nat.mul_add, Nat.mul_one] at e₅
+    have e₆ : K * D = D * K := by ring
+    omega
+  obtain ⟨a₀, ha₀⟩ := Finset.card_pos.1
+    (lt_of_lt_of_le hK0 hVK)
+  obtain ⟨⟨xw₁, hxw₁A, hxw₁⟩, ⟨xw₂, hxw₂A, hxw₂⟩⟩ :=
+    hrefl₁ a₀ (hV₂V₁ ha₀)
+  obtain ⟨⟨xw₁', hxw₁'A, hxw₁'⟩, ⟨xw₃, hxw₃A, hxw₃⟩⟩ :=
+    hrefl₂ a₀ ha₀
+  set u₁ := m₁ - g₁ with hu₁
+  set u₂ := m₂ - g₂ with hu₂
+  set u₁' := m₁ - g₁' with hu₁'
+  set u₃ := m₃ - g₃ with hu₃
+  have hpt₁ : u₁ + g₁ = m₁ := by omega
+  have hpt₂ : u₂ + g₂ = m₂ := by omega
+  have hpt₁' : u₁' + g₁' = m₁ := by omega
+  have hpt₃ : u₃ + g₃ = m₃ := by omega
+  have hrA : ∀ a ∈ V₂, a ∈ A ∧
+      (∃ x ∈ A, x + a = u₁) ∧ (∃ x ∈ A, x + a = u₂) ∧
+      (∃ x ∈ A, x + a = u₁') ∧ (∃ x ∈ A, x + a = u₃) := by
+    intro a ha
+    obtain ⟨⟨x₁, hx₁A, hx₁⟩, ⟨x₂, hx₂A, hx₂⟩⟩ :=
+      hrefl₁ a (hV₂V₁ ha)
+    obtain ⟨⟨x₁', hx₁'A, hx₁'⟩, ⟨x₃, hx₃A, hx₃⟩⟩ := hrefl₂ a ha
+    exact ⟨(hWmem a (hV₁W (hV₂V₁ ha))).1,
+      ⟨x₁, hx₁A, by omega⟩, ⟨x₂, hx₂A, by omega⟩,
+      ⟨x₁', hx₁'A, by omega⟩, ⟨x₃, hx₃A, by omega⟩⟩
+  have mkdiff : ∀ p q : ℕ, p < q →
+      (∀ a ∈ V₂, ∃ x ∈ A, x + a = p) →
+      (∀ a ∈ V₂, ∃ x ∈ A, x + a = q) →
+      (∃ δ, 1 ≤ δ ∧ ∃ V : Finset ℕ, K ≤ V.card ∧
+        ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A) := by
+    intro p q hpq hp hq
+    refine ⟨q - p, by omega, V₂.image (fun a => p - a), ?_, ?_⟩
+    · rw [Finset.card_image_of_injOn]
+      · exact hVK
+      · intro a ha a' ha' heq
+        obtain ⟨x, hxA, hx⟩ := hp a ha
+        obtain ⟨x', hx'A, hx'⟩ := hp a' ha'
+        simp only at heq
+        omega
+    · intro x hx
+      rw [Finset.mem_image] at hx
+      obtain ⟨a, ha, rfl⟩ := hx
+      obtain ⟨w, hwA, hw⟩ := hp a ha
+      obtain ⟨w', hw'A, hw'⟩ := hq a ha
+      have hwe : w = p - a := by omega
+      have hw2 : w + (q - p) = w' := by omega
+      rw [← hwe, hw2]
+      exact ⟨hwA, hw'A⟩
+  have proj₁ : ∀ a ∈ V₂, ∃ x ∈ A, x + a = u₁ :=
+    fun a ha => (hrA a ha).2.1
+  have proj₂ : ∀ a ∈ V₂, ∃ x ∈ A, x + a = u₂ :=
+    fun a ha => (hrA a ha).2.2.1
+  have proj₁' : ∀ a ∈ V₂, ∃ x ∈ A, x + a = u₁' :=
+    fun a ha => (hrA a ha).2.2.2.1
+  have proj₃ : ∀ a ∈ V₂, ∃ x ∈ A, x + a = u₃ :=
+    fun a ha => (hrA a ha).2.2.2.2
+  by_cases h12 : u₁ = u₂
+  · by_cases h11' : u₁ = u₁'
+    · by_cases h13 : u₁ = u₃
+      · right
+        have hg₂P : g₂ = b₂ := by
+          rcases Finset.mem_insert.1 hg₂ with h | h
+          · exact h
+          · exfalso
+            have hle : g₂ ≤ P.sup id :=
+              Finset.le_sup (f := id) h
+            omega
+        have hg₃P : g₃ = b₃ := by
+          rcases Finset.mem_insert.1 hg₃ with h | h
+          · exact h
+          · exfalso
+            have hle : g₃ ≤ P.sup id :=
+              Finset.le_sup (f := id) h
+            omega
+        refine ⟨u₁, ⟨V₂, hVK, fun a ha =>
+          ⟨(hrA a ha).1, proj₁ a ha⟩⟩,
+          b₂, hb₂A, b₃, hb₃A, by omega, by omega,
+          m₃ - b₂, by omega, by omega, ?_⟩
+        intro x hx y hy hxy
+        have hsum : b₂ + x + y = m₃ := by omega
+        rcases hhub₃ b₂ hb₂A x hx y hy hsum with h | h | h
+        · exfalso
+          rcases Finset.mem_insert.1 h with h' | h'
+          · omega
+          · have hle : b₂ ≤ P.sup id :=
+              Finset.le_sup (f := id) h'
+            omega
+        · exact Or.inl h
+        · exact Or.inr h
+      · left
+        rcases Nat.lt_or_ge u₁ u₃ with h | h
+        · exact mkdiff u₁ u₃ h proj₁ proj₃
+        · exact mkdiff u₃ u₁ (by omega) proj₃ proj₁
+    · left
+      rcases Nat.lt_or_ge u₁ u₁' with h | h
+      · exact mkdiff u₁ u₁' h proj₁ proj₁'
+      · exact mkdiff u₁' u₁ (by omega) proj₁' proj₁
+  · left
+    rcases Nat.lt_or_ge u₁ u₂ with h | h
+    · exact mkdiff u₁ u₂ h proj₁ proj₂
+    · exact mkdiff u₂ u₁ (by omega) proj₂ proj₁
+
 end Erdos881
