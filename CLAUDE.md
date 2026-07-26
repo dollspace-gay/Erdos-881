@@ -77,3 +77,12 @@ higher caps + conflict law → robustness branch → reflection
 ledger → street dichotomy + four rooms → ladder mining →
 classical-minimality interface → Ramsey cascade → omega pinch.
 Search for `/-! ##` to navigate.
+
+## Maintenance notes (2026-07-25 night)
+
+- Mathlib now deprecates `push_neg` in favour of `push Not`
+  (~300 warnings repo-wide, harmless).  A one-line macro shim in
+  a root-most import would silence them; do it in a quiet session,
+  not mid-campaign.
+- Remote: github.com/dollspace-gay/Erdos-881.  Sessions commit
+  locally; pushing is the user's call.
