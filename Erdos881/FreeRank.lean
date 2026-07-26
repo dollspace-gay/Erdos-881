@@ -6387,4 +6387,62 @@ theorem complete_families_blocked_of_hfail {A : Set ℕ}
     omega
   exact hnofail ![x, y, z] hmemb hsum3
 
+/-- **The completeness criterion.**  A sequence starting at 1
+whose each term is at most one more than the sum of its
+predecessors has subset sums covering every value up to the
+total: greedy from the top.  This is the bridge between the
+greedy probe's high density and `survival_of_complete_avoiding`:
+a self-avoiding family with small gaps is complete, hence a
+surviving deletion. -/
+theorem subset_sum_complete_of_small_gaps (t : ℕ → ℕ)
+    (h1 : t 0 = 1)
+    (hgap : ∀ k, t (k + 1) ≤
+      (∑ i ∈ Finset.range (k + 1), t i) + 1) :
+    ∀ K n, n ≤ ∑ i ∈ Finset.range (K + 1), t i →
+      ∃ S ⊆ Finset.range (K + 1), (∑ i ∈ S, t i) = n := by
+  intro K
+  induction K with
+  | zero =>
+    intro n hn
+    rw [Finset.sum_range_one, h1] at hn
+    rcases Nat.eq_zero_or_pos n with h | h
+    · exact ⟨∅, Finset.empty_subset _, by simp [h]⟩
+    · have hn1 : n = 1 := by omega
+      refine ⟨{0}, ?_, ?_⟩
+      · intro x hx
+        rw [Finset.mem_singleton] at hx
+        rw [hx]
+        exact Finset.mem_range.2 (by omega)
+      · rw [Finset.sum_singleton, h1, hn1]
+  | succ K ih =>
+    intro n hn
+    rw [Finset.sum_range_succ] at hn
+    by_cases hle : n ≤ ∑ i ∈ Finset.range (K + 1), t i
+    · obtain ⟨S, hS, hsum⟩ := ih n hle
+      refine ⟨S, ?_, hsum⟩
+      intro x hx
+      have := hS hx
+      rw [Finset.mem_range] at this ⊢
+      omega
+    · push_neg at hle
+      have hgap' := hgap K
+      have hsub : n - t (K + 1) ≤
+          ∑ i ∈ Finset.range (K + 1), t i := by omega
+      obtain ⟨S, hS, hsum⟩ := ih (n - t (K + 1)) hsub
+      have hnotmem : K + 1 ∉ S := by
+        intro hmem
+        have := hS hmem
+        rw [Finset.mem_range] at this
+        omega
+      refine ⟨insert (K + 1) S, ?_, ?_⟩
+      · intro x hx
+        rcases Finset.mem_insert.1 hx with h | h
+        · rw [h]
+          exact Finset.mem_range.2 (by omega)
+        · have := hS h
+          rw [Finset.mem_range] at this ⊢
+          omega
+      · rw [Finset.sum_insert hnotmem, hsum]
+        omega
+
 end Erdos881
