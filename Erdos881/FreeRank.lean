@@ -8808,4 +8808,192 @@ theorem the_four_lanes {A : Set ℕ} {N₀ : ℕ}
       exact ⟨hvN, hvA, s, hs, J, hJ2, hJL, hvW, hhub,
         street_member_small_part hxmono (by omega) hhub hvW⟩
 
+/-! ## The member street verdict: difference-blind stream or gap blowup -/
+
+/-- **Members expel differences.**  If every pair of v' has a
+part at most D, then any basis element v strictly between D and
+v' − D forces v' − v OUT of A: otherwise (v, v' − v) would be a
+banned middle pair.  Forced non-membership from pure counting
+geometry. -/
+theorem member_difference_out {A : Set ℕ} {v' D : ℕ}
+    (hsmall : ∀ a ∈ A, ∀ b ∈ A, a + b = v' → a ≤ D ∨ b ≤ D)
+    {v : ℕ} (hvA : v ∈ A) (hDv : D < v) (hvv' : v + D < v') :
+    v' - v ∉ A := by
+  intro hdA
+  rcases hsmall v hvA (v' - v) hdA (by omega) with h | h <;> omega
+
+/-- **The difference-blind stream.**  A uniformly-bounded-span
+member street condenses into a strictly increasing stream inside
+A, every element above the span bound, with EVERY pairwise
+difference forced out of A: an infinite subset of the basis
+whose difference set the basis refuses. -/
+theorem difference_blind_stream {A : Set ℕ} {N₀ D₀ : ℕ}
+    (hmem : ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ v ∈ V, N₀ ≤ v ∧ v ∈ A ∧
+        ∀ a ∈ A, ∀ b ∈ A, a + b = v → a ≤ D₀ ∨ b ≤ D₀) :
+    ∃ y : ℕ → ℕ, StrictMono y ∧
+      (∀ t, y t ∈ A ∧ N₀ ≤ y t ∧ D₀ < y t ∧
+        ∀ a ∈ A, ∀ b ∈ A, a + b = y t → a ≤ D₀ ∨ b ≤ D₀) ∧
+      (∀ t t', t < t' → y t' - y t ∉ A) := by
+  classical
+  have hsupply : ∀ c, ∃ v, c ≤ v ∧ N₀ ≤ v ∧ v ∈ A ∧
+      ∀ a ∈ A, ∀ b ∈ A, a + b = v → a ≤ D₀ ∨ b ≤ D₀ := by
+    intro c
+    obtain ⟨V, hVcard, hV⟩ := hmem (c + 1)
+    have hbig : ∃ v ∈ V, c ≤ v := by
+      by_contra hall
+      have hsub : V ⊆ Finset.range c := by
+        intro v hv
+        rw [Finset.mem_range]
+        by_contra hge
+        exact hall ⟨v, hv, by omega⟩
+      have h1 := Finset.card_le_card hsub
+      rw [Finset.card_range] at h1
+      omega
+    obtain ⟨v, hvV, hcv⟩ := hbig
+    obtain ⟨h1, h2, h3⟩ := hV v hvV
+    exact ⟨v, hcv, h1, h2, h3⟩
+  choose nf hnf1 hnf2 hnf3 hnf4 using hsupply
+  set y : ℕ → ℕ := fun t => Nat.rec (nf (D₀ + 1))
+    (fun _ prev => nf (prev + D₀ + 1)) t with hy
+  have hzero : y 0 = nf (D₀ + 1) := rfl
+  have hstep : ∀ t, y (t + 1) = nf (y t + D₀ + 1) :=
+    fun t => rfl
+  have hgap : ∀ t, y t + D₀ < y (t + 1) := by
+    intro t
+    have h1 := hnf1 (y t + D₀ + 1)
+    rw [hstep t]
+    omega
+  have hmono : StrictMono y :=
+    strictMono_nat_of_lt_succ (fun t => by
+      have := hgap t; omega)
+  have hDlt : ∀ t, D₀ < y t := by
+    intro t
+    cases t with
+    | zero =>
+      have h1 := hnf1 (D₀ + 1)
+      rw [hzero]
+      omega
+    | succ t =>
+      have h1 := hnf1 (y t + D₀ + 1)
+      rw [hstep t]
+      omega
+  have hcert : ∀ t, N₀ ≤ y t ∧ y t ∈ A ∧
+      ∀ a ∈ A, ∀ b ∈ A, a + b = y t → a ≤ D₀ ∨ b ≤ D₀ := by
+    intro t
+    cases t with
+    | zero =>
+      rw [hzero]
+      exact ⟨hnf2 _, hnf3 _, hnf4 _⟩
+    | succ t =>
+      rw [hstep t]
+      exact ⟨hnf2 _, hnf3 _, hnf4 _⟩
+  refine ⟨y, hmono, fun t => ⟨(hcert t).2.1, (hcert t).1,
+    hDlt t, (hcert t).2.2⟩, ?_⟩
+  intro t t' htt
+  have h1 : y t + D₀ < y t' := by
+    have h2 := hgap t
+    have h3 : y (t + 1) ≤ y t' := by
+      rcases Nat.lt_or_ge (t + 1) t' with h | h
+      · exact le_of_lt (hmono h)
+      · have h4 : t + 1 = t' := by omega
+        rw [h4]
+    omega
+  exact member_difference_out (hcert t').2.2 (hcert t).2.1
+    (hDlt t) h1
+
+/-- **THE MEMBER STREET VERDICT.**  The member street's window
+spans either stay bounded — and the street condenses into a
+difference-blind stream: an infinite ascending subset of A all
+of whose pairwise differences are forced OUT of A — or the spans
+blow up, and with width capped at L the CANONICAL SPINE develops
+unbounded consecutive gaps.  Lane 4 ends in a Sidon-flavoured
+stream or a torn spine; there is no third exit. -/
+theorem member_street_verdict {A : Set ℕ} {N₀ L : ℕ}
+    {x : ℕ → ℕ} (hxmono : StrictMono x)
+    (hmem : ∀ K : ℕ, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ v ∈ V, N₀ ≤ v ∧ v ∈ A ∧ ∃ s J, 2 ≤ J ∧ J ≤ L ∧
+        ∀ a ∈ A, ∀ b ∈ A, a + b = v →
+          a ≤ x (s + J - 1) - x s ∨ b ≤ x (s + J - 1) - x s) :
+    (∃ D₀, ∃ y : ℕ → ℕ, StrictMono y ∧
+      (∀ t, y t ∈ A ∧ N₀ ≤ y t ∧ D₀ < y t ∧
+        ∀ a ∈ A, ∀ b ∈ A, a + b = y t → a ≤ D₀ ∨ b ≤ D₀) ∧
+      (∀ t t', t < t' → y t' - y t ∉ A)) ∨
+    (∀ G, ∃ i, G ≤ x (i + 1) - x i) := by
+  classical
+  have hstreet' : ∀ K : ℕ, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ v ∈ V, ∃ d, N₀ ≤ v ∧ v ∈ A ∧ ∃ s J, 2 ≤ J ∧ J ≤ L ∧
+        d = x (s + J - 1) - x s ∧
+        ∀ a ∈ A, ∀ b ∈ A, a + b = v →
+          a ≤ x (s + J - 1) - x s ∨ b ≤ x (s + J - 1) - x s := by
+    intro K
+    obtain ⟨V, hVcard, hV⟩ := hmem K
+    refine ⟨V, hVcard, ?_⟩
+    intro v hv
+    obtain ⟨hvN, hvA, s, J, hJ2, hJL, hlaw⟩ := hV v hv
+    exact ⟨x (s + J - 1) - x s, hvN, hvA, s, J, hJ2, hJL,
+      rfl, hlaw⟩
+  rcases street_position_dichotomy
+    (W := fun v d => N₀ ≤ v ∧ v ∈ A ∧ ∃ s J, 2 ≤ J ∧ J ≤ L ∧
+      d = x (s + J - 1) - x s ∧
+      ∀ a ∈ A, ∀ b ∈ A, a + b = v →
+        a ≤ x (s + J - 1) - x s ∨ b ≤ x (s + J - 1) - x s)
+    hstreet' with ⟨D₀, hnear⟩ | hfar
+  · left
+    have hmem' : ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+        ∀ v ∈ V, N₀ ≤ v ∧ v ∈ A ∧
+          ∀ a ∈ A, ∀ b ∈ A, a + b = v → a ≤ D₀ ∨ b ≤ D₀ := by
+      intro K
+      obtain ⟨V, hVcard, hV⟩ := hnear K
+      refine ⟨V, hVcard, ?_⟩
+      intro v hv
+      obtain ⟨d, hdle, hvN, hvA, s, J, hJ2, hJL, hdspan,
+        hlaw⟩ := hV v hv
+      refine ⟨hvN, hvA, ?_⟩
+      intro a ha b hb hab
+      rcases hlaw a ha b hb hab with h | h
+      · left; omega
+      · right; omega
+    obtain ⟨y, hymono, hyprop, hydiff⟩ :=
+      difference_blind_stream hmem'
+    exact ⟨D₀, y, hymono, hyprop, hydiff⟩
+  · right
+    intro G
+    by_cases hG : G = 0
+    · exact ⟨0, by omega⟩
+    by_contra hno
+    have hall : ∀ i, x (i + 1) - x i < G := by
+      intro i
+      by_contra hge
+      exact hno ⟨i, by omega⟩
+    obtain ⟨V, hVcard, hV⟩ := hfar (L * G + 1) 1
+    have hVne : V.Nonempty := Finset.card_pos.1 (by omega)
+    obtain ⟨v, hvV⟩ := hVne
+    obtain ⟨d, hdD, hvN, hvA, s, J, hJ2, hJL, hdspan, hlaw⟩ :=
+      hV v hvV
+    have hclaim : ∀ j, x (s + j) ≤ x s + j * (G - 1) := by
+      intro j
+      induction j with
+      | zero => simp
+      | succ j ih =>
+        have h1 := hall (s + j)
+        have h2 : x (s + j) ≤ x (s + j + 1) :=
+          hxmono.monotone (by omega)
+        have h3 : (j + 1) * (G - 1) = j * (G - 1) + (G - 1) :=
+          by ring
+        have h4 : s + (j + 1) = s + j + 1 := by omega
+        rw [h4]
+        omega
+    have hkey := hclaim (J - 1)
+    have h5 : s + (J - 1) = s + J - 1 := by omega
+    rw [h5] at hkey
+    have h1 : (J - 1) * (G - 1) ≤ (L - 1) * (G - 1) :=
+      Nat.mul_le_mul_right _ (by omega)
+    have h2 : ((L - 1) + 1) * ((G - 1) + 1) =
+        (L - 1) * (G - 1) + (L - 1) + (G - 1) + 1 := by ring
+    have h3 : (L - 1) + 1 = L := by omega
+    have h4 : (G - 1) + 1 = G := by omega
+    rw [h3, h4] at h2
+    omega
+
 end Erdos881
