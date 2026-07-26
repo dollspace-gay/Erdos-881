@@ -647,3 +647,20 @@ it, because the schedule is indexed by the enemy's own material
 rather than by any static family.  The final assault — next
 session — plays this game: window-hub targets versus the caps
 versus the windows' own free interiors.
+
+## 26. WIDTH OR RANK (22:53; the closing theorem)
+
+**`repFree_iff_forall_not_hub`** (the exact duality: free =
+never-hub) + **`stall_width_or_rank`**: taking MINIMAL stall
+windows at every shift of the spine, proper prefixes are free by
+duality, so either the widths are unbounded — cross-shell free
+sets of every size, root rank ≥ ω, the finite-rank room closed —
+or a single bound L works at every shift: between 2 and L
+consecutive lineage values form a full hub at every position of
+the spine, cofinally distinct targets (the stream), uniform
+fragility, tax heights, all caps.
+
+The night ends with the enemy pinned on its own material:
+INFINITE RANK or a UNIFORM-WIDTH DEFENCE of every point of the
+canonical spine.  Both branches are now narrow, explicit, and
+fully instrumented.  The next session opens here.
