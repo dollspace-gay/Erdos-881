@@ -7614,4 +7614,38 @@ theorem residue_width_dichotomy {A : Set ℕ} (m : ℕ)
       have h2 : Bf (a % m) ≤ F.sup Bf := Finset.le_sup hinF
       omega
 
+/-- **Grid pressure or alignment** (the grid capstone).  Under
+hfail, at every modulus: four infinite classes yield four
+cofinal obligation streams that no represented target can serve
+simultaneously — the enemy's schedule must permanently split —
+or the tail concentrates in at most three classes, a two-scale
+alignment at that modulus.  Every modulus interrogates the
+enemy: spread or align. -/
+theorem grid_pressure_or_alignment {A : Set ℕ} {N₀ : ℕ}
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (m : ℕ) (hm : 1 ≤ m) :
+    (∃ r : Fin 4 → ℕ,
+      (∀ i j : Fin 4, i ≠ j → r i % m ≠ r j % m) ∧
+      (∀ i : Fin 4, ∀ N, ∃ n, N ≤ n ∧
+        ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = n →
+          x % m = r i % m ∨ y % m = r i % m ∨
+          z % m = r i % m) ∧
+      (∀ n, (∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = n) →
+        ¬∀ i : Fin 4, ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+          x + y + z = n → x % m = r i % m ∨
+          y % m = r i % m ∨ z % m = r i % m)) ∨
+    (∃ R : Finset ℕ, R.card ≤ 3 ∧ ∃ X, ∀ a ∈ A, X ≤ a →
+      a % m ∈ R) := by
+  rcases residue_width_dichotomy (A := A) m hm with
+    ⟨r, hrne, hrinf⟩ | hnarrow
+  · left
+    refine ⟨r, hrne, ?_, ?_⟩
+    · intro i
+      exact canonical_deletion_obligation (N₀ := N₀) hfail
+        (fun a => a % m = r i % m) (hrinf i)
+    · intro n hrep hall
+      exact grid_cap_three_classes hrne hrep hall
+  · exact Or.inr hnarrow
+
 end Erdos881
