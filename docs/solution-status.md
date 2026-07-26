@@ -1,3 +1,26 @@
+# THE DRIFT FORK — EIGHTEENTH SUMMIT (2026-07-26, night)
+
+`endgame_drift_fork` (Endgame.lean, standard axioms,
+UNCONDITIONAL): every counterexample either owns a UNIVERSAL
+LOW PART (one fixed u inside the complete canonical hubs of
+cofinally many poor targets — the door at a known member) or
+runs TOTAL DRIFT (beyond every window, cofinal poor targets
+with every low part above the window — complete bounded hubs
+marching in formation).
+
+The unconditional layer (oscillation -> canonical hubs ->
+stable cores -> drift fork) now terminates in the SAME two
+geometries the anchored rooms did — door or street — but with
+NO anchor, NO trichotomy hypothesis, NO room assumption: the
+enemy's final refuge shapes are forced from the bare failure
+interface.  Eighteen summits.
+
+The convergence of the conditional (rooms) and unconditional
+(oscillation) analyses onto door/street geometry from
+independent directions is the strongest structural signal of
+the campaign: Erdos 881's counterexamples, if any exist, are
+door-or-street objects, full stop.
+
 # THE CANONICAL CORE — SEVENTEENTH SUMMIT (2026-07-26, night)
 
 `endgame_canonical_core` (Endgame.lean, standard axioms,

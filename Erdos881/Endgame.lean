@@ -1118,4 +1118,34 @@ theorem endgame_canonical_core {A : Set ℕ} {N₀ : ℕ}
         S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h :=
   canonical_core_of_hfail h0 hcov hfail
 
+open Classical in
+/-- **THE DRIFT FORK** (re-export; eighteenth summit).  The
+unconditional layer's final organization: every counterexample
+either owns a UNIVERSAL LOW PART — one fixed u sitting inside
+the complete canonical hubs of cofinally many poor targets,
+the door configuration at a known member — or runs TOTAL
+DRIFT: beyond every window, cofinally many poor targets whose
+every low part exceeds the window, their complete bounded hubs
+marching to infinity in formation.  From 0 ∈ A, covering, and
+failure alone.  The oscillation layer now ends in the same
+two shapes the anchored rooms did — door or street — but
+UNCONDITIONALLY: the enemy's last refuge geometries are forced
+from the bare interface. -/
+theorem endgame_drift_fork {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ L,
+    (∃ u, ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ L ∧
+      IsPairHub A n H ∧
+      (∀ h ∈ H, h ∈ A ∧ (n - h) ∈ A ∧ 2 * h ≤ n) ∧
+      (∀ x, 2 * x ≤ n → x ∈ A → (n - x) ∈ A → x ∈ H) ∧
+      u ∈ H) ∨
+    (∀ W N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ L ∧
+      IsPairHub A n H ∧
+      (∀ h ∈ H, h ∈ A ∧ (n - h) ∈ A ∧ 2 * h ≤ n) ∧
+      (∀ x, 2 * x ≤ n → x ∈ A → (n - x) ∈ A → x ∈ H) ∧
+      ∀ h ∈ H, W < h) :=
+  poor_drift_fork h0 hcov hfail
+
 end Erdos881

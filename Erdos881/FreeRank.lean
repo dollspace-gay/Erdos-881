@@ -16279,4 +16279,54 @@ theorem canonical_core_of_hfail {A : Set ℕ} {N₀ : ℕ}
     hS N
   exact ⟨n, hn, H, hcard, hpair, hmem, hcomp, hSH, htail⟩
 
+open Classical in
+/-- **THE DRIFT FORK.**  The canonical core organizes into a
+clean dichotomy: either some FIXED u is a universal low part —
+belonging to the complete canonical hubs of cofinally many
+poor targets (the door configuration at a known member) — or
+the poor stream's ENTIRE low material drifts: beyond every
+window, cofinally many poor targets have every single low part
+larger than the window.  Unconditional, from the oscillation
+layer alone. -/
+theorem poor_drift_fork {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ L,
+    (∃ u, ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ L ∧
+      IsPairHub A n H ∧
+      (∀ h ∈ H, h ∈ A ∧ (n - h) ∈ A ∧ 2 * h ≤ n) ∧
+      (∀ x, 2 * x ≤ n → x ∈ A → (n - x) ∈ A → x ∈ H) ∧
+      u ∈ H) ∨
+    (∀ W N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ L ∧
+      IsPairHub A n H ∧
+      (∀ h ∈ H, h ∈ A ∧ (n - h) ∈ A ∧ 2 * h ≤ n) ∧
+      (∀ x, 2 * x ≤ n → x ∈ A → (n - x) ∈ A → x ∈ H) ∧
+      ∀ h ∈ H, W < h) := by
+  obtain ⟨L, hL⟩ := canonical_core_of_hfail h0 hcov hfail
+  refine ⟨L, ?_⟩
+  by_cases hu : ∃ u, ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      H.card ≤ L ∧ IsPairHub A n H ∧
+      (∀ h ∈ H, h ∈ A ∧ (n - h) ∈ A ∧ 2 * h ≤ n) ∧
+      (∀ x, 2 * x ≤ n → x ∈ A → (n - x) ∈ A → x ∈ H) ∧
+      u ∈ H
+  · exact Or.inl hu
+  · right
+    intro W N
+    obtain ⟨S, hSW, hS⟩ := hL W
+    rcases Finset.eq_empty_or_nonempty S with hemp | ⟨u, huS⟩
+    · obtain ⟨n, hn, H, hcard, hpair, hmem, hcomp, hSH,
+        htail⟩ := hS N
+      refine ⟨n, hn, H, hcard, hpair, hmem, hcomp,
+        fun h hh => ?_⟩
+      refine htail h hh ?_
+      rw [hemp]
+      exact Finset.notMem_empty h
+    · exfalso
+      apply hu
+      refine ⟨u, fun N' => ?_⟩
+      obtain ⟨n, hn, H, hcard, hpair, hmem, hcomp, hSH,
+        htail⟩ := hS N'
+      exact ⟨n, hn, H, hcard, hpair, hmem, hcomp, hSH huS⟩
+
 end Erdos881
