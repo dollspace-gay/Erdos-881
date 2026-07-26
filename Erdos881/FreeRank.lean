@@ -16018,4 +16018,152 @@ theorem cylinder_committee_chains {A : Set ℕ}
     · exact Or.inr (hHcyl y h).1
   · exact repHub_caps_pair_wealth h0 h0H hhub
 
+open Classical in
+/-- **THE POOR STREAM IS UNCONDITIONAL.**  Every counterexample
+keeps a cofinal stream of targets with BOUNDED pair wealth:
+liminf r₂ < ∞.  Proof by diagonal against the growth rate — if
+r₂ → ∞, build a deletion D sparser than the growth (spacing its
+i-th element beyond the threshold where r₂ exceeds 2i + 4);
+its failing targets would need r₂ ≤ 2·|D∩[0,n]| + 2, which the
+running minimum forbids, so D would survive.  Fat sets fail
+this conclusion (their r₂ → ∞): genuine counting content, from
+h0 + covering + hfail alone. -/
+theorem poor_stream_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ L, ∀ N, ∃ n, N ≤ n ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ L := by
+  by_contra hno
+  push Not at hno
+  choose G hG using hno
+  have hsupply : ∀ X, ∃ a, a ∈ A ∧ X ≤ a := by
+    intro X
+    obtain ⟨a, ha, hX⟩ := pairCovers_unbounded hcov X
+    exact ⟨a, ha, hX⟩
+  choose f hfA hfge using hsupply
+  set d : ℕ → ℕ := fun i => Nat.rec (f (G 4 + 1))
+    (fun i prev => f (max prev (G (2 * (i + 1) + 4)) + 1)) i
+    with hd
+  have hd0 : d 0 = f (G 4 + 1) := rfl
+  have hdS : ∀ i, d (i + 1) =
+      f (max (d i) (G (2 * (i + 1) + 4)) + 1) := fun _ => rfl
+  have hdA : ∀ i, d i ∈ A := by
+    intro i
+    cases i with
+    | zero =>
+      rw [hd0]
+      exact hfA _
+    | succ i =>
+      rw [hdS]
+      exact hfA _
+  have hdgap : ∀ i, G (2 * i + 4) < d i := by
+    intro i
+    cases i with
+    | zero =>
+      have he : 2 * 0 + 4 = 4 := by norm_num
+      rw [he, hd0]
+      have := hfge (G 4 + 1)
+      omega
+    | succ i =>
+      rw [hdS]
+      have h1 := hfge (max (d i) (G (2 * (i + 1) + 4)) + 1)
+      have h2 := le_max_right (d i) (G (2 * (i + 1) + 4))
+      omega
+  have hdmono : StrictMono d := by
+    apply strictMono_nat_of_lt_succ
+    intro i
+    rw [hdS]
+    have h1 := hfge (max (d i) (G (2 * (i + 1) + 4)) + 1)
+    have h2 := le_max_left (d i) (G (2 * (i + 1) + 4))
+    omega
+  have hdpos : ∀ i, 0 < d i := by
+    intro i
+    cases i with
+    | zero =>
+      rw [hd0]
+      have := hfge (G 4 + 1)
+      omega
+    | succ i =>
+      rw [hdS]
+      have := hfge (max (d i) (G (2 * (i + 1) + 4)) + 1)
+      omega
+  have hlin : ∀ i, i ≤ d i := by
+    intro i
+    induction i with
+    | zero => omega
+    | succ i ih =>
+      have := hdmono (by omega : i < i + 1)
+      omega
+  set D : Set ℕ := Set.range d with hD
+  have hDA : D ⊆ A := by
+    intro x hx
+    rw [hD, Set.mem_range] at hx
+    obtain ⟨i, rfl⟩ := hx
+    exact hdA i
+  have h0D : 0 ∉ D := by
+    intro hx
+    rw [hD, Set.mem_range] at hx
+    obtain ⟨i, hi⟩ := hx
+    have := hdpos i
+    omega
+  have hDinf : D.Infinite := by
+    rw [hD]
+    exact Set.infinite_range_of_injective hdmono.injective
+  have hnot := hfail D hDA hDinf
+  simp only [IsExactTupleAsymptoticBasis, not_exists,
+    not_forall] at hnot
+  obtain ⟨n, hn, hnrep⟩ := hnot (max N₀ (d 0))
+  have hfailn : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D) →
+      ∑ i, v i ≠ n := fun v hv hs => hnrep v ⟨hv, hs⟩
+  have hpoor := failing_target_poor h0 h0D hfailn
+  have hnd0 : d 0 ≤ n := le_trans (le_max_right _ _) hn
+  have hexJ : ∃ i, n < d i := by
+    obtain ⟨i, hi⟩ : ∃ i, n + 1 ≤ i := ⟨n + 1, le_refl _⟩
+    exact ⟨n + 1, by have := hlin (n + 1); omega⟩
+  set J := Nat.find hexJ with hJ
+  have hJspec : n < d J := Nat.find_spec hexJ
+  have hJmin : ∀ i, i < J → d i ≤ n := by
+    intro i hi
+    have := Nat.find_min hexJ hi
+    omega
+  have hJ1 : 1 ≤ J := by
+    rcases Nat.eq_zero_or_pos J with h | h
+    · exfalso
+      rw [h] at hJspec
+      omega
+    · exact h
+  have hFeq : (Finset.range (n + 1)).filter (fun x => x ∈ D) =
+      (Finset.range J).image d := by
+    ext x
+    rw [Finset.mem_filter, Finset.mem_range, Finset.mem_image]
+    constructor
+    · rintro ⟨hxn, hxD⟩
+      rw [hD, Set.mem_range] at hxD
+      obtain ⟨i, rfl⟩ := hxD
+      refine ⟨i, Finset.mem_range.2 ?_, rfl⟩
+      by_contra hiJ
+      have h1 : J ≤ i := by omega
+      have h2 : d J ≤ d i := hdmono.monotone h1
+      omega
+    · rintro ⟨i, hiJ, rfl⟩
+      rw [Finset.mem_range] at hiJ
+      have := hJmin i hiJ
+      refine ⟨by omega, ?_⟩
+      rw [hD, Set.mem_range]
+      exact ⟨i, rfl⟩
+  have hFcard : ((Finset.range (n + 1)).filter
+      (fun x => x ∈ D)).card = J := by
+    rw [hFeq, Finset.card_image_of_injOn
+      (fun a _ b _ hab => hdmono.injective hab),
+      Finset.card_range]
+  have hd1 : G (2 * (J - 1) + 4) < d (J - 1) := hdgap (J - 1)
+  have heq2 : 2 * (J - 1) + 4 = 2 * J + 2 := by omega
+  rw [heq2] at hd1
+  have hdn : d (J - 1) ≤ n := hJmin (J - 1) (by omega)
+  have hbig := hG (2 * J + 2) n (by omega)
+  rw [hFcard] at hpoor
+  omega
+
 end Erdos881

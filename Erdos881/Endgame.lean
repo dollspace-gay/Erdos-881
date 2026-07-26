@@ -1065,4 +1065,31 @@ theorem endgame_width_band {A B : Set ℕ} {N₀ : ℕ}
   endgame_width_band_local h0 hcov hanchor hfail hBA hBpos
     hBinf
 
+open Classical in
+/-- **THE OSCILLATION THEOREM** (re-export; sixteenth summit).
+Every counterexample's pair-counting function r₂ oscillates
+forever between a FIXED FINITE CEILING and INFINITY: there is
+an L with cofinally many targets of pair wealth ≤ L
+(`poor_stream_of_hfail` — if r₂ → ∞, a deletion spaced sparser
+than the growth rate has nowhere to fail), while cofinally many
+targets exceed every bound (`r2_unbounded_of_hfail`).  Neither
+stream may end.  The enemy's wealth function is pinned to a
+permanent boom-and-bust cycle — the two streams of the ledger,
+now unconditional, with no subset choice, no anchor, and no
+room hypothesis anywhere. -/
+theorem endgame_oscillation {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∃ L, ∀ N, ∃ n, N ≤ n ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ L) ∧
+    (∀ C N, ∃ v, N ≤ v ∧ C ≤
+      ((Finset.range (v + 1)).filter
+        (fun x => x ∈ A ∧ (v - x) ∈ A)).card) := by
+  constructor
+  · exact poor_stream_of_hfail h0 hcov hfail
+  · intro C N
+    exact r2_unbounded_of_hfail h0 hcov hfail C N
+
 end Erdos881

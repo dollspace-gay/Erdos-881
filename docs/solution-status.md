@@ -1,3 +1,27 @@
+# THE OSCILLATION THEOREM — SIXTEENTH SUMMIT (2026-07-26, night)
+
+`endgame_oscillation` (Endgame.lean, standard axioms): every
+counterexample's r2 oscillates FOREVER between a fixed finite
+ceiling and infinity.
+
+New half: `poor_stream_of_hfail` — liminf r2 < INFINITY,
+UNCONDITIONALLY (h0 + covering + hfail; no anchor, no subsets,
+no rooms).  THE DIAGONAL: if r2 -> infinity, space a deletion's
+i-th element beyond the threshold where r2 > 2i + 4; its
+failing targets would need r2 <= 2|D cap [0,n]| + 2 = 2J + 2
+with n beyond the (2J+2)-threshold — impossible; so D survives,
+contradiction.  Junk test: fat sets FAIL the conclusion
+(their r2 -> infinity): genuine counting content.
+
+Old half: `r2_unbounded_of_hfail` (limsup = infinity).
+
+CONSEQUENCE: the enemy's wealth function is pinned to a
+permanent boom-and-bust cycle.  The bounded-poor stream that
+the width band's bounded horn creates per-subset is now known
+to exist GLOBALLY, and the whole two-streams geometry
+(poverty chained + wealth pinned) is unconditional.
+
+Sixteen summits.
 # THE WIDTH BAND — FIFTEENTH SUMMIT (2026-07-26)
 
 `endgame_width_band` (Endgame.lean, standard axioms): the
