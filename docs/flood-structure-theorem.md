@@ -585,3 +585,15 @@ The carry-free enemy's only remaining freedom is nonzero triples
 over pinned pair-ruins — next session's sharpest anchor-side
 question: can order-3 nonzero-triple liberty alone sustain hfail
 when order-2 life is totally pinned?
+
+**Addendum (`central_branch_no_three_AP`, 22:23).**  Centrality
+is exactly midpoint-freeness: the central enemy contains no
+nontrivial 3-term arithmetic progression with positive
+non-router middle.  The carry-free counterexample candidate is
+thus a Salem–Spencer-type object — progression-free yet
+covering, exactly the window Behrend's construction leaves open
+(AP3-free density ≫ √n).  The anchor trichotomy's central
+branch now reads: total order-2 pinning + automatic minimality +
+progression-freeness; its order-3 residue (nonzero triples of
+doubles: diagonals, or pairs with odd sum or non-basis midpoint)
+is the entire remaining freedom of that world.
