@@ -47,11 +47,18 @@ basis.  Method: contradiction-mining a hypothetical counterexample
   state block at top; dead routes listed there — do not revisit
   them.
 
-## Current frontier (2026-07-25)
+## Current frontier (2026-07-25, night)
 
-Everything reduces to: find a pool operation that strictly drops
-the freeness-tree root rank (`no_pool_rank_descent` finishes from
-there), or kill the perfect clique worlds (rank-stable,
-hfail-self-serving — the descent must engage their outside), or
-kill the infinite-rank rooms.  The user (Doll) steers via
+FINAL FORM: counterexample ⟺ WellFounded(FreeStep)
+(`endgame_final_form`); 881 ⟺ every 2-covering set ∋ 0 has an
+infinite hereditarily rep-free subset.  THE FOUR ROOMS
+(`endgame_four_rooms`): every counterexample is in R1 (fixed
+offset, A ∩ (A−δ) infinite), R2 (growing offsets), R3 (scattered
+mirror halls), or R4 (street ladder — positions pinned at n + d,
+pure-Q streets, arithmetic rung family, difference deserts).
+Also: shell stratification + depth tax + rotation/6/18-level caps
++ conflict law; three branch mechanisms (counting/Sidon,
+robustness/Cantor, and their mixed-regime gap).  Alternative
+routes: rank-drop op (`no_pool_rank_descent`), mass accounting
+(seal-cost/blowup constants), adaptive program.  The user (Doll) steers via
 metaphors and cannot answer technical questions; read the code.
