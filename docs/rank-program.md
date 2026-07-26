@@ -381,3 +381,22 @@ semigroup?  Counting says yes with room (0.1³·Y^{3/2} ≫ Y);
 the enemy must defeat counting with structure at every scale,
 for every partition.  This is the sharpest quantitative form of
 881 the campaign has reached.
+
+## THE RIGIDITY SPECTRUM (21:36; probe_partition.py)
+
+With 0 (never deletable) included, thin subsets 3-cover
+everything in slack worlds at every tested thinning (greedy
+model: zero holes down to 14% density).  In rigid worlds the
+picture is structural: Cantor tolerates ONLY the thinning aligned
+with its own ternary structure (every 3rd tail element: zero
+holes with 54 elements; every 2nd/4th/6th/8th: 20–50% holes).
+Aligned thinnings are exactly the surviving branches
+(pure-powers).  THE SPECTRUM: slack worlds — everything
+survives; Cantor-rigid — aligned subsets survive; a
+counterexample — NOTHING survives, i.e. the enemy must be a set
+with no self-consistent alignment whatsoever, misaligned with
+every one of its own uncountably many thinnings.  Residue/digit
+towers are the enemy's only known counting-defeating device, and
+each tower level is itself an alignment the enemy would have to
+break.  This is the battle line restated structurally: does
+every covering set possess at least one self-alignment?
