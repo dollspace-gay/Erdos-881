@@ -438,3 +438,12 @@ order 2.  Combined with the classical-minimality graph
 objects: the unique-sum marriage network, the homogeneous
 Ramsey subsequences, and the guardian teams that matched
 deletions must field.
+
+**Addendum (`clique_or_independent_teams`, 21:08).**  Composed
+with the team supply: the counterexample contains an infinite
+no-unique-sums sequence, or an infinite Sidon clique whose
+deletion is defended by teams drawn from INSIDE the clique.  In
+the clique branch the fan blowup cannot land on the clique square
+(r₂ = 1 there): either blown translates dodge S + S or teams have
+size ≥ √n/2 — the dodge is enemy-controlled (liberty), so this is
+a location law, not a kill.
