@@ -15660,4 +15660,56 @@ theorem universal_prefix_hub_law {A : Set ℕ} {N₀ : ℕ}
           (by simpa [Fin.sum_univ_three] using hsum0)
   exact ⟨n, hn, hhub, pairHub_caps_wealth hhub⟩
 
+open Classical in
+/-- **THE UNIVERSAL COMMITTEE LAW.**  Strengthens the universal
+prefix-hub law to full guardian structure, from the failure
+interface ALONE (no 0-weld, no covering): every infinite subset
+B of the basis owns a cofinal stream of targets each carrying a
+MINIMAL order-3 guardian committee drawn from B itself — and by
+minimality, every committee member holds a private witness
+representation meeting the committee only at that member.  The
+entire guardian/team machinery, originally mined on A, now
+fires inside every infinite subset of A: the enemy's defense
+obligations are hereditary. -/
+theorem universal_committee_law {A : Set ℕ}
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∀ B ⊆ A, B.Infinite → ∀ N, ∃ n, N ≤ n ∧
+      ∃ H ⊆ (Finset.range (n + 1)).filter (fun x => x ∈ B),
+        IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        ∀ h ∈ H, ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = n ∧
+          (x = h ∨ y = h ∨ z = h) ∧
+          ∀ g ∈ H, g ≠ h → x ≠ g ∧ y ≠ g ∧ z ≠ g := by
+  intro B hBA hBinf N
+  have hnot := hfail B hBA hBinf
+  simp only [IsExactTupleAsymptoticBasis, not_exists,
+    not_forall] at hnot
+  obtain ⟨n, hn, hnrep⟩ := hnot N
+  have hprefix : IsRepHub A n ((Finset.range (n + 1)).filter
+      (fun x => x ∈ B)) := by
+    intro x hx y hy z hz hsum
+    by_cases hxB : x ∈ B
+    · exact Or.inl (Finset.mem_filter.2
+        ⟨Finset.mem_range.2 (by omega), hxB⟩)
+    · by_cases hyB : y ∈ B
+      · exact Or.inr (Or.inl (Finset.mem_filter.2
+          ⟨Finset.mem_range.2 (by omega), hyB⟩))
+      · by_cases hzB : z ∈ B
+        · exact Or.inr (Or.inr (Finset.mem_filter.2
+            ⟨Finset.mem_range.2 (by omega), hzB⟩))
+        · exfalso
+          have hmem : ∀ i, (![x, y, z] : Fin 3 → ℕ) i ∈
+              A \ B := by
+            intro i
+            match i with
+            | 0 => exact ⟨hx, hxB⟩
+            | 1 => exact ⟨hy, hyB⟩
+            | 2 => exact ⟨hz, hzB⟩
+          exact hnrep ![x, y, z] ⟨hmem,
+            by simpa [Fin.sum_univ_three] using hsum⟩
+  obtain ⟨H, hHsub, hHhub, hHmin⟩ := exists_minimal_hub hprefix
+  exact ⟨n, hn, H, hHsub, hHhub, hHmin,
+    minimal_hub_necessity hHhub hHmin⟩
+
 end Erdos881

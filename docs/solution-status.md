@@ -1,3 +1,24 @@
+# THE UNIVERSAL COMMITTEE LAW — THIRTEENTH SUMMIT (2026-07-26)
+
+`endgame_universal_committee` (Endgame.lean; hypotheses: hfail
+ALONE — no 0, no covering): every infinite B subseteq A owns a
+cofinal stream of targets carrying MINIMAL order-3 guardian
+committees drawn from B itself, each member with a private
+witness (representation meeting the committee only there).
+Composition: failing prefix is a rep hub + `exists_minimal_hub`
++ `minimal_hub_necessity`.
+
+STRUCTURAL TRANSFER: the guardian/team/rigidity machinery
+(GuardianRigidity, TeamGuardianRigidity, team-card escalation,
+singleton-stream kill...) was built for committees in A.  It now
+applies HEREDITARILY — inside every infinite subset.  In
+particular: committee members' private witnesses, team stacking
+bounds, and escalation ladders all constrain every B the
+deleter proposes.  Next: replay the singleton-stream and
+team-coverage kills INSIDE a chosen B (e.g. B = sparse cylinder
+material), where the old kills' obstructions (enemy's placement
+liberty in A) may vanish because WE choose B's geometry.
+
 # THE UNIVERSAL PREFIX-HUB LAW — TWELFTH SUMMIT (2026-07-26)
 
 `endgame_universal_hub` (Endgame.lean, standard axioms;

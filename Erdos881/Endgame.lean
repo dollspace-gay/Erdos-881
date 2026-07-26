@@ -959,4 +959,28 @@ theorem endgame_universal_hub {A : Set ℕ} {N₀ : ℕ}
         (fun x => x ∈ B)).card :=
   universal_prefix_hub_law (N₀ := N₀) h0 hfail
 
+open Classical in
+/-- **THE UNIVERSAL COMMITTEE LAW** (re-export; thirteenth
+summit).  From the failure interface alone — no zero element,
+no covering hypothesis: every infinite subset B of a
+counterexample basis owns a cofinal stream of targets, each
+carrying a minimal order-3 guardian committee drawn from B
+itself, every committee member holding a private witness
+representation that meets the committee only at that member.
+The guardian, team, and rigidity machinery — the campaign's
+oldest and deepest toolset, built for A — applies hereditarily
+inside every infinite subset of A.  The enemy's defense
+obligations are self-similar all the way down. -/
+theorem endgame_universal_committee {A : Set ℕ}
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∀ B ⊆ A, B.Infinite → ∀ N, ∃ n, N ≤ n ∧
+      ∃ H ⊆ (Finset.range (n + 1)).filter (fun x => x ∈ B),
+        IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        ∀ h ∈ H, ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = n ∧
+          (x = h ∨ y = h ∨ z = h) ∧
+          ∀ g ∈ H, g ≠ h → x ≠ g ∧ y ≠ g ∧ z ≠ g :=
+  universal_committee_law hfail
+
 end Erdos881
