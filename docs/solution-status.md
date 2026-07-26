@@ -1,3 +1,46 @@
+# UPDATE (2026-07-26, small hours): THE TOWER KILLS ITSELF
+
+**Arc 20 — the g₀-hole and its plug.**  The almost-anchored
+branch's anchor wall has one hole, at the member g₀.  Chasing it:
+
+- `almost_anchored_privateStream` (surgical transplant of the
+  rotating-guardian kill): with anchors at every g ≠ g₀, the
+  private-stream kill runs EXCEPT when the recurring guardian is
+  g₀ itself — the residual configuration is exactly a cofinal
+  g₀-private stream.
+- `g0_tower` — that stream condenses: cofinal levels L ∈ A,
+  singleton pair hub {g₀} at g₀ + L, full mirror law at L.
+- `g0_translate_law` — the tower ALONE forces A off its own
+  g₀-translate: g₀ + z ∉ A for every positive z ∈ A ∖ {g₀}.
+- `routed_tower_mirror_lock` — with routing, the slot L − g₀ is
+  forced empty at every high level (else the mirrored ladder
+  route hands 2(L−c) a g₀-free noncentral decomposition).
+- **`g0_tower_killed`** (+ `g0_tower_engine`): THE KILL.  The
+  translate law forbids 2c ∈ A and c + g₀ ∈ A at a ladder
+  anchor c, so every pair of the covered target 2c + g₀ is
+  automatically g₀-free AND c-free — precisely the repair pair
+  the geometric extraction lacked.  Deletion {L(2k+2) − c}
+  survives: double hits repaired by (L−u) + (L'−u') + g₀, single
+  hits by the c-mirror at the odd level.
+- `almost_anchored_stream_killed`, 
+  `almost_anchored_singletons_refuted` — the assembly: in
+  almost-anchored worlds EVERY cofinal positive private stream
+  yields a surviving deletion; under hfail there are NO cofinal
+  positive singleton rep-hubs.  The hole admits nothing at the
+  singleton level.
+
+**Where this leaves the map.**  Anchored and almost-anchored
+worlds now agree at the singleton-hub layer.  Next phase: push
+the plug up the chain (hub-card ≥ 2 → teams → shells → spine →
+lanes) — each hanchor consumer needs the (anchors-off-g₀ +
+ladder + g₀ ∈ A) replacement checked.  If all pass, ALMOST-
+ANCHORED = ANCHORED and the collapsed trichotomy becomes a
+DICHOTOMY: anchored fork vs central tail.
+
+All verified, zero sorries, standard axioms.
+
+---
+
 # NEW BLOCK (2026-07-25/26 night, post-fork): THE COLLAPSED TRICHOTOMY
 
 **Summit moved twice.**  `endgame_global_trichotomy` then
