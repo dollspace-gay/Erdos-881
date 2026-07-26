@@ -471,4 +471,64 @@ theorem endgame_final_fork {A : Set ℕ} {N₀ : ℕ}
             (fun j => x (s + j)))) :=
   the_final_fork h0 hcov hanchor hfail
 
+/-- **THE GLOBAL TRICHOTOMY** (re-export; the campaign's single
+final statement).  Hypotheses only: 0 ∈ A, order-2 covering,
+order-3 failure of every infinite deletion.  No anchor condition
+anywhere — the anchor dichotomy is resolved INSIDE the theorem.
+Every counterexample world is
+
+I. ANCHORED, and drives in one of four lanes: root rank ≥ ω, or
+   a fixed finite hall with a door element carrying unboundedly
+   many targets onto one translate, or a ghost street (targets
+   forced OUT of A, pair lives caught by marching spine
+   windows), or a member street (targets INSIDE their own
+   windows, middle pairs banned);
+
+II. ROUTED: a basis member g₀ routes every noncentral double
+   decomposition — every double 2c is pair-hubbed by {c, g₀};
+
+III. CENTRAL: doubles decompose only centrally — every element
+   pair-owns its double, minimality is automatic, and the basis
+   is midpoint-free off the router (Salem–Spencer geometry).
+
+This is the complete formal fusion of the anchored fork, the
+g₀-routed branch, and the central branch. -/
+theorem endgame_global_trichotomy {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ((∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+        w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g) ∧
+      ((∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
+        RepFree A N₀ P ∧ c ≤ P.card) ∨
+      (∃ H : Finset ℕ, ∃ h ∈ H, ∀ K, ∃ V : Finset ℕ,
+        K ≤ V.card ∧ ∀ v ∈ V, N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧
+          IsPairHub A v H) ∨
+      (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+        ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+          ∀ v ∈ V, N₀ ≤ v ∧ v ∉ A ∧ ∃ s, S₀ ≤ s ∧ x s ≤ v ∧
+            ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairHub A v
+              ((Finset.range J).image (fun j => x (s + j)))) ∨
+      (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+        ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+          ∀ v ∈ V, N₀ ≤ v ∧ v ∈ A ∧ ∃ s, S₀ ≤ s ∧
+            ∃ J, 2 ≤ J ∧ J ≤ L ∧
+              v ∈ (Finset.range J).image (fun j => x (s + j)) ∧
+              IsPairHub A v ((Finset.range J).image
+                (fun j => x (s + j))) ∧
+              (∀ a ∈ A, ∀ b ∈ A, a + b = v →
+                a ≤ x (s + J - 1) - x s ∨
+                b ≤ x (s + J - 1) - x s)))) ∨
+    (∃ g₀, g₀ ∈ A ∧ ∀ c ∈ A, 0 < c → c ≠ g₀ →
+      IsPairHub A (2 * c) ({c, g₀} : Finset ℕ)) ∨
+    (∃ g₀, (∀ c ∈ A, 0 < c → c ≠ g₀ → ∀ w ∈ A, ∀ w' ∈ A,
+        w + w' = 2 * c → w = c ∧ w' = c) ∧
+      (∀ c ∈ A, 0 < c → c ≠ g₀ →
+        IsPairHub A (2 * c) ({c} : Finset ℕ)) ∧
+      (∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+        ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) ∧
+      (∀ a d, 0 < d → a ∈ A → a + d ∈ A → a + 2 * d ∈ A →
+        a + d = g₀ ∨ a + d = 0)) :=
+  the_global_trichotomy h0 hcov hfail
+
 end Erdos881

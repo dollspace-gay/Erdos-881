@@ -8996,4 +8996,74 @@ theorem member_street_verdict {A : Set ℕ} {N₀ L : ℕ}
     rw [h3, h4] at h2
     omega
 
+/-! ## The global trichotomy: one exported statement -/
+
+/-- **THE GLOBAL TRICHOTOMY.**  One statement, hypotheses only
+(0 ∈ A, covering, order-3 failure of every infinite deletion) —
+no anchor condition anywhere.  Every counterexample world is:
+
+I. ANCHORED — full anchor supply holds, and the four-lane
+   endgame runs: rank ≥ ω, or the fixed hall with its door, or
+   the ghost street, or the member street.
+
+II. ROUTED — some basis MEMBER g₀ routes every noncentral
+   decomposition of every double: each 2c is pair-hubbed by the
+   two explicit values {c, g₀}.
+
+III. CENTRAL — doubles decompose ONLY centrally: every element
+   pair-owns its double ({c} is a full pair hub at 2c), every
+   infinite deletion breaks order-2 coverage at its own doubles
+   (minimality is automatic), and the basis is midpoint-free off
+   the router: Salem–Spencer geometry.
+
+The anchored fork, the g₀-routed branch, and the central branch,
+formally fused.  Erdős 881's negative answer would have to live
+in one of these three rooms; each carries explicit, located,
+verified structure. -/
+theorem the_global_trichotomy {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ((∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+        w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g) ∧
+      ((∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
+        RepFree A N₀ P ∧ c ≤ P.card) ∨
+      (∃ H : Finset ℕ, ∃ h ∈ H, ∀ K, ∃ V : Finset ℕ,
+        K ≤ V.card ∧ ∀ v ∈ V, N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧
+          IsPairHub A v H) ∨
+      (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+        ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+          ∀ v ∈ V, N₀ ≤ v ∧ v ∉ A ∧ ∃ s, S₀ ≤ s ∧ x s ≤ v ∧
+            ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairHub A v
+              ((Finset.range J).image (fun j => x (s + j)))) ∨
+      (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+        ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+          ∀ v ∈ V, N₀ ≤ v ∧ v ∈ A ∧ ∃ s, S₀ ≤ s ∧
+            ∃ J, 2 ≤ J ∧ J ≤ L ∧
+              v ∈ (Finset.range J).image (fun j => x (s + j)) ∧
+              IsPairHub A v ((Finset.range J).image
+                (fun j => x (s + j))) ∧
+              (∀ a ∈ A, ∀ b ∈ A, a + b = v →
+                a ≤ x (s + J - 1) - x s ∨
+                b ≤ x (s + J - 1) - x s)))) ∨
+    (∃ g₀, g₀ ∈ A ∧ ∀ c ∈ A, 0 < c → c ≠ g₀ →
+      IsPairHub A (2 * c) ({c, g₀} : Finset ℕ)) ∨
+    (∃ g₀, (∀ c ∈ A, 0 < c → c ≠ g₀ → ∀ w ∈ A, ∀ w' ∈ A,
+        w + w' = 2 * c → w = c ∧ w' = c) ∧
+      (∀ c ∈ A, 0 < c → c ≠ g₀ →
+        IsPairHub A (2 * c) ({c} : Finset ℕ)) ∧
+      (∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+        ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) ∧
+      (∀ a d, 0 < d → a ∈ A → a + d ∈ A → a + 2 * d ∈ A →
+        a + d = g₀ ∨ a + d = 0)) := by
+  rcases anchor_dichotomy (A := A) with hanchor | ⟨g₀, hroute⟩
+  · exact Or.inl ⟨hanchor,
+      the_four_lanes h0 hcov hanchor hfail⟩
+  · rcases no_anchor_central_or_member hroute with hg | hcentral
+    · exact Or.inr (Or.inl ⟨g₀, hg, hroute⟩)
+    · exact Or.inr (Or.inr ⟨g₀, hcentral,
+        central_branch_singleton_hubs hcentral,
+        central_branch_hmin hcentral,
+        central_branch_no_three_AP hcentral⟩)
+
 end Erdos881
