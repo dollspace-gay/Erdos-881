@@ -5256,4 +5256,99 @@ theorem fixed_hall_extracts_difference {A : Set ℕ} {N₀ : ℕ}
     refine ⟨b₂, hb₂A, b₂ + d, hb₃A, hb₂S, by omega, by omega,
       sc, by omega, hsN, hhub⟩
 
+/-- **THE FOUR ROOMS.**  Composing the street dichotomy, the
+corner stabilizations, and the hall extraction, every
+counterexample lives in one of four terminal rooms:
+
+  R1  one fixed offset δ with UNBOUNDED difference multiplicity
+      (A ∩ (A − δ) infinite: near-translation-invariance);
+  R2  difference pairs at arbitrarily large offsets, at every
+      multiplicity;
+  R3  scattered mirror halls: arbitrarily large blown points n,
+      each an affine corner beyond every size;
+  R4  a street ladder: ONE mirror point n whose difference
+      translates n + d are pair streets for unboundedly large
+      realized d — street POSITIONS pinned to a one-parameter
+      family, the first crack in target liberty.
+
+Rooms 3 and 4 share one flood envelope Q. -/
+theorem counterexample_four_rooms {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ Q : Finset ℕ, RepFree A N₀ Q ∧
+    ((∃ δ, 1 ≤ δ ∧ ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+        ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A) ∨
+     (∀ Δ K, ∃ δ, Δ < δ ∧ ∃ V : Finset ℕ, K ≤ V.card ∧
+        ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A) ∨
+     (∃ K₀, ∀ N S, ∃ n, N < n ∧
+        (∃ V : Finset ℕ, K₀ ≤ V.card ∧
+          ∀ a ∈ V, a ∈ A ∧ ∃ x ∈ A, x + a = n) ∧
+        ∃ b₂ ∈ A, ∃ b₃ ∈ A, S ≤ b₂ ∧ b₂ < b₃ ∧
+          ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
+            IsPairHub A s (insert b₃ Q)) ∨
+     (∃ n, ∀ Δ S, ∃ b₂ ∈ A, ∃ b₃ ∈ A, S ≤ b₂ ∧ b₂ < b₃ ∧
+        Δ < b₃ - b₂ ∧ ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
+          IsPairHub A s (insert b₃ Q))) := by
+  classical
+  have hfree0 : RepFree A N₀ ∅ := by
+    intro m hm
+    obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
+    exact ⟨x, hx, y, hy, 0, h0, by omega, Finset.notMem_empty x,
+      Finset.notMem_empty y, Finset.notMem_empty 0⟩
+  obtain ⟨Q, hQfree, hdich⟩ :=
+    street_dichotomy_uniform h0 hcov hfail
+  by_cases hdiff : ∀ K, ∃ δ, 1 ≤ δ ∧ ∃ V : Finset ℕ,
+      K ≤ V.card ∧ ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A
+  · rcases fixed_offset_or_growing hdiff with h | h
+    · exact ⟨∅, hfree0, Or.inl h⟩
+    · exact ⟨∅, hfree0, Or.inr (Or.inl h)⟩
+  · push_neg at hdiff
+    obtain ⟨K₀, hK₀⟩ := hdiff
+    have hcorner : ∀ S, ∃ n,
+        (∃ V : Finset ℕ, K₀ ≤ V.card ∧
+          ∀ a ∈ V, a ∈ A ∧ ∃ x ∈ A, x + a = n) ∧
+        ∃ b₂, b₂ ∈ A ∧ ∃ b₃, b₃ ∈ A ∧ S ≤ b₂ ∧ b₂ < b₃ ∧
+          ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
+            IsPairHub A s (insert b₃ Q) := by
+      intro S
+      rcases hdich K₀ S with h | h
+      · exfalso
+        obtain ⟨δ, hδ, V, hV, hVmem⟩ := h
+        obtain ⟨x, hxV, hximp⟩ := hK₀ δ hδ V hV
+        obtain ⟨hxA, hxδ⟩ := hVmem x hxV
+        exact hximp hxA hxδ
+      · obtain ⟨n, hblown, b₂, hb₂A, b₃, hb₃A, rest⟩ := h
+        exact ⟨n, hblown, b₂, hb₂A, b₃, hb₃A, rest⟩
+    have hanti : ∀ n S S', S ≤ S' →
+        ((∃ V : Finset ℕ, K₀ ≤ V.card ∧
+          ∀ a ∈ V, a ∈ A ∧ ∃ x ∈ A, x + a = n) ∧
+        ∃ b₂, b₂ ∈ A ∧ ∃ b₃, b₃ ∈ A ∧ S' ≤ b₂ ∧ b₂ < b₃ ∧
+          ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
+            IsPairHub A s (insert b₃ Q)) →
+        ((∃ V : Finset ℕ, K₀ ≤ V.card ∧
+          ∀ a ∈ V, a ∈ A ∧ ∃ x ∈ A, x + a = n) ∧
+        ∃ b₂, b₂ ∈ A ∧ ∃ b₃, b₃ ∈ A ∧ S ≤ b₂ ∧ b₂ < b₃ ∧
+          ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
+            IsPairHub A s (insert b₃ Q)) := by
+      intro n S S' hSS h
+      obtain ⟨hb, b₂, hb₂A, b₃, hb₃A, hS, rest⟩ := h
+      exact ⟨hb, b₂, hb₂A, b₃, hb₃A, by omega, rest⟩
+    rcases nat_param_stabilize hanti hcorner with ⟨n, hn⟩ | hesc
+    · -- fixed hall: extract the difference ladder
+      have hhall : ∀ S, ∃ b₂ ∈ A, ∃ b₃ ∈ A, S ≤ b₂ ∧ b₂ < b₃ ∧
+          ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
+            IsPairHub A s (insert b₃ Q) := by
+        intro S
+        obtain ⟨-, b₂, hb₂A, b₃, hb₃A, hS, rest⟩ := hn S
+        exact ⟨b₂, hb₂A, b₃, hb₃A, hS, rest⟩
+      rcases fixed_hall_extracts_difference hhall with h | h
+      · exact ⟨Q, hQfree, Or.inl h⟩
+      · exact ⟨Q, hQfree, Or.inr (Or.inr (Or.inr ⟨n, h⟩))⟩
+    · refine ⟨Q, hQfree, Or.inr (Or.inr (Or.inl
+        ⟨K₀, fun N S => ?_⟩))⟩
+      obtain ⟨n, hNn, hblown, b₂, hb₂A, b₃, hb₃A, rest⟩ :=
+        hesc N S
+      exact ⟨n, hNn, hblown, b₂, hb₂A, b₃, hb₃A, rest⟩
+
 end Erdos881
