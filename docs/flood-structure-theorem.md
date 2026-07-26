@@ -570,3 +570,18 @@ their own doubles.  Next session: mine the g₀-branch (the
 universal double-hub family against the conflict law and the
 caps — g₀ is ONE element serving every double, the strongest
 concentration the campaign has ever forced).
+
+**Addendum (22:19): the anchor trichotomy completed.**
+`no_anchor_central_or_member` + `central_branch_singleton_hubs`:
+the no-anchor branch splits again — the router g₀ is a basis
+element, or doubles are PURELY CENTRAL and every element
+pair-owns its double ({c} a singleton pair hub at 2c).  In the
+central branch every deletion B fails at order 2 exactly on 2·B:
+the campaign's first TOTAL placement law — zero order-2 target
+liberty.  The full anchor trichotomy: anchored (shells + spine
+apply) / g₀-routed (universal two-element double-hubs through
+one basis element) / central (total pinning; carry-free worlds).
+The carry-free enemy's only remaining freedom is nonzero triples
+over pinned pair-ruins — next session's sharpest anchor-side
+question: can order-3 nonzero-triple liberty alone sustain hfail
+when order-2 life is totally pinned?
