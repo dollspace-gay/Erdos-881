@@ -352,3 +352,32 @@ COMPLETENESS.  Program: formalize the greedy stall analysis at
 the semigroup level (the self-avoiding analogue of the absolute
 leaf) and characterize what blocking completeness costs the
 enemy per window.
+
+## THE COMPLETENESS CIRCLE, CLOSED HONESTLY (21:30)
+
+Chasing the pinch to its end: covering forces |A ∩ [0,Y]| ≥ √Y,
+so any positive-fraction subsequence T of A has k-th element
+O(k²) — POLYNOMIAL — while its prefix sums grow cubically.  The
+small-gaps criterion (`subset_sum_complete_of_small_gaps`) is
+therefore EVENTUALLY AUTOMATIC for any spread-out co-thin
+T ⊆ A (modulo initial-segment bootstrap).  Completeness is free;
+the reduction `survival_of_complete_avoiding` is thus EQUIVALENT
+to the original problem, not weaker: choosing U := A ∖ T, the
+sufficient condition "T complete + self-avoiding" is literally
+"U is a co-infinite order-3-covering subset" — Erdős 881 itself.
+
+VALUE of the circle: it certifies that SELF-AVOIDANCE IS THE
+ENTIRE CONTENT (density/completeness costs nothing), so the
+ω-Ramsey machinery, the greedy probe, and the blocked-subset-sum
+enemy obligations attack the true core with no loss.  The
+enemy's whole existence is the statement: every spread-out dense
+subfamily has cofinally many fully-blocked subset-sums.  Against
+that stands the verified fact that blocking a D-robust target
+needs D of its low elements inside the family — and the family
+is 90% of the basis, so the enemy's blocks must sit at targets
+robust ONLY through the thin co-part.  The battle line:
+can a 10%-subset of a covering basis 3-cover the 90%-family's
+semigroup?  Counting says yes with room (0.1³·Y^{3/2} ≫ Y);
+the enemy must defeat counting with structure at every scale,
+for every partition.  This is the sharpest quantitative form of
+881 the campaign has reached.
