@@ -10184,4 +10184,79 @@ theorem door_targets_ghost {A : Set ℕ} {M v : ℕ}
   · have h1 := hM v h
     omega
 
+/-- **The translate dichotomy.**  Either arbitrarily large basis
+elements have ALL their hall translates out of A (cofinal strong
+translate — the tower law verbatim), or beyond some point every
+basis element keeps at least one good translate.  The door
+world's first fork. -/
+theorem door_translate_dichotomy {A : Set ℕ} (H : Finset ℕ) :
+    (∀ N, ∃ z, N ≤ z ∧ z ∈ A ∧ z ∉ H ∧
+      ∀ h ∈ H, z + h ∉ A) ∨
+    (∃ Z₀, ∀ z, Z₀ ≤ z → z ∈ A → z ∉ H →
+      ∃ h ∈ H, z + h ∈ A) := by
+  classical
+  by_cases hs : ∀ N, ∃ z, N ≤ z ∧ z ∈ A ∧ z ∉ H ∧
+      ∀ h ∈ H, z + h ∉ A
+  · exact Or.inl hs
+  · right
+    obtain ⟨Z₀, hZ₀⟩ := not_forall.mp hs
+    refine ⟨Z₀, ?_⟩
+    intro z hZz hzA hzH
+    by_contra hno
+    push_neg at hno
+    exact hZ₀ ⟨z, hZz, hzA, hzH, hno⟩
+
+/-- **The two-member difference law.**  In a door world with
+|H| = 2, in the good horn, door-target differences are FORCED
+INTO A: the partner L = v − h₀ has h₀ bad (v is a ghost), so
+goodness pins its bad set to exactly {h₀}; the mirror colour at
+any higher door target v' must be h₀, and the mirror image is
+the pure difference v' − v.  The door world's targets carry
+their own difference ladder. -/
+theorem door_two_difference_law {A : Set ℕ} {N₀ M v v' : ℕ}
+    {H : Finset ℕ}
+    (hcov : PairCovers A N₀) (hM : ∀ h ∈ H, h ≤ M)
+    (hcard : H.card = 2)
+    (hrep' : IsRepHub A v' H) (hpair' : IsPairHub A v' H)
+    (hvA : v ∉ A) {h₀ : ℕ} (hh₀ : h₀ ∈ H)
+    (hpart : v - h₀ ∈ A) (hMv : 2 * M < v)
+    (hgood : ∃ h ∈ H, (v - h₀) + h ∈ A)
+    (hvv' : v + 2 * M + N₀ + 1 ≤ v') :
+    v' - v ∈ A := by
+  obtain ⟨hg, hgH, hgA⟩ := hgood
+  have hgh₀ : hg ≠ h₀ := by
+    intro h
+    rw [h] at hgA
+    have h1 : v - h₀ + h₀ = v := by
+      have := hM h₀ hh₀
+      omega
+    rw [h1] at hgA
+    exact hvA hgA
+  have hLH : v - h₀ ∉ H := by
+    intro h
+    have h1 := hM _ h
+    have h2 := hM h₀ hh₀
+    omega
+  obtain ⟨h, hhH, hhzv, hmir, hbad⟩ :=
+    hall_mirror_color_law hcov hM hrep' hpair' hpart hLH
+      (by have := hM h₀ hh₀; omega)
+      (by have := hM h₀ hh₀; omega)
+  have hhg : h ≠ hg := by
+    intro h1
+    rw [h1] at hbad
+    exact hbad hgA
+  have hhh₀ : h = h₀ := by
+    obtain ⟨a, b, hab, hH⟩ := Finset.card_eq_two.1 hcard
+    rw [hH] at hhH hgH hh₀
+    simp only [Finset.mem_insert, Finset.mem_singleton]
+      at hhH hgH hh₀
+    rcases hhH with h1 | h1 <;> rcases hgH with h2 | h2 <;>
+      rcases hh₀ with h3 | h3 <;> omega
+  rw [hhh₀] at hmir
+  have h1 : v' - (v - h₀) - h₀ = v' - v := by
+    have := hM h₀ hh₀
+    omega
+  rw [h1] at hmir
+  exact hmir
+
 end Erdos881
