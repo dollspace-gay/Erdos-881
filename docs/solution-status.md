@@ -1,3 +1,31 @@
+# WEALTH DENSITY + THE TWO-REGIME SQUEEZE (2026-07-26, close)
+
+Measurement (probe_wealth_density.py): wealthy targets (r2 > 8)
+are 60-78% per dyadic window in R1/DD candidate worlds — but
+thin/greedy worlds run near-zero wealthy density, so high
+wealth density is NOT forced; the enemy plays thin against
+composition (1).
+
+THE TWO-REGIME SQUEEZE (final map of the campaign):
+- FAT regime (wealth dense): `endgame_fan_poverty` is
+  devastating — each failing target needs a sqrt(n)-sized fan
+  avoiding a majority-dense wealthy set: reflected copies of A
+  must embed in the thin poor set, cofinally, for every sparse
+  deletion.  The kill here is a density/embedding counting
+  argument.
+- THIN regime (r2 small everywhere): matchings are tiny; the
+  vertex-cover game rules — the disjoint-matching dodge kills
+  spread streams, the rigidity trichotomy kills shared-low
+  streams, and the residue is local sharing + unique-pair
+  streams — Erdos-Turan-adjacent territory where even
+  CONSTRUCTING candidate worlds is beyond current mathematics.
+
+Every counterexample must run one of these regimes (or
+oscillate between them — the oscillation theorem forces at
+least the poor side to persist).  Twenty-one summits, the
+dodge, fan poverty, and the full trichotomy suite stand
+verified around this map.
+
 # THE FAN POVERTY LAW — TWENTY-FIRST SUMMIT (2026-07-26, night)
 
 `endgame_fan_poverty` (Endgame.lean, standard axioms; from the
