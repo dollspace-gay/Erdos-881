@@ -15448,4 +15448,87 @@ theorem overlap_bilinear_law {A D₁ D₂ : Set ℕ} {N₀ n : ℕ}
   · exact ⟨x, h1, y, h2, hxy⟩
   · exact ⟨y, h2, x, h1, by omega⟩
 
+open Classical in
+/-- **THE 2-ADIC WIDTH LAW.**  A pair-covering set's support
+tree must branch: at every depth j, if all elements beyond Y
+lie in infinitely-populated residue classes mod 2^j, then the
+head classes HC (residues of A ∩ [0,Y]) and the wide classes
+WC (infinitely-populated residues) must satisfy
+2^j ≤ |HC|·|WC| + |WC|², because every residue needs cofinal
+targets and every such target splits as head+wide or
+wide+wide.  Generalizes `two_adic_convergence_kills_covering`
+(the case |WC| = 1): a counterexample's 2-adic support width
+must grow like 2^(j/2) forever, up to head mass.  No finite
+union of 2-adic branches can pair-cover. -/
+theorem two_adic_width_law {A : Set ℕ} {N₀ j Y : ℕ}
+    (hcov : PairCovers A N₀)
+    (hY : ∀ a ∈ A, Y < a →
+      {b | b ∈ A ∧ b % 2 ^ j = a % 2 ^ j}.Infinite) :
+    2 ^ j ≤
+      (((Finset.range (Y + 1)).filter (fun a => a ∈ A)).image
+        (fun a => a % 2 ^ j)).card *
+      ((Finset.range (2 ^ j)).filter (fun r =>
+        {b | b ∈ A ∧ b % 2 ^ j = r}.Infinite)).card +
+      ((Finset.range (2 ^ j)).filter (fun r =>
+        {b | b ∈ A ∧ b % 2 ^ j = r}.Infinite)).card *
+      ((Finset.range (2 ^ j)).filter (fun r =>
+        {b | b ∈ A ∧ b % 2 ^ j = r}.Infinite)).card := by
+  set HC := ((Finset.range (Y + 1)).filter
+    (fun a => a ∈ A)).image (fun a => a % 2 ^ j) with hHC
+  set WC := (Finset.range (2 ^ j)).filter (fun r =>
+    {b | b ∈ A ∧ b % 2 ^ j = r}.Infinite) with hWC
+  have hpj : 0 < 2 ^ j := pow_pos (by omega) j
+  set f : ℕ × ℕ → ℕ := fun p => (p.1 + p.2) % 2 ^ j with hf
+  have hsub : Finset.range (2 ^ j) ⊆
+      ((HC ×ˢ WC).image f) ∪ ((WC ×ˢ WC).image f) := by
+    intro r hr
+    rw [Finset.mem_range] at hr
+    set M := N₀ + 2 * Y + 4 with hM
+    set n := r + 2 ^ j * M with hn
+    have hMle : M ≤ 2 ^ j * M := Nat.le_mul_of_pos_left M hpj
+    obtain ⟨u, hu, v, hv, huv⟩ := hcov n (by omega)
+    have hkey : ∀ a b : ℕ, a ∈ A → b ∈ A → a + b = n →
+        a ≤ b → r ∈ ((HC ×ˢ WC).image f) ∪
+          ((WC ×ˢ WC).image f) := by
+      intro a b haA hbA hab hle
+      have hbY : Y < b := by omega
+      have hbW : b % 2 ^ j ∈ WC := by
+        rw [hWC, Finset.mem_filter, Finset.mem_range]
+        exact ⟨Nat.mod_lt _ hpj, hY b hbA hbY⟩
+      have hrmod : (a % 2 ^ j + b % 2 ^ j) % 2 ^ j = r := by
+        rw [← Nat.add_mod, hab, hn]
+        rw [Nat.add_mul_mod_self_left]
+        exact Nat.mod_eq_of_lt hr
+      rcases Nat.lt_or_ge Y a with haY | haY
+      · refine Finset.mem_union_right _ ?_
+        rw [Finset.mem_image]
+        refine ⟨(a % 2 ^ j, b % 2 ^ j), ?_, hrmod⟩
+        rw [Finset.mem_product]
+        refine ⟨?_, hbW⟩
+        rw [hWC, Finset.mem_filter, Finset.mem_range]
+        exact ⟨Nat.mod_lt _ hpj, hY a haA haY⟩
+      · refine Finset.mem_union_left _ ?_
+        rw [Finset.mem_image]
+        refine ⟨(a % 2 ^ j, b % 2 ^ j), ?_, hrmod⟩
+        rw [Finset.mem_product]
+        refine ⟨?_, hbW⟩
+        rw [hHC, Finset.mem_image]
+        refine ⟨a, ?_, rfl⟩
+        rw [Finset.mem_filter, Finset.mem_range]
+        exact ⟨by omega, haA⟩
+    rcases Nat.le_total u v with h | h
+    · exact hkey u v hu hv huv h
+    · exact hkey v u hv hu (by omega) h
+  have h1 := Finset.card_le_card hsub
+  rw [Finset.card_range] at h1
+  have h2 := Finset.card_union_le ((HC ×ˢ WC).image f)
+    ((WC ×ˢ WC).image f)
+  have h3 : ((HC ×ˢ WC).image f).card ≤ HC.card * WC.card := by
+    refine le_trans Finset.card_image_le ?_
+    rw [Finset.card_product]
+  have h4 : ((WC ×ˢ WC).image f).card ≤ WC.card * WC.card := by
+    refine le_trans Finset.card_image_le ?_
+    rw [Finset.card_product]
+  omega
+
 end Erdos881

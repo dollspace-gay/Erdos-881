@@ -1,3 +1,23 @@
+# THE 2-ADIC WIDTH LAW (2026-07-26)
+
+`two_adic_width_law` (standard axioms, pure — only PairCovers):
+at every depth j, with Y the exhaustion bound for finite
+classes, 2^j <= |HC|*|WC| + |WC|^2 (HC = head classes of
+A cap [0,Y], WC = infinitely-populated classes mod 2^j).
+Every residue needs cofinal targets; each splits head+wide or
+wide+wide.  Generalizes the convergence blade (|WC| = 1).
+
+CONSEQUENCE: a counterexample's 2-adic support tree must have
+width ~2^(j/2) at depth j (up to head mass) — no finite union
+of 2-adic branches pair-covers.  Combined with forced mixing
+and the exclusion suite: the enemy is exponentially wide in
+addresses, while every sparse deletion pins a poor, chained,
+sumset-confined failure stream.  The width law supplies what
+the bypass audit found missing: unboundedly many
+infinitely-populated deep classes = unboundedly many disjoint
+cylinder deletions available AT EVERY DEPTH, each demanding
+its own 3-wise-disjoint cofinal failure stream.
+
 # THE THREE-DELETION EXCLUSION (2026-07-26)
 
 `three_deletion_exclusion` (standard axioms): a covered target
