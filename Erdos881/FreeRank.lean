@@ -7178,4 +7178,96 @@ theorem highway_tax {A : Set ℕ} {N₀ : ℕ}
     Nat.div_le_div_right (by omega)
   omega
 
+/-- **Uniform streets over every shell.**  One lane supplies
+infinitely many guardians for each spine shell, and the sharer
+law caps three guardians per target: every shell owns
+unboundedly many DISTINCT duty targets, all hubbed by
+(s+1)-sized envelopes.  On the lockstep highway every shell
+carries an infinite street of uniformly fragile targets. -/
+theorem lockstep_uniform_streets {A : Set ℕ} {N₀ : ℕ}
+    {Q : ℕ → Finset ℕ} {σ : ℕ ↪o ℕ} {T s : ℕ}
+    {y : Fin s → ℕ → ℕ}
+    (hmem : ∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h)
+    (hdisj : ∀ j k, j < k → Disjoint (Q j) (Q k))
+    (hguard : ∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
+      ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k)))
+    (hfree : ∀ k, RepFree A N₀ (Q k))
+    (hy : ∀ k t, y k t ∈ Q (σ (T + t)))
+    (hymono : ∀ k, StrictMono (y k)) (hs : 1 ≤ s) :
+    ∀ t K, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ m ∈ V, N₀ ≤ m ∧ ∃ b ∈ A, b ∉ Q (σ (T + t)) ∧
+        IsRepHub A m (insert b (Q (σ (T + t)))) := by
+  classical
+  intro t K
+  set k₀ : Fin s := ⟨0, by omega⟩ with hk₀
+  have hlane := lockstep_lane_guardianship hmem hdisj hguard hy
+  have hduty : ∀ i : ℕ, ∃ m, N₀ ≤ m ∧
+      IsRepHub A m (insert (y k₀ (t + 1 + i))
+        (Q (σ (T + t)))) :=
+    fun i => hlane k₀ t (t + 1 + i) (by omega)
+  choose mf hmf₁ hmf₂ using hduty
+  have hbnotin : ∀ i : ℕ, y k₀ (t + 1 + i) ∉ Q (σ (T + t)) := by
+    intro i hmem'
+    have h1 := hy k₀ (t + 1 + i)
+    have hσlt : σ (T + t) < σ (T + (t + 1 + i)) :=
+      σ.strictMono (by omega)
+    exact (Finset.disjoint_left.1 (hdisj _ _ hσlt)) hmem' h1
+  have hbinj : ∀ i j : ℕ, i ≠ j →
+      y k₀ (t + 1 + i) ≠ y k₀ (t + 1 + j) := by
+    intro i j hij
+    intro heq
+    rcases Nat.lt_or_ge i j with h | h
+    · exact absurd heq (ne_of_lt ((hymono k₀) (by omega)))
+    · have h' : j < i := by omega
+      exact absurd heq.symm
+        (ne_of_lt ((hymono k₀) (by omega)))
+  -- fibers of the duty map have size ≤ 3 (sharer law)
+  have hfib : ∀ m ∈ (Finset.range (3 * K + 1)).image mf,
+      ((Finset.range (3 * K + 1)).filter
+        (fun i => mf i = m)).card ≤ 3 := by
+    intro m hmV
+    rw [Finset.mem_image] at hmV
+    obtain ⟨i₀, hi₀r, hi₀⟩ := hmV
+    have hmN : N₀ ≤ m := hi₀ ▸ hmf₁ i₀
+    obtain ⟨x₀, y₀, z₀, hshare⟩ :=
+      three_guardians_per_rep_target (hfree (σ (T + t))) hmN
+    have hsub : ∀ i ∈ (Finset.range (3 * K + 1)).filter
+        (fun i => mf i = m),
+        y k₀ (t + 1 + i) ∈ ({x₀, y₀, z₀} : Finset ℕ) := by
+      intro i hi
+      rw [Finset.mem_filter] at hi
+      have hhub := hmf₂ i
+      rw [hi.2] at hhub
+      have h1 := hshare (y k₀ (t + 1 + i)) (hbnotin i) hhub
+      rcases h1 with h | h | h <;> simp [h]
+    have hcard := Finset.card_le_card_of_injOn
+      (f := fun i => y k₀ (t + 1 + i))
+      (s := (Finset.range (3 * K + 1)).filter
+        (fun i => mf i = m))
+      (t := ({x₀, y₀, z₀} : Finset ℕ))
+      hsub
+      (by
+        intro i _ j _ heq
+        by_contra hne
+        exact hbinj i j hne heq)
+    have h3 : ({x₀, y₀, z₀} : Finset ℕ).card ≤ 3 := by
+      apply le_trans (Finset.card_insert_le _ _)
+      have := Finset.card_insert_le y₀ ({z₀} : Finset ℕ)
+      simp at this ⊢
+      omega
+    omega
+  have hcount := Finset.card_le_mul_card_image_of_maps_to
+    (f := mf) (s := Finset.range (3 * K + 1))
+    (t := (Finset.range (3 * K + 1)).image mf)
+    (fun i hi => Finset.mem_image_of_mem mf hi) 3 hfib
+  rw [Finset.card_range] at hcount
+  refine ⟨(Finset.range (3 * K + 1)).image mf, by omega, ?_⟩
+  intro m hmV
+  rw [Finset.mem_image] at hmV
+  obtain ⟨i, hir, hi⟩ := hmV
+  refine ⟨hi ▸ hmf₁ i, y k₀ (t + 1 + i),
+    (hmem _ _ (hy k₀ (t + 1 + i))).1, hbnotin i, ?_⟩
+  rw [← hi]
+  exact hmf₂ i
+
 end Erdos881
