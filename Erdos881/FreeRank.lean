@@ -3311,4 +3311,210 @@ theorem four_disjoint_hubs_singleton {A : Set ℕ} {m b : ℕ}
   rw [hpij] at h1
   exact (Finset.disjoint_left.1 (hdisj i j hij)) h1 h2
 
+/-- Pool form of the absolute flood: within any pool of positive
+basis elements, every free set of pool elements extends to a
+pool-inclusion-maximal one, over which every remaining pool
+element is a guardian. -/
+theorem exists_absolute_leaf_pool {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (C : Set ℕ) (hC : ∀ c ∈ C, c ∈ A ∧ 0 < c)
+    (P : Finset ℕ) (hPC : ∀ h ∈ P, h ∈ C)
+    (hPfree : RepFree A N₀ P) :
+    ∃ Q : Finset ℕ, (∀ h ∈ Q, h ∈ C) ∧ RepFree A N₀ Q ∧ P ⊆ Q ∧
+      ∀ b ∈ C, b ∉ Q → ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b Q) := by
+  classical
+  have hwf := freeSup_wf h0 hcov hfail
+  revert hPC hPfree
+  induction P using hwf.induction with
+  | _ P ih =>
+    intro hPC hPfree
+    by_cases hmax : ∀ b ∈ C, b ∉ P → ¬RepFree A N₀ (insert b P)
+    · refine ⟨P, hPC, hPfree, Finset.Subset.refl P, ?_⟩
+      intro b hbC hbP
+      have hnotfree := hmax b hbC hbP
+      rw [RepFree] at hnotfree
+      push_neg at hnotfree
+      obtain ⟨m, hm, hall⟩ := hnotfree
+      refine ⟨m, hm, ?_⟩
+      intro x hx y hy z hz hsum
+      by_contra hmiss
+      push_neg at hmiss
+      obtain ⟨h1, h2, h3⟩ := hmiss
+      exact h3 (hall x hx y hy z hz hsum h1 h2)
+    · push_neg at hmax
+      obtain ⟨b, hbC, hbP, hbfree⟩ := hmax
+      have hnodeP : FreeNode A N₀ P :=
+        ⟨fun h hh => hC h (hPC h hh), hPfree⟩
+      have hnodeQ : FreeNode A N₀ (insert b P) := by
+        refine ⟨?_, hbfree⟩
+        intro h hh
+        rcases Finset.mem_insert.1 hh with h' | h'
+        · rw [h']
+          exact hC b hbC
+        · exact hC h (hPC h h')
+      have hstep : FreeSup A N₀ (insert b P) P :=
+        ⟨hnodeP, hnodeQ, Finset.ssubset_insert hbP⟩
+      have hinsC : ∀ h ∈ insert b P, h ∈ C := by
+        intro h hh
+        rcases Finset.mem_insert.1 hh with h' | h'
+        · rw [h']
+          exact hbC
+        · exact hPC h h'
+      obtain ⟨Q, hQC, hQfree, hQsub, hQmax⟩ :=
+        ih _ hstep hinsC hbfree
+      exact ⟨Q, hQC, hQfree, Finset.Subset.trans
+        (Finset.subset_insert _ _) hQsub, hQmax⟩
+
+/-- **THE SHELL STRATIFICATION.**  Under hfail the positive basis
+elements organize into infinitely many pairwise disjoint NONEMPTY
+free shells Q₀, Q₁, Q₂, …: each shell is inclusion-maximal free
+inside the pool left over by its predecessors, so every positive
+element outside the first k+1 shells is a guardian of shell k.
+An element joining shell k+1 guards shells 0..k; an element
+avoiding all shells guards every level. -/
+theorem absolute_shell_stratification {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ Q : ℕ → Finset ℕ,
+      (∀ k, (Q k).Nonempty) ∧
+      (∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h) ∧
+      (∀ k, RepFree A N₀ (Q k)) ∧
+      (∀ j k, j < k → Disjoint (Q j) (Q k)) ∧
+      (∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
+        ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) := by
+  classical
+  -- one shell over the pool avoiding a given finite past
+  have hstep : ∀ U : Finset ℕ, ∃ Q : Finset ℕ, Q.Nonempty ∧
+      (∀ h ∈ Q, h ∈ A ∧ 0 < h ∧ h ∉ U) ∧ RepFree A N₀ Q ∧
+      ∀ b ∈ A, 0 < b → b ∉ U → b ∉ Q →
+        ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b Q) := by
+    intro U
+    obtain ⟨X, hX⟩ := cofinite_free_singletons h0 hcov hanchor hfail
+    obtain ⟨a, haA, hage⟩ :=
+      pairCovers_unbounded hcov (X + (U.sup id) + 1)
+    have hapos : 0 < a := by omega
+    have haU : a ∉ U := by
+      intro hmem
+      have h2 : a ≤ U.sup id := Finset.le_sup (f := id) hmem
+      omega
+    have hafree : RepFree A N₀ {a} := hX a haA (by omega) hapos
+    obtain ⟨Q, hQC, hQfree, hQsub, hQmax⟩ :=
+      exists_absolute_leaf_pool h0 hcov hfail
+        {x | x ∈ A ∧ 0 < x ∧ x ∉ U}
+        (fun c hc => ⟨hc.1, hc.2.1⟩)
+        {a}
+        (fun h hh => by
+          rw [Finset.mem_singleton] at hh
+          subst hh
+          exact ⟨haA, hapos, haU⟩)
+        hafree
+    refine ⟨Q, ⟨a, hQsub (Finset.mem_singleton_self a)⟩,
+      fun h hh => hQC h hh, hQfree, ?_⟩
+    intro b hbA hbpos hbU hbQ
+    exact hQmax b ⟨hbA, hbpos, hbU⟩ hbQ
+  choose F hFne hFmem hFfree hFmax using hstep
+  -- iterate, carrying the cumulative union
+  obtain ⟨g, hg0, hgs⟩ : ∃ g : ℕ → Finset ℕ × Finset ℕ,
+      g 0 = (F ∅, F ∅) ∧
+      ∀ k, g (k + 1) = (F (g k).2, (g k).2 ∪ F (g k).2) :=
+    ⟨fun k => Nat.rec (F ∅, F ∅)
+      (fun _ p => (F p.2, p.2 ∪ F p.2)) k, rfl, fun _ => rfl⟩
+  have hQ0 : (g 0).1 = F ∅ := by rw [hg0]
+  have hU0 : (g 0).2 = F ∅ := by rw [hg0]
+  have hQs : ∀ k, (g (k + 1)).1 = F ((g k).2) :=
+    fun k => by rw [hgs k]
+  have hUs : ∀ k, (g (k + 1)).2 = (g k).2 ∪ F ((g k).2) :=
+    fun k => by rw [hgs k]
+  -- the cumulative union is exactly the union of shells so far
+  have hUmem : ∀ k x, x ∈ (g k).2 ↔ ∃ j, j ≤ k ∧ x ∈ (g j).1 := by
+    intro k
+    induction k with
+    | zero =>
+      intro x
+      rw [hU0]
+      constructor
+      · intro hx
+        exact ⟨0, le_refl 0, by rw [hQ0]; exact hx⟩
+      · rintro ⟨j, hj, hx⟩
+        have hj0 : j = 0 := by omega
+        subst hj0
+        rw [hQ0] at hx
+        exact hx
+    | succ k ihk =>
+      intro x
+      rw [hUs, Finset.mem_union]
+      constructor
+      · rintro (hx | hx)
+        · obtain ⟨j, hj, hx'⟩ := (ihk x).1 hx
+          exact ⟨j, by omega, hx'⟩
+        · exact ⟨k + 1, le_refl _, by rw [hQs]; exact hx⟩
+      · rintro ⟨j, hj, hx⟩
+        rcases Nat.lt_or_ge j (k + 1) with h | h
+        · exact Or.inl ((ihk x).2 ⟨j, by omega, hx⟩)
+        · have hj1 : j = k + 1 := by omega
+          subst hj1
+          rw [hQs] at hx
+          exact Or.inr hx
+  refine ⟨fun k => (g k).1, ?_, ?_, ?_, ?_, ?_⟩
+  · intro k
+    cases k with
+    | zero =>
+      show ((g 0).1).Nonempty
+      rw [hQ0]
+      exact hFne ∅
+    | succ k =>
+      show ((g (k + 1)).1).Nonempty
+      rw [hQs]
+      exact hFne _
+  · intro k h hh
+    cases k with
+    | zero =>
+      have hh' : h ∈ (g 0).1 := hh
+      rw [hQ0] at hh'
+      exact ⟨(hFmem ∅ h hh').1, (hFmem ∅ h hh').2.1⟩
+    | succ k =>
+      have hh' : h ∈ (g (k + 1)).1 := hh
+      rw [hQs] at hh'
+      exact ⟨(hFmem _ h hh').1, (hFmem _ h hh').2.1⟩
+  · intro k
+    cases k with
+    | zero =>
+      show RepFree A N₀ (g 0).1
+      rw [hQ0]
+      exact hFfree ∅
+    | succ k =>
+      show RepFree A N₀ (g (k + 1)).1
+      rw [hQs]
+      exact hFfree _
+  · intro j k hjk
+    show Disjoint (g j).1 (g k).1
+    rw [Finset.disjoint_left]
+    intro x hxj hxk
+    obtain ⟨k', rfl⟩ : ∃ k', k = k' + 1 :=
+      ⟨k - 1, by omega⟩
+    rw [hQs] at hxk
+    have hxU : x ∉ (g k').2 := (hFmem _ x hxk).2.2
+    exact hxU ((hUmem k' x).2 ⟨j, by omega, hxj⟩)
+  · intro k b hbA hbpos hbQ
+    cases k with
+    | zero =>
+      have hb0 : b ∉ (g 0).1 := hbQ 0 (le_refl 0)
+      show ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (g 0).1)
+      rw [hQ0] at hb0 ⊢
+      exact hFmax ∅ b hbA hbpos (Finset.notMem_empty b) hb0
+    | succ k =>
+      have hbU : b ∉ (g k).2 := by
+        intro hmem
+        obtain ⟨j, hj, hx⟩ := (hUmem k b).1 hmem
+        exact hbQ j (by omega) hx
+      have hb1 : b ∉ (g (k + 1)).1 := hbQ (k + 1) (le_refl _)
+      show ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (g (k + 1)).1)
+      rw [hQs] at hb1 ⊢
+      exact hFmax _ b hbA hbpos hbU hb1
+
 end Erdos881
