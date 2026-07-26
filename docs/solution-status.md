@@ -1,3 +1,38 @@
+# UPDATE (2026-07-26): THE ω-DRAIN — FIFTH SUMMIT
+
+**Arc 34 — the tree completed and globalized** (all verified):
+covering splits (`even_target_channel_split`,
+`odd_target_cross_split`, `half_worlds_joint_cover`,
+`half_cover_dichotomy` — every node passes covering to a live
+child); the mixing descent of obligations
+(`mixing_cross_slice_law`, `mixing_cross_slice_poverty` — hfail
+speaks downstairs in mixing worlds; the cascade blade cuts in
+the cross-channel); the generic iterating drain
+(`cross_channel_split`, `cross_channel_descends`,
+`cross_blowup_descends` — all four parity edges, closed under
+iteration); and the capstone:
+
+**`endgame_omega_drain`** — every counterexample owns an
+infinite path through the 2-adic tree of cross-systems, from
+(A, A) down parity children forever, with pair wealth
+persisting at EVERY level.  The enemy's riches trace an
+infinite 2-adic address, from hfail alone.
+
+FIVE SUMMITS now in Endgame.lean: final dichotomy, translate
+laws, collapsed trichotomy, parity fork, ω-drain.
+
+The remaining mathematics: the drained path's worlds carry
+Cantor-cascade structure — the survival argument on such
+cascades (template: the verified `cantor_carry_repair`) is the
+mixing core; the saturated halls and street analysis the
+second; racing termination and chain threading the rank side.
+The problem's open heart is now framed by a complete verified
+dynamical system on the 2-adic tree.
+
+All verified, zero sorries, standard axioms.
+
+---
+
 # UPDATE (2026-07-26): THE CORRIDOR AND THE CHAIN FORK
 
 **Arcs 32-33 — the rank room opened** (all verified):
