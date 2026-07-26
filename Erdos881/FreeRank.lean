@@ -13128,4 +13128,80 @@ theorem ee_blowup_descends {A : Set ℕ}
   have hdesc := ee_channel_descends (A := A) hveven
   exact ⟨v / 2, by omega, by omega⟩
 
+open Classical in
+/-- **The oo-channel descends.**  Odd-odd pairs of an even
+target halve into pairs of the shifted half-world
+H₁ = {y : 2y + 1 ∈ A} at the target v/2 − 1: the second
+counting edge of the tree. -/
+theorem oo_channel_descends {A : Set ℕ} {v : ℕ}
+    (hv : v % 2 = 0) :
+    ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A ∧ x % 2 = 1 ∧
+        (v - x) % 2 = 1)).card ≤
+    ((Finset.range (v / 2)).filter
+      (fun y => 2 * y + 1 ∈ A ∧
+        2 * (v / 2 - 1 - y) + 1 ∈ A)).card := by
+  apply Finset.card_le_card_of_injOn (fun x => x / 2)
+  · intro x hx
+    simp only [Finset.mem_coe, Finset.mem_filter,
+      Finset.mem_range] at hx
+    obtain ⟨hxr, hxA, hxpA, hxo, hxpo⟩ := hx
+    simp only [Finset.mem_coe, Finset.mem_filter,
+      Finset.mem_range]
+    refine ⟨by omega, ?_, ?_⟩
+    · have h1 : 2 * (x / 2) + 1 = x := by omega
+      rw [h1]
+      exact hxA
+    · have h1 : 2 * (v / 2 - 1 - x / 2) + 1 = v - x := by
+        omega
+      rw [h1]
+      exact hxpA
+  · intro a ha b hb hab
+    simp only [Finset.mem_coe, Finset.mem_filter,
+      Finset.mem_range] at ha hb
+    obtain ⟨_, _, _, hao, _⟩ := ha
+    obtain ⟨_, _, _, hbo, _⟩ := hb
+    have hab' : a / 2 = b / 2 := hab
+    omega
+
+open Classical in
+/-- **The oo-blowup descends.**  If the odd-odd channel carries
+the unbounded pair counts, the SHIFTED half-world inherits
+them: the tree's second drain, formal. -/
+theorem oo_blowup_descends {A : Set ℕ}
+    (hoo : ∀ C N, ∃ v, N ≤ v ∧ C ≤
+      ((Finset.range (v + 1)).filter
+        (fun x => x ∈ A ∧ (v - x) ∈ A ∧ x % 2 = 1 ∧
+          (v - x) % 2 = 1)).card) :
+    ∀ C N, ∃ w, N ≤ w ∧ C ≤
+      ((Finset.range (w + 1)).filter
+        (fun y => 2 * y + 1 ∈ A ∧
+          2 * (w - y) + 1 ∈ A)).card := by
+  intro C N
+  obtain ⟨v, hvN, hvC⟩ := hoo (C + 1) (2 * N + 2)
+  have hvne : ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A ∧ x % 2 = 1 ∧
+        (v - x) % 2 = 1)).Nonempty :=
+    Finset.card_pos.1 (by omega)
+  obtain ⟨x₀, hx₀⟩ := hvne
+  rw [Finset.mem_filter] at hx₀
+  have hveven : v % 2 = 0 := by
+    obtain ⟨hr, _, _, ho, hpo⟩ := hx₀
+    rw [Finset.mem_range] at hr
+    omega
+  have hdesc := oo_channel_descends (A := A) hveven
+  refine ⟨v / 2 - 1, by omega, ?_⟩
+  have hsub : (Finset.range (v / 2)).filter
+      (fun y => 2 * y + 1 ∈ A ∧
+        2 * (v / 2 - 1 - y) + 1 ∈ A) ⊆
+      (Finset.range (v / 2 - 1 + 1)).filter
+      (fun y => 2 * y + 1 ∈ A ∧
+        2 * (v / 2 - 1 - y) + 1 ∈ A) := by
+    intro y hy
+    rw [Finset.mem_filter, Finset.mem_range] at hy
+    rw [Finset.mem_filter, Finset.mem_range]
+    exact ⟨by omega, hy.2⟩
+  have h1 := Finset.card_le_card hsub
+  omega
+
 end Erdos881
