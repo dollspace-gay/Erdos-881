@@ -13434,4 +13434,40 @@ theorem mixing_cross_slice_law {A : Set ℕ}
     exact h1 ▸ hb
   · exact absurd h hy'LB
 
+open Classical in
+/-- **Cross-slice poverty.**  The quantitative form: at the
+mixing failure targets, every odd-survivor slice's cross-pair
+count is bounded by any window catching the deleted H₀-part —
+sparse deletions force uniform cross-pair poverty across the
+whole slice family, one level down.  The cascade's counting
+blade, now cutting in the tree's cross-channel. -/
+theorem mixing_cross_slice_poverty {A : Set ℕ}
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {B₀ : Set ℕ} (hB₀A : ∀ b ∈ B₀, 2 * b ∈ A)
+    (hB₀inf : B₀.Infinite) :
+    ∀ N, ∃ n, N ≤ n ∧ ∀ z, z % 2 = 1 → z ∈ A →
+      ∀ W : Finset ℕ, (∀ b, b ∈ B₀ → b ≤ n → b ∈ W) →
+      ((Finset.range (n + 1)).filter
+        (fun y => 2 * y ∈ A ∧ (n - z - 2 * y) ∈ A ∧
+          (n - z - 2 * y) % 2 = 1 ∧
+          2 * y + z + 1 ≤ n)).card ≤ W.card := by
+  intro N
+  obtain ⟨n, hn, hlaw⟩ :=
+    mixing_cross_slice_law hfail hB₀A hB₀inf N
+  refine ⟨n, hn, ?_⟩
+  intro z hzo hzA W hW
+  apply Finset.card_le_card
+  intro y hy
+  rw [Finset.mem_filter, Finset.mem_range] at hy
+  obtain ⟨hyr, hyA, hypA, hypo, hybd⟩ := hy
+  have hy' : n - z - 2 * y = 2 * ((n - z - 2 * y - 1) / 2)
+      + 1 := by omega
+  have hyB₀ : y ∈ B₀ := by
+    refine hlaw z hzo hzA y ((n - z - 2 * y - 1) / 2) hyA
+      ?_ (by omega)
+    rw [← hy']
+    exact hypA
+  exact hW y hyB₀ (by omega)
+
 end Erdos881
