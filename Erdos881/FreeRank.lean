@@ -7884,4 +7884,27 @@ theorem spine_stall_stream {A : Set ℕ} {N₀ : ℕ}
   obtain ⟨i, _, hi⟩ := hv
   exact ⟨i, hi⟩
 
+/-- **The exact duality.**  Freeness is precisely never being a
+full hub: the two sides of the whole campaign — free sets (the
+constructor's material) and hubs (the enemy's defence) — are
+logical complements at every target.  With this, minimal stall
+windows have FREE proper prefixes: window length measures
+exactly how much freeness the shifted spine accumulates before
+the enemy strikes, so bounded window lengths mean bounded free
+prefixes and unbounded lengths hand the constructor unbounded
+cross-shell free sets (root rank ≥ ω — the fork again, on the
+game board). -/
+theorem repFree_iff_forall_not_hub {A : Set ℕ} {N₀ : ℕ}
+    {P : Finset ℕ} :
+    RepFree A N₀ P ↔ ∀ m, N₀ ≤ m → ¬IsRepHub A m P := by
+  constructor
+  · intro hfree m hm hhub
+    exact free_set_never_hub hfree hm hhub
+  · intro hnot m hm
+    have h1 := hnot m hm
+    rw [IsRepHub] at h1
+    push_neg at h1
+    obtain ⟨x, hx, y, hy, z, hz, hsum, hxP, hyP, hzP⟩ := h1
+    exact ⟨x, hx, y, hy, z, hz, hsum, hxP, hyP, hzP⟩
+
 end Erdos881
