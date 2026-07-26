@@ -1,3 +1,31 @@
+# FORCED MIXING — EIGHTH SUMMIT, A COMPLETE BRANCH DEFEAT (2026-07-26)
+
+`endgame_forced_mixing` (Endgame.lean, standard axioms): THE
+DETERMINED HORN OF THE CASCADE FORK IS EMPTY.
+
+The kill chain: permanent saturation => the drain is a
+determined 2-adic point (`saturated_cascade_determined`) => the
+root basis's tail concentrates into one residue class mod 2^k
+for EVERY k (concentration induction: cylinders + per-level
+saturation + digit/parity link via level-infinitude) =>
+`two_adic_convergence_kills_covering` (pure counting: choose K
+with 2^(K-1) > head size; large-large sums have pinned parity,
+small-large sums land in <= |head| classes mod 2^K; some
+wrong-parity class mod 2^K has cofinally many uncovered
+targets) => contradiction with PairCovers.
+
+CONSEQUENCE: every counterexample's drain reaches a FIRST
+MIXING LEVEL m with exact coordinates — twin channels equal to
+the cylinder slice {x | c + 2^m x in A}, both parities cofinal,
+blowup wealth flowing through.  The Cantor-like endpoint cannot
+be run by any counterexample; mixing is the ONLY surviving
+regime of the 2-adic descent.
+
+Remaining: the located mixing world (cross-slice laws, mixed
+hfail descent, carry-repair survival) and the rank/street fork
+upstream.  The problem's open core is now: one located mixing
+cylinder world with wealth, against the survival machinery.
+
 # THE CASCADE FORK — SEVENTH SUMMIT (2026-07-26)
 
 `endgame_cascade_fork` (Endgame.lean, standard axioms): every

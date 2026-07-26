@@ -14638,4 +14638,185 @@ theorem two_adic_convergence_kills_covering {A : Set ℕ}
   · exact key u v huA hvA huv h
   · exact key v u hvA huA (by omega) h
 
+open Classical in
+/-- **THE CASCADE FORCES MIXING** (the determined horn is
+EMPTY).  Permanent saturation would make the drain a fully
+determined 2-adic point; then the root basis's tail would
+concentrate into one residue class mod 2^k for every k, and
+`two_adic_convergence_kills_covering` contradicts pair covering.
+So EVERY counterexample's drain hits a first mixing level: a
+twin-channel world at explicit cylinder coordinates
+{x | c + 2^m x ∈ A} with BOTH parities cofinal and blowup
+wealth flowing through it.  The Cantor-like endpoint is dead;
+mixing is not one branch but THE regime. -/
+theorem cascade_forces_mixing {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ S T : ℕ → Set ℕ, S 0 = A ∧ T 0 = A ∧
+      (∀ k, ∃ p q, p < 2 ∧ q < 2 ∧
+        S (k + 1) = {y | 2 * y + p ∈ S k} ∧
+        T (k + 1) = {y | 2 * y + q ∈ T k}) ∧
+      (∀ k, ∀ C N, ∃ v, N ≤ v ∧ C ≤
+        ((Finset.range (v + 1)).filter
+          (fun x => x ∈ S k ∧ (v - x) ∈ T k)).card) ∧
+      ∃ m c, S m = T m ∧
+        S m = {x : ℕ | c + 2 ^ m * x ∈ A} ∧
+        (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 0) ∧
+        (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 1) := by
+  obtain ⟨S, T, hS0, hT0, hstep, hblow, hdet⟩ :=
+    saturated_cascade_determined h0 hcov hfail
+  refine ⟨S, T, hS0, hT0, hstep, hblow, ?_⟩
+  by_cases hsat : ∀ k, ∃ Y ε, ∀ a ∈ S k, Y < a → a % 2 = ε
+  · exfalso
+    obtain ⟨ε', α, hα0, hdig, heq, hcyl⟩ := hdet hsat
+    choose Ys εs hs using hsat
+    have hαlt : ∀ k, α k < 2 ^ k := by
+      intro k
+      induction k with
+      | zero =>
+        rw [hα0]
+        norm_num
+      | succ k ih =>
+        have hd1 := (hdig k).1
+        have hd2 := (hdig k).2
+        have hp : 2 ^ (k + 1) = 2 * 2 ^ k := by
+          rw [pow_succ]
+          ring
+        have hle : 2 ^ k * ε' k ≤ 2 ^ k * 1 :=
+          Nat.mul_le_mul_left _ (by omega)
+        omega
+    have hdigpar : ∀ k, ε' k = εs k := by
+      intro k
+      have hinf : (S (k + 1)).Infinite :=
+        (cross_blowup_infinite (hblow (k + 1))).1
+      obtain ⟨x, hxS, hxgt⟩ := hinf.exists_gt (Ys k)
+      have hxA : α (k + 1) + 2 ^ (k + 1) * x ∈ A := by
+        rw [hcyl (k + 1)] at hxS
+        exact hxS
+      have halg : α k + 2 ^ k * (ε' k + 2 * x) =
+          α (k + 1) + 2 ^ (k + 1) * x := by
+        rw [(hdig k).2, pow_succ]
+        ring
+      have hz'S : (ε' k + 2 * x) ∈ S k := by
+        rw [hcyl k]
+        show α k + 2 ^ k * (ε' k + 2 * x) ∈ A
+        rw [halg]
+        exact hxA
+      have hpar' := hs k (ε' k + 2 * x) hz'S (by omega)
+      have hd1 := (hdig k).1
+      omega
+    have hconc : ∀ k, ∃ Y, ∀ a ∈ A, Y < a →
+        ∃ z, a = α k + 2 ^ k * z ∧ z ∈ S k := by
+      intro k
+      induction k with
+      | zero =>
+        refine ⟨0, fun a haA _ => ⟨a, ?_, ?_⟩⟩
+        · rw [hα0]
+          simp
+        · rw [hS0]
+          exact haA
+      | succ k ih =>
+        obtain ⟨Yk', hYk'⟩ := ih
+        refine ⟨max Yk' (α k + 2 ^ k * (Ys k + 1)),
+          fun a haA ha => ?_⟩
+        have ha1 : Yk' < a :=
+          lt_of_le_of_lt (le_max_left _ _) ha
+        have ha2 : α k + 2 ^ k * (Ys k + 1) < a :=
+          lt_of_le_of_lt (le_max_right _ _) ha
+        obtain ⟨z, hzeq, hzS⟩ := hYk' a haA ha1
+        have hzY : Ys k < z := by
+          rcases Nat.lt_or_ge (Ys k) z with h | h
+          · exact h
+          · exfalso
+            have h3 : 2 ^ k * z ≤ 2 ^ k * (Ys k + 1) :=
+              Nat.mul_le_mul_left _ (by omega)
+            omega
+        have hzp := hs k z hzS hzY
+        obtain ⟨w, hw⟩ : ∃ w, z = εs k + 2 * w :=
+          ⟨z / 2, by omega⟩
+        have h4 : 2 ^ k * z = 2 ^ k * (εs k + 2 * w) := by
+          rw [hw]
+        have halg2 : α (k + 1) + 2 ^ (k + 1) * w =
+            α k + 2 ^ k * (εs k + 2 * w) := by
+          rw [(hdig k).2, hdigpar k, pow_succ]
+          ring
+        have h5 : α (k + 1) + 2 ^ (k + 1) * w = a := by
+          omega
+        refine ⟨w, by omega, ?_⟩
+        rw [hcyl (k + 1)]
+        show α (k + 1) + 2 ^ (k + 1) * w ∈ A
+        rw [h5]
+        exact haA
+    apply two_adic_convergence_kills_covering hcov
+    intro k
+    obtain ⟨Y, hY⟩ := hconc k
+    refine ⟨Y, α k, hαlt k, fun a ha hYa => ?_⟩
+    obtain ⟨z, h1, _⟩ := hY a ha hYa
+    exact ⟨z, h1⟩
+  · have hP : ∃ k, ¬∃ Y ε, ∀ a ∈ S k, Y < a → a % 2 = ε :=
+      not_forall.mp hsat
+    set m := Nat.find hP with hm
+    have hPm : ¬∃ Y ε, ∀ a ∈ S m, Y < a → a % 2 = ε :=
+      Nat.find_spec hP
+    have htot : ∀ j, ∃ Y ε, j < m →
+        ∀ a ∈ S j, Y < a → a % 2 = ε := by
+      intro j
+      by_cases hj : j < m
+      · obtain ⟨Y, ε, h⟩ := not_not.mp (Nat.find_min hP hj)
+        exact ⟨Y, ε, fun _ => h⟩
+      · exact ⟨0, 0, fun h => absurd h hj⟩
+    choose Yf εf hf using htot
+    set α : ℕ → ℕ := fun k =>
+      Nat.rec 0 (fun k' acc => acc + 2 ^ k' * εf k') k with hα
+    have hα0 : α 0 = 0 := rfl
+    have hαS : ∀ k, α (k + 1) = α k + 2 ^ k * εf k :=
+      fun _ => rfl
+    have hchain : ∀ j, j ≤ m → S j = T j ∧
+        S j = {x : ℕ | α j + 2 ^ j * x ∈ A} := by
+      intro j
+      induction j with
+      | zero =>
+        intro _
+        refine ⟨by rw [hS0, hT0], ?_⟩
+        rw [hS0]
+        ext z
+        simp only [Set.mem_setOf_eq]
+        have he : α 0 + 2 ^ 0 * z = z := by
+          rw [hα0]
+          simp
+        rw [he]
+      | succ j ih =>
+        intro hjm
+        obtain ⟨heqj, hcylj⟩ := ih (by omega)
+        obtain ⟨p, q, hp, hq, hS1, hT1⟩ := hstep j
+        rw [← heqj] at hT1
+        have hres := saturated_cascade_step
+          (hf j (by omega)) hp hq hS1 hT1 (hblow (j + 1))
+        refine ⟨by rw [hres.2.2.1, hres.2.2.2], ?_⟩
+        rw [hres.2.2.1]
+        ext z
+        simp only [Set.mem_setOf_eq]
+        rw [hcylj]
+        simp only [Set.mem_setOf_eq]
+        have he : α j + 2 ^ j * (εf j + 2 * z) =
+            α (j + 1) + 2 ^ (j + 1) * z := by
+          rw [hαS j, pow_succ]
+          ring
+        rw [he]
+    obtain ⟨heqm, hcylm⟩ := hchain m le_rfl
+    refine ⟨m, α m, heqm, hcylm, ?_, ?_⟩
+    · intro N
+      by_contra hcon
+      apply hPm
+      refine ⟨N, 1, fun a ha hNa => ?_⟩
+      by_contra hne
+      exact hcon ⟨a, by omega, ha, by omega⟩
+    · intro N
+      by_contra hcon
+      apply hPm
+      refine ⟨N, 0, fun a ha hNa => ?_⟩
+      by_contra hne
+      exact hcon ⟨a, by omega, ha, by omega⟩
+
 end Erdos881

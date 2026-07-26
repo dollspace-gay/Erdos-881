@@ -790,4 +790,35 @@ theorem endgame_cascade_fork {A : Set ℕ} {N₀ : ℕ}
           (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 1))) :=
   cascade_mixing_fork h0 hcov hfail
 
+open Classical in
+/-- **FORCED MIXING** (re-export; eighth summit — a COMPLETE
+BRANCH DEFEAT).  The cascade fork's determined horn is EMPTY:
+permanent saturation would make the root basis 2-adically
+convergent, and `two_adic_convergence_kills_covering` shows a
+2-adically convergent tail cannot pair-cover (wrong-parity
+residue classes mod 2^K outnumber the head's translates).  So
+EVERY counterexample's drain reaches a first mixing level m:
+twin channels equal to the explicit cylinder slice
+{x | c + 2^m x ∈ A}, both parities cofinal inside it, blowup
+wealth flowing through it.  The Cantor-like endpoint — the
+saturated cascade — cannot be run by any counterexample.
+Mixing is not one branch of the descent; it is the only
+surviving regime, and it now has exact coordinates. -/
+theorem endgame_forced_mixing {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ S T : ℕ → Set ℕ, S 0 = A ∧ T 0 = A ∧
+      (∀ k, ∃ p q, p < 2 ∧ q < 2 ∧
+        S (k + 1) = {y | 2 * y + p ∈ S k} ∧
+        T (k + 1) = {y | 2 * y + q ∈ T k}) ∧
+      (∀ k, ∀ C N, ∃ v, N ≤ v ∧ C ≤
+        ((Finset.range (v + 1)).filter
+          (fun x => x ∈ S k ∧ (v - x) ∈ T k)).card) ∧
+      ∃ m c, S m = T m ∧
+        S m = {x : ℕ | c + 2 ^ m * x ∈ A} ∧
+        (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 0) ∧
+        (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 1) :=
+  cascade_forces_mixing h0 hcov hfail
+
 end Erdos881
