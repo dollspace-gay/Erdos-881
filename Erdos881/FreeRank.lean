@@ -12191,4 +12191,34 @@ theorem half_world_covers {A : Set ℕ} {N₀ Y ε : ℕ}
     exact hy
   · omega
 
+/-- **The ε-channel lift.**  Order-3 survival in the half-world
+lifts to the ε-channel upstairs: a surviving half-triple
+x' + y' + z' = n' lifts part-by-part to
+(ε + 2x') + (ε + 2y') + (ε + 2z') = 3ε + 2n', avoiding the
+lifted deletion.  The other channel needs fringe assistance —
+the descent's (2,3)-mixed structure, honestly split. -/
+theorem half_world_lift_channel {A : Set ℕ} {ε N' : ℕ}
+    (hε : ε < 2) {B' : Set ℕ}
+    (hsurv' : ∀ n', N' ≤ n' →
+      ∃ x' ∈ {x : ℕ | ε + 2 * x ∈ A},
+      ∃ y' ∈ {x : ℕ | ε + 2 * x ∈ A},
+      ∃ z' ∈ {x : ℕ | ε + 2 * x ∈ A},
+        x' ∉ B' ∧ y' ∉ B' ∧ z' ∉ B' ∧ x' + y' + z' = n') :
+    ∀ n, 2 * N' + 3 * ε ≤ n → n % 2 = 3 * ε % 2 →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ {a : ℕ | ∃ b' ∈ B', a = ε + 2 * b'} ∧
+        y ∉ {a : ℕ | ∃ b' ∈ B', a = ε + 2 * b'} ∧
+        z ∉ {a : ℕ | ∃ b' ∈ B', a = ε + 2 * b'} ∧
+        x + y + z = n := by
+  intro n hn hch
+  obtain ⟨x', hx', y', hy', z', hz', hxB, hyB, hzB, hsum⟩ :=
+    hsurv' ((n - 3 * ε) / 2) (by omega)
+  have hlift : ∀ w', w' ∉ B' →
+      ε + 2 * w' ∉ {a : ℕ | ∃ b' ∈ B', a = ε + 2 * b'} := by
+    intro w' hw' ⟨b', hb', heq⟩
+    have h1 : w' = b' := by omega
+    exact hw' (h1 ▸ hb')
+  refine ⟨ε + 2 * x', hx', ε + 2 * y', hy', ε + 2 * z', hz',
+    hlift x' hxB, hlift y' hyB, hlift z' hzB, by omega⟩
+
 end Erdos881
