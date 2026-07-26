@@ -15531,4 +15531,37 @@ theorem two_adic_width_law {A : Set ℕ} {N₀ j Y : ℕ}
     rw [Finset.card_product]
   omega
 
+open Classical in
+/-- **Same-class overlaps are address-pinned.**  Two disjoint
+deletions drawn from ONE residue class c mod 2^j: any covered
+target failing both has its address pinned to 2c mod 2^j and
+lies in the doubly-sparse sumset D₁ + D₂.  Splitting one deep
+class hence splits its failure duty into 3-wise-disjoint
+streams whose overlaps are pinned to a single known residue —
+the load ledger's first entry. -/
+theorem same_class_overlap_pinned {A D₁ D₂ : Set ℕ}
+    {N₀ j c n : ℕ}
+    (h0A : 0 ∈ A) (h01 : 0 ∉ D₁) (h02 : 0 ∉ D₂)
+    (hd12 : ∀ x, x ∈ D₁ → x ∉ D₂)
+    (hc1 : ∀ d ∈ D₁, d % 2 ^ j = c % 2 ^ j)
+    (hc2 : ∀ d ∈ D₂, d % 2 ^ j = c % 2 ^ j)
+    (hcov : PairCovers A N₀) (hn : N₀ ≤ n)
+    (hf1 : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D₁) →
+      ∑ i, v i ≠ n)
+    (hf2 : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D₂) →
+      ∑ i, v i ≠ n) :
+    n % 2 ^ j = (2 * c) % 2 ^ j ∧
+    ∃ d₁ ∈ D₁, ∃ d₂ ∈ D₂, d₁ + d₂ = n := by
+  obtain ⟨-, d₁, hd₁, d₂, hd₂, hsum⟩ :=
+    overlap_bilinear_law h0A h01 h02 hd12 hcov hn hf1 hf2
+  refine ⟨?_, d₁, hd₁, d₂, hd₂, hsum⟩
+  have h1 := hc1 d₁ hd₁
+  have h2 := hc2 d₂ hd₂
+  calc n % 2 ^ j = (d₁ + d₂) % 2 ^ j := by rw [hsum]
+    _ = (d₁ % 2 ^ j + d₂ % 2 ^ j) % 2 ^ j := by
+        rw [Nat.add_mod]
+    _ = (c % 2 ^ j + c % 2 ^ j) % 2 ^ j := by rw [h1, h2]
+    _ = (c + c) % 2 ^ j := by rw [← Nat.add_mod]
+    _ = (2 * c) % 2 ^ j := by ring_nf
+
 end Erdos881

@@ -1,3 +1,74 @@
+# The day of the twelve laws, in plain language
+
+*2026-07-26, for the keyring. Everything marked "proved" is
+machine-checked in Lean with zero gaps.*
+
+## The picture
+
+Think of the enemy — a hypothetical keyring that defeats every
+infinite discard — as a creature living on an infinite binary
+tree of addresses. Every key has a binary address (even/odd, then
+even/odd of the half, and so on).  Today we proved the creature
+cannot sit still, cannot hide in one branch, and must do
+paperwork for every discard we propose — paperwork we can now
+read.
+
+## What was proved today (all machine-verified)
+
+1. **The creature's riches repeat at every scale.** At every
+   address depth there are repair quadruples — two pairs sharing
+   one difference — and their targets sit at pinned addresses
+   (`drain_repair_mine`, `drain_wealth_addresses`).
+
+2. **Streets are poor.** Any "street" defense (one narrow window
+   of keys guarding a parade of locks) caps those locks' pair
+   riches at a fixed constant — while the creature's own riches
+   grow without bound elsewhere (`endgame_poor_street`).
+
+3. **The creature cannot converge.** If its keys eventually
+   funnel into a single address at every depth, the two-key
+   locks in most address classes starve.  Pure counting, no
+   fancy machinery (`two_adic_convergence_kills_covering`).
+   Consequence: **the Cantor-like endpoint is dead** — every
+   would-be counterexample must MIX (keep both parities alive)
+   at some depth, at a location we can compute
+   (`endgame_forced_mixing`).
+
+4. **The creature is self-similar.** At that mixing depth, the
+   world of keys is again a covering, rich, mixing, infinite
+   keyring — and discards inside it wound the original
+   (`endgame_self_similar`).  The enemy one window down is the
+   enemy again.
+
+5. **Discard paperwork.**  For any sparse discard we draw from
+   one address class: every failing lock must route all its
+   two-key openings through the discard's own class
+   (`cylinder_failure_residue_law`), must be pair-poor
+   (`failing_target_poor`), and must sit in the discard's thin
+   sumset (`failing_target_in_sumset`).  Two disjoint discards:
+   failing-both locks split every opening across the two, and
+   sit at a pinned address (`overlap_bilinear_law`,
+   `same_class_overlap_pinned`).  Three disjoint discards:
+   **no lock can fail all three** — a two-slot opening cannot
+   touch three disjoint sets (`three_deletion_exclusion`).
+
+6. **The tree must branch exponentially.**  A covering keyring
+   needs about 2^(j/2) live branches at depth j — no finite
+   bouquet of branches can cover (`two_adic_width_law`).
+
+## What the lab says
+
+Three hundred twenty adversarial worlds built to defend; every
+single proposed discard survived (52/52 halls, 268/268 mixing).
+The creature has never once won in silicon.
+
+## What remains
+
+One question: can any creature really run a separate cofinal
+failure parade for every sparse discard at once, forever, under
+all the laws above?  The lab says no.  The remaining mathematics
+is proving that "no."
+
 # The overnight campaign, in plain language
 
 *2026-07-24, for the keyring. Everything below marked "proved" is
