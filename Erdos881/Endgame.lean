@@ -983,4 +983,47 @@ theorem endgame_universal_committee {A : Set ℕ}
           ∀ g ∈ H, g ≠ h → x ≠ g ∧ y ≠ g ∧ z ≠ g :=
   universal_committee_law hfail
 
+open Classical in
+/-- **HEREDITARY TEAMS OR EXOTIC GEOMETRY** (re-export;
+fourteenth summit — the anchor discharged).  Every
+counterexample either (I) owes HEREDITARY TEAMS to its entire
+subset lattice — every infinite positive subset B defends with
+cofinal minimal committees of size ≥ 2 drawn from B, every
+member privately witnessed — or lives in one of the two exotic
+rooms: (II) a member router g₀ pair-hubbing every noncentral
+double through {c, g₀}, or (III) the central-pinned world
+(doubles decompose only centrally, singleton double-hubs, no
+order-2-surviving deletion, AP3-free off the router).  The
+anchored horn's oracle is implemented by
+`streamSurvives_of_anchor`, so no anchor hypothesis remains
+anywhere in the statement. -/
+theorem endgame_hereditary_teams {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∀ B ⊆ A, (∀ b ∈ B, 0 < b) → B.Infinite →
+      ∀ N, ∃ n, N ≤ n ∧
+      ∃ H ⊆ (Finset.range (n + 1)).filter (fun x => x ∈ B),
+        2 ≤ H.card ∧ IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        ∀ h ∈ H, ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = n ∧
+          (x = h ∨ y = h ∨ z = h) ∧
+          ∀ g ∈ H, g ≠ h → x ≠ g ∧ y ≠ g ∧ z ≠ g) ∨
+    (∃ g₀, g₀ ∈ A ∧ ∀ c ∈ A, 0 < c → c ≠ g₀ →
+      IsPairHub A (2 * c) ({c, g₀} : Finset ℕ)) ∨
+    (∃ g₀, (∀ c ∈ A, 0 < c → c ≠ g₀ → ∀ w ∈ A, ∀ w' ∈ A,
+        w + w' = 2 * c → w = c ∧ w' = c) ∧
+      (∀ c ∈ A, 0 < c → c ≠ g₀ →
+        IsPairHub A (2 * c) ({c} : Finset ℕ)) ∧
+      (∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+        ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) ∧
+      (∀ a d, 0 < d → a ∈ A → a + d ∈ A → a + 2 * d ∈ A →
+        a + d = g₀ ∨ a + d = 0)) := by
+  rcases endgame_global_trichotomy h0 hcov hfail with
+    ⟨hanc, -⟩ | h | h
+  · exact Or.inl (committee_size_floor h0 hcov
+      (streamSurvives_of_anchor h0 hcov hanc) hfail)
+  · exact Or.inr (Or.inl h)
+  · exact Or.inr (Or.inr h)
+
 end Erdos881

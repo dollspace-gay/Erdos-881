@@ -1,3 +1,23 @@
+# HEREDITARY TEAMS OR EXOTIC GEOMETRY — FOURTEENTH SUMMIT (2026-07-26)
+
+`endgame_hereditary_teams` (Endgame.lean, standard axioms,
+ANCHOR-FREE): every counterexample either
+(I) owes hereditary teams to its entire subset lattice — every
+infinite positive B defends with cofinal minimal committees of
+size >= 2 drawn from B, each member privately witnessed
+(`committee_size_floor` through `streamSurvives_of_anchor` on
+the trichotomy's anchored horn) — or
+(II) runs a member router g0 ({c, g0} pair-hubs every
+noncentral double), or
+(III) is central-pinned (central-only doubles, singleton
+double-hubs, no order-2-surviving deletion, AP3-free off
+router).
+
+The anchored world — the main room — now has its defense
+obligations quantified hereditarily with a proven team floor.
+Rooms II/III are the surviving exotic geometries with their own
+recorded structure (routed collapse, Salem-Spencer).
+
 # THE UNIVERSAL COMMITTEE LAW — THIRTEENTH SUMMIT (2026-07-26)
 
 `endgame_universal_committee` (Endgame.lean; hypotheses: hfail
