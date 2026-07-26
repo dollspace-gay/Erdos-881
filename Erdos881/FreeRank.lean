@@ -15308,4 +15308,33 @@ theorem mixing_failure_addresses {A : Set ℕ} {N₀ : ℕ}
     cylinder_failure_residue_law h0 h0D hDcyl hfailn,
     failing_target_poor h0 h0D hfailn⟩
 
+open Classical in
+/-- **Failing targets live in the deletion's sumset.**  A
+covered target failing against a deletion avoiding 0 must have
+its guaranteed pair touch the deletion itself: n ∈ D + A.  With
+D chosen arbitrarily sparse, the entire failure stream is
+confined to an arbitrarily thin sumset — the quantitative
+companion of the residue law. -/
+theorem failing_target_in_sumset {A D : Set ℕ} {N₀ n : ℕ}
+    (h0A : 0 ∈ A) (h0D : 0 ∉ D)
+    (hcov : PairCovers A N₀) (hn : N₀ ≤ n)
+    (hfailn : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D) →
+      ∑ i, v i ≠ n) :
+    ∃ d ∈ D, ∃ a ∈ A, d ∈ A ∧ d + a = n := by
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hn
+  by_cases hxD : x ∈ D
+  · exact ⟨x, hxD, y, hy, hx, hxy⟩
+  · by_cases hyD : y ∈ D
+    · exact ⟨y, hyD, x, hx, hy, by omega⟩
+    · exfalso
+      have hmem : ∀ i, (![x, y, 0] : Fin 3 → ℕ) i ∈ A \ D := by
+        intro i
+        match i with
+        | 0 => exact ⟨hx, hxD⟩
+        | 1 => exact ⟨hy, hyD⟩
+        | 2 => exact ⟨h0A, h0D⟩
+      have hsum0 : x + y + 0 = n := by omega
+      exact hfailn ![x, y, 0] hmem
+        (by simpa [Fin.sum_univ_three] using hsum0)
+
 end Erdos881

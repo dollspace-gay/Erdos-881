@@ -1,3 +1,32 @@
+# BYPASS AUDIT: refuted as stated; the true gap located (2026-07-26)
+
+LAB (scripts/probe_bypass.py): class-chained targets (every
+pair rep touches a fixed class c* mod 2^j) are COFINAL in
+adversarial and even random mixing worlds — the naive bypass
+claim ('no class is universally pair-touched') is FALSE.
+Mechanism: thin covering worlds have r2 = O(1) for most
+targets, and chaining is cheap when r2 is small.
+
+Reconciliation with 268/268 survival: failure needs every pair
+to touch the SPARSE DELETION ITSELF, not merely its residue
+class.  The mathematical difficulty of Erdos 881 lives exactly
+in the gap between class-chaining (cheap, cofinal) and
+sparse-set-chaining (never observed).  Sparse-set-chaining at
+target n = a bounded hub (card <= |D cap [0,n]|) — the mixing
+sub-instance failure reconnects to the BOUNDED-HUB STREET
+supply, now in cylinder coordinates: the two remaining tracks
+(mixing sub-instance, rank/street fork) are ONE track.
+
+New brick: `failing_target_in_sumset` — failing targets live in
+D + A; with D log-sparse the failure stream is confined to an
+arbitrarily thin sumset.  Together with poverty + residue laws:
+failing targets are poor, residue-chained, and sumset-confined.
+
+ALSO recorded: the convergence blade is level-agnostic BUT
+covering does not descend through a MIXING step
+(half_world_covers needs saturation) — 'infinitely many mixing
+levels' is NOT free; do not claim it.
+
 # THE TWO STREAMS — ELEVENTH SUMMIT (2026-07-26)
 
 `endgame_two_streams` (Endgame.lean, standard axioms): inside
