@@ -7367,4 +7367,21 @@ theorem no_anchor_central_or_member {A : Set ℕ} {g₀ : ℕ}
       · rw [Finset.mem_singleton] at h'
         exact absurd (h' ▸ hw') hg
 
+/-- **Total pinning in the central branch.**  Purely central
+doubles mean every element pair-OWNS its double: {c} is a full
+singleton pair hub at 2c.  Consequently any deletion B fails at
+order 2 exactly on the explicit set 2·B — the first TOTAL
+placement law of the campaign: in the central branch there is no
+order-2 target liberty at all.  (Order 3 keeps its freedom
+through nonzero triples; that residue is where the carry-free
+enemy would have to live.) -/
+theorem central_branch_singleton_hubs {A : Set ℕ} {g₀ : ℕ}
+    (hcentral : ∀ c ∈ A, 0 < c → c ≠ g₀ → ∀ w ∈ A, ∀ w' ∈ A,
+      w + w' = 2 * c → w = c ∧ w' = c) :
+    ∀ c ∈ A, 0 < c → c ≠ g₀ →
+      IsPairHub A (2 * c) ({c} : Finset ℕ) := by
+  intro c hcA hcpos hcg w hw w' hw' hsum
+  obtain ⟨h1, _⟩ := hcentral c hcA hcpos hcg w hw w' hw' hsum
+  exact Or.inl (by simp [h1])
+
 end Erdos881
