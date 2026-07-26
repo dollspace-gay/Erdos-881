@@ -3255,4 +3255,60 @@ theorem absolute_leaf_personal_target {A : Set ℕ} {N₀ : ℕ}
   · exact ⟨by omega, x, hx, z, hz, hxQ, hzQ, by omega⟩
   · exact ⟨by omega, x, hx, y, hy, hxQ, hyQ, by omega⟩
 
+/-- **Three-never-four for rotating envelope-hubs.**  A rep has
+three parts, so a b-avoiding rep meets at most three pairwise
+disjoint envelopes.  If one target carries hubs `insert b Qᵢ`
+through FOUR pairwise disjoint b-free envelopes, no rep can avoid
+b: the shared guardian owns the target outright ({b} is a full
+singleton hub).  Pure combinatorics — no freeness, no hfail. -/
+theorem four_disjoint_hubs_singleton {A : Set ℕ} {m b : ℕ}
+    {Q : Fin 4 → Finset ℕ}
+    (hdisj : ∀ i j, i ≠ j → Disjoint (Q i) (Q j))
+    (hb : ∀ i, b ∉ Q i)
+    (hhub : ∀ i, IsRepHub A m (insert b (Q i))) :
+    IsRepHub A m {b} := by
+  classical
+  intro x hx y hy z hz hsum
+  by_contra hmiss
+  push_neg at hmiss
+  obtain ⟨hxb, hyb, hzb⟩ := hmiss
+  have hxb' : x ≠ b := by simpa using hxb
+  have hyb' : y ≠ b := by simpa using hyb
+  have hzb' : z ≠ b := by simpa using hzb
+  -- each envelope is hit by one of the three parts
+  have hhit : ∀ i : Fin 4, x ∈ Q i ∨ y ∈ Q i ∨ z ∈ Q i := by
+    intro i
+    rcases hhub i x hx y hy z hz hsum with h | h | h
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact absurd h' hxb'
+      · exact Or.inl h'
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact absurd h' hyb'
+      · exact Or.inr (Or.inl h')
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · exact absurd h' hzb'
+      · exact Or.inr (Or.inr h')
+  -- x hits at most one envelope, likewise y, z: pick the hit part
+  -- for each of the four indices; two indices share a part; that
+  -- part lies in two disjoint envelopes — contradiction.
+  have hpick : ∀ i : Fin 4, ∃ p : Fin 3,
+      (if p = 0 then x else if p = 1 then y else z) ∈ Q i := by
+    intro i
+    rcases hhit i with h | h | h
+    · exact ⟨0, by simpa using h⟩
+    · exact ⟨1, by simpa using h⟩
+    · exact ⟨2, by simpa using h⟩
+  choose pk hpk using hpick
+  -- pigeonhole: 4 indices, 3 parts
+  have hcard : ¬Function.Injective pk := by
+    intro hinj
+    have := Fintype.card_le_of_injective pk hinj
+    simp at this
+  rw [Function.not_injective_iff] at hcard
+  obtain ⟨i, j, hpij, hij⟩ := hcard
+  have h1 := hpk i
+  have h2 := hpk j
+  rw [hpij] at h1
+  exact (Finset.disjoint_left.1 (hdisj i j hij)) h1 h2
+
 end Erdos881
