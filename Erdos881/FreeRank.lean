@@ -15988,4 +15988,34 @@ theorem endgame_width_band_local {A B : Set ℕ} {N₀ : ℕ}
     exact ⟨n, by omega, H, hHsub, hwide, hHhub, hHmin,
       committee_translate_freeness hHhub hHmin, hHwit⟩
 
+open Classical in
+/-- **Cylinder committees chain and cap.**  A committee of
+positive material from one residue class mod 2^m does both
+things to its target at once: every pair representation of n
+must touch the class (0-weld + hub), and n's entire pair
+wealth is capped at twice the committee size.  The workhorse
+for the same-set collision: when the width band's bounded horn
+runs inside the drain's own cylinder material, its poor street
+is simultaneously residue-chained to the tower's address. -/
+theorem cylinder_committee_chains {A : Set ℕ}
+    {m c n : ℕ} {H : Finset ℕ}
+    (h0 : 0 ∈ A)
+    (hHcyl : ∀ x ∈ H, x % 2 ^ m = c % 2 ^ m ∧ 0 < x)
+    (hhub : IsRepHub A n H) :
+    (∀ x ∈ A, ∀ y ∈ A, x + y = n →
+      x % 2 ^ m = c % 2 ^ m ∨ y % 2 ^ m = c % 2 ^ m) ∧
+    ((Finset.range (n + 1)).filter
+      (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * H.card := by
+  have h0H : 0 ∉ H := by
+    intro h
+    have := (hHcyl 0 h).2
+    omega
+  have hpair := pairHub_of_repHub h0 h0H hhub
+  constructor
+  · intro x hx y hy hxy
+    rcases hpair x hx y hy hxy with h | h
+    · exact Or.inl (hHcyl x h).1
+    · exact Or.inr (hHcyl y h).1
+  · exact repHub_caps_pair_wealth h0 h0H hhub
+
 end Erdos881
