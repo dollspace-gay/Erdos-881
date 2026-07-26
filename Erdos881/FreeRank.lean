@@ -4842,4 +4842,38 @@ theorem street_dichotomy_of_hfail {A : Set ℕ} {N₀ : ℕ}
     · exact mkdiff u₁ u₂ h proj₁ proj₂
     · exact mkdiff u₂ u₁ (by omega) proj₂ proj₁
 
+/-- **Difference blowup or infinite affine corners.**  Splitting
+the street dichotomy over all K: a counterexample either has
+UNBOUNDED difference multiplicity (for every K some positive
+offset δ carries K pairs x, x + δ ∈ A), or beyond every size
+threshold it produces affine corners — a K₀-fold blown point n
+with a pair street at the difference translate n + b₃ − b₂
+through arbitrarily large rotators.  Erdős–Turán closed the sum
+door; this closes the difference door except into affinity. -/
+theorem difference_blowup_or_affine_corners {A : Set ℕ}
+    {N₀ : ℕ} (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∀ K, ∃ δ, 1 ≤ δ ∧ ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A) ∨
+    (∃ K₀, ∀ S, ∃ n, (∃ V : Finset ℕ, K₀ ≤ V.card ∧
+        ∀ a ∈ V, a ∈ A ∧ ∃ x ∈ A, x + a = n) ∧
+      ∃ Q : Finset ℕ, RepFree A N₀ Q ∧ ∃ b₂ ∈ A, ∃ b₃ ∈ A,
+        S ≤ b₂ ∧ b₂ < b₃ ∧ ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
+          IsPairHub A s (insert b₃ Q)) := by
+  by_cases hdiff : ∀ K, ∃ δ, 1 ≤ δ ∧ ∃ V : Finset ℕ,
+      K ≤ V.card ∧ ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A
+  · exact Or.inl hdiff
+  · push_neg at hdiff
+    obtain ⟨K₀, hK₀⟩ := hdiff
+    refine Or.inr ⟨K₀, fun S => ?_⟩
+    rcases street_dichotomy_of_hfail h0 hcov hfail K₀ S with
+      h | h
+    · exfalso
+      obtain ⟨δ, hδ, V, hV, hVmem⟩ := h
+      obtain ⟨x, hxV, hximp⟩ := hK₀ δ hδ V hV
+      obtain ⟨hxA, hxδ⟩ := hVmem x hxV
+      exact hximp hxA hxδ
+    · exact h
+
 end Erdos881
