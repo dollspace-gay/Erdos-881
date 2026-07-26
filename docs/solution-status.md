@@ -1,3 +1,34 @@
+# THREE-ROOMS LAB + THE ERDOS-TURAN WALL (2026-07-26, night)
+
+LAB (scripts/probe_three_rooms.py): 27/27 deletions survive in
+adversarial R1 / doored-desert / total-desert worlds.  Decisive
+mechanism data: survival is ~always PAIR+0 (order-2 redundancy
+alone repairs the deletion); genuine triples are a <= 4%
+correction.  The deletions never even reach the regime where
+order 3's extra summand is needed.
+
+HONEST LAB LIMIT: the 'total desert' worlds are not faithful —
+greedy balanced-pair construction creates massive incidental
+r2.  A faithful desert needs BOUNDED r2 on a covering set,
+i.e. near-Erdos-Turan-violating structure — whose existence is
+the famous open problem.  The lab cannot build what nobody can.
+
+STRATEGIC READING: for the enemy's deletions to bite at all,
+it needs bounded-r2 behavior on massive target families (the
+lab can't reach it; Erdos-Turan says it may be impossible);
+and `poor_stream_of_hfail` proves hfail FORCES bounded-r2 on a
+cofinal stream — the enemy is REQUIRED to live at the edge of
+the Erdos-Turan wall.  Erdos 881 k=2's difficulty is thus
+precisely calibrated: its counterexamples inhabit the same
+regime whose nonexistence is the Erdos-Turan conjecture's
+content, but on cofinal streams rather than all targets — the
+oscillation theorem is exactly the formal wedge between the
+two.  A proof of 881 need not resolve Erdos-Turan: it needs
+only that BOUNDED-r2 STREAMS INSIDE AN UNBOUNDED-r2 COVERING
+WORLD cannot absorb every sparse deletion's failure demand —
+the width-band question again, now placed in the classical
+landscape.
+
 # RIGIDITY WITH TEAMS — TWENTIETH SUMMIT (2026-07-26, night)
 
 `endgame_rigidity_teams` (Endgame.lean, standard axioms): in
