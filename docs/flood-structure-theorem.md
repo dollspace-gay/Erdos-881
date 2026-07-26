@@ -470,3 +470,21 @@ deletion) or a sequence routed at some fixed arity.  The distance
 from the all-arities survivor to a full surviving deletion — its
 sumsets versus all late targets — is the cleanest remaining
 statement of the whole problem.
+
+## 20. THE ω-AVOIDANCE DICHOTOMY (21:22)
+
+**`omega_avoidance_dichotomy`** — nested Ramsey at EVERY arity
+against one fixed base range, diagonal extraction: every covering
+set contains an ascending positive sequence T (inside a positive
+family R) whose entire tail subset-sum semigroup either SURVIVES
+T's own deletion — every tail subset-sum of every arity keeps a
+triple representation avoiding R ⊇ T, so failing targets dodge
+the whole semigroup — or is ROUTED at some fixed arity.  With
+`survival_of_complete_avoiding`, Erdős 881 (k = 2) is now pinched
+between two verified statements:
+
+  the ω-diagonal gives self-avoidance at all arities but loses
+  density; completeness would finish the problem but Ramsey
+  thinning destroys it.
+
+DENSITY VERSUS HOMOGENEITY, as one pair of Lean theorems.

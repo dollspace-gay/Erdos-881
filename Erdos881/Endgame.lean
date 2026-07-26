@@ -293,4 +293,29 @@ theorem endgame_ramsey_trichotomy {A : Set ℕ} {N₀ : ℕ}
             x + y = T i + T j → x ∈ R ∨ y ∈ R)) :=
   ramsey_trichotomy_of_covering h0 hcov
 
+/-- **THE ω-DICHOTOMY + COMPLETENESS PINCH** (re-export).  The
+subset-sum semigroup of some ascending sequence survives its own
+deletion at every arity, or is routed at a fixed arity
+(`omega_avoidance_dichotomy`); a COMPLETE such sequence would be
+a surviving deletion outright (`survival_of_complete_avoiding`).
+The distance between the diagonal's thinness and completeness is
+the problem. -/
+theorem endgame_omega_pinch {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀) :
+    ∃ T : ℕ → ℕ, StrictMono T ∧ (∀ i, T i ∈ A) ∧
+      (∀ i, 0 < T i) ∧
+      ∃ R : Set ℕ, (∀ w ∈ R, w ∈ A ∧ 0 < w) ∧
+        (∀ i, T i ∈ R) ∧
+        ((∀ r : ℕ, ∀ k : Fin (r + 1) → ℕ, StrictMono k →
+            (∀ i, r + 1 ≤ k i) →
+            ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+              x ∉ R ∧ y ∉ R ∧ z ∉ R ∧
+              x + y + z = ∑ i, T (k i)) ∨
+         (∃ r : ℕ, ∀ k : Fin (r + 1) → ℕ, StrictMono k →
+            (∀ i, r + 1 ≤ k i) →
+            ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+              x + y + z = ∑ i, T (k i) →
+              x ∈ R ∨ y ∈ R ∨ z ∈ R)) :=
+  omega_avoidance_dichotomy hcov
+
 end Erdos881
