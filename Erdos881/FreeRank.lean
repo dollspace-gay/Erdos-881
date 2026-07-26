@@ -18430,4 +18430,92 @@ theorem sum_pairwise_inter_lower {U T : Finset ℕ}
   rw [h1, h2]
   exact sq_sum_le_card_mul_sum_sq
 
+open Classical in
+/-- **THE POPULAR DIFFERENCE LAW.**  Wealth forces repeated
+differences.  Let T be any family of targets below X, each
+carrying its symmetry set S M = {z ≤ M : z, M − z ∈ A}.  If
+every difference d ≤ X is realised at most D times in the basis
+(|{y ≤ X : y, y+d ∈ A}| ≤ D), then
+
+  (Σ_{M ∈ T} |S M|)² ≤ α · (Σ_{M ∈ T} |S M| + |T|²·D),
+                       α = |A ∩ [0,X]|.
+
+Contrapositive — the usable form: a family of wealthy targets
+whose symmetry mass beats α·(mass + |T|²·D) forces SOME
+difference to be realised more than D times.  Two reflections
+compose to a translation (`two_symmetries_translate`), and
+overlap is forced by counting (`sum_pairwise_inter_lower`):
+so wealth at many places is fixed-difference structure — the
+R1 room's supply, manufactured from wealth alone. -/
+theorem popular_difference_bound {A : Set ℕ} {X D : ℕ}
+    {T : Finset ℕ} (hTX : ∀ M ∈ T, M ≤ X)
+    (hD : ∀ d, ((Finset.range (X + 1)).filter
+      (fun y => y ∈ A ∧ (y + d) ∈ A)).card ≤ D) :
+    (∑ M ∈ T, ((Finset.range (M + 1)).filter
+        (fun z => z ∈ A ∧ (M - z) ∈ A)).card) ^ 2 ≤
+    ((Finset.range (X + 1)).filter (fun x => x ∈ A)).card *
+      ((∑ M ∈ T, ((Finset.range (M + 1)).filter
+        (fun z => z ∈ A ∧ (M - z) ∈ A)).card) +
+        T.card * T.card * D) := by
+  set U := (Finset.range (X + 1)).filter (fun x => x ∈ A) with hU
+  set S : ℕ → Finset ℕ := fun M => (Finset.range (M + 1)).filter
+    (fun z => z ∈ A ∧ (M - z) ∈ A) with hS
+  have hsub : ∀ M ∈ T, S M ⊆ U := by
+    intro M hM z hz
+    rw [hS, Finset.mem_filter, Finset.mem_range] at hz
+    rw [hU, Finset.mem_filter, Finset.mem_range]
+    have := hTX M hM
+    exact ⟨by omega, hz.2.1⟩
+  have hoff : ∀ M₁ ∈ T, ∀ M₂ ∈ T, M₁ ≠ M₂ →
+      ((S M₁) ∩ (S M₂)).card ≤ D := by
+    intro M₁ h₁ M₂ h₂ hne
+    have key : ∀ N₁ N₂, N₁ ∈ T → N₂ ∈ T → N₁ ≤ N₂ →
+        ((S N₁) ∩ (S N₂)).card ≤ D := by
+      intro N₁ N₂ hN₁ hN₂ hle
+      refine le_trans (two_symmetries_translate (A := A) hle) ?_
+      refine le_trans (Finset.card_le_card ?_) (hD (N₂ - N₁))
+      intro y hy
+      rw [Finset.mem_filter, Finset.mem_range] at hy
+      rw [Finset.mem_filter, Finset.mem_range]
+      have := hTX N₁ hN₁
+      exact ⟨by omega, hy.2⟩
+    rcases Nat.lt_or_ge M₁ M₂ with h | h
+    · exact key M₁ M₂ h₁ h₂ (by omega)
+    · rw [Finset.inter_comm]
+      exact key M₂ M₁ h₂ h₁ (by omega)
+  have hrow : ∀ M₁ ∈ T, ∑ M₂ ∈ T, ((S M₁) ∩ (S M₂)).card ≤
+      (S M₁).card + T.card * D := by
+    intro M₁ h₁
+    rw [← Finset.add_sum_erase T _ h₁, Finset.inter_self]
+    have hsum : ∑ M₂ ∈ T.erase M₁, ((S M₁) ∩ (S M₂)).card ≤
+        (T.erase M₁).card * D := by
+      rw [← smul_eq_mul]
+      refine Finset.sum_le_card_nsmul _ _ _ (fun M₂ hM₂ => ?_)
+      exact hoff M₁ h₁ M₂ (Finset.mem_of_mem_erase hM₂)
+        (Ne.symm (Finset.ne_of_mem_erase hM₂))
+    have hcard : (T.erase M₁).card ≤ T.card :=
+      Finset.card_le_card (Finset.erase_subset _ _)
+    have : (T.erase M₁).card * D ≤ T.card * D :=
+      Nat.mul_le_mul_right _ hcard
+    omega
+  have htot : ∑ M₁ ∈ T, ∑ M₂ ∈ T, ((S M₁) ∩ (S M₂)).card ≤
+      (∑ M ∈ T, (S M).card) + T.card * T.card * D := by
+    have h1 : ∑ M₁ ∈ T, ∑ M₂ ∈ T, ((S M₁) ∩ (S M₂)).card ≤
+        ∑ M₁ ∈ T, ((S M₁).card + T.card * D) :=
+      Finset.sum_le_sum (fun M₁ h₁ => hrow M₁ h₁)
+    have h2 : ∑ M₁ ∈ T, ((S M₁).card + T.card * D) =
+        (∑ M ∈ T, (S M).card) + T.card * (T.card * D) := by
+      rw [Finset.sum_add_distrib, Finset.sum_const, smul_eq_mul]
+    have h3 : T.card * (T.card * D) = T.card * T.card * D := by
+      ring
+    omega
+  have hcs := sum_pairwise_inter_lower (U := U) (T := T) (S := S) hsub
+  have hmul : U.card * ∑ M₁ ∈ T, ∑ M₂ ∈ T,
+      ((S M₁) ∩ (S M₂)).card ≤
+      U.card * ((∑ M ∈ T, (S M).card) + T.card * T.card * D) :=
+    Nat.mul_le_mul_left _ htot
+  show (∑ M ∈ T, (S M).card) ^ 2 ≤
+    U.card * ((∑ M ∈ T, (S M).card) + T.card * T.card * D)
+  exact le_trans hcs hmul
+
 end Erdos881

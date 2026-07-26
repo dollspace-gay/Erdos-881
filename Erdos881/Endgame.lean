@@ -1485,4 +1485,41 @@ theorem endgame_join {A : Set ℕ} {N₀ n : ℕ} {B : Finset ℕ}
         (fun x => x ∈ A ∧ (n - w - x) ∈ A)).card :=
   stall_forces_wealth hcov hB hn hunserved
 
+open Classical in
+/-- **THE POPULAR DIFFERENCE LAW** (re-export; twenty-ninth
+summit).  The chain from the join, completed: STALL → WEALTH →
+SYMMETRY → TRANSLATION → FIXED DIFFERENCE.
+
+A wealthy target's representation set is a large
+reflection-invariant subset of the basis (`wealthy_set_symm`).
+Reflecting about M₁/2 and then about M₂/2 is translation by
+d = M₂ − M₁, so every element shared by two wealthy targets'
+symmetry sets is one basis pair at difference d
+(`two_symmetries_translate`).  Many large sets in one universe
+must overlap (`sum_pairwise_inter_lower`, Cauchy–Schwarz).
+Hence, with α = |A ∩ [0,X]| and D a uniform bound on how often
+any difference is realised below X:
+
+  (Σ_{M ∈ T} |S M|)² ≤ α · (Σ_{M ∈ T} |S M| + |T|²·D).
+
+Contrapositive: a family of wealthy targets with enough total
+symmetry mass FORCES a difference realised more than D times —
+the fixed-difference supply of the R1 room, manufactured out of
+wealth alone.  Since `endgame_join` prices every stall of the
+constructive greedy in exactly that wealth, a counterexample
+that blocks the construction must pay in R1 structure, where
+`endgame_rigidity_teams` and the translation-room machinery
+already wait. -/
+theorem endgame_popular_difference {A : Set ℕ} {X D : ℕ}
+    {T : Finset ℕ} (hTX : ∀ M ∈ T, M ≤ X)
+    (hD : ∀ d, ((Finset.range (X + 1)).filter
+      (fun y => y ∈ A ∧ (y + d) ∈ A)).card ≤ D) :
+    (∑ M ∈ T, ((Finset.range (M + 1)).filter
+        (fun z => z ∈ A ∧ (M - z) ∈ A)).card) ^ 2 ≤
+    ((Finset.range (X + 1)).filter (fun x => x ∈ A)).card *
+      ((∑ M ∈ T, ((Finset.range (M + 1)).filter
+        (fun z => z ∈ A ∧ (M - z) ∈ A)).card) +
+        T.card * T.card * D) :=
+  popular_difference_bound hTX hD
+
 end Erdos881

@@ -1,3 +1,39 @@
+# THE POPULAR DIFFERENCE LAW — TWENTY-NINTH SUMMIT (2026-07-26)
+
+The chain from the join, completed and verified:
+
+  STALL → WEALTH → SYMMETRY → TRANSLATION → FIXED DIFFERENCE.
+
+- `endgame_join` / `stall_forces_wealth`: a stall of the
+  constructive greedy at scale n forces a target of pair wealth
+  ≳ α/k at a deleted-element offset.
+- `wealthy_set_symm`: a wealthy target's representation set is
+  reflection-invariant (x ↦ M − x) — wealth IS symmetry.
+- `two_symmetries_translate`: reflecting about M₁/2 then M₂/2
+  is translation by d = M₂ − M₁, so each element shared by two
+  wealthy symmetry sets is a basis pair at difference d.
+- `sum_pairwise_inter_lower`: Cauchy–Schwarz double count —
+  many large sets in one universe must overlap.
+- `endgame_popular_difference` (the summit): with
+  α = |A ∩ [0,X]| and D a uniform bound on how often any
+  difference is realised below X,
+    (Σ_{M∈T} |S M|)² ≤ α · (Σ_{M∈T} |S M| + |T|²·D).
+  Contrapositive: enough wealth mass FORCES a difference
+  realised more than D times.
+
+CONSEQUENCE: a counterexample that blocks the construction pays
+in R1 structure.  The stall's wealth is not merely a number —
+it is a symmetry, and symmetries compose into translations.
+The fixed-difference room (`endgame_rigidity_teams`,
+`translation_room_teams`, δ-coherent teams) is where the
+payment lands, and it is the campaign's most developed room.
+
+OPEN LINK: the difference produced is per-scale (d = M₂ − M₁
+depends on the wealthy pair), while the R1 machinery consumes
+one difference realised cofinally.  Closing that gap —
+pigeonholing d across scales, or generalising the team
+machinery to per-scale differences — is the next step.
+
 # THE JOIN — TWENTY-EIGHTH SUMMIT (2026-07-26)
 
 `endgame_join` / `stall_forces_wealth` (Endgame.lean, standard
