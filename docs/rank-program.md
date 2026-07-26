@@ -427,3 +427,22 @@ central world's order-3 residue is structurally two-channelled,
 and a central-branch kill must close parity-escape and
 midpoint-gap simultaneously.  Both channels feed the robustness
 mechanism (Cantor's min-R growth lives here).
+
+## THE CANONICAL DELETION PROGRAM (22:28; closing design note)
+
+Parity-escape triples always carry an odd part, so the CANONICAL
+deletion B_odd = A ∩ (2ℕ+1) kills that channel wholesale; the
+enemy must then fail on the all-even sector alone.  Generalizing:
+residue-class deletions B_{r mod m} are ENEMY-INDEPENDENT — the
+adaptive game can open with the full grid {B_{r mod m}} and the
+enemy owes cofinal failures against every one: a profinite
+obligation grid.  Each obligation constrains a different
+congruence sector, and the sectors interlock (coverage couples
+residues additively).  This is the alignment battle line
+weaponized on the deletion side: the enemy must be misaligned
+with every congruence structure while its failure schedule
+against the grid IS a congruence-indexed structure.  First
+concrete sub-question for next session: can the enemy fail
+B_odd and B_even-style deletions simultaneously with all its
+other duties in a finite window?  (Lab: extend the ladder-world
+builder with the grid obligations and measure strain.)
