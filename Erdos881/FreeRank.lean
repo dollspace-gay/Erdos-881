@@ -4184,4 +4184,29 @@ theorem four_shell_pair_conflict_impossible {A : Set ℕ}
     hij (Fin.succ_injective 3 h)
   exact (Finset.disjoint_left.1 (hdisj i.succ j.succ hne)) h1 h2
 
+/-- Duty targets are fragile: a level-k duty target admits at
+most |Q k| + 1 pairwise disjoint representations.  Contrapositive:
+windows whose targets are all (|Q k| + 2)-robust repel every
+level-k duty — the first placement constraint on the ledger. -/
+theorem duty_targets_fragile {A : Set ℕ} {N₀ : ℕ}
+    {Q : ℕ → Finset ℕ} {k b m K : ℕ}
+    (hhub : IsRepHub A m (insert b (Q k)))
+    (hrob : HasDisjointTripleReps A m K) :
+    K ≤ (Q k).card + 1 := by
+  have h1 := disjoint_reps_le_hub_card hhub hrob
+  have h2 := Finset.card_insert_le b (Q k)
+  omega
+
+/-- Conflict targets are fragile: a conflict target of the shell
+pair (j,k) admits at most |Q j| + |Q k| pairwise disjoint
+representations.  Robust windows repel shell conflicts too. -/
+theorem conflict_targets_fragile {A : Set ℕ} {N₀ : ℕ}
+    {Q : ℕ → Finset ℕ} {j k m K : ℕ}
+    (hhub : IsRepHub A m (Q j ∪ Q k))
+    (hrob : HasDisjointTripleReps A m K) :
+    K ≤ (Q j).card + (Q k).card := by
+  have h1 := disjoint_reps_le_hub_card hhub hrob
+  have h2 := Finset.card_union_le (Q j) (Q k)
+  omega
+
 end Erdos881
