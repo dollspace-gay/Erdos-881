@@ -446,3 +446,16 @@ concrete sub-question for next session: can the enemy fail
 B_odd and B_even-style deletions simultaneously with all its
 other duties in a finite window?  (Lab: extend the ladder-world
 builder with the grid obligations and measure strain.)
+
+## GRID STRAIN LAB (22:37; probe_grid_strain.py) — final lab
+
+Single-class obligations are CHEAP: two-scale and Cantor worlds
+both carry hundreds of naturally class-obligated targets
+in-window (596 odd-obligated each; 794–1086 for mod 3).  The
+canonical grid's pressure therefore cannot come from any single
+obligation — only from the cap-forced interaction across all
+moduli at once (the ≤3-per-modulus spread crossed with the
+per-modulus narrow/wide alignment dichotomy).  Next session's
+grid work should target the INTERACTION term directly: pick two
+moduli with wide rows and measure whether their spread-streams
+can share targets consistently with the 18-cap.
