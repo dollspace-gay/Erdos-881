@@ -15337,4 +15337,61 @@ theorem failing_target_in_sumset {A D : Set ℕ} {N₀ n : ℕ}
       exact hfailn ![x, y, 0] hmem
         (by simpa [Fin.sum_univ_three] using hsum0)
 
+open Classical in
+/-- **THE THREE-DELETION EXCLUSION.**  A covered target cannot
+fail against three pairwise disjoint 0-free deletions at once:
+its guaranteed pair (x, y, 0-pad) offers only TWO slots, and
+three disjoint sets cannot all be hit by two elements.  So the
+enemy's failure streams for disjoint deletions are 3-wise
+disjoint beyond the covering threshold — every new disjoint
+sparse deletion demands its own fresh cofinal failure stream,
+pairwise-overlap at most.  The simultaneous bounded-hub demand
+is load-balanced across infinitely many essentially disjoint
+streams: the quantitative form of the enemy's last liberty. -/
+theorem three_deletion_exclusion {A D₁ D₂ D₃ : Set ℕ}
+    {N₀ n : ℕ}
+    (h0A : 0 ∈ A) (h01 : 0 ∉ D₁) (h02 : 0 ∉ D₂) (h03 : 0 ∉ D₃)
+    (hd12 : ∀ x, x ∈ D₁ → x ∉ D₂)
+    (hd13 : ∀ x, x ∈ D₁ → x ∉ D₃)
+    (hd23 : ∀ x, x ∈ D₂ → x ∉ D₃)
+    (hcov : PairCovers A N₀) (hn : N₀ ≤ n)
+    (hf1 : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D₁) →
+      ∑ i, v i ≠ n)
+    (hf2 : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D₂) →
+      ∑ i, v i ≠ n)
+    (hf3 : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D₃) →
+      ∑ i, v i ≠ n) :
+    False := by
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hn
+  have key : ∀ (D : Set ℕ), 0 ∉ D →
+      (∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D) → ∑ i, v i ≠ n) →
+      x ∈ D ∨ y ∈ D := by
+    intro D h0D hfD
+    by_cases hxD : x ∈ D
+    · exact Or.inl hxD
+    · by_cases hyD : y ∈ D
+      · exact Or.inr hyD
+      · exfalso
+        have hmem : ∀ i, (![x, y, 0] : Fin 3 → ℕ) i ∈
+            A \ D := by
+          intro i
+          match i with
+          | 0 => exact ⟨hx, hxD⟩
+          | 1 => exact ⟨hy, hyD⟩
+          | 2 => exact ⟨h0A, h0D⟩
+        have hsum0 : x + y + 0 = n := by omega
+        exact hfD ![x, y, 0] hmem
+          (by simpa [Fin.sum_univ_three] using hsum0)
+  rcases key D₁ h01 hf1 with h1 | h1 <;>
+    rcases key D₂ h02 hf2 with h2 | h2 <;>
+    rcases key D₃ h03 hf3 with h3 | h3
+  · exact hd12 x h1 h2
+  · exact hd12 x h1 h2
+  · exact hd13 x h1 h3
+  · exact hd23 y h2 h3
+  · exact hd23 x h2 h3
+  · exact hd13 y h1 h3
+  · exact hd12 y h1 h2
+  · exact hd12 y h1 h2
+
 end Erdos881

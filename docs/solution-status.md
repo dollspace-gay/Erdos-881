@@ -1,3 +1,23 @@
+# THE THREE-DELETION EXCLUSION (2026-07-26)
+
+`three_deletion_exclusion` (standard axioms): a covered target
+cannot fail against three pairwise disjoint 0-free deletions
+simultaneously — the 0-padded covering pair has two slots,
+three disjoint sets need three.  CONSEQUENCE: for any splitting
+of the mixing world into disjoint sparse deletions, the enemy
+must run pairwise-overlapping-at-most, 3-wise disjoint COFINAL
+failure streams — one per deletion.  Splitting into k disjoint
+deletions forces k cofinal streams with 3-wise empty
+intersections; the failure machinery must be spread across
+unboundedly many essentially independent target families, each
+poor, residue-chained, and sumset-confined (D_i + A).
+
+The unified core's quantitative form: the enemy's failure
+budget is one pair per target, two slots, against unboundedly
+many disjoint demands.  Every additional structure law on
+WHERE streams can live (residue, sumset, poverty) now
+multiplies across the stream family.
+
 # BYPASS AUDIT: refuted as stated; the true gap located (2026-07-26)
 
 LAB (scripts/probe_bypass.py): class-chained targets (every
