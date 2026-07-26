@@ -17420,4 +17420,124 @@ theorem mathlib_energy_floor {A : Set ℕ} (n : ℕ) :
     _ ≤ (2 * n + 1) * Finset.addEnergy Af Af :=
       Nat.mul_le_mul_right _ hcard
 
+open Classical Pointwise in
+/-- **The upper-half energy floor** (cascade entry).  The
+Mathlib energy floor with the energy split at the window
+boundary: α⁴ ≤ (2n+1)·(windowΣ + upperΣ), where windowΣ is the
+campaign's windowed second moment on [0,n] and upperΣ is the
+sumset energy above n.  Whenever the window's second moment is
+capped (poor-dense regimes), the demand transfers to the upper
+half — which is the next scale's window: the energy cascade's
+first rung, formal. -/
+theorem energy_upper_half_floor {A : Set ℕ} (n : ℕ) :
+    (((Finset.range (n + 1)).filter
+      (fun x => x ∈ A)).card) ^ 2 *
+    (((Finset.range (n + 1)).filter
+      (fun x => x ∈ A)).card) ^ 2 ≤
+    (2 * n + 1) *
+      ((Finset.range (n + 1)).sum (fun m =>
+        ((Finset.range (m + 1)).filter
+          (fun y => y ∈ A ∧ (m - y) ∈ A)).card ^ 2) +
+      ((((Finset.range (n + 1)).filter (fun x => x ∈ A)) +
+        ((Finset.range (n + 1)).filter (fun x => x ∈ A))).filter
+          (fun a => n < a)).sum (fun a =>
+        (((((Finset.range (n + 1)).filter (fun x => x ∈ A)) ×ˢ
+           ((Finset.range (n + 1)).filter (fun x => x ∈ A))).filter
+          (fun xy => xy.1 + xy.2 = a)).card) ^ 2)) := by
+  set Af := (Finset.range (n + 1)).filter (fun x => x ∈ A)
+    with hAf
+  have hfloor := mathlib_energy_floor (A := A) n
+  have hE : Finset.addEnergy Af Af =
+      (Af + Af).sum (fun a =>
+        ((Af ×ˢ Af).filter
+          (fun xy => xy.1 + xy.2 = a)).card ^ 2) := by
+    rw [Finset.addEnergy_eq_sum_sq']
+  have hsplit := Finset.sum_filter_add_sum_filter_not
+    (Af + Af) (fun a => a ≤ n)
+    (fun a => ((Af ×ˢ Af).filter
+      (fun xy => xy.1 + xy.2 = a)).card ^ 2)
+  have hfiber : ∀ m, m ≤ n →
+      ((Af ×ˢ Af).filter
+        (fun xy => xy.1 + xy.2 = m)).card =
+      ((Finset.range (m + 1)).filter
+        (fun y => y ∈ A ∧ (m - y) ∈ A)).card := by
+    intro m hm
+    apply Finset.card_bij' (fun xy _ => xy.1)
+      (fun x _ => (x, m - x))
+    · intro xy hxy
+      rw [Finset.mem_filter, Finset.mem_product] at hxy
+      obtain ⟨⟨h1, h2⟩, h3⟩ := hxy
+      rw [hAf, Finset.mem_filter, Finset.mem_range] at h1
+      rw [hAf, Finset.mem_filter, Finset.mem_range] at h2
+      rw [Finset.mem_filter, Finset.mem_range]
+      refine ⟨by omega, h1.2, ?_⟩
+      have he : m - xy.1 = xy.2 := by omega
+      rw [he]
+      exact h2.2
+    · intro x hx
+      rw [Finset.mem_filter, Finset.mem_range] at hx
+      rw [Finset.mem_filter, Finset.mem_product]
+      refine ⟨⟨?_, ?_⟩, by omega⟩
+      · rw [hAf, Finset.mem_filter, Finset.mem_range]
+        exact ⟨by omega, hx.2.1⟩
+      · rw [hAf, Finset.mem_filter, Finset.mem_range]
+        exact ⟨by omega, hx.2.2⟩
+    · intro xy hxy
+      rw [Finset.mem_filter, Finset.mem_product] at hxy
+      obtain ⟨⟨h1, h2⟩, h3⟩ := hxy
+      have he : m - xy.1 = xy.2 := by omega
+      exact Prod.ext rfl he
+    · intro x hx
+      rfl
+  have hlow : ((Af + Af).filter (fun a => a ≤ n)).sum
+      (fun a => ((Af ×ˢ Af).filter
+        (fun xy => xy.1 + xy.2 = a)).card ^ 2) ≤
+      (Finset.range (n + 1)).sum (fun m =>
+        ((Finset.range (m + 1)).filter
+          (fun y => y ∈ A ∧ (m - y) ∈ A)).card ^ 2) := by
+    have hcongr : ((Af + Af).filter (fun a => a ≤ n)).sum
+        (fun a => ((Af ×ˢ Af).filter
+          (fun xy => xy.1 + xy.2 = a)).card ^ 2) =
+        ((Af + Af).filter (fun a => a ≤ n)).sum
+        (fun a => ((Finset.range (a + 1)).filter
+          (fun y => y ∈ A ∧ (a - y) ∈ A)).card ^ 2) := by
+      apply Finset.sum_congr rfl
+      intro a ha
+      rw [Finset.mem_filter] at ha
+      rw [hfiber a ha.2]
+    rw [hcongr]
+    apply Finset.sum_le_sum_of_subset
+    intro a ha
+    rw [Finset.mem_filter] at ha
+    rw [Finset.mem_range]
+    omega
+  have hupper_eq : ((Af + Af).filter (fun a => ¬a ≤ n)).sum
+      (fun a => ((Af ×ˢ Af).filter
+        (fun xy => xy.1 + xy.2 = a)).card ^ 2) =
+      ((Af + Af).filter (fun a => n < a)).sum
+      (fun a => ((Af ×ˢ Af).filter
+        (fun xy => xy.1 + xy.2 = a)).card ^ 2) := by
+    apply Finset.sum_congr
+    · apply Finset.filter_congr
+      intro a ha
+      constructor
+      · intro h
+        omega
+      · intro h
+        omega
+    · intro a ha
+      rfl
+  have hEle : Finset.addEnergy Af Af ≤
+      (Finset.range (n + 1)).sum (fun m =>
+        ((Finset.range (m + 1)).filter
+          (fun y => y ∈ A ∧ (m - y) ∈ A)).card ^ 2) +
+      ((Af + Af).filter (fun a => n < a)).sum
+        (fun a => ((Af ×ˢ Af).filter
+          (fun xy => xy.1 + xy.2 = a)).card ^ 2) := by
+    rw [hE, ← hsplit, hupper_eq]
+    omega
+  calc Af.card ^ 2 * Af.card ^ 2 ≤
+      (2 * n + 1) * Finset.addEnergy Af Af := hfloor
+    _ ≤ (2 * n + 1) * _ := Nat.mul_le_mul_left _ hEle
+
 end Erdos881
