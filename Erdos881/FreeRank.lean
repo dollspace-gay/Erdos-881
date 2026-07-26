@@ -17065,4 +17065,57 @@ theorem failing_avoids_wealthy_translates {A D : Set ℕ}
   rw [he] at hcap
   omega
 
+open Classical in
+/-- **Served targets never fail.**  One wealthy server —
+w ≤ n wealthy beyond the deletion cap with n − w surviving in
+the basis — is enough to save n: the server's own clean pair
+plus the surviving translate part make a surviving triple.
+Contrapositive of the wealthy-translate wall, stated as the
+survival criterion of the completeness reduction. -/
+theorem served_targets_never_fail {A D : Set ℕ} {n : ℕ}
+    (hserve : ∃ w, w ≤ n ∧ (n - w) ∈ A ∧ (n - w) ∉ D ∧
+      2 * ((Finset.range (n + 1)).filter
+        (fun d => d ∈ D)).card + 2 <
+      ((Finset.range (w + 1)).filter
+        (fun y => y ∈ A ∧ (w - y) ∈ A)).card) :
+    ¬(∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D) →
+      ∑ i, v i ≠ n) := by
+  intro hfailn
+  obtain ⟨w, hwn, hxA, hxD, hwealthy⟩ := hserve
+  rcases failing_avoids_wealthy_translates hfailn hwn
+    hwealthy with h | h
+  · exact h hxA
+  · exact hxD h
+
+open Classical in
+/-- **THE SERVICE BREAKDOWN LAW.**  Every counterexample must
+break sumset completeness against every deletion: for each
+infinite B ⊆ A there are cofinally many targets n at which
+EVERY wealthy target w ≤ n (wealth above the deletion cap) has
+a dead translate — n − w outside the basis or deleted.  The
+completeness reduction in theorem form: Erdős 881 (k = 2) is
+exactly the impossibility of running this total breakdown
+forever against all deletions at once, and every lab world
+ever built fails to run it against a single one. -/
+theorem service_breakdown_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∀ B ⊆ A, B.Infinite → ∀ N, ∃ n, N ≤ n ∧
+      ∀ w, w ≤ n →
+        2 * ((Finset.range (n + 1)).filter
+          (fun d => d ∈ B)).card + 2 <
+        ((Finset.range (w + 1)).filter
+          (fun y => y ∈ A ∧ (w - y) ∈ A)).card →
+        (n - w) ∉ A ∨ (n - w) ∈ B := by
+  intro B hBA hBinf N
+  have hnot := hfail B hBA hBinf
+  simp only [IsExactTupleAsymptoticBasis, not_exists,
+    not_forall] at hnot
+  obtain ⟨n, hn, hnrep⟩ := hnot N
+  have hfailn : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ B) →
+      ∑ i, v i ≠ n := fun v hv hs => hnrep v ⟨hv, hs⟩
+  exact ⟨n, hn, fun w hwn hwealthy =>
+    failing_avoids_wealthy_translates hfailn hwn hwealthy⟩
+
 end Erdos881

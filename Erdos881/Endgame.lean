@@ -1335,4 +1335,30 @@ theorem endgame_master_law {A : Set ℕ} {N₀ : ℕ}
         (fun x => x ∈ A)).card) :=
   the_master_law h0 hcov hfail
 
+open Classical in
+/-- **THE SERVICE BREAKDOWN LAW** (re-export; twenty-fourth
+summit — the reduction in theorem form).  Every counterexample
+must break sumset completeness against every deletion: for
+each infinite B ⊆ A there are cofinally many targets n at
+which EVERY wealthy target w ≤ n has a dead translate (n − w
+outside the basis or deleted).  One wealthy server anywhere
+saves the target (`served_targets_never_fail`).  Erdős 881
+(k = 2) is exactly the impossibility of running this total
+service breakdown forever against all deletions at once —
+against oscillation, rigidity, density, the dodge, forced
+mixing, and the width law; every lab world ever built fails
+to run it against even one deletion. -/
+theorem endgame_service_breakdown {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∀ B ⊆ A, B.Infinite → ∀ N, ∃ n, N ≤ n ∧
+      ∀ w, w ≤ n →
+        2 * ((Finset.range (n + 1)).filter
+          (fun d => d ∈ B)).card + 2 <
+        ((Finset.range (w + 1)).filter
+          (fun y => y ∈ A ∧ (w - y) ∈ A)).card →
+        (n - w) ∉ A ∨ (n - w) ∈ B :=
+  service_breakdown_of_hfail h0 hcov hfail
+
 end Erdos881
