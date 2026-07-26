@@ -7403,4 +7403,27 @@ theorem central_branch_hmin {A : Set ℕ} {g₀ : ℕ}
   obtain ⟨hxb, hyb⟩ := hcentral b hbA hbpos hbg x hx y hy hxy
   exact hxB (hxb ▸ hbB)
 
+/-- **The central branch is progression-free.**  Centrality of
+doubles is exactly midpoint-freeness: no two distinct basis
+elements average to a positive basis element other than the
+router.  Hence the central enemy carries no nontrivial 3-term
+arithmetic progression whose middle is a positive non-router
+element — it is a Salem–Spencer-type object, living where
+Behrend density (≫ √n) still permits covering.  Cantor is
+midpoint-free, confirming the classification. -/
+theorem central_branch_no_three_AP {A : Set ℕ} {g₀ : ℕ}
+    (hcentral : ∀ c ∈ A, 0 < c → c ≠ g₀ → ∀ w ∈ A, ∀ w' ∈ A,
+      w + w' = 2 * c → w = c ∧ w' = c) :
+    ∀ a d, 0 < d → a ∈ A → a + d ∈ A → a + 2 * d ∈ A →
+      a + d = g₀ ∨ a + d = 0 := by
+  intro a d hd haA hadA ha2dA
+  by_contra hno
+  push_neg at hno
+  obtain ⟨hg, h0⟩ := hno
+  have hpos : 0 < a + d := by omega
+  have hsum : a + (a + 2 * d) = 2 * (a + d) := by omega
+  obtain ⟨h1, h2⟩ := hcentral (a + d) hadA hpos hg
+    a haA (a + 2 * d) ha2dA hsum
+  omega
+
 end Erdos881
