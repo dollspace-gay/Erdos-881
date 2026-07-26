@@ -13066,4 +13066,66 @@ theorem r2_channel_blowup {A : Set ℕ} {N₀ : ℕ}
         (v - x) % 2 = 1))
   omega
 
+open Classical in
+/-- **The ee-channel descends.**  Even-even pairs of an even
+target halve into genuine pairs of the half-world
+H₀ = {y : 2y ∈ A} at the half target: the channel count injects
+downstairs.  The tree descent's counting edge, concrete. -/
+theorem ee_channel_descends {A : Set ℕ} {v : ℕ}
+    (hv : v % 2 = 0) :
+    ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A ∧ x % 2 = 0 ∧
+        (v - x) % 2 = 0)).card ≤
+    ((Finset.range (v / 2 + 1)).filter
+      (fun y => 2 * y ∈ A ∧ 2 * (v / 2 - y) ∈ A)).card := by
+  apply Finset.card_le_card_of_injOn (fun x => x / 2)
+  · intro x hx
+    simp only [Finset.mem_coe, Finset.mem_filter,
+      Finset.mem_range] at hx
+    obtain ⟨hxr, hxA, hxpA, hxe, hxpe⟩ := hx
+    simp only [Finset.mem_coe, Finset.mem_filter,
+      Finset.mem_range]
+    refine ⟨by omega, ?_, ?_⟩
+    · have h1 : 2 * (x / 2) = x := by omega
+      rw [h1]
+      exact hxA
+    · have h1 : 2 * (v / 2 - x / 2) = v - x := by omega
+      rw [h1]
+      exact hxpA
+  · intro a ha b hb hab
+    simp only [Finset.mem_coe, Finset.mem_filter,
+      Finset.mem_range] at ha hb
+    obtain ⟨_, _, _, hae, _⟩ := ha
+    obtain ⟨_, _, _, hbe, _⟩ := hb
+    have hab' : a / 2 = b / 2 := hab
+    omega
+
+open Classical in
+/-- **The ee-blowup descends.**  If the even-even channel
+carries the unbounded pair counts, the HALF-WORLD inherits
+unbounded pair counts cofinally: the enemy's riches provably
+move one level down the 2-adic tree. -/
+theorem ee_blowup_descends {A : Set ℕ}
+    (hee : ∀ C N, ∃ v, N ≤ v ∧ C ≤
+      ((Finset.range (v + 1)).filter
+        (fun x => x ∈ A ∧ (v - x) ∈ A ∧ x % 2 = 0 ∧
+          (v - x) % 2 = 0)).card) :
+    ∀ C N, ∃ w, N ≤ w ∧ C ≤
+      ((Finset.range (w + 1)).filter
+        (fun y => 2 * y ∈ A ∧ 2 * (w - y) ∈ A)).card := by
+  intro C N
+  obtain ⟨v, hvN, hvC⟩ := hee (C + 1) (2 * N)
+  have hvne : ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A ∧ x % 2 = 0 ∧
+        (v - x) % 2 = 0)).Nonempty :=
+    Finset.card_pos.1 (by omega)
+  obtain ⟨x₀, hx₀⟩ := hvne
+  rw [Finset.mem_filter] at hx₀
+  have hveven : v % 2 = 0 := by
+    obtain ⟨hr, _, _, he, hpe⟩ := hx₀
+    rw [Finset.mem_range] at hr
+    omega
+  have hdesc := ee_channel_descends (A := A) hveven
+  exact ⟨v / 2, by omega, by omega⟩
+
 end Erdos881
