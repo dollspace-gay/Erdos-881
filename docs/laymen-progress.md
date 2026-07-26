@@ -513,3 +513,18 @@ burden of duties.
 An encircled fortress, one gate, a canonical board, and a
 two-pronged fork where both prongs are narrow.  That is where
 the night ends and tomorrow begins.
+
+## 2026-07-25, the closing minutes — Width or rank
+
+The last theorems of the night put the enemy in a vice built
+from its own spine.  We take the smallest sealing squad the
+enemy can field at each point of its canonical thread, and prove
+the squads' shapes betray it either way: if the squads grow
+without bound, the enemy has been forced to hand us harmless
+handfuls of every size — one entire wing of its existence
+collapses.  If the squads stay small, then at EVERY point of its
+own spine, forever, it must field a narrow squad of at most L
+consecutive spine keys — squads whose doors we count, whose
+positions we tax, whose reuse we cap, and whose pattern repeats
+inside every thinning of the thread, all the way down.  Grow or
+march — either way, the enemy now answers to its own keys.
