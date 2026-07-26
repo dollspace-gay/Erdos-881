@@ -459,3 +459,23 @@ per-modulus narrow/wide alignment dichotomy).  Next session's
 grid work should target the INTERACTION term directly: pick two
 moduli with wide rows and measure whether their spread-streams
 can share targets consistently with the 18-cap.
+
+## THE GRID'S LIMIT (22:45; closing analysis)
+
+Tested and closed: "every covering set is grid-spread at some
+modulus" is FALSE as a uniform claim.  An all-aligned enemy
+survives by THRESHOLD RACING — letting the alignment threshold
+X_m grow so fast that at every window only a slow-growing set of
+moduli is active, keeping the CRT-joint class count useless
+against the √-covering bound.  This is the same staggering that
+defeats every static counting family in the campaign, now
+verified to defeat the grid too.  FINAL SHAPE OF THE NIGHT'S
+LESSON: every static interrogation (windows, streets, grids,
+ledgers) is beaten by racing; the only devices that survive
+racing are self-referential ones that consume the enemy's own
+choices — the Nash-Williams spine (built FROM the enemy's
+shells), the game board (stalls ON the enemy's own canonical
+material), and the completeness pinch (obligations against every
+family INCLUDING adaptively chosen ones).  The final proof, if
+881 is positive, lives there; the racing-proof formal frame is
+the spine game.
