@@ -6979,4 +6979,132 @@ theorem lockstep_columns {A : Set ℕ} {N₀ : ℕ}
     ((Q (σ (T + t))).sort (· ≤ ·)).getD (k : ℕ) 0,
     hymono, hymem, honto⟩
 
+/-- Fork with guardianship carried through (primed form of
+`spine_rank_or_lockstep`). -/
+theorem spine_rank_or_lockstep' {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
+      RepFree A N₀ P ∧ c ≤ P.card) ∨
+    (∃ Q : ℕ → Finset ℕ, ∃ σ : ℕ ↪o ℕ, ∃ T s : ℕ,
+      (∀ k, RepFree A N₀ (Q k)) ∧
+      (∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h) ∧
+      (∀ j k, j < k → Disjoint (Q j) (Q k)) ∧
+      (∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
+        ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) ∧
+      1 ≤ s ∧
+      (∀ t, T ≤ t → (Q (σ t)).card = s) ∧
+      (∀ t, T ≤ t → List.Forall₂ (· ≤ ·)
+        ((Q (σ t)).sort (· ≤ ·))
+        ((Q (σ (t + 1))).sort (· ≤ ·)))) := by
+  classical
+  obtain ⟨Q, hne, hmem, hfree, hdisj, hguard, σ, hσ⟩ :=
+    shell_higman_chain h0 hcov hanchor hfail
+  have hmono : ∀ t t', t ≤ t' →
+      (Q (σ t)).card ≤ (Q (σ t')).card := by
+    intro t t' htt
+    obtain ⟨l', hf₂, hsub⟩ := List.sublistForall₂_iff.1
+      (hσ t t' htt)
+    have h1 : ((Q (σ t)).sort (· ≤ ·)).length = l'.length :=
+      hf₂.length_eq
+    have h2 := hsub.length_le
+    rw [Finset.length_sort] at h1
+    have h3 : ((Q (σ t')).sort (· ≤ ·)).length =
+        (Q (σ t')).card := Finset.length_sort _
+    omega
+  by_cases hunb : ∀ c, ∃ t, c ≤ (Q (σ t)).card
+  · left
+    intro c
+    obtain ⟨t, hc⟩ := hunb c
+    exact ⟨Q (σ t), hmem _, hfree _, hc⟩
+  · right
+    push_neg at hunb
+    obtain ⟨c₀, hc₀⟩ := hunb
+    have hstab : ∃ T, ∀ t, T ≤ t →
+        (Q (σ t)).card = (Q (σ T)).card := by
+      by_contra hno
+      push_neg at hno
+      have hstep : ∀ T, ∃ t, T ≤ t ∧
+          (Q (σ T)).card < (Q (σ t)).card := by
+        intro T
+        obtain ⟨t, hTt, hne'⟩ := hno T
+        have := hmono T t hTt
+        exact ⟨t, hTt, by omega⟩
+      choose nxt hnxt₁ hnxt₂ using hstep
+      obtain ⟨g, hg0, hgs⟩ : ∃ g : ℕ → ℕ, g 0 = 0 ∧
+          ∀ k, g (k + 1) = nxt (g k) :=
+        ⟨fun k => Nat.rec 0 (fun _ p => nxt p) k, rfl,
+          fun _ => rfl⟩
+      have hclimb : ∀ k, k ≤ (Q (σ (g k))).card := by
+        intro k
+        induction k with
+        | zero => omega
+        | succ k ih =>
+          have h1 := hnxt₂ (g k)
+          rw [hgs]
+          omega
+      have := hclimb c₀
+      have := hc₀ (g c₀)
+      omega
+    obtain ⟨T, hT⟩ := hstab
+    refine ⟨Q, σ, T, (Q (σ T)).card, hfree, hmem, hdisj, hguard,
+      ?_, hT, ?_⟩
+    · have := hne (σ T)
+      have := Finset.card_pos.2 this
+      omega
+    · intro t hTt
+      obtain ⟨l', hf₂, hsub⟩ := List.sublistForall₂_iff.1
+        (hσ t (t + 1) (by omega))
+      have h1 : ((Q (σ t)).sort (· ≤ ·)).length = l'.length :=
+        hf₂.length_eq
+      have h2 : ((Q (σ t)).sort (· ≤ ·)).length =
+          (Q (σ t)).card := Finset.length_sort _
+      have h3 : ((Q (σ (t + 1))).sort (· ≤ ·)).length =
+          (Q (σ (t + 1))).card := Finset.length_sort _
+      have h4 := hT t hTt
+      have h5 := hT (t + 1) (by omega)
+      have hleq : l' = (Q (σ (t + 1))).sort (· ≤ ·) := by
+        apply hsub.eq_of_length_le
+        omega
+      rw [← hleq]
+      exact hf₂
+
+/-- **The one-lane clique.**  If the lockstep width is s = 1 the
+spine shells are singletons {x t}, and hierarchical guardianship
+makes every LATER spine value a guardian of every EARLIER
+singleton shell: each pair of one-lane spine values is a full
+two-element hub somewhere.  A single-lane enemy carries an
+infinite d = 1 crystal clique on canonical material. -/
+theorem lockstep_one_lane_clique {A : Set ℕ} {N₀ : ℕ}
+    {Q : ℕ → Finset ℕ} {σ : ℕ ↪o ℕ} {T : ℕ} {x : ℕ → ℕ}
+    (hmem : ∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h)
+    (hdisj : ∀ j k, j < k → Disjoint (Q j) (Q k))
+    (hguard : ∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
+      ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k)))
+    (hsingle : ∀ t, T ≤ t → Q (σ t) = {x t}) :
+    ∀ t t', T ≤ t → t < t' →
+      ∃ m, N₀ ≤ m ∧ IsRepHub A m ({x t', x t} : Finset ℕ) := by
+  intro t t' hTt htt
+  have hx'mem : x t' ∈ Q (σ t') := by
+    rw [hsingle t' (by omega)]
+    exact Finset.mem_singleton_self _
+  have hx'A := (hmem _ _ hx'mem).1
+  have hx'pos := (hmem _ _ hx'mem).2
+  have havoid : ∀ j, j ≤ σ t → x t' ∉ Q j := by
+    intro j hj hmem'
+    have hσlt : σ t < σ t' := σ.strictMono htt
+    have hjlt : j < σ t' := by omega
+    exact (Finset.disjoint_left.1 (hdisj j (σ t') hjlt))
+      hmem' hx'mem
+  obtain ⟨m, hm, hhub⟩ := hguard (σ t) (x t') hx'A hx'pos havoid
+  refine ⟨m, hm, ?_⟩
+  have h1 : insert (x t') (Q (σ t)) =
+      ({x t', x t} : Finset ℕ) := by
+    rw [hsingle t hTt]
+  rw [← h1]
+  exact hhub
+
 end Erdos881
