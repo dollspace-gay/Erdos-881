@@ -769,3 +769,86 @@ infinite positive subset of itself simultaneously, forever,
 while pair-covering with forced exponential 2-adic width,
 pinned wealth, poor streets, and forced mixing?  All evidence
 says no; Erdős 881 (k=2) is the proof of that no.
+
+
+---
+
+## Appendix II (2026-07-26, night): the unconditional layer and the reduction
+
+_Same verification standards.  Statements in `Erdos881/FreeRank.lean`,
+exports in `Erdos881/Endgame.lean`._
+
+### G. The oscillation layer
+
+**Oscillation** (`poor_stream_of_hfail` + `r2_unbounded_of_hfail`;
+export `endgame_oscillation`): liminf r₂ < ∞ and limsup r₂ = ∞.
+The liminf half is the sparse-spacing diagonal: if r₂ → ∞, a
+deletion spaced sparser than the growth rate has nowhere to fail.
+
+**Canonical structure** (`poor_stream_canonical_hubs`,
+`pair_hub_window_split` — free via the vacuous-world trick —
+`canonical_core_of_hfail`, `endgame_canonical_core`): the poor
+stream's complete low-part hubs organize into stable window cores
+plus marching tails.
+
+**The drift fork** (`endgame_drift_fork`): universal low part
+(door at a known member) or total drift (deserts:
+`drift_horn_deserts`).
+
+**Rigidity** (`small_lowpart_rigidity`,
+`endgame_rigidity_trichotomy`, teams via
+`fixed_difference_families` + `endgame_rigidity_teams`): per
+window one frozen small-low-part set; globally: fixed difference
+(δ-coherent teams in anchored worlds) / doored desert / total
+desert.
+
+### H. The steering suite
+
+**Vertex covers and the dodge** (`disjoint_matching_dodge`):
+failure = vertex-covering the target's pair matching; pairwise
+disjoint ≥2-edge streams are dodged by one-vertex-per-second-
+matching deletions.  Fixed high doors are arithmetically
+impossible; distant sharing is low-sharing.
+
+### I. The fan laws and the density wall
+
+**Fan poverty** (`wealthy_pair_survives`,
+`fan_poverty_of_failing`, `endgame_fan_poverty`): a failing
+target's entire surviving translate fan is uniformly poor.
+
+**Reflected embedding** (`poor_count_of_failing`): the fan
+injects into the poor set — poor populations ≥ surviving basis
+counts below every failing target.
+
+**The density law** (`density_law_of_failing`,
+`endgame_density_law`): α₂² + P·(α − C) ≤ (n+1)·α at every
+failing target.  Dense bases can never fail.
+
+### J. The reduction
+
+**Wealthy-translate walls**
+(`failing_avoids_wealthy_translates`): failing targets avoid
+w + (A∖D) for every wealthy w.
+
+**Service breakdown** (`served_targets_never_fail`,
+`service_breakdown_of_hfail`, `endgame_service_breakdown`):
+one wealthy server saves a target; every counterexample must
+run total wealthy-service breakdown cofinally against every
+deletion.  **Erdős 881 (k = 2) is equivalent to the
+impossibility of that breakdown**, and the breakdown is
+lab-false in every constructible world (7 campaigns, 347/347
+survivals, tail-completeness with 2–152 servers minimum).
+
+**The master law** (`the_master_law`, `endgame_master_law`):
+oscillation ∧ rigidity ∧ per-deletion density, in one
+statement.
+
+### K. What remains
+
+The all-poor-fan configuration at scale: a covering world
+sustaining, against every sparse deletion, cofinal targets
+whose entire surviving neighborhoods are uniformly near-Sidon —
+squeezed between the density wall (fat), the dodge/rigidity
+suite (thin), and Erdős–Turán-hard constructibility.  One
+theorem-shaped question; twenty-four machine-checked summits
+around it.
