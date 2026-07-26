@@ -13997,4 +13997,109 @@ theorem drain_repair_mine {A : Set ℕ} {N₀ : ℕ}
   · exact key x₁ x₂ hx₁ hx₂ hlt
   · exact key x₂ x₁ hx₂ hx₁ hlt
 
+open Classical in
+/-- **DRAIN TARGETS ARE 2-ADICALLY PINNED.**  The wealthy
+targets manufactured by the ω-drain carry addresses: there is a
+nested residue tower e (steps of size ≤ 2·2^k) such that at
+every depth k, beyond every bound, some target congruent to
+e k mod 2^k carries arbitrarily large root-coordinate pair
+wealth.  Sharpens `r2_unbounded_of_hfail`: the Sidon door is
+closed CYLINDER BY CYLINDER along one 2-adic point — the
+collision battleground with the street branch's width-capped
+hub targets. -/
+theorem drain_wealth_addresses {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ e : ℕ → ℕ, e 0 = 0 ∧
+      (∀ k, ∃ r, r ≤ 2 ∧ e (k + 1) = e k + 2 ^ k * r) ∧
+      ∀ k C N, ∃ w y, N ≤ w ∧ w = e k + 2 ^ k * y ∧
+        C ≤ ((Finset.range (w + 1)).filter
+          (fun x => x ∈ A ∧ (w - x) ∈ A)).card := by
+  obtain ⟨S, T, hS0, hT0, hstep, hblow⟩ :=
+    the_omega_drain h0 hcov hfail
+  choose pf qf hpf hqf hSe hTe using hstep
+  set c : ℕ → ℕ := fun k =>
+    Nat.rec 0 (fun k' acc => acc + 2 ^ k' * pf k') k with hc
+  set d : ℕ → ℕ := fun k =>
+    Nat.rec 0 (fun k' acc => acc + 2 ^ k' * qf k') k with hd
+  have hc0 : c 0 = 0 := rfl
+  have hd0 : d 0 = 0 := rfl
+  have hcS : ∀ k, c (k + 1) = c k + 2 ^ k * pf k :=
+    fun _ => rfl
+  have hdS : ∀ k, d (k + 1) = d k + 2 ^ k * qf k :=
+    fun _ => rfl
+  have hliftS : ∀ k y, y ∈ S k ↔ c k + 2 ^ k * y ∈ A := by
+    intro k
+    induction k with
+    | zero =>
+      intro y
+      have he : c 0 + 2 ^ 0 * y = y := by
+        rw [hc0]
+        simp
+      rw [he, hS0]
+    | succ k ih =>
+      intro y
+      rw [hSe k, Set.mem_setOf_eq, ih (2 * y + pf k)]
+      have he : c k + 2 ^ k * (2 * y + pf k) =
+          c (k + 1) + 2 ^ (k + 1) * y := by
+        rw [hcS k, pow_succ]
+        ring
+      rw [he]
+  have hliftT : ∀ k y, y ∈ T k ↔ d k + 2 ^ k * y ∈ A := by
+    intro k
+    induction k with
+    | zero =>
+      intro y
+      have he : d 0 + 2 ^ 0 * y = y := by
+        rw [hd0]
+        simp
+      rw [he, hT0]
+    | succ k ih =>
+      intro y
+      rw [hTe k, Set.mem_setOf_eq, ih (2 * y + qf k)]
+      have he : d k + 2 ^ k * (2 * y + qf k) =
+          d (k + 1) + 2 ^ (k + 1) * y := by
+        rw [hdS k, pow_succ]
+        ring
+      rw [he]
+  refine ⟨fun k => c k + d k, ?_, ?_, ?_⟩
+  · show c 0 + d 0 = 0
+    rw [hc0, hd0]
+  · intro k
+    refine ⟨pf k + qf k, by have := hpf k; have := hqf k; omega,
+      ?_⟩
+    show c (k + 1) + d (k + 1) =
+      c k + d k + 2 ^ k * (pf k + qf k)
+    rw [hcS k, hdS k, Nat.mul_add]
+    ring
+  · intro k C N
+    obtain ⟨v, hvN, hvc⟩ := hblow k C N
+    have hpow : 0 < 2 ^ k := pow_pos (by omega) k
+    have hvle : v ≤ 2 ^ k * v := Nat.le_mul_of_pos_left v hpow
+    refine ⟨c k + d k + 2 ^ k * v, v, by omega, rfl, ?_⟩
+    refine le_trans hvc ?_
+    apply Finset.card_le_card_of_injOn
+      (fun x => c k + 2 ^ k * x)
+    · intro x hx
+      simp only [Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range] at hx
+      obtain ⟨hxv, hxS, hxT⟩ := hx
+      have hxle : 2 ^ k * x ≤ 2 ^ k * v :=
+        Nat.mul_le_mul_left _ (by omega)
+      simp only [Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range]
+      refine ⟨by omega, (hliftS k x).1 hxS, ?_⟩
+      have h7 : v - x + x = v := by omega
+      have h8 : 2 ^ k * v = 2 ^ k * (v - x) + 2 ^ k * x := by
+        rw [← Nat.mul_add, h7]
+      have h9 : c k + d k + 2 ^ k * v - (c k + 2 ^ k * x) =
+          d k + 2 ^ k * (v - x) := by omega
+      rw [h9]
+      exact (hliftT k (v - x)).1 hxT
+    · intro a ha b hb hab
+      have hab' : c k + 2 ^ k * a = c k + 2 ^ k * b := hab
+      have h10 : 2 ^ k * a = 2 ^ k * b := by omega
+      exact Nat.eq_of_mul_eq_mul_left hpow h10
+
 end Erdos881
