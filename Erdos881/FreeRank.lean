@@ -5184,4 +5184,76 @@ theorem street_dichotomy_uniform {A : Set ℕ} {N₀ : ℕ}
     · exact mkdiff u₁ u₂ h proj₁ proj₂
     · exact mkdiff u₂ u₁ (by omega) proj₂ proj₁
 
+/-- **The fixed hall extracts a difference.**  If one mirror
+point n serves affine corners beyond every size (with a uniform
+envelope Q), then stabilizing the basis-pair difference d = b₃ −
+b₂ gives: either ONE offset δ carries unbounded difference
+multiplicity — corners at all sizes with the same d hand over
+infinitely many pairs b, b + δ ∈ A — or the realized differences
+grow without bound, producing infinitely many DISTINCT streets
+n + d with basis pairs at difference d.  The mirror hall cannot
+avoid difference structure. -/
+theorem fixed_hall_extracts_difference {A : Set ℕ} {N₀ : ℕ}
+    {Q : Finset ℕ} {n : ℕ}
+    (hcorner : ∀ S, ∃ b₂ ∈ A, ∃ b₃ ∈ A, S ≤ b₂ ∧ b₂ < b₃ ∧
+      ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
+        IsPairHub A s (insert b₃ Q)) :
+    (∃ δ, 1 ≤ δ ∧ ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A) ∨
+    (∀ Δ S, ∃ b₂ ∈ A, ∃ b₃ ∈ A, S ≤ b₂ ∧ b₂ < b₃ ∧
+      Δ < b₃ - b₂ ∧ ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
+        IsPairHub A s (insert b₃ Q)) := by
+  classical
+  set C : ℕ → ℕ → Prop := fun d S => 1 ≤ d ∧
+    ∃ b₂, b₂ ∈ A ∧ S ≤ b₂ ∧ b₂ + d ∈ A ∧
+    ∃ s, s + b₂ = n + (b₂ + d) ∧ N₀ ≤ s ∧
+      IsPairHub A s (insert (b₂ + d) Q) with hCdef
+  have hanti : ∀ d S S', S ≤ S' → C d S' → C d S := by
+    intro d S S' hSS h
+    obtain ⟨hd, b₂, hb₂A, hb₂S, hb₃A, rest⟩ := h
+    exact ⟨hd, b₂, hb₂A, by omega, hb₃A, rest⟩
+  have hex : ∀ S, ∃ d, C d S := by
+    intro S
+    obtain ⟨b₂, hb₂A, b₃, hb₃A, hS, hlt, sc, hsc, hsN, hhub⟩ :=
+      hcorner S
+    refine ⟨b₃ - b₂, by omega, b₂, hb₂A, hS, ?_, sc, by omega,
+      hsN, ?_⟩
+    · have h1 : b₂ + (b₃ - b₂) = b₃ := by omega
+      rw [h1]
+      exact hb₃A
+    · have h1 : b₂ + (b₃ - b₂) = b₃ := by omega
+      rw [h1]
+      exact hhub
+  rcases nat_param_stabilize hanti hex with ⟨d, hd⟩ | hesc
+  · left
+    have hd1 : 1 ≤ d := (hd 0).1
+    refine ⟨d, hd1, ?_⟩
+    intro K
+    induction K with
+    | zero =>
+      exact ⟨∅, le_refl 0, fun x hx =>
+        absurd hx (Finset.notMem_empty x)⟩
+    | succ K ih =>
+      obtain ⟨V, hVc, hVm⟩ := ih
+      obtain ⟨-, b₂, hb₂A, hb₂S, hb₃A, -⟩ :=
+        hd (V.sup id + 1)
+      have hb₂V : b₂ ∉ V := by
+        intro hmem
+        have h1 : b₂ ≤ V.sup id := Finset.le_sup (f := id) hmem
+        omega
+      refine ⟨insert b₂ V, ?_, ?_⟩
+      · rw [Finset.card_insert_of_notMem hb₂V]
+        omega
+      · intro x hx
+        rcases Finset.mem_insert.1 hx with h | h
+        · subst h
+          exact ⟨hb₂A, hb₃A⟩
+        · exact hVm x h
+  · right
+    intro Δ S
+    obtain ⟨d, hΔd, hd1, b₂, hb₂A, hb₂S, hb₃A, sc, hsc, hsN,
+      hhub⟩ := hesc Δ S
+    refine ⟨b₂, hb₂A, b₂ + d, hb₃A, hb₂S, by omega, by omega,
+      sc, by omega, hsN, hhub⟩
+
 end Erdos881
