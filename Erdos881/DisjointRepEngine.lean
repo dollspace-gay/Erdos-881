@@ -536,14 +536,34 @@ theorem privateTriple_of_singleton_hub {A : Set ℕ} {N₀ n a : ℕ}
   · exact Or.inr (Or.inl (Finset.mem_singleton.1 h))
   · exact Or.inr (Or.inr (Finset.mem_singleton.1 h))
 
+/-- **The stream-kill oracle.**  The single interface through which
+the entire engine consumes anchor supply: every cofinal positive
+private stream yields a surviving deletion.  Fully anchored worlds
+implement it via the rotating/fixed guardian kills; almost-anchored
+worlds implement it via the g₀-tower self-kill.  Every downstream
+theorem that formerly demanded anchor supply now demands only this. -/
+def StreamSurvives (A : Set ℕ) (N₀ : ℕ) : Prop :=
+  (∀ N, ∃ a m, N ≤ m ∧ 0 < a ∧ IsPrivateTriple A a m) →
+    ∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n
+
+/-- Anchored worlds implement the oracle. -/
+theorem streamSurvives_of_anchor {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanc : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g) :
+    StreamSurvives A N₀ :=
+  fun hstream =>
+    surviving_deletion_of_cofinal_privateStream h0 hcov hstream hanc
+
 /-- **Positive singleton hubs are refuted**: cofinal positive
 singleton-hub targets feed the verified private-stream kill, whose
 surviving deletion contradicts `hfail`.  The hub tower's core cannot
 collapse to a single positive guardian. -/
 theorem singleton_hubs_refuted {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ¬(∀ N, ∃ n, N ≤ n ∧ ∃ a, 0 < a ∧ IsRepHub A n {a}) := by
@@ -554,8 +574,7 @@ theorem singleton_hubs_refuted {A : Set ℕ} {N₀ : ℕ}
     exact ⟨a, n, le_trans (le_max_left _ _) hn, ha,
       privateTriple_of_singleton_hub h0 hcov
         (le_trans (le_max_right _ _) hn) hhub⟩
-  obtain ⟨B, hBsub, hBinf, hsurv⟩ :=
-    surviving_deletion_of_cofinal_privateStream h0 hcov hstream hanchor
+  obtain ⟨B, hBsub, hBinf, hsurv⟩ := hanchor hstream
   refine hfail B hBsub hBinf ⟨N₀, fun n hn => ?_⟩
   obtain ⟨x, hx, y, hy, z, hz, hxB, hyB, hzB, hsum⟩ := hsurv n hn
   refine ⟨![x, y, z], ?_, ?_⟩
@@ -594,8 +613,7 @@ private-stream kill. -/
 theorem hub_card_ge_two_of_hfail {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hdb : {c | c ∈ A ∧ 2 * c ∈ A ∧ 0 < c}.Infinite)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ N, ∀ n, N ≤ n → ∀ H : Finset ℕ, IsRepHub A n H → 2 ≤ H.card := by
@@ -1082,8 +1100,7 @@ escorts (counting-vise territory, with the order-2 shadow when
 theorem hub_endgame_of_hfail {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hdb : {c | c ∈ A ∧ 2 * c ∈ A ∧ 0 < c}.Infinite)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ K S c, c ≤ 3 * (K - 1) ∧ 2 ≤ c ∧ S.card ≤ c ∧
@@ -3926,8 +3943,7 @@ pipeline''s doorstep. -/
 theorem tower_teams_ge_two {A : Set ℕ} {N0 C : ℕ} {Y : ℕ → ℕ}
     {F : ℕ → Finset ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N0)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N0)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
     (hY1 : 1 ≤ Y 0)
@@ -3966,8 +3982,7 @@ fixed core plus one rotating necessary guardian.  Constant-sized
 everywhere; no log anywhere. -/
 theorem flood_canonical {A : Set ℕ} {N0 : ℕ} {F : Finset ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N0)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N0)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
     (hflood : ∀ X, ∃ a, a ∈ A ∧ X ≤ a ∧
@@ -4507,8 +4522,7 @@ bounded-hub stream.  No junk instantiation reaches any of them. -/
 theorem stable_core_trichotomy {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hdb : {c | c ∈ A ∧ 2 * c ∈ A ∧ 0 < c}.Infinite)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     (∃ S : Finset ℕ, 2 ≤ S.card ∧
@@ -5411,8 +5425,7 @@ core from the private-stream kill.  Interfaces: covering, `0 ∈ A`,
 and the anchor supply — nothing else. -/
 theorem canonical_flood_of_hfail {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ S : Finset ℕ, S.Nonempty ∧
@@ -5580,8 +5593,7 @@ core — inside the positive part of `A`: the zero-in-core sliver is
 closed structurally, before any case analysis. -/
 theorem canonical_flood_pos_of_hfail {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ S : Finset ℕ, S.Nonempty ∧ (∀ h ∈ S, h ∈ A ∧ 0 < h) ∧
@@ -5639,8 +5651,7 @@ entire order-2 life.  The campaign''s endgame, derived end to end
 from first principles. -/
 theorem routing_dichotomy_of_hfail {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ S : Finset ℕ, S.Nonempty ∧ (∀ h ∈ S, h ∈ A ∧ 0 < h) ∧
@@ -5953,8 +5964,7 @@ infinite deletion must be all four at once, forever. -/
 theorem counterexample_portrait {A : Set ℕ} {N₀ : ℕ}
     [DecidablePred (· ∈ A)]
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hmin : ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
       ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -5988,8 +5998,7 @@ deletion, forever.  The legacy campaign's team hypothesis, derived. -/
 theorem guardian_team_hubs_of_deletion {A B : Set ℕ} {N₀ : ℕ}
     [DecidablePred (· ∈ B)]
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B' ⊆ A, B'.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B') 3)
     (hBA : B ⊆ A) (hBinf : B.Infinite) (h0B : 0 ∉ B) :
@@ -6470,8 +6479,7 @@ the rank program's deletion-feedback route runs on. -/
 theorem hub_server_dichotomy {A B : Set ℕ} {N₀ : ℕ}
     [DecidablePred (· ∈ B)]
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B' ⊆ A, B'.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B') 3)
     (hBA : B ⊆ A) (hBinf : B.Infinite) (h0B : 0 ∉ B) :
@@ -6542,8 +6550,7 @@ no infinite deletion leaves an exact order-3 tuple basis. -/
 theorem counterexample_portrait' {A : Set ℕ} {N₀ : ℕ}
     [DecidablePred (· ∈ A)]
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hmin : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 2)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -6576,8 +6583,7 @@ hub inside it (supplied cofinally by
 Team-card escalation, step one. -/
 theorem rep_pair_clique_or_triple_teams {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
     (b : ℕ → ℕ) (hmono : StrictMono b)
@@ -6672,8 +6678,7 @@ private-stream kill.  The clique''s target array escapes upward on
 almost every row. -/
 theorem clique_rows_march {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
     (e : ℕ → ℕ) (hemono : StrictMono e) (hepos : ∀ i, 0 < e i) :
@@ -6893,8 +6898,7 @@ FOUR members.  The enemy admits no finite team-size bound that the
 Ramsey ladder cannot outclimb arity by arity. -/
 theorem team_card_escalation_two {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
     (b : ℕ → ℕ) (hmono : StrictMono b)
@@ -7063,8 +7067,7 @@ triple-clique branch records pair-freeness (so
 team branch records freeness at both arities. -/
 theorem team_card_escalation_two' {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
     (b : ℕ → ℕ) (hmono : StrictMono b)
@@ -7312,8 +7315,7 @@ arity four: any ground stream refines to a clique at some arity in
 subsequence whose minimal team hubs all have at least FIVE members. -/
 theorem team_card_escalation_three {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
     (b : ℕ → ℕ) (hmono : StrictMono b)
@@ -7523,8 +7525,7 @@ single target. -/
 theorem union_deletion_trichotomy {A B₁ B₂ : Set ℕ} {N₀ : ℕ}
     [DecidablePred (· ∈ B₁)] [DecidablePred (· ∈ B₂)]
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
     (h1A : B₁ ⊆ A) (h2A : B₂ ⊆ A) (h1inf : B₁.Infinite)

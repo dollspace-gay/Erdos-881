@@ -31,8 +31,7 @@ counterexample.  See `counterexample_portrait'` for the proof. -/
 theorem endgame_portrait {A : Set ℕ} {N₀ : ℕ}
     [DecidablePred (· ∈ A)]
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hmin : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 2)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -73,8 +72,7 @@ full hubs); its rank is exactly the freedom level and it is
 rank-stable — otherwise the pool has infinite rank. -/
 theorem endgame_two_rooms {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
     (b : ℕ → ℕ) (hbmono : StrictMono b)
@@ -229,8 +227,7 @@ and is dead).  Two shapes remain: perfect stratification, or an
 infinite crowd of infinitely-employed eternal survivors. -/
 theorem endgame_shells {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ Q : ℕ → Finset ℕ, ∃ X,
@@ -345,8 +342,7 @@ pillar's downstream consequences; the enemy must thread all six
 forever. -/
 theorem the_encirclement {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
     (hess : ∀ a ∈ A, 0 < a → ¬∃ N₁, ∀ n, N₁ ≤ n →
@@ -425,8 +421,7 @@ subsequence of it forces a stall hub of spine elements, and the
 endgame forks: infinite root rank, or the lockstep highway. -/
 theorem endgame_spine {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     (∃ Q : ℕ → Finset ℕ, ∃ σ : ℕ ↪o ℕ, ∃ x : ℕ → ℕ,
@@ -458,8 +453,7 @@ its own canonical spine.  Erdős 881's remaining content is the
 defeat of these two explicit configurations. -/
 theorem endgame_final_fork {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     (∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
@@ -582,5 +576,55 @@ theorem endgame_collapsed_trichotomy {A : Set ℕ} {N₀ : ℕ}
       (∀ a d, 0 < d → a ∈ A → a + d ∈ A → a + 2 * d ∈ A →
         a + d = g₀ ∨ a + d < C₀)) :=
   the_collapsed_trichotomy h0 hcov hfail
+
+/-- **THE FINAL DICHOTOMY** (re-export; the campaign's summit).
+TWO ROOMS.  Every counterexample world — hypotheses only
+0 ∈ A, order-2 covering, order-3 failure of every infinite
+deletion — either drives in one of the FOUR LANES (root rank
+≥ ω; a fixed finite hall whose door element carries unboundedly
+many targets onto one translate; a ghost street of targets
+forced OUT of A with pair lives caught by marching spine
+windows; or a member street of targets inside their own windows
+with middle pairs banned) or lives in the CENTRAL TAIL
+(explicitly thresholded total pinning, automatic minimality,
+midpoint-freeness off one value).  The anchor wall and its
+g₀-hole are gone: the stream-kill oracle is implemented in both
+anchored and almost-anchored worlds — the latter by the
+g₀-tower self-kill — so the four-lane endgame runs on both.
+Erdős 881's negative answer would have to live in one of five
+explicit verified configurations. -/
+theorem endgame_final_dichotomy {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ((∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
+      RepFree A N₀ P ∧ c ≤ P.card) ∨
+    (∃ H : Finset ℕ, ∃ h ∈ H, ∀ K, ∃ V : Finset ℕ,
+      K ≤ V.card ∧ ∀ v ∈ V, N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧
+        IsPairHub A v H) ∨
+    (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+      ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+        ∀ v ∈ V, N₀ ≤ v ∧ v ∉ A ∧ ∃ s, S₀ ≤ s ∧ x s ≤ v ∧
+          ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairHub A v
+            ((Finset.range J).image (fun j => x (s + j)))) ∨
+    (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+      ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+        ∀ v ∈ V, N₀ ≤ v ∧ v ∈ A ∧ ∃ s, S₀ ≤ s ∧
+          ∃ J, 2 ≤ J ∧ J ≤ L ∧
+            v ∈ (Finset.range J).image (fun j => x (s + j)) ∧
+            IsPairHub A v ((Finset.range J).image
+              (fun j => x (s + j))) ∧
+            (∀ a ∈ A, ∀ b ∈ A, a + b = v →
+              a ≤ x (s + J - 1) - x s ∨
+              b ≤ x (s + J - 1) - x s))) ∨
+    (∃ g₀ C₀, (∀ c ∈ A, C₀ ≤ c → c ≠ g₀ → ∀ w ∈ A, ∀ w' ∈ A,
+        w + w' = 2 * c → w = c ∧ w' = c) ∧
+      (∀ c ∈ A, C₀ ≤ c → c ≠ g₀ →
+        IsPairHub A (2 * c) ({c} : Finset ℕ)) ∧
+      (∀ B ⊆ A, B.Infinite → ¬∃ N₂, ∀ n, N₂ ≤ n →
+        ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) ∧
+      (∀ a d, 0 < d → a ∈ A → a + d ∈ A → a + 2 * d ∈ A →
+        a + d = g₀ ∨ a + d < C₀)) :=
+  the_final_dichotomy h0 hcov hfail
 
 end Erdos881

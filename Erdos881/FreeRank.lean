@@ -593,8 +593,7 @@ rank at least one: the rank interval `(0, root]` is where the
 descent must happen. -/
 theorem pool_rank_pos {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
     {P₀ : Set ℕ} (hP₀A : P₀ ⊆ A) (h0P : 0 ∉ P₀)
@@ -817,8 +816,7 @@ Ramsey rung raises the certificate by one; low-rank pools force
 cliques at low arity. -/
 theorem escalation_rank_certificate {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
     {P₀ : Set ℕ}
@@ -888,8 +886,7 @@ is barred by the private-stream kill.  Some perfect level
 `1 ≤ d' ≤ d` always exists. -/
 theorem clique_descent {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∀ (d : ℕ) (e : ℕ → ℕ), 1 ≤ d → StrictMono e →
@@ -1006,8 +1003,7 @@ perfect clique worlds — and the descent to the perfect world is
 itself the rank analysis the program called for. -/
 theorem rank_lt_omega_perfect_clique {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
     (b : ℕ → ℕ) (hbmono : StrictMono b)
@@ -1242,8 +1238,7 @@ runs exactly at its uniformity level. -/
 theorem perfect_world_deletion_hubs_card {A B : Set ℕ} {N₀ : ℕ}
     [DecidablePred (· ∈ B)]
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B' ⊆ A, B'.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B') 3)
     {e : ℕ → ℕ} {d : ℕ} (hemono : StrictMono e)
@@ -1870,8 +1865,7 @@ kill forbids.  Every element of the enemy's tail opens the freeness
 tree. -/
 theorem cofinite_free_singletons {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ X, ∀ b ∈ A, X ≤ b → 0 < b → RepFree A N₀ {b} := by
@@ -3385,8 +3379,7 @@ An element joining shell k+1 guards shells 0..k; an element
 avoiding all shells guards every level. -/
 theorem absolute_shell_stratification {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ Q : ℕ → Finset ℕ,
@@ -3607,8 +3600,7 @@ one threshold EVERY eternal survivor has unbounded personal
 targets across the shells. -/
 theorem shell_survivors_unbounded_targets {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
     {Q : ℕ → Finset ℕ}
@@ -3654,9 +3646,7 @@ theorem shell_survivors_unbounded_targets {A : Set ℕ} {N₀ : ℕ}
     · exact Or.inl (by simpa using h)
     · exact Or.inr (Or.inl (by simpa using h))
     · exact Or.inr (Or.inr (by simpa using h))
-  obtain ⟨B, hBA, hBinf, hsurv⟩ :=
-    surviving_deletion_of_cofinal_privateStream h0 hcov hstream
-      hanchor
+  obtain ⟨B, hBA, hBinf, hsurv⟩ := hanchor hstream
   refine hfail B hBA hBinf ⟨N₀, ?_⟩
   intro n hn
   obtain ⟨x, hx, y, hy, z, hz, hxB, hyB, hzB, hsum⟩ := hsurv n hn
@@ -3678,8 +3668,7 @@ survivors) or carries an infinite crowd of infinitely-employed
 survivors — no third shape exists. -/
 theorem shell_endgame {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ Q : ℕ → Finset ℕ, ∃ X,
@@ -3794,8 +3783,7 @@ stratification forces employment at linear scale; this
 quantitatively strengthens `shell_survivors_unbounded_targets`. -/
 theorem depth_tax_of_hfail {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
     {Q : ℕ → Finset ℕ}
@@ -3839,9 +3827,7 @@ theorem depth_tax_of_hfail {A : Set ℕ} {N₀ : ℕ}
       · exact Or.inr (Or.inr (by simpa using h))
     · obtain ⟨j, hj, m, h1, h2, h3⟩ := hbig
       exact absurd h3 (hbdd j hj m h1 h2)
-  obtain ⟨B, hBA, hBinf, hsurv⟩ :=
-    surviving_deletion_of_cofinal_privateStream h0 hcov hstream
-      hanchor
+  obtain ⟨B, hBA, hBinf, hsurv⟩ := hanchor hstream
   refine hfail B hBA hBinf ⟨N₀, ?_⟩
   intro n hn
   obtain ⟨x, hx, y, hy, z, hz, hxB, hyB, hzB, hsum⟩ := hsurv n hn
@@ -3907,8 +3893,7 @@ the payer appears in every shell-avoiding representation of its
 duty target, which therefore also sits at or above the payer. -/
 theorem stratified_tax_portrait {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ Q : ℕ → Finset ℕ, ∃ X,
@@ -5479,8 +5464,7 @@ The enemy's teams there are translation-coherent — each team
 shifts by δ into a family of fresh representations. -/
 theorem translation_room_teams {A : Set ℕ} {N₀ δ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
     (hR1 : ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
@@ -5690,8 +5674,7 @@ own.  First contact between the classical-minimality graph and
 the order-3 machinery. -/
 theorem matched_deletion_teams {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
     (hess : ∀ a ∈ A, 0 < a → ¬∃ N₁, ∀ n, N₁ ≤ n →
@@ -5945,8 +5928,7 @@ are unique-decomposition targets.  The enemy defends the clique's
 2-parameter fragile family with defenders married inside it. -/
 theorem clique_or_independent_teams {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ g : ℕ → ℕ, StrictMono g ∧ (∀ i, g i ∈ A) ∧
@@ -6586,8 +6568,7 @@ embedding-chain into a freeness chain is the remaining distance
 to a branch. -/
 theorem shell_higman_chain {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ Q : ℕ → Finset ℕ,
@@ -6646,8 +6627,7 @@ the enemy's own free material.  The branch program's raw
 spine. -/
 theorem spine_lineage {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ Q : ℕ → Finset ℕ, ∃ σ : ℕ ↪o ℕ, ∃ x : ℕ → ℕ,
@@ -6723,8 +6703,7 @@ laws.  This theorem is the game board; the winning strategy is
 the remaining work. -/
 theorem spine_stalls_hereditarily {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ Q : ℕ → Finset ℕ, ∃ σ : ℕ ↪o ℕ, ∃ x : ℕ → ℕ,
@@ -6769,8 +6748,7 @@ or the enemy's shells are s parallel strictly increasing
 columns. -/
 theorem spine_rank_or_lockstep {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     (∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
@@ -6865,8 +6843,7 @@ lockstep.  Mechanical combination of `spine_rank_or_lockstep`
 with `free_set_card_le_rank`. -/
 theorem root_rank_omega_or_lockstep {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     (Ordinal.omega0 ≤
@@ -6983,8 +6960,7 @@ theorem lockstep_columns {A : Set ℕ} {N₀ : ℕ}
 `spine_rank_or_lockstep`). -/
 theorem spine_rank_or_lockstep' {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     (∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
@@ -7144,8 +7120,7 @@ fixed-width structure — the quantitative burden of the lockstep
 branch. -/
 theorem highway_tax {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
     {Q : ℕ → Finset ℕ} {σ : ℕ ↪o ℕ} {T s : ℕ}
@@ -7718,8 +7693,7 @@ target street.  The racing-proof battlefield, fully
 formalized. -/
 theorem spine_stall_stream {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
@@ -7919,8 +7893,7 @@ uniformly fragile, cofinally distinct window-hubs against its
 own canonical material.  The night's closing theorem. -/
 theorem stall_width_or_rank {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     (∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
@@ -8015,8 +7988,7 @@ sparser subsequences: the narrow branch is self-similar, and the
 recursion is now formally available at every level. -/
 theorem stall_width_or_rank_along {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
@@ -8212,8 +8184,7 @@ material.  Erdős 881's remaining content is the defeat of these
 two explicit configurations. -/
 theorem the_final_fork {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     (∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
@@ -8321,8 +8292,7 @@ r₂ ≤ L and pair supply pinned to known spine windows.  The
 order-3 problem's remaining enemy lives at order 2. -/
 theorem the_final_fork_welded {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     (∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
@@ -8586,8 +8556,7 @@ h + A — or runs a MARCHING street: pair-hub windows of width
 target.  Three explicit configurations; nothing else survives. -/
 theorem the_street_trichotomy {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     (∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
@@ -8766,8 +8735,7 @@ has a part at most the window span: middle pairs banned.  The
 night's taxonomies compress into rank, door, ghosts, members. -/
 theorem the_four_lanes {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
-      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     (∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
@@ -9058,7 +9026,8 @@ theorem the_global_trichotomy {A : Set ℕ} {N₀ : ℕ}
         a + d = g₀ ∨ a + d = 0)) := by
   rcases anchor_dichotomy (A := A) with hanchor | ⟨g₀, hroute⟩
   · exact Or.inl ⟨hanchor,
-      the_four_lanes h0 hcov hanchor hfail⟩
+      the_four_lanes h0 hcov
+        (streamSurvives_of_anchor h0 hcov hanchor) hfail⟩
   · rcases no_anchor_central_or_member hroute with hg | hcentral
     · exact Or.inr (Or.inl ⟨g₀, hg, hroute⟩)
     · exact Or.inr (Or.inr ⟨g₀, hcentral,
@@ -9891,5 +9860,76 @@ theorem almost_anchored_singletons_refuted {A : Set ℕ}
     | 1 => exact ⟨hy, hyB⟩
     | 2 => exact ⟨hz, hzB⟩
   · simpa [Fin.sum_univ_three] using hsum
+
+/-- **Almost-anchored worlds implement the stream-kill oracle.**
+The g₀-tower self-kill in interface form: with a member router,
+the ladder, and anchors at every value except g₀, every cofinal
+positive private stream yields a surviving deletion.  The
+almost-anchored world can be fed to EVERY theorem of the engine
+that formerly demanded full anchor supply. -/
+theorem streamSurvives_of_almost_anchored {A : Set ℕ}
+    {N₀ g₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (hgA : g₀ ∈ A)
+    (hladder : ∀ N, ∃ c ∈ A, N ≤ c ∧ c ≠ g₀ ∧ g₀ ≤ 2 * c ∧
+      (2 * c - g₀) ∈ A ∧ 2 * c - g₀ ≠ c)
+    (hanchor' : ∀ g, g ≠ g₀ → ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
+      ∃ w ∈ A, ∃ w' ∈ A,
+        w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g) :
+    StreamSurvives A N₀ :=
+  fun hstream =>
+    almost_anchored_stream_killed h0 hcov hgA hladder hanchor'
+      hstream
+
+/-- **THE FINAL DICHOTOMY.**  Two rooms.  Every counterexample
+world (0 ∈ A, covering, hfail — nothing else) either drives in
+one of the FOUR LANES — root rank ≥ ω, the fixed hall with its
+door, the ghost street, or the member street — or lives in the
+CENTRAL TAIL: beyond an explicit threshold every double is
+purely central, minimality is automatic, and the basis is
+midpoint-free off one value.  The anchored and almost-anchored
+branches are MERGED: the stream-kill oracle is implemented on
+both sides, so the four-lane endgame runs regardless of the
+anchor wall's hole.  Erdős 881's negative answer would have to
+live in one of five explicit configurations: rank, door,
+ghosts, members, or Salem–Spencer tail. -/
+theorem the_final_dichotomy {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ((∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
+      RepFree A N₀ P ∧ c ≤ P.card) ∨
+    (∃ H : Finset ℕ, ∃ h ∈ H, ∀ K, ∃ V : Finset ℕ,
+      K ≤ V.card ∧ ∀ v ∈ V, N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧
+        IsPairHub A v H) ∨
+    (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+      ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+        ∀ v ∈ V, N₀ ≤ v ∧ v ∉ A ∧ ∃ s, S₀ ≤ s ∧ x s ≤ v ∧
+          ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairHub A v
+            ((Finset.range J).image (fun j => x (s + j)))) ∨
+    (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+      ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+        ∀ v ∈ V, N₀ ≤ v ∧ v ∈ A ∧ ∃ s, S₀ ≤ s ∧
+          ∃ J, 2 ≤ J ∧ J ≤ L ∧
+            v ∈ (Finset.range J).image (fun j => x (s + j)) ∧
+            IsPairHub A v ((Finset.range J).image
+              (fun j => x (s + j))) ∧
+            (∀ a ∈ A, ∀ b ∈ A, a + b = v →
+              a ≤ x (s + J - 1) - x s ∨
+              b ≤ x (s + J - 1) - x s))) ∨
+    (∃ g₀ C₀, (∀ c ∈ A, C₀ ≤ c → c ≠ g₀ → ∀ w ∈ A, ∀ w' ∈ A,
+        w + w' = 2 * c → w = c ∧ w' = c) ∧
+      (∀ c ∈ A, C₀ ≤ c → c ≠ g₀ →
+        IsPairHub A (2 * c) ({c} : Finset ℕ)) ∧
+      (∀ B ⊆ A, B.Infinite → ¬∃ N₂, ∀ n, N₂ ≤ n →
+        ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) ∧
+      (∀ a d, 0 < d → a ∈ A → a + d ∈ A → a + 2 * d ∈ A →
+        a + d = g₀ ∨ a + d < C₀)) := by
+  rcases the_collapsed_trichotomy h0 hcov hfail with
+    ⟨_, hlanes⟩ | ⟨g₀, hgA, hladder, hanchor'⟩ | htail
+  · exact Or.inl hlanes
+  · exact Or.inl (the_four_lanes h0 hcov
+      (streamSurvives_of_almost_anchored h0 hcov hgA hladder
+        hanchor') hfail)
+  · exact Or.inr htail
 
 end Erdos881
