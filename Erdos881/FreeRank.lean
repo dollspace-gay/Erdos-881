@@ -16361,4 +16361,42 @@ theorem drift_horn_deserts {A : Set ℕ} {L : ℕ}
     have := htail x hxH
     omega
 
+open Classical in
+/-- **SMALL-LOW-PART RIGIDITY.**  At every scale W there is ONE
+fixed set S ⊆ [0, W] such that cofinally many poor targets have
+EXACTLY S as their small low parts: x ≤ W is a low part of n if
+and only if x ∈ S.  The enemy's small pair-service pattern is
+frozen on a cofinal stream at every window — completeness turns
+the canonical core's containment into an equality.  Forced
+membership in both directions, unconditionally. -/
+theorem small_lowpart_rigidity {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ L, ∀ W, ∃ S : Finset ℕ, S ⊆ Finset.range (W + 1) ∧
+      ∀ N, ∃ n, N ≤ n ∧
+        ((Finset.range (n + 1)).filter
+          (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * L ∧
+        ∀ x, x ≤ W →
+          ((x ∈ A ∧ (n - x) ∈ A ∧ 2 * x ≤ n) ↔ x ∈ S) := by
+  obtain ⟨L, hL⟩ := canonical_core_of_hfail h0 hcov hfail
+  refine ⟨L, fun W => ?_⟩
+  obtain ⟨S, hSW, hS⟩ := hL W
+  refine ⟨S, hSW, fun N => ?_⟩
+  obtain ⟨n, hn, H, hcard, hpair, hmem, hcomp, hSH, htail⟩ :=
+    hS N
+  have hcap := pairHub_caps_wealth hpair
+  refine ⟨n, hn, by omega, fun x hxW => ?_⟩
+  constructor
+  · rintro ⟨hxA, hnxA, hxle⟩
+    have hxH : x ∈ H := hcomp x hxle hxA hnxA
+    rcases Nat.lt_or_ge W x with hgt | hle'
+    · omega
+    · by_contra hxS
+      have := htail x hxH hxS
+      omega
+  · intro hxS
+    have hxH : x ∈ H := hSH hxS
+    exact hmem x hxH
+
 end Erdos881
