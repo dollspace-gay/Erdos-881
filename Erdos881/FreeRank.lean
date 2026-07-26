@@ -6151,4 +6151,29 @@ theorem cube_avoidance_ramsey {A : Set ℕ} {N₀ : ℕ}
     exact h2 ⟨x, hx, y, hy, z, hz, hno.1, hno.2.1, hno.2.2,
       hxyz⟩
 
+/-- **THE COMPLETENESS REDUCTION.**  If some infinite family
+T ⊆ A is COMPLETE (every late target is a finite subset-sum of
+it) and SELF-AVOIDING at all subset arities (every such subset
+sum has an order-3 representation avoiding T), then A∖T is an
+order-3 basis: T is a surviving deletion and the counterexample
+dies.  The Ramsey cascade produces self-avoidance branch-wise
+(`cube_avoidance_ramsey`, tuples version pending); completeness
+is what Ramsey thinning destroys.  Erdős 881 (k = 2), sufficient
+form: every minimal basis contains a complete self-avoiding
+family. -/
+theorem survival_of_complete_avoiding {A : Set ℕ} {N₂ : ℕ}
+    (T : Set ℕ)
+    (hcomp : ∀ n, N₂ ≤ n → ∃ S : Finset ℕ,
+      (↑S : Set ℕ) ⊆ T ∧ S.sum id = n)
+    (havoid : ∀ S : Finset ℕ, (↑S : Set ℕ) ⊆ T →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ T ∧ y ∉ T ∧ z ∉ T ∧ x + y + z = S.sum id) :
+    ∀ n, N₂ ≤ n → ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+      x ∉ T ∧ y ∉ T ∧ z ∉ T ∧ x + y + z = n := by
+  intro n hn
+  obtain ⟨S, hST, hsum⟩ := hcomp n hn
+  obtain ⟨x, hx, y, hy, z, hz, hxT, hyT, hzT, hxyz⟩ :=
+    havoid S hST
+  exact ⟨x, hx, y, hy, z, hz, hxT, hyT, hzT, by omega⟩
+
 end Erdos881
