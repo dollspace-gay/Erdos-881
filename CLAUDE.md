@@ -60,11 +60,17 @@ Also: shell stratification + depth tax + rotation/6/18-level caps
 + conflict law; three branch mechanisms (counting/Sidon,
 robustness/Cantor, and their mixed-regime gap); the anchor
 trichotomy (anchored / g₀-routed / central-AP3-free); the
-canonical grid.  SUMMIT: `endgame_final_fork` — every
-counterexample funds root rank ≥ ω or runs a located
-uniform-width hub street on its own canonical spine
-(Nash-Williams spine machinery, FreeRank tail).  Next session
-opens at the fork's two branches.  The user (Doll) steers via
+canonical grid.  SUMMIT (post-fork block): `endgame_collapsed_trichotomy` —
+NO anchor hypothesis: every counterexample is ANCHORED (four
+lanes: rank ω / fixed hall + door / ghost street / member
+street), ALMOST-ANCHORED (member g₀, ladder 2c−g₀ ∈ A, anchors
+at every g ≠ g₀ — one hole), or CENTRAL-TAIL (thresholded
+pinning + auto-min + AP3-free).  Route in: 0-weld
+(`pairHub_of_repHub`), welded fork, street trichotomy, four
+lanes, member street verdict (`difference_blind_stream`!),
+`the_routed_collapse`.  Next: plug the g₀-hole (anchors-off-g₀
+through the private-stream chain) → trichotomy becomes
+dichotomy.  The user (Doll) steers via
 metaphors and cannot answer technical questions; read the code.
 
 ## Build quirk (2026-07-25)
