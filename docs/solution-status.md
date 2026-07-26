@@ -1,3 +1,36 @@
+# UPDATE (2026-07-26, cont.): THE DOOR WORLD OPENED
+
+**Arc 22 — lane 2 at full strength.**  The weld had discarded
+order-3 information; re-running the fixed-hall pigeonhole
+without it: `bounded_street_fixed_hall_rep` (one window
+REP-hubs unboundedly many targets, hall = known positive basis
+material), `the_door_world` (2 ≤ |H| ≤ L — teamness forced by
+the stream-kill oracle: a singleton hall is a refuted stream —
+with cofinal targets carrying BOTH hubs).  The door world's
+verified laws:
+
+- `hall_mirror` — defective mirror: v − z − h ∈ A for SOME
+  h ∈ H (multivalued where the tower's was exact);
+- `hall_weak_translate` — every large z ∈ A escapes at least
+  one hall translate (singleton case = the g₀-translate law);
+- `hall_mirror_color_law` — mirrors and translates are LOCKED:
+  the mirror colour is always a BAD translate (z + h ∉ A);
+- `door_targets_ghost` — door targets are forced OUT of A.
+
+**The honest team wall.**  The singleton tower kill does NOT
+lift directly: defective mirror residues (which h fired) cannot
+be cancelled in 3 repair slots when colours are uncontrolled.
+The colour law cuts the space: colours live in H ∖ G_z (bad
+translates only).  Next session's engine dichotomy: if some
+offset has a UNIQUE bad translate, its mirrors are exact and
+the tower engine runs; if all bad sets are full (strong
+translate law), the repair-pair analysis of the tower kill
+applies instead.  |H| = 2 is the critical first case.
+
+All verified, zero sorries, standard axioms.
+
+---
+
 # UPDATE (2026-07-26): THE FINAL DICHOTOMY — TWO ROOMS
 
 **Arc 21 — the stream-kill oracle refactor.**  Audit finding:
