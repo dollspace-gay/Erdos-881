@@ -11095,4 +11095,213 @@ theorem covering_density {A : Set ℕ} {N₀ : ℕ}
   have h6 : Af.card * Af.card = Af.card ^ 2 := by ring
   omega
 
+open Classical in
+/-- **The pair flood.**  Welding the rep flood: when the flood
+envelope avoids 0, every large positive basis element b
+personally guards a target m ≥ b whose ENTIRE pair life routes
+through the constant-size set P ∪ {b} — so r₂(m) ≤ |P| + 1.
+A personal pair-poor guarded target for every basis element:
+the density-free supply the cascade counting was missing. -/
+theorem flood_pair_guard {A : Set ℕ} {N₀ X : ℕ}
+    {P : Finset ℕ}
+    (h0 : 0 ∈ A) (h0P : (0 : ℕ) ∉ P)
+    (hflood : ∀ b ∈ A, X ≤ b → ∃ m, N₀ ≤ m ∧ b ≤ m ∧
+      IsRepHub A m (insert b P)) :
+    ∀ b ∈ A, X ≤ b → 0 < b → ∃ m, N₀ ≤ m ∧ b ≤ m ∧
+      IsPairHub A m (insert b P) ∧
+      ((Finset.range (m + 1)).filter
+        (fun a => a ∈ A ∧ (m - a) ∈ A ∧ 2 * a ≤ m)).card ≤
+        P.card + 1 := by
+  intro b hbA hXb hbpos
+  obtain ⟨m, hmN, hbm, hhub⟩ := hflood b hbA hXb
+  have h0i : (0 : ℕ) ∉ insert b P := by
+    intro h
+    rcases Finset.mem_insert.1 h with h | h
+    · omega
+    · exact h0P h
+  have hpair := pairHub_of_repHub h0 h0i hhub
+  refine ⟨m, hmN, hbm, hpair, ?_⟩
+  have h1 := pair_hub_pair_count hpair
+  have h2 : (insert b P).card ≤ P.card + 1 :=
+    Finset.card_insert_le _ _
+  omega
+
+/-- **THE REP FLOOD, POSITIVE ENVELOPE.**  The rep flood with
+the envelope guaranteed to avoid 0: the dodge chain only ever
+inserts picks at thresholds ≥ 1, so the classical envelope can
+be taken 0-free.  This is what the 0-weld needs.  The theorem the campaign''s
+assumed configurations were reaching for, with no interface beyond
+covering and `0 ∈ A`: a counterexample yields ONE finite rep-free
+envelope `P` and a threshold beyond which EVERY basis element `b`
+personally guards a target `m ≥ b` at ORDER 3 — every
+3-representation of `m` routes through `P ∪ {b}`.  Constant
+cardinality; the freeness of `P` is the recorded non-vacuity (junk
+envelopes are never free).  Proof: the rep dodge; if it never
+stalls, all parts of a late target''s surviving representation lie
+below the target and hence inside the stalled prefix''s shadow, so
+the built deletion leaves every late target represented, refuting
+`hfail` directly. -/
+theorem rep_flood_pos_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ P : Finset ℕ, RepFree A N₀ P ∧ (0 : ℕ) ∉ P ∧
+      ∃ X, ∀ b ∈ A, X ≤ b →
+      ∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsRepHub A m (insert b P) := by
+  classical
+  by_contra hno
+  push_neg at hno
+  have hfree0 : RepFree A N₀ ∅ := by
+    intro m hm
+    obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
+    exact ⟨x, hx, y, hy, 0, h0, by omega, Finset.notMem_empty x,
+      Finset.notMem_empty y, Finset.notMem_empty 0⟩
+  have hpick : ∀ (P : Finset ℕ) (X : ℕ), ∃ b, b ∈ A ∧ X ≤ b ∧
+      (RepFree A N₀ P → (0 : ℕ) ∉ P → ∀ m, N₀ ≤ m → b ≤ m →
+        ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = m ∧
+          x ∉ insert b P ∧ y ∉ insert b P ∧ z ∉ insert b P) := by
+    intro P X
+    by_cases hfree : RepFree A N₀ P
+    · by_cases h0P : (0 : ℕ) ∉ P
+      · obtain ⟨b, hbA, hXb, hbgood⟩ := hno P hfree h0P X
+        refine ⟨b, hbA, hXb, fun _ _ m hm hbm => ?_⟩
+        have hnh := hbgood m hm hbm
+        rw [IsRepHub] at hnh
+        push_neg at hnh
+        obtain ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩ := hnh
+        exact ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩
+      · obtain ⟨b, hbA, hXb⟩ := pairCovers_unbounded hcov X
+        exact ⟨b, hbA, hXb, fun _ h => absurd h h0P⟩
+    · obtain ⟨b, hbA, hXb⟩ := pairCovers_unbounded hcov X
+      exact ⟨b, hbA, hXb, fun h => absurd h hfree⟩
+  choose pick hpickA hpickge hpickfree using hpick
+  set st : ℕ → ℕ × Finset ℕ := fun j =>
+    Nat.rec (pick ∅ 1, {pick ∅ 1})
+      (fun _ prev => (pick prev.2 (prev.1 + 1),
+        insert (pick prev.2 (prev.1 + 1)) prev.2)) j with hst
+  have hstS : ∀ j, st (j + 1) = (pick (st j).2 ((st j).1 + 1),
+      insert (pick (st j).2 ((st j).1 + 1)) (st j).2) := fun _ => rfl
+  have h0S : ∀ j, (0 : ℕ) ∉ (st j).2 := by
+    intro j
+    induction j with
+    | zero =>
+      show (0 : ℕ) ∉ ({pick ∅ 1} : Finset ℕ)
+      rw [Finset.mem_singleton]
+      have h1 := hpickge ∅ 1
+      omega
+    | succ j ih =>
+      rw [hstS]
+      intro hmem
+      rcases Finset.mem_insert.1 hmem with h | h
+      · have h1 := hpickge (st j).2 ((st j).1 + 1)
+        omega
+      · exact ih h
+  have hfreeS : ∀ j, RepFree A N₀ (st j).2 := by
+    intro j
+    induction j with
+    | zero =>
+      show RepFree A N₀ (insert (pick ∅ 1) ∅)
+      exact repFree_insert hfree0
+        (hpickfree ∅ 1 hfree0 (Finset.notMem_empty 0))
+    | succ j ih =>
+      rw [show (st (j + 1)).2 =
+          insert (pick (st j).2 ((st j).1 + 1)) (st j).2 from
+        by rw [hstS]]
+      exact repFree_insert ih
+        (hpickfree (st j).2 ((st j).1 + 1) ih (h0S j))
+  have hlastge : ∀ j, j + 1 ≤ (st j).1 := by
+    intro j
+    induction j with
+    | zero => simpa using hpickge ∅ 1
+    | succ j ih =>
+      have h1 : (st (j + 1)).1 = pick (st j).2 ((st j).1 + 1) := by
+        rw [hstS]
+      have h2 := hpickge (st j).2 ((st j).1 + 1)
+      omega
+  have hchain : ∀ i j, i ≤ j → (st i).2 ⊆ (st j).2 := by
+    intro i j hij
+    induction j with
+    | zero =>
+      have h0' : i = 0 := by omega
+      subst h0'
+      exact Finset.Subset.refl _
+    | succ j ih =>
+      rcases Nat.lt_or_ge i (j + 1) with h' | h'
+      · refine Finset.Subset.trans (ih (by omega)) ?_
+        rw [hstS]
+        exact Finset.subset_insert _ _
+      · have h1 : i = j + 1 := by omega
+        subst h1
+        exact Finset.Subset.refl _
+  have hlastmem : ∀ j, (st j).1 ∈ (st j).2 := by
+    intro j
+    cases j with
+    | zero => exact Finset.mem_singleton_self _
+    | succ j =>
+      rw [hstS]
+      exact Finset.mem_insert_self _ _
+  have hlaststep : ∀ j, (st j).1 < (st (j + 1)).1 := by
+    intro j
+    have h1 : (st (j + 1)).1 = pick (st j).2 ((st j).1 + 1) := by
+      rw [hstS]
+    have h2 := hpickge (st j).2 ((st j).1 + 1)
+    omega
+  have hlastmono : StrictMono (fun j => (st j).1) :=
+    strictMono_nat_of_lt_succ hlaststep
+  set B : Set ℕ := Set.range (fun j => (st j).1) with hB
+  have hBA : B ⊆ A := by
+    rintro x ⟨j, rfl⟩
+    show (st j).1 ∈ A
+    cases j with
+    | zero => exact hpickA ∅ 1
+    | succ j =>
+      rw [show (st (j + 1)).1 = pick (st j).2 ((st j).1 + 1) from
+        by rw [hstS]]
+      exact hpickA _ _
+  have hBinf : B.Infinite :=
+    Set.infinite_range_of_injective hlastmono.injective
+  refine hfail B hBA hBinf ⟨N₀, fun m hm => ?_⟩
+  obtain ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩ := hfreeS m m hm
+  have havoid : ∀ w, w ≤ m → w ∉ (st m).2 → w ∉ B := by
+    intro w hwm hwP
+    rintro ⟨i, hi⟩
+    have hi' : (st i).1 = w := hi
+    rcases Nat.lt_or_ge m i with h' | h'
+    · have := hlastge i
+      omega
+    · exact hwP (by
+        rw [← hi']
+        exact hchain i m h' (hlastmem i))
+  refine ⟨![x, y, z], ?_, by simp [Fin.sum_univ_three]; omega⟩
+  intro i
+  match i with
+  | 0 => exact ⟨hx, havoid x (by omega) hxP⟩
+  | 1 => exact ⟨hy, havoid y (by omega) hyP⟩
+  | 2 => exact ⟨hz, havoid z (by omega) hzP⟩
+
+open Classical in
+/-- **THE PAIR FLOOD, UNCONDITIONAL.**  Every counterexample
+world carries a constant C and a free 0-less envelope P such
+that EVERY sufficiently large basis element b personally guards
+a target m ≥ b whose ENTIRE pair life routes through P ∪ {b}
+and whose unordered pair count is at most C.  Pair-poverty is
+not scattered — it is pinned to every basis element personally,
+with one constant, density-free.  The canonical core's
+unbounded r₂ and this law now share one world: the enemy's
+r₂-blowups live only on targets guarded by NO large element. -/
+theorem personal_pair_guard_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ P : Finset ℕ, RepFree A N₀ P ∧ (0 : ℕ) ∉ P ∧
+      ∃ X, ∀ b ∈ A, X ≤ b → 0 < b →
+      ∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsPairHub A m (insert b P) ∧
+      ((Finset.range (m + 1)).filter
+        (fun a => a ∈ A ∧ (m - a) ∈ A ∧ 2 * a ≤ m)).card ≤
+        P.card + 1 := by
+  obtain ⟨P, hPfree, h0P, X, hflood⟩ :=
+    rep_flood_pos_of_hfail h0 hcov hfail
+  exact ⟨P, hPfree, h0P, X,
+    flood_pair_guard h0 h0P hflood⟩
+
 end Erdos881
