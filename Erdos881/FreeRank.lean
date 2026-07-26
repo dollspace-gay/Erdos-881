@@ -9240,4 +9240,242 @@ theorem the_collapsed_trichotomy {A : Set ℕ} {N₀ : ℕ}
       · exact Or.inl h
       · exact Or.inr (by omega)
 
+/-! ## The g₀-tower: what lives in the hole -/
+
+/-- **The almost-anchored stream dichotomy.**  With anchor
+supply at every value EXCEPT g₀ — the almost-anchored branch of
+the collapsed trichotomy — the private-stream kill still runs:
+the rotating extraction needs only one anchor package, and every
+recurring guardian other than g₀ dies by the fixed kill.  What
+survives is ONE explicit configuration: the guardian g₀ itself
+recurring cofinally.  The g₀-hole in the anchor wall admits
+exactly the g₀-tower. -/
+theorem almost_anchored_privateStream
+    {A : Set ℕ} {N₀ g₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hstream : ∀ N, ∃ a m, N ≤ m ∧ 0 < a ∧ IsPrivateTriple A a m)
+    (hanchor' : ∀ g, g ≠ g₀ → ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
+      ∃ w ∈ A, ∃ w' ∈ A,
+        w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g) :
+    (∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n) ∨
+    (0 < g₀ ∧ ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A g₀ m) := by
+  classical
+  by_cases hro : ∀ (F : Finset ℕ) (N : ℕ), ∃ a m, N ≤ m ∧ 0 < a ∧
+      a ∉ F ∧ IsPrivateTriple A a m
+  · -- rotating case: every finite forbidden set is dodged
+    refine Or.inl ?_
+    obtain ⟨c, hc, hc0, -, w, hwA, w', hw'A, hww, hwc, -, -⟩ :=
+      hanchor' (g₀ + 1) (by omega)
+    choose pa pm hpm hpa0 hpaF hppriv using hro
+    set F₀ : Finset ℕ := {c, w, w'} with hF₀
+    set nxt : ℕ × Finset ℕ → ℕ × Finset ℕ := fun s =>
+      (pm s.2 (8 * s.1 + 9 * N₀ + 21) - pa s.2 (8 * s.1 + 9 * N₀ + 21),
+        insert
+          (pm s.2 (8 * s.1 + 9 * N₀ + 21) -
+            pa s.2 (8 * s.1 + 9 * N₀ + 21)) s.2) with hnxt
+    set prev : ℕ → ℕ × Finset ℕ := fun k =>
+      Nat.rec (c + N₀, F₀) (fun _ p => nxt p) k with hprev
+    set L : ℕ → ℕ := fun k => (prev (k + 1)).1 with hLdef
+    set d : ℕ → ℕ := fun k =>
+      pa (prev k).2 (8 * (prev k).1 + 9 * N₀ + 21) with hddef
+    have hprevS : ∀ k, prev (k + 1) = nxt (prev k) := fun _ => rfl
+    have hLeq : ∀ k, L k =
+        pm (prev k).2 (8 * (prev k).1 + 9 * N₀ + 21) -
+          pa (prev k).2 (8 * (prev k).1 + 9 * N₀ + 21) := by
+      intro k
+      simp only [hLdef, hprevS k, hnxt]
+    have hFeq : ∀ k, (prev (k + 1)).2 = insert (L k) (prev k).2 := by
+      intro k
+      simp only [hLdef, hprevS k, hnxt]
+    have hdeq : ∀ k, d k =
+        pa (prev k).2 (8 * (prev k).1 + 9 * N₀ + 21) := by
+      intro k
+      simp only [hddef]
+    -- per-step facts
+    have hstep : ∀ k, d k ∉ (prev k).2 ∧ 0 < d k ∧ L k ∈ A ∧
+        (prev k).1 < L k ∧ 2 * (prev k).1 + N₀ < L k ∧
+        ∀ z ∈ A, z ≠ d k → z + N₀ < L k → L k - z ∈ A := by
+      intro k
+      have hpriv := hppriv (prev k).2 (8 * (prev k).1 + 9 * N₀ + 21)
+      have hm := hpm (prev k).2 (8 * (prev k).1 + 9 * N₀ + 21)
+      have ha0 := hpa0 (prev k).2 (8 * (prev k).1 + 9 * N₀ + 21)
+      have hlow : ¬ (4 * (pm (prev k).2 (8 * (prev k).1 + 9 * N₀ + 21) -
+          pa (prev k).2 (8 * (prev k).1 + 9 * N₀ + 21)) +
+            4 * N₀ + 20 ≤
+          pm (prev k).2 (8 * (prev k).1 + 9 * N₀ + 21)) :=
+        fun h => hpriv.corep_lower h0 hcov ha0 h
+      obtain ⟨M, hMA, hMe⟩ := hpriv.corep_mem h0 hcov ha0 (by omega)
+      constructor
+      · rw [hdeq]
+        exact hpaF _ _
+      refine ⟨by rw [hdeq]; exact ha0, ?_, ?_, ?_, ?_⟩
+      · rw [hLeq]
+        have hMeq : M = pm (prev k).2 (8 * (prev k).1 + 9 * N₀ + 21) -
+            pa (prev k).2 (8 * (prev k).1 + 9 * N₀ + 21) := by omega
+        exact hMeq ▸ hMA
+      · rw [hLeq]; omega
+      · rw [hLeq]; omega
+      · intro z hz hza hzM
+        rw [hLeq] at hzM ⊢
+        rw [hdeq] at hza
+        obtain ⟨v, hvA, hvs⟩ :=
+          hpriv.mirror_of_ne h0 hcov hz (by omega) (by omega) hza
+        have hve : v = pm (prev k).2 (8 * (prev k).1 + 9 * N₀ + 21) -
+            pa (prev k).2 (8 * (prev k).1 + 9 * N₀ + 21) - z := by
+          omega
+        exact hve ▸ hvA
+    -- state invariants
+    have hF₀sub : ∀ k, F₀ ⊆ (prev k).2 := by
+      intro k
+      induction k with
+      | zero =>
+          have hp0 : prev 0 = (c + N₀, F₀) := rfl
+          rw [hp0]
+      | succ k ih =>
+          rw [hFeq k]
+          exact ih.trans (Finset.subset_insert _ _)
+    have hLmem : ∀ j k, j < k → L j ∈ (prev k).2 := by
+      intro j k hjk
+      induction k with
+      | zero => omega
+      | succ k ih =>
+          rw [hFeq k]
+          rcases Nat.lt_or_ge j k with h | h
+          · exact Finset.mem_insert_of_mem (ih h)
+          · have hjeq : j = k := by omega
+            subst hjeq
+            exact Finset.mem_insert_self _ _
+    have hprev1 : ∀ k, (prev (k + 1)).1 = L k := fun _ => rfl
+    have hgrow : ∀ k, 2 * L k < L (k + 1) := by
+      intro k
+      have h1 := (hstep (k + 1)).2.2.2.2.1
+      rw [hprev1] at h1
+      omega
+    have hcL : c + N₀ < L 0 := by
+      have h1 := (hstep 0).2.2.2.2.1
+      have h2 : (prev 0).1 = c + N₀ := rfl
+      omega
+    have hmono : StrictMono L := by
+      apply strictMono_nat_of_lt_succ
+      intro k
+      have h1 := hgrow k
+      have h2 := (hstep k).2.2.2.1
+      omega
+    have hcF : ∀ k, c ∈ (prev k).2 :=
+      fun k => hF₀sub k (by simp [hF₀])
+    have hwF : ∀ k, w ∈ (prev k).2 :=
+      fun k => hF₀sub k (by simp [hF₀])
+    have hw'F : ∀ k, w' ∈ (prev k).2 :=
+      fun k => hF₀sub k (by simp [hF₀])
+    exact surviving_deletion_of_geometric_rotatingDefects L d h0 hcov
+      hmono (fun k => (hstep k).2.2.2.2.2) (fun k => (hstep k).2.2.1)
+      hgrow hc hc0 hcL hwA hw'A hww hwc
+      (fun k h => (hstep k).1 (h ▸ hcF k))
+      (fun k h => (hstep k).1 (h ▸ hwF k))
+      (fun k h => (hstep k).1 (h ▸ hw'F k))
+      (fun j k hjk h => (hstep k).1 (h ▸ hLmem j k hjk))
+  · -- recurring case: all late guardians in one finite set
+    push Not at hro
+    obtain ⟨F, N₁, hF⟩ := hro
+    by_cases hrec : ∃ g ∈ F, 0 < g ∧
+        ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A g m
+    · obtain ⟨g, hgF, hg0, hgstream⟩ := hrec
+      by_cases hgg₀ : g = g₀
+      · subst hgg₀
+        exact Or.inr ⟨hg0, hgstream⟩
+      · obtain ⟨c, hc, hc0, hcg, w, hwA, w', hw'A, hww, hwc, hwg,
+          hw'g⟩ := hanchor' g hgg₀
+        exact Or.inl (surviving_deletion_of_cofinal_fixedGuardian'
+          h0 hcov hg0 hgstream hc hc0 hcg
+          ⟨w, hwA, w', hw'A, hww, hwc, hwg, hw'g⟩)
+    · push Not at hrec
+      have hbnd : ∀ g, ∃ Ng, ∀ m, Ng ≤ m → g ∈ F → 0 < g →
+          ¬ IsPrivateTriple A g m := by
+        intro g
+        by_cases hgF : g ∈ F
+        · by_cases hg0 : 0 < g
+          · obtain ⟨Ng', hNg'⟩ := hrec g hgF hg0
+            exact ⟨Ng', fun m hm _ _ => hNg' m hm⟩
+          · exact ⟨0, fun m _ _ h0g => absurd h0g hg0⟩
+        · exact ⟨0, fun m _ hgF' _ => absurd hgF' hgF⟩
+      choose Ng hNg using hbnd
+      obtain ⟨a, m, hm, ha0, hpriv⟩ :=
+        hstream (max N₁ (F.sup Ng))
+      have haF : a ∈ F := by
+        by_contra haF
+        exact hF a m (le_trans (le_max_left _ _) hm) ha0 haF hpriv
+      have hbound : Ng a ≤ m :=
+        le_trans (le_trans (Finset.le_sup haF) (le_max_right _ _)) hm
+      exact absurd hpriv (hNg a m hbound haF ha0)
+
+/-- **The g₀-tower structure.**  A cofinal g₀-private stream
+condenses into explicit material: cofinal levels L ∈ A with the
+target g₀ + L pair-hubbed by the SINGLETON {g₀} (one door for
+every pair) and the full mirror law at L — every non-g₀ element
+below the level reflects back into A.  The hole in the anchor
+wall contains a fully symmetric tower, all of it centred on the
+single member g₀. -/
+theorem g0_tower {A : Set ℕ} {N₀ g₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (hg0 : 0 < g₀)
+    (hstream : ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A g₀ m) :
+    ∀ K, ∃ L, K < L ∧ L ∈ A ∧ N₀ ≤ g₀ + L ∧
+      IsPairHub A (g₀ + L) ({g₀} : Finset ℕ) ∧
+      ∀ z ∈ A, z ≠ g₀ → z + N₀ < L → L - z ∈ A := by
+  intro K
+  obtain ⟨m, hm, hpriv⟩ := hstream (4 * K + 5 * N₀ + 21)
+  have hMlow : ¬ (4 * (m - g₀) + 4 * N₀ + 20 ≤ m) :=
+    fun h => hpriv.corep_lower h0 hcov hg0 h
+  obtain ⟨M, hMA, hMe⟩ := hpriv.corep_mem h0 hcov hg0 (by omega)
+  refine ⟨M, by omega, hMA, by omega, ?_, ?_⟩
+  · intro u hu v hv huv
+    rcases hpriv.2 u hu v hv 0 h0 (by omega) with h | h | h
+    · exact Or.inl (by simp [h])
+    · exact Or.inr (by simp [h])
+    · omega
+  · intro z hz hzg hzM
+    obtain ⟨w, hwA, hws⟩ :=
+      hpriv.mirror_of_ne h0 hcov hz (by omega) (by omega) hzg
+    have hwe : w = M - z := by omega
+    exact hwe ▸ hwA
+
+/-- **Almost-anchored singleton hubs feed the tower.**  Under
+hfail, an almost-anchored world with cofinal positive singleton
+rep-hubs is forced into the g₀-tower: the stream dichotomy's
+surviving branch contradicts hfail, so the guardian g₀ recurs
+cofinally and the tower stands.  The last unkilled singleton
+configuration of the almost-anchored branch is completely
+explicit. -/
+theorem almost_anchored_singleton_hubs {A : Set ℕ} {N₀ g₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor' : ∀ g, g ≠ g₀ → ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
+      ∃ w ∈ A, ∃ w' ∈ A,
+        w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hsing : ∀ N, ∃ n, N ≤ n ∧ ∃ a, 0 < a ∧ IsRepHub A n {a}) :
+    0 < g₀ ∧ ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A g₀ m := by
+  have hstream : ∀ N, ∃ a m, N ≤ m ∧ 0 < a ∧
+      IsPrivateTriple A a m := by
+    intro N
+    obtain ⟨n, hn, a, ha, hhub⟩ := hsing (max N N₀)
+    exact ⟨a, n, le_trans (le_max_left _ _) hn, ha,
+      privateTriple_of_singleton_hub h0 hcov
+        (le_trans (le_max_right _ _) hn) hhub⟩
+  rcases almost_anchored_privateStream h0 hcov hstream hanchor'
+    with ⟨B, hBsub, hBinf, hsurv⟩ | htower
+  · exfalso
+    refine hfail B hBsub hBinf ⟨N₀, fun n hn => ?_⟩
+    obtain ⟨x, hx, y, hy, z, hz, hxB, hyB, hzB, hsum⟩ :=
+      hsurv n hn
+    refine ⟨![x, y, z], ?_, ?_⟩
+    · intro i
+      match i with
+      | 0 => exact ⟨hx, hxB⟩
+      | 1 => exact ⟨hy, hyB⟩
+      | 2 => exact ⟨hz, hzB⟩
+    · simpa [Fin.sum_univ_three] using hsum
+  · exact htower
+
 end Erdos881
