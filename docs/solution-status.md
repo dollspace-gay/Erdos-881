@@ -750,3 +750,22 @@ shallow-and-fat; the enemy must be an infinitely deep onion of
 finite shells.  The open core is unchanged (target liberty /
 witness confinement), but the adaptive program now has a verified
 LOCATION LAW for where deep elements' obligations sit.
+
+## THE STREET DICHOTOMY + REFLECTION LEDGER (2026-07-25, 20:29)
+
+Verified tonight (FreeRank.lean, standard axioms, zero sorries):
+`seal_cost_of_disjoint_avoiding`, `two_hubs_common_reflection`,
+`double_reflection_supply_of_hfail`, `street_dichotomy_of_hfail`,
+`difference_blowup_or_affine_corners`, `fixed_offset_or_growing`.
+Every counterexample must either repeat DIFFERENCES beyond any
+bound (one fixed offset with infinite multiplicity, or
+arbitrarily large offsets at every multiplicity — closing the
+difference door as Erdős–Turán closed the sum door), or run an
+affine sealing schedule m_b = b + n with blown points coupled to
+pair streets by s + b₂ = n + b₃.  Also verified this block: the
+absolute flood / shell stratification / depth tax / rotation caps
+/ six-level and 18-level caps / shell-conflict law / robustness
+branch (third branch mechanism; Cantor is uniformly robust) /
+fragility laws.  The enemy's remaining configuration space: the
+mixed fragile-blown regime, now further split into echo-hoarder
+vs mirror-hall.

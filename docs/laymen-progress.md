@@ -409,3 +409,34 @@ Our lab probes show honest keyrings are shallow onions — three or
 four fat skins.  The enemy must be an infinitely deep onion of
 thin skins, paying linear tax at every layer.  The trap-building
 program now knows WHERE the enemy's obligations live.
+
+## 2026-07-25 night, part four — The hall of mirrors
+
+Tonight's second discovery is about echoes.  Every door the enemy
+seals casts reflections: the sealed door bounces every key below
+it off one of its few guard-posts.  Take TWO sealed doors and
+bounce the same crowd of keys off both — the machine now proves
+the crowd splits into groups, and one large group reflects
+through the same two mirror-points simultaneously.
+
+If those two mirror-points differ, the enemy's keyring suddenly
+contains a long arithmetic echo: many pairs of keys separated by
+exactly the same gap, repeated over and over.  Keyrings built to
+avoid repetition — the natural way to stay minimal — cannot
+contain such echoes.  We had already proven the enemy's keyring
+must repeat SUMS beyond any bound; now it must repeat GAPS beyond
+any bound too, or else...
+
+...or else every mirror-point coincides, forever.  And that
+forced coincidence is astonishingly rigid: the enemy's whole
+sealing schedule turns AFFINE — every big key b seals the door at
+exactly b + n for one fixed number n, like a hall of mirrors all
+angled at the same point.  In that hall we prove a new coupling:
+the blown-up point n, two specific keys, and a quiet street all
+locked in one linear equation.
+
+So the enemy now has exactly two faces left: the echo-hoarder
+(unbounded repeated gaps) or the mirror-hall (a rigid affine
+schedule).  Both faces are strange, specific, and — for the first
+time — written as one machine-checked dichotomy.  Tomorrow's work
+begins inside those two rooms.
