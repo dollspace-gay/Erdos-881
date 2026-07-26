@@ -1,3 +1,25 @@
+# THE SELF-SIMILAR ENEMY — TENTH SUMMIT (2026-07-26)
+
+`endgame_self_similar` (Endgame.lean, standard axioms): every
+counterexample reproduces the problem's COMPLETE hypothesis
+package inside a located cylinder — first mixing level m,
+address c, world W = {x | c + 2^m x in A} with: covering,
+unbounded wealth, both parities cofinal, infinitude, and the
+lifted failure interface (`mixing_deletion_wounds_root`: every
+infinite deletion from W wounds the root at order 3 through
+x -> c + 2^m x).
+
+The enemy one window down is the enemy again.  The remaining
+mathematical content along the cascade track is exactly the
+sub-instance analysis: either the lifted interface
+self-destructs under iteration, or a mixing world survives a
+deletion — and mixing IS the carry liberty that powered the
+verified Cantor repair (`cantor_carry_repair`).
+
+Ten summits: dichotomy, translate laws, collapsed trichotomy,
+parity fork, omega drain, poor street, cascade fork, forced
+mixing, mixing world, self-similar enemy.
+
 # THE MIXING WORLD — NINTH SUMMIT (2026-07-26)
 
 `endgame_mixing_world` (Endgame.lean, standard axioms): every

@@ -15027,4 +15027,68 @@ theorem mixing_world_complete {A : Set ℕ} {N₀ : ℕ}
       by_contra hne
       exact hcon ⟨a, by omega, ha, by omega⟩
 
+/-- **Cylinder deletions wound the root.**  Any infinite
+deletion drawn from a cylinder world W = {x | c + 2^m x ∈ A}
+lifts to an infinite subset of A, so the root failure interface
+strikes it: the root basis minus the lifted copy fails at order
+3.  The failure interface touches every mixing world through
+its own address map — the entry point of the mixed-interface
+descent. -/
+theorem mixing_deletion_wounds_root {A : Set ℕ}
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {W : Set ℕ} {m c : ℕ}
+    (hW : W = {x : ℕ | c + 2 ^ m * x ∈ A}) :
+    ∀ B' ⊆ W, B'.Infinite →
+      ¬IsExactTupleAsymptoticBasis
+        (A \ ((fun x => c + 2 ^ m * x) '' B')) 3 := by
+  intro B' hB'W hB'inf
+  refine hfail _ ?_ ?_
+  · rintro a ⟨x, hxB', hxa⟩
+    have hxW := hB'W hxB'
+    rw [hW] at hxW
+    rw [← hxa]
+    exact hxW
+  · refine hB'inf.image ?_
+    intro a _ b _ hab
+    have h : c + 2 ^ m * a = c + 2 ^ m * b := hab
+    have hp : 0 < 2 ^ m := pow_pos (by omega) m
+    exact Nat.eq_of_mul_eq_mul_left hp (by omega)
+
+open Classical in
+/-- **THE MIXING WORLD CARRIES THE INTERFACE.**  The complete
+located mixing sub-instance, now with the failure interface
+attached: every infinite deletion drawn from the mixing world
+S m wounds the root basis at order 3 through the address map
+x ↦ c + 2^m x.  Covering, wealth, mixing, infinitude, AND the
+lifted failure law — the full hypothesis package of the
+original problem, reproduced inside explicit cylinder
+coordinates. -/
+theorem mixing_world_interface {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ S T : ℕ → Set ℕ, S 0 = A ∧ T 0 = A ∧
+      (∀ k, ∃ p q, p < 2 ∧ q < 2 ∧
+        S (k + 1) = {y | 2 * y + p ∈ S k} ∧
+        T (k + 1) = {y | 2 * y + q ∈ T k}) ∧
+      (∀ k, ∀ C N, ∃ v, N ≤ v ∧ C ≤
+        ((Finset.range (v + 1)).filter
+          (fun x => x ∈ S k ∧ (v - x) ∈ T k)).card) ∧
+      ∃ m c, S m = T m ∧
+        S m = {x : ℕ | c + 2 ^ m * x ∈ A} ∧
+        (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 0) ∧
+        (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 1) ∧
+        (∃ N', PairCovers (S m) N') ∧
+        (S m).Infinite ∧
+        (∀ B' ⊆ S m, B'.Infinite →
+          ¬IsExactTupleAsymptoticBasis
+            (A \ ((fun x => c + 2 ^ m * x) '' B')) 3) := by
+  obtain ⟨S, T, hS0, hT0, hstep, hblow, m, c, heqm, hcylm,
+    hmix0, hmix1, hcovm, hinfm⟩ :=
+    mixing_world_complete h0 hcov hfail
+  exact ⟨S, T, hS0, hT0, hstep, hblow, m, c, heqm, hcylm,
+    hmix0, hmix1, hcovm, hinfm,
+    mixing_deletion_wounds_root hfail hcylm⟩
+
 end Erdos881

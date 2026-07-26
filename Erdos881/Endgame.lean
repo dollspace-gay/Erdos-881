@@ -853,4 +853,41 @@ theorem endgame_mixing_world {A : Set ℕ} {N₀ : ℕ}
         (S m).Infinite :=
   mixing_world_complete h0 hcov hfail
 
+open Classical in
+/-- **THE SELF-SIMILAR ENEMY** (re-export; tenth summit).
+Every counterexample reproduces the problem's complete
+hypothesis package inside a located cylinder: a first mixing
+level m and address c where the world {x | c + 2^m x ∈ A}
+pair-covers, carries unbounded pair wealth, has both parities
+cofinal, is infinite, and — through the address map — every
+infinite deletion drawn from it wounds the root basis at order
+3.  Covering, wealth, mixing, infinitude, interface: the enemy
+one window down is the enemy again.  What remains of Erdős 881
+along this track is precisely the sub-instance analysis: either
+the lifted interface self-destructs under iteration, or a
+mixing world survives a deletion — and mixing (both parities
+cofinal) is exactly the carry liberty that powered the verified
+Cantor repair. -/
+theorem endgame_self_similar {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ S T : ℕ → Set ℕ, S 0 = A ∧ T 0 = A ∧
+      (∀ k, ∃ p q, p < 2 ∧ q < 2 ∧
+        S (k + 1) = {y | 2 * y + p ∈ S k} ∧
+        T (k + 1) = {y | 2 * y + q ∈ T k}) ∧
+      (∀ k, ∀ C N, ∃ v, N ≤ v ∧ C ≤
+        ((Finset.range (v + 1)).filter
+          (fun x => x ∈ S k ∧ (v - x) ∈ T k)).card) ∧
+      ∃ m c, S m = T m ∧
+        S m = {x : ℕ | c + 2 ^ m * x ∈ A} ∧
+        (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 0) ∧
+        (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 1) ∧
+        (∃ N', PairCovers (S m) N') ∧
+        (S m).Infinite ∧
+        (∀ B' ⊆ S m, B'.Infinite →
+          ¬IsExactTupleAsymptoticBasis
+            (A \ ((fun x => c + 2 ^ m * x) '' B')) 3) :=
+  mixing_world_interface h0 hcov hfail
+
 end Erdos881
