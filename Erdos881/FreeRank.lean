@@ -11304,4 +11304,45 @@ theorem personal_pair_guard_of_hfail {A : Set ℕ} {N₀ : ℕ}
   exact ⟨P, hPfree, h0P, X,
     flood_pair_guard h0 h0P hflood⟩
 
+open Classical in
+/-- **Ghost or centre.**  The pair flood's placement law: each
+large basis element's personal target either IS the element
+itself — its every nontrivial pair routed through the fixed
+envelope — or is a GHOST, forced out of A with its whole pair
+life through P ∪ {b}.  Unconditional: every counterexample is
+saturated with personal door-configurations. -/
+theorem pair_flood_ghost_or_center {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ P : Finset ℕ, RepFree A N₀ P ∧ (0 : ℕ) ∉ P ∧
+      ∃ X, ∀ b ∈ A, X ≤ b →
+      ∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsPairHub A m (insert b P) ∧
+      ((Finset.range (m + 1)).filter
+        (fun a => a ∈ A ∧ (m - a) ∈ A ∧ 2 * a ≤ m)).card ≤
+        P.card + 1 ∧
+      (m = b ∨ m ∉ A) := by
+  obtain ⟨P, hPfree, h0P, X, hguard⟩ :=
+    personal_pair_guard_of_hfail h0 hcov hfail
+  refine ⟨P, hPfree, h0P, max X (P.sup id + 1), ?_⟩
+  intro b hbA hXb
+  have hbX : X ≤ b := le_trans (le_max_left _ _) hXb
+  have hbP : P.sup id + 1 ≤ b := le_trans (le_max_right _ _) hXb
+  obtain ⟨m, hmN, hbm, hpair, hcount⟩ :=
+    hguard b hbA hbX (by omega)
+  refine ⟨m, hmN, hbm, hpair, hcount, ?_⟩
+  have h0i : (0 : ℕ) ∉ insert b P := by
+    intro h
+    rcases Finset.mem_insert.1 h with h | h
+    · omega
+    · exact h0P h
+  rcases street_target_notMem_or_window h0 h0i hpair with
+    h | h
+  · exact Or.inr h
+  · rcases Finset.mem_insert.1 h with h1 | h1
+    · exact Or.inl h1
+    · exfalso
+      have h2 : m ≤ P.sup id := Finset.le_sup (f := id) h1
+      omega
+
 end Erdos881
