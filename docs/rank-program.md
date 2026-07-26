@@ -199,3 +199,44 @@ TRADE-OFF, the sharpest open sub-question the shell arc leaves:
   conflicts" is the next dichotomy candidate: both branches are
   usable (one feeds the branch template, the other pins placement
   — the first crack in target liberty).
+
+## MECHANISM UNIFICATION + MIXED REGIME (19:47)
+
+`robustness_gives_hereditarily_free` (verified): uniformly growing
+disjoint-rep counts give a branch by diagonal choice — the
+branch-form of Engine V10's diagonal (`fragile_supply_of_hfail` is
+its ν-form contrapositive; `cofinal_bounded_hubs_of_hfail` was
+already the τ-form, and `hub_of_no_disjointReps` +
+`disjoint_reps_le_hub_card` make ν and τ equivalent up to factor
+3).  FRAGILITY (few disjoint reps ⟺ small hubs) is the single
+currency of the whole quantitative theory.
+
+probe_robustness.py: Cantor is UNIFORMLY ROBUST (min R over
+windows: 1→4→5→8→9) — the Cantor branch is subsumed by the
+robustness mechanism; carry-repair is disjoint-supply in
+disguise.  Greedy-B₂ stays fragile forever (min R = 1, half of
+each window at R ≤ 2) — its branch is the counting mechanism.
+TWO mechanisms, and the enemy must live in the MIXED regime:
+cofinally fragile (verified) with unbounded r₂ (verified), i.e.
+fragile streets threaded through blown neighbourhoods forever.
+
+Recombination audit: fragile+blown targets rederive the fan
+blowup (covering forces nonzero completions m − z ∈ A + A for
+every z, and a small cover concentrates them); every quantitative
+consequence tested today is inter-derivable with the V10 core +
+floods + caps.  The theory is CLOSED under recombination — new
+inputs must come from (i) a mixed-regime branch construction,
+(ii) Nash-Williams barriers, or (iii) explicit enemy-candidate
+search.
+
+## CRYSTAL HUNT, FIRST ATTEMPT (probe_crystal.py)
+
+d=1 crystals (every tail pair a full hub) at Y=400: naive
+covering sets score 0/1378 — no pair seals anything, because
+covering density makes average r₃ ~ √Y and a full-hub pair must
+carry a target's entire representation mass (the blown-translate
+coincidence).  B₃-style uniqueness would do it but B₃ sets cannot
+cover.  Crystal candidates must be engineered mirror-first, on
+sparse Sidon streets; naive annealing cannot reach that geometry.
+Next lab iteration: seed with designed reflection structure
+(m − h* − A ⊆ A patterns) instead of random perturbation.
