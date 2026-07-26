@@ -17306,4 +17306,118 @@ theorem covering_sqrt_growth {A : Set ℕ} {N₀ : ℕ}
   rw [Finset.card_product, Nat.card_Icc] at hinj
   have hsq : Af.card * Af.card = Af.card ^ 2 := by ring
   omega
+open Classical Pointwise in
+/-- **THE ENERGY BRIDGE.**  The campaign's windowed second
+moment embeds into Mathlib's additive energy: the window sum
+Σ_{m ≤ n} r₂(m)² is at most E[Af, Af] for Af = A ∩ [0,n] —
+each window fiber is exactly a sumset fiber, and the sumset
+carries more.  This connects the entire bespoke counting suite
+to `Mathlib.Combinatorics.Additive` (energy, Plünnecke–Ruzsa,
+Ruzsa covering, doubling): the classical arsenal now points at
+the corridor. -/
+theorem window_energy_le_addEnergy {A : Set ℕ} (n : ℕ) :
+    (Finset.range (n + 1)).sum (fun m =>
+      ((Finset.range (m + 1)).filter
+        (fun y => y ∈ A ∧ (m - y) ∈ A)).card ^ 2) ≤
+    Finset.addEnergy ((Finset.range (n + 1)).filter
+      (fun x => x ∈ A))
+      ((Finset.range (n + 1)).filter (fun x => x ∈ A)) := by
+  set Af := (Finset.range (n + 1)).filter (fun x => x ∈ A)
+    with hAf
+  rw [Finset.addEnergy_eq_sum_sq']
+  have hfiber : ∀ m, m ≤ n →
+      ((Finset.range (m + 1)).filter
+        (fun y => y ∈ A ∧ (m - y) ∈ A)).card =
+      ((Af ×ˢ Af).filter
+        (fun xy => xy.1 + xy.2 = m)).card := by
+    intro m hm
+    apply Finset.card_bij' (fun x _ => (x, m - x))
+      (fun xy _ => xy.1)
+    · intro x hx
+      rw [Finset.mem_filter, Finset.mem_range] at hx
+      rw [Finset.mem_filter, Finset.mem_product]
+      refine ⟨⟨?_, ?_⟩, by omega⟩
+      · rw [hAf, Finset.mem_filter, Finset.mem_range]
+        exact ⟨by omega, hx.2.1⟩
+      · rw [hAf, Finset.mem_filter, Finset.mem_range]
+        exact ⟨by omega, hx.2.2⟩
+    · intro xy hxy
+      rw [Finset.mem_filter, Finset.mem_product] at hxy
+      obtain ⟨⟨h1, h2⟩, h3⟩ := hxy
+      rw [hAf, Finset.mem_filter, Finset.mem_range] at h1
+      rw [hAf, Finset.mem_filter, Finset.mem_range] at h2
+      rw [Finset.mem_filter, Finset.mem_range]
+      refine ⟨by omega, h1.2, ?_⟩
+      have he : m - xy.1 = xy.2 := by omega
+      rw [he]
+      exact h2.2
+    · intro x hx
+      rfl
+    · intro xy hxy
+      rw [Finset.mem_filter, Finset.mem_product] at hxy
+      obtain ⟨⟨h1, h2⟩, h3⟩ := hxy
+      have he : m - xy.1 = xy.2 := by omega
+      exact Prod.ext rfl he
+  have hrw : (Finset.range (n + 1)).sum (fun m =>
+      ((Finset.range (m + 1)).filter
+        (fun y => y ∈ A ∧ (m - y) ∈ A)).card ^ 2) =
+      (Finset.range (n + 1)).sum (fun m =>
+        ((Af ×ˢ Af).filter
+          (fun xy => xy.1 + xy.2 = m)).card ^ 2) := by
+    apply Finset.sum_congr rfl
+    intro m hm
+    rw [Finset.mem_range] at hm
+    rw [hfiber m (by omega)]
+  rw [hrw]
+  apply Finset.sum_le_sum_of_ne_zero
+  intro m hm hne
+  have hpos : 0 < ((Af ×ˢ Af).filter
+      (fun xy => xy.1 + xy.2 = m)).card := by
+    rcases Nat.eq_zero_or_pos ((Af ×ˢ Af).filter
+        (fun xy => xy.1 + xy.2 = m)).card with h | h
+    · rw [h] at hne
+      simp at hne
+    · exact h
+  rw [Finset.card_pos] at hpos
+  obtain ⟨xy, hxy⟩ := hpos
+  rw [Finset.mem_filter, Finset.mem_product] at hxy
+  obtain ⟨⟨h1, h2⟩, h3⟩ := hxy
+  rw [← h3]
+  exact Finset.add_mem_add h1 h2
+
+open Classical Pointwise in
+/-- **The Mathlib energy floor.**  α⁴ ≤ (2n+1)·E[Af, Af] —
+directly from `le_card_add_mul_addEnergy` and the sumset
+living inside [0, 2n].  Sharper than the hand-built engine
+(α, not α₂), and stated in the classical library's own
+vocabulary: covering worlds have near-maximal additive energy
+demands at every scale. -/
+theorem mathlib_energy_floor {A : Set ℕ} (n : ℕ) :
+    (((Finset.range (n + 1)).filter
+      (fun x => x ∈ A)).card) ^ 2 *
+    (((Finset.range (n + 1)).filter
+      (fun x => x ∈ A)).card) ^ 2 ≤
+    (2 * n + 1) * Finset.addEnergy
+      ((Finset.range (n + 1)).filter (fun x => x ∈ A))
+      ((Finset.range (n + 1)).filter (fun x => x ∈ A)) := by
+  set Af := (Finset.range (n + 1)).filter (fun x => x ∈ A)
+    with hAf
+  have hle := Finset.le_card_add_mul_addEnergy Af Af
+  have hsub : Af + Af ⊆ Finset.range (2 * n + 1) := by
+    intro z hz
+    rw [Finset.mem_add] at hz
+    obtain ⟨a, ha, b, hb, hab⟩ := hz
+    rw [hAf, Finset.mem_filter, Finset.mem_range] at ha
+    rw [hAf, Finset.mem_filter, Finset.mem_range] at hb
+    rw [Finset.mem_range]
+    omega
+  have hcard : (Af + Af).card ≤ 2 * n + 1 := by
+    have := Finset.card_le_card hsub
+    rw [Finset.card_range] at this
+    exact this
+  calc Af.card ^ 2 * Af.card ^ 2 ≤
+      (Af + Af).card * Finset.addEnergy Af Af := hle
+    _ ≤ (2 * n + 1) * Finset.addEnergy Af Af :=
+      Nat.mul_le_mul_right _ hcard
+
 end Erdos881
