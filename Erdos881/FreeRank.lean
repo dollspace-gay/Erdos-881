@@ -12400,4 +12400,59 @@ theorem two_level_descent {A : Set ℕ} {Y₀ Y₁ ε₀ ε₁ : ℕ}
   have h1 := hpar₁ _ hmem (by omega)
   omega
 
+/-- **The ω-descent cylinder law.**  An iterated single-parity
+tower of half-worlds pins the basis, beyond level thresholds,
+into ONE 2-adic cylinder per depth: every large element
+decomposes as (address) + 2^k · (level-k survivor).  Infinitely
+descending worlds are asymptotically 2-adic — Cantor-caliber —
+with residue freedom zero at every depth. -/
+theorem omega_descent_cylinder {A : Set ℕ} (ε Y : ℕ → ℕ)
+    (hε : ∀ k, ε k < 2)
+    (W : ℕ → Set ℕ) (hW0 : W 0 = A)
+    (hWs : ∀ k, W (k + 1) = {x | ε k + 2 * x ∈ W k})
+    (hpar : ∀ k, ∀ a ∈ W k, Y k < a → a % 2 = ε k) :
+    ∀ k, ∃ c T, c < 2 ^ k ∧ ∀ a ∈ A, T < a →
+      ∃ a', a = c + 2 ^ k * a' ∧ a' ∈ W k := by
+  intro k
+  induction k with
+  | zero =>
+    refine ⟨0, 0, by norm_num, ?_⟩
+    intro a ha _
+    refine ⟨a, by simp, ?_⟩
+    rw [hW0]
+    exact ha
+  | succ k ih =>
+    obtain ⟨c, T, hc, hT⟩ := ih
+    have hpk : (0 : ℕ) < 2 ^ k := pow_pos (by omega) k
+    refine ⟨c + 2 ^ k * ε k,
+      max T (c + 2 ^ k * (Y k + 1)), ?_, ?_⟩
+    · have h1 := hε k
+      have hp : (2 : ℕ) ^ (k + 1) = 2 ^ k * 2 := pow_succ 2 k
+      have h2 : 2 ^ k * ε k ≤ 2 ^ k * 1 :=
+        Nat.mul_le_mul_left _ (by omega)
+      omega
+    · intro a ha hbig
+      have hT' : T < a :=
+        lt_of_le_of_lt (le_max_left _ _) hbig
+      have hbig' : c + 2 ^ k * (Y k + 1) < a :=
+        lt_of_le_of_lt (le_max_right _ _) hbig
+      obtain ⟨a', heq, hmem⟩ := hT a ha hT'
+      have ha'Y : Y k < a' := by
+        have h1 : 2 ^ k * (Y k + 1) < 2 ^ k * a' := by omega
+        have h2 := Nat.lt_of_mul_lt_mul_left h1
+        omega
+      have hpar' := hpar k a' hmem ha'Y
+      set a'' := (a' - ε k) / 2 with ha''
+      have hε' := hε k
+      have hae : a' = ε k + 2 * a'' := by omega
+      have hmem' : a'' ∈ W (k + 1) := by
+        rw [hWs k]
+        show ε k + 2 * a'' ∈ W k
+        rw [← hae]
+        exact hmem
+      refine ⟨a'', ?_, hmem'⟩
+      have hp : (2 : ℕ) ^ (k + 1) = 2 ^ k * 2 := pow_succ 2 k
+      rw [heq, hae, hp]
+      ring
+
 end Erdos881
