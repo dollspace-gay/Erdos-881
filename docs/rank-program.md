@@ -479,3 +479,18 @@ material), and the completeness pinch (obligations against every
 family INCLUDING adaptively chosen ones).  The final proof, if
 881 is positive, lives there; the racing-proof formal frame is
 the spine game.
+
+
+## Hall-world lab (2026-07-26)
+
+`scripts/probe_hall_strong.py`: adversarial hall worlds (fixed
+2-element hall pair-hubbing sparse ghost targets, full pair
+coverage, then thinned to minimality ~164 elements at N = 3000)
+cannot defeat ANY tested deletion at order 3: partners, strong
+elements, every-4th, geometric — 52/52 survive.  The order-3
+repair richness (three slots, every survivor z opens a slice
+n − z) overwhelms pair-hub corruption.  Formal counterpart
+started: `deletion_failure_slices`.  The open formal step is
+counting pressure: B must pair-hub every slice of every failure
+target; slices overlap across failure targets; quantify against
+B's own structure (the slice-hub cascade).
