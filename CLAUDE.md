@@ -60,7 +60,15 @@ Also: shell stratification + depth tax + rotation/6/18-level caps
 + conflict law; three branch mechanisms (counting/Sidon,
 robustness/Cantor, and their mixed-regime gap); the anchor
 trichotomy (anchored / g₀-routed / central-AP3-free); the
-canonical grid.  NEWEST SUMMIT: `the_pair_flood_funnel` — every counterexample
+canonical grid.  NEWEST EXPORT: `endgame_parity_fork` — mixing world ∨ the full
+saturated package (odd channel = one immovable finite hall,
+blowups forced even, half-world covering + descended hfail:
+the 2-adic recursion armed).  Descent suite:
+`omega_descent_cylinder` (infinitely descending worlds are
+2-adic/Cantor-caliber), `descent_invariant`, `half_world_covers`.
+Three true cores remain: Cantor carry-repair generalization to
+cylinder worlds, walk engines at mixing levels, rank-ω.
+NEWEST SUMMIT: `the_pair_flood_funnel` — every counterexample
 funnels via its own pair flood (`personal_pair_guard_of_hfail`,
 unconditional, density-free) into: P-centred members / rotator
 ghosts / the pure hall — over ONE fixed free 0-less envelope.
