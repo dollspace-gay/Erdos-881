@@ -675,3 +675,97 @@ each fully hubbed by 2..L consecutive lineage values at known
 positions, uniformly fragile, taxed, capped, and self-similar
 under thinning.  Erdős 881 (k = 2), after this night, is the
 defeat of these two explicit configurations.
+
+
+---
+
+## Appendix (2026-07-26): the descent-and-ledger layer
+
+_All machine-verified same standards; statements in
+`Erdos881/FreeRank.lean`, exports in `Erdos881/Endgame.lean`._
+
+### A. The 2-adic descent
+
+**Drain exports.** The ω-drain's carriers are infinite at every
+level (`cross_blowup_infinite`); its addresses lift to a nested
+tower in root coordinates (`drain_address_cluster` — junk-audit:
+bare towers are König-free; the wealth concentration is the
+content); it manufactures repair quadruples a, a+δ, b, b−δ ∈ A
+with 2^k | δ at every depth beyond every bound
+(`drain_repair_mine`); its wealthy targets are pinned,
+w = e_k + 2^k y along one nested tower
+(`drain_wealth_addresses`).
+
+**The saturated cascade.** Saturation + child blowup pins the
+child's parities to the saturation parity and collapses both
+channels onto the canonical half-world (`saturated_cascade_step`
+— pure, hfail-free, level-free).  Permanent saturation therefore
+determines the entire drain: explicit digits, every level a
+cylinder slice (`saturated_cascade_determined`).
+
+**Forced mixing (branch defeat).**  2-adic convergence of the
+tail contradicts pair covering (pure counting:
+`two_adic_convergence_kills_covering`), so permanent saturation
+is impossible: every counterexample's drain reaches a first
+mixing level with explicit coordinates
+(`cascade_forces_mixing` / `endgame_forced_mixing`).  The
+mixing world moreover pair-covers (covering descends the
+saturated prefix), is infinite, and receives the failure
+interface through its address map (`mixing_world_complete`,
+`mixing_deletion_wounds_root`, `endgame_self_similar`).
+
+**Width law.**  2^j ≤ |HC|·|WC| + |WC|² at every depth
+(`two_adic_width_law`): support width ~2^(j/2) is forced; no
+finite union of 2-adic branches pair-covers.
+
+### B. The street ceiling
+
+A 0-free order-3 hub caps its target's ENTIRE pair count at
+2·|H| (`repHub_caps_pair_wealth`, `pairHub_caps_wealth`); street
+targets are uniformly Sidon-poor (`street_is_sidon_poor`,
+`endgame_poor_street`).
+
+### C. The exclusion suite (the deletion ledger)
+
+Root obligation (`universal_prefix_hub_law` /
+`endgame_universal_hub`; hypotheses 0 ∈ A + hfail only): every
+infinite positive B ⊆ A is owed a cofinal stream of targets at
+which B's prefix is an order-2 hub, with r₂(n) ≤ 2·|B∩[0,n]|.
+
+Refinements for a covered failing target n:
+- residue law (`cylinder_failure_residue_law`): deletion in one
+  class mod 2^m ⟹ every pair of n touches that class;
+- poverty (`failing_target_poor`, from
+  `wealthy_target_survives`);
+- sumset confinement (`failing_target_in_sumset`): n ∈ D + A;
+- bilinear overlap (`overlap_bilinear_law`): failing two
+  disjoint deletions ⟹ every pair splits across them and
+  n ∈ D₁ + D₂;
+- same-class pinning (`same_class_overlap_pinned`):
+  n ≡ 2c mod 2^j;
+- exclusion (`three_deletion_exclusion`): no covered target
+  fails three pairwise disjoint 0-free deletions.
+
+### D. Route prunings (recorded impossibilities)
+
+- Core 4 (chain threading) is not closable from the chain
+  supply alone: the per-c chain supply is an hfail theorem and
+  counterexample ⟺ WF(FreeStep).
+- Covering does NOT descend through a mixing step; "infinitely
+  many mixing levels" is not free.
+- Naive bypass is false: class-chained targets are cofinal in
+  thin worlds (lab); the difficulty is class-vs-sparse-set
+  chaining.
+
+### E. Labs
+
+52/52 (halls), 268/268 (mixing cylinders), bypass audit — no
+adversarial world has ever defeated a deletion.
+
+### F. The remaining question
+
+Can one set pay the universal prefix-hub obligation to every
+infinite positive subset of itself simultaneously, forever,
+while pair-covering with forced exponential 2-adic width,
+pinned wealth, poor streets, and forced mixing?  All evidence
+says no; Erdős 881 (k=2) is the proof of that no.
