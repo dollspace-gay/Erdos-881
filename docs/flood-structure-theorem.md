@@ -608,10 +608,14 @@ book.
 
 **`grid_cap_three_classes`.**  At most three residue obligations
 per modulus fire at one target (a rep has three parts, each with
-one residue).  Since late coverage forces A's residue support
-mod m to have width ≳ √m, the enemy's schedule against the
-m-row must spread over ≳ √m/3 distinct cofinal target streams —
-for every m simultaneously.  The obligation grid is the
-alignment battle line weaponized: the enemy's failure schedule
-against all congruence slices is itself a congruence-indexed
-object of unbounded width.
+one residue).  CORRECTION (same hour): the tempting width claim
+— that coverage forces ≳ √m infinite classes mod m — is FALSE:
+two-scale bases ([0, m] ∪ m·ℕ) cover with a SINGLE infinite
+class per modulus, finite classes carrying the residues.  The
+grid presses only on infinite slices, and the enemy can
+concentrate infiniteness in few classes per modulus at the cost
+of two-scale structure — which is itself an alignment.  The
+honest grid statement: either many infinite classes (wide
+obligation rows, spread by the cap) or few (the basis is
+two-scale-aligned at that modulus).  Alignment again, at every
+modulus: the grid is a dichotomy engine, not a width bound.
