@@ -6894,4 +6894,89 @@ theorem root_rank_omega_or_lockstep {A : Set ℕ} {N₀ : ℕ}
       _ ≤ _ := h1
   · exact Or.inr hlock
 
+/-- **The lockstep columns.**  In the lockstep branch the spine
+shells are literally s parallel strictly increasing columns: the
+k-th smallest elements across the spine form a strictly monotone
+sequence, and every shell is exactly the set of current column
+values.  The enemy's entire late freedom supply is an s-lane
+highway. -/
+theorem lockstep_columns {A : Set ℕ} {N₀ : ℕ}
+    {Q : ℕ → Finset ℕ} {σ : ℕ ↪o ℕ} {T s : ℕ}
+    (hdisj : ∀ j k, j < k → Disjoint (Q j) (Q k))
+    (hcard : ∀ t, T ≤ t → (Q (σ t)).card = s)
+    (hdom : ∀ t, T ≤ t → List.Forall₂ (· ≤ ·)
+      ((Q (σ t)).sort (· ≤ ·))
+      ((Q (σ (t + 1))).sort (· ≤ ·))) :
+    ∃ y : Fin s → ℕ → ℕ,
+      (∀ k, StrictMono (y k)) ∧
+      (∀ k t, y k t ∈ Q (σ (T + t))) ∧
+      (∀ t, ∀ h ∈ Q (σ (T + t)), ∃ k, y k t = h) := by
+  classical
+  have hlen : ∀ t : ℕ,
+      ((Q (σ (T + t))).sort (· ≤ ·)).length = s := by
+    intro t
+    rw [Finset.length_sort]
+    exact hcard (T + t) (by omega)
+  have hkl : ∀ (k : Fin s) (t : ℕ),
+      (k : ℕ) < ((Q (σ (T + t))).sort (· ≤ ·)).length := by
+    intro k t
+    rw [hlen]
+    exact k.isLt
+  have hyget : ∀ (k : Fin s) (t : ℕ),
+      ((Q (σ (T + t))).sort (· ≤ ·)).getD (k : ℕ) 0 =
+        ((Q (σ (T + t))).sort (· ≤ ·))[(k : ℕ)]'(hkl k t) :=
+    fun k t => List.getD_eq_getElem _ _ (hkl k t)
+  have hymem : ∀ (k : Fin s) (t : ℕ),
+      ((Q (σ (T + t))).sort (· ≤ ·)).getD (k : ℕ) 0 ∈
+        Q (σ (T + t)) := by
+    intro k t
+    rw [hyget k t]
+    have h1 := List.getElem_mem (hkl k t)
+    rw [Finset.mem_sort] at h1
+    exact h1
+  have hymono : ∀ k : Fin s, StrictMono (fun t =>
+      ((Q (σ (T + t))).sort (· ≤ ·)).getD (k : ℕ) 0) := by
+    intro k
+    apply strictMono_nat_of_lt_succ
+    intro t
+    have hd := hdom (T + t) (by omega)
+    have harith : T + t + 1 = T + (t + 1) := by omega
+    rw [harith] at hd
+    have hle := (List.forall₂_iff_get.1 hd).2 (k : ℕ)
+      (hkl k t) (hkl k (t + 1))
+    have h1 : ((Q (σ (T + t))).sort (· ≤ ·)).getD (k : ℕ) 0 ≤
+        ((Q (σ (T + (t + 1)))).sort (· ≤ ·)).getD (k : ℕ) 0 := by
+      rw [hyget k t, hyget k (t + 1)]
+      exact hle
+    have hne : ((Q (σ (T + t))).sort (· ≤ ·)).getD (k : ℕ) 0 ≠
+        ((Q (σ (T + (t + 1)))).sort (· ≤ ·)).getD (k : ℕ) 0 := by
+      intro heq
+      have hm1 := hymem k t
+      have hm2 := hymem k (t + 1)
+      have hσlt : σ (T + t) < σ (T + (t + 1)) :=
+        σ.strictMono (by omega)
+      exact (Finset.disjoint_left.1 (hdisj _ _ hσlt)) hm1
+        (heq ▸ hm2)
+    show ((Q (σ (T + t))).sort (· ≤ ·)).getD (k : ℕ) 0 <
+      ((Q (σ (T + (t + 1)))).sort (· ≤ ·)).getD (k : ℕ) 0
+    omega
+  have honto : ∀ t, ∀ h ∈ Q (σ (T + t)), ∃ k : Fin s,
+      ((Q (σ (T + t))).sort (· ≤ ·)).getD (k : ℕ) 0 = h := by
+    intro t h hh
+    have h1 : h ∈ (Q (σ (T + t))).sort (· ≤ ·) := by
+      rw [Finset.mem_sort]
+      exact hh
+    obtain ⟨i, hi⟩ := List.mem_iff_get.1 h1
+    have his : (i : ℕ) < s := by
+      have h2 := i.isLt
+      have h3 := hlen t
+      omega
+    refine ⟨⟨(i : ℕ), his⟩, ?_⟩
+    rw [hyget ⟨(i : ℕ), his⟩ t]
+    rw [← hi]
+    rfl
+  exact ⟨fun k t =>
+    ((Q (σ (T + t))).sort (· ≤ ·)).getD (k : ℕ) 0,
+    hymono, hymem, honto⟩
+
 end Erdos881
