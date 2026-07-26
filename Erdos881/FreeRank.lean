@@ -7464,4 +7464,43 @@ theorem odd_deletion_obligation {A : Set ℕ} {N₀ : ℕ}
       Matrix.head_cons, Matrix.cons_val_two, Matrix.tail_cons]
     omega
 
+/-- **The canonical obligation, fully general.**  For ANY
+property P cutting an infinite slice of the basis, hfail owes
+cofinal targets whose every representation uses a P-element.
+The residue grid, the odd deletion, digit classes, column
+families — every enemy-independent slice generates its own
+obligation schedule.  The adaptive game's full opening book. -/
+theorem canonical_deletion_obligation {A : Set ℕ} {N₀ : ℕ}
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (P : ℕ → Prop) (hP : {a ∈ A | P a}.Infinite) :
+    ∀ N, ∃ n, N ≤ n ∧
+      ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = n →
+        P x ∨ P y ∨ P z := by
+  classical
+  intro N
+  set B : Set ℕ := {a ∈ A | P a} with hB
+  have hBA : B ⊆ A := fun a ha => ha.1
+  have hnb := hfail B hBA hP
+  rw [IsExactTupleAsymptoticBasis] at hnb
+  push_neg at hnb
+  obtain ⟨n, hn, hnofail⟩ := hnb N
+  refine ⟨n, hn, ?_⟩
+  intro x hx y hy z hz hsum
+  by_contra hno
+  push_neg at hno
+  obtain ⟨hx2, hy2, hz2⟩ := hno
+  have hxB : x ∉ B := fun h => hx2 h.2
+  have hyB : y ∉ B := fun h => hy2 h.2
+  have hzB : z ∉ B := fun h => hz2 h.2
+  refine hnofail ![x, y, z] (fun i => ?_) ?_
+  · match i with
+    | 0 => exact ⟨hx, hxB⟩
+    | 1 => exact ⟨hy, hyB⟩
+    | 2 => exact ⟨hz, hzB⟩
+  · rw [Fin.sum_univ_three]
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one,
+      Matrix.head_cons, Matrix.cons_val_two, Matrix.tail_cons]
+    omega
+
 end Erdos881
