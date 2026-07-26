@@ -13821,4 +13821,55 @@ theorem cross_blowup_infinite {S T : Set ℕ}
         omega
     omega
 
+open Classical in
+/-- **THE 2-ADIC CLUSTER.**  The drain's path lifts to the root:
+every counterexample contains an infinite nested address tower —
+one residue class mod 2^k at every depth, consistently nested,
+each carrying infinitely many basis elements.  A profinite
+accumulation point of the basis, extracted from hfail alone:
+the Cantor cascade is no longer a shadow but literal nested
+material inside A. -/
+theorem drain_address_cluster {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ c : ℕ → ℕ, c 0 = 0 ∧
+      (∀ k, ∃ p, p < 2 ∧ c (k + 1) = c k + 2 ^ k * p) ∧
+      ∀ k N, ∃ a, N ≤ a ∧ a ∈ A ∧
+        ∃ y, a = c k + 2 ^ k * y := by
+  obtain ⟨S, T, hS0, hT0, hstep, hblow⟩ :=
+    the_omega_drain h0 hcov hfail
+  choose pf qf hpf hqf hSe hTe using hstep
+  set c : ℕ → ℕ := fun k =>
+    Nat.rec 0 (fun k' acc => acc + 2 ^ k' * pf k') k with hc
+  have hc0 : c 0 = 0 := rfl
+  have hcS : ∀ k, c (k + 1) = c k + 2 ^ k * pf k :=
+    fun _ => rfl
+  have hlift : ∀ k y, y ∈ S k ↔ c k + 2 ^ k * y ∈ A := by
+    intro k
+    induction k with
+    | zero =>
+      intro y
+      have he : c 0 + 2 ^ 0 * y = y := by
+        rw [hc0]
+        simp
+      rw [he, hS0]
+    | succ k ih =>
+      intro y
+      rw [hSe k, Set.mem_setOf_eq, ih (2 * y + pf k)]
+      have he : c k + 2 ^ k * (2 * y + pf k) =
+          c (k + 1) + 2 ^ (k + 1) * y := by
+        rw [hcS k, pow_succ]
+        ring
+      rw [he]
+  have hinf : ∀ k, (S k).Infinite :=
+    fun k => (cross_blowup_infinite (hblow k)).1
+  refine ⟨c, hc0, fun k => ⟨pf k, hpf k, hcS k⟩, ?_⟩
+  intro k N
+  obtain ⟨y, hyS, hyN⟩ := (hinf k).exists_gt N
+  have hple : y ≤ 2 ^ k * y :=
+    Nat.le_mul_of_pos_left y (pow_pos (by omega) k)
+  exact ⟨c k + 2 ^ k * y, by omega, (hlift k y).1 hyS,
+    y, rfl⟩
+
 end Erdos881
