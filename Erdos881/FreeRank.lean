@@ -11375,7 +11375,7 @@ theorem the_pair_flood_funnel {A : Set ℕ} {N₀ : ℕ}
      (∀ N, ∃ b w, N ≤ b ∧ b ∈ A ∧ w ∈ A ∧ b + w ∉ A ∧
         IsRepHub A (b + w) (insert b P) ∧
         IsPairHub A (b + w) (insert b P)) ∨
-     (∀ N, ∃ m b, N ≤ m ∧ N ≤ b ∧ b ∈ A ∧ m ∉ A ∧
+     (∀ N, ∃ m b, N ≤ b ∧ b ≤ m ∧ b ∈ A ∧ m ∉ A ∧
         IsRepHub A m (insert b P) ∧ IsPairHub A m P)) := by
   obtain ⟨P, hPfree, h0P, X, hguard⟩ :=
     pair_flood_ghost_or_center h0 hcov hfail
@@ -11422,7 +11422,7 @@ theorem the_pair_flood_funnel {A : Set ℕ} {N₀ : ℕ}
           · have h1 : b + (m - b) = m := by omega
             rw [h1]
             exact hpair
-        · refine ⟨m, b, by omega, by omega, hbA, hghost,
+        · refine ⟨m, b, by omega, hbm, hbA, hghost,
             hrep, ?_⟩
           intro x hx y hy hxy
           have hxm : x ≠ b := by
@@ -11516,5 +11516,54 @@ theorem face_three_color_law {A : Set ℕ} {N₀ M₀ m b : ℕ}
     · omega
     · have h4 := hM _ h3
       omega
+
+/-- **The rotator-gap dichotomy.**  Face III splits on the gap
+between targets and their rotators.  Either the gaps stay
+bounded — cofinal instances with m ≤ b + G, the near-diagonal
+regime — or the two-level colour law's window opens for every
+basis element and the DEAD SPECTRUM pigeonhole fires: every
+large basis element has a dead translate into the fixed
+envelope, or its translates die along the rotator stream
+itself.  Every element of the basis is translate-poor against
+face III's own material. -/
+theorem face_three_gap_dichotomy {A : Set ℕ} {N₀ M₀ : ℕ}
+    {P : Finset ℕ}
+    (hcov : PairCovers A N₀) (hM : ∀ p ∈ P, p ≤ M₀)
+    (hface : ∀ N, ∃ m b, N ≤ b ∧ b ≤ m ∧ b ∈ A ∧ m ∉ A ∧
+      IsRepHub A m (insert b P) ∧ IsPairHub A m P) :
+    (∃ G, ∀ N, ∃ m b, N ≤ b ∧ b ≤ m ∧ m ≤ b + G ∧ b ∈ A ∧
+      m ∉ A ∧ IsRepHub A m (insert b P) ∧ IsPairHub A m P) ∨
+    (∀ z ∈ A, M₀ < z →
+      (∃ p ∈ P, z + p ∉ A) ∨
+      (∀ N, ∃ b, N ≤ b ∧ b ∈ A ∧ z + b ∉ A)) := by
+  classical
+  by_cases hbdd : ∃ G, ∀ N, ∃ m b, N ≤ b ∧ b ≤ m ∧
+      m ≤ b + G ∧ b ∈ A ∧ m ∉ A ∧
+      IsRepHub A m (insert b P) ∧ IsPairHub A m P
+  · exact Or.inl hbdd
+  · right
+    intro z hzA hzM
+    by_cases hzP : ∃ p ∈ P, z + p ∉ A
+    · exact Or.inl hzP
+    · push_neg at hzP
+      right
+      intro N
+      set G := z + 2 * M₀ + N₀ + 1 with hG
+      have hnb : ¬∀ N', ∃ m b, N' ≤ b ∧ b ≤ m ∧ m ≤ b + G ∧
+          b ∈ A ∧ m ∉ A ∧ IsRepHub A m (insert b P) ∧
+          IsPairHub A m P := fun hall => hbdd ⟨G, hall⟩
+      obtain ⟨NG, hNG⟩ := not_forall.mp hnb
+      obtain ⟨m, b, hNb, hbm, hbA, hmA, hrep, hpair⟩ :=
+        hface (N + NG + z + 1)
+      have hgap : b + G < m := by
+        by_contra hle
+        exact hNG ⟨m, b, by omega, hbm, by omega, hbA, hmA,
+          hrep, hpair⟩
+      obtain ⟨h, hhH, hhz, hmir, hdead⟩ :=
+        face_three_color_law hcov hM hrep hpair hzA hzM
+          (by omega) (by omega)
+      rcases Finset.mem_insert.1 hhH with h1 | h1
+      · exact ⟨b, by omega, hbA, h1 ▸ hdead⟩
+      · exact absurd (hzP h h1) hdead
 
 end Erdos881
