@@ -17184,4 +17184,82 @@ theorem pair_energy_lower_bound {A : Set ℕ} (n : ℕ) :
     _ ≤ (n + 1) * (Finset.range (n + 1)).sum
         (fun m => r2f m ^ 2) := hCS
 
+open Classical in
+/-- **The wealthy count bound** (pure counting).  Splitting the
+energy between C-poor targets (≤ C² each) and wealthy ones
+(≤ α² each): α₂⁴ ≤ (n+1)·((n+1)·C² + W·α²), where W counts the
+wealthy targets below n.  In any world whose low half beats
+√n·C-scale, wealth is forced in QUANTITY, not merely
+cofinally — and every wealthy target is a wall against every
+failing stream.  The corridor profile inequality, formal. -/
+theorem wealthy_count_bound {A : Set ℕ} (n C : ℕ) :
+    (((Finset.range (n / 2 + 1)).filter
+      (fun x => x ∈ A)).card) ^ 4 ≤
+    (n + 1) * ((n + 1) * C ^ 2 +
+      ((Finset.range (n + 1)).filter (fun m =>
+        C < ((Finset.range (m + 1)).filter
+          (fun y => y ∈ A ∧ (m - y) ∈ A)).card)).card *
+      (((Finset.range (n + 1)).filter
+        (fun x => x ∈ A)).card) ^ 2) := by
+  set Af := (Finset.range (n + 1)).filter (fun x => x ∈ A)
+    with hAf
+  set r2f : ℕ → ℕ := fun m => ((Finset.range (m + 1)).filter
+    (fun y => y ∈ A ∧ (m - y) ∈ A)).card with hr2f
+  set Wf := (Finset.range (n + 1)).filter
+    (fun m => C < r2f m) with hWf
+  have henergy := pair_energy_lower_bound (A := A) n
+  have hsplit := Finset.sum_filter_add_sum_filter_not
+    (Finset.range (n + 1)) (fun m => C < r2f m)
+    (fun m => r2f m ^ 2)
+  have hsplit2 : Wf.sum (fun m => r2f m ^ 2) +
+      ((Finset.range (n + 1)).filter
+        (fun m => ¬C < r2f m)).sum (fun m => r2f m ^ 2) =
+      (Finset.range (n + 1)).sum (fun m => r2f m ^ 2) :=
+    hsplit
+  have hr2le : ∀ m, m ≤ n → r2f m ≤ Af.card := by
+    intro m hm
+    rw [hr2f]
+    apply Finset.card_le_card
+    intro x hx
+    rw [Finset.mem_filter, Finset.mem_range] at hx
+    rw [hAf, Finset.mem_filter, Finset.mem_range]
+    exact ⟨by omega, hx.2.1⟩
+  have hwealthy_sum : Wf.sum (fun m => r2f m ^ 2) ≤
+      Wf.card * Af.card ^ 2 := by
+    rw [← smul_eq_mul]
+    apply Finset.sum_le_card_nsmul
+    intro m hm
+    rw [hWf, Finset.mem_filter, Finset.mem_range] at hm
+    exact Nat.pow_le_pow_left (hr2le m (by omega)) 2
+  have hpoor_sum : ((Finset.range (n + 1)).filter
+      (fun m => ¬C < r2f m)).sum (fun m => r2f m ^ 2) ≤
+      ((Finset.range (n + 1)).filter
+        (fun m => ¬C < r2f m)).card * C ^ 2 := by
+    rw [← smul_eq_mul]
+    apply Finset.sum_le_card_nsmul
+    intro m hm
+    rw [Finset.mem_filter] at hm
+    exact Nat.pow_le_pow_left (by omega) 2
+  have hpoor_card : ((Finset.range (n + 1)).filter
+      (fun m => ¬C < r2f m)).card ≤ n + 1 := by
+    have := Finset.card_filter_le (Finset.range (n + 1))
+      (fun m => ¬C < r2f m)
+    rw [Finset.card_range] at this
+    exact this
+  have htotal : (Finset.range (n + 1)).sum
+      (fun m => r2f m ^ 2) ≤
+      (n + 1) * C ^ 2 + Wf.card * Af.card ^ 2 := by
+    have h1 : ((Finset.range (n + 1)).filter
+        (fun m => ¬C < r2f m)).card * C ^ 2 ≤
+        (n + 1) * C ^ 2 :=
+      Nat.mul_le_mul_right _ hpoor_card
+    omega
+  calc (((Finset.range (n / 2 + 1)).filter
+      (fun x => x ∈ A)).card) ^ 4 ≤
+      (n + 1) * (Finset.range (n + 1)).sum
+        (fun m => r2f m ^ 2) := henergy
+    _ ≤ (n + 1) * ((n + 1) * C ^ 2 +
+        Wf.card * Af.card ^ 2) :=
+      Nat.mul_le_mul_left _ htotal
+
 end Erdos881
