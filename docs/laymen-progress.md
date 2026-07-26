@@ -440,3 +440,23 @@ So the enemy now has exactly two faces left: the echo-hoarder
 schedule).  Both faces are strange, specific, and — for the first
 time — written as one machine-checked dichotomy.  Tomorrow's work
 begins inside those two rooms.
+
+## 2026-07-25 night, part five — Reading the problem's own fine print
+
+All this time the machine had been fighting with one hand tied:
+Erdős's problem says the keyring is MINIMAL — no single key can
+be thrown away — and our machinery only ever used a weaker,
+bulk version of that promise.  Tonight we finally cashed the
+fine print.  If no key is disposable, then every key personally
+guards an endless parade of doors that only IT can open (with
+exactly one partner key each).  Partnerships are almost never
+shared, every key has infinitely many partners across its
+parade, and we can carve out endless disjoint partner-pairs.
+
+The keyring, in other words, carries a hidden marriage network —
+and we proved the wrecking crew can aim at it: delete an endless
+set of married couples and the failure teams that spring up are
+made ENTIRELY of married keys, each dragging its own private
+parade behind it.  Two bookkeeping systems — the marriage
+network and the guardian teams — now have to balance against
+each other.  That ledger is tomorrow's battlefield.
