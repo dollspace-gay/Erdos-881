@@ -12598,4 +12598,28 @@ theorem descent_depth_cost {A : Set ℕ} {N₀ k c T : ℕ}
   rw [← hb] at h2
   omega
 
+/-- **Free sets dodge.**  The rank-ω room's supply is agile:
+free sets of every size exist AVOIDING any prescribed finite
+obstruction — take a larger one and discard the collisions.
+Whatever diagonal the rank kill runs, the enemy cannot block it
+with finitely much material. -/
+theorem free_sets_dodge {A : Set ℕ} {N₀ : ℕ}
+    (hfree : ∀ c, ∃ P : Finset ℕ, RepFree A N₀ P ∧
+      c ≤ P.card) :
+    ∀ (F : Finset ℕ) (c : ℕ), ∃ P : Finset ℕ,
+      RepFree A N₀ P ∧ c ≤ P.card ∧ Disjoint P F := by
+  intro F c
+  obtain ⟨P, hPfree, hPc⟩ := hfree (c + F.card)
+  refine ⟨P \ F, RepFree.mono Finset.sdiff_subset hPfree,
+    ?_, Finset.sdiff_disjoint⟩
+  have h1 : P ⊆ (P \ F) ∪ F := by
+    intro x hx
+    by_cases hxF : x ∈ F
+    · exact Finset.mem_union_right _ hxF
+    · exact Finset.mem_union_left _
+        (Finset.mem_sdiff.2 ⟨hx, hxF⟩)
+  have h2 := Finset.card_le_card h1
+  have h3 := Finset.card_union_le (P \ F) F
+  omega
+
 end Erdos881
