@@ -1,3 +1,23 @@
+# THE DENSITY LAW — TWENTY-SECOND SUMMIT (2026-07-26, close)
+
+`endgame_density_law` (Endgame.lean, standard axioms; from the
+tuple-failure alone): at every failing target,
+alpha - DF <= P  and  alpha2^2 + P*(alpha - C) <= (n+1)*alpha.
+Reflected embedding pushes the poor population up; the energy
+Sigma r2 >= alpha2^2 (low-half pairs, sigma-counting) against
+the poor/rich partition pushes the total down.
+
+FIRST CONSEQUENCE: dense bases can NEVER fail — a set
+containing [0,n] violates the inequality outright.  The fat
+end of the two-regime squeeze now has its quantitative wall:
+counterexamples' density profiles are bound at every failing
+target of every deletion, forever.
+
+Twenty-two summits.  The session's closing stack: fan poverty
+-> reflected embedding -> THE DENSITY LAW; dodge + rigidity
+trichotomy; oscillation layer; forced mixing.  All standard
+axioms, zero sorries, ~715 commits.
+
 # WEALTH DENSITY + THE TWO-REGIME SQUEEZE (2026-07-26, close)
 
 Measurement (probe_wealth_density.py): wealthy targets (r2 > 8)

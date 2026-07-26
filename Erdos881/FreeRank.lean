@@ -16788,4 +16788,185 @@ theorem poor_count_of_failing {A D : Set ℕ} {n : ℕ}
     have hab' : n - a = n - b := hab
     omega
 
+open Classical in
+/-- **THE DENSITY LAW.**  At every order-3 failing target the
+counting closes into one global inequality: with α = |A∩[0,n]|,
+α₂ = |A∩[0,n/2]|, DF = |D∩[0,n]|, C = 2·DF+2, and P the number
+of C-poor targets below n,
+
+    α − DF ≤ P   and   α₂² + P·(α − C) ≤ (n+1)·α.
+
+Lower bound: the reflected embedding.  Upper: the energy
+Σ r₂ ≥ α₂² (pairs of low halves) against the poor/rich
+partition (poor contribute ≤ C, the rest ≤ α each).  First
+consequence: a set containing [0,n] can never have a failing
+target (α₂² + α² ≈ 1.25·n² > n² ≈ (n+1)·α) — dense bases fail
+nothing, quantitatively.  The campaign's first global
+inequality binding density profiles at every failing
+target of every deletion. -/
+theorem density_law_of_failing {A D : Set ℕ} {n : ℕ}
+    (hfailn : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D) →
+      ∑ i, v i ≠ n) :
+    ((Finset.range (n + 1)).filter (fun x => x ∈ A)).card -
+      ((Finset.range (n + 1)).filter (fun d => d ∈ D)).card ≤
+    ((Finset.range (n + 1)).filter (fun m =>
+      ((Finset.range (m + 1)).filter
+        (fun y => y ∈ A ∧ (m - y) ∈ A)).card ≤
+      2 * ((Finset.range (n + 1)).filter
+        (fun d => d ∈ D)).card + 2)).card ∧
+    ((Finset.range (n / 2 + 1)).filter
+        (fun x => x ∈ A)).card *
+      ((Finset.range (n / 2 + 1)).filter
+        (fun x => x ∈ A)).card +
+    ((Finset.range (n + 1)).filter (fun m =>
+      ((Finset.range (m + 1)).filter
+        (fun y => y ∈ A ∧ (m - y) ∈ A)).card ≤
+      2 * ((Finset.range (n + 1)).filter
+        (fun d => d ∈ D)).card + 2)).card *
+      (((Finset.range (n + 1)).filter
+        (fun x => x ∈ A)).card -
+       (2 * ((Finset.range (n + 1)).filter
+        (fun d => d ∈ D)).card + 2)) ≤
+    (n + 1) * ((Finset.range (n + 1)).filter
+      (fun x => x ∈ A)).card := by
+  constructor
+  · have hemb := poor_count_of_failing hfailn
+    have hsplit : ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A)).card ≤
+        ((Finset.range (n + 1)).filter
+          (fun x => x ∈ A ∧ x ∉ D)).card +
+        ((Finset.range (n + 1)).filter
+          (fun d => d ∈ D)).card := by
+      have hsub : (Finset.range (n + 1)).filter
+          (fun x => x ∈ A) ⊆
+          ((Finset.range (n + 1)).filter
+            (fun x => x ∈ A ∧ x ∉ D)) ∪
+          ((Finset.range (n + 1)).filter (fun d => d ∈ D)) := by
+        intro x hx
+        rw [Finset.mem_filter] at hx
+        by_cases hxD : x ∈ D
+        · exact Finset.mem_union_right _
+            (Finset.mem_filter.2 ⟨hx.1, hxD⟩)
+        · exact Finset.mem_union_left _
+            (Finset.mem_filter.2 ⟨hx.1, hx.2, hxD⟩)
+      have h1 := Finset.card_le_card hsub
+      have h2 := Finset.card_union_le
+        ((Finset.range (n + 1)).filter
+          (fun x => x ∈ A ∧ x ∉ D))
+        ((Finset.range (n + 1)).filter (fun d => d ∈ D))
+      omega
+    omega
+  · set Af := (Finset.range (n + 1)).filter (fun x => x ∈ A)
+      with hAf
+    set A2f := (Finset.range (n / 2 + 1)).filter
+      (fun x => x ∈ A) with hA2f
+    set DFf := (Finset.range (n + 1)).filter (fun d => d ∈ D)
+      with hDFf
+    set r2f : ℕ → ℕ := fun m => ((Finset.range (m + 1)).filter
+      (fun y => y ∈ A ∧ (m - y) ∈ A)).card with hr2f
+    set C := 2 * DFf.card + 2 with hC
+    set Poor := (Finset.range (n + 1)).filter
+      (fun m => r2f m ≤ C) with hPoor
+    have hsumlow : A2f.card * A2f.card ≤
+        (Finset.range (n + 1)).sum r2f := by
+      have hkey : (A2f ×ˢ A2f).card ≤
+          ((Finset.range (n + 1)).sigma (fun m =>
+            (Finset.range (m + 1)).filter
+              (fun y => y ∈ A ∧ (m - y) ∈ A))).card := by
+        apply Finset.card_le_card_of_injOn
+          (fun p => (⟨p.1 + p.2, p.1⟩ : Σ _ : ℕ, ℕ))
+        · intro p hp
+          rw [Finset.mem_coe, Finset.mem_product] at hp
+          obtain ⟨hp1, hp2⟩ := hp
+          rw [hA2f, Finset.mem_filter, Finset.mem_range] at hp1
+          rw [hA2f, Finset.mem_filter, Finset.mem_range] at hp2
+          rw [Finset.mem_coe, Finset.mem_sigma]
+          constructor
+          · show p.1 + p.2 ∈ Finset.range (n + 1)
+            rw [Finset.mem_range]
+            omega
+          · show p.1 ∈ (Finset.range (p.1 + p.2 + 1)).filter
+              (fun y => y ∈ A ∧ (p.1 + p.2 - y) ∈ A)
+            rw [Finset.mem_filter, Finset.mem_range]
+            refine ⟨by omega, hp1.2, ?_⟩
+            have he : p.1 + p.2 - p.1 = p.2 := by omega
+            rw [he]
+            exact hp2.2
+        · intro p hp q hq hpq
+          have h1 : p.1 + p.2 = q.1 + q.2 :=
+            congrArg Sigma.fst hpq
+          have h2 : p.1 = q.1 := congrArg Sigma.snd hpq
+          exact Prod.ext h2 (by omega)
+      rw [Finset.card_product, Finset.card_sigma] at hkey
+      exact hkey
+    have hsumsplit := Finset.sum_filter_add_sum_filter_not
+      (Finset.range (n + 1)) (fun m => r2f m ≤ C) r2f
+    have hpoorsum : Poor.sum r2f ≤ Poor.card * C := by
+      rw [← smul_eq_mul]
+      apply Finset.sum_le_card_nsmul
+      intro m hm
+      rw [hPoor, Finset.mem_filter] at hm
+      exact hm.2
+    have hrestsum : ((Finset.range (n + 1)).filter
+        (fun m => ¬r2f m ≤ C)).sum r2f ≤
+        ((Finset.range (n + 1)).filter
+          (fun m => ¬r2f m ≤ C)).card * Af.card := by
+      rw [← smul_eq_mul]
+      apply Finset.sum_le_card_nsmul
+      intro m hm
+      rw [Finset.mem_filter, Finset.mem_range] at hm
+      show r2f m ≤ Af.card
+      rw [hr2f]
+      apply Finset.card_le_card
+      intro x hx
+      rw [Finset.mem_filter, Finset.mem_range] at hx
+      rw [hAf, Finset.mem_filter, Finset.mem_range]
+      exact ⟨by omega, hx.2.1⟩
+    have hcards := Finset.card_filter_add_card_filter_not
+      (s := Finset.range (n + 1)) (p := fun m => r2f m ≤ C)
+    rw [Finset.card_range] at hcards
+    have hcards2 : Poor.card + ((Finset.range (n + 1)).filter
+        (fun m => ¬r2f m ≤ C)).card = n + 1 := hcards
+    have hsumsplit2 : Poor.sum r2f +
+        ((Finset.range (n + 1)).filter
+          (fun m => ¬r2f m ≤ C)).sum r2f =
+        (Finset.range (n + 1)).sum r2f := hsumsplit
+    have hA2sub : A2f.card ≤ Af.card := by
+      apply Finset.card_le_card
+      intro x hx
+      rw [hA2f, Finset.mem_filter, Finset.mem_range] at hx
+      rw [hAf, Finset.mem_filter, Finset.mem_range]
+      exact ⟨by omega, hx.2⟩
+    have hA2n : A2f.card ≤ n + 1 := by
+      rw [hA2f]
+      have h := Finset.card_filter_le (Finset.range (n / 2 + 1))
+        (fun x => x ∈ A)
+      rw [Finset.card_range] at h
+      omega
+    show A2f.card * A2f.card + Poor.card * (Af.card - C) ≤
+      (n + 1) * Af.card
+    rcases Nat.le_total C Af.card with hCα | hCα
+    · have hmul1 : Poor.card * (Af.card - C) + Poor.card * C =
+          Poor.card * Af.card := by
+        have h7 : Af.card - C + C = Af.card := by omega
+        rw [← Nat.mul_add, h7]
+      have hPn : Poor.card ≤ n + 1 := by omega
+      have hmul2 : Poor.card * Af.card +
+          ((n + 1) - Poor.card) * Af.card =
+          (n + 1) * Af.card := by
+        have h8 : Poor.card + ((n + 1) - Poor.card) = n + 1 :=
+          by omega
+        rw [← Nat.add_mul, h8]
+      have hrestcard : ((Finset.range (n + 1)).filter
+          (fun m => ¬r2f m ≤ C)).card =
+          (n + 1) - Poor.card := by omega
+      rw [hrestcard] at hrestsum
+      omega
+    · have hzero : Af.card - C = 0 := by omega
+      rw [hzero, Nat.mul_zero, Nat.add_zero]
+      calc A2f.card * A2f.card ≤ (n + 1) * A2f.card :=
+            Nat.mul_le_mul_right _ hA2n
+        _ ≤ (n + 1) * Af.card :=
+            Nat.mul_le_mul_left _ hA2sub
+
 end Erdos881

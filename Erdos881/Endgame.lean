@@ -1233,4 +1233,44 @@ theorem endgame_fan_poverty {A D : Set ℕ} {n : ℕ}
         (fun d => d ∈ D)).card + 2 :=
   fan_poverty_of_failing hfailn
 
+open Classical in
+/-- **THE DENSITY LAW** (re-export; twenty-second summit).
+At every order-3 failing target n of every deletion D, with
+α = |A∩[0,n]|, α₂ = |A∩[0,n/2]|, DF = |D∩[0,n]|, C = 2·DF+2,
+P = #(C-poor targets ≤ n):   α − DF ≤ P   and
+α₂² + P·(α − C) ≤ (n+1)·α.  The reflected embedding forces the
+poor population up; the energy Σr₂ ≥ α₂² against the poor/rich
+partition forces the total down.  First consequence: dense
+bases can never fail (a set containing an interval [0,n]
+violates the inequality outright).  The campaign's first
+global quantitative inequality — every counterexample's
+density profile is bound by it at every failing target,
+forever. -/
+theorem endgame_density_law {A D : Set ℕ} {n : ℕ}
+    (hfailn : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D) →
+      ∑ i, v i ≠ n) :
+    ((Finset.range (n + 1)).filter (fun x => x ∈ A)).card -
+      ((Finset.range (n + 1)).filter (fun d => d ∈ D)).card ≤
+    ((Finset.range (n + 1)).filter (fun m =>
+      ((Finset.range (m + 1)).filter
+        (fun y => y ∈ A ∧ (m - y) ∈ A)).card ≤
+      2 * ((Finset.range (n + 1)).filter
+        (fun d => d ∈ D)).card + 2)).card ∧
+    ((Finset.range (n / 2 + 1)).filter
+        (fun x => x ∈ A)).card *
+      ((Finset.range (n / 2 + 1)).filter
+        (fun x => x ∈ A)).card +
+    ((Finset.range (n + 1)).filter (fun m =>
+      ((Finset.range (m + 1)).filter
+        (fun y => y ∈ A ∧ (m - y) ∈ A)).card ≤
+      2 * ((Finset.range (n + 1)).filter
+        (fun d => d ∈ D)).card + 2)).card *
+      (((Finset.range (n + 1)).filter
+        (fun x => x ∈ A)).card -
+       (2 * ((Finset.range (n + 1)).filter
+        (fun d => d ∈ D)).card + 2)) ≤
+    (n + 1) * ((Finset.range (n + 1)).filter
+      (fun x => x ∈ A)).card :=
+  density_law_of_failing hfailn
+
 end Erdos881
