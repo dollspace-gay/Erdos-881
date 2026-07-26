@@ -6072,4 +6072,83 @@ theorem ramsey_trichotomy_of_covering {A : Set ℕ} {N₀ : ℕ}
       · intro i j hij x hx y hy hxy
         exact hno i j hij x hx y hy hxy
 
+/-- **THE CUBE DICHOTOMY** (order-3 Ramsey, the problem in
+miniature).  Every covering set contains an infinite ascending
+positive sequence T inside a positive family R with: every
+triple sum T i + T j + T k has a representation avoiding R
+entirely — so the T-deletion leaves its own sum CUBE alive at
+order 3, and failing targets of that deletion must dodge an
+infinite 3-parameter region — or every representation of every
+triple sum routes through R, the enemy's dream configuration
+realized on one sequence.  The gap between the surviving-cube
+branch and full survival (all late targets, not just the cube)
+is exactly Erdős 881. -/
+theorem cube_avoidance_ramsey {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀) :
+    ∃ T : ℕ → ℕ, StrictMono T ∧ (∀ i, T i ∈ A) ∧
+      (∀ i, 0 < T i) ∧
+      ∃ R : Set ℕ, (∀ w ∈ R, w ∈ A ∧ 0 < w) ∧
+        (∀ i, T i ∈ R) ∧
+        ((∀ i j k, i < j → j < k →
+            ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+            x ∉ R ∧ y ∉ R ∧ z ∉ R ∧
+            x + y + z = T i + T j + T k) ∨
+         (∀ i j k, i < j → j < k →
+            ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+            x + y + z = T i + T j + T k →
+            x ∈ R ∨ y ∈ R ∨ z ∈ R)) := by
+  classical
+  have hstep : ∀ x : ℕ, ∃ a, a ∈ A ∧ x < a := by
+    intro x
+    obtain ⟨a, haA, hage⟩ := pairCovers_unbounded hcov (x + 1)
+    exact ⟨a, haA, by omega⟩
+  choose F hFA hFgt using hstep
+  obtain ⟨e, he0, hes⟩ : ∃ e : ℕ → ℕ, e 0 = F 0 ∧
+      ∀ i, e (i + 1) = F (e i) :=
+    ⟨fun i => Nat.rec (F 0) (fun _ p => F p) i, rfl, fun _ => rfl⟩
+  have heA : ∀ i, e i ∈ A := by
+    intro i
+    cases i with
+    | zero => rw [he0]; exact hFA 0
+    | succ i => rw [hes]; exact hFA (e i)
+  have hemono : StrictMono e := by
+    apply strictMono_nat_of_lt_succ
+    intro i
+    rw [hes]
+    exact hFgt (e i)
+  have hepos : ∀ i, 0 < e i := by
+    intro i
+    have h1 : e 0 ≤ e i := hemono.le_iff_le.2 (Nat.zero_le i)
+    have h2 : 0 < e 0 := by
+      rw [he0]
+      exact lt_of_le_of_lt (Nat.zero_le 0) (hFgt 0)
+    omega
+  set c : ℕ → ℕ → ℕ → Bool := fun i j k =>
+    decide (∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+      x ∉ Set.range e ∧ y ∉ Set.range e ∧ z ∉ Set.range e ∧
+      x + y + z = e i + e j + e k) with hc
+  obtain ⟨f, hfmono, b, hfb⟩ := infinite_ramsey_triples c
+  refine ⟨fun i => e (f i), hemono.comp hfmono,
+    fun i => heA _, fun i => hepos _,
+    Set.range e, ?_, fun i => ⟨f i, rfl⟩, ?_⟩
+  · rintro w ⟨k, rfl⟩
+    exact ⟨heA k, hepos k⟩
+  cases b with
+  | true =>
+    left
+    intro i j k hij hjk
+    have h1 := hfb i j k hij hjk
+    rw [hc] at h1
+    simpa using of_decide_eq_true h1
+  | false =>
+    right
+    intro i j k hij hjk x hx y hy z hz hxyz
+    have h1 := hfb i j k hij hjk
+    rw [hc] at h1
+    have h2 := of_decide_eq_false h1
+    by_contra hno
+    push_neg at hno
+    exact h2 ⟨x, hx, y, hy, z, hz, hno.1, hno.2.1, hno.2.2,
+      hxyz⟩
+
 end Erdos881

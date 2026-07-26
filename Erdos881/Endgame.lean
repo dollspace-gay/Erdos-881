@@ -272,4 +272,25 @@ theorem endgame_four_rooms {A : Set ℕ} {N₀ : ℕ}
           IsPairHub A s (insert b₃ Q))) :=
   counterexample_four_rooms h0 hcov hfail
 
+/-- **THE RAMSEY TRICHOTOMY** (re-export).  Every covering set
+contains an infinite ascending positive sequence that is a Sidon
+clique (pairwise sums are two-element pair hubs), self-avoiding
+(every pairwise sum keeps a representation avoiding the whole
+sequence — failures of that deletion must dodge the sum square),
+or routed through a fixed positive family. -/
+theorem endgame_ramsey_trichotomy {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) :
+    ∃ T : ℕ → ℕ, StrictMono T ∧ (∀ i, T i ∈ A) ∧
+      (∀ i, 0 < T i) ∧
+      ((∀ i j, i < j →
+          IsPairHub A (T i + T j) ({T i, T j} : Finset ℕ)) ∨
+       (∀ i j, i < j → ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+          x ∉ Set.range T ∧ y ∉ Set.range T ∧
+          z ∉ Set.range T ∧ x + y + z = T i + T j) ∨
+       (∃ R : Set ℕ, (∀ w ∈ R, w ∈ A ∧ 0 < w) ∧
+          (∀ i, T i ∈ R) ∧
+          ∀ i j, i < j → ∀ x ∈ A, ∀ y ∈ A,
+            x + y = T i + T j → x ∈ R ∨ y ∈ R)) :=
+  ramsey_trichotomy_of_covering h0 hcov
+
 end Erdos881
