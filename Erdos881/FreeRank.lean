@@ -10259,4 +10259,148 @@ theorem door_two_difference_law {A : Set ℕ} {N₀ M v v' : ℕ}
   rw [h1] at hmir
   exact hmir
 
+/-- **The good-deep door engine.**  In the two-member good horn
+with cofinal deep partners, deleting the even levels
+{v(2k+2) − h₀} survives.  Single hits are repaired by a
+difference plus an odd level; double hits by the
+good-translated level M = v − h₀ + h₁, a consecutive
+difference, and a deep partner v − h₀ − h₁ — the h₁'s cancel
+and the sum closes with NO constraint between the two hit
+indices.  All parts are separated from the deletion by parity
+and scale. -/
+theorem door_good_deep_engine {A : Set ℕ} {N₀ h₀ h₁ : ℕ}
+    (v : ℕ → ℕ)
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hmono : StrictMono v)
+    (hgrow : ∀ k, 2 * v k < v (k + 1))
+    (hh₁ : 0 < h₁)
+    (hbase : h₀ + h₁ + N₀ + 1 < v 0)
+    (hL : ∀ k, v k - h₀ ∈ A)
+    (hM : ∀ k, v k - h₀ + h₁ ∈ A)
+    (hDP : ∀ k, v k - h₀ - h₁ ∈ A)
+    (hd : ∀ i j, i < j → v j - v i ∈ A) :
+    ∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n := by
+  classical
+  have hv0 : ∀ k, v 0 ≤ v k := fun k => hmono.monotone (Nat.zero_le k)
+  have hgap : ∀ k, v k + v 0 < v (k + 1) := by
+    intro k
+    have h1 := hgrow k
+    have h2 := hv0 k
+    omega
+  set f : ℕ → ℕ := fun k => v (2 * k + 2) - h₀ with hf
+  have hfA : ∀ k, f k ∈ A := fun k => hL (2 * k + 2)
+  have hfinj : Function.Injective f := by
+    intro i j hij
+    simp only [hf] at hij
+    have h1 := hv0 (2 * i + 2)
+    have h2 := hv0 (2 * j + 2)
+    have h3 : v (2 * i + 2) = v (2 * j + 2) := by omega
+    have h4 := hmono.injective h3
+    omega
+  have hBsub : Set.range f ⊆ A := by
+    rintro w ⟨k, rfl⟩
+    exact hfA k
+  have h0B : (0 : ℕ) ∉ Set.range f := by
+    rintro ⟨r, hr⟩
+    simp only [hf] at hr
+    have := hv0 (2 * r + 2)
+    omega
+  -- scale separation: distinct indices differ by more than v 0
+  have hsep : ∀ a b, a < b → v a + v 0 ≤ v b := by
+    intro a b hab
+    have h1 := hgap a
+    have h2 : v (a + 1) ≤ v b := hmono.monotone (by omega)
+    omega
+  -- consecutive differences are not deleted values
+  have hdiffB : ∀ i, v (i + 1) - v i ∉ Set.range f := by
+    rintro i ⟨r, hr⟩
+    simp only [hf] at hr
+    have h1 := hv0 (2 * r + 2)
+    have h2 := hv0 i
+    have e : v (2 * r + 2) + v i = v (i + 1) + h₀ := by omega
+    rcases Nat.lt_trichotomy (2 * r + 2) (i + 1) with h | h | h
+    · have h3 : v (2 * r + 2) ≤ v i := hmono.monotone (by omega)
+      have h4 := hsep i (i + 1) (by omega)
+      have h5 := hgrow i
+      omega
+    · rw [h] at e
+      omega
+    · have h3 := hsep (i + 1) (2 * r + 2) h
+      omega
+  -- odd levels are not deleted values
+  have hoddB : ∀ i, v (2 * i + 1) - h₀ ∉ Set.range f := by
+    rintro i ⟨r, hr⟩
+    simp only [hf] at hr
+    have h1 := hv0 (2 * r + 2)
+    have h2 := hv0 (2 * i + 1)
+    have h3 : v (2 * r + 2) = v (2 * i + 1) := by omega
+    have h4 := hmono.injective h3
+    omega
+  -- good-translated levels are not deleted values
+  have hMB : ∀ i, v i - h₀ + h₁ ∉ Set.range f := by
+    rintro i ⟨r, hr⟩
+    simp only [hf] at hr
+    have h1 := hv0 (2 * r + 2)
+    have h2 := hv0 i
+    rcases Nat.lt_trichotomy (2 * r + 2) i with h | h | h
+    · have h3 := hsep (2 * r + 2) i h
+      omega
+    · rw [h] at hr
+      omega
+    · have h3 := hsep i (2 * r + 2) h
+      omega
+  -- deep partners are not deleted values
+  have hDPB : ∀ i, v i - h₀ - h₁ ∉ Set.range f := by
+    rintro i ⟨r, hr⟩
+    simp only [hf] at hr
+    have h1 := hv0 (2 * r + 2)
+    have h2 := hv0 i
+    rcases Nat.lt_trichotomy (2 * r + 2) i with h | h | h
+    · have h3 := hsep (2 * r + 2) i h
+      omega
+    · rw [h] at hr
+      omega
+    · have h3 := hsep i (2 * r + 2) h
+      omega
+  refine ⟨Set.range f, hBsub,
+    Set.infinite_range_of_injective hfinj, ?_⟩
+  intro n hn
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hn
+  by_cases hxB : x ∈ Set.range f
+  · obtain ⟨i, hix⟩ := hxB
+    simp only [hf] at hix
+    by_cases hyB : y ∈ Set.range f
+    · obtain ⟨j, hjy⟩ := hyB
+      simp only [hf] at hjy
+      have h1 := hv0 (2 * i + 2)
+      have h2 := hv0 (2 * j + 2)
+      have h3 := hsep (2 * j + 1) (2 * j + 2) (by omega)
+      have h4 := hv0 (2 * j + 1)
+      exact ⟨v (2 * i + 2) - h₀ + h₁, hM (2 * i + 2),
+        v (2 * j + 2) - v (2 * j + 1),
+        hd (2 * j + 1) (2 * j + 2) (by omega),
+        v (2 * j + 1) - h₀ - h₁, hDP (2 * j + 1),
+        hMB (2 * i + 2), hdiffB (2 * j + 1),
+        hDPB (2 * j + 1), by omega⟩
+    · have h1 := hv0 (2 * i + 2)
+      have h2 := hv0 (2 * i + 1)
+      have h3 := hsep (2 * i + 1) (2 * i + 2) (by omega)
+      exact ⟨v (2 * i + 2) - v (2 * i + 1),
+        hd (2 * i + 1) (2 * i + 2) (by omega),
+        v (2 * i + 1) - h₀, hL (2 * i + 1), y, hy,
+        hdiffB (2 * i + 1), hoddB i, hyB, by omega⟩
+  · by_cases hyB : y ∈ Set.range f
+    · obtain ⟨j, hjy⟩ := hyB
+      simp only [hf] at hjy
+      have h1 := hv0 (2 * j + 2)
+      have h2 := hv0 (2 * j + 1)
+      have h3 := hsep (2 * j + 1) (2 * j + 2) (by omega)
+      exact ⟨v (2 * j + 2) - v (2 * j + 1),
+        hd (2 * j + 1) (2 * j + 2) (by omega),
+        v (2 * j + 1) - h₀, hL (2 * j + 1), x, hx,
+        hdiffB (2 * j + 1), hoddB j, hxB, by omega⟩
+    · exact ⟨x, hx, y, hy, 0, h0, hxB, hyB, h0B, by omega⟩
+
 end Erdos881
