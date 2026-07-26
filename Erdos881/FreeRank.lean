@@ -7384,4 +7384,23 @@ theorem central_branch_singleton_hubs {A : Set ℕ} {g₀ : ℕ}
   obtain ⟨h1, _⟩ := hcentral c hcA hcpos hcg w hw w' hw' hsum
   exact Or.inl (by simp [h1])
 
+/-- **Central minimality for free.**  In the purely central
+branch every infinite deletion automatically breaks order-2
+coverage at its own doubles: ℵ₀-minimality is not a hypothesis
+there but a consequence — consistent with the verified Cantor
+instance, which is carry-free, central, and ℵ₀-minimal. -/
+theorem central_branch_hmin {A : Set ℕ} {g₀ : ℕ}
+    (hcentral : ∀ c ∈ A, 0 < c → c ≠ g₀ → ∀ w ∈ A, ∀ w' ∈ A,
+      w + w' = 2 * c → w = c ∧ w' = c) :
+    ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n := by
+  rintro B hBA hBinf ⟨N₁, hN₁⟩
+  obtain ⟨b, hbB, hbgt⟩ := hBinf.exists_gt (N₁ + g₀ + 1)
+  have hbA := hBA hbB
+  have hbpos : 0 < b := by omega
+  have hbg : b ≠ g₀ := by omega
+  obtain ⟨x, hx, y, hy, hxB, hyB, hxy⟩ := hN₁ (2 * b) (by omega)
+  obtain ⟨hxb, hyb⟩ := hcentral b hbA hbpos hbg x hx y hy hxy
+  exact hxB (hxb ▸ hbB)
+
 end Erdos881
