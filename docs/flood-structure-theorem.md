@@ -510,3 +510,27 @@ Next: the spine's own stall (free_prefixes_die applied to x
 yields a hub of lineage elements), and the adaptive game on
 canonical material — lineage extension versus stall hubs.  This
 is where the next session begins.
+
+## 22. RANK OR LOCKSTEP (21:56)
+
+**`spine_rank_or_lockstep`.**  Spine shell sizes are
+non-decreasing along the Higman chain, so:
+
+  either the counterexample contains FREE SETS OF EVERY SIZE —
+  by size ≤ rank the root rank is infinite, and the finite-rank
+  room (perfect clique worlds at the root) closes for good;
+
+  or the sizes stabilize at some s ≥ 1, equal-length sublist
+  embeddings become FULL pointwise dominations, and beyond some
+  point the spine shells march in lockstep: s parallel strictly
+  increasing columns, the enemy's freedom supply reduced to an
+  s-lane highway.
+
+Next session's first moves: (i) the mechanical corollary that
+branch 1 forces infinite root rank (free_set_card_le_rank);
+(ii) extract the s parallel lineage columns in the lockstep
+branch (per-coordinate spine_lineage); (iii) confront the s-lane
+highway with the cap suite — s is a FIXED finite constant
+carrying the entire freedom supply of the enemy beyond the
+stabilization point, and every duty, conflict, and tax law now
+applies to a bounded-width object.
