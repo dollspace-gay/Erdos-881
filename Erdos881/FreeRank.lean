@@ -5529,4 +5529,83 @@ theorem essential_private_pair_stream {A : Set ℕ} {N₀ : ℕ}
   · exact Or.inl ⟨h, by omega⟩
   · exact Or.inr ⟨by omega, h⟩
 
+/-- Two distinct essential elements share a private target only
+at their mutual sum: the unique pair must be {b, b'}. -/
+theorem shared_private_target_is_sum {A : Set ℕ} {b b' m c c' : ℕ}
+    (hne : b ≠ b') (hb'A : b' ∈ A) (hcA : c ∈ A) (hbc : b + c = m)
+    (hc'A : c' ∈ A) (hbc' : b' + c' = m)
+    (huniq : ∀ x ∈ A, ∀ y ∈ A, x + y = m →
+      (x = b ∧ y = c) ∨ (x = c ∧ y = b)) :
+    m = b + b' := by
+  rcases huniq b' hb'A c' hc'A hbc' with ⟨h1, h2⟩ | ⟨h1, h2⟩
+  · exact absurd h1 (Ne.symm hne)
+  · omega
+
+/-- **The disjoint unique-pair supply.**  In a classically minimal
+basis (every positive element essential at order 2), every K
+admits K pairwise disjoint pairs (bᵢ, cᵢ) of basis elements whose
+sums are unique-decomposition targets.  Fresh choice by height:
+each new private target is taken above everything used, so its
+companion is automatically fresh. -/
+theorem disjoint_unique_pairs_of_essential {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hess : ∀ a ∈ A, 0 < a → ¬∃ N₁, ∀ n, N₁ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, x ≠ a ∧ y ≠ a ∧ x + y = n) :
+    ∀ K, ∃ f : Fin K → ℕ × ℕ,
+      (∀ i, (f i).1 ∈ A ∧ (f i).2 ∈ A ∧
+        ∀ x ∈ A, ∀ y ∈ A, x + y = (f i).1 + (f i).2 →
+          (x = (f i).1 ∧ y = (f i).2) ∨
+          (x = (f i).2 ∧ y = (f i).1)) ∧
+      (∀ i j, i < j → (f i).1 < (f j).1 ∧ (f i).1 < (f j).2 ∧
+        (f i).2 < (f j).1 ∧ (f i).2 < (f j).2) := by
+  classical
+  intro K
+  induction K with
+  | zero =>
+    exact ⟨fun i => i.elim0, fun i => i.elim0, fun i => i.elim0⟩
+  | succ K ih =>
+    obtain ⟨f, hf₁, hf₂⟩ := ih
+    -- height of everything used so far
+    set M := (Finset.univ : Finset (Fin K)).sup
+      (fun i => max (f i).1 (f i).2) with hM
+    -- a fresh positive basis element above M
+    obtain ⟨b, hbA, hbge⟩ := pairCovers_unbounded hcov (M + 1)
+    have hbpos : 0 < b := by omega
+    -- its private stream, high above everything
+    obtain ⟨m, hm, c, hcA, hbc, huniq⟩ :=
+      essential_private_pair_stream hcov (hess b hbA hbpos)
+        (2 * b + M + N₀ + 1)
+    have hcM : M < c := by omega
+    refine ⟨fun i => if h : (i : ℕ) < K then
+      f ⟨i, h⟩ else (b, c), ?_, ?_⟩
+    · intro i
+      by_cases h : (i : ℕ) < K
+      · simp only [dif_pos h]
+        exact hf₁ ⟨i, h⟩
+      · simp only [dif_neg h]
+        exact ⟨hbA, hcA, fun x hx y hy hxy =>
+          huniq x hx y hy (by omega)⟩
+    · intro i j hij
+      have hjK : (j : ℕ) < K + 1 := j.isLt
+      by_cases hi : (i : ℕ) < K
+      · by_cases hj : (j : ℕ) < K
+        · simp only [dif_pos hi, dif_pos hj]
+          exact hf₂ ⟨i, hi⟩ ⟨j, hj⟩ (by
+            rw [Fin.mk_lt_mk]
+            exact hij)
+        · simp only [dif_pos hi, dif_neg hj]
+          have h1 : max (f ⟨i, hi⟩).1 (f ⟨i, hi⟩).2 ≤ M := by
+            rw [hM]
+            exact Finset.le_sup
+              (f := fun k => max (f k).1 (f k).2)
+              (Finset.mem_univ (⟨i, hi⟩ : Fin K))
+          have h2 : (f ⟨i, hi⟩).1 ≤ M := by omega
+          have h3 : (f ⟨i, hi⟩).2 ≤ M := by omega
+          exact ⟨by omega, by omega, by omega, by omega⟩
+      · exfalso
+        have hiK : (i : ℕ) < K + 1 := i.isLt
+        have : (j : ℕ) < K + 1 := j.isLt
+        have hij' : (i : ℕ) < (j : ℕ) := hij
+        omega
+
 end Erdos881
