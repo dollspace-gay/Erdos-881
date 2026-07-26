@@ -11637,4 +11637,72 @@ theorem face_one_split {A : Set ℕ} {P : Finset ℕ}
       intro x hx y hy hx0 hy0 hxy
       exact hpos x hx y hy hx0 hy0 hxy
 
+/-- **The free-tower mirror.**  At a near-diagonal face-III
+target b + g, every basis element in the huge window
+(g, b − 2M₀ − N₀ − 1] mirrors PURELY through the envelope — the
+rotator colour is size-excluded — and the mirror colour's
+translate is dead: b + g − z − p ∈ A and z + p ∉ A for some
+p ∈ P.  The g₀-tower's mirror-and-translate structure,
+recovered for a general envelope without any routing
+hypothesis. -/
+theorem free_tower_mirror {A : Set ℕ} {N₀ M₀ g b : ℕ}
+    {P : Finset ℕ}
+    (hcov : PairCovers A N₀) (hM : ∀ p ∈ P, p ≤ M₀)
+    (hrep : IsRepHub A (b + g) (insert b P))
+    (hpair : IsPairHub A (b + g) P)
+    {z : ℕ} (hz : z ∈ A) (hzM : M₀ < z) (hzg : g < z)
+    (hsize : z + 2 * M₀ + N₀ + 1 ≤ b) :
+    ∃ p ∈ P, p + z ≤ b + g ∧ b + g - z - p ∈ A ∧
+      z + p ∉ A := by
+  have hzH : z ∉ insert b P := by
+    intro h
+    rcases Finset.mem_insert.1 h with h1 | h1
+    · omega
+    · have := hM z h1
+      omega
+  obtain ⟨h, hhH, hhz, hmir⟩ :=
+    hall_mirror hcov hrep hz hzH (by omega)
+  rcases Finset.mem_insert.1 hhH with h1 | h1
+  · exfalso
+    omega
+  · refine ⟨h, h1, hhz, hmir, ?_⟩
+    intro hzhA
+    have hsum : (z + h) + (b + g - z - h) = b + g := by omega
+    rcases hpair (z + h) hzhA (b + g - z - h) hmir hsum with
+      h2 | h2
+    · have := hM _ h2
+      omega
+    · have h3 := hM _ h2
+      have h4 := hM h h1
+      omega
+
+/-- **The free tower's level structure.**  Singleton envelope:
+at a near-diagonal face-III target b + g with envelope {p}, the
+whole window reflects through the constant level L' = b + g − p
+— every window element z has L' − z ∈ A — and the STRONG
+translate law holds across the window: z + p ∉ A for every
+window z.  The g₀-tower's exact structure (levels, mirror,
+translate desert), recovered with no routing and no anchor
+hypothesis.  The tower kill lacks only its ladder: one c ∈ A
+with 2c − p ∈ A in range would close this room. -/
+theorem free_tower_singleton_levels {A : Set ℕ}
+    {N₀ M₀ g b p : ℕ}
+    (hcov : PairCovers A N₀) (hM : p ≤ M₀)
+    (hrep : IsRepHub A (b + g) (insert b {p}))
+    (hpair : IsPairHub A (b + g) ({p} : Finset ℕ)) :
+    ∀ z ∈ A, M₀ < z → g < z → z + 2 * M₀ + N₀ + 1 ≤ b →
+      p + z ≤ b + g ∧ (b + g - p) - z ∈ A ∧ z + p ∉ A := by
+  intro z hz hzM hzg hsize
+  have hM' : ∀ q ∈ ({p} : Finset ℕ), q ≤ M₀ := by
+    intro q hq
+    rw [Finset.mem_singleton] at hq
+    omega
+  obtain ⟨q, hqP, hqz, hmir, hdead⟩ :=
+    free_tower_mirror hcov hM' hrep hpair hz hzM hzg hsize
+  rw [Finset.mem_singleton] at hqP
+  subst hqP
+  have h1 : b + g - z - q = (b + g - q) - z := by omega
+  rw [h1] at hmir
+  exact ⟨by omega, hmir, hdead⟩
+
 end Erdos881
