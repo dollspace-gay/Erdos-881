@@ -270,3 +270,36 @@ tension; slackless windows: counting branch).  Height-pinning
 helper: a genuine pair-hub needs m ≥ max(b, b'), so tail-pair
 demand is bounded-below in height — the first demand-side height
 pin in the whole program.
+
+## SLACK MEASUREMENT + THE MASS-ACCOUNTING CORNER (19:55)
+
+probe_slack.py (Y = 320): seal capacity is ZERO at every density.
+Near-minimal (slack-free) bases: fragile targets exist (minR = 1)
+but coverage protection blocks all 16/16 attempted seals.  Adding
+slack: robustness explodes QUADRATICALLY — minR ≈ |A∩[0,Y]|²/(7Y)
+(measured: slack +30% ⟹ minR 19; +70% ⟹ 29; +150% ⟹ 47) — and
+robust targets cannot be sealed at all.  Both regimes kill seals.
+
+**The ledger, with measured constants.**  (i) Sealing a pair at a
+target costs ≥ R_avoid(m) removals (disjoint pair-avoiding reps
+need distinct removals); removal budget per window ≈ slack.
+(ii) Optimal slack s ≈ √(2Y) gives max seal capacity ~ (c/4)·√Y
+per dyadic window, c ≈ 7.  (iii) Pair demand at scale k is ~2^k;
+Hall's condition for the assignment (pairs of scale k seal at
+scales ≥ k) is satisfied EXACTLY by quadratic height staggering
+(scale-k pairs seal at scale ~2k) — target liberty's known
+escape, now pinned to a specific schedule.  (iv) NEW: each seal
+{b,b'} at m fires the fan blowup — r₂(m − b) ≳ √m/2 — and the
+total pair mass of a window is |A∩[0,Y]|²/2; at capacity-full
+sealing the blowup consumption is within a factor ~2 of the whole
+window's pair supply.  The mixed-regime enemy survives on a
+KNIFE-EDGE OF CONSTANTS in this mass account, exactly as the
+order-2 telescope did.
+
+Next session's sharpest program: verify each ledger line as an
+inequality (seal cost ≥ disjoint avoiding reps — trivial from
+disjoint_reps_le_hub_card relativized; blowup per seal —
+hub_fan_blowup as-is; window pair mass — sum_pair_counts_le_sq
+as-is; the staggering schedule — new), then tighten constants
+until one side wins or the enemy's schedule is forced unique and
+attacked structurally.
