@@ -13780,4 +13780,45 @@ theorem the_omega_drain {A : Set ℕ} {N₀ : ℕ}
   · intro k
     exact hB k
 
+open Classical in
+/-- **Blowup worlds are infinite.**  Cross-pair wealth forces
+both carriers infinite: the filter's members live in S and
+their reflections in T.  Every world on the ω-drain's path is
+infinite on both sides. -/
+theorem cross_blowup_infinite {S T : Set ℕ}
+    (h : ∀ C N, ∃ v, N ≤ v ∧ C ≤
+      ((Finset.range (v + 1)).filter
+        (fun x => x ∈ S ∧ (v - x) ∈ T)).card) :
+    S.Infinite ∧ T.Infinite := by
+  constructor
+  · by_contra hS
+    rw [Set.not_infinite] at hS
+    obtain ⟨v, hv, hc⟩ := h (hS.toFinset.card + 1) 0
+    have hsub : (Finset.range (v + 1)).filter
+        (fun x => x ∈ S ∧ (v - x) ∈ T) ⊆ hS.toFinset := by
+      intro x hx
+      rw [Finset.mem_filter] at hx
+      rw [Set.Finite.mem_toFinset]
+      exact hx.2.1
+    have := Finset.card_le_card hsub
+    omega
+  · by_contra hT
+    rw [Set.not_infinite] at hT
+    obtain ⟨v, hv, hc⟩ := h (hT.toFinset.card + 1) 0
+    have hinj : ((Finset.range (v + 1)).filter
+        (fun x => x ∈ S ∧ (v - x) ∈ T)).card ≤
+        hT.toFinset.card := by
+      apply Finset.card_le_card_of_injOn (fun x => v - x)
+      · intro x hx
+        simp only [Finset.mem_coe, Finset.mem_filter,
+          Finset.mem_range] at hx
+        simp only [Finset.mem_coe, Set.Finite.mem_toFinset]
+        exact hx.2.2
+      · intro a ha b hb hab
+        simp only [Finset.mem_coe, Finset.mem_filter,
+          Finset.mem_range] at ha hb
+        have hab' : v - a = v - b := hab
+        omega
+    omega
+
 end Erdos881
