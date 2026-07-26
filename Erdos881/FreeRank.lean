@@ -15712,4 +15712,52 @@ theorem universal_committee_law {A : Set ℕ}
   exact ⟨n, hn, H, hHsub, hHhub, hHmin,
     minimal_hub_necessity hHhub hHmin⟩
 
+open Classical in
+/-- **THE COMMITTEE SIZE FLOOR.**  In anchored counterexample
+worlds, the hereditary committees are never lone guardians:
+for every infinite positive subset B, cofinally many targets
+carry minimal committees from B of size AT LEAST TWO — empty
+committees die on covering, singleton committees feed the
+private-triple stream and the rotating-guardian engine kills
+through the oracle.  Every subset the deleter proposes is
+defended by genuine TEAMS, with every member holding a private
+witness: the team machinery is hereditary with its floor
+intact. -/
+theorem committee_size_floor {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : StreamSurvives A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∀ B ⊆ A, (∀ b ∈ B, 0 < b) → B.Infinite →
+      ∀ N, ∃ n, N ≤ n ∧
+      ∃ H ⊆ (Finset.range (n + 1)).filter (fun x => x ∈ B),
+        2 ≤ H.card ∧ IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        ∀ h ∈ H, ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = n ∧
+          (x = h ∨ y = h ∨ z = h) ∧
+          ∀ g ∈ H, g ≠ h → x ≠ g ∧ y ≠ g ∧ z ≠ g := by
+  intro B hBA hBpos hBinf N
+  have hnosing := singleton_hubs_refuted h0 hcov hanchor hfail
+  push Not at hnosing
+  obtain ⟨N₁, hN₁⟩ := hnosing
+  obtain ⟨n, hn, H, hHsub, hHhub, hHmin, hHwit⟩ :=
+    universal_committee_law hfail B hBA hBinf
+      (max N (max N₁ N₀))
+  refine ⟨n, by omega, H, hHsub, ?_, hHhub, hHmin, hHwit⟩
+  rcases Nat.lt_or_ge H.card 2 with hc | hc
+  · exfalso
+    interval_cases h : H.card
+    · have hemp : H = ∅ := Finset.card_eq_zero.1 h
+      obtain ⟨x, hx, y, hy, hxy⟩ := hcov n (by omega)
+      rcases hHhub x hx y hy 0 h0 (by omega) with hm | hm | hm
+        <;> rw [hemp] at hm <;>
+        exact absurd hm (Finset.notMem_empty _)
+    · obtain ⟨b, hb⟩ := Finset.card_eq_one.1 h
+      have hbB : b ∈ B := by
+        have := hHsub (hb ▸ Finset.mem_singleton_self b)
+        rw [Finset.mem_filter] at this
+        exact this.2
+      exact hN₁ n (by omega) b (hBpos b hbB) (hb ▸ hHhub)
+  · exact hc
+
 end Erdos881
