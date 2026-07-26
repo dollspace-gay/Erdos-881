@@ -7849,4 +7849,30 @@ theorem spine_stall_stream {A : Set ℕ} {N₀ : ℕ}
   obtain ⟨i, _, hi⟩ := hv
   exact ⟨i, hi⟩
 
+/-- A free set is a full hub of no target: freeness hands the
+target a representation avoiding the set, hub-ness forbids it.
+The fundamental exclusion between the two sides of the game. -/
+theorem free_set_never_hub {A : Set ℕ} {N₀ m : ℕ}
+    {P : Finset ℕ} (hfree : RepFree A N₀ P) (hm : N₀ ≤ m)
+    (hhub : IsRepHub A m P) : False := by
+  obtain ⟨x, hx, y, hy, z, hz, hsum, hxP, hyP, hzP⟩ := hfree m hm
+  rcases hhub x hx y hy z hz hsum with h | h | h
+  · exact hxP h
+  · exact hyP h
+  · exact hzP h
+
+/-- **Stall windows are wide, and stall defence is cross-shell.**
+Any stall window contained in a single (free) shell would be a
+free full hub — impossible.  Since consecutive spine values lie
+in distinct shells, every stall window of the spine stream has
+length at least two, and more generally every sub-hub of every
+stall window must straddle at least two shells: the enemy's
+defence against its own spine is intrinsically a cross-shell
+phenomenon, exactly where the conflict law and the caps live. -/
+theorem stall_window_not_in_shell {A : Set ℕ} {N₀ m : ℕ}
+    {Q : Finset ℕ} {W : Finset ℕ}
+    (hQfree : RepFree A N₀ Q) (hWQ : W ⊆ Q) (hm : N₀ ≤ m)
+    (hhub : IsRepHub A m W) : False :=
+  free_set_never_hub (RepFree.mono hWQ hQfree) hm hhub
+
 end Erdos881
