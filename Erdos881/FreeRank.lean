@@ -10144,4 +10144,44 @@ theorem the_door_world {A : Set ℕ} {N₀ : ℕ}
   obtain ⟨hvN, hrep⟩ := hV v hv
   exact ⟨hvN, hrep, hpair v hrep⟩
 
+/-- **The mirror-color law.**  At a door target the defective
+mirror's choice is never a good translate: it produces
+v − z − h ∈ A only for h with z + h ∉ A.  (A good translate
+z + h ∈ A would recombine with the mirror image into a
+hall-free pair of v, breaking the pair hub.)  The door world's
+mirrors and translates are locked together: the mirror colour
+set of z is exactly the complement of its translate set. -/
+theorem hall_mirror_color_law {A : Set ℕ} {N₀ M v : ℕ}
+    {H : Finset ℕ}
+    (hcov : PairCovers A N₀) (hM : ∀ h ∈ H, h ≤ M)
+    (hrep : IsRepHub A v H) (hpair : IsPairHub A v H)
+    {z : ℕ} (hz : z ∈ A) (hzH : z ∉ H) (hzM : M < z)
+    (hzv : z + 2 * M + N₀ + 1 ≤ v) :
+    ∃ h ∈ H, h + z ≤ v ∧ v - z - h ∈ A ∧ z + h ∉ A := by
+  obtain ⟨h, hhH, hhzv, hmir⟩ :=
+    hall_mirror hcov hrep hz hzH (by omega)
+  refine ⟨h, hhH, hhzv, hmir, ?_⟩
+  intro hzhA
+  have hsum : (z + h) + (v - z - h) = v := by omega
+  rcases hpair (z + h) hzhA (v - z - h) hmir hsum with h1 | h1
+  · have h2 := hM (z + h) h1
+    omega
+  · have h2 := hM (v - z - h) h1
+    have h3 := hM h hhH
+    omega
+
+/-- **Door targets are ghosts.**  Every door target beyond the
+hall's range is forced OUT of A: a member target would be hall
+material by the 0-pair law, but the hall is bounded.  Lane 2's
+targets share lane 3's defining mark. -/
+theorem door_targets_ghost {A : Set ℕ} {M v : ℕ}
+    {H : Finset ℕ} (h0 : 0 ∈ A) (h0H : (0 : ℕ) ∉ H)
+    (hM : ∀ h ∈ H, h ≤ M) (hpair : IsPairHub A v H)
+    (hvM : M < v) : v ∉ A := by
+  rcases street_target_notMem_or_window h0 h0H hpair with
+    h | h
+  · exact h
+  · have h1 := hM v h
+    omega
+
 end Erdos881
