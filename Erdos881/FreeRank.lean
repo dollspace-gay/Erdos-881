@@ -5351,4 +5351,48 @@ theorem counterexample_four_rooms {A : Set ℕ} {N₀ : ℕ}
         hesc N S
       exact ⟨n, hNn, hblown, b₂, hb₂A, b₃, hb₃A, rest⟩
 
+/-- **The rotator drops out of the ladder.**  In the street
+ladder (room R4), taking the basis pair beyond the mirror point
+puts the street strictly below the rotator: s = n + b₃ − b₂ < b₃
+whenever b₂ > n.  No pair of s can use b₃, so the street is a
+PURE-Q street: a fixed finite set pair-hubs infinitely many
+explicitly-located targets n + d, each in the shadow Q + A, with
+a basis pair at difference d alongside.  Target liberty is broken
+on the ladder: positions, envelope, and shadow are all pinned. -/
+theorem street_ladder_pure {A : Set ℕ} {N₀ : ℕ}
+    {Q : Finset ℕ} {n : ℕ}
+    (hcov : PairCovers A N₀)
+    (hladder : ∀ Δ S, ∃ b₂ ∈ A, ∃ b₃ ∈ A, S ≤ b₂ ∧ b₂ < b₃ ∧
+      Δ < b₃ - b₂ ∧ ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
+        IsPairHub A s (insert b₃ Q)) :
+    ∀ Δ, ∃ d, Δ < d ∧ N₀ ≤ n + d ∧
+      IsPairHub A (n + d) Q ∧
+      (∃ b ∈ A, b + d ∈ A) ∧
+      (∃ q ∈ Q, ∃ a ∈ A, q + a = n + d) := by
+  intro Δ
+  obtain ⟨b₂, hb₂A, b₃, hb₃A, hS, hlt, hΔ, s, hs, hsN, hhub⟩ :=
+    hladder Δ (n + 1)
+  set d := b₃ - b₂ with hd
+  have hsd : s = n + d := by omega
+  have hsb₃ : s < b₃ := by omega
+  have hpure : IsPairHub A (n + d) Q := by
+    rw [← hsd]
+    intro x hx y hy hxy
+    rcases hhub x hx y hy hxy with h | h
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · omega
+      · exact Or.inl h'
+    · rcases Finset.mem_insert.1 h with h' | h'
+      · omega
+      · exact Or.inr h'
+  have hshadow : ∃ q ∈ Q, ∃ a ∈ A, q + a = n + d := by
+    obtain ⟨x, hx, y, hy, hxy⟩ := hcov (n + d) (by omega)
+    rcases hpure x hx y hy hxy with h | h
+    · exact ⟨x, h, y, hy, by omega⟩
+    · exact ⟨y, h, x, hx, by omega⟩
+  exact ⟨d, hΔ, by omega, hpure, ⟨b₂, hb₂A, by
+    have h1 : b₂ + d = b₃ := by omega
+    rw [h1]
+    exact hb₃A⟩, hshadow⟩
+
 end Erdos881
