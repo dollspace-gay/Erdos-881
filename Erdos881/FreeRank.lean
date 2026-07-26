@@ -13512,4 +13512,93 @@ theorem half_cover_dichotomy {A : Set ℕ} {N₀ : ℕ}
         hN₁
     · exact ⟨N + N₁ + N₀, by omega, y, y', h1, h2, h3⟩
 
+open Classical in
+/-- **The generic cross-channel split.**  Any pair of sets
+whose cross-pair counts blow up cofinally has the blowup in one
+of the four parity channels.  Cross-systems are closed under
+this split, so the drain ITERATES: this is the induction step's
+pigeonhole, hypothesis-free beyond the supply itself. -/
+theorem cross_channel_split {S T : Set ℕ}
+    (hST : ∀ C N, ∃ v, N ≤ v ∧ C ≤
+      ((Finset.range (v + 1)).filter
+        (fun x => x ∈ S ∧ (v - x) ∈ T)).card) :
+    (∀ C N, ∃ v, N ≤ v ∧ C ≤ ((Finset.range (v + 1)).filter
+      (fun x => x ∈ S ∧ (v - x) ∈ T ∧ x % 2 = 0 ∧
+        (v - x) % 2 = 0)).card) ∨
+    (∀ C N, ∃ v, N ≤ v ∧ C ≤ ((Finset.range (v + 1)).filter
+      (fun x => x ∈ S ∧ (v - x) ∈ T ∧ x % 2 = 0 ∧
+        (v - x) % 2 = 1)).card) ∨
+    (∀ C N, ∃ v, N ≤ v ∧ C ≤ ((Finset.range (v + 1)).filter
+      (fun x => x ∈ S ∧ (v - x) ∈ T ∧ x % 2 = 1 ∧
+        (v - x) % 2 = 0)).card) ∨
+    (∀ C N, ∃ v, N ≤ v ∧ C ≤ ((Finset.range (v + 1)).filter
+      (fun x => x ∈ S ∧ (v - x) ∈ T ∧ x % 2 = 1 ∧
+        (v - x) % 2 = 1)).card) := by
+  classical
+  by_contra hno
+  push_neg at hno
+  obtain ⟨⟨C₁, N₁, h1⟩, ⟨C₂, N₂, h2⟩, ⟨C₃, N₃, h3⟩,
+    ⟨C₄, N₄, h4⟩⟩ := hno
+  obtain ⟨v, hvN, hvC⟩ := hST (C₁ + C₂ + C₃ + C₄ + 4)
+    (N₁ + N₂ + N₃ + N₄)
+  have hs1 := h1 v (by omega)
+  have hs2 := h2 v (by omega)
+  have hs3 := h3 v (by omega)
+  have hs4 := h4 v (by omega)
+  have hsub : (Finset.range (v + 1)).filter
+      (fun x => x ∈ S ∧ (v - x) ∈ T) ⊆
+      (((Finset.range (v + 1)).filter
+        (fun x => x ∈ S ∧ (v - x) ∈ T ∧ x % 2 = 0 ∧
+          (v - x) % 2 = 0)) ∪
+       ((Finset.range (v + 1)).filter
+        (fun x => x ∈ S ∧ (v - x) ∈ T ∧ x % 2 = 0 ∧
+          (v - x) % 2 = 1))) ∪
+      (((Finset.range (v + 1)).filter
+        (fun x => x ∈ S ∧ (v - x) ∈ T ∧ x % 2 = 1 ∧
+          (v - x) % 2 = 0)) ∪
+       ((Finset.range (v + 1)).filter
+        (fun x => x ∈ S ∧ (v - x) ∈ T ∧ x % 2 = 1 ∧
+          (v - x) % 2 = 1))) := by
+    intro x hx
+    rw [Finset.mem_filter] at hx
+    obtain ⟨hxr, hxS, hxT⟩ := hx
+    rcases Nat.mod_two_eq_zero_or_one x with he | ho <;>
+      rcases Nat.mod_two_eq_zero_or_one (v - x) with he' | ho'
+    · exact Finset.mem_union_left _ (Finset.mem_union_left _
+        (Finset.mem_filter.2 ⟨hxr, hxS, hxT, he, he'⟩))
+    · exact Finset.mem_union_left _ (Finset.mem_union_right _
+        (Finset.mem_filter.2 ⟨hxr, hxS, hxT, he, ho'⟩))
+    · exact Finset.mem_union_right _ (Finset.mem_union_left _
+        (Finset.mem_filter.2 ⟨hxr, hxS, hxT, ho, he'⟩))
+    · exact Finset.mem_union_right _ (Finset.mem_union_right _
+        (Finset.mem_filter.2 ⟨hxr, hxS, hxT, ho, ho'⟩))
+  have hc := Finset.card_le_card hsub
+  have hu1 := Finset.card_union_le
+    (((Finset.range (v + 1)).filter
+      (fun x => x ∈ S ∧ (v - x) ∈ T ∧ x % 2 = 0 ∧
+        (v - x) % 2 = 0)) ∪
+     ((Finset.range (v + 1)).filter
+      (fun x => x ∈ S ∧ (v - x) ∈ T ∧ x % 2 = 0 ∧
+        (v - x) % 2 = 1)))
+    (((Finset.range (v + 1)).filter
+      (fun x => x ∈ S ∧ (v - x) ∈ T ∧ x % 2 = 1 ∧
+        (v - x) % 2 = 0)) ∪
+     ((Finset.range (v + 1)).filter
+      (fun x => x ∈ S ∧ (v - x) ∈ T ∧ x % 2 = 1 ∧
+        (v - x) % 2 = 1)))
+  have hu2 := Finset.card_union_le
+    ((Finset.range (v + 1)).filter
+      (fun x => x ∈ S ∧ (v - x) ∈ T ∧ x % 2 = 0 ∧
+        (v - x) % 2 = 0))
+    ((Finset.range (v + 1)).filter
+      (fun x => x ∈ S ∧ (v - x) ∈ T ∧ x % 2 = 0 ∧
+        (v - x) % 2 = 1))
+  have hu3 := Finset.card_union_le
+    ((Finset.range (v + 1)).filter
+      (fun x => x ∈ S ∧ (v - x) ∈ T ∧ x % 2 = 1 ∧
+        (v - x) % 2 = 0))
+    ((Finset.range (v + 1)).filter
+      (fun x => x ∈ S ∧ (v - x) ∈ T ∧ x % 2 = 1 ∧
+        (v - x) % 2 = 1))
+  omega
 end Erdos881
