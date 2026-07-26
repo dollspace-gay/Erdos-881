@@ -10403,4 +10403,137 @@ theorem door_good_deep_engine {A : Set ℕ} {N₀ h₀ h₁ : ℕ}
         hdiffB (2 * j + 1), hoddB j, hxB, by omega⟩
     · exact ⟨x, hx, y, hy, 0, h0, hxB, hyB, h0B, by omega⟩
 
+/-- **THE TWO-MEMBER GOOD-DEEP DOOR IS DEAD.**  Assembly: in a
+door world with |H| = 2, the eventually-good horn, and cofinal
+deep partners, a surviving deletion exists.  The stream
+extraction threads four laws — ghostliness, the pinned good
+translate of every level (bad(L) = {h₀} since L + h₀ is the
+ghost target, so L + h₁ ∈ A), deep partners, and the pairwise
+difference law — into the good-deep engine. -/
+theorem door_two_good_deep_killed {A : Set ℕ}
+    {N₀ M₀ h₀ h₁ Z₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    {H : Finset ℕ} (hcard : H.card = 2)
+    (hM₀ : ∀ h ∈ H, h ≤ M₀)
+    (hh₀ : h₀ ∈ H) (hh₁ : h₁ ∈ H) (hne : h₀ ≠ h₁)
+    (hh₀pos : 0 < h₀) (hh₁pos : 0 < h₁)
+    (hgood : ∀ z, Z₀ ≤ z → z ∈ A → z ∉ H →
+      ∃ h ∈ H, z + h ∈ A)
+    (hsupply : ∀ N, ∃ v, N ≤ v ∧ N₀ ≤ v ∧ IsRepHub A v H ∧
+      IsPairHub A v H ∧ v - h₀ ∈ A ∧ v - h₀ - h₁ ∈ A) :
+    ∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n := by
+  classical
+  have hHeq : H = {h₀, h₁} := by
+    refine (Finset.eq_of_subset_of_card_le ?_ ?_).symm
+    · intro a ha
+      rcases Finset.mem_insert.1 ha with h | h
+      · exact h ▸ hh₀
+      · rw [Finset.mem_singleton] at h
+        exact h ▸ hh₁
+    · rw [hcard, Finset.card_insert_of_notMem
+        (by rw [Finset.mem_singleton]; exact hne),
+        Finset.card_singleton]
+  have h0H : (0 : ℕ) ∉ H := by
+    intro h
+    rw [hHeq] at h
+    rcases Finset.mem_insert.1 h with h | h
+    · omega
+    · rw [Finset.mem_singleton] at h
+      omega
+  -- extraction
+  have hsup' : ∀ c, ∃ w, c < w ∧ N₀ ≤ w ∧ IsRepHub A w H ∧
+      IsPairHub A w H ∧ w - h₀ ∈ A ∧ w - h₀ - h₁ ∈ A := by
+    intro c
+    obtain ⟨w, hw1, hw2, hw3, hw4, hw5, hw6⟩ := hsupply (c + 1)
+    exact ⟨w, by omega, hw2, hw3, hw4, hw5, hw6⟩
+  choose nf hnf1 hnf2 hnf3 hnf4 hnf5 hnf6 using hsup'
+  set base := Z₀ + 2 * M₀ + h₀ + h₁ + N₀ + 1 with hbase
+  set v : ℕ → ℕ := fun k =>
+    Nat.rec (nf base) (fun _ prev => nf (2 * prev)) k with hv
+  have hv0 : v 0 = nf base := rfl
+  have hvs : ∀ k, v (k + 1) = nf (2 * v k) := fun _ => rfl
+  have hgrow : ∀ k, 2 * v k < v (k + 1) := by
+    intro k
+    rw [hvs]
+    exact hnf1 (2 * v k)
+  have hbv : base < v 0 := by
+    rw [hv0]
+    exact hnf1 base
+  have hmono : StrictMono v := by
+    apply strictMono_nat_of_lt_succ
+    intro k
+    have h1 := hgrow k
+    have h2 : 0 < v k := by
+      induction k with
+      | zero => omega
+      | succ k ih => have := hgrow k; omega
+    omega
+  have hbvk : ∀ k, base < v k := by
+    intro k
+    have := hmono.monotone (Nat.zero_le k)
+    omega
+  have hprops : ∀ k, N₀ ≤ v k ∧ IsRepHub A (v k) H ∧
+      IsPairHub A (v k) H ∧ v k - h₀ ∈ A ∧
+      v k - h₀ - h₁ ∈ A := by
+    intro k
+    cases k with
+    | zero =>
+      rw [hv0]
+      exact ⟨hnf2 _, hnf3 _, hnf4 _, hnf5 _, hnf6 _⟩
+    | succ k =>
+      rw [hvs]
+      exact ⟨hnf2 _, hnf3 _, hnf4 _, hnf5 _, hnf6 _⟩
+  have hghost : ∀ k, v k ∉ A := by
+    intro k
+    exact door_targets_ghost h0 h0H hM₀ (hprops k).2.2.1
+      (by have := hbvk k; omega)
+  have hMlaw : ∀ k, v k - h₀ + h₁ ∈ A := by
+    intro k
+    have hLA : v k - h₀ ∈ A := (hprops k).2.2.2.1
+    have hLH : v k - h₀ ∉ H := by
+      intro h
+      have h1 := hM₀ _ h
+      have h2 := hbvk k
+      have h3 := hM₀ h₀ hh₀
+      omega
+    obtain ⟨g, hgH, hgA⟩ := hgood (v k - h₀)
+      (by have := hbvk k; have := hM₀ h₀ hh₀; omega) hLA hLH
+    have hgh₁ : g = h₁ := by
+      rw [hHeq] at hgH
+      rcases Finset.mem_insert.1 hgH with h | h
+      · exfalso
+        rw [h] at hgA
+        have h1 : v k - h₀ + h₀ = v k := by
+          have := hM₀ h₀ hh₀
+          have := hbvk k
+          omega
+        rw [h1] at hgA
+        exact hghost k hgA
+      · rw [Finset.mem_singleton] at h
+        exact h
+    rw [hgh₁] at hgA
+    exact hgA
+  have hdlaw : ∀ i j, i < j → v j - v i ∈ A := by
+    intro i j hij
+    have hji : v i + 2 * M₀ + N₀ + 1 ≤ v j := by
+      have h1 : v (i + 1) ≤ v j := by
+        rcases Nat.lt_or_ge (i + 1) j with h | h
+        · exact le_of_lt (hmono h)
+        · have h4 : i + 1 = j := by omega
+          rw [h4]
+      have h2 := hgrow i
+      have h3 := hbvk i
+      omega
+    exact door_two_difference_law hcov hM₀ hcard
+      (hprops j).2.1 (hprops j).2.2.1 (hghost i) hh₀
+      (hprops i).2.2.2.1
+      (by have := hbvk i; omega)
+      ⟨h₁, hh₁, hMlaw i⟩ hji
+  exact door_good_deep_engine v h0 hcov hmono hgrow hh₁pos
+    (by have := hbvk 0; omega)
+    (fun k => (hprops k).2.2.2.1) hMlaw
+    (fun k => (hprops k).2.2.2.2) hdlaw
+
 end Erdos881
