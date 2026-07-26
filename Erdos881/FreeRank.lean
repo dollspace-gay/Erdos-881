@@ -4142,4 +4142,46 @@ theorem shell_pairs_conflict {A : Set ℕ} {N₀ : ℕ}
     exact Finset.mem_union_right _ hb
   · exact Finset.mem_union_left _ h'
 
+/-- Order-2 conflict cap: a pair-free shell's escape pair must
+meet every conflict partner, and a pair has two parts — so at
+order 2 the per-target conflict degree is at most 2; a fourth
+disjoint partner is impossible. -/
+theorem four_shell_pair_conflict_impossible {A : Set ℕ}
+    {N₀ m : ℕ} {Q : Fin 4 → Finset ℕ}
+    (hdisj : ∀ i j, i ≠ j → Disjoint (Q i) (Q j))
+    (hfree : PairFree A N₀ (Q 0))
+    (hm : N₀ ≤ m)
+    (hhub : ∀ i : Fin 3, IsPairHub A m (Q 0 ∪ Q i.succ)) :
+    False := by
+  classical
+  obtain ⟨x, hx, y, hy, hsum, hxQ, hyQ⟩ := hfree m hm
+  have hhit : ∀ i : Fin 3, x ∈ Q i.succ ∨ y ∈ Q i.succ := by
+    intro i
+    rcases hhub i x hx y hy hsum with h | h
+    · rcases Finset.mem_union.1 h with h' | h'
+      · exact absurd h' hxQ
+      · exact Or.inl h'
+    · rcases Finset.mem_union.1 h with h' | h'
+      · exact absurd h' hyQ
+      · exact Or.inr h'
+  have hpick : ∀ i : Fin 3, ∃ p : Fin 2,
+      (if p = 0 then x else y) ∈ Q i.succ := by
+    intro i
+    rcases hhit i with h | h
+    · exact ⟨0, by simpa using h⟩
+    · exact ⟨1, by simpa using h⟩
+  choose pk hpk using hpick
+  have hcard : ¬Function.Injective pk := by
+    intro hinj
+    have := Fintype.card_le_of_injective pk hinj
+    simp at this
+  rw [Function.not_injective_iff] at hcard
+  obtain ⟨i, j, hpij, hij⟩ := hcard
+  have h1 := hpk i
+  have h2 := hpk j
+  rw [hpij] at h1
+  have hne : i.succ ≠ j.succ := fun h =>
+    hij (Fin.succ_injective 3 h)
+  exact (Finset.disjoint_left.1 (hdisj i.succ j.succ hne)) h1 h2
+
 end Erdos881

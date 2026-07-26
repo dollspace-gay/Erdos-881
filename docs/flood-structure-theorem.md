@@ -263,3 +263,37 @@ the disjoint shell family.
 the fractal/Cantor-like picture) — or infinitely many survivors
 each guard at unbounded scales across infinitely many disjoint
 free envelopes.
+
+## 12. THE CAP SUITE AND THE CONFLICT LAW (19:29)
+
+All hypothesis-free pigeonhole, hence true in every world:
+
+**Rotation caps.**  One target, one guardian: four disjoint
+b-free envelopes force singleton ownership
+(`four_disjoint_hubs_singleton`); three suffice at order 2
+(`three_disjoint_pair_hubs_singleton`).
+
+**The six-level cap (`seven_level_hub_impossible`).**  One
+target, seven DISTINCT guardians over seven disjoint envelopes:
+impossible outright — a rep part covers at most one envelope
+plus one guardian-identity, 3×2 = 6 < 7.  No ownership escape.
+
+**The 18-level absolute cap (`eighteen_level_cap`).**  Nineteen
+envelope-hubs at one target, any guardians: some guardian owns
+the target.  So absent ownership one target serves ≤ 18 levels.
+
+**The conflict law (`shell_pairs_conflict`,
+`five_shell_conflict_impossible`,
+`four_shell_pair_conflict_impossible`).**  Every pair of shells
+owns a conflict target (later members guard earlier shells; hubs
+up-monotone `IsRepHub.mono`).  Per target the conflict graph has
+max degree ≤ 3 and vertex-cover ≤ 3, hence ≤ 9 shell-pairs per
+target (degree ≤ 2 at order 2).  The complete graph on shell
+indices must therefore spread over infinitely many conflict
+targets — each a guardian-free pure envelope hub, Sidon-bounded
+by the union size.
+
+Status: the caps quantify REUSE exhaustively; placement remains
+enemy-free (target liberty).  The ledger is complete; the missing
+piece is unchanged — one verified upper-bound device on target
+placement.
