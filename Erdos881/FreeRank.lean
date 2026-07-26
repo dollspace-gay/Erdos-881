@@ -12312,4 +12312,68 @@ theorem descent_invariant {A : Set ℕ} {N₀ Y ε : ℕ}
       | 2 => exact ⟨hz, hzB⟩
     · simpa [Fin.sum_univ_three] using hsum
 
+open Classical in
+/-- **The saturated fringe is nonempty.**  Single-parity worlds
+must keep at least one opposite-parity key in the fringe — odd
+targets have no other door. -/
+theorem saturated_fringe_nonempty {A : Set ℕ} {N₀ Y ε : ℕ}
+    (hcov : PairCovers A N₀)
+    (hpar : ∀ a ∈ A, Y < a → a % 2 = ε) :
+    ((Finset.range (Y + 1)).filter
+      (fun x => x ∈ A ∧ x % 2 ≠ ε)).Nonempty := by
+  obtain ⟨x, hx, y, hy, hxy⟩ :=
+    hcov (2 * (Y + N₀) + 1) (by omega)
+  rcases global_parity_odd_fringe hpar (2 * (Y + N₀) + 1)
+    (by omega) (by omega) x hx y hy hxy with
+    ⟨h1, h2⟩ | ⟨h1, h2⟩
+  · exact ⟨x, by
+      rw [Finset.mem_filter, Finset.mem_range]
+      exact ⟨by omega, hx, h2⟩⟩
+  · exact ⟨y, by
+      rw [Finset.mem_filter, Finset.mem_range]
+      exact ⟨by omega, hy, h2⟩⟩
+
+open Classical in
+/-- **The popular fringe key.**  One opposite-parity fringe
+element partners cofinally many odd targets: the saturated
+hall has a door, and the door's partner stream is the whole
+odd channel's backbone. -/
+theorem saturated_popular_fringe {A : Set ℕ} {N₀ Y ε : ℕ}
+    (hcov : PairCovers A N₀)
+    (hpar : ∀ a ∈ A, Y < a → a % 2 = ε) :
+    ∃ f, f ∈ A ∧ f ≤ Y ∧ f % 2 ≠ ε ∧
+      ∀ N, ∃ n, N ≤ n ∧ n % 2 = 1 ∧ f ≤ n ∧ n - f ∈ A := by
+  classical
+  by_contra hno
+  push_neg at hno
+  have hKf : ∀ f : ℕ, ∃ Kf, f ∈ A → f ≤ Y → f % 2 ≠ ε →
+      ∀ n, Kf ≤ n → n % 2 = 1 → f ≤ n → n - f ∉ A := by
+    intro f
+    by_cases hfA : f ∈ A
+    · by_cases hfY : f ≤ Y
+      · by_cases hfp : f % 2 = ε
+        · exact ⟨0, fun _ _ h => absurd hfp h⟩
+        · obtain ⟨Kf, hKf'⟩ := hno f hfA hfY hfp
+          exact ⟨Kf, fun _ _ _ => hKf'⟩
+      · exact ⟨0, fun _ h => absurd h hfY⟩
+    · exact ⟨0, fun h => absurd h hfA⟩
+  choose Kf hKf using hKf
+  set KM := (Finset.range (Y + 1)).sup Kf with hKM
+  set n := 2 * (KM + Y + N₀) + 1 with hn
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov n (by omega)
+  rcases global_parity_odd_fringe hpar n (by omega) (by omega)
+    x hx y hy hxy with ⟨h1, h2⟩ | ⟨h1, h2⟩
+  · have hKx : Kf x ≤ KM :=
+      Finset.le_sup (f := Kf) (Finset.mem_range.2 (by omega))
+    have h3 := hKf x hx h1 h2 n (by omega) (by omega) (by omega)
+    have h4 : n - x = y := by omega
+    rw [h4] at h3
+    exact h3 hy
+  · have hKy : Kf y ≤ KM :=
+      Finset.le_sup (f := Kf) (Finset.mem_range.2 (by omega))
+    have h3 := hKf y hy h1 h2 n (by omega) (by omega) (by omega)
+    have h4 : n - y = x := by omega
+    rw [h4] at h3
+    exact h3 hx
+
 end Erdos881
