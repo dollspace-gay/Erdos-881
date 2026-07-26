@@ -6621,4 +6621,95 @@ theorem shell_higman_chain {A : Set ℕ} {N₀ : ℕ}
     (fun k x _ => Set.mem_univ x)
   exact ⟨Q, hne, hmem, hfree, hdisj, hguard, σ, hσ⟩
 
+/-- Forall₂-membership transfer: each left element has a related
+partner on the right. -/
+theorem forall₂_mem_partner {r : ℕ → ℕ → Prop}
+    {l₁ l₂ : List ℕ} (h : List.Forall₂ r l₁ l₂) :
+    ∀ x ∈ l₁, ∃ y ∈ l₂, r x y := by
+  induction h with
+  | nil => intro x hx; exact absurd hx (List.not_mem_nil)
+  | cons hr _ ih =>
+    intro x hx
+    rcases List.mem_cons.1 hx with h' | h'
+    · subst h'
+      exact ⟨_, List.mem_cons_self, hr⟩
+    · obtain ⟨y, hy, hxy⟩ := ih x h'
+      exact ⟨y, List.mem_cons_of_mem _ hy, hxy⟩
+
+/-- **THE SPINE LINEAGE.**  Walking through the Nash-Williams
+door: consecutive Higman embeddings along the shell chain
+compose into element lineages, and shell disjointness makes
+every step STRICT.  The enemy's stratification threads a
+canonical strictly increasing sequence meeting one spine shell
+after another — an infinite ascending skeleton assembled from
+the enemy's own free material.  The branch program's raw
+spine. -/
+theorem spine_lineage {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ Q : ℕ → Finset ℕ, ∃ σ : ℕ ↪o ℕ, ∃ x : ℕ → ℕ,
+      (∀ k, (Q k).Nonempty) ∧
+      (∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h) ∧
+      (∀ k, RepFree A N₀ (Q k)) ∧
+      (∀ j k, j < k → Disjoint (Q j) (Q k)) ∧
+      (∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
+        ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) ∧
+      StrictMono x ∧ (∀ t, x t ∈ Q (σ t)) := by
+  classical
+  obtain ⟨Q, hne, hmem, hfree, hdisj, hguard, σ, hσ⟩ :=
+    shell_higman_chain h0 hcov hanchor hfail
+  -- step: an element of a spine shell has a strictly larger
+  -- partner in the next spine shell
+  have hstep : ∀ t v, v ∈ Q (σ t) → ∃ w ∈ Q (σ (t + 1)),
+      v < w := by
+    intro t v hv
+    have hchain := hσ t (t + 1) (by omega)
+    obtain ⟨l', hf₂, hsub⟩ := List.sublistForall₂_iff.1 hchain
+    have hvL : v ∈ (Q (σ t)).sort (· ≤ ·) := by
+      rw [Finset.mem_sort]
+      exact hv
+    obtain ⟨w, hwl', hvw⟩ := forall₂_mem_partner hf₂ v hvL
+    have hwL : w ∈ (Q (σ (t + 1))).sort (· ≤ ·) :=
+      hsub.mem hwl'
+    have hwQ : w ∈ Q (σ (t + 1)) := by
+      rw [← Finset.mem_sort (α := ℕ) (· ≤ ·)]
+      exact hwL
+    have hvne : v ≠ w := by
+      intro heq
+      have h1 : σ t < σ (t + 1) := σ.strictMono (by omega)
+      exact (Finset.disjoint_left.1 (hdisj _ _ h1)) hv
+        (heq ▸ hwQ)
+    exact ⟨w, hwQ, by omega⟩
+  -- thread the lineage by recursion
+  obtain ⟨v₀, hv₀⟩ := hne (σ 0)
+  have hpick : ∀ t v, ∃ w, v ∈ Q (σ t) → w ∈ Q (σ (t + 1)) ∧
+      v < w := by
+    intro t v
+    by_cases hv : v ∈ Q (σ t)
+    · obtain ⟨w, hw, hvw⟩ := hstep t v hv
+      exact ⟨w, fun _ => ⟨hw, hvw⟩⟩
+    · exact ⟨0, fun h => absurd h hv⟩
+  choose W hW using hpick
+  obtain ⟨x, hx0, hxs⟩ : ∃ x : ℕ → ℕ, x 0 = v₀ ∧
+      ∀ t, x (t + 1) = W t (x t) :=
+    ⟨fun t => Nat.rec v₀ (fun t' v => W t' v) t, rfl,
+      fun _ => rfl⟩
+  have hxmem : ∀ t, x t ∈ Q (σ t) := by
+    intro t
+    induction t with
+    | zero => rw [hx0]; exact hv₀
+    | succ t ih =>
+      rw [hxs]
+      exact (hW t (x t) ih).1
+  have hxmono : StrictMono x := by
+    apply strictMono_nat_of_lt_succ
+    intro t
+    rw [hxs]
+    exact (hW t (x t) (hxmem t)).2
+  exact ⟨Q, σ, x, hne, hmem, hfree, hdisj, hguard, hxmono,
+    hxmem⟩
+
 end Erdos881
