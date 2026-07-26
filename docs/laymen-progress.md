@@ -382,3 +382,30 @@ leave behind; the crystals are the local roadblocks; the rank
 measures how far harmlessness extends; and the immunity laws show
 whole neighbourhoods where roadblocks cannot stand.  One question,
 two attack tracks, all scaffolding machine-checked.
+
+## 2026-07-25 night, part three — Peeling the onion
+
+A new picture emerged tonight, and it is the cleanest one yet.
+Take the enemy's keyring and pull out a largest possible harmless
+handful of keys — harmless meaning every door still opens without
+them.  What's left?  We proved: EVERY single remaining key, big or
+small, becomes a guardian sealing some door against that handful.
+Peel that layer off and repeat: another maximal harmless handful,
+another total guardianship, forever.  The enemy is an onion with
+infinitely many skins, each skin finite, each skin's outsiders all
+on duty.
+
+Then two counting facts with no hypotheses at all: a door has only
+three key-slots (or two, at the pair level), so one door cannot
+serve four different skins through the same guardian — the fourth
+try hands the guardian outright OWNERSHIP of the door, and owners
+at ever-larger sizes form exactly the parade our rotating-guardian
+theorem already executes.  The consequence, the DEPTH TAX: a key
+sitting k skins deep must guard a door at height proportional to
+k.  Depth costs.  The deeper the enemy hides a key, the higher the
+duty it must post, at a height we can compute in advance.
+
+Our lab probes show honest keyrings are shallow onions — three or
+four fat skins.  The enemy must be an infinitely deep onion of
+thin skins, paying linear tax at every layer.  The trap-building
+program now knows WHERE the enemy's obligations live.

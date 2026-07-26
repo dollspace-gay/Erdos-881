@@ -725,3 +725,28 @@ randomized searches show the local laws admit alternate fixed
 points at every tested radius. The uniqueness — hence Erdős 881
 itself — lives exactly in the global rails' selection power, with
 everything below them machine-verified.
+
+## THE SHELL ENDGAME + DEPTH TAX (2026-07-25, 19:20)
+
+Verified arc (FreeRank.lean; all standard axioms, zero sorries):
+`freeSup_wf` / `pairSup_wf` (no ascending inclusion-chains of free
+sets — unions would be branches), `exists_absolute_leaf` (+ pool
+and pair versions; the pair version is a standalone structure
+theorem for EVERY ℵ₀-minimal order-2 basis),
+`absolute_leaf_personal_target`, `absolute_shell_stratification`
+(disjoint nonempty free shells, hierarchical total guardianship),
+rotation caps `four_disjoint_hubs_singleton` /
+`three_disjoint_pair_hubs_singleton` (hypothesis-free pigeonhole),
+`eternal_survivor_dichotomy`, `shell_survivors_unbounded_targets`,
+`shell_depth_forces_scale`, `depth_tax_of_hfail` (every large
+element clear of shells 0..k guards at height ≥ N₀ + k/3),
+capstone `shell_endgame` / `endgame_shells`.
+
+Enemy shapes remaining: perfect stratification (shells tile A⁺ up
+to a finite set) or an infinite crowd of infinitely-employed
+survivors; in both, deep elements pay linear-height guardian
+duties.  Probes (scripts/probe_shells.py): honest models are
+shallow-and-fat; the enemy must be an infinitely deep onion of
+finite shells.  The open core is unchanged (target liberty /
+witness confinement), but the adaptive program now has a verified
+LOCATION LAW for where deep elements' obligations sit.
