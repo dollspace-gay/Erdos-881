@@ -520,3 +520,33 @@ supply IS cofinal: ∀ C N ∃ v ≥ N with pair-count ≥ C) +
    cascade — use rep_flood_of_hfail's per-b personal targets as
    the slice family, so the slice indices are enemy material
    rather than a static V.
+
+
+## The free-tower kill requirements (2026-07-26, audited)
+
+The free tower (face III, near-diagonal, singleton effective
+envelope {p}, p in A automatically) has: levels L' = m - p in A
+(`pair_hub_corep`), windowed exact mirror through L'
+(`free_tower_singleton_levels`), strong translate law across
+the window.  The g0-tower engine does NOT port verbatim; the
+audit found exactly three gaps:
+
+1. THE LADDER: one c in A, large, with 2c - p in A.  Equivalent
+   form: one 3-term AP in A with endpoint p (midpoint c).  The
+   enemy's only defense is A cap (2A - p) bounded — total
+   AP3-freeness at p, the central branch's geometry localized.
+2. SMALL-z MIRRORS: the free-tower window excludes z <= max(p, g);
+   the engine reflects repair-pair parts that may be small.  At
+   small z the rotator color is live (image g - z, tiny).  The
+   engine needs either both-large repair pairs (uncontrolled) or
+   a small-part bypass.
+3. HIGH-z MIRRORS: window also stops 2M0 + N0 + 1 below the
+   rotator; engine level-reflections need the full range.  Fix:
+   space the level extraction so all reflected values sit inside
+   successive windows (feasible: windows have width ~ b).
+
+Gap 1 is the mathematical heart; gaps 2-3 are engineering.
+If ladder: adapt engine with windowed levels.  If no ladder
+(AP3-free at p): the free tower merges into central-tail
+geometry — and the two remaining rooms begin to look like ONE:
+midpoint-free worlds vs rank-omega.
