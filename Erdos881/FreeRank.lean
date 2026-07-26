@@ -12258,7 +12258,7 @@ one off-parity fringe key, hfail DESCENDS: every infinite
 half-world deletion fails at order 2 or at order 3.  The
 half-world inherits the (2,3)-mixed counterexample interface —
 the 2-adic recursion is formally armed. -/
-theorem descent_invariant {A : Set ℕ} {N₀ Y ε : ℕ}
+theorem descent_invariant {A : Set ℕ} {ε : ℕ}
     (hε : ε < 2)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)

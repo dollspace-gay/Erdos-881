@@ -650,4 +650,54 @@ theorem endgame_translate_laws {A : Set ℕ} {N₀ : ℕ}
    fun h₀ h₁ h₀A h₁A hh₀ hh₁ =>
      pair_translate_law h0 hcov hfail h₀A h₁A hh₀ hh₁⟩
 
+open Classical in
+/-- **THE PARITY FORK** (re-export; the descent suite composed).
+Every counterexample world either keeps BOTH parity classes
+cofinally (the mixing world — walk-engine territory), or is
+eventually single-parity and then carries the complete
+saturated package at once: the finite opposite-parity fringe
+pair-hubs EVERY odd target (total door saturation, no placement
+liberty); the canonical r₂-blowups are forced onto the even
+channel; the half-world inherits order-2 covering; and every
+infinite half-world deletion fails at order 2 or order 3 — the
+counterexample interface DESCENDS.  The 2-adic recursion is
+armed inside every parity-defended world. -/
+theorem endgame_parity_fork {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ((∀ N, ∃ a, N ≤ a ∧ a ∈ A ∧ a % 2 = 0) ∧
+     (∀ N, ∃ a, N ≤ a ∧ a ∈ A ∧ a % 2 = 1)) ∨
+    (∃ Y ε, ε < 2 ∧ (∀ a ∈ A, Y < a → a % 2 = ε) ∧
+      (∀ n, 2 * Y < n → n % 2 = 1 →
+        IsPairHub A n ((Finset.range (Y + 1)).filter
+          (fun x => x ∈ A ∧ x % 2 ≠ ε))) ∧
+      (∀ N, ∃ v, N ≤ v ∧ v % 2 = 0 ∧ 2 * Y + 3 ≤
+        ((Finset.range (v + 1)).filter
+          (fun x => x ∈ A ∧ (v - x) ∈ A)).card) ∧
+      PairCovers {x : ℕ | ε + 2 * x ∈ A} (N₀ + 2 * Y + 2) ∧
+      (∀ B' ⊆ {x : ℕ | ε + 2 * x ∈ A}, B'.Infinite →
+        ¬((∃ N2, ∀ n', N2 ≤ n' →
+            ∃ x' ∈ {x : ℕ | ε + 2 * x ∈ A},
+            ∃ y' ∈ {x : ℕ | ε + 2 * x ∈ A},
+              x' ∉ B' ∧ y' ∉ B' ∧ x' + y' = n') ∧
+          (∃ N3, ∀ n', N3 ≤ n' →
+            ∃ x' ∈ {x : ℕ | ε + 2 * x ∈ A},
+            ∃ y' ∈ {x : ℕ | ε + 2 * x ∈ A},
+            ∃ z' ∈ {x : ℕ | ε + 2 * x ∈ A},
+              x' ∉ B' ∧ y' ∉ B' ∧ z' ∉ B' ∧
+              x' + y' + z' = n')))) := by
+  rcases global_parity_dichotomy (A := A) with
+    ⟨Y, ε, hε, hpar⟩ | hboth
+  · right
+    obtain ⟨f, hff⟩ := saturated_fringe_nonempty hcov hpar
+    rw [Finset.mem_filter, Finset.mem_range] at hff
+    obtain ⟨hfY, hfA, hfpar⟩ := hff
+    exact ⟨Y, ε, hε, hpar,
+      fun n h1 h2 => global_parity_odd_hall hpar n h1 h2,
+      r2_witnesses_even h0 hcov hfail hpar,
+      half_world_covers hε hcov hpar,
+      descent_invariant hε hfail hfA hfpar⟩
+  · exact Or.inl hboth
+
 end Erdos881
