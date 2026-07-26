@@ -10884,4 +10884,86 @@ theorem good_two_walk_killed {A : Set ℕ} {N₀ h₀ h₁ Z₀ : ℕ}
             hsmallB h₁ (by omega), hxB, by omega⟩
       · exact ⟨x, hx, y, hy, 0, h0, hxB, hyB, h0B, by omega⟩
 
+/-- **THE SINGLE TRANSLATE LAW.**  Unconditional counterexample
+law: for every positive basis element c, arbitrarily large
+basis elements z have z + c OUT of A.  Otherwise the c-chain
+z, z + c, z + 2c, … supplies cofinal fixed-difference AP3s and
+the midpoint engine hands hfail a surviving deletion.  No
+element's upward translate eventually captures the basis. -/
+theorem single_translate_law {A : Set ℕ} {N₀ c : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hcA : c ∈ A) (hcpos : 0 < c) :
+    ∀ Z₀, ∃ z, Z₀ ≤ z ∧ z ∈ A ∧ z + c ∉ A := by
+  by_contra hno
+  push_neg at hno
+  obtain ⟨Z₀, hZ₀⟩ := hno
+  have hgood : ∀ z, Z₀ ≤ z → z ∈ A → z + c ∈ A := by
+    intro z h1 h2
+    exact hZ₀ z h1 h2
+  have hbig : ∀ V, ∃ a, a ∈ A ∧ V ≤ a := by
+    intro V
+    obtain ⟨p, hpA, q, hqA, hpq⟩ := hcov (2 * (V + N₀))
+      (by omega)
+    rcases le_total p q with h | h
+    · exact ⟨q, hqA, by omega⟩
+    · exact ⟨p, hpA, by omega⟩
+  obtain ⟨B, hBsub, hBinf, hsurv⟩ :=
+    ap3_deletion_engine h0 hcov hcA hcpos (by
+      intro V
+      obtain ⟨a, haA, haV⟩ := hbig (V + Z₀)
+      have h1 : a + c ∈ A := hgood a (by omega) haA
+      have h2 : a + c + c ∈ A := hgood (a + c) (by omega) h1
+      refine ⟨a + c, by omega, ?_, h1, h2⟩
+      have h3 : a + c - c = a := by omega
+      rw [h3]
+      exact haA)
+  refine hfail B hBsub hBinf ⟨N₀, fun n hn => ?_⟩
+  obtain ⟨x, hx, y, hy, z, hz, hxB, hyB, hzB, hsum⟩ :=
+    hsurv n hn
+  refine ⟨![x, y, z], ?_, ?_⟩
+  · intro i
+    match i with
+    | 0 => exact ⟨hx, hxB⟩
+    | 1 => exact ⟨hy, hyB⟩
+    | 2 => exact ⟨hz, hzB⟩
+  · simpa [Fin.sum_univ_three] using hsum
+
+/-- **THE PAIR TRANSLATE LAW.**  Unconditional counterexample
+law: for every two positive basis elements h₀, h₁, arbitrarily
+large basis elements z have BOTH z + h₀ and z + h₁ out of A.
+Otherwise the good-translate walk runs and dies by the walk
+kill.  Every counterexample is cofinally two-sided
+translate-free at every pair — the door world's strong horn is
+not a case, it is the LAW, and the good horn is empty. -/
+theorem pair_translate_law {A : Set ℕ} {N₀ h₀ h₁ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hh₀A : h₀ ∈ A) (hh₁A : h₁ ∈ A)
+    (hh₀ : 0 < h₀) (hh₁ : 0 < h₁) :
+    ∀ Z₀, ∃ z, Z₀ ≤ z ∧ z ∈ A ∧ z + h₀ ∉ A ∧ z + h₁ ∉ A := by
+  by_contra hno
+  push_neg at hno
+  obtain ⟨Z₀, hZ₀⟩ := hno
+  have hgood : ∀ z, Z₀ ≤ z → z ∈ A →
+      z + h₀ ∈ A ∨ z + h₁ ∈ A := by
+    intro z h1 h2
+    by_cases ha : z + h₀ ∈ A
+    · exact Or.inl ha
+    · exact Or.inr (hZ₀ z h1 h2 ha)
+  obtain ⟨B, hBsub, hBinf, hsurv⟩ :=
+    good_two_walk_killed h0 hcov hh₀A hh₁A hh₀ hh₁ hgood
+  refine hfail B hBsub hBinf ⟨N₀, fun n hn => ?_⟩
+  obtain ⟨x, hx, y, hy, z, hz, hxB, hyB, hzB, hsum⟩ :=
+    hsurv n hn
+  refine ⟨![x, y, z], ?_, ?_⟩
+  · intro i
+    match i with
+    | 0 => exact ⟨hx, hxB⟩
+    | 1 => exact ⟨hy, hyB⟩
+    | 2 => exact ⟨hz, hzB⟩
+  · simpa [Fin.sum_univ_three] using hsum
+
 end Erdos881
