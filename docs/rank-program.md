@@ -400,3 +400,17 @@ towers are the enemy's only known counting-defeating device, and
 each tower level is itself an alignment the enemy would have to
 break.  This is the battle line restated structurally: does
 every covering set possess at least one self-alignment?
+
+## SPINE LAB (21:55; probe_spine.py)
+
+Truncated honest worlds have 3–4 shells of DECREASING size
+([37,23,3,1] Cantor), so no Higman chain forms — correctly: the
+spine needs infinitely many shells, which exist exactly when the
+enemy does.  The spine is an enemy-exclusive object, like every
+structure of the campaign: invisible in honest worlds, forced in
+failing ones.  Consequence worth noting: along the spine, shell
+sizes are non-decreasing (sublist embedding), so a counterexample
+possesses arbitrarily large free shells along its own spine —
+combined with size↔rank in the finite regime this pushes spine
+pool ranks upward.  Next session: spine stall hubs (the game
+board, spine_stalls_hereditarily) versus the caps.
