@@ -1,3 +1,32 @@
+# UPDATE (2026-07-26, cont. 2): THE DOOR'S DIFFERENCE LADDER
+
+**Arc 23 — the two-member good horn.**
+`door_translate_dichotomy`: cofinal strong-translate elements
+(tower law verbatim) or eventually-good.
+`door_two_difference_law`: |H| = 2, good horn — door-target
+differences are FORCED INTO A.  Proof mechanism: the partner
+L = v − h₀ has h₀ bad (v is a ghost), goodness pins bad(L) =
+{h₀} exactly, the colour law forces the mirror colour h₀, and
+the mirror image collapses to the pure difference v' − v.
+
+**Engine progress (k = 2, good horn), verified reasoning:**
+- single-hit repair CLOSES: x = v_{2i} − v₀ deleted, triple
+  (v_{2i} − v_{2i−1}) + (v_{2i−1} − v₀) + y — all parts are
+  door differences, parity separates them from B.
+- both-in-B WALL: residual 2(v_w − v₀) must split into two
+  non-deleted A-parts; candidate splits land on the deleted
+  difference or need membership at the 2v₀ scale (values
+  z + bad(z) = 2v₀ − h forms) which nothing yet controls.
+
+**Next attack on the wall**: Ramsey on the difference algebra
+(d_ik = d_ij + d_jk telescopes — consecutive-difference sums
+are differences); two-base-point geometry; or the strong-horn
+side first (tower repair-pair analysis with ∀-bad translates).
+
+All verified, zero sorries, standard axioms.
+
+---
+
 # UPDATE (2026-07-26, cont.): THE DOOR WORLD OPENED
 
 **Arc 22 — lane 2 at full strength.**  The weld had discarded
