@@ -319,3 +319,21 @@ freedom; the covering budget absorbs ~√Y/3 of them per window.
 A real R4 counterexample must ALSO pay shells, floods, blowups
 and minimality on top — the combined budget is the next lab
 question.
+
+## CROSS-AUDIT: LADDER × SHELLS (20:52; probe_ladder_shells.py)
+
+The R4 ladder world stalls shallow-and-fat like every honest set
+(3 shells, sizes [133, 51, 2]; rungs scattered through shells 0–1).
+R4 structure contributes nothing to depth: streets constrain
+PAIRS, depth needs rep-hub abundance at every level.  Across all
+probed worlds the first shell holds a POSITIVE FRACTION of the
+window basis (0.52 Cantor, 0.71 ladder world, 0.78 greedy-B₂).
+Window free-fraction conjecture: every covering set's maximal
+window-free subset is ≥ ε·|A ∩ window| — if true at the level of
+TRUE freeness it would kill finite shells outright, but the
+finite/infinite gap (window freeness ≪ true freeness) blocks the
+transfer; thin TRUE shells need r₂ ≈ 1 supply which covering
+forbids in windows yet fragile streets provide cofinally.  The
+enemy's depth lives exactly in the window-invisible part of
+freeness — consistent with the adaptive conclusion: no finite
+probe sees the enemy.
