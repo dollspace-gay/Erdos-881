@@ -1,3 +1,25 @@
+# THE RIGIDITY TRICHOTOMY — NINETEENTH SUMMIT (2026-07-26, night)
+
+`endgame_rigidity_trichotomy` (Endgame.lean, standard axioms,
+UNCONDITIONAL): every counterexample runs one of three explicit
+geometries — (1) FIXED DIFFERENCE (some d >= 1 with a, a+d in A
+beyond every bound: the translation room's hR1 supply,
+translation_room_teams' input, unlocked from the bare
+interface); (2) DOORED DESERT (one u serving a cofinal poor
+stream as its only small low part up to a window); (3) TOTAL
+DESERT (no small low parts at any scale).
+
+R1 / door / R4 — the campaign's oldest room names — now forced
+UNCONDITIONALLY by the oscillation layer, poverty riding every
+horn.  The conditional rooms (built through the anchor
+trichotomy and the final fork) and the unconditional oscillation
+layer now agree on the terminal geography from two independent
+derivations.  Nineteen summits.
+
+Next composition: horn (1) + translation_room_teams (needs
+anchor) — or the unconditional δ-machinery; horn (2) door kills;
+horn (3) desert vs head-service bookkeeping.
+
 # THE DRIFT FORK — EIGHTEENTH SUMMIT (2026-07-26, night)
 
 `endgame_drift_fork` (Endgame.lean, standard axioms,

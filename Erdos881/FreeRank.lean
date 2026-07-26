@@ -16399,4 +16399,98 @@ theorem small_lowpart_rigidity {A : Set ℕ} {N₀ : ℕ}
     have hxH : x ∈ H := hSH hxS
     exact hmem x hxH
 
+open Classical in
+/-- **THE RIGIDITY TRICHOTOMY.**  The frozen small-low-part
+pattern admits exactly three shapes, so every counterexample
+unconditionally runs one of three explicit geometries:
+(1) FIXED DIFFERENCE — some d ≥ 1 with a, a + d ∈ A beyond
+every bound (the translation room's team supply, unlocked);
+(2) DOORED DESERT — one u serving a cofinal poor stream as its
+ONLY small low part up to some window: a pure door with a
+desert moat;
+(3) TOTAL DESERT — beyond every window, cofinal poor targets
+with no small low parts at all.
+R1, the door, and R4: the campaign's oldest room names, now
+forced from the bare interface by the oscillation layer. -/
+theorem rigidity_trichotomy {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∃ d, 1 ≤ d ∧ ∀ N, ∃ a, N ≤ a ∧ a ∈ A ∧ a + d ∈ A) ∨
+    (∃ L u W, u ≤ W ∧ ∀ N, ∃ n, N ≤ n ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * L ∧
+      (u ∈ A ∧ (n - u) ∈ A ∧ 2 * u ≤ n) ∧
+      ∀ x, x ≤ W → x ≠ u →
+        ¬(x ∈ A ∧ (n - x) ∈ A ∧ 2 * x ≤ n)) ∨
+    (∃ L, ∀ W N, ∃ n, N ≤ n ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * L ∧
+      ∀ x, x ≤ W → ¬(x ∈ A ∧ (n - x) ∈ A ∧ 2 * x ≤ n)) := by
+  obtain ⟨L, hL⟩ := small_lowpart_rigidity h0 hcov hfail
+  choose Sf hSfW hSf using hL
+  by_cases h2 : ∃ W, 2 ≤ (Sf W).card
+  · left
+    obtain ⟨W, hW2⟩ := h2
+    have h1lt : 1 < (Sf W).card := by omega
+    obtain ⟨x, hxS, x', hx'S, hne⟩ := Finset.one_lt_card.1 h1lt
+    have hne' : x ≠ x' := hne
+    have key : ∀ y y' : ℕ, y ∈ Sf W → y' ∈ Sf W → y < y' →
+        ∃ d, 1 ≤ d ∧ ∀ N, ∃ a, N ≤ a ∧ a ∈ A ∧ a + d ∈ A := by
+      intro y y' hyS hy'S hyy'
+      refine ⟨y' - y, by omega, fun N => ?_⟩
+      obtain ⟨n, hn, hpoor, hiff⟩ := hSf W (N + y' + 1)
+      have hyW : y ≤ W := by
+        have := hSfW W hyS
+        rw [Finset.mem_range] at this
+        omega
+      have hy'W : y' ≤ W := by
+        have := hSfW W hy'S
+        rw [Finset.mem_range] at this
+        omega
+      have hy := (hiff y hyW).2 hyS
+      have hy' := (hiff y' hy'W).2 hy'S
+      refine ⟨n - y', by omega, hy'.2.1, ?_⟩
+      have he : n - y' + (y' - y) = n - y := by omega
+      rw [he]
+      exact hy.2.1
+    rcases lt_or_gt_of_ne hne' with hlt | hlt
+    · exact key x x' hxS hx'S hlt
+    · exact key x' x hx'S hxS hlt
+  · by_cases h1 : ∃ W, (Sf W).card = 1
+    · right
+      left
+      obtain ⟨W, hW1⟩ := h1
+      obtain ⟨u, hu⟩ := Finset.card_eq_one.1 hW1
+      have huW : u ≤ W := by
+        have : u ∈ Sf W := by
+          rw [hu]
+          exact Finset.mem_singleton_self u
+        have := hSfW W this
+        rw [Finset.mem_range] at this
+        omega
+      refine ⟨L, u, W, huW, fun N => ?_⟩
+      obtain ⟨n, hn, hpoor, hiff⟩ := hSf W N
+      refine ⟨n, hn, hpoor, ?_, ?_⟩
+      · refine (hiff u huW).2 ?_
+        rw [hu]
+        exact Finset.mem_singleton_self u
+      · intro x hxW hxu hpkg
+        have := (hiff x hxW).1 hpkg
+        rw [hu, Finset.mem_singleton] at this
+        exact hxu this
+    · right
+      right
+      refine ⟨L, fun W N => ?_⟩
+      obtain ⟨n, hn, hpoor, hiff⟩ := hSf W N
+      refine ⟨n, hn, hpoor, fun x hxW hpkg => ?_⟩
+      have hxS := (hiff x hxW).1 hpkg
+      have hcard : (Sf W).card = 0 ∨ (Sf W).card = 1 ∨
+          2 ≤ (Sf W).card := by omega
+      rcases hcard with h | h | h
+      · rw [Finset.card_eq_zero.1 h] at hxS
+        exact absurd hxS (Finset.notMem_empty x)
+      · exact h1 ⟨W, h⟩
+      · exact h2 ⟨W, h⟩
+
 end Erdos881

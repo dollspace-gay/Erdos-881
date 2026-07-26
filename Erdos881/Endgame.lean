@@ -1148,4 +1148,34 @@ theorem endgame_drift_fork {A : Set ℕ} {N₀ : ℕ}
       ∀ h ∈ H, W < h) :=
   poor_drift_fork h0 hcov hfail
 
+open Classical in
+/-- **THE RIGIDITY TRICHOTOMY** (re-export; nineteenth summit).
+The unconditional layer's terminal classification: every
+counterexample runs (1) FIXED DIFFERENCE — some d ≥ 1 realized
+in the basis beyond every bound, the translation room's team
+supply unlocked from the bare interface — or (2) DOORED
+DESERT — one element u serving a cofinal poor stream as its
+ONLY small low part up to a window, a pure door in a desert
+moat — or (3) TOTAL DESERT — cofinal poor targets with no
+small low parts at any scale.  R1, the door, and R4 — the
+campaign's oldest room names — now forced unconditionally by
+the oscillation layer, with poverty bounds riding every
+horn. -/
+theorem endgame_rigidity_trichotomy {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∃ d, 1 ≤ d ∧ ∀ N, ∃ a, N ≤ a ∧ a ∈ A ∧ a + d ∈ A) ∨
+    (∃ L u W, u ≤ W ∧ ∀ N, ∃ n, N ≤ n ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * L ∧
+      (u ∈ A ∧ (n - u) ∈ A ∧ 2 * u ≤ n) ∧
+      ∀ x, x ≤ W → x ≠ u →
+        ¬(x ∈ A ∧ (n - x) ∈ A ∧ 2 * x ≤ n)) ∨
+    (∃ L, ∀ W N, ∃ n, N ≤ n ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * L ∧
+      ∀ x, x ≤ W → ¬(x ∈ A ∧ (n - x) ∈ A ∧ 2 * x ≤ n)) :=
+  rigidity_trichotomy h0 hcov hfail
+
 end Erdos881
