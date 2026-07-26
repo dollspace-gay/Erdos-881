@@ -3517,4 +3517,74 @@ theorem absolute_shell_stratification {A : Set ℕ} {N₀ : ℕ}
       rw [hQs] at hb1 ⊢
       exact hFmax _ b hbA hbpos hbU hb1
 
+/-- **The eternal-survivor dichotomy.**  An element guarding every
+level of a disjoint shell family either sees its personal targets
+grow without bound, or — if they stay bounded — pigeonholes four
+disjoint shells onto ONE target and owns it outright
+(`four_disjoint_hubs_singleton`): every representation of that
+target uses the survivor. -/
+theorem eternal_survivor_dichotomy {A : Set ℕ} {N₀ : ℕ}
+    {Q : ℕ → Finset ℕ} {b : ℕ}
+    (hdisj : ∀ j k, j < k → Disjoint (Q j) (Q k))
+    (hb : ∀ j, b ∉ Q j)
+    (hguard : ∀ k, ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) :
+    (∀ Y, ∃ k, ∃ m, Y ≤ m ∧ N₀ ≤ m ∧
+      IsRepHub A m (insert b (Q k))) ∨
+    ∃ m, N₀ ≤ m ∧ IsRepHub A m {b} := by
+  classical
+  choose m hm₁ hm₂ using hguard
+  by_cases hunb : ∀ Y, ∃ k, Y ≤ m k
+  · left
+    intro Y
+    obtain ⟨k, hk⟩ := hunb Y
+    exact ⟨k, m k, hk, hm₁ k, hm₂ k⟩
+  · right
+    push_neg at hunb
+    obtain ⟨Y, hY⟩ := hunb
+    have hmaps : ∀ k ∈ Finset.range (3 * Y + 1),
+        m k ∈ Finset.range Y := by
+      intro k _
+      rw [Finset.mem_range]
+      exact hY k
+    have hlt : (Finset.range Y).card * 3 <
+        (Finset.range (3 * Y + 1)).card := by
+      rw [Finset.card_range, Finset.card_range]
+      omega
+    obtain ⟨v, hvt, hfib⟩ :=
+      Finset.exists_lt_card_fiber_of_mul_lt_card_of_maps_to
+        hmaps hlt
+    set s := (Finset.range (3 * Y + 1)).filter
+      (fun k => m k = v) with hs
+    have hcard4 : 4 ≤ s.card := hfib
+    obtain ⟨t, hts, htcard⟩ := Finset.exists_subset_card_eq hcard4
+    let e := t.orderIsoOfFin htcard
+    have hmem : ∀ i : Fin 4, (e i : ℕ) ∈ s := fun i => hts (e i).2
+    have hval : ∀ i : Fin 4, m (e i : ℕ) = v := by
+      intro i
+      have h1 := hmem i
+      rw [hs, Finset.mem_filter] at h1
+      exact h1.2
+    have hinj : ∀ i j : Fin 4, i ≠ j → (e i : ℕ) ≠ (e j : ℕ) := by
+      intro i j hij hne
+      exact hij (e.injective (Subtype.ext hne))
+    have hNv : N₀ ≤ v := by
+      have h1 := hm₁ (e 0 : ℕ)
+      rw [hval 0] at h1
+      exact h1
+    refine ⟨v, hNv, ?_⟩
+    refine four_disjoint_hubs_singleton
+      (Q := fun i => Q (e i : ℕ)) ?_ ?_ ?_
+    · intro i j hij
+      rcases Nat.lt_or_ge (e i : ℕ) (e j : ℕ) with h | h
+      · exact hdisj _ _ h
+      · have hne := hinj i j hij
+        have h' : (e j : ℕ) < (e i : ℕ) := by omega
+        exact (hdisj _ _ h').symm
+    · intro i
+      exact hb _
+    · intro i
+      have h1 := hm₂ (e i : ℕ)
+      rw [hval i] at h1
+      exact h1
+
 end Erdos881
