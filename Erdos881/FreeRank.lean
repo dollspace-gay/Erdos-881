@@ -13470,4 +13470,46 @@ theorem mixing_cross_slice_poverty {A : Set ℕ}
     exact hypA
   exact hW y hyB₀ (by omega)
 
+/-- **Joint half-covering.**  The two half-worlds jointly cover
+at half scale: every half target is an H₀-pair sum or, shifted
+by one, an H₁-pair sum.  The tree node's children form a
+covering system — the interface the ω-iteration consumes. -/
+theorem half_worlds_joint_cover {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀) :
+    ∀ n', N₀ ≤ 2 * n' →
+      (∃ y y', 2 * y ∈ A ∧ 2 * y' ∈ A ∧ y + y' = n') ∨
+      (∃ y y', 2 * y + 1 ∈ A ∧ 2 * y' + 1 ∈ A ∧
+        y + y' + 1 = n') := by
+  intro n' hn'
+  have h := even_target_channel_split hcov (2 * n') hn'
+    (by omega)
+  have he : 2 * n' / 2 = n' := by omega
+  rw [he] at h
+  exact h
+
+/-- **The half-cover dichotomy.**  One child channel serves
+cofinally: the even half-world pair-covers arbitrarily large
+half targets, or the odd one does.  Every tree node passes
+covering duty to at least one child — the descent always has a
+live branch. -/
+theorem half_cover_dichotomy {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀) :
+    (∀ N, ∃ n', N ≤ n' ∧ ∃ y y', 2 * y ∈ A ∧ 2 * y' ∈ A ∧
+      y + y' = n') ∨
+    (∀ N, ∃ n', N ≤ n' ∧ ∃ y y', 2 * y + 1 ∈ A ∧
+      2 * y' + 1 ∈ A ∧ y + y' + 1 = n') := by
+  classical
+  by_cases h0 : ∀ N, ∃ n', N ≤ n' ∧ ∃ y y', 2 * y ∈ A ∧
+      2 * y' ∈ A ∧ y + y' = n'
+  · exact Or.inl h0
+  · right
+    obtain ⟨N₁, hN₁⟩ := not_forall.mp h0
+    intro N
+    have hbig : N₀ ≤ 2 * (N + N₁ + N₀) := by omega
+    rcases half_worlds_joint_cover hcov (N + N₁ + N₀) hbig
+      with ⟨y, y', h1, h2, h3⟩ | ⟨y, y', h1, h2, h3⟩
+    · exact absurd ⟨N + N₁ + N₀, by omega, y, y', h1, h2, h3⟩
+        hN₁
+    · exact ⟨N + N₁ + N₀, by omega, y, y', h1, h2, h3⟩
+
 end Erdos881
