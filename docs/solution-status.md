@@ -1,3 +1,31 @@
+# THE TWO STREAMS — ELEVENTH SUMMIT (2026-07-26)
+
+`endgame_two_streams` (Endgame.lean, standard axioms): inside
+every counterexample's located mixing world, each infinite
+cylinder deletion generates cofinal failing targets obeying TWO
+laws — the RESIDUE LAW (`cylinder_failure_residue_law`: every
+pair rep of a failing target touches the deletion's class c mod
+2^m; the 0-pad turns any class-avoiding pair into a surviving
+triple) and the POVERTY LAW (`failing_target_poor`: pair wealth
+<= 2 * deletion's local mass + 2, via `wealthy_target_survives`).
+
+The counterexample is now formally TWO DISJOINT COFINAL
+STREAMS: poor residue-chained failures, and rich wealth pinned
+to a nested 2-adic tower (`drain_wealth_addresses`) — running
+forever through one covering mixing world.  The remaining
+question of Erdos 881 along this track: is the segregation
+sustainable?  Lab: 52/52 + 268/268 say NO.
+
+Kill geometry now visible: failing targets' pair reps all touch
+class c; but the mixing world pair-covers and has both parities
+cofinal — choosing the deletion's cylinder INSIDE a class the
+covering can bypass (both-parities-off-c pairs exist for
+cofinally many targets) would leave no legal address for
+failure.  The residue law is the lever: pick B' whose class c
+is AVOIDABLE.  Next: formalize bypass-ability in the mixing
+world (a pair with both parts off a fixed deep cylinder for
+cofinally many targets — counting vs the 2^m - 1 free classes).
+
 # THE MIXING LAB + WEALTHY TARGETS SURVIVE (2026-07-26)
 
 LAB (scripts/probe_mixing_survival.py): 268/268 cylinder-drawn

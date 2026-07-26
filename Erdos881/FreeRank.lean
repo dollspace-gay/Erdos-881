@@ -15175,4 +15175,137 @@ theorem wealthy_target_survives {A D : Set ℕ} {v : ℕ}
   · intro h
     exact hxnotor (Or.inr h)
 
+open Classical in
+/-- **THE FAILURE RESIDUE LAW.**  Against a deletion confined to
+one residue class mod 2^m, a failing target's EVERY pair
+representation must touch that class: the 0-pad turns any
+class-avoiding pair into a surviving triple.  Failure is
+residue-chained to the deletion's own address. -/
+theorem cylinder_failure_residue_law {A D : Set ℕ}
+    {m c n : ℕ}
+    (h0A : 0 ∈ A) (h0D : 0 ∉ D)
+    (hDcyl : ∀ d ∈ D, d % 2 ^ m = c % 2 ^ m)
+    (hfailn : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D) →
+      ∑ i, v i ≠ n) :
+    ∀ x ∈ A, ∀ y ∈ A, x + y = n →
+      x % 2 ^ m = c % 2 ^ m ∨ y % 2 ^ m = c % 2 ^ m := by
+  intro x hx y hy hxy
+  by_contra hcon
+  have hxc : x % 2 ^ m ≠ c % 2 ^ m :=
+    fun h => hcon (Or.inl h)
+  have hyc : y % 2 ^ m ≠ c % 2 ^ m :=
+    fun h => hcon (Or.inr h)
+  have hxD : x ∉ D := fun h => hxc (hDcyl x h)
+  have hyD : y ∉ D := fun h => hyc (hDcyl y h)
+  have hmem : ∀ i, (![x, y, 0] : Fin 3 → ℕ) i ∈ A \ D := by
+    intro i
+    match i with
+    | 0 => exact ⟨hx, hxD⟩
+    | 1 => exact ⟨hy, hyD⟩
+    | 2 => exact ⟨h0A, h0D⟩
+  have hsum0 : x + y + 0 = n := by omega
+  exact hfailn ![x, y, 0] hmem
+    (by simpa [Fin.sum_univ_three] using hsum0)
+
+open Classical in
+/-- **Failing targets are poor** (tuple-form composition of
+`wealthy_target_survives`).  A target failing against a
+deletion avoiding 0 has pair wealth at most twice the
+deletion's local mass plus two. -/
+theorem failing_target_poor {A D : Set ℕ} {n : ℕ}
+    (h0A : 0 ∈ A) (h0D : 0 ∉ D)
+    (hfailn : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D) →
+      ∑ i, v i ≠ n) :
+    ((Finset.range (n + 1)).filter
+      (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤
+    2 * ((Finset.range (n + 1)).filter
+      (fun x => x ∈ D)).card + 2 := by
+  by_contra hrich
+  push Not at hrich
+  obtain ⟨x, hx, y, hy, z, hz, hxD, hyD, hzD, hsum⟩ :=
+    wealthy_target_survives h0A h0D hrich
+  have hmem : ∀ i, (![x, y, z] : Fin 3 → ℕ) i ∈ A \ D := by
+    intro i
+    match i with
+    | 0 => exact ⟨hx, hxD⟩
+    | 1 => exact ⟨hy, hyD⟩
+    | 2 => exact ⟨hz, hzD⟩
+  exact hfailn ![x, y, z] hmem
+    (by simpa [Fin.sum_univ_three] using hsum)
+
+open Classical in
+/-- **THE FAILURE STREAM HAS ADDRESSES.**  In the located
+mixing world of any counterexample: every infinite deletion
+B' ⊆ S m ∖ {0}, lifted through the address map, generates
+cofinally many failing targets n, and EACH obeys two laws —
+(i) the residue law: every pair representation of n touches
+the class c mod 2^m, and (ii) the poverty law: n's pair wealth
+is at most twice the lifted deletion's mass below n plus two.
+Failure is now formally address-chained and wealth-capped,
+while `drain_wealth_addresses` pins the wealth stream to its
+own nested tower: the enemy must run two disjoint cofinal
+streams — poor c-chained failures and rich pinned wealth —
+inside one covering world, forever. -/
+theorem mixing_failure_addresses {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ S T : ℕ → Set ℕ, S 0 = A ∧ T 0 = A ∧
+      (∀ k, ∃ p q, p < 2 ∧ q < 2 ∧
+        S (k + 1) = {y | 2 * y + p ∈ S k} ∧
+        T (k + 1) = {y | 2 * y + q ∈ T k}) ∧
+      (∀ k, ∀ C N, ∃ v, N ≤ v ∧ C ≤
+        ((Finset.range (v + 1)).filter
+          (fun x => x ∈ S k ∧ (v - x) ∈ T k)).card) ∧
+      ∃ m c, S m = T m ∧
+        S m = {x : ℕ | c + 2 ^ m * x ∈ A} ∧
+        (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 0) ∧
+        (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 1) ∧
+        (∃ N', PairCovers (S m) N') ∧
+        (S m).Infinite ∧
+        ∀ B' ⊆ S m, 0 ∉ B' → B'.Infinite → ∀ N, ∃ n, N ≤ n ∧
+          (∀ x ∈ A, ∀ y ∈ A, x + y = n →
+            x % 2 ^ m = c % 2 ^ m ∨
+            y % 2 ^ m = c % 2 ^ m) ∧
+          ((Finset.range (n + 1)).filter
+            (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤
+          2 * ((Finset.range (n + 1)).filter
+            (fun x => x ∈ ((fun x => c + 2 ^ m * x) ''
+              B'))).card + 2 := by
+  obtain ⟨S, T, hS0, hT0, hstep, hblow, m, c, heqm, hcylm,
+    hmix0, hmix1, hcovm, hinfm, hwound⟩ :=
+    mixing_world_interface h0 hcov hfail
+  refine ⟨S, T, hS0, hT0, hstep, hblow, m, c, heqm, hcylm,
+    hmix0, hmix1, hcovm, hinfm, ?_⟩
+  intro B' hB'sub h0B' hB'inf N
+  have hnot := hwound B' hB'sub hB'inf
+  set D : Set ℕ := (fun x => c + 2 ^ m * x) '' B' with hD
+  have h0D : 0 ∉ D := by
+    rintro ⟨x, hxB', hx0⟩
+    have hx0' : c + 2 ^ m * x = 0 := hx0
+    have hp : 0 < 2 ^ m := pow_pos (by omega) m
+    have hx : x = 0 := by
+      rcases Nat.eq_zero_or_pos x with h | h
+      · exact h
+      · exfalso
+        have h1 : 2 ^ m * 1 ≤ 2 ^ m * x :=
+          Nat.mul_le_mul_left _ (by omega)
+        omega
+    rw [hx] at hxB'
+    exact h0B' hxB'
+  have hDcyl : ∀ d ∈ D, d % 2 ^ m = c % 2 ^ m := by
+    rintro d ⟨x, _, hxd⟩
+    rw [← hxd]
+    exact Nat.add_mul_mod_self_left c (2 ^ m) x
+  simp only [IsExactTupleAsymptoticBasis, not_exists,
+    not_forall] at hnot
+  obtain ⟨n, hn, hnrep⟩ := hnot N
+  have hfailn : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D) →
+      ∑ i, v i ≠ n := by
+    intro v hv hs
+    exact hnrep v ⟨hv, hs⟩
+  exact ⟨n, hn,
+    cylinder_failure_residue_law h0 h0D hDcyl hfailn,
+    failing_target_poor h0 h0D hfailn⟩
+
 end Erdos881

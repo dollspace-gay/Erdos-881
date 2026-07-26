@@ -890,4 +890,46 @@ theorem endgame_self_similar {A : Set ℕ} {N₀ : ℕ}
             (A \ ((fun x => c + 2 ^ m * x) '' B')) 3) :=
   mixing_world_interface h0 hcov hfail
 
+open Classical in
+/-- **THE TWO STREAMS** (re-export; eleventh summit).  Inside
+every counterexample's located mixing world, each infinite
+cylinder deletion generates cofinally many failing targets, and
+every one of them is (i) RESIDUE-CHAINED: all its pair
+representations touch the deletion's class c mod 2^m, and
+(ii) POOR: its pair wealth is capped by twice the deletion's
+local mass plus two.  Meanwhile the ω-drain pins an unbounded
+wealth stream to a fixed nested 2-adic tower.  A counterexample
+is therefore two disjoint cofinal streams — poor address-chained
+failures and rich pinned wealth — running forever through one
+covering, mixing world.  Erdős 881's remaining content is
+whether that segregation is sustainable; every lab probe
+(52/52 hall, 268/268 mixing) says it is not. -/
+theorem endgame_two_streams {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ S T : ℕ → Set ℕ, S 0 = A ∧ T 0 = A ∧
+      (∀ k, ∃ p q, p < 2 ∧ q < 2 ∧
+        S (k + 1) = {y | 2 * y + p ∈ S k} ∧
+        T (k + 1) = {y | 2 * y + q ∈ T k}) ∧
+      (∀ k, ∀ C N, ∃ v, N ≤ v ∧ C ≤
+        ((Finset.range (v + 1)).filter
+          (fun x => x ∈ S k ∧ (v - x) ∈ T k)).card) ∧
+      ∃ m c, S m = T m ∧
+        S m = {x : ℕ | c + 2 ^ m * x ∈ A} ∧
+        (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 0) ∧
+        (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 1) ∧
+        (∃ N', PairCovers (S m) N') ∧
+        (S m).Infinite ∧
+        ∀ B' ⊆ S m, 0 ∉ B' → B'.Infinite → ∀ N, ∃ n, N ≤ n ∧
+          (∀ x ∈ A, ∀ y ∈ A, x + y = n →
+            x % 2 ^ m = c % 2 ^ m ∨
+            y % 2 ^ m = c % 2 ^ m) ∧
+          ((Finset.range (n + 1)).filter
+            (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤
+          2 * ((Finset.range (n + 1)).filter
+            (fun x => x ∈ ((fun x => c + 2 ^ m * x) ''
+              B'))).card + 2 :=
+  mixing_failure_addresses h0 hcov hfail
+
 end Erdos881
