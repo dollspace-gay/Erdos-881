@@ -17118,4 +17118,70 @@ theorem service_breakdown_of_hfail {A : Set ℕ} {N₀ : ℕ}
   exact ⟨n, hn, fun w hwn hwealthy =>
     failing_avoids_wealthy_translates hfailn hwn hwealthy⟩
 
+open Classical in
+/-- **The pair-energy lower bound** (pure counting, no failure
+hypothesis).  For any set: α₂⁴ ≤ (n+1)·Σ r₂(m)², by the
+low-half pair injection and Cauchy–Schwarz.  In corridor
+worlds this forces wealthy square-mass: with the poor
+partition, a world whose α₂ beats √n must carry polynomially
+many wealthy targets — each of which erects a translate wall
+against every failing stream.  The corridor program's counting
+engine. -/
+theorem pair_energy_lower_bound {A : Set ℕ} (n : ℕ) :
+    (((Finset.range (n / 2 + 1)).filter
+      (fun x => x ∈ A)).card) ^ 4 ≤
+    (n + 1) * (Finset.range (n + 1)).sum (fun m =>
+      ((Finset.range (m + 1)).filter
+        (fun y => y ∈ A ∧ (m - y) ∈ A)).card ^ 2) := by
+  set A2f := (Finset.range (n / 2 + 1)).filter
+    (fun x => x ∈ A) with hA2f
+  set r2f : ℕ → ℕ := fun m => ((Finset.range (m + 1)).filter
+    (fun y => y ∈ A ∧ (m - y) ∈ A)).card with hr2f
+  have hsumlow : A2f.card * A2f.card ≤
+      (Finset.range (n + 1)).sum r2f := by
+    have hkey : (A2f ×ˢ A2f).card ≤
+        ((Finset.range (n + 1)).sigma (fun m =>
+          (Finset.range (m + 1)).filter
+            (fun y => y ∈ A ∧ (m - y) ∈ A))).card := by
+      apply Finset.card_le_card_of_injOn
+        (fun p => (⟨p.1 + p.2, p.1⟩ : Σ _ : ℕ, ℕ))
+      · intro p hp
+        rw [Finset.mem_coe, Finset.mem_product] at hp
+        obtain ⟨hp1, hp2⟩ := hp
+        rw [hA2f, Finset.mem_filter, Finset.mem_range] at hp1
+        rw [hA2f, Finset.mem_filter, Finset.mem_range] at hp2
+        rw [Finset.mem_coe, Finset.mem_sigma]
+        constructor
+        · show p.1 + p.2 ∈ Finset.range (n + 1)
+          rw [Finset.mem_range]
+          omega
+        · show p.1 ∈ (Finset.range (p.1 + p.2 + 1)).filter
+            (fun y => y ∈ A ∧ (p.1 + p.2 - y) ∈ A)
+          rw [Finset.mem_filter, Finset.mem_range]
+          refine ⟨by omega, hp1.2, ?_⟩
+          have he : p.1 + p.2 - p.1 = p.2 := by omega
+          rw [he]
+          exact hp2.2
+      · intro p hp q hq hpq
+        have h1 : p.1 + p.2 = q.1 + q.2 :=
+          congrArg Sigma.fst hpq
+        have h2 : p.1 = q.1 := congrArg Sigma.snd hpq
+        exact Prod.ext h2 (by omega)
+    rw [Finset.card_product, Finset.card_sigma] at hkey
+    exact hkey
+  have hCS : ((Finset.range (n + 1)).sum r2f) ^ 2 ≤
+      (n + 1) * (Finset.range (n + 1)).sum
+        (fun m => r2f m ^ 2) := by
+    have h := sq_sum_le_card_mul_sum_sq
+      (s := Finset.range (n + 1)) (f := r2f)
+    rw [Finset.card_range] at h
+    exact h
+  have hfour : A2f.card ^ 4 = (A2f.card * A2f.card) ^ 2 := by
+    ring
+  calc A2f.card ^ 4 = (A2f.card * A2f.card) ^ 2 := hfour
+    _ ≤ ((Finset.range (n + 1)).sum r2f) ^ 2 :=
+        Nat.pow_le_pow_left hsumlow 2
+    _ ≤ (n + 1) * (Finset.range (n + 1)).sum
+        (fun m => r2f m ^ 2) := hCS
+
 end Erdos881
