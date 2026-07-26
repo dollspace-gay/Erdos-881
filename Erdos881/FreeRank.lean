@@ -11435,4 +11435,40 @@ theorem the_pair_flood_funnel {A : Set ℕ} {N₀ : ℕ}
             · exact absurd h' hym
             · exact Or.inr h'
 
+/-- **The singleton hall is a marriage stream.**  Face III of
+the funnel with a one-element envelope is exactly the
+unique-pair configuration: cofinal ghosts m whose ONLY pair is
+(p, m − p) — the fixed element p order-2-owns cofinally many
+targets at explicit positions p + A.  The funnel's third face,
+handed to the marriage network in its native vocabulary. -/
+theorem pure_hall_singleton_form {A : Set ℕ} {N₀ p : ℕ}
+    (hcov : PairCovers A N₀)
+    (hface : ∀ N, ∃ m, N ≤ m ∧ m ∉ A ∧
+      IsPairHub A m ({p} : Finset ℕ)) :
+    ∀ N, ∃ m, N ≤ m ∧ m ∉ A ∧ p ≤ m ∧ m - p ∈ A ∧
+      ∀ x ∈ A, ∀ y ∈ A, x + y = m →
+        (x = p ∧ y = m - p) ∨ (x = m - p ∧ y = p) := by
+  intro N
+  obtain ⟨m, hmN, hmA, hhub⟩ := hface (N + N₀)
+  obtain ⟨a, haA, b, hbA, hab⟩ := hcov m (by omega)
+  have hpart : p ≤ m ∧ m - p ∈ A := by
+    rcases hhub a haA b hbA hab with h | h
+    · rw [Finset.mem_singleton] at h
+      subst h
+      have h1 : m - a = b := by omega
+      rw [h1]
+      exact ⟨by omega, hbA⟩
+    · rw [Finset.mem_singleton] at h
+      subst h
+      have h1 : m - b = a := by omega
+      rw [h1]
+      exact ⟨by omega, haA⟩
+  refine ⟨m, by omega, hmA, hpart.1, hpart.2, ?_⟩
+  intro x hx y hy hxy
+  rcases hhub x hx y hy hxy with h | h
+  · rw [Finset.mem_singleton] at h
+    exact Or.inl ⟨h, by omega⟩
+  · rw [Finset.mem_singleton] at h
+    exact Or.inr ⟨by omega, h⟩
+
 end Erdos881
