@@ -17638,4 +17638,104 @@ theorem cascade_law {A : Set ℕ} (n C : ℕ) :
   apply Nat.mul_le_mul_left
   omega
 
+open Classical Pointwise in
+/-- **Upper half feeds the next window.**  The sumset energy
+above n at scale n is dominated by the windowed second moment
+at scale 2n: scale-n fibers are sub-fibers of scale-2n window
+counts.  The cascade's chaining identity — upper-half transfers
+land in the next dyadic window's budget. -/
+theorem upper_le_next_window {A : Set ℕ} (n : ℕ) :
+    ((((Finset.range (n + 1)).filter (fun x => x ∈ A)) +
+      ((Finset.range (n + 1)).filter (fun x => x ∈ A))).filter
+        (fun a => n < a)).sum (fun a =>
+      (((((Finset.range (n + 1)).filter (fun x => x ∈ A)) ×ˢ
+         ((Finset.range (n + 1)).filter (fun x => x ∈ A))).filter
+        (fun xy => xy.1 + xy.2 = a)).card) ^ 2) ≤
+    (Finset.range (2 * n + 1)).sum (fun m =>
+      ((Finset.range (m + 1)).filter
+        (fun y => y ∈ A ∧ (m - y) ∈ A)).card ^ 2) := by
+  set Af := (Finset.range (n + 1)).filter (fun x => x ∈ A)
+    with hAf
+  have hfib : ∀ a, ((Af ×ˢ Af).filter
+      (fun xy => xy.1 + xy.2 = a)).card ≤
+      ((Finset.range (a + 1)).filter
+        (fun y => y ∈ A ∧ (a - y) ∈ A)).card := by
+    intro a
+    apply Finset.card_le_card_of_injOn (fun xy => xy.1)
+    · intro xy hxy
+      rw [Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_product] at hxy
+      obtain ⟨⟨h1, h2⟩, h3⟩ := hxy
+      have h3' : xy.1 + xy.2 = a := h3
+      rw [hAf, Finset.mem_filter, Finset.mem_range] at h1
+      rw [hAf, Finset.mem_filter, Finset.mem_range] at h2
+      rw [Finset.mem_coe, Finset.mem_filter, Finset.mem_range]
+      refine ⟨?_, h1.2, ?_⟩
+      · show xy.1 < a + 1
+        omega
+      · show (a - xy.1) ∈ A
+        have he : a - xy.1 = xy.2 := by omega
+        rw [he]
+        exact h2.2
+    · intro p hp q hq hpq
+      rw [Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_product] at hp hq
+      have h3p : p.1 + p.2 = a := hp.2
+      have h3q : q.1 + q.2 = a := hq.2
+      have hpq' : p.1 = q.1 := hpq
+      refine Prod.ext hpq' ?_
+      omega
+  calc ((Af + Af).filter (fun a => n < a)).sum (fun a =>
+      (((Af ×ˢ Af).filter
+        (fun xy => xy.1 + xy.2 = a)).card) ^ 2) ≤
+      ((Af + Af).filter (fun a => n < a)).sum (fun a =>
+        ((Finset.range (a + 1)).filter
+          (fun y => y ∈ A ∧ (a - y) ∈ A)).card ^ 2) := by
+        apply Finset.sum_le_sum
+        intro a ha
+        exact Nat.pow_le_pow_left (hfib a) 2
+    _ ≤ (Finset.range (2 * n + 1)).sum (fun m =>
+        ((Finset.range (m + 1)).filter
+          (fun y => y ∈ A ∧ (m - y) ∈ A)).card ^ 2) := by
+        apply Finset.sum_le_sum_of_subset
+        intro a ha
+        rw [Finset.mem_filter] at ha
+        obtain ⟨haS, -⟩ := ha
+        rw [Finset.mem_add] at haS
+        obtain ⟨u, hu, v, hv, huv⟩ := haS
+        rw [hAf, Finset.mem_filter, Finset.mem_range] at hu
+        rw [hAf, Finset.mem_filter, Finset.mem_range] at hv
+        rw [Finset.mem_range]
+        omega
+
+open Classical Pointwise in
+/-- **THE TWO-SCALE LAW.**  Composing the cascade law with the
+chaining identity: consecutive dyadic scales are bound
+together —
+
+  α(n)⁴ ≤ (2n+1)·((n+1)C² + W_C(n)·α(n)² + windowΣ(2n)).
+
+The upper-half transfer is now the NEXT window's second moment:
+iterating binds every dyadic tower of scales into one budget
+chain.  The telescope's first two links, verified. -/
+theorem two_scale_law {A : Set ℕ} (n C : ℕ) :
+    (((Finset.range (n + 1)).filter
+      (fun x => x ∈ A)).card) ^ 2 *
+    (((Finset.range (n + 1)).filter
+      (fun x => x ∈ A)).card) ^ 2 ≤
+    (2 * n + 1) * ((n + 1) * C ^ 2 +
+      ((Finset.range (n + 1)).filter (fun m =>
+        C < ((Finset.range (m + 1)).filter
+          (fun y => y ∈ A ∧ (m - y) ∈ A)).card)).card *
+      (((Finset.range (n + 1)).filter
+        (fun x => x ∈ A)).card) ^ 2 +
+      (Finset.range (2 * n + 1)).sum (fun m =>
+        ((Finset.range (m + 1)).filter
+          (fun y => y ∈ A ∧ (m - y) ∈ A)).card ^ 2)) := by
+  have hc := cascade_law (A := A) n C
+  have hu := upper_le_next_window (A := A) n
+  refine le_trans hc ?_
+  apply Nat.mul_le_mul_left
+  omega
+
 end Erdos881
