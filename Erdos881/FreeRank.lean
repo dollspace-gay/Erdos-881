@@ -13387,4 +13387,51 @@ theorem odd_target_cross_split {A : Set ℕ} {N₀ : ℕ}
       rw [h1]
       exact hx
 
+/-- **The mixing cross-slice law.**  hfail speaks downstairs in
+mixing worlds too: deleting any infinite H₀-part forces cofinal
+failure targets whose every odd-survivor slice has ALL its
+cross-pairs captured on the H₀ side — the even part of every
+mixed triple routes through the lifted deletion, because odd
+material can never be deleted by an even lift.  The slice law's
+image in the tree's cross-channel. -/
+theorem mixing_cross_slice_law {A : Set ℕ}
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {B₀ : Set ℕ} (hB₀A : ∀ b ∈ B₀, 2 * b ∈ A)
+    (hB₀inf : B₀.Infinite) :
+    ∀ N, ∃ n, N ≤ n ∧ ∀ z, z % 2 = 1 → z ∈ A →
+      ∀ y y', 2 * y ∈ A → 2 * y' + 1 ∈ A →
+        2 * y + (2 * y' + 1) + z = n → y ∈ B₀ := by
+  set LB := {a : ℕ | ∃ b ∈ B₀, a = 2 * b} with hLB
+  have hLBA : LB ⊆ A := by
+    rintro a ⟨b, hb, rfl⟩
+    exact hB₀A b hb
+  have hLBinf : LB.Infinite := by
+    have h1 : LB = (fun b => 2 * b) '' B₀ := by
+      ext a
+      constructor
+      · rintro ⟨b, hb, rfl⟩
+        exact ⟨b, hb, rfl⟩
+      · rintro ⟨b, hb, rfl⟩
+        exact ⟨b, hb, rfl⟩
+    rw [h1]
+    exact hB₀inf.image (fun a _ b _ h => by omega)
+  intro N
+  obtain ⟨n, hn, hslice⟩ :=
+    deletion_failure_slices hfail hLBA hLBinf N
+  refine ⟨n, hn, ?_⟩
+  intro z hzo hzA y y' hyA hy'A hsum
+  have hzLB : z ∉ LB := by
+    rintro ⟨b, hb, heq⟩
+    omega
+  have hy'LB : 2 * y' + 1 ∉ LB := by
+    rintro ⟨b, hb, heq⟩
+    omega
+  rcases hslice z hzA hzLB (2 * y) hyA (2 * y' + 1) hy'A
+    (by omega) with h | h
+  · obtain ⟨b, hb, heq⟩ := h
+    have h1 : y = b := by omega
+    exact h1 ▸ hb
+  · exact absurd h hy'LB
+
 end Erdos881
