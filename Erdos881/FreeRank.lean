@@ -15394,4 +15394,58 @@ theorem three_deletion_exclusion {A D₁ D₂ D₃ : Set ℕ}
   · exact hd12 y h1 h2
   · exact hd12 y h1 h2
 
+open Classical in
+/-- **THE OVERLAP BILINEAR LAW.**  A covered target failing
+against TWO disjoint 0-free deletions has every pair
+representation split across them — one part in each — and in
+particular lies in the doubly-thin sumset D₁ + D₂.  With both
+deletions log-sparse, stream overlaps are confined to a set of
+(log log)²-type growth: pairwise stream overlap is nearly as
+expensive as the forbidden triple overlap. -/
+theorem overlap_bilinear_law {A D₁ D₂ : Set ℕ} {N₀ n : ℕ}
+    (h0A : 0 ∈ A) (h01 : 0 ∉ D₁) (h02 : 0 ∉ D₂)
+    (hd12 : ∀ x, x ∈ D₁ → x ∉ D₂)
+    (hcov : PairCovers A N₀) (hn : N₀ ≤ n)
+    (hf1 : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D₁) →
+      ∑ i, v i ≠ n)
+    (hf2 : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D₂) →
+      ∑ i, v i ≠ n) :
+    (∀ x ∈ A, ∀ y ∈ A, x + y = n →
+      (x ∈ D₁ ∧ y ∈ D₂) ∨ (x ∈ D₂ ∧ y ∈ D₁)) ∧
+    ∃ d₁ ∈ D₁, ∃ d₂ ∈ D₂, d₁ + d₂ = n := by
+  have key : ∀ x ∈ A, ∀ y ∈ A, x + y = n →
+      (x ∈ D₁ ∧ y ∈ D₂) ∨ (x ∈ D₂ ∧ y ∈ D₁) := by
+    intro x hx y hy hxy
+    have touch : ∀ (D : Set ℕ), 0 ∉ D →
+        (∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D) →
+          ∑ i, v i ≠ n) →
+        x ∈ D ∨ y ∈ D := by
+      intro D h0D hfD
+      by_cases hxD : x ∈ D
+      · exact Or.inl hxD
+      · by_cases hyD : y ∈ D
+        · exact Or.inr hyD
+        · exfalso
+          have hmem : ∀ i, (![x, y, 0] : Fin 3 → ℕ) i ∈
+              A \ D := by
+            intro i
+            match i with
+            | 0 => exact ⟨hx, hxD⟩
+            | 1 => exact ⟨hy, hyD⟩
+            | 2 => exact ⟨h0A, h0D⟩
+          have hsum0 : x + y + 0 = n := by omega
+          exact hfD ![x, y, 0] hmem
+            (by simpa [Fin.sum_univ_three] using hsum0)
+    rcases touch D₁ h01 hf1 with h1 | h1 <;>
+      rcases touch D₂ h02 hf2 with h2 | h2
+    · exact absurd h2 (hd12 x h1)
+    · exact Or.inl ⟨h1, h2⟩
+    · exact Or.inr ⟨h2, h1⟩
+    · exact absurd h2 (hd12 y h1)
+  refine ⟨key, ?_⟩
+  obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hn
+  rcases key x hx y hy hxy with ⟨h1, h2⟩ | ⟨h1, h2⟩
+  · exact ⟨x, h1, y, h2, hxy⟩
+  · exact ⟨y, h2, x, h1, by omega⟩
+
 end Erdos881
