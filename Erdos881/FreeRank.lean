@@ -9932,4 +9932,57 @@ theorem the_final_dichotomy {A : Set ℕ} {N₀ : ℕ}
         hanchor') hfail)
   · exact Or.inr htail
 
+/-! ## The door world: hall mirrors and the weak translate law -/
+
+/-- **The hall mirror.**  An order-3 hall target reflects every
+non-hall element into one of |H| translated copies: covering
+v − z and routing the triple through the hall produces
+v − z − h ∈ A for SOME hall member h.  The defective mirror of
+the door world — multivalued where the tower's was exact. -/
+theorem hall_mirror {A : Set ℕ} {N₀ v : ℕ} {H : Finset ℕ}
+    (hcov : PairCovers A N₀) (hhub : IsRepHub A v H)
+    {z : ℕ} (hz : z ∈ A) (hzH : z ∉ H) (hzv : z + N₀ ≤ v) :
+    ∃ h ∈ H, h + z ≤ v ∧ v - z - h ∈ A := by
+  obtain ⟨a, haA, b, hbA, hab⟩ := hcov (v - z) (by omega)
+  rcases hhub z hz a haA b hbA (by omega) with h | h | h
+  · exact absurd h hzH
+  · refine ⟨a, h, by omega, ?_⟩
+    have hb : v - z - a = b := by omega
+    rw [hb]
+    exact hbA
+  · refine ⟨b, h, by omega, ?_⟩
+    have ha : v - z - b = a := by omega
+    rw [ha]
+    exact haA
+
+/-- **The weak hall translate law.**  In a door world — one
+fixed hall H both rep- and pair-hubbing unboundedly many
+targets — every basis element beyond the hall's range escapes
+at least one hall translate: SOME h ∈ H has z + h ∉ A.
+Otherwise a huge door target's defective mirror would recombine
+with the translate into a hall-free pair.  For a singleton hall
+this is exactly the g₀-translate law. -/
+theorem hall_weak_translate {A : Set ℕ} {N₀ M : ℕ}
+    {H : Finset ℕ}
+    (hcov : PairCovers A N₀)
+    (hM : ∀ h ∈ H, h ≤ M)
+    (hdoor : ∀ N, ∃ v, N ≤ v ∧ N₀ ≤ v ∧ IsRepHub A v H ∧
+      IsPairHub A v H) :
+    ∀ z ∈ A, M < z → z ∉ H → ∃ h ∈ H, z + h ∉ A := by
+  intro z hzA hzM hzH
+  by_contra hall
+  push_neg at hall
+  obtain ⟨v, hvN, hvN₀, hrep, hpair⟩ :=
+    hdoor (z + 2 * M + N₀ + 1)
+  obtain ⟨h, hhH, hhzv, hmir⟩ :=
+    hall_mirror hcov hrep hzA hzH (by omega)
+  have hzhA : z + h ∈ A := hall h hhH
+  have hsum : (z + h) + (v - z - h) = v := by omega
+  rcases hpair (z + h) hzhA (v - z - h) hmir hsum with h1 | h1
+  · have h2 := hM (z + h) h1
+    omega
+  · have h2 := hM (v - z - h) h1
+    have h3 := hM h hhH
+    omega
+
 end Erdos881
