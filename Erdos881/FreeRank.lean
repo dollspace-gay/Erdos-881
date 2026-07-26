@@ -17738,4 +17738,109 @@ theorem two_scale_law {A : Set ℕ} (n C : ℕ) :
   apply Nat.mul_le_mul_left
   omega
 
+open Classical in
+/-- **The window partition** (standalone).  Any window's second
+moment splits into poor noise and spike mass:
+windowΣ(n) ≤ (n+1)·C² + W_C(n)·α(n)². -/
+theorem window_partition {A : Set ℕ} (n C : ℕ) :
+    (Finset.range (n + 1)).sum (fun m =>
+      ((Finset.range (m + 1)).filter
+        (fun y => y ∈ A ∧ (m - y) ∈ A)).card ^ 2) ≤
+    (n + 1) * C ^ 2 +
+    ((Finset.range (n + 1)).filter (fun m =>
+      C < ((Finset.range (m + 1)).filter
+        (fun y => y ∈ A ∧ (m - y) ∈ A)).card)).card *
+    (((Finset.range (n + 1)).filter
+      (fun x => x ∈ A)).card) ^ 2 := by
+  set Af := (Finset.range (n + 1)).filter (fun x => x ∈ A)
+    with hAf
+  set r2f : ℕ → ℕ := fun m => ((Finset.range (m + 1)).filter
+    (fun y => y ∈ A ∧ (m - y) ∈ A)).card with hr2f
+  set Wf := (Finset.range (n + 1)).filter
+    (fun m => C < r2f m) with hWf
+  have hsplit := Finset.sum_filter_add_sum_filter_not
+    (Finset.range (n + 1)) (fun m => C < r2f m)
+    (fun m => r2f m ^ 2)
+  have hsplit2 : Wf.sum (fun m => r2f m ^ 2) +
+      ((Finset.range (n + 1)).filter
+        (fun m => ¬C < r2f m)).sum (fun m => r2f m ^ 2) =
+      (Finset.range (n + 1)).sum (fun m => r2f m ^ 2) :=
+    hsplit
+  have hr2le : ∀ m, m ≤ n → r2f m ≤ Af.card := by
+    intro m hm
+    rw [hr2f]
+    apply Finset.card_le_card
+    intro x hx
+    rw [Finset.mem_filter, Finset.mem_range] at hx
+    rw [hAf, Finset.mem_filter, Finset.mem_range]
+    exact ⟨by omega, hx.2.1⟩
+  have hwealthy_sum : Wf.sum (fun m => r2f m ^ 2) ≤
+      Wf.card * Af.card ^ 2 := by
+    rw [← smul_eq_mul]
+    apply Finset.sum_le_card_nsmul
+    intro m hm
+    rw [hWf, Finset.mem_filter, Finset.mem_range] at hm
+    exact Nat.pow_le_pow_left (hr2le m (by omega)) 2
+  have hpoor_sum : ((Finset.range (n + 1)).filter
+      (fun m => ¬C < r2f m)).sum (fun m => r2f m ^ 2) ≤
+      (n + 1) * C ^ 2 := by
+    have h1 : ((Finset.range (n + 1)).filter
+        (fun m => ¬C < r2f m)).sum (fun m => r2f m ^ 2) ≤
+        ((Finset.range (n + 1)).filter
+          (fun m => ¬C < r2f m)).card * C ^ 2 := by
+      rw [← smul_eq_mul]
+      apply Finset.sum_le_card_nsmul
+      intro m hm
+      rw [Finset.mem_filter] at hm
+      exact Nat.pow_le_pow_left (by omega) 2
+    have h2 : ((Finset.range (n + 1)).filter
+        (fun m => ¬C < r2f m)).card ≤ n + 1 := by
+      have := Finset.card_filter_le (Finset.range (n + 1))
+        (fun m => ¬C < r2f m)
+      rw [Finset.card_range] at this
+      exact this
+    have h3 : ((Finset.range (n + 1)).filter
+        (fun m => ¬C < r2f m)).card * C ^ 2 ≤
+        (n + 1) * C ^ 2 := Nat.mul_le_mul_right _ h2
+    omega
+  show (Finset.range (n + 1)).sum (fun m => r2f m ^ 2) ≤
+    (n + 1) * C ^ 2 + Wf.card * Af.card ^ 2
+  omega
+
+open Classical in
+/-- **THE CLOSED TWO-SCALE LAW.**  The first fully closed
+multi-scale spike inequality: for every scale n and thresholds
+C, C′,
+
+  α(n)⁴ ≤ (2n+1)·((n+1)C² + W_C(n)·α(n)²
+                  + (2n+1)C′² + W_{C′}(2n)·α(2n)²).
+
+Every counterexample's covering demand at scale n is funded by
+poor noise and spike counts at scales n AND 2n alone — and
+every spike is a service wall.  Iterable to any dyadic tower.
+The energy cascade, closed at two scales. -/
+theorem two_scale_closed {A : Set ℕ} (n C C' : ℕ) :
+    (((Finset.range (n + 1)).filter
+      (fun x => x ∈ A)).card) ^ 2 *
+    (((Finset.range (n + 1)).filter
+      (fun x => x ∈ A)).card) ^ 2 ≤
+    (2 * n + 1) * ((n + 1) * C ^ 2 +
+      ((Finset.range (n + 1)).filter (fun m =>
+        C < ((Finset.range (m + 1)).filter
+          (fun y => y ∈ A ∧ (m - y) ∈ A)).card)).card *
+      (((Finset.range (n + 1)).filter
+        (fun x => x ∈ A)).card) ^ 2 +
+      ((2 * n + 1) * C' ^ 2 +
+      ((Finset.range (2 * n + 1)).filter (fun m =>
+        C' < ((Finset.range (m + 1)).filter
+          (fun y => y ∈ A ∧ (m - y) ∈ A)).card)).card *
+      (((Finset.range (2 * n + 1)).filter
+        (fun x => x ∈ A)).card) ^ 2)) := by
+  have h2s := two_scale_law (A := A) n C
+  have hw := window_partition (A := A) (2 * n) C'
+  refine le_trans h2s ?_
+  apply Nat.mul_le_mul_left
+  have hrw : (2 * n + 1) = 2 * n + 1 := rfl
+  omega
+
 end Erdos881
