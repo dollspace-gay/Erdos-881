@@ -8641,4 +8641,171 @@ theorem the_street_trichotomy {A : Set ℕ} {N₀ : ℕ}
         street_window_below_target hcov hxmono hvN hhub,
         J, hJ2, hJL, hhub⟩
 
+/-! ## The four lanes: ghosts and members on the marching street -/
+
+/-- **The 0-pair forces membership placement.**  A pair-hubbed
+target over a basis containing 0 either lies outside A entirely
+or lies INSIDE its own hub: the pair (0, v) must meet the hub,
+and 0 is not hub material.  Forced non-membership — the shape
+that carries information. -/
+theorem street_target_notMem_or_window {A : Set ℕ} {v : ℕ}
+    {W : Finset ℕ} (h0 : 0 ∈ A) (h0W : 0 ∉ W)
+    (hhub : IsPairHub A v W) : v ∉ A ∨ v ∈ W := by
+  by_cases hvA : v ∈ A
+  · rcases hhub 0 h0 v hvA (by omega) with h | h
+    · exact absurd h h0W
+    · exact Or.inr h
+  · exact Or.inl hvA
+
+/-- **Member targets have only small-part pairs.**  A street
+target sitting inside its own window has every pair split
+unevenly: one part inside the window, hence the other at most
+the window's span.  Middle pairs are banned — the member street
+is difference-desert material. -/
+theorem street_member_small_part {A : Set ℕ} {v s J : ℕ}
+    {x : ℕ → ℕ} (hxmono : StrictMono x) (hJ : 1 ≤ J)
+    (hhub : IsPairHub A v ((Finset.range J).image
+      (fun j => x (s + j))))
+    (hvW : v ∈ (Finset.range J).image (fun j => x (s + j))) :
+    ∀ a ∈ A, ∀ b ∈ A, a + b = v →
+      a ≤ x (s + J - 1) - x s ∨ b ≤ x (s + J - 1) - x s := by
+  have hbounds : ∀ y ∈ (Finset.range J).image
+      (fun j => x (s + j)), x s ≤ y ∧ y ≤ x (s + J - 1) := by
+    intro y hy
+    rw [Finset.mem_image] at hy
+    obtain ⟨j, hj, hjy⟩ := hy
+    rw [Finset.mem_range] at hj
+    exact ⟨hjy ▸ hxmono.monotone (by omega),
+      hjy ▸ hxmono.monotone (by omega)⟩
+  obtain ⟨hvlo, hvhi⟩ := hbounds v hvW
+  intro a ha b hb hab
+  rcases hhub a ha b hb hab with h | h
+  · obtain ⟨halo, _⟩ := hbounds a h
+    right; omega
+  · obtain ⟨hblo, _⟩ := hbounds b h
+    left; omega
+
+/-- **Ghost-or-member dichotomy on the marching street.**  The
+marching street's targets split: either unboundedly many are
+GHOSTS — forced OUT of A, at every window horizon — or, from
+some horizon on, unboundedly many are MEMBERS, each sitting
+inside its own hub window. -/
+theorem marching_member_dichotomy {A : Set ℕ} {N₀ L : ℕ}
+    {x : ℕ → ℕ} (h0 : 0 ∈ A) (hxpos : ∀ t, 0 < x t)
+    (hmarch : ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ v ∈ V, N₀ ≤ v ∧ ∃ s, S₀ ≤ s ∧ x s ≤ v ∧
+        ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairHub A v
+          ((Finset.range J).image (fun j => x (s + j)))) :
+    (∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ v ∈ V, N₀ ≤ v ∧ v ∉ A ∧ ∃ s, S₀ ≤ s ∧ x s ≤ v ∧
+        ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairHub A v
+          ((Finset.range J).image (fun j => x (s + j)))) ∨
+    (∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ v ∈ V, N₀ ≤ v ∧ v ∈ A ∧ ∃ s, S₀ ≤ s ∧
+        ∃ J, 2 ≤ J ∧ J ≤ L ∧
+          v ∈ (Finset.range J).image (fun j => x (s + j)) ∧
+          IsPairHub A v ((Finset.range J).image
+            (fun j => x (s + j)))) := by
+  classical
+  by_cases hghost : ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ v ∈ V, N₀ ≤ v ∧ v ∉ A ∧ ∃ s, S₀ ≤ s ∧ x s ≤ v ∧
+        ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairHub A v
+          ((Finset.range J).image (fun j => x (s + j)))
+  · exact Or.inl hghost
+  · right
+    obtain ⟨S₁, hS₁⟩ := not_forall.mp hghost
+    obtain ⟨K₁, hK₁⟩ := not_forall.mp hS₁
+    intro S₀ K
+    obtain ⟨V, hVcard, hV⟩ := hmarch (S₀ + S₁) (K₁ + K)
+    set Vg := V.filter (fun v => v ∉ A) with hVg
+    by_cases hgcard : K₁ ≤ Vg.card
+    · exfalso
+      apply hK₁
+      refine ⟨Vg, hgcard, ?_⟩
+      intro v hv
+      rw [hVg, Finset.mem_filter] at hv
+      obtain ⟨hvV, hvnA⟩ := hv
+      obtain ⟨hvN, s, hs, hxsv, J, hJ2, hJL, hhub⟩ := hV v hvV
+      exact ⟨hvN, hvnA, s, by omega, hxsv, J, hJ2, hJL, hhub⟩
+    · refine ⟨V \ Vg, ?_, ?_⟩
+      · have h2 : (V \ Vg).card =
+            V.card - (Vg ∩ V).card := Finset.card_sdiff
+        have h3 : (Vg ∩ V).card ≤ Vg.card :=
+          Finset.card_le_card Finset.inter_subset_left
+        omega
+      · intro v hv
+        rw [Finset.mem_sdiff] at hv
+        obtain ⟨hvV, hvng⟩ := hv
+        have hvA : v ∈ A := by
+          by_contra hvnA
+          exact hvng (by
+            rw [hVg, Finset.mem_filter]
+            exact ⟨hvV, hvnA⟩)
+        obtain ⟨hvN, s, hs, hxsv, J, hJ2, hJL, hhub⟩ := hV v hvV
+        have h0W : (0 : ℕ) ∉ (Finset.range J).image
+            (fun j => x (s + j)) := by
+          intro hmem
+          rw [Finset.mem_image] at hmem
+          obtain ⟨j, _, hj⟩ := hmem
+          exact (hxpos (s + j)).ne' hj
+        rcases street_target_notMem_or_window h0 h0W hhub with
+          hno | hyes
+        · exact absurd hvA hno
+        · exact ⟨hvN, hvA, s, by omega, J, hJ2, hJL, hyes, hhub⟩
+
+/-- **THE FOUR LANES.**  Every anchored counterexample drives in
+one of four explicit lanes.  LANE 1 (rank): free sets of every
+size — root rank ≥ ω.  LANE 2 (the door): one FIXED finite hall
+pair-hubs unboundedly many targets, one hall element h carrying
+unboundedly many of them onto the translate h + A.  LANE 3 (the
+ghost street): unboundedly many targets FORCED OUT of A, each
+with its whole pair life caught by a marching spine window.
+LANE 4 (the member street): unboundedly many targets INSIDE
+their own marching windows — spine material whose every pair
+has a part at most the window span: middle pairs banned.  The
+night's taxonomies compress into rank, door, ghosts, members. -/
+theorem the_four_lanes {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
+      RepFree A N₀ P ∧ c ≤ P.card) ∨
+    (∃ H : Finset ℕ, ∃ h ∈ H, ∀ K, ∃ V : Finset ℕ,
+      K ≤ V.card ∧ ∀ v ∈ V, N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧
+        IsPairHub A v H) ∨
+    (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+      ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+        ∀ v ∈ V, N₀ ≤ v ∧ v ∉ A ∧ ∃ s, S₀ ≤ s ∧ x s ≤ v ∧
+          ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairHub A v
+            ((Finset.range J).image (fun j => x (s + j)))) ∨
+    (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+      ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+        ∀ v ∈ V, N₀ ≤ v ∧ v ∈ A ∧ ∃ s, S₀ ≤ s ∧
+          ∃ J, 2 ≤ J ∧ J ≤ L ∧
+            v ∈ (Finset.range J).image (fun j => x (s + j)) ∧
+            IsPairHub A v ((Finset.range J).image
+              (fun j => x (s + j))) ∧
+            (∀ a ∈ A, ∀ b ∈ A, a + b = v →
+              a ≤ x (s + J - 1) - x s ∨
+              b ≤ x (s + J - 1) - x s)) := by
+  rcases the_street_trichotomy h0 hcov hanchor hfail with
+    h1 | h2 | ⟨x, hxmono, hxA, L, hmarch⟩
+  · exact Or.inl h1
+  · exact Or.inr (Or.inl h2)
+  · have hxpos : ∀ t, 0 < x t := fun t => (hxA t).2
+    rcases marching_member_dichotomy h0 hxpos hmarch with
+      hg | hm
+    · exact Or.inr (Or.inr (Or.inl ⟨x, hxmono, hxA, L, hg⟩))
+    · refine Or.inr (Or.inr (Or.inr ⟨x, hxmono, hxA, L, ?_⟩))
+      intro S₀ K
+      obtain ⟨V, hVcard, hV⟩ := hm S₀ K
+      refine ⟨V, hVcard, ?_⟩
+      intro v hv
+      obtain ⟨hvN, hvA, s, hs, J, hJ2, hJL, hvW, hhub⟩ :=
+        hV v hv
+      exact ⟨hvN, hvA, s, hs, J, hJ2, hJL, hvW, hhub,
+        street_member_small_part hxmono (by omega) hhub hvW⟩
+
 end Erdos881
