@@ -11566,4 +11566,40 @@ theorem face_three_gap_dichotomy {A : Set ℕ} {N₀ M₀ : ℕ}
       · exact ⟨b, by omega, hbA, h1 ▸ hdead⟩
       · exact absurd (hzP h h1) hdead
 
+/-- **Near-diagonal stabilization.**  In the bounded-gap regime
+one single offset g ≤ G serves cofinally: infinitely many basis
+elements b whose g-translate b + g is a GHOST pair-hubbed by
+the fixed envelope, with the rotator b guarding it at order 3.
+Face III's near-diagonal horn is a fixed-offset ghost family —
+the single translate law's witnesses, upgraded with full hub
+structure at one explicit offset. -/
+theorem near_diagonal_stabilized {A : Set ℕ} {G : ℕ}
+    {P : Finset ℕ}
+    (hbdd : ∀ N, ∃ m b, N ≤ b ∧ b ≤ m ∧ m ≤ b + G ∧ b ∈ A ∧
+      m ∉ A ∧ IsRepHub A m (insert b P) ∧ IsPairHub A m P) :
+    ∃ g, g ≤ G ∧ ∀ N, ∃ b, N ≤ b ∧ b ∈ A ∧ b + g ∉ A ∧
+      IsRepHub A (b + g) (insert b P) ∧
+      IsPairHub A (b + g) P := by
+  classical
+  by_contra hno
+  push_neg at hno
+  have hKg : ∀ g : ℕ, ∃ Kg, g ≤ G → ∀ b, Kg ≤ b → b ∈ A →
+      b + g ∉ A → IsRepHub A (b + g) (insert b P) →
+      ¬IsPairHub A (b + g) P := by
+    intro g
+    by_cases hgG : g ≤ G
+    · obtain ⟨Kg, hKg'⟩ := hno g hgG
+      exact ⟨Kg, fun _ => hKg'⟩
+    · exact ⟨0, fun h => absurd h hgG⟩
+  choose Kf hKf using hKg
+  obtain ⟨m, b, hNb, hbm, hmG, hbA, hmA, hrep, hpair⟩ :=
+    hbdd ((Finset.range (G + 1)).sup Kf + 1)
+  set g := m - b with hg
+  have hgG : g ≤ G := by omega
+  have hKle : Kf g ≤ (Finset.range (G + 1)).sup Kf :=
+    Finset.le_sup (f := Kf) (Finset.mem_range.2 (by omega))
+  have hmbg : m = b + g := by omega
+  rw [hmbg] at hmA hrep hpair
+  exact hKf g hgG b (by omega) hbA hmA hrep hpair
+
 end Erdos881
