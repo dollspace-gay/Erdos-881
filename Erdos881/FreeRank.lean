@@ -4209,4 +4209,195 @@ theorem conflict_targets_fragile {A : Set ℕ} {N₀ : ℕ}
   have h2 := Finset.card_union_le (Q j) (Q k)
   omega
 
+/-- **THE ROBUSTNESS BRANCH.**  If disjoint-representation counts
+grow uniformly (for every C, all large targets carry C pairwise
+disjoint representations), then a hereditarily free infinite set
+exists: pick the sequence diagonally above the monotone
+robustness thresholds.  Any finite subset P then loses to every
+target — targets below the relevant threshold see nothing of P,
+and a target above it has more disjoint representations than P
+has members at or below the target, so some representation
+escapes whole.  A third branch mechanism, alongside counting
+(Sidon) and structure (Cantor). -/
+theorem robustness_gives_hereditarily_free {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hrob : ∀ C, ∃ H, ∀ m, H ≤ m →
+      HasDisjointTripleReps A m C) :
+    ∃ B : Set ℕ, HereditarilyFree A N₀ B := by
+  classical
+  choose Hf hHf using hrob
+  set M : ℕ → ℕ := fun C => (Finset.range (C + 1)).sup Hf
+    with hM
+  have hMrob : ∀ C m, M C ≤ m → HasDisjointTripleReps A m C := by
+    intro C m hm
+    refine hHf C m ?_
+    have h1 : Hf C ≤ M C :=
+      Finset.le_sup (Finset.mem_range.2 (by omega))
+    omega
+  have hMmono : ∀ C C', C ≤ C' → M C ≤ M C' := by
+    intro C C' hCC
+    exact Finset.sup_mono (by
+      intro x hx
+      rw [Finset.mem_range] at hx ⊢
+      omega)
+  have hstep : ∀ (i x : ℕ), ∃ a, a ∈ A ∧ x < a ∧
+      M (i + 2) < a := by
+    intro i x
+    obtain ⟨a, ha, hge⟩ :=
+      pairCovers_unbounded hcov (max x (M (i + 2)) + 1)
+    have h1 : x ≤ max x (M (i + 2)) := le_max_left _ _
+    have h2 : M (i + 2) ≤ max x (M (i + 2)) := le_max_right _ _
+    exact ⟨a, ha, by omega, by omega⟩
+  choose F hFA hFgt hFM using hstep
+  obtain ⟨g, hg0, hgs⟩ : ∃ g : ℕ → ℕ, g 0 = F 0 0 ∧
+      ∀ i, g (i + 1) = F (i + 1) (g i) :=
+    ⟨fun i => Nat.rec (F 0 0) (fun i' prev => F (i' + 1) prev) i,
+      rfl, fun _ => rfl⟩
+  have hgA : ∀ i, g i ∈ A := by
+    intro i
+    cases i with
+    | zero => rw [hg0]; exact hFA 0 0
+    | succ i => rw [hgs]; exact hFA (i + 1) (g i)
+  have hgM : ∀ i, M (i + 2) < g i := by
+    intro i
+    cases i with
+    | zero => rw [hg0]; exact hFM 0 0
+    | succ i => rw [hgs]; exact hFM (i + 1) (g i)
+  have hgmono : StrictMono g := by
+    apply strictMono_nat_of_lt_succ
+    intro i
+    rw [hgs]
+    exact hFgt (i + 1) (g i)
+  have hgpos : ∀ i, 0 < g i := by
+    intro i
+    cases i with
+    | zero =>
+      rw [hg0]
+      exact lt_of_le_of_lt (Nat.zero_le _) (hFgt 0 0)
+    | succ i =>
+      rw [hgs]
+      exact lt_of_le_of_lt (Nat.zero_le _) (hFgt (i + 1) (g i))
+  have hgi : ∀ i, i ≤ g i := fun i => hgmono.le_apply
+  refine ⟨Set.range g, Set.infinite_range_of_injective
+    hgmono.injective, ?_, ?_⟩
+  · rintro b ⟨i, rfl⟩
+    exact ⟨hgA i, hgpos i⟩
+  · intro P hP m hm
+    have hidx : ∀ t ∈ P, ∃ i, g i = t := by
+      intro t ht
+      exact hP t ht
+    choose idx hidx' using hidx
+    set T := P.filter (fun t => t ≤ m) with hT
+    set J := (Finset.range (m + 1)).filter (fun i => g i ≤ m)
+      with hJ
+    have hTJ : T.card ≤ J.card := by
+      refine Finset.card_le_card_of_injOn
+        (fun t => if ht : t ∈ P then idx t ht else 0) ?_ ?_
+      · intro t ht
+        have ht2 : t ∈ P ∧ t ≤ m := by simpa [hT] using ht
+        have hgoal : (if ht : t ∈ P then idx t ht else 0) ∈ J := by
+          rw [dif_pos ht2.1]
+          have h1 : g (idx t ht2.1) = t := hidx' t ht2.1
+          have h2 := hgi (idx t ht2.1)
+          simp only [hJ, Finset.mem_filter, Finset.mem_range]
+          omega
+        exact hgoal
+      · intro t ht t' ht' heq
+        have ht2 : t ∈ P ∧ t ≤ m := by simpa [hT] using ht
+        have ht'2 : t' ∈ P ∧ t' ≤ m := by simpa [hT] using ht'
+        have heq' : (if ht : t ∈ P then idx t ht else 0) =
+            (if ht' : t' ∈ P then idx t' ht' else 0) := heq
+        rw [dif_pos ht2.1, dif_pos ht'2.1] at heq'
+        have h1 : g (idx t ht2.1) = t := hidx' t ht2.1
+        have h2 : g (idx t' ht'2.1) = t' := hidx' t' ht'2.1
+        rw [← h1, ← h2, heq']
+    by_cases hJ0 : J.card = 0
+    · obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
+      have havoid : ∀ w, w ≤ m → w ∉ P := by
+        intro w hw hwP
+        have hwT : w ∈ T := by
+          rw [hT, Finset.mem_filter]
+          exact ⟨hwP, hw⟩
+        have h1 : 0 < T.card := Finset.card_pos.2 ⟨w, hwT⟩
+        omega
+      refine ⟨x, hx, y, hy, 0, h0, by omega, ?_, ?_, ?_⟩
+      · exact havoid x (by omega)
+      · exact havoid y (by omega)
+      · exact havoid 0 (by omega)
+    · have hJne : J.Nonempty := Finset.card_pos.1 (by omega)
+      obtain ⟨imax, himax, himax'⟩ :=
+        Finset.exists_max_image J id hJne
+      have himaxJ : g imax ≤ m := by
+        have h1 := himax
+        rw [hJ, Finset.mem_filter] at h1
+        exact h1.2
+      have himax_ge : J.card ≤ imax + 1 := by
+        have hsub : J ⊆ Finset.range (imax + 1) := by
+          intro i hi
+          rw [Finset.mem_range]
+          have h2 : i ≤ imax := himax' i hi
+          omega
+        have h3 := Finset.card_le_card hsub
+        rw [Finset.card_range] at h3
+        omega
+      have hMle : M (J.card + 1) ≤ m := by
+        have h1 : M (J.card + 1) ≤ M (imax + 2) :=
+          hMmono _ _ (by omega)
+        have h2 := hgM imax
+        omega
+      obtain ⟨R, hRA, hRsum, hRdis⟩ :=
+        hMrob (J.card + 1) m hMle
+      by_contra hall
+      push_neg at hall
+      have hpickP : ∀ i : Fin (J.card + 1), ∃ k : Fin 3,
+          R i k ∈ P := by
+        intro i
+        by_cases hp0 : R i 0 ∈ P
+        · exact ⟨0, hp0⟩
+        by_cases hp1 : R i 1 ∈ P
+        · exact ⟨1, hp1⟩
+        exact ⟨2, hall (R i 0) (hRA i 0) (R i 1) (hRA i 1)
+          (R i 2) (hRA i 2) (hRsum i) hp0 hp1⟩
+      choose pk hpk using hpickP
+      have hinjT : ∀ i : Fin (J.card + 1), R i (pk i) ∈ T := by
+        intro i
+        rw [hT, Finset.mem_filter]
+        refine ⟨hpk i, ?_⟩
+        have hle : ∀ k : Fin 3, R i k ≤ m := by
+          have hs := hRsum i
+          intro k
+          match k with
+          | 0 => omega
+          | 1 => omega
+          | 2 => omega
+        exact hle (pk i)
+      have hcard : (J.card + 1) ≤ T.card := by
+        have h4 := Finset.card_le_card_of_injOn
+          (f := fun i : Fin (J.card + 1) => R i (pk i))
+          (s := Finset.univ) (t := T)
+          (fun i _ => hinjT i)
+          (by
+            intro i _ i' _ heq
+            by_contra hne
+            exact hRdis i i' (pk i) (pk i') hne heq)
+        rw [Finset.card_univ, Fintype.card_fin] at h4
+        exact h4
+      omega
+
+/-- **THE FRAGILE SUPPLY** (contrapositive).  Under hfail some
+fixed fragility level C recurs cofinally: infinitely many targets
+carry fewer than C pairwise disjoint representations.  Otherwise
+the robustness branch would survive, refuting hfail.  A
+self-contained rederivation of the card-bounded supply from pure
+robustness logic. -/
+theorem fragile_supply_of_hfail {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ C, ∀ H, ∃ m, H ≤ m ∧ ¬HasDisjointTripleReps A m C := by
+  by_contra hno
+  push_neg at hno
+  exact (hfail_iff_no_hereditarily_free h0 hcov).1 hfail
+    (robustness_gives_hereditarily_free h0 hcov hno)
+
 end Erdos881
