@@ -348,3 +348,27 @@ affine corner is the enemy's last reflection refuge; it couples a
 blown point, two basis elements, and a Sidon street in one linear
 equation s + b₂ = n + b₃, which no previously known theorem
 forced.
+
+## 15. THE FOUR ROOMS (20:36)
+
+**`counterexample_four_rooms` / `endgame_four_rooms`.**  The full
+composition of the dichotomy night.  Every counterexample lives
+in one of four terminal rooms (rooms 3–4 share one flood
+envelope):
+
+  **R1 — the translation room**: one fixed offset δ with
+  unbounded difference multiplicity (A ∩ (A − δ) infinite).
+  **R2 — the scattering room**: difference pairs at arbitrarily
+  large offsets, at every multiplicity.
+  **R3 — the scattered halls**: arbitrarily large blown mirror
+  points, each an affine corner beyond every size.
+  **R4 — the street ladder**: one mirror point n whose
+  difference translates n + d are pair streets for unboundedly
+  large realized d.
+
+R4 pins street POSITIONS to a one-parameter family — the first
+crack in target liberty.  R1 is near-translation-invariance, the
+most rigid configuration yet.  Next-session attacks: R1 via
+translation/periodicity machinery (MirrorPeriodicity), R4 via
+ladder-street interactions with blown targets, R2/R3 via energy
+accounting over the scattered scales.

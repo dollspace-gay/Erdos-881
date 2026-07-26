@@ -245,4 +245,31 @@ theorem endgame_shells {A : Set ℕ} {N₀ : ℕ}
           IsRepHub A m (insert b (Q k))) :=
   shell_endgame h0 hcov hanchor hfail
 
+/-- **THE FOUR ROOMS** (re-export).  Every counterexample lives
+in one of four terminal rooms: fixed-offset difference blowup
+(A ∩ (A − δ) infinite), growing-offset difference pairs at every
+multiplicity, scattered mirror halls (arbitrarily large blown
+affine corners), or the street ladder — one mirror point n whose
+difference translates n + d are pair streets for unboundedly
+large d, pinning street positions to a one-parameter family. -/
+theorem endgame_four_rooms {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ Q : Finset ℕ, RepFree A N₀ Q ∧
+    ((∃ δ, 1 ≤ δ ∧ ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+        ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A) ∨
+     (∀ Δ K, ∃ δ, Δ < δ ∧ ∃ V : Finset ℕ, K ≤ V.card ∧
+        ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A) ∨
+     (∃ K₀, ∀ N S, ∃ n, N < n ∧
+        (∃ V : Finset ℕ, K₀ ≤ V.card ∧
+          ∀ a ∈ V, a ∈ A ∧ ∃ x ∈ A, x + a = n) ∧
+        ∃ b₂ ∈ A, ∃ b₃ ∈ A, S ≤ b₂ ∧ b₂ < b₃ ∧
+          ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
+            IsPairHub A s (insert b₃ Q)) ∨
+     (∃ n, ∀ Δ S, ∃ b₂ ∈ A, ∃ b₃ ∈ A, S ≤ b₂ ∧ b₂ < b₃ ∧
+        Δ < b₃ - b₂ ∧ ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
+          IsPairHub A s (insert b₃ Q))) :=
+  counterexample_four_rooms h0 hcov hfail
+
 end Erdos881
