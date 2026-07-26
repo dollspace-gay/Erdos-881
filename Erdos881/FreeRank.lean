@@ -7648,4 +7648,37 @@ theorem grid_pressure_or_alignment {A : Set ℕ} {N₀ : ℕ}
       exact grid_cap_three_classes hrne hrep hall
   · exact Or.inr hnarrow
 
+/-- **The pure four-hub cap.**  Four pairwise disjoint envelopes
+cannot all be full hubs at one represented target: a
+representation has three parts and each part lies in at most one
+envelope.  The simplest cap of the suite — no guardians, no
+freeness, no escape.  Feeds the spine stall stream: pairwise
+disjoint stall windows share targets at most three-fold, so
+cofinal stall streams carry cofinally many DISTINCT targets. -/
+theorem four_disjoint_full_hubs_impossible {A : Set ℕ} {m : ℕ}
+    {H : Fin 4 → Finset ℕ}
+    (hdisj : ∀ i j, i ≠ j → Disjoint (H i) (H j))
+    (hrep : ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = m)
+    (hhub : ∀ i, IsRepHub A m (H i)) : False := by
+  classical
+  obtain ⟨x, hx, y, hy, z, hz, hsum⟩ := hrep
+  have hpick : ∀ i : Fin 4, ∃ p : Fin 3,
+      (if p = 0 then x else if p = 1 then y else z) ∈ H i := by
+    intro i
+    rcases hhub i x hx y hy z hz hsum with h | h | h
+    · exact ⟨0, by simpa using h⟩
+    · exact ⟨1, by simpa using h⟩
+    · exact ⟨2, by simpa using h⟩
+  choose pk hpk using hpick
+  have hcard : ¬Function.Injective pk := by
+    intro hinj
+    have := Fintype.card_le_of_injective pk hinj
+    simp at this
+  rw [Function.not_injective_iff] at hcard
+  obtain ⟨i, j, hpij, hij⟩ := hcard
+  have h1 := hpk i
+  have h2 := hpk j
+  rw [hpij] at h1
+  exact (Finset.disjoint_left.1 (hdisj i j hij)) h1 h2
+
 end Erdos881
