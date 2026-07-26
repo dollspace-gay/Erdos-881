@@ -372,3 +372,25 @@ most rigid configuration yet.  Next-session attacks: R1 via
 translation/periodicity machinery (MirrorPeriodicity), R4 via
 ladder-street interactions with blown targets, R2/R3 via energy
 accounting over the scattered scales.
+
+## 16. MINING THE STREET LADDER (20:42)
+
+**`street_ladder_pure`.**  Beyond the mirror point the rotator
+sits above its own street and drops out of every pair: the ladder
+streets n + d are PURE-Q pair hubs (fixed finite envelope), each
+in the shadow Q + A, each alongside a basis pair at difference d.
+
+**`ladder_shadow_concentrates`.**  One shadow element q* serves
+unboundedly many rungs: {n + d − q*} is an infinite subset of A —
+an arithmetic copy of the realized-difference family living
+inside the basis.
+
+**`ladder_difference_desert`.**  A rung reflection crossed with a
+higher rung's street forces q* + (d' − d) out of A (up to Q): the
+ladder digs deserts at its own translated difference set, so the
+rung family is invisible to all higher streets' pair-life.
+
+Room R4 is now the most constrained object in the program:
+explicit street positions, one fixed envelope, an arithmetic rung
+family inside A, and self-dug deserts — four simultaneous laws on
+one one-parameter family.
