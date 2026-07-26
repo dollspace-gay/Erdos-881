@@ -1,3 +1,35 @@
+# UPDATE (2026-07-26, cont. 7): THE PAIR FLOOD
+
+**Arc 26 — the flood welded, unconditional.**
+`rep_flood_pos_of_hfail` — the rep flood re-proved with a
+0-free envelope (the dodge chain's picks are all ≥ 1; the
+strengthened by-contradiction threads 0-freeness through the
+whole recursion).  Then the 0-weld:
+
+- **`personal_pair_guard_of_hfail`** — every counterexample
+  carries a constant C = |P| + 1 and a free 0-less envelope P
+  with: EVERY large basis element b personally guards a target
+  m ≥ b whose entire pair life routes through P ∪ {b}, with
+  r₂(m) ≤ C.  Pair-poverty pinned to every basis element,
+  density-free.
+- **`pair_flood_ghost_or_center`** — the placement law: each
+  personal target IS its guard (all nontrivial pairs through
+  the fixed P) or is a GHOST (m ∉ A).
+
+**Reframing.**  Fixed-hall/door configurations are not lane 2's
+special case — they are AMBIENT: every large basis element
+carries one personally.  The cascade's counting now has a
+density-free supply: the slice spectrum can be tested against
+the personal targets of the survivors themselves.  Next: play
+the cascade against the pair flood — a deletion B's failure
+target n has all survivor-slices pair-poor AND every survivor
+s carries a personal pair-poor target m_s; the two supplies
+must coexist with coverage's pair-square mass.
+
+All verified, zero sorries, standard axioms.
+
+---
+
 # UPDATE (2026-07-26, cont. 6): THE CASCADE'S TWO AXIOMS
 
 `deletion_failure_slices` + `deletion_failure_double_slice`
