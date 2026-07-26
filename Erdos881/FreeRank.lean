@@ -12455,4 +12455,96 @@ theorem omega_descent_cylinder {A : Set ℕ} (ε Y : ℕ → ℕ)
       rw [heq, hae, hp]
       ring
 
+open Classical in
+/-- **Cylinder sparsity.**  A single 2-adic lane holds at most
+one element per 2^k integers: the level-k decomposition injects
+the tail into its survivor indices. -/
+theorem cylinder_sparsity {A : Set ℕ} {k c T : ℕ}
+    (hcyl : ∀ a ∈ A, T < a → ∃ a', a = c + 2 ^ k * a') :
+    ∀ X, ((Finset.Ioc T X).filter (· ∈ A)).card ≤
+      X / 2 ^ k + 1 := by
+  intro X
+  have hpk : (0 : ℕ) < 2 ^ k := pow_pos (by omega) k
+  refine le_trans (Finset.card_le_card_of_injOn
+    (fun a => (a - c) / 2 ^ k) (t := Finset.range
+      (X / 2 ^ k + 1)) ?_ ?_)
+    (le_of_eq (Finset.card_range _))
+  · intro a ha
+    simp only [Finset.mem_coe, Finset.mem_filter,
+      Finset.mem_Ioc] at ha
+    obtain ⟨⟨hTa, haX⟩, haA⟩ := ha
+    obtain ⟨a', hae⟩ := hcyl a haA hTa
+    have h1 : (a - c) / 2 ^ k = a' := by
+      rw [hae]
+      have h2 : c + 2 ^ k * a' - c = 2 ^ k * a' := by omega
+      rw [h2]
+      exact Nat.mul_div_cancel_left a' hpk
+    simp only [Finset.mem_coe, Finset.mem_range]
+    rw [h1]
+    have h3 : 2 ^ k * a' ≤ X := by omega
+    have h4 : a' ≤ X / 2 ^ k := by
+      rw [Nat.le_div_iff_mul_le hpk]
+      have h5 : a' * 2 ^ k = 2 ^ k * a' := by ring
+      omega
+    omega
+  · intro a ha b hb hab
+    simp only [Finset.mem_coe, Finset.mem_filter,
+      Finset.mem_Ioc] at ha hb
+    obtain ⟨⟨hTa, _⟩, haA⟩ := ha
+    obtain ⟨⟨hTb, _⟩, hbA⟩ := hb
+    obtain ⟨a', hae⟩ := hcyl a haA hTa
+    obtain ⟨b', hbe⟩ := hcyl b hbA hTb
+    have hab' : (a - c) / 2 ^ k = (b - c) / 2 ^ k := hab
+    have h1 : (a - c) / 2 ^ k = a' := by
+      rw [hae]
+      have h2 : c + 2 ^ k * a' - c = 2 ^ k * a' := by omega
+      rw [h2]
+      exact Nat.mul_div_cancel_left a' hpk
+    have h2 : (b - c) / 2 ^ k = b' := by
+      rw [hbe]
+      have h3 : c + 2 ^ k * b' - c = 2 ^ k * b' := by omega
+      rw [h3]
+      exact Nat.mul_div_cancel_left b' hpk
+    rw [h1, h2] at hab'
+    rw [hab'] at hae
+    omega
+
+open Classical in
+/-- **The threshold race.**  Cylinder containment against
+covering: the level threshold plus the lane's own capacity must
+square to the covered range.  Deep lanes force √-scale
+thresholds — the racing cost of every descent level, made
+quantitative. -/
+theorem descent_threshold_race {A : Set ℕ} {N₀ k c T : ℕ}
+    (hcov : PairCovers A N₀)
+    (hcyl : ∀ a ∈ A, T < a → ∃ a', a = c + 2 ^ k * a') :
+    ∀ X, N₀ ≤ X →
+      X - N₀ + 1 ≤ (T + X / 2 ^ k + 2) ^ 2 := by
+  intro X hX
+  have hd := covering_density hcov X hX
+  set AX := (Finset.range (X + 1)).filter (· ∈ A) with hAX
+  have hsplit : AX.card ≤ (T + 1) +
+      ((Finset.Ioc T X).filter (· ∈ A)).card := by
+    have hsub : AX ⊆ (Finset.range (T + 1)) ∪
+        ((Finset.Ioc T X).filter (· ∈ A)) := by
+      intro a ha
+      rw [hAX, Finset.mem_filter, Finset.mem_range] at ha
+      obtain ⟨h1, h2⟩ := ha
+      rcases Nat.lt_or_ge T a with h | h
+      · exact Finset.mem_union_right _ (by
+          rw [Finset.mem_filter, Finset.mem_Ioc]
+          exact ⟨⟨h, by omega⟩, h2⟩)
+      · exact Finset.mem_union_left _
+          (Finset.mem_range.2 (by omega))
+    have h1 := Finset.card_le_card hsub
+    have h2 := Finset.card_union_le (Finset.range (T + 1))
+      ((Finset.Ioc T X).filter (· ∈ A))
+    rw [Finset.card_range] at h2
+    omega
+  have hcs := cylinder_sparsity hcyl X
+  have hle : AX.card ≤ T + X / 2 ^ k + 2 := by omega
+  have hpow : AX.card ^ 2 ≤ (T + X / 2 ^ k + 2) ^ 2 :=
+    Nat.pow_le_pow_left hle 2
+  omega
+
 end Erdos881
