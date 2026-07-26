@@ -4876,4 +4876,44 @@ theorem difference_blowup_or_affine_corners {A : Set ℕ}
       exact hximp hxA hxδ
     · exact h
 
+/-- Refinement of the difference branch: unbounded multiplicity
+either concentrates at ONE fixed offset δ — infinitely many
+x ∈ A with x + δ ∈ A, near-translation-invariance — or escapes
+through arbitrarily large offsets at every multiplicity. -/
+theorem fixed_offset_or_growing {A : Set ℕ}
+    (hdiff : ∀ K, ∃ δ, 1 ≤ δ ∧ ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A) :
+    (∃ δ, 1 ≤ δ ∧ ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A) ∨
+    (∀ Δ K, ∃ δ, Δ < δ ∧ ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A) := by
+  classical
+  by_cases hfix : ∃ δ, 1 ≤ δ ∧ ∀ K, ∃ V : Finset ℕ,
+      K ≤ V.card ∧ ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A
+  · exact Or.inl hfix
+  · push_neg at hfix
+    have hKf : ∀ δ, ∃ Kd, 1 ≤ δ → ∀ V : Finset ℕ,
+        Kd ≤ V.card → ∃ x ∈ V, x ∈ A → x + δ ∉ A := by
+      intro δ
+      by_cases hδ : 1 ≤ δ
+      · obtain ⟨Kd, hKd⟩ := hfix δ hδ
+        exact ⟨Kd, fun _ => hKd⟩
+      · exact ⟨0, fun h => absurd h hδ⟩
+    choose Kf hKf' using hKf
+    right
+    intro Δ K
+    set Ksup := (Finset.range (Δ + 1)).sup Kf with hKsup
+    obtain ⟨δ₀, hδ₀, V₀, hV₀c, hV₀m⟩ := hdiff (K + Ksup)
+    by_cases hle : δ₀ ≤ Δ
+    · exfalso
+      have hsup : Kf δ₀ ≤ Ksup := by
+        rw [hKsup]
+        exact Finset.le_sup (Finset.mem_range.2 (by omega))
+      obtain ⟨x, hxV, himp⟩ :=
+        hKf' δ₀ hδ₀ V₀ (by omega)
+      obtain ⟨hxA, hxd⟩ := hV₀m x hxV
+      exact himp hxA hxd
+    · push_neg at hle
+      exact ⟨δ₀, hle, V₀, by omega, hV₀m⟩
+
 end Erdos881
