@@ -1,3 +1,23 @@
+# RIGIDITY WITH TEAMS — TWENTIETH SUMMIT (2026-07-26, night)
+
+`endgame_rigidity_teams` (Endgame.lean, standard axioms): in
+anchored worlds the terminal classification sharpens — every
+counterexample runs (1) TRANSLATION-COHERENT TEAMS (fixed
+d >= 1, cofinal minimal committees of size >= 2, every member
+delta-paired h, h+d in A — each team shifts by d into fresh
+representations: full R1 structure), or (2) a DOORED DESERT,
+or (3) a TOTAL DESERT.
+
+Tools: `fixed_difference_families` (supply -> families of every
+size) welding the rigidity trichotomy's horn 1 to
+`translation_room_teams`.  Twenty summits.
+
+THE GEOGRAPHY IS NOW FULLY WELDED: oscillation layer
+(unconditional) -> three terminal rooms, horn 1 carrying the
+translation room's complete team structure.  The kills that
+remain: delta-coherent teams (R1), the doored desert (door
+kills + moat), the total desert (head-service bookkeeping).
+
 # THE RIGIDITY TRICHOTOMY — NINETEENTH SUMMIT (2026-07-26, night)
 
 `endgame_rigidity_trichotomy` (Endgame.lean, standard axioms,

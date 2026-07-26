@@ -1178,4 +1178,35 @@ theorem endgame_rigidity_trichotomy {A : Set ℕ} {N₀ : ℕ}
       ∀ x, x ≤ W → ¬(x ∈ A ∧ (n - x) ∈ A ∧ 2 * x ≤ n)) :=
   rigidity_trichotomy h0 hcov hfail
 
+open Classical in
+/-- **THE RIGIDITY TRICHOTOMY WITH TEAMS** (re-export;
+twentieth summit).  In anchored worlds the unconditional
+terminal classification sharpens: every counterexample runs
+(1) TRANSLATION-COHERENT TEAMS — a fixed d ≥ 1 and cofinal
+minimal committees of size ≥ 2 whose every member is δ-paired
+(h, h + d ∈ A): each team shifts by d into fresh
+representations, the R1 room's full structure — or (2) a
+DOORED DESERT, or (3) a TOTAL DESERT.  The oscillation layer's
+classification, welded to the translation room's team
+machinery through the fixed-difference bridge. -/
+theorem endgame_rigidity_teams {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : StreamSurvives A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∃ d, 1 ≤ d ∧ ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      2 ≤ H.card ∧ ∀ h ∈ H, h ∈ A ∧ h + d ∈ A ∧ 0 < h) ∨
+    (∃ L u W, u ≤ W ∧ ∀ N, ∃ n, N ≤ n ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * L ∧
+      (u ∈ A ∧ (n - u) ∈ A ∧ 2 * u ≤ n) ∧
+      ∀ x, x ≤ W → x ≠ u →
+        ¬(x ∈ A ∧ (n - x) ∈ A ∧ 2 * x ≤ n)) ∨
+    (∃ L, ∀ W N, ∃ n, N ≤ n ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * L ∧
+      ∀ x, x ≤ W → ¬(x ∈ A ∧ (n - x) ∈ A ∧ 2 * x ≤ n)) :=
+  rigidity_trichotomy_teams h0 hcov hanchor hfail
+
 end Erdos881

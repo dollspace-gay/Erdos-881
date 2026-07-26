@@ -16493,4 +16493,68 @@ theorem rigidity_trichotomy {A : Set ℕ} {N₀ : ℕ}
       · exact h1 ⟨W, h⟩
       · exact h2 ⟨W, h⟩
 
+/-- Cofinal δ-paired supply yields δ-paired finite families of
+every size — the bridge from the rigidity trichotomy's fixed-
+difference horn to the translation room's team machinery. -/
+theorem fixed_difference_families {d : ℕ} {A : Set ℕ}
+    (hsup : ∀ N, ∃ a, N ≤ a ∧ a ∈ A ∧ a + d ∈ A) :
+    ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ x ∈ V, x ∈ A ∧ x + d ∈ A := by
+  intro K
+  induction K with
+  | zero => exact ⟨∅, by simp, by simp⟩
+  | succ K ih =>
+    obtain ⟨V, hVc, hVm⟩ := ih
+    obtain ⟨a, ha, haA, hadA⟩ := hsup (V.sup id + 1)
+    have haV : a ∉ V := by
+      intro hmem
+      have := Finset.le_sup (f := id) hmem
+      simp only [id] at this
+      omega
+    refine ⟨insert a V, ?_, ?_⟩
+    · rw [Finset.card_insert_of_notMem haV]
+      omega
+    · intro x hx
+      rcases Finset.mem_insert.1 hx with hxa | hxV
+      · rw [hxa]
+        exact ⟨haA, hadA⟩
+      · exact hVm x hxV
+
+open Classical in
+/-- **THE RIGIDITY TRICHOTOMY WITH TEAMS.**  In anchored
+worlds the fixed-difference horn upgrades from bare supply to
+TRANSLATION-COHERENT TEAMS: cofinally many targets carry
+minimal committees of size ≥ 2 whose EVERY member is δ-paired
+in the basis (h, h + d ∈ A).  Every counterexample runs
+δ-coherent teams, a doored desert, or a total desert. -/
+theorem rigidity_trichotomy_teams {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : StreamSurvives A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∃ d, 1 ≤ d ∧ ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
+      IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      2 ≤ H.card ∧ ∀ h ∈ H, h ∈ A ∧ h + d ∈ A ∧ 0 < h) ∨
+    (∃ L u W, u ≤ W ∧ ∀ N, ∃ n, N ≤ n ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * L ∧
+      (u ∈ A ∧ (n - u) ∈ A ∧ 2 * u ≤ n) ∧
+      ∀ x, x ≤ W → x ≠ u →
+        ¬(x ∈ A ∧ (n - x) ∈ A ∧ 2 * x ≤ n)) ∨
+    (∃ L, ∀ W N, ∃ n, N ≤ n ∧
+      ((Finset.range (n + 1)).filter
+        (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * L ∧
+      ∀ x, x ≤ W → ¬(x ∈ A ∧ (n - x) ∈ A ∧ 2 * x ≤ n)) := by
+  rcases rigidity_trichotomy h0 hcov hfail with
+    ⟨d, hd, hsup⟩ | h | h
+  · left
+    refine ⟨d, hd, ?_⟩
+    have hteams := translation_room_teams h0 hcov hanchor
+      hfail (fixed_difference_families hsup)
+    intro N
+    obtain ⟨n, hn, H, hhub, hmin, hcard, hmem⟩ := hteams N
+    exact ⟨n, hn, H, hhub, hmin, hcard, hmem⟩
+  · exact Or.inr (Or.inl h)
+  · exact Or.inr (Or.inr h)
+
 end Erdos881
