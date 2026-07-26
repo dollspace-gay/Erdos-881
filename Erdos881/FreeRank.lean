@@ -6712,4 +6712,49 @@ theorem spine_lineage {A : Set ℕ} {N₀ : ℕ}
   exact ⟨Q, σ, x, hne, hmem, hfree, hdisj, hguard, hxmono,
     hxmem⟩
 
+/-- **The board is set.**  Against EVERY subsequence of the
+canonical spine, the enemy must post a stall: some finite prefix
+of lineage elements becomes a full hub at some target.  The
+adaptive endgame is now a game on canonical material — the
+constructor plays subsequences of the spine, the enemy must
+answer each with a hub made of spine elements, and every hub it
+posts is subject to the cap suite, the depth tax, and the sharer
+laws.  This theorem is the game board; the winning strategy is
+the remaining work. -/
+theorem spine_stalls_hereditarily {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ Q : ℕ → Finset ℕ, ∃ σ : ℕ ↪o ℕ, ∃ x : ℕ → ℕ,
+      StrictMono x ∧ (∀ t, x t ∈ Q (σ t)) ∧
+      (∀ k, RepFree A N₀ (Q k)) ∧
+      (∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h) ∧
+      ∀ τ : ℕ → ℕ, StrictMono τ →
+        ∃ J m, N₀ ≤ m ∧
+          IsRepHub A m ((Finset.range J).image (fun t =>
+            x (τ t))) := by
+  classical
+  obtain ⟨Q, σ, x, hne, hmem, hfree, hdisj, hguard, hxmono,
+    hxmem⟩ := spine_lineage h0 hcov hanchor hfail
+  refine ⟨Q, σ, x, hxmono, hxmem, hfree,
+    hmem, ?_⟩
+  intro τ hτ
+  have hdie := free_prefixes_die_of_hfail h0 hcov hfail
+    (fun t => x (τ t)) (hxmono.comp hτ)
+    (fun t => (hmem _ _ (hxmem (τ t))).1)
+    (fun t => (hmem _ _ (hxmem (τ t))).2)
+  push_neg at hdie
+  obtain ⟨J, hJ⟩ := hdie
+  rw [RepFree] at hJ
+  push_neg at hJ
+  obtain ⟨m, hm, hall⟩ := hJ
+  refine ⟨J, m, hm, ?_⟩
+  intro a ha b hb c hc hsum
+  by_contra hmiss
+  push_neg at hmiss
+  obtain ⟨h1, h2, h3⟩ := hmiss
+  exact h3 (hall a ha b hb c hc hsum h1 h2)
+
 end Erdos881
