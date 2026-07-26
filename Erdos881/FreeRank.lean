@@ -5805,4 +5805,61 @@ theorem hmin_of_essential {A : Set ℕ}
   exact ⟨x, hx, y, hy, fun h => hxB (h ▸ hbB),
     fun h => hyB (h ▸ hbB), hxy⟩
 
+/-- **The unique-sum Ramsey dichotomy.**  Any covering set
+contains an infinite ascending subsequence whose pairwise sums
+are ALL unique-decomposition targets, or NONE are: colour index
+pairs by unique-sum-ness and apply infinite Ramsey.  The
+all-unique side is an infinite strong-Sidon configuration inside
+A; the none-unique side has every pairwise sum robust.  Both
+sides are deletion fodder for the classical-minimality program. -/
+theorem unique_sum_ramsey {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀) :
+    ∃ g : ℕ → ℕ, StrictMono g ∧ (∀ i, g i ∈ A) ∧
+      ((∀ i j, i < j → ∀ x ∈ A, ∀ y ∈ A, x + y = g i + g j →
+          (x = g i ∧ y = g j) ∨ (x = g j ∧ y = g i)) ∨
+       (∀ i j, i < j →
+          ¬(∀ x ∈ A, ∀ y ∈ A, x + y = g i + g j →
+            (x = g i ∧ y = g j) ∨ (x = g j ∧ y = g i)))) := by
+  classical
+  -- ascending enumeration inside A
+  have hstep : ∀ x : ℕ, ∃ a, a ∈ A ∧ x < a := by
+    intro x
+    obtain ⟨a, haA, hage⟩ := pairCovers_unbounded hcov (x + 1)
+    exact ⟨a, haA, by omega⟩
+  choose F hFA hFgt using hstep
+  obtain ⟨e, he0, hes⟩ : ∃ e : ℕ → ℕ, e 0 = F 0 ∧
+      ∀ i, e (i + 1) = F (e i) :=
+    ⟨fun i => Nat.rec (F 0) (fun _ p => F p) i, rfl, fun _ => rfl⟩
+  have heA : ∀ i, e i ∈ A := by
+    intro i
+    cases i with
+    | zero => rw [he0]; exact hFA 0
+    | succ i => rw [hes]; exact hFA (e i)
+  have hemono : StrictMono e := by
+    apply strictMono_nat_of_lt_succ
+    intro i
+    rw [hes]
+    exact hFgt (e i)
+  -- colour and apply Ramsey
+  set c : ℕ → ℕ → Bool := fun i j =>
+    decide (∀ x ∈ A, ∀ y ∈ A, x + y = e i + e j →
+      (x = e i ∧ y = e j) ∨ (x = e j ∧ y = e i)) with hc
+  obtain ⟨f, hfmono, b, hfb⟩ := infinite_ramsey_pairs c
+  refine ⟨fun i => e (f i), hemono.comp hfmono, fun i => heA _,
+    ?_⟩
+  cases b with
+  | true =>
+    left
+    intro i j hij
+    have h1 := hfb i j hij
+    rw [hc] at h1
+    simpa using of_decide_eq_true h1
+  | false =>
+    right
+    intro i j hij
+    have h1 := hfb i j hij
+    rw [hc] at h1
+    have h2 := of_decide_eq_false h1
+    simpa using h2
+
 end Erdos881
