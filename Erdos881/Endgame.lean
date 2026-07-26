@@ -724,4 +724,37 @@ theorem endgame_omega_drain {A : Set ℕ} {N₀ : ℕ}
           (fun x => x ∈ S k ∧ (v - x) ∈ T k)).card :=
   the_omega_drain h0 hcov hfail
 
+open Classical in
+/-- **THE POOR STREET** (sharpened final fork).  Every
+counterexample funds free sets of every size — root rank ≥ ω —
+or runs a street of targets whose pair wealth is UNIFORMLY
+CAPPED at 2L: through the 0-weld, a window hub of ≤ L positive
+spine elements is an order-2 hub, and unordered pair counting
+injects into it.  Meanwhile `r2_unbounded_of_hfail` blows pair
+wealth up cofinally and `drain_wealth_addresses` pins wealthy
+targets along one nested 2-adic address tower.  The street
+branch is now a segregation regime: an infinite uniformly poor
+lane threading forever between 2-adically clustered wealth. -/
+theorem endgame_poor_street {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : StreamSurvives A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
+      RepFree A N₀ P ∧ c ≤ P.card) ∨
+    (∃ L, ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ v ∈ V, N₀ ≤ v ∧
+        ((Finset.range (v + 1)).filter
+          (fun z => z ∈ A ∧ (v - z) ∈ A)).card ≤ 2 * L) := by
+  rcases endgame_final_fork h0 hcov hanchor hfail with h | h
+  · exact Or.inl h
+  · right
+    obtain ⟨x, hxm, hxA, L, hL⟩ := h
+    refine ⟨L, fun K => ?_⟩
+    obtain ⟨V, hVc, hVm⟩ := hL K
+    refine ⟨V, hVc, fun v hv => ?_⟩
+    obtain ⟨hvN, s, J, hJ2, hJL, hhub⟩ := hVm v hv
+    exact ⟨hvN, street_is_sidon_poor h0
+      (fun t => (hxA t).2) hJL hhub⟩
+
 end Erdos881

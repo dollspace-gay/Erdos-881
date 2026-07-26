@@ -1,3 +1,24 @@
+# THE POOR STREET — SIXTH SUMMIT (2026-07-26)
+
+`endgame_poor_street` (Endgame.lean, standard axioms): every
+counterexample funds free sets of every size (root rank >= omega)
+OR runs a street of targets with pair wealth UNIFORMLY CAPPED at
+2L.  Chain: 0-weld (`pairHub_of_repHub`) + unordered pair
+counting (`pair_hub_pair_count`) + high/low reflection
+(`repHub_caps_pair_wealth`) + window positivity
+(`street_is_sidon_poor`) composed onto the final fork's street
+horn.
+
+The collision program: `r2_unbounded_of_hfail` makes wealth
+cofinal; `drain_wealth_addresses` pins wealthy targets along one
+nested 2-adic tower (w = e_k + 2^k y, e nested, every depth,
+every bound).  The street branch is now a segregation regime —
+an infinite uniformly poor lane dodging 2-adically clustered
+wealth forever.  The remaining kill shape for this branch: force
+one wealthy address onto the street (odd-step streets hit every
+2-adic cylinder; the enemy must run 2-power-aligned steps to
+dodge — a dichotomy to mine next).
+
 # THE REPAIR MINE + THREADING IMPOSSIBILITY (2026-07-26)
 
 Three drain exports: `cross_blowup_infinite` (both carriers
