@@ -1,3 +1,78 @@
+# NEW BLOCK (2026-07-25/26 night, post-fork): THE COLLAPSED TRICHOTOMY
+
+**Summit moved twice.**  `endgame_global_trichotomy` then
+`endgame_collapsed_trichotomy` (Endgame.lean) — the first final
+statements of the campaign with NO anchor hypothesis: only
+0 ∈ A, PairCovers, hfail.
+
+**Arc 14 — the welded fork.**  The 0-weld (`pairHub_of_repHub`):
+over a basis containing 0, any order-3 hub avoiding 0 is an
+order-2 hub.  The final fork's street windows are positive spine
+material, so the entire street is an ORDER-2 object
+(`the_final_fork_welded`): street targets have ≤ L unordered
+pairs (`pair_hub_pair_count` — injective donation into the hub),
+pair supply pinned to located windows (`street_target_desert`).
+
+**Arc 15 — the street trichotomy.**  Generic splitting
+(`street_position_dichotomy`) + double pigeonhole
+(`bounded_street_fixed_hall`) + door extraction
+(`fixed_hall_popular_shift`): `the_street_trichotomy` — rank ω,
+or a FIXED finite hall with one door element h carrying
+unboundedly many targets onto h + A, or a MARCHING street
+(windows beyond every spine position, each below its target,
+`street_window_below_target`).
+
+**Arc 16 — the four lanes.**  The 0-pair placement law
+(`street_target_notMem_or_window`): a pair-hubbed target is out
+of A or INSIDE its own window.  `marching_member_dichotomy`
+splits the marching street into GHOSTS (targets forced out of A
+— forced non-membership, the informative shape) and MEMBERS
+(targets = window values, middle pairs banned:
+`street_member_small_part`).  Summit: `the_four_lanes` — rank,
+door, ghost street, member street.
+
+**Arc 17 — the member street verdict.**  Members expel
+differences (`member_difference_out`).  Span dichotomy + stream
+extraction (`difference_blind_stream`, Nat.rec supply):
+`member_street_verdict` — bounded spans give an infinite
+ascending stream y ⊆ A with EVERY pairwise difference OUT of A;
+unbounded spans tear the spine (unbounded consecutive gaps).
+Lane 4 ends in a Sidon-flavoured stream or a torn spine.
+
+**Arc 18 — THE GLOBAL TRICHOTOMY** (`the_global_trichotomy`,
+exported `endgame_global_trichotomy`).  anchor_dichotomy resolved
+INSIDE the statement: every counterexample world is
+I. ANCHORED (four lanes), II. ROUTED (member g₀ routes all
+noncentral doubles: hubs {c, g₀} at 2c), III. CENTRAL (pure
+central doubles + total pinning + automatic minimality +
+midpoint-freeness).  The fused export the audit addendum asked
+for.
+
+**Arc 19 — THE ROUTED COLLAPSE** (`the_routed_collapse`,
+summit `the_collapsed_trichotomy` / `endgame_collapsed_trichotomy`).
+The middle room is DEFEATED as a separate case: cofinal
+g₀-routes give the explicit ladder 2c − g₀ ∈ A plus full anchor
+supply at every g ≠ g₀ (ALMOST-ANCHORED — one hole in the anchor
+wall, at a known member); dying routes give the ENTIRE central
+suite beyond an explicit threshold (CENTRAL-TAIL, subsuming pure
+central at threshold 1).  Two live geometries remain:
+anchored/almost-anchored fork frontier, and Salem–Spencer
+central tail.
+
+**Open next.**  (1) Plug the g₀-hole: can the anchored chain
+(private-stream kill onward) run on anchors-off-g₀ + the ladder?
+The g₀-singleton-hub case is the fixed-guardian configuration —
+the old rotating-guardian endgame killed positive fixed
+guardians; if that kill composes, ALMOST-ANCHORED = ANCHORED and
+the trichotomy becomes a DICHOTOMY.  (2) Difference-blind stream
+vs completeness pinch: the stream is sum-free-relative-to-A;
+completeness is the missing half.  (3) Central-tail order-3
+residue: the two channels (parity escape + midpoint gap).
+
+All verified, zero sorries, standard axioms.
+
+---
+
 # Erdős 881 (k=2) — Campaign State
 _Last full update: 2026-07-25 17:40.  Lean entry point for the
 final statements: `Erdos881/Endgame.lean` (the portrait, the
