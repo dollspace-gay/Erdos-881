@@ -18309,4 +18309,125 @@ theorem stall_forces_wealth {A : Set ℕ} {N₀ n : ℕ} {B : Finset ℕ}
     Nat.mul_le_mul_left _ h3
   omega
 
+open Classical in
+/-- **Wealthy targets are symmetric.**  The representation set
+of M is invariant under the reflection x ↦ M − x: a wealthy
+target is a large reflection-invariant subset of the basis. -/
+theorem wealthy_set_symm {A : Set ℕ} {M x : ℕ}
+    (hx : x ∈ (Finset.range (M + 1)).filter
+      (fun z => z ∈ A ∧ (M - z) ∈ A)) :
+    (M - x) ∈ (Finset.range (M + 1)).filter
+      (fun z => z ∈ A ∧ (M - z) ∈ A) := by
+  rw [Finset.mem_filter, Finset.mem_range] at hx
+  obtain ⟨hxM, hxA, hMxA⟩ := hx
+  rw [Finset.mem_filter, Finset.mem_range]
+  refine ⟨by omega, hMxA, ?_⟩
+  have he : M - (M - x) = x := by omega
+  rw [he]
+  exact hxA
+
+open Classical in
+/-- **TWO REFLECTIONS MAKE A TRANSLATION.**  The heart of the
+chain.  If a basis element x is symmetric for two different
+wealthy targets M₁ ≤ M₂ — that is, M₁ − x and M₂ − x both lie
+in A — then the single element M₁ − x witnesses the fixed
+difference d = M₂ − M₁:
+
+    (M₁ − x)  and  (M₁ − x) + d   both lie in A.
+
+Reflecting about M₁/2 and then about M₂/2 is translation by d.
+So the common part of two wealthy targets' symmetry sets
+injects into the set of d-PAIRS of the basis: shared symmetry
+is fixed-difference structure, one pair per shared element. -/
+theorem two_symmetries_translate {A : Set ℕ} {M₁ M₂ : ℕ}
+    (h12 : M₁ ≤ M₂) :
+    (((Finset.range (M₁ + 1)).filter
+        (fun z => z ∈ A ∧ (M₁ - z) ∈ A)) ∩
+      ((Finset.range (M₂ + 1)).filter
+        (fun z => z ∈ A ∧ (M₂ - z) ∈ A))).card ≤
+    ((Finset.range (M₁ + 1)).filter
+      (fun y => y ∈ A ∧ (y + (M₂ - M₁)) ∈ A)).card := by
+  apply Finset.card_le_card_of_injOn (fun x => M₁ - x)
+  · intro x hx
+    simp only [Finset.mem_coe, Finset.mem_inter, Finset.mem_filter,
+      Finset.mem_range] at hx
+    obtain ⟨⟨hx1, hxA, hM1x⟩, ⟨hx2, -, hM2x⟩⟩ := hx
+    simp only [Finset.mem_coe, Finset.mem_filter, Finset.mem_range]
+    refine ⟨by omega, hM1x, ?_⟩
+    have he : M₁ - x + (M₂ - M₁) = M₂ - x := by omega
+    rw [he]
+    exact hM2x
+  · intro a ha b hb hab
+    simp only [Finset.mem_coe, Finset.mem_inter, Finset.mem_filter,
+      Finset.mem_range] at ha hb
+    have hab' : M₁ - a = M₁ - b := hab
+    omega
+
+open Classical in
+/-- **Overlap forcing** (Cauchy–Schwarz double count).  For any
+family of subsets of one universe, total pairwise-intersection
+mass dominates the square of the total size:
+
+  (Σ_{M ∈ T} |S M|)² ≤ |U| · Σ_{M₁ ∈ T} Σ_{M₂ ∈ T} |S M₁ ∩ S M₂|.
+
+Many large sets in a small universe must overlap heavily —
+the combinatorial engine that turns a family of wealthy
+targets into a single popular difference. -/
+theorem sum_pairwise_inter_lower {U T : Finset ℕ}
+    {S : ℕ → Finset ℕ} (hsub : ∀ M ∈ T, S M ⊆ U) :
+    (∑ M ∈ T, (S M).card) ^ 2 ≤
+    U.card * ∑ M₁ ∈ T, ∑ M₂ ∈ T, ((S M₁) ∩ (S M₂)).card := by
+  have hrestrict : ∀ M ∈ T, S M = U.filter (fun x => x ∈ S M) := by
+    intro M hM
+    ext x
+    simp only [Finset.mem_filter]
+    exact ⟨fun h => ⟨hsub M hM h, h⟩, fun h => h.2⟩
+  have h1 : ∑ M ∈ T, (S M).card =
+      ∑ x ∈ U, (T.filter (fun M => x ∈ S M)).card := by
+    calc ∑ M ∈ T, (S M).card
+        = ∑ M ∈ T, ∑ x ∈ U, (if x ∈ S M then 1 else 0) := by
+          refine Finset.sum_congr rfl (fun M hM => ?_)
+          conv_lhs => rw [hrestrict M hM]
+          rw [Finset.card_filter]
+      _ = ∑ x ∈ U, ∑ M ∈ T, (if x ∈ S M then 1 else 0) :=
+          Finset.sum_comm
+      _ = ∑ x ∈ U, (T.filter (fun M => x ∈ S M)).card := by
+          refine Finset.sum_congr rfl (fun x _ => ?_)
+          rw [Finset.card_filter]
+  have hinter : ∀ M₁ ∈ T, ∀ M₂ ∈ T,
+      ((S M₁) ∩ (S M₂)).card =
+      ∑ x ∈ U, (if x ∈ S M₁ then 1 else 0) *
+        (if x ∈ S M₂ then 1 else 0) := by
+    intro M₁ h₁ M₂ _
+    have he : (S M₁) ∩ (S M₂) =
+        U.filter (fun x => x ∈ S M₁ ∧ x ∈ S M₂) := by
+      ext x
+      simp only [Finset.mem_inter, Finset.mem_filter]
+      exact ⟨fun h => ⟨hsub M₁ h₁ h.1, h⟩, fun h => h.2⟩
+    rw [he, Finset.card_filter]
+    refine Finset.sum_congr rfl (fun x _ => ?_)
+    by_cases hx1 : x ∈ S M₁ <;> by_cases hx2 : x ∈ S M₂ <;>
+      simp [hx1, hx2]
+  have h2 : ∑ M₁ ∈ T, ∑ M₂ ∈ T, ((S M₁) ∩ (S M₂)).card =
+      ∑ x ∈ U, ((T.filter (fun M => x ∈ S M)).card) ^ 2 := by
+    calc ∑ M₁ ∈ T, ∑ M₂ ∈ T, ((S M₁) ∩ (S M₂)).card
+        = ∑ M₁ ∈ T, ∑ M₂ ∈ T, ∑ x ∈ U,
+            (if x ∈ S M₁ then 1 else 0) *
+            (if x ∈ S M₂ then 1 else 0) := by
+          refine Finset.sum_congr rfl (fun M₁ h₁ => ?_)
+          exact Finset.sum_congr rfl (fun M₂ h₂ => hinter M₁ h₁ M₂ h₂)
+      _ = ∑ M₁ ∈ T, ∑ x ∈ U, ∑ M₂ ∈ T,
+            (if x ∈ S M₁ then 1 else 0) *
+            (if x ∈ S M₂ then 1 else 0) := by
+          refine Finset.sum_congr rfl (fun M₁ _ => ?_)
+          exact Finset.sum_comm
+      _ = ∑ x ∈ U, ∑ M₁ ∈ T, ∑ M₂ ∈ T,
+            (if x ∈ S M₁ then 1 else 0) *
+            (if x ∈ S M₂ then 1 else 0) := Finset.sum_comm
+      _ = ∑ x ∈ U, ((T.filter (fun M => x ∈ S M)).card) ^ 2 := by
+          refine Finset.sum_congr rfl (fun x _ => ?_)
+          rw [← Finset.sum_mul_sum, Finset.card_filter, sq]
+  rw [h1, h2]
+  exact sq_sum_le_card_mul_sum_sq
+
 end Erdos881
