@@ -3884,4 +3884,35 @@ theorem three_disjoint_pair_hubs_singleton {A : Set ℕ} {m b : ℕ}
   rw [hpij] at h1
   exact (Finset.disjoint_left.1 (hdisj i j hij)) h1 h2
 
+/-- **THE STRATIFIED TAX PORTRAIT.**  Everything the shell arc
+proves, in one object: disjoint nonempty free shells with
+hierarchical total guardianship, and a single threshold beyond
+which every element clear of shells 0..k — shell-(k+1) members
+and eternal survivors alike — pays a guardian duty at height at
+least N₀ + k/3 over one of those shells.  Since each shell is
+free, `absolute_leaf_personal_target` applies to every such duty:
+the payer appears in every shell-avoiding representation of its
+duty target, which therefore also sits at or above the payer. -/
+theorem stratified_tax_portrait {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ Q : ℕ → Finset ℕ, ∃ X,
+      (∀ k, (Q k).Nonempty) ∧
+      (∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h) ∧
+      (∀ k, RepFree A N₀ (Q k)) ∧
+      (∀ j k, j < k → Disjoint (Q j) (Q k)) ∧
+      (∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
+        ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) ∧
+      (∀ k, ∀ b ∈ A, X ≤ b → 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
+        ∃ j, j ≤ k ∧ ∃ m, N₀ + k / 3 ≤ m ∧ N₀ ≤ m ∧
+          IsRepHub A m (insert b (Q j))) := by
+  obtain ⟨Q, hne, hmem, hfree, hdisj, hguard⟩ :=
+    absolute_shell_stratification h0 hcov hanchor hfail
+  obtain ⟨X, hX⟩ :=
+    depth_tax_of_hfail h0 hcov hanchor hfail hdisj hguard
+  exact ⟨Q, X, hne, hmem, hfree, hdisj, hguard, hX⟩
+
 end Erdos881
