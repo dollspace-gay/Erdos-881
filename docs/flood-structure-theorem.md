@@ -628,3 +628,22 @@ tail concentrating in ≤ 3 classes.  Every modulus interrogates
 the enemy: the grid is now a fully formal, infinitely-indexed
 family of spread-or-align dichotomies, the alignment battle
 line's machine-checked opening book.
+
+## 25. THE SPINE STALL STREAM (22:46; the night's last theorem)
+
+**`four_disjoint_full_hubs_impossible`** (the pure cap) +
+**`spine_stall_stream`**: consecutive shifts of the canonical
+spine force pairwise disjoint stall WINDOWS — finite blocks of
+consecutive lineage values, each a full hub at its own target —
+and the pure cap caps target-sharing at three windows, so the
+stream carries unboundedly many DISTINCT stall targets.
+
+This is the racing-proof battlefield in one object: the
+questions (spine shifts) are canonical, built from the enemy's
+own shells; the answers (window-hubs and their targets) are
+forced, cofinal, and street-structured; and every cap, tax, and
+sharer law applies to the ledger.  Threshold racing cannot touch
+it, because the schedule is indexed by the enemy's own material
+rather than by any static family.  The final assault — next
+session — plays this game: window-hub targets versus the caps
+versus the windows' own free interiors.
