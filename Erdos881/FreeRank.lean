@@ -16752,4 +16752,40 @@ theorem fan_poverty_of_failing {A D : Set ℕ} {n : ℕ}
   exact hfailn ![x, y, n - x - y] hmem
     (by simpa [Fin.sum_univ_three] using hsum0)
 
+open Classical in
+/-- **THE REFLECTED EMBEDDING COUNT.**  A failing target's fan
+injects into the poor set: below any target failing at order 3
+against D, the number of (2·|D∩[0,n]|+2)-poor targets is at
+least the number of non-deleted basis elements — the map
+x ↦ n − x embeds A ∖ D into the poor population.  A
+counterexample's poor targets must be AS NUMEROUS AS ITS OWN
+ELEMENTS below every failing target: in fat worlds (positive-
+density bases) failure forces positive-density near-Sidon
+target populations; in thin worlds this is the √n-scale
+bookkeeping.  The fat-regime program's counting core. -/
+theorem poor_count_of_failing {A D : Set ℕ} {n : ℕ}
+    (hfailn : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D) →
+      ∑ i, v i ≠ n) :
+    ((Finset.range (n + 1)).filter
+      (fun x => x ∈ A ∧ x ∉ D)).card ≤
+    ((Finset.range (n + 1)).filter (fun m =>
+      ((Finset.range (m + 1)).filter
+        (fun y => y ∈ A ∧ (m - y) ∈ A)).card ≤
+      2 * ((Finset.range (n + 1)).filter
+        (fun d => d ∈ D)).card + 2)).card := by
+  apply Finset.card_le_card_of_injOn (fun x => n - x)
+  · intro x hx
+    simp only [Finset.mem_coe, Finset.mem_filter,
+      Finset.mem_range] at hx
+    obtain ⟨hxn, hxA, hxD⟩ := hx
+    simp only [Finset.mem_coe, Finset.mem_filter,
+      Finset.mem_range]
+    exact ⟨by omega,
+      fan_poverty_of_failing hfailn x hxA hxD (by omega)⟩
+  · intro a ha b hb hab
+    simp only [Finset.mem_coe, Finset.mem_filter,
+      Finset.mem_range] at ha hb
+    have hab' : n - a = n - b := hab
+    omega
+
 end Erdos881
