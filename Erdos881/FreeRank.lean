@@ -17038,4 +17038,31 @@ theorem the_master_law {A : Set ℕ} {N₀ : ℕ}
       ∑ i, v i ≠ n := fun v hv hs => hnrep v ⟨hv, hs⟩
   exact ⟨n, hn, density_law_of_failing hfailn⟩
 
+open Classical in
+/-- **Failing targets avoid wealthy translates.**  If w is
+wealthy beyond the deletion cap and w ≤ n, then a failing
+target n cannot reach w through surviving basis material:
+n − w is outside A or inside D.  The failing stream must
+thread the complement of w + (A ∖ D) for EVERY sufficiently
+wealthy w simultaneously — each wealthy target erects one more
+corridor wall. -/
+theorem failing_avoids_wealthy_translates {A D : Set ℕ}
+    {n w : ℕ}
+    (hfailn : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D) →
+      ∑ i, v i ≠ n)
+    (hwn : w ≤ n)
+    (hwealthy : 2 * ((Finset.range (n + 1)).filter
+        (fun d => d ∈ D)).card + 2 <
+      ((Finset.range (w + 1)).filter
+        (fun y => y ∈ A ∧ (w - y) ∈ A)).card) :
+    n - w ∉ A ∨ n - w ∈ D := by
+  by_contra hcon
+  push Not at hcon
+  obtain ⟨hxA, hxD⟩ := hcon
+  have hcap := fan_poverty_of_failing hfailn (n - w) hxA hxD
+    (by omega)
+  have he : n - (n - w) = w := by omega
+  rw [he] at hcap
+  omega
+
 end Erdos881
