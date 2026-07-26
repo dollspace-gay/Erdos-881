@@ -10966,4 +10966,41 @@ theorem pair_translate_law {A : Set ℕ} {N₀ h₀ h₁ : ℕ}
     | 2 => exact ⟨hz, hzB⟩
   · simpa [Fin.sum_univ_three] using hsum
 
+/-- **The slice law.**  A deletion's failure, in hub
+vocabulary: cofinally many targets n have EVERY slice n − z
+(z a survivor) pair-hubbed by the deleted set — every two-part
+completion of every survivor is caught by B.  The lab shows
+this demand is unmeetable in hall worlds; formally it is the
+door to counting pressure: one deleted set must simultaneously
+hub every slice family of every failure target. -/
+theorem deletion_failure_slices {A B : Set ℕ} {N₀ : ℕ}
+    (hfail : ∀ B' ⊆ A, B'.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B') 3)
+    (hBA : B ⊆ A) (hBinf : B.Infinite) :
+    ∀ N, ∃ n, N ≤ n ∧ ∀ z ∈ A, z ∉ B →
+      ∀ a ∈ A, ∀ b ∈ A, a + b + z = n →
+        a ∈ B ∨ b ∈ B := by
+  intro N
+  have hnb := hfail B hBA hBinf
+  rw [IsExactTupleAsymptoticBasis] at hnb
+  push_neg at hnb
+  obtain ⟨n, hn, hnofail⟩ := hnb N
+  refine ⟨n, hn, ?_⟩
+  intro z hz hzB a ha b hb hab
+  by_contra hno
+  push_neg at hno
+  have hmemb : ∀ i : Fin 3, (![a, b, z] : Fin 3 → ℕ) i ∈
+      A \ B := by
+    intro i
+    match i with
+    | 0 => exact ⟨ha, hno.1⟩
+    | 1 => exact ⟨hb, hno.2⟩
+    | 2 => exact ⟨hz, hzB⟩
+  have hsum3 : (∑ i, (![a, b, z] : Fin 3 → ℕ) i) = n := by
+    rw [Fin.sum_univ_three]
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one,
+      Matrix.head_cons, Matrix.cons_val_two, Matrix.tail_cons]
+    omega
+  exact hnofail ![a, b, z] hmemb hsum3
+
 end Erdos881
