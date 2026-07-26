@@ -3587,4 +3587,76 @@ theorem eternal_survivor_dichotomy {A : Set ℕ} {N₀ : ℕ}
       rw [hval i] at h1
       exact h1
 
+/-- **The singleton-owner corner dies.**  Survivors of a disjoint
+shell family cannot take the bounded-target branch of
+`eternal_survivor_dichotomy` at unbounded sizes: an owner sits
+inside every representation of its target, so its target is at or
+above its own scale, and infinitely many owners would form a
+cofinal private-triple stream — which the rotating-guardian kill
+converts into a surviving deletion, refuting hfail.  Hence beyond
+one threshold EVERY eternal survivor has unbounded personal
+targets across the shells. -/
+theorem shell_survivors_unbounded_targets {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {Q : ℕ → Finset ℕ}
+    (hdisj : ∀ j k, j < k → Disjoint (Q j) (Q k))
+    (hguard : ∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
+      ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) :
+    ∃ X, ∀ b ∈ A, X ≤ b → 0 < b → (∀ j, b ∉ Q j) →
+      ∀ Y, ∃ k, ∃ m, Y ≤ m ∧ N₀ ≤ m ∧
+        IsRepHub A m (insert b (Q k)) := by
+  classical
+  by_contra hno
+  push_neg at hno
+  have hstream : ∀ N, ∃ a m, N ≤ m ∧ 0 < a ∧
+      IsPrivateTriple A a m := by
+    intro N
+    obtain ⟨b, hbA, hbX, hbpos, hbQ, Y, hY⟩ := hno N
+    have hg : ∀ k, ∃ m, N₀ ≤ m ∧
+        IsRepHub A m (insert b (Q k)) := by
+      intro k
+      exact hguard k b hbA hbpos (fun j _ => hbQ j)
+    have hnotleft : ¬(∀ Y', ∃ k, ∃ m, Y' ≤ m ∧ N₀ ≤ m ∧
+        IsRepHub A m (insert b (Q k))) := by
+      intro hall
+      obtain ⟨k, m, h1, h2, h3⟩ := hall Y
+      exact hY k m h1 h2 h3
+    rcases eternal_survivor_dichotomy hdisj hbQ hg with hL | hR
+    · exact absurd hL hnotleft
+    obtain ⟨m, hm, hhub⟩ := hR
+    obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
+    have h3 : x + y + 0 = m := by omega
+    have hbm : b ≤ m := by
+      rcases hhub x hx y hy 0 h0 h3 with h | h | h
+      · have hxb : x = b := by simpa using h
+        omega
+      · have hyb : y = b := by simpa using h
+        omega
+      · have h0b : (0 : ℕ) = b := by simpa using h
+        omega
+    refine ⟨b, m, by omega, hbpos,
+      ⟨x, hx, y, hy, 0, h0, h3⟩, ?_⟩
+    intro x' hx' y' hy' z' hz' hsum
+    rcases hhub x' hx' y' hy' z' hz' hsum with h | h | h
+    · exact Or.inl (by simpa using h)
+    · exact Or.inr (Or.inl (by simpa using h))
+    · exact Or.inr (Or.inr (by simpa using h))
+  obtain ⟨B, hBA, hBinf, hsurv⟩ :=
+    surviving_deletion_of_cofinal_privateStream h0 hcov hstream
+      hanchor
+  refine hfail B hBA hBinf ⟨N₀, ?_⟩
+  intro n hn
+  obtain ⟨x, hx, y, hy, z, hz, hxB, hyB, hzB, hsum⟩ := hsurv n hn
+  refine ⟨![x, y, z], ?_, by
+    simpa [Fin.sum_univ_three] using hsum⟩
+  intro i
+  match i with
+  | 0 => exact ⟨hx, hxB⟩
+  | 1 => exact ⟨hy, hyB⟩
+  | 2 => exact ⟨hz, hzB⟩
+
 end Erdos881
