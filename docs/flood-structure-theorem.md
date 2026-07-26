@@ -597,3 +597,21 @@ branch now reads: total order-2 pinning + automatic minimality +
 progression-freeness; its order-3 residue (nonzero triples of
 doubles: diagonals, or pairs with odd sum or non-basis midpoint)
 is the entire remaining freedom of that world.
+
+## 24. THE CANONICAL GRID (22:31)
+
+**`canonical_deletion_obligation`.**  Every infinite slice of
+the basis (any property P) generates an enemy-independent
+obligation: cofinal targets whose every representation uses a
+P-element.  The residue grid {r mod m} is the canonical opening
+book.
+
+**`grid_cap_three_classes`.**  At most three residue obligations
+per modulus fire at one target (a rep has three parts, each with
+one residue).  Since late coverage forces A's residue support
+mod m to have width ≳ √m, the enemy's schedule against the
+m-row must spread over ≳ √m/3 distinct cofinal target streams —
+for every m simultaneously.  The obligation grid is the
+alignment battle line weaponized: the enemy's failure schedule
+against all congruence slices is itself a congruence-indexed
+object of unbounded width.
