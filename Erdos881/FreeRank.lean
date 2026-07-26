@@ -13204,4 +13204,85 @@ theorem oo_blowup_descends {A : Set ℕ}
   have h1 := Finset.card_le_card hsub
   omega
 
+open Classical in
+/-- **The mixed channel descends.**  Mixed-parity pairs of an
+odd target drain into CROSS-pairs between the two half-worlds
+at the half target (v−1)/2: each mixed pair, from either side,
+lands on a cross-pair, at most two-to-one.  The tree's third
+and last counting edge. -/
+theorem mixed_channel_descends {A : Set ℕ} {v : ℕ}
+    (hv : v % 2 = 1) :
+    ((Finset.range (v + 1)).filter
+      (fun x => x ∈ A ∧ (v - x) ∈ A ∧
+        x % 2 ≠ (v - x) % 2)).card ≤
+    2 * ((Finset.range ((v - 1) / 2 + 1)).filter
+      (fun y => 2 * y ∈ A ∧
+        2 * ((v - 1) / 2 - y) + 1 ∈ A)).card := by
+  set M := (Finset.range (v + 1)).filter
+    (fun x => x ∈ A ∧ (v - x) ∈ A ∧
+      x % 2 ≠ (v - x) % 2) with hM
+  set X := (Finset.range ((v - 1) / 2 + 1)).filter
+    (fun y => 2 * y ∈ A ∧
+      2 * ((v - 1) / 2 - y) + 1 ∈ A) with hX
+  set Fe := M.filter (fun x => x % 2 = 0) with hFe
+  set Fo := M.filter (fun x => x % 2 = 1) with hFo
+  have hsplit : M.card ≤ Fe.card + Fo.card := by
+    have hsub : M ⊆ Fe ∪ Fo := by
+      intro x hx
+      rcases Nat.mod_two_eq_zero_or_one x with h | h
+      · exact Finset.mem_union_left _
+          (Finset.mem_filter.2 ⟨hx, h⟩)
+      · exact Finset.mem_union_right _
+          (Finset.mem_filter.2 ⟨hx, h⟩)
+    have h1 := Finset.card_le_card hsub
+    have h2 := Finset.card_union_le Fe Fo
+    omega
+  have hFeX : Fe.card ≤ X.card := by
+    apply Finset.card_le_card_of_injOn (fun x => x / 2)
+    · intro x hx
+      simp only [hFe, hM, Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range] at hx
+      obtain ⟨⟨hxr, hxA, hxpA, hxm⟩, hxe⟩ := hx
+      simp only [hX, Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range]
+      refine ⟨by omega, ?_, ?_⟩
+      · have h1 : 2 * (x / 2) = x := by omega
+        rw [h1]
+        exact hxA
+      · have h1 : 2 * ((v - 1) / 2 - x / 2) + 1 = v - x := by
+          omega
+        rw [h1]
+        exact hxpA
+    · intro a ha b hb hab
+      simp only [hFe, hM, Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range] at ha hb
+      obtain ⟨⟨_, _, _, _⟩, hae⟩ := ha
+      obtain ⟨⟨_, _, _, _⟩, hbe⟩ := hb
+      have hab' : a / 2 = b / 2 := hab
+      omega
+  have hFoX : Fo.card ≤ X.card := by
+    apply Finset.card_le_card_of_injOn (fun x => (v - x) / 2)
+    · intro x hx
+      simp only [hFo, hM, Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range] at hx
+      obtain ⟨⟨hxr, hxA, hxpA, hxm⟩, hxo⟩ := hx
+      simp only [hX, Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range]
+      refine ⟨by omega, ?_, ?_⟩
+      · have h1 : 2 * ((v - x) / 2) = v - x := by omega
+        rw [h1]
+        exact hxpA
+      · have h1 : 2 * ((v - 1) / 2 - (v - x) / 2) + 1 = x := by
+          omega
+        rw [h1]
+        exact hxA
+    · intro a ha b hb hab
+      simp only [hFo, hM, Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range] at ha hb
+      obtain ⟨⟨har, _, _, _⟩, hao⟩ := ha
+      obtain ⟨⟨hbr, _, _, _⟩, hbo⟩ := hb
+      have hab' : (v - a) / 2 = (v - b) / 2 := hab
+      omega
+  omega
+
 end Erdos881
