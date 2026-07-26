@@ -11345,4 +11345,94 @@ theorem pair_flood_ghost_or_center {A : Set ℕ} {N₀ : ℕ}
       have h2 : m ≤ P.sup id := Finset.le_sup (f := id) h1
       omega
 
+open Classical in
+/-- **THE PAIR-FLOOD FUNNEL.**  The block's closing summit:
+every counterexample world funnels, through its own pair flood,
+into one of three cofinal configurations over ONE fixed free
+0-less envelope P:
+
+I. P-CENTRED MEMBERS — cofinally many basis elements whose
+   every positive pair routes through P;
+II. ROTATOR GHOSTS — cofinally many b ∈ A with a partner
+   w ∈ A whose sum b + w is OUT of A and pair-hubbed by
+   P ∪ {b} — the canonical core-and-rotator configuration;
+III. THE PURE HALL — cofinally many ghosts pair-hubbed by the
+   FIXED P alone: the door configuration, unconditional.
+
+The door is not a lane; it is one of three faces of the flood.
+The remaining core of Erdős 881 is the defeat of these three
+faces and the rank-ω room. -/
+theorem the_pair_flood_funnel {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ P : Finset ℕ, RepFree A N₀ P ∧ (0 : ℕ) ∉ P ∧
+    ((∀ N, ∃ b, N ≤ b ∧ b ∈ A ∧ ∀ x ∈ A, ∀ y ∈ A,
+        0 < x → 0 < y → x + y = b → x ∈ P ∨ y ∈ P) ∨
+     (∀ N, ∃ b w, N ≤ b ∧ b ∈ A ∧ w ∈ A ∧ b + w ∉ A ∧
+        IsPairHub A (b + w) (insert b P)) ∨
+     (∀ N, ∃ m, N ≤ m ∧ m ∉ A ∧ IsPairHub A m P)) := by
+  obtain ⟨P, hPfree, h0P, X, hguard⟩ :=
+    pair_flood_ghost_or_center h0 hcov hfail
+  refine ⟨P, hPfree, h0P, ?_⟩
+  by_cases hI : ∀ N, ∃ b, N ≤ b ∧ b ∈ A ∧ ∀ x ∈ A, ∀ y ∈ A,
+      0 < x → 0 < y → x + y = b → x ∈ P ∨ y ∈ P
+  · exact Or.inl hI
+  · obtain ⟨NA, hNA⟩ := not_forall.mp hI
+    by_cases hII : ∀ N, ∃ b w, N ≤ b ∧ b ∈ A ∧ w ∈ A ∧
+        b + w ∉ A ∧ IsPairHub A (b + w) (insert b P)
+    · exact Or.inr (Or.inl hII)
+    · obtain ⟨NB, hNB⟩ := not_forall.mp hII
+      refine Or.inr (Or.inr ?_)
+      intro N
+      obtain ⟨b, hbA, hbig⟩ := pairCovers_unbounded hcov
+        (X + NA + NB + N + 1)
+      obtain ⟨m, hmN, hbm, hpair, hcount, hplace⟩ :=
+        hguard b hbA (by omega)
+      rcases hplace with hcen | hghost
+      · exfalso
+        apply hNA
+        refine ⟨b, by omega, hbA, ?_⟩
+        intro x hx y hy hx0 hy0 hxy
+        have hxb : x ≠ b := by omega
+        have hyb : y ≠ b := by omega
+        rcases hpair x hx y hy (by omega) with h | h
+        · rcases Finset.mem_insert.1 h with h' | h'
+          · exact absurd h' hxb
+          · exact Or.inl h'
+        · rcases Finset.mem_insert.1 h with h' | h'
+          · exact absurd h' hyb
+          · exact Or.inr h'
+      · by_cases hbpart : m - b ∈ A
+        · exfalso
+          apply hNB
+          refine ⟨b, m - b, by omega, hbA, hbpart, ?_, ?_⟩
+          · have h1 : b + (m - b) = m := by omega
+            rw [h1]
+            exact hghost
+          · have h1 : b + (m - b) = m := by omega
+            rw [h1]
+            exact hpair
+        · refine ⟨m, by omega, hghost, ?_⟩
+          intro x hx y hy hxy
+          have hxm : x ≠ b := by
+            intro h
+            subst h
+            have h1 : y = m - x := by omega
+            rw [h1] at hy
+            exact hbpart hy
+          have hym : y ≠ b := by
+            intro h
+            subst h
+            have h1 : x = m - y := by omega
+            rw [h1] at hx
+            exact hbpart hx
+          rcases hpair x hx y hy hxy with h | h
+          · rcases Finset.mem_insert.1 h with h' | h'
+            · exact absurd h' hxm
+            · exact Or.inl h'
+          · rcases Finset.mem_insert.1 h with h' | h'
+            · exact absurd h' hym
+            · exact Or.inr h'
+
 end Erdos881
