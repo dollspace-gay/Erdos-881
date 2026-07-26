@@ -7907,4 +7907,102 @@ theorem repFree_iff_forall_not_hub {A : Set ℕ} {N₀ : ℕ}
     obtain ⟨x, hx, y, hy, z, hz, hsum, hxP, hyP, hzP⟩ := h1
     exact ⟨x, hx, y, hy, z, hz, hsum, hxP, hyP, hzP⟩
 
+/-- **WIDTH OR RANK** (the fork on the game board).  Take the
+MINIMAL stall window at every shift of the spine; by the exact
+duality its proper prefixes are free.  Either the minimal
+widths are unbounded — handing the constructor cross-shell free
+sets of every size, hence root rank ≥ ω — or one width bound L
+serves every shift: at every position of the spine a window of
+between 2 and L consecutive lineage values is a full hub.  The
+enemy must fund infinite rank or defend with uniformly narrow,
+uniformly fragile, cofinally distinct window-hubs against its
+own canonical material.  The night's closing theorem. -/
+theorem stall_width_or_rank {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
+      w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    (∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
+      RepFree A N₀ P ∧ c ≤ P.card) ∨
+    (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
+      ∃ L, ∀ s : ℕ, ∃ J m, 2 ≤ J ∧ J ≤ L ∧ N₀ ≤ m ∧
+        IsRepHub A m ((Finset.range J).image
+          (fun j => x (s + j)))) := by
+  classical
+  obtain ⟨Q, σ, x, hxmono, hxmem, hQfree, hQmem, hstall⟩ :=
+    spine_stalls_hereditarily h0 hcov hanchor hfail
+  have hxA : ∀ t, x t ∈ A ∧ 0 < x t :=
+    fun t => hQmem _ _ (hxmem t)
+  set Pred : ℕ → ℕ → Prop := fun s J => ∃ m, N₀ ≤ m ∧
+    IsRepHub A m ((Finset.range J).image (fun j => x (s + j)))
+    with hPred
+  have hne : ∀ s, ∃ J, Pred s J := by
+    intro s
+    obtain ⟨J, m, hm, hhub⟩ := hstall (fun j => s + j)
+      (fun a b hab => by
+        show s + a < s + b
+        omega)
+    exact ⟨J, m, hm, hhub⟩
+  have hJdef : ∀ s, Pred s (Nat.find (hne s)) :=
+    fun s => Nat.find_spec (hne s)
+  have hJmin : ∀ s J', J' < Nat.find (hne s) → ¬Pred s J' :=
+    fun s J' h => Nat.find_min (hne s) h
+  -- minimal windows have width ≥ 2
+  have hJ2 : ∀ s, 2 ≤ Nat.find (hne s) := by
+    intro s
+    by_contra hlt
+    push_neg at hlt
+    interval_cases h : (Nat.find (hne s))
+    · obtain ⟨m, hm, hhub⟩ := hJdef s
+      rw [h] at hhub
+      obtain ⟨u, hu, v, hv, huv⟩ := hcov m hm
+      have h3 : u + v + 0 = m := by omega
+      rcases hhub u hu v hv 0 h0 h3 with hh | hh | hh <;>
+        simp at hh
+    · obtain ⟨m, hm, hhub⟩ := hJdef s
+      rw [h] at hhub
+      have hW1 : ((Finset.range 1).image
+          (fun j => x (s + j))) = {x s} := by
+        rw [Finset.range_one, Finset.image_singleton]
+        simp
+      rw [hW1] at hhub
+      exact stall_window_not_in_shell (hQfree (σ s))
+        (Finset.singleton_subset_iff.2 (by
+          simpa using hxmem s)) hm hhub
+  by_cases hbnd : ∃ L, ∀ s, Nat.find (hne s) ≤ L
+  · right
+    obtain ⟨L, hL⟩ := hbnd
+    refine ⟨x, hxmono, hxA, L, fun s => ?_⟩
+    obtain ⟨m, hm, hhub⟩ := hJdef s
+    exact ⟨Nat.find (hne s), m, hJ2 s, hL s, hm, hhub⟩
+  · left
+    push_neg at hbnd
+    intro c
+    obtain ⟨s, hs⟩ := hbnd (c + 1)
+    -- the prefix of length c + 1 is a proper prefix: free
+    have hfree' : RepFree A N₀ ((Finset.range (c + 1)).image
+        (fun j => x (s + j))) := by
+      rw [repFree_iff_forall_not_hub]
+      intro m hm hhub
+      exact hJmin s (c + 1) (by omega) ⟨m, hm, hhub⟩
+    refine ⟨(Finset.range (c + 1)).image (fun j => x (s + j)),
+      ?_, hfree', ?_⟩
+    · intro h hh
+      rw [Finset.mem_image] at hh
+      obtain ⟨j, _, hj⟩ := hh
+      rw [← hj]
+      exact hxA _
+    · have hcard : ((Finset.range (c + 1)).image
+          (fun j => x (s + j))).card = c + 1 := by
+        rw [Finset.card_image_of_injOn]
+        · exact Finset.card_range _
+        · intro a _ b _ hab
+          by_contra hne'
+          rcases Nat.lt_or_ge a b with hl | hl
+          · exact absurd hab (ne_of_lt (hxmono (by omega)))
+          · exact absurd hab.symm
+              (ne_of_lt (hxmono (by omega)))
+      omega
+
 end Erdos881
