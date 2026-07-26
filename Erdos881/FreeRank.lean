@@ -12693,4 +12693,32 @@ theorem free_disjoint_stream {A : Set ℕ} {N₀ : ℕ}
     rw [h1]
     exact (Finset.disjoint_of_subset_right h3 h2).symm
 
+/-- **Generic Higman chaining.**  ANY sequence of finsets has an
+infinite subsequence forming a sorted-list Higman chain — no
+hypotheses at all.  The Nash-Williams door, detached from the
+stratification: the rank room's own disjoint stream can now
+walk through it. -/
+theorem finset_stream_higman (Q : ℕ → Finset ℕ) :
+    ∃ σ : ℕ ↪o ℕ, ∀ m n, m ≤ n →
+      List.SublistForall₂ (· ≤ ·)
+        ((Q (σ m)).sort (· ≤ ·)) ((Q (σ n)).sort (· ≤ ·)) := by
+  classical
+  haveI hwqo : WellQuasiOrderedLE ℕ :=
+    wellQuasiOrderedLE_iff_wellFoundedLT.mpr inferInstance
+  have hpwo : (Set.univ : Set ℕ).PartiallyWellOrderedOn
+      (· ≤ ·) :=
+    Set.isPWO_of_wellQuasiOrderedLE _
+  haveI hrefl : IsRefl (List ℕ)
+      (List.SublistForall₂ ((· ≤ ·) : ℕ → ℕ → Prop)) :=
+    ⟨fun l => Std.Refl.refl l⟩
+  haveI hpre : IsPreorder (List ℕ)
+      (List.SublistForall₂ ((· ≤ ·) : ℕ → ℕ → Prop)) := ⟨⟩
+  have hlists :=
+    Set.PartiallyWellOrderedOn.partiallyWellOrderedOn_sublistForall₂
+      (· ≤ ·) hpwo
+  obtain ⟨σ, hσ⟩ := hlists.exists_monotone_subseq
+    (f := fun k => (Q k).sort (· ≤ ·))
+    (fun k x _ => Set.mem_univ x)
+  exact ⟨σ, hσ⟩
+
 end Erdos881
