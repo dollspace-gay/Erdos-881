@@ -10667,4 +10667,221 @@ theorem ap3_deletion_engine {A : Set ℕ} {N₀ c : ℕ}
         hdownB j, hcB, hxB, by omega⟩
     · exact ⟨x, hx, y, hy, 0, h0, hxB, hyB, h0B, by omega⟩
 
+/-- **THE GOOD HORN DIES BY WALKING.**  If every large basis
+element keeps at least one good translate among two fixed
+positive basis elements h₀ ≠ h₁, a surviving deletion exists —
+full stop.  The good-translate walk climbs forever in
+{h₀, h₁}-steps; either some colour repeats consecutively at
+cofinally many heights — giving cofinal fixed-difference AP3s
+and the midpoint engine — or the walk eventually alternates
+perfectly, every two steps sum to h₀ + h₁, and deleting every
+fifth walk element survives by two-step shifting.  The door
+world's entire good horn (|H| = 2) is contradictory with hfail,
+with no reference to mirrors, ghosts, or partners. -/
+theorem good_two_walk_killed {A : Set ℕ} {N₀ h₀ h₁ Z₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hh₀A : h₀ ∈ A) (hh₁A : h₁ ∈ A)
+    (hh₀ : 0 < h₀) (hh₁ : 0 < h₁)
+    (hgood : ∀ z, Z₀ ≤ z → z ∈ A →
+      z + h₀ ∈ A ∨ z + h₁ ∈ A) :
+    ∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n := by
+  classical
+  -- a large starting element
+  obtain ⟨p, hpA, q, hqA, hpq⟩ :=
+    hcov (2 * (Z₀ + h₀ + h₁ + N₀ + 1)) (by omega)
+  have hbig : ∃ a, a ∈ A ∧ Z₀ + h₀ + h₁ + N₀ + 1 ≤ a := by
+    rcases le_total p q with h | h
+    · exact ⟨q, hqA, by omega⟩
+    · exact ⟨p, hpA, by omega⟩
+  obtain ⟨a, haA, haZ⟩ := hbig
+  -- the walk
+  have hstepex : ∀ w, ∃ w', Z₀ ≤ w → w ∈ A →
+      (w' = w + h₀ ∨ w' = w + h₁) ∧ w' ∈ A := by
+    intro w
+    by_cases hw : Z₀ ≤ w ∧ w ∈ A
+    · rcases hgood w hw.1 hw.2 with h | h
+      · exact ⟨w + h₀, fun _ _ => ⟨Or.inl rfl, h⟩⟩
+      · exact ⟨w + h₁, fun _ _ => ⟨Or.inr rfl, h⟩⟩
+    · exact ⟨0, fun h1 h2 => absurd ⟨h1, h2⟩ hw⟩
+  choose st hst using hstepex
+  set z : ℕ → ℕ := fun t =>
+    Nat.rec a (fun _ p => st p) t with hzdef
+  have hz0 : z 0 = a := rfl
+  have hzs : ∀ t, z (t + 1) = st (z t) := fun _ => rfl
+  have hzfacts : ∀ t, z t ∈ A ∧ Z₀ ≤ z t := by
+    intro t
+    induction t with
+    | zero => exact ⟨haA, by omega⟩
+    | succ t ih =>
+      obtain ⟨h1, h2⟩ := hst (z t) ih.2 ih.1
+      rw [hzs]
+      constructor
+      · exact h2
+      · rcases h1 with h | h <;> omega
+  have hstep : ∀ t, z (t + 1) = z t + h₀ ∨
+      z (t + 1) = z t + h₁ := by
+    intro t
+    have := (hst (z t) (hzfacts t).2 (hzfacts t).1).1
+    rw [hzs]
+    exact this
+  have hzmono : StrictMono z := by
+    apply strictMono_nat_of_lt_succ
+    intro t
+    rcases hstep t with h | h <;> omega
+  have hzunb : ∀ V, ∃ t, V ≤ z t := by
+    intro V
+    have hlin : ∀ t, z 0 + t ≤ z t := by
+      intro t
+      induction t with
+      | zero => omega
+      | succ t ih =>
+        rcases hstep t with h | h <;> omega
+    exact ⟨V, by have := hlin V; omega⟩
+  -- the equal-adjacent dichotomy
+  by_cases hEA : ∀ V, ∃ t, V ≤ z t ∧
+      ((z (t + 1) = z t + h₀ ∧ z (t + 2) = z t + 2 * h₀) ∨
+       (z (t + 1) = z t + h₁ ∧ z (t + 2) = z t + 2 * h₁))
+  · -- cofinal doubles: pigeonhole the colour, feed the AP3 engine
+    by_cases hEA0 : ∀ V, ∃ t, V ≤ z t ∧
+        z (t + 1) = z t + h₀ ∧ z (t + 2) = z t + 2 * h₀
+    · refine ap3_deletion_engine h0 hcov hh₀A hh₀ ?_
+      intro V
+      obtain ⟨t, hVt, h1, h2⟩ := hEA0 V
+      refine ⟨z (t + 1), by omega, ?_, (hzfacts (t + 1)).1, ?_⟩
+      · have h3 : z (t + 1) - h₀ = z t := by omega
+        rw [h3]
+        exact (hzfacts t).1
+      · have h3 : z (t + 1) + h₀ = z (t + 2) := by omega
+        rw [h3]
+        exact (hzfacts (t + 2)).1
+    · obtain ⟨V₀, hV₀⟩ := not_forall.mp hEA0
+      refine ap3_deletion_engine h0 hcov hh₁A hh₁ ?_
+      intro V
+      obtain ⟨t, hVt, hdb⟩ := hEA (max V V₀)
+      have hVt' : V ≤ z t := le_trans (le_max_left _ _) hVt
+      have hV₀t : V₀ ≤ z t := le_trans (le_max_right _ _) hVt
+      rcases hdb with ⟨h1, h2⟩ | ⟨h1, h2⟩
+      · exact absurd ⟨t, hV₀t, h1, h2⟩ hV₀
+      · refine ⟨z (t + 1), by omega, ?_,
+          (hzfacts (t + 1)).1, ?_⟩
+        · have h3 : z (t + 1) - h₁ = z t := by omega
+          rw [h3]
+          exact (hzfacts t).1
+        · have h3 : z (t + 1) + h₁ = z (t + 2) := by omega
+          rw [h3]
+          exact (hzfacts (t + 2)).1
+  · -- eventual perfect alternation: two-step sums are constant
+    obtain ⟨V₁, hV₁⟩ := not_forall.mp hEA
+    obtain ⟨T₁, hT₁⟩ := hzunb V₁
+    have halt : ∀ t, T₁ ≤ t →
+        z (t + 2) = z t + h₀ + h₁ := by
+      intro t hTt
+      have hVz : V₁ ≤ z t :=
+        le_trans hT₁ (hzmono.monotone hTt)
+      have hnd : ¬((z (t + 1) = z t + h₀ ∧
+          z (t + 2) = z t + 2 * h₀) ∨
+          (z (t + 1) = z t + h₁ ∧
+          z (t + 2) = z t + 2 * h₁)) :=
+        fun hdb => hV₁ ⟨t, hVz, hdb⟩
+      have h2' := hstep (t + 1)
+      have he : t + 1 + 1 = t + 2 := by omega
+      rw [he] at h2'
+      rcases hstep t with h1 | h1 <;> rcases h2' with h2 | h2
+      · exact absurd (Or.inl ⟨h1, by omega⟩) hnd
+      · omega
+      · omega
+      · exact absurd (Or.inr ⟨h1, by omega⟩) hnd
+    -- delete every fifth walk element beyond T₁ + 2
+    set f : ℕ → ℕ := fun k => z (T₁ + 2 + 5 * k) with hf
+    have hfinj : Function.Injective f := by
+      intro i j hij
+      simp only [hf] at hij
+      have := hzmono.injective hij
+      omega
+    have hBsub : Set.range f ⊆ A := by
+      rintro w ⟨k, rfl⟩
+      exact (hzfacts _).1
+    have hidx : ∀ s r, z s ∈ Set.range f →
+        s = T₁ + 2 + 5 * r → z s ∈ Set.range f := fun _ _ h _ => h
+    have hnotB : ∀ s, (∀ r, s ≠ T₁ + 2 + 5 * r) →
+        z s ∉ Set.range f := by
+      intro s hs ⟨r, hr⟩
+      simp only [hf] at hr
+      exact hs r (hzmono.injective hr).symm
+    have hzlow : ∀ t, a ≤ z t := by
+      intro t
+      have h1 : z 0 ≤ z t := hzmono.monotone (Nat.zero_le t)
+      rw [hz0] at h1
+      exact h1
+    have h0B : (0 : ℕ) ∉ Set.range f := by
+      rintro ⟨r, hr⟩
+      simp only [hf] at hr
+      have h1 := hzlow (T₁ + 2 + 5 * r)
+      omega
+    have hsmallB : ∀ w, w ≤ h₀ + h₁ → w ∉ Set.range f := by
+      rintro w hw ⟨r, hr⟩
+      simp only [hf] at hr
+      have h1 := hzlow (T₁ + 2 + 5 * r)
+      omega
+    refine ⟨Set.range f, hBsub,
+      Set.infinite_range_of_injective hfinj, ?_⟩
+    intro n hn
+    obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hn
+    by_cases hxB : x ∈ Set.range f
+    · obtain ⟨i, hix⟩ := hxB
+      simp only [hf] at hix
+      by_cases hyB : y ∈ Set.range f
+      · obtain ⟨j, hjy⟩ := hyB
+        simp only [hf] at hjy
+        have hai := halt (T₁ + 5 * i) (by omega)
+        have haj := halt (T₁ + 2 + 5 * j) (by omega)
+        have hei : T₁ + 5 * i + 2 = T₁ + 2 + 5 * i := by omega
+        rw [hei] at hai
+        have hB1 : z (T₁ + 5 * i) ∉ Set.range f := by
+          apply hnotB
+          intro r
+          omega
+        have hB2 : z (T₁ + 2 + 5 * j + 2) ∉ Set.range f :=
+          hnotB (T₁ + 2 + 5 * j + 2) (by intro r; omega)
+        exact ⟨z (T₁ + 5 * i), (hzfacts (T₁ + 5 * i)).1,
+          z (T₁ + 2 + 5 * j + 2),
+          (hzfacts (T₁ + 2 + 5 * j + 2)).1, 0, h0,
+          hB1, hB2, h0B, by omega⟩
+      · have hst' := hstep (T₁ + 1 + 5 * i)
+        have hei : T₁ + 1 + 5 * i + 1 = T₁ + 2 + 5 * i := by
+          omega
+        rw [hei] at hst'
+        have hB1 : z (T₁ + 1 + 5 * i) ∉ Set.range f := by
+          apply hnotB
+          intro r
+          omega
+        rcases hst' with h1 | h1
+        · exact ⟨z (T₁ + 1 + 5 * i), (hzfacts _).1,
+            h₀, hh₀A, y, hy, hB1,
+            hsmallB h₀ (by omega), hyB, by omega⟩
+        · exact ⟨z (T₁ + 1 + 5 * i), (hzfacts _).1,
+            h₁, hh₁A, y, hy, hB1,
+            hsmallB h₁ (by omega), hyB, by omega⟩
+    · by_cases hyB : y ∈ Set.range f
+      · obtain ⟨j, hjy⟩ := hyB
+        simp only [hf] at hjy
+        have hst' := hstep (T₁ + 1 + 5 * j)
+        have hej : T₁ + 1 + 5 * j + 1 = T₁ + 2 + 5 * j := by
+          omega
+        rw [hej] at hst'
+        have hB1 : z (T₁ + 1 + 5 * j) ∉ Set.range f := by
+          apply hnotB
+          intro r
+          omega
+        rcases hst' with h1 | h1
+        · exact ⟨z (T₁ + 1 + 5 * j), (hzfacts _).1,
+            h₀, hh₀A, x, hx, hB1,
+            hsmallB h₀ (by omega), hxB, by omega⟩
+        · exact ⟨z (T₁ + 1 + 5 * j), (hzfacts _).1,
+            h₁, hh₁A, x, hx, hB1,
+            hsmallB h₁ (by omega), hxB, by omega⟩
+      · exact ⟨x, hx, y, hy, 0, h0, hxB, hyB, h0B, by omega⟩
+
 end Erdos881
