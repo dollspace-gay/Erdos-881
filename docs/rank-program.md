@@ -337,3 +337,18 @@ forbids in windows yet fragile streets provide cofinally.  The
 enemy's depth lives exactly in the window-invisible part of
 freeness — consistent with the adaptive conclusion: no finite
 probe sees the enemy.
+
+## GREEDY SELF-AVOIDANCE PROBE (21:25; probe_greedy_avoiding.py)
+
+Greedy (density-preserving, no Ramsey thinning) builds
+self-avoiding families with density 0.68 (Cantor) and 0.90
+(greedy-B₂) whose subset sums cover 97% of the window
+(381/392).  On every tested world the COMPLETE SELF-AVOIDING
+family — the sufficient condition of
+`survival_of_complete_avoiding` — exists essentially outright.
+The enemy cannot stop thin self-avoiding families (they don't
+hurt it); its entire defence must concentrate on preventing
+COMPLETENESS.  Program: formalize the greedy stall analysis at
+the semigroup level (the self-avoiding analogue of the absolute
+leaf) and characterize what blocking completeness costs the
+enemy per window.

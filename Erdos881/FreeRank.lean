@@ -6347,4 +6347,44 @@ theorem omega_avoidance_dichotomy {A : Set ℕ} {N₀ : ℕ}
     simp only [hcol, id_eq] at h1
     simpa using of_decide_eq_true h1
 
+/-- **Complete families are blocked** (enemy-side interface,
+contrapositive of the completeness reduction).  Under hfail,
+every infinite complete family T ⊆ A has, beyond every bound, a
+finite subset whose sum admits no representation avoiding T: the
+enemy must post a blocked subset-sum against every complete
+family, cofinally.  Its defence budget is measured in blocked
+subset-sums per family per window. -/
+theorem complete_families_blocked_of_hfail {A : Set ℕ}
+    {N₀ : ℕ}
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (T : Set ℕ) (hTA : T ⊆ A) (hTinf : T.Infinite) {N₂ : ℕ}
+    (hcomp : ∀ n, N₂ ≤ n → ∃ S : Finset ℕ,
+      (↑S : Set ℕ) ⊆ T ∧ S.sum id = n) :
+    ∀ N, ∃ S : Finset ℕ, (↑S : Set ℕ) ⊆ T ∧ N ≤ S.sum id ∧
+      ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = S.sum id →
+        x ∈ T ∨ y ∈ T ∨ z ∈ T := by
+  intro N
+  have hnb := hfail T hTA hTinf
+  rw [IsExactTupleAsymptoticBasis] at hnb
+  push_neg at hnb
+  obtain ⟨n, hn, hnofail⟩ := hnb (N + N₂)
+  obtain ⟨S, hST, hsum⟩ := hcomp n (by omega)
+  refine ⟨S, hST, by omega, ?_⟩
+  intro x hx y hy z hz hxyz
+  by_contra hno
+  push_neg at hno
+  have hmemb : ∀ i : Fin 3, (![x, y, z] : Fin 3 → ℕ) i ∈ A \ T := by
+    intro i
+    match i with
+    | 0 => exact ⟨hx, hno.1⟩
+    | 1 => exact ⟨hy, hno.2.1⟩
+    | 2 => exact ⟨hz, hno.2.2⟩
+  have hsum3 : (∑ i, (![x, y, z] : Fin 3 → ℕ) i) = n := by
+    rw [Fin.sum_univ_three]
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one,
+      Matrix.head_cons, Matrix.cons_val_two, Matrix.tail_cons]
+    omega
+  exact hnofail ![x, y, z] hmemb hsum3
+
 end Erdos881
