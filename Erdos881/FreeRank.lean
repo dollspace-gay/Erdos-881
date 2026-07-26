@@ -14102,4 +14102,81 @@ theorem drain_wealth_addresses {A : Set ℕ} {N₀ : ℕ}
       have h10 : 2 ^ k * a = 2 ^ k * b := by omega
       exact Nat.eq_of_mul_eq_mul_left hpow h10
 
+open Classical in
+/-- **THE WEALTH CAP.**  A 0-free order-3 hub caps its target's
+ENTIRE pair wealth: through the 0-weld the hub is an order-2 hub,
+the low-half pair count injects into it, and the high half
+reflects onto the low half.  r₂(w) ≤ 2·|H| for any rep hub H of
+positive material at w.  Contrapositive: a target with pair
+wealth above 2·|H| refutes every candidate hub of that width —
+wealth and hubs cannot share an address. -/
+theorem repHub_caps_pair_wealth {A : Set ℕ} {w : ℕ}
+    {H : Finset ℕ}
+    (h0 : 0 ∈ A) (h0H : 0 ∉ H) (hhub : IsRepHub A w H) :
+    ((Finset.range (w + 1)).filter
+      (fun x => x ∈ A ∧ (w - x) ∈ A)).card ≤ 2 * H.card := by
+  have hpair := pairHub_of_repHub h0 h0H hhub
+  have hlow := pair_hub_pair_count hpair
+  set Low := (Finset.range (w + 1)).filter
+    (fun a => a ∈ A ∧ (w - a) ∈ A ∧ 2 * a ≤ w) with hLow
+  set High := (Finset.range (w + 1)).filter
+    (fun a => a ∈ A ∧ (w - a) ∈ A ∧ w < 2 * a) with hHigh
+  have hsub : (Finset.range (w + 1)).filter
+      (fun x => x ∈ A ∧ (w - x) ∈ A) ⊆ Low ∪ High := by
+    intro a ha
+    rw [Finset.mem_filter, Finset.mem_range] at ha
+    obtain ⟨hav, haA, hwaA⟩ := ha
+    rcases Nat.lt_or_ge w (2 * a) with hc | hc
+    · exact Finset.mem_union_right _ (Finset.mem_filter.2
+        ⟨Finset.mem_range.2 hav, haA, hwaA, hc⟩)
+    · exact Finset.mem_union_left _ (Finset.mem_filter.2
+        ⟨Finset.mem_range.2 hav, haA, hwaA, hc⟩)
+  have hHL : High.card ≤ Low.card := by
+    apply Finset.card_le_card_of_injOn (fun a => w - a)
+    · intro a ha
+      simp only [hHigh, Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range] at ha
+      obtain ⟨hav, haA, hwaA, hc⟩ := ha
+      simp only [hLow, Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range]
+      have he : w - (w - a) = a := by omega
+      rw [he]
+      exact ⟨by omega, hwaA, haA, by omega⟩
+    · intro a ha b hb hab
+      simp only [hHigh, Finset.mem_coe, Finset.mem_filter,
+        Finset.mem_range] at ha hb
+      have hab' : w - a = w - b := hab
+      omega
+  have h1 := Finset.card_le_card hsub
+  have h2 := Finset.card_union_le Low High
+  omega
+
+open Classical in
+/-- **STREETS ARE SIDON-POOR.**  Every street target — hubbed by
+a window of ≤ L positive spine elements — has pair wealth at
+most 2L.  The street branch of the final fork is a uniformly
+poor lane: while `r2_unbounded_of_hfail` blows wealth up
+cofinally and `drain_wealth_addresses` pins it 2-adically, the
+enemy's street must dodge every wealthy address forever. -/
+theorem street_is_sidon_poor {A : Set ℕ} {L m s J : ℕ}
+    {x : ℕ → ℕ}
+    (h0 : 0 ∈ A) (hx : ∀ t, 0 < x t) (hJL : J ≤ L)
+    (hhub : IsRepHub A m
+      ((Finset.range J).image (fun j => x (s + j)))) :
+    ((Finset.range (m + 1)).filter
+      (fun z => z ∈ A ∧ (m - z) ∈ A)).card ≤ 2 * L := by
+  have h0H : 0 ∉ (Finset.range J).image
+      (fun j => x (s + j)) := by
+    rw [Finset.mem_image]
+    rintro ⟨j, hj, hxj⟩
+    have := hx (s + j)
+    omega
+  have hcap := repHub_caps_pair_wealth h0 h0H hhub
+  have hcard : ((Finset.range J).image
+      (fun j => x (s + j))).card ≤ L := by
+    refine le_trans Finset.card_image_le ?_
+    rw [Finset.card_range]
+    exact hJL
+  omega
+
 end Erdos881
