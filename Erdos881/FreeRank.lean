@@ -12221,4 +12221,95 @@ theorem half_world_lift_channel {A : Set ℕ} {ε N' : ℕ}
   refine ⟨ε + 2 * x', hx', ε + 2 * y', hy', ε + 2 * z', hz',
     hlift x' hxB, hlift y' hyB, hlift z' hzB, by omega⟩
 
+/-- **The off-channel lift.**  Opposite-parity targets ascend
+by fringe assistance: one off-parity fringe element plus a
+surviving half-world PAIR covers the other channel.  The
+descent's survival transfer is (2,3)-mixed: order-3 on the
+ε-channel, order-2 plus a fringe key on the rest. -/
+theorem half_world_lift_offchannel {A : Set ℕ} {ε N' : ℕ}
+    (hε : ε < 2) {B' : Set ℕ}
+    (hsurv2 : ∀ n', N' ≤ n' →
+      ∃ x' ∈ {x : ℕ | ε + 2 * x ∈ A},
+      ∃ y' ∈ {x : ℕ | ε + 2 * x ∈ A},
+        x' ∉ B' ∧ y' ∉ B' ∧ x' + y' = n')
+    {f : ℕ} (hf : f ∈ A) (hfpar : f % 2 ≠ ε) :
+    ∀ n, 2 * N' + f + 2 * ε ≤ n → n % 2 = f % 2 →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ {a : ℕ | ∃ b' ∈ B', a = ε + 2 * b'} ∧
+        y ∉ {a : ℕ | ∃ b' ∈ B', a = ε + 2 * b'} ∧
+        z ∉ {a : ℕ | ∃ b' ∈ B', a = ε + 2 * b'} ∧
+        x + y + z = n := by
+  intro n hn hch
+  obtain ⟨x', hx', y', hy', hxB, hyB, hsum⟩ :=
+    hsurv2 ((n - f - 2 * ε) / 2) (by omega)
+  have hlift : ∀ w', w' ∉ B' →
+      ε + 2 * w' ∉ {a : ℕ | ∃ b' ∈ B', a = ε + 2 * b'} := by
+    intro w' hw' ⟨b', hb', heq⟩
+    have h1 : w' = b' := by omega
+    exact hw' (h1 ▸ hb')
+  have hfB : f ∉ {a : ℕ | ∃ b' ∈ B', a = ε + 2 * b'} := by
+    intro ⟨b', hb', heq⟩
+    omega
+  refine ⟨f, hf, ε + 2 * x', hx', ε + 2 * y', hy',
+    hfB, hlift x' hxB, hlift y' hyB, by omega⟩
+
+/-- **THE DESCENT INVARIANT.**  In a single-parity world with
+one off-parity fringe key, hfail DESCENDS: every infinite
+half-world deletion fails at order 2 or at order 3.  The
+half-world inherits the (2,3)-mixed counterexample interface —
+the 2-adic recursion is formally armed. -/
+theorem descent_invariant {A : Set ℕ} {N₀ Y ε : ℕ}
+    (hε : ε < 2)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    {f : ℕ} (hf : f ∈ A) (hfpar : f % 2 ≠ ε) :
+    ∀ B' ⊆ {x : ℕ | ε + 2 * x ∈ A}, B'.Infinite →
+      ¬((∃ N2, ∀ n', N2 ≤ n' →
+          ∃ x' ∈ {x : ℕ | ε + 2 * x ∈ A},
+          ∃ y' ∈ {x : ℕ | ε + 2 * x ∈ A},
+            x' ∉ B' ∧ y' ∉ B' ∧ x' + y' = n') ∧
+        (∃ N3, ∀ n', N3 ≤ n' →
+          ∃ x' ∈ {x : ℕ | ε + 2 * x ∈ A},
+          ∃ y' ∈ {x : ℕ | ε + 2 * x ∈ A},
+          ∃ z' ∈ {x : ℕ | ε + 2 * x ∈ A},
+            x' ∉ B' ∧ y' ∉ B' ∧ z' ∉ B' ∧
+            x' + y' + z' = n')) := by
+  rintro B' hB'sub hB'inf ⟨⟨N2, hs2⟩, ⟨N3, hs3⟩⟩
+  set LB := {a : ℕ | ∃ b' ∈ B', a = ε + 2 * b'} with hLB
+  have hLBA : LB ⊆ A := by
+    rintro a ⟨b', hb', rfl⟩
+    exact hB'sub hb'
+  have hLBinf : LB.Infinite := by
+    have h1 : LB = (fun b => ε + 2 * b) '' B' := by
+      ext a
+      constructor
+      · rintro ⟨b', hb', rfl⟩
+        exact ⟨b', hb', rfl⟩
+      · rintro ⟨b', hb', rfl⟩
+        exact ⟨b', hb', rfl⟩
+    rw [h1]
+    exact hB'inf.image (fun a _ b _ h => by omega)
+  refine hfail LB hLBA hLBinf ⟨2 * (N2 + N3) + f + 3, ?_⟩
+  intro n hn
+  by_cases hch : n % 2 = 3 * ε % 2
+  · obtain ⟨x, hx, y, hy, z, hz, hxB, hyB, hzB, hsum⟩ :=
+      half_world_lift_channel hε hs3 n (by omega) hch
+    refine ⟨![x, y, z], ?_, ?_⟩
+    · intro i
+      match i with
+      | 0 => exact ⟨hx, hxB⟩
+      | 1 => exact ⟨hy, hyB⟩
+      | 2 => exact ⟨hz, hzB⟩
+    · simpa [Fin.sum_univ_three] using hsum
+  · obtain ⟨x, hx, y, hy, z, hz, hxB, hyB, hzB, hsum⟩ :=
+      half_world_lift_offchannel hε hs2 hf hfpar n
+        (by omega) (by omega)
+    refine ⟨![x, y, z], ?_, ?_⟩
+    · intro i
+      match i with
+      | 0 => exact ⟨hx, hxB⟩
+      | 1 => exact ⟨hy, hyB⟩
+      | 2 => exact ⟨hz, hzB⟩
+    · simpa [Fin.sum_univ_three] using hsum
+
 end Erdos881
