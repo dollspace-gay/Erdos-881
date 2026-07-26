@@ -700,4 +700,28 @@ theorem endgame_parity_fork {A : Set ℕ} {N₀ : ℕ}
       descent_invariant hε hfail hfA hfpar⟩
   · exact Or.inl hboth
 
+open Classical in
+/-- **THE ω-DRAIN** (re-export; the tree's global law).  Every
+counterexample owns an infinite path through the 2-adic tree of
+cross-systems — a sequence of half-world pairs, each a parity
+child of the last, starting from (A, A) — along which pair
+wealth persists at EVERY level.  The enemy's riches trace an
+infinite 2-adic address: the formal shadow of the Cantor
+cascade, extracted from the counterexample interface alone.
+Together with the parity fork (interface descent) and the
+covering splits, the hypothetical counterexample is a structure
+in permanent downward motion on the infinite binary tree. -/
+theorem endgame_omega_drain {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ S T : ℕ → Set ℕ, S 0 = A ∧ T 0 = A ∧
+      (∀ k, ∃ p q, p < 2 ∧ q < 2 ∧
+        S (k + 1) = {y | 2 * y + p ∈ S k} ∧
+        T (k + 1) = {y | 2 * y + q ∈ T k}) ∧
+      ∀ k C N, ∃ v, N ≤ v ∧ C ≤
+        ((Finset.range (v + 1)).filter
+          (fun x => x ∈ S k ∧ (v - x) ∈ T k)).card :=
+  the_omega_drain h0 hcov hfail
+
 end Erdos881
