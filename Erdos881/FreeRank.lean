@@ -8101,4 +8101,104 @@ theorem stall_width_or_rank_along {A : Set ℕ} {N₀ : ℕ}
               (ne_of_lt (hxmono (hτ (by omega))))
       omega
 
+/-- **The narrow branch's located street.**  Uniform width L
+gives disjoint windows at L-spaced shifts; the pure cap bounds
+target-sharing at three, so the narrow branch carries
+unboundedly many DISTINCT targets, each hubbed by a located
+window of 2..L consecutive spine values.  Unlike the V10
+supply, the hubs here are made of KNOWN material at KNOWN
+positions: the fork's narrow side is a fully located
+uniform-width street. -/
+theorem narrow_located_street {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    {x : ℕ → ℕ} {L : ℕ} (hxmono : StrictMono x)
+    (hnarrow : ∀ s : ℕ, ∃ J m, 2 ≤ J ∧ J ≤ L ∧ N₀ ≤ m ∧
+      IsRepHub A m ((Finset.range J).image
+        (fun j => x (s + j)))) :
+    ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧ ∀ v ∈ V, N₀ ≤ v ∧
+      ∃ s J, 2 ≤ J ∧ J ≤ L ∧
+        IsRepHub A v ((Finset.range J).image
+          (fun j => x (s + j))) := by
+  classical
+  intro K
+  choose Jf mf hJ2 hJL hmN hhub using hnarrow
+  set W : ℕ → Finset ℕ := fun i =>
+    (Finset.range (Jf (i * L))).image
+      (fun j => x (i * L + j)) with hW
+  have hL2 : 2 ≤ L := le_trans (hJ2 0) (hJL 0)
+  have hWdisj : ∀ i i', i ≠ i' → Disjoint (W i) (W i') := by
+    intro i i' hii
+    rw [Finset.disjoint_left]
+    intro a hai hai'
+    rw [hW] at hai hai'
+    simp only [Finset.mem_image, Finset.mem_range] at hai hai'
+    obtain ⟨j, hj, hja⟩ := hai
+    obtain ⟨j', hj', hja'⟩ := hai'
+    have hjL : j < L := lt_of_lt_of_le hj (hJL _)
+    have hj'L : j' < L := lt_of_lt_of_le hj' (hJL _)
+    have hne : i * L + j ≠ i' * L + j' := by
+      rcases Nat.lt_or_ge i i' with h | h
+      · have h1 : i * L + j < i' * L + j' := by
+          have h2 : (i + 1) * L ≤ i' * L :=
+            Nat.mul_le_mul_right _ (by omega)
+          have h3 : (i + 1) * L = i * L + L := by ring
+          omega
+        omega
+      · have h' : i' < i := by omega
+        have h1 : i' * L + j' < i * L + j := by
+          have h2 : (i' + 1) * L ≤ i * L :=
+            Nat.mul_le_mul_right _ (by omega)
+          have h3 : (i' + 1) * L = i' * L + L := by ring
+          omega
+        omega
+    exact hne (hxmono.injective (hja.trans hja'.symm))
+  have hfib : ∀ v ∈ (Finset.range (3 * K + 1)).image
+      (fun i => mf (i * L)),
+      ((Finset.range (3 * K + 1)).filter
+        (fun i => mf (i * L) = v)).card ≤ 3 := by
+    intro v hv
+    by_contra hbig
+    push_neg at hbig
+    obtain ⟨t4, ht4s, ht4c⟩ := Finset.exists_subset_card_eq
+      (show 4 ≤ _ from hbig)
+    let e := t4.orderIsoOfFin ht4c
+    have hemem : ∀ i : Fin 4, (e i : ℕ) ∈
+        (Finset.range (3 * K + 1)).filter
+          (fun i => mf (i * L) = v) := fun i => ht4s (e i).2
+    have hval : ∀ i : Fin 4, mf ((e i : ℕ) * L) = v := by
+      intro i
+      have h1 := hemem i
+      rw [Finset.mem_filter] at h1
+      exact h1.2
+    have hvm : N₀ ≤ v := by
+      have h1 := hmN ((e 0 : ℕ) * L)
+      rw [hval 0] at h1
+      exact h1
+    obtain ⟨u, hu, w, hw, huw⟩ := hcov v hvm
+    refine four_disjoint_full_hubs_impossible
+      (H := fun i => W (e i : ℕ)) ?_
+      ⟨u, hu, w, hw, 0, h0, by omega⟩ ?_
+    · intro i j hij
+      exact hWdisj _ _ (fun h => hij
+        (e.injective (Subtype.ext h)))
+    · intro i
+      have h1 := hhub ((e i : ℕ) * L)
+      rw [hval i] at h1
+      exact h1
+  have hcount := Finset.card_le_mul_card_image_of_maps_to
+    (f := fun i => mf (i * L))
+    (s := Finset.range (3 * K + 1))
+    (t := (Finset.range (3 * K + 1)).image
+      (fun i => mf (i * L)))
+    (fun i hi => Finset.mem_image_of_mem _ hi) 3 hfib
+  rw [Finset.card_range] at hcount
+  refine ⟨(Finset.range (3 * K + 1)).image
+    (fun i => mf (i * L)), by omega, ?_⟩
+  intro v hv
+  rw [Finset.mem_image] at hv
+  obtain ⟨i, _, hi⟩ := hv
+  refine ⟨hi ▸ hmN (i * L), i * L, Jf (i * L), hJ2 _, hJL _, ?_⟩
+  rw [← hi]
+  exact hhub (i * L)
+
 end Erdos881
