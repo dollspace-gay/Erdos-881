@@ -27,7 +27,7 @@ basis.  Method: contradiction-mining a hypothetical counterexample
 - Heredocs: Lean prime/∅ identifiers collide with `'''` and are not
   valid in `h∅`-style names; write files via python with `r"""`.
 - omega is beta-blind: `show`/ascribe before calling it.
-- `push_neg` output shapes vary; destructure what it actually gives.
+- `push Not` output shapes vary; destructure what it actually gives.
 
 ## Map
 
@@ -47,27 +47,19 @@ basis.  Method: contradiction-mining a hypothetical counterexample
   state block at top; dead routes listed there — do not revisit
   them.
 
-## Current frontier (2026-07-26, session close)
+## Current status (2026-07-27)
 
-TWENTY-FIVE SUMMITS in Endgame.lean.  The day's arc: forced
-mixing (Cantor endpoint DEAD), self-similar mixing worlds, the
-exclusion suite, the width law; then the unconditional layer —
-OSCILLATION (liminf r2 < ∞ by the sparse-spacing diagonal),
-canonical cores, drift fork, rigidity trichotomy, teams; the
-steering suite (vertex covers, the disjoint dodge); fan poverty
-→ reflected embedding → THE DENSITY LAW; the reduction:
-`endgame_service_breakdown` (881 ⟺ no world sustains total
-wealthy-service breakdown vs every deletion; one wealthy server
-saves a target); THE MASTER LAW; the Mathlib bridge (additive
-energy, PR arsenal reachable); cascade + telescope + closed
-two-scale + SPIKE CENSUS (α + W ≤ n + slack at failing scales).
-PROFILE VERDICT: the counting books are consistent (feasible
-to ~0.9 density) — counting is EXHAUSTED; POSITION is the
-frontier.  Read docs/positional-program.md (phase opener,
-targets + assets) and memory UPDATES 55–74.  Labs: 347/347
-survivals.  Do not retry: pure threading, naive bypass,
-infinitely-many-mixing-levels, further counting refinements.
-The user (Doll) steers via metaphors; read the code.
+SOLVED in Lean.  `threeAnchor_forbids_terminalPrivateWounds`
+closes the moving-prefix endgame by combining the terminal
+private-wound field, the eventual positive sum-free tail, and
+finiteness of every fixed positive-difference fiber.
+`exists_infiniteDeletion_threeBasis_of_pairCovers` proves the
+stronger zero-normalized statement for every eventual order-two
+pair-cover, and `erdos881` transports it to the unrestricted
+strongly minimal formulation.  Full build: 8302 jobs.  Axiom
+audit: only `propext`, `Classical.choice`, and `Quot.sound`;
+zero sorries.  The remaining work is exposition and independent
+statement/dependency review, not an open proof obligation.
 
 ## Build quirk (2026-07-25)
 
@@ -84,11 +76,8 @@ ledger → street dichotomy + four rooms → ladder mining →
 classical-minimality interface → Ramsey cascade → omega pinch.
 Search for `/-! ##` to navigate.
 
-## Maintenance notes (2026-07-25 night)
+## Maintenance notes (2026-07-26)
 
-- Mathlib now deprecates `push_neg` in favour of `push Not`
-  (~300 warnings repo-wide, harmless).  A one-line macro shim in
-  a root-most import would silence them; do it in a quiet session,
-  not mid-campaign.
+- All deprecated `push_neg` uses were migrated to `push Not`.
 - Remote: github.com/dollspace-gay/Erdos-881.  Sessions commit
   locally; pushing is the user's call.

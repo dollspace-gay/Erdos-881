@@ -32,7 +32,7 @@ theorem surviving_deletion_of_geometric_defectiveLevels
     (hlev : ∀ k, ∀ z ∈ A, z ≠ a → z < L k → L k - z ∈ A)
     (hmem : ∀ k, L k ∈ A)
     (hgrow : ∀ k, 2 * L k < L (k + 1))
-    (ha0 : 0 < a) (haL : a < L 0)
+    (_ha0 : 0 < a) (haL : a < L 0)
     (hc : c ∈ A) (hc0 : 0 < c) (hcL : c < L 0) (hca : c ≠ a)
     (hw : ∃ w ∈ A, ∃ w' ∈ A,
       w + w' = 2 * c ∧ w ≠ c ∧ w ≠ a ∧ w' ≠ a) :

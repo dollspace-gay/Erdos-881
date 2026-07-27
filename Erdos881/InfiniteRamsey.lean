@@ -115,7 +115,7 @@ theorem infinite_ramsey_pairs (c : ℕ → ℕ → Bool) :
       exact (hpoolstep k _ hmem2).2
   have htag : ∃ b : Bool, {k | t k = b}.Infinite := by
     by_contra hno
-    push_neg at hno
+    push Not at hno
     have h1 : {k | t k = true}.Finite := by
       simpa [Set.not_infinite] using hno true
     have h2 : {k | t k = false}.Finite := by
@@ -275,7 +275,7 @@ theorem infinite_ramsey_triples (c : ℕ → ℕ → ℕ → Bool) :
   -- pigeonhole the tags and extract
   have htag : ∃ b : Bool, {k | t k = b}.Infinite := by
     by_contra hno
-    push_neg at hno
+    push Not at hno
     have h1 : {k | t k = true}.Finite := by
       simpa [Set.not_infinite] using hno true
     have h2 : {k | t k = false}.Finite := by
@@ -436,7 +436,7 @@ theorem infinite_ramsey_quadruples (c : ℕ → ℕ → ℕ → ℕ → Bool) :
       exact hhomp _ _ _ _ α β γ hαβ hβγ
   have htag : ∃ b : Bool, {k | t k = b}.Infinite := by
     by_contra hno
-    push_neg at hno
+    push Not at hno
     have h1 : {k | t k = true}.Finite := by
       simpa [Set.not_infinite] using hno true
     have h2 : {k | t k = false}.Finite := by
@@ -486,7 +486,7 @@ theorem infinite_ramsey_singletons (c : (Fin 1 → ℕ) → Bool) :
   set e : ℕ → Bool := fun n => c (fun _ => n) with he
   have htag : ∃ bt : Bool, {n | e n = bt}.Infinite := by
     by_contra hno
-    push_neg at hno
+    push Not at hno
     have h1 : {n | e n = true}.Finite := by
       simpa [Set.not_infinite] using hno true
     have h2 : {n | e n = false}.Finite := by
@@ -650,7 +650,7 @@ theorem infinite_ramsey_tuples :
     -- pigeonhole the tags and extract
     have htag : ∃ b : Bool, {k | t k = b}.Infinite := by
       by_contra hno
-      push_neg at hno
+      push Not at hno
       have h1 : {k | t k = true}.Finite := by
         simpa [Set.not_infinite] using hno true
       have h2 : {k | t k = false}.Finite := by

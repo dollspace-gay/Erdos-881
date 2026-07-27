@@ -31981,7 +31981,7 @@ theorem HasInfiniteExternalBipartitePairDecompositionOutsideStream.has_infiniteE
   have hrange : (atom '' T).Infinite ∨
       (external '' T).Infinite := by
     by_contra hnot
-    push_neg at hnot
+    push Not at hnot
     have hsumFinite := Set.Finite.image2
       (fun a e : ℕ => a + e) hnot.1 hnot.2
     apply hT
@@ -43765,7 +43765,7 @@ theorem exists_coveredCell_of_coreSelectorCertificate_and_pairChoice
     have hchoice : ∀ i, ∃ x, x ∈ cell i ∧ x ∉ U₃ := by
       intro i
       by_contra hi
-      push_neg at hi
+      push Not at hi
       apply hnone
       exact ⟨i, hi⟩
     choose x hxCell hxNotU using hchoice

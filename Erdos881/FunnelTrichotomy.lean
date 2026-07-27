@@ -647,7 +647,7 @@ theorem zero_mirror_primitive {A : Set ℕ} {N₀ m p : ℕ}
     (hcov : PairCovers A N₀)
     (hm : IsPrivateTriple A 0 m)
     (hp : p ∈ A) (hp0 : 0 < p) (hpm : p + N₀ ≤ m)
-    (hprim : ¬ ∃ s ∈ A, ∃ t ∈ A, s + t = p ∧ 0 < s ∧ 0 < t) :
+    (_hprim : ¬ ∃ s ∈ A, ∃ t ∈ A, s + t = p ∧ 0 < s ∧ 0 < t) :
     (m - p ∈ A) ∧
     ¬ ∃ s ∈ A, ∃ t ∈ A, s + t = m - p ∧ 0 < s ∧ 0 < t := by
   obtain ⟨y, hy, z, hz, hyz⟩ := hcov (m - p) (by omega)

@@ -37,7 +37,7 @@ lemma isCantor_pow (k : ℕ) : IsCantor (3 ^ k) := by
     rw [h3]
     have h4 : k - i = (k - i - 1) + 1 := by omega
     rw [h4, pow_succ]
-    simp [Nat.mul_mod]
+    simp
   · subst h
     simp [Nat.div_self (pow3_pos i)]
   · have h3 : 3 ^ k < 3 ^ i := Nat.pow_lt_pow_right (by norm_num) h
@@ -191,7 +191,7 @@ theorem cantor_two_rep_rigid {a b k : ℕ} (ha : IsCantor a)
       rw [Nat.pow_div (Nat.le_of_lt hik) (by norm_num)]
     have h3 : k - i = (k - i - 1) + 1 := by omega
     rw [h2, h3, pow_succ] at h1
-    have h4 : 3 ^ (k - i - 1) * 3 % 3 = 0 := by simp [Nat.mul_mod]
+    have h4 : 3 ^ (k - i - 1) * 3 % 3 = 0 := by simp
     omega
   -- the digit at position k is 1, carried by exactly one summand
   have hk := isCantor_add_digit ha hb k
@@ -487,7 +487,7 @@ theorem cantor_doubles_destroyed (k : ℕ) :
       rw [h2, h3, pow_succ] at h1
       have h4 : 2 * (3 ^ (k - i - 1) * 3) % 3 = 0 := by
         rw [← Nat.mul_assoc]
-        simp [Nat.mul_mod]
+        simp
       omega
     · have hik' : k < i := by omega
       have h2 : 2 * 3 ^ k < 3 ^ i := by
@@ -642,7 +642,7 @@ lemma pow_digit (j i : ℕ) : 3 ^ j / 3 ^ i % 3 = if i = j then 1 else 0 := by
     rw [h3]
     have h4 : j - i = (j - i - 1) + 1 := by omega
     rw [h4, pow_succ]
-    simp [Nat.mul_mod]
+    simp
   · subst h
     rw [if_pos rfl, Nat.div_self (pow3_pos i)]
   · rw [if_neg (by omega),
@@ -977,7 +977,7 @@ theorem cantor_deletion_order_three (n : ℕ) (hn : 3 ^ 7 ≤ n) :
       obtain ⟨x, y, z, hx, hy, hz, hpx, hpy, hpz, hs⟩ :=
         cantor_carry_repair a ha3
       exact ⟨x, y, z, hx, hy, hz, hpx, hpy, hpz, by rw [ha]; exact hs⟩
-    · push_neg at hpure
+    · push Not at hpure
       exact ⟨n, 0, 0, hnc, isCantor_zero, isCantor_zero, hpure,
         not_pure_zero, not_pure_zero, by omega⟩
   · by_cases hp2 : ∃ b, n - layer n = 3 ^ b

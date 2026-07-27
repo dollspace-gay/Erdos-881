@@ -3,6 +3,7 @@ import Erdos881.FiniteBlocks
 import Erdos881.MovingTransversals
 import Erdos881.CertificateAmplification
 import Erdos881.AdditiveSupports
+import Erdos881.Normalization
 import Erdos881.ChoiceUnion
 import Erdos881.FiniteCoreCounterexamples
 import Erdos881.ConstructionAudit
@@ -49,3 +50,4 @@ import Erdos881.DisjointRepEngine
 import Erdos881.CantorSieve
 import Erdos881.InfiniteRamsey
 import Erdos881.FreeRank
+import Erdos881.Endgame

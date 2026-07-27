@@ -37,7 +37,7 @@ lemma digit_one_of_between {y m : ℕ} (h1 : 3 ^ m ≤ y)
     have hlo : 1 ≤ y / 3 ^ m := (Nat.one_le_div_iff hp).2 h1
     have hhi : y / 3 ^ m < 2 := by
       by_contra hge
-      push_neg at hge
+      push Not at hge
       have := Nat.div_mul_le_self y (3 ^ m)
       have h3 : 2 * 3 ^ m ≤ y / 3 ^ m * 3 ^ m :=
         Nat.mul_le_mul_right _ hge
@@ -108,7 +108,7 @@ theorem shifted_double_owns {h m : ℕ} (hh : IsCantor h)
     -- y is in the top half: it must carry the power
     have hyge : 3 ^ m ≤ y := by
       by_contra hsm
-      push_neg at hsm
+      push Not at hsm
       have := cantor_small_bound hyC hsm
       omega
     have hylt2 : y < 2 * 3 ^ m := by omega
@@ -144,7 +144,7 @@ theorem cantor_sieve_complete {v : ℕ} (hv : ¬IsCantor v) (hv1 : 1 ≤ v) :
   have hv2h : v ≤ 2 * h := le_two_layer v
   have hpos : 0 < h := by
     by_contra h0
-    push_neg at h0
+    push Not at h0
     omega
   set c := 2 * h - v with hcdef
   have hcC : IsCantor c := isCantor_layer_defect v

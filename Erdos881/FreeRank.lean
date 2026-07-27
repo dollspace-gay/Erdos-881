@@ -14,6 +14,10 @@ past every ordinal would refute the counterexample outright.
 -/
 
 import Erdos881.DisjointRepEngine
+import Erdos881.Normalization
+import Erdos881.BoundedPairFreeSet
+import Erdos881.InfiniteSunflower
+import Erdos881.FreeSetTripleRepairs
 
 namespace Erdos881
 
@@ -180,12 +184,12 @@ theorem freeNode_extension_iff {A : Set ℕ} {N₀ : ℕ} {P : Finset ℕ}
       intro hfree
       exact hnot ⟨hposins, hfree⟩
     rw [RepFree] at hnotfree
-    push_neg at hnotfree
+    push Not at hnotfree
     obtain ⟨m, hm, hall⟩ := hnotfree
     refine ⟨m, hm, ?_⟩
     intro x hx y hy z hz hsum
     by_contra hmiss
-    push_neg at hmiss
+    push Not at hmiss
     obtain ⟨hxm, hym, hzm⟩ := hmiss
     exact hzm (hall x hx y hy z hz hsum hxm hym)
   · rintro ⟨m, hm, hhub⟩ ⟨-, hfree⟩
@@ -248,7 +252,7 @@ theorem stalled_chain_bound {A : Set ℕ} {N₀ X : ℕ}
     obtain ⟨-, hQnode, b, hbA, hbpos, hbmax, hQeq⟩ := hstep i hiL
     refine ⟨b, hbA, hbpos, hbmax, hQeq, ?_⟩
     by_contra hbX
-    push_neg at hbX
+    push Not at hbX
     exact (hstall i (by omega)).2 b hbA hbpos hbX
       (hQeq ▸ hQnode.2)
   choose b hbA hbpos hbmax hbins hbX using hpick
@@ -358,7 +362,7 @@ theorem root_rank_dichotomy (A : Set ℕ) (N₀ : ℕ) :
   by_cases hub : ∀ n, ∃ P : Finset ℕ, FreeNode A N₀ P ∧ n ≤ P.card
   · exact Or.inl hub
   · right
-    push_neg at hub
+    push Not at hub
     obtain ⟨D, hD⟩ := hub
     refine ⟨D, fun S hSpos hScard => ?_⟩
     have hnotfree : ¬RepFree A N₀ S := by
@@ -366,12 +370,12 @@ theorem root_rank_dichotomy (A : Set ℕ) (N₀ : ℕ) :
       have := hD S ⟨hSpos, hfree⟩
       omega
     rw [RepFree] at hnotfree
-    push_neg at hnotfree
+    push Not at hnotfree
     obtain ⟨m, hm, hall⟩ := hnotfree
     refine ⟨m, hm, ?_⟩
     intro x hx y hy z hz hsum
     by_contra hmiss
-    push_neg at hmiss
+    push Not at hmiss
     obtain ⟨hxm, hym, hzm⟩ := hmiss
     exact hzm (hall x hx y hy z hz hsum hxm hym)
 
@@ -608,7 +612,7 @@ theorem pool_rank_pos {A : Set ℕ} {N₀ : ℕ}
   -- some pool singleton is free
   have hchild : ∃ b, b ∈ P₀ ∧ 0 < b ∧ RepFree A N₀ {b} := by
     by_contra hno
-    push_neg at hno
+    push Not at hno
     refine singleton_hubs_refuted h0 hcov hanchor hfail ?_
     intro N
     obtain ⟨b, hbP, hNb⟩ := hunb (max N 1)
@@ -618,12 +622,12 @@ theorem pool_rank_pos {A : Set ℕ} {N₀ : ℕ}
       · exact h
     have hnotfree := hno b hbP hbpos
     rw [RepFree] at hnotfree
-    push_neg at hnotfree
+    push Not at hnotfree
     obtain ⟨m, hm, hall⟩ := hnotfree
     have hhub : IsRepHub A m {b} := by
       intro x hx y hy z hz hsum
       by_contra hmiss
-      push_neg at hmiss
+      push Not at hmiss
       obtain ⟨hxm, hym, hzm⟩ := hmiss
       exact hzm (hall x hx y hy z hz hsum hxm hym)
     -- the target dominates the guardian, so targets are cofinal
@@ -730,7 +734,7 @@ theorem free_set_card_le_rank {A : Set ℕ} {N₀ : ℕ}
           (hwf.apply (pre i)).rank := lt_of_le_of_lt hih hlt
       have h2 : ((d + 1 : ℕ) : Ordinal.{0}) =
           Order.succ ((d : ℕ) : Ordinal.{0}) := by
-        rw [Nat.cast_succ, Ordinal.add_one_eq_succ]
+        rw [Nat.cast_succ, Order.succ_eq_add_one]
       rw [h2]
       exact Order.succ_le_of_lt h1
   have h0pre : pre 0 = ∅ := by
@@ -800,11 +804,11 @@ theorem repFree_iff_no_hub {A : Set ℕ} {N₀ : ℕ} {S : Finset ℕ} :
     · exact hzS h
   · intro hno m hm
     by_contra hall
-    push_neg at hall
+    push Not at hall
     refine hno ⟨m, hm, ?_⟩
     intro x hx y hy z hz hs
     by_contra hmiss
-    push_neg at hmiss
+    push Not at hmiss
     obtain ⟨h1, h2, h3⟩ := hmiss
     exact h3 (hall x hx y hy z hz hs h1 h2)
 
@@ -868,7 +872,7 @@ theorem escalation_rank_certificate {A : Set ℕ} {N₀ : ℕ}
     have hScard : S.card = 3 := by
       rw [hS, Finset.card_insert_of_notMem (by
           simp only [Finset.mem_insert, Finset.mem_singleton]
-          push_neg
+          push Not
           omega),
         Finset.card_insert_of_notMem (by
           simp only [Finset.mem_singleton]
@@ -1124,7 +1128,7 @@ theorem perfect_world_rank {A : Set ℕ} {N₀ : ℕ}
   apply le_antisymm
   · -- rank ≤ d: a free (d+1)-set from the pool would contradict hhub
     by_contra hgt
-    push_neg at hgt
+    push Not at hgt
     have hge : ((d + 1 : ℕ) : Ordinal.{0}) ≤
         ((poolFreeStep_wf h0 hcov hfail (Set.range e)).apply
           ∅).rank := by
@@ -1133,7 +1137,7 @@ theorem perfect_world_rank {A : Set ℕ} {N₀ : ℕ}
             ∅).rank := hgt
       have h2 : ((d + 1 : ℕ) : Ordinal.{0}) =
           Order.succ ((d : ℕ) : Ordinal.{0}) := by
-        rw [Nat.cast_succ, Ordinal.add_one_eq_succ]
+        rw [Nat.cast_succ, Order.succ_eq_add_one]
       rw [h2]
       exact Order.succ_le_of_lt h1
     obtain ⟨Q, hQnode, hQpool, hQcard⟩ := rank_ge_imp_free_set
@@ -1265,7 +1269,7 @@ theorem perfect_world_deletion_hubs_card {A B : Set ℕ} {N₀ : ℕ}
   obtain ⟨n, hn, H, hhub, hmin, hcard2, hHB⟩ := hteams (max N N₀)
   refine ⟨n, le_trans (le_max_left _ _) hn, H, hhub, hmin, ?_, hHB⟩
   by_contra hlt
-  push_neg at hlt
+  push Not at hlt
   have hHmem : ∀ h ∈ H, ∃ i, e i = h := by
     intro h hh
     obtain ⟨j, hj⟩ := hBsub (hHB h hh)
@@ -1333,11 +1337,11 @@ theorem pairFree_iff_no_pairHub {A : Set ℕ} {N₀ : ℕ}
     · exact hyS h
   · intro hno m hm
     by_contra hall
-    push_neg at hall
+    push Not at hall
     refine hno ⟨m, hm, ?_⟩
     intro x hx y hy hs
     by_contra hmiss
-    push_neg at hmiss
+    push Not at hmiss
     obtain ⟨h1, h2⟩ := hmiss
     exact h2 (hall x hx y hy hs h1)
 
@@ -1455,7 +1459,7 @@ theorem stream_pair_classification (A : Set ℕ) (N₀ : ℕ)
       (∀ h ∈ S, ∃ i, e i = h) ∧ S.card = n ∧ PairFree A N₀ S
   · exact Or.inl hwide
   · right
-    push_neg at hwide
+    push Not at hwide
     obtain ⟨n, hn⟩ := hwide
     rcases Nat.lt_or_ge n 2 with hn2 | hn2
     · -- n ≤ 1: every singleton is non-free (directly, or via ∅)
@@ -1508,7 +1512,7 @@ theorem stream_rep_classification (A : Set ℕ) (N₀ : ℕ)
       (∀ h ∈ S, ∃ i, e i = h) ∧ S.card = n ∧ RepFree A N₀ S
   · exact Or.inl hwide
   · right
-    push_neg at hwide
+    push Not at hwide
     obtain ⟨n, hn⟩ := hwide
     rcases Nat.lt_or_ge n 2 with hn2 | hn2
     · refine ⟨id, fun i j hij => hij, Or.inl ?_⟩
@@ -1683,12 +1687,12 @@ theorem stalled_pool_rank_bound {A : Set ℕ} {N₀ X : ℕ}
   classical
   set W := ((Finset.range X).filter (· ∈ A)).card with hW
   by_contra hgt
-  push_neg at hgt
+  push Not at hgt
   have hge : ((W + 1 : ℕ) : Ordinal.{0}) ≤
       ((poolFreeStep_wf h0 hcov hfail P₀).apply P).rank := by
     have h2 : ((W + 1 : ℕ) : Ordinal.{0}) =
         Order.succ ((W : ℕ) : Ordinal.{0}) := by
-      rw [Nat.cast_succ, Ordinal.add_one_eq_succ]
+      rw [Nat.cast_succ, Order.succ_eq_add_one]
     rw [h2]
     exact Order.succ_le_of_lt hgt
   obtain ⟨Q, hQnode, hQpool, hPQ, hQcard⟩ :=
@@ -1698,7 +1702,7 @@ theorem stalled_pool_rank_bound {A : Set ℕ} {N₀ X : ℕ}
   have hfresh : ∀ q ∈ Q, q ∉ P → q < X := by
     intro q hq hqP
     by_contra hqX
-    push_neg at hqX
+    push Not at hqX
     have hqA : q ∈ A := (hQnode.1 q hq).1
     have hqpos : 0 < q := (hQnode.1 q hq).2
     refine hst.2 q hqA hqpos hqX ?_
@@ -1808,7 +1812,7 @@ theorem crossing_edge_exists {A : Set ℕ} {N₀ X : ℕ}
         ≤ (((Finset.range X).filter (· ∈ A)).card :
             Ordinal.{0}) :=
           stalled_pool_rank_bound h0 hcov hfail hst hPpool
-      _ < Ordinal.omega0 := Ordinal.nat_lt_omega0 _
+      _ < Ordinal.omega0 := Ordinal.natCast_lt_omega0 _
   have hex : ∃ i, i ≤ n ∧ (hwf.apply (pre i)).rank <
       Ordinal.omega0 := ⟨n, le_refl n, hlast⟩
   have h0pre : pre 0 = ∅ := by
@@ -1824,7 +1828,7 @@ theorem crossing_edge_exists {A : Set ℕ} {N₀ X : ℕ}
       have := hi₀fin
       rw [h, h0pre] at this
       exact absurd hroot (by
-        push_neg
+        push Not
         exact this)
     · exact h
   have hprev : ¬((hwf.apply (pre (i₀ - 1))).rank <
@@ -1832,16 +1836,16 @@ theorem crossing_edge_exists {A : Set ℕ} {N₀ X : ℕ}
     intro hfin
     have := Nat.find_min hex (m := i₀ - 1) (by omega)
     exact this ⟨by omega, hfin⟩
-  push_neg at hprev
+  push Not at hprev
   obtain ⟨j₀, hj₀⟩ : ∃ j₀, i₀ = j₀ + 1 := ⟨i₀ - 1, by omega⟩
   have hj₀prev : ¬((hwf.apply (pre j₀)).rank <
       Ordinal.omega0) := by
     have h1 : j₀ = i₀ - 1 := by omega
     rw [h1]
     exact fun h => absurd h (by
-      push_neg
+      push Not
       exact hprev)
-  push_neg at hj₀prev
+  push Not at hj₀prev
   have hstep := hprestep j₀ (by omega)
   have hkey : insert (e j₀) (pre j₀) = pre (j₀ + 1) := by
     show _ = (Finset.range (j₀ + 1)).image e
@@ -1871,7 +1875,7 @@ theorem cofinite_free_singletons {A : Set ℕ} {N₀ : ℕ}
     ∃ X, ∀ b ∈ A, X ≤ b → 0 < b → RepFree A N₀ {b} := by
   classical
   by_contra hno
-  push_neg at hno
+  push Not at hno
   refine singleton_hubs_refuted h0 hcov hanchor hfail ?_
   intro N
   obtain ⟨b, hbA, hNb, hbpos, hnotfree⟩ := hno N
@@ -1913,7 +1917,7 @@ theorem root_omega_dichotomy {A : Set ℕ} {N₀ : ℕ}
       Ordinal.omega0 ≤ (hwf.apply C).rank
   · exact Or.inl hwide
   · right
-    push_neg at hwide
+    push Not at hwide
     apply le_antisymm _ hroot
     rw [Acc.rank_eq]
     apply Ordinal.iSup_le
@@ -1940,7 +1944,7 @@ theorem node_omega_dichotomy {A : Set ℕ} {N₀ : ℕ}
       Ordinal.omega0 ≤ (hwf.apply C).rank
   · exact Or.inl hwide
   · right
-    push_neg at hwide
+    push Not at hwide
     apply le_antisymm _ hR
     rw [Acc.rank_eq]
     apply Ordinal.iSup_le
@@ -2008,7 +2012,7 @@ theorem omega_node_children_unbounded {A : Set ℕ} {N₀ : ℕ}
   set hwf := poolFreeStep_wf h0 hcov hfail P₀ with hhwf
   intro k X
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hchildlt : ∀ C, PoolFreeStep A N₀ P₀ C R →
       (hwf.apply C).rank < Ordinal.omega0 := by
     intro C hC
@@ -2045,7 +2049,7 @@ theorem omega_node_children_unbounded {A : Set ℕ} {N₀ : ℕ}
       have h3 : g b + 1 ≤ K := by omega
       calc Order.succ ((hwf.apply C).rank)
           = ((g b + 1 : ℕ) : Ordinal.{0}) := by
-            rw [h1, Nat.cast_succ, Ordinal.add_one_eq_succ]
+            rw [h1, Nat.cast_succ, Order.succ_eq_add_one]
         _ ≤ ((K : ℕ) : Ordinal.{0}) := by exact_mod_cast h3
     · -- large child: capped by k
       have h1 : (hwf.apply (insert b R)).rank <
@@ -2059,8 +2063,8 @@ theorem omega_node_children_unbounded {A : Set ℕ} {N₀ : ℕ}
         _ ≤ ((K : ℕ) : Ordinal.{0}) := by exact_mod_cast h3
   rw [hR] at hbound
   exact absurd hbound (by
-    push_neg
-    exact Ordinal.nat_lt_omega0 K)
+    push Not
+    exact Ordinal.natCast_lt_omega0 K)
 
 /-- **The diagonal through the grades.**  From a rank-`ω` node,
 extract a strictly monotone sequence of admissible extensions whose
@@ -2170,16 +2174,16 @@ theorem hfail_iff_no_hereditarily_free {A : Set ℕ} {N₀ : ℕ}
     have hnother : ¬HereditarilyFree A N₀ B' :=
       fun h => hno ⟨B', h⟩
     rw [HereditarilyFree] at hnother
-    push_neg at hnother
+    push Not at hnother
     obtain ⟨Q, hQB', hQnotfree⟩ := hnother hB'inf
       (fun b hb => ⟨hBA hb.1, hb.2.1⟩)
     rw [RepFree] at hQnotfree
-    push_neg at hQnotfree
+    push Not at hQnotfree
     obtain ⟨n, hn, halln⟩ := hQnotfree
     have hhub : IsRepHub A n Q := by
       intro x hx y hy z hz hsum
       by_contra hmiss
-      push_neg at hmiss
+      push Not at hmiss
       obtain ⟨h1, h2, h3⟩ := hmiss
       exact h3 (halln x hx y hy z hz hsum h1 h2)
     -- the hub is high, so the dead target is late
@@ -2381,16 +2385,16 @@ theorem hmin_iff_no_hereditarilyPairFree {A : Set ℕ} {N₀ : ℕ}
     have hnother : ¬HereditarilyPairFree A N₀ B' :=
       fun h => hno ⟨B', h⟩
     rw [HereditarilyPairFree] at hnother
-    push_neg at hnother
+    push Not at hnother
     obtain ⟨Q, hQB', hQnotfree⟩ := hnother hB'inf
       (fun b hb => ⟨hBA hb.1, hb.2.1⟩)
     rw [PairFree] at hQnotfree
-    push_neg at hQnotfree
+    push Not at hQnotfree
     obtain ⟨n, hn, halln⟩ := hQnotfree
     have hhub : IsPairHub A n Q := by
       intro x hx y hy hsum
       by_contra hmiss
-      push_neg at hmiss
+      push Not at hmiss
       obtain ⟨h1, h2⟩ := hmiss
       exact h2 (halln x hx y hy hsum h1)
     obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hn
@@ -2699,7 +2703,7 @@ theorem sidon_has_branch {A : Set ℕ} {N₀ C : ℕ}
           fun h => hyb ⟨j, h.symm⟩, fun h => hzb ⟨j, h.symm⟩⟩
       · -- otherwise the candidates inject into the window fibers
         exfalso
-        push_neg at hgood
+        push Not at hgood
         set fib : ℕ → Finset ℕ := fun j =>
           (Finset.range (m - N₀ + 1)).filter
             (fun z => z ∈ A ∧ z + b j ≤ m ∧ m - z - b j ∈ A)
@@ -2985,7 +2989,7 @@ theorem exists_maximal_free_node {A : Set ℕ} {N₀ : ℕ}
     intro hP
     by_cases hmax : ∀ R : Finset ℕ, ¬FreeStep A N₀ R P
     · exact ⟨P, hP, Finset.Subset.refl P, hmax⟩
-    · push_neg at hmax
+    · push Not at hmax
       obtain ⟨R, hR⟩ := hmax
       obtain ⟨Q, hQnode, hRQ, hQmax⟩ := ih R hR hR.2.1
       refine ⟨Q, hQnode, ?_, hQmax⟩
@@ -3096,15 +3100,15 @@ theorem exists_absolute_leaf {A : Set ℕ} {N₀ : ℕ}
           exact ⟨hbA, hbpos⟩
         · exact hP.1 h h'
       rw [RepFree] at hnotfree
-      push_neg at hnotfree
+      push Not at hnotfree
       obtain ⟨m, hm, hall⟩ := hnotfree
       refine ⟨m, hm, ?_⟩
       intro x hx y hy z hz hsum
       by_contra hmiss
-      push_neg at hmiss
+      push Not at hmiss
       obtain ⟨h1, h2, h3⟩ := hmiss
       exact h3 (hall x hx y hy z hz hsum h1 h2)
-    · push_neg at hmax
+    · push Not at hmax
       obtain ⟨b, hbA, hbpos, hbP, hbfree⟩ := hmax
       have hstep : FreeSup A N₀ (insert b P) P :=
         ⟨hP, hbfree, Finset.ssubset_insert hbP⟩
@@ -3209,14 +3213,14 @@ theorem exists_absolute_pair_leaf {A : Set ℕ} {N₀ : ℕ}
           exact ⟨hbA, hbpos⟩
         · exact hP.1 h h'
       rw [PairFree] at hnotfree
-      push_neg at hnotfree
+      push Not at hnotfree
       obtain ⟨m, hm, hall⟩ := hnotfree
       refine ⟨m, hm, ?_⟩
       intro x hx y hy hsum
       by_cases hxin : x ∈ insert b P
       · exact Or.inl hxin
       · exact Or.inr (hall x hx y hy hsum hxin)
-    · push_neg at hmax
+    · push Not at hmax
       obtain ⟨b, hbA, hbpos, hbP, hbfree⟩ := hmax
       have hstep : PairSup A N₀ (insert b P) P :=
         ⟨hP, hbfree, Finset.ssubset_insert hbP⟩
@@ -3270,7 +3274,7 @@ theorem four_disjoint_hubs_singleton {A : Set ℕ} {m b : ℕ}
   classical
   intro x hx y hy z hz hsum
   by_contra hmiss
-  push_neg at hmiss
+  push Not at hmiss
   obtain ⟨hxb, hyb, hzb⟩ := hmiss
   have hxb' : x ≠ b := by simpa using hxb
   have hyb' : y ≠ b := by simpa using hyb
@@ -3338,15 +3342,15 @@ theorem exists_absolute_leaf_pool {A : Set ℕ} {N₀ : ℕ}
       intro b hbC hbP
       have hnotfree := hmax b hbC hbP
       rw [RepFree] at hnotfree
-      push_neg at hnotfree
+      push Not at hnotfree
       obtain ⟨m, hm, hall⟩ := hnotfree
       refine ⟨m, hm, ?_⟩
       intro x hx y hy z hz hsum
       by_contra hmiss
-      push_neg at hmiss
+      push Not at hmiss
       obtain ⟨h1, h2, h3⟩ := hmiss
       exact h3 (hall x hx y hy z hz hsum h1 h2)
-    · push_neg at hmax
+    · push Not at hmax
       obtain ⟨b, hbC, hbP, hbfree⟩ := hmax
       have hnodeP : FreeNode A N₀ P :=
         ⟨fun h hh => hC h (hPC h hh), hPfree⟩
@@ -3541,7 +3545,7 @@ theorem eternal_survivor_dichotomy {A : Set ℕ} {N₀ : ℕ}
     obtain ⟨k, hk⟩ := hunb Y
     exact ⟨k, m k, hk, hm₁ k, hm₂ k⟩
   · right
-    push_neg at hunb
+    push Not at hunb
     obtain ⟨Y, hY⟩ := hunb
     have hmaps : ∀ k ∈ Finset.range (3 * Y + 1),
         m k ∈ Finset.range Y := by
@@ -3612,7 +3616,7 @@ theorem shell_survivors_unbounded_targets {A : Set ℕ} {N₀ : ℕ}
         IsRepHub A m (insert b (Q k)) := by
   classical
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hstream : ∀ N, ∃ a m, N ≤ m ∧ 0 < a ∧
       IsPrivateTriple A a m := by
     intro N
@@ -3720,7 +3724,7 @@ theorem shell_depth_forces_scale {A : Set ℕ} {N₀ : ℕ}
     obtain ⟨j, hj, hbigj⟩ := hbig
     exact ⟨j, hj, m j, hbigj, hm₁ j, hm₂ j hj⟩
   · left
-    push_neg at hbig
+    push Not at hbig
     have hmaps : ∀ j ∈ Finset.range (k + 1),
         m j ∈ Finset.Ico N₀ (N₀ + k / 3) := by
       intro j hj
@@ -3796,7 +3800,7 @@ theorem depth_tax_of_hfail {A : Set ℕ} {N₀ : ℕ}
         IsRepHub A m (insert b (Q j)) := by
   classical
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hstream : ∀ N, ∃ a m', N ≤ m' ∧ 0 < a ∧
       IsPrivateTriple A a m' := by
     intro N
@@ -3851,7 +3855,7 @@ theorem three_disjoint_pair_hubs_singleton {A : Set ℕ} {m b : ℕ}
   classical
   intro x hx y hy hsum
   by_contra hmiss
-  push_neg at hmiss
+  push Not at hmiss
   obtain ⟨hxb, hyb⟩ := hmiss
   have hxb' : x ≠ b := by simpa using hxb
   have hyb' : y ≠ b := by simpa using hyb
@@ -4015,7 +4019,7 @@ theorem eighteen_level_cap {A : Set ℕ} {m : ℕ}
     rw [← hi0] at hown
     exact ⟨i0, hown⟩
   · exfalso
-    push_neg at hfib
+    push Not at hfib
     have hcount : (Finset.univ : Finset (Fin 19)).card ≤
         3 * (Finset.univ.image b).card := by
       refine Finset.card_le_mul_card_image (f := b)
@@ -4351,7 +4355,7 @@ theorem robustness_gives_hereditarily_free {A : Set ℕ} {N₀ : ℕ}
       obtain ⟨R, hRA, hRsum, hRdis⟩ :=
         hMrob (J.card + 1) m hMle
       by_contra hall
-      push_neg at hall
+      push Not at hall
       have hpickP : ∀ i : Fin (J.card + 1), ∃ k : Fin 3,
           R i k ∈ P := by
         intro i
@@ -4399,7 +4403,7 @@ theorem fragile_supply_of_hfail {A : Set ℕ} {N₀ : ℕ}
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ C, ∀ H, ∃ m, H ≤ m ∧ ¬HasDisjointTripleReps A m C := by
   by_contra hno
-  push_neg at hno
+  push Not at hno
   exact (hfail_iff_no_hereditarily_free h0 hcov).1 hfail
     (robustness_gives_hereditarily_free h0 hcov hno)
 
@@ -4425,7 +4429,7 @@ theorem seal_cost_of_disjoint_avoiding {A : Set ℕ} {m K : ℕ}
   have hpick : ∀ i : Fin K, ∃ k : Fin 3, P i k ∈ D := by
     intro i
     by_contra hnone
-    push_neg at hnone
+    push Not at hnone
     have hmem : ∀ k : Fin 3, P i k ∈ A \ ↑D := by
       intro k
       exact ⟨hPA i k, by simpa using hnone k⟩
@@ -4577,7 +4581,7 @@ theorem double_reflection_supply_of_hfail {A : Set ℕ} {N₀ : ℕ}
     have h1 := covering_sqrt_lower (A := A) (N₀ := N₀) hcov
       (n := b - N₀) (by omega)
     by_contra hlt
-    push_neg at hlt
+    push Not at hlt
     have h2 : F.card * F.card < T * T :=
       Nat.mul_lt_mul_of_lt_of_le hlt (le_of_lt hlt) (by omega)
     rw [← hF] at h1
@@ -4605,7 +4609,7 @@ theorem double_reflection_supply_of_hfail {A : Set ℕ} {N₀ : ℕ}
     rw [hW, Finset.mem_sdiff, Finset.mem_union] at ha
     obtain ⟨haF, haHH⟩ := ha
     rw [hF, Finset.mem_filter, Finset.mem_range] at haF
-    push_neg at haHH
+    push Not at haHH
     refine ⟨haF.2, haHH.1, haHH.2, ?_, ?_⟩
     · omega
     · omega
@@ -4618,7 +4622,7 @@ theorem double_reflection_supply_of_hfail {A : Set ℕ} {N₀ : ℕ}
     have h2 : H.card * H'.card * V.card ≤ C * C * V.card :=
       Nat.mul_le_mul h1 (le_refl V.card)
     by_contra hVK
-    push_neg at hVK
+    push Not at hVK
     have hVK' : V.card + 1 ≤ K := hVK
     have h3 : C * C * (V.card + 1) ≤ C * C * K :=
       Nat.mul_le_mul (le_refl (C * C)) hVK'
@@ -4682,7 +4686,7 @@ theorem street_dichotomy_of_hfail {A : Set ℕ} {N₀ : ℕ}
     have h1 := covering_sqrt_lower (A := A) (N₀ := N₀) hcov
       (n := b₁ - N₀) (by omega)
     by_contra hlt
-    push_neg at hlt
+    push Not at hlt
     have h2 : F.card * F.card < T * T :=
       Nat.mul_lt_mul_of_lt_of_le hlt (le_of_lt hlt) (by omega)
     rw [← hF] at h1
@@ -4713,7 +4717,7 @@ theorem street_dichotomy_of_hfail {A : Set ℕ} {N₀ : ℕ}
       Finset.mem_union] at ha
     obtain ⟨haF, haH⟩ := ha
     rw [hF, Finset.mem_filter, Finset.mem_range] at haF
-    push_neg at haH
+    push Not at haH
     exact ⟨haF.2, haH.1.1, haH.1.2, haH.2, by omega, by omega,
       by omega⟩
   obtain ⟨g₁, hg₁, g₂, hg₂, V₁, hV₁W, hcount₁, hrefl₁⟩ :=
@@ -4742,7 +4746,7 @@ theorem street_dichotomy_of_hfail {A : Set ℕ} {N₀ : ℕ}
     have e₄ : C * C * (C * C * V₂.card) = D * V₂.card := by
       rw [hD]; ring
     by_contra hK
-    push_neg at hK
+    push Not at hK
     have hK' : V₂.card + 1 ≤ K := hK
     have e₅ : D * (V₂.card + 1) ≤ D * K :=
       Nat.mul_le_mul (le_refl D) hK'
@@ -4873,7 +4877,7 @@ theorem difference_blowup_or_affine_corners {A : Set ℕ}
   by_cases hdiff : ∀ K, ∃ δ, 1 ≤ δ ∧ ∃ V : Finset ℕ,
       K ≤ V.card ∧ ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A
   · exact Or.inl hdiff
-  · push_neg at hdiff
+  · push Not at hdiff
     obtain ⟨K₀, hK₀⟩ := hdiff
     refine Or.inr ⟨K₀, fun S => ?_⟩
     rcases street_dichotomy_of_hfail h0 hcov hfail K₀ S with
@@ -4900,7 +4904,7 @@ theorem fixed_offset_or_growing {A : Set ℕ}
   by_cases hfix : ∃ δ, 1 ≤ δ ∧ ∀ K, ∃ V : Finset ℕ,
       K ≤ V.card ∧ ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A
   · exact Or.inl hfix
-  · push_neg at hfix
+  · push Not at hfix
     have hKf : ∀ δ, ∃ Kd, 1 ≤ δ → ∀ V : Finset ℕ,
         Kd ≤ V.card → ∃ x ∈ V, x ∈ A → x + δ ∉ A := by
       intro δ
@@ -4922,7 +4926,7 @@ theorem fixed_offset_or_growing {A : Set ℕ}
         hKf' δ₀ hδ₀ V₀ (by omega)
       obtain ⟨hxA, hxd⟩ := hV₀m x hxV
       exact himp hxA hxd
-    · push_neg at hle
+    · push Not at hle
       exact ⟨δ₀, hle, V₀, by omega, hV₀m⟩
 
 /-- An affine corner at blown point n and size S: a K₀-fold
@@ -4953,7 +4957,7 @@ theorem nat_param_stabilize {C : ℕ → ℕ → Prop}
   classical
   by_cases hstab : ∃ n, ∀ S, C n S
   · exact Or.inl hstab
-  · push_neg at hstab
+  · push Not at hstab
     choose Sf hSf using hstab
     right
     intro N S
@@ -4966,7 +4970,7 @@ theorem nat_param_stabilize {C : ℕ → ℕ → Prop}
           Finset.le_sup (Finset.mem_range.2 (by omega))
         omega
       exact hSf n₀ (hanti n₀ (Sf n₀) Ssup h1 hn₀)
-    · push_neg at hle
+    · push Not at hle
       exact ⟨n₀, hle, hanti n₀ S Ssup (le_max_left _ _) hn₀⟩
 
 /-- **The mirror hall splits.**  In the affine-corner branch the
@@ -5025,7 +5029,7 @@ theorem street_dichotomy_uniform {A : Set ℕ} {N₀ : ℕ}
     have h1 := covering_sqrt_lower (A := A) (N₀ := N₀) hcov
       (n := b₁ - N₀) (by omega)
     by_contra hlt
-    push_neg at hlt
+    push Not at hlt
     have h2 : F.card * F.card < T * T :=
       Nat.mul_lt_mul_of_lt_of_le hlt (le_of_lt hlt) (by omega)
     rw [← hF] at h1
@@ -5056,7 +5060,7 @@ theorem street_dichotomy_uniform {A : Set ℕ} {N₀ : ℕ}
       Finset.mem_union] at ha
     obtain ⟨haF, haH⟩ := ha
     rw [hF, Finset.mem_filter, Finset.mem_range] at haF
-    push_neg at haH
+    push Not at haH
     exact ⟨haF.2, haH.1.1, haH.1.2, haH.2, by omega, by omega,
       by omega⟩
   obtain ⟨g₁, hg₁, g₂, hg₂, V₁, hV₁W, hcount₁, hrefl₁⟩ :=
@@ -5085,7 +5089,7 @@ theorem street_dichotomy_uniform {A : Set ℕ} {N₀ : ℕ}
     have e₄ : C * C * (C * C * V₂.card) = D * V₂.card := by
       rw [hD]; ring
     by_contra hK
-    push_neg at hK
+    push Not at hK
     have hK' : V₂.card + 1 ≤ K := hK
     have e₅ : D * (V₂.card + 1) ≤ D * K :=
       Nat.mul_le_mul (le_refl D) hK'
@@ -5312,7 +5316,7 @@ theorem counterexample_four_rooms {A : Set ℕ} {N₀ : ℕ}
   · rcases fixed_offset_or_growing hdiff with h | h
     · exact ⟨∅, hfree0, Or.inl h⟩
     · exact ⟨∅, hfree0, Or.inr (Or.inl h)⟩
-  · push_neg at hdiff
+  · push Not at hdiff
     obtain ⟨K₀, hK₀⟩ := hdiff
     have hcorner : ∀ S, ∃ n,
         (∃ V : Finset ℕ, K₀ ≤ V.card ∧
@@ -5423,7 +5427,7 @@ theorem ladder_shadow_concentrates {A : Set ℕ} {N₀ : ℕ}
       (∃ a ∈ A, q + a = n + d) := by
   classical
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hDf : ∀ q, ∃ Δq, q ∈ Q → ∀ d, Δq < d → N₀ ≤ n + d →
       IsPairHub A (n + d) Q → (∃ b ∈ A, b + d ∈ A) →
       ∀ a ∈ A, q + a ≠ n + d := by
@@ -5520,13 +5524,13 @@ theorem essential_private_pair_stream {A : Set ℕ} {N₀ : ℕ}
     ∀ N, ∃ m, N ≤ m ∧ ∃ c ∈ A, b + c = m ∧
       ∀ x ∈ A, ∀ y ∈ A, x + y = m →
         (x = b ∧ y = c) ∨ (x = c ∧ y = b) := by
-  push_neg at hess
+  push Not at hess
   intro N
   obtain ⟨m, hm, hall⟩ := hess (N + N₀)
   obtain ⟨x₀, hx₀, y₀, hy₀, hxy₀⟩ := hcov m (by omega)
   have hb₀ : x₀ = b ∨ y₀ = b := by
     by_contra hno
-    push_neg at hno
+    push Not at hno
     exact hall x₀ hx₀ y₀ hy₀ hno.1 hno.2 hxy₀
   have hc : ∃ c ∈ A, b + c = m := by
     rcases hb₀ with h | h
@@ -5537,7 +5541,7 @@ theorem essential_private_pair_stream {A : Set ℕ} {N₀ : ℕ}
   intro x hx y hy hxy
   have hbxy : x = b ∨ y = b := by
     by_contra hno
-    push_neg at hno
+    push Not at hno
     exact hall x hx y hy hno.1 hno.2 hxy
   rcases hbxy with h | h
   · exact Or.inl ⟨h, by omega⟩
@@ -6006,7 +6010,7 @@ theorem independent_alternatives_ramsey {A : Set ℕ}
     rw [hc] at h1
     have h2 := of_decide_eq_false h1
     by_contra hno
-    push_neg at hno
+    push Not at hno
     exact h2 (by
       exact ⟨x, hx, y, hy, hno.1, hno.2, hxy⟩)
 
@@ -6162,7 +6166,7 @@ theorem cube_avoidance_ramsey {A : Set ℕ} {N₀ : ℕ}
     rw [hc] at h1
     have h2 := of_decide_eq_false h1
     by_contra hno
-    push_neg at hno
+    push Not at hno
     exact h2 ⟨x, hx, y, hy, z, hz, hno.1, hno.2.1, hno.2.2,
       hxyz⟩
 
@@ -6349,11 +6353,11 @@ theorem omega_avoidance_dichotomy {A : Set ℕ} {N₀ : ℕ}
     simp only [hcol, id_eq] at h1
     have h2 := of_decide_eq_false h1
     by_contra hno
-    push_neg at hno
+    push Not at hno
     exact h2 ⟨x, hx, y, hy, z, hz, hno.1, hno.2.1, hno.2.2,
       hxyz⟩
   · left
-    push_neg at hex
+    push Not at hex
     intro r k hkmono hkge
     have h1 := hdiag r k hkmono hkge
     have h2 : (FB (Φ r) r).2 = true := by
@@ -6385,13 +6389,13 @@ theorem complete_families_blocked_of_hfail {A : Set ℕ}
   intro N
   have hnb := hfail T hTA hTinf
   rw [IsExactTupleAsymptoticBasis] at hnb
-  push_neg at hnb
+  push Not at hnb
   obtain ⟨n, hn, hnofail⟩ := hnb (N + N₂)
   obtain ⟨S, hST, hsum⟩ := hcomp n (by omega)
   refine ⟨S, hST, by omega, ?_⟩
   intro x hx y hy z hz hxyz
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hmemb : ∀ i : Fin 3, (![x, y, z] : Fin 3 → ℕ) i ∈ A \ T := by
     intro i
     match i with
@@ -6442,7 +6446,7 @@ theorem subset_sum_complete_of_small_gaps (t : ℕ → ℕ)
       have := hS hx
       rw [Finset.mem_range] at this ⊢
       omega
-    · push_neg at hle
+    · push Not at hle
       have hgap' := hgap K
       have hsub : n - t (K + 1) ≤
           ∑ i ∈ Finset.range (K + 1), t i := by omega
@@ -6508,7 +6512,7 @@ theorem subset_sum_complete_of_bootstrap (t : ℕ → ℕ)
         have := hS hx
         rw [Finset.mem_range] at this ⊢
         omega
-      · push_neg at hle
+      · push Not at hle
         have hgap' := hgap (K + 1) (by omega)
         have hrange : B ≤ n - t (K + 1) ∧
             n - t (K + 1) ≤ CK := by
@@ -6589,8 +6593,8 @@ theorem shell_higman_chain {A : Set ℕ} {N₀ : ℕ}
   have hpwo : (Set.univ : Set ℕ).PartiallyWellOrderedOn
       (· ≤ ·) :=
     Set.isPWO_of_wellQuasiOrderedLE _
-  haveI hrefl : IsRefl (List ℕ)
-      (List.SublistForall₂ ((· ≤ ·) : ℕ → ℕ → Prop)) :=
+  haveI hrefl :
+      Std.Refl (List.SublistForall₂ ((· ≤ ·) : ℕ → ℕ → Prop)) :=
     ⟨fun l => Std.Refl.refl l⟩
   haveI hpre : IsPreorder (List ℕ)
       (List.SublistForall₂ ((· ≤ ·) : ℕ → ℕ → Prop)) := ⟨⟩
@@ -6724,15 +6728,15 @@ theorem spine_stalls_hereditarily {A : Set ℕ} {N₀ : ℕ}
     (fun t => x (τ t)) (hxmono.comp hτ)
     (fun t => (hmem _ _ (hxmem (τ t))).1)
     (fun t => (hmem _ _ (hxmem (τ t))).2)
-  push_neg at hdie
+  push Not at hdie
   obtain ⟨J, hJ⟩ := hdie
   rw [RepFree] at hJ
-  push_neg at hJ
+  push Not at hJ
   obtain ⟨m, hm, hall⟩ := hJ
   refine ⟨J, m, hm, ?_⟩
   intro a ha b hb c hc hsum
   by_contra hmiss
-  push_neg at hmiss
+  push Not at hmiss
   obtain ⟨h1, h2, h3⟩ := hmiss
   exact h3 (hall a ha b hb c hc hsum h1 h2)
 
@@ -6783,13 +6787,13 @@ theorem spine_rank_or_lockstep {A : Set ℕ} {N₀ : ℕ}
     obtain ⟨t, hc⟩ := hunb c
     exact ⟨Q (σ t), hmem _, hfree _, hc⟩
   · right
-    push_neg at hunb
+    push Not at hunb
     obtain ⟨c₀, hc₀⟩ := hunb
     -- monotone bounded: eventually constant
     have hstab : ∃ T, ∀ t, T ≤ t →
         (Q (σ t)).card = (Q (σ T)).card := by
       by_contra hno
-      push_neg at hno
+      push Not at hno
       -- build a strictly climbing value chain, contradicting c₀
       have hstep : ∀ T, ∃ t, T ≤ t ∧
           (Q (σ T)).card < (Q (σ t)).card := by
@@ -6997,12 +7001,12 @@ theorem spine_rank_or_lockstep' {A : Set ℕ} {N₀ : ℕ}
     obtain ⟨t, hc⟩ := hunb c
     exact ⟨Q (σ t), hmem _, hfree _, hc⟩
   · right
-    push_neg at hunb
+    push Not at hunb
     obtain ⟨c₀, hc₀⟩ := hunb
     have hstab : ∃ T, ∀ t, T ≤ t →
         (Q (σ t)).card = (Q (σ T)).card := by
       by_contra hno
-      push_neg at hno
+      push Not at hno
       have hstep : ∀ T, ∃ t, T ≤ t ∧
           (Q (σ T)).card < (Q (σ t)).card := by
         intro T
@@ -7264,7 +7268,7 @@ theorem anchor_dichotomy {A : Set ℕ} :
       w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g
   · exact Or.inl h
   · right
-    push_neg at h
+    push Not at h
     obtain ⟨g₀, hg₀⟩ := h
     refine ⟨g₀, fun c hcA hcpos hcg w hw w' hw' hsum => ?_⟩
     have h1 := hg₀ c hcA hcpos hcg w hw w' hw' hsum
@@ -7393,7 +7397,7 @@ theorem central_branch_no_three_AP {A : Set ℕ} {g₀ : ℕ}
       a + d = g₀ ∨ a + d = 0 := by
   intro a d hd haA hadA ha2dA
   by_contra hno
-  push_neg at hno
+  push Not at hno
   obtain ⟨hg, h0⟩ := hno
   have hpos : 0 < a + d := by omega
   have hsum : a + (a + 2 * d) = 2 * (a + d) := by omega
@@ -7419,12 +7423,12 @@ theorem odd_deletion_obligation {A : Set ℕ} {N₀ : ℕ}
   have hBA : B ⊆ A := fun a ha => ha.1
   have hnb := hfail B hBA hodd
   rw [IsExactTupleAsymptoticBasis] at hnb
-  push_neg at hnb
+  push Not at hnb
   obtain ⟨n, hn, hnofail⟩ := hnb N
   refine ⟨n, hn, ?_⟩
   intro x hx y hy z hz hsum
   by_contra hno
-  push_neg at hno
+  push Not at hno
   obtain ⟨hx2, hy2, hz2⟩ := hno
   have hxB : x ∉ B := fun h => h.2 hx2
   have hyB : y ∉ B := fun h => h.2 hy2
@@ -7458,12 +7462,12 @@ theorem canonical_deletion_obligation {A : Set ℕ} {N₀ : ℕ}
   have hBA : B ⊆ A := fun a ha => ha.1
   have hnb := hfail B hBA hP
   rw [IsExactTupleAsymptoticBasis] at hnb
-  push_neg at hnb
+  push Not at hnb
   obtain ⟨n, hn, hnofail⟩ := hnb N
   refine ⟨n, hn, ?_⟩
   intro x hx y hy z hz hsum
   by_contra hno
-  push_neg at hno
+  push Not at hno
   obtain ⟨hx2, hy2, hz2⟩ := hno
   have hxB : x ∉ B := fun h => hx2 h.2
   have hyB : y ∉ B := fun h => hy2 h.2
@@ -7555,7 +7559,7 @@ theorem residue_width_dichotomy {A : Set ℕ} (m : ℕ)
       rw [hmodself i]
       exact h1.2
   · right
-    push_neg at hcard
+    push Not at hcard
     refine ⟨W, by omega, ?_⟩
     set F := (Finset.range m) \ W with hF
     have hFfin : ∀ r ∈ F, {a ∈ A | a % m = r}.Finite := by
@@ -7812,7 +7816,7 @@ theorem spine_stall_stream {A : Set ℕ} {N₀ : ℕ}
         (fun i => mf (st i) = v)).card ≤ 3 := by
     intro v hv
     by_contra hbig
-    push_neg at hbig
+    push Not at hbig
     have h4 : 4 ≤ ((Finset.range (3 * K + 1)).filter
         (fun i => mf (st i) = v)).card := hbig
     obtain ⟨t4, ht4s, ht4c⟩ := Finset.exists_subset_card_eq h4
@@ -7877,7 +7881,7 @@ theorem repFree_iff_forall_not_hub {A : Set ℕ} {N₀ : ℕ}
   · intro hnot m hm
     have h1 := hnot m hm
     rw [IsRepHub] at h1
-    push_neg at h1
+    push Not at h1
     obtain ⟨x, hx, y, hy, z, hz, hsum, hxP, hyP, hzP⟩ := h1
     exact ⟨x, hx, y, hy, z, hz, hsum, hxP, hyP, hzP⟩
 
@@ -7925,7 +7929,7 @@ theorem stall_width_or_rank {A : Set ℕ} {N₀ : ℕ}
   have hJ2 : ∀ s, 2 ≤ Nat.find (hne s) := by
     intro s
     by_contra hlt
-    push_neg at hlt
+    push Not at hlt
     interval_cases h : (Nat.find (hne s))
     · obtain ⟨m, hm, hhub⟩ := hJdef s
       rw [h] at hhub
@@ -7950,7 +7954,7 @@ theorem stall_width_or_rank {A : Set ℕ} {N₀ : ℕ}
     obtain ⟨m, hm, hhub⟩ := hJdef s
     exact ⟨Nat.find (hne s), m, hJ2 s, hL s, hm, hhub⟩
   · left
-    push_neg at hbnd
+    push Not at hbnd
     intro c
     obtain ⟨s, hs⟩ := hbnd (c + 1)
     -- the prefix of length c + 1 is a proper prefix: free
@@ -8020,7 +8024,7 @@ theorem stall_width_or_rank_along {A : Set ℕ} {N₀ : ℕ}
   have hJ2 : ∀ s, 2 ≤ Nat.find (hne s) := by
     intro s
     by_contra hlt
-    push_neg at hlt
+    push Not at hlt
     interval_cases h : (Nat.find (hne s))
     · obtain ⟨m, hm, hhub⟩ := hJdef s
       rw [h] at hhub
@@ -8045,7 +8049,7 @@ theorem stall_width_or_rank_along {A : Set ℕ} {N₀ : ℕ}
     obtain ⟨m, hm, hhub⟩ := hJdef s
     exact ⟨Nat.find (hne s), m, hJ2 s, hL s, hm, hhub⟩
   · left
-    push_neg at hbnd
+    push Not at hbnd
     intro c
     obtain ⟨s, hs⟩ := hbnd (c + 1)
     have hfree' : RepFree A N₀ ((Finset.range (c + 1)).image
@@ -8130,7 +8134,7 @@ theorem narrow_located_street {A : Set ℕ} {N₀ : ℕ}
         (fun i => mf (i * L) = v)).card ≤ 3 := by
     intro v hv
     by_contra hbig
-    push_neg at hbig
+    push Not at hbig
     obtain ⟨t4, ht4s, ht4c⟩ := Finset.exists_subset_card_eq
       (show 4 ≤ _ from hbig)
     let e := t4.orderIsoOfFin ht4c
@@ -9126,7 +9130,7 @@ theorem the_routed_collapse {A : Set ℕ} {g₀ : ℕ} (hg : g₀ ∈ A)
       exact hxB (hxb ▸ hbB)
     · intro a d hd haA hadA ha2dA
       by_contra hno
-      push_neg at hno
+      push Not at hno
       obtain ⟨hgne, hC⟩ := hno
       have hsum : a + (a + 2 * d) = 2 * (a + d) := by omega
       have hac : a ≠ a + d := by omega
@@ -9971,7 +9975,7 @@ theorem hall_weak_translate {A : Set ℕ} {N₀ M : ℕ}
     ∀ z ∈ A, M < z → z ∉ H → ∃ h ∈ H, z + h ∉ A := by
   intro z hzA hzM hzH
   by_contra hall
-  push_neg at hall
+  push Not at hall
   obtain ⟨v, hvN, hvN₀, hrep, hpair⟩ :=
     hdoor (z + 2 * M + N₀ + 1)
   obtain ⟨h, hhH, hhzv, hmir⟩ :=
@@ -10203,7 +10207,7 @@ theorem door_translate_dichotomy {A : Set ℕ} (H : Finset ℕ) :
     refine ⟨Z₀, ?_⟩
     intro z hZz hzA hzH
     by_contra hno
-    push_neg at hno
+    push Not at hno
     exact hZ₀ ⟨z, hZz, hzA, hzH, hno⟩
 
 /-- **The two-member difference law.**  In a door world with
@@ -10897,7 +10901,7 @@ theorem single_translate_law {A : Set ℕ} {N₀ c : ℕ}
     (hcA : c ∈ A) (hcpos : 0 < c) :
     ∀ Z₀, ∃ z, Z₀ ≤ z ∧ z ∈ A ∧ z + c ∉ A := by
   by_contra hno
-  push_neg at hno
+  push Not at hno
   obtain ⟨Z₀, hZ₀⟩ := hno
   have hgood : ∀ z, Z₀ ≤ z → z ∈ A → z + c ∈ A := by
     intro z h1 h2
@@ -10945,7 +10949,7 @@ theorem pair_translate_law {A : Set ℕ} {N₀ h₀ h₁ : ℕ}
     (hh₀ : 0 < h₀) (hh₁ : 0 < h₁) :
     ∀ Z₀, ∃ z, Z₀ ≤ z ∧ z ∈ A ∧ z + h₀ ∉ A ∧ z + h₁ ∉ A := by
   by_contra hno
-  push_neg at hno
+  push Not at hno
   obtain ⟨Z₀, hZ₀⟩ := hno
   have hgood : ∀ z, Z₀ ≤ z → z ∈ A →
       z + h₀ ∈ A ∨ z + h₁ ∈ A := by
@@ -10983,12 +10987,12 @@ theorem deletion_failure_slices {A B : Set ℕ}
   intro N
   have hnb := hfail B hBA hBinf
   rw [IsExactTupleAsymptoticBasis] at hnb
-  push_neg at hnb
+  push Not at hnb
   obtain ⟨n, hn, hnofail⟩ := hnb N
   refine ⟨n, hn, ?_⟩
   intro z hz hzB a ha b hb hab
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hmemb : ∀ i : Fin 3, (![a, b, z] : Fin 3 → ℕ) i ∈
       A \ B := by
     intro i
@@ -11151,7 +11155,7 @@ theorem rep_flood_pos_of_hfail {A : Set ℕ} {N₀ : ℕ}
       ∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsRepHub A m (insert b P) := by
   classical
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hfree0 : RepFree A N₀ ∅ := by
     intro m hm
     obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
@@ -11168,7 +11172,7 @@ theorem rep_flood_pos_of_hfail {A : Set ℕ} {N₀ : ℕ}
         refine ⟨b, hbA, hXb, fun _ _ m hm hbm => ?_⟩
         have hnh := hbgood m hm hbm
         rw [IsRepHub] at hnh
-        push_neg at hnh
+        push Not at hnh
         obtain ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩ := hnh
         exact ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩
       · obtain ⟨b, hbA, hXb⟩ := pairCovers_unbounded hcov X
@@ -11545,7 +11549,7 @@ theorem face_three_gap_dichotomy {A : Set ℕ} {N₀ M₀ : ℕ}
     intro z hzA hzM
     by_cases hzP : ∃ p ∈ P, z + p ∉ A
     · exact Or.inl hzP
-    · push_neg at hzP
+    · push Not at hzP
       right
       intro N
       set G := z + 2 * M₀ + N₀ + 1 with hG
@@ -11582,7 +11586,7 @@ theorem near_diagonal_stabilized {A : Set ℕ} {G : ℕ}
       IsPairHub A (b + g) P := by
   classical
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hKg : ∀ g : ℕ, ∃ Kg, g ≤ G → ∀ b, Kg ≤ b → b ∈ A →
       b + g ∉ A → IsRepHub A (b + g) (insert b P) →
       ¬IsPairHub A (b + g) P := by
@@ -11632,7 +11636,7 @@ theorem face_one_split {A : Set ℕ} {P : Finset ℕ}
     by_cases hpos : ∃ x ∈ A, ∃ y ∈ A, 0 < x ∧ 0 < y ∧
         x + y = b
     · exact absurd ⟨b, by omega, hbA, hpos, hcen⟩ hNA
-    · push_neg at hpos
+    · push Not at hpos
       refine ⟨b, by omega, hbA, ?_⟩
       intro x hx y hy hx0 hy0 hxy
       exact hpos x hx y hy hx0 hy0 hxy
@@ -11824,7 +11828,7 @@ theorem parity_window_fringe {A : Set ℕ} {Y X ε : ℕ}
       ∀ x ∈ A, ∀ y ∈ A, x + y = n → x ≤ Y ∨ y ≤ Y := by
   intro n hnX hodd x hx y hy hxy
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have h1 := hpar x hx (by omega) (by omega)
   have h2 := hpar y hy (by omega) (by omega)
   omega
@@ -12345,7 +12349,7 @@ theorem saturated_popular_fringe {A : Set ℕ} {N₀ Y ε : ℕ}
       ∀ N, ∃ n, N ≤ n ∧ n % 2 = 1 ∧ f ≤ n ∧ n - f ∈ A := by
   classical
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hKf : ∀ f : ℕ, ∃ Kf, f ∈ A → f ≤ Y → f % 2 ≠ ε →
       ∀ n, Kf ≤ n → n % 2 = 1 → f ≤ n → n - f ∉ A := by
     intro f
@@ -12576,7 +12580,7 @@ theorem descent_depth_cost {A : Set ℕ} {N₀ k c T : ℕ}
     exact Nat.mul_div_cancel_left _ (pow_pos (by omega) k)
   rw [hdiv] at hrace
   by_contra hlt
-  push_neg at hlt
+  push Not at hlt
   set a := T + 2 ^ (k - 2) + 2 with ha
   set b := (2 : ℕ) ^ (k - 1) with hbdef
   have hsplit : b = 2 * 2 ^ (k - 2) := by
@@ -12708,8 +12712,8 @@ theorem finset_stream_higman (Q : ℕ → Finset ℕ) :
   have hpwo : (Set.univ : Set ℕ).PartiallyWellOrderedOn
       (· ≤ ·) :=
     Set.isPWO_of_wellQuasiOrderedLE _
-  haveI hrefl : IsRefl (List ℕ)
-      (List.SublistForall₂ ((· ≤ ·) : ℕ → ℕ → Prop)) :=
+  haveI hrefl :
+      Std.Refl (List.SublistForall₂ ((· ≤ ·) : ℕ → ℕ → Prop)) :=
     ⟨fun l => Std.Refl.refl l⟩
   haveI hpre : IsPreorder (List ℕ)
       (List.SublistForall₂ ((· ≤ ·) : ℕ → ℕ → Prop)) := ⟨⟩
@@ -12948,7 +12952,7 @@ theorem stall_chain_or_rank {A : Set ℕ} {N₀ : ℕ}
     have hJ2 : ∀ s, 2 ≤ Nat.find (hne s) := by
       intro s
       by_contra hlt
-      push_neg at hlt
+      push Not at hlt
       interval_cases h : (Nat.find (hne s))
       · obtain ⟨m, hm, hhub⟩ := hJdef s
         rw [h] at hhub
@@ -12970,7 +12974,7 @@ theorem stall_chain_or_rank {A : Set ℕ} {N₀ : ℕ}
     obtain ⟨m, hm, hhub⟩ := hJdef s
     exact ⟨Nat.find (hne s), m, hJ2 s, hL s, hm, hhub⟩
   · left
-    push_neg at hbnd
+    push Not at hbnd
     intro c
     obtain ⟨s, hs⟩ := hbnd (c + 1)
     refine ⟨fun i => x (s + i), ?_, fun t => hxA _, ?_⟩
@@ -13008,7 +13012,7 @@ theorem r2_channel_blowup {A : Set ℕ} {N₀ : ℕ}
       (fun x => x ∈ A ∧ (v - x) ∈ A ∧
         x % 2 ≠ (v - x) % 2)).card) := by
   by_contra hno
-  push_neg at hno
+  push Not at hno
   obtain ⟨⟨C₁, N₁, h1⟩, ⟨C₂, N₂, h2⟩, ⟨C₃, N₃, h3⟩⟩ := hno
   obtain ⟨v, hvN, hvC⟩ := r2_unbounded_of_hfail h0 hcov hfail
     (C₁ + C₂ + C₃ + 3) (N₁ + N₂ + N₃)
@@ -13536,7 +13540,7 @@ theorem cross_channel_split {S T : Set ℕ}
         (v - x) % 2 = 1)).card) := by
   classical
   by_contra hno
-  push_neg at hno
+  push Not at hno
   obtain ⟨⟨C₁, N₁, h1⟩, ⟨C₂, N₂, h2⟩, ⟨C₃, N₃, h3⟩,
     ⟨C₄, N₄, h4⟩⟩ := hno
   obtain ⟨v, hvN, hvC⟩ := hST (C₁ + C₂ + C₃ + C₄ + 4)
@@ -14598,7 +14602,7 @@ theorem two_adic_convergence_kills_covering {A : Set ℕ}
   have hPK : 0 < 2 ^ K := pow_pos (by omega) K
   have hMle : M ≤ 2 ^ K * M := Nat.le_mul_of_pos_left M hPK
   have h2K : 2 ≤ 2 ^ K := by omega
-  have h2M : 2 * M ≤ 2 ^ K * M := mul_le_mul_right' h2K M
+  have h2M : 2 * M ≤ 2 ^ K * M := Nat.mul_le_mul_right M h2K
   obtain ⟨u, huA, v, hvA, huv⟩ := hcov n (by omega)
   have key : ∀ u v, u ∈ A → v ∈ A → u + v = n → u ≤ v →
       False := by
@@ -18220,6 +18224,212 @@ theorem deletion_criterion_local {A B : Set ℕ} {N₀ : ℕ}
         simpa [Fin.sum_univ_three] using he
 
 open Classical in
+/-- A finite deletion prefix serves all targets it currently threatens.
+This is the exact finite-stage invariant suggested by
+`deletion_criterion_local`: every late target in `B + A` has a
+three-term representation avoiding `B`. -/
+def FinitePrefixServesRisks
+    (A : Set ℕ) (N₀ : ℕ) (B : Finset ℕ) : Prop :=
+  ∀ n, N₀ ≤ n → (∃ b ∈ B, ∃ a ∈ A, b + a = n) →
+    ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+      x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n
+
+open Classical in
+/-- **A moving stall is a relative singleton hub.**
+Saying that no triple from `A` avoids `insert b B` is exactly saying that
+every triple over the old survivor set `A \ B` uses `b`. -/
+theorem moving_stall_iff_relative_singleton_hub
+    {A : Set ℕ} {B : Finset ℕ} {b n : ℕ} :
+    (∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+      x ∉ insert b B → y ∉ insert b B → z ∉ insert b B →
+        x + y + z ≠ n) ↔
+    IsRepHub (A \ (B : Set ℕ)) n {b} := by
+  constructor
+  · intro hstall x hx y hy z hz hsum
+    by_contra hnone
+    push Not at hnone
+    have hxInsert : x ∉ insert b B := by
+      intro h
+      rcases Finset.mem_insert.1 h with hxb | hxB
+      · exact hnone.1 (Finset.mem_singleton.2 hxb)
+      · exact hx.2 hxB
+    have hyInsert : y ∉ insert b B := by
+      intro h
+      rcases Finset.mem_insert.1 h with hyb | hyB
+      · exact hnone.2.1 (Finset.mem_singleton.2 hyb)
+      · exact hy.2 hyB
+    have hzInsert : z ∉ insert b B := by
+      intro h
+      rcases Finset.mem_insert.1 h with hzb | hzB
+      · exact hnone.2.2 (Finset.mem_singleton.2 hzb)
+      · exact hz.2 hzB
+    exact hstall x hx.1 y hy.1 z hz.1
+      hxInsert hyInsert hzInsert hsum
+  · intro hhub x hxA y hyA z hzA hxInsert hyInsert hzInsert hsum
+    have hx : x ∈ A \ (B : Set ℕ) := by
+      refine ⟨hxA, ?_⟩
+      exact fun hxB => hxInsert (Finset.mem_insert_of_mem hxB)
+    have hy : y ∈ A \ (B : Set ℕ) := by
+      refine ⟨hyA, ?_⟩
+      exact fun hyB => hyInsert (Finset.mem_insert_of_mem hyB)
+    have hz : z ∈ A \ (B : Set ℕ) := by
+      refine ⟨hzA, ?_⟩
+      exact fun hzB => hzInsert (Finset.mem_insert_of_mem hzB)
+    rcases hhub x hx y hy z hz hsum with hxB | hyB | hzB
+    · rw [Finset.mem_singleton] at hxB
+      subst x
+      exact hxInsert (Finset.mem_insert_self b B)
+    · rw [Finset.mem_singleton] at hyB
+      subst y
+      exact hyInsert (Finset.mem_insert_self b B)
+    · rw [Finset.mem_singleton] at hzB
+      subst z
+      exact hzInsert (Finset.mem_insert_self b B)
+
+open Classical in
+/-- **The exact one-step greedy failure fork.**
+Suppose the old finite prefix `B` serves all its threatened targets, but
+`insert b B` does not.  A failed target is then either
+
+* a genuinely new risk `b + a`, with a moving-prefix stall; or
+* an old risk `d + a` for some `d ∈ B`, in which case the target is
+  private to the newly deleted element `b` over the old survivor set
+  `A \ B`.
+
+The second collateral-damage horn is why a failed extension cannot in
+general be assumed to satisfy `n = b + a`. -/
+theorem unsafe_extension_self_risk_or_collateral_private
+    {A : Set ℕ} {N₀ b : ℕ} {B : Finset ℕ}
+    (hserved : FinitePrefixServesRisks A N₀ B)
+    (hunsafe : ¬ FinitePrefixServesRisks A N₀ (insert b B)) :
+    (∃ n, N₀ ≤ n ∧ (∃ a ∈ A, b + a = n) ∧
+      ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+        x ∉ insert b B → y ∉ insert b B → z ∉ insert b B →
+          x + y + z ≠ n) ∨
+    (∃ n, N₀ ≤ n ∧ (∃ d ∈ B, ∃ a ∈ A, d + a = n) ∧
+      IsPrivateTriple (A \ (B : Set ℕ)) b n) := by
+  unfold FinitePrefixServesRisks at hunsafe
+  push Not at hunsafe
+  obtain ⟨n, hn, ⟨d, hdPrefix, a, haA, hda⟩, hstall⟩ := hunsafe
+  rcases Finset.mem_insert.1 hdPrefix with hdb | hdB
+  · left
+    subst d
+    exact ⟨n, hn, ⟨a, haA, hda⟩, hstall⟩
+  · right
+    have holdRisk : ∃ d ∈ B, ∃ a ∈ A, d + a = n :=
+      ⟨d, hdB, a, haA, hda⟩
+    obtain ⟨x, hxA, y, hyA, z, hzA, hxB, hyB, hzB, hsum⟩ :=
+      hserved n hn holdRisk
+    have hprivate : IsPrivateTriple (A \ (B : Set ℕ)) b n := by
+      constructor
+      · exact ⟨x, ⟨hxA, hxB⟩, y, ⟨hyA, hyB⟩,
+          z, ⟨hzA, hzB⟩, hsum⟩
+      · intro x' hx' y' hy' z' hz' hsum'
+        have hhub :=
+          moving_stall_iff_relative_singleton_hub.mp hstall
+        rcases hhub x' hx' y' hy' z' hz' hsum' with h | h | h
+        · exact Or.inl (Finset.mem_singleton.1 h)
+        · exact Or.inr (Or.inl (Finset.mem_singleton.1 h))
+        · exact Or.inr (Or.inr (Finset.mem_singleton.1 h))
+    exact ⟨n, hn, holdRisk, hprivate⟩
+
+open Classical in
+/-- **A private guardian leaves a two-term co-sum.**
+If `n` is private to `b` over a set `S`, then `b ∈ S`, `b ≤ n`, and
+removing the forced occurrence of `b` from one private triple leaves two
+members of `S` summing to `n - b`. -/
+theorem IsPrivateTriple.guardian_mem_le_and_complement_split
+    {S : Set ℕ} {b n : ℕ} (hprivate : IsPrivateTriple S b n) :
+    b ∈ S ∧ b ≤ n ∧
+      ∃ u ∈ S, ∃ v ∈ S, u + v = n - b := by
+  obtain ⟨⟨x, hxS, y, hyS, z, hzS, hsum⟩, hall⟩ := hprivate
+  rcases hall x hxS y hyS z hzS hsum with hxb | hyb | hzb
+  · subst x
+    exact ⟨hxS, by omega, y, hyS, z, hzS, by omega⟩
+  · subst y
+    exact ⟨hyS, by omega, x, hxS, z, hzS, by omega⟩
+  · subst z
+    exact ⟨hzS, by omega, x, hxS, y, hyS, by omega⟩
+
+open Classical in
+/-- **Finite-batch greedy fork.**
+Let an old prefix `B` serve all of its risks and let `C` contain more
+than `2*K` possible next deletions.  Then either one candidate safely
+extends the invariant, more than `K` candidates fail at genuinely new
+risks `b + a`, or more than `K` candidates cause collateral private
+targets over `A \ B`.
+
+This is the exact combinatorial gateway from the constructive greedy to
+the moving-prefix stall analysis. -/
+theorem candidate_batch_safe_or_self_stalls_or_collateral_private
+    {A : Set ℕ} {N₀ K : ℕ} {B C : Finset ℕ}
+    (hserved : FinitePrefixServesRisks A N₀ B)
+    (hmany : 2 * K < C.card) :
+    (∃ b ∈ C, FinitePrefixServesRisks A N₀ (insert b B)) ∨
+    (∃ S : Finset ℕ, S ⊆ C ∧ K < S.card ∧
+      ∀ b ∈ S, ∃ n, N₀ ≤ n ∧ (∃ a ∈ A, b + a = n) ∧
+        ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+          x ∉ insert b B → y ∉ insert b B → z ∉ insert b B →
+            x + y + z ≠ n) ∨
+    (∃ P : Finset ℕ, P ⊆ C ∧ K < P.card ∧
+      ∀ b ∈ P, ∃ n, N₀ ≤ n ∧
+        (∃ d ∈ B, ∃ a ∈ A, d + a = n) ∧
+        IsPrivateTriple (A \ (B : Set ℕ)) b n) := by
+  by_cases hsafe :
+      ∃ b ∈ C, FinitePrefixServesRisks A N₀ (insert b B)
+  · exact Or.inl hsafe
+  · right
+    have hclass : ∀ b ∈ C,
+        (∃ n, N₀ ≤ n ∧ (∃ a ∈ A, b + a = n) ∧
+          ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+            x ∉ insert b B → y ∉ insert b B →
+              z ∉ insert b B → x + y + z ≠ n) ∨
+        (∃ n, N₀ ≤ n ∧
+          (∃ d ∈ B, ∃ a ∈ A, d + a = n) ∧
+          IsPrivateTriple (A \ (B : Set ℕ)) b n) := by
+      intro b hbC
+      apply unsafe_extension_self_risk_or_collateral_private hserved
+      exact fun h => hsafe ⟨b, hbC, h⟩
+    set S := C.filter (fun b =>
+      ∃ n, N₀ ≤ n ∧ (∃ a ∈ A, b + a = n) ∧
+        ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+          x ∉ insert b B → y ∉ insert b B →
+            z ∉ insert b B → x + y + z ≠ n) with hS
+    set P := C.filter (fun b =>
+      ∃ n, N₀ ≤ n ∧
+        (∃ d ∈ B, ∃ a ∈ A, d + a = n) ∧
+        IsPrivateTriple (A \ (B : Set ℕ)) b n) with hP
+    have hcover : C ⊆ S ∪ P := by
+      intro b hbC
+      rcases hclass b hbC with hself | hprivate
+      · exact Finset.mem_union_left _
+          (by rw [hS, Finset.mem_filter]; exact ⟨hbC, hself⟩)
+      · exact Finset.mem_union_right _
+          (by rw [hP, Finset.mem_filter]; exact ⟨hbC, hprivate⟩)
+    have hcard : C.card ≤ S.card + P.card := by
+      exact (Finset.card_le_card hcover).trans
+        (Finset.card_union_le S P)
+    by_cases hSlarge : K < S.card
+    · left
+      refine ⟨S, ?_, hSlarge, ?_⟩
+      · intro b hb
+        rw [hS, Finset.mem_filter] at hb
+        exact hb.1
+      · intro b hb
+        rw [hS, Finset.mem_filter] at hb
+        exact hb.2
+    · right
+      have hSsmall : S.card ≤ K := Nat.le_of_not_gt hSlarge
+      have hPlarge : K < P.card := by omega
+      refine ⟨P, ?_, hPlarge, ?_⟩
+      · intro b hb
+        rw [hP, Finset.mem_filter] at hb
+        exact hb.1
+      · intro b hb
+        rw [hP, Finset.mem_filter] at hb
+        exact hb.2
+
+open Classical in
 /-- **THE STALL FORCES WEALTH** (the join: construction meets
 contradiction-mining).  If a target n resists every triple
 drawn from A ∖ B — the exact way the constructive greedy can
@@ -18308,6 +18518,6093 @@ theorem stall_forces_wealth {A : Set ℕ} {N₀ n : ℕ} {B : Finset ℕ}
         (fun x => x ∈ A ∧ (n - w - x) ∈ A)).card :=
     Nat.mul_le_mul_left _ h3
   omega
+
+open Classical in
+/-- **Large finite families have many values or one large exact fiber.**
+If `|S| > K * R`, then a map on `S` either assumes more than `R`
+distinct values, or some one value has more than `K` preimages in `S`.
+
+This elementary quantitative form is useful for stall offsets: it keeps
+the exact recurrent value instead of discarding repeated candidates. -/
+theorem large_finset_image_or_large_fiber
+    {α β : Type*} [DecidableEq α] [DecidableEq β]
+    (S : Finset α) (f : α → β) (K R : ℕ)
+    (hlarge : K * R < S.card) :
+    R < (S.image f).card ∨
+      ∃ y ∈ S.image f, K < (S.filter (fun x => f x = y)).card := by
+  by_cases hImage : R < (S.image f).card
+  · exact Or.inl hImage
+  · right
+    have hImageSmall : (S.image f).card ≤ R :=
+      Nat.le_of_not_gt hImage
+    by_contra hFiber
+    have hFiberSmall : ∀ y ∈ S.image f,
+        (S.filter (fun x => f x = y)).card ≤ K := by
+      intro y hy
+      exact Nat.le_of_not_gt
+        (fun hyLarge => hFiber ⟨y, hy, hyLarge⟩)
+    have hcount : S.card ≤ K * (S.image f).card :=
+      Finset.card_le_mul_card_image (f := f) S K hFiberSmall
+    have hmul : K * (S.image f).card ≤ K * R :=
+      Nat.mul_le_mul_left K hImageSmall
+    exact (Nat.not_lt_of_ge (hcount.trans hmul)) hlarge
+
+open Classical in
+/-- **THE MOVING-PREFIX STALL LEMMA.**  Let `B` be the fixed old
+deletion prefix and let every candidate `b ∈ C` stall at a target `n b`
+against the moving prefix `insert b B`.  Suppose each stall has enough
+surviving low mass to force pair wealth at least `L`.
+
+If there are more than `(|B| + 1) * K` candidates, then one of two
+uniform charge patterns occurs:
+
+* more than `K` candidates charge themselves, so `n b - b` is wealthy;
+* more than `K` candidates charge one fixed old `w ∈ B`, so `n b - w`
+  is wealthy.
+
+This is the exact finite pigeonhole bridge from actual greedy failures,
+whose prefixes move with `b`, to the fixed-offset target families consumed
+by the symmetry-mass amplifier. -/
+theorem moving_prefix_stalls_core_or_mobile
+    {A : Set ℕ} {N₀ K L : ℕ} {B C : Finset ℕ} {n : ℕ → ℕ}
+    (hcov : PairCovers A N₀)
+    (hscale : ∀ b ∈ C, N₀ ≤ n b)
+    (hstall : ∀ b ∈ C, ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+      x ∉ insert b B → y ∉ insert b B → z ∉ insert b B →
+        x + y + z ≠ n b)
+    (hlow : ∀ b ∈ C,
+      (insert b B).card * L ≤
+        ((Finset.range (n b - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ insert b B)).card)
+    (hmany : (B.card + 1) * K < C.card) :
+    (∃ M : Finset ℕ, M ⊆ C ∧ K < M.card ∧
+      ∀ b ∈ M,
+        L ≤ ((Finset.range (n b - b + 1)).filter
+          (fun x => x ∈ A ∧ (n b - b - x) ∈ A)).card) ∨
+    (∃ w ∈ B, ∃ M : Finset ℕ, M ⊆ C ∧ K < M.card ∧
+      ∀ b ∈ M,
+        L ≤ ((Finset.range (n b - w + 1)).filter
+          (fun x => x ∈ A ∧ (n b - w - x) ∈ A)).card) := by
+  have hpick : ∀ b, ∃ w, b ∈ C →
+      w ∈ insert b B ∧
+        L ≤ ((Finset.range (n b - w + 1)).filter
+          (fun x => x ∈ A ∧ (n b - w - x) ∈ A)).card := by
+    intro b
+    by_cases hbC : b ∈ C
+    · have hprefix : (insert b B).Nonempty :=
+        ⟨b, Finset.mem_insert_self b B⟩
+      obtain ⟨w, hw, hwealth⟩ :=
+        stall_forces_wealth hcov hprefix (hscale b hbC)
+          (hstall b hbC)
+      refine ⟨w, fun _ => ⟨hw, ?_⟩⟩
+      apply le_of_mul_le_mul_left
+        (le_trans (hlow b hbC) hwealth)
+        (Finset.card_pos.mpr hprefix)
+    · exact ⟨b, fun hb => absurd hb hbC⟩
+  choose g hg using hpick
+  set Mobile := C.filter (fun b => g b = b) with hMobile
+  set Core := C.filter (fun b => g b ≠ b) with hCore
+  have hpartition : Mobile.card + Core.card = C.card := by
+    rw [hMobile, hCore]
+    exact Finset.card_filter_add_card_filter_not (fun b => g b = b)
+  by_cases hMobileLarge : K < Mobile.card
+  · left
+    refine ⟨Mobile, ?_, hMobileLarge, ?_⟩
+    · intro b hb
+      exact (Finset.mem_filter.1 hb).1
+    · intro b hb
+      have hb' := Finset.mem_filter.1 hb
+      have hwealth := (hg b hb'.1).2
+      rw [hb'.2] at hwealth
+      exact hwealth
+  · right
+    have hMobileSmall : Mobile.card ≤ K :=
+      Nat.le_of_not_gt hMobileLarge
+    have hCoreLarge : B.card * K < Core.card := by
+      have hmany' := hmany
+      rw [← hpartition] at hmany'
+      simp only [Nat.add_mul, one_mul] at hmany'
+      omega
+    have hmaps : ∀ b ∈ Core, g b ∈ B := by
+      intro b hb
+      have hb' := Finset.mem_filter.1 hb
+      have hginsert := (hg b hb'.1).1
+      rw [Finset.mem_insert] at hginsert
+      exact hginsert.resolve_left hb'.2
+    obtain ⟨w, hwB, hwfiber⟩ :=
+      Finset.exists_lt_card_fiber_of_mul_lt_card_of_maps_to
+        hmaps hCoreLarge
+    refine ⟨w, hwB, Core.filter (fun b => g b = w), ?_,
+      hwfiber, ?_⟩
+    · intro b hb
+      have hbCore := (Finset.mem_filter.1 hb).1
+      exact (Finset.mem_filter.1 hbCore).1
+    · intro b hb
+      have hb' := Finset.mem_filter.1 hb
+      have hbCore := Finset.mem_filter.1 hb'.1
+      have hwealth := (hg b hbCore.1).2
+      rw [hb'.2] at hwealth
+      exact hwealth
+
+open Classical in
+/-- **Moving stalls give distinct wealth or an exact recurrent offset.**
+Apply the moving-prefix charge lemma at the product threshold `K * R`,
+then retain the fibers of the resulting offset map.  If
+
+    `(|B| + 1) * (K * R) < |C|`,
+
+one of three concrete outcomes occurs:
+
+* more than `R` distinct wealthy offsets;
+* more than `K` self-charged candidates share one exact value
+  `n b - b = M`;
+* more than `K` candidates charged to one fixed old `w ∈ B` share one
+  exact value `n b - w = M`.
+
+Thus repetition is no longer an unclassified loss in the stall-to-wealth
+bridge: it becomes one of two explicit affine recurrence patterns. -/
+theorem moving_prefix_stalls_distinct_or_recurrent
+    {A : Set ℕ} {N₀ K R L : ℕ} {B C : Finset ℕ} {n : ℕ → ℕ}
+    (hcov : PairCovers A N₀)
+    (hscale : ∀ b ∈ C, N₀ ≤ n b)
+    (hstall : ∀ b ∈ C, ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+      x ∉ insert b B → y ∉ insert b B → z ∉ insert b B →
+        x + y + z ≠ n b)
+    (hlow : ∀ b ∈ C,
+      (insert b B).card * L ≤
+        ((Finset.range (n b - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ insert b B)).card)
+    (hmany : (B.card + 1) * (K * R) < C.card) :
+    (∃ T : Finset ℕ, R < T.card ∧ T.card ≤ C.card ∧
+      ∀ M ∈ T,
+        (∃ b ∈ C, M ≤ n b) ∧
+          L ≤ ((Finset.range (M + 1)).filter
+            (fun x => x ∈ A ∧ (M - x) ∈ A)).card) ∨
+    (∃ M : ℕ, ∃ F : Finset ℕ, F ⊆ C ∧ K < F.card ∧
+      (∀ b ∈ F, n b - b = M) ∧
+      L ≤ ((Finset.range (M + 1)).filter
+        (fun x => x ∈ A ∧ (M - x) ∈ A)).card) ∨
+    (∃ w ∈ B, ∃ M : ℕ, ∃ F : Finset ℕ,
+      F ⊆ C ∧ K < F.card ∧
+      (∀ b ∈ F, n b - w = M) ∧
+      L ≤ ((Finset.range (M + 1)).filter
+        (fun x => x ∈ A ∧ (M - x) ∈ A)).card) := by
+  rcases moving_prefix_stalls_core_or_mobile
+      (K := K * R) hcov hscale hstall hlow hmany with
+    ⟨M, hMC, hMlarge, hwealth⟩ |
+      ⟨w, hwB, M, hMC, hMlarge, hwealth⟩
+  · rcases large_finset_image_or_large_fiber M
+      (fun b => n b - b) K R hMlarge with hDistinct | hRecurrent
+    · left
+      refine ⟨M.image (fun b => n b - b), hDistinct,
+        Finset.card_image_le.trans (Finset.card_le_card hMC), ?_⟩
+      intro q hq
+      rw [Finset.mem_image] at hq
+      obtain ⟨b, hbM, rfl⟩ := hq
+      exact ⟨⟨b, hMC hbM, Nat.sub_le _ _⟩, hwealth b hbM⟩
+    · right
+      left
+      obtain ⟨q, hqImage, hqFiber⟩ := hRecurrent
+      rw [Finset.mem_image] at hqImage
+      obtain ⟨b₀, hb₀M, hb₀q⟩ := hqImage
+      refine ⟨q, M.filter (fun b => n b - b = q), ?_,
+        hqFiber, ?_, ?_⟩
+      · intro b hb
+        exact hMC (Finset.mem_filter.1 hb).1
+      · intro b hb
+        exact (Finset.mem_filter.1 hb).2
+      · rw [← hb₀q]
+        exact hwealth b₀ hb₀M
+  · rcases large_finset_image_or_large_fiber M
+      (fun b => n b - w) K R hMlarge with hDistinct | hRecurrent
+    · left
+      refine ⟨M.image (fun b => n b - w), hDistinct,
+        Finset.card_image_le.trans (Finset.card_le_card hMC), ?_⟩
+      intro q hq
+      rw [Finset.mem_image] at hq
+      obtain ⟨b, hbM, rfl⟩ := hq
+      exact ⟨⟨b, hMC hbM, Nat.sub_le _ _⟩, hwealth b hbM⟩
+    · right
+      right
+      obtain ⟨q, hqImage, hqFiber⟩ := hRecurrent
+      rw [Finset.mem_image] at hqImage
+      obtain ⟨b₀, hb₀M, hb₀q⟩ := hqImage
+      refine ⟨w, hwB, q, M.filter (fun b => n b - w = q), ?_,
+        hqFiber, ?_, ?_⟩
+      · intro b hb
+        exact hMC (Finset.mem_filter.1 hb).1
+      · intro b hb
+        exact (Finset.mem_filter.1 hb).2
+      · rw [← hb₀q]
+        exact hwealth b₀ hb₀M
+
+open Classical in
+/-- **Four moving deletions at one target collapse to a fixed stall.**
+If the same target stalls after adjoining each member of a finite family
+`F` to an old prefix `B`, and `F` has at least four elements, then the
+target already stalls against `B`.
+
+Indeed, any triple avoiding `B` has only three entries, so some `b ∈ F`
+is absent from all of them.  That triple would also avoid `insert b B`,
+contradicting the corresponding moving stall. -/
+theorem four_moving_stalls_same_target_force_fixed_stall
+    {A : Set ℕ} {B F : Finset ℕ} {m : ℕ}
+    (hF : 3 < F.card)
+    (hstall : ∀ b ∈ F, ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+      x ∉ insert b B → y ∉ insert b B → z ∉ insert b B →
+        x + y + z ≠ m) :
+    ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+      x ∉ B → y ∉ B → z ∉ B → x + y + z ≠ m := by
+  intro x hxA y hyA z hzA hxB hyB hzB hsum
+  have hfresh : ∃ b ∈ F, b ∉ ({x, y, z} : Finset ℕ) := by
+    by_contra hnone
+    push Not at hnone
+    have hsub : F ⊆ ({x, y, z} : Finset ℕ) :=
+      fun b hb => hnone b hb
+    have hcard := Finset.card_le_card hsub
+    have hthree : ({x, y, z} : Finset ℕ).card ≤ 3 := by
+      apply le_trans (Finset.card_insert_le _ _)
+      have htwo := Finset.card_insert_le y ({z} : Finset ℕ)
+      simp at htwo ⊢
+      omega
+    omega
+  obtain ⟨b, hbF, hbFresh⟩ := hfresh
+  have hbxyz : b ≠ x ∧ b ≠ y ∧ b ≠ z := by
+    simpa using hbFresh
+  have hxInsert : x ∉ insert b B := by
+    intro hx
+    rcases Finset.mem_insert.1 hx with hxb | hxB'
+    · exact hbxyz.1 hxb.symm
+    · exact hxB hxB'
+  have hyInsert : y ∉ insert b B := by
+    intro hy
+    rcases Finset.mem_insert.1 hy with hyb | hyB'
+    · exact hbxyz.2.1 hyb.symm
+    · exact hyB hyB'
+  have hzInsert : z ∉ insert b B := by
+    intro hz
+    rcases Finset.mem_insert.1 hz with hzb | hzB'
+    · exact hbxyz.2.2 hzb.symm
+    · exact hzB hzB'
+  exact hstall b hbF x hxA y hyA z hzA
+    hxInsert hyInsert hzInsert hsum
+
+open Classical in
+/-- **An affine triple stall forces pair primitiveness.**
+If `a` survives the moving prefix `insert b B` and `b + a` has no
+triple representation avoiding that prefix, then every pair
+representation of `b` meets the prefix.  Otherwise `b = x + y` would
+give the forbidden surviving triple `x + y + a = b + a`. -/
+theorem affine_stall_forces_pair_hub
+    {A : Set ℕ} {B : Finset ℕ} {a b : ℕ}
+    (haA : a ∈ A) (haFresh : a ∉ insert b B)
+    (hstall : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+      x ∉ insert b B → y ∉ insert b B → z ∉ insert b B →
+        x + y + z ≠ b + a) :
+    IsPairHub A b (insert b B) := by
+  intro x hxA y hyA hxy
+  by_contra havoid
+  push Not at havoid
+  exact hstall x hxA y hyA a haA havoid.1 havoid.2 haFresh (by omega)
+
+open Classical in
+/-- **Risk-aware moving stalls: distinct wealth, an affine wall, or a
+fixed-prefix stall.**
+
+Assume each candidate really threatens its stalled target,
+`n b = b + a` for some `a ∈ A`, and every old prefix element lies below
+the new candidate.  At the threshold
+
+    `(|B| + 1) * (3 * R) < |C|`,
+
+the exact recurrent-offset lemma sharpens to three structural outcomes:
+
+1. more than `R` distinct wealthy offsets;
+2. four self-charged candidates lie on one affine wall `n b = b + a`,
+   where the fixed translate `a ∈ A` is itself wealthy;
+3. one target stalls against the fixed old prefix `B`, with the required
+   low-mass estimate transferred from a moving prefix.
+
+The third outcome uses `four_moving_stalls_same_target_force_fixed_stall`;
+the second is the first exact point where the argument genuinely remains
+mobile. -/
+theorem moving_prefix_risks_distinct_or_affine_or_fixed_stall
+    {A : Set ℕ} {N₀ R L : ℕ} {B C : Finset ℕ} {n : ℕ → ℕ}
+    (hcov : PairCovers A N₀)
+    (hscale : ∀ b ∈ C, N₀ ≤ n b)
+    (hcandidate : ∀ b ∈ C, b ∈ A)
+    (hrisk : ∀ b ∈ C, ∃ a ∈ A, b + a = n b)
+    (hordered : ∀ b ∈ C, ∀ w ∈ B, w ≤ b)
+    (hstall : ∀ b ∈ C, ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+      x ∉ insert b B → y ∉ insert b B → z ∉ insert b B →
+        x + y + z ≠ n b)
+    (hlow : ∀ b ∈ C,
+      (insert b B).card * L ≤
+        ((Finset.range (n b - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ insert b B)).card)
+    (hmany : (B.card + 1) * (3 * R) < C.card) :
+    (∃ T : Finset ℕ, R < T.card ∧ T.card ≤ C.card ∧
+      ∀ M ∈ T,
+        (∃ b ∈ C, M ≤ n b) ∧
+          L ≤ ((Finset.range (M + 1)).filter
+            (fun x => x ∈ A ∧ (M - x) ∈ A)).card) ∨
+    (∃ a ∈ A, ∃ F : Finset ℕ, F ⊆ C ∧ 3 < F.card ∧
+      (∀ b ∈ F, b ∈ A ∧ n b = b + a) ∧
+      L ≤ ((Finset.range (a + 1)).filter
+        (fun x => x ∈ A ∧ (a - x) ∈ A)).card ∧
+      (a ∈ B ∨ ∃ G : Finset ℕ, G ⊆ F ∧ 2 < G.card ∧
+        ∀ b ∈ G, IsPairHub A b (insert b B))) ∨
+    (∃ m, N₀ ≤ m ∧ (∀ w ∈ B, w ≤ m) ∧
+      (∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+        x ∉ B → y ∉ B → z ∉ B → x + y + z ≠ m) ∧
+      B.card * L ≤
+        ((Finset.range (m - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ B)).card) := by
+  rcases moving_prefix_stalls_distinct_or_recurrent
+      (K := 3) hcov hscale hstall hlow hmany with
+    hDistinct | hAffine | hCore
+  · exact Or.inl hDistinct
+  · right
+    left
+    obtain ⟨a, F, hFC, hFlarge, hoffset, hwealth⟩ := hAffine
+    obtain ⟨b₀, hb₀F⟩ := Finset.card_pos.mp (by omega : 0 < F.card)
+    obtain ⟨a₀, ha₀A, ha₀eq⟩ := hrisk b₀ (hFC hb₀F)
+    have haA : a ∈ A := by
+      have haeq : n b₀ - b₀ = a₀ := by omega
+      rw [hoffset b₀ hb₀F] at haeq
+      rw [haeq]
+      exact ha₀A
+    have hwall : ∀ b ∈ F, n b = b + a := by
+      intro b hbF
+      obtain ⟨a', ha'A, ha'eq⟩ := hrisk b (hFC hbF)
+      have hsub : n b - b = a' := by omega
+      rw [hoffset b hbF] at hsub
+      omega
+    have hwallA : ∀ b ∈ F, b ∈ A ∧ n b = b + a :=
+      fun b hbF => ⟨hcandidate b (hFC hbF), hwall b hbF⟩
+    have hstructure :
+        a ∈ B ∨ ∃ G : Finset ℕ, G ⊆ F ∧ 2 < G.card ∧
+          ∀ b ∈ G, IsPairHub A b (insert b B) := by
+      by_cases haB : a ∈ B
+      · exact Or.inl haB
+      · right
+        refine ⟨F.erase a, Finset.erase_subset a F, ?_, ?_⟩
+        · by_cases haF : a ∈ F
+          · rw [Finset.card_erase_of_mem haF]
+            omega
+          · rw [Finset.erase_eq_self.mpr haF]
+            omega
+        · intro b hb
+          rw [Finset.mem_erase] at hb
+          have haFresh : a ∉ insert b B := by
+            intro ha
+            rcases Finset.mem_insert.1 ha with hab | haB'
+            · exact hb.1 hab.symm
+            · exact haB haB'
+          apply affine_stall_forces_pair_hub haA haFresh
+          intro x hxA y hyA z hzA hxI hyI hzI
+          rw [← hwall b hb.2]
+          exact hstall b (hFC hb.2) x hxA y hyA z hzA hxI hyI hzI
+    exact ⟨a, haA, F, hFC, hFlarge, hwallA, hwealth, hstructure⟩
+  · right
+    right
+    obtain ⟨w, hwB, q, F, hFC, hFlarge, hoffset, hwealth⟩ := hCore
+    have htarget : ∀ b ∈ F, n b = q + w := by
+      intro b hbF
+      obtain ⟨a, haA, haeq⟩ := hrisk b (hFC hbF)
+      have hbLe : b ≤ n b := by omega
+      have hwLe : w ≤ n b :=
+        le_trans (hordered b (hFC hbF) w hwB) hbLe
+      have hoff := hoffset b hbF
+      omega
+    have hfixedStall :
+        ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+          x ∉ B → y ∉ B → z ∉ B → x + y + z ≠ q + w := by
+      apply four_moving_stalls_same_target_force_fixed_stall hFlarge
+      intro b hbF x hxA y hyA z hzA hxI hyI hzI
+      rw [← htarget b hbF]
+      exact hstall b (hFC hbF) x hxA y hyA z hzA hxI hyI hzI
+    obtain ⟨b₀, hb₀F⟩ := Finset.card_pos.mp (by omega : 0 < F.card)
+    have hb₀C := hFC hb₀F
+    have hmScale : N₀ ≤ q + w := by
+      rw [← htarget b₀ hb₀F]
+      exact hscale b₀ hb₀C
+    have hBbelow : ∀ u ∈ B, u ≤ q + w := by
+      intro u huB
+      obtain ⟨a, haA, haeq⟩ := hrisk b₀ hb₀C
+      have hb₀Le : b₀ ≤ n b₀ := by omega
+      rw [← htarget b₀ hb₀F]
+      exact le_trans (hordered b₀ hb₀C u huB) hb₀Le
+    have hcardPrefix : B.card ≤ (insert b₀ B).card :=
+      Finset.card_le_card (Finset.subset_insert b₀ B)
+    have hsurvivorSubset :
+        ((Finset.range (n b₀ - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ insert b₀ B)) ⊆
+        ((Finset.range (n b₀ - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ B)) := by
+      intro z hz
+      rw [Finset.mem_filter] at hz ⊢
+      refine ⟨hz.1, hz.2.1, ?_⟩
+      exact fun hzB => hz.2.2 (Finset.mem_insert_of_mem hzB)
+    have hlowFixed :
+        B.card * L ≤
+          ((Finset.range (q + w - N₀ + 1)).filter
+            (fun z => z ∈ A ∧ z ∉ B)).card := by
+      have hmul :
+          B.card * L ≤ (insert b₀ B).card * L :=
+        Nat.mul_le_mul_right L hcardPrefix
+      have hcardSurvivors := Finset.card_le_card hsurvivorSubset
+      rw [htarget b₀ hb₀F] at hcardSurvivors
+      have hlow₀ := hlow b₀ hb₀C
+      rw [htarget b₀ hb₀F] at hlow₀
+      exact hmul.trans (hlow₀.trans hcardSurvivors)
+    exact ⟨q + w, hmScale, hBbelow, hfixedStall, hlowFixed⟩
+
+open Classical in
+/-- **Collateral private stalls: distinct wealth, a survivor co-sum
+wall, or a fixed-prefix stall.**
+
+The risk-aware theorem handles targets of the form `n b = b + a`.
+Collateral failures instead make `n b` private to `b` over `A \ B`.
+Privacy supplies the missing affine information: `b ≤ n b`, and
+`n b - b` is a sum of two old survivors.  Therefore the same
+charge/fiber argument yields:
+
+1. more than `R` distinct wealthy offsets;
+2. four candidates on one wall `n b = b + q`, where `q` splits into
+   two elements of `A \ B`;
+3. one genuine fixed-prefix stall.
+-/
+theorem moving_prefix_private_distinct_or_cosum_or_fixed_stall
+    {A : Set ℕ} {N₀ R L : ℕ} {B C : Finset ℕ} {n : ℕ → ℕ}
+    (hcov : PairCovers A N₀)
+    (hscale : ∀ b ∈ C, N₀ ≤ n b)
+    (hprivate : ∀ b ∈ C,
+      IsPrivateTriple (A \ (B : Set ℕ)) b (n b))
+    (hordered : ∀ b ∈ C, ∀ w ∈ B, w ≤ b)
+    (hlow : ∀ b ∈ C,
+      (insert b B).card * L ≤
+        ((Finset.range (n b - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ insert b B)).card)
+    (hmany : (B.card + 1) * (3 * R) < C.card) :
+    (∃ T : Finset ℕ, R < T.card ∧ T.card ≤ C.card ∧
+      ∀ M ∈ T,
+        (∃ b ∈ C, M ≤ n b) ∧
+          L ≤ ((Finset.range (M + 1)).filter
+            (fun x => x ∈ A ∧ (M - x) ∈ A)).card) ∨
+    (∃ q, (∃ u ∈ A \ (B : Set ℕ), ∃ v ∈ A \ (B : Set ℕ),
+        u + v = q) ∧
+      ∃ F : Finset ℕ, F ⊆ C ∧ 3 < F.card ∧
+        (∀ b ∈ F, b ∈ A \ (B : Set ℕ) ∧ n b = b + q ∧
+          IsRepHub A (b + q) (insert b B)) ∧
+        L ≤ ((Finset.range (q + 1)).filter
+          (fun x => x ∈ A ∧ (q - x) ∈ A)).card) ∨
+    (∃ m, N₀ ≤ m ∧ (∀ w ∈ B, w ≤ m) ∧
+      (∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+        x ∉ B → y ∉ B → z ∉ B → x + y + z ≠ m) ∧
+      B.card * L ≤
+        ((Finset.range (m - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ B)).card) := by
+  have hstall : ∀ b ∈ C, ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+      x ∉ insert b B → y ∉ insert b B → z ∉ insert b B →
+        x + y + z ≠ n b := by
+    intro b hbC
+    apply moving_stall_iff_relative_singleton_hub.mpr
+    intro x hx y hy z hz hsum
+    rcases (hprivate b hbC).2 x hx y hy z hz hsum with h | h | h
+    · exact Or.inl (Finset.mem_singleton.2 h)
+    · exact Or.inr (Or.inl (Finset.mem_singleton.2 h))
+    · exact Or.inr (Or.inr (Finset.mem_singleton.2 h))
+  rcases moving_prefix_stalls_distinct_or_recurrent
+      (K := 3) hcov hscale hstall hlow hmany with
+    hDistinct | hAffine | hCore
+  · exact Or.inl hDistinct
+  · right
+    left
+    obtain ⟨q, F, hFC, hFlarge, hoffset, hwealth⟩ := hAffine
+    obtain ⟨b₀, hb₀F⟩ := Finset.card_pos.mp (by omega : 0 < F.card)
+    obtain ⟨hb₀S, hb₀Le, u, huS, v, hvS, huv⟩ :=
+      (hprivate b₀ (hFC hb₀F)).guardian_mem_le_and_complement_split
+    have hqsplit :
+        ∃ u ∈ A \ (B : Set ℕ), ∃ v ∈ A \ (B : Set ℕ),
+          u + v = q := by
+      rw [hoffset b₀ hb₀F] at huv
+      exact ⟨u, huS, v, hvS, huv⟩
+    have hwall : ∀ b ∈ F, n b = b + q := by
+      intro b hbF
+      have hbLe :=
+        (hprivate b (hFC hbF)).guardian_mem_le_and_complement_split.2.1
+      have hoff := hoffset b hbF
+      omega
+    refine ⟨q, hqsplit, F, hFC, hFlarge, ?_, hwealth⟩
+    intro b hbF
+    have hbS :=
+      (hprivate b (hFC hbF)).guardian_mem_le_and_complement_split.1
+    refine ⟨hbS, hwall b hbF, ?_⟩
+    intro x hxA y hyA z hzA hsum
+    by_contra havoid
+    push Not at havoid
+    have hne := hstall b (hFC hbF) x hxA y hyA z hzA
+      havoid.1 havoid.2.1 havoid.2.2
+    rw [hwall b hbF] at hne
+    exact hne hsum
+  · right
+    right
+    obtain ⟨w, hwB, q, F, hFC, hFlarge, hoffset, hwealth⟩ := hCore
+    have htarget : ∀ b ∈ F, n b = q + w := by
+      intro b hbF
+      have hbLe :=
+        (hprivate b (hFC hbF)).guardian_mem_le_and_complement_split.2.1
+      have hwLe : w ≤ n b :=
+        le_trans (hordered b (hFC hbF) w hwB) hbLe
+      have hoff := hoffset b hbF
+      omega
+    have hfixedStall :
+        ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+          x ∉ B → y ∉ B → z ∉ B → x + y + z ≠ q + w := by
+      apply four_moving_stalls_same_target_force_fixed_stall hFlarge
+      intro b hbF x hxA y hyA z hzA hxI hyI hzI
+      rw [← htarget b hbF]
+      exact hstall b (hFC hbF) x hxA y hyA z hzA hxI hyI hzI
+    obtain ⟨b₀, hb₀F⟩ := Finset.card_pos.mp (by omega : 0 < F.card)
+    have hb₀C := hFC hb₀F
+    have hmScale : N₀ ≤ q + w := by
+      rw [← htarget b₀ hb₀F]
+      exact hscale b₀ hb₀C
+    have hBbelow : ∀ u ∈ B, u ≤ q + w := by
+      intro u huB
+      have hb₀Le :=
+        (hprivate b₀ hb₀C).guardian_mem_le_and_complement_split.2.1
+      rw [← htarget b₀ hb₀F]
+      exact le_trans (hordered b₀ hb₀C u huB) hb₀Le
+    have hcardPrefix : B.card ≤ (insert b₀ B).card :=
+      Finset.card_le_card (Finset.subset_insert b₀ B)
+    have hsurvivorSubset :
+        ((Finset.range (n b₀ - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ insert b₀ B)) ⊆
+        ((Finset.range (n b₀ - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ B)) := by
+      intro z hz
+      rw [Finset.mem_filter] at hz ⊢
+      refine ⟨hz.1, hz.2.1, ?_⟩
+      exact fun hzB => hz.2.2 (Finset.mem_insert_of_mem hzB)
+    have hlowFixed :
+        B.card * L ≤
+          ((Finset.range (q + w - N₀ + 1)).filter
+            (fun z => z ∈ A ∧ z ∉ B)).card := by
+      have hmul :
+          B.card * L ≤ (insert b₀ B).card * L :=
+        Nat.mul_le_mul_right L hcardPrefix
+      have hcardSurvivors := Finset.card_le_card hsurvivorSubset
+      rw [htarget b₀ hb₀F] at hcardSurvivors
+      have hlow₀ := hlow b₀ hb₀C
+      rw [htarget b₀ hb₀F] at hlow₀
+      exact hmul.trans (hlow₀.trans hcardSurvivors)
+    exact ⟨q + w, hmScale, hBbelow, hfixedStall, hlowFixed⟩
+
+open Classical in
+/-- **The honest finite greedy-step structure theorem.**
+Assume the old prefix `B` serves all its risks.  Take a large ordered
+batch `C` of basis candidates, each with enough survivor mass already
+visible below `b - N₀`.  Then one of five outcomes occurs:
+
+1. some `b ∈ C` safely extends the prefix;
+2. more than `R` distinct wealthy offsets are produced;
+3. a wealthy affine wall appears (old translate or moving pair hubs);
+4. a genuine fixed-prefix stall appears;
+5. a large collateral family is private to its candidates over `A \ B`.
+
+The size threshold has one factor `2` for the self/collateral split and
+the exact factor `(|B|+1)*3*R` from charge and offset fibers.  The low
+mass hypothesis is checked at `b`; self-risk gives `b ≤ n b`, so it
+transfers monotonically to the selected stalled target. -/
+theorem greedy_batch_safe_or_wealth_or_affine_or_fixed_or_collateral
+    {A : Set ℕ} {N₀ R L : ℕ} {B C : Finset ℕ}
+    (hcov : PairCovers A N₀)
+    (hserved : FinitePrefixServesRisks A N₀ B)
+    (hcandidate : ∀ b ∈ C, b ∈ A)
+    (hordered : ∀ b ∈ C, ∀ w ∈ B, w ≤ b)
+    (hlow : ∀ b ∈ C,
+      (insert b B).card * L ≤
+        ((Finset.range (b - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ insert b B)).card)
+    (hmany : 2 * ((B.card + 1) * (3 * R)) < C.card) :
+    (∃ b ∈ C, FinitePrefixServesRisks A N₀ (insert b B)) ∨
+    (∃ T : Finset ℕ, R < T.card ∧ T.card ≤ C.card ∧
+      ∀ M ∈ T,
+        L ≤ ((Finset.range (M + 1)).filter
+          (fun x => x ∈ A ∧ (M - x) ∈ A)).card) ∨
+    (∃ a ∈ A, ∃ F : Finset ℕ, F ⊆ C ∧ 3 < F.card ∧
+      (∀ b ∈ F, b ∈ A ∧
+        IsRepHub A (b + a) (insert b B)) ∧
+      L ≤ ((Finset.range (a + 1)).filter
+        (fun x => x ∈ A ∧ (a - x) ∈ A)).card ∧
+      (a ∈ B ∨ ∃ G : Finset ℕ, G ⊆ F ∧ 2 < G.card ∧
+        ∀ b ∈ G, IsPairHub A b (insert b B))) ∨
+    (∃ m, N₀ ≤ m ∧ (∀ w ∈ B, w ≤ m) ∧
+      (∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+        x ∉ B → y ∉ B → z ∉ B → x + y + z ≠ m) ∧
+      B.card * L ≤
+        ((Finset.range (m - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ B)).card) ∨
+    (∃ P : Finset ℕ, P ⊆ C ∧
+      (B.card + 1) * (3 * R) < P.card ∧
+      ∀ b ∈ P, ∃ n, N₀ ≤ n ∧
+        (∃ d ∈ B, ∃ a ∈ A, d + a = n) ∧
+        IsPrivateTriple (A \ (B : Set ℕ)) b n) := by
+  rcases candidate_batch_safe_or_self_stalls_or_collateral_private
+      hserved hmany with hsafe | hself | hcollateral
+  · exact Or.inl hsafe
+  · obtain ⟨S, hSC, hSlarge, hself⟩ := hself
+    have hpick : ∀ b, ∃ n, b ∈ S →
+        N₀ ≤ n ∧ (∃ a ∈ A, b + a = n) ∧
+        ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+          x ∉ insert b B → y ∉ insert b B →
+            z ∉ insert b B → x + y + z ≠ n := by
+      intro b
+      by_cases hbS : b ∈ S
+      · obtain ⟨n, hn⟩ := hself b hbS
+        exact ⟨n, fun _ => hn⟩
+      · exact ⟨0, fun hb => absurd hb hbS⟩
+    choose n hn using hpick
+    have hscale : ∀ b ∈ S, N₀ ≤ n b :=
+      fun b hb => (hn b hb).1
+    have hrisk : ∀ b ∈ S, ∃ a ∈ A, b + a = n b :=
+      fun b hb => (hn b hb).2.1
+    have hstall : ∀ b ∈ S, ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+        x ∉ insert b B → y ∉ insert b B → z ∉ insert b B →
+          x + y + z ≠ n b :=
+      fun b hb => (hn b hb).2.2
+    have hlowS : ∀ b ∈ S,
+        (insert b B).card * L ≤
+          ((Finset.range (n b - N₀ + 1)).filter
+            (fun z => z ∈ A ∧ z ∉ insert b B)).card := by
+      intro b hbS
+      obtain ⟨a, haA, haeq⟩ := hrisk b hbS
+      have hbLe : b ≤ n b := by omega
+      apply (hlow b (hSC hbS)).trans
+      apply Finset.card_le_card
+      intro z hz
+      rw [Finset.mem_filter, Finset.mem_range] at hz ⊢
+      exact ⟨by omega, hz.2⟩
+    rcases moving_prefix_risks_distinct_or_affine_or_fixed_stall
+        (B := B) (C := S) hcov hscale
+          (fun b hb => hcandidate b (hSC hb))
+          hrisk (fun b hb => hordered b (hSC hb))
+          hstall hlowS hSlarge with
+      hDistinct | hAffine | hFixed
+    · right
+      left
+      obtain ⟨T, hTR, hTS, hwealth⟩ := hDistinct
+      refine ⟨T, hTR, hTS.trans (Finset.card_le_card hSC), ?_⟩
+      intro M hMT
+      exact (hwealth M hMT).2
+    · right
+      right
+      left
+      obtain ⟨a, haA, F, hFS, hFlarge, hwall,
+        hwealth, hstructure⟩ := hAffine
+      refine ⟨a, haA, F, hFS.trans hSC, hFlarge, ?_,
+        hwealth, hstructure⟩
+      intro b hbF
+      refine ⟨(hwall b hbF).1, ?_⟩
+      intro x hxA y hyA z hzA hsum
+      by_contra havoid
+      push Not at havoid
+      have hne := hstall b (hFS hbF) x hxA y hyA z hzA
+        havoid.1 havoid.2.1 havoid.2.2
+      rw [(hwall b hbF).2] at hne
+      exact hne hsum
+    · exact Or.inr (Or.inr (Or.inr (Or.inl hFixed)))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr hcollateral)))
+
+open Classical in
+/-- **Complete finite greedy fork: no unclassified collateral branch.**
+The collateral family in
+`greedy_batch_safe_or_wealth_or_affine_or_fixed_or_collateral`
+also passes through the charge/fiber theorem because privacy forces
+`b ≤ n`.  Its recurrent self-offset is a sum of two old survivors.
+Hence a sufficiently large ordered candidate batch has only:
+
+1. a safe extension;
+2. many distinct wealthy offsets;
+3. a wealthy affine wall at an actual basis translate;
+4. a wealthy affine wall at a translate splitting into two old survivors;
+5. a fixed-prefix stall.
+
+Every branch is now a direct structural or constructive object. -/
+theorem greedy_batch_complete_structural_fork
+    {A : Set ℕ} {N₀ R L : ℕ} {B C : Finset ℕ}
+    (hcov : PairCovers A N₀)
+    (hserved : FinitePrefixServesRisks A N₀ B)
+    (hcandidate : ∀ b ∈ C, b ∈ A)
+    (hordered : ∀ b ∈ C, ∀ w ∈ B, w ≤ b)
+    (hlow : ∀ b ∈ C,
+      (insert b B).card * L ≤
+        ((Finset.range (b - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ insert b B)).card)
+    (hmany : 2 * ((B.card + 1) * (3 * R)) < C.card) :
+    (∃ b ∈ C, FinitePrefixServesRisks A N₀ (insert b B)) ∨
+    (∃ T : Finset ℕ, R < T.card ∧ T.card ≤ C.card ∧
+      ∀ M ∈ T,
+        L ≤ ((Finset.range (M + 1)).filter
+          (fun x => x ∈ A ∧ (M - x) ∈ A)).card) ∨
+    (∃ a ∈ A, ∃ F : Finset ℕ, F ⊆ C ∧ 3 < F.card ∧
+      (∀ b ∈ F, b ∈ A ∧ IsRepHub A (b + a) (insert b B)) ∧
+      L ≤ ((Finset.range (a + 1)).filter
+        (fun x => x ∈ A ∧ (a - x) ∈ A)).card ∧
+      (a ∈ B ∨ ∃ G : Finset ℕ, G ⊆ F ∧ 2 < G.card ∧
+        ∀ b ∈ G, IsPairHub A b (insert b B))) ∨
+    (∃ q, (∃ u ∈ A \ (B : Set ℕ), ∃ v ∈ A \ (B : Set ℕ),
+        u + v = q) ∧
+      ∃ F : Finset ℕ, F ⊆ C ∧ 3 < F.card ∧
+        (∀ b ∈ F, b ∈ A \ (B : Set ℕ) ∧
+          IsRepHub A (b + q) (insert b B)) ∧
+        L ≤ ((Finset.range (q + 1)).filter
+          (fun x => x ∈ A ∧ (q - x) ∈ A)).card) ∨
+    (∃ m, N₀ ≤ m ∧ (∀ w ∈ B, w ≤ m) ∧
+      (∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+        x ∉ B → y ∉ B → z ∉ B → x + y + z ≠ m) ∧
+      B.card * L ≤
+        ((Finset.range (m - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ B)).card) := by
+  rcases greedy_batch_safe_or_wealth_or_affine_or_fixed_or_collateral
+      hcov hserved hcandidate hordered hlow hmany with
+    hsafe | hDistinct | hAffine | hFixed | hCollateral
+  · exact Or.inl hsafe
+  · exact Or.inr (Or.inl hDistinct)
+  · exact Or.inr (Or.inr (Or.inl hAffine))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr hFixed)))
+  · obtain ⟨P, hPC, hPlarge, hprivateWitness⟩ := hCollateral
+    have hpick : ∀ b, ∃ n, b ∈ P →
+        N₀ ≤ n ∧
+        (∃ d ∈ B, ∃ a ∈ A, d + a = n) ∧
+        IsPrivateTriple (A \ (B : Set ℕ)) b n := by
+      intro b
+      by_cases hbP : b ∈ P
+      · obtain ⟨n, hn⟩ := hprivateWitness b hbP
+        exact ⟨n, fun _ => hn⟩
+      · exact ⟨0, fun hb => absurd hb hbP⟩
+    choose n hn using hpick
+    have hscaleP : ∀ b ∈ P, N₀ ≤ n b :=
+      fun b hb => (hn b hb).1
+    have hprivateP : ∀ b ∈ P,
+        IsPrivateTriple (A \ (B : Set ℕ)) b (n b) :=
+      fun b hb => (hn b hb).2.2
+    have hlowP : ∀ b ∈ P,
+        (insert b B).card * L ≤
+          ((Finset.range (n b - N₀ + 1)).filter
+            (fun z => z ∈ A ∧ z ∉ insert b B)).card := by
+      intro b hbP
+      have hbLe :=
+        (hprivateP b hbP).guardian_mem_le_and_complement_split.2.1
+      apply (hlow b (hPC hbP)).trans
+      apply Finset.card_le_card
+      intro z hz
+      rw [Finset.mem_filter, Finset.mem_range] at hz ⊢
+      exact ⟨by omega, hz.2⟩
+    rcases moving_prefix_private_distinct_or_cosum_or_fixed_stall
+        (B := B) (C := P) hcov hscaleP hprivateP
+          (fun b hb => hordered b (hPC hb)) hlowP hPlarge with
+      hDistinct | hCosum | hFixed
+    · right
+      left
+      obtain ⟨T, hTR, hTP, hwealth⟩ := hDistinct
+      refine ⟨T, hTR, hTP.trans (Finset.card_le_card hPC), ?_⟩
+      intro M hMT
+      exact (hwealth M hMT).2
+    · right
+      right
+      right
+      left
+      obtain ⟨q, hqsplit, F, hFP, hFlarge, hwall, hwealth⟩ := hCosum
+      refine ⟨q, hqsplit, F, hFP.trans hPC, hFlarge, ?_, hwealth⟩
+      intro b hbF
+      exact ⟨(hwall b hbF).1, (hwall b hbF).2.2⟩
+    · exact Or.inr (Or.inr (Or.inr (Or.inr hFixed)))
+
+open Classical in
+/-- **Large ordered candidate batches with uniform low supply always
+exist.**
+For any finite prefix `B` and requested parameters `R,L`, covering
+provides:
+
+* a reserved block of `(B.card+1)*L` basis elements above `B`;
+* more than `2*(B.card+1)*3*R` later basis candidates;
+* a gap of more than `N₀` between the reserved block and every candidate.
+
+The reserved block avoids every moving prefix `insert b B` and lies below
+`b-N₀`, proving exactly the low-mass hypothesis consumed by
+`greedy_batch_complete_structural_fork`. -/
+theorem exists_large_ordered_candidate_batch_with_low_supply
+    {A : Set ℕ} {N₀ R L : ℕ} (hcov : PairCovers A N₀)
+    (B : Finset ℕ) :
+    ∃ C : Finset ℕ,
+      2 * ((B.card + 1) * (3 * R)) < C.card ∧
+      (∀ b ∈ C, b ∈ A) ∧
+      (∀ b ∈ C, 0 < b) ∧
+      (∀ b ∈ C, ∀ w ∈ B, w < b) ∧
+      ∀ b ∈ C,
+        (insert b B).card * L ≤
+          ((Finset.range (b - N₀ + 1)).filter
+            (fun z => z ∈ A ∧ z ∉ insert b B)).card := by
+  have hstep : ∀ x : ℕ, ∃ a, a ∈ A ∧ x + N₀ < a := by
+    intro x
+    obtain ⟨a, haA, ha⟩ :=
+      pairCovers_unbounded hcov (x + N₀ + 1)
+    exact ⟨a, haA, by omega⟩
+  choose f hfA hfgap using hstep
+  let e : ℕ → ℕ :=
+    fun i => Nat.rec (f (B.sup id)) (fun _ prev => f prev) i
+  have he0 : e 0 = f (B.sup id) := rfl
+  have heSucc : ∀ i, e (i + 1) = f (e i) := fun _ => rfl
+  have heA : ∀ i, e i ∈ A := by
+    intro i
+    cases i with
+    | zero =>
+        rw [he0]
+        exact hfA _
+    | succ i =>
+        rw [heSucc]
+        exact hfA _
+  have hegap : ∀ i, e i + N₀ < e (i + 1) := by
+    intro i
+    rw [heSucc]
+    exact hfgap _
+  have hemono : StrictMono e :=
+    strictMono_nat_of_lt_succ (fun i => by
+      have := hegap i
+      omega)
+  have heAbove : ∀ i, B.sup id < e i := by
+    intro i
+    have hbase : B.sup id < e 0 := by
+      rw [he0]
+      have := hfgap (B.sup id)
+      omega
+    exact hbase.trans_le (hemono.monotone (Nat.zero_le i))
+  let Q := (B.card + 1) * L
+  let H := 2 * ((B.card + 1) * (3 * R)) + 1
+  let W := (Finset.range Q).image e
+  let C := (Finset.range H).image (fun j => e (Q + j))
+  have hWcard : W.card = Q := by
+    rw [show W = (Finset.range Q).image e from rfl,
+      Finset.card_image_of_injective _ hemono.injective,
+      Finset.card_range]
+  have hCcard : C.card = H := by
+    rw [show C = (Finset.range H).image (fun j => e (Q + j)) from rfl,
+      Finset.card_image_of_injective, Finset.card_range]
+    intro i j hij
+    have hidx : Q + i = Q + j := hemono.injective hij
+    omega
+  refine ⟨C, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [hCcard]
+    simp only [H]
+    omega
+  · intro b hbC
+    rw [show C = (Finset.range H).image (fun j => e (Q + j)) from rfl,
+      Finset.mem_image] at hbC
+    obtain ⟨j, hj, rfl⟩ := hbC
+    exact heA _
+  · intro b hbC
+    rw [show C = (Finset.range H).image (fun j => e (Q + j)) from rfl,
+      Finset.mem_image] at hbC
+    obtain ⟨j, hj, rfl⟩ := hbC
+    have := heAbove (Q + j)
+    omega
+  · intro b hbC w hwB
+    rw [show C = (Finset.range H).image (fun j => e (Q + j)) from rfl,
+      Finset.mem_image] at hbC
+    obtain ⟨j, hj, rfl⟩ := hbC
+    have hwSup : w ≤ B.sup id := Finset.le_sup (f := id) hwB
+    exact hwSup.trans_lt (heAbove _)
+  · intro b hbC
+    rw [show C = (Finset.range H).image (fun j => e (Q + j)) from rfl,
+      Finset.mem_image] at hbC
+    obtain ⟨j, hj, rfl⟩ := hbC
+    have hWsub :
+        W ⊆ ((Finset.range (e (Q + j) - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ insert (e (Q + j)) B)) := by
+      intro z hzW
+      rw [show W = (Finset.range Q).image e from rfl,
+        Finset.mem_image] at hzW
+      obtain ⟨i, hi, rfl⟩ := hzW
+      have hiQ : i < Q := Finset.mem_range.1 hi
+      have hindex : i + 1 ≤ Q + j := by omega
+      have hsep : e i + N₀ < e (Q + j) :=
+        (hegap i).trans_le (hemono.monotone hindex)
+      have hiB : e i ∉ B := by
+        intro heiB
+        have hle : e i ≤ B.sup id := Finset.le_sup (f := id) heiB
+        exact (not_lt_of_ge hle) (heAbove i)
+      have hneq : e i ≠ e (Q + j) := by omega
+      rw [Finset.mem_filter, Finset.mem_range]
+      refine ⟨by omega, heA i, ?_⟩
+      intro hmem
+      rcases Finset.mem_insert.1 hmem with heq | hmemB
+      · exact hneq heq
+      · exact hiB hmemB
+    have hreserved :
+        Q ≤ ((Finset.range (e (Q + j) - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ insert (e (Q + j)) B)).card := by
+      calc
+        Q = W.card := hWcard.symm
+        _ ≤ ((Finset.range (e (Q + j) - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ insert (e (Q + j)) B)).card :=
+            Finset.card_le_card hWsub
+    have hprefix : (insert (e (Q + j)) B).card ≤ B.card + 1 :=
+      Finset.card_insert_le _ _
+    have hpay :
+        (insert (e (Q + j)) B).card * L ≤ Q := by
+      simp only [Q]
+      exact Nat.mul_le_mul_right L hprefix
+    exact hpay.trans hreserved
+
+open Classical in
+/-- **Unconditional finite-prefix extension fork.**
+At every finite prefix that currently serves its risks, and for every
+requested wealth multiplicity `L` and distinctness threshold `R`, covering
+itself supplies enough fresh candidates to invoke the complete structural
+fork.  Therefore either the prefix has a fresh safe extension, or one of
+the four explicit obstruction objects already exists:
+
+* `R+1` distinct `L`-wealthy offsets;
+* a basis-translate affine wall;
+* a survivor-co-sum affine wall;
+* a fixed-prefix stall.
+
+There is no remaining candidate-supply or moving-prefix hypothesis in this
+interface. -/
+theorem finite_prefix_extension_or_complete_structure
+    {A : Set ℕ} {N₀ R L : ℕ} {B : Finset ℕ}
+    (hcov : PairCovers A N₀)
+    (hserved : FinitePrefixServesRisks A N₀ B) :
+    (∃ b ∈ A, 0 < b ∧ (∀ w ∈ B, w < b) ∧
+      FinitePrefixServesRisks A N₀ (insert b B)) ∨
+    (∃ T : Finset ℕ, R < T.card ∧
+      ∀ M ∈ T,
+        L ≤ ((Finset.range (M + 1)).filter
+          (fun x => x ∈ A ∧ (M - x) ∈ A)).card) ∨
+    (∃ a ∈ A, ∃ F : Finset ℕ, 3 < F.card ∧
+      (∀ b ∈ F, b ∈ A ∧ IsRepHub A (b + a) (insert b B)) ∧
+      L ≤ ((Finset.range (a + 1)).filter
+        (fun x => x ∈ A ∧ (a - x) ∈ A)).card ∧
+      (a ∈ B ∨ ∃ G : Finset ℕ, G ⊆ F ∧ 2 < G.card ∧
+        ∀ b ∈ G, IsPairHub A b (insert b B))) ∨
+    (∃ q, (∃ u ∈ A \ (B : Set ℕ), ∃ v ∈ A \ (B : Set ℕ),
+        u + v = q) ∧
+      ∃ F : Finset ℕ, 3 < F.card ∧
+        (∀ b ∈ F, b ∈ A \ (B : Set ℕ) ∧
+          IsRepHub A (b + q) (insert b B)) ∧
+        L ≤ ((Finset.range (q + 1)).filter
+          (fun x => x ∈ A ∧ (q - x) ∈ A)).card) ∨
+    (∃ m, N₀ ≤ m ∧ (∀ w ∈ B, w ≤ m) ∧
+      (∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+        x ∉ B → y ∉ B → z ∉ B → x + y + z ≠ m) ∧
+      B.card * L ≤
+        ((Finset.range (m - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ B)).card) := by
+  obtain ⟨C, hmany, hcandidate, hpositive, hordered, hlow⟩ :=
+    exists_large_ordered_candidate_batch_with_low_supply
+      (R := R) (L := L) hcov B
+  rcases greedy_batch_complete_structural_fork
+      hcov hserved hcandidate
+        (fun b hb w hw => (hordered b hb w hw).le)
+        hlow hmany with
+    hsafe | hDistinct | hAffine | hCosum | hFixed
+  · left
+    obtain ⟨b, hbC, hsafe⟩ := hsafe
+    exact ⟨b, hcandidate b hbC, hpositive b hbC,
+      hordered b hbC, hsafe⟩
+  · obtain ⟨T, hTR, hTC, hwealth⟩ := hDistinct
+    exact Or.inr (Or.inl ⟨T, hTR, hwealth⟩)
+  · right
+    right
+    left
+    obtain ⟨a, haA, F, hFC, hFlarge, hwall,
+      hwealth, hstructure⟩ := hAffine
+    exact ⟨a, haA, F, hFlarge, hwall, hwealth, hstructure⟩
+  · right
+    right
+    right
+    left
+    obtain ⟨q, hqsplit, F, hFC, hFlarge, hwall, hwealth⟩ := hCosum
+    exact ⟨q, hqsplit, F, hFlarge, hwall, hwealth⟩
+  · exact Or.inr (Or.inr (Or.inr (Or.inr hFixed)))
+
+open Classical in
+/-- **Safe finite prefixes glue to an infinite deletion.**
+Suppose every finite deletion prefix which serves all risks it currently
+threatens has a positive safe extension above the whole prefix.  Iterating
+these extensions gives a strictly increasing sequence `b`.
+
+The only point requiring care is passage from finite prefixes to the full
+range of `b`: a triple serving a fixed target `n` has every entry at most
+`n`, whereas sufficiently late values of the increasing sequence exceed
+`n`.  Thus after a finite stage no future deletion can damage that triple.
+The master local deletion criterion then gives the exact order-three
+asymptotic basis. -/
+theorem infinite_deletion_of_safe_prefix_extensions
+    {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hext : ∀ B : Finset ℕ, FinitePrefixServesRisks A N₀ B →
+      0 ∉ B →
+      ∃ b ∈ A, 0 < b ∧ (∀ w ∈ B, w < b) ∧
+        FinitePrefixServesRisks A N₀ (insert b B)) :
+    ∃ B : Set ℕ, B ⊆ A ∧ B.Infinite ∧ 0 ∉ B ∧
+      IsExactTupleAsymptoticBasis (A \ B) 3 := by
+  have hempty : FinitePrefixServesRisks A N₀ ∅ := by
+    intro n hn hrisk
+    obtain ⟨b, hb, a, ha, hba⟩ := hrisk
+    exact absurd hb (Finset.notMem_empty b)
+  let SafePrefix :=
+    {B : Finset ℕ //
+      FinitePrefixServesRisks A N₀ B ∧ 0 ∉ B}
+  let pick : SafePrefix → ℕ :=
+    fun S => Classical.choose (hext S.1 S.2.1 S.2.2)
+  have hpick : ∀ S : SafePrefix,
+      pick S ∈ A ∧ 0 < pick S ∧
+        (∀ w ∈ S.1, w < pick S) ∧
+        FinitePrefixServesRisks A N₀ (insert (pick S) S.1) := by
+    intro S
+    exact Classical.choose_spec (hext S.1 S.2.1 S.2.2)
+  let step : SafePrefix → SafePrefix :=
+    fun S => ⟨insert (pick S) S.1, (hpick S).2.2.2, by
+      rw [Finset.mem_insert]
+      push Not
+      exact ⟨(ne_of_gt (hpick S).2.1).symm, S.2.2⟩⟩
+  let state : ℕ → SafePrefix :=
+    fun k => Nat.rec ⟨∅, hempty, Finset.notMem_empty 0⟩
+      (fun _ S => step S) k
+  let b : ℕ → ℕ := fun k => pick (state k)
+  have hstateSucc : ∀ k,
+      (state (k + 1)).1 = insert (b k) (state k).1 := by
+    intro k
+    rfl
+  have hbA : ∀ k, b k ∈ A := by
+    intro k
+    exact (hpick (state k)).1
+  have hbpos : ∀ k, 0 < b k := by
+    intro k
+    exact (hpick (state k)).2.1
+  have hbAbove : ∀ k, ∀ w ∈ (state k).1, w < b k := by
+    intro k
+    exact (hpick (state k)).2.2.1
+  have hbmem : ∀ k, b k ∈ (state (k + 1)).1 := by
+    intro k
+    rw [hstateSucc]
+    exact Finset.mem_insert_self _ _
+  have hbstep : ∀ k, b k < b (k + 1) := by
+    intro k
+    exact hbAbove (k + 1) (b k) (hbmem k)
+  have hbmono : StrictMono b := strictMono_nat_of_lt_succ hbstep
+  have hprefix : ∀ k,
+      (Finset.range k).image b = (state k).1 := by
+    intro k
+    induction k with
+    | zero =>
+        simp [state]
+    | succ k ih =>
+        rw [Finset.range_add_one, Finset.image_insert, ih,
+          hstateSucc]
+  have hkltb : ∀ k, k < b k := by
+    intro k
+    induction k with
+    | zero => exact hbpos 0
+    | succ k ih =>
+        have := hbstep k
+        omega
+  let B : Set ℕ := Set.range b
+  have hBA : B ⊆ A := by
+    rintro _ ⟨k, rfl⟩
+    exact hbA k
+  have hBinf : B.Infinite :=
+    Set.infinite_range_of_injective hbmono.injective
+  have h0B : 0 ∉ B := by
+    rintro ⟨k, hk⟩
+    have := hbpos k
+    omega
+  refine ⟨B, hBA, hBinf, h0B, ?_⟩
+  apply deletion_criterion_local h0 h0B hcov
+  intro n hn
+  rintro ⟨d, ⟨i, rfl⟩, a, haA, hba⟩
+  let k := n + i + 2
+  have hik : i < k := by
+    simp only [k]
+    omega
+  have hnk : n < k := by
+    simp only [k]
+    omega
+  have hnbk : n < b k := hnk.trans (hkltb k)
+  have hbiPrefix : b i ∈ (state k).1 := by
+    rw [← hprefix k]
+    exact Finset.mem_image.2
+      ⟨i, Finset.mem_range.2 hik, rfl⟩
+  obtain ⟨x, hxA, y, hyA, z, hzA, hxPrefix, hyPrefix, hzPrefix,
+      hxyz⟩ :=
+    (state k).2.1 n hn ⟨b i, hbiPrefix, a, haA, hba⟩
+  have havoid : ∀ t, t ∉ (state k).1 → t ≤ n → t ∉ B := by
+    intro t htPrefix htn
+    rintro ⟨j, rfl⟩
+    by_cases hjk : j < k
+    · apply htPrefix
+      rw [← hprefix k]
+      exact Finset.mem_image.2
+        ⟨j, Finset.mem_range.2 hjk, rfl⟩
+    · have hkj : k ≤ j := Nat.le_of_not_gt hjk
+      have hbkj : b k ≤ b j := hbmono.monotone hkj
+      omega
+  exact ⟨x, hxA, y, hyA, z, hzA,
+    havoid x hxPrefix (by omega),
+    havoid y hyPrefix (by omega),
+    havoid z hzPrefix (by omega), hxyz⟩
+
+open Classical in
+/-- The four non-extension outputs of
+`finite_prefix_extension_or_complete_structure`, packaged so that they can
+be quantified at one fixed terminal prefix. -/
+def FinitePrefixStructuralObstruction
+    (A : Set ℕ) (N₀ : ℕ) (B : Finset ℕ) (R L : ℕ) : Prop :=
+  (∃ T : Finset ℕ, R < T.card ∧
+      ∀ M ∈ T,
+        L ≤ ((Finset.range (M + 1)).filter
+          (fun x => x ∈ A ∧ (M - x) ∈ A)).card) ∨
+  (∃ a ∈ A, ∃ F : Finset ℕ, 3 < F.card ∧
+      (∀ b ∈ F, b ∈ A ∧ IsRepHub A (b + a) (insert b B)) ∧
+      L ≤ ((Finset.range (a + 1)).filter
+        (fun x => x ∈ A ∧ (a - x) ∈ A)).card ∧
+      (a ∈ B ∨ ∃ G : Finset ℕ, G ⊆ F ∧ 2 < G.card ∧
+        ∀ b ∈ G, IsPairHub A b (insert b B))) ∨
+  (∃ q, (∃ u ∈ A \ (B : Set ℕ), ∃ v ∈ A \ (B : Set ℕ),
+        u + v = q) ∧
+      ∃ F : Finset ℕ, 3 < F.card ∧
+        (∀ b ∈ F, b ∈ A \ (B : Set ℕ) ∧
+          IsRepHub A (b + q) (insert b B)) ∧
+        L ≤ ((Finset.range (q + 1)).filter
+          (fun x => x ∈ A ∧ (q - x) ∈ A)).card) ∨
+  (∃ m, N₀ ≤ m ∧ (∀ w ∈ B, w ≤ m) ∧
+      (∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+        x ∉ B → y ∉ B → z ∉ B → x + y + z ≠ m) ∧
+      B.card * L ≤
+        ((Finset.range (m - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ B)).card)
+
+open Classical in
+/-- The unconditional finite fork in its compact interface. -/
+theorem finite_prefix_extension_or_structural_obstruction
+    {A : Set ℕ} {N₀ R L : ℕ} {B : Finset ℕ}
+    (hcov : PairCovers A N₀)
+    (hserved : FinitePrefixServesRisks A N₀ B) :
+    (∃ b ∈ A, 0 < b ∧ (∀ w ∈ B, w < b) ∧
+      FinitePrefixServesRisks A N₀ (insert b B)) ∨
+    FinitePrefixStructuralObstruction A N₀ B R L := by
+  simpa [FinitePrefixStructuralObstruction] using
+    (finite_prefix_extension_or_complete_structure
+      (R := R) (L := L) hcov hserved)
+
+open Classical in
+/-- **A counterexample has a terminal safe prefix.**
+If every safe finite prefix had a larger positive safe extension, the
+preceding gluing theorem would produce the forbidden infinite deletion.
+Thus some safe prefix has no such extension. -/
+theorem counterexample_has_terminal_safe_prefix
+    {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ B : Finset ℕ, FinitePrefixServesRisks A N₀ B ∧
+      0 ∉ B ∧
+      ∀ b ∈ A, 0 < b → (∀ w ∈ B, w < b) →
+        ¬FinitePrefixServesRisks A N₀ (insert b B) := by
+  by_contra hterminal
+  have hext : ∀ B : Finset ℕ, FinitePrefixServesRisks A N₀ B →
+      0 ∉ B →
+      ∃ b ∈ A, 0 < b ∧ (∀ w ∈ B, w < b) ∧
+        FinitePrefixServesRisks A N₀ (insert b B) := by
+    intro B hserved h0B
+    by_contra hnone
+    apply hterminal
+    refine ⟨B, hserved, h0B, ?_⟩
+    intro b hbA hbpos hbAbove hsafe
+    exact hnone ⟨b, hbA, hbpos, hbAbove, hsafe⟩
+  obtain ⟨B, hBA, hBinf, h0B, hbasis⟩ :=
+    infinite_deletion_of_safe_prefix_extensions h0 hcov hext
+  exact (hfail B hBA hBinf) hbasis
+
+open Classical in
+/-- **Complete terminal-prefix obstruction profile.**
+In any counterexample there is one fixed finite prefix `B` which already
+serves all of its risks, cannot be safely extended upward, and at which the
+structural obstruction occurs for every pair of requested scales `R,L`.
+The moving-prefix problem has therefore been reduced to eliminating these
+four concrete, arbitrarily strong geometries at one terminal node. -/
+theorem counterexample_terminal_prefix_has_complete_structure
+    {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ B : Finset ℕ,
+      FinitePrefixServesRisks A N₀ B ∧
+      0 ∉ B ∧
+      (∀ b ∈ A, 0 < b → (∀ w ∈ B, w < b) →
+        ¬FinitePrefixServesRisks A N₀ (insert b B)) ∧
+      ∀ R L, FinitePrefixStructuralObstruction A N₀ B R L := by
+  obtain ⟨B, hserved, h0B, hterminal⟩ :=
+    counterexample_has_terminal_safe_prefix h0 hcov hfail
+  refine ⟨B, hserved, h0B, hterminal, ?_⟩
+  intro R L
+  rcases finite_prefix_extension_or_structural_obstruction
+      (R := R) (L := L) hcov hserved with hsafe | hstructure
+  · obtain ⟨b, hbA, hbpos, hbAbove, hsafe⟩ := hsafe
+    exact absurd hsafe (hterminal b hbA hbpos hbAbove)
+  · exact hstructure
+
+open Classical in
+/-- A safe prefix which leaves `0` undeleted cannot have a genuine fixed
+stall above the covering threshold.  A covering pair either avoids the
+prefix, in which case it can be padded by `0`, or contains a deleted
+endpoint, in which case the target is a risk and `hserved` supplies the
+required surviving triple. -/
+theorem safe_zero_surviving_prefix_has_no_fixed_stall
+    {A : Set ℕ} {N₀ m : ℕ} {B : Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hserved : FinitePrefixServesRisks A N₀ B)
+    (h0B : 0 ∉ B) (hm : N₀ ≤ m) :
+    ¬(∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+      x ∉ B → y ∉ B → z ∉ B → x + y + z ≠ m) := by
+  intro hstall
+  obtain ⟨x, hxA, y, hyA, hxy⟩ := hcov m hm
+  by_cases hxB : x ∈ B
+  · obtain ⟨p, hpA, q, hqA, r, hrA, hpB, hqB, hrB, hpqr⟩ :=
+      hserved m hm ⟨x, hxB, y, hyA, hxy⟩
+    exact hstall p hpA q hqA r hrA hpB hqB hrB hpqr
+  · by_cases hyB : y ∈ B
+    · obtain ⟨p, hpA, q, hqA, r, hrA, hpB, hqB, hrB, hpqr⟩ :=
+        hserved m hm ⟨y, hyB, x, hxA, by omega⟩
+      exact hstall p hpA q hqA r hrA hpB hqB hrB hpqr
+    · exact hstall x hxA y hyA 0 h0 hxB hyB h0B (by omega)
+
+open Classical in
+/-- More than `R` distinct targets, each with pair wealth at least `L`. -/
+def ManyWealthyOffsets (A : Set ℕ) (R L : ℕ) : Prop :=
+  ∃ T : Finset ℕ, R < T.card ∧
+    ∀ M ∈ T,
+      L ≤ ((Finset.range (M + 1)).filter
+        (fun x => x ∈ A ∧ (M - x) ∈ A)).card
+
+open Classical in
+/-- The wealthy basis-translate affine wall at a finite prefix. -/
+def BasisAffineWall
+    (A : Set ℕ) (B : Finset ℕ) (L : ℕ) : Prop :=
+  ∃ a ∈ A, ∃ F : Finset ℕ, 3 < F.card ∧
+    (∀ b ∈ F, b ∈ A ∧ IsRepHub A (b + a) (insert b B)) ∧
+    L ≤ ((Finset.range (a + 1)).filter
+      (fun x => x ∈ A ∧ (a - x) ∈ A)).card ∧
+    (a ∈ B ∨ ∃ G : Finset ℕ, G ⊆ F ∧ 2 < G.card ∧
+      ∀ b ∈ G, IsPairHub A b (insert b B))
+
+open Classical in
+/-- The wealthy survivor-co-sum affine wall at a finite prefix. -/
+def SurvivorCosumAffineWall
+    (A : Set ℕ) (B : Finset ℕ) (L : ℕ) : Prop :=
+  ∃ q, (∃ u ∈ A \ (B : Set ℕ), ∃ v ∈ A \ (B : Set ℕ),
+      u + v = q) ∧
+    ∃ F : Finset ℕ, 3 < F.card ∧
+      (∀ b ∈ F, b ∈ A \ (B : Set ℕ) ∧
+        IsRepHub A (b + q) (insert b B)) ∧
+      L ≤ ((Finset.range (q + 1)).filter
+        (fun x => x ∈ A ∧ (q - x) ∈ A)).card
+
+/-- The three genuinely mobile outputs left after the fixed-stall horn is
+eliminated at a safe prefix which preserves zero. -/
+def FinitePrefixMobileObstruction
+    (A : Set ℕ) (B : Finset ℕ) (R L : ℕ) : Prop :=
+  ManyWealthyOffsets A R L ∨
+  BasisAffineWall A B L ∨
+  SurvivorCosumAffineWall A B L
+
+open Classical in
+/-- At a safe prefix preserving zero, the complete four-way structural
+obstruction automatically reduces to the three mobile horns. -/
+theorem finitePrefixStructuralObstruction_is_mobile
+    {A : Set ℕ} {N₀ R L : ℕ} {B : Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hserved : FinitePrefixServesRisks A N₀ B) (h0B : 0 ∉ B)
+    (hstructure : FinitePrefixStructuralObstruction A N₀ B R L) :
+    FinitePrefixMobileObstruction A B R L := by
+  rcases hstructure with hDistinct | hAffine | hCosum | hFixed
+  · exact Or.inl hDistinct
+  · exact Or.inr (Or.inl hAffine)
+  · exact Or.inr (Or.inr hCosum)
+  · obtain ⟨m, hm, hmB, hstall, hlow⟩ := hFixed
+    exact absurd hstall
+      (safe_zero_surviving_prefix_has_no_fixed_stall
+        h0 hcov hserved h0B hm)
+
+open Classical in
+/-- **Three-horn terminal theorem.**
+Every counterexample has one fixed safe, zero-preserving, upward-terminal
+prefix at which, for every `R,L`, either there are more than `R` distinct
+`L`-wealthy offsets, a wealthy basis-translate affine wall, or a wealthy
+survivor-co-sum affine wall.  Fixed stalls are not a remaining escape. -/
+theorem counterexample_terminal_prefix_has_mobile_structure
+    {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ B : Finset ℕ,
+      FinitePrefixServesRisks A N₀ B ∧
+      0 ∉ B ∧
+      (∀ b ∈ A, 0 < b → (∀ w ∈ B, w < b) →
+        ¬FinitePrefixServesRisks A N₀ (insert b B)) ∧
+      ∀ R L, FinitePrefixMobileObstruction A B R L := by
+  obtain ⟨B, hserved, h0B, hterminal, hstructure⟩ :=
+    counterexample_terminal_prefix_has_complete_structure h0 hcov hfail
+  refine ⟨B, hserved, h0B, hterminal, ?_⟩
+  intro R L
+  exact finitePrefixStructuralObstruction_is_mobile
+    h0 hcov hserved h0B (hstructure R L)
+
+open Classical in
+/-- Distinct wealthy families are downward monotone in both requested
+scales. -/
+theorem manyWealthyOffsets_mono
+    {A : Set ℕ} {R L R' L' : ℕ}
+    (hR : R ≤ R') (hL : L ≤ L')
+    (h : ManyWealthyOffsets A R' L') :
+    ManyWealthyOffsets A R L := by
+  obtain ⟨T, hlarge, hwealth⟩ := h
+  exact ⟨T, hR.trans_lt hlarge,
+    fun M hMT => hL.trans (hwealth M hMT)⟩
+
+open Classical in
+/-- Basis-affine walls are downward monotone in wealth. -/
+theorem basisAffineWall_mono
+    {A : Set ℕ} {B : Finset ℕ} {L L' : ℕ}
+    (hL : L ≤ L') (h : BasisAffineWall A B L') :
+    BasisAffineWall A B L := by
+  obtain ⟨a, haA, F, hF, hwall, hwealth, hstructure⟩ := h
+  exact ⟨a, haA, F, hF, hwall, hL.trans hwealth, hstructure⟩
+
+open Classical in
+/-- Survivor-co-sum affine walls are downward monotone in wealth. -/
+theorem survivorCosumAffineWall_mono
+    {A : Set ℕ} {B : Finset ℕ} {L L' : ℕ}
+    (hL : L ≤ L') (h : SurvivorCosumAffineWall A B L') :
+    SurvivorCosumAffineWall A B L := by
+  obtain ⟨q, hqsplit, F, hF, hwall, hwealth⟩ := h
+  exact ⟨q, hqsplit, F, hF, hwall, hL.trans hwealth⟩
+
+open Classical in
+/-- **The mobile scale-switching collapses.**
+If the three-way mobile obstruction is available for every `R,L`, then
+one regime holds cofinally in its full natural strength:
+
+* distinct wealthy offsets at every pair of scales; or
+* basis-affine walls at every wealth scale; or
+* survivor-co-sum affine walls at every wealth scale.
+
+Indeed, failure of an affine regime at one threshold excludes it at every
+larger threshold by monotonicity; requesting a wealth scale above both
+failure thresholds then forces the distinct horn. -/
+theorem mobile_obstruction_cofinal_trichotomy
+    {A : Set ℕ} {B : Finset ℕ}
+    (hmobile : ∀ R L, FinitePrefixMobileObstruction A B R L) :
+    (∀ R L, ManyWealthyOffsets A R L) ∨
+    (∀ L, BasisAffineWall A B L) ∨
+    (∀ L, SurvivorCosumAffineWall A B L) := by
+  by_cases hAffine : ∀ L, BasisAffineWall A B L
+  · exact Or.inr (Or.inl hAffine)
+  · by_cases hCosum : ∀ L, SurvivorCosumAffineWall A B L
+    · exact Or.inr (Or.inr hCosum)
+    · left
+      simp only [not_forall] at hAffine hCosum
+      obtain ⟨L₁, hL₁⟩ := hAffine
+      obtain ⟨L₂, hL₂⟩ := hCosum
+      intro R L
+      let L' := max L (max L₁ L₂)
+      rcases hmobile R L' with hDistinct | hAffine' | hCosum'
+      · exact manyWealthyOffsets_mono (le_refl R)
+          (le_max_left L (max L₁ L₂)) hDistinct
+      · exfalso
+        apply hL₁
+        exact basisAffineWall_mono
+          (le_trans (le_max_left L₁ L₂)
+            (le_max_right L (max L₁ L₂))) hAffine'
+      · exfalso
+        apply hL₂
+        exact survivorCosumAffineWall_mono
+          (le_trans (le_max_right L₁ L₂)
+            (le_max_right L (max L₁ L₂))) hCosum'
+
+open Classical in
+/-- **Cofinal terminal trichotomy for a counterexample.**
+The terminal moving-prefix geometry cannot alternate indefinitely merely by
+changing numerical thresholds: one of the three explicit regimes persists
+at every requested scale at the same finite terminal prefix. -/
+theorem counterexample_terminal_prefix_cofinal_trichotomy
+    {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ B : Finset ℕ,
+      FinitePrefixServesRisks A N₀ B ∧
+      0 ∉ B ∧
+      (∀ b ∈ A, 0 < b → (∀ w ∈ B, w < b) →
+        ¬FinitePrefixServesRisks A N₀ (insert b B)) ∧
+      ((∀ R L, ManyWealthyOffsets A R L) ∨
+       (∀ L, BasisAffineWall A B L) ∨
+       (∀ L, SurvivorCosumAffineWall A B L)) := by
+  obtain ⟨B, hserved, h0B, hterminal, hmobile⟩ :=
+    counterexample_terminal_prefix_has_mobile_structure h0 hcov hfail
+  exact ⟨B, hserved, h0B, hterminal,
+    mobile_obstruction_cofinal_trichotomy hmobile⟩
+
+open Classical in
+/-- A safe finite prefix which preserves zero in fact has a surviving
+triple for every late target, not only for the targets it threatens.
+For a covering pair, either an endpoint lies in the prefix and `hserved`
+applies, or both endpoints survive and the pair is padded by zero. -/
+theorem safe_zero_surviving_prefix_serves_every_late_target
+    {A : Set ℕ} {N₀ : ℕ} {B : Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hserved : FinitePrefixServesRisks A N₀ B)
+    (h0B : 0 ∉ B) :
+    ∀ n, N₀ ≤ n →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n := by
+  intro n hn
+  obtain ⟨x, hxA, y, hyA, hxy⟩ := hcov n hn
+  by_cases hxB : x ∈ B
+  · exact hserved n hn ⟨x, hxB, y, hyA, hxy⟩
+  · by_cases hyB : y ∈ B
+    · exact hserved n hn ⟨y, hyB, x, hxA, by omega⟩
+    · exact ⟨x, hxA, y, hyA, 0, h0, hxB, hyB, h0B, by omega⟩
+
+open Classical in
+/-- **Every unsafe extension has a relative private wound.**
+At a safe zero-preserving prefix, the target witnessing failure after
+adjoining `b` already has a triple over the old survivor set.  The moving
+stall says every such triple uses `b`, exactly making `b` a private
+guardian over `A \ B`. -/
+theorem unsafe_extension_has_relative_private_wound
+    {A : Set ℕ} {N₀ b : ℕ} {B : Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hserved : FinitePrefixServesRisks A N₀ B)
+    (h0B : 0 ∉ B)
+    (hunsafe : ¬FinitePrefixServesRisks A N₀ (insert b B)) :
+    ∃ n, N₀ ≤ n ∧
+      (∃ d ∈ insert b B, ∃ a ∈ A, d + a = n) ∧
+      IsPrivateTriple (A \ (B : Set ℕ)) b n := by
+  unfold FinitePrefixServesRisks at hunsafe
+  push Not at hunsafe
+  obtain ⟨n, hn, hrisk, hstall⟩ := hunsafe
+  obtain ⟨x, hxA, y, hyA, z, hzA, hxB, hyB, hzB, hxyz⟩ :=
+    safe_zero_surviving_prefix_serves_every_late_target
+      h0 hcov hserved h0B n hn
+  refine ⟨n, hn, hrisk, ?_⟩
+  constructor
+  · exact ⟨x, ⟨hxA, hxB⟩, y, ⟨hyA, hyB⟩,
+      z, ⟨hzA, hzB⟩, hxyz⟩
+  · intro p hp q hq r hr hpqr
+    have hhub := moving_stall_iff_relative_singleton_hub.mp hstall
+    rcases hhub p hp q hq r hr hpqr with h | h | h
+    · exact Or.inl (Finset.mem_singleton.1 h)
+    · exact Or.inr (Or.inl (Finset.mem_singleton.1 h))
+    · exact Or.inr (Or.inr (Finset.mem_singleton.1 h))
+
+open Classical in
+/-- A repair of the private wound at `(b,n)` which avoids `b` but
+necessarily uses at least one element of the retained finite prefix. -/
+def HasPrefixRepairTriple
+    (A : Set ℕ) (B : Finset ℕ) (b n : ℕ) : Prop :=
+  ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+    x + y + z = n ∧ x ≠ b ∧ y ≠ b ∧ z ≠ b ∧
+      (x ∈ B ∨ y ∈ B ∨ z ∈ B)
+
+open Classical in
+/-- **Relative private wound = absolute guardian or prefix repair.**
+If every triple over `A \ B` summing to `n` uses `b`, then either every
+triple over all of `A` uses `b`, or there is a triple avoiding `b`; such a
+triple must hit the finite prefix `B`.  This is an exact dichotomy, with no
+counting or asymptotic loss. -/
+theorem relative_private_absolute_or_prefix_repair
+    {A : Set ℕ} {B : Finset ℕ} {b n : ℕ}
+    (hprivate : IsPrivateTriple (A \ (B : Set ℕ)) b n) :
+    IsPrivateTriple A b n ∨ HasPrefixRepairTriple A B b n := by
+  by_cases habsolute :
+      ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+        x + y + z = n → x = b ∨ y = b ∨ z = b
+  · left
+    obtain ⟨x, hx, y, hy, z, hz, hxyz⟩ := hprivate.1
+    exact ⟨⟨x, hx.1, y, hy.1, z, hz.1, hxyz⟩, habsolute⟩
+  · right
+    push Not at habsolute
+    obtain ⟨x, hxA, y, hyA, z, hzA, hxyz,
+      hxb, hyb, hzb⟩ := habsolute
+    have hhit : x ∈ B ∨ y ∈ B ∨ z ∈ B := by
+      by_contra havoid
+      push Not at havoid
+      rcases hprivate.2 x ⟨hxA, havoid.1⟩
+          y ⟨hyA, havoid.2.1⟩ z ⟨hzA, havoid.2.2⟩ hxyz with
+        h | h | h
+      · exact hxb h
+      · exact hyb h
+      · exact hzb h
+    exact ⟨x, hxA, y, hyA, z, hzA, hxyz,
+      hxb, hyb, hzb, hhit⟩
+
+open Classical in
+/-- **Terminal private-wound composition fork.**
+Every counterexample has one fixed safe terminal prefix `B` such that each
+larger positive basis candidate `b` owns a target `n ≥ b` which is private
+to `b` over `A \ B`.  At each candidate, either this is already an
+absolute private guardian in `A`, or an avoiding repair triple exists and
+must route through `B`.
+
+This is the exact interface between the moving-prefix stall problem and
+the remaining fixed/cofinal-difference composition problem. -/
+theorem counterexample_terminal_prefix_private_wound_fork
+    {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ B : Finset ℕ,
+      FinitePrefixServesRisks A N₀ B ∧ 0 ∉ B ∧
+      ∀ b ∈ A, 0 < b → (∀ w ∈ B, w < b) →
+        ∃ n, N₀ ≤ n ∧ b ≤ n ∧
+          (∃ d ∈ insert b B, ∃ a ∈ A, d + a = n) ∧
+          IsPrivateTriple (A \ (B : Set ℕ)) b n ∧
+          (IsPrivateTriple A b n ∨
+            HasPrefixRepairTriple A B b n) := by
+  obtain ⟨B, hserved, h0B, hterminal⟩ :=
+    counterexample_has_terminal_safe_prefix h0 hcov hfail
+  refine ⟨B, hserved, h0B, ?_⟩
+  intro b hbA hbpos hbAbove
+  obtain ⟨n, hn, hrisk, hprivate⟩ :=
+    unsafe_extension_has_relative_private_wound
+      h0 hcov hserved h0B (hterminal b hbA hbpos hbAbove)
+  have hbn :=
+    (IsPrivateTriple.guardian_mem_le_and_complement_split hprivate).2.1
+  exact ⟨n, hn, hbn, hrisk, hprivate,
+    relative_private_absolute_or_prefix_repair hprivate⟩
+
+open Classical in
+/-- A repair triple avoiding `b` and passing through one specified old
+prefix element `w`. -/
+def HasRepairThrough
+    (A : Set ℕ) (w b n : ℕ) : Prop :=
+  ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+    x + y + z = n ∧ x ≠ b ∧ y ≠ b ∧ z ≠ b ∧
+      (x = w ∨ y = w ∨ z = w)
+
+open Classical in
+/-- A repair through `w` is exactly a shifted surviving pair:
+`w + u + v = n`, with both pair entries different from the current
+guardian `b`. -/
+theorem repairThrough_gives_shifted_pair
+    {A : Set ℕ} {w b n : ℕ}
+    (hrepair : HasRepairThrough A w b n) :
+    ∃ u ∈ A, ∃ v ∈ A,
+      u ≠ b ∧ v ≠ b ∧ w + u + v = n := by
+  obtain ⟨x, hxA, y, hyA, z, hzA, hxyz,
+    hxb, hyb, hzb, hxw | hyw | hzw⟩ := hrepair
+  · subst x
+    exact ⟨y, hyA, z, hzA, hyb, hzb, by omega⟩
+  · subst y
+    exact ⟨x, hxA, z, hzA, hxb, hzb, by omega⟩
+  · subst z
+    exact ⟨x, hxA, y, hyA, hxb, hyb, by omega⟩
+
+open Classical in
+/-- The fixed channel element in a repair-through witness is itself a
+basis element. -/
+theorem HasRepairThrough.channel_mem
+    {A : Set ℕ} {w b n : ℕ}
+    (hrepair : HasRepairThrough A w b n) : w ∈ A := by
+  obtain ⟨x, hxA, y, hyA, z, hzA, hxyz,
+    hxb, hyb, hzb, hxw | hyw | hzw⟩ := hrepair
+  · exact hxw ▸ hxA
+  · exact hyw ▸ hyA
+  · exact hzw ▸ hzA
+
+open Classical in
+/-- A prefix repair passes through at least one specified member of the
+finite prefix. -/
+theorem prefixRepairTriple_has_repairThrough
+    {A : Set ℕ} {B : Finset ℕ} {b n : ℕ}
+    (hrepair : HasPrefixRepairTriple A B b n) :
+    ∃ w ∈ B, HasRepairThrough A w b n := by
+  obtain ⟨x, hxA, y, hyA, z, hzA, hxyz,
+    hxb, hyb, hzb, hhit⟩ := hrepair
+  rcases hhit with hxB | hyB | hzB
+  · exact ⟨x, hxB, x, hxA, y, hyA, z, hzA,
+      hxyz, hxb, hyb, hzb, Or.inl rfl⟩
+  · exact ⟨y, hyB, x, hxA, y, hyA, z, hzA,
+      hxyz, hxb, hyb, hzb, Or.inr (Or.inl rfl)⟩
+  · exact ⟨z, hzB, x, hxA, y, hyA, z, hzA,
+      hxyz, hxb, hyb, hzb, Or.inr (Or.inr rfl)⟩
+
+open Classical in
+/-- Finite cofinal pigeonhole: if arbitrarily large objects carry a label
+from a fixed finite set, one fixed label occurs arbitrarily far out. -/
+theorem finite_cofinal_pigeonhole
+    {B : Finset ℕ} {P : ℕ → ℕ → Prop}
+    (hcofinal : ∀ X, ∃ b, X < b ∧ ∃ w ∈ B, P w b) :
+    ∃ w ∈ B, ∀ X, ∃ b, X < b ∧ P w b := by
+  by_contra hfixed
+  push Not at hfixed
+  let f : ℕ → ℕ := fun w =>
+    if hw : w ∈ B then Classical.choose (hfixed w hw) else 0
+  have hf : ∀ w ∈ B, ∀ b, f w < b → ¬P w b := by
+    intro w hw
+    have hspec := Classical.choose_spec (hfixed w hw)
+    simpa [f, hw] using hspec
+  obtain ⟨b, hb, w, hwB, hP⟩ := hcofinal (B.sup f)
+  have hfw : f w ≤ B.sup f := Finset.le_sup (f := f) hwB
+  exact hf w hwB b (hfw.trans_lt hb) hP
+
+open Classical in
+/-- An absolute terminal wound carried by the candidate `b`. -/
+def HasAbsoluteTerminalWound
+    (A : Set ℕ) (N₀ : ℕ) (B : Finset ℕ) (b : ℕ) : Prop :=
+  ∃ n, N₀ ≤ n ∧ b ≤ n ∧
+    (∃ d ∈ insert b B, ∃ a ∈ A, d + a = n) ∧
+    IsPrivateTriple (A \ (B : Set ℕ)) b n ∧
+    IsPrivateTriple A b n
+
+open Classical in
+/-- A relative terminal wound at `b` with a repair routed through the
+specified old prefix element `w`. -/
+def HasTerminalRepairWoundThrough
+    (A : Set ℕ) (N₀ : ℕ) (B : Finset ℕ) (w b : ℕ) : Prop :=
+  ∃ n, N₀ ≤ n ∧ b ≤ n ∧
+    (∃ d ∈ insert b B, ∃ a ∈ A, d + a = n) ∧
+    IsPrivateTriple (A \ (B : Set ℕ)) b n ∧
+    HasRepairThrough A w b n
+
+open Classical in
+/-- **Collision-free thinning of a fixed repair channel.**
+Suppose arbitrarily large guardians have terminal wounds repaired through
+one fixed element `w`.  Choose for each guardian one shifted repair pair
+`u_b,v_b`.  The map `b ↦ {u_b,v_b}` has size at most two and never contains
+`b`, so the bounded point-map free-set theorem yields an infinite thinning
+`C` disjoint from every selected repair pair.
+
+Consequently every selected wound has a full surviving repair
+`w+u_b+v_b`, with `w,u_b,v_b ∈ A \ C`. -/
+theorem cofinal_fixedRepairChannel_has_collisionFree_thinning
+    {A : Set ℕ} {N₀ w : ℕ} {B : Finset ℕ}
+    (hcofinal : ∀ X, ∃ b ∈ A, X < b ∧
+      HasTerminalRepairWoundThrough A N₀ B w b) :
+    ∃ C : Set ℕ, C ⊆ A ∧ C.Infinite ∧
+      (∀ b ∈ C, w < b) ∧ w ∉ C ∧ w ∈ A ∧
+      ∀ b ∈ C, ∃ n, N₀ ≤ n ∧ b ≤ n ∧
+        (∃ d ∈ insert b B, ∃ a ∈ A, d + a = n) ∧
+        IsPrivateTriple (A \ (B : Set ℕ)) b n ∧
+        ∃ u ∈ A \ C, ∃ v ∈ A \ C, w + u + v = n := by
+  let K : Set ℕ :=
+    {b | b ∈ A ∧ w < b ∧
+      HasTerminalRepairWoundThrough A N₀ B w b}
+  have hK : K.Infinite := by
+    apply Set.infinite_of_forall_exists_gt
+    intro X
+    obtain ⟨b, hbA, hbLarge, hbRepair⟩ :=
+      hcofinal (max X w)
+    exact ⟨b, ⟨hbA, by omega, hbRepair⟩, by omega⟩
+  have hchoice : ∀ b, ∃ n, ∃ u, ∃ v, b ∈ K →
+      N₀ ≤ n ∧ b ≤ n ∧
+      (∃ d ∈ insert b B, ∃ a ∈ A, d + a = n) ∧
+      IsPrivateTriple (A \ (B : Set ℕ)) b n ∧
+      u ∈ A ∧ v ∈ A ∧ u ≠ b ∧ v ≠ b ∧ w + u + v = n := by
+    intro b
+    by_cases hbK : b ∈ K
+    · obtain ⟨n, hn, hbn, hrisk, hprivate, hrepair⟩ := hbK.2.2
+      obtain ⟨u, huA, v, hvA, hub, hvb, huv⟩ :=
+        repairThrough_gives_shifted_pair hrepair
+      exact ⟨n, u, v, fun _ =>
+        ⟨hn, hbn, hrisk, hprivate, huA, hvA, hub, hvb, huv⟩⟩
+    · exact ⟨0, 0, 0, fun h => absurd h hbK⟩
+  choose n u v hdata using hchoice
+  let f : ℕ → Finset ℕ := fun b => {u b, v b}
+  have hfcard : ∀ b ∈ K, (f b).card ≤ 2 := by
+    intro b hbK
+    exact le_trans (Finset.card_insert_le _ _) (by simp)
+  have hfavoid : ∀ b ∈ K, b ∉ f b := by
+    intro b hbK hb
+    have h := hdata b hbK
+    simp only [f, Finset.mem_insert, Finset.mem_singleton] at hb
+    rcases hb with hbu | hbv
+    · exact h.2.2.2.2.2.2.1 hbu.symm
+    · exact h.2.2.2.2.2.2.2.1 hbv.symm
+  obtain ⟨C, hCK, hCinf, hfree⟩ :=
+    exists_infinite_freeSet_of_bounded_pointMap
+      hK f 2 hfcard hfavoid
+  have hwC : w ∉ C := by
+    intro hw
+    have := (hCK hw).2.1
+    omega
+  have hwA : w ∈ A := by
+    obtain ⟨b, hbC⟩ := hCinf.nonempty
+    obtain ⟨n, hn, hbn, hrisk, hprivate, hrepair⟩ :=
+      (hCK hbC).2.2
+    exact hrepair.channel_mem
+  refine ⟨C, fun b hb => (hCK hb).1, hCinf,
+    (fun b hb => (hCK hb).2.1), hwC, hwA, ?_⟩
+  intro b hbC
+  have hbK := hCK hbC
+  have hd := hdata b hbK
+  have hdisj := hfree b hbC
+  have huC : u b ∉ C := by
+    intro hu
+    exact Set.disjoint_left.mp hdisj (by simp [f]) hu
+  have hvC : v b ∉ C := by
+    intro hv
+    exact Set.disjoint_left.mp hdisj (by simp [f]) hv
+  exact ⟨n b, hd.1, hd.2.1, hd.2.2.1, hd.2.2.2.1,
+    u b, ⟨hd.2.2.2.2.1, huC⟩,
+    v b, ⟨hd.2.2.2.2.2.1, hvC⟩,
+    hd.2.2.2.2.2.2.2.2⟩
+
+open Classical in
+/-- Selector form of collision-free thinning.  One function `τ` records the
+single repaired wound chosen for each member of the infinite thinning. -/
+theorem cofinal_fixedRepairChannel_has_collisionFree_selector
+    {A : Set ℕ} {N₀ w : ℕ} {B : Finset ℕ}
+    (hcofinal : ∀ X, ∃ b ∈ A, X < b ∧
+      HasTerminalRepairWoundThrough A N₀ B w b) :
+    ∃ C : Set ℕ, ∃ τ : ℕ → ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧ w ∉ C ∧ w ∈ A ∧
+      ∀ b ∈ C, N₀ ≤ τ b ∧ b ≤ τ b ∧
+        (∃ d ∈ insert b B, ∃ a ∈ A, d + a = τ b) ∧
+        IsPrivateTriple (A \ (B : Set ℕ)) b (τ b) ∧
+        ∃ u ∈ A \ C, ∃ v ∈ A \ C, w + u + v = τ b := by
+  obtain ⟨C, hCA, hCinf, hwBelow, hwC, hwA, hdata⟩ :=
+    cofinal_fixedRepairChannel_has_collisionFree_thinning hcofinal
+  have hpick : ∀ b, ∃ n, b ∈ C →
+      N₀ ≤ n ∧ b ≤ n ∧
+      (∃ d ∈ insert b B, ∃ a ∈ A, d + a = n) ∧
+      IsPrivateTriple (A \ (B : Set ℕ)) b n ∧
+      ∃ u ∈ A \ C, ∃ v ∈ A \ C, w + u + v = n := by
+    intro b
+    by_cases hbC : b ∈ C
+    · obtain ⟨n, hn, hbn, hrisk, hprivate, hrepair⟩ :=
+        hdata b hbC
+      exact ⟨n, fun _ => ⟨hn, hbn, hrisk, hprivate, hrepair⟩⟩
+    · exact ⟨0, fun h => absurd h hbC⟩
+  choose τ hτ using hpick
+  have h0C : 0 ∉ C := by
+    intro hzero
+    have := hwBelow 0 hzero
+    omega
+  refine ⟨C, τ, hCA, hCinf, h0C, hwC, hwA, ?_⟩
+  intro b hbC
+  exact hτ b hbC
+
+open Classical in
+/-- **Exact off-selector composition criterion.**
+Assume one selected target `τ b` for each deleted point already has a
+surviving triple.  Then the local deletion criterion reduces precisely to
+the remaining threatened targets which are not any selected `τ b`.
+
+This is the strongest valid form at the original threshold `N₀` of “one
+repaired wound per guardian composes”: it composes once every
+off-selector risk is also served. -/
+theorem deletion_of_selectedRepairs_and_offSelectorRisks
+    {A C : Set ℕ} {N₀ : ℕ} (τ : ℕ → ℕ)
+    (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
+    (hselected : ∀ b ∈ C,
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = τ b)
+    (hoff : ∀ n, N₀ ≤ n →
+      (∃ b ∈ C, ∃ a ∈ A, b + a = n) →
+      (∀ b ∈ C, τ b ≠ n) →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = n) :
+    IsExactTupleAsymptoticBasis (A \ C) 3 := by
+  apply deletion_criterion_local h0 h0C hcov
+  intro n hn hrisk
+  by_cases hhit : ∃ b ∈ C, τ b = n
+  · obtain ⟨b, hbC, hbn⟩ := hhit
+    obtain ⟨x, hxA, y, hyA, z, hzA, hxC, hyC, hzC, hxyz⟩ :=
+      hselected b hbC
+    exact ⟨x, hxA, y, hyA, z, hzA,
+      hxC, hyC, hzC, by omega⟩
+  · apply hoff n hn hrisk
+    intro b hbC hbn
+    exact hhit ⟨b, hbC, hbn⟩
+
+open Classical in
+/-- **Exact eventual off-selector equivalence.**
+Once all selected targets `τ b` survive, deletion by `C` is an exact
+order-three asymptotic basis if and only if every sufficiently late
+off-selector risk has a surviving triple.  The eventual threshold is
+essential: requiring this already from the original pair-cover threshold
+would be sufficient but not necessary. -/
+theorem selectedRepairs_basis_iff_eventual_offSelectorRisks
+    {A C : Set ℕ} {N₀ : ℕ} (τ : ℕ → ℕ)
+    (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
+    (hselected : ∀ b ∈ C,
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = τ b) :
+    IsExactTupleAsymptoticBasis (A \ C) 3 ↔
+      ∃ M, ∀ n, M ≤ n →
+        (∃ b ∈ C, ∃ a ∈ A, b + a = n) →
+        (∀ b ∈ C, τ b ≠ n) →
+        ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+          x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = n := by
+  constructor
+  · rintro ⟨M, hbasis⟩
+    refine ⟨M, ?_⟩
+    intro n hn hrisk hoff
+    obtain ⟨v, hv, hvsum⟩ := hbasis n hn
+    exact ⟨v 0, (hv 0).1, v 1, (hv 1).1, v 2, (hv 2).1,
+      (hv 0).2, (hv 1).2, (hv 2).2,
+      by simpa [Fin.sum_univ_three] using hvsum⟩
+  · rintro ⟨M, hoff⟩
+    have hcov' : PairCovers A (max N₀ M) := by
+      intro n hn
+      exact hcov n ((le_max_left N₀ M).trans hn)
+    apply deletion_criterion_local h0 h0C hcov'
+    intro n hn hrisk
+    by_cases hhit : ∃ b ∈ C, τ b = n
+    · obtain ⟨b, hbC, hbn⟩ := hhit
+      obtain ⟨x, hxA, y, hyA, z, hzA, hxC, hyC, hzC, hxyz⟩ :=
+        hselected b hbC
+      exact ⟨x, hxA, y, hyA, z, hzA,
+        hxC, hyC, hzC, by omega⟩
+    · apply hoff n ((le_max_right N₀ M).trans hn) hrisk
+      intro b hbC hbn
+      exact hhit ⟨b, hbC, hbn⟩
+
+open Classical in
+/-- **A counterexample forces cofinally late off-selector stalls.**
+Suppose every selected target `τ b` already has a triple surviving the
+deletion `C`.  If `A \ C` nevertheless fails to be an exact order-three
+asymptotic basis, then arbitrarily late targets remain which
+
+* are genuinely threatened by `C`;
+* are not any selected target `τ b`; and
+* have no triple from `A` avoiding `C`.
+
+Thus collision-free thinning does not lose the problem: it isolates the
+precise cofinal residual stream that any further composition argument
+must serve. -/
+theorem failure_with_selectedRepairs_forces_cofinal_offSelectorStalls
+    {A C : Set ℕ} {N₀ : ℕ} (τ : ℕ → ℕ)
+    (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
+    (hselected : ∀ b ∈ C,
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = τ b)
+    (hfail : ¬IsExactTupleAsymptoticBasis (A \ C) 3) :
+    ∀ T, ∃ n, T ≤ n ∧ N₀ ≤ n ∧
+      (∃ b ∈ C, ∃ a ∈ A, b + a = n) ∧
+      (∀ b ∈ C, τ b ≠ n) ∧
+      ¬∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = n := by
+  simp only [IsExactTupleAsymptoticBasis,
+    not_exists, not_forall] at hfail
+  intro T
+  obtain ⟨n, hn, hnorep⟩ := hfail (max T N₀)
+  have hnT : T ≤ n := (le_max_left T N₀).trans hn
+  have hn₀ : N₀ ≤ n := (le_max_right T N₀).trans hn
+  obtain ⟨x, hxA, y, hyA, hxy⟩ := hcov n hn₀
+  have hrisk : ∃ b ∈ C, ∃ a ∈ A, b + a = n := by
+    by_cases hxC : x ∈ C
+    · exact ⟨x, hxC, y, hyA, hxy⟩
+    · by_cases hyC : y ∈ C
+      · exact ⟨y, hyC, x, hxA, by omega⟩
+      · exfalso
+        apply hnorep ![x, y, 0]
+        constructor
+        · intro i
+          match i with
+          | 0 => exact ⟨hxA, hxC⟩
+          | 1 => exact ⟨hyA, hyC⟩
+          | 2 => exact ⟨h0, h0C⟩
+        · simpa [Fin.sum_univ_three] using hxy
+  have hoff : ∀ b ∈ C, τ b ≠ n := by
+    intro b hbC hbn
+    obtain ⟨p, hpA, q, hqA, r, hrA, hpC, hqC, hrC, hpqr⟩ :=
+      hselected b hbC
+    apply hnorep ![p, q, r]
+    constructor
+    · intro i
+      match i with
+      | 0 => exact ⟨hpA, hpC⟩
+      | 1 => exact ⟨hqA, hqC⟩
+      | 2 => exact ⟨hrA, hrC⟩
+    · simpa [Fin.sum_univ_three, hbn] using hpqr
+  refine ⟨n, hnT, hn₀, hrisk, hoff, ?_⟩
+  rintro ⟨p, hpA, q, hqA, r, hrA, hpC, hqC, hrC, hpqr⟩
+  apply hnorep ![p, q, r]
+  constructor
+  · intro i
+    match i with
+    | 0 => exact ⟨hpA, hpC⟩
+    | 1 => exact ⟨hqA, hqC⟩
+    | 2 => exact ⟨hrA, hrC⟩
+  · simpa [Fin.sum_univ_three] using hpqr
+
+open Classical in
+/-- **Off-selector stalls carry finite minimal committees.**
+Every residual stall from the preceding theorem has a nonempty minimal
+representation hub drawn from the deleted set `C` below the target.
+Every committee member therefore owns a representation meeting that
+committee only at itself.  This converts the analytic-looking residual
+failure into finite guardian data without losing the fact that the target
+is off the selected repair stream. -/
+theorem failure_with_selectedRepairs_forces_offSelector_minimalCommittees
+    {A C : Set ℕ} {N₀ : ℕ} (τ : ℕ → ℕ)
+    (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
+    (hselected : ∀ b ∈ C,
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = τ b)
+    (hfail : ¬IsExactTupleAsymptoticBasis (A \ C) 3) :
+    ∀ T, ∃ n, T ≤ n ∧ N₀ ≤ n ∧
+      (∀ b ∈ C, τ b ≠ n) ∧
+      ∃ H : Finset ℕ,
+        H.Nonempty ∧
+        H ⊆ (Finset.range (n + 1)).filter (· ∈ C) ∧
+        IsRepHub A n H ∧
+        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        ∀ h ∈ H,
+          ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+            x + y + z = n ∧
+            (x = h ∨ y = h ∨ z = h) ∧
+            ∀ g ∈ H, g ≠ h →
+              x ≠ g ∧ y ≠ g ∧ z ≠ g := by
+  intro T
+  obtain ⟨n, hnT, hn₀, hrisk, hoff, hno⟩ :=
+    failure_with_selectedRepairs_forces_cofinal_offSelectorStalls
+      τ h0 h0C hcov hselected hfail T
+  have hdead : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+      x + y + z = n → x ∈ C ∨ y ∈ C ∨ z ∈ C := by
+    intro x hxA y hyA z hzA hxyz
+    by_cases hxC : x ∈ C
+    · exact Or.inl hxC
+    · by_cases hyC : y ∈ C
+      · exact Or.inr (Or.inl hyC)
+      · by_cases hzC : z ∈ C
+        · exact Or.inr (Or.inr hzC)
+        · exact (hno
+            ⟨x, hxA, y, hyA, z, hzA, hxC, hyC, hzC, hxyz⟩).elim
+  have hhub :=
+    failing_hub_subset_deletion (A := A) (B := C) hdead
+  obtain ⟨H, hHsub, hHhub, hHmin⟩ := exists_minimal_hub hhub
+  have hHne : H.Nonempty :=
+    hub_nonempty_of_covering h0 hcov hn₀ hHhub
+  exact ⟨n, hnT, hn₀, hoff, H, hHne, hHsub, hHhub, hHmin,
+    minimal_hub_necessity hHhub hHmin⟩
+
+open Classical in
+/-- A nonempty minimal representation committee for an off-selector
+target, contained in the deleted set below that target. -/
+def IsOffSelectorMinimalCommittee
+    (A C : Set ℕ) (N₀ : ℕ) (τ : ℕ → ℕ)
+    (n : ℕ) (H : Finset ℕ) : Prop :=
+  N₀ ≤ n ∧
+  (∀ b ∈ C, τ b ≠ n) ∧
+  H.Nonempty ∧
+  IsRepHub A n H ∧
+  (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+  H ⊆ (Finset.range (n + 1)).filter (· ∈ C)
+
+open Classical in
+/-- A member of a minimal representation hub owns a pair co-witness:
+the target is `h+u+v`, and the two co-witness entries avoid every other
+member of the hub.  They need not avoid deleted points outside the hub. -/
+theorem minimalRepHub_member_has_pairCowitness
+    {A : Set ℕ} {n h : ℕ} {H : Finset ℕ}
+    (hhub : IsRepHub A n H)
+    (hmin : ∀ g ∈ H, ¬IsRepHub A n (H \ {g}))
+    (hhH : h ∈ H) :
+    ∃ u ∈ A, ∃ v ∈ A, h + u + v = n ∧
+      ∀ g ∈ H, g ≠ h → u ≠ g ∧ v ≠ g := by
+  obtain ⟨x, hxA, y, hyA, z, hzA, hxyz, howner, havoid⟩ :=
+    minimal_hub_necessity hhub hmin h hhH
+  rcases howner with hxh | hyh | hzh
+  · subst x
+    exact ⟨y, hyA, z, hzA, hxyz, fun g hgH hgh =>
+      ⟨(havoid g hgH hgh).2.1, (havoid g hgH hgh).2.2⟩⟩
+  · subst y
+    exact ⟨x, hxA, z, hzA, by omega, fun g hgH hgh =>
+      ⟨(havoid g hgH hgh).1, (havoid g hgH hgh).2.2⟩⟩
+  · subst z
+    exact ⟨x, hxA, y, hyA, by omega, fun g hgH hgh =>
+      ⟨(havoid g hgH hgh).1, (havoid g hgH hgh).2.1⟩⟩
+
+open Classical in
+/-- **Finite counterexample to globalizing committee privacy.**
+Let `A={0,1,2,3}`, target `4`, minimal hub `H={1,2}`, and deletion
+`C={1,2,3}`.  The hub is inclusion-minimal.  Nevertheless every
+representation of `4` which is owned by guardian `1` and avoids the other
+hub member `2` must use `3 ∈ C \ H`.
+
+Thus minimal-hub necessity cannot be strengthened from avoiding `H\{h}`
+to avoiding `C\{h}` without additional hypotheses. -/
+theorem finite_minimalHub_has_external_deleted_interference :
+    let A : Set ℕ := {0, 1, 2, 3}
+    let H : Finset ℕ := {1, 2}
+    IsRepHub A 4 H ∧
+    (∀ h ∈ H, ¬IsRepHub A 4 (H \ {h})) ∧
+    ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = 4 →
+      (x = 1 ∨ y = 1 ∨ z = 1) →
+      x ≠ 2 → y ≠ 2 → z ≠ 2 →
+      x = 3 ∨ y = 3 ∨ z = 3 := by
+  dsimp
+  constructor
+  · intro x hx y hy z hz hsum
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hx hy hz
+    simp only [Finset.mem_insert, Finset.mem_singleton]
+    omega
+  constructor
+  · intro h hh
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hh
+    rcases hh with rfl | rfl
+    · intro hhub
+      have hhit := hhub 0 (by simp) 1 (by simp) 3 (by simp) (by omega)
+      simp at hhit
+    · intro hhub
+      have hhit := hhub 0 (by simp) 2 (by simp) 2 (by simp) (by omega)
+      simp at hhit
+  · intro x hx y hy z hz hsum howner hx2 hy2 hz2
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hx hy hz
+    omega
+
+open Classical in
+/-- **Finite-window stabilization of the off-selector committees.**
+For every window `[0,W]`, one fixed subset `S` of the deleted points in
+that window recurs as the low part of minimal hubs at arbitrarily late
+off-selector targets.  Every other committee member is therefore above
+`W`.  This is the precise fixed-core/mobile-guardian split available from
+the residual stream. -/
+theorem selectedRepairs_offSelector_window_core
+    {A C : Set ℕ} {N₀ : ℕ} (τ : ℕ → ℕ)
+    (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
+    (hselected : ∀ b ∈ C,
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = τ b)
+    (hfail : ¬IsExactTupleAsymptoticBasis (A \ C) 3)
+    (W : ℕ) :
+    ∃ S ⊆ (Finset.range (W + 1)).filter (· ∈ C),
+      ∀ T, ∃ n, T ≤ n ∧
+        (∀ b ∈ C, τ b ≠ n) ∧
+        ∃ H : Finset ℕ,
+          H.Nonempty ∧ IsRepHub A n H ∧
+          (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+          H ⊆ (Finset.range (n + 1)).filter (· ∈ C) ∧
+          H ∩ Finset.range (W + 1) =
+            S ∩ Finset.range (W + 1) := by
+  have hQ : ∀ T, ∃ n, T ≤ n ∧ ∃ S,
+      S ⊆ (Finset.range (W + 1)).filter (· ∈ C) ∧
+      ((∀ b ∈ C, τ b ≠ n) ∧
+        ∃ H : Finset ℕ,
+          H.Nonempty ∧ IsRepHub A n H ∧
+          (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+          H ⊆ (Finset.range (n + 1)).filter (· ∈ C) ∧
+          H ∩ Finset.range (W + 1) =
+            S ∩ Finset.range (W + 1)) := by
+    intro T
+    obtain ⟨n, hnT, hn₀, hoff, H, hHne, hHsub, hHhub, hHmin,
+      hnecessity⟩ :=
+      failure_with_selectedRepairs_forces_offSelector_minimalCommittees
+        τ h0 h0C hcov hselected hfail T
+    refine ⟨n, hnT, H ∩ Finset.range (W + 1), ?_, hoff,
+      H, hHne, hHhub, hHmin, hHsub, ?_⟩
+    · intro x hx
+      obtain ⟨hxH, hxW⟩ := Finset.mem_inter.1 hx
+      have hxHC := hHsub hxH
+      obtain ⟨hxn, hxC⟩ := Finset.mem_filter.1 hxHC
+      exact Finset.mem_filter.2 ⟨hxW, hxC⟩
+    · rw [Finset.inter_assoc, Finset.inter_self]
+  obtain ⟨S, hSsub, hrec⟩ :=
+    cofinal_subset_pigeonhole
+      (Q := fun n S =>
+        (∀ b ∈ C, τ b ≠ n) ∧
+        ∃ H : Finset ℕ,
+          H.Nonempty ∧ IsRepHub A n H ∧
+          (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+          H ⊆ (Finset.range (n + 1)).filter (· ∈ C) ∧
+          H ∩ Finset.range (W + 1) =
+            S ∩ Finset.range (W + 1))
+      (F := (Finset.range (W + 1)).filter (· ∈ C)) hQ
+  exact ⟨S, hSsub, hrec⟩
+
+open Classical in
+/-- **Recurrent-core versus escaping-committee dichotomy.**
+For the cofinal off-selector minimal committees forced by a failed
+deletion, exactly the useful infinitary alternative holds:
+
+* some fixed deleted guardian belongs to such committees cofinally; or
+* for every finite window, such committees can be found arbitrarily late
+  with every guardian above that window.
+
+The second branch follows by taking, for each low deleted point, a
+threshold beyond which it never occurs and maximizing those finitely many
+thresholds. -/
+theorem selectedRepairs_recurrentGuardian_or_escapingCommittees
+    {A C : Set ℕ} {N₀ : ℕ} (τ : ℕ → ℕ)
+    (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
+    (hselected : ∀ b ∈ C,
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = τ b)
+    (hfail : ¬IsExactTupleAsymptoticBasis (A \ C) 3) :
+    (∃ h ∈ C, ∀ T, ∃ n, T ≤ n ∧
+      ∃ H : Finset ℕ,
+        IsOffSelectorMinimalCommittee A C N₀ τ n H ∧ h ∈ H) ∨
+    (∀ W T, ∃ n, T ≤ n ∧
+      ∃ H : Finset ℕ,
+        IsOffSelectorMinimalCommittee A C N₀ τ n H ∧
+        ∀ h ∈ H, W < h) := by
+  by_cases hrec : ∃ h ∈ C, ∀ T, ∃ n, T ≤ n ∧
+      ∃ H : Finset ℕ,
+        IsOffSelectorMinimalCommittee A C N₀ τ n H ∧ h ∈ H
+  · exact Or.inl hrec
+  · right
+    have hboundedC : ∀ h ∈ C, ∃ T, ∀ n, T ≤ n →
+        ∀ H : Finset ℕ,
+          IsOffSelectorMinimalCommittee A C N₀ τ n H → h ∉ H := by
+      intro h hhC
+      by_contra hnoT
+      push Not at hnoT
+      exact hrec ⟨h, hhC, hnoT⟩
+    have hthreshold : ∀ h, ∃ T, h ∈ C → ∀ n, T ≤ n →
+        ∀ H : Finset ℕ,
+          IsOffSelectorMinimalCommittee A C N₀ τ n H → h ∉ H := by
+      intro h
+      by_cases hhC : h ∈ C
+      · obtain ⟨T, hT⟩ := hboundedC h hhC
+        exact ⟨T, fun _ => hT⟩
+      · exact ⟨0, fun hmem => absurd hmem hhC⟩
+    choose g hg using hthreshold
+    intro W T
+    let F : Finset ℕ :=
+      (Finset.range (W + 1)).filter (· ∈ C)
+    let T' := max T (F.sup g)
+    obtain ⟨n, hnT', hn₀, hoff, H, hHne, hHsub, hHhub, hHmin,
+      hnecessity⟩ :=
+      failure_with_selectedRepairs_forces_offSelector_minimalCommittees
+        τ h0 h0C hcov hselected hfail T'
+    have hcomm : IsOffSelectorMinimalCommittee A C N₀ τ n H :=
+      ⟨hn₀, hoff, hHne, hHhub, hHmin, hHsub⟩
+    refine ⟨n, ?_, H, hcomm, ?_⟩
+    · dsimp [T'] at hnT'
+      omega
+    · intro h hhH
+      by_contra hnotAbove
+      have hhW : h ≤ W := Nat.le_of_not_gt hnotAbove
+      have hhC : h ∈ C := by
+        have hhFilter := hHsub hhH
+        exact (Finset.mem_filter.1 hhFilter).2
+      have hhF : h ∈ F := by
+        exact Finset.mem_filter.2
+          ⟨Finset.mem_range.2 (by omega), hhC⟩
+      have hgSup : g h ≤ F.sup g :=
+        Finset.le_sup (f := g) hhF
+      have hgn : g h ≤ n := by
+        dsimp [T'] at hnT'
+        omega
+      exact (hg h hhC n hgn H hcomm) hhH
+
+open Classical in
+/-- In the recurrent-core branch, the fixed guardian owns cofinally many
+pair co-witnesses at off-selector targets.  The pair avoids every other
+member of the current minimal committee.  No conclusion about points of
+`C \ H` is asserted. -/
+theorem recurrentOffSelectorGuardian_has_pairCowitnessStream
+    {A C : Set ℕ} {N₀ : ℕ} {τ : ℕ → ℕ}
+    (hrec : ∃ h ∈ C, ∀ T, ∃ n, T ≤ n ∧
+      ∃ H : Finset ℕ,
+        IsOffSelectorMinimalCommittee A C N₀ τ n H ∧ h ∈ H) :
+    ∃ h ∈ C, ∀ T, ∃ n, T ≤ n ∧
+      ∃ H : Finset ℕ,
+        IsOffSelectorMinimalCommittee A C N₀ τ n H ∧ h ∈ H ∧
+        ∃ u ∈ A, ∃ v ∈ A, h + u + v = n ∧
+          ∀ g ∈ H, g ≠ h → u ≠ g ∧ v ≠ g := by
+  obtain ⟨h, hhC, hcofinal⟩ := hrec
+  refine ⟨h, hhC, ?_⟩
+  intro T
+  obtain ⟨n, hnT, H, hcomm, hhH⟩ := hcofinal T
+  obtain ⟨u, huA, v, hvA, huv, havoid⟩ :=
+    minimalRepHub_member_has_pairCowitness
+      hcomm.2.2.2.1 hcomm.2.2.2.2.1 hhH
+  exact ⟨n, hnT, H, hcomm, hhH,
+    u, huA, v, hvA, huv, havoid⟩
+
+open Classical in
+/-- **Escaping committees are singleton-private or uniformly multiple.**
+Either arbitrarily late escaping committees can be chosen singleton, in
+which case their unique guardians form an unbounded stream of absolute
+private triples, or beyond one window and one target threshold every
+escaping off-selector committee has at least two members. -/
+theorem escapingCommittees_singletonPrivate_or_uniformlyMultiple
+    {A C : Set ℕ} {N₀ : ℕ} {τ : ℕ → ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hesc : ∀ W T, ∃ n, T ≤ n ∧
+      ∃ H : Finset ℕ,
+        IsOffSelectorMinimalCommittee A C N₀ τ n H ∧
+        ∀ h ∈ H, W < h) :
+    (∀ W T, ∃ n, T ≤ n ∧ ∃ h ∈ C,
+      W < h ∧ h ≤ n ∧ N₀ ≤ n ∧
+      τ h ≠ n ∧ IsPrivateTriple A h n) ∨
+    (∃ W₀ T₀,
+      (∀ n, T₀ ≤ n → ∀ H : Finset ℕ,
+        IsOffSelectorMinimalCommittee A C N₀ τ n H →
+        (∀ h ∈ H, W₀ < h) → 2 ≤ H.card) ∧
+      ∀ W T, ∃ n, T ≤ n ∧ ∃ H : Finset ℕ,
+        IsOffSelectorMinimalCommittee A C N₀ τ n H ∧
+        (∀ h ∈ H, W < h) ∧ 2 ≤ H.card) := by
+  by_cases hsingle : ∀ W T, ∃ n, T ≤ n ∧
+      ∃ H : Finset ℕ,
+        IsOffSelectorMinimalCommittee A C N₀ τ n H ∧
+        (∀ h ∈ H, W < h) ∧ H.card = 1
+  · left
+    intro W T
+    obtain ⟨n, hnT, H, hcomm, habove, hHcard⟩ :=
+      hsingle W T
+    obtain ⟨h, rfl⟩ := Finset.card_eq_one.mp hHcard
+    have hhC : h ∈ C := by
+      have hhFilter :=
+        hcomm.2.2.2.2.2 (Finset.mem_singleton_self h)
+      exact (Finset.mem_filter.1 hhFilter).2
+    have hhle : h ≤ n := by
+      have hhFilter :=
+        hcomm.2.2.2.2.2 (Finset.mem_singleton_self h)
+      have := Finset.mem_range.1 (Finset.mem_filter.1 hhFilter).1
+      omega
+    have hprivate : IsPrivateTriple A h n :=
+      privateTriple_of_singleton_hub h0 hcov hcomm.1
+        hcomm.2.2.2.1
+    exact ⟨n, hnT, h, hhC,
+      habove h (Finset.mem_singleton_self h), hhle,
+      hcomm.1, hcomm.2.1 h hhC, hprivate⟩
+  · right
+    push Not at hsingle
+    obtain ⟨W₀, T₀, hnotSingle⟩ := hsingle
+    have hmultiple : ∀ n, T₀ ≤ n → ∀ H : Finset ℕ,
+        IsOffSelectorMinimalCommittee A C N₀ τ n H →
+        (∀ h ∈ H, W₀ < h) → 2 ≤ H.card := by
+      intro n hn H hcomm habove
+      have hpos : 0 < H.card :=
+        Finset.card_pos.mpr hcomm.2.2.1
+      have hneOne : H.card ≠ 1 :=
+        hnotSingle n hn H hcomm habove
+      omega
+    refine ⟨W₀, T₀, hmultiple, ?_⟩
+    intro W T
+    obtain ⟨n, hn, H, hcomm, habove⟩ :=
+      hesc (max W W₀) (max T T₀)
+    have hnT : T ≤ n := by omega
+    have hnT₀ : T₀ ≤ n := by omega
+    have haboveW₀ : ∀ h ∈ H, W₀ < h := by
+      intro h hh
+      have := habove h hh
+      omega
+    have hcard : 2 ≤ H.card :=
+      hmultiple n hnT₀ H hcomm haboveW₀
+    refine ⟨n, hnT, H, hcomm, ?_, hcard⟩
+    intro h hh
+    have := habove h hh
+    omega
+
+open Classical in
+/-- Escaping committees can be diagonalized into a block-separated
+sequence: targets increase strictly, and every guardian in the next
+committee lies above the preceding target.  Since each committee lies
+below its own target, distinct committees in the sequence are disjoint. -/
+theorem escapingOffSelectorCommittees_has_blockSequence
+    {A C : Set ℕ} {N₀ : ℕ} {τ : ℕ → ℕ}
+    (hesc : ∀ W T, ∃ n, T ≤ n ∧
+      ∃ H : Finset ℕ,
+        IsOffSelectorMinimalCommittee A C N₀ τ n H ∧
+        ∀ h ∈ H, W < h) :
+    ∃ n : ℕ → ℕ, ∃ H : ℕ → Finset ℕ,
+      StrictMono n ∧
+      (∀ i, IsOffSelectorMinimalCommittee A C N₀ τ (n i) (H i)) ∧
+      (∀ i, ∀ h ∈ H (i + 1), n i < h) ∧
+      ∀ i j, i < j → Disjoint (H i) (H j) := by
+  have hpick : ∀ W, ∃ p : ℕ × Finset ℕ,
+      W < p.1 ∧
+      IsOffSelectorMinimalCommittee A C N₀ τ p.1 p.2 ∧
+      ∀ h ∈ p.2, W < h := by
+    intro W
+    obtain ⟨n, hn, H, hcomm, habove⟩ := hesc W (W + 1)
+    exact ⟨(n, H), by omega, hcomm, habove⟩
+  choose p hp using hpick
+  let s : ℕ → ℕ × Finset ℕ :=
+    Nat.rec (p 0) (fun _ q => p q.1)
+  let n : ℕ → ℕ := fun i => (s i).1
+  let H : ℕ → Finset ℕ := fun i => (s i).2
+  have hs_zero : s 0 = p 0 := rfl
+  have hs_succ : ∀ i, s (i + 1) = p (s i).1 := by
+    intro i
+    rfl
+  have hn_step : ∀ i, n i < n (i + 1) := by
+    intro i
+    rw [show n i = (s i).1 from rfl,
+      show n (i + 1) = (s (i + 1)).1 from rfl,
+      hs_succ]
+    exact (hp (s i).1).1
+  have hn_mono : StrictMono n :=
+    strictMono_nat_of_lt_succ hn_step
+  have hcomm : ∀ i,
+      IsOffSelectorMinimalCommittee A C N₀ τ (n i) (H i) := by
+    intro i
+    cases i with
+    | zero =>
+        rw [show n 0 = (s 0).1 from rfl,
+          show H 0 = (s 0).2 from rfl, hs_zero]
+        exact (hp 0).2.1
+    | succ i =>
+        rw [show n (i + 1) = (s (i + 1)).1 from rfl,
+          show H (i + 1) = (s (i + 1)).2 from rfl, hs_succ]
+        exact (hp (s i).1).2.1
+  have habove : ∀ i, ∀ h ∈ H (i + 1), n i < h := by
+    intro i h hh
+    have hh' : h ∈ (p (s i).1).2 := by
+      dsimp [H] at hh
+      rw [hs_succ] at hh
+      exact hh
+    exact (hp (s i).1).2.2 h hh'
+  refine ⟨n, H, hn_mono, hcomm, habove, ?_⟩
+  intro i j hij
+  apply Finset.disjoint_left.mpr
+  intro x hxi hxj
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : j ≠ 0)
+  have hik : i ≤ k := by omega
+  have hxle : x ≤ n i := by
+    have hxFilter := (hcomm i).2.2.2.2.2 hxi
+    have hxRange := (Finset.mem_filter.1 hxFilter).1
+    have := Finset.mem_range.1 hxRange
+    omega
+  have hnik : n i ≤ n k := hn_mono.monotone hik
+  have hkx : n k < x := habove k x hxj
+  omega
+
+open Classical in
+/-- Once escaping committees are uniformly non-singleton, the
+block-separated diagonal may be taken entirely in the multi-guardian
+regime. -/
+theorem escapingUniformlyMultipleCommittees_has_blockSequence
+    {A C : Set ℕ} {N₀ : ℕ} {τ : ℕ → ℕ} {W₀ T₀ : ℕ}
+    (hmultiple : ∀ n, T₀ ≤ n → ∀ H : Finset ℕ,
+      IsOffSelectorMinimalCommittee A C N₀ τ n H →
+      (∀ h ∈ H, W₀ < h) → 2 ≤ H.card)
+    (hesc : ∀ W T, ∃ n, T ≤ n ∧
+      ∃ H : Finset ℕ,
+        IsOffSelectorMinimalCommittee A C N₀ τ n H ∧
+        ∀ h ∈ H, W < h) :
+    ∃ n : ℕ → ℕ, ∃ H : ℕ → Finset ℕ,
+      StrictMono n ∧
+      (∀ i, IsOffSelectorMinimalCommittee A C N₀ τ (n i) (H i)) ∧
+      (∀ i, 2 ≤ (H i).card) ∧
+      (∀ i, ∀ h ∈ H (i + 1), n i < h) ∧
+      ∀ i j, i < j → Disjoint (H i) (H j) := by
+  obtain ⟨n, H, hnmono, hcomm, habove, hdisjoint⟩ :=
+    escapingOffSelectorCommittees_has_blockSequence hesc
+  let I := max W₀ T₀ + 1
+  let n' : ℕ → ℕ := fun i => n (I + i)
+  let H' : ℕ → Finset ℕ := fun i => H (I + i)
+  have hn'mono : StrictMono n' := by
+    intro i j hij
+    exact hnmono (by omega)
+  have hcomm' : ∀ i,
+      IsOffSelectorMinimalCommittee A C N₀ τ (n' i) (H' i) := by
+    intro i
+    exact hcomm (I + i)
+  have hcard' : ∀ i, 2 ≤ (H' i).card := by
+    intro i
+    have hindexPos : 0 < I + i := by
+      dsimp [I]
+      omega
+    obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero
+      (Nat.ne_of_gt hindexPos)
+    have hnT₀ : T₀ ≤ n' i := by
+      have hself : I + i ≤ n (I + i) := hnmono.id_le (I + i)
+      have hTindex : T₀ ≤ I + i := by
+        dsimp [I]
+        omega
+      exact hTindex.trans hself
+    have hHW₀ : ∀ h ∈ H' i, W₀ < h := by
+      intro h hh
+      have hprev : n k < h := by
+        apply habove k h
+        simpa [H', hk] using hh
+      have hkself : k ≤ n k := hnmono.id_le k
+      dsimp [I] at hk
+      omega
+    exact hmultiple (n' i) hnT₀ (H' i) (hcomm' i) hHW₀
+  have habove' : ∀ i, ∀ h ∈ H' (i + 1), n' i < h := by
+    intro i h hh
+    apply habove (I + i) h
+    simpa [H', Nat.add_assoc] using hh
+  have hdisjoint' : ∀ i j, i < j → Disjoint (H' i) (H' j) := by
+    intro i j hij
+    exact hdisjoint (I + i) (I + j) (by omega)
+  exact ⟨n', H', hn'mono, hcomm', hcard',
+    habove', hdisjoint'⟩
+
+open Classical in
+/-- **Fixed-channel residual theorem.**
+In a global counterexample, collision-free thinning of any cofinal fixed
+repair channel produces an infinite deletion `C` whose chosen wounds all
+survive, together with a cofinal stream of different threatened targets
+which do not survive.  This is the exact remaining moving-prefix
+composition obstruction. -/
+theorem counterexample_fixedRepairChannel_has_offSelectorStalls
+    {A : Set ℕ} {N₀ w : ℕ} {B : Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ C ⊆ A, C.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ C) 3)
+    (hcofinal : ∀ X, ∃ b ∈ A, X < b ∧
+      HasTerminalRepairWoundThrough A N₀ B w b) :
+    ∃ C : Set ℕ, ∃ τ : ℕ → ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧ w ∉ C ∧ w ∈ A ∧
+      (∀ b ∈ C, N₀ ≤ τ b ∧ b ≤ τ b ∧
+        (∃ d ∈ insert b B, ∃ a ∈ A, d + a = τ b) ∧
+        IsPrivateTriple (A \ (B : Set ℕ)) b (τ b) ∧
+        ∃ u ∈ A \ C, ∃ v ∈ A \ C, w + u + v = τ b) ∧
+      ∀ T, ∃ n, T ≤ n ∧ N₀ ≤ n ∧
+        (∃ b ∈ C, ∃ a ∈ A, b + a = n) ∧
+        (∀ b ∈ C, τ b ≠ n) ∧
+        ¬∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+          x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = n := by
+  obtain ⟨C, τ, hCA, hCinf, h0C, hwC, hwA, hdata⟩ :=
+    cofinal_fixedRepairChannel_has_collisionFree_selector hcofinal
+  have hselected : ∀ b ∈ C,
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = τ b := by
+    intro b hbC
+    obtain ⟨-, -, -, -, u, hu, v, hv, huv⟩ := hdata b hbC
+    exact ⟨w, hwA, u, hu.1, v, hv.1, hwC, hu.2, hv.2, huv⟩
+  have hstalls :=
+    failure_with_selectedRepairs_forces_cofinal_offSelectorStalls
+      τ h0 h0C hcov hselected (hfail C hCA hCinf)
+  exact ⟨C, τ, hCA, hCinf, h0C, hwC, hwA, hdata, hstalls⟩
+
+open Classical in
+/-- A fixed-channel wound whose failed target is a genuine new risk
+`b+a`. -/
+def HasSelfRepairWoundThrough
+    (A : Set ℕ) (N₀ : ℕ) (B : Finset ℕ) (w b : ℕ) : Prop :=
+  ∃ n, N₀ ≤ n ∧ b ≤ n ∧
+    (∃ a ∈ A, b + a = n) ∧
+    IsPrivateTriple (A \ (B : Set ℕ)) b n ∧
+    HasRepairThrough A w b n
+
+open Classical in
+/-- A fixed-channel wound whose failed target comes from one specified old
+prefix element `d`. -/
+def HasCollateralRepairWoundThrough
+    (A : Set ℕ) (N₀ : ℕ) (B : Finset ℕ)
+    (w d b : ℕ) : Prop :=
+  ∃ n, N₀ ≤ n ∧ b ≤ n ∧
+    (∃ a ∈ A, d + a = n) ∧
+    IsPrivateTriple (A \ (B : Set ℕ)) b n ∧
+    HasRepairThrough A w b n
+
+open Classical in
+/-- Retaining the source of the risk gives an exact pointwise split:
+the new guardian `b` caused the wound, or one old `d∈B` did. -/
+theorem terminalRepairWound_self_or_collateral
+    {A : Set ℕ} {N₀ w b : ℕ} {B : Finset ℕ}
+    (h : HasTerminalRepairWoundThrough A N₀ B w b) :
+    HasSelfRepairWoundThrough A N₀ B w b ∨
+      ∃ d ∈ B, HasCollateralRepairWoundThrough A N₀ B w d b := by
+  obtain ⟨n, hn, hbn, hrisk, hprivate, hrepair⟩ := h
+  obtain ⟨d, hdInsert, a, haA, hda⟩ := hrisk
+  rcases Finset.mem_insert.1 hdInsert with hdb | hdB
+  · subst d
+    exact Or.inl
+      ⟨n, hn, hbn, ⟨a, haA, hda⟩, hprivate, hrepair⟩
+  · exact Or.inr
+      ⟨d, hdB, n, hn, hbn, ⟨a, haA, hda⟩,
+        hprivate, hrepair⟩
+
+open Classical in
+/-- **Cofinal source stabilization for a fixed repair channel.**
+If repaired wounds through `w` occur arbitrarily far out, then either
+self-risk wounds occur arbitrarily far out, or one fixed old prefix
+element `d` is the collateral source arbitrarily far out. -/
+theorem cofinal_fixedRepairChannel_self_or_fixedCollateral
+    {A : Set ℕ} {N₀ w : ℕ} {B : Finset ℕ}
+    (hcofinal : ∀ X, ∃ b ∈ A, X < b ∧
+      HasTerminalRepairWoundThrough A N₀ B w b) :
+    (∀ X, ∃ b ∈ A, X < b ∧
+      HasSelfRepairWoundThrough A N₀ B w b) ∨
+    (∃ d ∈ B, ∀ X, ∃ b ∈ A, X < b ∧
+      HasCollateralRepairWoundThrough A N₀ B w d b) := by
+  by_cases hself : ∀ X, ∃ b ∈ A, X < b ∧
+      HasSelfRepairWoundThrough A N₀ B w b
+  · exact Or.inl hself
+  · right
+    push Not at hself
+    obtain ⟨X₀, hX₀⟩ := hself
+    have hcollateral : ∀ X, ∃ b, X < b ∧
+        ∃ d ∈ B, b ∈ A ∧
+          HasCollateralRepairWoundThrough A N₀ B w d b := by
+      intro X
+      obtain ⟨b, hbA, hbLarge, hrepair⟩ :=
+        hcofinal (max X X₀)
+      rcases terminalRepairWound_self_or_collateral hrepair with
+        hnew | hold
+      · exact absurd hnew (hX₀ b hbA (by omega))
+      · obtain ⟨d, hdB, hold⟩ := hold
+        exact ⟨b, by omega, d, hdB, hbA, hold⟩
+    obtain ⟨d, hdB, hdCofinal⟩ :=
+      finite_cofinal_pigeonhole hcollateral
+    refine ⟨d, hdB, ?_⟩
+    intro X
+    obtain ⟨b, hbX, hbA, hrepair⟩ := hdCofinal X
+    exact ⟨b, hbA, hbX, hrepair⟩
+
+open Classical in
+/-- A collateral repair through fixed `w,d` is an exact fixed-shift
+identity.  If `w≤d`, it gives a surviving pair for `a+(d-w)`; if `d≤w`,
+it expresses `a` as the fixed shift `w-d` plus that pair. -/
+theorem collateralRepairWound_fixedShift_identity
+    {A : Set ℕ} {N₀ w d b : ℕ} {B : Finset ℕ}
+    (h : HasCollateralRepairWoundThrough A N₀ B w d b) :
+    ∃ a ∈ A, ∃ u ∈ A, ∃ v ∈ A,
+      u ≠ b ∧ v ≠ b ∧ d + a = w + u + v ∧
+      ((w ≤ d ∧ (d - w) + a = u + v) ∨
+       (d ≤ w ∧ a = (w - d) + u + v)) := by
+  obtain ⟨n, hn, hbn, hrisk, hprivate, hrepair⟩ := h
+  obtain ⟨a, haA, hda⟩ := hrisk
+  obtain ⟨u, huA, v, hvA, hub, hvb, huv⟩ :=
+    repairThrough_gives_shifted_pair hrepair
+  refine ⟨a, haA, u, huA, v, hvA, hub, hvb, by omega, ?_⟩
+  rcases le_total w d with hwd | hdw
+  · exact Or.inl ⟨hwd, by omega⟩
+  · exact Or.inr ⟨hdw, by omega⟩
+
+open Classical in
+/-- **Cofinal private guardians or one fixed repair channel.**
+At the terminal prefix of any counterexample, either absolute private
+wounds occur on arbitrarily large basis candidates, or there is one fixed
+`w ∈ B` through which repair triples for arbitrarily large candidates must
+pass.  Finiteness of `B` removes all label-switching loss. -/
+theorem counterexample_cofinal_absolute_or_fixed_prefix_repairs
+    {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ B : Finset ℕ,
+      FinitePrefixServesRisks A N₀ B ∧ 0 ∉ B ∧
+      ((∀ X, ∃ b ∈ A, X < b ∧
+          HasAbsoluteTerminalWound A N₀ B b) ∨
+       ∃ w ∈ B, ∀ X, ∃ b ∈ A, X < b ∧
+          HasTerminalRepairWoundThrough A N₀ B w b) := by
+  obtain ⟨B, hserved, h0B, hwound⟩ :=
+    counterexample_terminal_prefix_private_wound_fork h0 hcov hfail
+  have hcandidate : ∀ X, ∃ b ∈ A, X < b ∧
+      (HasAbsoluteTerminalWound A N₀ B b ∨
+       ∃ w ∈ B, HasTerminalRepairWoundThrough A N₀ B w b) := by
+    intro X
+    obtain ⟨b, hbA, hbLarge⟩ :=
+      pairCovers_unbounded hcov (max (X + 1) (B.sup id + 1))
+    have hbX : X < b := by omega
+    have hbpos : 0 < b := by omega
+    have hbAbove : ∀ w ∈ B, w < b := by
+      intro w hwB
+      have hwSup : w ≤ B.sup id := Finset.le_sup (f := id) hwB
+      omega
+    obtain ⟨n, hn, hbn, hrisk, hprivate, habs | hrepair⟩ :=
+      hwound b hbA hbpos hbAbove
+    · exact ⟨b, hbA, hbX, Or.inl
+        ⟨n, hn, hbn, hrisk, hprivate, habs⟩⟩
+    · obtain ⟨w, hwB, hthrough⟩ :=
+        prefixRepairTriple_has_repairThrough hrepair
+      exact ⟨b, hbA, hbX, Or.inr
+        ⟨w, hwB, n, hn, hbn, hrisk, hprivate, hthrough⟩⟩
+  by_cases habsolute :
+      ∀ X, ∃ b ∈ A, X < b ∧
+        HasAbsoluteTerminalWound A N₀ B b
+  · exact ⟨B, hserved, h0B, Or.inl habsolute⟩
+  · push Not at habsolute
+    obtain ⟨X₀, hX₀⟩ := habsolute
+    have hrepairs : ∀ X, ∃ b, X < b ∧
+        ∃ w ∈ B,
+          b ∈ A ∧ HasTerminalRepairWoundThrough A N₀ B w b := by
+      intro X
+      obtain ⟨b, hbA, hbLarge, habs | hrepair⟩ :=
+        hcandidate (max X X₀)
+      · exact absurd habs (hX₀ b hbA (by omega))
+      · obtain ⟨w, hwB, hrepair⟩ := hrepair
+        exact ⟨b, by omega, w, hwB, hbA, hrepair⟩
+    obtain ⟨w, hwB, hwCofinal⟩ :=
+      finite_cofinal_pigeonhole hrepairs
+    refine ⟨B, hserved, h0B, Or.inr ⟨w, hwB, ?_⟩⟩
+    intro X
+    obtain ⟨b, hbX, hbA, hrepair⟩ := hwCofinal X
+    exact ⟨b, hbA, hbX, hrepair⟩
+
+open Classical in
+/-- The data of an absolute private wound whose guardian is larger than its
+co-offset. -/
+def IsBigAbsolutePrivateWound
+    (A : Set ℕ) (N₀ b n : ℕ) : Prop :=
+  N₀ ≤ n ∧ b ≤ n ∧ n < 2 * b ∧ IsPrivateTriple A b n
+
+open Classical in
+/-- **Big absolute private guardians cannot be cofinal.**
+Assume arbitrarily large `b` have private targets `n < 2b`.  If co-offsets
+`q=n-b` with `q≥N₀` occur cofinally, one first wound and
+`no_big_guardian_stacking` bound every later co-offset.  Otherwise the
+co-offsets are eventually bounded by `N₀` already.  Finite cofinal
+pigeonhole therefore fixes one `q`.
+
+For two sufficiently separated guardians `b₁<b₂` at this same co-offset,
+`b₁` lies strictly inside the private desert of `(b₂,b₂+q)`, so the desert
+law forces `b₁=b₂`, a contradiction. -/
+theorem no_cofinal_big_absolute_private_guardians
+    {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) :
+    ¬(∀ X, ∃ b ∈ A, X < b ∧
+      ∃ n, IsBigAbsolutePrivateWound A N₀ b n) := by
+  intro hcofinal
+  have hbound : ∃ Q X₀, ∀ b ∈ A, X₀ < b → ∀ n,
+      IsBigAbsolutePrivateWound A N₀ b n → n - b < Q := by
+    by_cases hlargeOffset : ∀ X, ∃ b ∈ A, X < b ∧
+        ∃ n, IsBigAbsolutePrivateWound A N₀ b n ∧ N₀ ≤ n - b
+    · obtain ⟨b₁, hb₁A, hb₁large, n₁, hbig₁, hq₁N⟩ :=
+        hlargeOffset (N₀ + 3)
+      refine ⟨max N₀ n₁, 0, ?_⟩
+      intro b hbA hbpos n hbig
+      by_cases hqN : N₀ ≤ n - b
+      · by_contra hqBound
+        have hn₁q : n₁ ≤ n - b := by
+          have := Nat.le_of_not_gt hqBound
+          omega
+        have hN₁ : N₀ + b₁ ≤ n₁ := by
+          have := hbig₁.2.1
+          omega
+        have hN : N₀ + b ≤ n := by
+          have := hbig.2.1
+          omega
+        have hsep : n₁ + b ≤ n := by omega
+        exact no_big_guardian_stacking h0 hcov
+          hbig₁.2.2.2 hbig.2.2.2
+          hbig₁.2.2.1 hN₁ hbig.2.2.1 hN
+          (by omega) hsep
+      · have := Nat.lt_of_not_ge hqN
+        exact this.trans_le (le_max_left N₀ n₁)
+    · simp only [not_forall] at hlargeOffset
+      obtain ⟨X₀, hX₀⟩ := hlargeOffset
+      refine ⟨N₀, X₀, ?_⟩
+      intro b hbA hbX n hbig
+      by_contra hq
+      have hqN : N₀ ≤ n - b := Nat.le_of_not_gt hq
+      exact hX₀ ⟨b, hbA, hbX, n, hbig, hqN⟩
+  obtain ⟨Q, X₀, hbound⟩ := hbound
+  have hfixedInput : ∀ X, ∃ b, X < b ∧
+      ∃ q ∈ Finset.range Q,
+        b ∈ A ∧ ∃ n, IsBigAbsolutePrivateWound A N₀ b n ∧
+          n - b = q := by
+    intro X
+    obtain ⟨b, hbA, hbLarge, n, hbig⟩ :=
+      hcofinal (max X X₀)
+    have hbX₀ : X₀ < b := by omega
+    have hqQ := hbound b hbA hbX₀ n hbig
+    exact ⟨b, by omega, n - b, Finset.mem_range.2 hqQ,
+      hbA, n, hbig, rfl⟩
+  have hfixedInput' : ∀ X, ∃ b, X < b ∧
+      ∃ q ∈ Finset.range Q,
+        (b ∈ A ∧ ∃ n, IsBigAbsolutePrivateWound A N₀ b n ∧
+          n - b = q) := hfixedInput
+  obtain ⟨q, hqQ, hqCofinal⟩ :=
+    finite_cofinal_pigeonhole hfixedInput'
+  obtain ⟨b₁, hb₁q, hb₁A, n₁, hbig₁, hn₁q⟩ :=
+    hqCofinal q
+  obtain ⟨b₂, hb₂large, hb₂A, n₂, hbig₂, hn₂q⟩ :=
+    hqCofinal (b₁ + N₀ + 1)
+  have hqb₁ : q < b₁ := by
+    have := hbig₁.2.2.1
+    have := hbig₁.2.1
+    omega
+  have hb₂pos : 0 < b₂ := by omega
+  have hn₂sum : n₂ = b₂ + q := by
+    calc
+      n₂ = (n₂ - b₂) + b₂ :=
+        (Nat.sub_add_cancel hbig₂.2.1).symm
+      _ = q + b₂ := by rw [hn₂q]
+      _ = b₂ + q := Nat.add_comm _ _
+  have hlow : n₂ < b₂ + b₁ := by
+    rw [hn₂sum]
+    omega
+  have hhigh : b₁ + N₀ ≤ n₂ := by omega
+  have hdesert :=
+    hbig₂.2.2.2.desert h0 hcov hb₂pos hb₁A
+      hlow hhigh
+  omega
+
+open Classical in
+/-- An unbounded singleton-committee stream cannot remain in the big
+guardian regime.  After thinning, its absolute private off-selector
+wounds all satisfy `2h≤n`. -/
+theorem cofinal_offSelector_absolutePrivate_wounds_are_nonbig
+    {A C : Set ℕ} {N₀ : ℕ} {τ : ℕ → ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (hCA : C ⊆ A)
+    (hstream : ∀ W T, ∃ n, T ≤ n ∧ ∃ h ∈ C,
+      W < h ∧ h ≤ n ∧ N₀ ≤ n ∧
+      τ h ≠ n ∧ IsPrivateTriple A h n) :
+    ∀ W T, ∃ n, T ≤ n ∧ ∃ h ∈ C,
+      W < h ∧ h ≤ n ∧ N₀ ≤ n ∧ 2 * h ≤ n ∧
+      τ h ≠ n ∧ IsPrivateTriple A h n := by
+  by_contra hnonbig
+  push Not at hnonbig
+  obtain ⟨W₀, T₀, hbad⟩ := hnonbig
+  have hbigCofinal : ∀ X, ∃ h ∈ A, X < h ∧
+      ∃ n, IsBigAbsolutePrivateWound A N₀ h n := by
+    intro X
+    obtain ⟨n, hnT₀, h, hhC, hhLarge, hhn, hn₀, hoff, hprivate⟩ :=
+      hstream (max X W₀) T₀
+    have hnotNonbig : ¬2 * h ≤ n := by
+      intro hnonbig
+      exact hbad n hnT₀ h hhC (by omega) hhn hn₀
+        hnonbig hoff hprivate
+    exact ⟨h, hCA hhC, by omega, n,
+      hn₀, hhn, Nat.lt_of_not_ge hnotNonbig, hprivate⟩
+  exact no_cofinal_big_absolute_private_guardians h0 hcov hbigCofinal
+
+open Classical in
+/-- A fixed deleted point occurs in off-selector minimal committees
+cofinally. -/
+def HasRecurrentOffSelectorGuardian
+    (A C : Set ℕ) (N₀ : ℕ) (τ : ℕ → ℕ) : Prop :=
+  ∃ h ∈ C, ∀ T, ∃ n, T ≤ n ∧
+    ∃ H : Finset ℕ,
+      IsOffSelectorMinimalCommittee A C N₀ τ n H ∧ h ∈ H
+
+open Classical in
+/-- Cofinal non-big absolute private wounds arising from singleton
+off-selector committees. -/
+def HasCofinalNonbigOffSelectorPrivateStream
+    (A C : Set ℕ) (N₀ : ℕ) (τ : ℕ → ℕ) : Prop :=
+  ∀ W T, ∃ n, T ≤ n ∧ ∃ h ∈ C,
+    W < h ∧ h ≤ n ∧ N₀ ≤ n ∧ 2 * h ≤ n ∧
+    τ h ≠ n ∧ IsPrivateTriple A h n
+
+open Classical in
+/-- A block-separated sequence of non-singleton off-selector minimal
+committees. -/
+def HasBlockSeparatedMultipleOffSelectorCommittees
+    (A C : Set ℕ) (N₀ : ℕ) (τ : ℕ → ℕ) : Prop :=
+  ∃ n : ℕ → ℕ, ∃ H : ℕ → Finset ℕ,
+    StrictMono n ∧
+    (∀ i, IsOffSelectorMinimalCommittee A C N₀ τ (n i) (H i)) ∧
+    (∀ i, 2 ≤ (H i).card) ∧
+    (∀ i, ∀ h ∈ H (i + 1), n i < h) ∧
+    ∀ i j, i < j → Disjoint (H i) (H j)
+
+open Classical in
+/-- Every target in the finite schedule attached to a deleted point has
+a representation surviving the whole deletion. -/
+def HasSurvivingFiniteServiceSchedule
+    (A C : Set ℕ) (σ : ℕ → Finset ℕ) : Prop :=
+  ∀ b ∈ C, ∀ m ∈ σ b,
+    ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+      x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = m
+
+open Classical in
+/-- A surviving finite service schedule with exactly `k` distinct targets
+attached to every deleted point. -/
+def HasUniformSurvivingServiceSchedule
+    (A C : Set ℕ) (k : ℕ) : Prop :=
+  ∃ σ : ℕ → Finset ℕ,
+    HasSurvivingFiniteServiceSchedule A C σ ∧
+    ∀ b ∈ C, (σ b).card = k
+
+open Classical in
+/-- A finite service schedule whose labels are genuine: every target
+attached to `b` is actually threatened by deleting `b`. -/
+def HasSurvivingFiniteRiskSchedule
+    (A C : Set ℕ) (σ : ℕ → Finset ℕ) : Prop :=
+  ∀ b ∈ C, ∀ m ∈ σ b,
+    (∃ a ∈ A, b + a = m) ∧
+    ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+      x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = m
+
+open Classical in
+/-- Forgetting the genuine-risk labels leaves an ordinary surviving
+finite service schedule. -/
+theorem HasSurvivingFiniteRiskSchedule.toService
+    {A C : Set ℕ} {σ : ℕ → Finset ℕ}
+    (h : HasSurvivingFiniteRiskSchedule A C σ) :
+    HasSurvivingFiniteServiceSchedule A C σ := by
+  intro b hbC m hm
+  exact (h b hbC m hm).2
+
+open Classical in
+/-- **Exact eventual criterion for arbitrary finite service schedules.**
+Once all scheduled targets survive, `A\C` is an exact order-three
+asymptotic basis exactly when every sufficiently late threatened target
+outside every schedule is served. -/
+theorem finiteServiceSchedule_basis_iff_eventual_offScheduleRisks
+    {A C : Set ℕ} {N₀ : ℕ} (σ : ℕ → Finset ℕ)
+    (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
+    (hschedule : HasSurvivingFiniteServiceSchedule A C σ) :
+    IsExactTupleAsymptoticBasis (A \ C) 3 ↔
+      ∃ M, ∀ n, M ≤ n →
+        (∃ b ∈ C, ∃ a ∈ A, b + a = n) →
+        (∀ b ∈ C, n ∉ σ b) →
+        ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+          x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = n := by
+  constructor
+  · rintro ⟨M, hbasis⟩
+    refine ⟨M, ?_⟩
+    intro n hn hrisk hoff
+    obtain ⟨v, hv, hvsum⟩ := hbasis n hn
+    exact ⟨v 0, (hv 0).1, v 1, (hv 1).1, v 2, (hv 2).1,
+      (hv 0).2, (hv 1).2, (hv 2).2,
+      by simpa [Fin.sum_univ_three] using hvsum⟩
+  · rintro ⟨M, hoff⟩
+    have hcov' : PairCovers A (max N₀ M) := by
+      intro n hn
+      exact hcov n ((le_max_left N₀ M).trans hn)
+    apply deletion_criterion_local h0 h0C hcov'
+    intro n hn hrisk
+    by_cases hhit : ∃ b ∈ C, n ∈ σ b
+    · obtain ⟨b, hbC, hnσ⟩ := hhit
+      exact hschedule b hbC n hnσ
+    · apply hoff n ((le_max_right N₀ M).trans hn) hrisk
+      intro b hbC hnσ
+      exact hhit ⟨b, hbC, hnσ⟩
+
+open Classical in
+/-- **Moving finite-schedule stall lemma.**
+Let each deleted point carry an arbitrary finite list of targets which
+already have representations surviving the whole deletion.  If the
+deletion still fails to be an exact order-three asymptotic basis, then
+arbitrarily far out there is a threatened target which is outside every
+current list and has no surviving triple.
+
+This is the iteration form of the off-selector stall lemma: enlarging the
+finite service prefix may move the next stall, but it cannot eliminate all
+late stalls unless the deletion has already succeeded. -/
+theorem failure_with_finiteServiceSchedule_forces_cofinal_offScheduleStalls
+    {A C : Set ℕ} {N₀ : ℕ} (σ : ℕ → Finset ℕ)
+    (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
+    (hschedule : HasSurvivingFiniteServiceSchedule A C σ)
+    (hfail : ¬IsExactTupleAsymptoticBasis (A \ C) 3) :
+    ∀ T, ∃ n, T ≤ n ∧ N₀ ≤ n ∧
+      (∃ b ∈ C, ∃ a ∈ A, b + a = n) ∧
+      (∀ b ∈ C, n ∉ σ b) ∧
+      ¬∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = n := by
+  simp only [IsExactTupleAsymptoticBasis,
+    not_exists, not_forall] at hfail
+  intro T
+  obtain ⟨n, hn, hnorep⟩ := hfail (max T N₀)
+  have hnT : T ≤ n := (le_max_left T N₀).trans hn
+  have hn₀ : N₀ ≤ n := (le_max_right T N₀).trans hn
+  obtain ⟨x, hxA, y, hyA, hxy⟩ := hcov n hn₀
+  have hrisk : ∃ b ∈ C, ∃ a ∈ A, b + a = n := by
+    by_cases hxC : x ∈ C
+    · exact ⟨x, hxC, y, hyA, hxy⟩
+    · by_cases hyC : y ∈ C
+      · exact ⟨y, hyC, x, hxA, by omega⟩
+      · exfalso
+        apply hnorep ![x, y, 0]
+        constructor
+        · intro i
+          match i with
+          | 0 => exact ⟨hxA, hxC⟩
+          | 1 => exact ⟨hyA, hyC⟩
+          | 2 => exact ⟨h0, h0C⟩
+        · simpa [Fin.sum_univ_three] using hxy
+  have hoff : ∀ b ∈ C, n ∉ σ b := by
+    intro b hbC hnσ
+    obtain ⟨p, hpA, q, hqA, r, hrA, hpC, hqC, hrC, hpqr⟩ :=
+      hschedule b hbC n hnσ
+    apply hnorep ![p, q, r]
+    constructor
+    · intro i
+      match i with
+      | 0 => exact ⟨hpA, hpC⟩
+      | 1 => exact ⟨hqA, hqC⟩
+      | 2 => exact ⟨hrA, hrC⟩
+    · simpa [Fin.sum_univ_three] using hpqr
+  refine ⟨n, hnT, hn₀, hrisk, hoff, ?_⟩
+  rintro ⟨p, hpA, q, hqA, r, hrA, hpC, hqC, hrC, hpqr⟩
+  apply hnorep ![p, q, r]
+  constructor
+  · intro i
+    match i with
+    | 0 => exact ⟨hpA, hpC⟩
+    | 1 => exact ⟨hqA, hqC⟩
+    | 2 => exact ⟨hrA, hrC⟩
+  · simpa [Fin.sum_univ_three] using hpqr
+
+open Classical in
+/-- A nonempty minimal representation committee for a target lying outside
+every currently scheduled finite service list. -/
+def IsOffScheduleMinimalCommittee
+    (A C : Set ℕ) (N₀ : ℕ) (σ : ℕ → Finset ℕ)
+    (n : ℕ) (H : Finset ℕ) : Prop :=
+  N₀ ≤ n ∧
+  (∀ b ∈ C, n ∉ σ b) ∧
+  H.Nonempty ∧
+  IsRepHub A n H ∧
+  (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+  H ⊆ (Finset.range (n + 1)).filter (· ∈ C)
+
+open Classical in
+/-- Every stall outside a finite service schedule has a finite nonempty
+minimal committee contained in the deleted points below the target. -/
+theorem failure_with_finiteServiceSchedule_forces_offSchedule_minimalCommittees
+    {A C : Set ℕ} {N₀ : ℕ} (σ : ℕ → Finset ℕ)
+    (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
+    (hschedule : HasSurvivingFiniteServiceSchedule A C σ)
+    (hfail : ¬IsExactTupleAsymptoticBasis (A \ C) 3) :
+    ∀ T, ∃ n, T ≤ n ∧
+      ∃ H : Finset ℕ,
+        IsOffScheduleMinimalCommittee A C N₀ σ n H := by
+  intro T
+  obtain ⟨n, hnT, hn₀, hrisk, hoff, hno⟩ :=
+    failure_with_finiteServiceSchedule_forces_cofinal_offScheduleStalls
+      σ h0 h0C hcov hschedule hfail T
+  have hdead : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+      x + y + z = n → x ∈ C ∨ y ∈ C ∨ z ∈ C := by
+    intro x hxA y hyA z hzA hxyz
+    by_cases hxC : x ∈ C
+    · exact Or.inl hxC
+    · by_cases hyC : y ∈ C
+      · exact Or.inr (Or.inl hyC)
+      · by_cases hzC : z ∈ C
+        · exact Or.inr (Or.inr hzC)
+        · exact (hno
+            ⟨x, hxA, y, hyA, z, hzA, hxC, hyC, hzC, hxyz⟩).elim
+  have hhub :=
+    failing_hub_subset_deletion (A := A) (B := C) hdead
+  obtain ⟨H, hHsub, hHhub, hHmin⟩ := exists_minimal_hub hhub
+  have hHne : H.Nonempty :=
+    hub_nonempty_of_covering h0 hcov hn₀ hHhub
+  exact ⟨n, hnT, H,
+    hn₀, hoff, hHne, hHhub, hHmin, hHsub⟩
+
+open Classical in
+/-- A block-separated sequence of non-singleton minimal committees outside
+an arbitrary finite service schedule. -/
+def HasBlockSeparatedMultipleOffScheduleCommittees
+    (A C : Set ℕ) (N₀ : ℕ) (σ : ℕ → Finset ℕ) : Prop :=
+  ∃ n : ℕ → ℕ, ∃ H : ℕ → Finset ℕ,
+    StrictMono n ∧
+    (∀ i, IsOffScheduleMinimalCommittee A C N₀ σ (n i) (H i)) ∧
+    (∀ i, 2 ≤ (H i).card) ∧
+    (∀ i, ∀ h ∈ H (i + 1), n i < h) ∧
+    ∀ i j, i < j → Disjoint (H i) (H j)
+
+open Classical in
+/-- **Recurrent guardian versus escaping committees for a finite
+schedule.**  Either one fixed deleted point occurs in arbitrarily late
+minimal off-schedule committees, or committees can be chosen arbitrarily
+late with every member above any prescribed finite window. -/
+theorem finiteServiceSchedule_recurrentGuardian_or_escapingCommittees
+    {A C : Set ℕ} {N₀ : ℕ} (σ : ℕ → Finset ℕ)
+    (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
+    (hschedule : HasSurvivingFiniteServiceSchedule A C σ)
+    (hfail : ¬IsExactTupleAsymptoticBasis (A \ C) 3) :
+    (∃ h ∈ C, ∀ T, ∃ n, T ≤ n ∧
+      ∃ H : Finset ℕ,
+        IsOffScheduleMinimalCommittee A C N₀ σ n H ∧ h ∈ H) ∨
+    (∀ W T, ∃ n, T ≤ n ∧
+      ∃ H : Finset ℕ,
+        IsOffScheduleMinimalCommittee A C N₀ σ n H ∧
+        ∀ h ∈ H, W < h) := by
+  by_cases hrec : ∃ h ∈ C, ∀ T, ∃ n, T ≤ n ∧
+      ∃ H : Finset ℕ,
+        IsOffScheduleMinimalCommittee A C N₀ σ n H ∧ h ∈ H
+  · exact Or.inl hrec
+  · right
+    have hboundedC : ∀ h ∈ C, ∃ T, ∀ n, T ≤ n →
+        ∀ H : Finset ℕ,
+          IsOffScheduleMinimalCommittee A C N₀ σ n H → h ∉ H := by
+      intro h hhC
+      by_contra hnoT
+      push Not at hnoT
+      exact hrec ⟨h, hhC, hnoT⟩
+    have hthreshold : ∀ h, ∃ T, h ∈ C → ∀ n, T ≤ n →
+        ∀ H : Finset ℕ,
+          IsOffScheduleMinimalCommittee A C N₀ σ n H → h ∉ H := by
+      intro h
+      by_cases hhC : h ∈ C
+      · obtain ⟨T, hT⟩ := hboundedC h hhC
+        exact ⟨T, fun _ => hT⟩
+      · exact ⟨0, fun hmem => absurd hmem hhC⟩
+    choose g hg using hthreshold
+    intro W T
+    let F : Finset ℕ :=
+      (Finset.range (W + 1)).filter (· ∈ C)
+    let T' := max T (F.sup g)
+    obtain ⟨n, hnT', H, hcomm⟩ :=
+      failure_with_finiteServiceSchedule_forces_offSchedule_minimalCommittees
+        σ h0 h0C hcov hschedule hfail T'
+    refine ⟨n, ?_, H, hcomm, ?_⟩
+    · dsimp [T'] at hnT'
+      omega
+    · intro h hhH
+      by_contra hnotAbove
+      have hhW : h ≤ W := Nat.le_of_not_gt hnotAbove
+      have hhC : h ∈ C := by
+        have hhFilter := hcomm.2.2.2.2.2 hhH
+        exact (Finset.mem_filter.1 hhFilter).2
+      have hhF : h ∈ F := by
+        exact Finset.mem_filter.2
+          ⟨Finset.mem_range.2 (by omega), hhC⟩
+      have hgSup : g h ≤ F.sup g :=
+        Finset.le_sup (f := g) hhF
+      have hgn : g h ≤ n := by
+        dsimp [T'] at hnT'
+        omega
+      exact (hg h hhC n hgn H hcomm) hhH
+
+open Classical in
+/-- **Escaping finite-schedule committees are singleton-private or
+uniformly multiple.** -/
+theorem escapingOffScheduleCommittees_singletonPrivate_or_multiple
+    {A C : Set ℕ} {N₀ : ℕ} {σ : ℕ → Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hesc : ∀ W T, ∃ n, T ≤ n ∧
+      ∃ H : Finset ℕ,
+        IsOffScheduleMinimalCommittee A C N₀ σ n H ∧
+        ∀ h ∈ H, W < h) :
+    (∀ W T, ∃ n, T ≤ n ∧ ∃ h ∈ C,
+      W < h ∧ h ≤ n ∧ N₀ ≤ n ∧
+      (∀ b ∈ C, n ∉ σ b) ∧ IsPrivateTriple A h n) ∨
+    (∀ W T, ∃ n, T ≤ n ∧ ∃ H : Finset ℕ,
+      IsOffScheduleMinimalCommittee A C N₀ σ n H ∧
+      (∀ h ∈ H, W < h) ∧ 2 ≤ H.card) := by
+  by_cases hsingle : ∀ W T, ∃ n, T ≤ n ∧
+      ∃ H : Finset ℕ,
+        IsOffScheduleMinimalCommittee A C N₀ σ n H ∧
+        (∀ h ∈ H, W < h) ∧ H.card = 1
+  · left
+    intro W T
+    obtain ⟨n, hnT, H, hcomm, habove, hHcard⟩ :=
+      hsingle W T
+    obtain ⟨h, rfl⟩ := Finset.card_eq_one.mp hHcard
+    have hhC : h ∈ C := by
+      have hhFilter :=
+        hcomm.2.2.2.2.2 (Finset.mem_singleton_self h)
+      exact (Finset.mem_filter.1 hhFilter).2
+    have hhle : h ≤ n := by
+      have hhFilter :=
+        hcomm.2.2.2.2.2 (Finset.mem_singleton_self h)
+      have := Finset.mem_range.1 (Finset.mem_filter.1 hhFilter).1
+      omega
+    have hprivate : IsPrivateTriple A h n :=
+      privateTriple_of_singleton_hub h0 hcov hcomm.1
+        hcomm.2.2.2.1
+    exact ⟨n, hnT, h, hhC,
+      habove h (Finset.mem_singleton_self h), hhle,
+      hcomm.1, hcomm.2.1, hprivate⟩
+  · right
+    push Not at hsingle
+    obtain ⟨W₀, T₀, hnotSingle⟩ := hsingle
+    have hmultiple : ∀ n, T₀ ≤ n → ∀ H : Finset ℕ,
+        IsOffScheduleMinimalCommittee A C N₀ σ n H →
+        (∀ h ∈ H, W₀ < h) → 2 ≤ H.card := by
+      intro n hn H hcomm habove
+      have hpos : 0 < H.card :=
+        Finset.card_pos.mpr hcomm.2.2.1
+      have hneOne : H.card ≠ 1 :=
+        hnotSingle n hn H hcomm habove
+      omega
+    intro W T
+    obtain ⟨n, hn, H, hcomm, habove⟩ :=
+      hesc (max W W₀) (max T T₀)
+    have hnT : T ≤ n := by omega
+    have hnT₀ : T₀ ≤ n := by omega
+    have haboveW₀ : ∀ h ∈ H, W₀ < h := by
+      intro h hh
+      have := habove h hh
+      omega
+    have hHcard : 2 ≤ H.card :=
+      hmultiple n hnT₀ H hcomm haboveW₀
+    refine ⟨n, hnT, H, hcomm, ?_, hHcard⟩
+    intro h hh
+    have := habove h hh
+    omega
+
+open Classical in
+/-- Escaping multi-guardian off-schedule committees admit a
+block-separated diagonal. -/
+theorem escapingMultipleOffScheduleCommittees_has_blockSequence
+    {A C : Set ℕ} {N₀ : ℕ} {σ : ℕ → Finset ℕ}
+    (hmulti : ∀ W T, ∃ n, T ≤ n ∧
+      ∃ H : Finset ℕ,
+        IsOffScheduleMinimalCommittee A C N₀ σ n H ∧
+        (∀ h ∈ H, W < h) ∧ 2 ≤ H.card) :
+    HasBlockSeparatedMultipleOffScheduleCommittees A C N₀ σ := by
+  have hpick : ∀ W, ∃ p : ℕ × Finset ℕ,
+      W < p.1 ∧
+      IsOffScheduleMinimalCommittee A C N₀ σ p.1 p.2 ∧
+      (∀ h ∈ p.2, W < h) ∧ 2 ≤ p.2.card := by
+    intro W
+    obtain ⟨n, hn, H, hcomm, habove, hcard⟩ :=
+      hmulti W (W + 1)
+    exact ⟨(n, H), by omega, hcomm, habove, hcard⟩
+  choose p hp using hpick
+  let s : ℕ → ℕ × Finset ℕ :=
+    Nat.rec (p 0) (fun _ q => p q.1)
+  let n : ℕ → ℕ := fun i => (s i).1
+  let H : ℕ → Finset ℕ := fun i => (s i).2
+  have hs_zero : s 0 = p 0 := rfl
+  have hs_succ : ∀ i, s (i + 1) = p (s i).1 := by
+    intro i
+    rfl
+  have hn_step : ∀ i, n i < n (i + 1) := by
+    intro i
+    rw [show n i = (s i).1 from rfl,
+      show n (i + 1) = (s (i + 1)).1 from rfl,
+      hs_succ]
+    exact (hp (s i).1).1
+  have hnmono : StrictMono n :=
+    strictMono_nat_of_lt_succ hn_step
+  have hcomm : ∀ i,
+      IsOffScheduleMinimalCommittee A C N₀ σ (n i) (H i) := by
+    intro i
+    cases i with
+    | zero =>
+        rw [show n 0 = (s 0).1 from rfl,
+          show H 0 = (s 0).2 from rfl, hs_zero]
+        exact (hp 0).2.1
+    | succ i =>
+        rw [show n (i + 1) = (s (i + 1)).1 from rfl,
+          show H (i + 1) = (s (i + 1)).2 from rfl, hs_succ]
+        exact (hp (s i).1).2.1
+  have hcard : ∀ i, 2 ≤ (H i).card := by
+    intro i
+    cases i with
+    | zero =>
+        rw [show H 0 = (s 0).2 from rfl, hs_zero]
+        exact (hp 0).2.2.2
+    | succ i =>
+        rw [show H (i + 1) = (s (i + 1)).2 from rfl, hs_succ]
+        exact (hp (s i).1).2.2.2
+  have habove : ∀ i, ∀ h ∈ H (i + 1), n i < h := by
+    intro i h hh
+    have hh' : h ∈ (p (s i).1).2 := by
+      dsimp [H] at hh
+      rw [hs_succ] at hh
+      exact hh
+    exact (hp (s i).1).2.2.1 h hh'
+  refine ⟨n, H, hnmono, hcomm, hcard, habove, ?_⟩
+  intro i j hij
+  apply Finset.disjoint_left.mpr
+  intro x hxi hxj
+  obtain ⟨r, rfl⟩ :=
+    Nat.exists_eq_succ_of_ne_zero (by omega : j ≠ 0)
+  have hir : i ≤ r := by omega
+  have hxle : x ≤ n i := by
+    have hxFilter := (hcomm i).2.2.2.2.2 hxi
+    have hxRange := (Finset.mem_filter.1 hxFilter).1
+    have := Finset.mem_range.1 hxRange
+    omega
+  have hnir : n i ≤ n r := hnmono.monotone hir
+  have hrx : n r < x := habove r x hxj
+  omega
+
+open Classical in
+/-- **Finite-schedule increment by mobile committee doors.**
+Suppose every deleted point currently has exactly `k` scheduled targets,
+all already represented outside the deletion.  If the residual
+off-schedule stalls contain block-separated committees of size at least
+two, then one can thin the deletion to an infinite subset and add one new
+served target at every retained point.
+
+For committee `Hᵢ`, choose a door `dᵢ` and a different owner `eᵢ`.
+Minimality gives `nᵢ=eᵢ+uᵢ+vᵢ` avoiding `dᵢ`.  The bounded point-map
+free-set theorem thins the doors so that all three witnesses survive.
+Since `nᵢ` lies outside every old schedule, inserting it raises the
+schedule cardinality from `k` to exactly `k+1`. -/
+theorem blockSeparatedMultipleOffScheduleCommittees_scheduleIncrement
+    {A C : Set ℕ} {N₀ k : ℕ} {σ : ℕ → Finset ℕ}
+    (hCA : C ⊆ A)
+    (hschedule : HasSurvivingFiniteServiceSchedule A C σ)
+    (hcard : ∀ b ∈ C, (σ b).card = k)
+    (hblocks :
+      HasBlockSeparatedMultipleOffScheduleCommittees A C N₀ σ) :
+    ∃ D ⊆ C, D.Infinite ∧
+      HasUniformSurvivingServiceSchedule A D (k + 1) := by
+  obtain ⟨n, H, hnmono, hcomm, hcommitteeCard, habove, hdisjoint⟩ :=
+    hblocks
+  have htwo : ∀ i, ∃ d ∈ H i, ∃ e ∈ H i, d ≠ e := by
+    intro i
+    apply Finset.one_lt_card.mp
+    have := hcommitteeCard i
+    omega
+  choose d hdH e heH hde using htwo
+  have hcowitness : ∀ i, ∃ u ∈ A, ∃ v ∈ A,
+      e i + u + v = n i ∧
+      ∀ g ∈ H i, g ≠ e i → u ≠ g ∧ v ≠ g := by
+    intro i
+    exact minimalRepHub_member_has_pairCowitness
+      (hcomm i).2.2.2.1 (hcomm i).2.2.2.2.1 (heH i)
+  choose u huA v hvA huv havoid using hcowitness
+  have hdInjective : Function.Injective d := by
+    intro i j hdij
+    by_contra hij
+    rcases lt_or_gt_of_ne hij with hij | hji
+    · have hdis := Finset.disjoint_left.mp (hdisjoint i j hij)
+      have hdiHj : d i ∈ H j := by
+        rw [hdij]
+        exact hdH j
+      exact hdis (hdH i) hdiHj
+    · have hdis := Finset.disjoint_left.mp (hdisjoint j i hji)
+      have hdjHi : d j ∈ H i := by
+        rw [← hdij]
+        exact hdH i
+      exact hdis (hdH j) hdjHi
+  let K : Set ℕ := Set.range d
+  have hKinf : K.Infinite :=
+    Set.infinite_range_of_injective hdInjective
+  let idx : ℕ → ℕ := fun x =>
+    if hx : x ∈ K then Classical.choose hx else 0
+  have hidx : ∀ x ∈ K, d (idx x) = x := by
+    intro x hx
+    simpa [idx, hx] using Classical.choose_spec hx
+  let f : ℕ → Finset ℕ := fun x =>
+    {e (idx x), u (idx x), v (idx x)}
+  have hfcard : ∀ x ∈ K, (f x).card ≤ 3 := by
+    intro x hx
+    calc
+      (f x).card ≤
+          ({u (idx x), v (idx x)} : Finset ℕ).card + 1 := by
+        simpa [f] using
+          Finset.card_insert_le (e (idx x))
+            ({u (idx x), v (idx x)} : Finset ℕ)
+      _ ≤ ({v (idx x)} : Finset ℕ).card + 1 + 1 := by
+        exact Nat.add_le_add_right
+          (Finset.card_insert_le (u (idx x)) {v (idx x)}) 1
+      _ ≤ 3 := by simp
+  have hfavoid : ∀ x ∈ K, x ∉ f x := by
+    intro x hx
+    have hav :=
+      havoid (idx x) (d (idx x)) (hdH (idx x)) (hde (idx x))
+    simp only [f, Finset.mem_insert, Finset.mem_singleton, not_or]
+    refine ⟨?_, ?_, ?_⟩
+    · intro hxe
+      exact hde (idx x) ((hidx x hx).trans hxe)
+    · intro hxu
+      exact hav.1 ((hidx x hx).trans hxu).symm
+    · intro hxv
+      exact hav.2 ((hidx x hx).trans hxv).symm
+  obtain ⟨D, hDK, hDinf, hfree⟩ :=
+    exists_infinite_freeSet_of_bounded_pointMap
+      hKinf f 3 hfcard hfavoid
+  have hDC : D ⊆ C := by
+    intro x hxD
+    have hxK := hDK hxD
+    have hdFilter :=
+      (hcomm (idx x)).2.2.2.2.2 (hdH (idx x))
+    have hdC := (Finset.mem_filter.1 hdFilter).2
+    rw [hidx x hxK] at hdC
+    exact hdC
+  let σ' : ℕ → Finset ℕ := fun x => insert (n (idx x)) (σ x)
+  have hschedule' : HasSurvivingFiniteServiceSchedule A D σ' := by
+    intro x hxD m hm
+    have hxK := hDK hxD
+    have hcoordAvoid :
+        e (idx x) ∉ D ∧ u (idx x) ∉ D ∧ v (idx x) ∉ D := by
+      have hdis := Set.disjoint_left.mp (hfree x hxD)
+      refine ⟨?_, ?_, ?_⟩
+      · intro heD
+        exact hdis (by simp [f]) heD
+      · intro huD
+        exact hdis (by simp [f]) huD
+      · intro hvD
+        exact hdis (by simp [f]) hvD
+    simp only [σ', Finset.mem_insert] at hm
+    rcases hm with hnew | hold
+    · subst m
+      have heFilter :=
+        (hcomm (idx x)).2.2.2.2.2 (heH (idx x))
+      exact ⟨e (idx x), hCA (Finset.mem_filter.1 heFilter).2,
+        u (idx x), huA (idx x), v (idx x), hvA (idx x),
+        hcoordAvoid.1, hcoordAvoid.2.1, hcoordAvoid.2.2,
+        huv (idx x)⟩
+    · obtain ⟨p, hpA, q, hqA, r, hrA, hpC, hqC, hrC, hpqr⟩ :=
+        hschedule x (hDC hxD) m hold
+      exact ⟨p, hpA, q, hqA, r, hrA,
+        fun hpD => hpC (hDC hpD),
+        fun hqD => hqC (hDC hqD),
+        fun hrD => hrC (hDC hrD), hpqr⟩
+  have hcard' : ∀ x ∈ D, (σ' x).card = k + 1 := by
+    intro x hxD
+    have hnew :
+        n (idx x) ∉ σ x :=
+      (hcomm (idx x)).2.1 x (hDC hxD)
+    simp [σ', hnew, hcard x (hDC hxD)]
+  exact ⟨D, hDC, hDinf, σ', hschedule', hcard'⟩
+
+open Classical in
+/-- **Mobile co-guardians also increment a finite schedule.**
+A block matching is not actually necessary.  If one fixed committee
+member `h` is accompanied, across the recurrent stalls, by infinitely
+many distinct other committee members, use those other members as doors
+and use the minimality witness owned by `h`.  The same bounded point-map
+thinning adds one off-schedule target per retained door. -/
+theorem infiniteCoguardianDoors_scheduleIncrement
+    {A C U : Set ℕ} {N₀ k h : ℕ} {σ : ℕ → Finset ℕ}
+    (hCA : C ⊆ A)
+    (hhC : h ∈ C)
+    (hUC : U ⊆ C)
+    (hUinf : U.Infinite)
+    (hschedule : HasSurvivingFiniteServiceSchedule A C σ)
+    (hcard : ∀ b ∈ C, (σ b).card = k)
+    (hdoors : ∀ d ∈ U, d ≠ h ∧
+      ∃ n, ∃ H : Finset ℕ,
+        IsOffScheduleMinimalCommittee A C N₀ σ n H ∧
+        h ∈ H ∧ d ∈ H) :
+    ∃ D ⊆ C, D.Infinite ∧
+      HasUniformSurvivingServiceSchedule A D (k + 1) := by
+  have hpick : ∀ d, ∃ n, ∃ H : Finset ℕ, d ∈ U →
+      IsOffScheduleMinimalCommittee A C N₀ σ n H ∧
+      h ∈ H ∧ d ∈ H := by
+    intro d
+    by_cases hdU : d ∈ U
+    · obtain ⟨hdh, n, H, hcomm, hhH, hdH⟩ := hdoors d hdU
+      exact ⟨n, H, fun _ => ⟨hcomm, hhH, hdH⟩⟩
+    · exact ⟨0, ∅, fun h => absurd h hdU⟩
+  choose n H hdata using hpick
+  have hcowitness : ∀ d, ∃ u, ∃ v, d ∈ U →
+      u ∈ A ∧ v ∈ A ∧ h + u + v = n d ∧
+      u ≠ d ∧ v ≠ d := by
+    intro d
+    by_cases hdU : d ∈ U
+    · have hd := hdata d hdU
+      obtain ⟨u, huA, v, hvA, huv, havoid⟩ :=
+        minimalRepHub_member_has_pairCowitness
+          hd.1.2.2.2.1 hd.1.2.2.2.2.1 hd.2.1
+      have havd := havoid d hd.2.2 (hdoors d hdU).1
+      exact ⟨u, v, fun _ =>
+        ⟨huA, hvA, huv, havd.1, havd.2⟩⟩
+    · exact ⟨0, 0, fun h => absurd h hdU⟩
+  choose u v hcow using hcowitness
+  let f : ℕ → Finset ℕ := fun d => {h, u d, v d}
+  have hfcard : ∀ d ∈ U, (f d).card ≤ 3 := by
+    intro d hdU
+    calc
+      (f d).card ≤ ({u d, v d} : Finset ℕ).card + 1 := by
+        simpa [f] using
+          Finset.card_insert_le h ({u d, v d} : Finset ℕ)
+      _ ≤ ({v d} : Finset ℕ).card + 1 + 1 := by
+        exact Nat.add_le_add_right
+          (Finset.card_insert_le (u d) {v d}) 1
+      _ ≤ 3 := by simp
+  have hfavoid : ∀ d ∈ U, d ∉ f d := by
+    intro d hdU
+    have hdne := (hdoors d hdU).1
+    have hco := hcow d hdU
+    simp only [f, Finset.mem_insert, Finset.mem_singleton, not_or]
+    exact ⟨hdne, hco.2.2.2.1.symm, hco.2.2.2.2.symm⟩
+  obtain ⟨D, hDU, hDinf, hfree⟩ :=
+    exists_infinite_freeSet_of_bounded_pointMap
+      hUinf f 3 hfcard hfavoid
+  have hDC : D ⊆ C := hDU.trans hUC
+  let σ' : ℕ → Finset ℕ := fun d => insert (n d) (σ d)
+  have hschedule' : HasSurvivingFiniteServiceSchedule A D σ' := by
+    intro d hdD m hm
+    have hdU := hDU hdD
+    have hco := hcow d hdU
+    have hcoordAvoid :
+        h ∉ D ∧ u d ∉ D ∧ v d ∉ D := by
+      have hdis := Set.disjoint_left.mp (hfree d hdD)
+      refine ⟨?_, ?_, ?_⟩
+      · intro hhD
+        exact hdis (by simp [f]) hhD
+      · intro huD
+        exact hdis (by simp [f]) huD
+      · intro hvD
+        exact hdis (by simp [f]) hvD
+    simp only [σ', Finset.mem_insert] at hm
+    rcases hm with hnew | hold
+    · subst m
+      exact ⟨h, hCA hhC, u d, hco.1, v d, hco.2.1,
+        hcoordAvoid.1, hcoordAvoid.2.1, hcoordAvoid.2.2,
+        hco.2.2.1⟩
+    · obtain ⟨p, hpA, q, hqA, r, hrA, hpC, hqC, hrC, hpqr⟩ :=
+        hschedule d (hDC hdD) m hold
+      exact ⟨p, hpA, q, hqA, r, hrA,
+        fun hpD => hpC (hDC hpD),
+        fun hqD => hqC (hDC hqD),
+        fun hrD => hrC (hDC hrD), hpqr⟩
+  have hcard' : ∀ d ∈ D, (σ' d).card = k + 1 := by
+    intro d hdD
+    have hdU := hDU hdD
+    have hnew : n d ∉ σ d :=
+      (hdata d hdU).1.2.1 d (hDC hdD)
+    simp [σ', hnew, hcard d (hDC hdD)]
+  exact ⟨D, hDC, hDinf, σ', hschedule', hcard'⟩
+
+open Classical in
+/-- **A recurrent guardian has a fixed finite committee or yields a
+schedule increment.**
+
+Collect every co-guardian which ever appears with the recurrent point
+`h`.  If this collection is infinite, the preceding mobile-door theorem
+increments the schedule.  If it is finite, every recurrent committee is
+a subset of one finite alphabet, so finite cofinal pigeonhole fixes one
+exact committee recurring arbitrarily late. -/
+theorem recurrentOffScheduleGuardian_fixedCommittee_or_increment
+    {A C : Set ℕ} {N₀ k : ℕ} {σ : ℕ → Finset ℕ}
+    (hCA : C ⊆ A)
+    (hschedule : HasSurvivingFiniteServiceSchedule A C σ)
+    (hcard : ∀ b ∈ C, (σ b).card = k)
+    (hrec : ∃ h ∈ C, ∀ T, ∃ n, T ≤ n ∧
+      ∃ H : Finset ℕ,
+        IsOffScheduleMinimalCommittee A C N₀ σ n H ∧ h ∈ H) :
+    (∃ h ∈ C, ∃ R : Finset ℕ, h ∈ R ∧
+      ∀ T, ∃ n, T ≤ n ∧
+        IsOffScheduleMinimalCommittee A C N₀ σ n R) ∨
+    (∃ D ⊆ C, D.Infinite ∧
+      HasUniformSurvivingServiceSchedule A D (k + 1)) := by
+  obtain ⟨h, hhC, hcofinal⟩ := hrec
+  let U : Set ℕ := {d | d ≠ h ∧
+    ∃ n, ∃ H : Finset ℕ,
+      IsOffScheduleMinimalCommittee A C N₀ σ n H ∧
+      h ∈ H ∧ d ∈ H}
+  have hUC : U ⊆ C := by
+    intro d hdU
+    obtain ⟨hdh, n, H, hcomm, hhH, hdH⟩ := hdU
+    have hdFilter := hcomm.2.2.2.2.2 hdH
+    exact (Finset.mem_filter.1 hdFilter).2
+  by_cases hUinf : U.Infinite
+  · right
+    apply infiniteCoguardianDoors_scheduleIncrement
+      hCA hhC hUC hUinf hschedule hcard
+    intro d hdU
+    exact hdU
+  · left
+    have hUfin : U.Finite := Set.not_infinite.mp hUinf
+    let F : Finset ℕ := insert h hUfin.toFinset
+    have hQ : ∀ T, ∃ n, T ≤ n ∧ ∃ H : Finset ℕ,
+        H ⊆ F ∧
+        (IsOffScheduleMinimalCommittee A C N₀ σ n H ∧ h ∈ H) := by
+      intro T
+      obtain ⟨n, hnT, H, hcomm, hhH⟩ := hcofinal T
+      refine ⟨n, hnT, H, ?_, hcomm, hhH⟩
+      intro d hdH
+      by_cases hdh : d = h
+      · subst d
+        exact Finset.mem_insert_self h _
+      · apply Finset.mem_insert_of_mem
+        apply hUfin.mem_toFinset.mpr
+        exact ⟨hdh, n, H, hcomm, hhH, hdH⟩
+    obtain ⟨R, hRF, hRcofinal⟩ :=
+      cofinal_subset_pigeonhole
+        (Q := fun n H =>
+          IsOffScheduleMinimalCommittee A C N₀ σ n H ∧ h ∈ H)
+        hQ
+    refine ⟨h, hhC, R, ?_, ?_⟩
+    · obtain ⟨n, hn, hcomm, hhR⟩ := hRcofinal 0
+      exact hhR
+    · intro T
+      obtain ⟨n, hnT, hcomm, hhR⟩ := hRcofinal T
+      exact ⟨n, hnT, hcomm⟩
+
+open Classical in
+/-- An escaping singleton-committee stream outside a finite schedule may
+be thinned so that every guardian is non-big (`2h ≤ n`). -/
+theorem cofinal_offSchedule_singletonPrivate_are_nonbig
+    {A C : Set ℕ} {N₀ : ℕ} {σ : ℕ → Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (hCA : C ⊆ A)
+    (hstream : ∀ W T, ∃ n, T ≤ n ∧ ∃ h ∈ C,
+      W < h ∧ h ≤ n ∧ N₀ ≤ n ∧
+      (∀ b ∈ C, n ∉ σ b) ∧ IsPrivateTriple A h n) :
+    ∀ W T, ∃ n, T ≤ n ∧ ∃ h ∈ C,
+      W < h ∧ h ≤ n ∧ N₀ ≤ n ∧ 2 * h ≤ n ∧
+      (∀ b ∈ C, n ∉ σ b) ∧ IsPrivateTriple A h n := by
+  by_contra hnonbig
+  push Not at hnonbig
+  obtain ⟨W₀, T₀, hbad⟩ := hnonbig
+  have hbigCofinal : ∀ X, ∃ h ∈ A, X < h ∧
+      ∃ n, IsBigAbsolutePrivateWound A N₀ h n := by
+    intro X
+    obtain ⟨n, hnT₀, h, hhC, hhLarge, hhn, hn₀, hoff, hprivate⟩ :=
+      hstream (max X W₀) T₀
+    have hnotNonbig : ¬2 * h ≤ n := by
+      intro hnonbig
+      exact hbad n hnT₀ h hhC (by omega) hhn hn₀
+        hnonbig hoff hprivate
+    exact ⟨h, hCA hhC, by omega, n,
+      hn₀, hhn, Nat.lt_of_not_ge hnotNonbig, hprivate⟩
+  exact no_cofinal_big_absolute_private_guardians h0 hcov hbigCofinal
+
+open Classical in
+/-- **One-step finite-schedule frontier.**
+In a failed deletion carrying a uniform surviving schedule of size `k`,
+one of three things happens:
+
+1. a fixed guardian recurs in off-schedule committees;
+2. escaping singleton committees give cofinal non-big absolute private
+   wounds; or
+3. the deletion can be thinned and its uniform schedule enlarged from
+   `k` to `k+1`.
+
+This is the rigorous iteration interface.  The third horn is genuine
+progress; the first two are the exact obstructions to repeating it. -/
+theorem finiteServiceSchedule_recurrent_or_nonbigPrivate_or_increment
+    {A C : Set ℕ} {N₀ k : ℕ} {σ : ℕ → Finset ℕ}
+    (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
+    (hCA : C ⊆ A)
+    (hschedule : HasSurvivingFiniteServiceSchedule A C σ)
+    (hcard : ∀ b ∈ C, (σ b).card = k)
+    (hfail : ¬IsExactTupleAsymptoticBasis (A \ C) 3) :
+    (∃ h ∈ C, ∀ T, ∃ n, T ≤ n ∧
+      ∃ H : Finset ℕ,
+        IsOffScheduleMinimalCommittee A C N₀ σ n H ∧ h ∈ H) ∨
+    (∀ W T, ∃ n, T ≤ n ∧ ∃ h ∈ C,
+      W < h ∧ h ≤ n ∧ N₀ ≤ n ∧ 2 * h ≤ n ∧
+      (∀ b ∈ C, n ∉ σ b) ∧ IsPrivateTriple A h n) ∨
+    (∃ D ⊆ C, D.Infinite ∧
+      HasUniformSurvivingServiceSchedule A D (k + 1)) := by
+  rcases finiteServiceSchedule_recurrentGuardian_or_escapingCommittees
+      σ h0 h0C hcov hschedule hfail with hrec | hesc
+  · exact Or.inl hrec
+  rcases escapingOffScheduleCommittees_singletonPrivate_or_multiple
+      h0 hcov hesc with hsingle | hmulti
+  · exact Or.inr (Or.inl
+      (cofinal_offSchedule_singletonPrivate_are_nonbig
+        h0 hcov hCA hsingle))
+  · exact Or.inr (Or.inr
+      (blockSeparatedMultipleOffScheduleCommittees_scheduleIncrement
+        hCA hschedule hcard
+        (escapingMultipleOffScheduleCommittees_has_blockSequence hmulti)))
+
+open Classical in
+/-- **Sharp one-step schedule frontier.**
+The recurrent horn can itself be resolved unless one exact finite
+committee recurs cofinally.  Thus a failed uniform `k`-schedule has only
+three outcomes: a fixed finite recurrent committee, a cofinal non-big
+absolute-private stream, or a uniform `(k+1)`-schedule after infinite
+thinning. -/
+theorem finiteServiceSchedule_fixedCommittee_or_nonbigPrivate_or_increment
+    {A C : Set ℕ} {N₀ k : ℕ} {σ : ℕ → Finset ℕ}
+    (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
+    (hCA : C ⊆ A)
+    (hschedule : HasSurvivingFiniteServiceSchedule A C σ)
+    (hcard : ∀ b ∈ C, (σ b).card = k)
+    (hfail : ¬IsExactTupleAsymptoticBasis (A \ C) 3) :
+    (∃ h ∈ C, ∃ R : Finset ℕ, h ∈ R ∧
+      ∀ T, ∃ n, T ≤ n ∧
+        IsOffScheduleMinimalCommittee A C N₀ σ n R) ∨
+    (∀ W T, ∃ n, T ≤ n ∧ ∃ h ∈ C,
+      W < h ∧ h ≤ n ∧ N₀ ≤ n ∧ 2 * h ≤ n ∧
+      (∀ b ∈ C, n ∉ σ b) ∧ IsPrivateTriple A h n) ∨
+    (∃ D ⊆ C, D.Infinite ∧
+      HasUniformSurvivingServiceSchedule A D (k + 1)) := by
+  rcases finiteServiceSchedule_recurrent_or_nonbigPrivate_or_increment
+      h0 h0C hcov hCA hschedule hcard hfail with
+    hrec | hprivate | hincrement
+  · rcases recurrentOffScheduleGuardian_fixedCommittee_or_increment
+      hCA hschedule hcard hrec with hfixed | hincrement
+    · exact Or.inl hfixed
+    · exact Or.inr (Or.inr hincrement)
+  · exact Or.inr (Or.inl hprivate)
+  · exact Or.inr (Or.inr hincrement)
+
+open Classical in
+/-- **Unconditional moving-schedule increment.**
+Let `C` be an infinite failed deletion and suppose every deleted point
+currently carries exactly `k` scheduled targets whose representations
+survive `C`.  Then an infinite thinning carries a uniform surviving
+schedule of size `k+1`.
+
+Choose alternating unscheduled stalls and later doors
+
+`m₀ < d₀ < m₁ < d₁ < ⋯`,  with `dᵢ ∈ C`.
+
+The covering pair for `mᵢ`, padded by zero, is a three-term
+representation whose entries all lie below `dᵢ`.  Attach `mᵢ` to door
+`dᵢ`.  The associated three-point support map avoids its door, so the
+bounded point-map free-set theorem gives infinitely many doors disjoint
+from all retained supports.  Old scheduled representations survive by
+monotonicity under thinning, while `mᵢ` is outside every old schedule.
+Thus every retained door gains exactly one genuinely new service target.
+
+In particular, neither recurrent committees nor singleton committees
+obstruct finite schedule growth; they matter only for a future fusion of
+the finite stages. -/
+theorem failed_uniformFiniteServiceSchedule_has_increment
+    {A C : Set ℕ} {N₀ k : ℕ} {σ : ℕ → Finset ℕ}
+    (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
+    (hCinf : C.Infinite)
+    (hschedule : HasSurvivingFiniteServiceSchedule A C σ)
+    (hcard : ∀ b ∈ C, (σ b).card = k)
+    (hfail : ¬IsExactTupleAsymptoticBasis (A \ C) 3) :
+    ∃ D ⊆ C, D.Infinite ∧
+      HasUniformSurvivingServiceSchedule A D (k + 1) := by
+  have hstalls :=
+    failure_with_finiteServiceSchedule_forces_cofinal_offScheduleStalls
+      σ h0 h0C hcov hschedule hfail
+  have hpick : ∀ W, ∃ p : ℕ × ℕ,
+      W < p.1 ∧ p.1 < p.2 ∧ p.2 ∈ C ∧
+      N₀ ≤ p.1 ∧ ∀ b ∈ C, p.1 ∉ σ b := by
+    intro W
+    obtain ⟨m, hmW, hmN, hrisk, hoff, hno⟩ :=
+      hstalls (W + 1)
+    obtain ⟨d, hdC, hmd⟩ := hCinf.exists_gt m
+    exact ⟨(m, d), by omega, hmd, hdC, hmN, hoff⟩
+  choose p hp using hpick
+  let s : ℕ → ℕ × ℕ :=
+    Nat.rec (p 0) (fun _ q => p q.2)
+  let m : ℕ → ℕ := fun i => (s i).1
+  let d : ℕ → ℕ := fun i => (s i).2
+  have hs_zero : s 0 = p 0 := rfl
+  have hs_succ : ∀ i, s (i + 1) = p (s i).2 := by
+    intro i
+    rfl
+  have hdata : ∀ i, m i < d i ∧ d i ∈ C ∧
+      N₀ ≤ m i ∧ ∀ b ∈ C, m i ∉ σ b := by
+    intro i
+    cases i with
+    | zero =>
+        rw [show m 0 = (s 0).1 from rfl,
+          show d 0 = (s 0).2 from rfl, hs_zero]
+        exact ⟨(hp 0).2.1, (hp 0).2.2.1,
+          (hp 0).2.2.2.1, (hp 0).2.2.2.2⟩
+    | succ i =>
+        rw [show m (i + 1) = (s (i + 1)).1 from rfl,
+          show d (i + 1) = (s (i + 1)).2 from rfl, hs_succ]
+        exact ⟨(hp (s i).2).2.1, (hp (s i).2).2.2.1,
+          (hp (s i).2).2.2.2.1, (hp (s i).2).2.2.2.2⟩
+  have hdstep : ∀ i, d i < d (i + 1) := by
+    intro i
+    have hbetween := (hp (s i).2).1
+    have hmnext := (hp (s i).2).2.1
+    rw [show d i = (s i).2 from rfl,
+      show d (i + 1) = (s (i + 1)).2 from rfl,
+      hs_succ]
+    omega
+  have hdmono : StrictMono d :=
+    strictMono_nat_of_lt_succ hdstep
+  have hrep : ∀ i, ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+      x + y + z = m i := by
+    intro i
+    obtain ⟨x, hxA, y, hyA, hxy⟩ :=
+      hcov (m i) (hdata i).2.2.1
+    exact ⟨x, hxA, y, hyA, 0, h0, by omega⟩
+  choose x hxA y hyA z hzA hxyz using hrep
+  let K : Set ℕ := Set.range d
+  have hKinf : K.Infinite :=
+    Set.infinite_range_of_injective hdmono.injective
+  let idx : ℕ → ℕ := fun q =>
+    if hq : q ∈ K then Classical.choose hq else 0
+  have hidx : ∀ q ∈ K, d (idx q) = q := by
+    intro q hq
+    simpa [idx, hq] using Classical.choose_spec hq
+  let f : ℕ → Finset ℕ := fun q =>
+    {x (idx q), y (idx q), z (idx q)}
+  have hfcard : ∀ q ∈ K, (f q).card ≤ 3 := by
+    intro q hq
+    calc
+      (f q).card ≤
+          ({y (idx q), z (idx q)} : Finset ℕ).card + 1 := by
+        simpa [f] using
+          Finset.card_insert_le (x (idx q))
+            ({y (idx q), z (idx q)} : Finset ℕ)
+      _ ≤ ({z (idx q)} : Finset ℕ).card + 1 + 1 := by
+        exact Nat.add_le_add_right
+          (Finset.card_insert_le (y (idx q)) {z (idx q)}) 1
+      _ ≤ 3 := by simp
+  have hfavoid : ∀ q ∈ K, q ∉ f q := by
+    intro q hq
+    have hsum := hxyz (idx q)
+    have hbelow := (hdata (idx q)).1
+    have hdoor := hidx q hq
+    have hmQ : m (idx q) < q := by
+      calc
+        m (idx q) < d (idx q) := hbelow
+        _ = q := hdoor
+    simp only [f, Finset.mem_insert, Finset.mem_singleton, not_or]
+    constructor
+    · intro hqx
+      omega
+    constructor
+    · intro hqy
+      omega
+    · intro hqz
+      omega
+  obtain ⟨D, hDK, hDinf, hfree⟩ :=
+    exists_infinite_freeSet_of_bounded_pointMap
+      hKinf f 3 hfcard hfavoid
+  have hDC : D ⊆ C := by
+    intro q hqD
+    have hqK := hDK hqD
+    rw [← hidx q hqK]
+    exact (hdata (idx q)).2.1
+  let σ' : ℕ → Finset ℕ := fun q =>
+    insert (m (idx q)) (σ q)
+  have hschedule' : HasSurvivingFiniteServiceSchedule A D σ' := by
+    intro q hqD t ht
+    have hqK := hDK hqD
+    have hcoordAvoid :
+        x (idx q) ∉ D ∧ y (idx q) ∉ D ∧ z (idx q) ∉ D := by
+      have hdis := Set.disjoint_left.mp (hfree q hqD)
+      refine ⟨?_, ?_, ?_⟩
+      · intro hxD
+        exact hdis (by simp [f]) hxD
+      · intro hyD
+        exact hdis (by simp [f]) hyD
+      · intro hzD
+        exact hdis (by simp [f]) hzD
+    simp only [σ', Finset.mem_insert] at ht
+    rcases ht with hnew | hold
+    · subst t
+      exact ⟨x (idx q), hxA (idx q),
+        y (idx q), hyA (idx q), z (idx q), hzA (idx q),
+        hcoordAvoid.1, hcoordAvoid.2.1, hcoordAvoid.2.2,
+        hxyz (idx q)⟩
+    · obtain ⟨a, haA, b, hbA, c, hcA, haC, hbC, hcC, habc⟩ :=
+        hschedule q (hDC hqD) t hold
+      exact ⟨a, haA, b, hbA, c, hcA,
+        fun haD => haC (hDC haD),
+        fun hbD => hbC (hDC hbD),
+        fun hcD => hcC (hDC hcD), habc⟩
+  have hcard' : ∀ q ∈ D, (σ' q).card = k + 1 := by
+    intro q hqD
+    have hnew : m (idx q) ∉ σ q :=
+      (hdata (idx q)).2.2.2 q (hDC hqD)
+    simp [σ', hnew, hcard q (hDC hqD)]
+  exact ⟨D, hDC, hDinf, σ', hschedule', hcard'⟩
+
+open Classical in
+/-- **Counterexamples force uniform finite schedules of every size.**
+Starting with the empty schedule on the infinite positive part of `A`,
+iterate `failed_uniformFiniteServiceSchedule_has_increment`.  A global
+counterexample therefore supplies, for every finite `k`, an infinite
+deletion on which every deleted point has exactly `k` distinct certified
+service targets.
+
+This is a finite-level theorem only: the deletion may change with `k`.
+Passing to one deletion with a complete countable service schedule is the
+remaining fusion problem. -/
+theorem counterexample_has_uniformServiceSchedules_of_every_finite_size
+    {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ C ⊆ A, C.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ C) 3) :
+    ∀ k, ∃ C : Set ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧
+      HasUniformSurvivingServiceSchedule A C k := by
+  intro k
+  induction k with
+  | zero =>
+      let C : Set ℕ := {a | a ∈ A ∧ 0 < a}
+      have hCA : C ⊆ A := by
+        intro a ha
+        exact ha.1
+      have hCinf : C.Infinite := by
+        apply Set.infinite_of_forall_exists_gt
+        intro X
+        obtain ⟨a, haA, hXa⟩ :=
+          pairCovers_unbounded hcov (X + 1)
+        exact ⟨a, ⟨haA, by omega⟩, by omega⟩
+      have h0C : 0 ∉ C := by
+        intro hz
+        exact (Nat.lt_irrefl 0) hz.2
+      let σ : ℕ → Finset ℕ := fun _ => ∅
+      have hschedule :
+          HasSurvivingFiniteServiceSchedule A C σ := by
+        intro b hbC m hm
+        simp [σ] at hm
+      have hcard : ∀ b ∈ C, (σ b).card = 0 := by
+        intro b hbC
+        simp [σ]
+      exact ⟨C, hCA, hCinf, h0C, σ, hschedule, hcard⟩
+  | succ k ih =>
+      obtain ⟨C, hCA, hCinf, h0C, σ, hschedule, hcard⟩ := ih
+      obtain ⟨D, hDC, hDinf, hDuniform⟩ :=
+        failed_uniformFiniteServiceSchedule_has_increment
+          h0 h0C hcov hCinf hschedule hcard
+            (hfail C hCA hCinf)
+      exact ⟨D, hDC.trans hCA, hDinf,
+        fun h0D => h0C (hDC h0D), hDuniform⟩
+
+open Classical in
+/-- **Finite schedule growth alone does not imply a basis.**
+Let `A=ℕ` and delete all odd numbers.  The survivor set is the evens, so
+it is not an order-three asymptotic basis.  Nevertheless, for every `k`
+attach the same `k` even targets `{0,2,...,2(k-1)}` to every deleted
+point; each is represented by `0+0+2i` outside the deletion.
+
+Thus even uniform schedules of every finite size on one fixed failed
+deletion do not solve the fusion problem.  What is missing is a fairness
+condition forcing the union of scheduled targets eventually to contain
+every threatened target. -/
+theorem uniformFiniteServiceSchedules_all_sizes_not_force_basis :
+    let A : Set ℕ := Set.univ
+    let C : Set ℕ := {n | n % 2 = 1}
+    (∀ k, HasUniformSurvivingServiceSchedule A C k) ∧
+      ¬IsExactTupleAsymptoticBasis (A \ C) 3 := by
+  dsimp
+  constructor
+  · intro k
+    let σ : ℕ → Finset ℕ := fun _ =>
+      (Finset.range k).image (fun i => 2 * i)
+    have hschedule :
+        HasSurvivingFiniteServiceSchedule Set.univ
+          {n | n % 2 = 1} σ := by
+      intro b hbC m hm
+      simp only [σ, Finset.mem_image] at hm
+      obtain ⟨i, hi, rfl⟩ := hm
+      exact ⟨0, Set.mem_univ 0, 0, Set.mem_univ 0,
+        2 * i, Set.mem_univ (2 * i),
+        by simp, by simp, by simp, by omega⟩
+    have hcard : ∀ b ∈ ({n | n % 2 = 1} : Set ℕ),
+        (σ b).card = k := by
+      intro b hbC
+      change ((Finset.range k).image (fun i => 2 * i)).card = k
+      rw [Finset.card_image_of_injective _
+        (fun i j hij => by omega), Finset.card_range]
+    exact ⟨σ, hschedule, hcard⟩
+  · rintro ⟨M, hbasis⟩
+    obtain ⟨v, hv, hvsum⟩ := hbasis (2 * M + 1) (by omega)
+    have hmod : ∀ i, v i % 2 = 0 := by
+      intro i
+      have hnot : v i % 2 ≠ 1 := by
+        simpa using (hv i).2
+      have hlt := Nat.mod_lt (v i) (by omega : 0 < 2)
+      omega
+    have hd0 : 2 ∣ v 0 := Nat.dvd_of_mod_eq_zero (hmod 0)
+    have hd1 : 2 ∣ v 1 := Nat.dvd_of_mod_eq_zero (hmod 1)
+    have hd2 : 2 ∣ v 2 := Nat.dvd_of_mod_eq_zero (hmod 2)
+    obtain ⟨q0, hq0⟩ := hd0
+    obtain ⟨q1, hq1⟩ := hd1
+    obtain ⟨q2, hq2⟩ := hd2
+    have hsum : v 0 + v 1 + v 2 = 2 * M + 1 := by
+      simpa [Fin.sum_univ_three] using hvsum
+    omega
+
+open Classical in
+/-- **Fair finite-schedule fusion.**
+A family of finite schedules on one fixed deletion fuses to a basis as
+soon as its union eventually contains every threatened target.  No
+uniform cardinality or monotonicity in the stage is needed: membership at
+one stage supplies the surviving representation.
+
+Together with `uniformFiniteServiceSchedules_all_sizes_not_force_basis`,
+this identifies the exact missing property in schedule iteration:
+fairness over the risk set, not unbounded schedule cardinality. -/
+theorem fair_finiteServiceSchedule_fusion
+    {A C : Set ℕ} {N₀ : ℕ} (sched : ℕ → ℕ → Finset ℕ)
+    (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
+    (hschedule : ∀ k,
+      HasSurvivingFiniteServiceSchedule A C (sched k))
+    (hfair : ∃ M, ∀ n, M ≤ n →
+      (∃ b ∈ C, ∃ a ∈ A, b + a = n) →
+      ∃ k, ∃ b ∈ C, n ∈ sched k b) :
+    IsExactTupleAsymptoticBasis (A \ C) 3 := by
+  obtain ⟨M, hfair⟩ := hfair
+  have hcov' : PairCovers A (max N₀ M) := by
+    intro n hn
+    exact hcov n ((le_max_left N₀ M).trans hn)
+  apply deletion_criterion_local h0 h0C hcov'
+  intro n hn hrisk
+  obtain ⟨k, b, hbC, hnSched⟩ :=
+    hfair n ((le_max_right N₀ M).trans hn) hrisk
+  exact hschedule k b hbC n hnSched
+
+open Classical in
+/-- **Risk-respecting schedule increment.**
+Suppose infinitely many distinct deleted sources `b` have a genuinely
+threatened target `n_b=b+a_b` outside their own old schedule and an
+`A`-representation avoiding `b`.  The three-point support map therefore
+avoids its source.  A bounded free-set thinning retains infinitely many
+sources while avoiding all retained supports, so every retained source
+gains one new *genuine risk* target.
+
+Unlike the unconditional moving-schedule increment, this preserves the
+semantic relation between a schedule label and the deletion point which
+threatens it.  Failure of its hypothesis is exactly where absolute
+private guardians or finitely recurrent risk sources must appear. -/
+theorem infiniteAlternativeRiskSources_scheduleIncrement
+    {A C K : Set ℕ} {k : ℕ} {σ : ℕ → Finset ℕ}
+    (hKC : K ⊆ C) (hKinf : K.Infinite)
+    (hschedule : HasSurvivingFiniteRiskSchedule A C σ)
+    (hcard : ∀ b ∈ C, (σ b).card = k)
+    (hdata : ∀ b ∈ K, ∃ n,
+      n ∉ σ b ∧
+      (∃ a ∈ A, b + a = n) ∧
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x + y + z = n ∧ x ≠ b ∧ y ≠ b ∧ z ≠ b) :
+    ∃ D ⊆ C, D.Infinite ∧
+      ∃ σ' : ℕ → Finset ℕ,
+        HasSurvivingFiniteRiskSchedule A D σ' ∧
+        ∀ b ∈ D, (σ' b).card = k + 1 := by
+  have hnchoice : ∀ b, ∃ n, b ∈ K →
+      n ∉ σ b ∧
+      (∃ a ∈ A, b + a = n) ∧
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x + y + z = n ∧ x ≠ b ∧ y ≠ b ∧ z ≠ b := by
+    intro b
+    by_cases hbK : b ∈ K
+    · obtain ⟨n, hn⟩ := hdata b hbK
+      exact ⟨n, fun _ => hn⟩
+    · exact ⟨0, fun h => absurd h hbK⟩
+  choose n hn using hnchoice
+  have hrepchoice : ∀ b, ∃ x, ∃ y, ∃ z, b ∈ K →
+      x ∈ A ∧ y ∈ A ∧ z ∈ A ∧
+      x + y + z = n b ∧ x ≠ b ∧ y ≠ b ∧ z ≠ b := by
+    intro b
+    by_cases hbK : b ∈ K
+    · obtain ⟨x, hxA, y, hyA, z, hzA, hxyz, hxb, hyb, hzb⟩ :=
+        (hn b hbK).2.2
+      exact ⟨x, y, z, fun _ =>
+        ⟨hxA, hyA, hzA, hxyz, hxb, hyb, hzb⟩⟩
+    · exact ⟨0, 0, 0, fun h => absurd h hbK⟩
+  choose x y z hrep using hrepchoice
+  let f : ℕ → Finset ℕ := fun b => {x b, y b, z b}
+  have hfcard : ∀ b ∈ K, (f b).card ≤ 3 := by
+    intro b hbK
+    calc
+      (f b).card ≤ ({y b, z b} : Finset ℕ).card + 1 := by
+        simpa [f] using
+          Finset.card_insert_le (x b) ({y b, z b} : Finset ℕ)
+      _ ≤ ({z b} : Finset ℕ).card + 1 + 1 := by
+        exact Nat.add_le_add_right
+          (Finset.card_insert_le (y b) {z b}) 1
+      _ ≤ 3 := by simp
+  have hfavoid : ∀ b ∈ K, b ∉ f b := by
+    intro b hbK
+    have hr := hrep b hbK
+    simp only [f, Finset.mem_insert, Finset.mem_singleton, not_or]
+    exact ⟨hr.2.2.2.2.1.symm, hr.2.2.2.2.2.1.symm,
+      hr.2.2.2.2.2.2.symm⟩
+  obtain ⟨D, hDK, hDinf, hfree⟩ :=
+    exists_infinite_freeSet_of_bounded_pointMap
+      hKinf f 3 hfcard hfavoid
+  have hDC : D ⊆ C := hDK.trans hKC
+  let σ' : ℕ → Finset ℕ := fun b => insert (n b) (σ b)
+  have hschedule' : HasSurvivingFiniteRiskSchedule A D σ' := by
+    intro b hbD m hm
+    have hbK := hDK hbD
+    simp only [σ', Finset.mem_insert] at hm
+    rcases hm with hnew | hold
+    · subst m
+      have hr := hrep b hbK
+      have hdis := Set.disjoint_left.mp (hfree b hbD)
+      refine ⟨(hn b hbK).2.1,
+        x b, hr.1, y b, hr.2.1, z b, hr.2.2.1,
+        ?_, ?_, ?_, hr.2.2.2.1⟩
+      · intro hxD
+        exact hdis (by simp [f]) hxD
+      · intro hyD
+        exact hdis (by simp [f]) hyD
+      · intro hzD
+        exact hdis (by simp [f]) hzD
+    · obtain ⟨hrisk, p, hpA, q, hqA, r, hrA,
+        hpC, hqC, hrC, hpqr⟩ :=
+        hschedule b (hDC hbD) m hold
+      exact ⟨hrisk, p, hpA, q, hqA, r, hrA,
+        fun hpD => hpC (hDC hpD),
+        fun hqD => hqC (hDC hqD),
+        fun hrD => hrC (hDC hrD), hpqr⟩
+  have hcard' : ∀ b ∈ D, (σ' b).card = k + 1 := by
+    intro b hbD
+    have hbK := hDK hbD
+    have hnew : n b ∉ σ b :=
+      (hn b hbK).1
+    simp [σ', hnew, hcard b (hDC hbD)]
+  exact ⟨D, hDC, hDinf, σ', hschedule', hcard'⟩
+
+open Classical in
+/-- A target has a three-term representation avoiding one specified
+source point. -/
+def HasAlternativeTriple (A : Set ℕ) (b n : ℕ) : Prop :=
+  ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+    x + y + z = n ∧ x ≠ b ∧ y ≠ b ∧ z ≠ b
+
+open Classical in
+/-- A failed target outside a finite schedule, together with one genuine
+deleted source `b` which threatens it. -/
+def IsOffScheduleFailedRiskSource
+    (A C : Set ℕ) (N₀ : ℕ) (σ : ℕ → Finset ℕ)
+    (b n : ℕ) : Prop :=
+  b ∈ C ∧ N₀ ≤ n ∧
+  (∃ a ∈ A, b + a = n) ∧
+  (∀ c ∈ C, n ∉ σ c) ∧
+  ¬∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+    x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = n
+
+open Classical in
+/-- Above the pair-cover threshold, failure of an alternative triple
+means exactly that `b` is an absolute private guardian. -/
+theorem alternativeTriple_or_private
+    {A : Set ℕ} {N₀ b n : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (hn : N₀ ≤ n) :
+    HasAlternativeTriple A b n ∨ IsPrivateTriple A b n := by
+  by_cases halt : HasAlternativeTriple A b n
+  · exact Or.inl halt
+  · right
+    obtain ⟨x, hxA, y, hyA, hxy⟩ := hcov n hn
+    constructor
+    · exact ⟨x, hxA, y, hyA, 0, h0, by omega⟩
+    · intro p hpA q hqA r hrA hpqr
+      by_contra hnone
+      push Not at hnone
+      exact halt ⟨p, hpA, q, hqA, r, hrA, hpqr,
+        hnone.1, hnone.2.1, hnone.2.2⟩
+
+open Classical in
+/-- **Risk-source frontier for a failed genuine schedule.**
+Choose one deleted source for each cofinal off-schedule stall and classify
+that source by `alternativeTriple_or_private`.
+
+* infinitely many alternative sources give a risk-respecting schedule
+  increment;
+* infinitely many private sources give an unbounded absolute-private
+  stream; and
+* if both source sets are finite, finite cofinal pigeonhole fixes one
+  source which carries cofinally many alternative or private stalls.
+
+This is the moving-prefix stall lemma with the source label retained; it
+pinpoints the exact obstructions to iterating genuine-risk repairs. -/
+theorem failed_riskSchedule_source_frontier
+    {A C : Set ℕ} {N₀ k : ℕ} {σ : ℕ → Finset ℕ}
+    (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
+    (hschedule : HasSurvivingFiniteRiskSchedule A C σ)
+    (hcard : ∀ b ∈ C, (σ b).card = k)
+    (hfail : ¬IsExactTupleAsymptoticBasis (A \ C) 3) :
+    (∃ D ⊆ C, D.Infinite ∧
+      ∃ σ' : ℕ → Finset ℕ,
+        HasSurvivingFiniteRiskSchedule A D σ' ∧
+        ∀ b ∈ D, (σ' b).card = k + 1) ∨
+    (∀ W, ∃ b ∈ C, W < b ∧ ∃ n,
+      IsOffScheduleFailedRiskSource A C N₀ σ b n ∧
+      IsPrivateTriple A b n) ∨
+    (∃ b ∈ C,
+      (∀ T, ∃ n, T < n ∧
+        IsOffScheduleFailedRiskSource A C N₀ σ b n ∧
+        HasAlternativeTriple A b n) ∨
+      (∀ T, ∃ n, T < n ∧
+        IsOffScheduleFailedRiskSource A C N₀ σ b n ∧
+        IsPrivateTriple A b n)) := by
+  have hstalls :=
+    failure_with_finiteServiceSchedule_forces_cofinal_offScheduleStalls
+      σ h0 h0C hcov hschedule.toService hfail
+  have hQ : ∀ T, ∃ n, T < n ∧ ∃ b,
+      IsOffScheduleFailedRiskSource A C N₀ σ b n := by
+    intro T
+    obtain ⟨n, hnT, hnN, hrisk, hoff, hno⟩ :=
+      hstalls (T + 1)
+    obtain ⟨b, hbC, a, haA, hba⟩ := hrisk
+    exact ⟨n, by omega, b, hbC, hnN, ⟨a, haA, hba⟩,
+      hoff, hno⟩
+  let Kalt : Set ℕ := {b | ∃ n,
+    IsOffScheduleFailedRiskSource A C N₀ σ b n ∧
+    HasAlternativeTriple A b n}
+  let Kprivate : Set ℕ := {b | ∃ n,
+    IsOffScheduleFailedRiskSource A C N₀ σ b n ∧
+    IsPrivateTriple A b n}
+  have hKaltC : Kalt ⊆ C := by
+    intro b hb
+    obtain ⟨n, hq, halt⟩ := hb
+    exact hq.1
+  have hKprivateC : Kprivate ⊆ C := by
+    intro b hb
+    obtain ⟨n, hq, hprivate⟩ := hb
+    exact hq.1
+  have hclass : ∀ b n,
+      IsOffScheduleFailedRiskSource A C N₀ σ b n →
+      b ∈ Kalt ∨ b ∈ Kprivate := by
+    intro b n hq
+    rcases alternativeTriple_or_private h0 hcov hq.2.1 with
+      halt | hprivate
+    · exact Or.inl ⟨n, hq, halt⟩
+    · exact Or.inr ⟨n, hq, hprivate⟩
+  by_cases hKaltInf : Kalt.Infinite
+  · left
+    apply infiniteAlternativeRiskSources_scheduleIncrement
+      hKaltC hKaltInf hschedule hcard
+    intro b hbK
+    obtain ⟨n, hq, halt⟩ := hbK
+    exact ⟨n, hq.2.2.2.1 b hq.1, hq.2.2.1, halt⟩
+  have hKaltFin : Kalt.Finite := Set.not_infinite.mp hKaltInf
+  by_cases hKprivateInf : Kprivate.Infinite
+  · right
+    left
+    intro W
+    obtain ⟨b, hbK, hbW⟩ := hKprivateInf.exists_gt W
+    have hbC := hKprivateC hbK
+    obtain ⟨n, hq, hprivate⟩ := hbK
+    exact ⟨b, hbC, hbW, n, hq, hprivate⟩
+  have hKprivateFin : Kprivate.Finite :=
+    Set.not_infinite.mp hKprivateInf
+  right
+  right
+  have hUnionFin : (Kalt ∪ Kprivate).Finite :=
+    hKaltFin.union hKprivateFin
+  let F : Finset ℕ := hUnionFin.toFinset
+  have hlabels : ∀ T, ∃ n, T < n ∧ ∃ b ∈ F,
+      IsOffScheduleFailedRiskSource A C N₀ σ b n := by
+    intro T
+    obtain ⟨n, hnT, b, hq⟩ := hQ T
+    have hbUnion : b ∈ Kalt ∪ Kprivate := hclass b n hq
+    exact ⟨n, hnT, b, hUnionFin.mem_toFinset.mpr hbUnion, hq⟩
+  obtain ⟨b, hbF, hbcofinal⟩ :=
+    finite_cofinal_pigeonhole
+      (B := F)
+      (P := fun b n =>
+        IsOffScheduleFailedRiskSource A C N₀ σ b n)
+      hlabels
+  obtain ⟨n₀, hn₀, hq₀⟩ := hbcofinal 0
+  refine ⟨b, hq₀.1, ?_⟩
+  by_cases haltCofinal : ∀ T, ∃ n, T < n ∧
+      IsOffScheduleFailedRiskSource A C N₀ σ b n ∧
+      HasAlternativeTriple A b n
+  · exact Or.inl haltCofinal
+  · right
+    push Not at haltCofinal
+    obtain ⟨T₀, hT₀⟩ := haltCofinal
+    intro T
+    obtain ⟨n, hnLarge, hq⟩ :=
+      hbcofinal (max T T₀)
+    have hnotAlt : ¬HasAlternativeTriple A b n := by
+      intro halt
+      exact hT₀ n (by omega) hq halt
+    have hprivate : IsPrivateTriple A b n :=
+      (alternativeTriple_or_private h0 hcov hq.2.1).resolve_left
+        hnotAlt
+    exact ⟨n, by omega, hq, hprivate⟩
+
+open Classical in
+/-- **Anchored risk-source frontier.**
+In the anchor-abundant branch of a global counterexample, both private
+outputs of `failed_riskSchedule_source_frontier` are impossible: their
+unbounded private targets feed the established rotating/fixed guardian
+extraction and produce a surviving infinite deletion.
+
+Hence an anchored failed genuine `k`-schedule either increments to
+`k+1`, or one fixed deleted source carries cofinally many failed genuine
+risks which nevertheless have representations avoiding that source.
+All failure is then collateral through the rest of the deletion. -/
+theorem anchored_counterexample_riskSchedule_increment_or_fixedCollateral
+    {A C : Set ℕ} {N₀ k : ℕ} {σ : ℕ → Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hCA : C ⊆ A) (hCinf : C.Infinite) (h0C : 0 ∉ C)
+    (hglobal : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
+      ∃ w ∈ A, ∃ w' ∈ A,
+        w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hschedule : HasSurvivingFiniteRiskSchedule A C σ)
+    (hcard : ∀ b ∈ C, (σ b).card = k) :
+    (∃ D ⊆ C, D.Infinite ∧
+      ∃ σ' : ℕ → Finset ℕ,
+        HasSurvivingFiniteRiskSchedule A D σ' ∧
+        ∀ b ∈ D, (σ' b).card = k + 1) ∨
+    (∃ b ∈ C, ∀ T, ∃ n, T < n ∧
+      IsOffScheduleFailedRiskSource A C N₀ σ b n ∧
+      HasAlternativeTriple A b n) := by
+  rcases failed_riskSchedule_source_frontier
+      h0 h0C hcov hschedule hcard (hglobal C hCA hCinf) with
+    hincrement | hunboundedPrivate |
+      ⟨b, hbC, hfixedAlt | hfixedPrivate⟩
+  · exact Or.inl hincrement
+  · exfalso
+    have hstream : ∀ N, ∃ a m, N ≤ m ∧
+        0 < a ∧ IsPrivateTriple A a m := by
+      intro N
+      obtain ⟨b, hbC, hbN, n, hq, hprivate⟩ :=
+        hunboundedPrivate N
+      obtain ⟨a, haA, hba⟩ := hq.2.2.1
+      have hbpos : 0 < b := by
+        by_contra hb0
+        have : b = 0 := Nat.eq_zero_of_not_pos hb0
+        exact h0C (this ▸ hbC)
+      exact ⟨b, n, by omega, hbpos, hprivate⟩
+    obtain ⟨B, hBA, hBinf, hsurvive⟩ :=
+      surviving_deletion_of_cofinal_privateStream
+        h0 hcov hstream hanchor
+    exact hglobal B hBA hBinf
+      (exactTupleBasis_diff_of_survival hsurvive)
+  · exact Or.inr ⟨b, hbC, hfixedAlt⟩
+  · exfalso
+    have hbpos : 0 < b := by
+      by_contra hb0
+      have : b = 0 := Nat.eq_zero_of_not_pos hb0
+      exact h0C (this ▸ hbC)
+    have hstream : ∀ N, ∃ a m, N ≤ m ∧
+        0 < a ∧ IsPrivateTriple A a m := by
+      intro N
+      obtain ⟨n, hnN, hq, hprivate⟩ := hfixedPrivate N
+      exact ⟨b, n, by omega, hbpos, hprivate⟩
+    obtain ⟨B, hBA, hBinf, hsurvive⟩ :=
+      surviving_deletion_of_cofinal_privateStream
+        h0 hcov hstream hanchor
+    exact hglobal B hBA hBinf
+      (exactTupleBasis_diff_of_survival hsurvive)
+
+open Classical in
+/-- **Sunflower structure of the fixed-source collateral horn.**
+Suppose one fixed deleted source `b` has cofinally many failed genuine
+risks, each with an alternative triple avoiding `b`.  Choose a strictly
+increasing target stream and one alternative support `Pᵢ` of size at
+most three.  Every `Pᵢ` meets `C`, since its target still fails under
+`C`.
+
+The infinite delta-system theorem leaves exactly two collateral
+geometries:
+
+* one fixed `c∈C`, `c≠b`, belongs to every retained support; or
+* the retained supports admit pairwise distinct collateral hits in `C`.
+
+This converts “fixed source, unspecified other damage” into a fixed
+two-channel obstruction or a mobile collateral matching. -/
+theorem fixedAlternativeRiskSource_has_collateralSunflower
+    {A C : Set ℕ} {N₀ : ℕ} {σ : ℕ → Finset ℕ}
+    (hfixed : ∃ b ∈ C, ∀ T, ∃ n, T < n ∧
+      IsOffScheduleFailedRiskSource A C N₀ σ b n ∧
+      HasAlternativeTriple A b n) :
+    ∃ b ∈ C, ∃ n : ℕ → ℕ, ∃ P : ℕ → Finset ℕ,
+      ∃ L : Set ℕ,
+      StrictMono n ∧ L.Infinite ∧
+      (∀ i ∈ L,
+        IsOffScheduleFailedRiskSource A C N₀ σ b (n i) ∧
+        (P i).card ≤ 3 ∧ b ∉ P i ∧
+        ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+          P i = {x, y, z} ∧ x + y + z = n i) ∧
+      ((∃ c ∈ C, c ≠ b ∧ ∀ i ∈ L, c ∈ P i) ∨
+       ∃ d : ℕ → ℕ, Set.InjOn d L ∧
+         ∀ i ∈ L, d i ∈ C ∧ d i ∈ P i) := by
+  obtain ⟨b, hbC, hcofinal⟩ := hfixed
+  have hpick : ∀ T, ∃ m, T < m ∧
+      IsOffScheduleFailedRiskSource A C N₀ σ b m ∧
+      HasAlternativeTriple A b m := hcofinal
+  choose nxt hnxt hQnext hAltnext using hpick
+  let n : ℕ → ℕ :=
+    Nat.rec (nxt 0) (fun _ prev => nxt prev)
+  have hnzero : n 0 = nxt 0 := rfl
+  have hnsucc : ∀ i, n (i + 1) = nxt (n i) := by
+    intro i
+    rfl
+  have hnstep : ∀ i, n i < n (i + 1) := by
+    intro i
+    rw [hnsucc]
+    exact hnxt (n i)
+  have hnmono : StrictMono n :=
+    strictMono_nat_of_lt_succ hnstep
+  have hndata : ∀ i,
+      IsOffScheduleFailedRiskSource A C N₀ σ b (n i) ∧
+      HasAlternativeTriple A b (n i) := by
+    intro i
+    cases i with
+    | zero =>
+        rw [hnzero]
+        exact ⟨hQnext 0, hAltnext 0⟩
+    | succ i =>
+        rw [hnsucc]
+        exact ⟨hQnext (n i), hAltnext (n i)⟩
+  have hrepchoice : ∀ i, ∃ x, ∃ y, ∃ z,
+      x ∈ A ∧ y ∈ A ∧ z ∈ A ∧
+      x + y + z = n i ∧ x ≠ b ∧ y ≠ b ∧ z ≠ b := by
+    intro i
+    simpa [HasAlternativeTriple] using (hndata i).2
+  choose x y z hrep using hrepchoice
+  let P : ℕ → Finset ℕ := fun i => {x i, y i, z i}
+  have hPcard : ∀ i, (P i).card ≤ 3 := by
+    intro i
+    calc
+      (P i).card ≤ ({y i, z i} : Finset ℕ).card + 1 := by
+        simpa [P] using
+          Finset.card_insert_le (x i) ({y i, z i} : Finset ℕ)
+      _ ≤ ({z i} : Finset ℕ).card + 1 + 1 := by
+        exact Nat.add_le_add_right
+          (Finset.card_insert_le (y i) {z i}) 1
+      _ ≤ 3 := by simp
+  obtain ⟨L, hLuniv, hLinf, R, hdelta⟩ :=
+    exists_infinite_deltaSystem_of_bounded_pointMap
+      (K := Set.univ) Set.infinite_univ P 3
+        (fun i hi => hPcard i)
+  have hPavoid : ∀ i, b ∉ P i := by
+    intro i
+    have hr := hrep i
+    simp only [P, Finset.mem_insert, Finset.mem_singleton, not_or]
+    exact ⟨hr.2.2.2.2.1.symm, hr.2.2.2.2.2.1.symm,
+      hr.2.2.2.2.2.2.symm⟩
+  have hPhit : ∀ i, ∃ c, c ∈ C ∧ c ∈ P i := by
+    intro i
+    have hq := (hndata i).1
+    have hr := hrep i
+    have hhit : x i ∈ C ∨ y i ∈ C ∨ z i ∈ C := by
+      by_contra hnone
+      push Not at hnone
+      exact hq.2.2.2.2
+        ⟨x i, hr.1, y i, hr.2.1, z i, hr.2.2.1,
+          hnone.1, hnone.2.1, hnone.2.2, hr.2.2.2.1⟩
+    rcases hhit with hxC | hyC | hzC
+    · exact ⟨x i, hxC, by simp [P]⟩
+    · exact ⟨y i, hyC, by simp [P]⟩
+    · exact ⟨z i, hzC, by simp [P]⟩
+  refine ⟨b, hbC, n, P, L, hnmono, hLinf, ?_, ?_⟩
+  · intro i hiL
+    have hr := hrep i
+    exact ⟨(hndata i).1, hPcard i, hPavoid i,
+      x i, hr.1, y i, hr.2.1, z i, hr.2.2.1,
+      rfl, hr.2.2.2.1⟩
+  · by_cases hrootHit : ∃ c, c ∈ R ∧ c ∈ C
+    · left
+      obtain ⟨c, hcR, hcC⟩ := hrootHit
+      have hcAll : ∀ i ∈ L, c ∈ P i := by
+        intro i hiL
+        have hother : (L \ ({i} : Set ℕ)).Infinite :=
+          hLinf.diff (Set.finite_singleton i)
+        obtain ⟨j, hjL, hji⟩ := hother.nonempty
+        have hij : i ≠ j := by
+          exact fun hij => hji (by simpa using hij.symm)
+        have hd := hdelta i hiL j hjL hij
+        rw [← hd] at hcR
+        exact (Finset.mem_inter.1 hcR).1
+      have hcb : c ≠ b := by
+        obtain ⟨i, hiL⟩ := hLinf.nonempty
+        intro hcb
+        subst c
+        exact hPavoid i (hcAll i hiL)
+      exact ⟨c, hcC, hcb, hcAll⟩
+    · right
+      have hchoice : ∀ i, ∃ c, i ∈ L →
+          c ∈ C ∧ c ∈ P i := by
+        intro i
+        by_cases hiL : i ∈ L
+        · obtain ⟨c, hcC, hcP⟩ := hPhit i
+          exact ⟨c, fun _ => ⟨hcC, hcP⟩⟩
+        · exact ⟨0, fun h => absurd h hiL⟩
+      choose d hd using hchoice
+      have hdInj : Set.InjOn d L := by
+        intro i hiL j hjL hij
+        by_contra hne
+        have hdI := hd i hiL
+        have hdJ := hd j hjL
+        have hdInter : d i ∈ P i ∩ P j := by
+          exact Finset.mem_inter.2
+            ⟨hdI.2, hij ▸ hdJ.2⟩
+        have hdRoot : d i ∈ R := by
+          rw [← hdelta i hiL j hjL hne]
+          exact hdInter
+        exact hrootHit ⟨d i, hdRoot, hdI.1⟩
+      exact ⟨d, hdInj, fun i hiL => hd i hiL⟩
+
+open Classical in
+/-- Removing a named member from a three-point support leaves two
+`A`-entries and the corresponding additive identity. -/
+theorem tripleSupport_member_has_pairDecomposition
+    {A : Set ℕ} {P : Finset ℕ} {c n x y z : ℕ}
+    (hxA : x ∈ A) (hyA : y ∈ A) (hzA : z ∈ A)
+    (hP : P = {x, y, z}) (hcP : c ∈ P)
+    (hxyz : x + y + z = n) :
+    ∃ u ∈ A, ∃ v ∈ A, c + u + v = n := by
+  rw [hP] at hcP
+  simp only [Finset.mem_insert, Finset.mem_singleton] at hcP
+  rcases hcP with hcx | hcy | hcz
+  · subst c
+    exact ⟨y, hyA, z, hzA, hxyz⟩
+  · subst c
+    exact ⟨x, hxA, z, hzA, by omega⟩
+  · subst c
+    exact ⟨x, hxA, y, hyA, by omega⟩
+
+open Classical in
+/-- **Exact fixed/mobile collateral equations.**
+The collateral sunflower can be stated without support notation.  Along
+a strictly increasing cofinal target stream, one fixed source equation
+`b+aᵢ=nᵢ` is paired either with one fixed collateral equation
+`c+uᵢ+vᵢ=nᵢ`, or with such equations whose collateral points `dᵢ` are
+pairwise distinct. -/
+theorem fixedAlternativeRiskSource_fixed_or_mobileCollateralEquations
+    {A C : Set ℕ} {N₀ : ℕ} {σ : ℕ → Finset ℕ}
+    (hfixed : ∃ b ∈ C, ∀ T, ∃ n, T < n ∧
+      IsOffScheduleFailedRiskSource A C N₀ σ b n ∧
+      HasAlternativeTriple A b n) :
+    ∃ b ∈ C, ∃ n : ℕ → ℕ, ∃ L : Set ℕ,
+      StrictMono n ∧ L.Infinite ∧
+      (∀ i ∈ L,
+        IsOffScheduleFailedRiskSource A C N₀ σ b (n i)) ∧
+      ((∃ c ∈ C, c ≠ b ∧ ∀ i ∈ L,
+        ∃ a ∈ A, ∃ u ∈ A, ∃ v ∈ A,
+          b + a = n i ∧ c + u + v = n i) ∨
+       ∃ d : ℕ → ℕ, Set.InjOn d L ∧
+        ∀ i ∈ L, d i ∈ C ∧ d i ≠ b ∧
+          ∃ a ∈ A, ∃ u ∈ A, ∃ v ∈ A,
+            b + a = n i ∧ d i + u + v = n i) := by
+  obtain ⟨b, hbC, n, P, L, hnmono, hLinf, hrows,
+      hfixedCollateral | hmobileCollateral⟩ :=
+    fixedAlternativeRiskSource_has_collateralSunflower hfixed
+  · refine ⟨b, hbC, n, L, hnmono, hLinf,
+      fun i hiL => (hrows i hiL).1, Or.inl ?_⟩
+    obtain ⟨c, hcC, hcb, hcAll⟩ := hfixedCollateral
+    refine ⟨c, hcC, hcb, ?_⟩
+    intro i hiL
+    have hrow := hrows i hiL
+    obtain ⟨a, haA, hba⟩ := hrow.1.2.2.1
+    obtain ⟨x, hxA, y, hyA, z, hzA, hP, hxyz⟩ :=
+      hrow.2.2.2
+    obtain ⟨u, huA, v, hvA, hcuv⟩ :=
+      tripleSupport_member_has_pairDecomposition
+        hxA hyA hzA hP (hcAll i hiL) hxyz
+    exact ⟨a, haA, u, huA, v, hvA, hba, hcuv⟩
+  · refine ⟨b, hbC, n, L, hnmono, hLinf,
+      fun i hiL => (hrows i hiL).1, Or.inr ?_⟩
+    obtain ⟨d, hdInj, hdAll⟩ := hmobileCollateral
+    refine ⟨d, hdInj, ?_⟩
+    intro i hiL
+    have hrow := hrows i hiL
+    obtain ⟨a, haA, hba⟩ := hrow.1.2.2.1
+    obtain ⟨x, hxA, y, hyA, z, hzA, hP, hxyz⟩ :=
+      hrow.2.2.2
+    obtain ⟨hdiC, hdiP⟩ := hdAll i hiL
+    obtain ⟨u, huA, v, hvA, hduv⟩ :=
+      tripleSupport_member_has_pairDecomposition
+        hxA hyA hzA hP hdiP hxyz
+    exact ⟨hdiC, fun hdib => (hrow.2.2.1) (hdib ▸ hdiP),
+      a, haA, u, huA, v, hvA, hba, hduv⟩
+
+open Classical in
+/-- A cofinal mobile-collateral stream in which the collateral point is
+the original pair partner.  The two equations then cancel to
+`b = uᵢ+vᵢ`; thus every row is the same two-guardian collision
+`b+dᵢ = dᵢ+uᵢ+vᵢ`, with pairwise distinct `dᵢ`. -/
+def HasCofinalSourceCollisionRows
+    (A C : Set ℕ) (N₀ : ℕ) (σ : ℕ → Finset ℕ) (b : ℕ) : Prop :=
+  ∃ n : ℕ → ℕ, ∃ L : Set ℕ,
+    ∃ d a u v : ℕ → ℕ,
+      StrictMono n ∧ L.Infinite ∧ Set.InjOn d L ∧
+      ∀ i ∈ L,
+        IsOffScheduleFailedRiskSource A C N₀ σ b (n i) ∧
+        d i ∈ C ∧ d i ≠ b ∧
+        a i ∈ A ∧ u i ∈ A ∧ v i ∈ A ∧
+        d i = a i ∧ b = u i + v i ∧
+        b + a i = n i ∧ d i + u i + v i = n i
+
+open Classical in
+/-- A cofinal mobile-collateral stream whose collateral co-pair cannot
+be normalized to an element of `A`.  This records the exact failure of
+the tempting compression
+`dᵢ+uᵢ+vᵢ = nᵢ  ↦  dᵢ+(uᵢ+vᵢ) = nᵢ`
+as a genuine pair-risk label. -/
+def HasCofinalNonNormalizableCollateralRows
+    (A C : Set ℕ) (N₀ : ℕ) (σ : ℕ → Finset ℕ) (b : ℕ) : Prop :=
+  ∃ n : ℕ → ℕ, ∃ L : Set ℕ,
+    ∃ d a u v : ℕ → ℕ,
+      StrictMono n ∧ L.Infinite ∧ Set.InjOn d L ∧
+      ∀ i ∈ L,
+        IsOffScheduleFailedRiskSource A C N₀ σ b (n i) ∧
+        d i ∈ C ∧ d i ≠ b ∧
+        a i ∈ A ∧ u i ∈ A ∧ v i ∈ A ∧
+        u i + v i ∉ A ∧
+        b + a i = n i ∧ d i + u i + v i = n i
+
+open Classical in
+/-- **Mobile collateral either increments or reaches an exact
+obstruction.**
+
+For a mobile equation
+`b+aᵢ = dᵢ+uᵢ+vᵢ = nᵢ`, split according to whether the co-sum
+`uᵢ+vᵢ` lies in `A`.
+
+* If it does and `dᵢ ≠ aᵢ`, then `nᵢ=dᵢ+(uᵢ+vᵢ)` is a genuine risk of
+  the distinct source `dᵢ`, while `b+aᵢ+0` avoids `dᵢ`.  The
+  risk-schedule free-set theorem therefore increments `k` to `k+1`.
+* If it does and `dᵢ=aᵢ`, cancellation gives the source-collision
+  equation `b=uᵢ+vᵢ`.
+* If it does not, the row is an explicit failure of unrestricted
+  normalization.
+
+Infinite two-colour thinning makes one of these alternatives uniform.
+This isolates the two genuine mathematical obstructions in the mobile
+branch instead of silently assuming that a triple representation is a
+pair-risk representation. -/
+theorem mobileCollateralEquations_increment_or_collision_or_nonNormalizable
+    {A C : Set ℕ} {N₀ k b : ℕ} {σ : ℕ → Finset ℕ}
+    {n d : ℕ → ℕ} {L : Set ℕ}
+    (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hCA : C ⊆ A)
+    (hbC : b ∈ C)
+    (hschedule : HasSurvivingFiniteRiskSchedule A C σ)
+    (hcard : ∀ c ∈ C, (σ c).card = k)
+    (hnmono : StrictMono n) (hLinf : L.Infinite)
+    (hfailed : ∀ i ∈ L,
+      IsOffScheduleFailedRiskSource A C N₀ σ b (n i))
+    (hdInj : Set.InjOn d L)
+    (hmobile : ∀ i ∈ L, d i ∈ C ∧ d i ≠ b ∧
+      ∃ a ∈ A, ∃ u ∈ A, ∃ v ∈ A,
+        b + a = n i ∧ d i + u + v = n i) :
+    (∃ D ⊆ C, D.Infinite ∧
+      ∃ σ' : ℕ → Finset ℕ,
+        HasSurvivingFiniteRiskSchedule A D σ' ∧
+        ∀ c ∈ D, (σ' c).card = k + 1) ∨
+    HasCofinalSourceCollisionRows A C N₀ σ b ∨
+    HasCofinalNonNormalizableCollateralRows A C N₀ σ b := by
+  have hpick : ∀ i, ∃ a, ∃ u, ∃ v, i ∈ L →
+      a ∈ A ∧ u ∈ A ∧ v ∈ A ∧
+      b + a = n i ∧ d i + u + v = n i := by
+    intro i
+    by_cases hiL : i ∈ L
+    · obtain ⟨a, haA, u, huA, v, hvA, hba, hduv⟩ :=
+        (hmobile i hiL).2.2
+      exact ⟨a, u, v, fun _ =>
+        ⟨haA, huA, hvA, hba, hduv⟩⟩
+    · exact ⟨0, 0, 0, fun hi => absurd hi hiL⟩
+  choose a u v hrow using hpick
+  let P : Set ℕ := {i | u i + v i ∈ A}
+  have hfirstSplit :
+      (L ∩ P).Infinite ∨ (L \ P).Infinite := by
+    by_cases hLP : (L ∩ P).Infinite
+    · exact Or.inl hLP
+    · right
+      have hdiff :=
+        hLinf.diff (Set.not_infinite.mp hLP)
+      simpa [P, Set.ext_iff] using hdiff
+  rcases hfirstSplit with hnormal | hnonNormal
+  · let Q : Set ℕ := {i | d i ≠ a i}
+    have hsecondSplit :
+        ((L ∩ P) ∩ Q).Infinite ∨
+          ((L ∩ P) \ Q).Infinite := by
+      by_cases hLPQ : ((L ∩ P) ∩ Q).Infinite
+      · exact Or.inl hLPQ
+      · right
+        have hdiff :=
+          hnormal.diff (Set.not_infinite.mp hLPQ)
+        simpa [Q, Set.ext_iff] using hdiff
+    rcases hsecondSplit with hcomposable | hcollision
+    · left
+      let K : Set ℕ := (L ∩ P) ∩ Q
+      have hKinf : K.Infinite := hcomposable
+      have hKL : K ⊆ L := by
+        intro i hi
+        exact hi.1.1
+      have hdInjK : Set.InjOn d K :=
+        hdInj.mono hKL
+      have hsourceInf : (d '' K).Infinite :=
+        hKinf.image hdInjK
+      have hsourceC : d '' K ⊆ C := by
+        rintro c ⟨i, hiK, rfl⟩
+        exact (hmobile i (hKL hiK)).1
+      apply infiniteAlternativeRiskSources_scheduleIncrement
+        hsourceC hsourceInf hschedule hcard
+      intro c hc
+      obtain ⟨i, hiK, rfl⟩ := hc
+      have hiL : i ∈ L := hKL hiK
+      have hri := hrow i hiL
+      have hdi := hmobile i hiL
+      have hsumA : u i + v i ∈ A := hiK.1.2
+      have hdneA : d i ≠ a i := hiK.2
+      have hd0 : d i ≠ 0 := by
+        intro hdi0
+        exact h0C (hdi0 ▸ hdi.1)
+      refine ⟨n i,
+        (hfailed i hiL).2.2.2.1 (d i) hdi.1,
+        ⟨u i + v i, hsumA, by omega⟩, ?_⟩
+      exact ⟨b, hCA hbC, a i, hri.1, 0, h0,
+        by omega, hdi.2.1.symm, hdneA.symm, hd0.symm⟩
+    · right
+      left
+      let K : Set ℕ := (L ∩ P) \ Q
+      have hKL : K ⊆ L := by
+        intro i hi
+        exact hi.1.1
+      refine ⟨n, K, d, a, u, v, hnmono, hcollision,
+        hdInj.mono hKL, ?_⟩
+      intro i hiK
+      have hiL : i ∈ L := hKL hiK
+      have hri := hrow i hiL
+      have hdi := hmobile i hiL
+      have hdia : d i = a i := by
+        simpa [Q] using hiK.2
+      have hbuv : b = u i + v i := by
+        omega
+      exact ⟨hfailed i hiL, hdi.1, hdi.2.1,
+        hri.1, hri.2.1, hri.2.2.1, hdia, hbuv,
+        hri.2.2.2.1, hri.2.2.2.2⟩
+  · right
+    right
+    let K : Set ℕ := L \ P
+    have hKL : K ⊆ L := by
+      intro i hi
+      exact hi.1
+    refine ⟨n, K, d, a, u, v, hnmono, hnonNormal,
+      hdInj.mono hKL, ?_⟩
+    intro i hiK
+    have hiL : i ∈ L := hKL hiK
+    have hri := hrow i hiL
+    have hdi := hmobile i hiL
+    have hsumNot : u i + v i ∉ A := by
+      simpa [P] using hiK.2
+    exact ⟨hfailed i hiL, hdi.1, hdi.2.1,
+      hri.1, hri.2.1, hri.2.2.1, hsumNot,
+      hri.2.2.2.1, hri.2.2.2.2⟩
+
+open Classical in
+/-- One fixed collateral point occurs in an alternative equation for a
+cofinal stream of failed risks of the fixed source `b`. -/
+def HasCofinalFixedCollateralRows
+    (A C : Set ℕ) (N₀ : ℕ) (σ : ℕ → Finset ℕ) (b : ℕ) : Prop :=
+  ∃ c ∈ C, c ≠ b ∧
+    ∃ n : ℕ → ℕ, ∃ L : Set ℕ,
+      StrictMono n ∧ L.Infinite ∧
+      ∀ i ∈ L,
+        IsOffScheduleFailedRiskSource A C N₀ σ b (n i) ∧
+        ∃ a ∈ A, ∃ u ∈ A, ∃ v ∈ A,
+          b + a = n i ∧ c + u + v = n i
+
+open Classical in
+/-- **Anchored genuine-schedule frontier with explicit terminal
+equations.**
+
+Starting from an anchor-abundant global counterexample and a uniform
+genuine `k`-schedule, the moving-prefix stall lemma, private-stream
+elimination, collateral sunflower, and mobile normalization split
+compose to give exactly four outcomes:
+
+1. the genuine schedule increments to `k+1`;
+2. a fixed second channel occurs cofinally;
+3. mobile channels collide with their original pair partners; or
+4. mobile channels have co-sums outside `A`.
+
+Thus every inference before these two algebraic terminal obstructions is
+now formal: neither fixed/cofinal-difference composition nor
+unrestricted normalization is smuggled into the schedule induction. -/
+theorem anchored_counterexample_riskSchedule_increment_or_terminalRows
+    {A C : Set ℕ} {N₀ k : ℕ} {σ : ℕ → Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hCA : C ⊆ A) (hCinf : C.Infinite) (h0C : 0 ∉ C)
+    (hglobal : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
+      ∃ w ∈ A, ∃ w' ∈ A,
+        w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hschedule : HasSurvivingFiniteRiskSchedule A C σ)
+    (hcard : ∀ b ∈ C, (σ b).card = k) :
+    (∃ D ⊆ C, D.Infinite ∧
+      ∃ σ' : ℕ → Finset ℕ,
+        HasSurvivingFiniteRiskSchedule A D σ' ∧
+        ∀ b ∈ D, (σ' b).card = k + 1) ∨
+    (∃ b ∈ C, HasCofinalFixedCollateralRows A C N₀ σ b) ∨
+    (∃ b ∈ C, HasCofinalSourceCollisionRows A C N₀ σ b) ∨
+    ∃ b ∈ C,
+      HasCofinalNonNormalizableCollateralRows A C N₀ σ b := by
+  rcases anchored_counterexample_riskSchedule_increment_or_fixedCollateral
+      h0 hcov hCA hCinf h0C hglobal hanchor hschedule hcard with
+    hincrement | hfixedSource
+  · exact Or.inl hincrement
+  obtain ⟨b, hbC, n, L, hnmono, hLinf, hfailed,
+      hfixed | hmobile⟩ :=
+    fixedAlternativeRiskSource_fixed_or_mobileCollateralEquations
+      hfixedSource
+  · right
+    left
+    obtain ⟨c, hcC, hcb, hrows⟩ := hfixed
+    exact ⟨b, hbC, c, hcC, hcb, n, L, hnmono, hLinf,
+      fun i hiL => ⟨hfailed i hiL, hrows i hiL⟩⟩
+  · obtain ⟨d, hdInj, hrows⟩ := hmobile
+    rcases
+        mobileCollateralEquations_increment_or_collision_or_nonNormalizable
+          h0 h0C hCA hbC hschedule hcard hnmono hLinf
+            hfailed hdInj hrows with
+      hincrement | hcollision | hnonNormal
+    · exact Or.inl hincrement
+    · exact Or.inr (Or.inr (Or.inl ⟨b, hbC, hcollision⟩))
+    · exact Or.inr (Or.inr (Or.inr ⟨b, hbC, hnonNormal⟩))
+
+open Classical in
+/-- **Source-collision rows are not terminal in an anchored
+counterexample.**
+
+For a collision row, `dᵢ=aᵢ` turns `b+aᵢ=nᵢ` into the genuine risk
+`dᵢ+b=nᵢ`.  Classify that risk at its mobile source `dᵢ`.
+Infinitely many alternative triples give the genuine schedule
+increment.  Infinitely many private triples give an unbounded private
+stream, which the anchor theorem converts to a surviving infinite
+deletion, contradicting the global-counterexample hypothesis. -/
+theorem anchored_sourceCollisionRows_force_increment
+    {A C : Set ℕ} {N₀ k b : ℕ} {σ : ℕ → Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hCA : C ⊆ A) (h0C : 0 ∉ C) (hbC : b ∈ C)
+    (hglobal : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
+      ∃ w ∈ A, ∃ w' ∈ A,
+        w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hschedule : HasSurvivingFiniteRiskSchedule A C σ)
+    (hcard : ∀ c ∈ C, (σ c).card = k)
+    (hcollision :
+      HasCofinalSourceCollisionRows A C N₀ σ b) :
+    ∃ D ⊆ C, D.Infinite ∧
+      ∃ σ' : ℕ → Finset ℕ,
+        HasSurvivingFiniteRiskSchedule A D σ' ∧
+        ∀ c ∈ D, (σ' c).card = k + 1 := by
+  obtain ⟨n, L, d, a, u, v, hnmono, hLinf, hdInj, hrows⟩ :=
+    hcollision
+  let P : Set ℕ := {i | HasAlternativeTriple A (d i) (n i)}
+  have hsplit :
+      (L ∩ P).Infinite ∨ (L \ P).Infinite := by
+    by_cases hLP : (L ∩ P).Infinite
+    · exact Or.inl hLP
+    · right
+      have hdiff :=
+        hLinf.diff (Set.not_infinite.mp hLP)
+      simpa [P, Set.ext_iff] using hdiff
+  rcases hsplit with hAltInf | hPrivateInf
+  · let K : Set ℕ := L ∩ P
+    have hKL : K ⊆ L := by
+      intro i hi
+      exact hi.1
+    have hsourceInf : (d '' K).Infinite :=
+      hAltInf.image (hdInj.mono hKL)
+    have hsourceC : d '' K ⊆ C := by
+      rintro c ⟨i, hiK, rfl⟩
+      exact (hrows i (hKL hiK)).2.1
+    apply infiniteAlternativeRiskSources_scheduleIncrement
+      hsourceC hsourceInf hschedule hcard
+    intro c hc
+    obtain ⟨i, hiK, rfl⟩ := hc
+    have hiL : i ∈ L := hKL hiK
+    obtain ⟨hfailed, hdiC, hdib, haiA, huiA, hviA,
+        hdia, hbuv, hba, hduv⟩ :=
+      hrows i hiL
+    exact ⟨n i, hfailed.2.2.2.1 (d i) hdiC,
+      ⟨b, hCA hbC, by omega⟩, hiK.2⟩
+  · exfalso
+    let K : Set ℕ := L \ P
+    have hKL : K ⊆ L := by
+      intro i hi
+      exact hi.1
+    have hsourceInf : (d '' K).Infinite :=
+      hPrivateInf.image (hdInj.mono hKL)
+    have hstream : ∀ N, ∃ g m, N ≤ m ∧
+        0 < g ∧ IsPrivateTriple A g m := by
+      intro N
+      obtain ⟨g, hgSource, hgN⟩ :=
+        hsourceInf.exists_gt N
+      obtain ⟨i, hiK, rfl⟩ := hgSource
+      have hiL : i ∈ L := hKL hiK
+      obtain ⟨hfailed, hdiC, hdib, haiA, huiA, hviA,
+          hdia, hbuv, hba, hduv⟩ :=
+        hrows i hiL
+      have hnotAlt :
+          ¬HasAlternativeTriple A (d i) (n i) := by
+        simpa [P] using hiK.2
+      have hprivate : IsPrivateTriple A (d i) (n i) :=
+        (alternativeTriple_or_private h0 hcov hfailed.2.1).resolve_left
+          hnotAlt
+      have hdpos : 0 < d i := by
+        by_contra hd0
+        have : d i = 0 := Nat.eq_zero_of_not_pos hd0
+        exact h0C (this ▸ hdiC)
+      exact ⟨d i, n i, by omega, hdpos, hprivate⟩
+    obtain ⟨B, hBA, hBinf, hsurvive⟩ :=
+      surviving_deletion_of_cofinal_privateStream
+        h0 hcov hstream hanchor
+    exact hglobal B hBA hBinf
+      (exactTupleBasis_diff_of_survival hsurvive)
+
+open Classical in
+/-- After eliminating the collision horn, an anchored counterexample
+with a genuine finite schedule has only two non-increment outputs:
+fixed collateral composition, or an explicit cofinal failure of
+co-sum normalization. -/
+theorem anchored_counterexample_riskSchedule_increment_or_fixed_or_nonNormalizable
+    {A C : Set ℕ} {N₀ k : ℕ} {σ : ℕ → Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hCA : C ⊆ A) (hCinf : C.Infinite) (h0C : 0 ∉ C)
+    (hglobal : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
+      ∃ w ∈ A, ∃ w' ∈ A,
+        w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hschedule : HasSurvivingFiniteRiskSchedule A C σ)
+    (hcard : ∀ b ∈ C, (σ b).card = k) :
+    (∃ D ⊆ C, D.Infinite ∧
+      ∃ σ' : ℕ → Finset ℕ,
+        HasSurvivingFiniteRiskSchedule A D σ' ∧
+        ∀ b ∈ D, (σ' b).card = k + 1) ∨
+    (∃ b ∈ C, HasCofinalFixedCollateralRows A C N₀ σ b) ∨
+    ∃ b ∈ C,
+      HasCofinalNonNormalizableCollateralRows A C N₀ σ b := by
+  rcases anchored_counterexample_riskSchedule_increment_or_terminalRows
+      h0 hcov hCA hCinf h0C hglobal hanchor hschedule hcard with
+    hincrement | hfixed | hcollision | hnonNormal
+  · exact Or.inl hincrement
+  · exact Or.inr (Or.inl hfixed)
+  · obtain ⟨b, hbC, hcollision⟩ := hcollision
+    exact Or.inl
+      (anchored_sourceCollisionRows_force_increment
+        h0 hcov hCA h0C hbC hglobal hanchor
+          hschedule hcard hcollision)
+  · exact Or.inr (Or.inr hnonNormal)
+
+open Classical in
+/-- **Fresh-source restart lemma.**
+Assume no genuine `k+1` schedule can be obtained below `C`.  Remove any
+finite set `F` of previously used sources and apply the anchored
+risk-source frontier to `C\F`.  Its increment horn contradicts the
+assumption, so a new fixed alternative source remains.  Choosing its
+cofinal stall above the sum of all old finite schedules makes the target
+off-schedule not merely on `C\F`, but on all of `C`.
+
+This is the finite-avoidance step needed to turn recurrent fixed sources
+into infinitely many distinct sources. -/
+theorem anchored_counterexample_freshAlternativeRiskSource
+    {A C : Set ℕ} {N₀ k : ℕ} {σ : ℕ → Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hCA : C ⊆ A) (hCinf : C.Infinite) (h0C : 0 ∉ C)
+    (hglobal : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
+      ∃ w ∈ A, ∃ w' ∈ A,
+        w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hschedule : HasSurvivingFiniteRiskSchedule A C σ)
+    (hcard : ∀ b ∈ C, (σ b).card = k)
+    (hnoIncrement : ¬∃ D ⊆ C, D.Infinite ∧
+      ∃ σ' : ℕ → Finset ℕ,
+        HasSurvivingFiniteRiskSchedule A D σ' ∧
+        ∀ b ∈ D, (σ' b).card = k + 1)
+    (F : Finset ℕ) :
+    ∃ b ∈ C, b ∉ F ∧ ∃ n,
+      (∀ c ∈ C, n ∉ σ c) ∧
+      (∃ a ∈ A, b + a = n) ∧
+      HasAlternativeTriple A b n := by
+  let D : Set ℕ := C \ (F : Set ℕ)
+  have hDC : D ⊆ C := by
+    intro x hx
+    exact hx.1
+  have hDinf : D.Infinite := by
+    exact hCinf.diff F.finite_toSet
+  have hDA : D ⊆ A :=
+    hDC.trans hCA
+  have h0D : 0 ∉ D := by
+    intro hzero
+    exact h0C (hDC hzero)
+  have hscheduleD :
+      HasSurvivingFiniteRiskSchedule A D σ := by
+    intro b hbD m hm
+    obtain ⟨hrisk, x, hxA, y, hyA, z, hzA,
+        hxC, hyC, hzC, hxyz⟩ :=
+      hschedule b (hDC hbD) m hm
+    exact ⟨hrisk, x, hxA, y, hyA, z, hzA,
+      fun hxD => hxC (hDC hxD),
+      fun hyD => hyC (hDC hyD),
+      fun hzD => hzC (hDC hzD), hxyz⟩
+  have hcardD : ∀ b ∈ D, (σ b).card = k := by
+    intro b hbD
+    exact hcard b (hDC hbD)
+  rcases
+      anchored_counterexample_riskSchedule_increment_or_fixedCollateral
+        (A := A) (C := D) (N₀ := N₀) (k := k) (σ := σ)
+        h0 hcov hDA hDinf h0D hglobal hanchor
+          hscheduleD hcardD with
+    hincrement | ⟨b, hbD, hcofinal⟩
+  · exfalso
+    obtain ⟨E, hED, hEinf, σ', hschedule', hcard'⟩ :=
+      hincrement
+    exact hnoIncrement
+      ⟨E, hED.trans hDC, hEinf, σ', hschedule', hcard'⟩
+  · let U : Finset ℕ := F.biUnion σ
+    obtain ⟨n, hnU, hfailed, halt⟩ :=
+      hcofinal (U.sum id)
+    refine ⟨b, hDC hbD, hbD.2, n, ?_,
+      hfailed.2.2.1, halt⟩
+    intro c hcC hnσ
+    by_cases hcF : c ∈ F
+    · have hnMemU : n ∈ U := by
+        exact Finset.mem_biUnion.mpr ⟨c, hcF, hnσ⟩
+      have hnLe : n ≤ U.sum id :=
+        Finset.single_le_sum
+          (fun x _hx => Nat.zero_le x) hnMemU
+      omega
+    · exact hfailed.2.2.2.1 c ⟨hcC, hcF⟩ hnσ
+
+open Classical in
+/-- **Fixed recurrent sources can be restarted away.**
+
+If no `k+1` schedule existed, the fresh-source restart lemma could be
+iterated.  At stage `i`, remove the finite set of earlier sources and
+choose a new source `bᵢ` with an alternative failed risk `nᵢ` outside
+every old schedule on all of `C`.  The sources are injective.  Applying
+the bounded free-set schedule increment theorem to their range then
+produces the forbidden `k+1` schedule.
+
+Consequently, in the anchor-abundant global-counterexample setting,
+*every* uniform finite genuine-risk schedule admits a genuine uniform
+increment.  The previously recurrent fixed-source horn is therefore a
+finite-stage artefact, not a terminal obstruction. -/
+theorem anchored_counterexample_riskSchedule_increment
+    {A C : Set ℕ} {N₀ k : ℕ} {σ : ℕ → Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hCA : C ⊆ A) (hCinf : C.Infinite) (h0C : 0 ∉ C)
+    (hglobal : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
+      ∃ w ∈ A, ∃ w' ∈ A,
+        w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
+    (hschedule : HasSurvivingFiniteRiskSchedule A C σ)
+    (hcard : ∀ b ∈ C, (σ b).card = k) :
+    ∃ D ⊆ C, D.Infinite ∧
+      ∃ σ' : ℕ → Finset ℕ,
+        HasSurvivingFiniteRiskSchedule A D σ' ∧
+        ∀ b ∈ D, (σ' b).card = k + 1 := by
+  by_contra hnoIncrement
+  have hchoice : ∀ F : Finset ℕ, ∃ b, ∃ n,
+      b ∈ C ∧ b ∉ F ∧
+      (∀ c ∈ C, n ∉ σ c) ∧
+      (∃ a ∈ A, b + a = n) ∧
+      HasAlternativeTriple A b n := by
+    intro F
+    obtain ⟨b, hbC, hbF, n, hoff, hrisk, halt⟩ :=
+      anchored_counterexample_freshAlternativeRiskSource
+        h0 hcov hCA hCinf h0C hglobal hanchor
+          hschedule hcard hnoIncrement F
+    exact ⟨b, n, hbC, hbF, hoff, hrisk, halt⟩
+  choose source target hdata using hchoice
+  let used : ℕ → Finset ℕ :=
+    fun i => Nat.rec (∅ : Finset ℕ)
+      (fun _ (F : Finset ℕ) => insert (source F) F) i
+  let b : ℕ → ℕ := fun i => source (used i)
+  let n : ℕ → ℕ := fun i => target (used i)
+  have husedSucc : ∀ i,
+      used (i + 1) = insert (b i) (used i) := by
+    intro i
+    simp only [used, b]
+  have husedStep : ∀ i, used i ⊆ used (i + 1) := by
+    intro i
+    rw [husedSucc]
+    exact Finset.subset_insert _ _
+  have husedMono : Monotone used :=
+    monotone_nat_of_le_succ husedStep
+  have hbUsedNext : ∀ i, b i ∈ used (i + 1) := by
+    intro i
+    rw [husedSucc]
+    exact Finset.mem_insert_self _ _
+  have hbC : ∀ i, b i ∈ C := by
+    intro i
+    exact (hdata (used i)).1
+  have hbFresh : ∀ i, b i ∉ used i := by
+    intro i
+    exact (hdata (used i)).2.1
+  have hbInjective : Function.Injective b := by
+    intro i j hij
+    by_contra hne
+    rcases lt_or_gt_of_ne hne with hijlt | hjilt
+    · have hbiUsed : b i ∈ used j :=
+        husedMono (Nat.succ_le_of_lt hijlt) (hbUsedNext i)
+      exact hbFresh j (hij ▸ hbiUsed)
+    · have hbjUsed : b j ∈ used i :=
+        husedMono (Nat.succ_le_of_lt hjilt) (hbUsedNext j)
+      exact hbFresh i (hij.symm ▸ hbjUsed)
+  have hKinf : (Set.range b).Infinite :=
+    Set.infinite_range_of_injective hbInjective
+  have hKC : Set.range b ⊆ C := by
+    rintro c ⟨i, rfl⟩
+    exact hbC i
+  have hincrement :=
+    infiniteAlternativeRiskSources_scheduleIncrement
+      hKC hKinf hschedule hcard
+      (fun c hc => by
+        obtain ⟨i, rfl⟩ := hc
+        have hi := hdata (used i)
+        exact ⟨n i, hi.2.2.1 (b i) (hbC i),
+          hi.2.2.2.1,
+          hi.2.2.2.2⟩)
+  exact hnoIncrement hincrement
+
+open Classical in
+/-- **Finite translation-slice fairness.**
+
+Let `Q` be any finite set of offsets.  For a source `b`, each target
+`b+q` is either represented by a triple avoiding `b`, or `b` is its
+absolute private guardian.  For fixed `q`, infinitely many private
+sources would form an unbounded private stream and contradict the
+anchor/global-counterexample hypotheses.  Removing the finite union of
+all private-source fibers leaves infinitely many sources with avoiding
+triples for every `q∈Q`.  The union of those finitely many three-point
+supports is still uniformly bounded, so one free-set thinning makes all
+of them survive simultaneously.
+
+Thus the genuine fairness problem is not finite: every finite collection
+of translate slices can be served on one infinite deletion.  The exact
+remaining issue is countable fusion while retaining infinitude. -/
+theorem anchored_counterexample_serves_finite_translationSlices
+    {A C : Set ℕ} {N₀ : ℕ} (Q : Finset ℕ)
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hCinf : C.Infinite)
+    (hCAbove : ∀ b ∈ C, N₀ ≤ b)
+    (hglobal : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
+      ∃ w ∈ A, ∃ w' ∈ A,
+        w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g) :
+    ∃ D ⊆ C, D.Infinite ∧
+      ∀ b ∈ D, ∀ q ∈ Q,
+        ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+          x ∉ D ∧ y ∉ D ∧ z ∉ D ∧
+          x + y + z = b + q := by
+  let BadAt : ℕ → Set ℕ := fun q =>
+    {b | b ∈ C ∧ IsPrivateTriple A b (b + q)}
+  have hBadAtFinite : ∀ q ∈ (Q : Set ℕ),
+      (BadAt q).Finite := by
+    intro q hqQ
+    apply Set.not_infinite.mp
+    intro hBadInf
+    have hstream : ∀ N, ∃ g m, N ≤ m ∧
+        0 < g ∧ IsPrivateTriple A g m := by
+      intro N
+      obtain ⟨b, hbBad, hbN⟩ :=
+        hBadInf.exists_gt N
+      have hbpos : 0 < b := by omega
+      exact ⟨b, b + q, by omega, hbpos, hbBad.2⟩
+    obtain ⟨B, hBA, hBinf, hsurvive⟩ :=
+      surviving_deletion_of_cofinal_privateStream
+        h0 hcov hstream hanchor
+    exact hglobal B hBA hBinf
+      (exactTupleBasis_diff_of_survival hsurvive)
+  let Bad : Set ℕ :=
+    ⋃ q ∈ (Q : Set ℕ), BadAt q
+  have hBadFinite : Bad.Finite := by
+    exact Q.finite_toSet.biUnion hBadAtFinite
+  let K : Set ℕ := C \ Bad
+  have hKinf : K.Infinite :=
+    hCinf.diff hBadFinite
+  have hKC : K ⊆ C := by
+    intro b hb
+    exact hb.1
+  have hrepchoice : ∀ b q, ∃ x, ∃ y, ∃ z,
+      b ∈ K → q ∈ Q →
+      x ∈ A ∧ y ∈ A ∧ z ∈ A ∧
+      x + y + z = b + q ∧
+      x ≠ b ∧ y ≠ b ∧ z ≠ b := by
+    intro b q
+    by_cases hbK : b ∈ K
+    · by_cases hqQ : q ∈ Q
+      · have hnotPrivate :
+            ¬IsPrivateTriple A b (b + q) := by
+          intro hprivate
+          apply hbK.2
+          simp only [Bad, Set.mem_iUnion]
+          exact ⟨q, hqQ, hbK.1, hprivate⟩
+        have halt : HasAlternativeTriple A b (b + q) :=
+          (alternativeTriple_or_private h0 hcov
+            (by have := hCAbove b hbK.1; omega)).resolve_right
+              hnotPrivate
+        obtain ⟨x, hxA, y, hyA, z, hzA,
+            hxyz, hxb, hyb, hzb⟩ := halt
+        exact ⟨x, y, z, fun _ _ =>
+          ⟨hxA, hyA, hzA, hxyz, hxb, hyb, hzb⟩⟩
+      · exact ⟨0, 0, 0, fun _ h => absurd h hqQ⟩
+    · exact ⟨0, 0, 0, fun h => absurd h hbK⟩
+  choose x y z hrep using hrepchoice
+  let f : ℕ → Finset ℕ := fun b =>
+    Q.biUnion fun q => {x b q, y b q, z b q}
+  have hfcard : ∀ b ∈ K, (f b).card ≤ 3 * Q.card := by
+    intro b hbK
+    calc
+      (f b).card ≤
+          ∑ q ∈ Q, ({x b q, y b q, z b q} : Finset ℕ).card := by
+        exact Finset.card_biUnion_le
+      _ ≤ ∑ _q ∈ Q, 3 := by
+        apply Finset.sum_le_sum
+        intro q hqQ
+        calc
+          ({x b q, y b q, z b q} : Finset ℕ).card ≤
+              ({y b q, z b q} : Finset ℕ).card + 1 := by
+            exact Finset.card_insert_le _ _
+          _ ≤ ({z b q} : Finset ℕ).card + 1 + 1 := by
+            exact Nat.add_le_add_right
+              (Finset.card_insert_le _ _) 1
+          _ ≤ 3 := by simp
+      _ = 3 * Q.card := by simp [Nat.mul_comm]
+  have hfavoid : ∀ b ∈ K, b ∉ f b := by
+    intro b hbK hb
+    obtain ⟨q, hqQ, hbSupport⟩ :=
+      Finset.mem_biUnion.mp hb
+    obtain ⟨hxA, hyA, hzA, hxyz, hxb, hyb, hzb⟩ :=
+      hrep b q hbK hqQ
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hbSupport
+    rcases hbSupport with h | h | h
+    · exact hxb h.symm
+    · exact hyb h.symm
+    · exact hzb h.symm
+  obtain ⟨D, hDK, hDinf, hfree⟩ :=
+    exists_infinite_freeSet_of_bounded_pointMap
+      hKinf f (3 * Q.card) hfcard hfavoid
+  refine ⟨D, hDK.trans hKC, hDinf, ?_⟩
+  intro b hbD q hqQ
+  have hbK := hDK hbD
+  obtain ⟨hxA, hyA, hzA, hxyz, hxb, hyb, hzb⟩ :=
+    hrep b q hbK hqQ
+  have hdis := Set.disjoint_left.mp (hfree b hbD)
+  refine ⟨x b q, hxA, y b q, hyA, z b q, hzA,
+    ?_, ?_, ?_, hxyz⟩
+  · intro hxD
+    exact hdis
+      (Finset.mem_biUnion.mpr
+        ⟨q, hqQ, by simp⟩) hxD
+  · intro hyD
+    exact hdis
+      (Finset.mem_biUnion.mpr
+        ⟨q, hqQ, by simp⟩) hyD
+  · intro hzD
+    exact hdis
+      (Finset.mem_biUnion.mpr
+        ⟨q, hqQ, by simp⟩) hzD
+
+open Classical in
+/-- Tail form of finite translation-slice fairness.  The lower-bound
+hypothesis is automatic after discarding the finite initial interval
+`[0,N₀)`. -/
+theorem anchored_counterexample_serves_finite_translationSlices_on_tail
+    {A C : Set ℕ} {N₀ : ℕ} (Q : Finset ℕ)
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hCinf : C.Infinite)
+    (hglobal : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
+      ∃ w ∈ A, ∃ w' ∈ A,
+        w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g) :
+    ∃ D ⊆ C, D.Infinite ∧
+      ∀ b ∈ D, ∀ q ∈ Q,
+        ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+          x ∉ D ∧ y ∉ D ∧ z ∉ D ∧
+          x + y + z = b + q := by
+  let K : Set ℕ := C \ Set.Iio N₀
+  have hKinf : K.Infinite :=
+    hCinf.diff (Set.finite_Iio N₀)
+  have hKAbove : ∀ b ∈ K, N₀ ≤ b := by
+    intro b hbK
+    exact Nat.le_of_not_gt hbK.2
+  obtain ⟨D, hDK, hDinf, hserve⟩ :=
+    anchored_counterexample_serves_finite_translationSlices
+      (C := K) Q h0 hcov hKinf hKAbove hglobal hanchor
+  exact ⟨D, hDK.trans Set.diff_subset, hDinf, hserve⟩
+
+open Classical in
+/-- Finite-slice fairness in genuine schedule form.  Any prescribed finite
+set `Q⊆A` can be installed as the exact risk schedule
+`σ(b)={b+q | q∈Q}` on an infinite thinning. -/
+theorem anchored_counterexample_has_prescribedFiniteRiskSchedule
+    {A C : Set ℕ} {N₀ : ℕ} (Q : Finset ℕ)
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hQA : ∀ q ∈ Q, q ∈ A)
+    (hCinf : C.Infinite)
+    (hglobal : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
+      ∃ w ∈ A, ∃ w' ∈ A,
+        w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g) :
+    ∃ D ⊆ C, D.Infinite ∧
+      ∃ σ : ℕ → Finset ℕ,
+        HasSurvivingFiniteRiskSchedule A D σ ∧
+        (∀ b, σ b = Q.image (fun q => b + q)) ∧
+        ∀ b ∈ D, (σ b).card = Q.card := by
+  obtain ⟨D, hDC, hDinf, hserve⟩ :=
+    anchored_counterexample_serves_finite_translationSlices_on_tail
+      (A := A) Q h0 hcov hCinf hglobal hanchor
+  let σ : ℕ → Finset ℕ :=
+    fun b => Q.image (fun q => b + q)
+  have hschedule : HasSurvivingFiniteRiskSchedule A D σ := by
+    intro b hbD m hm
+    simp only [σ, Finset.mem_image] at hm
+    obtain ⟨q, hqQ, rfl⟩ := hm
+    obtain ⟨x, hxA, y, hyA, z, hzA,
+        hxD, hyD, hzD, hxyz⟩ :=
+      hserve b hbD q hqQ
+    exact ⟨⟨q, hQA q hqQ, rfl⟩,
+      x, hxA, y, hyA, z, hzA,
+      hxD, hyD, hzD, hxyz⟩
+  refine ⟨D, hDC, hDinf, σ, hschedule, fun b => rfl, ?_⟩
+  intro b hbD
+  change (Q.image (fun q => b + q)).card = Q.card
+  exact Finset.card_image_of_injective Q
+    (fun q r hqr => by omega)
+
+open Classical in
+/-- Every finite offset window can be made fair on some infinite
+deletion: all risks `b+q` with `q∈A∩[0,M]` occur in the schedule.
+Only the dependence of the deletion on `M` remains. -/
+theorem anchored_counterexample_has_every_finite_fairWindow
+    {A C : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hCinf : C.Infinite)
+    (hglobal : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
+      ∃ w ∈ A, ∃ w' ∈ A,
+        w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g) :
+    ∀ M, ∃ D ⊆ C, D.Infinite ∧
+      ∃ σ : ℕ → Finset ℕ,
+        HasSurvivingFiniteRiskSchedule A D σ ∧
+        ∀ b ∈ D, ∀ q ∈ A, q ≤ M → b + q ∈ σ b := by
+  intro M
+  let Q : Finset ℕ :=
+    (Finset.range (M + 1)).filter fun q => q ∈ A
+  have hQA : ∀ q ∈ Q, q ∈ A := by
+    intro q hqQ
+    exact (Finset.mem_filter.mp hqQ).2
+  obtain ⟨D, hDC, hDinf, σ, hschedule, hσ, hcard⟩ :=
+    anchored_counterexample_has_prescribedFiniteRiskSchedule
+      (A := A) Q h0 hcov hQA hCinf hglobal hanchor
+  refine ⟨D, hDC, hDinf, σ, hschedule, ?_⟩
+  intro b hbD q hqA hqM
+  rw [hσ b]
+  apply Finset.mem_image.mpr
+  refine ⟨q, ?_, rfl⟩
+  exact Finset.mem_filter.mpr
+    ⟨Finset.mem_range.mpr (by omega), hqA⟩
+
+open Classical in
+/-- **Exact fixed-deletion fairness bridge.**
+If the same infinite deletion supports a fair finite schedule for every
+offset window, then it is the desired order-three deletion.  Coherence
+between the schedules is unnecessary: for a particular risk `b+a`, use
+the schedule at window `M=a`.
+
+Together with
+`anchored_counterexample_has_every_finite_fairWindow`, this exposes the
+remaining quantifier swap exactly:
+
+`∀ M, ∃ D_M` is proved; `∃ D, ∀ M` would finish the anchored branch. -/
+theorem fixedDeletion_allFiniteFairWindows_implies_basis
+    {A D : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (h0D : 0 ∉ D) (hcov : PairCovers A N₀)
+    (hfair : ∀ M, ∃ σ : ℕ → Finset ℕ,
+      HasSurvivingFiniteRiskSchedule A D σ ∧
+      ∀ b ∈ D, ∀ q ∈ A, q ≤ M → b + q ∈ σ b) :
+    IsExactTupleAsymptoticBasis (A \ D) 3 := by
+  apply deletion_criterion_local h0 h0D hcov
+  intro n hn
+  rintro ⟨b, hbD, a, haA, hba⟩
+  obtain ⟨σ, hschedule, hwindow⟩ := hfair a
+  have hmem : b + a ∈ σ b :=
+    hwindow b hbD a haA le_rfl
+  obtain ⟨hrisk, x, hxA, y, hyA, z, hzA,
+      hxD, hyD, hzD, hxyz⟩ :=
+    hschedule b hbD (b + a) hmem
+  exact ⟨x, hxA, y, hyA, z, hzA,
+    hxD, hyD, hzD, by omega⟩
+
+open Classical in
+/-- **Finite free-set solvability does not abstractly fuse over
+countably many slices.**
+
+Let `f q b = {q}` when `q<b`, and `∅` otherwise.  Inside every infinite
+reservoir, every finite set of indices `Q` has an infinite common free
+subreservoir: take a relative tail above all of `Q`.  But no infinite set
+is free for every `q`: if `q` belongs to the set, any later `b` points
+back to `q`.
+
+This one-point-map example is the exact compactness warning for
+`anchored_counterexample_serves_finite_translationSlices`.  A successful
+limit argument must use additive structure beyond bounded support size
+and finite-slice solvability. -/
+theorem finite_free_pointMaps_not_countably_fusible :
+    let f : ℕ → ℕ → Finset ℕ :=
+      fun q b => if q < b then {q} else ∅
+    (∀ C : Set ℕ, C.Infinite → ∀ Q : Finset ℕ,
+      ∃ D ⊆ C, D.Infinite ∧
+      ∀ q ∈ Q, ∀ b ∈ D,
+        Disjoint ((f q b : Finset ℕ) : Set ℕ) D) ∧
+    ¬∃ D : Set ℕ, D.Infinite ∧
+      ∀ q, ∀ b ∈ D,
+        Disjoint ((f q b : Finset ℕ) : Set ℕ) D := by
+  dsimp
+  constructor
+  · intro C hCinf Q
+    let D : Set ℕ := C \ Set.Iic (Q.sum id)
+    have hDinf : D.Infinite :=
+      hCinf.diff (Set.finite_Iic (Q.sum id))
+    refine ⟨D, Set.diff_subset, hDinf, ?_⟩
+    intro q hqQ b hbD
+    rw [Set.disjoint_left]
+    intro x hxf hxD
+    have hqLe : q ≤ Q.sum id :=
+      Finset.single_le_sum
+        (fun y _hy => Nat.zero_le y) hqQ
+    have hqb : q < b := by
+      have hbLarge : b ∉ Set.Iic (Q.sum id) := hbD.2
+      simp only [Set.mem_Iic] at hbLarge
+      omega
+    have hxq : x = q := by
+      simpa [hqb] using hxf
+    subst x
+    exact hxD.2 (by simpa only [Set.mem_Iic] using hqLe)
+  · rintro ⟨D, hDinf, hfree⟩
+    obtain ⟨q, hqD⟩ := hDinf.nonempty
+    obtain ⟨b, hbD, hqb⟩ := hDinf.exists_gt q
+    have hdis := Set.disjoint_left.mp (hfree q b hbD)
+    exact hdis (by simp [hqb]) hqD
+
+open Classical in
+/-- An infinite deletion for which every deleted point has both its
+selected target and one distinct off-selector target already served. -/
+def HasTwoTargetDoorThinning
+    (A C : Set ℕ) (N₀ : ℕ) (τ : ℕ → ℕ) : Prop :=
+  ∃ D : Set ℕ, D ⊆ C ∧ D.Infinite ∧
+    ∀ x ∈ D,
+      (∃ p ∈ A, ∃ q ∈ A, ∃ r ∈ A,
+        p ∉ D ∧ q ∉ D ∧ r ∉ D ∧ p + q + r = τ x) ∧
+      ∃ m, N₀ ≤ m ∧ x ≤ m ∧ τ x ≠ m ∧
+        (∀ b ∈ C, τ b ≠ m) ∧
+        ∃ p ∈ A, ∃ q ∈ A, ∃ r ∈ A,
+          p ∉ D ∧ q ∉ D ∧ r ∉ D ∧ p + q + r = m
+
+open Classical in
+/-- **Door thinning services two targets per deleted point.**
+From block-separated minimal committees of size at least two, choose in
+each block a door `dᵢ` and a different witness owner `eᵢ`.  Minimality
+gives `nᵢ=eᵢ+uᵢ+vᵢ` avoiding the door.  The three-point map
+`dᵢ ↦ {eᵢ,uᵢ,vᵢ}` is bounded and avoids its input, so a point-map free
+set yields an infinite set `D` of doors disjoint from every retained
+witness.
+
+Consequently each `x∈D` has both its selected target `τ x` and a distinct
+off-selector target represented in `A\D`.  This doubles the certified
+service per deleted point, though it does not yet serve every target in
+`D+A`. -/
+theorem blockSeparatedMultipleCommittees_has_twoTargetDoorThinning
+    {A C : Set ℕ} {N₀ : ℕ} {τ : ℕ → ℕ}
+    (hCA : C ⊆ A)
+    (hselected : ∀ b ∈ C,
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = τ b)
+    (hblocks :
+      HasBlockSeparatedMultipleOffSelectorCommittees A C N₀ τ) :
+    HasTwoTargetDoorThinning A C N₀ τ := by
+  unfold HasTwoTargetDoorThinning
+  obtain ⟨n, H, hnmono, hcomm, hcard, habove, hdisjoint⟩ :=
+    hblocks
+  have htwo : ∀ i, ∃ d ∈ H i, ∃ e ∈ H i, d ≠ e := by
+    intro i
+    apply Finset.one_lt_card.mp
+    have := hcard i
+    omega
+  choose d hdH e heH hde using htwo
+  have hcowitness : ∀ i, ∃ u ∈ A, ∃ v ∈ A,
+      e i + u + v = n i ∧
+      ∀ g ∈ H i, g ≠ e i → u ≠ g ∧ v ≠ g := by
+    intro i
+    exact minimalRepHub_member_has_pairCowitness
+      (hcomm i).2.2.2.1 (hcomm i).2.2.2.2.1 (heH i)
+  choose u huA v hvA huv havoid using hcowitness
+  have hdInjective : Function.Injective d := by
+    intro i j hdij
+    by_contra hij
+    rcases lt_or_gt_of_ne hij with hij | hji
+    · have hdis := Finset.disjoint_left.mp (hdisjoint i j hij)
+      have hdiHj : d i ∈ H j := by
+        rw [hdij]
+        exact hdH j
+      exact hdis (hdH i) hdiHj
+    · have hdis := Finset.disjoint_left.mp (hdisjoint j i hji)
+      have hdjHi : d j ∈ H i := by
+        rw [← hdij]
+        exact hdH i
+      exact hdis (hdH j) hdjHi
+  let K : Set ℕ := Set.range d
+  have hKinf : K.Infinite :=
+    Set.infinite_range_of_injective hdInjective
+  let idx : ℕ → ℕ := fun x =>
+    if hx : x ∈ K then Classical.choose hx else 0
+  have hidx : ∀ x ∈ K, d (idx x) = x := by
+    intro x hx
+    simpa [idx, hx] using Classical.choose_spec hx
+  let f : ℕ → Finset ℕ := fun x =>
+    {e (idx x), u (idx x), v (idx x)}
+  have hfcard : ∀ x ∈ K, (f x).card ≤ 3 := by
+    intro x hx
+    calc
+      (f x).card ≤
+          ({u (idx x), v (idx x)} : Finset ℕ).card + 1 := by
+        simpa [f] using
+          Finset.card_insert_le (e (idx x))
+            ({u (idx x), v (idx x)} : Finset ℕ)
+      _ ≤ ({v (idx x)} : Finset ℕ).card + 1 + 1 := by
+        exact Nat.add_le_add_right
+          (Finset.card_insert_le (u (idx x)) {v (idx x)}) 1
+      _ ≤ 3 := by simp
+  have hfavoid : ∀ x ∈ K, x ∉ f x := by
+    intro x hx
+    have hav :=
+      havoid (idx x) (d (idx x)) (hdH (idx x)) (hde (idx x))
+    simp only [f, Finset.mem_insert, Finset.mem_singleton, not_or]
+    refine ⟨?_, ?_, ?_⟩
+    · intro hxe
+      exact hde (idx x) ((hidx x hx).trans hxe)
+    · intro hxu
+      exact hav.1 ((hidx x hx).trans hxu).symm
+    · intro hxv
+      exact hav.2 ((hidx x hx).trans hxv).symm
+  obtain ⟨D, hDK, hDinf, hfree⟩ :=
+    exists_infinite_freeSet_of_bounded_pointMap
+      hKinf f 3 hfcard hfavoid
+  have hDC : D ⊆ C := by
+    intro x hxD
+    obtain ⟨i, rfl⟩ := hDK hxD
+    have hdFilter := (hcomm i).2.2.2.2.2 (hdH i)
+    exact (Finset.mem_filter.1 hdFilter).2
+  refine ⟨D, hDC, hDinf, ?_⟩
+  intro x hxD
+  have hxK := hDK hxD
+  obtain ⟨i, hix⟩ := hxK
+  have hidxi : idx x = i := by
+    apply hdInjective
+    rw [hidx x (hDK hxD), hix]
+  have hcoordAvoid : e i ∉ D ∧ u i ∉ D ∧ v i ∉ D := by
+    have hdis := Set.disjoint_left.mp (hfree x hxD)
+    refine ⟨?_, ?_, ?_⟩
+    · intro heD
+      exact hdis (by simp [f, hidxi]) heD
+    · intro huD
+      exact hdis (by simp [f, hidxi]) huD
+    · intro hvD
+      exact hdis (by simp [f, hidxi]) hvD
+  obtain ⟨p, hpA, q, hqA, r, hrA, hpC, hqC, hrC, hpqr⟩ :=
+    hselected x (hDC hxD)
+  have hselectedD :
+      ∃ p ∈ A, ∃ q ∈ A, ∃ r ∈ A,
+        p ∉ D ∧ q ∉ D ∧ r ∉ D ∧ p + q + r = τ x :=
+    ⟨p, hpA, q, hqA, r, hrA,
+      fun hpD => hpC (hDC hpD),
+      fun hqD => hqC (hDC hqD),
+      fun hrD => hrC (hDC hrD), hpqr⟩
+  have hxm : x ≤ n i := by
+    have hdFilter := (hcomm i).2.2.2.2.2 (hdH i)
+    have hdiRange := Finset.mem_range.1 (Finset.mem_filter.1 hdFilter).1
+    omega
+  refine ⟨hselectedD, n i, (hcomm i).1, hxm,
+    (hcomm i).2.1 x (hDC hxD), (hcomm i).2.1, ?_⟩
+  refine ⟨e i, ?_, u i, huA i, v i, hvA i,
+    hcoordAvoid.1, hcoordAvoid.2.1, hcoordAvoid.2.2, huv i⟩
+  have heFilter := (hcomm i).2.2.2.2.2 (heH i)
+  exact hCA (Finset.mem_filter.1 heFilter).2
+
+open Classical in
+/-- A two-target door thinning is equivalently an infinite subdeletion
+carrying a surviving service schedule of uniform cardinality two. -/
+theorem twoTargetDoorThinning_has_uniform_twoServiceSchedule
+    {A C : Set ℕ} {N₀ : ℕ} {τ : ℕ → ℕ}
+    (hdoors : HasTwoTargetDoorThinning A C N₀ τ) :
+    ∃ D ⊆ C, D.Infinite ∧
+      HasUniformSurvivingServiceSchedule A D 2 := by
+  obtain ⟨D, hDC, hDinf, hserve⟩ := hdoors
+  have hchoice : ∀ x, ∃ m, x ∈ D →
+      τ x ≠ m ∧
+      ∃ p ∈ A, ∃ q ∈ A, ∃ r ∈ A,
+        p ∉ D ∧ q ∉ D ∧ r ∉ D ∧ p + q + r = m := by
+    intro x
+    by_cases hxD : x ∈ D
+    · obtain ⟨m, hm₀, hxm, hne, hoff, hrep⟩ :=
+        (hserve x hxD).2
+      exact ⟨m, fun _ => ⟨hne, hrep⟩⟩
+    · exact ⟨0, fun hx => absurd hx hxD⟩
+  choose μ hμ using hchoice
+  let σ : ℕ → Finset ℕ := fun x => {τ x, μ x}
+  have hschedule : HasSurvivingFiniteServiceSchedule A D σ := by
+    intro x hxD m hm
+    simp only [σ, Finset.mem_insert, Finset.mem_singleton] at hm
+    rcases hm with hmt | hmt
+    · subst m
+      exact (hserve x hxD).1
+    · subst m
+      exact (hμ x hxD).2
+  have hcard : ∀ x ∈ D, (σ x).card = 2 := by
+    intro x hxD
+    have hne := (hμ x hxD).1
+    simp [σ, hne]
+  exact ⟨D, hDC, hDinf, σ, hschedule, hcard⟩
+
+open Classical in
+/-- **Refined fixed-repair-channel frontier.**
+Collision-free thinning of a cofinal fixed repair channel in a global
+counterexample produces one infinite deletion `C` and selector `τ`, and
+then exactly one of the three remaining committee geometries:
+
+1. one fixed deleted guardian recurs cofinally;
+2. singleton escaping committees yield cofinal non-big absolute private
+   wounds; or
+3. non-singleton committees form a block-separated pairwise-disjoint
+   sequence.
+
+The former unstructured off-selector stall stream has therefore been
+replaced by finite guardian geometry. -/
+theorem counterexample_fixedRepairChannel_committee_frontier
+    {A : Set ℕ} {N₀ w : ℕ} {B : Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ C ⊆ A, C.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ C) 3)
+    (hcofinal : ∀ X, ∃ b ∈ A, X < b ∧
+      HasTerminalRepairWoundThrough A N₀ B w b) :
+    ∃ C : Set ℕ, ∃ τ : ℕ → ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧ w ∉ C ∧ w ∈ A ∧
+      (∀ b ∈ C, N₀ ≤ τ b ∧ b ≤ τ b ∧
+        (∃ d ∈ insert b B, ∃ a ∈ A, d + a = τ b) ∧
+        IsPrivateTriple (A \ (B : Set ℕ)) b (τ b) ∧
+        ∃ u ∈ A \ C, ∃ v ∈ A \ C, w + u + v = τ b) ∧
+      (HasRecurrentOffSelectorGuardian A C N₀ τ ∨
+       HasCofinalNonbigOffSelectorPrivateStream A C N₀ τ ∨
+       HasBlockSeparatedMultipleOffSelectorCommittees A C N₀ τ) := by
+  obtain ⟨C, τ, hCA, hCinf, h0C, hwC, hwA, hdata⟩ :=
+    cofinal_fixedRepairChannel_has_collisionFree_selector hcofinal
+  have hselected : ∀ b ∈ C,
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = τ b := by
+    intro b hbC
+    obtain ⟨-, -, -, -, u, hu, v, hv, huv⟩ := hdata b hbC
+    exact ⟨w, hwA, u, hu.1, v, hv.1,
+      hwC, hu.2, hv.2, huv⟩
+  have hfailC := hfail C hCA hCinf
+  rcases selectedRepairs_recurrentGuardian_or_escapingCommittees
+      τ h0 h0C hcov hselected hfailC with hrec | hesc
+  · exact ⟨C, τ, hCA, hCinf, h0C, hwC, hwA, hdata,
+      Or.inl hrec⟩
+  · rcases escapingCommittees_singletonPrivate_or_uniformlyMultiple
+      h0 hcov hesc with hsingle | hmultiple
+    · have hnonbig :=
+        cofinal_offSelector_absolutePrivate_wounds_are_nonbig
+          h0 hcov hCA hsingle
+      exact ⟨C, τ, hCA, hCinf, h0C, hwC, hwA, hdata,
+        Or.inr (Or.inl hnonbig)⟩
+    · obtain ⟨W₀, T₀, hlarge, hsupply⟩ := hmultiple
+      have hblocks :=
+        escapingUniformlyMultipleCommittees_has_blockSequence
+          hlarge hesc
+      exact ⟨C, τ, hCA, hCinf, h0C, hwC, hwA, hdata,
+        Or.inr (Or.inr hblocks)⟩
+
+open Classical in
+/-- **Two-target fixed-channel frontier.**
+The block-separated multiple-committee horn of the preceding theorem
+already yields a second infinite collision-free thinning.  Hence the
+fixed-channel branch reduces further to: a recurrent guardian, a
+central/atomic singleton-private stream, or an infinite deletion with two
+certified surviving targets per deleted point. -/
+theorem counterexample_fixedRepairChannel_twoTarget_frontier
+    {A : Set ℕ} {N₀ w : ℕ} {B : Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ C ⊆ A, C.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ C) 3)
+    (hcofinal : ∀ X, ∃ b ∈ A, X < b ∧
+      HasTerminalRepairWoundThrough A N₀ B w b) :
+    ∃ C : Set ℕ, ∃ τ : ℕ → ℕ,
+      C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧ w ∉ C ∧ w ∈ A ∧
+      (∀ b ∈ C, N₀ ≤ τ b ∧ b ≤ τ b ∧
+        (∃ d ∈ insert b B, ∃ a ∈ A, d + a = τ b) ∧
+        IsPrivateTriple (A \ (B : Set ℕ)) b (τ b) ∧
+        ∃ u ∈ A \ C, ∃ v ∈ A \ C, w + u + v = τ b) ∧
+      (HasRecurrentOffSelectorGuardian A C N₀ τ ∨
+       HasCofinalNonbigOffSelectorPrivateStream A C N₀ τ ∨
+       HasTwoTargetDoorThinning A C N₀ τ) := by
+  obtain ⟨C, τ, hCA, hCinf, h0C, hwC, hwA, hdata,
+    hrec | hprivate | hblocks⟩ :=
+    counterexample_fixedRepairChannel_committee_frontier
+      h0 hcov hfail hcofinal
+  · exact ⟨C, τ, hCA, hCinf, h0C, hwC, hwA, hdata,
+      Or.inl hrec⟩
+  · exact ⟨C, τ, hCA, hCinf, h0C, hwC, hwA, hdata,
+      Or.inr (Or.inl hprivate)⟩
+  · have hselected : ∀ b ∈ C,
+        ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+          x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = τ b := by
+      intro b hbC
+      obtain ⟨-, -, -, -, u, hu, v, hv, huv⟩ := hdata b hbC
+      exact ⟨w, hwA, u, hu.1, v, hv.1,
+        hwC, hu.2, hv.2, huv⟩
+    have hdoors :=
+      blockSeparatedMultipleCommittees_has_twoTargetDoorThinning
+        hCA hselected hblocks
+    exact ⟨C, τ, hCA, hCinf, h0C, hwC, hwA, hdata,
+      Or.inr (Or.inr hdoors)⟩
+
+open Classical in
+/-- An absolute terminal wound in the non-big regime: the co-offset is at
+least the guardian. -/
+def HasNonBigAbsoluteTerminalWound
+    (A : Set ℕ) (N₀ : ℕ) (B : Finset ℕ) (b : ℕ) : Prop :=
+  ∃ n, N₀ ≤ n ∧ b ≤ n ∧ 2 * b ≤ n ∧
+    (∃ d ∈ insert b B, ∃ a ∈ A, d + a = n) ∧
+    IsPrivateTriple (A \ (B : Set ℕ)) b n ∧
+    IsPrivateTriple A b n
+
+open Classical in
+/-- A cofinal stream of absolute terminal wounds can be thinned to the
+non-big regime `2b≤n`; otherwise its cofinal big substream contradicts
+`no_cofinal_big_absolute_private_guardians`. -/
+theorem cofinal_absolute_terminal_wounds_are_nonbig
+    {A : Set ℕ} {N₀ : ℕ} {B : Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hcofinal : ∀ X, ∃ b ∈ A, X < b ∧
+      HasAbsoluteTerminalWound A N₀ B b) :
+    ∀ X, ∃ b ∈ A, X < b ∧
+      HasNonBigAbsoluteTerminalWound A N₀ B b := by
+  by_contra hnonbig
+  push Not at hnonbig
+  obtain ⟨X₀, hX₀⟩ := hnonbig
+  have hbigCofinal : ∀ X, ∃ b ∈ A, X < b ∧
+      ∃ n, IsBigAbsolutePrivateWound A N₀ b n := by
+    intro X
+    obtain ⟨b, hbA, hbLarge, n, hn, hbn, hrisk,
+      hrelative, habsolute⟩ := hcofinal (max X X₀)
+    have hbX₀ : X₀ < b := by omega
+    have hbig : n < 2 * b := by
+      by_contra hnotBig
+      have hnonBig : 2 * b ≤ n := Nat.le_of_not_gt hnotBig
+      exact hX₀ b hbA hbX₀
+        ⟨n, hn, hbn, hnonBig, hrisk, hrelative, habsolute⟩
+    exact ⟨b, hbA, by omega, n,
+      hn, hbn, hbig, habsolute⟩
+  exact no_cofinal_big_absolute_private_guardians h0 hcov hbigCofinal
+
+open Classical in
+/-- **Final moving-prefix frontier.**
+Every counterexample has one safe zero-preserving finite prefix `B` and
+falls into exactly the two surviving cofinal geometries:
+
+1. arbitrarily large absolute private guardians `b` with targets
+   `n≥2b`; or
+2. repairs for arbitrarily large relative private guardians all pass
+   through one fixed old element `w∈B`.
+
+The big-guardian absolute branch and all moving/fiber/fixed-stall losses
+have been eliminated. -/
+theorem counterexample_nonbig_absolute_or_fixed_prefix_repairs
+    {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ B : Finset ℕ,
+      FinitePrefixServesRisks A N₀ B ∧ 0 ∉ B ∧
+      ((∀ X, ∃ b ∈ A, X < b ∧
+          HasNonBigAbsoluteTerminalWound A N₀ B b) ∨
+       ∃ w ∈ B, ∀ X, ∃ b ∈ A, X < b ∧
+          HasTerminalRepairWoundThrough A N₀ B w b) := by
+  obtain ⟨B, hserved, h0B, habsolute | hrepair⟩ :=
+    counterexample_cofinal_absolute_or_fixed_prefix_repairs h0 hcov hfail
+  · exact ⟨B, hserved, h0B, Or.inl
+      (cofinal_absolute_terminal_wounds_are_nonbig
+        h0 hcov habsolute)⟩
+  · exact ⟨B, hserved, h0B, Or.inr hrepair⟩
+
+open Classical in
+/-- A terminal absolute wound exactly at the guardian's double. -/
+def HasDoubleAbsoluteTerminalWound
+    (A : Set ℕ) (N₀ : ℕ) (B : Finset ℕ) (b : ℕ) : Prop :=
+  N₀ ≤ 2 * b ∧
+    (∃ d ∈ insert b B, ∃ a ∈ A, d + a = 2 * b) ∧
+    IsPrivateTriple (A \ (B : Set ℕ)) b (2 * b) ∧
+    IsPrivateTriple A b (2 * b)
+
+open Classical in
+/-- Absolute privacy at `2b` pins its covering pair uniquely to `b+b`.
+This is the pointwise central geometry. -/
+theorem absolute_private_double_forces_unique_pair
+    {A : Set ℕ} {b : ℕ}
+    (h0 : 0 ∈ A) (hbpos : 0 < b)
+    (hprivate : IsPrivateTriple A b (2 * b)) :
+    ∀ x ∈ A, ∀ y ∈ A, x + y = 2 * b → x = b ∧ y = b := by
+  intro x hxA y hyA hxy
+  rcases hprivate.2 x hxA y hyA 0 h0 (by omega) with
+    hxb | hyb | h0b
+  · exact ⟨hxb, by omega⟩
+  · exact ⟨by omega, hyb⟩
+  · exact absurd h0b (Nat.ne_of_lt hbpos)
+
+open Classical in
+/-- **Strict small absolute guardians are zero-atomic and create a
+desert.**
+For an absolute private target `n` with `2b<n`, the co-representative
+`q=n-b` lies in `A` and satisfies `b<q`.  Any pair `x+y=b` would make
+`q+x+y=n`; privacy forces `x=b` or `y=b`.  Thus `{b}` is a singleton
+pair hub at `b`.  The standard small-guardian law also makes
+`(q,n-N₀]` empty in `A`. -/
+theorem strict_small_absolute_private_structure
+    {A : Set ℕ} {N₀ b n : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hbpos : 0 < b) (hn : N₀ ≤ n)
+    (hprivate : IsPrivateTriple A b n) (hstrict : 2 * b < n) :
+    ∃ q ∈ A, b < q ∧ b + q = n ∧
+      IsPairHub A b {b} ∧
+      ∀ z ∈ A, q < z → z + N₀ ≤ n → False := by
+  obtain ⟨q, hqA, hbq⟩ :=
+    hprivate.corep_mem h0 hcov hbpos hn
+  have hbq' : b < q := by omega
+  have hpairHub : IsPairHub A b {b} := by
+    intro x hxA y hyA hxy
+    rcases hprivate.2 q hqA x hxA y hyA (by omega) with
+      hqb | hxb | hyb
+    · exact absurd hqb (Nat.ne_of_lt hbq').symm
+    · exact Or.inl (by simp [hxb])
+    · exact Or.inr (by simp [hyb])
+  refine ⟨q, hqA, hbq', hbq, hpairHub, ?_⟩
+  intro z hzA hqz hzHigh
+  exact hprivate.small_desert h0 hcov hbpos hstrict hzA
+    (by omega) hzHigh
+
+open Classical in
+/-- The singleton-committee branch has the same exact central/atomic
+split as the original absolute-private branch: cofinally private doubles
+with a unique covering pair, or cofinally strict-small singleton pair
+hubs with a post-corepresentative desert. -/
+theorem cofinal_nonbig_offSelector_privateStream_split
+    {A C : Set ℕ} {N₀ : ℕ} {τ : ℕ → ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hstream : HasCofinalNonbigOffSelectorPrivateStream
+      A C N₀ τ) :
+    (∀ W T, ∃ h ∈ C, W < h ∧ T ≤ 2 * h ∧ N₀ ≤ 2 * h ∧
+      τ h ≠ 2 * h ∧ IsPrivateTriple A h (2 * h) ∧
+      ∀ x ∈ A, ∀ y ∈ A, x + y = 2 * h → x = h ∧ y = h) ∨
+    (∀ W T, ∃ n, T ≤ n ∧ ∃ h ∈ C,
+      W < h ∧ N₀ ≤ n ∧ 2 * h < n ∧ τ h ≠ n ∧
+      IsPrivateTriple A h n ∧
+      ∃ q ∈ A, h < q ∧ h + q = n ∧
+        IsPairHub A h {h} ∧
+        ∀ z ∈ A, q < z → z + N₀ ≤ n → False) := by
+  by_cases hdouble : ∀ W T, ∃ h ∈ C,
+      W < h ∧ T ≤ 2 * h ∧ N₀ ≤ 2 * h ∧
+      τ h ≠ 2 * h ∧ IsPrivateTriple A h (2 * h) ∧
+      ∀ x ∈ A, ∀ y ∈ A, x + y = 2 * h → x = h ∧ y = h
+  · exact Or.inl hdouble
+  · right
+    push Not at hdouble
+    obtain ⟨W₀, T₀, hnoDouble⟩ := hdouble
+    intro W T
+    obtain ⟨n, hnT, h, hhC, hhLarge, hhn, hn₀, hnonbig,
+      hoff, hprivate⟩ :=
+      hstream (max W (max W₀ 0)) (max T T₀)
+    have hhpos : 0 < h := by omega
+    have hstrict : 2 * h < n := by
+      rcases lt_or_eq_of_le hnonbig with hlt | heq
+      · exact hlt
+      · exfalso
+        have hunique :=
+          absolute_private_double_forces_unique_pair h0 hhpos
+            (by simpa [heq] using hprivate)
+        obtain ⟨x, hxA, y, hyA, hxy, hbadPair⟩ :=
+          hnoDouble h hhC (by omega) (by omega) (by omega)
+            (by simpa [heq] using hoff)
+            (by simpa [heq] using hprivate)
+        have hxyUnique := hunique x hxA y hyA hxy
+        exact hbadPair hxyUnique.1 hxyUnique.2
+    obtain ⟨q, hqA, hhq, hhqsum, hpairHub, hdesert⟩ :=
+      strict_small_absolute_private_structure
+        h0 hcov hhpos hn₀ hprivate hstrict
+    exact ⟨n, by omega, h, hhC, by omega, hn₀, hstrict,
+      hoff, hprivate, q, hqA, hhq, hhqsum, hpairHub, hdesert⟩
+
+open Classical in
+/-- A strict-small terminal wound, including its forced co-representative,
+singleton pair hub, and desert. -/
+def HasStrictSmallAbsoluteTerminalWound
+    (A : Set ℕ) (N₀ : ℕ) (B : Finset ℕ) (b : ℕ) : Prop :=
+  ∃ n, N₀ ≤ n ∧ b ≤ n ∧ 2 * b < n ∧
+    (∃ d ∈ insert b B, ∃ a ∈ A, d + a = n) ∧
+    IsPrivateTriple (A \ (B : Set ℕ)) b n ∧
+    IsPrivateTriple A b n ∧
+    ∃ q ∈ A, b < q ∧ b + q = n ∧
+      IsPairHub A b {b} ∧
+      ∀ z ∈ A, q < z → z + N₀ ≤ n → False
+
+open Classical in
+/-- Cofinal non-big absolute wounds stabilize to one of their two exact
+size regimes: private doubles, or strict-small zero-atomic deserts. -/
+theorem cofinal_nonbig_absolute_terminal_wounds_split
+    {A : Set ℕ} {N₀ : ℕ} {B : Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hcofinal : ∀ X, ∃ b ∈ A, X < b ∧
+      HasNonBigAbsoluteTerminalWound A N₀ B b) :
+    (∀ X, ∃ b ∈ A, X < b ∧
+      HasDoubleAbsoluteTerminalWound A N₀ B b) ∨
+    (∀ X, ∃ b ∈ A, X < b ∧
+      HasStrictSmallAbsoluteTerminalWound A N₀ B b) := by
+  by_cases hdouble : ∀ X, ∃ b ∈ A, X < b ∧
+      HasDoubleAbsoluteTerminalWound A N₀ B b
+  · exact Or.inl hdouble
+  · right
+    push Not at hdouble
+    obtain ⟨X₀, hX₀⟩ := hdouble
+    intro X
+    obtain ⟨b, hbA, hbLarge, n, hn, hbn, hnonbig,
+      hrisk, hrelative, habsolute⟩ :=
+      hcofinal (max X X₀)
+    have hbX₀ : X₀ < b := by omega
+    have hstrict : 2 * b < n := by
+      rcases lt_or_eq_of_le hnonbig with hlt | heq
+      · exact hlt
+      · exfalso
+        apply hX₀ b hbA hbX₀
+        exact ⟨by omega,
+          by simpa [heq] using hrisk,
+          by simpa [heq] using hrelative,
+          by simpa [heq] using habsolute⟩
+    obtain ⟨q, hqA, hbq, hbqsum, hpairHub, hdesert⟩ :=
+      strict_small_absolute_private_structure
+        h0 hcov (by omega) hn habsolute hstrict
+    exact ⟨b, hbA, by omega, n, hn, hbn, hstrict,
+      hrisk, hrelative, habsolute,
+      q, hqA, hbq, hbqsum, hpairHub, hdesert⟩
+
+open Classical in
+/-- **Central/atomic/fixed-repair terminal trichotomy.**
+The moving-prefix line now ends in three rigid cofinal models at one finite
+safe prefix:
+
+1. absolute private targets exactly `2b`;
+2. strict-small absolute targets, where `b` is singleton pair-atomic and a
+   long desert follows `q=n-b`;
+3. repair triples routed through one fixed old `w∈B`.
+
+No candidate-supply, moving-fiber, collateral, scale-switching, fixed-stall,
+or big-guardian alternative remains. -/
+theorem counterexample_double_or_strictSmall_or_fixedPrefixRepairs
+    {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ B : Finset ℕ,
+      FinitePrefixServesRisks A N₀ B ∧ 0 ∉ B ∧
+      ((∀ X, ∃ b ∈ A, X < b ∧
+          HasDoubleAbsoluteTerminalWound A N₀ B b) ∨
+       (∀ X, ∃ b ∈ A, X < b ∧
+          HasStrictSmallAbsoluteTerminalWound A N₀ B b) ∨
+       ∃ w ∈ B, ∀ X, ∃ b ∈ A, X < b ∧
+          HasTerminalRepairWoundThrough A N₀ B w b) := by
+  obtain ⟨B, hserved, h0B, hnonbig | hrepair⟩ :=
+    counterexample_nonbig_absolute_or_fixed_prefix_repairs h0 hcov hfail
+  · rcases cofinal_nonbig_absolute_terminal_wounds_split
+      h0 hcov hnonbig with hdouble | hstrict
+    · exact ⟨B, hserved, h0B, Or.inl hdouble⟩
+    · exact ⟨B, hserved, h0B, Or.inr (Or.inl hstrict)⟩
+  · exact ⟨B, hserved, h0B, Or.inr (Or.inr hrepair)⟩
+
+/-- A finite quantitative certificate saying that many targets stall against
+one fixed deletion prefix and carry enough surviving low mass to violate the
+popular-difference bound at multiplicity threshold `D`. -/
+def FixedPrefixStallMassCertificate
+    (A : Set ℕ) (N₀ D : ℕ) : Prop := by
+  classical
+  exact ∃ X L : ℕ, ∃ B S : Finset ℕ,
+    B.Nonempty ∧
+    (∀ n ∈ S, N₀ ≤ n ∧ n ≤ X ∧ ∀ w ∈ B, w ≤ n) ∧
+    (∀ n ∈ S, ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+      x ∉ B → y ∉ B → z ∉ B → x + y + z ≠ n) ∧
+    (∀ n ∈ S,
+      B.card * L ≤
+        ((Finset.range (n - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ B)).card) ∧
+    ∀ t, S.card ≤ B.card * t → t ≤ S.card →
+      ((Finset.range (X + 1)).filter (fun x => x ∈ A)).card *
+          (t * ((Finset.range (X + 1)).filter
+              (fun x => x ∈ A)).card +
+            t * t * D) <
+        (t * L) ^ 2
+
+/-- **One explicit inequality pays for every possible stall fiber.**
+Write `s = |S|`, `k = |B|`, and
+
+`q = (s + k - 1) / k = ⌈s/k⌉`.
+
+Every fiber size produced by the fixed-prefix pigeonhole satisfies
+`q ≤ t ≤ s`.  Hence its popular-difference left side is at most the
+left side evaluated at `s`, while its squared mass lower bound is at least
+the one evaluated at `q`.  A single strict endpoint inequality therefore
+implies the universal numerical hypothesis in
+`FixedPrefixStallMassCertificate`. -/
+theorem stall_mass_quantitative_of_single_inequality
+    {s k α L D : ℕ} (hk : 0 < k)
+    (hsingle :
+      α * (s * α + s * s * D) <
+        (((s + k - 1) / k) * L) ^ 2) :
+    ∀ t, s ≤ k * t → t ≤ s →
+      α * (t * α + t * t * D) < (t * L) ^ 2 := by
+  intro t hst hts
+  have hceil : (s + k - 1) / k ≤ t := by
+    rw [Nat.div_le_iff_le_mul hk]
+    have hadd : s + k ≤ k * t + k :=
+      Nat.add_le_add_right hst k
+    have hsub := Nat.sub_le_sub_right hadd 1
+    simpa [Nat.mul_comm] using hsub
+  have hlinear : t * α ≤ s * α :=
+    Nat.mul_le_mul_right α hts
+  have hquadratic : t * t * D ≤ s * s * D :=
+    Nat.mul_le_mul_right D (Nat.mul_le_mul hts hts)
+  have hinside :
+      t * α + t * t * D ≤ s * α + s * s * D :=
+    Nat.add_le_add hlinear hquadratic
+  have hleft :
+      α * (t * α + t * t * D) ≤
+        α * (s * α + s * s * D) :=
+    Nat.mul_le_mul_left α hinside
+  have hbase :
+      ((s + k - 1) / k) * L ≤ t * L :=
+    Nat.mul_le_mul_right L hceil
+  have hright :
+      (((s + k - 1) / k) * L) ^ 2 ≤ (t * L) ^ 2 :=
+    Nat.pow_le_pow_left hbase 2
+  exact hleft.trans_lt (hsingle.trans_le hright)
+
+open Classical in
+/-- Build a fixed-prefix stall-mass certificate from one checkable endpoint
+inequality rather than a universally quantified condition on the unknown
+pigeonhole fiber size. -/
+theorem fixedPrefixStallMassCertificate_of_single_inequality
+    {A : Set ℕ} {N₀ X L D : ℕ} {B S : Finset ℕ}
+    (hB : B.Nonempty)
+    (hscale : ∀ n ∈ S, N₀ ≤ n ∧ n ≤ X ∧
+      ∀ w ∈ B, w ≤ n)
+    (hstall : ∀ n ∈ S, ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+      x ∉ B → y ∉ B → z ∉ B → x + y + z ≠ n)
+    (hlow : ∀ n ∈ S,
+      B.card * L ≤
+        ((Finset.range (n - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ B)).card)
+    (hsingle :
+      ((Finset.range (X + 1)).filter (fun x => x ∈ A)).card *
+          (S.card * ((Finset.range (X + 1)).filter
+              (fun x => x ∈ A)).card +
+            S.card * S.card * D) <
+        (((S.card + B.card - 1) / B.card) * L) ^ 2) :
+    FixedPrefixStallMassCertificate A N₀ D := by
+  refine ⟨X, L, B, S, hB, hscale, hstall, hlow, ?_⟩
+  exact stall_mass_quantitative_of_single_inequality
+    (Finset.card_pos.mpr hB) hsingle
+
+open Classical in
+/-- **A fixed prefix amplifies a family of stalls into symmetry mass.**
+Suppose every target in `S` stalls against the same nonempty finite deletion
+prefix `B`.  If at least `|B| * L` surviving low elements are available at
+each stall, then one fixed `w ∈ B` is charged by a large fiber of the stalls.
+After translating that fiber by `w`, we obtain a family `T` of distinct
+wealthy targets:
+
+* `|S| ≤ |B| * |T|`;
+* every target in `T` has at least `L` pair representations;
+* their total symmetry mass is at most `|T| * |A ∩ [0,X]|`.
+
+The last two estimates are the exact quantitative inputs consumed by the
+popular-difference law. -/
+theorem stall_family_mass_amplifier
+    {A : Set ℕ} {N₀ X L : ℕ} {B S : Finset ℕ}
+    (hcov : PairCovers A N₀) (hB : B.Nonempty)
+    (hscale : ∀ n ∈ S, N₀ ≤ n ∧ n ≤ X ∧
+      ∀ w ∈ B, w ≤ n)
+    (hstall : ∀ n ∈ S, ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+      x ∉ B → y ∉ B → z ∉ B → x + y + z ≠ n)
+    (hlow : ∀ n ∈ S,
+      B.card * L ≤
+        ((Finset.range (n - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ B)).card) :
+    ∃ w ∈ B, ∃ T : Finset ℕ,
+      S.card ≤ B.card * T.card ∧ T.card ≤ S.card ∧
+      (∀ M ∈ T, M ≤ X) ∧
+      T.card * L ≤
+        ∑ M ∈ T, ((Finset.range (M + 1)).filter
+          (fun z => z ∈ A ∧ (M - z) ∈ A)).card ∧
+      (∑ M ∈ T, ((Finset.range (M + 1)).filter
+          (fun z => z ∈ A ∧ (M - z) ∈ A)).card) ≤
+        T.card *
+          ((Finset.range (X + 1)).filter (fun x => x ∈ A)).card := by
+  have hBpos : 0 < B.card := Finset.card_pos.mpr hB
+  have hpick : ∀ n, ∃ w, n ∈ S →
+      w ∈ B ∧
+        L ≤ ((Finset.range (n - w + 1)).filter
+          (fun x => x ∈ A ∧ (n - w - x) ∈ A)).card := by
+    intro n
+    by_cases hnS : n ∈ S
+    · obtain ⟨w, hwB, hwealth⟩ :=
+        stall_forces_wealth hcov hB (hscale n hnS).1
+          (hstall n hnS)
+      refine ⟨w, fun _ => ⟨hwB, ?_⟩⟩
+      apply le_of_mul_le_mul_left
+        (le_trans (hlow n hnS) hwealth) hBpos
+    · exact ⟨hB.choose, fun h => absurd h hnS⟩
+  choose g hg using hpick
+  set fib : ℕ → Finset ℕ := fun w =>
+    S.filter (fun n => g n = w) with hfib
+  have hcover : S ⊆ B.biUnion fib := by
+    intro n hnS
+    rw [Finset.mem_biUnion]
+    exact ⟨g n, (hg n hnS).1,
+      Finset.mem_filter.2 ⟨hnS, rfl⟩⟩
+  obtain ⟨w, hwB, hwmax⟩ :=
+    Finset.exists_max_image B (fun w => (fib w).card) hB
+  set R := fib w with hR
+  have hScard : S.card ≤ B.card * R.card := by
+    have hsum :
+        S.card ≤ ∑ v ∈ B, (fib v).card :=
+      le_trans (Finset.card_le_card hcover) Finset.card_biUnion_le
+    have hmaxsum :
+        ∑ v ∈ B, (fib v).card ≤ B.card * (fib w).card := by
+      rw [← smul_eq_mul]
+      exact Finset.sum_le_card_nsmul _ _ _
+        (fun v hv => hwmax v hv)
+    rw [hR]
+    exact le_trans hsum hmaxsum
+  have hRS : R ⊆ S := by
+    intro n hnR
+    rw [hR, hfib, Finset.mem_filter] at hnR
+    exact hnR.1
+  have hsubinj :
+      (R : Set ℕ).InjOn (fun n => n - w) := by
+    intro n hnR m hmR hnm
+    have hnS := hRS hnR
+    have hmS := hRS hmR
+    have hwn := (hscale n hnS).2.2 w hwB
+    have hwm := (hscale m hmS).2.2 w hwB
+    calc
+      n = (n - w) + w := (Nat.sub_add_cancel hwn).symm
+      _ = (m - w) + w := congrArg (fun t => t + w) hnm
+      _ = m := Nat.sub_add_cancel hwm
+  set T := R.image (fun n => n - w) with hT
+  have hTcard : T.card = R.card := by
+    rw [hT, Finset.card_image_iff.mpr hsubinj]
+  have hTle : T.card ≤ S.card := by
+    rw [hTcard]
+    exact Finset.card_le_card hRS
+  have hTX : ∀ M ∈ T, M ≤ X := by
+    intro M hMT
+    rw [hT, Finset.mem_image] at hMT
+    obtain ⟨n, hnR, rfl⟩ := hMT
+    exact le_trans (Nat.sub_le n w) (hscale n (hRS hnR)).2.1
+  have hwealth : ∀ M ∈ T,
+      L ≤ ((Finset.range (M + 1)).filter
+        (fun z => z ∈ A ∧ (M - z) ∈ A)).card := by
+    intro M hMT
+    rw [hT, Finset.mem_image] at hMT
+    obtain ⟨n, hnR, rfl⟩ := hMT
+    have hnRf := hnR
+    rw [hR, hfib, Finset.mem_filter] at hnRf
+    have hp := (hg n hnRf.1).2
+    rw [hnRf.2] at hp
+    exact hp
+  have hlower :
+      T.card * L ≤
+        ∑ M ∈ T, ((Finset.range (M + 1)).filter
+          (fun z => z ∈ A ∧ (M - z) ∈ A)).card := by
+    calc
+      T.card * L = ∑ _M ∈ T, L := by
+        simp
+      _ ≤ ∑ M ∈ T, ((Finset.range (M + 1)).filter
+          (fun z => z ∈ A ∧ (M - z) ∈ A)).card :=
+        Finset.sum_le_sum hwealth
+  have heachUpper : ∀ M ∈ T,
+      ((Finset.range (M + 1)).filter
+        (fun z => z ∈ A ∧ (M - z) ∈ A)).card ≤
+      ((Finset.range (X + 1)).filter (fun x => x ∈ A)).card := by
+    intro M hMT
+    apply Finset.card_le_card
+    intro z hz
+    rw [Finset.mem_filter, Finset.mem_range] at hz
+    rw [Finset.mem_filter, Finset.mem_range]
+    exact ⟨by have := hTX M hMT; omega, hz.2.1⟩
+  have hupper :
+      (∑ M ∈ T, ((Finset.range (M + 1)).filter
+          (fun z => z ∈ A ∧ (M - z) ∈ A)).card) ≤
+        T.card *
+          ((Finset.range (X + 1)).filter (fun x => x ∈ A)).card := by
+    rw [← smul_eq_mul]
+    exact Finset.sum_le_card_nsmul _ _ _ heachUpper
+  refine ⟨w, hwB, T, ?_, hTle, hTX, hlower, hupper⟩
+  rw [hTcard]
+  exact hScard
 
 open Classical in
 /-- **Wealthy targets are symmetric.**  The representation set
@@ -18441,16 +24738,17 @@ every difference d ≤ X is realised at most D times in the basis
                        α = |A ∩ [0,X]|.
 
 Contrapositive — the usable form: a family of wealthy targets
-whose symmetry mass beats α·(mass + |T|²·D) forces SOME
-difference to be realised more than D times.  Two reflections
+whose symmetry mass beats α·(mass + |T|²·D) forces SOME positive
+difference `d ≤ X` to be realised more than D times.  Two reflections
 compose to a translation (`two_symmetries_translate`), and
 overlap is forced by counting (`sum_pairwise_inter_lower`):
 so wealth at many places is fixed-difference structure — the
 R1 room's supply, manufactured from wealth alone. -/
 theorem popular_difference_bound {A : Set ℕ} {X D : ℕ}
     {T : Finset ℕ} (hTX : ∀ M ∈ T, M ≤ X)
-    (hD : ∀ d, ((Finset.range (X + 1)).filter
-      (fun y => y ∈ A ∧ (y + d) ∈ A)).card ≤ D) :
+    (hD : ∀ d, 0 < d → d ≤ X →
+      ((Finset.range (X + 1)).filter
+        (fun y => y ∈ A ∧ (y + d) ∈ A)).card ≤ D) :
     (∑ M ∈ T, ((Finset.range (M + 1)).filter
         (fun z => z ∈ A ∧ (M - z) ∈ A)).card) ^ 2 ≤
     ((Finset.range (X + 1)).filter (fun x => x ∈ A)).card *
@@ -18469,11 +24767,14 @@ theorem popular_difference_bound {A : Set ℕ} {X D : ℕ}
   have hoff : ∀ M₁ ∈ T, ∀ M₂ ∈ T, M₁ ≠ M₂ →
       ((S M₁) ∩ (S M₂)).card ≤ D := by
     intro M₁ h₁ M₂ h₂ hne
-    have key : ∀ N₁ N₂, N₁ ∈ T → N₂ ∈ T → N₁ ≤ N₂ →
+    have key : ∀ N₁ N₂, N₁ ∈ T → N₂ ∈ T → N₁ < N₂ →
         ((S N₁) ∩ (S N₂)).card ≤ D := by
-      intro N₁ N₂ hN₁ hN₂ hle
-      refine le_trans (two_symmetries_translate (A := A) hle) ?_
-      refine le_trans (Finset.card_le_card ?_) (hD (N₂ - N₁))
+      intro N₁ N₂ hN₁ hN₂ hlt
+      refine le_trans (two_symmetries_translate (A := A) hlt.le) ?_
+      refine le_trans (Finset.card_le_card ?_)
+        (hD (N₂ - N₁) (by omega) (by
+          have := hTX N₂ hN₂
+          omega))
       intro y hy
       rw [Finset.mem_filter, Finset.mem_range] at hy
       rw [Finset.mem_filter, Finset.mem_range]
@@ -18519,6 +24820,376 @@ theorem popular_difference_bound {A : Set ℕ} {X D : ℕ}
   exact le_trans hcs hmul
 
 open Classical in
+/-- **Positive popular difference, explicit contrapositive.**  If the
+symmetry mass exceeds the bound from `popular_difference_bound`, then some
+genuine difference `d ∈ [1, X]` is represented more than `D` times.  The
+positivity restriction excludes the diagonal `d = 0`, whose representation
+count is simply `|A ∩ [0, X]|` and carries no translation information. -/
+theorem exists_popular_positive_difference {A : Set ℕ} {X D : ℕ}
+    {T : Finset ℕ} (hTX : ∀ M ∈ T, M ≤ X)
+    (hmass :
+      ((Finset.range (X + 1)).filter (fun x => x ∈ A)).card *
+        ((∑ M ∈ T, ((Finset.range (M + 1)).filter
+          (fun z => z ∈ A ∧ (M - z) ∈ A)).card) +
+          T.card * T.card * D) <
+      (∑ M ∈ T, ((Finset.range (M + 1)).filter
+        (fun z => z ∈ A ∧ (M - z) ∈ A)).card) ^ 2) :
+    ∃ d, 0 < d ∧ d ≤ X ∧ D <
+      ((Finset.range (X + 1)).filter
+        (fun y => y ∈ A ∧ (y + d) ∈ A)).card := by
+  by_contra hno
+  push Not at hno
+  have hD : ∀ d, 0 < d → d ≤ X →
+      ((Finset.range (X + 1)).filter
+        (fun y => y ∈ A ∧ (y + d) ∈ A)).card ≤ D := by
+    intro d hd hdX
+    exact hno d hd hdX
+  exact (not_le_of_gt hmass) (popular_difference_bound hTX hD)
+
+open Classical in
+/-- **Endpoint budget for a distinct wealthy family.**
+Suppose `T` contains more than `R` distinct targets below `X`, has at most
+`S` targets, and every target has pair wealth at least `L`.  It is enough
+to check the single worst-case inequality
+
+    `α * (S*α + S²*D) < ((R+1)*L)²`,
+
+where `α = |A ∩ [0,X]|`, to force a positive difference represented
+more than `D` times below `X`.
+
+The left endpoint uses the largest possible family size `S`; the right
+endpoint uses the smallest possible size `R+1`.  This is the direct
+numerical consumer for the distinct horn of
+`moving_prefix_risks_distinct_or_affine_or_fixed_stall`. -/
+theorem wealthy_targets_force_popular_difference_of_endpoint
+    {A : Set ℕ} {X D L R S : ℕ} {T : Finset ℕ}
+    (hTX : ∀ M ∈ T, M ≤ X)
+    (hlarge : R < T.card) (hupperCard : T.card ≤ S)
+    (hwealth : ∀ M ∈ T,
+      L ≤ ((Finset.range (M + 1)).filter
+        (fun z => z ∈ A ∧ (M - z) ∈ A)).card)
+    (hendpoint :
+      ((Finset.range (X + 1)).filter (fun x => x ∈ A)).card *
+        (S * ((Finset.range (X + 1)).filter
+            (fun x => x ∈ A)).card +
+          S * S * D) <
+      ((R + 1) * L) ^ 2) :
+    ∃ d, 0 < d ∧ d ≤ X ∧ D <
+      ((Finset.range (X + 1)).filter
+        (fun y => y ∈ A ∧ (y + d) ∈ A)).card := by
+  let α := ((Finset.range (X + 1)).filter
+    (fun x => x ∈ A)).card
+  let mass := ∑ M ∈ T, ((Finset.range (M + 1)).filter
+    (fun z => z ∈ A ∧ (M - z) ∈ A)).card
+  have hmassLower : T.card * L ≤ mass := by
+    calc
+      T.card * L = ∑ _M ∈ T, L := by simp
+      _ ≤ mass := Finset.sum_le_sum hwealth
+  have heachUpper : ∀ M ∈ T,
+      ((Finset.range (M + 1)).filter
+        (fun z => z ∈ A ∧ (M - z) ∈ A)).card ≤ α := by
+    intro M hMT
+    apply Finset.card_le_card
+    intro z hz
+    rw [Finset.mem_filter, Finset.mem_range] at hz
+    rw [Finset.mem_filter, Finset.mem_range]
+    exact ⟨by
+      have := hTX M hMT
+      omega, hz.2.1⟩
+  have hmassUpper : mass ≤ T.card * α := by
+    calc
+      mass ≤ ∑ _M ∈ T, α := Finset.sum_le_sum heachUpper
+      _ = T.card * α := by simp
+  have hlinear : T.card * α ≤ S * α :=
+    Nat.mul_le_mul_right α hupperCard
+  have hquadratic : T.card * T.card * D ≤ S * S * D :=
+    Nat.mul_le_mul_right D
+      (Nat.mul_le_mul hupperCard hupperCard)
+  have hinside :
+      mass + T.card * T.card * D ≤ S * α + S * S * D :=
+    Nat.add_le_add (hmassUpper.trans hlinear) hquadratic
+  have hleft :
+      α * (mass + T.card * T.card * D) ≤
+        α * (S * α + S * S * D) :=
+    Nat.mul_le_mul_left α hinside
+  have hbase : (R + 1) * L ≤ T.card * L :=
+    Nat.mul_le_mul_right L hlarge
+  have hright :
+      ((R + 1) * L) ^ 2 ≤ mass ^ 2 :=
+    (Nat.pow_le_pow_left hbase 2).trans
+      (Nat.pow_le_pow_left hmassLower 2)
+  have hmass :
+      α * (mass + T.card * T.card * D) < mass ^ 2 :=
+    hleft.trans_lt (hendpoint.trans_le hright)
+  exact exists_popular_positive_difference hTX hmass
+
+open Classical in
+/-- **The quantitative moving-prefix fork.**
+Under a single endpoint inequality, the distinct horn of the risk-aware
+moving-prefix theorem immediately yields a positive popular difference.
+Consequently a large batch of genuine greedy risks has only three possible
+outcomes:
+
+1. a difference represented more than `D` times below `X`;
+2. a wealthy affine wall, which is either based at an old deleted element
+   or contains at least three moving pair hubs;
+3. a genuine stall against the fixed old prefix, with its low-mass bound.
+
+This is the complete finite composition of
+
+`moving stall → charge → exact fibers → symmetry mass`.
+-/
+theorem moving_prefix_risks_popular_or_affine_or_fixed_stall
+    {A : Set ℕ} {N₀ X D R L : ℕ}
+    {B C : Finset ℕ} {n : ℕ → ℕ}
+    (hcov : PairCovers A N₀)
+    (hscale : ∀ b ∈ C, N₀ ≤ n b)
+    (hcap : ∀ b ∈ C, n b ≤ X)
+    (hcandidate : ∀ b ∈ C, b ∈ A)
+    (hrisk : ∀ b ∈ C, ∃ a ∈ A, b + a = n b)
+    (hordered : ∀ b ∈ C, ∀ w ∈ B, w ≤ b)
+    (hstall : ∀ b ∈ C, ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+      x ∉ insert b B → y ∉ insert b B → z ∉ insert b B →
+        x + y + z ≠ n b)
+    (hlow : ∀ b ∈ C,
+      (insert b B).card * L ≤
+        ((Finset.range (n b - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ insert b B)).card)
+    (hmany : (B.card + 1) * (3 * R) < C.card)
+    (hendpoint :
+      ((Finset.range (X + 1)).filter (fun x => x ∈ A)).card *
+        (C.card * ((Finset.range (X + 1)).filter
+            (fun x => x ∈ A)).card +
+          C.card * C.card * D) <
+      ((R + 1) * L) ^ 2) :
+    (∃ d, 0 < d ∧ d ≤ X ∧ D <
+      ((Finset.range (X + 1)).filter
+        (fun y => y ∈ A ∧ (y + d) ∈ A)).card) ∨
+    (∃ a ∈ A, ∃ F : Finset ℕ, F ⊆ C ∧ 3 < F.card ∧
+      (∀ b ∈ F, b ∈ A ∧ n b = b + a) ∧
+      L ≤ ((Finset.range (a + 1)).filter
+        (fun x => x ∈ A ∧ (a - x) ∈ A)).card ∧
+      (a ∈ B ∨ ∃ G : Finset ℕ, G ⊆ F ∧ 2 < G.card ∧
+        ∀ b ∈ G, IsPairHub A b (insert b B))) ∨
+    (∃ m, N₀ ≤ m ∧ (∀ w ∈ B, w ≤ m) ∧
+      (∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+        x ∉ B → y ∉ B → z ∉ B → x + y + z ≠ m) ∧
+      B.card * L ≤
+        ((Finset.range (m - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ B)).card) := by
+  rcases moving_prefix_risks_distinct_or_affine_or_fixed_stall
+      hcov hscale hcandidate hrisk hordered hstall hlow hmany with
+    ⟨T, hTlarge, hTcard, hTwealth⟩ | hAffine | hFixed
+  · left
+    have hTX : ∀ M ∈ T, M ≤ X := by
+      intro M hMT
+      obtain ⟨⟨b, hbC, hMnb⟩, hwealth⟩ := hTwealth M hMT
+      exact hMnb.trans (hcap b hbC)
+    exact wealthy_targets_force_popular_difference_of_endpoint
+      hTX hTlarge hTcard (fun M hMT => (hTwealth M hMT).2)
+        hendpoint
+  · exact Or.inr (Or.inl hAffine)
+  · exact Or.inr (Or.inr hFixed)
+
+open Classical in
+/-- **A sufficiently large fixed-prefix stall family forces a popular
+positive difference.**  `stall_family_mass_amplifier` produces a target
+family whose size is between the prefix-pigeonhole lower bound and the
+original number of stalls.  The numerical hypothesis is deliberately stated
+for every size in that certified interval; it is independent of the chosen
+fiber.  Once it holds, the popular-difference inequality is violated. -/
+theorem stall_family_forces_popular_difference
+    {A : Set ℕ} {N₀ X L D : ℕ} {B S : Finset ℕ}
+    (hcov : PairCovers A N₀) (hB : B.Nonempty)
+    (hscale : ∀ n ∈ S, N₀ ≤ n ∧ n ≤ X ∧
+      ∀ w ∈ B, w ≤ n)
+    (hstall : ∀ n ∈ S, ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
+      x ∉ B → y ∉ B → z ∉ B → x + y + z ≠ n)
+    (hlow : ∀ n ∈ S,
+      B.card * L ≤
+        ((Finset.range (n - N₀ + 1)).filter
+          (fun z => z ∈ A ∧ z ∉ B)).card)
+    (hquant : ∀ t, S.card ≤ B.card * t → t ≤ S.card →
+      ((Finset.range (X + 1)).filter (fun x => x ∈ A)).card *
+          (t * ((Finset.range (X + 1)).filter
+              (fun x => x ∈ A)).card +
+            t * t * D) <
+        (t * L) ^ 2) :
+    ∃ d, 0 < d ∧ d ≤ X ∧ D <
+      ((Finset.range (X + 1)).filter
+        (fun y => y ∈ A ∧ y + d ∈ A)).card := by
+  obtain ⟨w, hwB, T, hST, hTS, hTX, hlower, hupper⟩ :=
+    stall_family_mass_amplifier hcov hB hscale hstall hlow
+  let α := ((Finset.range (X + 1)).filter
+    (fun x => x ∈ A)).card
+  let mass := ∑ M ∈ T, ((Finset.range (M + 1)).filter
+    (fun z => z ∈ A ∧ (M - z) ∈ A)).card
+  have hnum :
+      α * (T.card * α + T.card * T.card * D) <
+        (T.card * L) ^ 2 := by
+    exact hquant T.card hST hTS
+  have hinside :
+      mass + T.card * T.card * D ≤
+        T.card * α + T.card * T.card * D := by
+    exact Nat.add_le_add_right hupper _
+  have hleft :
+      α * (mass + T.card * T.card * D) ≤
+        α * (T.card * α + T.card * T.card * D) :=
+    Nat.mul_le_mul_left _ hinside
+  have hright : (T.card * L) ^ 2 ≤ mass ^ 2 :=
+    Nat.pow_le_pow_left hlower 2
+  have hmass :
+      α * (mass + T.card * T.card * D) < mass ^ 2 :=
+    lt_of_le_of_lt hleft (lt_of_lt_of_le hnum hright)
+  exact exists_popular_positive_difference hTX hmass
+
+open Classical in
+/-- A fixed-prefix stall-mass certificate produces the advertised positive
+popular difference. -/
+theorem FixedPrefixStallMassCertificate.exists_popular_difference
+    {A : Set ℕ} {N₀ D : ℕ}
+    (hcov : PairCovers A N₀)
+    (hcert : FixedPrefixStallMassCertificate A N₀ D) :
+    ∃ X d, 0 < d ∧ d ≤ X ∧ D <
+      ((Finset.range (X + 1)).filter
+        (fun y => y ∈ A ∧ y + d ∈ A)).card := by
+  obtain ⟨X, L, B, S, hB, hscale, hstall, hlow, hquant⟩ := hcert
+  obtain ⟨d, hd, hdX, hmany⟩ :=
+    stall_family_forces_popular_difference
+      hcov hB hscale hstall hlow hquant
+  exact ⟨X, d, hd, hdX, hmany⟩
+
+open Classical in
+/-- **STALL MASS FEEDS THE EXISTING DIFFERENCE FORK.**  If a
+fixed-prefix stall-mass certificate can be manufactured at every desired
+multiplicity, then the already-verified `fixed_offset_or_growing` theorem
+applies: either one positive offset has arbitrarily many pairs, or
+arbitrarily large offsets have arbitrarily many pairs. -/
+theorem stall_mass_certificates_fixed_offset_or_growing
+    {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hsupply : ∀ K, FixedPrefixStallMassCertificate A N₀ K) :
+    (∃ δ, 1 ≤ δ ∧ ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A) ∨
+    (∀ Δ K, ∃ δ, Δ < δ ∧ ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A) := by
+  apply fixed_offset_or_growing
+  intro K
+  obtain ⟨X, δ, hδ, hδX, hcard⟩ :=
+    (hsupply K).exists_popular_difference hcov
+  let V := (Finset.range (X + 1)).filter
+    (fun x => x ∈ A ∧ x + δ ∈ A)
+  refine ⟨δ, hδ, V, by dsimp [V]; omega, ?_⟩
+  intro x hx
+  exact (Finset.mem_filter.1 hx).2
+
+open Classical in
+/-- More than `K + 2|F|` starts from one equal-difference family leave more
+than `K` starts whose two endpoints avoid `F`.  This is the quantitative
+finite-injury form of `many_difference_pairs_avoid_finset`, stated for an
+arbitrary supplied family rather than an initial interval. -/
+theorem difference_pair_family_many_fresh
+    {A : Set ℕ} {d K : ℕ} {V : Finset ℕ} (F : Finset ℕ)
+    (hV : ∀ x ∈ V, x ∈ A ∧ x + d ∈ A)
+    (hmany : K + 2 * F.card < V.card) :
+    ∃ W : Finset ℕ, W ⊆ V ∧ K < W.card ∧
+      ∀ x ∈ W, x ∈ A ∧ x + d ∈ A ∧ x ∉ F ∧ x + d ∉ F := by
+  let fresh : ℕ → Prop := fun x => x ∉ F ∧ x + d ∉ F
+  set W := V.filter fresh with hW
+  set Bad := V.filter (fun x => ¬fresh x) with hBad
+  let f : ℕ → Sum ℕ ℕ := fun x =>
+    if x ∈ F then Sum.inl x else Sum.inr (x + d)
+  have hmaps : Set.MapsTo f (Bad : Set ℕ)
+      (F.disjSum F : Set (Sum ℕ ℕ)) := by
+    intro x hxBad
+    have hxBadFin : x ∈ Bad := hxBad
+    rw [hBad, Finset.mem_filter] at hxBadFin
+    by_cases hxF : x ∈ F
+    · simp [f, hxF]
+    · have hxdF : x + d ∈ F := by
+        by_contra hxdF
+        exact hxBadFin.2 ⟨hxF, hxdF⟩
+      simp [f, hxF, hxdF]
+  have hinj : (Bad : Set ℕ).InjOn f := by
+    intro x hx y hy hxy
+    by_cases hxF : x ∈ F
+    · by_cases hyF : y ∈ F
+      · simpa [f, hxF, hyF] using hxy
+      · simp [f, hxF, hyF] at hxy
+    · by_cases hyF : y ∈ F
+      · simp [f, hxF, hyF] at hxy
+      · have hadd : x + d = y + d := by
+          simpa [f, hxF, hyF] using hxy
+        exact Nat.add_right_cancel hadd
+  have hBadcard : Bad.card ≤ 2 * F.card := by
+    have hcard :
+        Bad.card ≤ (F.disjSum F).card :=
+      Finset.card_le_card_of_injOn f hmaps hinj
+    rw [Finset.card_disjSum] at hcard
+    omega
+  have hpartition : W.card + Bad.card = V.card := by
+    rw [hW, hBad]
+    exact Finset.card_filter_add_card_filter_not fresh
+  refine ⟨W, ?_, by omega, ?_⟩
+  · intro x hx
+    exact (Finset.mem_filter.1 hx).1
+  · intro x hx
+    have hx' := Finset.mem_filter.1 hx
+    exact ⟨(hV x hx'.1).1, (hV x hx'.1).2,
+      hx'.2.1, hx'.2.2⟩
+
+open Classical in
+/-- **Many equal-difference pairs avoid every finite forbidden set.**
+A forbidden vertex can spoil at most two starts of a `d`-pair: the pair
+starting at that vertex and the pair ending there.  Consequently, more than
+`2 * |F|` pairs at one difference contain a pair whose two endpoints both
+avoid `F`.
+
+This is the finite-injury interface needed to turn an abundant (possibly
+scale-dependent) popular difference into fresh construction material. -/
+theorem many_difference_pairs_avoid_finset
+    {A : Set ℕ} {X d : ℕ} (F : Finset ℕ)
+    (hmany : 2 * F.card <
+      ((Finset.range (X + 1)).filter
+        (fun y => y ∈ A ∧ y + d ∈ A)).card) :
+    ∃ y, y ≤ X ∧ y ∈ A ∧ y + d ∈ A ∧ y ∉ F ∧ y + d ∉ F := by
+  set P := (Finset.range (X + 1)).filter
+    (fun y => y ∈ A ∧ y + d ∈ A) with hP
+  by_contra hno
+  push Not at hno
+  have hbad : ∀ y ∈ P, y ∈ F ∨ y + d ∈ F := by
+    intro y hy
+    rw [hP, Finset.mem_filter, Finset.mem_range] at hy
+    by_cases hyF : y ∈ F
+    · exact Or.inl hyF
+    · exact Or.inr (hno y (by omega) hy.2.1 hy.2.2 hyF)
+  let f : ℕ → Sum ℕ ℕ := fun y =>
+    if y ∈ F then Sum.inl y else Sum.inr (y + d)
+  have hmaps : Set.MapsTo f (P : Set ℕ)
+      (F.disjSum F : Set (Sum ℕ ℕ)) := by
+    intro y hy
+    by_cases hyF : y ∈ F
+    · simp [f, hyF]
+    · have hydF : y + d ∈ F := (hbad y hy).resolve_left hyF
+      simp [f, hyF, hydF]
+  have hinj : (P : Set ℕ).InjOn f := by
+    intro x hx y hy hxy
+    by_cases hxF : x ∈ F
+    · by_cases hyF : y ∈ F
+      · simpa [f, hxF, hyF] using hxy
+      · simp [f, hxF, hyF] at hxy
+    · by_cases hyF : y ∈ F
+      · simp [f, hxF, hyF] at hxy
+      · have hadd : x + d = y + d := by
+          simpa [f, hxF, hyF] using hxy
+        exact Nat.add_right_cancel hadd
+  have hcard :
+      P.card ≤ (F.disjSum F).card :=
+    Finset.card_le_card_of_injOn f hmaps hinj
+  rw [Finset.card_disjSum] at hcard
+  omega
+
+open Classical in
 /-- **Every large number is a basis element or splits.**  From
 covering alone: for d ≥ N₀ either d ∈ A, or d = u + v with
 u, v ∈ A both positive (a zero part would force d ∈ A).  The
@@ -18562,7 +25233,7 @@ the two-part horn is the exception.) -/
 theorem difference_reaches_element {A : Set ℕ} {N₀ d y : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hd : N₀ ≤ d) (hd0 : 0 < d) (hy0 : 0 < y)
-    (hyA : y ∈ A) (hydA : y + d ∈ A) :
+    (hyA : y ∈ A) (_hydA : y + d ∈ A) :
     ∃ p ∈ A, ∃ q ∈ A, ∃ r ∈ A,
       p + q + r = y + d ∧ p < y + d ∧ q < y + d ∧ r < y + d := by
   rcases large_mem_or_splits hcov hd with hdA | ⟨u, huA, v, hvA,
@@ -18571,5 +25242,2445 @@ theorem difference_reaches_element {A : Set ℕ} {N₀ d y : ℕ}
       by omega⟩
   · exact ⟨y, hyA, u, huA, v, hvA, by omega, by omega, by omega,
       by omega⟩
+
+open Classical in
+/-- **THE GROWING-DIFFERENCE COMPOSITION FORK.**  Arbitrarily large
+high-multiplicity differences can be made fresh relative to any finite
+forbidden set.  Covering then gives exactly two algebraic regimes:
+
+1. the difference itself lies in `A` (the atomic-difference branch); or
+2. `d = u + v` with positive `u,v ∈ A`.
+
+In the split branch, either some fresh edge has an intermediate basis point
+`x+u` or `x+v` and is therefore composable, or an arbitrarily large fresh
+family consists of filled endpoints with both intermediate vertices missing.
+The latter is the missing-rectangle geometry to be confronted with the
+desert/reflection laws. -/
+theorem growing_differences_composable_or_missing_rectangles
+    {A : Set ℕ} {N₀ : ℕ}
+    (hcov : PairCovers A N₀)
+    (hgrowing : ∀ Δ K, ∃ d, Δ < d ∧ ∃ V : Finset ℕ,
+      K ≤ V.card ∧ ∀ x ∈ V, x ∈ A ∧ x + d ∈ A) :
+    ∀ (F : Finset ℕ) (Δ K : ℕ), ∃ d, Δ < d ∧
+      ((d ∈ A ∧ ∃ V : Finset ℕ, K < V.card ∧
+          ∀ x ∈ V, x ∈ A ∧ x + d ∈ A ∧
+            x ∉ F ∧ x + d ∉ F) ∨
+       ∃ u ∈ A, ∃ v ∈ A,
+          0 < u ∧ 0 < v ∧ u + v = d ∧
+          ((∃ x, x ∈ A ∧ x + d ∈ A ∧
+              x ∉ F ∧ x + d ∉ F ∧
+              (x + u ∈ A ∨ x + v ∈ A)) ∨
+           ∃ V : Finset ℕ, K < V.card ∧
+              ∀ x ∈ V, x ∈ A ∧ x + d ∈ A ∧
+                x ∉ F ∧ x + d ∉ F ∧
+                x + u ∉ A ∧ x + v ∉ A)) := by
+  intro F Δ K
+  obtain ⟨d, hdlarge, V, hVcard, hV⟩ :=
+    hgrowing (max Δ N₀) (K + 2 * F.card + 1)
+  have hdΔ : Δ < d := lt_of_le_of_lt (le_max_left _ _) hdlarge
+  have hdN : N₀ ≤ d :=
+    le_trans (le_max_right Δ N₀) (le_of_lt hdlarge)
+  have hmany : K + 2 * F.card < V.card := by omega
+  obtain ⟨W, hWV, hWK, hW⟩ :=
+    difference_pair_family_many_fresh F hV hmany
+  refine ⟨d, hdΔ, ?_⟩
+  rcases large_mem_or_splits hcov hdN with hdA |
+      ⟨u, huA, v, hvA, hu0, hv0, huv⟩
+  · left
+    exact ⟨hdA, W, hWK, hW⟩
+  · right
+    refine ⟨u, huA, v, hvA, hu0, hv0, huv, ?_⟩
+    by_cases hcomp : ∃ x ∈ W, x + u ∈ A ∨ x + v ∈ A
+    · left
+      obtain ⟨x, hxW, hxcomp⟩ := hcomp
+      obtain ⟨hxA, hxdA, hxF, hxdF⟩ := hW x hxW
+      exact ⟨x, hxA, hxdA, hxF, hxdF, hxcomp⟩
+    · right
+      push Not at hcomp
+      refine ⟨W, hWK, fun x hxW => ?_⟩
+      obtain ⟨hxA, hxdA, hxF, hxdF⟩ := hW x hxW
+      have hxmid := hcomp x hxW
+      exact ⟨hxA, hxdA, hxF, hxdF, hxmid.1, hxmid.2⟩
+
+/-! ## Fixed-difference composition through a shifted slice -/
+
+/-- Every translate `a + δ`, for `a ∈ A`, has a surviving pair after
+deleting `B`.  This is the precise order-two slice needed to compose a
+`δ`-edge with every target threatened by its upper endpoint. -/
+def ShiftedPairSurvives
+    (A B : Set ℕ) (δ : ℕ) : Prop :=
+  ∀ a ∈ A, ∃ p ∈ A, ∃ q ∈ A,
+    p ∉ B ∧ q ∉ B ∧ p + q = a + δ
+
+/-- **THE FIXED-DIFFERENCE COMPOSITION BRIDGE.**  Suppose every deleted
+element `b` has a surviving predecessor `x` with `x + δ = b`, and the
+translated slice `A + δ` retains surviving order-two representations.
+Then every threatened target
+
+`b + a = x + (a + δ)`
+
+has a surviving triple.  The master deletion criterion therefore gives the
+desired exact order-three basis. -/
+theorem fixed_difference_deletion_of_shiftedPairSurvival
+    {A B : Set ℕ} {N₀ δ : ℕ}
+    (h0 : 0 ∈ A) (h0B : 0 ∉ B) (hcov : PairCovers A N₀)
+    (hpred : ∀ b ∈ B, ∃ x ∈ A, x ∉ B ∧ x + δ = b)
+    (hshift : ShiftedPairSurvives A B δ) :
+    IsExactTupleAsymptoticBasis (A \ B) 3 := by
+  apply deletion_criterion_local h0 h0B hcov
+  intro n _hn
+  rintro ⟨b, hbB, a, haA, hba⟩
+  obtain ⟨x, hxA, hxB, hxδ⟩ := hpred b hbB
+  obtain ⟨p, hpA, q, hqA, hpB, hqB, hpq⟩ := hshift a haA
+  exact ⟨x, hxA, p, hpA, q, hqA, hxB, hpB, hqB, by omega⟩
+
+open Classical in
+/-- Cofinal `δ`-pairs contain an infinite separated matching.  Deleting the
+upper endpoints leaves every selected lower endpoint outside the deletion,
+so each deleted element has a surviving `δ`-predecessor. -/
+theorem fixed_difference_predecessor_deletion
+    {A : Set ℕ} {δ : ℕ} (hδ : 0 < δ)
+    (hsupply : ∀ N, ∃ x, N ≤ x ∧ x ∈ A ∧ x + δ ∈ A) :
+    ∃ B : Set ℕ, B ⊆ A ∧ B.Infinite ∧ 0 ∉ B ∧
+      ∀ b ∈ B, ∃ x ∈ A, x ∉ B ∧ x + δ = b := by
+  have hnext : ∀ N, ∃ x, N < x ∧ x ∈ A ∧ x + δ ∈ A := by
+    intro N
+    obtain ⟨x, hxN, hxA, hxδA⟩ := hsupply (N + 1)
+    exact ⟨x, by omega, hxA, hxδA⟩
+  choose nx hnx hnxA hnxδA using hnext
+  set x : ℕ → ℕ :=
+    fun k => Nat.rec (nx 0) (fun _ prev => nx (prev + δ)) k
+    with hx
+  have hx0 : x 0 = nx 0 := rfl
+  have hxs : ∀ k, x (k + 1) = nx (x k + δ) := fun _ => rfl
+  have hsep : ∀ k, x k + δ < x (k + 1) := by
+    intro k
+    rw [hxs]
+    exact hnx _
+  have hxmono : StrictMono x := by
+    apply strictMono_nat_of_lt_succ
+    intro k
+    have := hsep k
+    omega
+  have hxA : ∀ k, x k ∈ A := by
+    intro k
+    cases k with
+    | zero =>
+        rw [hx0]
+        exact hnxA _
+    | succ k =>
+        rw [hxs]
+        exact hnxA _
+  have hxδA : ∀ k, x k + δ ∈ A := by
+    intro k
+    cases k with
+    | zero =>
+        rw [hx0]
+        exact hnxδA _
+    | succ k =>
+        rw [hxs]
+        exact hnxδA _
+  let b : ℕ → ℕ := fun k => x k + δ
+  have hbmono : StrictMono b := by
+    intro i j hij
+    dsimp [b]
+    exact Nat.add_lt_add_right (hxmono hij) δ
+  have hlower_notMem : ∀ k, x k ∉ Set.range b := by
+    intro k
+    rintro ⟨j, hj⟩
+    dsimp [b] at hj
+    rcases Nat.lt_trichotomy j k with hjk | hjk | hjk
+    · have hj1k : j + 1 ≤ k := by omega
+      have hle : x (j + 1) ≤ x k := hxmono.monotone hj1k
+      have := hsep j
+      omega
+    · subst j
+      omega
+    · have := hxmono hjk
+      omega
+  refine ⟨Set.range b, ?_, Set.infinite_range_of_injective
+    hbmono.injective, ?_, ?_⟩
+  · rintro _ ⟨k, rfl⟩
+    exact hxδA k
+  · rintro ⟨k, hk⟩
+    dsimp [b] at hk
+    have := hδ
+    omega
+  · rintro _ ⟨k, rfl⟩
+    exact ⟨x k, hxA k, hlower_notMem k, rfl⟩
+
+/-- **Fixed-difference shifted-slice obstruction.**  In a counterexample,
+cofinal `δ`-pairs can be thinned to an infinite predecessor deletion `B`.
+Since shifted-slice survival would compose to an order-three basis, some
+translated target `a + δ` must have every order-two representation hit `B`.
+
+This is the concrete obstruction that the fixed-translate destroyer and
+repair machinery can now analyze. -/
+theorem fixed_difference_forces_shifted_slice_obstruction
+    {A : Set ℕ} {N₀ δ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hδ : 0 < δ)
+    (hsupply : ∀ N, ∃ x, N ≤ x ∧ x ∈ A ∧ x + δ ∈ A) :
+    ∃ B : Set ℕ, B ⊆ A ∧ B.Infinite ∧ 0 ∉ B ∧
+      (∀ b ∈ B, ∃ x ∈ A, x ∉ B ∧ x + δ = b) ∧
+      ∃ a ∈ A, ∀ p ∈ A, ∀ q ∈ A, p + q = a + δ →
+        p ∈ B ∨ q ∈ B := by
+  obtain ⟨B, hBA, hBinf, h0B, hpred⟩ :=
+    fixed_difference_predecessor_deletion hδ hsupply
+  refine ⟨B, hBA, hBinf, h0B, hpred, ?_⟩
+  by_contra hno
+  push Not at hno
+  have hshift : ShiftedPairSurvives A B δ := by
+    intro a haA
+    obtain ⟨p, hpA, q, hqA, hpq, hpB, hqB⟩ := hno a haA
+    exact ⟨p, hpA, q, hqA, hpB, hqB, hpq⟩
+  exact hfail B hBA hBinf
+    (fixed_difference_deletion_of_shiftedPairSurvival
+      h0 h0B hcov hpred hshift)
+
+open Classical in
+/-- **A counterexample has no infinite reservoir of pair-splittable
+positive basis elements.**
+
+Point-map free-set thinning first chooses an infinite subreservoir whose
+selected pair support for every deleted point avoids the entire deletion.
+Retaining zero turns these pointwise splittings into an order-two
+self-basis along `A`; the completed splitting-reservoir theorem then gives
+the forbidden order-three deletion. -/
+theorem counterexample_pairSplittable_reservoir_finite
+    {A K : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hKA : K ⊆ A) (h0K : 0 ∉ K)
+    (hsplittable : ∀ b ∈ K, PairSplittableAwayFromSelf A b) :
+    K.Finite := by
+  apply Set.not_infinite.mp
+  intro hKinf
+  obtain ⟨B₀, hB₀K, hB₀inf, hsplit⟩ :=
+    exists_infiniteDeletion_splittingDeletedPoints
+      hKinf hsplittable
+  have hB₀A : B₀ ⊆ A := hB₀K.trans hKA
+  have h0B₀ : 0 ∉ B₀ := fun hzero => h0K (hB₀K hzero)
+  have hbasisTwo : IsExactTupleAsymptoticBasis A 2 := by
+    refine ⟨N₀, ?_⟩
+    intro n hn
+    obtain ⟨x, hxA, y, hyA, hxy⟩ := hcov n hn
+    refine ⟨![x, y], ?_, ?_⟩
+    · intro i
+      fin_cases i
+      · exact hxA
+      · exact hyA
+    · simpa [Fin.sum_univ_two] using hxy
+  obtain ⟨B, hBB₀, hBinf, hbasisThree⟩ :=
+    exists_infiniteDeletion_threeBasis_of_zero_splittingReservoir
+      hbasisTwo h0 h0B₀ hB₀A hB₀inf hsplit
+  exact hfail B (hBB₀.trans hB₀A) hBinf hbasisThree
+
+open Classical in
+/-- **Only finitely many positive basis points are nontrivially
+pair-splittable in a counterexample.** -/
+theorem counterexample_positive_pairSplittable_points_finite
+    {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    {a | a ∈ A ∧ 0 < a ∧ PairSplittableAwayFromSelf A a}.Finite := by
+  let K : Set ℕ :=
+    {a | a ∈ A ∧ 0 < a ∧ PairSplittableAwayFromSelf A a}
+  apply counterexample_pairSplittable_reservoir_finite
+      h0 hcov hfail
+  · intro a ha
+    exact ha.1
+  · intro ha
+    change 0 ∈ A ∧ 0 < 0 ∧
+      PairSplittableAwayFromSelf A 0 at ha
+    omega
+  · intro a ha
+    exact ha.2.2
+
+open Classical in
+/-- **Global zero-atomic tail normalization.**
+
+In a counterexample there is one threshold beyond which every basis point
+has only its tautological order-two support `{a,0}`.  This is stronger than
+extracting a single infinite zero-atomic subreservoir: it applies to the
+entire tail of `A`. -/
+theorem counterexample_eventually_all_basisPoints_zeroAtomic
+    {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ T, ∀ a ∈ A, T ≤ a →
+      ∀ E ∈ additiveSupportFamily A 2 a, E = {a, 0} := by
+  let K : Set ℕ :=
+    {a | a ∈ A ∧ 0 < a ∧ PairSplittableAwayFromSelf A a}
+  have hKfinite : K.Finite :=
+    counterexample_positive_pairSplittable_points_finite
+      h0 hcov hfail
+  obtain ⟨U, hU⟩ := hKfinite.bddAbove
+  refine ⟨U + 1, ?_⟩
+  intro a haA haU E hER
+  have hatomic : ¬PairSplittableAwayFromSelf A a := by
+    intro hsplit
+    have haK : a ∈ K := ⟨haA, by omega, hsplit⟩
+    have haBound := hU haK
+    omega
+  exact pairSupport_eq_self_zero_of_not_pairSplittableAwayFromSelf
+    hatomic hER
+
+open Classical in
+/-- **The positive part of a counterexample is eventually internally
+sum-free.**
+
+This is the equation-level form of global zero-atomic normalization.  If a
+late basis point were `a=u+v` with positive `u,v∈A`, its pair support would
+avoid `a`, contradicting the preceding theorem. -/
+theorem counterexample_eventually_positive_sumFree
+    {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ T, ∀ a ∈ A, T ≤ a →
+      ∀ u ∈ A, ∀ v ∈ A, 0 < u → 0 < v → u + v ≠ a := by
+  obtain ⟨T, hatomic⟩ :=
+    counterexample_eventually_all_basisPoints_zeroAtomic
+      h0 hcov hfail
+  refine ⟨T, ?_⟩
+  intro a haA haT u huA v hvA huPos hvPos huv
+  have hua : u < a := by omega
+  have hsub : a - u = v := by omega
+  exact
+    (zeroAtom_forbids_positiveBackwardTranslate
+      (hatomic a haA haT) huA huPos hua)
+      (hsub.symm ▸ hvA)
+
+open Classical in
+/-- **Complete sum-free tail partition.**
+
+Beyond one threshold, membership in a counterexample is exactly the
+negation of representability as a sum of two positive basis elements:
+
+`n∈A ↔ n∉A⁺+A⁺`.
+
+The forward implication is tail sum-freeness.  Conversely pair covering
+represents every late `n`; if `n∉A`, neither summand can be zero, since a
+zero summand would put the other summand—and hence `n`—back in `A`. -/
+theorem counterexample_eventually_completeSumFreePartition
+    {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ T, ∀ n, T ≤ n →
+      (n ∈ A ↔ ¬∃ u ∈ A, ∃ v ∈ A,
+        0 < u ∧ 0 < v ∧ u + v = n) := by
+  obtain ⟨S, hsumfree⟩ :=
+    counterexample_eventually_positive_sumFree h0 hcov hfail
+  refine ⟨max S N₀, ?_⟩
+  intro n hn
+  have hnS : S ≤ n := (le_max_left S N₀).trans hn
+  have hnN : N₀ ≤ n := (le_max_right S N₀).trans hn
+  constructor
+  · intro hnA
+    rintro ⟨u, huA, v, hvA, huPos, hvPos, huv⟩
+    exact hsumfree n hnA hnS u huA v hvA huPos hvPos huv
+  · intro hnoPositive
+    by_contra hnA
+    obtain ⟨u, huA, v, hvA, huv⟩ := hcov n hnN
+    have huPos : 0 < u := by
+      rcases Nat.eq_zero_or_pos u with rfl | huPos
+      · have hvn : v = n := by omega
+        exact (hnA (hvn ▸ hvA)).elim
+      · exact huPos
+    have hvPos : 0 < v := by
+      rcases Nat.eq_zero_or_pos v with rfl | hvPos
+      · have hun : u = n := by omega
+        exact (hnA (hun ▸ huA)).elim
+      · exact hvPos
+    exact hnoPositive ⟨u, huA, v, hvA, huPos, hvPos, huv⟩
+
+open Classical in
+/-- **A positive basis difference cannot be popular in a counterexample.**
+
+Assume `δ∈A`, `δ>0`, and infinitely many starts satisfy
+`x,x+δ∈A`.  Discard the single start `x=0`.  Every remaining upper endpoint
+`b=x+δ` has the nontrivial pair support `{x,δ}`, which avoids `b`.
+The bounded point-map free-set theorem therefore thins the upper endpoints
+to an infinite deletion whose every point splits into two survivors.
+Because zero is retained, the completed splitting-reservoir theorem then
+produces an order-three basis after an infinite deletion.
+
+Consequently a global counterexample has only finitely many `δ`-edges for
+every fixed positive `δ∈A`.  This eliminates the fixed atomic-difference
+branch outright. -/
+theorem counterexample_basisDifference_edges_finite
+    {A : Set ℕ} {N₀ δ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hδpos : 0 < δ) (hδA : δ ∈ A) :
+    {x | x ∈ A ∧ x + δ ∈ A}.Finite := by
+  apply Set.not_infinite.mp
+  intro hstart
+  let Start : Set ℕ := {x | x ∈ A ∧ x + δ ∈ A}
+  let StartPos : Set ℕ := Start \ ({0} : Set ℕ)
+  have hStartPos : StartPos.Infinite :=
+    hstart.diff (Set.finite_singleton 0)
+  let K : Set ℕ := (fun x => x + δ) '' StartPos
+  have hKinf : K.Infinite := by
+    apply hStartPos.image
+    intro x hx y hy hxy
+    exact Nat.add_right_cancel hxy
+  have hKA : K ⊆ A := by
+    rintro b ⟨x, hx, rfl⟩
+    exact hx.1.2
+  have h0K : 0 ∉ K := by
+    rintro ⟨x, hx, hzero⟩
+    change x + δ = 0 at hzero
+    omega
+  have hsplittable : ∀ b ∈ K,
+      PairSplittableAwayFromSelf A b := by
+    rintro b ⟨x, hx, rfl⟩
+    have hxStart : x ∈ A ∧ x + δ ∈ A := hx.1
+    have hxpos : 0 < x := by
+      by_contra hx0
+      have : x = 0 := Nat.eq_zero_of_not_pos hx0
+      exact hx.2 (by simpa [this])
+    have hcomp : x + δ - x = δ := by omega
+    have hsupport :
+        pairSupport (x + δ) x ∈
+          additiveSupportFamily A 2 (x + δ) := by
+      apply pairSupport_mem_additiveSupportFamily
+        (by omega) hxStart.1
+      simpa [hcomp] using hδA
+    refine ⟨pairSupport (x + δ) x, hsupport, ?_⟩
+    intro hupper
+    simp only [pairSupport, Finset.mem_insert,
+      Finset.mem_singleton] at hupper
+    rcases hupper with h | h <;> omega
+  obtain ⟨B₀, hB₀K, hB₀inf, hsplit⟩ :=
+    exists_infiniteDeletion_splittingDeletedPoints
+      hKinf hsplittable
+  have hB₀A : B₀ ⊆ A := hB₀K.trans hKA
+  have h0B₀ : 0 ∉ B₀ := fun hzero => h0K (hB₀K hzero)
+  have hbasisTwo : IsExactTupleAsymptoticBasis A 2 := by
+    refine ⟨N₀, ?_⟩
+    intro n hn
+    obtain ⟨x, hxA, y, hyA, hxy⟩ := hcov n hn
+    refine ⟨![x, y], ?_, ?_⟩
+    · intro i
+      fin_cases i
+      · exact hxA
+      · exact hyA
+    · simpa [Fin.sum_univ_two] using hxy
+  obtain ⟨B, hBB₀, hBinf, hbasisThree⟩ :=
+    exists_infiniteDeletion_threeBasis_of_zero_splittingReservoir
+      hbasisTwo h0 h0B₀ hB₀A hB₀inf hsplit
+  exact hfail B (hBB₀.trans hB₀A) hBinf hbasisThree
+
+open Classical in
+/-- **One-scale fixed-difference composition.**
+
+Fix a nontrivial split `δ=s+t` with `t∈A` and `s≠δ`.  In a global
+counterexample only finitely many starts can simultaneously satisfy
+
+`x, x+δ, x+s ∈ A`.
+
+Indeed, after discarding the possible upper endpoint `t`, every upper
+endpoint `b=x+δ` has the pair support `{x+s,t}`, which avoids `b`.
+An infinite family would therefore contradict
+`counterexample_pairSplittable_reservoir_finite`. -/
+theorem counterexample_fixedDifference_split_filled_finite
+    {A : Set ℕ} {N₀ δ s t : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hδpos : 0 < δ) (htA : t ∈ A)
+    (hst : s + t = δ) (hsδ : s ≠ δ) :
+    {x | x ∈ A ∧ x + δ ∈ A ∧ x + s ∈ A}.Finite := by
+  apply Set.not_infinite.mp
+  intro hstarts
+  let Starts : Set ℕ :=
+    {x | x ∈ A ∧ x + δ ∈ A ∧ x + s ∈ A}
+  let Upper : Set ℕ := (fun x => x + δ) '' Starts
+  have hUpperInf : Upper.Infinite := by
+    apply hstarts.image
+    intro x hx y hy hxy
+    exact Nat.add_right_cancel hxy
+  let K : Set ℕ := Upper \ ({t} : Set ℕ)
+  have hKinf : K.Infinite :=
+    hUpperInf.diff (Set.finite_singleton t)
+  have hKUpper : K ⊆ Upper := Set.diff_subset
+  have hKA : K ⊆ A := by
+    intro b hbK
+    obtain ⟨x, hx, rfl⟩ := hKUpper hbK
+    exact hx.2.1
+  have h0K : 0 ∉ K := by
+    intro hzero
+    obtain ⟨x, hx, hsum⟩ := hKUpper hzero
+    change x + δ = 0 at hsum
+    omega
+  have hsplittable : ∀ b ∈ K,
+      PairSplittableAwayFromSelf A b := by
+    intro b hbK
+    obtain ⟨x, hx, hxb⟩ := hKUpper hbK
+    change x ∈ A ∧ x + δ ∈ A ∧ x + s ∈ A at hx
+    have hslt : s < δ := by omega
+    have hcomponent : x + δ - (x + s) = t := by omega
+    have hsupport :
+        pairSupport (x + δ) (x + s) ∈
+          additiveSupportFamily A 2 (x + δ) := by
+      apply pairSupport_mem_additiveSupportFamily
+        (by omega) hx.2.2
+      simpa [hcomponent] using htA
+    refine ⟨pairSupport (x + δ) (x + s), hxb ▸ hsupport, ?_⟩
+    intro hbmem
+    simp only [pairSupport, Finset.mem_insert,
+      Finset.mem_singleton] at hbmem
+    rcases hbmem with hfirst | hsecond
+    · exact hsδ
+        (Nat.add_left_cancel (hxb.trans hfirst)).symm
+    · have hbt : b = t := hsecond.trans hcomponent
+      exact hbK.2 (by simpa using hbt)
+  exact hKinf
+    (counterexample_pairSplittable_reservoir_finite
+      h0 hcov hfail hKA h0K hsplittable)
+
+open Classical in
+/-- **TWO-SCALE FIXED-DIFFERENCE COMPOSITION.**
+
+Suppose `δ=s+t` and `2δ=u+v` in `A`, with `s≠δ` and `u≠δ`.
+If infinitely many starts `x` carry all four points
+
+`x, x+δ, x+s, x+u ∈ A`,
+
+then the upper endpoints `b=x+δ` contain an infinite deletion leaving an
+order-three basis.
+
+The proof is a bounded free-set construction.  Thin the upper endpoints so
+that, for every retained `b=x+δ`, the five points
+`x+s,t,x+u,x,v` all remain outside the deletion.  A risk `b+a` is then
+repaired as follows:
+
+* if `a` survives, use `(x+s)+t+a=b+a`;
+* if `a=y+δ` is also deleted, use `(x+u)+y+v=b+a`.
+
+Thus the first split repairs mixed deleted/surviving pairs and the doubled
+split repairs deleted/deleted pairs. -/
+theorem twoScale_fixedDifference_composition
+    {A : Set ℕ} {N₀ δ s t u v : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hδpos : 0 < δ)
+    (htA : t ∈ A) (hvA : v ∈ A)
+    (hst : s + t = δ) (huv : u + v = 2 * δ)
+    (hsδ : s ≠ δ) (huδ : u ≠ δ)
+    (hstarts :
+      {x | x ∈ A ∧ x + δ ∈ A ∧ x + s ∈ A ∧ x + u ∈ A}.Infinite) :
+    ∃ B : Set ℕ, B ⊆ A ∧ B.Infinite ∧ 0 ∉ B ∧
+      IsExactTupleAsymptoticBasis (A \ B) 3 := by
+  let Starts : Set ℕ :=
+    {x | x ∈ A ∧ x + δ ∈ A ∧ x + s ∈ A ∧ x + u ∈ A}
+  let Upper : Set ℕ := (fun x => x + δ) '' Starts
+  have hUpperInf : Upper.Infinite := by
+    apply hstarts.image
+    intro x hx y hy hxy
+    exact Nat.add_right_cancel hxy
+  let K : Set ℕ := Upper \ ({t, v} : Set ℕ)
+  have hKinf : K.Infinite :=
+    hUpperInf.diff (Set.toFinite {t, v})
+  have hKUpper : K ⊆ Upper := Set.diff_subset
+  have hdata : ∀ b ∈ K,
+      δ ≤ b ∧ b - δ ∈ A ∧ b - δ + δ = b ∧
+      (b - δ) + s ∈ A ∧ (b - δ) + u ∈ A := by
+    intro b hbK
+    obtain ⟨x, hxStarts, rfl⟩ := hKUpper hbK
+    change x ∈ A ∧ x + δ ∈ A ∧
+      x + s ∈ A ∧ x + u ∈ A at hxStarts
+    change δ ≤ x + δ ∧
+      x + δ - δ ∈ A ∧
+      x + δ - δ + δ = x + δ ∧
+      (x + δ - δ) + s ∈ A ∧
+      (x + δ - δ) + u ∈ A
+    refine ⟨by omega, ?_, ?_, ?_, ?_⟩
+    · simpa using hxStarts.1
+    · simp
+    · simpa using hxStarts.2.2.1
+    · simpa using hxStarts.2.2.2
+  let f : ℕ → Finset ℕ := fun b =>
+    {(b - δ) + s, t, (b - δ) + u, b - δ, v}
+  have hfcard : ∀ b ∈ K, (f b).card ≤ 5 := by
+    intro b hbK
+    calc
+      (f b).card ≤
+          ({t, (b - δ) + u, b - δ, v} : Finset ℕ).card + 1 := by
+        exact Finset.card_insert_le _ _
+      _ ≤ ({(b - δ) + u, b - δ, v} : Finset ℕ).card + 1 + 1 := by
+        exact Nat.add_le_add_right (Finset.card_insert_le _ _) 1
+      _ ≤ ({b - δ, v} : Finset ℕ).card + 1 + 1 + 1 := by
+        exact Nat.add_le_add_right (Finset.card_insert_le _ _) 2
+      _ ≤ ({v} : Finset ℕ).card + 1 + 1 + 1 + 1 := by
+        exact Nat.add_le_add_right (Finset.card_insert_le _ _) 3
+      _ ≤ 5 := by simp
+  have hfavoid : ∀ b ∈ K, b ∉ f b := by
+    intro b hbK hb
+    have hd := hdata b hbK
+    simp only [f, Finset.mem_insert, Finset.mem_singleton] at hb
+    rcases hb with hbs | hbt | hbu | hbx | hbv
+    · have hbeq : (b - δ) + δ = (b - δ) + s := by
+        exact hd.2.2.1.trans hbs
+      exact hsδ (Nat.add_left_cancel hbeq).symm
+    · exact hbK.2 (by simp [hbt])
+    · have hbeq : (b - δ) + δ = (b - δ) + u := by
+        exact hd.2.2.1.trans hbu
+      exact huδ (Nat.add_left_cancel hbeq).symm
+    · omega
+    · exact hbK.2 (by simp [hbv])
+  obtain ⟨B, hBK, hBinf, hfree⟩ :=
+    exists_infinite_freeSet_of_bounded_pointMap
+      hKinf f 5 hfcard hfavoid
+  have hBA : B ⊆ A := by
+    intro b hbB
+    obtain ⟨x, hxStarts, rfl⟩ := hKUpper (hBK hbB)
+    exact hxStarts.2.1
+  have h0B : 0 ∉ B := by
+    intro hzero
+    have hd := hdata 0 (hBK hzero)
+    omega
+  refine ⟨B, hBA, hBinf, h0B, ?_⟩
+  apply deletion_criterion_local h0 h0B hcov
+  intro n hn
+  rintro ⟨b, hbB, a, haA, hba⟩
+  have hbK := hBK hbB
+  have hbd := hdata b hbK
+  have hbdis := Set.disjoint_left.mp (hfree b hbB)
+  by_cases haB : a ∈ B
+  · have haK := hBK haB
+    have had := hdata a haK
+    have hadis := Set.disjoint_left.mp (hfree a haB)
+    refine ⟨(b - δ) + u, hbd.2.2.2.2,
+      a - δ, had.2.1,
+      v, hvA, ?_, ?_, ?_, ?_⟩
+    · intro hmem
+      exact hbdis (by simp [f]) hmem
+    · intro hmem
+      exact hadis (by simp [f]) hmem
+    · intro hmem
+      exact hbdis (by simp [f]) hmem
+    · omega
+  · refine ⟨(b - δ) + s, hbd.2.2.2.1,
+      t, htA, a, haA, ?_, ?_, haB, ?_⟩
+    · intro hmem
+      exact hbdis (by simp [f]) hmem
+    · intro hmem
+      exact hbdis (by simp [f]) hmem
+    · omega
+
+open Classical in
+/-- **Two-scale missing-rectangle law for counterexamples.**
+
+The preceding construction has a sharp contrapositive.  In a global
+counterexample, once `δ=s+t` and `2δ=u+v` with both chosen intermediate
+steps nontrivial (`s≠δ`, `u≠δ`), only finitely many `δ`-edges can have both
+intermediate vertices `x+s` and `x+u` present.
+
+This is a genuinely additive restriction absent from the abstract
+countable-fusion counterexample: a popular difference cannot be
+simultaneously composable at its one-copy and two-copy scales. -/
+theorem counterexample_twoScale_missingRectangles
+    {A : Set ℕ} {N₀ δ s t u v : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hδpos : 0 < δ)
+    (htA : t ∈ A) (hvA : v ∈ A)
+    (hst : s + t = δ) (huv : u + v = 2 * δ)
+    (hsδ : s ≠ δ) (huδ : u ≠ δ) :
+    {x | x ∈ A ∧ x + δ ∈ A ∧
+      x + s ∈ A ∧ x + u ∈ A}.Finite := by
+  apply Set.not_infinite.mp
+  intro hinfinite
+  obtain ⟨B, hBA, hBinf, h0B, hbasis⟩ :=
+    twoScale_fixedDifference_composition
+      h0 hcov hδpos htA hvA hst huv hsδ huδ hinfinite
+  exact hfail B hBA hBinf hbasis
+
+open Classical in
+/-- **Popular anchored differences have missing parallelograms.**
+
+Take the first-scale split to be the canonical `δ=0+δ`.  If `δ∈A` and
+`2δ=u+v` is off-center, then a counterexample permits only finitely many
+filled parallelograms
+
+`x, x+δ, x+u ∈ A`.
+
+Indeed such an infinite family is the special case `s=0,t=δ` of
+`twoScale_fixedDifference_composition`. -/
+theorem counterexample_anchorCenter_missingParallelograms
+    {A : Set ℕ} {N₀ δ u v : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hδpos : 0 < δ) (hδA : δ ∈ A) (hvA : v ∈ A)
+    (huv : u + v = 2 * δ) (huδ : u ≠ δ) :
+    {x | x ∈ A ∧ x + δ ∈ A ∧ x + u ∈ A}.Finite := by
+  have hfinite :=
+    counterexample_twoScale_missingRectangles
+      h0 hcov hfail hδpos hδA hvA
+        (by omega : 0 + δ = δ) huv (by omega) huδ
+  apply hfinite.subset
+  intro x hx
+  exact ⟨hx.1, hx.2.1, by simpa using hx.1, hx.2.2⟩
+
+open Classical in
+/-- **A popular off-center anchor forces empty parallelograms.**
+
+If `δ∈A` is a popular difference and `u+v=2δ` is an off-center pair from
+`A`, then, on infinitely many `δ`-edges, *both* intermediate vertices are
+missing:
+
+`x,x+δ∈A`, but `x+u,x+v∉A`.
+
+Each filled-intermediate set is finite by the preceding theorem (applied
+once to `u,v` and once to `v,u`), so deleting their finite union from the
+popular edge set leaves the asserted infinite empty-rectangle family. -/
+theorem counterexample_popularAnchorCenter_has_emptyParallelograms
+    {A : Set ℕ} {N₀ δ u v : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hδpos : 0 < δ) (hδA : δ ∈ A)
+    (huA : u ∈ A) (hvA : v ∈ A)
+    (huv : u + v = 2 * δ) (huδ : u ≠ δ)
+    (hedges : {x | x ∈ A ∧ x + δ ∈ A}.Infinite) :
+    {x | x ∈ A ∧ x + δ ∈ A ∧
+      x + u ∉ A ∧ x + v ∉ A}.Infinite := by
+  have hvδ : v ≠ δ := by
+    intro hvδ
+    omega
+  let Edge : Set ℕ := {x | x ∈ A ∧ x + δ ∈ A}
+  let FillU : Set ℕ :=
+    {x | x ∈ A ∧ x + δ ∈ A ∧ x + u ∈ A}
+  let FillV : Set ℕ :=
+    {x | x ∈ A ∧ x + δ ∈ A ∧ x + v ∈ A}
+  have hFillU : FillU.Finite :=
+    counterexample_anchorCenter_missingParallelograms
+      h0 hcov hfail hδpos hδA hvA huv huδ
+  have hFillV : FillV.Finite :=
+    counterexample_anchorCenter_missingParallelograms
+      h0 hcov hfail hδpos hδA huA (by omega) hvδ
+  have hremaining : (Edge \ (FillU ∪ FillV)).Infinite :=
+    hedges.diff (hFillU.union hFillV)
+  apply hremaining.mono
+  intro x hx
+  have hxEdge : x ∈ A ∧ x + δ ∈ A := hx.1
+  have hxNotU : x + u ∉ A := by
+    intro hxu
+    exact hx.2 (Or.inl ⟨hxEdge.1, hxEdge.2, hxu⟩)
+  have hxNotV : x + v ∉ A := by
+    intro hxv
+    exact hx.2 (Or.inr ⟨hxEdge.1, hxEdge.2, hxv⟩)
+  exact ⟨hxEdge.1, hxEdge.2, hxNotU, hxNotV⟩
+
+open Classical in
+/-- **Popular-difference two-scale fork.**
+
+If `δ` itself occurs on infinitely many edges, then the preceding finite
+composition law forces an infinite missing-intermediate family at one of
+the two scales.  Either `x+s` is absent on infinitely many `δ`-edges, or
+`x+u` is absent on infinitely many of them.
+
+This is the strongest unconditional conclusion supplied by the two-scale
+composition: the first unsupported next inference would be to rule out both
+missing-rectangle alternatives using only pair covering. -/
+theorem counterexample_popularDifference_missingIntermediate_fork
+    {A : Set ℕ} {N₀ δ s t u v : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hδpos : 0 < δ)
+    (htA : t ∈ A) (hvA : v ∈ A)
+    (hst : s + t = δ) (huv : u + v = 2 * δ)
+    (hsδ : s ≠ δ) (huδ : u ≠ δ)
+    (hedges : {x | x ∈ A ∧ x + δ ∈ A}.Infinite) :
+    {x | x ∈ A ∧ x + δ ∈ A ∧ x + s ∉ A}.Infinite ∨
+    {x | x ∈ A ∧ x + δ ∈ A ∧ x + u ∉ A}.Infinite := by
+  let Edge : Set ℕ := {x | x ∈ A ∧ x + δ ∈ A}
+  let Both : Set ℕ :=
+    {x | x ∈ A ∧ x + δ ∈ A ∧ x + s ∈ A ∧ x + u ∈ A}
+  let MissingS : Set ℕ :=
+    {x | x ∈ A ∧ x + δ ∈ A ∧ x + s ∉ A}
+  let MissingU : Set ℕ :=
+    {x | x ∈ A ∧ x + δ ∈ A ∧ x + u ∉ A}
+  have hBoth : Both.Finite :=
+    counterexample_twoScale_missingRectangles
+      h0 hcov hfail hδpos htA hvA hst huv hsδ huδ
+  by_cases hS : MissingS.Infinite
+  · exact Or.inl hS
+  · right
+    by_contra hU
+    have hcover : Edge ⊆ Both ∪ MissingS ∪ MissingU := by
+      intro x hx
+      by_cases hxs : x + s ∈ A
+      · by_cases hxu : x + u ∈ A
+        · exact Or.inl (Or.inl ⟨hx.1, hx.2, hxs, hxu⟩)
+        · exact Or.inr ⟨hx.1, hx.2, hxu⟩
+      · exact Or.inl (Or.inr ⟨hx.1, hx.2, hxs⟩)
+    have hfinite : Edge.Finite :=
+      (hBoth.union (Set.not_infinite.mp hS) |>.union
+        (Set.not_infinite.mp hU)).subset hcover
+    exact hedges hfinite
+
+open Classical in
+/-- **Popular-difference central-or-missing trichotomy.**
+
+Let `δ≥N₀` occur on infinitely many edges of `A`.  Pair covering supplies
+a nontrivial oriented split `δ=s+t`.  At the doubled target there are only
+two possibilities:
+
+* every pair representation of `2δ` is the central pair `δ+δ`; or
+* an off-center split `2δ=u+v` exists, and the two-scale composition theorem
+  forces infinitely many `δ`-edges to miss `x+s` or infinitely many to miss
+  `x+u`.
+
+Thus a popular difference in a counterexample is either centrally rigid at
+its double or supports an infinite, explicitly oriented missing-rectangle
+family. -/
+theorem counterexample_popularDifference_central_or_twoScaleMissing
+    {A : Set ℕ} {N₀ δ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hδpos : 0 < δ) (hδN : N₀ ≤ δ)
+    (hedges : {x | x ∈ A ∧ x + δ ∈ A}.Infinite) :
+    (δ ∈ A ∧
+      ∀ x ∈ A, ∀ y ∈ A, x + y = 2 * δ → x = δ ∧ y = δ) ∨
+    ∃ s ∈ A, ∃ t ∈ A, ∃ u ∈ A, ∃ v ∈ A,
+      s + t = δ ∧ u + v = 2 * δ ∧ s ≠ δ ∧ u ≠ δ ∧
+      ({x | x ∈ A ∧ x + δ ∈ A ∧ x + s ∉ A}.Infinite ∨
+       {x | x ∈ A ∧ x + δ ∈ A ∧ x + u ∉ A}.Infinite) := by
+  by_cases hoffcenter :
+      ∃ u ∈ A, ∃ v ∈ A, u + v = 2 * δ ∧ u ≠ δ
+  · right
+    obtain ⟨u, huA, v, hvA, huv, huδ⟩ := hoffcenter
+    obtain ⟨p, hpA, q, hqA, hpq⟩ := hcov δ hδN
+    by_cases hpδ : p = δ
+    · have hq0 : q = 0 := by omega
+      have hsplit :=
+        counterexample_popularDifference_missingIntermediate_fork
+          h0 hcov hfail hδpos hpA hvA
+            (by omega : q + p = δ) huv (by omega) huδ hedges
+      exact ⟨q, hqA, p, hpA, u, huA, v, hvA,
+        by omega, huv, by omega, huδ, hsplit⟩
+    · have hsplit :=
+        counterexample_popularDifference_missingIntermediate_fork
+          h0 hcov hfail hδpos hqA hvA
+            hpq huv hpδ huδ hedges
+      exact ⟨p, hpA, q, hqA, u, huA, v, hvA,
+        hpq, huv, hpδ, huδ, hsplit⟩
+  · left
+    push Not at hoffcenter
+    obtain ⟨p, hpA, q, hqA, hpq⟩ :=
+      hcov (2 * δ) (by omega)
+    have hpδ : p = δ :=
+      hoffcenter p hpA q hqA hpq
+    have hqδ : q = δ := by omega
+    refine ⟨hpδ ▸ hpA, ?_⟩
+    intro x hxA y hyA hxy
+    have hxδ : x = δ :=
+      hoffcenter x hxA y hyA hxy
+    exact ⟨hxδ, by omega⟩
+
+open Classical in
+/-- **A popular positive difference lies outside the basis.**
+
+This is the direct infinite-edge form of
+`counterexample_basisDifference_edges_finite`: in a global counterexample,
+no positive `δ ∈ A` can occur as a difference on infinitely many pairs of
+basis elements. -/
+theorem counterexample_popularDifference_not_mem
+    {A : Set ℕ} {N₀ δ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hδpos : 0 < δ)
+    (hedges : {x | x ∈ A ∧ x + δ ∈ A}.Infinite) :
+    δ ∉ A := by
+  intro hδA
+  exact hedges
+    (counterexample_basisDifference_edges_finite
+      h0 hcov hfail hδpos hδA)
+
+open Classical in
+/-- **A popular difference has an infinite empty split-diamond family.**
+
+For `δ ≥ N₀`, choose any basis split `δ=s+t`.  Popularity first forces
+`δ∉A`, hence neither summand can equal `δ`.  The one-scale composition
+law, applied in both orientations, says that only finitely many `δ`-edges
+contain `x+s`, and only finitely many contain `x+t`.  Removing those two
+finite exceptional families leaves infinitely many edges on which both
+intermediate translates are absent. -/
+theorem counterexample_popularDifference_has_emptySplitDiamonds
+    {A : Set ℕ} {N₀ δ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hδpos : 0 < δ) (hδN : N₀ ≤ δ)
+    (hedges : {x | x ∈ A ∧ x + δ ∈ A}.Infinite) :
+    ∃ s ∈ A, ∃ t ∈ A, s + t = δ ∧
+      {x | x ∈ A ∧ x + δ ∈ A ∧
+        x + s ∉ A ∧ x + t ∉ A}.Infinite := by
+  have hδnot : δ ∉ A :=
+    counterexample_popularDifference_not_mem
+      h0 hcov hfail hδpos hedges
+  obtain ⟨s, hsA, t, htA, hst⟩ := hcov δ hδN
+  have hsδ : s ≠ δ := by
+    intro hs
+    exact hδnot (hs ▸ hsA)
+  have htδ : t ≠ δ := by
+    intro ht
+    exact hδnot (ht ▸ htA)
+  let Edge : Set ℕ := {x | x ∈ A ∧ x + δ ∈ A}
+  let FillS : Set ℕ :=
+    {x | x ∈ A ∧ x + δ ∈ A ∧ x + s ∈ A}
+  let FillT : Set ℕ :=
+    {x | x ∈ A ∧ x + δ ∈ A ∧ x + t ∈ A}
+  have hFillS : FillS.Finite :=
+    counterexample_fixedDifference_split_filled_finite
+      h0 hcov hfail hδpos htA hst hsδ
+  have hFillT : FillT.Finite :=
+    counterexample_fixedDifference_split_filled_finite
+      h0 hcov hfail hδpos hsA (by omega) htδ
+  have hremaining : (Edge \ (FillS ∪ FillT)).Infinite :=
+    hedges.diff (hFillS.union hFillT)
+  refine ⟨s, hsA, t, htA, hst, ?_⟩
+  apply hremaining.mono
+  intro x hx
+  have hxEdge : x ∈ A ∧ x + δ ∈ A := hx.1
+  have hxs : x + s ∉ A := by
+    intro hxsA
+    exact hx.2 (Or.inl ⟨hxEdge.1, hxEdge.2, hxsA⟩)
+  have hxt : x + t ∉ A := by
+    intro hxtA
+    exact hx.2 (Or.inr ⟨hxEdge.1, hxEdge.2, hxtA⟩)
+  exact ⟨hxEdge.1, hxEdge.2, hxs, hxt⟩
+
+open Classical in
+/-- **Every sufficiently large popular difference has a two-scale hole.**
+
+The central branch in
+`counterexample_popularDifference_central_or_twoScaleMissing` would put
+`δ` in `A`, but a popular positive difference cannot belong to `A`.
+Consequently only the explicit off-center branch survives: there are
+splittings `δ=s+t` and `2δ=u+v` for which infinitely many `δ`-edges miss
+one of the two translated intermediate points. -/
+theorem counterexample_popularDifference_has_twoScaleMissing
+    {A : Set ℕ} {N₀ δ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hδpos : 0 < δ) (hδN : N₀ ≤ δ)
+    (hedges : {x | x ∈ A ∧ x + δ ∈ A}.Infinite) :
+    ∃ s ∈ A, ∃ t ∈ A, ∃ u ∈ A, ∃ v ∈ A,
+      s + t = δ ∧ u + v = 2 * δ ∧ s ≠ δ ∧ u ≠ δ ∧
+      ({x | x ∈ A ∧ x + δ ∈ A ∧ x + s ∉ A}.Infinite ∨
+       {x | x ∈ A ∧ x + δ ∈ A ∧ x + u ∉ A}.Infinite) := by
+  rcases counterexample_popularDifference_central_or_twoScaleMissing
+      h0 hcov hfail hδpos hδN hedges with hcentral | hmissing
+  · exact (counterexample_popularDifference_not_mem
+      h0 hcov hfail hδpos hedges hcentral.1).elim
+  · exact hmissing
+
+open Classical in
+/-- **Growing popular differences are forced into arbitrarily large empty
+split rectangles.**
+
+Global tail sum-freeness removes both disposable horns from
+`growing_differences_composable_or_missing_rectangles`.  Choose a
+difference `d` beyond the sum-free threshold with at least two supplied
+edges.  If `d∈A`, one of their positive starts would make the late basis
+point `x+d` an internal positive sum.  Hence `d∉A`, and covering splits it
+as `d=u+v` with positive `u,v∈A`.  For every supplied edge, either
+intermediate membership would give
+
+`x+d=(x+u)+v=(x+v)+u`,
+
+again contradicting tail sum-freeness.  The conclusion retains arbitrary
+difference and multiplicity thresholds. -/
+theorem counterexample_growingDifferences_have_large_emptySplitRectangles
+    {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hgrowing : ∀ Δ K, ∃ d, Δ < d ∧ ∃ V : Finset ℕ,
+      K ≤ V.card ∧ ∀ x ∈ V, x ∈ A ∧ x + d ∈ A) :
+    ∀ Δ K, ∃ d, Δ < d ∧ d ∉ A ∧
+      ∃ u ∈ A, ∃ v ∈ A,
+        0 < u ∧ 0 < v ∧ u + v = d ∧
+        ∃ V : Finset ℕ, K ≤ V.card ∧
+          ∀ x ∈ V, x ∈ A ∧ x + d ∈ A ∧
+            x + u ∉ A ∧ x + v ∉ A := by
+  obtain ⟨T, hsumfree⟩ :=
+    counterexample_eventually_positive_sumFree h0 hcov hfail
+  intro Δ K
+  obtain ⟨d, hdlarge, V, hVcard, hV⟩ :=
+    hgrowing (max Δ (max T N₀)) (max K 2)
+  have hdΔ : Δ < d := lt_of_le_of_lt
+    (le_max_left Δ (max T N₀)) hdlarge
+  have hdT : T < d := lt_of_le_of_lt
+    (le_trans (le_max_left T N₀)
+      (le_max_right Δ (max T N₀))) hdlarge
+  have hdN : N₀ ≤ d := le_trans
+    (le_trans (le_max_right T N₀)
+      (le_max_right Δ (max T N₀)))
+    (le_of_lt hdlarge)
+  have hVtwo : 1 < V.card := by omega
+  obtain ⟨x, hxV, y, hyV, hxy⟩ :=
+    Finset.one_lt_card.mp hVtwo
+  have hdnot : d ∉ A := by
+    intro hdA
+    have hpositive : 0 < x ∨ 0 < y := by omega
+    rcases hpositive with hxpos | hypos
+    · have hxdata := hV x hxV
+      exact
+        (hsumfree (x + d) hxdata.2 (by omega)
+          x hxdata.1 d hdA hxpos (by omega)) rfl
+    · have hydata := hV y hyV
+      exact
+        (hsumfree (y + d) hydata.2 (by omega)
+          y hydata.1 d hdA hypos (by omega)) rfl
+  obtain ⟨u, huA, v, hvA, huPos, hvPos, huv⟩ :=
+    (large_mem_or_splits hcov hdN).resolve_left hdnot
+  refine ⟨d, hdΔ, hdnot, u, huA, v, hvA,
+    huPos, hvPos, huv, V, by omega, ?_⟩
+  intro z hzV
+  have hzdata := hV z hzV
+  have hzu : z + u ∉ A := by
+    intro hzuA
+    apply hsumfree (z + d) hzdata.2 (by omega)
+      (z + u) hzuA v hvA (by omega) hvPos
+    omega
+  have hzv : z + v ∉ A := by
+    intro hzvA
+    apply hsumfree (z + d) hzdata.2 (by omega)
+      (z + v) hzvA u huA (by omega) huPos
+    omega
+  exact ⟨hzdata.1, hzdata.2, hzu, hzv⟩
+
+open Classical in
+/-- **External matching growth already proves the desired deletion.**
+
+Run the finite-core matching dichotomy only over targets outside `A`.  In
+the matching-growth branch, sparse deletion leaves a pair representation of
+every sufficiently large external target.  Thin that deletion once more so
+that every retained deleted point has a triple representation avoiding the
+whole deletion.  The two kinds of representations then fit exactly into
+`deletion_criterion_sumfree`: undeleted points of `A` serve themselves using
+zero, deleted points use their chosen triple repairs, and external targets
+use their surviving pairs.
+
+Consequently the only obstruction to an infinite order-three deletion is a
+bounded moving transversal for the pair supports, recurrent along the
+external target set. -/
+theorem infiniteDeletionThreeBasis_or_boundedMovingPairTransversalsAlongExternal
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzero : 0 ∈ A) :
+    (∃ B, B ⊆ A ∧ B.Infinite ∧
+      IsExactTupleAsymptoticBasis (A \ B) 3) ∨
+      HasBoundedMovingOutsideTransversalsAlong
+        (additiveSupportFamily A 2) A {n | n ∉ A} := by
+  obtain ⟨F, hFA, hgrowth⟩ | hmoving :=
+    exists_finiteCore_outsideMatchingAlong_or_boundedMovingAlong
+      (A := A) (S := {n | n ∉ A})
+      (R := additiveSupportFamily A 2) (r := 2)
+      (additiveSupportFamily_supportsIn A 2)
+      (additiveSupportFamily_cardAtMost A 2)
+  · left
+    have hmatches : MatchingTendsToInfinityOutsideAlong
+        (additiveSupportFamily A 2) F {n | n ∉ A} :=
+      matchingTendsToInfinityOutsideAlong_of_outsideMatchingAlong hgrowth
+    obtain ⟨B₀, hB₀A, hB₀, _hB₀F, hsurvive⟩ :=
+      sparseDeletion_of_matchingTendsToInfinityOutsideAlong
+        (C := A) (S := {n | n ∉ A})
+        (R := additiveSupportFamily A 2) (F := F)
+        (additiveSupportFamily_supportsBounded A 2)
+        hmatches (hbasis.unboundedOutside F)
+    have hexternal :
+        IsExactTupleAsymptoticBasisAlong
+          (A \ B₀) 2 {n | n ∉ A} :=
+      hasEventuallySurvivingSupportAlong_additive_iff.mp hsurvive
+    obtain ⟨N, hN⟩ := hexternal
+    obtain ⟨T, hself⟩ :=
+      eventually_selfAvoidingTripleSupport_of_orderTwoBasis hbasis
+    let K : Set ℕ := B₀ \ Set.Iio (max T 1)
+    have hK : K.Infinite :=
+      hB₀.diff (Set.finite_Iio (max T 1))
+    have hlocal : ∀ x ∈ K, HasSelfAvoidingTripleSupport A x := by
+      intro x hxK
+      apply hself x
+      exact le_trans (le_max_left T 1) (Nat.le_of_not_gt hxK.2)
+    obtain ⟨B, hBK, hB, hrepairs⟩ :=
+      exists_infinite_selfTripleRepairs hK hlocal
+    have hBB₀ : B ⊆ B₀ :=
+      hBK.trans Set.diff_subset
+    have hBA : B ⊆ A :=
+      hBB₀.trans hB₀A
+    have hzeroB : 0 ∉ B := by
+      intro h0B
+      have h0K := hBK h0B
+      apply h0K.2
+      exact lt_of_lt_of_le Nat.zero_lt_one (le_max_right T 1)
+    have hserved : ∀ b ∈ B, ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = b := by
+      intro b hbB
+      obtain ⟨G, hGR, hGB⟩ := hrepairs b hbB
+      obtain ⟨v, hvA, hvsum, hvSupport⟩ :=
+        mem_additiveSupportFamily_iff.mp hGR
+      have hnotB : ∀ i, (v i).1 ∉ B := by
+        intro i hviB
+        apply Set.disjoint_left.mp hGB
+          (show (v i).1 ∈ G from by
+            rw [← hvSupport]
+            exact mem_tupleSupport_iff.mpr ⟨i, rfl⟩)
+          hviB
+      refine ⟨(v 0).1, hvA 0, (v 1).1, hvA 1,
+        (v 2).1, hvA 2, hnotB 0, hnotB 1, hnotB 2, ?_⟩
+      simpa [Fin.sum_univ_three] using hvsum
+    have hcover : ∀ n, N ≤ n → n ∉ A →
+        ∃ x ∈ A, ∃ y ∈ A,
+          x ∉ B ∧ y ∉ B ∧ x + y = n := by
+      intro n hn hnA
+      obtain ⟨v, hvAB₀, hvsum⟩ := hN n hn hnA
+      refine ⟨v 0, (hvAB₀ 0).1, v 1, (hvAB₀ 1).1,
+        ?_, ?_, ?_⟩
+      · intro hvB
+        exact (hvAB₀ 0).2 (hBB₀ hvB)
+      · intro hvB
+        exact (hvAB₀ 1).2 (hBB₀ hvB)
+      · simpa [Fin.sum_univ_two] using hvsum
+    exact ⟨B, hBA, hB,
+      deletion_criterion_sumfree hzero hzeroB hserved hcover⟩
+  · exact Or.inr hmoving
+
+open Classical in
+/-- A genuine counterexample must lie in the external bounded-moving
+branch of the preceding dichotomy. -/
+theorem counterexample_forces_boundedMovingPairTransversalsAlongExternal
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzero : 0 ∈ A)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    HasBoundedMovingOutsideTransversalsAlong
+      (additiveSupportFamily A 2) A {n | n ∉ A} := by
+  rcases
+      infiniteDeletionThreeBasis_or_boundedMovingPairTransversalsAlongExternal
+        hbasis hzero with hdelete | hmoving
+  · obtain ⟨B, hBA, hB, hthree⟩ := hdelete
+    exact (hfail B hBA hB hthree).elim
+  · exact hmoving
+
+open Classical in
+/-- Bounded moving transversals along external targets give a fixed
+cardinality bound for the complete pair-support family at arbitrarily large
+external targets.  With empty protected core, pair supports are nonempty and
+form a matching, so any transversal has at least as many vertices as there
+are supports. -/
+theorem recurrently_bounded_pairSupports_on_external_of_boundedMoving
+    {A : Set ℕ}
+    (hmoving : HasBoundedMovingOutsideTransversalsAlong
+      (additiveSupportFamily A 2) A {n | n ∉ A}) :
+    ∃ m, ∀ N, ∃ n, N ≤ n ∧ n ∉ A ∧
+      (additiveSupportFamily A 2 n).card ≤ m := by
+  obtain ⟨m, hm⟩ := hmoving ∅ (by simp)
+  refine ⟨m, ?_⟩
+  intro N
+  obtain ⟨n, T, hn, hnA, _hTA, _hTempty, hTcard, htrans⟩ := hm N
+  have hdestroy : DestroysAt
+      (additiveSupportFamily A 2) (T : Set ℕ) n := by
+    intro E hER
+    have hEnonempty :=
+      additiveSupportFamily_supportsNonempty A (by omega) n E hER
+    have hEout : E ∈ outsideSupportHypergraph
+        (additiveSupportFamily A 2) ∅ n := by
+      apply Finset.mem_erase.mpr
+      refine ⟨Finset.nonempty_iff_ne_empty.mp hEnonempty, ?_⟩
+      exact Finset.mem_image.mpr ⟨E, hER, by simp⟩
+    obtain ⟨x, hx⟩ := htrans E hEout
+    have hx' := Finset.mem_inter.mp hx
+    exact Set.not_disjoint_iff.mpr
+      ⟨x, hx'.1, Finset.mem_coe.mpr hx'.2⟩
+  have hsupportCard : (additiveSupportFamily A 2 n).card ≤ T.card :=
+    card_supports_le_card_of_matching_of_destroysAt
+      (fun E hER =>
+        additiveSupportFamily_supportsNonempty A (by omega) n E hER)
+      (additiveSupportFamily_two_isMatching A n) hdestroy
+  exact ⟨n, hn, hnA, hsupportCard.trans hTcard⟩
+
+open Classical in
+/-- Numerical external-target normal form for a counterexample: one fixed
+bound controls the number of unordered pair supports on an unbounded
+sequence of targets outside `A`. -/
+theorem counterexample_forces_recurrentlyBoundedPairSupportsOnExternal
+    {A : Set ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A 2)
+    (hzero : 0 ∈ A)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ m, ∀ N, ∃ n, N ≤ n ∧ n ∉ A ∧
+      (additiveSupportFamily A 2 n).card ≤ m :=
+  recurrently_bounded_pairSupports_on_external_of_boundedMoving
+    (counterexample_forces_boundedMovingPairTransversalsAlongExternal
+      hbasis hzero hfail)
+
+open Classical in
+/-- At a complete sum-free tail, subtracting a positive basis source from
+an external target has only two outcomes.  Either the remainder is itself
+in the basis, so the source is an endpoint of a pair representation of the
+original target, or the remainder splits into two positive basis elements
+and the source extends that split to a positive triple representation. -/
+theorem completeSumFree_external_source_pair_or_positiveTriple
+    {A : Set ℕ} {T n a : ℕ}
+    (hcomplete : ∀ q, T ≤ q →
+      (q ∈ A ↔ ¬∃ u ∈ A, ∃ v ∈ A,
+        0 < u ∧ 0 < v ∧ u + v = q))
+    (hnA : n ∉ A) (haA : a ∈ A) (haPos : 0 < a)
+    (hTa : T + a ≤ n) :
+    n - a ∈ A ∨
+      ∃ u ∈ A, ∃ v ∈ A,
+        0 < u ∧ 0 < v ∧ a + u + v = n := by
+  by_cases hremA : n - a ∈ A
+  · exact Or.inl hremA
+  · right
+    have hTrem : T ≤ n - a := by omega
+    have hsplit : ∃ u ∈ A, ∃ v ∈ A,
+        0 < u ∧ 0 < v ∧ u + v = n - a := by
+      by_contra hno
+      exact hremA ((hcomplete (n - a) hTrem).mpr hno)
+    obtain ⟨u, huA, v, hvA, huPos, hvPos, huv⟩ := hsplit
+    exact ⟨u, huA, v, hvA, huPos, hvPos, by omega⟩
+
+open Classical in
+/-- **Bounded external pair bottlenecks have arbitrarily many positive
+triple sources.**
+
+The external moving-transversal obstruction bounds the complete pair
+family at arbitrarily late external targets.  Choose more than `2m + K`
+positive elements of the infinite basis below such a target.  At most
+`2m` of them occur in the union of its pair supports.  Every remaining
+source therefore falls into the triple branch of
+`completeSumFree_external_source_pair_or_positiveTriple`.
+
+Thus low pair multiplicity does not mean low order-three multiplicity: at
+each requested scale there is one bottleneck target with more than `K`
+distinct positive basis elements, each extending to a positive triple
+representation of that same target. -/
+theorem counterexample_externalPairBottlenecks_have_manyPositiveTripleSources
+    {A : Set ℕ} {N₀ : ℕ}
+    (hzero : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
+    ∃ m, ∀ K N, ∃ n, ∃ S : Finset ℕ,
+      N ≤ n ∧ n ∉ A ∧
+      (additiveSupportFamily A 2 n).card ≤ m ∧
+      K < S.card ∧
+      ∀ a ∈ S, a ∈ A ∧ 0 < a ∧
+        ∃ u ∈ A, ∃ v ∈ A,
+          0 < u ∧ 0 < v ∧ a + u + v = n := by
+  have hbasis : IsExactTupleAsymptoticBasis A 2 := by
+    refine ⟨N₀, ?_⟩
+    intro n hn
+    obtain ⟨x, hxA, y, hyA, hxy⟩ := hcov n hn
+    refine ⟨![x, y], ?_, ?_⟩
+    · intro i
+      fin_cases i
+      · exact hxA
+      · exact hyA
+    · simpa [Fin.sum_univ_two] using hxy
+  obtain ⟨T, hcomplete⟩ :=
+    counterexample_eventually_completeSumFreePartition
+      hzero hcov hfail
+  obtain ⟨m, hbounded⟩ :=
+    counterexample_forces_recurrentlyBoundedPairSupportsOnExternal
+      hbasis hzero hfail
+  refine ⟨m, ?_⟩
+  intro K N
+  let Apos : Set ℕ := A \ ({0} : Set ℕ)
+  have hApos : Apos.Infinite :=
+    hbasis.infinite.diff (Set.finite_singleton 0)
+  obtain ⟨S₀, hS₀Apos, hS₀card⟩ :=
+    hApos.exists_subset_card_eq (K + 2 * m + 1)
+  have hS₀nonempty : S₀.Nonempty := by
+    apply Finset.card_pos.mp
+    rw [hS₀card]
+    omega
+  obtain ⟨n, hnLate, hnA, hnPairCard⟩ :=
+    hbounded (max N (T + S₀.max' hS₀nonempty))
+  let U : Finset ℕ :=
+    (additiveSupportFamily A 2 n).biUnion id
+  let S : Finset ℕ := S₀ \ U
+  have hUcard : U.card ≤ 2 * m := by
+    calc
+      U.card ≤
+          ∑ E ∈ additiveSupportFamily A 2 n, E.card :=
+        Finset.card_biUnion_le
+      _ ≤ ∑ _E ∈ additiveSupportFamily A 2 n, 2 := by
+        gcongr with E hER
+        exact additiveSupportFamily_cardAtMost A 2 n E hER
+      _ = 2 * (additiveSupportFamily A 2 n).card := by
+        simp [Nat.mul_comm]
+      _ ≤ 2 * m := Nat.mul_le_mul_left 2 hnPairCard
+  have hinterCard : (S₀ ∩ U).card ≤ U.card :=
+    Finset.card_le_card Finset.inter_subset_right
+  have hScardSum : S.card + (S₀ ∩ U).card = S₀.card := by
+    exact Finset.card_sdiff_add_card_inter S₀ U
+  have hScard : K < S.card := by
+    rw [hS₀card] at hScardSum
+    omega
+  refine ⟨n, S,
+    (le_max_left N (T + S₀.max' hS₀nonempty)).trans hnLate,
+    hnA, hnPairCard, hScard, ?_⟩
+  intro a haS
+  have haS₀ : a ∈ S₀ := (Finset.mem_sdiff.mp haS).1
+  have haU : a ∉ U := (Finset.mem_sdiff.mp haS).2
+  have haApos := hS₀Apos haS₀
+  have haA : a ∈ A := haApos.1
+  have haPos : 0 < a := by
+    have ha0 : a ≠ 0 := by simpa using haApos.2
+    omega
+  have haMax : a ≤ S₀.max' hS₀nonempty :=
+    Finset.le_max' S₀ a haS₀
+  have hTa : T + a ≤ n := by
+    exact (Nat.add_le_add_left haMax T).trans
+      ((le_max_right N (T + S₀.max' hS₀nonempty)).trans hnLate)
+  rcases
+      completeSumFree_external_source_pair_or_positiveTriple
+        hcomplete hnA haA haPos hTa with hremA | htriple
+  · exfalso
+    have han : a ≤ n := by omega
+    have hpair :
+        pairSupport n a ∈ additiveSupportFamily A 2 n := by
+      apply pairSupport_mem_additiveSupportFamily han haA
+      have hsub : n - a = n - a := rfl
+      simpa [hsub] using hremA
+    apply haU
+    exact Finset.mem_biUnion.mpr
+      ⟨pairSupport n a, hpair, by simp [pairSupport]⟩
+  · exact ⟨haA, haPos, htriple⟩
+
+open Classical in
+/-- A fixed-difference cross target has a triple repair avoiding both upper
+endpoints.  Subtract a fixed positive source `d` and cover the remainder by
+two basis elements.  If either one were `x+δ`, the other would express the
+late basis point `y` as a sum of two positive basis elements; the other
+endpoint is symmetric. -/
+theorem fixedDifference_crossTarget_has_endpointAvoidingTriple
+    {A : Set ℕ} {N₀ T δ d x y : ℕ}
+    (hcov : PairCovers A N₀)
+    (hsumfree : ∀ a ∈ A, T ≤ a →
+      ∀ u ∈ A, ∀ v ∈ A, 0 < u → 0 < v → u + v ≠ a)
+    (hdA : d ∈ A) (hdPos : 0 < d)
+    (hxA : x ∈ A) (hyA : y ∈ A)
+    (hxT : T ≤ x) (hyT : T ≤ y)
+    (hxd : d < x) (hyd : d < y)
+    (hxlarge : N₀ + d ≤ x) :
+    ∃ G ∈ additiveSupportFamily A 3 (x + y + δ),
+      Disjoint (G : Set ℕ)
+        ((({x + δ, y + δ} : Finset ℕ) : Set ℕ)) := by
+  have hdTarget : d ≤ x + y + δ := by omega
+  obtain ⟨p, hpA, q, hqA, hpq⟩ :=
+    hcov (x + y + δ - d) (by omega)
+  have hsum : d + p + q = x + y + δ := by omega
+  have hpx : p ≠ x + δ := by
+    intro hp
+    have hqPos : 0 < q := by omega
+    exact hsumfree y hyA hyT d hdA q hqA hdPos hqPos (by omega)
+  have hpy : p ≠ y + δ := by
+    intro hp
+    have hqPos : 0 < q := by omega
+    exact hsumfree x hxA hxT d hdA q hqA hdPos hqPos (by omega)
+  have hqx : q ≠ x + δ := by
+    intro hq
+    have hpPos : 0 < p := by omega
+    exact hsumfree y hyA hyT d hdA p hpA hdPos hpPos (by omega)
+  have hqy : q ≠ y + δ := by
+    intro hq
+    have hpPos : 0 < p := by omega
+    exact hsumfree x hxA hxT d hdA p hpA hdPos hpPos (by omega)
+  apply exists_surviving_additiveSupport_iff.mpr
+  refine ⟨![d, p, q], ?_, ?_⟩
+  · intro i
+    fin_cases i <;> simp_all <;> omega
+  · simpa [Fin.sum_univ_three] using hsum
+
+open Classical in
+/-- A bounded exceptional shift `a<d` has a triple repair avoiding the
+upper endpoint `x+δ`.  If the pair obtained after subtracting `d` used that
+endpoint, its complementary summand would force `d≤a`. -/
+theorem fixedDifference_smallShift_has_endpointAvoidingTriple
+    {A : Set ℕ} {N₀ δ d x a : ℕ}
+    (hcov : PairCovers A N₀)
+    (hdA : d ∈ A) (hxA : x ∈ A)
+    (haA : a ∈ A) (haSmall : a < d)
+    (hdx : d < x)
+    (hxlarge : N₀ + d ≤ x) :
+    ∃ G ∈ additiveSupportFamily A 3 (x + δ + a),
+      Disjoint (G : Set ℕ) ({x + δ} : Set ℕ) := by
+  obtain ⟨p, hpA, q, hqA, hpq⟩ :=
+    hcov (x + δ + a - d) (by omega)
+  have hsum : d + p + q = x + δ + a := by omega
+  have hdp : d ≠ x + δ := by omega
+  have hpp : p ≠ x + δ := by
+    intro hp
+    omega
+  have hqp : q ≠ x + δ := by
+    intro hq
+    omega
+  apply exists_surviving_additiveSupport_iff.mpr
+  refine ⟨![d, p, q], ?_, ?_⟩
+  · intro i
+    fin_cases i <;> simp_all
+  · simpa [Fin.sum_univ_three] using hsum
+
+open Classical in
+/-- Finitely many pointwise endpoint-avoiding repairs can be made
+simultaneously disjoint from one infinite thinning of the endpoint
+reservoir. -/
+theorem exists_infinite_freeSet_for_finitelyMany_pointwiseSupports
+    {A K : Set ℕ} {I : Finset ℕ} {target : ℕ → ℕ → ℕ}
+    (hK : K.Infinite)
+    (hlocal : ∀ b ∈ K, ∀ i ∈ I,
+      ∃ G ∈ additiveSupportFamily A 3 (target b i),
+        Disjoint (G : Set ℕ) ({b} : Set ℕ)) :
+    ∃ L, L ⊆ K ∧ L.Infinite ∧
+      ∀ b ∈ L, ∀ i ∈ I,
+        ∃ G ∈ additiveSupportFamily A 3 (target b i),
+          Disjoint (G : Set ℕ) L := by
+  let HasRepair (b i : ℕ) : Prop :=
+    ∃ G ∈ additiveSupportFamily A 3 (target b i),
+      Disjoint (G : Set ℕ) ({b} : Set ℕ)
+  let chooseSupport (b i : ℕ) : Finset ℕ :=
+    if h : HasRepair b i then Classical.choose h else ∅
+  let f : ℕ → Finset ℕ := fun b => I.biUnion (chooseSupport b)
+  have hchoose : ∀ b ∈ K, ∀ i ∈ I,
+      chooseSupport b i ∈ additiveSupportFamily A 3 (target b i) ∧
+        Disjoint (chooseSupport b i : Set ℕ) ({b} : Set ℕ) := by
+    intro b hbK i hiI
+    have hHas : HasRepair b i := hlocal b hbK i hiI
+    simp only [chooseSupport, dif_pos hHas]
+    exact Classical.choose_spec hHas
+  have hfcard : ∀ b ∈ K, (f b).card ≤ 3 * I.card := by
+    intro b hbK
+    calc
+      (f b).card ≤ ∑ i ∈ I, (chooseSupport b i).card := by
+        exact Finset.card_biUnion_le
+      _ ≤ ∑ _i ∈ I, 3 := by
+        apply Finset.sum_le_sum
+        intro i hiI
+        exact additiveSupportFamily_cardAtMost A 3 (target b i)
+          (chooseSupport b i) (hchoose b hbK i hiI).1
+      _ = 3 * I.card := by simp [Nat.mul_comm]
+  have hfavoid : ∀ b ∈ K, b ∉ f b := by
+    intro b hbK hbf
+    obtain ⟨i, hiI, hbi⟩ := Finset.mem_biUnion.mp hbf
+    exact Set.disjoint_left.mp (hchoose b hbK i hiI).2 hbi (by simp)
+  obtain ⟨L, hLK, hL, hfree⟩ :=
+    exists_infinite_freeSet_of_bounded_pointMap
+      hK f (3 * I.card) hfcard hfavoid
+  refine ⟨L, hLK, hL, ?_⟩
+  intro b hbL i hiI
+  refine ⟨chooseSupport b i, (hchoose b (hLK hbL) i hiI).1, ?_⟩
+  rw [Set.disjoint_left]
+  intro x hxi hxL
+  exact Set.disjoint_left.mp (hfree b hbL)
+    (Finset.mem_biUnion.mpr ⟨i, hiI, hxi⟩) hxL
+
+open Classical in
+/-- Pairwise endpoint-avoiding repairs of the shifted targets
+`b+c-δ` can be made simultaneously disjoint from one infinite thinning. -/
+theorem exists_infinite_freeSet_for_shiftedPairSupports
+    {A K : Set ℕ} {δ : ℕ}
+    (hK : K.Infinite)
+    (hlocal : ∀ b ∈ K, ∀ c ∈ K, b ≠ c →
+      ∃ G ∈ additiveSupportFamily A 3 (b + c - δ),
+        Disjoint (G : Set ℕ)
+          ((({b, c} : Finset ℕ) : Set ℕ))) :
+    ∃ L, L ⊆ K ∧ L.Infinite ∧
+      ∀ b ∈ L, ∀ c ∈ L, b ≠ c →
+        ∃ G ∈ additiveSupportFamily A 3 (b + c - δ),
+          Disjoint (G : Set ℕ) L := by
+  let HasRepair (P : Finset ℕ) : Prop :=
+    ∃ G ∈ additiveSupportFamily A 3 (P.sum id - δ),
+      Disjoint (G : Set ℕ) (P : Set ℕ)
+  let chooseSupport (P : Finset ℕ) : Finset ℕ :=
+    if h : HasRepair P then Classical.choose h else ∅
+  let f : ℕ → ℕ → Finset ℕ := fun b c => chooseSupport {b, c}
+  have hfsymm : ∀ b c, f b c = f c b := by
+    intro b c
+    have hp : ({b, c} : Finset ℕ) = {c, b} := by
+      ext z
+      simp [or_comm]
+    simp only [f, hp]
+  have hfRepair : ∀ b ∈ K, ∀ c ∈ K, b ≠ c →
+      f b c ∈ additiveSupportFamily A 3 (b + c - δ) ∧
+        Disjoint (f b c : Set ℕ)
+          ((({b, c} : Finset ℕ) : Set ℕ)) := by
+    intro b hbK c hcK hbc
+    obtain ⟨G, hGR, hGbc⟩ := hlocal b hbK c hcK hbc
+    have hHas : HasRepair {b, c} := by
+      refine ⟨G, ?_, hGbc⟩
+      simpa [hbc] using hGR
+    have hspec : chooseSupport {b, c} ∈
+          additiveSupportFamily A 3
+            (({b, c} : Finset ℕ).sum id - δ) ∧
+        Disjoint (chooseSupport {b, c} : Set ℕ)
+          ((({b, c} : Finset ℕ) : Set ℕ)) := by
+      simp only [chooseSupport, dif_pos hHas]
+      exact Classical.choose_spec hHas
+    change chooseSupport {b, c} ∈
+          additiveSupportFamily A 3 (b + c - δ) ∧
+        Disjoint (chooseSupport {b, c} : Set ℕ)
+          ((({b, c} : Finset ℕ) : Set ℕ))
+    simpa [hbc] using hspec
+  have hfcard : ∀ b ∈ K, ∀ c ∈ K, b ≠ c →
+      (f b c).card ≤ 3 := by
+    intro b hbK c hcK hbc
+    exact additiveSupportFamily_cardAtMost A 3 (b + c - δ)
+      (f b c) (hfRepair b hbK c hcK hbc).1
+  have hfavoid : ∀ b ∈ K, ∀ c ∈ K, b ≠ c →
+      b ∉ f b c ∧ c ∉ f b c := by
+    intro b hbK c hcK hbc
+    have hdisj := (hfRepair b hbK c hcK hbc).2
+    constructor
+    · intro hb
+      exact Set.disjoint_left.mp hdisj hb (by simp)
+    · intro hc
+      exact Set.disjoint_left.mp hdisj hc (by simp)
+  obtain ⟨L, hLK, hL, hfree⟩ :=
+    exists_infinite_freeSet_of_symmetric_bounded_pairMap
+      hK f 3 hfsymm hfcard hfavoid
+  refine ⟨L, hLK, hL, ?_⟩
+  intro b hbL c hcL hbc
+  exact ⟨f b c, (hfRepair b (hLK hbL) c (hLK hcL) hbc).1,
+    hfree b hbL c hcL hbc⟩
+
+open Classical in
+/-- **Fixed popular differences are constructively deletable.**
+
+Assume the late positive part of `A` is sum-free and one positive
+difference `δ` occurs cofinally inside `A`.  Then the upper endpoints of a
+cofinal separated `δ`-matching contain an infinite deletion whose
+complement is an exact order-three asymptotic basis.
+
+The proof treats the only difficult risks explicitly.  Two selected
+predecessors use a shifted pair repair, a selected predecessor paired with
+itself uses the diagonal instance of the same repair, and the finitely many
+small summands use bounded point-map thinning.  Every remaining translated
+pair cover automatically avoids the deletion by late sum-freeness. -/
+theorem exists_infiniteDeletion_threeBasis_of_fixedPopularDifference
+    {A : Set ℕ} {N₀ T δ : ℕ}
+    (h0 : 0 ∈ A)
+    (hcov : PairCovers A N₀)
+    (hsumfree : ∀ a ∈ A, T ≤ a →
+      ∀ u ∈ A, ∀ v ∈ A, 0 < u → 0 < v → u + v ≠ a)
+    (hδ : 0 < δ)
+    (hsupply : ∀ N, ∃ x, N ≤ x ∧ x ∈ A ∧ x + δ ∈ A) :
+    ∃ B, B ⊆ A ∧ B.Infinite ∧
+      IsExactTupleAsymptoticBasis (A \ B) 3 := by
+  have hbasis : IsExactTupleAsymptoticBasis A 2 := by
+    refine ⟨N₀, ?_⟩
+    intro n hn
+    obtain ⟨x, hxA, y, hyA, hxy⟩ := hcov n hn
+    refine ⟨![x, y], ?_, ?_⟩
+    · intro i
+      fin_cases i
+      · exact hxA
+      · exact hyA
+    · simpa [Fin.sum_univ_two] using hxy
+  obtain ⟨d, hdA, hdLarge⟩ :=
+    hbasis.infinite.exists_gt (max T N₀)
+  have hdPos : 0 < d := by omega
+  let H : ℕ := max T (max (d + 1) (N₀ + d))
+  obtain ⟨Braw, hBrawA, hBraw, h0Braw, hpredRaw⟩ :=
+    fixed_difference_predecessor_deletion hδ hsupply
+  let B₀ : Set ℕ := Braw \ Set.Iio (H + δ)
+  have hB₀A : B₀ ⊆ A := fun b hb => hBrawA hb.1
+  have hB₀ : B₀.Infinite :=
+    hBraw.diff (Set.finite_Iio (H + δ))
+  have h0B₀ : 0 ∉ B₀ := fun h => h0Braw h.1
+  have hpredData : ∀ b ∈ B₀,
+      b - δ ∈ A ∧ b - δ ∉ B₀ ∧ b - δ + δ = b ∧
+        T ≤ b - δ ∧ d < b - δ ∧ N₀ + d ≤ b - δ := by
+    intro b hbB₀
+    obtain ⟨x, hxA, hxBraw, hxδ⟩ := hpredRaw b hbB₀.1
+    have hxH : H ≤ x := by
+      have hbLarge : H + δ ≤ b := Nat.le_of_not_gt hbB₀.2
+      omega
+    have hsub : b - δ = x := by omega
+    rw [hsub]
+    refine ⟨hxA, fun hxB₀ => hxBraw hxB₀.1, hxδ, ?_, ?_, ?_⟩
+    · exact (le_max_left T (max (d + 1) (N₀ + d))).trans hxH
+    · have := (le_max_left (d + 1) (N₀ + d)).trans
+        ((le_max_right T (max (d + 1) (N₀ + d))).trans hxH)
+      omega
+    · exact (le_max_right (d + 1) (N₀ + d)).trans
+        ((le_max_right T (max (d + 1) (N₀ + d))).trans hxH)
+  let I : Finset ℕ := insert d ((Finset.range d).filter (· ∈ A))
+  let target : ℕ → ℕ → ℕ := fun b a =>
+    if a = d then b + (b - δ) else b + a
+  have hlocalPoint : ∀ b ∈ B₀, ∀ a ∈ I,
+      ∃ G ∈ additiveSupportFamily A 3 (target b a),
+        Disjoint (G : Set ℕ) ({b} : Set ℕ) := by
+    intro b hbB₀ a haI
+    obtain ⟨hxA, hxB₀, hxδ, hxT, hxd, hxlarge⟩ :=
+      hpredData b hbB₀
+    by_cases had : a = d
+    · subst a
+      obtain ⟨G, hGR, hGb⟩ :=
+        fixedDifference_crossTarget_has_endpointAvoidingTriple
+          (A := A) (N₀ := N₀) (T := T) (δ := δ) (d := d)
+          (x := b - δ) (y := b - δ)
+          hcov hsumfree hdA hdPos hxA hxA hxT hxT hxd hxd hxlarge
+      refine ⟨G, ?_, ?_⟩
+      · have heq : (b - δ) + (b - δ) + δ =
+            b + (b - δ) := by omega
+        rw [show target b d = b + (b - δ) by simp [target]]
+        rw [← heq]
+        exact hGR
+      · simpa [hxδ] using hGb
+    · have haFilter :
+          a ∈ (Finset.range d).filter (· ∈ A) := by
+        simpa [I, had] using haI
+      have haSmall : a < d := Finset.mem_range.mp
+        (Finset.mem_filter.mp haFilter).1
+      have haA : a ∈ A := (Finset.mem_filter.mp haFilter).2
+      obtain ⟨G, hGR, hGb⟩ :=
+        fixedDifference_smallShift_has_endpointAvoidingTriple
+          (A := A) (N₀ := N₀) (δ := δ) (d := d)
+          (x := b - δ) (a := a)
+          hcov hdA hxA haA haSmall hxd hxlarge
+      refine ⟨G, ?_, ?_⟩
+      · have heq : (b - δ) + δ + a = b + a := by omega
+        rw [show target b a = b + a by simp [target, had]]
+        rw [← heq]
+        exact hGR
+      · simpa [hxδ] using hGb
+  obtain ⟨K, hKB₀, hK, hpoint⟩ :=
+    exists_infinite_freeSet_for_finitelyMany_pointwiseSupports
+      (A := A) (I := I) (target := target) hB₀ hlocalPoint
+  have hlocalPair : ∀ b ∈ K, ∀ c ∈ K, b ≠ c →
+      ∃ G ∈ additiveSupportFamily A 3 (b + c - δ),
+        Disjoint (G : Set ℕ)
+          ((({b, c} : Finset ℕ) : Set ℕ)) := by
+    intro b hbK c hcK hbc
+    obtain ⟨hxbA, hxbB₀, hxbδ, hxbT, hxbd, hxblarge⟩ :=
+      hpredData b (hKB₀ hbK)
+    obtain ⟨hxcA, hxcB₀, hxcδ, hxcT, hxcd, hxclarge⟩ :=
+      hpredData c (hKB₀ hcK)
+    obtain ⟨G, hGR, hGbc⟩ :=
+      fixedDifference_crossTarget_has_endpointAvoidingTriple
+        (A := A) (N₀ := N₀) (T := T) (δ := δ) (d := d)
+        (x := b - δ) (y := c - δ)
+        hcov hsumfree hdA hdPos hxbA hxcA hxbT hxcT
+        hxbd hxcd hxblarge
+    refine ⟨G, ?_, ?_⟩
+    · have htarget :
+          (b - δ) + (c - δ) + δ = b + c - δ := by
+        omega
+      simpa [htarget] using hGR
+    · simpa [hxbδ, hxcδ] using hGbc
+  obtain ⟨B, hBK, hB, hpair⟩ :=
+    exists_infinite_freeSet_for_shiftedPairSupports
+      (A := A) (δ := δ) hK hlocalPair
+  have hBA : B ⊆ A := hBK.trans (hKB₀.trans hB₀A)
+  have hBB₀ : B ⊆ B₀ := hBK.trans hKB₀
+  have h0B : 0 ∉ B := fun h => h0B₀ (hBB₀ h)
+  have hunpack : ∀ n,
+      (∃ G ∈ additiveSupportFamily A 3 n,
+          Disjoint (G : Set ℕ) B) →
+      ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
+        x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n := by
+    intro n hrep
+    obtain ⟨v, hvAB, hvsum⟩ :=
+      exists_surviving_additiveSupport_iff.mp hrep
+    refine ⟨v 0, (hvAB 0).1, v 1, (hvAB 1).1,
+      v 2, (hvAB 2).1, (hvAB 0).2, (hvAB 1).2,
+      (hvAB 2).2, ?_⟩
+    simpa [Fin.sum_univ_three] using hvsum
+  refine ⟨B, hBA, hB, deletion_criterion_local h0 h0B hcov ?_⟩
+  intro n hn
+  rintro ⟨b, hbB, a, haA, hba⟩
+  have hbK := hBK hbB
+  obtain ⟨hxbA, hxbB₀, hxbδ, hxbT, hxbd, hxblarge⟩ :=
+    hpredData b (hKB₀ hbK)
+  let x := b - δ
+  have hxA : x ∈ A := hxbA
+  have hxB₀ : x ∉ B₀ := hxbB₀
+  have hxB : x ∉ B := fun hx => hxB₀ (hBB₀ hx)
+  have hxδ : x + δ = b := hxbδ
+  by_cases haSmall : a < d
+  · have haI : a ∈ I := by
+      simp [I, haSmall, haA]
+    have had : a ≠ d := by omega
+    obtain ⟨G, hGR, hGK⟩ := hpoint b hbK a haI
+    apply hunpack n
+    refine ⟨G, ?_, hGK.mono_right hBK⟩
+    rw [show target b a = b + a by simp [target, had], hba] at hGR
+    exact hGR
+  · have hda : d ≤ a := Nat.le_of_not_gt haSmall
+    by_cases hselected : ∃ c ∈ B, c - δ = a
+    · obtain ⟨c, hcB, hca⟩ := hselected
+      by_cases hbc : b = c
+      · subst c
+        have hdI : d ∈ I := by simp [I]
+        obtain ⟨G, hGR, hGK⟩ := hpoint b hbK d hdI
+        apply hunpack n
+        refine ⟨G, ?_, hGK.mono_right hBK⟩
+        rw [show target b d = b + (b - δ) by simp [target],
+          hca, hba] at hGR
+        exact hGR
+      · obtain ⟨G, hGR, hGB⟩ := hpair b hbB c hcB hbc
+        apply hunpack n
+        refine ⟨G, ?_, hGB⟩
+        obtain ⟨hxcA, hxcB₀, hxcδ, hxcT, hxcd, hxclarge⟩ :=
+          hpredData c (hBB₀ hcB)
+        have hδc : δ ≤ c := by omega
+        have htarget : b + c - δ = n := by
+          calc
+            b + c - δ = b + (c - δ) := Nat.add_sub_assoc hδc b
+            _ = b + a := by rw [hca]
+            _ = n := hba
+        rw [htarget] at hGR
+        exact hGR
+    · obtain ⟨p, hpA, q, hqA, hpq⟩ :=
+        hcov (a + δ) (by omega)
+      have hpB : p ∉ B := by
+        intro hp
+        obtain ⟨hzA, hzB₀, hzδ, hzT, hzd, hzlarge⟩ :=
+          hpredData p (hBB₀ hp)
+        by_cases hq0 : q = 0
+        · apply hselected
+          exact ⟨p, hp, by omega⟩
+        · have hqPos : 0 < q := Nat.pos_of_ne_zero hq0
+          have hzPos : 0 < p - δ := by
+            omega
+          exact hsumfree a haA (by omega) (p - δ) hzA q hqA
+            hzPos hqPos (by omega)
+      have hqB : q ∉ B := by
+        intro hq
+        obtain ⟨hzA, hzB₀, hzδ, hzT, hzd, hzlarge⟩ :=
+          hpredData q (hBB₀ hq)
+        by_cases hp0 : p = 0
+        · apply hselected
+          exact ⟨q, hq, by omega⟩
+        · have hpPos : 0 < p := Nat.pos_of_ne_zero hp0
+          have hzPos : 0 < q - δ := by
+            omega
+          exact hsumfree a haA (by omega) p hpA (q - δ) hzA
+            hpPos hzPos (by omega)
+      exact ⟨x, hxA, p, hpA, q, hqA, hxB, hpB, hqB, by omega⟩
+
+open Classical in
+/-- In a genuine counterexample, every fixed positive difference occurs
+only finitely often.  Unlike
+`counterexample_basisDifference_edges_finite`, the difference need not
+itself belong to `A`. -/
+theorem counterexample_all_positiveDifference_edges_finite
+    {A : Set ℕ} {N₀ δ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hδ : 0 < δ) :
+    {x | x ∈ A ∧ x + δ ∈ A}.Finite := by
+  apply Set.not_infinite.mp
+  intro hedges
+  obtain ⟨T, hsumfree⟩ :=
+    counterexample_eventually_positive_sumFree h0 hcov hfail
+  have hsupply : ∀ N, ∃ x, N ≤ x ∧ x ∈ A ∧ x + δ ∈ A := by
+    intro N
+    obtain ⟨x, hxEdges, hxN⟩ := hedges.exists_gt N
+    exact ⟨x, hxN.le, hxEdges.1, hxEdges.2⟩
+  obtain ⟨B, hBA, hB, hthree⟩ :=
+    exists_infiniteDeletion_threeBasis_of_fixedPopularDifference
+      h0 hcov hsumfree hδ hsupply
+  exact hfail B hBA hB hthree
+
+open Classical in
+/-- **Cross-gap collisions are finite.**
+
+Fix two distinct shifts `δ` and `c`.  The offsets `a ∈ A` for which a
+translated pair cover
+
+`a + δ = c + q`,  with `q ∈ A`,
+
+can be identified with one fixed positive-difference edge family.  If
+`δ<c`, then `a=q+(c-δ)`; if `c<δ`, then
+`q=a+(δ-c)`.  Thus finiteness of every positive-difference fiber makes the
+whole cross-gap collision set finite.
+
+This is the basic coherence fact for passing from one equal-gap block to a
+different block: a fixed old endpoint can contaminate only finitely many of
+the otherwise uniform translated-pair repairs of the new block. -/
+theorem crossGap_collisionOffsets_finite
+    {A : Set ℕ} {δ c : ℕ}
+    (hδc : δ ≠ c)
+    (hedges : ∀ r, 0 < r →
+      {x | x ∈ A ∧ x + r ∈ A}.Finite) :
+    {a | a ∈ A ∧ ∃ q ∈ A, a + δ = c + q}.Finite := by
+  rcases lt_or_gt_of_ne hδc with hδltc | hcltδ
+  · let r := c - δ
+    have hrpos : 0 < r := by
+      simp only [r]
+      omega
+    have hfinite : {q | q ∈ A ∧ q + r ∈ A}.Finite :=
+      hedges r hrpos
+    apply (hfinite.image (fun q => q + r)).subset
+    intro a ha
+    obtain ⟨haA, q, hqA, haq⟩ := ha
+    have hqa : q + r = a := by
+      simp only [r]
+      omega
+    exact ⟨q, ⟨hqA, hqa ▸ haA⟩, hqa⟩
+  · let r := δ - c
+    have hrpos : 0 < r := by
+      simp only [r]
+      omega
+    have hfinite : {a | a ∈ A ∧ a + r ∈ A}.Finite :=
+      hedges r hrpos
+    apply hfinite.subset
+    intro a ha
+    obtain ⟨haA, q, hqA, haq⟩ := ha
+    refine ⟨haA, ?_⟩
+    have haq' : a + r = q := by
+      simp only [r]
+      omega
+    exact haq' ▸ hqA
+
+open Classical in
+/-- A finite set of old endpoints creates only finitely many exceptional
+offsets for a new gap `δ`, provided no old endpoint is literally equal to
+`δ`.  This is the finite-union form needed in a block-by-block
+construction. -/
+theorem crossGap_collisionOffsets_finite_prefix
+    {A : Set ℕ} {δ : ℕ} {D : Finset ℕ}
+    (hδD : ∀ c ∈ D, δ ≠ c)
+    (hedges : ∀ r, 0 < r →
+      {x | x ∈ A ∧ x + r ∈ A}.Finite) :
+    {a | a ∈ A ∧ ∃ c ∈ D, ∃ q ∈ A, a + δ = c + q}.Finite := by
+  induction D using Finset.induction_on with
+  | empty =>
+      simp
+  | @insert c D hc ih =>
+      have hcne : δ ≠ c := hδD c (Finset.mem_insert_self c D)
+      have hDne : ∀ d ∈ D, δ ≠ d := by
+        intro d hd
+        exact hδD d (Finset.mem_insert_of_mem hd)
+      have hcfinite :
+          {a | a ∈ A ∧ ∃ q ∈ A, a + δ = c + q}.Finite :=
+        crossGap_collisionOffsets_finite hcne hedges
+      have hDfinite :
+          {a | a ∈ A ∧ ∃ d ∈ D, ∃ q ∈ A,
+            a + δ = d + q}.Finite :=
+        ih hDne
+      apply (hcfinite.union hDfinite).subset
+      intro a ha
+      obtain ⟨haA, d, hd, q, hqA, haq⟩ := ha
+      rcases Finset.mem_insert.mp hd with hdc | hdD
+      · subst d
+        exact Or.inl ⟨haA, q, hqA, haq⟩
+      · exact Or.inr ⟨haA, d, hdD, q, hqA, haq⟩
+
+open Classical in
+/-- **Uniform repair away from the finite cross-gap list.**
+
+Let `b=x+δ` be an upper endpoint of a `δ`-edge.  To repair the risk
+`b+a`, cover `a+δ` by `p+q` and use
+
+`x+p+q = (x+δ)+a`.
+
+If `p` or `q` were an old deleted endpoint in `D`, then `a` would belong to
+the explicit cross-gap collision set.  If one were the new endpoint `b`,
+late positive sum-freeness would force `a=x`; that is the single diagonal
+exception.  Consequently every other offset has a triple avoiding the
+whole moving prefix `insert b D`. -/
+theorem equalGap_genericRisk_has_prefixAvoidingTriple
+    {A : Set ℕ} {N₀ T δ x a : ℕ} {D : Finset ℕ}
+    (hcov : PairCovers A N₀)
+    (hsumfree : ∀ n ∈ A, T ≤ n →
+      ∀ u ∈ A, ∀ v ∈ A, 0 < u → 0 < v → u + v ≠ n)
+    (hδpos : 0 < δ) (hcover : N₀ ≤ a + δ)
+    (hxA : x ∈ A) (hxpos : 0 < x)
+    (haA : a ∈ A) (haT : T ≤ a) (hax : a ≠ x)
+    (hxD : x ∉ D)
+    (hgeneric : ¬∃ c ∈ D, ∃ q ∈ A, a + δ = c + q) :
+    ∃ p ∈ A, ∃ q ∈ A,
+      x ∉ insert (x + δ) D ∧
+      p ∉ insert (x + δ) D ∧
+      q ∉ insert (x + δ) D ∧
+      x + p + q = (x + δ) + a := by
+  obtain ⟨p, hpA, q, hqA, hpq⟩ := hcov (a + δ) hcover
+  have hpb : p ≠ x + δ := by
+    intro hpb
+    have hxq : x + q = a := by omega
+    have hqpos : 0 < q := by
+      by_contra hq0
+      have hqzero : q = 0 := Nat.eq_zero_of_not_pos hq0
+      exact hax (by omega)
+    exact hsumfree a haA haT x hxA q hqA hxpos hqpos hxq
+  have hqb : q ≠ x + δ := by
+    intro hqb
+    have hxp : x + p = a := by omega
+    have hppos : 0 < p := by
+      by_contra hp0
+      have hpzero : p = 0 := Nat.eq_zero_of_not_pos hp0
+      exact hax (by omega)
+    exact hsumfree a haA haT x hxA p hpA hxpos hppos hxp
+  have hpD : p ∉ D := by
+    intro hpD
+    exact hgeneric ⟨p, hpD, q, hqA, by omega⟩
+  have hqD : q ∉ D := by
+    intro hqD
+    exact hgeneric ⟨q, hqD, p, hpA, by omega⟩
+  refine ⟨p, hpA, q, hqA, ?_, ?_, ?_, by omega⟩
+  · simp only [Finset.mem_insert, not_or]
+    exact ⟨by omega, hxD⟩
+  · simp [hpb, hpD]
+  · simp [hqb, hqD]
+
+open Classical in
+/-- **The exact generic criterion is pair survival, not absence of a
+collision.**
+
+For the translated target `a + δ`, suppose there is even one order-two
+support avoiding the old prefix `D`.  Prefix avoidance is inherited by its
+two entries.  Late sum-freeness also prevents either entry from being the
+new upper endpoint `x + δ`, except in the excluded diagonal case `a = x`.
+Adding the surviving lower endpoint `x` therefore gives a triple for the
+new risk `(x + δ) + a` which avoids the whole enlarged prefix.
+
+This strictly strengthens `equalGap_genericRisk_has_prefixAvoidingTriple`:
+individual pair representations may collide with `D`; only destruction of
+*all* pair representations is a genuine exception. -/
+theorem equalGap_pairSurvival_has_prefixAvoidingTriple
+    {A : Set ℕ} {T δ x a : ℕ} {D : Finset ℕ}
+    (hsumfree : ∀ n ∈ A, T ≤ n →
+      ∀ u ∈ A, ∀ v ∈ A, 0 < u → 0 < v → u + v ≠ n)
+    (hδpos : 0 < δ)
+    (hxA : x ∈ A) (hxpos : 0 < x)
+    (haA : a ∈ A) (haT : T ≤ a) (hax : a ≠ x)
+    (hxD : x ∉ D)
+    (hsurvive : ¬ DestroysAt (additiveSupportFamily A 2)
+      (D : Set ℕ) (a + δ)) :
+    ∃ p ∈ A, ∃ q ∈ A,
+      x ∉ insert (x + δ) D ∧
+      p ∉ insert (x + δ) D ∧
+      q ∉ insert (x + δ) D ∧
+      x + p + q = (x + δ) + a := by
+  obtain ⟨E, hER, hED⟩ := not_destroysAt_iff.mp hsurvive
+  obtain ⟨v, hvAD, hvsum⟩ :=
+    exists_surviving_additiveSupport_iff.mp ⟨E, hER, hED⟩
+  let p := v 0
+  let q := v 1
+  have hpA : p ∈ A := (hvAD 0).1
+  have hqA : q ∈ A := (hvAD 1).1
+  have hpD : p ∉ D := (hvAD 0).2
+  have hqD : q ∉ D := (hvAD 1).2
+  have hpq : p + q = a + δ := by
+    simpa [p, q, Fin.sum_univ_two] using hvsum
+  have hpb : p ≠ x + δ := by
+    intro hpb
+    have hxq : x + q = a := by omega
+    have hqpos : 0 < q := by
+      by_contra hq0
+      have hqzero : q = 0 := Nat.eq_zero_of_not_pos hq0
+      exact hax (by omega)
+    exact hsumfree a haA haT x hxA q hqA hxpos hqpos hxq
+  have hqb : q ≠ x + δ := by
+    intro hqb
+    have hxp : x + p = a := by omega
+    have hppos : 0 < p := by
+      by_contra hp0
+      have hpzero : p = 0 := Nat.eq_zero_of_not_pos hp0
+      exact hax (by omega)
+    exact hsumfree a haA haT x hxA p hpA hxpos hppos hxp
+  refine ⟨p, hpA, q, hqA, ?_, ?_, ?_, by omega⟩
+  · simp only [Finset.mem_insert, not_or]
+    exact ⟨by omega, hxD⟩
+  · simp [hpb, hpD]
+  · simp [hqb, hqD]
+
+open Classical in
+/-- **Only finitely many shifted targets are genuinely pair-destroyed.**
+
+Assume every fixed positive difference fiber of `A` is finite and the new
+gap `δ` differs from every old deleted value.  If `D` destroys every pair
+support of `a + δ`, specialize that destruction to a pair supplied by
+`PairCovers`.  One of its entries is an old deleted value `c`, so
+
+`a + δ = c + q`
+
+for another `q ∈ A`.  Hence the genuinely bad offsets form a subset of the
+finite cross-gap collision set. -/
+theorem pairDestroyed_shiftOffsets_finite
+    {A : Set ℕ} {N₀ δ : ℕ} {D : Finset ℕ}
+    (hcov : PairCovers A N₀) (hδN : N₀ ≤ δ)
+    (hδD : ∀ c ∈ D, δ ≠ c)
+    (hedges : ∀ r, 0 < r →
+      {x | x ∈ A ∧ x + r ∈ A}.Finite) :
+    {a | a ∈ A ∧
+      DestroysAt (additiveSupportFamily A 2)
+        (D : Set ℕ) (a + δ)}.Finite := by
+  have hcollision :
+      {a | a ∈ A ∧ ∃ c ∈ D, ∃ q ∈ A,
+        a + δ = c + q}.Finite :=
+    crossGap_collisionOffsets_finite_prefix hδD hedges
+  apply hcollision.subset
+  intro a ha
+  obtain ⟨p, hpA, q, hqA, hpq⟩ :=
+    hcov (a + δ) (by omega)
+  have hpLe : p ≤ a + δ := by omega
+  have hpair :
+      pairSupport (a + δ) p ∈
+        additiveSupportFamily A 2 (a + δ) := by
+    apply pairSupport_mem_additiveSupportFamily hpLe hpA
+    have hsub : a + δ - p = q := by omega
+    simpa [hsub] using hqA
+  obtain ⟨z, hzPair, hzD⟩ :=
+    Set.not_disjoint_iff.mp (ha.2 (pairSupport (a + δ) p) hpair)
+  have hzCases : z = p ∨ z = a + δ - p := by
+    simpa [pairSupport] using hzPair
+  rcases hzCases with hzp | hzq
+  · subst z
+    exact ⟨ha.1, p, hzD, q, hqA, hpq.symm⟩
+  · rw [hzq] at hzD
+    exact ⟨ha.1, a + δ - p, hzD, p, hpA, by omega⟩
+
+open Classical in
+/-- In a global counterexample the preceding finite cross-gap conclusion is
+automatic, because every fixed positive difference has already been proved
+to occur only finitely often. -/
+theorem counterexample_crossGap_collisionOffsets_finite_prefix
+    {A : Set ℕ} {N₀ δ : ℕ} {D : Finset ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hδD : ∀ c ∈ D, δ ≠ c) :
+    {a | a ∈ A ∧ ∃ c ∈ D, ∃ q ∈ A,
+      a + δ = c + q}.Finite := by
+  apply crossGap_collisionOffsets_finite_prefix hδD
+  intro r hr
+  exact counterexample_all_positiveDifference_edges_finite
+    h0 hcov hfail hr
+
+open Classical in
+/-- **The finite exceptional list is a genuine obstruction.**
+
+The six-point sum-free configuration
+
+`A₀={0,1,5,8,11,15}`
+
+contains the new edge `11,15` of gap `4` and the old deleted point `1`.
+The offset `a=5` is exceptional because `5+4=1+8`.  The threatened target
+`15+5=20` has the two evident representations `15+5+0` and `11+1+8`,
+but no triple over `A₀` avoiding both `1` and `15`.
+
+Thus after proving that cross-block contamination is finite, one still
+must actually repair those finitely many targets; finiteness alone cannot
+silently discard them.  This finite computation marks the exact first
+failure of the naive blockwise fusion. -/
+theorem crossGap_finiteException_can_genuinely_stall :
+    let S : Finset ℕ := {0, 1, 5, 8, 11, 15}
+    (∀ n ∈ S, 0 < n →
+      ∀ u ∈ S, ∀ v ∈ S, 0 < u → 0 < v → u + v ≠ n) ∧
+    (5 ∈ S ∧ 1 ∈ ({1} : Finset ℕ) ∧ 8 ∈ S ∧ 5 + 4 = 1 + 8) ∧
+    ∀ p ∈ S, ∀ q ∈ S, ∀ r ∈ S,
+      p ∉ insert 15 ({1} : Finset ℕ) →
+      q ∉ insert 15 ({1} : Finset ℕ) →
+      r ∉ insert 15 ({1} : Finset ℕ) →
+      p + q + r ≠ 20 := by
+  native_decide
+
+open Classical in
+/-- The fixed-offset horn of `fixed_offset_or_growing` is impossible in a
+counterexample.  Thus any unbounded multiplicity of difference edges must
+escape through arbitrarily large differences. -/
+theorem counterexample_differenceMultiplicity_mustGrow
+    {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
+    (hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3)
+    (hdiff : ∀ K, ∃ δ, 1 ≤ δ ∧ ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A) :
+    ∀ Δ K, ∃ δ, Δ < δ ∧ ∃ V : Finset ℕ, K ≤ V.card ∧
+      ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A := by
+  rcases fixed_offset_or_growing hdiff with hfixed | hgrowing
+  · obtain ⟨δ, hδ, hpopular⟩ := hfixed
+    have hfinite :
+        {x | x ∈ A ∧ x + δ ∈ A}.Finite :=
+      counterexample_all_positiveDifference_edges_finite
+        h0 hcov hfail hδ
+    obtain ⟨V, hVcard, hV⟩ :=
+      hpopular (hfinite.toFinset.card + 1)
+    have hsub : V ⊆ hfinite.toFinset := by
+      intro x hxV
+      simpa using hV x hxV
+    have := Finset.card_le_card hsub
+    omega
+  · exact hgrowing
+
+/-- Cancelling two routes through the same moving guardian turns the gap
+between their anchors into a fixed difference between their co-parts. -/
+theorem equalGuardianRoutes_force_coPartDifference
+    {r s b u v n : ℕ}
+    (hrs : r ≤ s) (hr : r + b + u = n) (hs : s + b + v = n) :
+    v + (s - r) = u := by
+  omega
+
+/-- If the later anchor was chosen beyond every possible co-part of the
+earlier route, the two routes cannot hit the same moving guardian. -/
+theorem separatedGuardianRoutes_impossible
+    {r s b u v n U : ℕ}
+    (hsep : r + U + 1 ≤ s) (hu : u ≤ U)
+    (hr : r + b + u = n) (hs : s + b + v = n) :
+    False := by
+  omega
+
+open Classical in
+/-- **Three fixed anchors rule out a terminal private-wound field.**
+
+Let `D` be a finite deletion prefix.  Suppose the positive tail of `A` is
+sum-free and every fixed positive-difference fiber of `A` is finite.  Then
+it is impossible that every sufficiently large basis element `b` owns a
+private target over `A \ D` which is also a risk generated by
+`insert b D`.
+
+Choose three surviving anchors `r₀ < r₁ < r₂`, separated far enough that
+their translates by `D` are disjoint.  Cover `n-rᵢ` at a private target
+`n`.  Since `rᵢ` survives the old prefix, privacy forces each covering pair
+to use either the moving guardian `b` or an old point of `D`.
+
+* At a self-risk `n=b+a`, a route through `b` writes the late basis point
+  `a` as `rᵢ+u`; tail sum-freeness forces `u=0`, hence `a=rᵢ`.  At most one
+  anchor can do this, so two routes pass through old points.  Their other
+  endpoints form an arbitrarily late edge of one fixed positive
+  difference.
+* At a collateral risk `n=d+a`, an old route directly makes `a` and its
+  other endpoint a fixed-difference edge.  Hence all three routes must pass
+  through `b`.  The first two then bound the complement `n-b` using the
+  finite `(r₁-r₀)`-difference fiber, while the third anchor was chosen
+  beyond that bound.
+
+Both alternatives contradict the finite-difference hypothesis.  This is
+the positional composition missing from the moving-prefix construction:
+no equal-gap block supply and no unrestricted co-sum normalization are
+needed. -/
+theorem threeAnchor_forbids_terminalPrivateWounds
+    {A : Set ℕ} {N₀ T : ℕ}
+    (hcov : PairCovers A N₀)
+    (hsumfree : ∀ a ∈ A, T ≤ a →
+      ∀ u ∈ A, ∀ v ∈ A, 0 < u → 0 < v → u + v ≠ a)
+    (hedges : ∀ g, 0 < g →
+      {x | x ∈ A ∧ x + g ∈ A}.Finite)
+    (D : Finset ℕ)
+    (hwounds : ∀ b ∈ A, 0 < b → (∀ d ∈ D, d < b) →
+      ∃ n, N₀ ≤ n ∧ b ≤ n ∧
+        (∃ d ∈ insert b D, ∃ a ∈ A, d + a = n) ∧
+        IsPrivateTriple (A \ (D : Set ℕ)) b n) :
+    False := by
+  let Dmax := D.sup id
+  have hDle : ∀ d ∈ D, d ≤ Dmax := by
+    intro d hdD
+    exact Finset.le_sup (f := id) hdD
+  have hedgeBounded : ∀ g, ∃ U, 0 < g →
+      ∀ x ∈ A, x + g ∈ A → x ≤ U := by
+    intro g
+    by_cases hg : 0 < g
+    · obtain ⟨U, hU⟩ := (hedges g hg).bddAbove
+      exact ⟨U, fun _ x hxA hxgA => hU ⟨hxA, hxgA⟩⟩
+    · exact ⟨0, fun h => absurd h hg⟩
+  choose edgeBound hedgeBound using hedgeBounded
+  obtain ⟨r₀, hr₀A, hr₀large⟩ :=
+    pairCovers_unbounded hcov (max T Dmax + 1)
+  obtain ⟨r₁, hr₁A, hr₁large⟩ :=
+    pairCovers_unbounded hcov (r₀ + Dmax + 1)
+  have hr₀pos : 0 < r₀ := by omega
+  have hr₁pos : 0 < r₁ := by omega
+  have hr₀T : T ≤ r₀ := by omega
+  have hr₁T : T ≤ r₁ := by omega
+  have hr₀D : r₀ ∉ D := by
+    intro hr₀mem
+    have := hDle r₀ hr₀mem
+    omega
+  have hr₁D : r₁ ∉ D := by
+    intro hr₁mem
+    have := hDle r₁ hr₁mem
+    omega
+  have hg₀₁pos : 0 < r₁ - r₀ := by omega
+  obtain ⟨U₀₁, hU₀₁⟩ :=
+    (hedges (r₁ - r₀) hg₀₁pos).bddAbove
+  obtain ⟨r₂, hr₂A, hr₂large⟩ :=
+    pairCovers_unbounded hcov
+      (max (r₁ + Dmax + 1) (r₁ + U₀₁ + 1))
+  have hr₂pos : 0 < r₂ := by omega
+  have hr₂T : T ≤ r₂ := by omega
+  have hr₂D : r₂ ∉ D := by
+    intro hr₂mem
+    have := hDle r₂ hr₂mem
+    omega
+  have hDmaxr₀ : Dmax < r₀ := by omega
+  have hDmaxr₁ : Dmax < r₁ := by omega
+  have hDmaxr₂ : Dmax < r₂ := by omega
+  have hr₀le₂ : r₀ ≤ r₂ := by omega
+  have hr₁le₂ : r₁ ≤ r₂ := by omega
+  let H := r₂ + Dmax
+  let U := (Finset.range (H + 1)).sup edgeBound
+  have hboundedEdge :
+      ∀ g, 0 < g → g ≤ H →
+        ∀ x ∈ A, x + g ∈ A → x ≤ U := by
+    intro g hgpos hgH x hxA hxgA
+    have hxBound := hedgeBound g hgpos x hxA hxgA
+    have hgRange : g ∈ Finset.range (H + 1) :=
+      Finset.mem_range.2 (by omega)
+    have htoSup : edgeBound g ≤ U := by
+      dsimp only [U]
+      exact Finset.le_sup (f := edgeBound) hgRange
+    exact hxBound.trans htoSup
+  obtain ⟨b, hbA, hbLarge⟩ :=
+    pairCovers_unbounded hcov
+      (max (N₀ + r₂) (U + r₂ + 2 * Dmax + 1))
+  have hbpos : 0 < b := by omega
+  have hbAboveD : ∀ d ∈ D, d < b := by
+    intro d hdD
+    have := hDle d hdD
+    omega
+  have hr₀b : r₀ < b := by omega
+  have hr₁b : r₁ < b := by omega
+  have hr₂b : r₂ < b := by omega
+  obtain ⟨n, hnN, hbn, hrisk, hprivate⟩ :=
+    hwounds b hbA hbpos hbAboveD
+  have hroute : ∀ r, r ∈ A → r ∉ D → r < b → r ≤ r₂ →
+      (∃ u ∈ A, r + b + u = n) ∨
+      ∃ c ∈ D, ∃ u ∈ A, r + c + u = n := by
+    intro r hrA hrD hrb hr₂
+    obtain ⟨p, hpA, q, hqA, hpq⟩ :=
+      hcov (n - r) (by omega)
+    have hrpq : r + p + q = n := by omega
+    by_cases hpD : p ∈ D
+    · exact Or.inr ⟨p, hpD, q, hqA, hrpq⟩
+    · by_cases hqD : q ∈ D
+      · exact Or.inr ⟨q, hqD, p, hpA, by omega⟩
+      · have hrS : r ∈ A \ (D : Set ℕ) :=
+          ⟨hrA, by simpa using hrD⟩
+        have hpS : p ∈ A \ (D : Set ℕ) :=
+          ⟨hpA, by simpa using hpD⟩
+        have hqS : q ∈ A \ (D : Set ℕ) :=
+          ⟨hqA, by simpa using hqD⟩
+        rcases hprivate.2 r hrS p hpS q hqS hrpq with
+          hrEq | hpEq | hqEq
+        · exact absurd hrEq (ne_of_lt hrb)
+        · subst p
+          exact Or.inl ⟨q, hqA, by omega⟩
+        · subst q
+          exact Or.inl ⟨p, hpA, by omega⟩
+  have hroute₀ := hroute r₀ hr₀A hr₀D hr₀b (by omega)
+  have hroute₁ := hroute r₁ hr₁A hr₁D hr₁b (by omega)
+  have hroute₂ := hroute r₂ hr₂A hr₂D hr₂b le_rfl
+  have holdRoutesContradict :
+      ∀ r s, r + Dmax < s → s ≤ r₂ →
+        (∃ c ∈ D, ∃ u ∈ A, r + c + u = n) →
+        (∃ c ∈ D, ∃ u ∈ A, s + c + u = n) →
+        False := by
+    intro r s hrs hs₂ hrOld hsOld
+    obtain ⟨c, hcD, u, huA, hrcu⟩ := hrOld
+    obtain ⟨c', hc'D, v, hvA, hscv⟩ := hsOld
+    have hcLe := hDle c hcD
+    have hc'Le := hDle c' hc'D
+    let g := (s + c') - (r + c)
+    have hgpos : 0 < g := by
+      dsimp only [g]
+      omega
+    have hgH : g ≤ H := by
+      dsimp only [g, H]
+      omega
+    have hvLarge : U < v := by
+      have hbThreshold :
+          U + r₂ + 2 * Dmax + 1 ≤ b := by
+        exact (le_max_right (N₀ + r₂)
+          (U + r₂ + 2 * Dmax + 1)).trans hbLarge
+      omega
+    have hvg : v + g = u := by
+      dsimp only [g]
+      omega
+    have hvBound : v ≤ U :=
+      hboundedEdge g hgpos hgH v hvA (by
+        rw [hvg]
+        exact huA)
+    omega
+  obtain ⟨d, hdInsert, a, haA, hda⟩ := hrisk
+  rcases Finset.mem_insert.1 hdInsert with hdb | hdD
+  · subst d
+    have hselfRoute :
+        ∀ r u, r ∈ A → T ≤ r → 0 < r → u ∈ A →
+          r + b + u = n → b + a = n → a = r := by
+      intro r u hrA hrT hrpos huA hrbu hba
+      have haru : r + u = a := by omega
+      rcases Nat.eq_zero_or_pos u with hu0 | hupos
+      · omega
+      · exact absurd haru
+          (hsumfree a haA (by omega)
+            r hrA u huA hrpos hupos)
+    rcases hroute₀ with hr₀Self | hr₀Old
+    · obtain ⟨u₀, hu₀A, hr₀bu⟩ := hr₀Self
+      have ha₀ := hselfRoute r₀ u₀ hr₀A hr₀T hr₀pos
+        hu₀A hr₀bu hda
+      rcases hroute₁ with hr₁Self | hr₁Old
+      · obtain ⟨u₁, hu₁A, hr₁bu⟩ := hr₁Self
+        have ha₁ := hselfRoute r₁ u₁ hr₁A hr₁T hr₁pos
+          hu₁A hr₁bu hda
+        omega
+      · rcases hroute₂ with hr₂Self | hr₂Old
+        · obtain ⟨u₂, hu₂A, hr₂bu⟩ := hr₂Self
+          have ha₂ := hselfRoute r₂ u₂ hr₂A hr₂T hr₂pos
+            hu₂A hr₂bu hda
+          omega
+        · exact holdRoutesContradict r₁ r₂ (by omega) le_rfl
+            hr₁Old hr₂Old
+    · rcases hroute₁ with hr₁Self | hr₁Old
+      · obtain ⟨u₁, hu₁A, hr₁bu⟩ := hr₁Self
+        have ha₁ := hselfRoute r₁ u₁ hr₁A hr₁T hr₁pos
+          hu₁A hr₁bu hda
+        rcases hroute₂ with hr₂Self | hr₂Old
+        · obtain ⟨u₂, hu₂A, hr₂bu⟩ := hr₂Self
+          have ha₂ := hselfRoute r₂ u₂ hr₂A hr₂T hr₂pos
+            hu₂A hr₂bu hda
+          omega
+        · exact holdRoutesContradict r₀ r₂ (by omega) le_rfl
+            hr₀Old hr₂Old
+      · exact holdRoutesContradict r₀ r₁ (by omega) (by omega)
+          hr₀Old hr₁Old
+  · have hdLe := hDle d hdD
+    have hcollateralOldImpossible :
+        ∀ r, Dmax < r → r ≤ r₂ →
+          (∃ c ∈ D, ∃ u ∈ A, r + c + u = n) → False := by
+      intro r hrDmax hr₂ oldRoute
+      obtain ⟨c, hcD, u, huA, hrcu⟩ := oldRoute
+      have hcLe := hDle c hcD
+      let g := r + c - d
+      have hgpos : 0 < g := by
+        dsimp only [g]
+        omega
+      have hgH : g ≤ H := by
+        dsimp only [g, H]
+        omega
+      have huLarge : U < u := by
+        have hbThreshold :
+            U + r₂ + 2 * Dmax + 1 ≤ b := by
+          exact (le_max_right (N₀ + r₂)
+            (U + r₂ + 2 * Dmax + 1)).trans hbLarge
+        omega
+      have hug : u + g = a := by
+        dsimp only [g]
+        omega
+      have huBound : u ≤ U :=
+        hboundedEdge g hgpos hgH u huA (by
+          rw [hug]
+          exact haA)
+      omega
+    have hr₀Self : ∃ u ∈ A, r₀ + b + u = n := by
+      rcases hroute₀ with h | h
+      · exact h
+      · exact
+          (hcollateralOldImpossible r₀ hDmaxr₀ hr₀le₂ h).elim
+    have hr₁Self : ∃ u ∈ A, r₁ + b + u = n := by
+      rcases hroute₁ with h | h
+      · exact h
+      · exact
+          (hcollateralOldImpossible r₁ hDmaxr₁ hr₁le₂ h).elim
+    have hr₂Self : ∃ u ∈ A, r₂ + b + u = n := by
+      rcases hroute₂ with h | h
+      · exact h
+      · exact
+          (hcollateralOldImpossible r₂ hDmaxr₂ le_rfl h).elim
+    obtain ⟨u₀, hu₀A, hr₀bu⟩ := hr₀Self
+    obtain ⟨u₁, hu₁A, hr₁bu⟩ := hr₁Self
+    obtain ⟨u₂, hu₂A, hr₂bu⟩ := hr₂Self
+    have hu₁edge : u₁ + (r₁ - r₀) = u₀ :=
+      equalGuardianRoutes_force_coPartDifference
+        (by omega) hr₀bu hr₁bu
+    have hu₁Bound : u₁ ≤ U₀₁ :=
+      hU₀₁ ⟨hu₁A, by
+        rw [hu₁edge]
+        exact hu₀A⟩
+    exact separatedGuardianRoutes_impossible
+      (le_max_right (r₁ + Dmax + 1) (r₁ + U₀₁ + 1) |>.trans
+        hr₂large)
+      hu₁Bound hr₁bu hr₂bu
+
+open Classical in
+/-- **Three anchors complete the infinite deletion.**
+
+Every zero-containing set which pair-covers all sufficiently large
+integers admits an infinite deletion whose complement is an exact
+order-three asymptotic basis.
+
+Indeed, if no such deletion existed, the counterexample machinery would
+simultaneously supply:
+
+* one terminal finite prefix and a relative private wound above every
+  later basis point;
+* eventual positive sum-freeness; and
+* finiteness of every fixed positive-difference edge family.
+
+These are exactly the hypotheses contradicted by
+`threeAnchor_forbids_terminalPrivateWounds`. -/
+theorem exists_infiniteDeletion_threeBasis_of_pairCovers
+    {A : Set ℕ} {N₀ : ℕ}
+    (h0 : 0 ∈ A) (hcov : PairCovers A N₀) :
+    ∃ B, B ⊆ A ∧ B.Infinite ∧
+      IsExactTupleAsymptoticBasis (A \ B) 3 := by
+  by_contra hno
+  push Not at hno
+  have hfail : ∀ B ⊆ A, B.Infinite →
+      ¬IsExactTupleAsymptoticBasis (A \ B) 3 := by
+    intro B hBA hBinf
+    exact hno B hBA hBinf
+  obtain ⟨D, _hserved, _h0D, hwounds⟩ :=
+    counterexample_terminal_prefix_private_wound_fork h0 hcov hfail
+  obtain ⟨T, hsumfree⟩ :=
+    counterexample_eventually_positive_sumFree h0 hcov hfail
+  have hedges : ∀ g, 0 < g →
+      {x | x ∈ A ∧ x + g ∈ A}.Finite := by
+    intro g hg
+    exact counterexample_all_positiveDifference_edges_finite
+      h0 hcov hfail hg
+  exact threeAnchor_forbids_terminalPrivateWounds
+    hcov hsumfree hedges D (by
+      intro b hbA hbpos hbAbove
+      obtain ⟨n, hnN, hbn, hrisk, hprivate, _hfork⟩ :=
+        hwounds b hbA hbpos hbAbove
+      exact ⟨n, hnN, hbn, hrisk, hprivate⟩)
+
+/-- The zero-normalized order-two instance of Erdős 881. -/
+theorem erdos881_zero_normalized :
+    ∀ A : Set ℕ, 0 ∈ A →
+      IsStronglyMinimalExactBasis A 2 →
+      ∃ B, B ⊆ A ∧ B.Infinite ∧
+        IsExactTupleAsymptoticBasis (A \ B) 3 := by
+  intro A h0 hminimal
+  obtain ⟨N₀, hcov⟩ :=
+    pairCovers_of_exactTupleBasis hminimal.1
+  exact exists_infiniteDeletion_threeBasis_of_pairCovers h0 hcov
+
+/-- **Erdős Problem 881, order two.**
+
+Every strongly minimal exact asymptotic basis of order two has an infinite
+subset whose deletion leaves an exact asymptotic basis of order three. -/
+theorem erdos881 :
+    ∀ A : Set ℕ, IsStronglyMinimalExactBasis A 2 →
+      ∃ B, B ⊆ A ∧ B.Infinite ∧
+        IsExactTupleAsymptoticBasis (A \ B) 3 :=
+  erdos881_of_zero_normalized erdos881_zero_normalized
 
 end Erdos881

@@ -24,7 +24,7 @@ namespace Erdos881
 /-- A covering set has at least `√(W + 1 - N₀)` elements up to `W`:
 the pairs from `A ∩ [0, W]` must cover the whole interval `[N₀, W]`. -/
 theorem pairCovers_card_lower {A : Set ℕ} [DecidablePred (· ∈ A)]
-    {N₀ W : ℕ} (hcov : PairCovers A N₀) (hW : N₀ ≤ W) :
+    {N₀ W : ℕ} (hcov : PairCovers A N₀) (_hW : N₀ ≤ W) :
     W + 1 - N₀ ≤
       ((Finset.range (W + 1)).filter fun a => a ∈ A).card ^ 2 := by
   set T := (Finset.range (W + 1)).filter fun a => a ∈ A with hT
@@ -80,7 +80,7 @@ theorem level_avoiding_pair {A D : Set ℕ}
     refine Finset.card_le_card ?_
     intro x hx
     simp only [hbadD, hT, Finset.mem_filter, Finset.mem_range] at hx
-    simp only [hδ, Finset.mem_filter, Finset.mem_range]
+    simp only [Finset.mem_filter, Finset.mem_range]
     exact ⟨by omega, hx.2⟩
   have hbadR_le : badR.card ≤ δ := by
     have hinj : Set.InjOn (fun x => M - x) badR := by
@@ -99,7 +99,7 @@ theorem level_avoiding_pair {A D : Set ℕ}
           obtain ⟨x, hx, rfl⟩ := hy
           simp only [hbadR, hT, Finset.mem_filter, Finset.mem_range]
             at hx
-          simp only [hδ, Finset.mem_filter, Finset.mem_range]
+          simp only [Finset.mem_filter, Finset.mem_range]
           exact ⟨by omega, hx.2⟩
   have hgood : (T \ (badD ∪ badR ∪ {u})).Nonempty := by
     rw [← Finset.card_pos]

@@ -1,3 +1,379 @@
+# THREE-ANCHOR COMPLETION — ERDŐS 881 PROVED (2026-07-27)
+
+The formal order-two instance is complete.
+
+`threeAnchor_forbids_terminalPrivateWounds` rules out the terminal
+private-wound field forced by any hypothetical counterexample.  Choose
+three fixed surviving anchors `r₀<r₁<r₂`.  Pair-covering a private target
+after subtracting each anchor forces every resulting route through either
+the moving guardian or the old finite prefix.
+
+- At a self-risk, two guardian routes would identify the same risk offset
+  with two distinct anchors.  Therefore two anchors route through the old
+  prefix, producing an arbitrarily late edge of one bounded positive
+  difference.
+- At a collateral risk, any old-prefix route already produces such a
+  bounded-difference edge.  Hence all three routes use the moving guardian.
+  The first two bound their common co-part through the finite
+  `(r₁-r₀)`-difference fiber, while `r₂` was chosen beyond that bound.
+
+Both cases contradict finiteness of fixed positive-difference fibers.
+Composing this lemma with
+`counterexample_terminal_prefix_private_wound_fork`,
+`counterexample_eventually_positive_sumFree`, and
+`counterexample_all_positiveDifference_edges_finite` gives
+`exists_infiniteDeletion_threeBasis_of_pairCovers`:
+
+> Every zero-containing set that pair-covers all sufficiently large
+> integers has an infinite subset whose deletion leaves an exact
+> order-three asymptotic basis.
+
+This is stronger than the required zero-normalized statement.
+`erdos881_of_zero_normalized` then gives the final unrestricted theorem
+`erdos881` for every strongly minimal exact order-two basis.
+
+Verification:
+
+- full `lake build Erdos881`: 8302 jobs;
+- no `sorry` or `admit`;
+- all new declarations depend only on `propext`, `Classical.choice`, and
+  `Quot.sound`;
+- `import Erdos881` exposes and kernel-checks `Erdos881.erdos881`.
+
+The proof obligation is closed.  The remaining task is to produce a
+paper-level exposition and independently audit correspondence with the
+published wording.
+
+# MOVING-PREFIX STALL + FRESH-SOURCE RESTART (2026-07-27)
+
+The moving-prefix stall lemma is now verified in its full finite-schedule
+form.
+
+- `failure_with_finiteServiceSchedule_forces_cofinal_offScheduleStalls`
+  says that after any finite lists of already served targets, failure forces
+  arbitrarily late threatened targets outside every list with no surviving
+  triple.
+- `IsOffScheduleMinimalCommittee` and
+  `failure_with_finiteServiceSchedule_forces_offSchedule_minimalCommittees`
+  attach nonempty inclusion-minimal guardian committees to those stalls.
+  Their recurrent/escaping, singleton/multiple, and block-separation
+  consequences are all formal.
+- `failed_uniformFiniteServiceSchedule_has_increment` shows that ordinary
+  finite schedules always grow by one after an infinite thinning.  The
+  verified parity example
+  `uniformFiniteServiceSchedules_all_sizes_not_force_basis` proves that
+  unbounded schedule size alone is not enough; the missing condition is
+  fairness over all threatened targets.
+- `HasSurvivingFiniteRiskSchedule` records the genuine label relation
+  `n=b+a`, and
+  `infiniteAlternativeRiskSources_scheduleIncrement` gives the bounded
+  free-set increment when infinitely many distinct sources have
+  source-avoiding representations.  Its hypothesis has been sharpened:
+  the new target need only be absent from its own source's schedule.
+
+The apparent fixed-source obstruction at a finite stage is now eliminated.
+
+- `failed_riskSchedule_source_frontier` first gives an increment, unbounded
+  private sources, or a recurrent fixed source.
+- Under anchor supply, private streams contradict the global-counterexample
+  hypothesis.
+- `anchored_counterexample_freshAlternativeRiskSource` removes any finite
+  set of earlier recurrent sources and restarts the theorem on the remaining
+  infinite deletion.  A new cofinal target is chosen above every schedule
+  value attached to those earlier sources, so it is off-schedule on the
+  original deletion as well.
+- `anchored_counterexample_riskSchedule_increment` iterates this restart.
+  If no `k+1` schedule existed, it would construct injectively many fresh
+  alternative sources; the bounded point-map free-set theorem would then
+  produce exactly the forbidden `k+1` schedule.  Therefore every uniform
+  finite genuine-risk schedule increments in an anchor-abundant global
+  counterexample.
+
+This supersedes the fixed/mobile collateral equations as a *finite-stage*
+obstruction.  Those equations and their exact normalization split remain
+verified (`fixedAlternativeRiskSource_fixed_or_mobileCollateralEquations`,
+`mobileCollateralEquations_increment_or_collision_or_nonNormalizable`), but
+fresh-source restart bypasses both horns before a limit is taken.
+
+The strongest nearby fairness result is also verified:
+`anchored_counterexample_serves_finite_translationSlices_on_tail`.  For
+every finite `Q⊂ℕ` and every infinite source reservoir `C`, some infinite
+`D⊂C` simultaneously has surviving triples for every target
+
+`b + q,  b∈D, q∈Q`.
+
+The proof removes the finite private-source fiber for each `q`, unions the
+chosen three-point supports over the finite set `Q`, and applies the bounded
+point-map free-set theorem.
+
+`anchored_counterexample_has_prescribedFiniteRiskSchedule` packages this
+when `Q⊂A`: the exact schedule at `b` is
+`{b+q | q∈Q}`.  Hence
+`anchored_counterexample_has_every_finite_fairWindow` proves the genuinely
+fair finite statement
+
+`∀ M, ∃ D_M infinite, every b∈D_M and q∈A∩[0,M] is served.`
+
+`fixedDeletion_allFiniteFairWindows_implies_basis` proves the exact desired
+quantifier-swapped bridge: if one fixed `D` works for every `M`, then
+`A\D` is an exact asymptotic basis of order three.  The schedules need not
+even be coherent between windows.
+
+The exact first unsupported limit inference is now explicit.  Finite-slice
+solvability does not by itself give one infinite deletion serving
+countably many slices.  The verified counterexample
+`finite_free_pointMaps_not_countably_fusible` uses
+
+`f(q,b) = {q}` when `q<b`, and `∅` otherwise.
+
+Inside every infinite reservoir, every finite family of these one-point
+maps has an infinite common free subreservoir, but no infinite set is free
+for all of them.  Thus even hereditary density of every finite window does
+not justify the swap `∀M∃D_M → ∃D∀M`.  The remaining bridge must exploit
+the additive equations of the repair supports; abstract compactness,
+nested thinning, and unbounded finite schedule size are insufficient.
+
+The additive composition analysis has now moved substantially past that
+warning.
+
+- `counterexample_pairSplittable_reservoir_finite` says that a counterexample
+  has no infinite positive reservoir of basis points with nontrivial
+  order-two supports.  The proof connects bounded point-map thinning to the
+  completed zero/splitting-reservoir theorem.
+- `counterexample_eventually_all_basisPoints_zeroAtomic` upgrades the former
+  “extract one zero-atomic subreservoir” result to a global tail law: beyond
+  one threshold, every `a∈A` has only the support `{a,0}`.
+  Equivalently, `counterexample_eventually_positive_sumFree` says the whole
+  positive tail of a counterexample is internally sum-free.
+- `counterexample_basisDifference_edges_finite` follows immediately: for
+  every positive `δ∈A`, only finitely many pairs `x,x+δ∈A` exist.  Hence
+  `counterexample_popularDifference_not_mem` says every popular positive
+  difference lies outside `A`.
+- The one-scale theorem
+  `counterexample_fixedDifference_split_filled_finite` is stronger than the
+  earlier two-scale composition for intermediate membership.  If
+  `δ=s+t`, `t∈A`, and `s≠δ`, then only finitely many `δ`-edges can also
+  contain `x+s`.  For a popular `δ≥N₀`, applying this to both orientations
+  of a covering split gives
+  `counterexample_popularDifference_has_emptySplitDiamonds`: infinitely many
+  edges satisfy
+
+  `x,x+δ∈A`, but `x+s,x+t∉A`.
+
+- `twoScale_fixedDifference_composition` and its missing-rectangle
+  contrapositive remain verified, but the central branch is now impossible;
+  `counterexample_popularDifference_has_twoScaleMissing` records the
+  strengthened conclusion.
+- Most importantly,
+  `counterexample_growingDifferences_have_large_emptySplitRectangles`
+  removes both the atomic and composable horns from the growing-difference
+  room uniformly.  At arbitrary difference and multiplicity thresholds it
+  supplies `d=u+v`, with `d∉A`, `u,v∈A` positive, and an arbitrarily large
+  finite family on which
+
+  `x,x+d∈A`, but `x+u,x+v∉A`.
+
+Thus the surviving difference geometry is exactly the internally sum-free,
+parity-like geometry (realized by `{0}∪ODDS`), not an unanalysed disjunction.
+The first unsupported next inference is to turn these arbitrarily large
+empty split rectangles into one deletion serving all mixed risks.  Pair
+covering alone cannot rule out the rectangles; the next composition must use
+their order-three repair supports together with the existing external
+four-clique/block-certificate obstruction.
+
+Erdős 881 is not yet solved.
+
+# MOVING-PREFIX TERMINAL REDUCTION (2026-07-26)
+
+The moving-prefix stall program now has a complete verified finite-to-infinite
+interface (standard axioms, zero sorries).
+
+- `unsafe_extension_self_risk_or_collateral_private` corrects the first
+  tempting inference.  Failure of `B ∪ {b}` need not occur at a new target
+  `b+a`; it can occur at an old risk `d+a`, `d∈B`, whose surviving
+  representations were privately guarded by `b`.
+- `moving_prefix_stalls_distinct_or_recurrent` proves the exact fiber
+  alternative.  From
+  `(card B+1)(KR) < card C`, moving stalls yield either more than `R`
+  distinct wealthy offsets, more than `K` candidates with one fixed
+  self-offset `n_b-b`, or more than `K` candidates with one fixed old charge
+  `n_b-w`, `w∈B`.
+- `greedy_batch_complete_structural_fork` consumes both the self-risk and
+  collateral-private branches.  The latter is not discarded:
+  `IsPrivateTriple.guardian_mem_le_and_complement_split` writes
+  `n-b=u+v` with `u,v∈A\B`, and the same exact-fiber argument applies.
+- `exists_large_ordered_candidate_batch_with_low_supply` removes the last
+  candidate-supply hypothesis.  A reserved block of `(card B+1)L` basis
+  elements, followed by a sufficiently large separated candidate block,
+  supplies the required low mass uniformly.
+- `finite_prefix_extension_or_complete_structure` is the resulting
+  unconditional finite theorem: a safe extension exists, or there are many
+  distinct wealthy offsets, a basis-translate affine wall, a
+  survivor-co-sum affine wall, or a fixed-prefix stall.
+
+The limit step is now also verified.  In
+`infinite_deletion_of_safe_prefix_extensions`, positive extensions above the
+whole prefix produce a strictly increasing sequence `b_i`.  For a fixed
+target `n`, choose a stage `k` with `b_k>n`.  Every entry of a triple summing
+to `n` is at most `n`, so no later deletion can damage the stage-`k`
+representation.  Hence safe finite extensions glue to an infinite deletion
+whose complement is an exact asymptotic basis of order three.
+
+Taking the contrapositive gives a single zero-preserving terminal prefix
+`B`.  At that same `B`, every requested scale `R,L` has a structural
+obstruction.  The fixed-stall horn is actually impossible:
+`safe_zero_surviving_prefix_has_no_fixed_stall` uses a covering pair
+`x+y=m`; if neither endpoint is in `B`, pad by `0`, while if an endpoint is
+in `B`, the safe-prefix invariant serves the risk.  Thus
+`counterexample_terminal_prefix_has_mobile_structure` has only three horns.
+Monotonicity in `R,L` then gives
+`counterexample_terminal_prefix_cofinal_trichotomy`: at one fixed terminal
+prefix, either
+
+1. `ManyWealthyOffsets A R L` holds for every `R,L`;
+2. `BasisAffineWall A B L` holds for every `L`; or
+3. `SurvivorCosumAffineWall A B L` holds for every `L`.
+
+The sharpest current object is
+`counterexample_terminal_prefix_private_wound_fork`.  For every positive
+`b∈A` above the terminal prefix there is a cofinal target `n≥b` such that
+`b` is private over `A\B`.  Exactly one of the following proof obligations
+remains:
+
+- `b` is already an absolute private guardian in `A`; or
+- a triple avoiding `b` exists in `A`, but it must route through the fixed
+  finite prefix `B` (`HasPrefixRepairTriple A B b n`).
+
+The finite routing loss is also closed:
+`counterexample_cofinal_absolute_or_fixed_prefix_repairs` applies a cofinal
+finite pigeonhole argument and leaves exactly two global branches:
+
+- absolute private wounds occur on arbitrarily large guardians `b`; or
+- one fixed `w∈B` lies in repair triples for arbitrarily large guardians.
+
+The absolute branch is now sharpened by
+`no_cofinal_big_absolute_private_guardians`.  Big guardians (`n<2b`) would
+either have cofinal co-offsets `q=n-b≥N₀`, contradicting
+`no_big_guardian_stacking`, or eventually bounded co-offsets.  In both
+cases finite pigeonhole fixes one `q`; two separated guardians at that
+offset contradict the private-desert law.  Hence
+`counterexample_nonbig_absolute_or_fixed_prefix_repairs` is the final
+two-way interface:
+
+- cofinally many absolute private wounds satisfy `2b≤n`; or
+- cofinally many prefix repairs pass through one fixed `w∈B`.
+
+Finally, `strict_small_absolute_private_structure` splits the first horn.
+If `2b<n` and `q=n-b`, then `q∈A`, `b<q`, `{b}` is a singleton pair hub
+at `b`, and `A∩(q,n-N₀]=∅`.  Thus
+`counterexample_double_or_strictSmall_or_fixedPrefixRepairs` leaves three
+named cofinal models at the same terminal prefix:
+
+1. private doubles `n=2b`;
+2. strict-small zero-atomic guardians with long post-`q` deserts;
+3. repairs through one fixed old `w`.
+
+At the endpoints, `absolute_private_double_forces_unique_pair` proves that
+the double branch has the unique order-two representation `2b=b+b`, while
+`repairThrough_gives_shifted_pair` rewrites the fixed-channel branch as
+`n=w+u+v` with `u,v≠b`.  These are respectively the pointwise central
+geometry and the exact shifted-pair composition interface.
+
+The fixed-channel interface has now been pushed through an infinite
+collision-free thinning.  The new theorem
+`cofinal_fixedRepairChannel_has_collisionFree_selector` produces an
+infinite `C⊆A`, with `0,w∉C`, and one wound `τ(b)` for each `b∈C` such that
+`τ(b)=w+u_b+v_b` with `u_b,v_b∈A\C`.  The free-set theorem for bounded
+point maps supplies the thinning: each selected repair pair has at most
+two entries and excludes its own guardian.
+
+This also isolates the first invalid inference in the hoped-for
+composition.  One repaired wound per `b` does not serve every threatened
+target in `C+A`.  `deletion_of_selectedRepairs_and_offSelectorRisks` gives
+the sufficient bridge at the original threshold `N₀`, while
+`selectedRepairs_basis_iff_eventual_offSelectorRisks` proves the exact
+statement: the deletion is an exact order-three asymptotic basis if and
+only if every sufficiently late off-selector risk is served.  Conversely,
+`counterexample_fixedRepairChannel_has_offSelectorStalls` proves that a
+counterexample forces arbitrarily late off-selector targets in `C+A`,
+different from every `τ(b)`, with no triple avoiding `C`.
+
+Those residual targets now have finite structure.
+`failure_with_selectedRepairs_forces_offSelector_minimalCommittees`
+extracts a nonempty minimal representation hub
+`H⊆C∩[0,n]` at every arbitrarily late off-selector stall.
+`selectedRepairs_offSelector_window_core` then fixes any window `[0,W]`
+and stabilizes one exact low committee `S`: cofinally many such minimal
+hubs satisfy `H∩[0,W]=S`, while every remaining guardian lies above `W`.
+Minimality supplies a witness for each `h∈H` avoiding `H\{h}`.  It does
+not imply that `h` is an absolute private guardian, because the witness
+may still use deleted points in `C\H`; that is the first exact remaining
+inference which is not justified.
+
+The source of the selected wounds is now stable as well.
+`cofinal_fixedRepairChannel_self_or_fixedCollateral` gives either cofinally
+many genuine self-risks `b+a`, or one fixed `d∈B` supplies cofinally many
+collateral risks.  In the latter case
+`collateralRepairWound_fixedShift_identity` gives the exact fixed-shift
+equation
+
+`d+a=w+u+v`,
+
+equivalently `(d-w)+a=u+v` when `w≤d`, or
+`a=(w-d)+u+v` when `d≤w`.
+
+Thus the moving-prefix and repeated-offset losses are closed, and the
+selected-repair collision problem is closed.  The remaining mathematics
+is to defeat the private-double/strict-small central-atomic models or
+prove that the forced cofinal off-selector stall stream cannot coexist
+with the fixed-shift self/collateral geometry.  Erdős 881 is not yet
+solved.
+
+# NORMALIZATION + DIFFERENCE-COMPOSITION BRIDGES (2026-07-26)
+
+New verified interfaces, all standard axioms and zero sorries:
+
+- `erdos881_of_zero_normalized` (`Normalization.lean`): the standing
+  `0 ∈ A` convention is now removed at the theorem level.  Shifting by
+  `min A` preserves exact tuple bases, infinite deletions, and strong
+  minimality; any zero-normalized order-two solution transports to the
+  unrestricted statement.
+- `many_difference_pairs_avoid_finset` and
+  `difference_pair_family_many_fresh`: more than `2|F|` equal-difference
+  pairs leave a pair avoiding any finite injury set `F`, quantitatively with
+  arbitrarily many fresh pairs.
+- `stall_family_mass_amplifier`: stalls against one fixed finite prefix
+  pigeonhole to one deleted offset and produce a distinct target family
+  with certified lower and upper symmetry-mass bounds.
+- `moving_prefix_stalls_core_or_mobile`: the greedy construction's actual
+  prefixes `B ∪ {b}` may move with the candidate.  More than
+  `(|B|+1)K` stalled candidates force either `K+1` self-charged wealthy
+  offsets `n_b-b`, or `K+1` wealthy offsets charged to one fixed old
+  `w ∈ B`.
+- `stall_mass_quantitative_of_single_inequality`: the unknown fiber size no
+  longer requires a universally quantified numerical hypothesis.  With
+  `s=|S|`, `k=|B|`, and `α=|A∩[0,X]|`, it is enough to check once that
+  `α(sα+s²D) < (⌈s/k⌉L)²`.
+- `stall_family_forces_popular_difference` packages the numerical payoff;
+  `stall_mass_certificates_fixed_offset_or_growing` feeds certificates at
+  every multiplicity directly into the existing fixed-offset/growing fork.
+- `fixed_difference_deletion_of_shiftedPairSurvival`: the exact composition
+  identity is `b+a = x+(a+δ)` for a deleted upper endpoint `b=x+δ`.
+  Consequently `fixed_difference_forces_shifted_slice_obstruction` says a
+  counterexample with cofinal fixed `δ`-pairs must destroy an order-two
+  representation somewhere on the translated slice `A+δ`.
+- `growing_differences_composable_or_missing_rectangles`: after finite
+  avoidance, every growing popular difference is either itself a basis
+  element, has a fresh edge with an intermediate basis point, or supplies
+  arbitrarily many filled endpoint pairs whose two intermediate vertices
+  are both absent.
+
+The remaining mathematical pressure is now localized.  On the stall side,
+one must manufacture the quantitative certificate family from the adaptive
+extension game.  On the fixed side, analyze the forced shifted-slice
+destroyers with the existing fixed-translate repair machinery.  On the
+growing side, eliminate or exploit the atomic and missing-rectangle horns.
+
 # THE POPULAR-DIFFERENCE MEASUREMENT (2026-07-26)
 
 MEASURED (scripts/probe_popular_diff.py): are the differences
@@ -51,10 +427,12 @@ The chain from the join, completed and verified:
   many large sets in one universe must overlap.
 - `endgame_popular_difference` (the summit): with
   α = |A ∩ [0,X]| and D a uniform bound on how often any
-  difference is realised below X,
+  genuine difference `1 ≤ d ≤ X` is realised below X,
     (Σ_{M∈T} |S M|)² ≤ α · (Σ_{M∈T} |S M| + |T|²·D).
-  Contrapositive: enough wealth mass FORCES a difference
-  realised more than D times.
+  `endgame_popular_positive_difference` packages the usable
+  contrapositive: enough wealth mass FORCES some positive
+  `d ≤ X` to be realised more than D times.  The uninformative
+  diagonal `d = 0` is explicitly excluded.
 
 CONSEQUENCE: a counterexample that blocks the construction pays
 in R1 structure.  The stall's wealth is not merely a number —

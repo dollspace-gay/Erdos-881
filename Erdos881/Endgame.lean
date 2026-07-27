@@ -646,8 +646,8 @@ theorem endgame_translate_laws {A : Set ℕ} {N₀ : ℕ}
       ∀ Z₀, ∃ z, Z₀ ≤ z ∧ z ∈ A ∧ z + c ∉ A) ∧
     (∀ h₀ h₁, h₀ ∈ A → h₁ ∈ A → 0 < h₀ → 0 < h₁ →
       ∀ Z₀, ∃ z, Z₀ ≤ z ∧ z ∈ A ∧ z + h₀ ∉ A ∧ z + h₁ ∉ A) :=
-  ⟨fun c hcA hc => single_translate_law h0 hcov hfail hcA hc,
-   fun h₀ h₁ h₀A h₁A hh₀ hh₁ =>
+  ⟨fun _c hcA hc => single_translate_law h0 hcov hfail hcA hc,
+   fun _h₀ _h₁ h₀A h₁A hh₀ hh₁ =>
      pair_translate_law h0 hcov hfail h₀A h₁A hh₀ hh₁⟩
 
 open Classical in
@@ -1498,12 +1498,12 @@ symmetry sets is one basis pair at difference d
 (`two_symmetries_translate`).  Many large sets in one universe
 must overlap (`sum_pairwise_inter_lower`, Cauchy–Schwarz).
 Hence, with α = |A ∩ [0,X]| and D a uniform bound on how often
-any difference is realised below X:
+any genuine difference `1 ≤ d ≤ X` is realised below X:
 
   (Σ_{M ∈ T} |S M|)² ≤ α · (Σ_{M ∈ T} |S M| + |T|²·D).
 
 Contrapositive: a family of wealthy targets with enough total
-symmetry mass FORCES a difference realised more than D times —
+symmetry mass FORCES a positive difference realised more than D times —
 the fixed-difference supply of the R1 room, manufactured out of
 wealth alone.  Since `endgame_join` prices every stall of the
 constructive greedy in exactly that wealth, a counterexample
@@ -1512,8 +1512,9 @@ that blocks the construction must pay in R1 structure, where
 already wait. -/
 theorem endgame_popular_difference {A : Set ℕ} {X D : ℕ}
     {T : Finset ℕ} (hTX : ∀ M ∈ T, M ≤ X)
-    (hD : ∀ d, ((Finset.range (X + 1)).filter
-      (fun y => y ∈ A ∧ (y + d) ∈ A)).card ≤ D) :
+    (hD : ∀ d, 0 < d → d ≤ X →
+      ((Finset.range (X + 1)).filter
+        (fun y => y ∈ A ∧ (y + d) ∈ A)).card ≤ D) :
     (∑ M ∈ T, ((Finset.range (M + 1)).filter
         (fun z => z ∈ A ∧ (M - z) ∈ A)).card) ^ 2 ≤
     ((Finset.range (X + 1)).filter (fun x => x ∈ A)).card *
@@ -1521,5 +1522,25 @@ theorem endgame_popular_difference {A : Set ℕ} {X D : ℕ}
         (fun z => z ∈ A ∧ (M - z) ∈ A)).card) +
         T.card * T.card * D) :=
   popular_difference_bound hTX hD
+
+open Classical in
+/-- **THE POSITIVE POPULAR DIFFERENCE** (usable contrapositive).
+If a target family's symmetry mass exceeds the popular-difference
+budget, a nonzero difference `d ≤ X` occurs more than `D` times.
+Unlike the raw inequality, this statement explicitly excludes the
+uninformative diagonal difference `d = 0`. -/
+theorem endgame_popular_positive_difference {A : Set ℕ} {X D : ℕ}
+    {T : Finset ℕ} (hTX : ∀ M ∈ T, M ≤ X)
+    (hmass :
+      ((Finset.range (X + 1)).filter (fun x => x ∈ A)).card *
+        ((∑ M ∈ T, ((Finset.range (M + 1)).filter
+          (fun z => z ∈ A ∧ (M - z) ∈ A)).card) +
+          T.card * T.card * D) <
+      (∑ M ∈ T, ((Finset.range (M + 1)).filter
+        (fun z => z ∈ A ∧ (M - z) ∈ A)).card) ^ 2) :
+    ∃ d, 0 < d ∧ d ≤ X ∧ D <
+      ((Finset.range (X + 1)).filter
+        (fun y => y ∈ A ∧ (y + d) ∈ A)).card :=
+  exists_popular_positive_difference hTX hmass
 
 end Erdos881

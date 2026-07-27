@@ -172,7 +172,7 @@ theorem surviving_deletion_of_disjointReps {A : Set ℕ} {N₀ : ℕ}
     obtain ⟨P, hPA, hPsum, hPdisj⟩ := hN (K + 1) n hnN
     -- some representation avoids the markers, else pigeonhole
     by_contra hall
-    push_neg at hall
+    push Not at hall
     have hhit : ∀ i : Fin (K + 1), ∃ j, j < K ∧ ∃ k, P i k = b j := by
       intro i
       have h0 := hPA i 0
@@ -180,7 +180,7 @@ theorem surviving_deletion_of_disjointReps {A : Set ℕ} {N₀ : ℕ}
       have h2 := hPA i 2
       have hs := hPsum i
       by_contra hnone
-      push_neg at hnone
+      push Not at hnone
       -- then this representation avoids B entirely
       have hfree : ∀ k, P i k ∉ Set.range b := by
         intro k
@@ -245,7 +245,7 @@ theorem hub_of_no_disjointReps {A : Set ℕ} {n K : ℕ}
   have hcross : ∃ J, J < K ∧ HasDisjointTripleReps A n J ∧
       ¬HasDisjointTripleReps A n (J + 1) := by
     by_contra hnc
-    push_neg at hnc
+    push Not at hnc
     have hall : ∀ J, J ≤ K → HasDisjointTripleReps A n J := by
       intro J hJ
       induction J with
@@ -263,7 +263,7 @@ theorem hub_of_no_disjointReps {A : Set ℕ} {n K : ℕ}
       _ ≤ 3 * (K - 1) := by omega
   · intro x hx y hy z hz hsum
     by_contra hnot
-    push_neg at hnot
+    push Not at hnot
     obtain ⟨hxH, hyH, hzH⟩ := hnot
     have hmem : ∀ i k, P i k ∈ (Finset.univ :
         Finset (Fin J × Fin 3)).image (fun p => P p.1 p.2) := by
@@ -347,7 +347,7 @@ theorem cofinal_bounded_hubs_of_hfail {A : Set ℕ} {N₀ : ℕ}
       | 1 => exact ⟨hy, hyB⟩
       | 2 => exact ⟨hz, hzB⟩
     · simpa [Fin.sum_univ_three] using hsum
-  push_neg at hnodis
+  push Not at hnodis
   obtain ⟨K, hK⟩ := hnodis
   refine ⟨K, fun N => ?_⟩
   obtain ⟨n, hn, hno⟩ := hK N
@@ -371,7 +371,7 @@ theorem hub_dichotomy {A : Set ℕ} {C : ℕ}
       IsRepHub A n H ∧ ∃ h ∈ H, h ≤ W
   · left
     by_contra hnoper
-    push_neg at hnoper
+    push Not at hnoper
     have hex : ∀ h, ∃ Nh, h ≤ W → ∀ n, Nh ≤ n →
         ∀ H : Finset ℕ, H.card ≤ C → IsRepHub A n H → h ∉ H := by
       intro h
@@ -386,7 +386,7 @@ theorem hub_dichotomy {A : Set ℕ} {C : ℕ}
       Finset.le_sup (Finset.mem_range.2 (by omega))
     exact hg h₀ hh₀W n (by omega) H hcard hhubH hh₀H
   · right
-    push_neg at hmeet
+    push Not at hmeet
     obtain ⟨N₀, hN₀⟩ := hmeet
     intro N
     obtain ⟨n, hn, H, hcard, hhubH⟩ := hhub (max N N₀)
@@ -406,7 +406,7 @@ theorem cofinal_dichotomy (Q : ℕ → Finset ℕ → Prop)
   by_cases hmeet : ∀ N, ∃ n, N ≤ n ∧ ∃ H, Q n H ∧ ∃ h ∈ H, h ≤ W
   · left
     by_contra hnoper
-    push_neg at hnoper
+    push Not at hnoper
     have hex : ∀ h, ∃ Nh, h ≤ W → ∀ n, Nh ≤ n →
         ∀ H, Q n H → h ∉ H := by
       intro h
@@ -421,7 +421,7 @@ theorem cofinal_dichotomy (Q : ℕ → Finset ℕ → Prop)
       Finset.le_sup (Finset.mem_range.2 (by omega))
     exact hg h₀ hh₀W n (by omega) H hQH hh₀H
   · right
-    push_neg at hmeet
+    push Not at hmeet
     obtain ⟨N₀, hN₀⟩ := hmeet
     intro N
     obtain ⟨n, hn, H, hQH⟩ := hQ (max N N₀)
@@ -619,10 +619,10 @@ theorem hub_card_ge_two_of_hfail {A : Set ℕ} {N₀ : ℕ}
     ∃ N, ∀ n, N ≤ n → ∀ H : Finset ℕ, IsRepHub A n H → 2 ≤ H.card := by
   classical
   have hzero := not_zero_residue_of_doubling hcov hdb
-  push_neg at hzero
+  push Not at hzero
   obtain ⟨Nz, hNz⟩ := hzero
   have hpos := singleton_hubs_refuted h0 hcov hanchor hfail
-  push_neg at hpos
+  push Not at hpos
   obtain ⟨Np, hNp⟩ := hpos
   refine ⟨max N₀ (max Nz Np), fun n hn H hhub => ?_⟩
   have hn₀ : N₀ ≤ n := le_trans (le_max_left _ _) hn
@@ -631,7 +631,7 @@ theorem hub_card_ge_two_of_hfail {A : Set ℕ} {N₀ : ℕ}
   have hnp : Np ≤ n := le_trans (le_trans (le_max_right _ _)
     (le_max_right _ _)) hn
   by_contra hlt
-  push_neg at hlt
+  push Not at hlt
   interval_cases hc : H.card
   · obtain ⟨x, hx⟩ := hub_nonempty_of_covering h0 hcov hn₀ hhub
     have := Finset.card_pos.2 ⟨x, hx⟩
@@ -669,7 +669,7 @@ theorem exists_minimal_hub {A : Set ℕ} {n : ℕ} {H : Finset ℕ}
     intro hhub
     by_cases hmin : ∀ h ∈ H, ¬IsRepHub A n (H \ {h})
     · exact ⟨H, Finset.Subset.refl H, hhub, hmin⟩
-    · push_neg at hmin
+    · push Not at hmin
       obtain ⟨h, hhH, hsub⟩ := hmin
       have hss : H \ {h} ⊂ H :=
         Finset.sdiff_ssubset (Finset.singleton_subset_iff.2 hhH)
@@ -690,7 +690,7 @@ theorem minimal_hub_necessity {A : Set ℕ} {n : ℕ} {H : Finset ℕ}
   intro h hhH
   have hnot := hmin h hhH
   rw [IsRepHub] at hnot
-  push_neg at hnot
+  push Not at hnot
   obtain ⟨x, hx, y, hy, z, hz, hsum, hxH, hyH, hzH⟩ := hnot
   have hcx : x ∈ H → x = h := by
     intro hxH'
@@ -727,7 +727,7 @@ theorem recurring_pair_of_bounded_pair_hubs {A : Set ℕ} {W : ℕ}
     ∃ u v, u ≤ W ∧ v ≤ W ∧ ∀ N, ∃ n, N ≤ n ∧ IsRepHub A n {u, v} := by
   classical
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hex : ∀ u v, ∃ Nuv, u ≤ W → v ≤ W → ∀ n, Nuv ≤ n →
       ¬IsRepHub A n {u, v} := by
     intro u v
@@ -888,7 +888,7 @@ theorem stable_core_aux {A : Set ℕ} {C : ℕ}
         H.card ≤ C ∧ IsRepHub A n H ∧ R n H ∧ S ⊆ H ∧
         ∀ h ∈ H, h ∉ S → W < h
     · exact ⟨S, Finset.Subset.refl S, hstable⟩
-    · push_neg at hstable
+    · push Not at hstable
       obtain ⟨W₁, N₁, hW₁⟩ := hstable
       rcases cofinal_dichotomy
         (fun n H' => ∃ H : Finset ℕ, H.card ≤ C ∧ IsRepHub A n H ∧
@@ -992,7 +992,7 @@ theorem cofinal_value_pigeonhole {C : ℕ} (P : ℕ → ℕ → Prop)
     ∃ c, c ≤ C ∧ ∀ N, ∃ n, N ≤ n ∧ P n c := by
   classical
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hex : ∀ c, ∃ Nc, c ≤ C → ∀ n, Nc ≤ n → ¬P n c := by
     intro c
     by_cases hc : c ≤ C
@@ -1049,7 +1049,7 @@ theorem stable_core_card_of_hfail {A : Set ℕ} {N₀ : ℕ}
     exact ⟨c, hc, hcof⟩
   -- pigeonhole the card across windows; downward closure finishes
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hex : ∀ c, ∃ Wc, c ≤ 3 * (K - 1) → ¬Good Wc c := by
     intro c
     by_cases hc : c ≤ 3 * (K - 1)
@@ -1614,13 +1614,13 @@ theorem surviving_pair_deletion_of_disjointPairReps {A : Set ℕ}
         omega
     obtain ⟨P, hPA, hPsum, hPdisj⟩ := hN (K + 1) n hnN
     by_contra hall
-    push_neg at hall
+    push Not at hall
     have hhit : ∀ i : Fin (K + 1), ∃ j, j < K ∧ ∃ k, P i k = b j := by
       intro i
       have h0 := hPA i 0
       have h1 := hPA i 1
       by_contra hnone
-      push_neg at hnone
+      push Not at hnone
       have hfree : ∀ k, P i k ∉ Set.range b := by
         intro k
         rintro ⟨j, hj⟩
@@ -1668,7 +1668,7 @@ theorem pairHub_of_no_disjointPairReps {A : Set ℕ} {n K : ℕ}
   have hcross : ∃ J, J < K ∧ HasDisjointPairReps A n J ∧
       ¬HasDisjointPairReps A n (J + 1) := by
     by_contra hnc
-    push_neg at hnc
+    push Not at hnc
     have hall : ∀ J, J ≤ K → HasDisjointPairReps A n J := by
       intro J hJ
       induction J with
@@ -1686,7 +1686,7 @@ theorem pairHub_of_no_disjointPairReps {A : Set ℕ} {n K : ℕ}
       _ ≤ 2 * (K - 1) := by omega
   · intro x hx y hy hsum
     by_contra hnot
-    push_neg at hnot
+    push Not at hnot
     obtain ⟨hxH, hyH⟩ := hnot
     have hmem : ∀ i k, P i k ∈ (Finset.univ :
         Finset (Fin J × Fin 2)).image (fun p => P p.1 p.2) := by
@@ -1761,7 +1761,7 @@ theorem cofinal_bounded_pairHubs_of_minimality {A : Set ℕ} {N₀ : ℕ}
     obtain ⟨B, hBsub, hBinf, N₁, hN₁⟩ :=
       surviving_pair_deletion_of_disjointPairReps hcov hdis
     exact hmin B hBsub hBinf ⟨N₁, hN₁⟩
-  push_neg at hnodis
+  push Not at hnodis
   obtain ⟨K, hK⟩ := hnodis
   refine ⟨K, fun N => ?_⟩
   obtain ⟨n, hn, hno⟩ := hK N
@@ -1802,7 +1802,7 @@ theorem stable_core_generic {C : ℕ} (Hub : ℕ → Finset ℕ → Prop) :
         H.card ≤ C ∧ Hub n H ∧ S ⊆ H ∧
         ∀ h ∈ H, h ∉ S → W < h
     · exact ⟨S, Finset.Subset.refl S, hstable⟩
-    · push_neg at hstable
+    · push Not at hstable
       obtain ⟨W₁, N₁, hW₁⟩ := hstable
       rcases cofinal_dichotomy
         (fun n H' => ∃ H : Finset ℕ, H.card ≤ C ∧ Hub n H ∧
@@ -1888,7 +1888,7 @@ theorem stable_pair_core_card_of_minimality {A : Set ℕ} {N₀ : ℕ}
         exact ⟨n, hn, H.card, hcard, H, rfl, hhub, hSH, hrest⟩)
     exact ⟨c, hc, hcof⟩
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hex : ∀ c, ∃ Wc, c ≤ 2 * (K - 1) → ¬Good Wc c := by
     intro c
     by_cases hc : c ≤ 2 * (K - 1)
@@ -2016,11 +2016,11 @@ theorem corrected_covering_of_rigidity {A : Set ℕ} {N₀ Ns d : ℕ}
       · have h1 : z - 2 * d + d = z - d := by omega
         rw [h1]
         exact hrig (z - d) hzdA hmid
-    · push_neg at hzd
+    · push Not at hzd
       refine ⟨z, hz, 0, Or.inl rfl, by omega, ?_⟩
       intro hdz hzdA
       by_contra hbig
-      push_neg at hbig
+      push Not at hbig
       exact absurd hbig (by
         have := hzd hdz hzdA
         omega)
@@ -2130,13 +2130,13 @@ theorem surviving_pair_deletion_of_disjointPairReps_pool {A P : Set ℕ}
         omega
     obtain ⟨Pm, hPA', hPsum, hPdisj⟩ := hN (K + 1) n hnN
     by_contra hall
-    push_neg at hall
+    push Not at hall
     have hhit : ∀ i : Fin (K + 1), ∃ j, j < K ∧ ∃ k, Pm i k = b j := by
       intro i
       have h0 := hPA' i 0
       have h1 := hPA' i 1
       by_contra hnone
-      push_neg at hnone
+      push Not at hnone
       have hfree : ∀ k, Pm i k ∉ Set.range b := by
         intro k
         rintro ⟨j, hj⟩
@@ -2190,7 +2190,7 @@ theorem cofinal_bounded_pairHubs_of_minimality_pool {A P : Set ℕ}
     obtain ⟨B, hBsub, hBinf, N₁, hN₁⟩ :=
       surviving_pair_deletion_of_disjointPairReps_pool hPA hunb hdis
     exact hmin B (fun x hx => hPA (hBsub hx)) hBinf ⟨N₁, hN₁⟩
-  push_neg at hnodis
+  push Not at hnodis
   obtain ⟨K, hK⟩ := hnodis
   refine ⟨K, fun N => ?_⟩
   obtain ⟨n, hn, hno⟩ := hK N
@@ -2344,7 +2344,7 @@ theorem cofinal_subset_pigeonhole {Q : ℕ → Finset ℕ → Prop}
     ∃ S ⊆ F, ∀ N, ∃ n, N ≤ n ∧ Q n S := by
   classical
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hex : ∀ S : Finset ℕ, ∃ NS, S ⊆ F → ∀ n, NS ≤ n → ¬Q n S := by
     intro S
     by_cases hS : S ⊆ F
@@ -2486,7 +2486,7 @@ theorem per_deletion_dichotomy_final {A : Set ℕ} {b : ℕ → ℕ}
     exact escape_singleton_of_supergeometric hsg
       (fun h hh => (hHB h hh).1) (fun h hh => (hHB h hh).2) hesc hne
   · left
-    push_neg at hesc
+    push Not at hesc
     obtain ⟨h, hh, hhn⟩ := hesc
     exact ⟨h, hh, hhn⟩
 
@@ -2547,7 +2547,7 @@ theorem ownership_chain {A : Set ℕ} {Ns : ℕ}
     · exact ⟨0, fun _ => a, rfl, fun i hi => by
         cases Nat.le_zero.1 hi
         exact haA, fun i hi => absurd hi (by omega), hlt⟩
-    · push_neg at hlt
+    · push Not at hlt
       obtain ⟨n, hown⟩ := huniv a haA hlt
       obtain ⟨hsA, hslt⟩ := hown.chain_step
       obtain ⟨k, c, hc0, hcA, hcstep, hcend⟩ := ih (n - a) hslt hsA
@@ -2645,7 +2645,7 @@ theorem gap_domination_of_empty_strip {A : Set ℕ} {a n a' : ℕ}
     (ha' : a' ∈ A) (haa' : a < a') (h0 : 0 ∈ A) :
     n - a ≤ a' - a := by
   by_contra hlt
-  push_neg at hlt
+  push Not at hlt
   have hn' : a' < n := by omega
   exact hstrip a' ha' haa' hn'
 
@@ -2835,12 +2835,12 @@ theorem zero_payment_squeeze {A : Set ℕ} {a t : ℕ}
   constructor
   · intro y hy hya
     by_contra hgt
-    push_neg at hgt
+    push Not at hgt
     have := hpay y hy hgt (by omega)
     omega
   · intro y hy hay
     by_contra hlt
-    push_neg at hlt
+    push Not at hlt
     have := hpay y hy (by omega) hlt
     omega
 
@@ -2911,7 +2911,7 @@ theorem octave_rich_of_covering {A : Set ℕ} [DecidablePred (· ∈ A)]
       5 ≤ ((Finset.Ioc (2 ^ k) (2 ^ (k + 1))).filter (· ∈ A)).card := by
   intro k₀
   by_contra hno
-  push_neg at hno
+  push Not at hno
   -- octave counts ≤ 4 beyond k₀
   have hoct : ∀ k, k₀ ≤ k →
       ((Finset.Ioc (2 ^ k) (2 ^ (k + 1))).filter (· ∈ A)).card ≤ 4 := by
@@ -3055,7 +3055,7 @@ theorem paying_owner_in_rich_octave {A : Set ℕ}
   obtain ⟨t2, ho2⟩ := huniv x2 hA2 (by omega)
   obtain ⟨t4, ho4⟩ := huniv x4 hA4 (by omega)
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hp2 : ∀ y ∈ A, 2 * y > t2 → y < t2 → y = x2 := by
     intro y hy hby hyt
     exact hno x2 t2 y hA2 hX2 ho2 hy hby hyt
@@ -3118,7 +3118,7 @@ theorem payer_in_five {A : Set ℕ} {Ns X x₁ x₂ x₃ x₄ x₅ : ℕ}
   obtain ⟨t₂, ho₂⟩ := huniv x₂ h₂ (by omega)
   obtain ⟨t₄, ho₄⟩ := huniv x₄ h₄ (by omega)
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hp₂ : ∀ y ∈ A, 2 * y > t₂ → y < t₂ → y = x₂ := by
     intro y hy hby hyt
     exact hno x₂ t₂ y (Or.inl rfl) ho₂ hy hby hyt
@@ -3227,7 +3227,7 @@ theorem edge_tax {A : Set ℕ} {w a : ℕ}
     (hne2 : a ≠ 2 * w) (hne3 : a ≠ 3 * w) :
     2 * w ∉ A ∨ a - w ∉ A := by
   by_contra h
-  push_neg at h
+  push Not at h
   exact edge_exclusion_law hown hne2 hne3 ⟨h.2, h.1⟩
 
 /-- **Split differences inject.**  Distinct split children of one
@@ -3435,7 +3435,7 @@ theorem dodge_or_trap {A : Set ℕ} {N0 : ℕ}
         ∀ h ∈ H, h ∈ F ∨ h = a := by
   classical
   by_contra hnotrap
-  push_neg at hnotrap
+  push Not at hnotrap
   have hpick : ∀ (F : Finset ℕ) (X : ℕ), ∃ a, a ∈ A ∧ X ≤ a ∧
       ((∀ h ∈ F, h ∈ A) →
         ¬∃ n, N0 ≤ n ∧ ∃ H : Finset ℕ, IsRepHub A n H ∧ a ∈ H ∧
@@ -3551,13 +3551,13 @@ theorem dodge_or_trap {A : Set ℕ} {N0 : ℕ}
     exact ⟨j, hlastmem j⟩
   have hnb := hfail B hBA hBinf
   rw [IsExactTupleAsymptoticBasis] at hnb
-  push_neg at hnb
+  push Not at hnb
   obtain ⟨n, hnN, hnorep⟩ := hnb N0
   have hdead : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = n →
       x ∈ B ∨ y ∈ B ∨ z ∈ B := by
     intro x hx y hy z hz hsum
     by_contra hall
-    push_neg at hall
+    push Not at hall
     obtain ⟨hxB, hyB, hzB⟩ := hall
     refine hnorep ![x, y, z] ?_ (by simpa [Fin.sum_univ_three] using hsum)
     intro i
@@ -3593,7 +3593,7 @@ theorem dodge_or_trap_pool {P A : Set ℕ} {N0 : ℕ}
         ∀ h ∈ H, h ∈ F ∨ h = a := by
   classical
   by_contra hnotrap
-  push_neg at hnotrap
+  push Not at hnotrap
   have hpick : ∀ (F : Finset ℕ) (X : ℕ), ∃ a, a ∈ P ∧ X ≤ a ∧
       ((∀ h ∈ F, h ∈ P) →
         ¬∃ n, N0 ≤ n ∧ ∃ H : Finset ℕ, IsRepHub A n H ∧ a ∈ H ∧
@@ -3709,13 +3709,13 @@ theorem dodge_or_trap_pool {P A : Set ℕ} {N0 : ℕ}
     exact ⟨j, hlastmem j⟩
   have hnb := hfail B hBA hBinf
   rw [IsExactTupleAsymptoticBasis] at hnb
-  push_neg at hnb
+  push Not at hnb
   obtain ⟨n, hnN, hnorep⟩ := hnb N0
   have hdead : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = n →
       x ∈ B ∨ y ∈ B ∨ z ∈ B := by
     intro x hx y hy z hz hsum
     by_contra hall
-    push_neg at hall
+    push Not at hall
     obtain ⟨hxB, hyB, hzB⟩ := hall
     refine hnorep ![x, y, z] ?_ (by simpa [Fin.sum_univ_three] using hsum)
     intro i
@@ -3844,7 +3844,7 @@ theorem grand_dichotomy {A : Set ℕ} {N0 : ℕ}
     obtain ⟨i, hi⟩ := hflood
     exact ⟨F i, hi⟩
   · right
-    push_neg at hflood
+    push Not at hflood
     refine ⟨Y, F, hFA, ?_, ?_⟩
     · intro i
       have h1 := hYX i
@@ -4323,12 +4323,12 @@ theorem forced_pair_shadow_of_hfail {A B : Set ℕ}
   intro N
   have hnb := hfail B hBA hBinf
   rw [IsExactTupleAsymptoticBasis] at hnb
-  push_neg at hnb
+  push Not at hnb
   obtain ⟨n, hnN, hnorep⟩ := hnb N
   refine ⟨n, hnN, ?_⟩
   intro x hx y hy hxy
   by_contra hall
-  push_neg at hall
+  push Not at hall
   obtain ⟨hxB, hyB⟩ := hall
   refine hnorep ![x, y, 0] ?_ (by simp [Fin.sum_univ_three]; omega)
   intro i
@@ -4456,7 +4456,7 @@ theorem log_sidon_of_hfail {A : Set ℕ} {N0 : ℕ}
         omega
       have hjn : 3 ^ j ≤ n := le_trans (hbpow j) (by omega)
       have hjlog : j ≤ Nat.log 3 n :=
-        (Nat.pow_le_iff_le_log (by norm_num) (by omega)).1 hjn
+        (Nat.le_log_iff_pow_le (by norm_num) (by omega)).2 hjn
       exact Finset.mem_image.2 ⟨j, Finset.mem_range.2 (by omega), hj⟩
     have h1 := Finset.card_le_card hsub
     have h2 : ((Finset.range (Nat.log 3 n + 1)).image b).card ≤
@@ -4780,7 +4780,7 @@ theorem pair_flood_of_hfail {A : Set ℕ} {N₀ : ℕ}
           x ∈ insert b P ∨ y ∈ insert b P := by
   classical
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hfree0 : PairFree A N₀ ∅ := by
     intro m hm
     obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
@@ -4909,7 +4909,7 @@ theorem exists_minimal_pairHub {A : Set ℕ} {n : ℕ} {H : Finset ℕ}
     intro hhub
     by_cases hmin : ∀ h ∈ H, ¬IsPairHub A n (H \ {h})
     · exact ⟨H, Finset.Subset.refl H, hhub, hmin⟩
-    · push_neg at hmin
+    · push Not at hmin
       obtain ⟨h, hhH, hsub⟩ := hmin
       have hss : H \ {h} ⊂ H :=
         Finset.sdiff_ssubset (Finset.singleton_subset_iff.2 hhH)
@@ -5022,7 +5022,7 @@ theorem pair_flood_pool {A P₀ : Set ℕ} {N₀ : ℕ}
             x ∈ insert b P ∨ y ∈ insert b P := by
   classical
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hfree0 : PairFree A N₀ ∅ := by
     intro m hm
     obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
@@ -5269,7 +5269,7 @@ theorem rep_flood_of_hfail {A : Set ℕ} {N₀ : ℕ}
       ∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsRepHub A m (insert b P) := by
   classical
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hfree0 : RepFree A N₀ ∅ := by
     intro m hm
     obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
@@ -5285,7 +5285,7 @@ theorem rep_flood_of_hfail {A : Set ℕ} {N₀ : ℕ}
       refine ⟨b, hbA, hXb, fun _ m hm hbm => ?_⟩
       have hnh := hbgood m hm hbm
       rw [IsRepHub] at hnh
-      push_neg at hnh
+      push Not at hnh
       obtain ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩ := hnh
       exact ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩
     · obtain ⟨b, hbA, hXb⟩ := pairCovers_unbounded hcov X
@@ -5464,7 +5464,7 @@ theorem rep_flood_pool {A P₀ : Set ℕ} {N₀ : ℕ}
         ∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsRepHub A m (insert b P) := by
   classical
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hfree0 : RepFree A N₀ ∅ := by
     intro m hm
     obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
@@ -5481,7 +5481,7 @@ theorem rep_flood_pool {A P₀ : Set ℕ} {N₀ : ℕ}
       refine ⟨b, hbP, hXb, fun _ _ m hm hbm => ?_⟩
       have hnh := hbgood m hm hbm
       rw [IsRepHub] at hnh
-      push_neg at hnh
+      push Not at hnh
       obtain ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩ := hnh
       exact ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩
     · obtain ⟨b, hbP, hXb⟩ := hunb X
@@ -5692,7 +5692,7 @@ theorem pair_flood_of_minimality {A : Set ℕ} {N₀ : ℕ}
           x ∈ insert b P ∨ y ∈ insert b P := by
   classical
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hfree0 : PairFree A N₀ ∅ := by
     intro m hm
     obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
@@ -6007,18 +6007,18 @@ theorem guardian_team_hubs_of_deletion {A B : Set ℕ} {N₀ : ℕ}
       2 ≤ H.card ∧ ∀ h ∈ H, h ∈ B := by
   classical
   have hsing := singleton_hubs_refuted h0 hcov hanchor hfail
-  push_neg at hsing
+  push Not at hsing
   obtain ⟨Nₛ, hNₛ⟩ := hsing
   intro N
   have hnb := hfail B hBA hBinf
   rw [IsExactTupleAsymptoticBasis] at hnb
-  push_neg at hnb
+  push Not at hnb
   obtain ⟨n, hnN, hnorep⟩ := hnb (max N (max N₀ Nₛ))
   have hdead : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = n →
       x ∈ B ∨ y ∈ B ∨ z ∈ B := by
     intro x hx y hy z hz hsum
     by_contra hall
-    push_neg at hall
+    push Not at hall
     obtain ⟨hxB, hyB, hzB⟩ := hall
     refine hnorep ![x, y, z] ?_ (by simpa [Fin.sum_univ_three] using hsum)
     intro i
@@ -6037,14 +6037,14 @@ theorem guardian_team_hubs_of_deletion {A B : Set ℕ} {N₀ : ℕ}
       hH'hub
   have hcard2 : 2 ≤ H'.card := by
     by_contra hlt
-    push_neg at hlt
+    push Not at hlt
     have hpos : 0 < H'.card := Finset.card_pos.2 hH'ne
     have hone : H'.card = 1 := by omega
     obtain ⟨a, ha⟩ := Finset.card_eq_one.1 hone
     have haB : a ∈ B := hH'B a (ha ▸ Finset.mem_singleton_self a)
     have hapos : 0 < a := by
       by_contra ha0
-      push_neg at ha0
+      push Not at ha0
       have haz : a = 0 := by omega
       rw [haz] at haB
       exact h0B haB
@@ -6158,10 +6158,10 @@ theorem blowup_offset_dichotomy {A : Set ℕ} {N₀ : ℕ}
   by_cases hcorep : ∀ C N, ∃ m b, N ≤ m ∧ BlowupAt A N₀ P C m b b
   · exact Or.inr hcorep
   · left
-    push_neg at hcorep
+    push Not at hcorep
     obtain ⟨C₁, N₁, hblock⟩ := hcorep
     by_contra hnos
-    push_neg at hnos
+    push Not at hnos
     have hex : ∀ s, ∃ Cs Ns, s ∈ P →
         ∀ m b, Ns ≤ m → ¬BlowupAt A N₀ P Cs m b s := by
       intro s
@@ -6382,13 +6382,13 @@ theorem corep_offset_dichotomy {A : Set ℕ} {N₀ : ℕ}
     obtain ⟨a, hXa, ha, hw, hNn, hall⟩ := hcof X
     exact ⟨a, ha, hXa, hNn, hall⟩
   · right
-    push_neg at hbnd
+    push Not at hbnd
     intro W X
     obtain ⟨X', hX'⟩ := hbnd W
     obtain ⟨a, w, ha, hw, hXa, hNn, hall⟩ := hstream (max X X')
     have hwW : W < w := by
       by_contra hle
-      push_neg at hle
+      push Not at hle
       obtain ⟨x, hx, y, hy, hxy, hxa, hya⟩ :=
         hX' a w ha hw (le_trans (le_max_right _ _) hXa) hle hNn
       rcases hall x hx y hy hxy with h | h
@@ -7035,7 +7035,7 @@ theorem team_target_dominates {A : Set ℕ} {N₀ n u v w : ℕ}
     (hn : N₀ ≤ n) (hhub : IsRepHub A n {u, v, w}) :
     w ≤ n := by
   by_contra hgt
-  push_neg at hgt
+  push Not at hgt
   refine hpf ⟨n, hn, ?_⟩
   intro x hx y hy z hz hsum
   rcases hhub x hx y hy z hz hsum with h | h | h
@@ -7441,7 +7441,7 @@ theorem team_target_dominates₄ {A : Set ℕ} {N₀ n u v w z : ℕ}
     (hn : N₀ ≤ n) (hhub : IsRepHub A n {u, v, w, z}) :
     z ≤ n := by
   by_contra hgt
-  push_neg at hgt
+  push Not at hgt
   refine htf ⟨n, hn, ?_⟩
   intro x hx y hy z' hz' hsum
   have hmem4 : ∀ q, q ∈ ({u, v, w, z} : Finset ℕ) →
@@ -7484,7 +7484,7 @@ theorem three_columns_per_clique_target {A : Set ℕ} {N₀ n u v : ℕ}
   classical
   have hnohub : ¬IsRepHub A n {u, v} := fun h => hpf ⟨n, hn, h⟩
   rw [IsRepHub] at hnohub
-  push_neg at hnohub
+  push Not at hnohub
   obtain ⟨x, hx, y, hy, z, hz, hsum, hxuv, hyuv, hzuv⟩ := hnohub
   refine ⟨x, y, z, fun w hhub => ?_⟩
   have hmem3 : ∀ q, q ∈ ({u, v, w} : Finset ℕ) →
@@ -7560,7 +7560,7 @@ theorem union_deletion_trichotomy {A B₁ B₂ : Set ℕ} {N₀ : ℕ}
       2 ≤ H.card ∧ ∀ h ∈ H, h ∈ B₂
   · exact Or.inr (Or.inl hc2)
   · refine Or.inr (Or.inr ?_)
-    push_neg at hc1 hc2
+    push Not at hc1 hc2
     obtain ⟨N₁, hN₁⟩ := hc1
     obtain ⟨N₂, hN₂⟩ := hc2
     intro N
@@ -7570,7 +7570,7 @@ theorem union_deletion_trichotomy {A B₁ B₂ : Set ℕ} {N₀ : ℕ}
       hcard, hHU, ?_, ?_⟩
     · -- some member in B₁: else all in B₂, contradicting hc2
       by_contra hno1
-      push_neg at hno1
+      push Not at hno1
       have hall2 : ∀ h ∈ H, h ∈ B₂ := by
         intro h hh
         rcases hHU h hh with h' | h'
@@ -7580,7 +7580,7 @@ theorem union_deletion_trichotomy {A B₁ B₂ : Set ℕ} {N₀ : ℕ}
         (le_max_right _ _) (le_max_right _ _)) hn) H hhub hmin hcard
       exact hhB (hall2 h hh)
     · by_contra hno2
-      push_neg at hno2
+      push Not at hno2
       have hall1 : ∀ h ∈ H, h ∈ B₁ := by
         intro h hh
         rcases hHU h hh with h' | h'
@@ -7603,7 +7603,7 @@ theorem three_partners_per_pair_target {A : Set ℕ} {N₀ n u : ℕ}
   classical
   have hnohub : ¬IsRepHub A n {u} := fun h => hpf ⟨n, hn, h⟩
   rw [IsRepHub] at hnohub
-  push_neg at hnohub
+  push Not at hnohub
   obtain ⟨x, hx, y, hy, z, hz, hsum, hxu, hyu, hzu⟩ := hnohub
   refine ⟨x, y, z, fun w hhub => ?_⟩
   have hxu' : x ≠ u := fun h => hxu (by simp [h])
@@ -7805,13 +7805,13 @@ theorem disjoint_deletions_many_failures {A : Set ℕ} {N₀ : ℕ}
     intro i
     have hnb := hfail (B i) (hBA i) (hBinf i)
     rw [IsExactTupleAsymptoticBasis] at hnb
-    push_neg at hnb
+    push Not at hnb
     obtain ⟨m, hm, hnorep⟩ := hnb (max N N₀)
     refine ⟨m, le_trans (le_max_left _ _) hm,
       le_trans (le_max_right _ _) hm, ?_⟩
     intro x hx y hy z hz hsum
     by_contra hall
-    push_neg at hall
+    push Not at hall
     obtain ⟨hxB, hyB, hzB⟩ := hall
     refine hnorep ![x, y, z] ?_
       (by simp [Fin.sum_univ_three]; omega)
@@ -7824,7 +7824,7 @@ theorem disjoint_deletions_many_failures {A : Set ℕ} {N₀ : ℕ}
   refine ⟨t, fun i => ⟨ht1 i, ht2 i, ht3 i⟩, ?_⟩
   intro v
   by_contra hbig
-  push_neg at hbig
+  push Not at hbig
   obtain ⟨F, hFsub, hFcard⟩ := Finset.exists_subset_card_eq
     (show 4 ≤ (Finset.univ.filter
       (fun i : Fin k => t i = v)).card from hbig)
@@ -7873,11 +7873,11 @@ theorem immune_survives_sparse {A B : Set ℕ} {v K : ℕ}
   obtain ⟨P, hPA, hPsum, hPdis⟩ := hK
   -- pairs killed by B inject into the deleted window
   by_contra hall
-  push_neg at hall
+  push Not at hall
   have hkill : ∀ i : Fin K, ∃ s : Fin 2, P i s ∈ B := by
     intro i
     by_contra hno
-    push_neg at hno
+    push Not at hno
     have h0' : P i 0 ∉ B := hno 0
     have h1' : P i 1 ∉ B := hno 1
     have hmem := hall (P i 0) (hPA i 0) (P i 1) (hPA i 1) 0 h0
@@ -7952,7 +7952,7 @@ theorem disjoint_pairs_extract {A : Set ℕ} {v : ℕ}
           have := Finset.mem_range.1 hxr
           omega
         rw [Finset.mem_union] at hxbl
-        push_neg at hxbl
+        push Not at hxbl
         obtain ⟨hxb1, hxb2⟩ := hxbl
         have hxx₀ : x ≠ x₀ ∧ x ≠ v - x₀ := by
           constructor <;> intro h <;>
