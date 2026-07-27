@@ -49,17 +49,41 @@ basis.  Method: contradiction-mining a hypothetical counterexample
 
 ## Current status (2026-07-27)
 
-SOLVED in Lean.  `threeAnchor_forbids_terminalPrivateWounds`
-closes the moving-prefix endgame by combining the terminal
-private-wound field, the eventual positive sum-free tail, and
-finiteness of every fixed positive-difference fiber.
-`exists_infiniteDeletion_threeBasis_of_pairCovers` proves the
-stronger zero-normalized statement for every eventual order-two
-pair-cover, and `erdos881` transports it to the unrestricted
-strongly minimal formulation.  Full build: 8302 jobs.  Axiom
-audit: only `propext`, `Classical.choice`, and `Quot.sound`;
-zero sorries.  The remaining work is exposition and independent
-statement/dependency review, not an open proof obligation.
+ORDERS 0, 1, 2 SOLVED in Lean; k ≥ 3 STILL OPEN.  Erdős 881 as
+published quantifies over *every* order k ("`A` a basis of order
+`k`, minimal; must some infinite `B ⊆ A` leave `A ∖ B` a basis of
+order `k+1`?").  Do not describe the repository as solving #881.
+
+- Order two (the main engine).
+  `threeAnchor_forbids_terminalPrivateWounds` closes the
+  moving-prefix endgame by combining the terminal private-wound
+  field, the eventual positive sum-free tail, and finiteness of
+  every fixed positive-difference fiber.
+  `exists_infiniteDeletion_threeBasis_of_pairCovers` proves the
+  stronger zero-normalized statement for every eventual order-two
+  pair-cover; `erdos881` transports it to the unrestricted
+  strongly minimal formulation.
+- General order: `Erdos881/GeneralOrder.lean`.  `Erdos881At k` is
+  the order-`k` statement, and `erdos881At_iff_elementary` (audit)
+  confirms it is the official statement verbatim.  Settled:
+  `erdos881_at_zero` (vacuous), `erdos881_at_one`,
+  `erdos881_at_two`, plus `exists_infiniteDeletion_succBasis_of_basisTwo`
+  — every `k ≥ 2` for `A` an exact order-two basis.
+- THE REMAINING GAP is exactly `erdos881_general_of_hardCase`'s
+  hypothesis: `k ≥ 3` with `A` NOT an exact order-two basis.  That
+  case is non-empty — the base-`(k+1)` digit-`{0,1}` set is an
+  exact order-`k` basis and misses many targets at order two — so
+  it is a genuine open obligation, not a vacuous one.  The natural
+  next target is the base-`(k+1)` analogue of the Cantor instance.
+
+MINIMALITY IS NEVER USED in any settled case: each proof needs
+only the basis half, so what is proved is strictly stronger than
+the problem asks.
+
+Full build: 8303 jobs.  Axiom audit: only `propext`,
+`Classical.choice`, `Quot.sound` — repo-wide, including
+`crossGap_finiteException_can_genuinely_stall` (was `native_decide`,
+now `decide`).  Zero sorries.
 
 ## Build quirk (2026-07-25)
 

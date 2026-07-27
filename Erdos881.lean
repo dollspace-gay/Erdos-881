@@ -50,4 +50,5 @@ import Erdos881.DisjointRepEngine
 import Erdos881.CantorSieve
 import Erdos881.InfiniteRamsey
 import Erdos881.FreeRank
+import Erdos881.GeneralOrder
 import Erdos881.Endgame

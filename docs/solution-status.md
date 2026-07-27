@@ -1,3 +1,54 @@
+# GENERAL ORDER: k = 0,1,2 SOLVED — k ≥ 3 OPEN (2026-07-27, later)
+
+An independent audit established that the previous entry overstated
+the result.  Erdős 881 as published quantifies over **every** order
+`k`; this repository had settled `k = 2` only.  The headline
+"ERDŐS 881 PROVED" was wrong and is retracted.
+
+`Erdos881/GeneralOrder.lean` now supplies the layer uniform in `k`.
+
+- `Erdos881At k` — the order-`k` statement.  The audit theorem
+  `erdos881At_iff_elementary` proves, for every `k`, that this is
+  *exactly* the official statement written out in plain arithmetic
+  with no repository definitions.
+- `IsExactTupleAsymptoticBasis.of_le` — order monotonicity, by
+  iterating the existing padding lemma `.succ` (pad with a fixed
+  basis element; no zero-normalization needed).
+- `erdos881_at_zero` — vacuous: the empty sum is `0`, so nothing is
+  an exact order-zero asymptotic basis.
+- `exists_infiniteDeletion_twoBasis_of_basisOne` / `erdos881_at_one`
+  — an exact order-one basis is a tail of `ℕ`; delete the
+  progression `N + 4 + 2ℕ`, which has no two consecutive members, so
+  one of `n = N + (n-N)` and `n = (N+1) + (n-N-1)` survives.
+- `exists_infiniteDeletion_threeBasis_of_basisTwo` — the order-two
+  engine with the `0 ∈ A` hypothesis discharged by translating `A`
+  down by `sInf A`.
+- `exists_infiniteDeletion_succBasis_of_basisTwo` — hence **every**
+  `k ≥ 2`, for every `A` that is an exact order-two basis: the
+  order-three deletion survives at every order `≥ 3`.
+
+**The remaining gap**, isolated exactly by
+`erdos881_general_of_hardCase`: order `k ≥ 3` with `A` *not* an
+exact order-two basis.  This family is non-empty — the base-`(k+1)`
+digit-`{0,1}` set is an exact order-`k` basis but misses many
+targets at order two (checked numerically for `k = 3, 4`) — so the
+hypothesis is a genuine open obligation, not a vacuum.  The natural
+next target is the base-`(k+1)` analogue of the verified Cantor
+instance, with carry repair at order `k + 1`.
+
+Also fixed: `crossGap_finiteException_can_genuinely_stall` used
+`native_decide` and so depended on a compiler-trusting axiom,
+contradicting this file's own audit claim.  It is now `decide`, and
+the standard-axioms claim holds repo-wide.
+
+Note throughout: **the minimality hypothesis is never used**.  Every
+settled case needs only the basis half, so what is proved is
+strictly stronger than Erdős 881 asks at those orders.
+
+Verification: full `lake build` 8303 jobs from scratch; zero
+sorries; `#print axioms` on every headline theorem shows only
+`propext`, `Classical.choice`, `Quot.sound`.
+
 # THREE-ANCHOR COMPLETION — ERDŐS 881 PROVED (2026-07-27)
 
 The formal order-two instance is complete.

@@ -27300,7 +27300,7 @@ theorem crossGap_finiteException_can_genuinely_stall :
       q ∉ insert 15 ({1} : Finset ℕ) →
       r ∉ insert 15 ({1} : Finset ℕ) →
       p + q + r ≠ 20 := by
-  native_decide
+  decide
 
 open Classical in
 /-- The fixed-offset horn of `fixed_offset_or_growing` is impossible in a
