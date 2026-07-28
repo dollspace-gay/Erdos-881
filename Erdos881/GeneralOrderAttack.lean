@@ -28762,4 +28762,213 @@ theorem IsStronglyMinimalExactBasis.cofinal_selectorRankDescent_or_manyBlocks_or
     ((P.selectedSet_subset s).trans hKA)
     (P.selectedSet_infinite s)
 
+/-- Primitive counterexample fork with a direct current-order attack in the
+co-singleton branch.
+
+Start from the growing same-target cardinality fork, not from the escaped
+successor-certificate loop.  The root-capture horn still fuses to an
+infinite deletion carrying a cofinal successor-order survival stream.  In
+the co-singleton horn, enumerate the fused blocks and immediately apply the
+original order-`h` strong minimality to every selector.
+
+Consequently every selector has arbitrarily late current-order minimal
+destroyers with one of three concrete outcomes: strict positive occurrence
+rank descent, unbounded growth across distinct blocks, or an anchored
+primitive order-`h - 1` gap.  The conclusion also retains the independent
+cofinal supply of primitive gaps supplied by `hnotLower`. -/
+theorem primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingletonAttack
+    {A : Set ℕ} {h : ℕ}
+    (hhpos : 0 < h)
+    (hminimal : IsStronglyMinimalExactBasis A h)
+    (hnotLower : ¬ IsExactTupleAsymptoticBasis A (h - 1))
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    (∃ X I : Set ℕ, ∃ target : ℕ → ℕ,
+        ∃ repair : ℕ → Finset ℕ,
+          X ⊆ A ∧
+          X.Infinite ∧
+          I.Infinite ∧
+          StrictMono target ∧
+          (∀ L, ∃ n ∈ I, L ≤ target n) ∧
+          ∀ n ∈ I,
+            repair n ∈
+              additiveSupportFamily A (h + 1) (target n) ∧
+            Disjoint (repair n : Set ℕ) X ∧
+            ¬ DestroysAt
+              (additiveSupportFamily A (h + 1))
+              X (target n)) ∨
+      ∃ X : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ P : IsFiniteBlockPartition X cell,
+      ∃ oldTarget : ℕ → ℕ,
+        X ⊆ A ∧
+        X.Infinite ∧
+        StrictMono oldTarget ∧
+        (∀ s : BlockSelector cell, ∀ n,
+          ∃ E ∈
+              additiveSupportFamily A (h + 1) (oldTarget n),
+            Disjoint (E : Set ℕ) (selectedSet s)) ∧
+        (∀ N, ∃ d, N ≤ d ∧
+          additiveSupportFamily A (h - 1) d = ∅) ∧
+        ∀ s : BlockSelector cell, ∀ r N,
+          ∃ q, ∃ D : Finset ℕ,
+            N ≤ q ∧
+            D.Nonempty ∧
+            (D : Set ℕ) ⊆ selectedSet s ∧
+            IsInclusionMinimalDestroyer
+              (additiveSupportFamily A h) D q ∧
+            (((∃ ℓ n,
+                0 < ℓ ∧
+                ℓ < h ∧
+                (additiveSupportFamily A ℓ n).Nonempty ∧
+                DestroysAt
+                  (additiveSupportFamily A ℓ)
+                  (D : Set ℕ) n) ∨
+              r < D.card) ∨
+              ∃ b, b ∈ selectedSet s ∧ b ≤ q ∧
+                additiveSupportFamily A (h - 1) (q - b) = ∅) := by
+  classical
+  obtain ⟨B, block, failure, root, matching,
+      hBA, _hBInfinite, hfailureStrict, _hfailureCofinal,
+      hblockB, hblockPairwise, _hminimalBlocks, hmatchingData,
+      hroot | hcosingleton⟩ :=
+    exactBasis_counterexample_forces_unboundedRootCapture_or_growingCosingletonFusion
+      hhpos hminimal.1 hcounter
+  · left
+    obtain ⟨J, hJInfinite, hJdata⟩ := hroot
+    have hVExists : ∀ i,
+        ∃ V : Finset ℕ, i ∈ J →
+          V.Nonempty ∧
+          (V : Set ℕ) ⊆ A ∧
+          i + 1 < V.card ∧
+          ∀ y ∈ V,
+            ¬ DestroysAt
+              (additiveSupportFamily A (h + 1))
+              ({y} : Set ℕ) (failure i) := by
+      intro i
+      by_cases hiJ : i ∈ J
+      · obtain ⟨_hsmall, _d, _hdRoot, _hdBlock, _hdA,
+            _hdFailure, _lower, _hlowerSub, _hlowerCard,
+            V, _hVeq, hVnonempty, hVA, _hrootV,
+            hVlarge, hsafe⟩ :=
+          hJdata i hiJ
+        exact ⟨V, fun _ => ⟨hVnonempty, hVA,
+          hVlarge, hsafe⟩⟩
+      · exact ⟨∅, fun hiJ' => (hiJ hiJ').elim⟩
+    choose V hVdata using hVExists
+    obtain ⟨index, _point, repair, X, I,
+        _hindexRange, hindexStrict, _hpointInjective,
+        hXA, hXInfinite, hIInfinite, hcofinal,
+        hrepairData⟩ :=
+      unbounded_singletonSafeBlocks_fuse_infiniteDeletion
+        failure V hJInfinite hfailureStrict
+        (fun i hiJ => (hVdata i hiJ).2.2.1)
+        (fun i hiJ => (hVdata i hiJ).2.1)
+        (fun i hiJ => (hVdata i hiJ).2.2.2)
+    let target : ℕ → ℕ := fun n => failure (index n)
+    exact ⟨X, I, target, repair, hXA, hXInfinite,
+      hIInfinite, hfailureStrict.comp hindexStrict,
+      hcofinal, fun n hnI =>
+        ⟨(hrepairData n hnI).2.1,
+          (hrepairData n hnI).2.2.1,
+          (hrepairData n hnI).2.2.2⟩⟩
+  · right
+    obtain ⟨L, X, kept, repair, hLInfinite,
+        hblockGrowth, hXeq, hXB, hXInfinite,
+        hrepairData, _hdescent⟩ := hcosingleton
+    have hkept : ∀ i ∈ L, kept i ∈ block i := by
+      intro i hiL
+      have hsingleton :
+          kept i ∈ ({kept i} : Finset ℕ) := by simp
+      rw [← (hrepairData i hiL).2.2.1] at hsingleton
+      exact (Finset.mem_inter.mp hsingleton).2
+    have hcosingletonNonempty : ∀ i ∈ L,
+        ((block i).erase (kept i)).Nonempty := by
+      intro i hiL
+      rw [← Finset.card_pos,
+        Finset.card_erase_of_mem (hkept i hiL)]
+      have hgrowth := hblockGrowth i hiL
+      omega
+    let index : ℕ → ℕ := Nat.nth fun i => i ∈ L
+    have hindexL : ∀ n, index n ∈ L := by
+      intro n
+      exact Nat.nth_mem_of_infinite hLInfinite n
+    have hindexStrict : StrictMono index :=
+      Nat.nth_strictMono hLInfinite
+    have hindexRange : Set.range index = L :=
+      Nat.range_nth_of_infinite hLInfinite
+    let cell : ℕ → Finset ℕ := fun n =>
+      (block (index n)).erase (kept (index n))
+    have hcellNonempty : ∀ n, (cell n).Nonempty := by
+      intro n
+      exact hcosingletonNonempty (index n) (hindexL n)
+    have hcellPairwise :
+        Pairwise fun i j => Disjoint (cell i) (cell j) := by
+      intro i j hij
+      have hindexNe : index i ≠ index j :=
+        hindexStrict.injective.ne hij
+      exact
+        (hblockPairwise hindexNe).mono
+          (Finset.erase_subset _ _)
+          (Finset.erase_subset _ _)
+    have hcellMem : ∀ x, x ∈ X ↔ ∃ n, x ∈ cell n := by
+      intro x
+      constructor
+      · intro hxX
+        rw [hXeq] at hxX
+        obtain ⟨i, hiL, hxCell⟩ := hxX
+        have hiRange : i ∈ Set.range index := by
+          rw [hindexRange]
+          exact hiL
+        obtain ⟨n, rfl⟩ := hiRange
+        exact ⟨n, hxCell⟩
+      · rintro ⟨n, hxCell⟩
+        rw [hXeq]
+        exact ⟨index n, hindexL n, hxCell⟩
+    have P : IsFiniteBlockPartition X cell :=
+      ⟨hcellNonempty, hcellPairwise, hcellMem⟩
+    let oldTarget : ℕ → ℕ := fun n => failure (index n)
+    have holdTargetStrict : StrictMono oldTarget :=
+      hfailureStrict.comp hindexStrict
+    have hXA : X ⊆ A :=
+      hXB.trans hBA
+    have hsurvive :
+        ∀ s : BlockSelector cell, ∀ n,
+          ∃ E ∈
+              additiveSupportFamily A (h + 1) (oldTarget n),
+            Disjoint (E : Set ℕ) (selectedSet s) := by
+      intro s n
+      refine ⟨repair (index n),
+        (hrepairData (index n) (hindexL n)).2.1, ?_⟩
+      exact Set.disjoint_of_subset_right
+        (P.selectedSet_subset s)
+        (hrepairData (index n) (hindexL n)).2.2.2.1
+    have hcofinalPrimitiveGaps :
+        ∀ N, ∃ d, N ≤ d ∧
+          additiveSupportFamily A (h - 1) d = ∅ :=
+      not_exactTupleAsymptoticBasis_iff_cofinal_emptySupport.mp
+        hnotLower
+    have hcurrentAttack :
+        ∀ s : BlockSelector cell, ∀ r N,
+          ∃ q, ∃ D : Finset ℕ,
+            N ≤ q ∧
+            D.Nonempty ∧
+            (D : Set ℕ) ⊆ selectedSet s ∧
+            IsInclusionMinimalDestroyer
+              (additiveSupportFamily A h) D q ∧
+            (((∃ ℓ n,
+                0 < ℓ ∧
+                ℓ < h ∧
+                (additiveSupportFamily A ℓ n).Nonempty ∧
+                DestroysAt
+                  (additiveSupportFamily A ℓ)
+                  (D : Set ℕ) n) ∨
+              r < D.card) ∨
+              ∃ b, b ∈ selectedSet s ∧ b ≤ q ∧
+                additiveSupportFamily A (h - 1) (q - b) = ∅) :=
+      hminimal.cofinal_selectorRankDescent_or_manyBlocks_or_lowerGap
+        hhpos hXA P
+    exact ⟨X, cell, P, oldTarget, hXA, hXInfinite,
+      holdTargetStrict, hsurvive, hcofinalPrimitiveGaps,
+      hcurrentAttack⟩
+
 end Erdos881
