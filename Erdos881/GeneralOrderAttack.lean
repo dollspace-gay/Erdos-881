@@ -6178,6 +6178,62 @@ theorem targetLocalized_lowerGapRepair_forces_oldCollision
         (Set.disjoint_of_subset_left hEU htU)).elim
   · exact hcollision
 
+/-- Certificate-local primitive-gap composition with no loss of labels.
+
+Fix one target-localized certificate state at `q`, its actual
+inclusion-minimal destroyer `D`, and a primitive predecessor-gap anchor
+`b`.  The protected gap repair cannot clear the whole certificate, so
+`targetLocalized_lowerGapRepair_forces_oldCollision` returns a private
+collision support for every `d ∈ D`.
+
+This wrapper retains the arithmetic payload which is lost by an unlabelled
+matching normalization.  The collision support still represents the same
+target `q`, meets `D` exactly at `d`, and removing that very hit produces
+an explicit order-`k` support at the coherent difference `q-d`. -/
+theorem targetLocalized_primitiveGapRepair_retains_destroyerDifference
+    {A : Set ℕ} {k q b : ℕ}
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
+    (s : BlockSelector F) {D Q U J : Finset ℕ}
+    (hcert : ∀ t : BlockSelector F, ∃ u ∈ Q,
+      DestroysAt
+        (additiveSupportFamily A (k + 1)) (selectedSet t) u)
+    (hprotected : ∀ u ∈ Q, u ≠ q →
+      ∃ E ∈ additiveSupportFamily A (k + 1) u,
+        (E : Set ℕ) ⊆ (U : Set ℕ))
+    (hUselected : Disjoint (U : Set ℕ) (selectedSet s))
+    (hminimal : IsInclusionMinimalDestroyer
+      (additiveSupportFamily A (k + 1)) D q)
+    (hbA : b ∈ A)
+    (hbU : b ∉ U)
+    (hgap : additiveSupportFamily A k (q - b) = ∅)
+    (hblocks : ∀ j, j ∉ J →
+      U.card + (k + 1) < (F j).card) :
+    ∀ d ∈ D,
+      d ≤ q ∧
+      ∃ j ∈ J,
+        ∃ E ∈ additiveSupportFamily A (k + 1) q,
+          ∃ H ∈ additiveSupportFamily A k (q - d),
+            (s j).1 ∈ E ∧
+            E ∩ D = {d} ∧
+            E = insert d H := by
+  intro d hdD
+  obtain ⟨j, hjJ, E, hER, hsjE, hEprivate⟩ :=
+    targetLocalized_lowerGapRepair_forces_oldCollision
+      P s hcert hprotected hUselected hminimal hbA hbU hgap
+        hblocks d hdD
+  have hdE : d ∈ E := by
+    have hdPrivate : d ∈ E ∩ D := by
+      rw [hEprivate]
+      simp
+    exact (Finset.mem_inter.mp hdPrivate).1
+  have hdq : d ≤ q :=
+    additiveSupportFamily_supportsBounded
+      A (k + 1) q E hER d hdE
+  obtain ⟨H, hHR, hEeq⟩ :=
+    additiveSupport_remove_hit_succ hER hdE
+  exact ⟨hdq, j, hjJ, E, hER, H, hHR,
+    hsjE, hEprivate, hEeq⟩
+
 /-- A protected repair makes certificate migration strictly descend.
 
 The repaired selector preserves `q` and avoids one stored support for every
