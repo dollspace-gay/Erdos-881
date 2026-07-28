@@ -11522,6 +11522,7 @@ theorem localLargerLockedGapDependency_has_crossedSupportRectangle
       ∃ j x y E G H L,
         x = (s j).1 ∧
         y ∈ (F j).erase x ∧
+        b ≠ x ∧
         E ∈ additiveSupportFamily A (k + 1) q ∧
         G ∈ additiveSupportFamily A (k + 1) v ∧
         x ∈ E ∧ y ∈ G ∧ y ∉ E ∧ x ∉ G ∧
@@ -11575,9 +11576,14 @@ theorem localLargerLockedGapDependency_has_crossedSupportRectangle
     additiveSupport_remove_hit_succ hER hsjE
   obtain ⟨L, hLR, hGreconstruct⟩ :=
     additiveSupport_remove_hit_succ hGR hyG
+  have hbx : b ≠ (s j).1 := by
+    intro hbx
+    rw [hbx] at hgap
+    rw [hgap] at hHR
+    simpa using hHR
   refine ⟨b, hbA, hbq, hgap, u.1, ?_, hQ'larger u.1 u.2,
     j, (s j).1, y, E, G, H, L, rfl, ?_,
-    hER, hGR, hsjE, hyG, hyE, hxG,
+    hbx, hER, hGR, hsjE, hyG, hyE, hxG,
     hHR, hEreconstruct, hLR, hGreconstruct⟩
   · exact (Finset.mem_filter.mp (hQ'Upper u.2)).1
   · simpa only [V] using hyV
@@ -12076,6 +12082,100 @@ theorem boundedFullTranslateDestroyers_growingCertificate_exactRootedMatching_or
   refine ⟨K, cell, target, P, Q, hKA, hKInfinite, hcellCard,
     htargetInfinite, hsurvival, hQnonempty, hlateL, hcert,
     hlocalized, hQsafe, ?_⟩
+  obtain hmatching | ⟨u, huQ, s, hdependency⟩ := houtcome
+  · exact Or.inl (by simpa only [Nat.add_assoc] using hmatching)
+  · right
+    have hdependency' :
+        HasLocalLargerLockedGapDependency
+          A (k + 1) P Q u s := by
+      simpa only [Nat.add_assoc] using hdependency
+    have hblocks :
+        ∀ j, k + 2 < ((cell j).erase (s j).1).card := by
+      intro j
+      rw [Finset.card_erase_of_mem (s j).2, hcellCard j]
+      omega
+    obtain ⟨v, hvQ, huv⟩ :=
+      localLargerLockedGapDependency_has_strictSuccessor
+        P s (by simpa only [Nat.add_assoc] using hblocks)
+          hdependency'
+    exact ⟨u, huQ, s, hdependency', v, hvQ, huv⟩
+
+/-- One fixed growing reservoir supports the entire unrestricted attack.
+
+The grouped binary partition depends only on the original bounded-translate
+obstruction.  It is chosen before both the matching demand `r` and the
+lateness cutoff `L`.  Every later request is answered by a certificate on
+this same partition, with the same exact matching-or-upward-dependency
+endpoint.  This quantifier order permits a genuine cofinal analysis of the
+dependency block indices and their crossed endpoint pairs. -/
+theorem boundedFullTranslateDestroyers_fixedGrowingCertificate_exactRootedMatching_or_localLargerDependency
+    {A : Set ℕ} {k q₀ : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    (hfull :
+      HasBoundedFullTranslateDestroyersByAnchor A (k + 1) {q₀})
+    (hqrep : (additiveSupportFamily A (k + 1) q₀).Nonempty)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 2)) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ target : ℕ → ℕ → ℕ,
+      ∃ P : IsFiniteBlockPartition K cell,
+        K ⊆ A ∧ K.Infinite ∧
+        (∀ i, (cell i).card = 2 * (i + k + 2)) ∧
+        (Set.range fun i => target i 0).Infinite ∧
+        (∀ s : BlockSelector cell, ∀ i j,
+          j < i + k + 2 →
+          ∃ H ∈ additiveSupportFamily A (k + 2) (target i j),
+            Disjoint (H : Set ℕ) (selectedSet s)) ∧
+        ∀ r L, ∃ Q : Finset ℕ,
+          Q.Nonempty ∧
+          (∀ u ∈ Q, L ≤ u) ∧
+          (∀ s : BlockSelector cell, ∃ u ∈ Q,
+            DestroysAt (additiveSupportFamily A (k + 2))
+              (selectedSet s) u) ∧
+          (∀ u ∈ Q, ∃ s : BlockSelector cell,
+            DestroysAt (additiveSupportFamily A (k + 2))
+                (selectedSet s) u ∧
+            ∀ u' ∈ Q, u' ≠ u →
+              ¬ DestroysAt (additiveSupportFamily A (k + 2))
+                (selectedSet s) u') ∧
+          Disjoint (Q : Set ℕ)
+            (Set.range fun i => target i 0) ∧
+          ((∃ u ∈ Q, ∃ R : Finset ℕ,
+              ∃ M : Finset (Finset ℕ),
+              R.card < k + 2 ∧
+              M ⊆ additiveSupportFamily A (k + 2) u ∧
+              r < M.card ∧
+              (∀ E ∈ M, R ⊆ E) ∧
+              (∀ E ∈ M, (E \ R).Nonempty) ∧
+              ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+                Disjoint (E \ R) (G \ R)) ∨
+            ∃ u ∈ Q, ∃ s : BlockSelector cell,
+              HasLocalLargerLockedGapDependency
+                A (k + 1) P Q u s ∧
+              ∃ v ∈ Q, u < v) := by
+  obtain ⟨K, cell, target, P, hKA, hKInfinite, hcellCard,
+      htargetInfinite, hsurvival, hcertificates⟩ :=
+    boundedFullTranslateDestroyers_forces_growingBlockCertificateMigration
+      hbasis hfull hqrep hcounter
+  refine ⟨K, cell, target, P, hKA, hKInfinite, hcellCard,
+    htargetInfinite, hsurvival, ?_⟩
+  intro r L
+  have hbasisSucc :
+      IsExactTupleAsymptoticBasis A (k + 2) := by
+    simpa only [Nat.add_assoc] using hbasis.succ
+  obtain ⟨N, hN⟩ :=
+    hbasisSucc.eventually_finiteCertificate_exactRootedMatching_or_localLargerDependency
+      P r
+  obtain ⟨Q, hQnonempty, hQlate, hcert, hlocalized, hQsafe⟩ :=
+    hcertificates (max L N)
+  have hlateL : ∀ u ∈ Q, L ≤ u := by
+    intro u huQ
+    exact (le_max_left L N).trans (hQlate u huQ)
+  have hlateN : ∀ u ∈ Q, N ≤ u := by
+    intro u huQ
+    exact (le_max_right L N).trans (hQlate u huQ)
+  have houtcome := hN Q hlateN hcert
+  refine ⟨Q, hQnonempty, hlateL, hcert, hlocalized, hQsafe, ?_⟩
   obtain hmatching | ⟨u, huQ, s, hdependency⟩ := houtcome
   · exact Or.inl (by simpa only [Nat.add_assoc] using hmatching)
   · right
