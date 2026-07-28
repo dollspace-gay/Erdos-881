@@ -20737,6 +20737,12 @@ theorem cofinalFreshPureMatchings_have_coherentLiftedBlockSurvival
           (∀ x ∈ hits i, x ∈ B) ∧
           failure i = (hits i).sum + rawTarget i ∧
           target i = rawTarget i + (h - rank i) * c) ∧
+        (∀ i j x, x ∈ hits i → x ∈ cell j → j < i) ∧
+        (∀ i, ∀ x ∈ hits i,
+          ∃ lower : Finset (Finset ℕ),
+            lower ⊆
+              additiveSupportFamily A (h - 1) (failure i - x) ∧
+            i + 2 < lower.card) ∧
         (∀ s : BlockSelector cell, ∀ i,
           Disjoint ((hits i).toFinset : Set ℕ) (selectedSet s) →
           ∃ E ∈ additiveSupportFamily A h (failure i),
@@ -21113,12 +21119,108 @@ theorem cofinalFreshPureMatchings_have_coherentLiftedBlockSurvival
       (step i).hits_length,
       (fun x hx => ((step i).hits_used x hx).2),
       (step i).failure_eq, rfl⟩
+  have hhitsForward :
+      ∀ i j x, x ∈ hits i → x ∈ cell j → j < i := by
+    intro i j x hxHits hxCell
+    by_contra hnot
+    have hij : i ≤ j := Nat.le_of_not_gt hnot
+    have hxUsedI : x ∈ used i :=
+      ((step i).hits_used x hxHits).1
+    have hxUsedJ : x ∈ used j :=
+      hused_mono hij hxUsedI
+    exact Finset.disjoint_left.mp (hcellPast j)
+      hxCell hxUsedJ
   refine ⟨K, cell, target, failure, rank, rawTarget, hits,
     hKB, hKInfinite, hcK,
     P, htargetStrict, hfailureStrict, hcoherent,
+    hhitsForward, ?_,
     hfailureSurvival,
     (fun i => (step i).failure_destroyed),
     hcellLarge, ?_⟩
+  · intro i x hxHits
+    have hhPos : 0 < h :=
+      (step i).rank_pos.trans_le (step i).rank_le
+    cases h with
+    | zero => omega
+    | succ k =>
+        let rebuildSupport : Finset ℕ → Finset ℕ := fun E =>
+          (hits i).foldr (fun y G => insert y G) E
+        let rebuilt : Finset (Finset ℕ) :=
+          (good i).image rebuildSupport
+        have hhitsUsed :
+            ∀ y ∈ (hits i).toFinset, y ∈ used i := by
+          intro y hy
+          exact ((step i).hits_used y
+            (List.mem_toFinset.mp hy)).1
+        have hrebuildInjective :
+            Set.InjOn rebuildSupport (good i) := by
+          intro E hE D hD hED
+          have hEpast := hgoodPast i E hE
+          have hDpast := hgoodPast i D hD
+          change
+            (hits i).foldr (fun y G => insert y G) E =
+              (hits i).foldr (fun y G => insert y G) D at hED
+          apply Finset.ext
+          intro y
+          constructor
+          · intro hyE
+            have hyUnion :
+                y ∈ (hits i).toFinset ∪ D := by
+              rw [← foldr_insert_eq_toFinset_union,
+                ← hED, foldr_insert_eq_toFinset_union]
+              exact Finset.mem_union_right _ hyE
+            rcases Finset.mem_union.mp hyUnion with hyHits | hyD
+            · exact False.elim
+                (Finset.disjoint_left.mp hEpast
+                  hyE (hhitsUsed y hyHits))
+            · exact hyD
+          · intro hyD
+            have hyUnion :
+                y ∈ (hits i).toFinset ∪ E := by
+              rw [← foldr_insert_eq_toFinset_union,
+                hED, foldr_insert_eq_toFinset_union]
+              exact Finset.mem_union_right _ hyD
+            rcases Finset.mem_union.mp hyUnion with hyHits | hyE
+            · exact False.elim
+                (Finset.disjoint_left.mp hDpast
+                  hyD (hhitsUsed y hyHits))
+            · exact hyE
+        have hrebuiltCard :
+            rebuilt.card = (good i).card := by
+          dsimp only [rebuilt]
+          exact Finset.card_image_iff.mpr hrebuildInjective
+        have hrebuiltSub :
+            rebuilt ⊆
+              additiveSupportFamily A (k + 1) (failure i) := by
+          intro G hG
+          obtain ⟨E, hEgood, rfl⟩ :=
+            Finset.mem_image.mp hG
+          have hER :
+              E ∈ additiveSupportFamily A (rank i) (rawTarget i) :=
+            (step i).matching_sub (hgoodSub i hEgood)
+          have hGRaw :=
+            foldr_insert_mem_additiveSupportFamily
+              (fun y hy => hBA ((step i).hits_used y hy).2)
+              hER
+          rw [(step i).hits_length,
+            ← (step i).failure_eq] at hGRaw
+          exact hGRaw
+        have hxRebuilt : ∀ G ∈ rebuilt, x ∈ G := by
+          intro G hG
+          obtain ⟨E, _hEgood, rfl⟩ :=
+            Finset.mem_image.mp hG
+          change x ∈
+            (hits i).foldr (fun y G => insert y G) E
+          rw [foldr_insert_eq_toFinset_union]
+          exact Finset.mem_union_left _
+            (List.mem_toFinset.mpr hxHits)
+        obtain ⟨lower, hlowerSub, hlowerCard⟩ :=
+          additiveSupportStar_descends_card
+            hrebuiltSub hxRebuilt
+        refine ⟨lower, ?_, ?_⟩
+        · simpa using hlowerSub
+        · rw [hlowerCard, hrebuiltCard]
+          exact hgoodLarge i
   intro s i
   obtain ⟨E, hER, hEselected⟩ :=
     hrawSurvival s i
@@ -21209,6 +21311,222 @@ theorem coherentFailureRepairs_commonSurvival_or_hitBlock
     exact ⟨s, fun i => hrepair s i (hs i)⟩
   · exact Or.inr hcovered
 
+/-- Cofinal full-block injury is genuine lower-order growth.
+
+Suppose arbitrarily late deletion blocks are covered by the old-coordinate
+lists.  Pick one point `x` in such a block `j`.  Its covering occurrence is
+at a strictly later stage `i`, and reconstruction makes `x` a common
+summand of more than `i+2` order-`h` supports of `failure i`.  Removing it
+therefore leaves the same number of order-`h-1` supports at the coherent
+difference `failure i - x`.
+
+Choosing `j` beyond the total number of all lower-order supports below a
+prescribed cutoff forces both the family cardinality and its represented
+difference to be arbitrarily large. -/
+theorem cofinal_hitBlockCoverage_forces_cofinal_largeLowerDifferenceFamilies
+    {A : Set ℕ} {h : ℕ}
+    {cell : ℕ → Finset ℕ}
+    {failure : ℕ → ℕ} {hits : ℕ → List ℕ}
+    (hcellNonempty : ∀ j, (cell j).Nonempty)
+    (hhitsForward :
+      ∀ i j x, x ∈ hits i → x ∈ cell j → j < i)
+    (hhitGrowth : ∀ i, ∀ x ∈ hits i,
+      ∃ lower : Finset (Finset ℕ),
+        lower ⊆
+          additiveSupportFamily A (h - 1) (failure i - x) ∧
+        i + 2 < lower.card)
+    (hcovered : ∀ L, ∃ j, L ≤ j ∧
+      ∀ x ∈ cell j, ∃ i, x ∈ hits i) :
+    ∀ r L, ∃ j i x, ∃ lower : Finset (Finset ℕ),
+      j < i ∧
+      x ∈ cell j ∧
+      x ∈ hits i ∧
+      L ≤ failure i - x ∧
+      lower ⊆
+        additiveSupportFamily A (h - 1) (failure i - x) ∧
+      r < lower.card := by
+  intro r L
+  let count :=
+    additiveLowerRankSupportCountBelow A (h - 1) L
+  obtain ⟨j, hjLower, hjCovered⟩ :=
+    hcovered (max r count)
+  obtain ⟨x, hxCell⟩ := hcellNonempty j
+  obtain ⟨i, hxHit⟩ := hjCovered x hxCell
+  have hji : j < i :=
+    hhitsForward i j x hxHit hxCell
+  obtain ⟨lower, hlowerSub, hlowerLarge⟩ :=
+    hhitGrowth i x hxHit
+  have hrLower : r < lower.card := by
+    have hrj : r ≤ j :=
+      (le_max_left r count).trans hjLower
+    omega
+  have htargetLower : L ≤ failure i - x := by
+    by_contra hnot
+    have htargetSmall : failure i - x < L :=
+      Nat.lt_of_not_ge hnot
+    have hfamilyBound :
+        (additiveSupportFamily A (h - 1)
+          (failure i - x)).card ≤ count := by
+      exact additiveSupportFamily_card_le_lowerRankSupportCountBelow
+        le_rfl htargetSmall
+    have hlowerBound :
+        lower.card ≤
+          (additiveSupportFamily A (h - 1)
+            (failure i - x)).card :=
+      Finset.card_le_card hlowerSub
+    have hcountj : count ≤ j :=
+      (le_max_right r count).trans hjLower
+    omega
+  exact ⟨j, i, x, lower, hji, hxCell, hxHit,
+    htargetLower, hlowerSub, hrLower⟩
+
+/-- Cofinal unbounded support families at one bounded order force genuine
+matching growth at one fixed positive rank.
+
+At each scale request enough supports to survive the complete finite-rank
+matching descent and to exceed the total number of all bounded-target
+families.  The descended matching therefore remains beyond the prescribed
+target cutoff.  Only finitely many positive ranks can occur, so cofinal
+pigeonhole fixes one rank once and for all. -/
+theorem cofinalLargeSupportFamilies_force_fixedRankCofinalMatching
+    {A : Set ℕ} {h : ℕ}
+    (hgrowth : ∀ r L, ∃ t,
+      ∃ lower : Finset (Finset ℕ),
+        L ≤ t ∧
+        lower ⊆ additiveSupportFamily A h t ∧
+        r < lower.card) :
+    ∃ j, 0 < j ∧ j ≤ h ∧
+      ∀ r L, ∃ t, ∃ M : Finset (Finset ℕ),
+        L ≤ t ∧
+        M ⊆ additiveSupportFamily A j t ∧
+        IsMatching M ∧
+        r < M.card := by
+  classical
+  have hstage : ∀ r L, ∃ j, 0 < j ∧ j ≤ h ∧
+      ∃ t, ∃ M : Finset (Finset ℕ),
+        L ≤ t ∧
+        M ⊆ additiveSupportFamily A j t ∧
+        IsMatching M ∧
+        r < M.card := by
+    intro r L
+    let count :=
+      additiveLowerRankSupportCountBelow A h L
+    let size := max r count
+    obtain ⟨m, lower, hmLower, hlowerSub, hlowerLarge⟩ :=
+      hgrowth (additiveSupportRankBound h size) L
+    have hfamilyLarge :
+        additiveSupportRankBound h size ≤
+          (additiveSupportFamily A h m).card := by
+      exact (Nat.le_of_lt hlowerLarge).trans
+        (Finset.card_le_card hlowerSub)
+    obtain ⟨j, hjpos, hjh, t, M, hMsub,
+        hMmatching, hMlarge⟩ :=
+      additiveSupportRankBound_forces_matching_below
+        h m hfamilyLarge
+    have htLower : L ≤ t := by
+      by_contra hnot
+      have htSmall : t < L :=
+        Nat.lt_of_not_ge hnot
+      have hfamilyBound :
+          (additiveSupportFamily A j t).card ≤ count := by
+        exact additiveSupportFamily_card_le_lowerRankSupportCountBelow
+          hjh htSmall
+      have hMbound :
+          M.card ≤ (additiveSupportFamily A j t).card :=
+        Finset.card_le_card hMsub
+      have hcountM : count < M.card :=
+        lt_of_le_of_lt (le_max_right r count) hMlarge
+      omega
+    exact ⟨j, hjpos, hjh, t, M, htLower, hMsub,
+      hMmatching,
+      lt_of_le_of_lt (le_max_left r count) hMlarge⟩
+  let ranks : Finset ℕ := Finset.Icc 1 h
+  let P : ℕ → ℕ → Prop := fun j b =>
+    ∃ t, ∃ M : Finset (Finset ℕ),
+      b ≤ t ∧
+      M ⊆ additiveSupportFamily A j t ∧
+      IsMatching M ∧
+      b < M.card
+  have hcofinal :
+      ∀ X, ∃ b, X < b ∧ ∃ j ∈ ranks, P j b := by
+    intro X
+    let b := X + 1
+    obtain ⟨j, hjpos, hjh, t, M, htLower,
+        hMsub, hMmatching, hMlarge⟩ :=
+      hstage b b
+    refine ⟨b, by omega, j, ?_, t, M, htLower,
+      hMsub, hMmatching, hMlarge⟩
+    exact Finset.mem_Icc.mpr ⟨hjpos, hjh⟩
+  obtain ⟨j, hjRanks, hjCofinal⟩ :=
+    finite_cofinal_pigeonhole hcofinal
+  have hjpos : 0 < j := (Finset.mem_Icc.mp hjRanks).1
+  have hjh : j ≤ h := (Finset.mem_Icc.mp hjRanks).2
+  refine ⟨j, hjpos, hjh, ?_⟩
+  intro r L
+  obtain ⟨b, hbLarge, t, M, hbt, hMsub,
+      hMmatching, hbM⟩ :=
+    hjCofinal (max r L)
+  refine ⟨t, M, ?_, hMsub, hMmatching, ?_⟩
+  · exact (le_max_right r L).trans
+      (Nat.le_of_lt hbLarge) |>.trans hbt
+  · exact (le_max_left r L).trans_lt hbLarge |>.trans hbM
+
+/-- The forward-injury endpoint has only two infinite shapes.
+
+Either infinitely many blocks retain a point which never occurs in any
+injury list, or all sufficiently late blocks are covered.  In the latter
+case the preceding theorem forces cofinal unbounded order-`h-1`
+representation families at exact differences. -/
+theorem forwardListInjuries_have_infiniteUncoveredBlocks_or_cofinalLowerGrowth
+    {A : Set ℕ} {h : ℕ}
+    {cell : ℕ → Finset ℕ}
+    {failure : ℕ → ℕ} {hits : ℕ → List ℕ}
+    (hcellNonempty : ∀ j, (cell j).Nonempty)
+    (hhitsForward :
+      ∀ i j x, x ∈ hits i → x ∈ cell j → j < i)
+    (hhitGrowth : ∀ i, ∀ x ∈ hits i,
+      ∃ lower : Finset (Finset ℕ),
+        lower ⊆
+          additiveSupportFamily A (h - 1) (failure i - x) ∧
+        i + 2 < lower.card) :
+    (Set.Infinite {j | ∃ x ∈ cell j, ∀ i, x ∉ hits i}) ∨
+      ∀ r L, ∃ j i x, ∃ lower : Finset (Finset ℕ),
+        j < i ∧
+        x ∈ cell j ∧
+        x ∈ hits i ∧
+        L ≤ failure i - x ∧
+        lower ⊆
+          additiveSupportFamily A (h - 1) (failure i - x) ∧
+        r < lower.card := by
+  classical
+  let U : Set ℕ :=
+    {j | ∃ x ∈ cell j, ∀ i, x ∉ hits i}
+  by_cases hU : U.Infinite
+  · exact Or.inl (by simpa only [U] using hU)
+  · right
+    have hUFinite : U.Finite :=
+      Set.not_infinite.mp hU
+    obtain ⟨M, hM⟩ := hUFinite.exists_le
+    have hcovered : ∀ L, ∃ j, L ≤ j ∧
+        ∀ x ∈ cell j, ∃ i, x ∈ hits i := by
+      intro L
+      let j := max L (M + 1)
+      have hjLower : L ≤ j :=
+        le_max_left L (M + 1)
+      have hjNotU : j ∉ U := by
+        intro hjU
+        have hjM := hM j hjU
+        dsimp only [j] at hjM
+        omega
+      refine ⟨j, hjLower, ?_⟩
+      intro x hxCell
+      by_contra hnone
+      push Not at hnone
+      exact hjNotU ⟨x, hxCell, hnone⟩
+    exact
+      cofinal_hitBlockCoverage_forces_cofinal_largeLowerDifferenceFamilies
+        hcellNonempty hhitsForward hhitGrowth hcovered
+
 /-- Counterexample-level payoff of the coherent pure block assembly.
 
 Either the fixed deletion has infinitely many noncontained damaged supports,
@@ -21258,6 +21576,21 @@ theorem exactBasis_counterexample_forces_noncontainedRankInjury_or_coherentPureB
             failure i = (hits i).sum + rawTarget i ∧
             target i =
               rawTarget i + (h + 1 - rank i) * c) ∧
+          (∀ i j x, x ∈ hits i → x ∈ cell j → j < i) ∧
+          (∀ i, ∀ x ∈ hits i,
+            ∃ lower : Finset (Finset ℕ),
+              lower ⊆
+                additiveSupportFamily A h (failure i - x) ∧
+              i + 2 < lower.card) ∧
+          ((Set.Infinite
+              {j | ∃ x ∈ cell j, ∀ i, x ∉ hits i}) ∨
+            ∃ j, 0 < j ∧ j ≤ h ∧
+              ∀ r L, ∃ t,
+                ∃ M : Finset (Finset ℕ),
+                  L ≤ t ∧
+                  M ⊆ additiveSupportFamily A j t ∧
+                  IsMatching M ∧
+                  r < M.card) ∧
           (∀ s : BlockSelector cell, ∀ i,
             Disjoint ((hits i).toFinset : Set ℕ) (selectedSet s) →
             ∃ E ∈ additiveSupportFamily A (h + 1) (failure i),
@@ -21300,8 +21633,9 @@ theorem exactBasis_counterexample_forces_noncontainedRankInjury_or_coherentPureB
     obtain ⟨c, hcA⟩ := hbasis.infinite.nonempty
     obtain ⟨K, cell, target, failure, rank, rawTarget, hits,
         hKB, hKInfinite, hcK, P, htarget, hfailure,
-        hcoherent, hfailureSurvival, hfailureDestroy,
-        hcellLarge, hsurvival⟩ :=
+        hcoherent, hhitsForward, hhitGrowth,
+        hfailureSurvival, hfailureDestroy, hcellLarge,
+        hsurvival⟩ :=
       cofinalFreshPureMatchings_have_coherentLiftedBlockSurvival
         (h := h + 1) hBA hcA hpure
     have hKA : K ⊆ A :=
@@ -21316,6 +21650,42 @@ theorem exactBasis_counterexample_forces_noncontainedRankInjury_or_coherentPureB
           ∃ j, ∀ x ∈ cell j, ∃ i, x ∈ hits i :=
       coherentFailureRepairs_commonSurvival_or_hitBlock
         hits failure hfailureSurvival
+    have hforwardEndpoint :
+        (Set.Infinite
+            {j | ∃ x ∈ cell j, ∀ i, x ∉ hits i}) ∨
+          ∀ r L, ∃ j i x,
+            ∃ lower : Finset (Finset ℕ),
+              j < i ∧
+              x ∈ cell j ∧
+              x ∈ hits i ∧
+              L ≤ failure i - x ∧
+              lower ⊆
+                additiveSupportFamily A h (failure i - x) ∧
+              r < lower.card := by
+      simpa only [Nat.add_sub_cancel] using
+        (forwardListInjuries_have_infiniteUncoveredBlocks_or_cofinalLowerGrowth
+          P.nonempty hhitsForward hhitGrowth)
+    have hforwardMatchingEndpoint :
+        (Set.Infinite
+            {j | ∃ x ∈ cell j, ∀ i, x ∉ hits i}) ∨
+          ∃ j, 0 < j ∧ j ≤ h ∧
+            ∀ r L, ∃ t,
+              ∃ M : Finset (Finset ℕ),
+                L ≤ t ∧
+                M ⊆ additiveSupportFamily A j t ∧
+                IsMatching M ∧
+                r < M.card := by
+      rcases hforwardEndpoint with hU | hgrowth
+      · exact Or.inl hU
+      · right
+        apply
+          cofinalLargeSupportFamilies_force_fixedRankCofinalMatching
+        intro r L
+        obtain ⟨_j, _i, _x, lower, _hji, _hxCell,
+            _hxHit, htLower, hlowerSub, hlowerLarge⟩ :=
+          hgrowth r L
+        exact ⟨failure _i - _x, lower, htLower,
+          hlowerSub, hlowerLarge⟩
     have hcertificates :
         ∀ N, ∃ Q : Finset ℕ,
           Q.Nonempty ∧
@@ -21339,7 +21709,9 @@ theorem exactBasis_counterexample_forces_noncontainedRankInjury_or_coherentPureB
     exact ⟨B, c, K, cell, target, failure, rank, rawTarget, hits,
       hBA, hBInfinite, hservice, hcA, hKB, hKInfinite,
       hcK, P, htarget, hfailure, hcoherent,
-      hfailureSurvival, hinjuryEndpoint, hfailureDestroy,
+      hhitsForward, hhitGrowth, hforwardMatchingEndpoint,
+      hfailureSurvival,
+      hinjuryEndpoint, hfailureDestroy,
       hcellLarge, hsurvival, hcertificates⟩
 
 end Erdos881
