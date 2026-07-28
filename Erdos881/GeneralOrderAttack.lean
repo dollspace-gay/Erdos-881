@@ -12318,6 +12318,141 @@ theorem boundedFullTranslateDestroyers_fixedGrowingCertificate_cofinalMatching_o
         hER, hGR, hxE, hyG, hyE, hxG, hHR, hEeq,
         hTR, hGeq⟩
 
+/-- The recurrent lower gap in the fixed-reservoir obstruction is genuinely
+fixed.
+
+There are only finitely many order-`k+1` gaps because `A` is already an
+exact order-`k+1` basis.  Apply finite cofinal pigeonhole to the gap label
+`d = q - b` in the crossed rectangles above.  If cofinal rooted matching
+growth is absent, one fixed gap `d` recurs with targets `q = d + b` for
+cofinally large basis points `b`.
+
+Thus the nongrowth obstruction is a fixed missing predecessor translated
+along `A`, not an arbitrary moving family of gaps. -/
+theorem boundedFullTranslateDestroyers_fixedGrowingCertificate_cofinalMatching_or_fixedGapRectangles
+    {A : Set ℕ} {k q₀ : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    (hfull :
+      HasBoundedFullTranslateDestroyersByAnchor A (k + 1) {q₀})
+    (hqrep : (additiveSupportFamily A (k + 1) q₀).Nonempty)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 2)) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ P : IsFiniteBlockPartition K cell,
+        K ⊆ A ∧ K.Infinite ∧
+        (∀ i, (cell i).card = 2 * (i + k + 2)) ∧
+        ∀ r,
+          ((∀ L, ∃ q R M,
+              L ≤ q ∧
+              R.card < k + 2 ∧
+              M ⊆ additiveSupportFamily A (k + 2) q ∧
+              r < M.card ∧
+              (∀ E ∈ M, R ⊆ E) ∧
+              (∀ E ∈ M, (E \ R).Nonempty) ∧
+              ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+                Disjoint (E \ R) (G \ R)) ∨
+            ∃ d,
+              additiveSupportFamily A (k + 1) d = ∅ ∧
+              ∀ L, ∃ b q v j, ∃ Q' : Finset ℕ,
+                ∃ x y E G H T,
+                  L ≤ b ∧
+                  b ∈ A ∧
+                  q = d + b ∧
+                  q < v ∧
+                  v ∈ Q' ∧
+                  (∀ u ∈ Q', q < u) ∧
+                  ((cell j).erase x).card ≤
+                    (k + 2) * (Q'.card + 1) ∧
+                  x ∈ cell j ∧
+                  y ∈ (cell j).erase x ∧
+                  b ≠ x ∧
+                  E ∈ additiveSupportFamily A (k + 2) q ∧
+                  G ∈ additiveSupportFamily A (k + 2) v ∧
+                  x ∈ E ∧ y ∈ G ∧ y ∉ E ∧ x ∉ G ∧
+                  H ∈ additiveSupportFamily A (k + 1) (q - x) ∧
+                  E = insert x H ∧
+                  T ∈ additiveSupportFamily A (k + 1) (v - y) ∧
+                  G = insert y T) := by
+  classical
+  obtain ⟨K, cell, P, hKA, hKInfinite, hcellCard, hendpoint⟩ :=
+    boundedFullTranslateDestroyers_fixedGrowingCertificate_cofinalMatching_or_crossedRectangles
+      hbasis hfull hqrep hcounter
+  obtain ⟨N, hN⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  refine ⟨K, cell, P, hKA, hKInfinite, hcellCard, ?_⟩
+  intro r
+  obtain hmatching | hrectangles := hendpoint r
+  · exact Or.inl hmatching
+  · right
+    let FixedGapRectangle : ℕ → ℕ → Prop := fun d q =>
+      ∃ b v j, ∃ Q' : Finset ℕ, ∃ x y E G H T,
+        b ∈ A ∧
+        b ≤ q ∧
+        q = d + b ∧
+        q < v ∧
+        v ∈ Q' ∧
+        (∀ u ∈ Q', q < u) ∧
+        ((cell j).erase x).card ≤
+          (k + 2) * (Q'.card + 1) ∧
+        x ∈ cell j ∧
+        y ∈ (cell j).erase x ∧
+        b ≠ x ∧
+        E ∈ additiveSupportFamily A (k + 2) q ∧
+        G ∈ additiveSupportFamily A (k + 2) v ∧
+        x ∈ E ∧ y ∈ G ∧ y ∉ E ∧ x ∉ G ∧
+        H ∈ additiveSupportFamily A (k + 1) (q - x) ∧
+        E = insert x H ∧
+        T ∈ additiveSupportFamily A (k + 1) (v - y) ∧
+        G = insert y T ∧
+        additiveSupportFamily A (k + 1) d = ∅
+    have hcofinal :
+        ∀ X, ∃ q, X < q ∧
+          ∃ d ∈ Finset.range N, FixedGapRectangle d q := by
+      intro X
+      obtain ⟨q, b, v, j, Q', x, y, E, G, H, T,
+          hXq, hbA, hbq, hgap, hqv, hvQ', hQ'larger,
+          hfanCapacity, hxBlock, hyBlock, hbx, hER, hGR,
+          hxE, hyG, hyE, hxG, hHR, hEeq, hTR, hGeq⟩ :=
+        hrectangles (X + 1)
+      let d := q - b
+      have hdlt : d < N := by
+        by_contra hnot
+        have hNd : N ≤ d := Nat.le_of_not_gt hnot
+        obtain ⟨D, hDR, _hDdisjoint⟩ := hN d hNd
+        rw [hgap] at hDR
+        simpa using hDR
+      have hqdb : q = d + b := by
+        dsimp only [d]
+        omega
+      refine ⟨q, by omega, d, Finset.mem_range.mpr hdlt, ?_⟩
+      exact ⟨b, v, j, Q', x, y, E, G, H, T,
+        hbA, hbq, hqdb, hqv, hvQ', hQ'larger,
+        hfanCapacity, hxBlock, hyBlock, hbx, hER, hGR,
+        hxE, hyG, hyE, hxG, hHR, hEeq, hTR, hGeq, hgap⟩
+    obtain ⟨d, _hdRange, hfixed⟩ :=
+      finite_cofinal_pigeonhole hcofinal
+    obtain ⟨_q₀', _hq₀'pos, _b₀, _v₀, _j₀, _Q₀,
+        _x₀, _y₀, _E₀, _G₀, _H₀, _T₀,
+        _hb₀A, _hb₀q, _hq₀db, _hq₀v, _hv₀Q,
+        _hQ₀larger, _hfan₀, _hx₀Block, _hy₀Block,
+        _hb₀x, _hE₀R, _hG₀R, _hx₀E, _hy₀G,
+        _hy₀E, _hx₀G, _hH₀R, _hE₀eq, _hT₀R,
+        _hG₀eq, hdGap⟩ :=
+      hfixed 0
+    refine ⟨d, hdGap, ?_⟩
+    intro L
+    obtain ⟨q, hqLarge, b, v, j, Q', x, y, E, G, H, T,
+        hbA, hbq, hqdb, hqv, hvQ', hQ'larger,
+        hfanCapacity, hxBlock, hyBlock, hbx, hER, hGR,
+        hxE, hyG, hyE, hxG, hHR, hEeq, hTR, hGeq,
+        _hdGap⟩ :=
+      hfixed (L + d)
+    have hLb : L ≤ b := by omega
+    exact ⟨b, q, v, j, Q', x, y, E, G, H, T,
+      hLb, hbA, hqdb, hqv, hvQ', hQ'larger,
+      hfanCapacity, hxBlock, hyBlock, hbx, hER, hGR,
+      hxE, hyG, hyE, hxG, hHR, hEeq, hTR, hGeq⟩
+
 /-- Protected-set strengthening of the locked-prefix composition.
 
 The predecessor-gap repair point is chosen outside an arbitrary finite set
