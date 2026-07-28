@@ -24052,6 +24052,199 @@ theorem zeroNormalized_counterexample_forces_cofinalThreeWayMatchingGrowth
       lt_of_le_of_lt (le_max_left r count) hMcard,
       hMroot, hMnonempty, hMmatching⟩
 
+/-- A sufficiently large rooted matching at a late target normalizes to a
+genuine late matching at some positive rank.
+
+If the root is empty, its petals are already pairwise-disjoint supports.  If
+the root is nonempty, remove one common summand from every support.  The
+cardinality is preserved at order one lower, and the finite-rank support
+threshold forces a genuine matching after complete rank descent.
+
+The explicit `hsmall` hypothesis prevents that descent from hiding at a
+bounded target.  It is normally discharged by
+`additiveLowerRankSupportCountBelow`. -/
+theorem lateRootedMatching_normalizes_to_lateMatching
+    {A : Set ℕ} {k q r L size : ℕ}
+    {R : Finset ℕ} {M : Finset (Finset ℕ)}
+    (hLq : L ≤ q)
+    (hMsub : M ⊆ additiveSupportFamily A (k + 1) q)
+    (hrSize : r ≤ size)
+    (hsmall : ∀ j, j ≤ k + 1 → ∀ t, t < L →
+      (additiveSupportFamily A j t).card ≤ size)
+    (hMlarge :
+      max size (additiveSupportRankBound k size) < M.card)
+    (hMroot : ∀ E ∈ M, R ⊆ E)
+    (hMmatching :
+      ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+        Disjoint (E \ R) (G \ R)) :
+    ∃ j, 0 < j ∧ j ≤ k + 1 ∧
+      ∃ t, ∃ N : Finset (Finset ℕ),
+        L ≤ t ∧
+        N ⊆ additiveSupportFamily A j t ∧
+        IsMatching N ∧
+        r < N.card := by
+  classical
+  by_cases hRempty : R = ∅
+  · refine ⟨k + 1, by omega, le_rfl, q, M, hLq,
+      hMsub, ?_, ?_⟩
+    · rw [IsMatching]
+      intro E hEM G hGM hEG
+      simpa [hRempty] using hMmatching E hEM G hGM hEG
+    · exact lt_of_le_of_lt
+        (hrSize.trans (le_max_left _ _)) hMlarge
+  · have hRnonempty : R.Nonempty :=
+      Finset.nonempty_iff_ne_empty.mpr hRempty
+    obtain ⟨d, hdR⟩ := hRnonempty
+    obtain ⟨lower, hlowerSub, hlowerCard⟩ :=
+      additiveSupportStar_descends_card hMsub
+        (fun E hEM => hMroot E hEM hdR)
+    have hfamilyLarge :
+        additiveSupportRankBound k size ≤
+          (additiveSupportFamily A k (q - d)).card := by
+      have hrankM :
+          additiveSupportRankBound k size < M.card :=
+        lt_of_le_of_lt (le_max_right _ _) hMlarge
+      have hlowerLarge :
+          additiveSupportRankBound k size ≤ lower.card := by
+        rw [hlowerCard]
+        exact Nat.le_of_lt hrankM
+      exact hlowerLarge.trans (Finset.card_le_card hlowerSub)
+    obtain ⟨j, hjpos, hjk, t, N, hNsub,
+        hNmatching, hNlarge⟩ :=
+      additiveSupportRankBound_forces_matching_below
+        k (q - d) hfamilyLarge
+    have hLt : L ≤ t := by
+      by_contra hnot
+      have htSmall : t < L :=
+        Nat.lt_of_not_ge hnot
+      have hfamilyBound :
+          (additiveSupportFamily A j t).card ≤ size :=
+        hsmall j (hjk.trans (Nat.le_succ k)) t htSmall
+      have hNbound :
+          N.card ≤ (additiveSupportFamily A j t).card :=
+        Finset.card_le_card hNsub
+      omega
+    exact ⟨j, hjpos, hjk.trans (Nat.le_succ k),
+      t, N, hLt, hNsub, hNmatching,
+      lt_of_le_of_lt hrSize hNlarge⟩
+
+/-- All three growth horns of the normalized counterexample collapse to one
+cofinal genuine matching, while retaining the same fresh nested destroyer
+stage.
+
+At predecessor order and successor order, apply
+`lateRootedMatching_normalizes_to_lateMatching`; the lower-rank horn is
+already a matching.  The demand is chosen above both possible rank-descent
+thresholds and above the total mass of every bounded target at every
+relevant rank.  Hence no root and no common-summand descent remains in the
+conclusion. -/
+theorem zeroNormalized_counterexample_forces_cofinalFreshMatchingGrowth
+    {A : Set ℕ} {k : ℕ}
+    (hzeroA : 0 ∈ A)
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 2)) :
+    ∃ C B : Set ℕ,
+      C ⊆ A ∧ C.Infinite ∧
+      B ⊆ A ∧ B.Infinite ∧
+      Disjoint C B ∧
+      A ⊆ C ∪ B ∧
+      0 ∈ C ∧
+      ∀ F : Finset ℕ, ∀ r L,
+        ∃ q, ∃ D₀ D : Finset ℕ,
+          L ≤ q ∧
+          D₀ ⊆ D ∧
+          D₀.Nonempty ∧ D.Nonempty ∧
+          (D : Set ℕ) ⊆ B ∧
+          Disjoint D F ∧
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A (k + 1)) D₀ q ∧
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A (k + 2)) D q ∧
+          ∃ j, 0 < j ∧ j ≤ k + 2 ∧
+            ∃ t, ∃ M : Finset (Finset ℕ),
+              L ≤ t ∧
+              M ⊆ additiveSupportFamily A j t ∧
+              IsMatching M ∧
+              r < M.card := by
+  classical
+  obtain ⟨C, B, hCA, hCInfinite, hBA, hBInfinite,
+      hCB, hACB, hzeroC, hstage⟩ :=
+    zeroNormalized_counterexample_forces_cofinalThreeWayMatchingGrowth
+      (h := k + 1) (by omega) hzeroA hbasis (by simpa using hcounter)
+  refine ⟨C, B, hCA, hCInfinite, hBA, hBInfinite,
+    hCB, hACB, hzeroC, ?_⟩
+  intro F r L
+  let count :=
+    additiveLowerRankSupportCountBelow A (k + 2) L
+  let size := max r count
+  let predDemand :=
+    max size (additiveSupportRankBound k size)
+  let succDemand :=
+    max size (additiveSupportRankBound (k + 1) size)
+  let demand := max predDemand succDemand
+  obtain ⟨q, D₀, D, hLq, hD₀D, hD₀nonempty,
+      hDnonempty, hDB, hDF, hminimal, hminimalH,
+      hgrowth⟩ :=
+    hstage F demand L
+  refine ⟨q, D₀, D, hLq, hD₀D, hD₀nonempty,
+    hDnonempty, hDB, hDF, hminimal, hminimalH, ?_⟩
+  rcases hgrowth with hpredRooted | hsuccRooted | hlowerMatching
+  · obtain ⟨R, M, _hRcard, hMsub, hMcard,
+        hMroot, _hMnonempty, hMmatching⟩ :=
+      hpredRooted
+    have hsmall : ∀ j, j ≤ k + 1 → ∀ t, t < L →
+        (additiveSupportFamily A j t).card ≤ size := by
+      intro j hj t ht
+      exact
+        (additiveSupportFamily_card_le_lowerRankSupportCountBelow
+          (hj.trans (Nat.le_succ (k + 1))) ht).trans
+          (le_max_right r count)
+    have hlarge :
+        predDemand < M.card := by
+      exact lt_of_le_of_lt (le_max_left predDemand succDemand) hMcard
+    obtain ⟨j, hjpos, hjle, t, N, hLt, hNsub,
+        hNmatching, hNcard⟩ :=
+      lateRootedMatching_normalizes_to_lateMatching
+        (k := k) (r := r) (size := size)
+        hLq hMsub (le_max_left r count) hsmall
+          (by simpa only [predDemand] using hlarge)
+        hMroot hMmatching
+    exact ⟨j, hjpos, hjle.trans (Nat.le_succ (k + 1)),
+      t, N, hLt, hNsub, hNmatching, hNcard⟩
+  · obtain ⟨R, M, _hRcard, hMsubFilter, hMcard,
+        hMroot, _hMnonempty, hMmatching⟩ :=
+      hsuccRooted
+    have hMsub :
+        M ⊆ additiveSupportFamily A (k + 2) q := by
+      intro E hEM
+      exact (Finset.mem_filter.mp (hMsubFilter hEM)).1
+    have hsmall : ∀ j, j ≤ k + 2 → ∀ t, t < L →
+        (additiveSupportFamily A j t).card ≤ size := by
+      intro j hj t ht
+      exact
+        (additiveSupportFamily_card_le_lowerRankSupportCountBelow
+          hj ht).trans (le_max_right r count)
+    have hlarge :
+        succDemand < M.card := by
+      exact lt_of_le_of_lt (le_max_right predDemand succDemand) hMcard
+    exact lateRootedMatching_normalizes_to_lateMatching
+      (k := k + 1) (r := r) (size := size)
+      hLq hMsub (le_max_left r count) hsmall
+        (by simpa only [succDemand] using hlarge)
+      hMroot hMmatching
+  · obtain ⟨j, hjpos, hjle, t, M, hLt, hMsub,
+        hMmatching, hMcard⟩ :=
+      hlowerMatching
+    exact ⟨j, hjpos, hjle.trans (Nat.le_succ (k + 1)),
+      t, M, hLt, hMsub, hMmatching,
+      lt_of_le_of_lt
+        ((le_max_left r count).trans
+          ((le_max_left size
+            (additiveSupportRankBound k size)).trans
+            (le_max_left predDemand succDemand)))
+        hMcard⟩
+
 /-- Infinite-anchor amplification of certificate descent.
 
 On one fixed infinite deletion partition, every requested finite number of
