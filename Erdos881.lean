@@ -13,6 +13,7 @@ import Erdos881.ReflectionDefects
 import Erdos881.AlternatingRepairs
 import Erdos881.SuccessorEssentialCore
 import Erdos881.GadicLaboratory
+import Erdos881.GeneralGadicLaboratory
 import Erdos881.FiniteSearchCounterexamples
 import Erdos881.SplittableIndependentDeletion
 import Erdos881.RigidDestroyerRepairs
