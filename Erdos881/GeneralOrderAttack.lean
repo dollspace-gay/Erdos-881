@@ -28898,8 +28898,9 @@ infinite selector subreservoir.  Original order-`h` strong minimality then
 produces a strictly later minimal destroyer `D'`, disjoint from `U ∪ D`.
 The same-target rooted/gap fork classifies that fresh injury immediately.
 
-Thus repeated primitive-gap outcomes cannot recycle an old finite
-destroyer: every repetition spends a new set of block coordinates. -/
+Thus repeated primitive-gap outcomes cannot recycle old destroyer values.
+Protecting the finite union of their blocks gives the block-coordinate
+version recorded immediately below. -/
 theorem IsStronglyMinimalExactBasis.lowerGapSelectorSwitch_forces_freshLaterAttack
     {A K : Set ℕ} {h q b : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -28990,6 +28991,69 @@ theorem IsStronglyMinimalExactBasis.lowerGapSelectorSwitch_forces_freshLaterAtta
     obtain ⟨b', hb'S, hb'D', hb'q', hgap'⟩ := hgap'
     exact ⟨b', (hb'S).1, (hb'S).2, hb'D',
       hb'q', hgap'⟩
+
+/-- Block-coordinate specialization of the fresh gap switch.
+
+Let `Used` be any finite set of previously occupied block indices.  Protect
+the union of those blocks together with every block occupied by the current
+destroyer `D`, then run the fresh-later attack.  Every point of the returned
+minimal destroyer `D'` has a block index outside both finite index sets.
+
+This is the precise persistent cross-block conclusion: successive gap
+switches can be iterated while never returning to an earlier block. -/
+theorem IsStronglyMinimalExactBasis.lowerGapSelectorSwitch_forces_newBlockLaterDestroyer
+    {A K : Set ℕ} {h q b : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hminimal : IsStronglyMinimalExactBasis A h)
+    (hhpos : 0 < h)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hblocks : ∀ j, h < (cell j).card)
+    (s : BlockSelector cell)
+    {D : Finset ℕ}
+    (hDnonempty : D.Nonempty)
+    (hDminimal : IsInclusionMinimalDestroyer
+      (additiveSupportFamily A h) D q)
+    (hbSelected : b ∈ selectedSet s)
+    (hgap : additiveSupportFamily A (h - 1) (q - b) = ∅) :
+    ∀ Used : Finset ℕ,
+      ∃ t : BlockSelector cell, ∃ q', ∃ D' : Finset ℕ,
+        (t (blockIndex P b)).1 = b ∧
+        ¬ DestroysAt
+          (additiveSupportFamily A h)
+          (selectedSet t) q ∧
+        q < q' ∧
+        D'.Nonempty ∧
+        (D' : Set ℕ) ⊆ selectedSet t ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A h) D' q' ∧
+        ∀ x ∈ D',
+          blockIndex P x ∉
+            Used ∪ D.image (blockIndex P) := by
+  classical
+  intro Used
+  let Locked : Finset ℕ :=
+    Used ∪ D.image (blockIndex P)
+  let U : Finset ℕ :=
+    Locked.biUnion cell
+  obtain ⟨t, q', D', htAnchor, htRepair, hqq',
+      hD'nonempty, hD'selected, hD'fresh, hD'minimal,
+      _hD'outcome⟩ :=
+    hminimal.lowerGapSelectorSwitch_forces_freshLaterAttack
+      hhpos hKA P hblocks s hDnonempty hDminimal
+        hbSelected hgap U 0
+  refine ⟨t, q', D', htAnchor, htRepair, hqq',
+    hD'nonempty, hD'selected, hD'minimal, ?_⟩
+  intro x hxD' hxLocked
+  have hxK : x ∈ K :=
+    P.selectedSet_subset t
+      (hD'selected (Finset.mem_coe.mpr hxD'))
+  have hxU : x ∈ U := by
+    apply Finset.mem_biUnion.mpr
+    exact ⟨blockIndex P x, hxLocked,
+      P.mem_blockIndex hxK⟩
+  exact Finset.disjoint_left.mp hD'fresh hxD'
+    (Finset.mem_union_left D hxU)
 
 /-- Primitive counterexample fork with a direct current-order attack in the
 co-singleton branch.
