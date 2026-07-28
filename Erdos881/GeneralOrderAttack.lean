@@ -28513,4 +28513,253 @@ theorem exactBasis_counterexample_forces_noncontainedRankInjury_or_coherentPureB
       hinjuryEndpoint, hfailureDestroy,
       hcellLarge, hsurvival, hcertificates⟩
 
+/-- A large destroyed rooted matching spends a strictly smaller positive
+occurrence rank inside its common root.
+
+Choose one matching member whose petal avoids the finite destroyer.  Since
+the whole member is nevertheless destroyed, every occurrence peeled from it
+lies in the common root.  The nonempty petal survives in the residual core,
+so that core has positive order and the complementary hit list has order
+strictly below `H`.  Complementary-core composition then shows that the same
+finite set already destroys the represented sum of those root occurrences.
+
+This is occurrence-sensitive: repeated values in the hit list retain their
+full multiplicity even though the support is a `Finset`. -/
+theorem large_destroyedRootedMatching_forces_strictOccurrenceRankDescent
+    {A : Set ℕ} {H q : ℕ}
+    {D R : Finset ℕ} {M : Finset (Finset ℕ)}
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A H) D q)
+    (hMsub : M ⊆ additiveSupportFamily A H q)
+    (hMpetal : ∀ E ∈ M, (E \ R).Nonempty)
+    (hMmatching :
+      ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+        Disjoint (E \ R) (G \ R))
+    (hlarge : D.card < M.card) :
+    ∃ E ∈ M, ∃ hits : List ℕ, ∃ j t : ℕ,
+      ∃ core : Finset ℕ,
+        0 < hits.length ∧
+        hits.length < H ∧
+        hits.length + j = H ∧
+        (∀ x ∈ hits, x ∈ A ∧ x ∈ D ∧ x ∈ R) ∧
+        q = hits.sum + t ∧
+        core ∈ additiveSupportFamily A j t ∧
+        Disjoint (core : Set ℕ) (D : Set ℕ) ∧
+        (additiveSupportFamily A hits.length hits.sum).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A hits.length)
+          (D : Set ℕ) hits.sum := by
+  classical
+  have hhit :
+      ∀ E ∈ M,
+        ¬ Disjoint (E : Set ℕ) ((D \ R : Finset ℕ) : Set ℕ) →
+          ∃ x ∈ D, x ∈ E \ R := by
+    intro E _hEM hED
+    obtain ⟨x, hxE, hxDR⟩ :=
+      Set.not_disjoint_iff.mp hED
+    have hxDR' : x ∈ D \ R :=
+      Finset.mem_coe.mp hxDR
+    exact ⟨x, (Finset.mem_sdiff.mp hxDR').1,
+      Finset.mem_sdiff.mpr
+        ⟨Finset.mem_coe.mp hxE, (Finset.mem_sdiff.mp hxDR').2⟩⟩
+  obtain ⟨E, hEM, hEavoidsOutsideRoot⟩ :=
+    exists_surviving_support hMmatching hhit hlarge
+  have hpetalD : Disjoint (E \ R) D := by
+    rw [Finset.disjoint_left]
+    intro x hxPetal hxD
+    exact Set.disjoint_left.mp hEavoidsOutsideRoot
+      (Finset.mem_coe.mpr (Finset.mem_sdiff.mp hxPetal).1)
+      (Finset.mem_coe.mpr
+        (Finset.mem_sdiff.mpr
+          ⟨hxD, (Finset.mem_sdiff.mp hxPetal).2⟩))
+  have hEDestroyed :
+      ¬ Disjoint (E : Set ℕ) (D : Set ℕ) :=
+    hminimal.1 E (hMsub hEM)
+  obtain ⟨hits, j, t, core, hhitsNonempty, hlength, _hjH,
+      hhits, hcoreR, hcoreD, htarget, hEeq⟩ :=
+    destroyed_additiveSupport_has_strictSurvivingCoreDecomposition
+      (hMsub hEM) hEDestroyed
+  have hhitsRoot :
+      ∀ x ∈ hits, x ∈ A ∧ x ∈ D ∧ x ∈ R := by
+    intro x hxHits
+    have hxE : x ∈ E := by
+      rw [hEeq, foldr_insert_eq_toFinset_union]
+      exact Finset.mem_union_left _
+        (List.mem_toFinset.mpr hxHits)
+    have hxA : x ∈ A := (hhits x hxHits).1
+    have hxD : x ∈ D :=
+      Finset.mem_coe.mp (hhits x hxHits).2
+    have hxR : x ∈ R := by
+      by_contra hxR
+      exact Finset.disjoint_left.mp hpetalD
+        (Finset.mem_sdiff.mpr ⟨hxE, hxR⟩) hxD
+    exact ⟨hxA, hxD, hxR⟩
+  obtain ⟨y, hyPetal⟩ := hMpetal E hEM
+  have hyCore : y ∈ core := by
+    have hyUnion : y ∈ hits.toFinset ∪ core := by
+      rw [← foldr_insert_eq_toFinset_union, ← hEeq]
+      exact (Finset.mem_sdiff.mp hyPetal).1
+    rcases Finset.mem_union.mp hyUnion with hyHits | hyCore
+    · exact ((Finset.mem_sdiff.mp hyPetal).2
+        (hhitsRoot y (List.mem_toFinset.mp hyHits)).2.2).elim
+    · exact hyCore
+  have hjpos : 0 < j := by
+    by_contra hj
+    have hjzero : j = 0 := Nat.eq_zero_of_not_pos hj
+    subst j
+    have hcoreEmpty :
+        core = ∅ :=
+      (additiveSupportFamily_zero_target_and_support hcoreR).2
+    rw [hcoreEmpty] at hyCore
+    simp at hyCore
+  have hhitsPos : 0 < hits.length :=
+    List.length_pos_iff.mpr hhitsNonempty
+  have hhitsStrict : hits.length < H := by
+    omega
+  have hhitSupport :
+      (additiveSupportFamily A hits.length hits.sum).Nonempty := by
+    exact ⟨hits.foldr (fun x G => insert x G) ∅,
+      list_foldr_mem_additiveSupportFamily
+        (fun x hx => (hhitsRoot x hx).1)⟩
+  have hhitDestroy :
+      DestroysAt
+        (additiveSupportFamily A hits.length)
+        (D : Set ℕ) hits.sum :=
+    complementarySurvivingCore_forces_hitTargetDestroyer
+      hminimal hlength htarget hcoreR hcoreD
+  exact ⟨E, hEM, hits, j, t, core, hhitsPos,
+    hhitsStrict, hlength, hhitsRoot, htarget,
+    hcoreR, hcoreD, hhitSupport, hhitDestroy⟩
+
+/-- Direct current-order attack on an arbitrary infinite deletion reservoir.
+
+Apply strong minimality at the original order `h`, compact the resulting
+failure to a finite inclusion-minimal destroyer, and inspect that *same*
+target with the reservoir-relative rooted-matching/lower-gap fork.
+
+If the rooted matching is larger than the destroyer, the
+occurrence-sensitive lemma above produces a nonvacuous destroyed target at
+a strict positive rank below `h`.  Otherwise the destroyer itself is larger
+than the requested demand.  The sole remaining outcome is a genuine
+primitive order-`h - 1` gap anchored in the prescribed reservoir. -/
+theorem IsStronglyMinimalExactBasis.cofinal_strictOccurrenceRankDescent_or_largeDestroyer_or_lowerGap
+    {A S : Set ℕ} {h : ℕ}
+    (hminimal : IsStronglyMinimalExactBasis A h)
+    (hhpos : 0 < h)
+    (hSA : S ⊆ A)
+    (hSInfinite : S.Infinite) :
+    ∀ r L, ∃ q, ∃ D : Finset ℕ,
+      L ≤ q ∧
+      D.Nonempty ∧
+      (D : Set ℕ) ⊆ S ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q ∧
+      (((∃ ℓ n,
+          0 < ℓ ∧
+          ℓ < h ∧
+          (additiveSupportFamily A ℓ n).Nonempty ∧
+          DestroysAt
+            (additiveSupportFamily A ℓ)
+            (D : Set ℕ) n) ∨
+        r < D.card) ∨
+        ∃ b, b ∈ S ∧ b ≤ q ∧
+          additiveSupportFamily A (h - 1) (q - b) = ∅) := by
+  classical
+  have hpredSucc : h - 1 + 1 = h := by
+    omega
+  obtain ⟨Nbasis, hNbasis⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr
+      hminimal.1
+  intro r L
+  obtain ⟨Nfork, hNfork⟩ :=
+    eventually_exactRootedMatching_or_lowerGap_onInfiniteReservoir
+      (A := A) (C := S) (k := h - 1)
+      hSA hSInfinite r
+  obtain ⟨q, hqLower, hqDestroy⟩ :=
+    hminimal.2 S hSA hSInfinite
+      (max L (max Nbasis Nfork))
+  obtain ⟨D₁, hD₁S, hD₁Destroy⟩ :=
+    exists_finiteDestroyer_subset hqDestroy
+  obtain ⟨D, hDD₁, hDminimal⟩ :=
+    exists_inclusionMinimalDestroyer_subset hD₁Destroy
+  have hDS : (D : Set ℕ) ⊆ S := by
+    intro x hxD
+    exact hD₁S
+      (Finset.mem_coe.mpr
+        (hDD₁ (Finset.mem_coe.mp hxD)))
+  have hDnonempty : D.Nonempty := by
+    by_contra hDempty
+    have hDeq : D = ∅ :=
+      Finset.not_nonempty_iff_eq_empty.mp hDempty
+    have hNbasisq : Nbasis ≤ q :=
+      (le_max_left Nbasis Nfork).trans
+        ((le_max_right L (max Nbasis Nfork)).trans hqLower)
+    obtain ⟨E, hER, _hEempty⟩ :=
+      hNbasis q hNbasisq
+    exact hDminimal.1 E hER (by simp [hDeq])
+  have hLq : L ≤ q :=
+    (le_max_left L (max Nbasis Nfork)).trans hqLower
+  have hNforkq : Nfork ≤ q :=
+    (le_max_right Nbasis Nfork).trans
+      ((le_max_right L (max Nbasis Nfork)).trans hqLower)
+  refine ⟨q, D, hLq, hDnonempty, hDS, hDminimal, ?_⟩
+  obtain hrooted | hgap := hNfork q hNforkq
+  · obtain ⟨R, M, _hRcard, hMsub, hrM, _hMroot,
+        hMpetal, hMmatching⟩ := hrooted
+    have hMsubH :
+        M ⊆ additiveSupportFamily A h q := by
+      simpa only [hpredSucc] using hMsub
+    by_cases hDM : D.card < M.card
+    · left
+      left
+      obtain ⟨_E, _hEM, hits, _j, _t, _core,
+          hhitsPos, hhitsStrict, _hlength, _hhitsRoot,
+          _htarget, _hcoreR, _hcoreD, hhitSupport,
+          hhitDestroy⟩ :=
+        large_destroyedRootedMatching_forces_strictOccurrenceRankDescent
+          hDminimal hMsubH hMpetal hMmatching hDM
+      exact ⟨hits.length, hits.sum, hhitsPos,
+        hhitsStrict, hhitSupport, hhitDestroy⟩
+    · left
+      right
+      exact hrM.trans_le (Nat.le_of_not_gt hDM)
+  · right
+    exact hgap
+
+/-- Selector form of the current-order attack.
+
+Every selector through a finite-block deletion is itself an infinite subset
+of that deletion and contains at most one point from each block.  Thus the
+large-destroyer horn below already means growth across distinct fused
+blocks, rather than concentration inside one old block. -/
+theorem IsStronglyMinimalExactBasis.cofinal_selectorRankDescent_or_manyBlocks_or_lowerGap
+    {A K : Set ℕ} {h : ℕ} {cell : ℕ → Finset ℕ}
+    (hminimal : IsStronglyMinimalExactBasis A h)
+    (hhpos : 0 < h)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell) :
+    ∀ s : BlockSelector cell, ∀ r L,
+      ∃ q, ∃ D : Finset ℕ,
+        L ≤ q ∧
+        D.Nonempty ∧
+        (D : Set ℕ) ⊆ selectedSet s ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A h) D q ∧
+        (((∃ ℓ n,
+            0 < ℓ ∧
+            ℓ < h ∧
+            (additiveSupportFamily A ℓ n).Nonempty ∧
+            DestroysAt
+              (additiveSupportFamily A ℓ)
+              (D : Set ℕ) n) ∨
+          r < D.card) ∨
+          ∃ b, b ∈ selectedSet s ∧ b ≤ q ∧
+            additiveSupportFamily A (h - 1) (q - b) = ∅) := by
+  intro s
+  exact hminimal.cofinal_strictOccurrenceRankDescent_or_largeDestroyer_or_lowerGap
+    hhpos
+    ((P.selectedSet_subset s).trans hKA)
+    (P.selectedSet_infinite s)
+
 end Erdos881
