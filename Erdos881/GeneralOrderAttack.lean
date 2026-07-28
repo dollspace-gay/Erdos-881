@@ -20833,6 +20833,77 @@ theorem list_foldr_mem_additiveSupportFamily
   simpa using
     (foldr_insert_mem_additiveSupportFamily hxs hempty)
 
+/-- Complementary-core composition transfers a destroyer to the peeled
+hit target.
+
+Suppose `D` destroys the full target `q = n + t` at order
+`H = ℓ + j`, while a fixed order-`j` support of `t` avoids `D`.  Any
+order-`ℓ` support of `n` avoiding `D` could be adjoined to that core,
+producing an order-`H` support of `q` avoiding `D`.  Hence `D` already
+destroys `n` at order `ℓ`.
+
+This is the exact finite-prefix/difference composition needed below: the
+same fresh destroyer, not an enlarged reservoir, descends with the peeled
+sum. -/
+theorem complementarySurvivingCore_forces_hitTargetDestroyer
+    {A : Set ℕ} {H q ℓ n j t : ℕ}
+    {D core : Finset ℕ}
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A H) D q)
+    (horder : ℓ + j = H)
+    (htarget : q = n + t)
+    (hcoreR : core ∈ additiveSupportFamily A j t)
+    (hcoreD : Disjoint (core : Set ℕ) (D : Set ℕ)) :
+    DestroysAt
+      (additiveSupportFamily A ℓ)
+      (D : Set ℕ) n := by
+  classical
+  intro R hRR hRD
+  obtain ⟨v, hvA, hvsum, rfl⟩ :=
+    mem_additiveSupportFamily_iff.mp hRR
+  let pads : List ℕ :=
+    List.ofFn fun i => (v i : ℕ)
+  have hpadsA : ∀ z ∈ pads, z ∈ A := by
+    intro z hzPads
+    obtain ⟨i, hiz⟩ := List.mem_ofFn.mp hzPads
+    simpa only [hiz] using hvA i
+  have hpadsLength : pads.length = ℓ := by
+    simp [pads]
+  have hpadsSum : pads.sum = n := by
+    change (List.ofFn fun i => (v i : ℕ)).sum = n
+    rw [List.sum_ofFn]
+    exact hvsum
+  let repaired : Finset ℕ :=
+    pads.foldr (fun z G => insert z G) core
+  have hrepairRaw :=
+    foldr_insert_mem_additiveSupportFamily hpadsA hcoreR
+  have hrepairQ :
+      repaired ∈ additiveSupportFamily A H q := by
+    have hrepairOrder : pads.length + j = H := by
+      omega
+    have hrepairTarget : pads.sum + t = q := by
+      omega
+    rw [hrepairOrder, hrepairTarget] at hrepairRaw
+    exact hrepairRaw
+  have hrepairD :
+      Disjoint (repaired : Set ℕ) (D : Set ℕ) := by
+    rw [Set.disjoint_left]
+    intro z hzRepair hzD
+    have hzUnion : z ∈ pads.toFinset ∪ core := by
+      simpa [repaired, foldr_insert_eq_toFinset_union] using hzRepair
+    rcases Finset.mem_union.mp hzUnion with hzPads | hzCore
+    · obtain ⟨i, hiz⟩ :=
+        List.mem_ofFn.mp (List.mem_toFinset.mp hzPads)
+      exact Set.disjoint_left.mp hRD
+        (by
+          apply mem_tupleSupport_iff.mpr
+          exact ⟨i, hiz⟩)
+        hzD
+    · exact Set.disjoint_left.mp hcoreD
+        (Finset.mem_coe.mpr hzCore) hzD
+  exact hminimal.1 repaired hrepairQ hrepairD
+
 /-- A successor counterexample forces cofinal nonvacuous lower-rank
 destruction on one fixed deletion reservoir.
 
@@ -23225,7 +23296,18 @@ theorem zeroNormalized_counterexample_forces_cofinalFixedReservoirPredecessorRan
           (additiveSupportFamily A ℓ) B n ∧
         (additiveSupportFamily A (ℓ + 1) n).Nonempty ∧
         DestroysAt
-          (additiveSupportFamily A (ℓ + 1)) B n := by
+          (additiveSupportFamily A (ℓ + 1)) B n ∧
+        ∃ D₀ D : Finset ℕ,
+          D₀ ⊆ D ∧
+          D₀.Nonempty ∧ D.Nonempty ∧
+          (D : Set ℕ) ⊆ B ∧
+          Disjoint D (Finset.range (L + 1)) ∧
+          DestroysAt
+            (additiveSupportFamily A ℓ)
+            (D₀ : Set ℕ) n ∧
+          DestroysAt
+            (additiveSupportFamily A (ℓ + 1))
+            (D : Set ℕ) n := by
   classical
   obtain ⟨C₀, B₀, hC₀A, hC₀Infinite, hB₀A, hB₀Infinite,
       hC₀B₀, hAC₀B₀, hstage⟩ :=
@@ -23304,6 +23386,7 @@ theorem zeroNormalized_counterexample_forces_cofinalFixedReservoirPredecessorRan
     have hD₀eq : D₀ = ∅ :=
       Finset.not_nonempty_iff_eq_empty.mp hD₀empty
     exact hminimal.1 E hER (by simp [hD₀eq])
+  have hD₀nonempty' : D₀.Nonempty := hD₀nonempty
   have hDB : (D₀ : Set ℕ) ⊆ B := by
     intro x hxD₀
     have hxD : x ∈ D :=
@@ -23352,67 +23435,41 @@ theorem zeroNormalized_counterexample_forces_cofinalFixedReservoirPredecessorRan
     have hlifted :=
       list_foldr_mem_additiveSupportFamily hliftedA
     simpa [lifted, Nat.add_comm] using hlifted
+  have hcoreB :
+      Disjoint (core : Set ℕ) B :=
+    hCB.mono_left hcoreC
+  have hcoreD₀ :
+      Disjoint (core : Set ℕ) (D₀ : Set ℕ) :=
+    hcoreB.mono_right hDB
+  have hdestroyD₀ :
+      DestroysAt
+        (additiveSupportFamily A hits.length)
+        (D₀ : Set ℕ) hits.sum :=
+    complementarySurvivingCore_forces_hitTargetDestroyer
+      hminimal hlength htarget hcoreR hcoreD₀
+  have hcoreD :
+      Disjoint (core : Set ℕ) (D : Set ℕ) :=
+    hcoreB.mono_right hDBfull
+  have horderSucc :
+      hits.length + 1 + j = h + 1 := by
+    omega
+  have hdestroyD :
+      DestroysAt
+        (additiveSupportFamily A (hits.length + 1))
+        (D : Set ℕ) hits.sum :=
+    complementarySurvivingCore_forces_hitTargetDestroyer
+      hminimalH horderSucc htarget hcoreR hcoreD
   have hdestroySucc :
       DestroysAt
         (additiveSupportFamily A (hits.length + 1))
-        B hits.sum := by
-    intro R hRR hRB
-    obtain ⟨v, hvA, hvsum, rfl⟩ :=
-      mem_additiveSupportFamily_iff.mp hRR
-    let pads : List ℕ :=
-      List.ofFn fun i => (v i : ℕ)
-    have hpadsLength :
-        pads.length = hits.length + 1 := by
-      simp [pads]
-    have hpadsSum : pads.sum = hits.sum := by
-      change
-        (List.ofFn fun i => (v i : ℕ)).sum = hits.sum
-      rw [List.sum_ofFn]
-      exact hvsum
-    have hpadsC : ∀ z ∈ pads, z ∈ C := by
-      intro z hzPads
-      obtain ⟨i, hiz⟩ := List.mem_ofFn.mp hzPads
-      have hzA : z ∈ A := by
-        simpa only [hiz] using hvA i
-      rcases hACB hzA with hzC | hzB
-      · exact hzC
-      · exfalso
-        apply Set.disjoint_left.mp hRB
-          (show z ∈ tupleSupport v by
-            apply mem_tupleSupport_iff.mpr
-            exact ⟨i, hiz⟩)
-          hzB
-    have hpadsA : ∀ z ∈ pads, z ∈ A := by
-      intro z hzPads
-      exact hCA (hpadsC z hzPads)
-    let repaired : Finset ℕ :=
-      pads.foldr (fun z G => insert z G) core
-    have hrepairRaw :=
-      foldr_insert_mem_additiveSupportFamily hpadsA hcoreR
-    have hrepairQ :
-        repaired ∈ additiveSupportFamily A (h + 1) q := by
-      have horder : pads.length + j = h + 1 := by
-        omega
-      have hsumTarget : pads.sum + t = q := by
-        omega
-      rw [horder, hsumTarget] at hrepairRaw
-      exact hrepairRaw
-    have hrepairB : Disjoint (repaired : Set ℕ) B := by
-      rw [Set.disjoint_left]
-      intro z hzRepair hzB
-      have hzUnion : z ∈ pads.toFinset ∪ core := by
-        simpa [repaired, foldr_insert_eq_toFinset_union] using hzRepair
-      rcases Finset.mem_union.mp hzUnion with hzPads | hzCore
-      · exact Set.disjoint_left.mp hCB
-          (hpadsC z (List.mem_toFinset.mp hzPads)) hzB
-      · exact Set.disjoint_left.mp hCB
-          (hcoreC (Finset.mem_coe.mpr hzCore)) hzB
-    exact hminimalH.1 repaired hrepairQ
-      (hrepairB.mono_right hDBfull)
+        B hits.sum :=
+    hdestroyD.mono hDBfull
   have hle : hits.length ≤ h := by omega
   exact ⟨hits.length, hits.sum, hhitsPos, hle,
     hLsum, hrepresented, hdestroy,
-    hrepresentedSucc, hdestroySucc⟩
+    hrepresentedSucc, hdestroySucc,
+    D₀, D, hD₀D, hD₀nonempty', hDnonempty,
+    hDBfull, hDRange, hdestroyD₀, hdestroyD⟩
 
 /-- One predecessor rank occurs cofinally in the zero-normalized descent.
 
@@ -23488,7 +23545,7 @@ theorem zeroNormalized_counterexample_forces_fixedPredecessorRankCofinalDestruct
   rcases hdata i with
     ⟨_hrankPos, _hrankLe, hiTarget,
       hrepresented, hdestroy,
-      hrepresentedSucc, hdestroySucc⟩
+      hrepresentedSucc, hdestroySucc, _hnested⟩
   have hLtarget : L < target i :=
     hLi.trans hiTarget
   rw [hiRank] at hrepresented hdestroy
