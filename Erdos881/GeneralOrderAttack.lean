@@ -3117,6 +3117,198 @@ theorem lowerGapRepairWitness_extends_protectedOnReservoir_or_oldCollision
         simp only [t, dif_neg hsjE]
       exact hsjE (htx.symm.trans hjx ▸ Finset.mem_coe.mp hxE)
 
+/-- Clear every old collision of one retained repair support, or expose a
+local acyclic certificate dependency.
+
+For old blocks hit by `E`, use the local support-choice subcover theorem.
+If every such block has a point outside both `E` and the stored
+larger-target supports, change all hit coordinates simultaneously.  Outside
+`J`, ordinary support-local capacity supplies the same choice.  The resulting
+selector avoids the protected union and preserves `q`.
+
+The only failure is concrete: one old hit block is covered by `E` together
+with supports belonging to a bounded subcollection of targets strictly
+larger than `q`. -/
+theorem lowerGapRepairWitness_extends_protected_or_localLargerDependency
+    {A : Set ℕ} {k q : ℕ} {Q : Finset ℕ}
+    {F : ℕ → Finset ℕ}
+    (s : BlockSelector F) {J E : Finset ℕ}
+    (c :
+      FiniteSupportChoice
+        (additiveSupportFamily A (k + 1)) Q)
+    (hQlarger : ∀ u ∈ Q, q < u)
+    (hcDisjoint :
+      Disjoint (finiteSupportChoiceUnion c : Set ℕ)
+        (selectedSet s))
+    (hER : E ∈ additiveSupportFamily A (k + 1) q)
+    (hcapacity :
+      ∀ j, j ∉ J →
+        (s j).1 ∈
+          supportVertices (additiveSupportFamily A (k + 1)) q →
+        (finiteSupportChoiceUnion c).card + (k + 1) <
+          (F j).card) :
+    (∃ t : BlockSelector F,
+        Disjoint (finiteSupportChoiceUnion c : Set ℕ)
+          (selectedSet t) ∧
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q) ∨
+      ∃ j ∈ J, (s j).1 ∈ E ∧
+        ∃ P : Finset ℕ, ∃ hPQ : P ⊆ Q,
+          P.card ≤ ((F j).erase (s j).1).card ∧
+          (∀ u ∈ P, q < u) ∧
+          (F j).erase (s j).1 ⊆
+            E ∪ finiteSupportChoiceUnion
+              (restrictFiniteSupportChoice hPQ c) ∧
+          ((F j).erase (s j).1).card ≤
+            (k + 1) * (P.card + 1) := by
+  classical
+  let U : Finset ℕ := finiteSupportChoiceUnion c
+  have hEcard : E.card ≤ k + 1 :=
+    additiveSupportFamily_cardAtMost A (k + 1) q E hER
+  by_cases hdependency :
+      ∃ j ∈ J, (s j).1 ∈ E ∧
+        ∃ P : Finset ℕ, ∃ hPQ : P ⊆ Q,
+          P.card ≤ ((F j).erase (s j).1).card ∧
+          (∀ u ∈ P, q < u) ∧
+          (F j).erase (s j).1 ⊆
+            E ∪ finiteSupportChoiceUnion
+              (restrictFiniteSupportChoice hPQ c) ∧
+          ((F j).erase (s j).1).card ≤
+            (k + 1) * (P.card + 1)
+  · exact Or.inr hdependency
+  left
+  have holdOutside :
+      ∀ j, j ∈ J → (s j).1 ∈ E →
+        ∃ y ∈ (F j).erase (s j).1, y ∉ E ∧ y ∉ U := by
+    intro j hjJ hsjE
+    obtain hsafe | ⟨P, hPQ, hPcard, hcover⟩ :=
+      exists_point_avoiding_or_localSupportChoiceSubcover
+        (V := (F j).erase (s j).1) (E := E) c
+    · simpa only [U] using hsafe
+    · exfalso
+      apply hdependency
+      refine ⟨j, hjJ, hsjE, P, hPQ, hPcard,
+        (fun u huP => hQlarger u (hPQ huP)), hcover, ?_⟩
+      have hrestrictedCard :
+          (finiteSupportChoiceUnion
+            (restrictFiniteSupportChoice hPQ c)).card ≤
+              (k + 1) * P.card :=
+        finiteSupportChoiceUnion_card_le
+          (additiveSupportFamily_cardAtMost A (k + 1)) _
+      have hcoverCard :
+          ((F j).erase (s j).1).card ≤
+            (E ∪ finiteSupportChoiceUnion
+              (restrictFiniteSupportChoice hPQ c)).card :=
+        Finset.card_le_card hcover
+      have hunionCard :
+          (E ∪ finiteSupportChoiceUnion
+            (restrictFiniteSupportChoice hPQ c)).card ≤
+              E.card +
+                (finiteSupportChoiceUnion
+                  (restrictFiniteSupportChoice hPQ c)).card :=
+        Finset.card_union_le _ _
+      calc
+        ((F j).erase (s j).1).card
+            ≤ E.card +
+                (finiteSupportChoiceUnion
+                  (restrictFiniteSupportChoice hPQ c)).card :=
+          hcoverCard.trans hunionCard
+        _ ≤ (k + 1) + (k + 1) * P.card :=
+          Nat.add_le_add hEcard hrestrictedCard
+        _ = (k + 1) * (P.card + 1) := by
+          simp only [Nat.mul_add, Nat.mul_one, Nat.add_comm]
+  choose oldOutside holdOutsideSpec using holdOutside
+  let W : Finset ℕ := U ∪ E
+  have hWcard : W.card ≤ U.card + (k + 1) := by
+    calc
+      W.card ≤ U.card + E.card := by
+        simpa only [W] using Finset.card_union_le U E
+      _ ≤ U.card + (k + 1) :=
+        Nat.add_le_add_left hEcard U.card
+  have hnewOutside :
+      ∀ j, j ∉ J → (hsjE : (s j).1 ∈ E) →
+        (F j \ W).Nonempty := by
+    intro j hjJ hsjE
+    by_contra hempty
+    have hsubset : F j ⊆ W := by
+      intro x hxF
+      by_contra hxW
+      exact hempty
+        ⟨x, Finset.mem_sdiff.mpr ⟨hxF, hxW⟩⟩
+    have hcard := Finset.card_le_card hsubset
+    have hsjVertices :
+        (s j).1 ∈
+          supportVertices (additiveSupportFamily A (k + 1)) q :=
+      Finset.mem_biUnion.mpr ⟨E, hER, hsjE⟩
+    have hlarge := hcapacity j hjJ hsjVertices
+    have hlarge' : U.card + (k + 1) < (F j).card := by
+      simpa only [U] using hlarge
+    omega
+  choose newOutside hnewOutsideSpec using hnewOutside
+  let t : BlockSelector F := fun j =>
+    if hsjE : (s j).1 ∈ E then
+      if hjJ : j ∈ J then
+        ⟨oldOutside j hjJ hsjE,
+          (Finset.mem_erase.mp
+            (holdOutsideSpec j hjJ hsjE).1).2⟩
+      else
+        ⟨newOutside j hjJ hsjE,
+          (Finset.mem_sdiff.mp
+            (hnewOutsideSpec j hjJ hsjE)).1⟩
+    else
+      s j
+  have htU :
+      Disjoint (U : Set ℕ) (selectedSet t) := by
+    rw [Set.disjoint_left]
+    intro x hxU hxSelected
+    obtain ⟨j, hjx⟩ := hxSelected
+    by_cases hsjE : (s j).1 ∈ E
+    · by_cases hjJ : j ∈ J
+      · have htj :
+            (t j).1 = oldOutside j hjJ hsjE := by
+          simp only [t, dif_pos hsjE, dif_pos hjJ]
+        exact (holdOutsideSpec j hjJ hsjE).2.2
+          (htj.symm.trans hjx ▸ Finset.mem_coe.mp hxU)
+      · have htj :
+            (t j).1 = newOutside j hjJ hsjE := by
+          simp only [t, dif_pos hsjE, dif_neg hjJ]
+        have hout :=
+          (Finset.mem_sdiff.mp
+            (hnewOutsideSpec j hjJ hsjE)).2
+        apply hout
+        apply Finset.mem_union_left E
+        exact htj.symm.trans hjx ▸ Finset.mem_coe.mp hxU
+    · have htj : (t j).1 = (s j).1 := by
+        simp only [t, dif_neg hsjE]
+      exact Set.disjoint_left.mp hcDisjoint
+        (Finset.mem_coe.mpr hxU) ⟨j, htj.symm.trans hjx⟩
+  refine ⟨t, by simpa only [U] using htU, ?_⟩
+  apply not_destroysAt_iff.mpr
+  refine ⟨E, hER, ?_⟩
+  rw [Set.disjoint_left]
+  intro x hxE hxSelected
+  obtain ⟨j, hjx⟩ := hxSelected
+  by_cases hsjE : (s j).1 ∈ E
+  · by_cases hjJ : j ∈ J
+    · have htj :
+          (t j).1 = oldOutside j hjJ hsjE := by
+        simp only [t, dif_pos hsjE, dif_pos hjJ]
+      exact (holdOutsideSpec j hjJ hsjE).2.1
+        (htj.symm.trans hjx ▸ Finset.mem_coe.mp hxE)
+    · have htj :
+          (t j).1 = newOutside j hjJ hsjE := by
+        simp only [t, dif_pos hsjE, dif_neg hjJ]
+      have hout :=
+        (Finset.mem_sdiff.mp
+          (hnewOutsideSpec j hjJ hsjE)).2
+      apply hout
+      apply Finset.mem_union_right U
+      exact htj.symm.trans hjx ▸ Finset.mem_coe.mp hxE
+  · have htj : (t j).1 = (s j).1 := by
+      simp only [t, dif_neg hsjE]
+    exact hsjE (htj.symm.trans hjx ▸ Finset.mem_coe.mp hxE)
+
 /-- An external lower-gap point gives the same protected
 completion-or-collision dichotomy on an arbitrary reservoir partition as
 an internal repair point gives on a partition of all of `A`. -/
@@ -11094,6 +11286,11 @@ def HasPrivateLockedGapCollision
     (A : Set ℕ) (k : ℕ) {K : Set ℕ} {F : ℕ → Finset ℕ}
     (P : IsFiniteBlockPartition K F) (Q : Finset ℕ)
     (q : ℕ) (s : BlockSelector F) : Prop :=
+  DestroysAt
+      (additiveSupportFamily A (k + 1)) (selectedSet s) q ∧
+  (∀ v ∈ Q, q < v →
+    ¬ DestroysAt
+      (additiveSupportFamily A (k + 1)) (selectedSet s) v) ∧
   ∃ b D d j E H,
     b ∈ A ∧ b ≤ q ∧
     additiveSupportFamily A k (q - b) = ∅ ∧
@@ -11199,7 +11396,7 @@ theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_matching_or_gap
         · exact Or.inr (Or.inr
             ⟨q, hqQ, s, by
               change HasPrivateLockedGapCollision A k P Q q s
-              exact hcollision⟩)
+              exact ⟨hqDestroy, hlarger, hcollision⟩⟩)
   let initial : BlockSelector F :=
     fun j => ⟨(P.nonempty j).choose, (P.nonempty j).choose_spec⟩
   obtain ⟨q, hqQ, hqDestroy, hqLarger⟩ :=
