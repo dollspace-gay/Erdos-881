@@ -13631,6 +13631,304 @@ theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_certificateSafeBound
     exact hxD.elim Or.inl
       (fun hxB => Or.inr hxB.1)
 
+/-- Arithmetic normalization of a genuinely moving repair hit.
+
+On an infinite family of successor supports, choose an injectively moving
+hit `point n` from each support and remove it.  Exact support removal leaves
+an order-`j` support at the predecessor difference
+`target n - point n`, reconstructs the original support exactly, and
+preserves every avoidance certificate.
+
+There are then only two infinite behaviours.  Either one predecessor
+difference occurs on an infinite subfamily, giving a fixed affine translate
+with an infinite anchor reservoir, or the predecessor differences can be
+made injective and hence cofinal.  The latter horn is a genuine rank descent;
+the former is exactly the fixed-difference horn handled by the terminating
+affine repair theorem above. -/
+theorem infinite_injectiveHitSupport_normalizes_fixedDifference_or_cofinalLowerRank
+    {A I : Set ℕ} {j : ℕ}
+    {target point : ℕ → ℕ}
+    {repair : ℕ → Finset ℕ}
+    {forbidden : ℕ → Set ℕ}
+    (hI : I.Infinite)
+    (hpointInj : Set.InjOn point I)
+    (hdata : ∀ n ∈ I,
+      repair n ∈ additiveSupportFamily A (j + 1) (target n) ∧
+      point n ∈ repair n ∧
+      Disjoint (repair n : Set ℕ) (forbidden n)) :
+    ∃ J : Set ℕ, ∃ lower : ℕ → Finset ℕ,
+      J ⊆ I ∧
+      J.Infinite ∧
+      Set.InjOn point J ∧
+      (∀ n ∈ J,
+        point n ∈ A ∧
+        point n ≤ target n ∧
+        lower n ∈
+          additiveSupportFamily A j (target n - point n) ∧
+        lower n ⊆ repair n ∧
+        repair n = insert (point n) (lower n) ∧
+        target n = point n + (target n - point n) ∧
+        Disjoint (lower n : Set ℕ) (forbidden n)) ∧
+      ((∃ d, ∀ n ∈ J, target n - point n = d) ∨
+        (Set.InjOn (fun n => target n - point n) J ∧
+          ∀ L, ∃ n ∈ J, L ≤ target n - point n)) := by
+  classical
+  let delta : ℕ → ℕ := fun n => target n - point n
+  have hlowerExists : ∀ n, n ∈ I →
+      ∃ H ∈ additiveSupportFamily A j (delta n),
+        repair n = insert (point n) H := by
+    intro n hn
+    simpa only [delta] using
+      additiveSupport_remove_hit_succ
+        (hdata n hn).1 (hdata n hn).2.1
+  let lower : ℕ → Finset ℕ := fun n =>
+    if hn : n ∈ I then
+      Classical.choose (hlowerExists n hn)
+    else ∅
+  have hlowerData : ∀ n ∈ I,
+      point n ∈ A ∧
+      point n ≤ target n ∧
+      lower n ∈ additiveSupportFamily A j (delta n) ∧
+      lower n ⊆ repair n ∧
+      repair n = insert (point n) (lower n) ∧
+      target n = point n + delta n ∧
+      Disjoint (lower n : Set ℕ) (forbidden n) := by
+    intro n hn
+    have hpointA : point n ∈ A :=
+      additiveSupportFamily_supportsIn
+        A (j + 1) (target n) (repair n)
+          (hdata n hn).1 (point n) (hdata n hn).2.1
+    have hpointLe : point n ≤ target n :=
+      additiveSupportFamily_supportsBounded
+        A (j + 1) (target n) (repair n)
+          (hdata n hn).1 (point n) (hdata n hn).2.1
+    have hlowerMem :
+        lower n ∈ additiveSupportFamily A j (delta n) := by
+      simp only [lower, dif_pos hn]
+      exact (Classical.choose_spec (hlowerExists n hn)).1
+    have hrepairEq :
+        repair n = insert (point n) (lower n) := by
+      simp only [lower, dif_pos hn]
+      exact (Classical.choose_spec (hlowerExists n hn)).2
+    have hlowerSub : lower n ⊆ repair n := by
+      intro x hx
+      rw [hrepairEq]
+      exact Finset.mem_insert_of_mem hx
+    have hsplit : target n = point n + delta n := by
+      dsimp only [delta]
+      omega
+    have hlowerAvoid :
+        Disjoint (lower n : Set ℕ) (forbidden n) := by
+      exact Set.disjoint_of_subset_left
+        (fun x hx =>
+          Finset.mem_coe.mpr
+            (hlowerSub (Finset.mem_coe.mp hx)))
+        (hdata n hn).2.2
+    exact ⟨hpointA, hpointLe, hlowerMem, hlowerSub,
+      hrepairEq, hsplit, hlowerAvoid⟩
+  by_cases hrange : (delta '' I).Infinite
+  · obtain ⟨J, hJI, hdeltaBij⟩ :=
+      Set.exists_subset_bijOn I delta
+    have hJ : J.Infinite := by
+      intro hJFinite
+      apply hrange
+      rw [← hdeltaBij.image_eq]
+      exact hJFinite.image delta
+    refine ⟨J, lower, hJI, hJ, hpointInj.mono hJI, ?_,
+      Or.inr ⟨?_, ?_⟩⟩
+    · intro n hnJ
+      simpa only [delta] using hlowerData n (hJI hnJ)
+    · simpa only [delta] using hdeltaBij.injOn
+    · intro L
+      have hdeltaImage : (delta '' J).Infinite := by
+        rw [hdeltaBij.image_eq]
+        exact hrange
+      obtain ⟨d, hdImage, hLd⟩ := hdeltaImage.exists_gt L
+      obtain ⟨n, hnJ, rfl⟩ := hdImage
+      exact ⟨n, hnJ, by
+        simpa only [delta] using Nat.le_of_lt hLd⟩
+  · have hrangeFinite : (delta '' I).Finite :=
+      Set.not_infinite.mp hrange
+    have hinfiniteFiber : ∃ d ∈ delta '' I,
+        (I ∩ delta ⁻¹' ({d} : Set ℕ)).Infinite := by
+      by_contra hnoFiber
+      push Not at hnoFiber
+      apply hI
+      apply Set.Finite.of_finite_fibers delta hrangeFinite
+      intro d hdImage
+      exact hnoFiber d hdImage
+    obtain ⟨d, _hdImage, hJ⟩ := hinfiniteFiber
+    let J : Set ℕ := I ∩ delta ⁻¹' ({d} : Set ℕ)
+    have hJI : J ⊆ I := Set.inter_subset_left
+    refine ⟨J, lower, hJI, hJ, hpointInj.mono hJI, ?_,
+      Or.inl ⟨d, ?_⟩⟩
+    · intro n hnJ
+      simpa only [delta] using hlowerData n (hJI hnJ)
+    · intro n hnJ
+      simpa only [J, delta] using hnJ.2
+
+/-- Order-uniform infinite extension from injective bounded repair hits.
+
+For an arbitrary additive rank `h`, suppose every indexed repair avoids an
+old infinite deletion `D`, while an injective marked point for each index
+lies in `A \ D`.  Bounded cross-avoidance thins the indices so that no
+repair contains another index's marked point.  Splitting that thinning into
+two infinite halves lets us delete the marked points of one half and retain
+all repairs on the other.
+
+This is the general-rank extension move needed at a fixed injury layer; it
+does not use any order-three classification. -/
+theorem injective_boundedRepairPoints_give_infiniteDeletionExtension
+    {A D I : Set ℕ} {h : ℕ}
+    {target point : ℕ → ℕ}
+    {repair : ℕ → Finset ℕ}
+    (hI : I.Infinite)
+    (hpointInj : Set.InjOn point I)
+    (hrepairR : ∀ n ∈ I,
+      repair n ∈ additiveSupportFamily A h (target n))
+    (hrepairD : ∀ n ∈ I,
+      Disjoint (repair n : Set ℕ) D)
+    (hpointAD : ∀ n ∈ I, point n ∈ A \ D) :
+    ∃ X J : Set ℕ,
+      X ⊆ A \ D ∧
+      X.Infinite ∧
+      J ⊆ I ∧
+      J.Infinite ∧
+      ∀ n ∈ J,
+        Disjoint (repair n : Set ℕ) (D ∪ X) := by
+  classical
+  have hrepairCard : ∀ n ∈ I, (repair n).card ≤ h := by
+    intro n hn
+    exact additiveSupportFamily_cardAtMost
+      A h (target n) (repair n) (hrepairR n hn)
+  obtain ⟨L, hLI, hL, hcross⟩ :=
+    exists_infinite_crossAvoiding_injectiveImage
+      hI point hpointInj repair h hrepairCard
+  obtain ⟨Even, Odd, hEvenL, hOddL, hEven, hOdd,
+      hEvenOdd⟩ :=
+    exists_two_disjoint_infinite_subsets_of_infinite hL
+  let X : Set ℕ := point '' Even
+  have hXInfinite : X.Infinite :=
+    hEven.image (hpointInj.mono (hEvenL.trans hLI))
+  have hXAD : X ⊆ A \ D := by
+    rintro x ⟨n, hnEven, rfl⟩
+    exact hpointAD n (hLI (hEvenL hnEven))
+  refine ⟨X, Odd, hXAD, hXInfinite,
+    hOddL.trans hLI, hOdd, ?_⟩
+  intro n hnOdd
+  have hnL : n ∈ L := hOddL hnOdd
+  rw [Set.disjoint_left]
+  intro x hxRepair hxUnion
+  rcases hxUnion with hxD | hxX
+  · exact Set.disjoint_left.mp
+      (hrepairD n (hLI hnL)) hxRepair hxD
+  · obtain ⟨d, hdEven, rfl⟩ := hxX
+    have hdL : d ∈ L := hEvenL hdEven
+    have hnd : n ≠ d := by
+      intro hnd
+      exact Set.disjoint_left.mp hEvenOdd
+        hdEven (hnd ▸ hnOdd)
+    exact hcross n hnL d hdL hnd
+      (Finset.mem_coe.mp hxRepair)
+
+/-- A first-injury branch cannot remain at one fixed tower stage while its
+hit points move injectively.
+
+All marked points then lie in the one fresh layer above `deletion k`.
+Bounded cross-avoidance thins the marked points into two infinite halves:
+delete one half and retain the repairs indexed by the other.  This constructs
+an actual strict candidate extension of `deletion k`, so the fixed-stage
+moving-point horn is consumed rather than carried as a residual case. -/
+theorem fixedLayer_injectiveFirstInjury_gives_candidateExtension
+    {A I : Set ℕ} {deletion layer : ℕ → Set ℕ}
+    {target injury point : ℕ → ℕ}
+    {repair : ℕ → Finset ℕ} {k : ℕ}
+    (hcandidate :
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs
+        A (deletion k))
+    (hlayer : layer k ⊆ A \ deletion k)
+    (hI : I.Infinite)
+    (hpointInj : Set.InjOn point I)
+    (hfixed : ∀ n ∈ I, injury n = k)
+    (hdata : ∀ n ∈ I,
+      n ≤ target n ∧
+      repair n ∈ additiveSupportFamily A 3 (target n) ∧
+      Disjoint (repair n : Set ℕ) (deletion (injury n)) ∧
+      point n ∈ layer (injury n)) :
+    ∃ X, X ⊆ A \ deletion k ∧ X.Infinite ∧
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs
+        A (deletion k ∪ X) := by
+  obtain ⟨X, J, hX, hXInfinite, hJI, hJ, hsurvive⟩ :=
+    injective_boundedRepairPoints_give_infiniteDeletionExtension
+      hI hpointInj
+      (fun n hn => (hdata n hn).2.1)
+      (fun n hn => by
+        simpa only [hfixed n hn] using
+          (hdata n hn).2.2.1)
+      (fun n hn => by
+        apply hlayer
+        simpa only [hfixed n hn] using
+          (hdata n hn).2.2.2)
+  exact ⟨X, hX, hXInfinite,
+    Set.union_subset hcandidate.1
+      (fun x hx => (hX hx).1),
+    hcandidate.2.1.mono Set.subset_union_left,
+    J, target, repair, hJ, fun n hn =>
+      ⟨(hdata n (hJI hn)).1,
+        (hdata n (hJI hn)).2.1,
+        hsurvive n hn⟩⟩
+
+/-- Consume the fixed-layer horn in the existing first-injury frontier.
+
+The pair-generated branch already supplies a strict candidate extension.
+If the frontier instead returns moving repair points at a fixed injury
+stage, `fixedLayer_injectiveFirstInjury_gives_candidateExtension` supplies
+the same conclusion.  Therefore a branch which still has no extension must
+have injective injury stages as well as injective hit points. -/
+theorem HasInfiniteCandidateFirstInjuryMovingOrPairGeneratedExtension.fixedLayer_absorbed
+    {A : Set ℕ} {deletion layer : ℕ → Set ℕ} {base : ℕ}
+    (h : HasInfiniteCandidateFirstInjuryMovingOrPairGeneratedExtension
+      A deletion layer base)
+    (hcandidate : ∀ k,
+      IsInfiniteCandidateDeletionWithLateSurvivingRepairs
+        A (deletion k))
+    (hlayer : ∀ k, layer k ⊆ A \ deletion k) :
+    (∃ I : Set ℕ, ∃ target : ℕ → ℕ,
+      ∃ repair : ℕ → Finset ℕ,
+      ∃ injury point : ℕ → ℕ,
+        I.Infinite ∧
+        Set.InjOn target I ∧
+        (∀ n ∈ I,
+          n ≤ target n ∧
+          repair n ∈ additiveSupportFamily A 3 (target n) ∧
+          base ≤ injury n ∧
+          Disjoint (repair n : Set ℕ) (deletion (injury n)) ∧
+          point n ∈ repair n ∧
+          point n ∈ layer (injury n)) ∧
+        Set.InjOn injury I ∧
+        Set.InjOn point I) ∨
+      ∃ k X,
+        X ⊆ A \ deletion k ∧ X.Infinite ∧
+        IsInfiniteCandidateDeletionWithLateSurvivingRepairs
+          A (deletion k ∪ X) := by
+  rcases h with
+      ⟨I, target, repair, injury, point, hI, htargetInj,
+        hdata, hmoving | hfixedLayer⟩ |
+      ⟨k, X, hX, hXInfinite, hextension⟩
+  · exact Or.inl ⟨I, target, repair, injury, point,
+      hI, htargetInj, hdata, hmoving.1, hmoving.2⟩
+  · obtain ⟨k, hinjuryFixed, hpointInj⟩ := hfixedLayer
+    obtain ⟨X, hX, hXInfinite, hextension⟩ :=
+      fixedLayer_injectiveFirstInjury_gives_candidateExtension
+        (hcandidate k) (hlayer k) hI hpointInj hinjuryFixed
+        (by
+          intro n hn
+          exact ⟨(hdata n hn).1, (hdata n hn).2.1,
+            (hdata n hn).2.2.2.1,
+            (hdata n hn).2.2.2.2.2⟩)
+    exact Or.inr ⟨k, X, hX, hXInfinite, hextension⟩
+  · exact Or.inr ⟨k, X, hX, hXInfinite, hextension⟩
+
 /-- A counterexample must escape every prescribed finite family of
 difference labels.
 
