@@ -11881,6 +11881,126 @@ theorem large_destroyedRootedMatching_descends_through_prefix
     omega
   · exact hdescend
 
+/-- A same-target rooted horn yields both root capture and usable block
+material.
+
+Suppose `D` destroys `q` while `q` carries a rooted matching larger than
+`D`.  The root cannot avoid `D`: one captured root point `d ∈ R ∩ D`
+therefore exposes a cardinality-preserving predecessor family at the exact
+coherent difference `q-d`.
+
+At the same time, the union `V` of the pairwise-disjoint nonempty petals is
+a genuine finite deletion block.  It lies in `A`, is disjoint from the
+captured root, has at least one point per matching member, and deleting any
+single `y ∈ V` leaves another same-target support alive whenever the
+matching has at least two members.  Thus the rooted horn is converted into
+both arithmetic descent and selector-ready block capacity without changing
+the target label. -/
+theorem large_sameTargetRootedMatching_capturesDestroyer_and_generatesBlock
+    {A : Set ℕ} {k q : ℕ}
+    {R D : Finset ℕ} {M : Finset (Finset ℕ)}
+    (hdestroy :
+      DestroysAt
+        (additiveSupportFamily A (k + 1)) (D : Set ℕ) q)
+    (hMsub : M ⊆ additiveSupportFamily A (k + 1) q)
+    (hMroot : ∀ E ∈ M, R ⊆ E)
+    (hMnonempty : ∀ E ∈ M, (E \ R).Nonempty)
+    (hMmatching :
+      ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+        Disjoint (E \ R) (G \ R))
+    (hlarge : D.card < M.card)
+    (htwo : 1 < M.card) :
+    ∃ d ∈ R, d ∈ D ∧ d ∈ A ∧ d ≤ q ∧
+      ∃ lower : Finset (Finset ℕ),
+        lower ⊆ additiveSupportFamily A k (q - d) ∧
+        lower.card = M.card ∧
+        ∃ V : Finset ℕ,
+          V = M.biUnion (fun E => E \ R) ∧
+          V.Nonempty ∧
+          (V : Set ℕ) ⊆ A ∧
+          Disjoint R V ∧
+          M.card ≤ V.card ∧
+          ∀ y ∈ V,
+            ¬ DestroysAt
+              (additiveSupportFamily A (k + 1))
+              ({y} : Set ℕ) q := by
+  classical
+  obtain ⟨d, hdR, hdD, hdA, hdq, lower,
+      hlowerSub, hlowerCard⟩ :=
+    large_destroyedRootedMatching_descends_through_prefix
+      hdestroy hMsub hMroot hMmatching hlarge
+  let V : Finset ℕ := M.biUnion fun E => E \ R
+  have hMnonempty' : M.Nonempty := by
+    rw [← Finset.card_pos]
+    omega
+  obtain ⟨E₀, hE₀M⟩ := hMnonempty'
+  obtain ⟨x₀, hx₀Petal⟩ := hMnonempty E₀ hE₀M
+  have hVnonempty : V.Nonempty :=
+    ⟨x₀, Finset.mem_biUnion.mpr ⟨E₀, hE₀M, hx₀Petal⟩⟩
+  have hVA : (V : Set ℕ) ⊆ A := by
+    intro x hxV
+    obtain ⟨E, hEM, hxPetal⟩ :=
+      Finset.mem_biUnion.mp (Finset.mem_coe.mp hxV)
+    exact additiveSupportFamily_supportsIn
+      A (k + 1) q E (hMsub hEM) x
+        (Finset.mem_sdiff.mp hxPetal).1
+  have hRV : Disjoint R V := by
+    rw [Finset.disjoint_left]
+    intro x hxR hxV
+    obtain ⟨E, _hEM, hxPetal⟩ :=
+      Finset.mem_biUnion.mp hxV
+    exact (Finset.mem_sdiff.mp hxPetal).2 hxR
+  let pick : {E // E ∈ M} → {x // x ∈ V} := fun E =>
+    ⟨(hMnonempty E.1 E.2).choose,
+      Finset.mem_biUnion.mpr
+        ⟨E.1, E.2, (hMnonempty E.1 E.2).choose_spec⟩⟩
+  have hpickPetal : ∀ E : {E // E ∈ M},
+      (pick E).1 ∈ E.1 \ R := by
+    intro E
+    exact (hMnonempty E.1 E.2).choose_spec
+  have hpickInjective : Function.Injective pick := by
+    intro E G hEG
+    apply Subtype.ext
+    by_contra hne
+    have hpointEq : (pick E).1 = (pick G).1 :=
+      congrArg Subtype.val hEG
+    exact
+      (Finset.not_disjoint_iff.mpr
+        ⟨(pick E).1, hpickPetal E,
+          hpointEq ▸ hpickPetal G⟩)
+      (hMmatching E.1 E.2 G.1 G.2 hne)
+  have hMcardV : M.card ≤ V.card := by
+    simpa only [Fintype.card_coe] using
+      Fintype.card_le_of_injective pick hpickInjective
+  have hsingletonSurvives : ∀ y ∈ V,
+      ¬ DestroysAt
+        (additiveSupportFamily A (k + 1))
+        ({y} : Set ℕ) q := by
+    intro y hyV
+    have hyR : y ∉ R := by
+      intro hyR
+      exact Finset.disjoint_left.mp hRV hyR hyV
+    have hhit :
+        ∀ E ∈ M,
+          ¬ Disjoint (E : Set ℕ) ({y} : Set ℕ) →
+            ∃ x ∈ ({y} : Finset ℕ), x ∈ E \ R := by
+      intro E _hEM hEy
+      obtain ⟨x, hxE, hxy⟩ :=
+        Set.not_disjoint_iff.mp hEy
+      have hxy' : x = y := by simpa using hxy
+      subst x
+      exact ⟨y, by simp,
+        Finset.mem_sdiff.mpr
+          ⟨Finset.mem_coe.mp hxE, hyR⟩⟩
+    obtain ⟨E, hEM, hEy⟩ :=
+      exists_surviving_support
+        hMmatching hhit (by simpa using htwo)
+    exact not_destroysAt_iff.mpr
+      ⟨E, hMsub hEM, hEy⟩
+  exact ⟨d, hdR, hdD, hdA, hdq, lower,
+    hlowerSub, hlowerCard, V, rfl, hVnonempty,
+    hVA, hRV, hMcardV, hsingletonSurvives⟩
+
 /-- Uniform finite-prefix composition at the *successor of an already exact
 basis order*, with no gap alternative.
 
