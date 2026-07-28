@@ -2943,6 +2943,229 @@ theorem lowerGapRepair_extends_to_twoBlockSelectorSurvival
     rw [← hxOutside]
     exact hxE
 
+/-- A lower-gap repair can be completed entirely inside a deletion
+reservoir even when the gap point itself lies outside that reservoir.
+
+Minimality supplies a support avoiding `D.erase d ∪ {b}`.  If every
+reservoir block is larger than an order-`k+1` support, choose one point
+outside that support in every block.  The resulting reservoir selector
+preserves `q`; no block containing `b`, and hence no assumption `b ∈ K`,
+is needed. -/
+theorem lowerGapRepair_extends_to_largeReservoirSelectorSurvival
+    {A K : Set ℕ} {k q b d : ℕ}
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
+    {D : Finset ℕ}
+    (hminimal : IsInclusionMinimalDestroyer
+      (additiveSupportFamily A (k + 1)) D q)
+    (hdD : d ∈ D)
+    (hgap : additiveSupportFamily A k (q - b) = ∅)
+    (hblocks : ∀ j, k + 1 < (F j).card) :
+    ∃ t : BlockSelector F,
+      ¬ DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (selectedSet t) q := by
+  classical
+  have hrepair :
+      ¬ DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (((D.erase d ∪ {b} : Finset ℕ) : Set ℕ)) q :=
+    hminimal.swap_hit_for_lowerGap_repairs hdD hgap
+  obtain ⟨E, hER, _hEswap⟩ :=
+    not_destroysAt_iff.mp hrepair
+  have hEcard : E.card ≤ k + 1 :=
+    additiveSupportFamily_cardAtMost A (k + 1) q E hER
+  have houtside : ∀ j, (F j \ E).Nonempty := by
+    intro j
+    by_contra hempty
+    have hsubset : F j ⊆ E := by
+      intro x hxF
+      by_contra hxE
+      exact hempty
+        ⟨x, Finset.mem_sdiff.mpr ⟨hxF, hxE⟩⟩
+    have hcard := Finset.card_le_card hsubset
+    have hlarge := hblocks j
+    omega
+  choose outside houtsideSpec using houtside
+  let t : BlockSelector F := fun j =>
+    ⟨outside j, (Finset.mem_sdiff.mp (houtsideSpec j)).1⟩
+  refine ⟨t, ?_⟩
+  apply not_destroysAt_iff.mpr
+  refine ⟨E, hER, ?_⟩
+  rw [Set.disjoint_left]
+  intro x hxE hxSelected
+  obtain ⟨j, hjx⟩ := hxSelected
+  have hxOutside : x = outside j := by
+    exact hjx.symm
+  exact (Finset.mem_sdiff.mp (houtsideSpec j)).2
+    (hxOutside ▸ Finset.mem_coe.mp hxE)
+
+/-- Protected completion of an external lower-gap repair on a deletion
+reservoir.
+
+The repair point need not belong to the reservoir.  Starting from its
+private repair support `E`, retain every old selector choice unless it hits
+`E`, and reroute every contemporary hit outside `U ∪ E`.  Thus either a
+reservoir selector preserves both the protected union and the repaired
+target, or an unchanged old coordinate lies in `E`. -/
+theorem lowerGapRepairWitness_extends_protectedOnReservoir_or_oldCollision
+    {A : Set ℕ} {k q : ℕ}
+    {F : ℕ → Finset ℕ}
+    (s : BlockSelector F) {U J E : Finset ℕ}
+    (hUselected : Disjoint (U : Set ℕ) (selectedSet s))
+    (hER : E ∈ additiveSupportFamily A (k + 1) q)
+    (hcontemporary :
+      ∀ j, j ∉ J → U.card + (k + 1) < (F j).card) :
+    (∃ t : BlockSelector F,
+        Disjoint (U : Set ℕ) (selectedSet t) ∧
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q) ∨
+      ∃ j ∈ J, (s j).1 ∈ E := by
+  classical
+  by_cases holdHit : ∃ j ∈ J, (s j).1 ∈ E
+  · exact Or.inr holdHit
+  · left
+    let W : Finset ℕ := U ∪ E
+    have hEcard : E.card ≤ k + 1 :=
+      additiveSupportFamily_cardAtMost A (k + 1) q E hER
+    have hWcard : W.card ≤ U.card + (k + 1) := by
+      calc
+        W.card ≤ U.card + E.card := by
+          simpa only [W] using Finset.card_union_le U E
+        _ ≤ U.card + (k + 1) :=
+          Nat.add_le_add_left hEcard U.card
+    have houtside :
+        ∀ j, j ∉ J → (F j \ W).Nonempty := by
+      intro j hjJ
+      by_contra hempty
+      have hsubset : F j ⊆ W := by
+        intro x hxF
+        by_contra hxW
+        exact hempty
+          ⟨x, Finset.mem_sdiff.mpr ⟨hxF, hxW⟩⟩
+      have hcard := Finset.card_le_card hsubset
+      have hlarge := hcontemporary j hjJ
+      omega
+    choose outside houtsideSpec using houtside
+    let t : BlockSelector F := fun j =>
+      if hsjE : (s j).1 ∈ E then
+        have hjNew : j ∉ J := by
+          intro hjJ
+          exact holdHit ⟨j, hjJ, hsjE⟩
+        ⟨outside j hjNew,
+          (Finset.mem_sdiff.mp (houtsideSpec j hjNew)).1⟩
+      else
+        s j
+    have hUavoid : Disjoint (U : Set ℕ) (selectedSet t) := by
+      rw [Set.disjoint_left]
+      intro x hxU hxSelected
+      obtain ⟨j, hjx⟩ := hxSelected
+      by_cases hsjE : (s j).1 ∈ E
+      · have hjNew : j ∉ J := by
+          intro hjJ
+          exact holdHit ⟨j, hjJ, hsjE⟩
+        have htx : (t j).1 = outside j hjNew := by
+          simp only [t, dif_pos hsjE]
+        have hxOutside : x = outside j hjNew :=
+          hjx.symm.trans htx
+        apply (Finset.mem_sdiff.mp
+          (houtsideSpec j hjNew)).2
+        apply Finset.mem_union_left E
+        rw [← hxOutside]
+        exact Finset.mem_coe.mp hxU
+      · have htx : (t j).1 = (s j).1 := by
+          simp only [t, dif_neg hsjE]
+        apply Set.disjoint_left.mp hUselected hxU
+        exact ⟨j, htx.symm.trans hjx⟩
+    refine ⟨t, hUavoid, ?_⟩
+    apply not_destroysAt_iff.mpr
+    refine ⟨E, hER, ?_⟩
+    rw [Set.disjoint_left]
+    intro x hxE hxSelected
+    obtain ⟨j, hjx⟩ := hxSelected
+    by_cases hsjE : (s j).1 ∈ E
+    · have hjNew : j ∉ J := by
+        intro hjJ
+        exact holdHit ⟨j, hjJ, hsjE⟩
+      have htx : (t j).1 = outside j hjNew := by
+        simp only [t, dif_pos hsjE]
+      have hxOutside : x = outside j hjNew :=
+        hjx.symm.trans htx
+      apply (Finset.mem_sdiff.mp
+        (houtsideSpec j hjNew)).2
+      apply Finset.mem_union_right U
+      rw [← hxOutside]
+      exact Finset.mem_coe.mp hxE
+    · have htx : (t j).1 = (s j).1 := by
+        simp only [t, dif_neg hsjE]
+      exact hsjE (htx.symm.trans hjx ▸ Finset.mem_coe.mp hxE)
+
+/-- An external lower-gap point gives the same protected
+completion-or-collision dichotomy on an arbitrary reservoir partition as
+an internal repair point gives on a partition of all of `A`. -/
+theorem lowerGapRepair_extends_protectedOnReservoir_or_oldCollision
+    {A K : Set ℕ} {k q b d : ℕ}
+    {F : ℕ → Finset ℕ} (_P : IsFiniteBlockPartition K F)
+    (s : BlockSelector F) {D U J : Finset ℕ}
+    (hminimal : IsInclusionMinimalDestroyer
+      (additiveSupportFamily A (k + 1)) D q)
+    (hdD : d ∈ D)
+    (hgap : additiveSupportFamily A k (q - b) = ∅)
+    (hUselected : Disjoint (U : Set ℕ) (selectedSet s))
+    (hcontemporary :
+      ∀ j, j ∉ J → U.card + (k + 1) < (F j).card) :
+    (∃ t : BlockSelector F,
+        Disjoint (U : Set ℕ) (selectedSet t) ∧
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q) ∨
+      ∃ j ∈ J, ∃ E ∈ additiveSupportFamily A (k + 1) q,
+        (s j).1 ∈ E ∧ E ∩ D = {d} := by
+  classical
+  have hrepair :
+      ¬ DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (((D.erase d ∪ {b} : Finset ℕ) : Set ℕ)) q :=
+    hminimal.swap_hit_for_lowerGap_repairs hdD hgap
+  obtain ⟨E, hER, hEswap⟩ :=
+    not_destroysAt_iff.mp hrepair
+  obtain hcompletion | ⟨j, hjJ, hsjE⟩ :=
+    lowerGapRepairWitness_extends_protectedOnReservoir_or_oldCollision
+      s hUselected hER hcontemporary
+  · exact Or.inl hcompletion
+  · right
+    have hdE : d ∈ E := by
+      by_contra hdE
+      apply hminimal.1 E hER
+      rw [Set.disjoint_left]
+      intro x hxE hxD
+      by_cases hxd : x = d
+      · subst x
+        exact hdE (Finset.mem_coe.mp hxE)
+      · apply Set.disjoint_left.mp hEswap hxE
+        apply Finset.mem_coe.mpr
+        exact Finset.mem_union_left _
+          (Finset.mem_erase.mpr
+            ⟨hxd, Finset.mem_coe.mp hxD⟩)
+    have hprivate : E ∩ D = {d} := by
+      ext x
+      constructor
+      · intro hx
+        obtain ⟨hxE, hxD⟩ := Finset.mem_inter.mp hx
+        have hxd : x = d := by
+          by_contra hne
+          apply Set.disjoint_left.mp hEswap
+            (Finset.mem_coe.mpr hxE)
+          apply Finset.mem_coe.mpr
+          exact Finset.mem_union_left _
+            (Finset.mem_erase.mpr ⟨hne, hxD⟩)
+        simpa [hxd]
+      · intro hx
+        have hxd : x = d := by simpa using hx
+        subst x
+        exact Finset.mem_inter.mpr ⟨hdE, hdD⟩
+    exact ⟨j, hjJ, E, hER, hsjE, hprivate⟩
+
 /-- Protected completion of a lower-gap repair, with finite old-block
 exceptions.
 
@@ -6640,9 +6863,12 @@ theorem LowerTriangularBinaryRepairSequence.exists_binaryCommonSurvivalPartition
         exact Finset.disjoint_left.mp hdisj
           (Finset.mem_coe.mp hyH) (by simpa only [cell] using (s j).2)
 
-/-- Group cross-disjoint binary repair cells into blocks of increasing size.
+/-- Group cross-disjoint binary repair cells into uniformly large blocks of
+increasing size.
 
-Block `i` contains `i+2` binary cells.  A selector chooses only one point
+Block `i` contains `i+k+2` binary cells.  In particular its cardinality is
+strictly greater than `k+2`, the maximum size of a protected successor
+support.  A selector chooses only one point
 from the whole block, so at most one subcell is touched.  The private repair
 in that subcell and cross-disjointness from every other subcell preserve
 every translated target indexed by the block.  In particular the common
@@ -6655,9 +6881,9 @@ theorem LowerTriangularBinaryRepairSequence.exists_growingBlockCommonSurvivalPar
       ∃ target : ℕ → ℕ → ℕ,
       K ⊆ A ∧ K.Infinite ∧
       IsFiniteBlockPartition K cell ∧
-      (∀ i, (cell i).card = 2 * (i + 2)) ∧
+      (∀ i, (cell i).card = 2 * (i + k + 2)) ∧
       (Set.range fun i => target i 0).Infinite ∧
-      ∀ s : BlockSelector cell, ∀ i j, j < i + 2 →
+      ∀ s : BlockSelector cell, ∀ i j, j < i + k + 2 →
         ∃ H ∈ additiveSupportFamily A (k + 2) (target i j),
           Disjoint (H : Set ℕ) (selectedSet s) := by
   classical
@@ -6668,7 +6894,7 @@ theorem LowerTriangularBinaryRepairSequence.exists_growingBlockCommonSurvivalPar
     {S.anchor (index n), S.core (index n)}
   let slot : ℕ → ℕ → ℕ := fun i j => Nat.pair i j
   let cell : ℕ → Finset ℕ := fun i =>
-    (Finset.range (i + 2)).biUnion fun j =>
+    (Finset.range (i + k + 2)).biUnion fun j =>
       binaryCell (slot i j)
   let target : ℕ → ℕ → ℕ := fun i j =>
     q + S.anchor (index (slot i j))
@@ -6735,27 +6961,27 @@ theorem LowerTriangularBinaryRepairSequence.exists_growingBlockCommonSurvivalPar
     exact ⟨0, Finset.mem_range.mpr (by omega), by simp [binaryCell]⟩
   have P : IsFiniteBlockPartition K cell := by
     exact ⟨hcellNonempty, hcellDisjoint, fun x => Iff.rfl⟩
-  have hcellCard : ∀ i, (cell i).card = 2 * (i + 2) := by
+  have hcellCard : ∀ i, (cell i).card = 2 * (i + k + 2) := by
     intro i
     have hpieces :
-        (Finset.range (i + 2) : Set ℕ).PairwiseDisjoint
+        (Finset.range (i + k + 2) : Set ℕ).PairwiseDisjoint
           (fun j => binaryCell (slot i j)) := by
       intro j _hj m _hm hjm
       apply hbinaryDisjoint
       intro heq
       exact hjm (Nat.pair_eq_pair.mp heq).2
     change
-      ((Finset.range (i + 2)).biUnion fun j =>
-        binaryCell (slot i j)).card = 2 * (i + 2)
+      ((Finset.range (i + k + 2)).biUnion fun j =>
+        binaryCell (slot i j)).card = 2 * (i + k + 2)
     rw [Finset.card_biUnion hpieces]
     calc
-      (∑ j ∈ Finset.range (i + 2),
+      (∑ j ∈ Finset.range (i + k + 2),
           (binaryCell (slot i j)).card) =
-          ∑ _j ∈ Finset.range (i + 2), 2 := by
+          ∑ _j ∈ Finset.range (i + k + 2), 2 := by
             apply Finset.sum_congr rfl
             intro j _hj
             exact hbinaryCard (slot i j)
-      _ = 2 * (i + 2) := by simp [Nat.mul_comm]
+      _ = 2 * (i + k + 2) := by simp [Nat.mul_comm]
   have htargetInjective :
       Function.Injective (fun i => target i 0) := by
     intro i l hil
@@ -6907,9 +7133,9 @@ theorem boundedFullTranslateDestroyers_growingBlockCommonSurvival
       ∃ target : ℕ → ℕ → ℕ,
       K ⊆ A ∧ K.Infinite ∧
       IsFiniteBlockPartition K cell ∧
-      (∀ i, (cell i).card = 2 * (i + 2)) ∧
+      (∀ i, (cell i).card = 2 * (i + k + 2)) ∧
       (Set.range fun i => target i 0).Infinite ∧
-      ∀ s : BlockSelector cell, ∀ i j, j < i + 2 →
+      ∀ s : BlockSelector cell, ∀ i j, j < i + k + 2 →
         ∃ H ∈ additiveSupportFamily A (k + 2) (target i j),
           Disjoint (H : Set ℕ) (selectedSet s) := by
   obtain ⟨S⟩ :=
@@ -6975,7 +7201,7 @@ def HasGapBinaryCertificateMigration
 /-- Growing-block binary migration inside a successor counterexample.
 
 Besides the target-localized certificate, this retains the entire grouped
-binary grid and the exact formula `|cell i| = 2(i+2)`, allowing the
+binary grid and the exact formula `|cell i| = 2(i+k+2)`, allowing the
 certificate-safe old/contemporary machinery to operate on the actual repair
 reservoir. -/
 theorem boundedFullTranslateDestroyers_forces_growingBlockCertificateMigration
@@ -6990,9 +7216,9 @@ theorem boundedFullTranslateDestroyers_forces_growingBlockCertificateMigration
       ∃ target : ℕ → ℕ → ℕ,
       ∃ P : IsFiniteBlockPartition K cell,
       K ⊆ A ∧ K.Infinite ∧
-      (∀ i, (cell i).card = 2 * (i + 2)) ∧
+      (∀ i, (cell i).card = 2 * (i + k + 2)) ∧
       (Set.range fun i => target i 0).Infinite ∧
-      (∀ s : BlockSelector cell, ∀ i j, j < i + 2 →
+      (∀ s : BlockSelector cell, ∀ i j, j < i + k + 2 →
         ∃ H ∈ additiveSupportFamily A (k + 2) (target i j),
           Disjoint (H : Set ℕ) (selectedSet s)) ∧
       ∀ N, ∃ Q : Finset ℕ,
@@ -7040,9 +7266,9 @@ theorem boundedFullTranslateDestroyers_growingBlock_activeSplit
       ∃ target : ℕ → ℕ → ℕ,
       ∃ P : IsFiniteBlockPartition K cell,
       K ⊆ A ∧ K.Infinite ∧
-      (∀ i, (cell i).card = 2 * (i + 2)) ∧
+      (∀ i, (cell i).card = 2 * (i + k + 2)) ∧
       (Set.range fun i => target i 0).Infinite ∧
-      (∀ s : BlockSelector cell, ∀ i j, j < i + 2 →
+      (∀ s : BlockSelector cell, ∀ i j, j < i + k + 2 →
         ∃ H ∈ additiveSupportFamily A (k + 2) (target i j),
           Disjoint (H : Set ℕ) (selectedSet s)) ∧
       ∀ r L, ∃ Q : Finset ℕ, ∃ q ∈ Q,
