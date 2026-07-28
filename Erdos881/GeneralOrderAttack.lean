@@ -11527,6 +11527,7 @@ theorem localLargerLockedGapDependency_has_crossedSupportRectangle
         x = (s j).1 ∧
         y ∈ (F j).erase x ∧
         b ≠ x ∧
+        b ∉ E ∧
         E ∈ additiveSupportFamily A (k + 1) q ∧
         G ∈ additiveSupportFamily A (k + 1) v ∧
         x ∈ E ∧ y ∈ G ∧ y ∉ E ∧ x ∉ G ∧
@@ -11585,10 +11586,12 @@ theorem localLargerLockedGapDependency_has_crossedSupportRectangle
     rw [hbx] at hgap
     rw [hgap] at hHR
     simpa using hHR
+  have hbE : b ∉ E :=
+    lowerOrderGap_point_avoids_successorSupports hgap E hER
   refine ⟨b, hbA, hbq, hgap, u.1, ?_, hQ'larger u.1 u.2,
     j, Q', (s j).1, y, E, G, H, L, hQ'Upper, u.2,
     hblockCard, rfl, ?_,
-    hbx, hER, hGR, hsjE, hyG, hyE, hxG,
+    hbx, hbE, hER, hGR, hsjE, hyG, hyE, hxG,
     hHR, hEreconstruct, hLR, hGreconstruct⟩
   · exact (Finset.mem_filter.mp (hQ'Upper u.2)).1
   · simpa only [V] using hyV
@@ -12245,6 +12248,7 @@ theorem boundedFullTranslateDestroyers_fixedGrowingCertificate_cofinalMatching_o
               x ∈ cell j ∧
               y ∈ (cell j).erase x ∧
               b ≠ x ∧
+              b ∉ E ∧
               E ∈ additiveSupportFamily A (k + 2) q ∧
               G ∈ additiveSupportFamily A (k + 2) v ∧
               x ∈ E ∧ y ∈ G ∧ y ∉ E ∧ x ∉ G ∧
@@ -12295,7 +12299,7 @@ theorem boundedFullTranslateDestroyers_fixedGrowingCertificate_cofinalMatching_o
         omega
       obtain ⟨b, hbA, hbq, hgap, v, _hvQ, hqv,
           j, Q', x, y, E, G, H, T, hQ'Upper, hvQ',
-          hfanCapacity, hx, hyBlock, hbx,
+          hfanCapacity, hx, hyBlock, hbx, hbE,
           hER, hGR, hxE, hyG, hyE, hxG, hHR, hEeq,
           hTR, hGeq⟩ :=
         localLargerLockedGapDependency_has_crossedSupportRectangle
@@ -12314,7 +12318,7 @@ theorem boundedFullTranslateDestroyers_fixedGrowingCertificate_cofinalMatching_o
       exact ⟨q, b, v, j, Q', x, y, E, G, H, T,
         (le_max_left L L₀).trans (hQlate q hqQ),
         hbA, hbq, hgap, hqv, hvQ', hQ'larger,
-        hfanCapacity', hxBlock, hyBlock, hbx,
+        hfanCapacity', hxBlock, hyBlock, hbx, hbE,
         hER, hGR, hxE, hyG, hyE, hxG, hHR, hEeq,
         hTR, hGeq⟩
 
@@ -12366,6 +12370,7 @@ theorem boundedFullTranslateDestroyers_fixedGrowingCertificate_cofinalMatching_o
                   x ∈ cell j ∧
                   y ∈ (cell j).erase x ∧
                   b ≠ x ∧
+                  b ∉ E ∧
                   E ∈ additiveSupportFamily A (k + 2) q ∧
                   G ∈ additiveSupportFamily A (k + 2) v ∧
                   x ∈ E ∧ y ∈ G ∧ y ∉ E ∧ x ∉ G ∧
@@ -12397,6 +12402,7 @@ theorem boundedFullTranslateDestroyers_fixedGrowingCertificate_cofinalMatching_o
         x ∈ cell j ∧
         y ∈ (cell j).erase x ∧
         b ≠ x ∧
+        b ∉ E ∧
         E ∈ additiveSupportFamily A (k + 2) q ∧
         G ∈ additiveSupportFamily A (k + 2) v ∧
         x ∈ E ∧ y ∈ G ∧ y ∉ E ∧ x ∉ G ∧
@@ -12411,7 +12417,7 @@ theorem boundedFullTranslateDestroyers_fixedGrowingCertificate_cofinalMatching_o
       intro X
       obtain ⟨q, b, v, j, Q', x, y, E, G, H, T,
           hXq, hbA, hbq, hgap, hqv, hvQ', hQ'larger,
-          hfanCapacity, hxBlock, hyBlock, hbx, hER, hGR,
+          hfanCapacity, hxBlock, hyBlock, hbx, hbE, hER, hGR,
           hxE, hyG, hyE, hxG, hHR, hEeq, hTR, hGeq⟩ :=
         hrectangles (X + 1)
       let d := q - b
@@ -12427,7 +12433,7 @@ theorem boundedFullTranslateDestroyers_fixedGrowingCertificate_cofinalMatching_o
       refine ⟨q, by omega, d, Finset.mem_range.mpr hdlt, ?_⟩
       exact ⟨b, v, j, Q', x, y, E, G, H, T,
         hbA, hbq, hqdb, hqv, hvQ', hQ'larger,
-        hfanCapacity, hxBlock, hyBlock, hbx, hER, hGR,
+        hfanCapacity, hxBlock, hyBlock, hbx, hbE, hER, hGR,
         hxE, hyG, hyE, hxG, hHR, hEeq, hTR, hGeq, hgap⟩
     obtain ⟨d, _hdRange, hfixed⟩ :=
       finite_cofinal_pigeonhole hcofinal
@@ -12435,7 +12441,7 @@ theorem boundedFullTranslateDestroyers_fixedGrowingCertificate_cofinalMatching_o
         _x₀, _y₀, _E₀, _G₀, _H₀, _T₀,
         _hb₀A, _hb₀q, _hq₀db, _hq₀v, _hv₀Q,
         _hQ₀larger, _hfan₀, _hx₀Block, _hy₀Block,
-        _hb₀x, _hE₀R, _hG₀R, _hx₀E, _hy₀G,
+        _hb₀x, _hb₀E, _hE₀R, _hG₀R, _hx₀E, _hy₀G,
         _hy₀E, _hx₀G, _hH₀R, _hE₀eq, _hT₀R,
         _hG₀eq, hdGap⟩ :=
       hfixed 0
@@ -12443,14 +12449,14 @@ theorem boundedFullTranslateDestroyers_fixedGrowingCertificate_cofinalMatching_o
     intro L
     obtain ⟨q, hqLarge, b, v, j, Q', x, y, E, G, H, T,
         hbA, hbq, hqdb, hqv, hvQ', hQ'larger,
-        hfanCapacity, hxBlock, hyBlock, hbx, hER, hGR,
+        hfanCapacity, hxBlock, hyBlock, hbx, hbE, hER, hGR,
         hxE, hyG, hyE, hxG, hHR, hEeq, hTR, hGeq,
         _hdGap⟩ :=
       hfixed (L + d)
     have hLb : L ≤ b := by omega
     exact ⟨b, q, v, j, Q', x, y, E, G, H, T,
       hLb, hbA, hqdb, hqv, hvQ', hQ'larger,
-      hfanCapacity, hxBlock, hyBlock, hbx, hER, hGR,
+      hfanCapacity, hxBlock, hyBlock, hbx, hbE, hER, hGR,
       hxE, hyG, hyE, hxG, hHR, hEeq, hTR, hGeq⟩
 
 /-- Protected-set strengthening of the locked-prefix composition.
