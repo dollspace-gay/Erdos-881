@@ -20,6 +20,28 @@ old vertices.  The remaining task is persistence: fuse the fresh repairs
 and fresh rooted-matching petals into one infinite deletion while ensuring
 that later choices do not re-damage supports locked at earlier targets.
 
+# GROWING-BLOCK BINARY MIGRATION (2026-07-27)
+
+The binary repair obstruction no longer has permanently undersized blocks.
+
+- `LowerTriangularBinaryRepairSequence.
+  exists_growingBlockCommonSurvivalPartition` groups `i+2` mutually
+  cross-disjoint binary cells into block `i`.  Its exact cardinality is
+  `2(i+2)`, and every selector still preserves every subcell target: the
+  selected point can touch only one subcell, where the opposite private
+  repair survives.
+- `boundedFullTranslateDestroyers_growingBlockCommonSurvival` applies this
+  regrouping directly to the bounded-moving branch.
+- `boundedFullTranslateDestroyers_forces_growingBlockCertificateMigration`
+  combines the growing blocks with strong successor deletion and retains a
+  target-localized late certificate disjoint from the infinite protected
+  target stream.
+
+Consequently the earlier binary certificate-migration branch can now be
+fed into the same certificate-safe old/contemporary capacity argument as
+the coherent matching reservoir.  The next step is to run that amplifier
+on this grouped partition and dispose of its finite old prefix.
+
 # CERTIFICATE-SAFE OLD-BLOCK COMPOSITION: MIGRATION TERMINATES (2026-07-27)
 
 The old-coordinate branch has now crossed the certificate-safety barrier.

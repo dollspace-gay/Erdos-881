@@ -6640,6 +6640,234 @@ theorem LowerTriangularBinaryRepairSequence.exists_binaryCommonSurvivalPartition
         exact Finset.disjoint_left.mp hdisj
           (Finset.mem_coe.mp hyH) (by simpa only [cell] using (s j).2)
 
+/-- Group cross-disjoint binary repair cells into blocks of increasing size.
+
+Block `i` contains `i+2` binary cells.  A selector chooses only one point
+from the whole block, so at most one subcell is touched.  The private repair
+in that subcell and cross-disjointness from every other subcell preserve
+every translated target indexed by the block.  In particular the common
+survival construction is compatible with block capacities tending to
+infinity. -/
+theorem LowerTriangularBinaryRepairSequence.exists_growingBlockCommonSurvivalPartition
+    {A : Set ℕ} {k q : ℕ}
+    (S : LowerTriangularBinaryRepairSequence A k q) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ target : ℕ → ℕ → ℕ,
+      K ⊆ A ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2 * (i + 2)) ∧
+      (Set.range fun i => target i 0).Infinite ∧
+      ∀ s : BlockSelector cell, ∀ i j, j < i + 2 →
+        ∃ H ∈ additiveSupportFamily A (k + 2) (target i j),
+          Disjoint (H : Set ℕ) (selectedSet s) := by
+  classical
+  obtain ⟨I, hIinf, hcross⟩ := S.exists_infinite_crossDisjoint
+  let e : ℕ ↪ {i // i ∈ I} := hIinf.natEmbedding
+  let index : ℕ → ℕ := fun n => (e n).1
+  let binaryCell : ℕ → Finset ℕ := fun n =>
+    {S.anchor (index n), S.core (index n)}
+  let slot : ℕ → ℕ → ℕ := fun i j => Nat.pair i j
+  let cell : ℕ → Finset ℕ := fun i =>
+    (Finset.range (i + 2)).biUnion fun j =>
+      binaryCell (slot i j)
+  let target : ℕ → ℕ → ℕ := fun i j =>
+    q + S.anchor (index (slot i j))
+  let K : Set ℕ := {x | ∃ i, x ∈ cell i}
+  have hindexMem : ∀ n, index n ∈ I := fun n => (e n).2
+  have hindexInjective : Function.Injective index := by
+    intro m n hmn
+    apply e.injective
+    exact Subtype.ext hmn
+  have hbinaryNonempty : ∀ n, (binaryCell n).Nonempty := by
+    intro n
+    exact ⟨S.anchor (index n), by simp [binaryCell]⟩
+  have hbinaryCard : ∀ n, (binaryCell n).card = 2 := by
+    intro n
+    exact Finset.card_pair (S.distinct (index n)).symm
+  have hbinaryDisjoint : ∀ m n, m ≠ n →
+      Disjoint (binaryCell m) (binaryCell n) := by
+    intro m n hmn
+    exact S.cells_disjoint (hindexInjective.ne hmn)
+  have hcellNonempty : ∀ i, (cell i).Nonempty := by
+    intro i
+    refine ⟨S.anchor (index (slot i 0)), ?_⟩
+    apply Finset.mem_biUnion.mpr
+    refine ⟨0, Finset.mem_range.mpr (by omega), ?_⟩
+    simp [binaryCell]
+  have hcellDisjoint :
+      Pairwise fun i j => Disjoint (cell i) (cell j) := by
+    intro i l hil
+    rw [Finset.disjoint_left]
+    intro x hxi hxl
+    obtain ⟨j, hjRange, hxj⟩ := Finset.mem_biUnion.mp hxi
+    obtain ⟨m, hmRange, hxm⟩ := Finset.mem_biUnion.mp hxl
+    have hslotNe : slot i j ≠ slot l m := by
+      intro heq
+      exact hil (Nat.pair_eq_pair.mp heq).1
+    exact Finset.disjoint_left.mp
+      (hbinaryDisjoint (slot i j) (slot l m) hslotNe)
+        hxj hxm
+  have hKA : K ⊆ A := by
+    rintro x ⟨i, hxi⟩
+    obtain ⟨j, _hjRange, hxj⟩ := Finset.mem_biUnion.mp hxi
+    have hcases :
+        x = S.anchor (index (slot i j)) ∨
+          x = S.core (index (slot i j)) := by
+      simpa [binaryCell] using hxj
+    rcases hcases with rfl | rfl
+    · exact S.anchor_mem _
+    · exact S.core_mem _
+  have hpointInjective :
+      Function.Injective
+        (fun i => S.anchor (index (slot i 0))) := by
+    intro i l hil
+    have hindex :
+        index (slot i 0) = index (slot l 0) :=
+      S.anchor_strictMono.injective hil
+    have hslot : slot i 0 = slot l 0 :=
+      hindexInjective hindex
+    exact (Nat.pair_eq_pair.mp hslot).1
+  have hKInfinite : K.Infinite := by
+    apply (Set.infinite_range_of_injective hpointInjective).mono
+    rintro x ⟨i, rfl⟩
+    refine ⟨i, ?_⟩
+    apply Finset.mem_biUnion.mpr
+    exact ⟨0, Finset.mem_range.mpr (by omega), by simp [binaryCell]⟩
+  have P : IsFiniteBlockPartition K cell := by
+    exact ⟨hcellNonempty, hcellDisjoint, fun x => Iff.rfl⟩
+  have hcellCard : ∀ i, (cell i).card = 2 * (i + 2) := by
+    intro i
+    have hpieces :
+        (Finset.range (i + 2) : Set ℕ).PairwiseDisjoint
+          (fun j => binaryCell (slot i j)) := by
+      intro j _hj m _hm hjm
+      apply hbinaryDisjoint
+      intro heq
+      exact hjm (Nat.pair_eq_pair.mp heq).2
+    change
+      ((Finset.range (i + 2)).biUnion fun j =>
+        binaryCell (slot i j)).card = 2 * (i + 2)
+    rw [Finset.card_biUnion hpieces]
+    calc
+      (∑ j ∈ Finset.range (i + 2),
+          (binaryCell (slot i j)).card) =
+          ∑ _j ∈ Finset.range (i + 2), 2 := by
+            apply Finset.sum_congr rfl
+            intro j _hj
+            exact hbinaryCard (slot i j)
+      _ = 2 * (i + 2) := by simp [Nat.mul_comm]
+  have htargetInjective :
+      Function.Injective (fun i => target i 0) := by
+    intro i l hil
+    apply (Nat.pair_eq_pair.mp
+      (hindexInjective
+        (S.anchor_strictMono.injective
+          (Nat.add_left_cancel hil)))).1
+  have htargetInfinite :
+      (Set.range fun i => target i 0).Infinite :=
+    Set.infinite_range_of_injective htargetInjective
+  refine ⟨K, cell, target, hKA, hKInfinite, P, hcellCard,
+    htargetInfinite, ?_⟩
+  intro s i j hj
+  let n := slot i j
+  have hleftCross : ∀ m, m ≠ n →
+      Disjoint (S.leftRepair (index n)) (binaryCell m) := by
+    intro m hmn
+    have hactual :
+        index n ≠ index m := by
+      intro heq
+      exact hmn (hindexInjective heq.symm)
+    exact (hcross (index n) (hindexMem n)
+      (index m) (hindexMem m) hactual).1
+  have hrightCross : ∀ m, m ≠ n →
+      Disjoint (S.rightRepair (index n)) (binaryCell m) := by
+    intro m hmn
+    have hactual :
+        index n ≠ index m := by
+      intro heq
+      exact hmn (hindexInjective heq.symm)
+    exact (hcross (index n) (hindexMem n)
+      (index m) (hindexMem m) hactual).2
+  have repairDisjoint
+      (H : Finset ℕ)
+      (hown : (s i).1 ∉ H)
+      (hother : ∀ m, m ≠ n → Disjoint H (binaryCell m)) :
+      Disjoint (H : Set ℕ) (selectedSet s) := by
+    rw [Set.disjoint_left]
+    intro x hxH hxSelected
+    obtain ⟨l, hlx⟩ := hxSelected
+    change (s l).1 = x at hlx
+    obtain ⟨m, hmRange, hselectedCell⟩ :=
+      Finset.mem_biUnion.mp (s l).2
+    by_cases hmn : slot l m = n
+    · have hpairs := Nat.pair_eq_pair.mp hmn
+      have hli : l = i := hpairs.1
+      subst l
+      exact hown (hlx ▸ Finset.mem_coe.mp hxH)
+    · exact Finset.disjoint_left.mp
+        (hother (slot l m) hmn)
+          (Finset.mem_coe.mp hxH) (by
+            rw [← hlx]
+            exact hselectedCell)
+  obtain ⟨m, hmRange, hselectedCell⟩ :=
+    Finset.mem_biUnion.mp (s i).2
+  by_cases hmj : m = j
+  · subst m
+    have hselectedCases :
+        (s i).1 = S.anchor (index n) ∨
+          (s i).1 = S.core (index n) := by
+      simpa [binaryCell, n] using hselectedCell
+    rcases hselectedCases with hanchor | hcore
+    · refine ⟨S.rightRepair (index n), ?_, ?_⟩
+      · simpa [target, n] using S.right_mem (index n)
+      · apply repairDisjoint
+        · intro hmem
+          have hinter :
+              (s i).1 ∈
+                S.rightRepair (index n) ∩ binaryCell n :=
+            Finset.mem_inter.mpr
+              ⟨hmem, by simpa [binaryCell, hanchor]⟩
+          have hcoreMem :
+              (s i).1 ∈ ({S.core (index n)} : Finset ℕ) := by
+            exact
+              (congrArg (fun Z : Finset ℕ => (s i).1 ∈ Z)
+                (S.right_private (index n))).mp
+                (by simpa [binaryCell] using hinter)
+          exact S.distinct (index n)
+            (by
+              have : S.anchor (index n) = S.core (index n) := by
+                simpa [hanchor] using hcoreMem
+              exact this.symm)
+        · exact hrightCross
+    · refine ⟨S.leftRepair (index n), ?_, ?_⟩
+      · simpa [target, n] using S.left_mem (index n)
+      · apply repairDisjoint
+        · intro hmem
+          have hinter :
+              (s i).1 ∈
+                S.leftRepair (index n) ∩ binaryCell n :=
+            Finset.mem_inter.mpr
+              ⟨hmem, by simpa [binaryCell, hcore]⟩
+          have hanchorMem :
+              (s i).1 ∈ ({S.anchor (index n)} : Finset ℕ) := by
+            exact
+              (congrArg (fun Z : Finset ℕ => (s i).1 ∈ Z)
+                (S.left_private (index n))).mp
+                (by simpa [binaryCell] using hinter)
+          exact S.distinct (index n)
+            (by simpa [hcore] using hanchorMem)
+        · exact hleftCross
+  · refine ⟨S.leftRepair (index n), ?_, ?_⟩
+    · simpa [target, n] using S.left_mem (index n)
+    · apply repairDisjoint
+      · exact fun hmem =>
+          Finset.disjoint_left.mp
+            (hleftCross (slot i m) (by
+              intro heq
+              exact hmj (Nat.pair_eq_pair.mp heq).2))
+            hmem hselectedCell
+      · exact hleftCross
+
 /-- Gap-free common-survival payoff for the bounded moving branch at a
 represented predecessor target. -/
 theorem boundedFullTranslateDestroyers_commonSurvival
@@ -6663,6 +6891,30 @@ theorem boundedFullTranslateDestroyers_commonSurvival
     S.exists_binaryCommonSurvivalPartition
   exact ⟨K, cell, target, hKA, hK, P, hcellCard,
     htarget, hsurvive⟩
+
+/-- Growing-block form of bounded-moving common survival.
+
+The same binary repair sequence can be grouped before strong deletion is
+invoked, so its certificate partition has unbounded block capacity rather
+than permanent two-point blocks. -/
+theorem boundedFullTranslateDestroyers_growingBlockCommonSurvival
+    {A : Set ℕ} {k q : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    (hfull :
+      HasBoundedFullTranslateDestroyersByAnchor A (k + 1) {q})
+    (hqrep : (additiveSupportFamily A (k + 1) q).Nonempty) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ target : ℕ → ℕ → ℕ,
+      K ⊆ A ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2 * (i + 2)) ∧
+      (Set.range fun i => target i 0).Infinite ∧
+      ∀ s : BlockSelector cell, ∀ i j, j < i + 2 →
+        ∃ H ∈ additiveSupportFamily A (k + 2) (target i j),
+          Disjoint (H : Set ℕ) (selectedSet s) := by
+  obtain ⟨S⟩ :=
+    exists_lowerTriangularBinaryRepairSequence hbasis hfull hqrep
+  exact S.exists_growingBlockCommonSurvivalPartition
 
 /-- Full gap-branch payoff: bounded successor transversals over one
 represented primitive gap force an infinite binary deletion reservoir on
@@ -6719,6 +6971,53 @@ def HasGapBinaryCertificateMigration
           ¬ DestroysAt (additiveSupportFamily A h)
             (selectedSet s) u') ∧
       Disjoint (Q : Set ℕ) (Set.range target)
+
+/-- Growing-block binary migration inside a successor counterexample.
+
+Besides the target-localized certificate, this retains the entire grouped
+binary grid and the exact formula `|cell i| = 2(i+2)`, allowing the
+certificate-safe old/contemporary machinery to operate on the actual repair
+reservoir. -/
+theorem boundedFullTranslateDestroyers_forces_growingBlockCertificateMigration
+    {A : Set ℕ} {k q : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    (hfull :
+      HasBoundedFullTranslateDestroyersByAnchor A (k + 1) {q})
+    (hqrep : (additiveSupportFamily A (k + 1) q).Nonempty)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 2)) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ target : ℕ → ℕ → ℕ,
+      K ⊆ A ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2 * (i + 2)) ∧
+      (Set.range fun i => target i 0).Infinite ∧
+      (∀ s : BlockSelector cell, ∀ i j, j < i + 2 →
+        ∃ H ∈ additiveSupportFamily A (k + 2) (target i j),
+          Disjoint (H : Set ℕ) (selectedSet s)) ∧
+      ∀ N, ∃ Q : Finset ℕ,
+        Q.Nonempty ∧
+        (∀ u ∈ Q, N ≤ u) ∧
+        (∀ s : BlockSelector cell, ∃ u ∈ Q,
+          DestroysAt (additiveSupportFamily A (k + 2))
+            (selectedSet s) u) ∧
+        (∀ u ∈ Q, ∃ s : BlockSelector cell,
+          DestroysAt (additiveSupportFamily A (k + 2))
+            (selectedSet s) u ∧
+          ∀ u' ∈ Q, u' ≠ u →
+            ¬ DestroysAt (additiveSupportFamily A (k + 2))
+              (selectedSet s) u') ∧
+        Disjoint (Q : Set ℕ)
+          (Set.range fun i => target i 0) := by
+  obtain ⟨K, cell, target, hKA, hKInfinite, P, hcellCard,
+      htargetInfinite, hsurvival⟩ :=
+    boundedFullTranslateDestroyers_growingBlockCommonSurvival
+      hbasis hfull hqrep
+  refine ⟨K, cell, target, hKA, hKInfinite, P, hcellCard,
+    htargetInfinite, hsurvival, ?_⟩
+  exact strongDeletion_certificate_avoids_unboundedCommonSurvivalTargets
+    (strongExactDeletion_of_counterexample hcounter)
+    hKA P htargetInfinite (fun s i => hsurvival s i 0 (by omega))
 
 /-- The counterexample/migration bridge is likewise gap-free.  At every
 represented fixed predecessor target supporting the bounded moving branch,
