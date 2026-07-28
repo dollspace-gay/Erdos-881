@@ -13037,10 +13037,10 @@ This is the terminating certificate-migration argument: each genuine old
 collision spends one unit of additive rank, rather than merely renaming the
 obstruction. -/
 theorem cofinal_affineSupportGrowth_has_boundedPrefixInjury
-    {A : Set ℕ} :
+    {A K : Set ℕ} :
     ∀ j d c (W : Finset ℕ),
       (∀ r L, ∃ b,
-        L ≤ b ∧ b ∈ A ∧
+        L ≤ b ∧ b ∈ K ∧
         r < (additiveSupportFamily A j (d + b - c)).card) →
       ∃ S : Finset ℕ,
         S ⊆ W ∧
@@ -13048,7 +13048,7 @@ theorem cofinal_affineSupportGrowth_has_boundedPrefixInjury
         (∀ x ∈ S, x ∈ A) ∧
         ∀ L, ∃ b E,
           L ≤ b ∧
-          b ∈ A ∧
+          b ∈ K ∧
           E ∈ additiveSupportFamily A j (d + b - c) ∧
           b ∉ E ∧
           Disjoint (E : Set ℕ) ((W \ S : Finset ℕ) : Set ℕ) := by
@@ -13057,7 +13057,7 @@ theorem cofinal_affineSupportGrowth_has_boundedPrefixInjury
   induction j with
   | zero =>
       intro d c W hgrowth
-      obtain ⟨b, _hbLower, _hbA, hlarge⟩ := hgrowth 1 0
+      obtain ⟨b, _hbLower, _hbK, hlarge⟩ := hgrowth 1 0
       have hsmall :=
         additiveSupportFamily_zero_card_le_one A (d + b - c)
       omega
@@ -13068,12 +13068,12 @@ theorem cofinal_affineSupportGrowth_has_boundedPrefixInjury
           b ∉ E ∧
           Disjoint (E : Set ℕ) (W : Set ℕ)
       by_cases hsafeCofinal :
-          ∀ L, ∃ b, L ≤ b ∧ b ∈ A ∧ SafeAt b
+          ∀ L, ∃ b, L ≤ b ∧ b ∈ K ∧ SafeAt b
       · refine ⟨∅, by simp, by simp, by simp, ?_⟩
         intro L
-        obtain ⟨b, hbLower, hbA, E, hER, hbE, hEW⟩ :=
+        obtain ⟨b, hbLower, hbK, E, hER, hbE, hEW⟩ :=
           hsafeCofinal L
-        exact ⟨b, E, hbLower, hbA, hER, hbE, by simpa using hEW⟩
+        exact ⟨b, E, hbLower, hbK, hER, hbE, by simpa using hEW⟩
       · obtain ⟨L₀, hL₀⟩ := not_forall.mp hsafeCofinal
         let anchorBound :=
           ∑ t ∈ Finset.range (d + 1),
@@ -13081,14 +13081,14 @@ theorem cofinal_affineSupportGrowth_has_boundedPrefixInjury
         have hdiagonal :
             ∀ X, ∃ y, X < y ∧
               ∃ w ∈ W, w ∈ A ∧ ∃ b,
-                y ≤ b ∧ b ∈ A ∧
+                y ≤ b ∧ b ∈ K ∧
                 y <
                   (additiveSupportFamily A k
                     (d + b - (c + w))).card := by
           intro X
           let y := X + 1
           let demand := anchorBound + W.card * (y + 1)
-          obtain ⟨b, hbLower, hbA, hbLarge⟩ :=
+          obtain ⟨b, hbLower, hbK, hbLarge⟩ :=
             hgrowth demand (max y L₀)
           have hyb : y ≤ b :=
             (le_max_left y L₀).trans hbLower
@@ -13096,7 +13096,7 @@ theorem cofinal_affineSupportGrowth_has_boundedPrefixInjury
             (le_max_right y L₀).trans hbLower
           have hnotSafe : ¬ SafeAt b := by
             intro hbSafe
-            exact hL₀ ⟨b, hL₀b, hbA, hbSafe⟩
+            exact hL₀ ⟨b, hL₀b, hbK, hbSafe⟩
           let H :=
             additiveSupportFamily A (k + 1) (d + b - c)
           let Hb : Finset (Finset ℕ) :=
@@ -13222,7 +13222,7 @@ theorem cofinal_affineSupportGrowth_has_boundedPrefixInjury
                 omega)
               (Finset.card_le_card hlowerSub)
           exact ⟨y, by omega, w, hwW, hwA,
-            b, hyb, hbA, hlowerLarge⟩
+            b, hyb, hbK, hlowerLarge⟩
         obtain ⟨w, hwW, hwCofinal⟩ :=
           finite_cofinal_pigeonhole hdiagonal
         have hwA : w ∈ A := by
@@ -13231,16 +13231,16 @@ theorem cofinal_affineSupportGrowth_has_boundedPrefixInjury
           exact hwA
         have hlowerGrowth :
             ∀ r L, ∃ b,
-              L ≤ b ∧ b ∈ A ∧
+              L ≤ b ∧ b ∈ K ∧
               r <
                 (additiveSupportFamily A k
                   (d + b - (c + w))).card := by
           intro r L
-          obtain ⟨y, hyLarge, _hwA, b, hyb, hbA, hfamily⟩ :=
+          obtain ⟨y, hyLarge, _hwA, b, hyb, hbK, hfamily⟩ :=
             hwCofinal (max r L)
           exact ⟨b,
             (le_max_right r L).trans (Nat.le_of_lt hyLarge) |>.trans hyb,
-            hbA,
+            hbK,
             lt_trans (le_max_left r L |>.trans_lt hyLarge) hfamily⟩
         obtain ⟨S, hSW, hScard, hSA, hrepair⟩ :=
           ih d (c + w) (W.erase w) hlowerGrowth
@@ -13259,7 +13259,7 @@ theorem cofinal_affineSupportGrowth_has_boundedPrefixInjury
           · exact hwA
           · exact hSA x hxS
         · intro L
-          obtain ⟨b, E, hbLower, hbA, hER, hbE, hEavoid⟩ :=
+          obtain ⟨b, E, hbLower, hbK, hER, hbE, hEavoid⟩ :=
             hrepair (max L (c + w + 1))
           have hLb : L ≤ b :=
             (le_max_left L (c + w + 1)).trans hbLower
@@ -13269,7 +13269,7 @@ theorem cofinal_affineSupportGrowth_has_boundedPrefixInjury
           have htarget :
               w + (d + b - (c + w)) = d + b - c := by
             omega
-          refine ⟨b, insert w E, hLb, hbA, ?_, ?_, ?_⟩
+          refine ⟨b, insert w E, hLb, hbK, ?_, ?_, ?_⟩
           · simpa only [htarget] using
               insert_mem_additiveSupportFamily_succ hwA hER
           · intro hbInsert
@@ -13300,6 +13300,169 @@ theorem cofinal_affineSupportGrowth_has_boundedPrefixInjury
                 (Finset.mem_coe.mpr
                   (Finset.mem_sdiff.mpr ⟨hxErase, hxNotS⟩))
 
+/-- Reservoir-relative protected fusion.
+
+The anchors may be required to lie in an arbitrary reservoir `K`, while the
+repair supports still come from the ambient basis `A`.  The bounded
+point-map free-set argument then returns its infinite free set inside `K`.
+This is the form needed for nested fusion: a later stage can thin the
+infinite tail produced by an earlier stage instead of restarting from all
+of `A`. -/
+theorem cofinal_anchorAvoidingSupports_avoidingFinite_onReservoir_have_infiniteFreeDeletion
+    {A K : Set ℕ} {h d : ℕ} (W : Finset ℕ)
+    (hcofinal : ∀ L, ∃ b E,
+      L ≤ b ∧
+      b ∈ K ∧
+      E ∈ additiveSupportFamily A h (d + b) ∧
+      b ∉ E ∧
+      Disjoint (E : Set ℕ) (W : Set ℕ)) :
+    ∃ B : Set ℕ, B ⊆ K ∧ B.Infinite ∧
+      Disjoint B (W : Set ℕ) ∧
+      ∀ b ∈ B, ∃ E ∈ additiveSupportFamily A h (d + b),
+        Disjoint (E : Set ℕ) B ∧
+        Disjoint (E : Set ℕ) (W : Set ℕ) := by
+  classical
+  let Good : Set ℕ :=
+    {b | b ∈ K ∧
+      ∃ E ∈ additiveSupportFamily A h (d + b),
+        b ∉ E ∧ Disjoint (E : Set ℕ) (W : Set ℕ)}
+  have hGoodInfinite : Good.Infinite := by
+    apply Set.infinite_of_forall_exists_gt
+    intro L
+    obtain ⟨b, E, hLb, hbK, hER, hbE, hEW⟩ :=
+      hcofinal (L + 1)
+    exact ⟨b, ⟨hbK, E, hER, hbE, hEW⟩, by omega⟩
+  let HasRepair : ℕ → Prop := fun b =>
+    ∃ E ∈ additiveSupportFamily A h (d + b),
+      b ∉ E ∧ Disjoint (E : Set ℕ) (W : Set ℕ)
+  let repair : ℕ → Finset ℕ := fun b =>
+    if hb : HasRepair b then Classical.choose hb else ∅
+  have hrepair : ∀ b ∈ Good,
+      repair b ∈ additiveSupportFamily A h (d + b) ∧
+      b ∉ repair b ∧
+      Disjoint (repair b : Set ℕ) (W : Set ℕ) := by
+    intro b hbGood
+    have hbRepair : HasRepair b := hbGood.2
+    simp only [repair, dif_pos hbRepair]
+    exact Classical.choose_spec hbRepair
+  have hrepairCard : ∀ b ∈ Good, (repair b).card ≤ h := by
+    intro b hbGood
+    exact additiveSupportFamily_cardAtMost A h (d + b)
+      (repair b) (hrepair b hbGood).1
+  have hrepairAvoids : ∀ b ∈ Good, b ∉ repair b := by
+    intro b hbGood
+    exact (hrepair b hbGood).2.1
+  obtain ⟨B₀, hB₀Good, hB₀Infinite, hfree⟩ :=
+    exists_infinite_freeSet_of_bounded_pointMap
+      hGoodInfinite repair h hrepairCard hrepairAvoids
+  let B : Set ℕ := B₀ \ (W : Set ℕ)
+  have hBInfinite : B.Infinite :=
+    hB₀Infinite.diff W.finite_toSet
+  have hBK : B ⊆ K := by
+    intro b hbB
+    exact (hB₀Good hbB.1).1
+  have hBW : Disjoint B (W : Set ℕ) := by
+    rw [Set.disjoint_left]
+    intro b hbB hbW
+    exact hbB.2 hbW
+  refine ⟨B, hBK, hBInfinite, hBW, ?_⟩
+  intro b hbB
+  have hbGood : b ∈ Good := hB₀Good hbB.1
+  refine ⟨repair b, (hrepair b hbGood).1, ?_,
+    (hrepair b hbGood).2.2⟩
+  exact Set.disjoint_of_subset_right
+    (fun x hxB => hxB.1) (hfree b hbB.1)
+
+/-- Reservoir-relative exact-basis input to the terminating injury theorem.
+
+Every infinite `K ⊆ A` supplies arbitrarily large anchors on the fixed
+translate.  Exact successor matchings give the unbounded support growth,
+and the affine descent returns cofinal reconstructed repairs whose anchors
+remain in `K`. -/
+theorem IsExactTupleAsymptoticBasis.cofinal_fixedSuccessorTranslateRepair_onInfiniteReservoir_after_boundedPrefixInjury
+    {A K : Set ℕ} {h d : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hKA : K ⊆ A) (hKInfinite : K.Infinite)
+    (W : Finset ℕ) :
+    ∃ S : Finset ℕ,
+      S ⊆ W ∧
+      S.card ≤ h + 1 ∧
+      (∀ x ∈ S, x ∈ A) ∧
+      ∀ L, ∃ b E,
+        L ≤ b ∧
+        b ∈ K ∧
+        E ∈ additiveSupportFamily A (h + 1) (d + b) ∧
+        b ∉ E ∧
+        Disjoint (E : Set ℕ) ((W \ S : Finset ℕ) : Set ℕ) := by
+  apply
+    cofinal_affineSupportGrowth_has_boundedPrefixInjury
+      (A := A) (K := K) (j := h + 1) (d := d) (c := 0) (W := W)
+  intro r L
+  obtain ⟨N, hN⟩ :=
+    hbasis.eventually_successorExactRootedMatching r
+  obtain ⟨b, hbK, hbLarge⟩ :=
+    hKInfinite.exists_gt (max L N)
+  obtain ⟨R, M, _hRcard, hMsub, hMcard, _hMroot,
+      _hMnonempty, _hMmatching⟩ :=
+    hN (d + b) (by omega)
+  refine ⟨b, by omega, hbK, ?_⟩
+  exact lt_of_lt_of_le hMcard
+    (Finset.card_le_card hMsub)
+
+/-- Nested-tail form of the bounded-injury deletion theorem.
+
+The new infinite deletion tail is chosen inside an arbitrary supplied
+infinite reservoir `K ⊆ A`.  Hence finitely many repair stages can be
+composed by genuine thinning, while each stage loses at most `h+1` points
+from its finite old prefix. -/
+theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_boundedInjuryInsideInfiniteReservoir
+    {A K : Set ℕ} {h d : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hKA : K ⊆ A) (hKInfinite : K.Infinite)
+    (W : Finset ℕ) (hWA : ∀ x ∈ W, x ∈ A) :
+    ∃ S : Finset ℕ, ∃ B : Set ℕ,
+      S ⊆ W ∧
+      S.card ≤ h + 1 ∧
+      B ⊆ K ∧
+      B.Infinite ∧
+      Disjoint B ((W \ S : Finset ℕ) : Set ℕ) ∧
+      let D : Set ℕ := ((W \ S : Finset ℕ) : Set ℕ) ∪ B
+      D ⊆ A ∧
+      D.Infinite ∧
+      ∀ b ∈ B, ∃ E ∈ additiveSupportFamily A (h + 1) (d + b),
+        Disjoint (E : Set ℕ) D := by
+  obtain ⟨S, hSW, hScard, _hSA, hcofinal⟩ :=
+    hbasis.cofinal_fixedSuccessorTranslateRepair_onInfiniteReservoir_after_boundedPrefixInjury
+      hKA hKInfinite W
+  obtain ⟨B, hBK, hBInfinite, hBRetained, hrepair⟩ :=
+    cofinal_anchorAvoidingSupports_avoidingFinite_onReservoir_have_infiniteFreeDeletion
+      (W \ S)
+      (by
+        intro L
+        obtain ⟨b, E, hbLower, hbK, hER, hbE, hEretained⟩ :=
+          hcofinal L
+        exact ⟨b, E, hbLower, hbK, hER, hbE, hEretained⟩)
+  refine ⟨S, B, hSW, hScard, hBK, hBInfinite,
+    hBRetained, ?_⟩
+  dsimp only
+  constructor
+  · intro x hxD
+    rcases hxD with hxRetained | hxB
+    · exact hWA x
+        (Finset.mem_sdiff.mp (Finset.mem_coe.mp hxRetained)).1
+    · exact hKA (hBK hxB)
+  constructor
+  · exact hBInfinite.mono Set.subset_union_right
+  · intro b hbB
+    obtain ⟨E, hER, hEB, hERetained⟩ :=
+      hrepair b hbB
+    refine ⟨E, hER, ?_⟩
+    rw [Set.disjoint_left]
+    intro x hxE hxD
+    rcases hxD with hxRetained | hxB
+    · exact Set.disjoint_left.mp hERetained hxE hxRetained
+    · exact Set.disjoint_left.mp hEB hxE hxB
+
 /-- Exact bases supply the cofinal affine growth needed by the terminating
 injury theorem at the successor order.
 
@@ -13325,7 +13488,7 @@ theorem IsExactTupleAsymptoticBasis.cofinal_fixedSuccessorTranslateRepair_after_
         Disjoint (E : Set ℕ) ((W \ S : Finset ℕ) : Set ℕ) := by
   apply
     cofinal_affineSupportGrowth_has_boundedPrefixInjury
-      (A := A) (j := h + 1) (d := d) (c := 0) (W := W)
+      (A := A) (K := A) (j := h + 1) (d := d) (c := 0) (W := W)
   intro r L
   obtain ⟨N, hN⟩ :=
     hbasis.eventually_successorExactRootedMatching r
@@ -13395,6 +13558,78 @@ theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_boundedInjuryInfinit
     rcases hxD with hxRetained | hxB
     · exact Set.disjoint_left.mp hERetained hxE hxRetained
     · exact Set.disjoint_left.mp hEB hxE hxB
+
+/-- Certificate-safe bounded-injury extension.
+
+Let `C` contain every vertex used by the repair certificates fixed at
+earlier stages, and assume the current finite deletion prefix `W` already
+avoids `C`.  Apply the terminating affine repair theorem, then remove `C`
+from its infinite free tail.  The tail stays infinite, all newly constructed
+repairs remain valid after this thinning, and the combined deletion remains
+disjoint from `C`.
+
+Thus later stages can never invalidate an earlier certificate: the sole
+remaining cost of a new translate is the explicitly bounded wound
+`S ⊆ W`, with `|S| ≤ h+1`. -/
+theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_certificateSafeBoundedInjury
+    {A : Set ℕ} {h d : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (W C : Finset ℕ)
+    (hWA : ∀ x ∈ W, x ∈ A)
+    (hWC : Disjoint (W : Set ℕ) (C : Set ℕ)) :
+    ∃ S : Finset ℕ, ∃ B : Set ℕ,
+      S ⊆ W ∧
+      S.card ≤ h + 1 ∧
+      B ⊆ A ∧
+      B.Infinite ∧
+      Disjoint B ((W \ S : Finset ℕ) : Set ℕ) ∧
+      let D : Set ℕ := ((W \ S : Finset ℕ) : Set ℕ) ∪ B
+      D ⊆ A ∧
+      D.Infinite ∧
+      Disjoint D (C : Set ℕ) ∧
+      ∀ b ∈ B, ∃ E ∈ additiveSupportFamily A (h + 1) (d + b),
+        Disjoint (E : Set ℕ) D := by
+  obtain ⟨S, B₀, hSW, hScard, hB₀A, hB₀Infinite,
+      hB₀Retained, hD₀A, _hD₀Infinite, hrepair₀⟩ :=
+    hbasis.fixedSuccessorTranslate_boundedInjuryInfiniteDeletion
+      W hWA
+  let B : Set ℕ := B₀ \ (C : Set ℕ)
+  have hBInfinite : B.Infinite :=
+    hB₀Infinite.diff C.finite_toSet
+  have hBA : B ⊆ A := by
+    intro b hbB
+    exact hB₀A hbB.1
+  have hBRetained :
+      Disjoint B ((W \ S : Finset ℕ) : Set ℕ) := by
+    exact Set.disjoint_of_subset_left
+      (fun x hxB => hxB.1) hB₀Retained
+  refine ⟨S, B, hSW, hScard, hBA, hBInfinite,
+    hBRetained, ?_⟩
+  dsimp only
+  constructor
+  · intro x hxD
+    exact hD₀A <| hxD.elim Or.inl
+      (fun hxB => Or.inr hxB.1)
+  constructor
+  · exact hBInfinite.mono Set.subset_union_right
+  constructor
+  · rw [Set.disjoint_left]
+    intro x hxD hxC
+    rcases hxD with hxRetained | hxB
+    · apply Set.disjoint_left.mp hWC
+      · exact Finset.mem_coe.mpr
+          (Finset.mem_sdiff.mp
+            (Finset.mem_coe.mp hxRetained)).1
+      · exact hxC
+    · exact hxB.2 hxC
+  · intro b hbB
+    obtain ⟨E, hER, hED₀⟩ :=
+      hrepair₀ b hbB.1
+    refine ⟨E, hER, ?_⟩
+    apply Set.disjoint_of_subset_right _ hED₀
+    intro x hxD
+    exact hxD.elim Or.inl
+      (fun hxB => Or.inr hxB.1)
 
 /-- A counterexample must escape every prescribed finite family of
 difference labels.
