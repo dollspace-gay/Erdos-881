@@ -19983,6 +19983,90 @@ theorem large_finiteAnchorFan_forces_twoOrder_or_commonTarget_supportGrowth
       Nat.le_of_not_gt hsucc
     omega
 
+/-- Number of anchors sufficient to turn the three-way support-growth
+escape into a genuine matching at some positive rank.
+
+The inner maximum is the support-family size needed for matching descent at
+orders `h` and `h+1`; the outer polynomial is exactly the finite-anchor fan
+threshold. -/
+def anchorFanMatchingBound (h r : ℕ) : ℕ :=
+  let s :=
+    max (additiveSupportRankBound h r)
+      (additiveSupportRankBound (h + 1) r)
+  (2 * s) * (h * s)
+
+/-- A sufficiently large anchor fan cannot be destroyed without producing
+a genuine matching at some positive rank.
+
+Apply the three-way escape theorem at the larger of the order-`h` and
+order-`h+1` matching thresholds.  Predecessor growth and common-translate
+growth normalize below order `h`; anchor-avoiding successor growth
+normalizes below order `h+1`.  Thus the conclusion no longer depends on the
+unknown destroyer cardinality. -/
+theorem large_finiteAnchorFan_forces_matching_below
+    {A : Set ℕ} {h q r : ℕ} {C D : Finset ℕ}
+    (hhpos : 0 < h)
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (h + 1)) D q)
+    (hfan : ∀ a ∈ C,
+      a ∈ A ∧
+      a ≤ q ∧
+      (additiveSupportFamily A h (q - a)).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A h) (D : Set ℕ) (q - a))
+    (hlarge : anchorFanMatchingBound h r < C.card) :
+    ∃ j, 0 < j ∧ j ≤ h + 1 ∧
+      ∃ t, ∃ M : Finset (Finset ℕ),
+        M ⊆ additiveSupportFamily A j t ∧
+        IsMatching M ∧
+        r < M.card := by
+  classical
+  let s :=
+    max (additiveSupportRankBound h r)
+      (additiveSupportRankBound (h + 1) r)
+  have hClarge : (2 * s) * (h * s) < C.card := by
+    simpa only [anchorFanMatchingBound, s] using hlarge
+  have hCnonempty : C.Nonempty := by
+    rw [← Finset.card_pos]
+    exact lt_of_le_of_lt (Nat.zero_le _) hClarge
+  obtain ⟨a, haC⟩ := hCnonempty
+  obtain hpred | hsucc | ⟨p, _hpD, hpGrowth⟩ :=
+    large_finiteAnchorFan_forces_twoOrder_or_commonTarget_supportGrowth
+      hhpos hminimal haC hfan hClarge
+  · have hbound :
+        additiveSupportRankBound h r ≤
+          (additiveSupportFamily A h (q - a)).card := by
+      exact le_trans (le_max_left _ _) (Nat.le_of_lt hpred)
+    obtain ⟨j, hjpos, hjh, t, M, hMsub, hMmatching, hMcard⟩ :=
+      additiveSupportRankBound_forces_matching_below
+        h (q - a) hbound
+    exact ⟨j, hjpos, hjh.trans (Nat.le_succ h),
+      t, M, hMsub, hMmatching, hMcard⟩
+  · have hfilterLe :
+        ((additiveSupportFamily A (h + 1) q).filter
+          fun E => a ∉ E).card ≤
+            (additiveSupportFamily A (h + 1) q).card :=
+      Finset.card_le_card (by
+        intro E hE
+        exact (Finset.mem_filter.mp hE).1)
+    have hbound :
+        additiveSupportRankBound (h + 1) r ≤
+          (additiveSupportFamily A (h + 1) q).card := by
+      exact le_trans (le_max_right _ _)
+        (le_trans (Nat.le_of_lt hsucc) hfilterLe)
+    exact additiveSupportRankBound_forces_matching_below
+      (h + 1) q hbound
+  · have hbound :
+        additiveSupportRankBound h r ≤
+          (additiveSupportFamily A h (q - p)).card := by
+      exact le_trans (le_max_left _ _) (Nat.le_of_lt hpGrowth)
+    obtain ⟨j, hjpos, hjh, t, M, hMsub, hMmatching, hMcard⟩ :=
+      additiveSupportRankBound_forces_matching_below
+        h (q - p) hbound
+    exact ⟨j, hjpos, hjh.trans (Nat.le_succ h),
+      t, M, hMsub, hMmatching, hMcard⟩
+
 /-- A successor-deletion counterexample forces unbounded exact
 representation growth in one of three aligned locations.
 
