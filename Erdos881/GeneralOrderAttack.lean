@@ -23390,6 +23390,10 @@ theorem commonSurvivalStream_forces_escapedCertificate_rootCapture_or_manyBlockD
           (D : Set ℕ) ⊆ selectedSet s ∧
           IsInclusionMinimalDestroyer
             (additiveSupportFamily A (k + 1)) D q ∧
+          (∀ q' ∈ Q, q' ≠ q →
+            ¬ DestroysAt
+              (additiveSupportFamily A (k + 1))
+              (selectedSet s) q') ∧
           R.card < k + 1 ∧
           M ⊆ additiveSupportFamily A (k + 1) q ∧
           r < M.card ∧
@@ -23434,7 +23438,7 @@ theorem commonSurvivalStream_forces_escapedCertificate_rootCapture_or_manyBlockD
   refine ⟨Q, hQnonempty, hQlateN, hcert,
     hlocalized, hQsafe, ?_⟩
   intro q hqQ
-  obtain ⟨s, hqDestroy, _hprivate⟩ :=
+  obtain ⟨s, hqDestroy, hprivate⟩ :=
     hlocalized q hqQ
   obtain ⟨D₁, hD₁selected, _hD₁card, hD₁destroy⟩ :=
     exists_finiteSelectedDestroyer_of_destroysAt
@@ -23456,7 +23460,7 @@ theorem commonSurvivalStream_forces_escapedCertificate_rootCapture_or_manyBlockD
     lt_of_le_of_lt (le_max_left r 1) hMlarge
   have htwo : 1 < M.card :=
     lt_of_le_of_lt (le_max_right r 1) hMlarge
-  refine ⟨s, D, R, M, hDselected, hminimal,
+  refine ⟨s, D, R, M, hDselected, hminimal, hprivate,
     hRcard, hMsub, hrM, htwo, hMroot,
     hMnonempty, hMmatching, ?_⟩
   by_cases hDM : D.card < M.card
@@ -23521,6 +23525,10 @@ theorem exactBasis_counterexample_forces_escapedCertificate_rootCapture_or_manyB
             (D : Set ℕ) ⊆ selectedSet s ∧
             IsInclusionMinimalDestroyer
               (additiveSupportFamily A (h + 1)) D q ∧
+            (∀ q' ∈ Q, q' ≠ q →
+              ¬ DestroysAt
+                (additiveSupportFamily A (h + 1))
+                (selectedSet s) q') ∧
             R.card < h + 1 ∧
             M ⊆ additiveSupportFamily A (h + 1) q ∧
             r < M.card ∧
@@ -23579,9 +23587,155 @@ theorem exactBasis_counterexample_forces_escapedCertificate_rootCapture_or_manyB
         hbasis (strongExactDeletion_of_counterexample hcounter)
           hXA P target htargetStrict hsurvive⟩
   · obtain ⟨X, cell, P, target, hXA, hXInfinite,
-        htargetStrict, hsurvive, hescaped⟩ := hcosingleton
+        htargetStrict, hsurvive, _hescaped⟩ := hcosingleton
     exact ⟨X, cell, P, target, hXA, hXInfinite,
-      htargetStrict, hsurvive, hescaped⟩
+      htargetStrict, hsurvive,
+      commonSurvivalStream_forces_escapedCertificate_rootCapture_or_manyBlockDestroyer
+        hbasis (strongExactDeletion_of_counterexample hcounter)
+          hXA P target htargetStrict hsurvive⟩
+
+/-- Certificate descent on the common-survival reservoir terminates.
+
+Choose the escaped certificate beyond the uniform threshold for the
+unrestricted locked-prefix composition theorem.  Starting with a largest
+destroyed certificate target, every repair migration moves to a strictly
+smaller target while preserving all larger targets.  Strong induction
+therefore consumes both the root-capture and the many-block destroyer
+endpoints.
+
+Only three normalized arithmetic outcomes remain: a large rooted matching
+at an escaped successor target, a large rooted matching at one coherent
+predecessor difference, or a genuine predecessor gap.  In particular,
+neither of the two cardinality branches survives as a terminal global
+obstruction. -/
+theorem commonSurvivalStream_forces_terminatedEscapedCertificate
+    {A X : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hstrong :
+      StrongInfiniteDeletion
+        (additiveSupportFamily A (k + 1)) A)
+    (hXA : X ⊆ A)
+    (P : IsFiniteBlockPartition X cell)
+    (target : ℕ → ℕ)
+    (htargetStrict : StrictMono target)
+    (hsurvive : ∀ s : BlockSelector cell, ∀ n,
+      ∃ E ∈ additiveSupportFamily A (k + 1) (target n),
+        Disjoint (E : Set ℕ) (selectedSet s)) :
+    ∀ r N, ∃ Q : Finset ℕ,
+        Q.Nonempty ∧
+        (∀ q ∈ Q, N ≤ q) ∧
+        (∀ s : BlockSelector cell, ∃ q ∈ Q,
+          DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q) ∧
+        Disjoint (Q : Set ℕ) (Set.range target) ∧
+        ((∃ q ∈ Q, ∃ R : Finset ℕ,
+            ∃ M : Finset (Finset ℕ),
+              R.card < k + 1 ∧
+              M ⊆ additiveSupportFamily A (k + 1) q ∧
+              r < M.card ∧
+              (∀ E ∈ M, R ⊆ E) ∧
+              (∀ E ∈ M, (E \ R).Nonempty) ∧
+              ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+                Disjoint (E \ R) (G \ R)) ∨
+          (∃ q ∈ Q, ∃ d, d ∈ A ∧ d ≤ q ∧
+            ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+                R.card < k ∧
+                M ⊆ additiveSupportFamily A k (q - d) ∧
+                r < M.card ∧
+                (∀ E ∈ M, R ⊆ E) ∧
+                (∀ E ∈ M, (E \ R).Nonempty) ∧
+                ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+                  Disjoint (E \ R) (G \ R)) ∨
+          ∃ q ∈ Q, ∃ b, b ∈ A ∧ b ≤ q ∧
+            additiveSupportFamily A k (q - b) = ∅) := by
+  classical
+  intro r N
+  obtain ⟨Ndescent, hdescent⟩ :=
+    hbasis.succ.eventually_finiteCertificate_matching_or_lowerGap
+      P r
+  have htargetRangeInfinite :
+      (Set.range target).Infinite :=
+    Set.infinite_range_of_injective htargetStrict.injective
+  obtain ⟨Q, hQnonempty, hQlate, hcert,
+      _hlocalized, hQsafe⟩ :=
+    strongDeletion_certificate_avoids_unboundedCommonSurvivalTargets
+      hstrong hXA P htargetRangeInfinite hsurvive
+        (max N Ndescent)
+  have hQlateN : ∀ q ∈ Q, N ≤ q := by
+    intro q hqQ
+    exact (le_max_left N Ndescent).trans
+      (hQlate q hqQ)
+  have hQlateDescent : ∀ q ∈ Q, Ndescent ≤ q := by
+    intro q hqQ
+    exact (le_max_right N Ndescent).trans
+      (hQlate q hqQ)
+  exact ⟨Q, hQnonempty, hQlateN, hcert, hQsafe,
+    hdescent Q hQlateDescent hcert⟩
+
+/-- Counterexample-level elimination of the root/cosingleton cardinality
+fork.
+
+The preceding fork theorem supplies one of its two coherent
+common-survival reservoirs.  The terminating escaped-certificate theorem
+then applies to that same fixed reservoir.  Hence a hypothetical successor
+counterexample cannot end in root capture, co-singleton fusion, or an
+unbounded cross-block destroyer: every requested scale and lateness demand
+reaches the normalized matching/matching/gap trichotomy after a finite
+certificate descent. -/
+theorem exactBasis_counterexample_forces_terminatedEscapedCertificate
+    {A : Set ℕ} {h : ℕ}
+    (hhpos : 0 < h)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    ∃ X : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ P : IsFiniteBlockPartition X cell,
+      ∃ target : ℕ → ℕ,
+        X ⊆ A ∧
+        X.Infinite ∧
+        StrictMono target ∧
+        (∀ s : BlockSelector cell, ∀ n,
+          ∃ E ∈ additiveSupportFamily A (h + 1) (target n),
+            Disjoint (E : Set ℕ) (selectedSet s)) ∧
+        ∀ r N, ∃ Q : Finset ℕ,
+          Q.Nonempty ∧
+          (∀ q ∈ Q, N ≤ q) ∧
+          (∀ s : BlockSelector cell, ∃ q ∈ Q,
+            DestroysAt
+              (additiveSupportFamily A (h + 1))
+              (selectedSet s) q) ∧
+          Disjoint (Q : Set ℕ) (Set.range target) ∧
+          ((∃ q ∈ Q, ∃ R : Finset ℕ,
+              ∃ M : Finset (Finset ℕ),
+                R.card < h + 1 ∧
+                M ⊆ additiveSupportFamily A (h + 1) q ∧
+                r < M.card ∧
+                (∀ E ∈ M, R ⊆ E) ∧
+                (∀ E ∈ M, (E \ R).Nonempty) ∧
+                ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+                  Disjoint (E \ R) (G \ R)) ∨
+            (∃ q ∈ Q, ∃ d, d ∈ A ∧ d ≤ q ∧
+              ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+                R.card < h ∧
+                M ⊆ additiveSupportFamily A h (q - d) ∧
+                r < M.card ∧
+                (∀ E ∈ M, R ⊆ E) ∧
+                (∀ E ∈ M, (E \ R).Nonempty) ∧
+                ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+                  Disjoint (E \ R) (G \ R)) ∨
+            ∃ q ∈ Q, ∃ b, b ∈ A ∧ b ≤ q ∧
+              additiveSupportFamily A h (q - b) = ∅) := by
+  obtain ⟨X, cell, P, target, hXA, hXInfinite,
+      htargetStrict, hsurvive, _hcardinalityFork⟩ :=
+    exactBasis_counterexample_forces_escapedCertificate_rootCapture_or_manyBlockDestroyer
+      hhpos hbasis hcounter
+  exact ⟨X, cell, P, target, hXA, hXInfinite,
+    htargetStrict, hsurvive,
+    commonSurvivalStream_forces_terminatedEscapedCertificate
+      hbasis (strongExactDeletion_of_counterexample hcounter)
+        hXA P target htargetStrict hsurvive⟩
 
 /-- A counterexample forces a coherent infinite deletion with an infinite
 common-core anchor fan above every deleted failure.
