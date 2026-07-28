@@ -20067,6 +20067,122 @@ theorem large_finiteAnchorFan_forces_matching_below
     exact ⟨j, hjpos, hjh.trans (Nat.le_succ h),
       t, M, hMsub, hMmatching, hMcard⟩
 
+/-- An infinite external anchor reservoir turns strong deletion on a
+disjoint reservoir into fresh matching growth.
+
+Choose a finite anchor shield large enough for the requested matching,
+then force the destroyed successor target beyond every shield element and
+the predecessor representation threshold.  A finite minimal destroyer
+inside `B \ F` is disjoint from the shield and from the old history `F`.
+Successor descent aligns it with every anchored predecessor target, so the
+shield theorem produces the matching.
+
+The important quantifier is that `B` is fixed while `F`, the matching
+demand, and the target cutoff vary.  Thus matching growth and fresh
+successor injury coexist on one infinite deletion reservoir. -/
+theorem infiniteAnchorShield_strongDeletion_forces_cofinalFreshMatchings
+    {A C B : Set ℕ} {h : ℕ}
+    (hhpos : 0 < h)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hCA : C ⊆ A) (hCInfinite : C.Infinite)
+    (hBA : B ⊆ A) (hBInfinite : B.Infinite)
+    (hCB : Disjoint C B)
+    (hstrong :
+      StrongInfiniteDeletion
+        (additiveSupportFamily A (h + 1)) A) :
+    ∀ F : Finset ℕ, ∀ r L,
+      ∃ q, ∃ D : Finset ℕ,
+        L ≤ q ∧
+        D.Nonempty ∧
+        (D : Set ℕ) ⊆ B ∧
+        Disjoint D F ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A (h + 1)) D q ∧
+        ∃ j, 0 < j ∧ j ≤ h + 1 ∧
+          ∃ t, ∃ M : Finset (Finset ℕ),
+            M ⊆ additiveSupportFamily A j t ∧
+            IsMatching M ∧
+            r < M.card := by
+  classical
+  obtain ⟨N, hN⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  obtain ⟨Nsucc, hNsucc⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis.succ
+  intro F r L
+  let size := anchorFanMatchingBound h r + 1
+  obtain ⟨C₀, hC₀C, hC₀card⟩ :=
+    hCInfinite.exists_subset_card_eq size
+  let S : Set ℕ := B \ (F : Set ℕ)
+  have hSInfinite : S.Infinite :=
+    hBInfinite.diff F.finite_toSet
+  have hSA : S ⊆ A :=
+    Set.diff_subset.trans hBA
+  let threshold := max L (max Nsucc (N + C₀.sup id))
+  obtain ⟨q, hqLower, hqDestroy⟩ :=
+    hstrong S hSA hSInfinite threshold
+  have hLq : L ≤ q :=
+    (le_max_left L (max Nsucc (N + C₀.sup id))).trans hqLower
+  have hNsuccq : Nsucc ≤ q :=
+    (le_max_left Nsucc (N + C₀.sup id)).trans
+      ((le_max_right L (max Nsucc (N + C₀.sup id))).trans hqLower)
+  obtain ⟨E, hER, _hEempty⟩ := hNsucc q hNsuccq
+  obtain ⟨T, hTS, hTDestroy⟩ :=
+    exists_finiteDestroyer_subset hqDestroy
+  obtain ⟨D, hDT, hminimal⟩ :=
+    exists_inclusionMinimalDestroyer_subset hTDestroy
+  have hDS : (D : Set ℕ) ⊆ S := by
+    intro d hdD
+    exact hTS (Finset.mem_coe.mpr
+      (hDT (Finset.mem_coe.mp hdD)))
+  have hDB : (D : Set ℕ) ⊆ B :=
+    hDS.trans Set.diff_subset
+  have hDF : Disjoint D F := by
+    rw [Finset.disjoint_left]
+    intro d hdD hdF
+    exact (hDS (Finset.mem_coe.mpr hdD)).2
+      (Finset.mem_coe.mpr hdF)
+  have hDnonempty : D.Nonempty := by
+    by_contra hDempty
+    have hDeq : D = ∅ :=
+      Finset.not_nonempty_iff_eq_empty.mp hDempty
+    exact (hminimal.1 E hER) (by simp [hDeq])
+  have hfan : ∀ a ∈ C₀,
+      a ∈ A ∧
+      a ≤ q ∧
+      (additiveSupportFamily A h (q - a)).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A h) (D : Set ℕ) (q - a) := by
+    intro a haC₀
+    have haC : a ∈ C :=
+      hC₀C (Finset.mem_coe.mpr haC₀)
+    have haA : a ∈ A := hCA haC
+    have haSup : a ≤ C₀.sup id :=
+      Finset.le_sup (f := id) haC₀
+    have hbaseLower : N + C₀.sup id ≤ q :=
+      (le_max_right Nsucc (N + C₀.sup id)).trans
+        ((le_max_right L (max Nsucc (N + C₀.sup id))).trans hqLower)
+    have haq : a ≤ q := by omega
+    have hNdiff : N ≤ q - a := by omega
+    obtain ⟨G, hGR, _hGempty⟩ := hN (q - a) hNdiff
+    have haD : a ∉ D := by
+      intro haD
+      exact Set.disjoint_left.mp hCB haC
+        (hDB (Finset.mem_coe.mpr haD))
+    have hpredDestroy :
+        DestroysAt
+          (additiveSupportFamily A h) (D : Set ℕ) (q - a) :=
+      additiveSuccessorTransversalsDescend
+        A h D q hminimal.1 a haA haD haq
+    exact ⟨haA, haq, ⟨G, hGR⟩, hpredDestroy⟩
+  have hC₀large : anchorFanMatchingBound h r < C₀.card := by
+    rw [hC₀card]
+    simp [size]
+  have hmatching :=
+    large_finiteAnchorFan_forces_matching_below
+      hhpos hminimal hfan hC₀large
+  exact ⟨q, D, hLq, hDnonempty, hDB, hDF,
+    hminimal, hmatching⟩
+
 /-- A successor-deletion counterexample forces unbounded exact
 representation growth in one of three aligned locations.
 
