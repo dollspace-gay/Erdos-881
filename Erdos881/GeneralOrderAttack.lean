@@ -19644,6 +19644,130 @@ theorem alignedMinimalDestroyer_card_le_twoOrderSupportMass
     Finset.card_sdiff_of_subset hPD
   omega
 
+/-- Arbitrary finite-anchor fan of aligned consecutive-order failures.
+
+Remove a prescribed finite set of anchors `C ⊆ A` from the gap-service
+reservoir.  After any additional finite history `F`, strong successor
+deletion supplies a fresh inclusion-minimal destroyer `D` at a late target
+`q`.  Every `a ∈ C` lies outside `D`, so successor descent through `a`
+shows that this single `D` destroys every predecessor target `q - a`.
+
+The threshold is chosen above the largest anchor, hence all of those
+predecessor targets are simultaneously late and represented.  This replaces
+the former moving-difference obstruction by one finite transversal serving
+an arbitrarily large fan of exact labels. -/
+theorem exactBasis_counterexample_forces_finiteAnchorFanMinimalDestroyers
+    {A : Set ℕ} {h : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1))
+    (C : Finset ℕ) (hCA : (C : Set ℕ) ⊆ A) :
+    ∃ B : Set ℕ,
+      B ⊆ A ∧
+      B.Infinite ∧
+      Disjoint B (C : Set ℕ) ∧
+      (∀ d, additiveSupportFamily A h d = ∅ →
+        ∀ b ∈ B,
+          ∃ E ∈ additiveSupportFamily A (h + 1) (d + b),
+            Disjoint (E : Set ℕ) B) ∧
+      ∀ F : Finset ℕ, ∀ L,
+        ∃ q, ∃ D : Finset ℕ,
+          D.Nonempty ∧
+          (D : Set ℕ) ⊆ B ∧
+          Disjoint D F ∧
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A (h + 1)) D q ∧
+          ∀ a ∈ C,
+            L ≤ q - a ∧
+            a ≤ q ∧
+            (additiveSupportFamily A h (q - a)).Nonempty ∧
+            DestroysAt
+              (additiveSupportFamily A h) (D : Set ℕ) (q - a) := by
+  classical
+  obtain ⟨B₀, hB₀A, hB₀Infinite, hservice⟩ :=
+    hbasis.exists_infiniteDeletion_servicing_all_gapTranslates
+  let B : Set ℕ := B₀ \ (C : Set ℕ)
+  have hBA : B ⊆ A :=
+    Set.diff_subset.trans hB₀A
+  have hBInfinite : B.Infinite :=
+    hB₀Infinite.diff C.finite_toSet
+  have hBC : Disjoint B (C : Set ℕ) := by
+    rw [Set.disjoint_left]
+    intro x hxB hxC
+    exact hxB.2 hxC
+  have hserviceB :
+      ∀ d, additiveSupportFamily A h d = ∅ →
+        ∀ b ∈ B,
+          ∃ E ∈ additiveSupportFamily A (h + 1) (d + b),
+            Disjoint (E : Set ℕ) B := by
+    intro d hdGap b hbB
+    obtain ⟨E, hER, hEB₀⟩ := hservice d hdGap b hbB.1
+    exact ⟨E, hER,
+      Set.disjoint_of_subset_right Set.diff_subset hEB₀⟩
+  have hstrong :
+      StrongInfiniteDeletion
+        (additiveSupportFamily A (h + 1)) A :=
+    strongExactDeletion_of_counterexample hcounter
+  obtain ⟨N, hN⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  obtain ⟨Nsucc, hNsucc⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis.succ
+  refine ⟨B, hBA, hBInfinite, hBC, hserviceB, ?_⟩
+  intro F L
+  let S : Set ℕ := B \ (F : Set ℕ)
+  have hSInfinite : S.Infinite :=
+    hBInfinite.diff F.finite_toSet
+  have hSA : S ⊆ A :=
+    Set.diff_subset.trans hBA
+  let threshold := max Nsucc (N + C.sup id + L)
+  obtain ⟨q, hqLower, hqDestroy⟩ :=
+    hstrong S hSA hSInfinite threshold
+  obtain ⟨T, hTS, hTDestroy⟩ :=
+    exists_finiteDestroyer_subset hqDestroy
+  obtain ⟨D, hDT, hminimal⟩ :=
+    exists_inclusionMinimalDestroyer_subset hTDestroy
+  have hDS : (D : Set ℕ) ⊆ S := by
+    intro d hdD
+    exact hTS (Finset.mem_coe.mpr
+      (hDT (Finset.mem_coe.mp hdD)))
+  have hDB : (D : Set ℕ) ⊆ B :=
+    hDS.trans Set.diff_subset
+  have hDF : Disjoint D F := by
+    rw [Finset.disjoint_left]
+    intro d hdD hdF
+    exact (hDS (Finset.mem_coe.mpr hdD)).2
+      (Finset.mem_coe.mpr hdF)
+  have hNsuccq : Nsucc ≤ q :=
+    (le_max_left Nsucc (N + C.sup id + L)).trans hqLower
+  obtain ⟨E, hER, _hEempty⟩ := hNsucc q hNsuccq
+  have hDnonempty : D.Nonempty := by
+    by_contra hDempty
+    have hDeq : D = ∅ :=
+      Finset.not_nonempty_iff_eq_empty.mp hDempty
+    exact (hminimal.1 E hER) (by simp [hDeq])
+  refine ⟨q, D, hDnonempty, hDB, hDF, hminimal, ?_⟩
+  intro a haC
+  have haMax : a ≤ C.sup id :=
+    Finset.le_sup (f := id) haC
+  have hbaseLower : N + C.sup id + L ≤ q :=
+    (le_max_right Nsucc (N + C.sup id + L)).trans hqLower
+  have haq : a ≤ q := by omega
+  have hLdiff : L ≤ q - a := by omega
+  have hNdiff : N ≤ q - a := by omega
+  obtain ⟨G, hGR, _hGempty⟩ := hN (q - a) hNdiff
+  have haD : a ∉ D := by
+    intro haD
+    exact Set.disjoint_left.mp hBC
+      (hDB (Finset.mem_coe.mpr haD))
+      (Finset.mem_coe.mpr haC)
+  have hpredDestroy :
+      DestroysAt
+        (additiveSupportFamily A h) (D : Set ℕ) (q - a) :=
+    additiveSuccessorTransversalsDescend
+      A h D q hminimal.1 a
+        (hCA (Finset.mem_coe.mpr haC)) haD haq
+  exact ⟨hLdiff, haq, ⟨G, hGR⟩, hpredDestroy⟩
+
 /-- Global counterexample endpoint after attacking both sides of the
 rank-zero split.
 
