@@ -23193,6 +23193,222 @@ theorem additiveSuccessorDestroyer_descends_outsideSet
     exact (haS hxS).elim
   · exact ⟨x, hxE, hxS⟩
 
+/-- Zero normalization removes the pure successor-rank endpoint.
+
+Keep `0` on the retained side of the fixed reservoir split.  A fresh
+order-`h+1` destroyer avoiding `0` also destroys the same target at order
+`h`, because every order-`h` support can be padded by `0`.  Take an
+inclusion-minimal order-`h` subdestroyer and peel its private support against
+the whole deletion reservoir.  The resulting nonvacuous destroyed rank is
+therefore positive and at most `h`, never `h+1`.
+
+Freshness beyond `{0, ..., L}` makes the peeled hit sum exceed `L`, so this
+strict predecessor-rank descent is cofinal on one fixed infinite deletion. -/
+theorem zeroNormalized_counterexample_forces_cofinalFixedReservoirPredecessorRankDestruction
+    {A : Set ℕ} {h : ℕ}
+    (hhpos : 0 < h)
+    (hzeroA : 0 ∈ A)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    ∃ C B : Set ℕ,
+      C ⊆ A ∧ C.Infinite ∧
+      B ⊆ A ∧ B.Infinite ∧
+      Disjoint C B ∧
+      A ⊆ C ∪ B ∧
+      0 ∈ C ∧
+      ∀ L, ∃ ℓ n,
+        0 < ℓ ∧ ℓ ≤ h ∧
+        L < n ∧
+        (additiveSupportFamily A ℓ n).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A ℓ) B n := by
+  classical
+  obtain ⟨C₀, B₀, hC₀A, hC₀Infinite, hB₀A, hB₀Infinite,
+      hC₀B₀, hAC₀B₀, hstage⟩ :=
+    exactBasis_counterexample_forces_fixedReservoir_freshMatchings
+      hhpos hbasis hcounter
+  let C : Set ℕ := C₀ ∪ {0}
+  let B : Set ℕ := B₀ \ {0}
+  have hCA : C ⊆ A := by
+    rintro x (hxC₀ | hx0)
+    · exact hC₀A hxC₀
+    · have hxEq : x = 0 := Set.mem_singleton_iff.mp hx0
+      subst x
+      exact hzeroA
+  have hCInfinite : C.Infinite := by
+    exact hC₀Infinite.mono Set.subset_union_left
+  have hBA : B ⊆ A := by
+    intro x hxB
+    exact hB₀A hxB.1
+  have hBInfinite : B.Infinite := by
+    exact hB₀Infinite.diff (Set.finite_singleton 0)
+  have hCB : Disjoint C B := by
+    rw [Set.disjoint_left]
+    intro x hxC hxB
+    rcases hxC with hxC₀ | hx0
+    · exact Set.disjoint_left.mp hC₀B₀ hxC₀ hxB.1
+    · have hxEq : x = 0 := Set.mem_singleton_iff.mp hx0
+      subst x
+      exact hxB.2 (by simp)
+  have hACB : A ⊆ C ∪ B := by
+    intro x hxA
+    rcases hAC₀B₀ hxA with hxC₀ | hxB₀
+    · exact Or.inl (Or.inl hxC₀)
+    · by_cases hx0 : x = 0
+      · subst x
+        exact Or.inl (Or.inr (by simp))
+      · exact Or.inr ⟨hxB₀, by simpa using hx0⟩
+  have hzeroC : 0 ∈ C := by
+    exact Or.inr (by simp)
+  obtain ⟨N, hN⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  refine ⟨C, B, hCA, hCInfinite, hBA, hBInfinite,
+    hCB, hACB, hzeroC, ?_⟩
+  intro L
+  let F : Finset ℕ :=
+    Finset.range (L + 1) ∪ {0}
+  obtain ⟨q, D, hqLower, hDnonempty, hDB₀, hDF,
+      hminimalH, _hmatching⟩ :=
+    hstage F 0 (max L N)
+  have hNq : N ≤ q :=
+    (le_max_right L N).trans hqLower
+  obtain ⟨E, hER, _hEempty⟩ := hN q hNq
+  have hDzero : 0 ∉ (D : Set ℕ) := by
+    intro h0D
+    exact Finset.disjoint_left.mp hDF
+      (Finset.mem_coe.mp h0D)
+      (Finset.mem_union_right _ (by simp))
+  have hDdestroy :
+      DestroysAt
+        (additiveSupportFamily A h) (D : Set ℕ) q := by
+    have hdescend :=
+      additiveSuccessorDestroyer_descends_outsideSet
+        (k := h) (n := q) (a := 0)
+        hminimalH.1 hzeroA hDzero (Nat.zero_le q)
+    simpa using hdescend
+  obtain ⟨D₀, hD₀D, hminimal⟩ :=
+    exists_inclusionMinimalDestroyer_subset hDdestroy
+  have hD₀nonempty : D₀.Nonempty := by
+    by_contra hD₀empty
+    have hD₀eq : D₀ = ∅ :=
+      Finset.not_nonempty_iff_eq_empty.mp hD₀empty
+    exact hminimal.1 E hER (by simp [hD₀eq])
+  have hDB : (D₀ : Set ℕ) ⊆ B := by
+    intro x hxD₀
+    have hxD : x ∈ D :=
+      hD₀D (Finset.mem_coe.mp hxD₀)
+    refine ⟨hDB₀ (Finset.mem_coe.mpr hxD), ?_⟩
+    intro hx0
+    have hxEq : x = 0 := by simpa using hx0
+    subst x
+    exact hDzero (Finset.mem_coe.mpr hxD)
+  obtain ⟨x, hxD₀⟩ := hD₀nonempty
+  obtain ⟨hits, j, t, core, hhitsPos, hlength,
+      hhits, hblockHit, _htarget, _hcoreR, _hcoreC,
+      _hfan, _hno, hdestroy⟩ :=
+    minimalAdditiveDestroyer_has_fixedReservoirLowerRankDescent
+      hminimal hxD₀ hDB hCA hACB hCB
+  obtain ⟨y, hyD₀, hyHits⟩ := hblockHit
+  have hyD : y ∈ D := hD₀D hyD₀
+  have hDRange :
+      Disjoint D (Finset.range (L + 1)) := by
+    exact hDF.mono_right Finset.subset_union_left
+  have hLy : L < y := by
+    have hyNotRange : y ∉ Finset.range (L + 1) := by
+      intro hyRange
+      exact Finset.disjoint_left.mp hDRange hyD hyRange
+    have hyNotLt : ¬ y < L + 1 := by
+      simpa only [Finset.mem_range] using hyNotRange
+    omega
+  have hLsum : L < hits.sum :=
+    hLy.trans_le (List.le_sum_of_mem hyHits)
+  have hrepresented :
+      (additiveSupportFamily A
+        hits.length hits.sum).Nonempty := by
+    exact ⟨hits.foldr (fun z G => insert z G) ∅,
+      list_foldr_mem_additiveSupportFamily fun z hz =>
+        (hhits z hz).1⟩
+  have hle : hits.length ≤ h := by omega
+  exact ⟨hits.length, hits.sum, hhitsPos, hle,
+    hLsum, hrepresented, hdestroy⟩
+
+/-- One predecessor rank occurs cofinally in the zero-normalized descent.
+
+The preceding theorem has only the finitely many possible ranks
+`1, ..., h`.  Fixing an infinite fiber yields a single `ℓ ≤ h` and one
+fixed infinite reservoir `B` which destroys cofinally many represented
+rank-`ℓ` targets. -/
+theorem zeroNormalized_counterexample_forces_fixedPredecessorRankCofinalDestruction
+    {A : Set ℕ} {h : ℕ}
+    (hhpos : 0 < h)
+    (hzeroA : 0 ∈ A)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    ∃ C B : Set ℕ, ∃ ℓ,
+      C ⊆ A ∧ C.Infinite ∧
+      B ⊆ A ∧ B.Infinite ∧
+      Disjoint C B ∧
+      A ⊆ C ∪ B ∧
+      0 ∈ C ∧
+      0 < ℓ ∧ ℓ ≤ h ∧
+      ∀ L, ∃ n,
+        L < n ∧
+        (additiveSupportFamily A ℓ n).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A ℓ) B n := by
+  classical
+  obtain ⟨C, B, hCA, hCInfinite, hBA, hBInfinite,
+      hCB, hACB, hzeroC, hcofinal⟩ :=
+    zeroNormalized_counterexample_forces_cofinalFixedReservoirPredecessorRankDestruction
+      hhpos hzeroA hbasis hcounter
+  choose rank target hdata using hcofinal
+  let slope : ℕ → Fin (h + 1) := fun i =>
+    ⟨rank i, by
+      have hirank := (hdata i).2.1
+      omega⟩
+  obtain ⟨ℓ, hℓFiber⟩ :=
+    Finite.exists_infinite_fiber slope
+  have hfiberEq :
+      slope ⁻¹' {ℓ} = {i | rank i = ℓ.1} := by
+    ext i
+    simp only [Set.mem_preimage, Set.mem_singleton_iff,
+      Set.mem_setOf_eq]
+    constructor
+    · intro hi
+      exact congrArg Fin.val hi
+    · intro hi
+      apply Fin.ext
+      exact hi
+  have hfixedRank :
+      {i | rank i = ℓ.1}.Infinite := by
+    have hpreimage :
+        (slope ⁻¹' {ℓ}).Infinite :=
+      Set.infinite_coe_iff.mp hℓFiber
+    rw [hfiberEq] at hpreimage
+    exact hpreimage
+  have hℓpos : 0 < ℓ.1 := by
+    obtain ⟨i, hiRank⟩ := hfixedRank.nonempty
+    have hirankPos := (hdata i).1
+    rw [hiRank] at hirankPos
+    exact hirankPos
+  have hℓle : ℓ.1 ≤ h := by
+    have := ℓ.isLt
+    omega
+  refine ⟨C, B, ℓ.1, hCA, hCInfinite, hBA, hBInfinite,
+    hCB, hACB, hzeroC, hℓpos, hℓle, ?_⟩
+  intro L
+  obtain ⟨i, hiRank, hLi⟩ :=
+    hfixedRank.exists_gt L
+  rcases hdata i with
+    ⟨_hrankPos, _hrankLe, hiTarget,
+      hrepresented, hdestroy⟩
+  have hLtarget : L < target i :=
+    hLi.trans hiTarget
+  rw [hiRank] at hrepresented hdestroy
+  exact ⟨target i, hLtarget, hrepresented, hdestroy⟩
+
 /-- Infinite-anchor amplification of certificate descent.
 
 On one fixed infinite deletion partition, every requested finite number of
