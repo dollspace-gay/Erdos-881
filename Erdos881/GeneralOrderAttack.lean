@@ -19644,6 +19644,65 @@ theorem alignedMinimalDestroyer_card_le_twoOrderSupportMass
     Finset.card_sdiff_of_subset hPD
   omega
 
+/-- The excess part of an aligned consecutive-order destroyer either stays
+below the rooted-matching threshold or produces a large rooted matching at
+the original successor target, entirely avoiding the descent anchor.
+
+The private-support injection is used before any rank descent.  Consequently
+the large-family horn retains both pieces of synchronization which are lost
+by a generic support-count argument: every support still represents `q`,
+and every support omits `c`. -/
+theorem alignedMinimalDestroyer_excess_bounded_or_anchorAvoidingRootedMatching
+    {A : Set ℕ} {h q c r : ℕ} {D P : Finset ℕ}
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (h + 1)) D q)
+    (hPD : P ⊆ D)
+    (hPdestroy :
+      DestroysAt
+        (additiveSupportFamily A h) (P : Set ℕ) (q - c)) :
+    (D \ P).card <
+        additiveRootedMatchingBound (h + 1) r ∨
+      ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+        R.card < h + 1 ∧
+        M ⊆
+          (additiveSupportFamily A (h + 1) q).filter
+            (fun E => c ∉ E) ∧
+        r < M.card ∧
+        (∀ E ∈ M, R ⊆ E) ∧
+        (∀ E ∈ M, (E \ R).Nonempty) ∧
+        ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+          Disjoint (E \ R) (G \ R) := by
+  classical
+  by_cases hsmall :
+      (D \ P).card <
+        additiveRootedMatchingBound (h + 1) r
+  · exact Or.inl hsmall
+  · right
+    have hexcess :
+        (D \ P).card ≤
+          ((additiveSupportFamily A (h + 1) q).filter
+            fun E => c ∉ E).card :=
+      alignedMinimalDestroyer_excess_le_anchorAvoidingSupports
+        hminimal hPD hPdestroy
+    have hlarge :
+        additiveRootedMatchingBound (h + 1) r ≤
+          ((additiveSupportFamily A (h + 1) q).filter
+            fun E => c ∉ E).card :=
+      (Nat.le_of_not_gt hsmall).trans hexcess
+    obtain ⟨R, M, hRcard, hMsub, hMcard, hMroot,
+        hMnonempty, hMmatching⟩ :=
+      additiveSupportSubfamily_has_large_rootedMatching
+        (h + 1) r q
+          ((additiveSupportFamily A (h + 1) q).filter
+            fun E => c ∉ E)
+          (by
+            intro E hE
+            exact (Finset.mem_filter.mp hE).1)
+          hlarge
+    exact ⟨R, M, hRcard, hMsub, hMcard, hMroot,
+      hMnonempty, hMmatching⟩
+
 /-- Arbitrary finite-anchor fan of aligned consecutive-order failures.
 
 Remove a prescribed finite set of anchors `C ⊆ A` from the gap-service
@@ -23552,6 +23611,149 @@ theorem zeroNormalized_counterexample_forces_fixedPredecessorRankCofinalDestruct
   rw [hiRank] at hrepresentedSucc hdestroySucc
   exact ⟨target i, hLtarget, hrepresented, hdestroy,
     hrepresentedSucc, hdestroySucc⟩
+
+/-- Zero-normalized fresh nested destroyers have only one large-excess
+escape: a rooted matching at the same successor target whose every support
+omits zero.
+
+The reservoir `B` is fixed.  After an arbitrary finite history, strong
+deletion gives a fresh successor-minimal destroyer `D`.  Since `0` is kept
+in the complementary reservoir, `D` also destroys the same target one
+order lower; choose a minimal lower-order subdestroyer `D₀ ⊆ D`.  The
+aligned excess fork then bounds `D \ D₀`, or returns a synchronized
+zero-free rooted matching without changing the target.
+
+This is the quantitative form needed to attack the moving-prefix stall:
+the unbounded horn is now matching material at the damaged target itself,
+while the other horn has a bound fixed before the fresh destroyer is
+chosen. -/
+theorem zeroNormalized_counterexample_forces_freshNestedExcessFork
+    {A : Set ℕ} {h : ℕ}
+    (hhpos : 0 < h)
+    (hzeroA : 0 ∈ A)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    ∃ C B : Set ℕ,
+      C ⊆ A ∧ C.Infinite ∧
+      B ⊆ A ∧ B.Infinite ∧
+      Disjoint C B ∧
+      A ⊆ C ∪ B ∧
+      0 ∈ C ∧
+      ∀ F : Finset ℕ, ∀ r L,
+        ∃ q, ∃ D₀ D : Finset ℕ,
+          L ≤ q ∧
+          D₀ ⊆ D ∧
+          D₀.Nonempty ∧ D.Nonempty ∧
+          (D : Set ℕ) ⊆ B ∧
+          Disjoint D F ∧
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A h) D₀ q ∧
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A (h + 1)) D q ∧
+          ((D \ D₀).card <
+              additiveRootedMatchingBound (h + 1) r ∨
+            ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+              R.card < h + 1 ∧
+              M ⊆
+                (additiveSupportFamily A (h + 1) q).filter
+                  (fun E => 0 ∉ E) ∧
+              r < M.card ∧
+              (∀ E ∈ M, R ⊆ E) ∧
+              (∀ E ∈ M, (E \ R).Nonempty) ∧
+              ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+                Disjoint (E \ R) (G \ R)) := by
+  classical
+  obtain ⟨C, B, hCA, hCInfinite, hBA, hBInfinite,
+      hCB, hACB, hzeroC, _hcofinal⟩ :=
+    zeroNormalized_counterexample_forces_cofinalFixedReservoirPredecessorRankDestruction
+      hhpos hzeroA hbasis hcounter
+  have hstrong :
+      StrongInfiniteDeletion
+        (additiveSupportFamily A (h + 1)) A :=
+    strongExactDeletion_of_counterexample hcounter
+  obtain ⟨N, hN⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  refine ⟨C, B, hCA, hCInfinite, hBA, hBInfinite,
+    hCB, hACB, hzeroC, ?_⟩
+  intro F r L
+  let S : Set ℕ := B \ (F : Set ℕ)
+  have hSInfinite : S.Infinite :=
+    hBInfinite.diff F.finite_toSet
+  have hSA : S ⊆ A :=
+    Set.diff_subset.trans hBA
+  obtain ⟨q, hqLower, hqDestroy⟩ :=
+    hstrong S hSA hSInfinite (max L N)
+  have hLq : L ≤ q :=
+    (le_max_left L N).trans hqLower
+  have hNq : N ≤ q :=
+    (le_max_right L N).trans hqLower
+  obtain ⟨E, hER, _hEempty⟩ := hN q hNq
+  have hlift :
+      insert 0 E ∈ additiveSupportFamily A (h + 1) q := by
+    have h :=
+      insert_mem_additiveSupportFamily_succ hzeroA hER
+    simpa using h
+  obtain ⟨T, hTS, hTdestroy⟩ :=
+    exists_finiteDestroyer_subset hqDestroy
+  obtain ⟨D, hDT, hminimalH⟩ :=
+    exists_inclusionMinimalDestroyer_subset hTdestroy
+  have hDS : (D : Set ℕ) ⊆ S := by
+    intro d hdD
+    exact hTS (Finset.mem_coe.mpr
+      (hDT (Finset.mem_coe.mp hdD)))
+  have hDB : (D : Set ℕ) ⊆ B :=
+    hDS.trans Set.diff_subset
+  have hDF : Disjoint D F := by
+    rw [Finset.disjoint_left]
+    intro d hdD hdF
+    exact (hDS (Finset.mem_coe.mpr hdD)).2
+      (Finset.mem_coe.mpr hdF)
+  have hDnonempty : D.Nonempty := by
+    by_contra hDempty
+    have hDeq : D = ∅ :=
+      Finset.not_nonempty_iff_eq_empty.mp hDempty
+    exact (hminimalH.1 (insert 0 E) hlift)
+      (by simp [hDeq])
+  have hDzero : 0 ∉ (D : Set ℕ) := by
+    intro h0D
+    exact Set.disjoint_left.mp hCB hzeroC (hDB h0D)
+  have hpredDestroy :
+      DestroysAt
+        (additiveSupportFamily A h) (D : Set ℕ) q := by
+    have hdescend :=
+      additiveSuccessorDestroyer_descends_outsideSet
+        (k := h) (n := q) (a := 0)
+        hminimalH.1 hzeroA hDzero (Nat.zero_le q)
+    simpa using hdescend
+  obtain ⟨D₀, hD₀D, hminimal⟩ :=
+    exists_inclusionMinimalDestroyer_subset hpredDestroy
+  have hD₀nonempty : D₀.Nonempty := by
+    by_contra hD₀empty
+    have hD₀eq : D₀ = ∅ :=
+      Finset.not_nonempty_iff_eq_empty.mp hD₀empty
+    exact (hminimal.1 E hER) (by simp [hD₀eq])
+  have hminimalDestroy :
+      DestroysAt
+        (additiveSupportFamily A h) (D₀ : Set ℕ) (q - 0) := by
+    simpa using hminimal.1
+  have hexcess :
+      (D \ D₀).card <
+          additiveRootedMatchingBound (h + 1) r ∨
+        ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+          R.card < h + 1 ∧
+          M ⊆
+            (additiveSupportFamily A (h + 1) q).filter
+              (fun G => 0 ∉ G) ∧
+          r < M.card ∧
+          (∀ G ∈ M, R ⊆ G) ∧
+          (∀ G ∈ M, (G \ R).Nonempty) ∧
+          ∀ G ∈ M, ∀ H ∈ M, G ≠ H →
+            Disjoint (G \ R) (H \ R) :=
+    alignedMinimalDestroyer_excess_bounded_or_anchorAvoidingRootedMatching
+      (c := 0) (r := r) hminimalH hD₀D hminimalDestroy
+  exact ⟨q, D₀, D, hLq, hD₀D, hD₀nonempty,
+    hDnonempty, hDB, hDF, hminimal, hminimalH, hexcess⟩
 
 /-- Infinite-anchor amplification of certificate descent.
 
