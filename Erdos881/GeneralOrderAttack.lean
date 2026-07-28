@@ -11310,6 +11310,209 @@ def HasPrivateLockedGapCollision
       (s j).1 ∈
         (J.image (fun i => (s i).1)).erase d \ D)
 
+/-- The finite upward dependency exposed when every collision of a retained
+gap-repair support cannot be cleared.
+
+One surviving support is stored for every certificate target strictly above
+`q`.  A concrete deficient block, after deleting its current selected
+coordinate, is covered by the repair support at `q` together with the stored
+supports of a bounded subcollection of strictly larger targets.  The last
+inequality records the rank-capacity constraint which will force that
+subcollection to be nonempty on the growing reservoir. -/
+def HasLocalLargerLockedGapDependency
+    (A : Set ℕ) (k : ℕ) {K : Set ℕ} {F : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K F) (Q : Finset ℕ)
+    (q : ℕ) (s : BlockSelector F) : Prop :=
+  let Upper := Q.filter fun u => q < u
+  let completionNeed := (k + 1) * Upper.card + (k + 1)
+  let J := deficientRepairHitBlocks P s
+    (additiveSupportFamily A (k + 1)) q 0 completionNeed
+  ∃ c :
+      FiniteSupportChoice
+        (additiveSupportFamily A (k + 1)) Upper,
+    Disjoint (finiteSupportChoiceUnion c : Set ℕ) (selectedSet s) ∧
+    ∃ j ∈ J, ∃ E ∈ additiveSupportFamily A (k + 1) q,
+      (s j).1 ∈ E ∧
+      ∃ Q' : Finset ℕ, ∃ hQ'Upper : Q' ⊆ Upper,
+        Q'.card ≤ ((F j).erase (s j).1).card ∧
+        (∀ u ∈ Q', q < u) ∧
+        (F j).erase (s j).1 ⊆
+          E ∪ finiteSupportChoiceUnion
+            (restrictFiniteSupportChoice hQ'Upper c) ∧
+        ((F j).erase (s j).1).card ≤
+          (k + 1) * (Q'.card + 1)
+
+/-- A private locked gap collision is not terminal.
+
+Clear every old hit of its retained repair support while keeping one
+surviving support for each larger certificate target.  Successful clearing
+preserves `q`, so maximality of the next destroyed target forces strict
+downward certificate migration.  Failure gives the finite upward local
+dependency above.  Thus the only remaining obstruction has a directed,
+acyclic target order. -/
+theorem privateLockedGapCollision_forces_rankGrowthDescent_or_localLargerDependency
+    {A K : Set ℕ} {k q : ℕ} {Q : Finset ℕ}
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
+    (s : BlockSelector F)
+    (hqQ : q ∈ Q)
+    (hcert : ∀ t : BlockSelector F, ∃ u ∈ Q,
+      DestroysAt
+        (additiveSupportFamily A (k + 1)) (selectedSet t) u)
+    (hcollision : HasPrivateLockedGapCollision A k P Q q s) :
+    (∃ t : BlockSelector F, ∃ u ∈ Q, u < q ∧
+        (Q.filter fun v => q < v).card <
+          (Q.filter fun v => u < v).card ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) (selectedSet t) u ∧
+        ∀ v ∈ Q, u < v →
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet t) v) ∨
+      HasLocalLargerLockedGapDependency A k P Q q s := by
+  classical
+  let Upper : Finset ℕ := Q.filter fun u => q < u
+  let completionNeed := (k + 1) * Upper.card + (k + 1)
+  let J := deficientRepairHitBlocks P s
+    (additiveSupportFamily A (k + 1)) q 0 completionNeed
+  change
+    DestroysAt
+        (additiveSupportFamily A (k + 1)) (selectedSet s) q ∧
+      (∀ v ∈ Q, q < v →
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1)) (selectedSet s) v) ∧
+      (∃ b D d j E H,
+        b ∈ A ∧ b ≤ q ∧
+        additiveSupportFamily A k (q - b) = ∅ ∧
+        D ⊆ J.image (fun i => (s i).1) ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A (k + 1)) D q ∧
+        d ∈ D ∧ j ∈ J ∧
+        E ∈ additiveSupportFamily A (k + 1) q ∧
+        (s j).1 ∈ E ∧ E ∩ D = {d} ∧
+        H ∈ additiveSupportFamily A k (q - (s j).1) ∧
+        E = insert (s j).1 H ∧
+        ((s j).1 = d ∨
+          (s j).1 ∈
+            (J.image (fun i => (s i).1)).erase d \ D))
+      at hcollision
+  obtain ⟨_hqDestroy, hlarger, b, D, d, j₀, E, H,
+      _hbA, _hbq, _hgap, _hDsub, _hminimal, _hdD, _hj₀J,
+      hER, _hsj₀E, _hprivate, _hHR, _hEreconstruct,
+      _hj₀Location⟩ := hcollision
+  obtain ⟨c, hcDisjoint⟩ :=
+    exists_survivingLargerSupportChoice s hlarger
+  let U : Finset ℕ := finiteSupportChoiceUnion c
+  have hUcard : U.card ≤ (k + 1) * Upper.card := by
+    exact finiteSupportChoiceUnion_card_le
+      (additiveSupportFamily_cardAtMost A (k + 1)) c
+  have hcapacity :
+      ∀ j, j ∉ J →
+        (s j).1 ∈
+          supportVertices (additiveSupportFamily A (k + 1)) q →
+        (finiteSupportChoiceUnion c).card + (k + 1) <
+          (F j).card := by
+    intro j hjJ hsjVertices
+    have hjImage :
+        j ∈ (supportVertices
+          (additiveSupportFamily A (k + 1)) q).image
+            (blockIndex P) := by
+      apply Finset.mem_image.mpr
+      refine ⟨(s j).1, hsjVertices, ?_⟩
+      exact P.blockIndex_eq_of_mem (s j).2
+    have hjGood :
+        0 < ((F j).erase (s j).1).card ∧
+          completionNeed < (F j).card := by
+      by_contra hnot
+      apply hjJ
+      exact Finset.mem_filter.mpr ⟨hjImage, hnot⟩
+    have hUcard' :
+        (finiteSupportChoiceUnion c).card ≤
+          (k + 1) * Upper.card := by
+      simpa only [U] using hUcard
+    exact lt_of_le_of_lt
+      (Nat.add_le_add_right hUcard' (k + 1)) hjGood.2
+  obtain ⟨t, htU, htq⟩ | hdependency :=
+    lowerGapRepairWitness_extends_protected_or_localLargerDependency
+      (J := J) s c
+        (fun u huUpper => (Finset.mem_filter.mp huUpper).2)
+        hcDisjoint hER hcapacity
+  · left
+    obtain ⟨u, huQ, huDestroy, huMax⟩ :=
+      exists_maximalDestroyedCertificateTarget hcert t
+    have huq : u < q := by
+      by_contra hnot
+      have hqu : q ≤ u := Nat.le_of_not_gt hnot
+      rcases hqu.eq_or_lt with rfl | hqu
+      · exact htq huDestroy
+      · let u' : {n // n ∈ Upper} :=
+          ⟨u, Finset.mem_filter.mpr ⟨huQ, hqu⟩⟩
+        have hsupportSubset :
+            ((c u').1 : Set ℕ) ⊆
+              (finiteSupportChoiceUnion c : Set ℕ) := by
+          intro x hx
+          exact Finset.mem_coe.mpr
+            (finiteSupportChoice_subset_union c u'
+              (Finset.mem_coe.mp hx))
+        exact (huDestroy (c u').1 (c u').2)
+          (Set.disjoint_of_subset_left hsupportSubset htU)
+    exact ⟨t, u, huQ, huq,
+      certificateUpperRank_strictly_grows_under_descent hqQ huq,
+      huDestroy, huMax⟩
+  · right
+    obtain ⟨j, hjJ, hsjE, Q', hQ'Upper, hQ'card,
+        hQ'larger, hcover, hblockCard⟩ := hdependency
+    change HasLocalLargerLockedGapDependency A k P Q q s
+    dsimp only [HasLocalLargerLockedGapDependency]
+    refine ⟨c, hcDisjoint, j, ?_, E, hER, hsjE,
+      Q', hQ'Upper, hQ'card, hQ'larger, hcover, hblockCard⟩
+    simpa only [J, completionNeed, Upper] using hjJ
+
+/-- On blocks with more than one support-rank of alternatives, the local
+dependency really has an outgoing edge.
+
+If its target subcollection were empty, the exposed cardinal inequality
+would put the entire block-minus-one inside a single rank-`k+1` support,
+contrary to the assumed block size. -/
+theorem localLargerLockedGapDependency_has_strictSuccessor
+    {A K : Set ℕ} {k q : ℕ} {Q : Finset ℕ}
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
+    (s : BlockSelector F)
+    (hblocks : ∀ j, k + 1 < ((F j).erase (s j).1).card)
+    (hdependency :
+      HasLocalLargerLockedGapDependency A k P Q q s) :
+    ∃ u ∈ Q, q < u := by
+  classical
+  dsimp only [HasLocalLargerLockedGapDependency] at hdependency
+  obtain ⟨c, hcDisjoint, j, hjJ, E, hER, hsjE,
+      Q', hQ'Upper, hQ'card, hQ'larger, hcover,
+      hblockCard⟩ := hdependency
+  have hQ'nonempty : Q'.Nonempty := by
+    by_contra hQ'empty
+    have hQ'eq : Q' = ∅ :=
+      Finset.not_nonempty_iff_eq_empty.mp hQ'empty
+    rw [hQ'eq] at hblockCard
+    simp only [Finset.card_empty, zero_add, Nat.mul_one] at hblockCard
+    exact (not_lt_of_ge hblockCard) (hblocks j)
+  obtain ⟨u, huQ'⟩ := hQ'nonempty
+  have huUpper := hQ'Upper huQ'
+  exact ⟨u, (Finset.mem_filter.mp huUpper).1,
+    hQ'larger u huQ'⟩
+
+/-- The top certificate target cannot carry the local upward dependency on
+large blocks. -/
+theorem not_localLargerLockedGapDependency_of_certificateMaximum
+    {A K : Set ℕ} {k q : ℕ} {Q : Finset ℕ}
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
+    (s : BlockSelector F)
+    (hblocks : ∀ j, k + 1 < ((F j).erase (s j).1).card)
+    (hmax : ∀ u ∈ Q, u ≤ q) :
+    ¬ HasLocalLargerLockedGapDependency A k P Q q s := by
+  intro hdependency
+  obtain ⟨u, huQ, hqu⟩ :=
+    localLargerLockedGapDependency_has_strictSuccessor
+      P s hblocks hdependency
+  exact (not_lt_of_ge (hmax u huQ)) hqu
+
 /-- Unrestricted finite-certificate termination after consuming the gap
 horn.
 
@@ -11403,6 +11606,104 @@ theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_matching_or_gap
     exists_maximalDestroyedCertificateTarget hcert initial
   exact hterminate q hqQ initial hqDestroy hqLarger
 
+/-- Unrestricted termination with the procedural collision eliminated.
+
+When the gap-consuming step exposes a private old collision, apply the
+simultaneous clearing theorem immediately.  A successful clearing is one
+more strict descent and is consumed by strong induction; failure is the
+finite local dependency on strictly larger certificate targets.  Hence this
+is the first unrestricted endpoint whose only nongrowth horn is structural,
+not an unfinished repair operation. -/
+theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_matching_or_localLargerDependency
+    {A K : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
+    (r : ℕ) :
+    ∃ N, ∀ Q : Finset ℕ,
+      (∀ q ∈ Q, N ≤ q) →
+      (∀ s : BlockSelector F, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) (selectedSet s) q) →
+      ((∃ q ∈ Q, ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+          R.card < k + 1 ∧
+          M ⊆ additiveSupportFamily A (k + 1) q ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+            Disjoint (E \ R) (G \ R)) ∨
+        (∃ q ∈ Q, ∃ d, d ∈ A ∧ d ≤ q ∧
+          ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+            R.card < k ∧
+            M ⊆ additiveSupportFamily A k (q - d) ∧
+            r < M.card ∧
+            (∀ E ∈ M, R ⊆ E) ∧
+            (∀ E ∈ M, (E \ R).Nonempty) ∧
+            ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+              Disjoint (E \ R) (G \ R)) ∨
+        ∃ q ∈ Q, ∃ s : BlockSelector F,
+          HasLocalLargerLockedGapDependency A k P Q q s) := by
+  classical
+  obtain ⟨N, hstep⟩ :=
+    hbasis.eventually_lockedPrefix_matching_or_rankGrowthDescent_or_gapCollision
+      P r
+  refine ⟨N, ?_⟩
+  intro Q hQlate hcert
+  let Outcome : Prop :=
+    ((∃ q ∈ Q, ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+        R.card < k + 1 ∧
+        M ⊆ additiveSupportFamily A (k + 1) q ∧
+        r < M.card ∧
+        (∀ E ∈ M, R ⊆ E) ∧
+        (∀ E ∈ M, (E \ R).Nonempty) ∧
+        ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+          Disjoint (E \ R) (G \ R)) ∨
+      (∃ q ∈ Q, ∃ d, d ∈ A ∧ d ≤ q ∧
+        ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+          R.card < k ∧
+          M ⊆ additiveSupportFamily A k (q - d) ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+            Disjoint (E \ R) (G \ R)) ∨
+      ∃ q ∈ Q, ∃ s : BlockSelector F,
+        HasLocalLargerLockedGapDependency A k P Q q s)
+  have hterminate :
+      ∀ q, q ∈ Q → ∀ s : BlockSelector F,
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) (selectedSet s) q →
+        (∀ v ∈ Q, q < v →
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1)) (selectedSet s) v) →
+        Outcome := by
+    intro q
+    induction q using Nat.strong_induction_on with
+    | h q ih =>
+        intro hqQ s hqDestroy hlarger
+        obtain hcurrent | hlower | hdescent | hcollision :=
+          hstep Q q (hQlate q hqQ) s hqQ hcert hlarger
+        · exact Or.inl ⟨q, hqQ, hcurrent⟩
+        · exact Or.inr (Or.inl ⟨q, hqQ, hlower⟩)
+        · obtain ⟨t, u, huQ, huq, _hrank,
+              huDestroy, huLarger⟩ := hdescent
+          exact ih u huq huQ t huDestroy huLarger
+        · have hprivate :
+              HasPrivateLockedGapCollision A k P Q q s :=
+            ⟨hqDestroy, hlarger, hcollision⟩
+          obtain hdescent' | hdependency :=
+            privateLockedGapCollision_forces_rankGrowthDescent_or_localLargerDependency
+              P s hqQ hcert hprivate
+          · obtain ⟨t, u, huQ, huq, _hrank,
+                huDestroy, huLarger⟩ := hdescent'
+            exact ih u huq huQ t huDestroy huLarger
+          · exact Or.inr (Or.inr ⟨q, hqQ, s, hdependency⟩)
+  let initial : BlockSelector F :=
+    fun j => ⟨(P.nonempty j).choose, (P.nonempty j).choose_spec⟩
+  obtain ⟨q, hqQ, hqDestroy, hqLarger⟩ :=
+    exists_maximalDestroyedCertificateTarget hcert initial
+  exact hterminate q hqQ initial hqDestroy hqLarger
+
 /-- Exact-label normalization of unrestricted gap-consuming migration.
 
 The coherent predecessor matching horn lifts back to the same certificate
@@ -11470,6 +11771,73 @@ theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_exactRootedMatc
     exact ⟨q, hqQ, R', M', hR'card, hM'sub, hM'card,
       hM'root, hM'nonempty, hM'matching⟩
   · exact Or.inr hcollision
+
+/-- Exact-label normalization of the structural dependency endpoint.
+
+The predecessor matching is lifted with the same factor-two estimate as
+above; the only remaining alternative is now the acyclic local dependency,
+not a pending collision repair. -/
+theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_exactRootedMatching_or_localLargerDependency
+    {A K : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
+    (r : ℕ) :
+    ∃ N, ∀ Q : Finset ℕ,
+      (∀ q ∈ Q, N ≤ q) →
+      (∀ s : BlockSelector F, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) (selectedSet s) q) →
+      (∃ q ∈ Q, ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+          R.card < k + 1 ∧
+          M ⊆ additiveSupportFamily A (k + 1) q ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+            Disjoint (E \ R) (G \ R)) ∨
+        ∃ q ∈ Q, ∃ s : BlockSelector F,
+          HasLocalLargerLockedGapDependency A k P Q q s := by
+  let threshold := additiveRootedMatchingBound (k + 1) r
+  let migrationNeed := max r (2 * threshold)
+  obtain ⟨N, hN⟩ :=
+    hbasis.eventually_finiteCertificate_matching_or_localLargerDependency
+      P migrationNeed
+  refine ⟨N, ?_⟩
+  intro Q hQlate hcert
+  obtain ⟨q, hqQ, R, M, hRcard, hMsub, hMlarge,
+      hMroot, hMnonempty, hMmatching⟩ |
+      ⟨q, hqQ, d, hdA, hdq, R, M, _hRcard, hMsub,
+        hMlarge, _hMroot, _hMnonempty, _hMmatching⟩ |
+      hdependency :=
+    hN Q hQlate hcert
+  · left
+    exact ⟨q, hqQ, R, M, hRcard, hMsub,
+      lt_of_le_of_lt (Nat.le_max_left _ _) hMlarge,
+      hMroot, hMnonempty, hMmatching⟩
+  · left
+    have hlowerLarge :
+        2 * threshold <
+          (additiveSupportFamily A k (q - d)).card := by
+      exact lt_of_le_of_lt
+        (Nat.le_max_right _ _) <|
+          lt_of_lt_of_le hMlarge (Finset.card_le_card hMsub)
+    have hliftBound :=
+      lowerDifferenceSupportFamily_card_le_twice_exact
+        (k := k) hdA hdq
+    have hthreshold :
+        threshold ≤
+          (additiveSupportFamily A (k + 1) q).card := by
+      omega
+    obtain ⟨R', M', hR'card, hM'sub, hM'card, hM'root,
+        hM'nonempty, hM'matching⟩ :=
+      additiveSupportSubfamily_has_large_rootedMatching
+        (k + 1) r q
+        (additiveSupportFamily A (k + 1) q)
+        Finset.Subset.rfl
+        (by simpa only [threshold] using hthreshold)
+    exact ⟨q, hqQ, R', M', hR'card, hM'sub, hM'card,
+      hM'root, hM'nonempty, hM'matching⟩
+  · exact Or.inr hdependency
 
 /-- Direct growing-reservoir endpoint of unrestricted gap-consuming
 migration.
@@ -11549,6 +11917,98 @@ theorem boundedFullTranslateDestroyers_growingCertificate_exactRootedMatching_or
     htargetInfinite, hsurvival, hQnonempty, hlateL, hcert,
     hlocalized, hQsafe, ?_⟩
   simpa only [Nat.add_assoc] using houtcome
+
+/-- Direct growing-reservoir endpoint after eliminating private collisions.
+
+For every matching demand, a hypothetical counterexample now forces either
+an exact rooted matching at a late certificate target or one finite local
+cover whose dependency targets are all strictly larger. -/
+theorem boundedFullTranslateDestroyers_growingCertificate_exactRootedMatching_or_localLargerDependency
+    {A : Set ℕ} {k q₀ : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    (hfull :
+      HasBoundedFullTranslateDestroyersByAnchor A (k + 1) {q₀})
+    (hqrep : (additiveSupportFamily A (k + 1) q₀).Nonempty)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 2)) :
+    ∀ r L,
+      ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+        ∃ target : ℕ → ℕ → ℕ,
+        ∃ P : IsFiniteBlockPartition K cell,
+        ∃ Q : Finset ℕ,
+          K ⊆ A ∧ K.Infinite ∧
+          (∀ i, (cell i).card = 2 * (i + k + 2)) ∧
+          (Set.range fun i => target i 0).Infinite ∧
+          (∀ s : BlockSelector cell, ∀ i j,
+            j < i + k + 2 →
+            ∃ H ∈ additiveSupportFamily A (k + 2) (target i j),
+              Disjoint (H : Set ℕ) (selectedSet s)) ∧
+          Q.Nonempty ∧
+          (∀ u ∈ Q, L ≤ u) ∧
+          (∀ s : BlockSelector cell, ∃ u ∈ Q,
+            DestroysAt (additiveSupportFamily A (k + 2))
+              (selectedSet s) u) ∧
+          (∀ u ∈ Q, ∃ s : BlockSelector cell,
+            DestroysAt (additiveSupportFamily A (k + 2))
+                (selectedSet s) u ∧
+            ∀ u' ∈ Q, u' ≠ u →
+              ¬ DestroysAt (additiveSupportFamily A (k + 2))
+                (selectedSet s) u') ∧
+          Disjoint (Q : Set ℕ)
+            (Set.range fun i => target i 0) ∧
+          ((∃ u ∈ Q, ∃ R : Finset ℕ,
+              ∃ M : Finset (Finset ℕ),
+              R.card < k + 2 ∧
+              M ⊆ additiveSupportFamily A (k + 2) u ∧
+              r < M.card ∧
+              (∀ E ∈ M, R ⊆ E) ∧
+              (∀ E ∈ M, (E \ R).Nonempty) ∧
+              ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+                Disjoint (E \ R) (G \ R)) ∨
+            ∃ u ∈ Q, ∃ s : BlockSelector cell,
+              HasLocalLargerLockedGapDependency
+                A (k + 1) P Q u s ∧
+              ∃ v ∈ Q, u < v) := by
+  intro r L
+  obtain ⟨K, cell, target, P, hKA, hKInfinite, hcellCard,
+      htargetInfinite, hsurvival, hcertificates⟩ :=
+    boundedFullTranslateDestroyers_forces_growingBlockCertificateMigration
+      hbasis hfull hqrep hcounter
+  have hbasisSucc :
+      IsExactTupleAsymptoticBasis A (k + 2) := by
+    simpa only [Nat.add_assoc] using hbasis.succ
+  obtain ⟨N, hN⟩ :=
+    hbasisSucc.eventually_finiteCertificate_exactRootedMatching_or_localLargerDependency
+      P r
+  obtain ⟨Q, hQnonempty, hQlate, hcert, hlocalized, hQsafe⟩ :=
+    hcertificates (max L N)
+  have hlateL : ∀ u ∈ Q, L ≤ u := by
+    intro u huQ
+    exact (le_max_left L N).trans (hQlate u huQ)
+  have hlateN : ∀ u ∈ Q, N ≤ u := by
+    intro u huQ
+    exact (le_max_right L N).trans (hQlate u huQ)
+  have houtcome := hN Q hlateN hcert
+  refine ⟨K, cell, target, P, Q, hKA, hKInfinite, hcellCard,
+    htargetInfinite, hsurvival, hQnonempty, hlateL, hcert,
+    hlocalized, hQsafe, ?_⟩
+  obtain hmatching | ⟨u, huQ, s, hdependency⟩ := houtcome
+  · exact Or.inl (by simpa only [Nat.add_assoc] using hmatching)
+  · right
+    have hdependency' :
+        HasLocalLargerLockedGapDependency
+          A (k + 1) P Q u s := by
+      simpa only [Nat.add_assoc] using hdependency
+    have hblocks :
+        ∀ j, k + 2 < ((cell j).erase (s j).1).card := by
+      intro j
+      rw [Finset.card_erase_of_mem (s j).2, hcellCard j]
+      omega
+    obtain ⟨v, hvQ, huv⟩ :=
+      localLargerLockedGapDependency_has_strictSuccessor
+        P s (by simpa only [Nat.add_assoc] using hblocks)
+          hdependency'
+    exact ⟨u, huQ, s, hdependency', v, hvQ, huv⟩
 
 /-- Protected-set strengthening of the locked-prefix composition.
 
