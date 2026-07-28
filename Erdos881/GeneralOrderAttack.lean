@@ -9747,6 +9747,119 @@ theorem blockAligned_intrinsicLockedPrefix_destruction_or_rankGrowthDescent
             0 completionNeed)
   · exact Or.inr (by simpa only [Upper] using hdescent)
 
+/-- An external predecessor gap is certificate-safe on a deletion
+reservoir, except for one explicit private collision in the intrinsic
+locked prefix.
+
+Choose an inclusion-minimal destroyer inside the locked prefix and try the
+gap repair at one of its private hits.  If protected reservoir completion
+succeeds, the largest target destroyed by the repaired selector is strictly
+smaller than `q`, and the usual upper-rank measure strictly grows.  If it
+fails, the failure retains a support `E` meeting the minimal destroyer only
+at the active point `d`, together with an old locked coordinate in `E`.
+Removing that old coordinate gives a represented coherent order-`k`
+difference.  Moreover that coordinate is either `d` itself or lies in the
+unused part of the locked prefix. -/
+theorem lockedPrefix_lowerGap_forces_rankGrowthDescent_or_privateOldCollision
+    {A K : Set ℕ} {k q b : ℕ} {Q U J : Finset ℕ}
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
+    (s : BlockSelector F)
+    (hqQ : q ∈ Q)
+    (hcert : ∀ t : BlockSelector F, ∃ u ∈ Q,
+      DestroysAt
+        (additiveSupportFamily A (k + 1)) (selectedSet t) u)
+    (hprotected : ∀ u ∈ Q, q < u →
+      ∃ E ∈ additiveSupportFamily A (k + 1) u,
+        (E : Set ℕ) ⊆ (U : Set ℕ))
+    (hUselected : Disjoint (U : Set ℕ) (selectedSet s))
+    (hrepresented :
+      (additiveSupportFamily A (k + 1) q).Nonempty)
+    (hlocked :
+      DestroysAt
+        (additiveSupportFamily A (k + 1))
+        ((((J.image fun j => (s j).1) : Finset ℕ) : Set ℕ)) q)
+    (hgap : additiveSupportFamily A k (q - b) = ∅)
+    (hcapacity : ∀ j, j ∉ J →
+      U.card + (k + 1) < (F j).card) :
+    (∃ t : BlockSelector F, ∃ u ∈ Q, u < q ∧
+        (Q.filter fun v => q < v).card <
+          (Q.filter fun v => u < v).card ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) u ∧
+        ∀ v ∈ Q, u < v →
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet t) v) ∨
+      ∃ D d j E H,
+        D ⊆ J.image (fun i => (s i).1) ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A (k + 1)) D q ∧
+        d ∈ D ∧ j ∈ J ∧
+        E ∈ additiveSupportFamily A (k + 1) q ∧
+        (s j).1 ∈ E ∧ E ∩ D = {d} ∧
+        H ∈ additiveSupportFamily A k (q - (s j).1) ∧
+        E = insert (s j).1 H ∧
+        ((s j).1 = d ∨
+          (s j).1 ∈
+            (J.image (fun i => (s i).1)).erase d \ D) := by
+  classical
+  let L : Finset ℕ := J.image fun j => (s j).1
+  obtain ⟨D, hDL, hminimal⟩ :=
+    exists_inclusionMinimalDestroyer_subset hlocked
+  have hDnonempty : D.Nonempty := by
+    by_contra hDempty
+    have hDEmpty : D = ∅ :=
+      Finset.not_nonempty_iff_eq_empty.mp hDempty
+    obtain ⟨G, hGR⟩ := hrepresented
+    apply hminimal.1 G hGR
+    rw [hDEmpty]
+    simp
+  obtain ⟨d, hdD⟩ := hDnonempty
+  obtain ⟨t, htU, htq⟩ |
+      ⟨j, hjJ, E, hER, hsjE, hprivate⟩ :=
+    lowerGapRepair_extends_protectedOnReservoir_or_oldCollision
+      P s hminimal hdD hgap hUselected hcapacity
+  · left
+    obtain ⟨u, huQ, huDestroy, huMax⟩ :=
+      exists_maximalDestroyedCertificateTarget hcert t
+    have huq : u < q := by
+      by_contra hnot
+      have hqu : q ≤ u := Nat.le_of_not_gt hnot
+      rcases hqu.eq_or_lt with rfl | hqu
+      · exact htq huDestroy
+      · obtain ⟨G, hGR, hGU⟩ := hprotected u huQ hqu
+        exact (huDestroy G hGR)
+          (Set.disjoint_of_subset_left hGU htU)
+    exact ⟨t, u, huQ, huq,
+      certificateUpperRank_strictly_grows_under_descent hqQ huq,
+      huDestroy, huMax⟩
+  · right
+    obtain ⟨H, hHR, hreconstruct⟩ :=
+      additiveSupport_remove_hit_succ hER hsjE
+    have hsjL : (s j).1 ∈ L := by
+      exact Finset.mem_image.mpr ⟨j, hjJ, rfl⟩
+    have hlocation :
+        (s j).1 = d ∨ (s j).1 ∈ L.erase d \ D := by
+      by_cases hsjD : (s j).1 ∈ D
+      · left
+        have hsjInter : (s j).1 ∈ E ∩ D :=
+          Finset.mem_inter.mpr ⟨hsjE, hsjD⟩
+        rw [hprivate] at hsjInter
+        simpa using hsjInter
+      · right
+        exact Finset.mem_sdiff.mpr
+          ⟨Finset.mem_erase.mpr
+              ⟨by
+                intro hsjEq
+                subst d
+                exact hsjD hdD,
+                hsjL⟩,
+            hsjD⟩
+    exact ⟨D, d, j, E, H, by simpa only [L] using hDL,
+      hminimal, hdD, hjJ, hER, hsjE, hprivate, hHR,
+      hreconstruct, by simpa only [L] using hlocation⟩
+
 /-- Uniform size budget for the locked-prefix composition. -/
 def lockedPrefixCompositionBound (k r : ℕ) : ℕ :=
   max ((k + 1) * additiveRootedMatchingBound (k + 1) r)
