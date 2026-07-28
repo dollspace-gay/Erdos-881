@@ -6988,8 +6988,8 @@ theorem boundedFullTranslateDestroyers_forces_growingBlockCertificateMigration
       ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 2)) :
     ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
       ∃ target : ℕ → ℕ → ℕ,
+      ∃ P : IsFiniteBlockPartition K cell,
       K ⊆ A ∧ K.Infinite ∧
-      IsFiniteBlockPartition K cell ∧
       (∀ i, (cell i).card = 2 * (i + 2)) ∧
       (Set.range fun i => target i 0).Infinite ∧
       (∀ s : BlockSelector cell, ∀ i j, j < i + 2 →
@@ -7013,11 +7013,110 @@ theorem boundedFullTranslateDestroyers_forces_growingBlockCertificateMigration
       htargetInfinite, hsurvival⟩ :=
     boundedFullTranslateDestroyers_growingBlockCommonSurvival
       hbasis hfull hqrep
-  refine ⟨K, cell, target, hKA, hKInfinite, P, hcellCard,
+  refine ⟨K, cell, target, P, hKA, hKInfinite, hcellCard,
     htargetInfinite, hsurvival, ?_⟩
   exact strongDeletion_certificate_avoids_unboundedCommonSurvivalTargets
     (strongExactDeletion_of_counterexample hcounter)
     hKA P htargetInfinite (fun s i => hsurvival s i 0 (by omega))
+
+/-- Run the certificate-safe contemporary amplifier on the grouped binary
+reservoir.
+
+For every support demand and lateness threshold, a localized successor
+certificate has a minimal selected destroyer `D`.  Taking the old prefix to
+be the blocks below the exact incidence budget makes every later grouped
+block large enough.  Hence either a coherent predecessor difference already
+has more than the requested number of supports, or all but at most
+`|J| r` points of `D` lie in that finite old prefix. -/
+theorem boundedFullTranslateDestroyers_growingBlock_activeSplit
+    {A : Set ℕ} {k q₀ : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    (hfull :
+      HasBoundedFullTranslateDestroyersByAnchor A (k + 1) {q₀})
+    (hqrep : (additiveSupportFamily A (k + 1) q₀).Nonempty)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 2)) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ target : ℕ → ℕ → ℕ,
+      ∃ P : IsFiniteBlockPartition K cell,
+      K ⊆ A ∧ K.Infinite ∧
+      (∀ i, (cell i).card = 2 * (i + 2)) ∧
+      (Set.range fun i => target i 0).Infinite ∧
+      (∀ s : BlockSelector cell, ∀ i j, j < i + 2 →
+        ∃ H ∈ additiveSupportFamily A (k + 2) (target i j),
+          Disjoint (H : Set ℕ) (selectedSet s)) ∧
+      ∀ r L, ∃ Q : Finset ℕ, ∃ q ∈ Q,
+        ∃ s : BlockSelector cell, ∃ D J : Finset ℕ,
+        L ≤ q ∧
+        (∀ t : BlockSelector cell, ∃ u ∈ Q,
+          DestroysAt (additiveSupportFamily A (k + 2))
+            (selectedSet t) u) ∧
+        DestroysAt (additiveSupportFamily A (k + 2))
+          (selectedSet s) q ∧
+        (∀ u ∈ Q, u ≠ q →
+          ¬ DestroysAt (additiveSupportFamily A (k + 2))
+            (selectedSet s) u) ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A (k + 2)) D q ∧
+        (D : Set ℕ) ⊆ selectedSet s ∧
+        J = Finset.range
+          (D.card * ((k + 1) * r) +
+            (k + 2) * Q.card + (k + 1) + 3) ∧
+        ((∃ d, r <
+            (additiveSupportFamily A (k + 1) (q - d)).card) ∨
+          (D.filter fun d => blockIndex P d ∉ J).card
+            ≤ J.card * r) := by
+  classical
+  obtain ⟨K, cell, target, P, hKA, hKInfinite, hcellCard,
+      htargetInfinite, hsurvival, hcertificates⟩ :=
+    boundedFullTranslateDestroyers_forces_growingBlockCertificateMigration
+      hbasis hfull hqrep hcounter
+  refine ⟨K, cell, target, P, hKA, hKInfinite, hcellCard,
+    htargetInfinite, hsurvival, ?_⟩
+  intro r L
+  obtain ⟨Q, hQnonempty, hQlate, hcert, hlocalized, _hQsafe⟩ :=
+    hcertificates L
+  obtain ⟨q, hqQ⟩ := hQnonempty
+  obtain ⟨s, hqDestroy, hother⟩ := hlocalized q hqQ
+  obtain ⟨D, hDselectedRaw, _hDcardRaw, hDdestroy⟩ :=
+    exists_finiteSelectedDestroyer_of_destroysAt
+      P s hqDestroy
+  obtain ⟨D₀, hD₀D, hminimal⟩ :=
+    exists_inclusionMinimalDestroyer_subset hDdestroy
+  have hD₀selected : (D₀ : Set ℕ) ⊆ selectedSet s := by
+    intro x hxD₀
+    exact hDselectedRaw (Finset.mem_coe.mpr
+      (hD₀D (Finset.mem_coe.mp hxD₀)))
+  let budget :=
+    D₀.card * ((k + 1) * r) +
+      (k + 2) * Q.card + (k + 1) + 3
+  let J := Finset.range budget
+  have hcontemporary : ∀ j, j ∉ J →
+      D₀.card * ((k + 1) * r) +
+          (k + 2) * Q.card + (k + 1) + 3 ≤
+        (cell j).card := by
+    intro j hjJ
+    have hbudgetLe : budget ≤ j := by
+      apply Nat.le_of_not_gt
+      intro hj
+      exact hjJ (Finset.mem_range.mpr hj)
+    rw [hcellCard j]
+    dsimp only [budget] at hbudgetLe ⊢
+    omega
+  refine ⟨Q, q, hqQ, s, D₀, J, hQlate q hqQ, hcert,
+    hqDestroy, hother, hminimal, hD₀selected, rfl, ?_⟩
+  by_cases hmany :
+      J.card * r <
+        (D₀.filter fun d => blockIndex P d ∉ J).card
+  · obtain hdirect | hold :=
+      positiveOrder_targetLocalized_manyContemporaryPoints_force_growth_onReservoir
+        hKA P s (k := k + 1) (by omega) hcert hother
+          hminimal hD₀selected hcontemporary hmany
+    · exact Or.inl ⟨hdirect.choose,
+        hdirect.choose_spec.2.2⟩
+    · exact Or.inl ⟨(s hold.choose).1,
+        hold.choose_spec.2⟩
+  · exact Or.inr (Nat.le_of_not_gt hmany)
 
 /-- The counterexample/migration bridge is likewise gap-free.  At every
 represented fixed predecessor target supporting the bounded moving branch,
