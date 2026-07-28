@@ -20260,6 +20260,108 @@ theorem exactBasis_counterexample_forces_fixedReservoir_freshMatchings
     hhpos hbasis hCA hCInfinite hBA hBInfinite hCB
       (strongExactDeletion_of_counterexample hcounter)
 
+/-- Repeated-anchor repair of a private minimal-destroyer support.
+
+For `x ∈ D`, minimality supplies an order-`H` support of `q` whose only
+destroyer *value* is `x`.  The value `x` may occur several times in the
+underlying tuple, so removing it once need not clear the destroyer.  Peel
+all hits on `D`; uniqueness shows that the entire hit list consists of
+copies of `x`.  Reinsert the same number of copies of an external anchor
+`a ∉ D`.
+
+The result has the original order `H`, is disjoint from `D`, and moves the
+target from `ℓ*x + t` to `ℓ*a + t`.  This is the multiplicity-safe
+replacement bridge missing from one-step support normalization. -/
+theorem minimalAdditiveDestroyer_has_repeatedAnchorRepair
+    {A : Set ℕ} {H q x a : ℕ} {D : Finset ℕ}
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A H) D q)
+    (hxD : x ∈ D)
+    (haA : a ∈ A)
+    (haD : a ∉ D) :
+    ∃ ℓ j t, ∃ core repaired : Finset ℕ,
+      0 < ℓ ∧
+      ℓ + j = H ∧
+      q = ℓ * x + t ∧
+      core ∈ additiveSupportFamily A j t ∧
+      Disjoint (core : Set ℕ) (D : Set ℕ) ∧
+      repaired ∈ additiveSupportFamily A H (ℓ * a + t) ∧
+      Disjoint (repaired : Set ℕ) (D : Set ℕ) := by
+  classical
+  obtain ⟨E, hER, hED⟩ :=
+    hminimal.exists_uniqueHitSupport hxD
+  obtain ⟨hits, j, t, core, hlength, hhits,
+      hcoreR, hcoreD, htarget, hEeq⟩ :=
+    additiveSupport_peel_hits_to_survivingCore H q E hER
+  have hhitsEq : ∀ y ∈ hits, y = x := by
+    intro y hyHits
+    have hyE : y ∈ E := by
+      rw [hEeq]
+      simp [foldr_insert_eq_toFinset_union, hyHits]
+    have hyD : y ∈ D :=
+      Finset.mem_coe.mp (hhits y hyHits).2
+    have hySingleton : y ∈ ({x} : Finset ℕ) := by
+      rw [← hED]
+      exact Finset.mem_inter.mpr ⟨hyE, hyD⟩
+    simpa using hySingleton
+  have hhitsNonempty : hits ≠ [] := by
+    intro hhitsEmpty
+    have hEcore : E = core := by
+      simpa [hhitsEmpty] using hEeq
+    exact Set.disjoint_left.mp hcoreD
+      (by
+        rw [← hEcore]
+        exact Finset.mem_coe.mpr
+          (by
+            have hxInter : x ∈ E ∩ D := by
+              rw [hED]
+              simp
+            exact (Finset.mem_inter.mp hxInter).1))
+      (Finset.mem_coe.mpr hxD)
+  have hellpos : 0 < hits.length :=
+    List.length_pos_iff.mpr hhitsNonempty
+  have hhitsList :
+      hits = List.replicate hits.length x :=
+    List.eq_replicate_iff.mpr ⟨rfl, hhitsEq⟩
+  have hqeq : q = hits.length * x + t := by
+    rw [htarget, hhitsList]
+    simp
+  let pads : List ℕ := List.replicate hits.length a
+  let repaired : Finset ℕ :=
+    pads.foldr (fun y G => insert y G) core
+  have hpadsA : ∀ y ∈ pads, y ∈ A := by
+    intro y hyPads
+    have hya : y = a := by
+      exact (List.mem_replicate.mp hyPads).2
+    simpa only [hya] using haA
+  have hrepairRaw :=
+    foldr_insert_mem_additiveSupportFamily hpadsA hcoreR
+  have hpadsLength : pads.length = hits.length := by
+    simp [pads]
+  have hpadsSum : pads.sum = hits.length * a := by
+    simp [pads]
+  have hrepairR :
+      repaired ∈
+        additiveSupportFamily A H (hits.length * a + t) := by
+    rw [hpadsLength, hlength, hpadsSum] at hrepairRaw
+    exact hrepairRaw
+  have hrepairD :
+      Disjoint (repaired : Set ℕ) (D : Set ℕ) := by
+    rw [Set.disjoint_left]
+    intro y hyRepair hyD
+    have hyUnion : y ∈ pads.toFinset ∪ core := by
+      simpa [repaired, foldr_insert_eq_toFinset_union] using hyRepair
+    rcases Finset.mem_union.mp hyUnion with hyPads | hyCore
+    · have hya : y = a := by
+        exact (List.mem_toFinset.mp hyPads |> List.mem_replicate.mp).2
+      exact haD (hya ▸ Finset.mem_coe.mp hyD)
+    · exact Set.disjoint_left.mp hcoreD
+        (Finset.mem_coe.mpr hyCore) hyD
+  exact ⟨hits.length, j, t, core, repaired,
+    hellpos, hlength, hqeq, hcoreR, hcoreD,
+    hrepairR, hrepairD⟩
+
 /-- A successor-deletion counterexample forces unbounded exact
 representation growth in one of three aligned locations.
 
