@@ -6968,7 +6968,8 @@ theorem LowerTriangularBinaryRepairSequence.exists_binaryCommonSurvivalPartition
 /-- Group cross-disjoint binary repair cells into uniformly large blocks of
 increasing size.
 
-Block `i` contains `i+k+2` binary cells.  In particular its cardinality is
+Block `i` contains `i+k+padding+2` binary cells.  In particular its
+cardinality is
 strictly greater than `k+2`, the maximum size of a protected successor
 support.  A selector chooses only one point
 from the whole block, so at most one subcell is touched.  The private repair
@@ -6976,16 +6977,18 @@ in that subcell and cross-disjointness from every other subcell preserve
 every translated target indexed by the block.  In particular the common
 survival construction is compatible with block capacities tending to
 infinity. -/
-theorem LowerTriangularBinaryRepairSequence.exists_growingBlockCommonSurvivalPartition
+theorem LowerTriangularBinaryRepairSequence.exists_paddedGrowingBlockCommonSurvivalPartition
     {A : Set ℕ} {k q : ℕ}
-    (S : LowerTriangularBinaryRepairSequence A k q) :
+    (S : LowerTriangularBinaryRepairSequence A k q)
+    (padding : ℕ) :
     ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
       ∃ target : ℕ → ℕ → ℕ,
       K ⊆ A ∧ K.Infinite ∧
       IsFiniteBlockPartition K cell ∧
-      (∀ i, (cell i).card = 2 * (i + k + 2)) ∧
+      (∀ i, (cell i).card = 2 * (i + k + padding + 2)) ∧
       (Set.range fun i => target i 0).Infinite ∧
-      ∀ s : BlockSelector cell, ∀ i j, j < i + k + 2 →
+      ∀ s : BlockSelector cell, ∀ i j,
+        j < i + k + padding + 2 →
         ∃ H ∈ additiveSupportFamily A (k + 2) (target i j),
           Disjoint (H : Set ℕ) (selectedSet s) := by
   classical
@@ -6996,7 +6999,7 @@ theorem LowerTriangularBinaryRepairSequence.exists_growingBlockCommonSurvivalPar
     {S.anchor (index n), S.core (index n)}
   let slot : ℕ → ℕ → ℕ := fun i j => Nat.pair i j
   let cell : ℕ → Finset ℕ := fun i =>
-    (Finset.range (i + k + 2)).biUnion fun j =>
+    (Finset.range (i + k + padding + 2)).biUnion fun j =>
       binaryCell (slot i j)
   let target : ℕ → ℕ → ℕ := fun i j =>
     q + S.anchor (index (slot i j))
@@ -7063,27 +7066,31 @@ theorem LowerTriangularBinaryRepairSequence.exists_growingBlockCommonSurvivalPar
     exact ⟨0, Finset.mem_range.mpr (by omega), by simp [binaryCell]⟩
   have P : IsFiniteBlockPartition K cell := by
     exact ⟨hcellNonempty, hcellDisjoint, fun x => Iff.rfl⟩
-  have hcellCard : ∀ i, (cell i).card = 2 * (i + k + 2) := by
+  have hcellCard :
+      ∀ i, (cell i).card = 2 * (i + k + padding + 2) := by
     intro i
     have hpieces :
-        (Finset.range (i + k + 2) : Set ℕ).PairwiseDisjoint
+        (Finset.range (i + k + padding + 2) :
+          Set ℕ).PairwiseDisjoint
           (fun j => binaryCell (slot i j)) := by
       intro j _hj m _hm hjm
       apply hbinaryDisjoint
       intro heq
       exact hjm (Nat.pair_eq_pair.mp heq).2
     change
-      ((Finset.range (i + k + 2)).biUnion fun j =>
-        binaryCell (slot i j)).card = 2 * (i + k + 2)
+      ((Finset.range (i + k + padding + 2)).biUnion fun j =>
+        binaryCell (slot i j)).card =
+          2 * (i + k + padding + 2)
     rw [Finset.card_biUnion hpieces]
     calc
-      (∑ j ∈ Finset.range (i + k + 2),
+      (∑ j ∈ Finset.range (i + k + padding + 2),
           (binaryCell (slot i j)).card) =
-          ∑ _j ∈ Finset.range (i + k + 2), 2 := by
+          ∑ _j ∈ Finset.range (i + k + padding + 2), 2 := by
             apply Finset.sum_congr rfl
             intro j _hj
             exact hbinaryCard (slot i j)
-      _ = 2 * (i + k + 2) := by simp [Nat.mul_comm]
+      _ = 2 * (i + k + padding + 2) := by
+        simp [Nat.mul_comm]
   have htargetInjective :
       Function.Injective (fun i => target i 0) := by
     intro i l hil
@@ -7196,6 +7203,23 @@ theorem LowerTriangularBinaryRepairSequence.exists_growingBlockCommonSurvivalPar
             hmem hselectedCell
       · exact hleftCross
 
+/-- Canonical growing-block specialization with no extra initial
+padding. -/
+theorem LowerTriangularBinaryRepairSequence.exists_growingBlockCommonSurvivalPartition
+    {A : Set ℕ} {k q : ℕ}
+    (S : LowerTriangularBinaryRepairSequence A k q) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ target : ℕ → ℕ → ℕ,
+      K ⊆ A ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i, (cell i).card = 2 * (i + k + 2)) ∧
+      (Set.range fun i => target i 0).Infinite ∧
+      ∀ s : BlockSelector cell, ∀ i j, j < i + k + 2 →
+        ∃ H ∈ additiveSupportFamily A (k + 2) (target i j),
+          Disjoint (H : Set ℕ) (selectedSet s) := by
+  simpa only [Nat.add_zero] using
+    S.exists_paddedGrowingBlockCommonSurvivalPartition 0
+
 /-- Gap-free common-survival payoff for the bounded moving branch at a
 represented predecessor target. -/
 theorem boundedFullTranslateDestroyers_commonSurvival
@@ -7243,6 +7267,31 @@ theorem boundedFullTranslateDestroyers_growingBlockCommonSurvival
   obtain ⟨S⟩ :=
     exists_lowerTriangularBinaryRepairSequence hbasis hfull hqrep
   exact S.exists_growingBlockCommonSurvivalPartition
+
+/-- Padded growing-block common survival.  The extra parameter is chosen
+before strong deletion and can therefore absorb any prescribed finite
+certificate-capacity budget uniformly from the first block onward. -/
+theorem boundedFullTranslateDestroyers_paddedGrowingBlockCommonSurvival
+    {A : Set ℕ} {k q : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    (hfull :
+      HasBoundedFullTranslateDestroyersByAnchor A (k + 1) {q})
+    (hqrep : (additiveSupportFamily A (k + 1) q).Nonempty)
+    (padding : ℕ) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ target : ℕ → ℕ → ℕ,
+      K ⊆ A ∧ K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      (∀ i,
+        (cell i).card = 2 * (i + k + padding + 2)) ∧
+      (Set.range fun i => target i 0).Infinite ∧
+      ∀ s : BlockSelector cell, ∀ i j,
+        j < i + k + padding + 2 →
+        ∃ H ∈ additiveSupportFamily A (k + 2) (target i j),
+          Disjoint (H : Set ℕ) (selectedSet s) := by
+  obtain ⟨S⟩ :=
+    exists_lowerTriangularBinaryRepairSequence hbasis hfull hqrep
+  exact S.exists_paddedGrowingBlockCommonSurvivalPartition padding
 
 /-- Full gap-branch payoff: bounded successor transversals over one
 represented primitive gap force an infinite binary deletion reservoir on
@@ -11499,6 +11548,64 @@ theorem IsExactTupleAsymptoticBasis.eventually_boundedMinimalDestroyer_protected
     exact lowerGapRepair_extends_avoiding_protectedUnion
       P s hminimal hdD hbA hbU hbGap hUselected hblocks
 
+/-- Uniform protected repair for bounded destroyers in a deletion
+reservoir.  Extra padding in every reservoir block eliminates old
+exceptions, while the external gap point itself need not lie in the
+reservoir. -/
+theorem IsExactTupleAsymptoticBasis.eventually_boundedMinimalDestroyer_protectedReservoirRepair_or_growth
+    {A K : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
+    (B w : ℕ) :
+    ∃ N, ∀ q, N ≤ q → ∀ U : Finset ℕ, U.card ≤ w →
+      ∀ s : BlockSelector F, ∀ D : Finset ℕ,
+      (additiveSupportFamily A (k + 1) q).Nonempty →
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (k + 1)) D q →
+      D.card ≤ B →
+      Disjoint (U : Set ℕ) (selectedSet s) →
+      (∀ j, U.card + (k + 1) < (F j).card) →
+      ((∃ d ∈ D, d ≤ q ∧
+          B < (additiveSupportFamily A k (q - d)).card) ∨
+        ∃ t : BlockSelector F,
+          Disjoint (U : Set ℕ) (selectedSet t) ∧
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet t) q) := by
+  obtain ⟨N, hN⟩ :=
+    hbasis.eventually_boundedDestroyer_forces_largeDifferenceFamily_or_lowerGap_avoiding
+      B w
+  refine ⟨N, ?_⟩
+  intro q hNq U hUcard s D hrepresented hminimal hDcard
+    hUselected hblocks
+  obtain hpGrowth | ⟨b, _hbA, _hbU, _hbq, hbGap⟩ :=
+    hN U hUcard D hDcard q hNq hminimal.1
+  · left
+    obtain ⟨d, hdD, _hdA, hdq, ℋ, hℋsub, hBℋ⟩ :=
+      hpGrowth
+    have hℋfamily :
+        ℋ.card ≤
+          (additiveSupportFamily A k (q - d)).card :=
+      Finset.card_le_card hℋsub
+    exact ⟨d, hdD, hdq,
+      lt_of_lt_of_le hBℋ hℋfamily⟩
+  · right
+    have hDnonempty : D.Nonempty := by
+      by_contra hDempty
+      rw [Finset.not_nonempty_iff_eq_empty.mp hDempty] at hminimal
+      obtain ⟨E, hER⟩ := hrepresented
+      exact hminimal.1 E hER (by simp)
+    obtain ⟨d, hdD⟩ := hDnonempty
+    obtain hrepair |
+        ⟨j, hjEmpty, _E, _hER, _hsjE, _hprivate⟩ :=
+      lowerGapRepair_extends_protectedOnReservoir_or_oldCollision
+        P s (J := ∅) hminimal hdD hbGap hUselected
+          (by
+            intro j _hj
+            exact hblocks j)
+    · exact hrepair
+    · simpa using hjEmpty
+
 /-- Bounded-destroyer strict certificate step.
 
 Store supports for the currently surviving larger certificate targets.  If
@@ -11534,6 +11641,58 @@ theorem IsExactTupleAsymptoticBasis.eventually_boundedMinimalDestroyer_growth_or
             (selectedSet t) u) := by
   obtain ⟨N, hN⟩ :=
     hbasis.eventually_boundedMinimalDestroyer_protectedRepair_or_growth
+      P B ((k + 1) * Q.card)
+  refine ⟨N, ?_⟩
+  intro q hNq s D hrepresented hcert hlarger hminimal
+    hDcard hblocks
+  obtain ⟨U, hUcard, hUselected, hprotected⟩ :=
+    exists_protectedSupportUnion_of_survivingLargerTargets
+      s hlarger
+  have hcompletion :
+      ∀ j, U.card + (k + 1) < (F j).card := by
+    intro j
+    exact lt_of_le_of_lt
+      (Nat.add_le_add_right hUcard (k + 1))
+      (hblocks j)
+  obtain hgrowth | ⟨t, htU, htq⟩ :=
+    hN q hNq U hUcard s D hrepresented hminimal hDcard
+      hUselected hcompletion
+  · exact Or.inl hgrowth
+  · right
+    obtain ⟨u, huQ, huq, huDestroy⟩ :=
+      protectedSelectorRepair_forces_strictCertificateDescent
+        hcert hprotected htU htq
+    exact ⟨t, u, huQ, huq, huDestroy⟩
+
+/-- Bounded-destroyer strict descent on a uniformly padded deletion
+reservoir. -/
+theorem IsExactTupleAsymptoticBasis.eventually_boundedMinimalDestroyer_onReservoir_growth_or_strictCertificateDescent
+    {A K : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
+    (Q : Finset ℕ)
+    (B : ℕ) :
+    ∃ N, ∀ q, N ≤ q → ∀ s : BlockSelector F, ∀ D : Finset ℕ,
+      (additiveSupportFamily A (k + 1) q).Nonempty →
+      (∀ t : BlockSelector F, ∃ u ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) (selectedSet t) u) →
+      (∀ u ∈ Q, q < u →
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1)) (selectedSet s) u) →
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (k + 1)) D q →
+      D.card ≤ B →
+      (∀ j,
+        (k + 1) * Q.card + (k + 1) < (F j).card) →
+      ((∃ d ∈ D, d ≤ q ∧
+          B < (additiveSupportFamily A k (q - d)).card) ∨
+        ∃ t : BlockSelector F, ∃ u ∈ Q, u < q ∧
+          DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet t) u) := by
+  obtain ⟨N, hN⟩ :=
+    hbasis.eventually_boundedMinimalDestroyer_protectedReservoirRepair_or_growth
       P B ((k + 1) * Q.card)
   refine ⟨N, ?_⟩
   intro q hNq s D hrepresented hcert hlarger hminimal
@@ -11672,6 +11831,201 @@ theorem IsExactTupleAsymptoticBasis.eventually_boundedCertificate_forces_support
     intro huDestroy
     exact (huDestroy G hGR)
       (Set.disjoint_of_subset_left hGU htU)
+
+/-- Uniform bounded-certificate payoff on a padded deletion reservoir.
+
+The proof is the same finite strict-descent argument as for a partition of
+all of `A`.  Reservoir membership of a destroyer point is promoted to
+membership in `A` through `K ⊆ A`, while external lower-gap repairs remain
+available through the reservoir completion theorem. -/
+theorem IsExactTupleAsymptoticBasis.eventually_boundedCertificate_onReservoir_forces_supportGrowth
+    {A K : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    (hKA : K ⊆ A)
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
+    (C B : ℕ) :
+    ∃ N, ∀ Q : Finset ℕ, Q.card ≤ C →
+      (∀ q ∈ Q, N ≤ q) →
+      (∀ s : BlockSelector F, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) (selectedSet s) q) →
+      (∀ j,
+        (k + 1) * C + (k + 1) < (F j).card) →
+      ((∃ q ∈ Q,
+          B < (additiveSupportFamily A (k + 1) q).card) ∨
+        ∃ q ∈ Q, ∃ d, d ∈ A ∧ d ≤ q ∧
+          B < (additiveSupportFamily A k (q - d)).card) := by
+  classical
+  obtain ⟨N₀, hN₀⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  obtain ⟨N₁, hN₁⟩ :=
+    hbasis.eventually_boundedMinimalDestroyer_protectedReservoirRepair_or_growth
+      P B ((k + 1) * C)
+  refine ⟨max N₀ N₁, ?_⟩
+  intro Q hQcard hlate hcert hblocks
+  by_cases hExact :
+      ∃ q ∈ Q,
+        B < (additiveSupportFamily A (k + 1) q).card
+  · exact Or.inl hExact
+  by_cases hDifference :
+      ∃ q ∈ Q, ∃ d, d ∈ A ∧ d ≤ q ∧
+        B < (additiveSupportFamily A k (q - d)).card
+  · exact Or.inr hDifference
+  have hExactBound :
+      ∀ q ∈ Q,
+        (additiveSupportFamily A (k + 1) q).card ≤ B := by
+    intro q hqQ
+    apply Nat.le_of_not_gt
+    intro hqLarge
+    exact hExact ⟨q, hqQ, hqLarge⟩
+  have hDifferenceBound :
+      ∀ q ∈ Q, ∀ d, d ∈ A → d ≤ q →
+        (additiveSupportFamily A k (q - d)).card ≤ B := by
+    intro q hqQ d hdA hdq
+    apply Nat.le_of_not_gt
+    intro hdLarge
+    exact hDifference ⟨q, hqQ, d, hdA, hdq, hdLarge⟩
+  let s₀ : BlockSelector F := fun j =>
+    ⟨(P.nonempty j).choose, (P.nonempty j).choose_spec⟩
+  exfalso
+  apply finiteSelectorCertificate_impossible_of_strictRepairStep
+    s₀ hcert
+  intro s q hqQ hqDestroy hlarger
+  have hqLate : N₀ ≤ q :=
+    (le_max_left N₀ N₁).trans (hlate q hqQ)
+  have hqRepairLate : N₁ ≤ q :=
+    (le_max_right N₀ N₁).trans (hlate q hqQ)
+  obtain ⟨E₀, hE₀R, _hE₀empty⟩ := hN₀ q hqLate
+  have hrepresented :
+      (additiveSupportFamily A (k + 1) q).Nonempty :=
+    ⟨E₀, hE₀R⟩
+  obtain ⟨D, hDselected, _hDcard, hDdestroy⟩ :=
+    exists_finiteSelectedDestroyer_of_destroysAt
+      P s hqDestroy
+  obtain ⟨D₀, hD₀D, hminimal⟩ :=
+    exists_inclusionMinimalDestroyer_subset hDdestroy
+  have hD₀selected : (D₀ : Set ℕ) ⊆ selectedSet s := by
+    intro x hxD₀
+    exact hDselected (Finset.mem_coe.mpr
+      (hD₀D (Finset.mem_coe.mp hxD₀)))
+  have hD₀card : D₀.card ≤ B :=
+    hminimal.card_le_supportFamily.trans
+      (hExactBound q hqQ)
+  obtain ⟨U, hUcard, hUselected, hprotected⟩ :=
+    exists_protectedSupportUnion_of_survivingLargerTargets
+      s hlarger
+  have hUbudget :
+      U.card ≤ (k + 1) * C :=
+    hUcard.trans
+      (Nat.mul_le_mul_left (k + 1) hQcard)
+  have hcompletion :
+      ∀ j, U.card + (k + 1) < (F j).card := by
+    intro j
+    exact lt_of_le_of_lt
+      (Nat.add_le_add_right hUbudget (k + 1))
+      (hblocks j)
+  obtain hgrowth | ⟨t, htU, htq⟩ :=
+    hN₁ q hqRepairLate U hUbudget s D₀ hrepresented
+      hminimal hD₀card hUselected hcompletion
+  · obtain ⟨d, hdD₀, hdq, hdLarge⟩ := hgrowth
+    have hdK : d ∈ K :=
+      P.selectedSet_subset s
+        (hD₀selected (Finset.mem_coe.mpr hdD₀))
+    exact (not_lt_of_ge
+      (hDifferenceBound q hqQ d (hKA hdK) hdq) hdLarge).elim
+  · refine ⟨t, htq, ?_⟩
+    intro u huQ hqu
+    obtain ⟨G, hGR, hGU⟩ := hprotected u huQ hqu
+    intro huDestroy
+    exact (huDestroy G hGR)
+      (Set.disjoint_of_subset_left hGU htU)
+
+/-- Padded binary migration closes every bounded-certificate branch.
+
+Fix certificate and support bounds `C,B` before constructing the deletion
+reservoir.  Extra binary subcells make every block large enough for the
+protected strict-descent argument.  Strong deletion then returns a late
+certificate `Q`: if `|Q| ≤ C`, finite descent forces genuine support growth
+at order `k+2` or at a coherent order-`k+1` difference.  Hence the only
+non-growth outcome is the concrete inequality `C < |Q|`. -/
+theorem boundedFullTranslateDestroyers_paddedCertificate_large_or_supportGrowth
+    {A : Set ℕ} {k q₀ : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    (hfull :
+      HasBoundedFullTranslateDestroyersByAnchor A (k + 1) {q₀})
+    (hqrep : (additiveSupportFamily A (k + 1) q₀).Nonempty)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 2)) :
+    ∀ C B L,
+      ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+        ∃ target : ℕ → ℕ → ℕ,
+        ∃ P : IsFiniteBlockPartition K cell,
+        ∃ Q : Finset ℕ,
+          K ⊆ A ∧ K.Infinite ∧
+          (∀ i,
+            (k + 2) * C + (k + 2) < (cell i).card) ∧
+          (Set.range fun i => target i 0).Infinite ∧
+          (∀ s : BlockSelector cell, ∀ i,
+            ∃ H ∈ additiveSupportFamily A (k + 2) (target i 0),
+              Disjoint (H : Set ℕ) (selectedSet s)) ∧
+          Q.Nonempty ∧
+          (∀ u ∈ Q, L ≤ u) ∧
+          (∀ s : BlockSelector cell, ∃ u ∈ Q,
+            DestroysAt (additiveSupportFamily A (k + 2))
+              (selectedSet s) u) ∧
+          (∀ u ∈ Q, ∃ s : BlockSelector cell,
+            DestroysAt (additiveSupportFamily A (k + 2))
+                (selectedSet s) u ∧
+            ∀ u' ∈ Q, u' ≠ u →
+              ¬ DestroysAt (additiveSupportFamily A (k + 2))
+                (selectedSet s) u') ∧
+          Disjoint (Q : Set ℕ)
+            (Set.range fun i => target i 0) ∧
+          (C < Q.card ∨
+            (∃ u ∈ Q,
+              B < (additiveSupportFamily A (k + 2) u).card) ∨
+            ∃ u ∈ Q, ∃ d, d ∈ A ∧ d ≤ u ∧
+              B <
+                (additiveSupportFamily A (k + 1) (u - d)).card) := by
+  classical
+  intro C B L
+  let padding := (k + 2) * C + (k + 2)
+  obtain ⟨K, cell, target, hKA, hKInfinite, P, hcellCard,
+      htargetInfinite, hsurvival⟩ :=
+    boundedFullTranslateDestroyers_paddedGrowingBlockCommonSurvival
+      hbasis hfull hqrep padding
+  have hcapacity :
+      ∀ i, (k + 2) * C + (k + 2) < (cell i).card := by
+    intro i
+    rw [hcellCard i]
+    dsimp only [padding]
+    omega
+  have hbasisSucc :
+      IsExactTupleAsymptoticBasis A (k + 2) := by
+    simpa only [Nat.add_assoc] using hbasis.succ
+  obtain ⟨N, hN⟩ :=
+    hbasisSucc.eventually_boundedCertificate_onReservoir_forces_supportGrowth
+      hKA P C B
+  obtain ⟨Q, hQnonempty, hQlate, hcert, hlocalized, hQsafe⟩ :=
+    strongDeletion_certificate_avoids_unboundedCommonSurvivalTargets
+      (strongExactDeletion_of_counterexample hcounter)
+      hKA P htargetInfinite
+        (fun s i => hsurvival s i 0 (by omega))
+        (max L N)
+  have hlateL : ∀ u ∈ Q, L ≤ u := by
+    intro u huQ
+    exact (le_max_left L N).trans (hQlate u huQ)
+  refine ⟨K, cell, target, P, Q, hKA, hKInfinite, hcapacity,
+    htargetInfinite, (fun s i => hsurvival s i 0 (by omega)),
+    hQnonempty, hlateL, hcert, hlocalized, hQsafe, ?_⟩
+  by_cases hQcard : Q.card ≤ C
+  · right
+    have hlateN : ∀ u ∈ Q, N ≤ u := by
+      intro u huQ
+      exact (le_max_right L N).trans (hQlate u huQ)
+    exact hN Q hQcard hlateN hcert hcapacity
+  · left
+    omega
 
 /-- Exact-label rooted-matching normalization of bounded certificates.
 
