@@ -14876,6 +14876,133 @@ theorem injective_boundedRepairPoints_give_infiniteDeletionExtension
     exact hcross n hnL d hdL hnd
       (Finset.mem_coe.mp hxRepair)
 
+/-- Fuse private supports from pairwise-fresh minimal-destroyer blocks.
+
+For every fresh block `block i`, mark two distinct block points.  The point
+`kept i` supplies a private support, while `deleted i` is the point placed
+in the eventual infinite deletion.  Pairwise disjointness of the blocks
+makes the deleted-point map injective.  Since every private support has
+cardinality at most `h`, bounded cross-avoidance thins the stages so that
+no retained private support meets any selected deleted point.
+
+The conclusion is already integrated with certificate maximality.  Every
+stage target survives the fused infinite deletion `X`; hence if a finite
+certificate bounded above by that target still detects a failure on `X`,
+its detected target is strictly smaller.  Thus the fusion produces an
+actual certificate descent, not merely an unrelated stream of surviving
+representations. -/
+theorem freshMinimalDestroyer_privateSupports_fuse_at_certificateMax
+    {A I : Set ℕ} {h : ℕ}
+    (block : ℕ → Finset ℕ) (target deleted kept : ℕ → ℕ)
+    (hI : I.Infinite)
+    (hblockA : ∀ i ∈ I, (block i : Set ℕ) ⊆ A)
+    (hblocks : ∀ i ∈ I, ∀ j ∈ I, i ≠ j →
+      Disjoint (block i) (block j))
+    (hdeleted : ∀ i ∈ I, deleted i ∈ block i)
+    (hkept : ∀ i ∈ I, kept i ∈ block i)
+    (hdifferent : ∀ i ∈ I, deleted i ≠ kept i)
+    (hminimal : ∀ i ∈ I,
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) (block i) (target i)) :
+    ∃ L X : Set ℕ, ∃ repair : ℕ → Finset ℕ,
+      L ⊆ I ∧
+      L.Infinite ∧
+      X = deleted '' L ∧
+      X ⊆ A ∧
+      X.Infinite ∧
+      (∀ i ∈ L,
+        repair i ∈ additiveSupportFamily A h (target i) ∧
+        repair i ∩ block i = {kept i} ∧
+        Disjoint (repair i : Set ℕ) X ∧
+        ¬ DestroysAt
+          (additiveSupportFamily A h) X (target i)) ∧
+      ∀ i ∈ L, ∀ Q : Finset ℕ,
+        target i ∈ Q →
+        (∀ u ∈ Q, u ≤ target i) →
+        (∃ u ∈ Q,
+          DestroysAt (additiveSupportFamily A h) X u) →
+        ∃ u ∈ Q, u < target i ∧
+          DestroysAt (additiveSupportFamily A h) X u := by
+  classical
+  have hprivateExists : ∀ i, i ∈ I →
+      ∃ E ∈ additiveSupportFamily A h (target i),
+        E ∩ block i = {kept i} := by
+    intro i hi
+    exact (hminimal i hi).exists_uniqueHitSupport (hkept i hi)
+  let repair : ℕ → Finset ℕ := fun i =>
+    if hi : i ∈ I then (hprivateExists i hi).choose else ∅
+  have hrepairMem : ∀ i ∈ I,
+      repair i ∈ additiveSupportFamily A h (target i) := by
+    intro i hi
+    simp only [repair, dif_pos hi]
+    exact (hprivateExists i hi).choose_spec.1
+  have hrepairPrivate : ∀ i ∈ I,
+      repair i ∩ block i = {kept i} := by
+    intro i hi
+    simp only [repair, dif_pos hi]
+    exact (hprivateExists i hi).choose_spec.2
+  have hdeletedInj : Set.InjOn deleted I := by
+    intro i hi j hj hij
+    by_contra hne
+    exact Finset.disjoint_left.mp (hblocks i hi j hj hne)
+      (hdeleted i hi) (hij ▸ hdeleted j hj)
+  have hrepairCard : ∀ i ∈ I, (repair i).card ≤ h := by
+    intro i hi
+    exact additiveSupportFamily_cardAtMost
+      A h (target i) (repair i) (hrepairMem i hi)
+  obtain ⟨L, hLI, hL, hcross⟩ :=
+    exists_infinite_crossAvoiding_injectiveImage
+      hI deleted hdeletedInj repair h hrepairCard
+  let X : Set ℕ := deleted '' L
+  have hXInfinite : X.Infinite :=
+    (Set.infinite_image_iff (hdeletedInj.mono hLI)).mpr hL
+  have hXA : X ⊆ A := by
+    rintro x ⟨i, hiL, rfl⟩
+    exact hblockA i (hLI hiL)
+      (Finset.mem_coe.mpr (hdeleted i (hLI hiL)))
+  have hrepairX : ∀ i ∈ L,
+      Disjoint (repair i : Set ℕ) X := by
+    intro i hiL
+    rw [Set.disjoint_left]
+    rintro x hxRepair ⟨j, hjL, rfl⟩
+    by_cases hij : i = j
+    · subst j
+      have hdeletedInter :
+          deleted i ∈ repair i ∩ block i :=
+        Finset.mem_inter.mpr
+          ⟨Finset.mem_coe.mp hxRepair,
+            hdeleted i (hLI hiL)⟩
+      have hdeletedKept : deleted i = kept i := by
+        have :
+            deleted i ∈ ({kept i} : Finset ℕ) := by
+          rw [← hrepairPrivate i (hLI hiL)]
+          exact hdeletedInter
+        simpa using this
+      exact hdifferent i (hLI hiL) hdeletedKept
+    · exact hcross i hiL j hjL hij
+        (Finset.mem_coe.mp hxRepair)
+  have hsurvives : ∀ i ∈ L,
+      ¬ DestroysAt
+        (additiveSupportFamily A h) X (target i) := by
+    intro i hiL
+    exact not_destroysAt_iff.mpr
+      ⟨repair i, hrepairMem i (hLI hiL), hrepairX i hiL⟩
+  refine ⟨L, X, repair, hLI, hL, rfl, hXA, hXInfinite,
+    ?_, ?_⟩
+  · intro i hiL
+    exact ⟨hrepairMem i (hLI hiL),
+      hrepairPrivate i (hLI hiL), hrepairX i hiL,
+      hsurvives i hiL⟩
+  · intro i hiL Q htargetQ hmax hcertificate
+    obtain ⟨u, huQ, huDestroy⟩ := hcertificate
+    have hune : u ≠ target i := by
+      intro hueq
+      subst u
+      exact (hsurvives i hiL) huDestroy
+    exact ⟨u, huQ,
+      lt_of_le_of_ne (hmax u huQ) hune,
+      huDestroy⟩
+
 /-- A first-injury branch cannot remain at one fixed tower stage while its
 hit points move injectively.
 
