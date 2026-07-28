@@ -10153,6 +10153,55 @@ theorem IsExactTupleAsymptoticBasis.eventually_exactRootedMatching_or_lowerGap
   · exact Or.inl hrooted
   · exact Or.inr ⟨b, hBA hbB, hBn b hbB, hgap⟩
 
+/-- Reservoir-relative form of the exact rooted-matching/lower-gap fork.
+
+The finite test pool can be chosen inside any prescribed infinite
+`C ⊆ A`.  Consequently every nongrowth target has a genuine lower-gap
+anchor in that same reservoir.  This is the quantifier needed to feed a
+preconstructed deletion back into the finite-prefix composition. -/
+theorem eventually_exactRootedMatching_or_lowerGap_onInfiniteReservoir
+    {A C : Set ℕ} {k : ℕ}
+    (hCA : C ⊆ A) (hCInfinite : C.Infinite) :
+    ∀ r, ∃ N, ∀ n, N ≤ n →
+      (∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+          R.card < k + 1 ∧
+          M ⊆ additiveSupportFamily A (k + 1) n ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          ∀ E ∈ M, ∀ D ∈ M, E ≠ D →
+            Disjoint (E \ R) (D \ R)) ∨
+        ∃ b, b ∈ C ∧ b ≤ n ∧
+          additiveSupportFamily A k (n - b) = ∅ := by
+  classical
+  intro r
+  let size :=
+    (k + 1) * additiveRootedMatchingBound (k + 1) r + 1
+  obtain ⟨B, hBC, hBcard⟩ :=
+    hCInfinite.exists_subset_card_eq size
+  have hBnonempty : B.Nonempty := by
+    apply Finset.card_pos.mp
+    rw [hBcard]
+    simp [size]
+  refine ⟨B.max' hBnonempty, ?_⟩
+  intro n hn
+  have hBA : ∀ b ∈ B, b ∈ A := by
+    intro b hbB
+    exact hCA (hBC hbB)
+  have hBn : ∀ b ∈ B, b ≤ n := by
+    intro b hbB
+    exact (Finset.le_max' B b hbB).trans hn
+  have hlarge :
+      (k + 1) * additiveRootedMatchingBound (k + 1) r <
+        B.card := by
+    rw [hBcard]
+    simp [size]
+  obtain hrooted | ⟨b, hbB, hgap⟩ :=
+    many_belowBasisElements_force_exactRootedMatching_or_gap
+      hBA hBn hlarge
+  · exact Or.inl hrooted
+  · exact Or.inr ⟨b, hBC hbB, hBn b hbB, hgap⟩
+
 /-- Uniform protected-set version of the rooted matching/lower-gap
 dichotomy.
 
@@ -12373,6 +12422,468 @@ theorem cofinal_anchorAvoidingSupports_have_infiniteFreeDeletion
   refine ⟨B, fun b hbB => (hBK hbB).1, hBInfinite, ?_⟩
   intro b hbB
   exact ⟨repair b, (hrepair b (hBK hbB)).1, hfree b hbB⟩
+
+/-- One infinite deletion simultaneously services every exceptional
+predecessor gap.
+
+If `A` is an exact order-`h` basis, all order-`h` gaps lie below one fixed
+threshold.  For each sufficiently large `b ∈ A` and each such gap `d`,
+choose an order-`h+1` support of `d+b`.  That support cannot contain `b`:
+removing an occurrence of `b` would represent `d` at order `h`.
+
+The union of all repairs attached to one `b` has a uniform finite bound,
+because there are only finitely many gaps.  One application of the bounded
+point-map free-set theorem therefore produces a single infinite `B ⊆ A`
+which every one of these repairs avoids. -/
+theorem IsExactTupleAsymptoticBasis.exists_infiniteDeletion_servicing_all_gapTranslates
+    {A : Set ℕ} {h : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A h) :
+    ∃ B : Set ℕ, B ⊆ A ∧ B.Infinite ∧
+      ∀ d, additiveSupportFamily A h d = ∅ →
+        ∀ b ∈ B,
+          ∃ E ∈ additiveSupportFamily A (h + 1) (d + b),
+            Disjoint (E : Set ℕ) B := by
+  classical
+  obtain ⟨N₀, hN₀⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  obtain ⟨N₁, hN₁⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis.succ
+  let Gap : Finset ℕ :=
+    (Finset.range N₀).filter fun d =>
+      additiveSupportFamily A h d = ∅
+  let K : Set ℕ := {b | b ∈ A ∧ N₁ ≤ b}
+  have hKInfinite : K.Infinite := by
+    apply Set.infinite_of_forall_exists_gt
+    intro L
+    obtain ⟨b, hbA, hbLarge⟩ :=
+      hbasis.infinite.exists_gt (max L N₁)
+    exact ⟨b, ⟨hbA, by omega⟩, by omega⟩
+  have hexists :
+      ∀ b : {b // b ∈ K}, ∀ d : {d // d ∈ Gap},
+        ∃ E, E ∈ additiveSupportFamily A (h + 1) (d.1 + b.1) := by
+    intro b d
+    obtain ⟨E, hER, _hEnonempty⟩ :=
+      hN₁ (d.1 + b.1) (by
+        have hbLarge := b.2.2
+        omega)
+    exact ⟨E, hER⟩
+  choose repair hrepair using hexists
+  have hrepairAvoids :
+      ∀ b : {b // b ∈ K}, ∀ d : {d // d ∈ Gap},
+        b.1 ∉ repair b d := by
+    intro b d hbRepair
+    have hdGap :
+        additiveSupportFamily A h d.1 = ∅ :=
+      (Finset.mem_filter.mp d.2).2
+    obtain ⟨H, hHR, _hreconstruct⟩ :=
+      additiveSupport_remove_hit_succ (hrepair b d) hbRepair
+    have htarget : d.1 + b.1 - b.1 = d.1 := by omega
+    rw [htarget, hdGap] at hHR
+    simpa using hHR
+  let repairUnionOn : {b // b ∈ K} → Finset ℕ := fun b =>
+    Gap.attach.biUnion fun d => repair b d
+  have hGapSubset : Gap ⊆ Finset.range N₀ := by
+    intro d hdGap
+    exact (Finset.mem_filter.mp hdGap).1
+  have hrepairUnionOnCard :
+      ∀ b, (repairUnionOn b).card ≤ (h + 1) * N₀ := by
+    intro b
+    calc
+      (repairUnionOn b).card ≤
+          ∑ d ∈ Gap.attach, (repair b d).card := by
+        simpa only [repairUnionOn] using
+          Finset.card_biUnion_le
+            (s := Gap.attach) (t := fun d => repair b d)
+      _ ≤ ∑ _d ∈ Gap.attach, (h + 1) := by
+        gcongr with d hd
+        exact additiveSupportFamily_cardAtMost
+          A (h + 1) (d.1 + b.1) (repair b d) (hrepair b d)
+      _ = (h + 1) * Gap.card := by
+        simp [Nat.mul_comm]
+      _ ≤ (h + 1) * N₀ := by
+        apply Nat.mul_le_mul_left
+        simpa using Finset.card_le_card hGapSubset
+  let repairUnion : ℕ → Finset ℕ := fun b =>
+    if hb : b ∈ K then repairUnionOn ⟨b, hb⟩ else ∅
+  have hrepairUnionCard :
+      ∀ b ∈ K, (repairUnion b).card ≤ (h + 1) * N₀ := by
+    intro b hbK
+    simp only [repairUnion, dif_pos hbK]
+    exact hrepairUnionOnCard ⟨b, hbK⟩
+  have hrepairUnionAvoids :
+      ∀ b ∈ K, b ∉ repairUnion b := by
+    intro b hbK
+    simp only [repairUnion, dif_pos hbK, repairUnionOn]
+    intro hbUnion
+    obtain ⟨d, _hdAttach, hbRepair⟩ :=
+      Finset.mem_biUnion.mp hbUnion
+    exact hrepairAvoids ⟨b, hbK⟩ d hbRepair
+  obtain ⟨B, hBK, hBInfinite, hfree⟩ :=
+    exists_infinite_freeSet_of_bounded_pointMap
+      hKInfinite repairUnion ((h + 1) * N₀)
+        hrepairUnionCard hrepairUnionAvoids
+  refine ⟨B, fun b hbB => (hBK hbB).1, hBInfinite, ?_⟩
+  intro d hdGap b hbB
+  have hdlt : d < N₀ := by
+    by_contra hnot
+    obtain ⟨E, hER, _hEnonempty⟩ :=
+      hN₀ d (Nat.le_of_not_gt hnot)
+    rw [hdGap] at hER
+    simpa using hER
+  have hdGapFin : d ∈ Gap := by
+    exact Finset.mem_filter.mpr
+      ⟨Finset.mem_range.mpr hdlt, hdGap⟩
+  let b' : {b // b ∈ K} := ⟨b, hBK hbB⟩
+  let d' : {d // d ∈ Gap} := ⟨d, hdGapFin⟩
+  refine ⟨repair b' d', ?_, ?_⟩
+  · simpa only [b', d'] using hrepair b' d'
+  · have hsubsetFin :
+        repair b' d' ⊆ repairUnion b := by
+      intro x hx
+      simp only [repairUnion, dif_pos (hBK hbB), repairUnionOn]
+      exact Finset.mem_biUnion.mpr
+        ⟨d', by simp, hx⟩
+    have hsubsetSet :
+        (repair b' d' : Set ℕ) ⊆ (repairUnion b : Set ℕ) := by
+      intro x hx
+      exact Finset.mem_coe.mpr
+        (hsubsetFin (Finset.mem_coe.mp hx))
+    exact Set.disjoint_of_subset_left hsubsetSet (hfree b hbB)
+
+/-- Every finite family of successor translates can be serviced on one
+infinite deletion.
+
+Fix finitely many difference labels `D`.  Let `r` be the sum of the
+cardinalities of their order-`h` support families.  At every sufficiently
+late target, exactness at order `h` gives a rooted order-`h+1` matching with
+more than `r` members.
+
+For `d ∈ D` and large `b ∈ A`, not every support of `d+b` can contain `b`.
+If it did, removing `b` from the large rooted matching would inject that
+matching into the finite order-`h` support family at `d`, whose cardinality
+is at most `r`.  Choose one anchor-avoiding support for every `d ∈ D`;
+their union has the uniform bound `(h+1)|D|`.  The bounded free-set theorem
+then fuses all these repairs into a single infinite deletion.
+
+This closes fixed/cofinal-difference composition outright: any obstruction
+which remains on a fixed finite set of difference labels is already
+simultaneously repairable. -/
+theorem IsExactTupleAsymptoticBasis.exists_infiniteDeletion_servicing_finiteSuccessorTranslates
+    {A : Set ℕ} {h : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (D : Finset ℕ) :
+    ∃ B : Set ℕ, B ⊆ A ∧ B.Infinite ∧
+      ∀ d ∈ D, ∀ b ∈ B,
+        ∃ E ∈ additiveSupportFamily A (h + 1) (d + b),
+          Disjoint (E : Set ℕ) B := by
+  classical
+  let demand :=
+    ∑ d ∈ D, (additiveSupportFamily A h d).card
+  obtain ⟨N, hN⟩ :=
+    hbasis.eventually_successorExactRootedMatching demand
+  let K : Set ℕ := {b | b ∈ A ∧ N ≤ b}
+  have hKInfinite : K.Infinite := by
+    apply Set.infinite_of_forall_exists_gt
+    intro L
+    obtain ⟨b, hbA, hbLarge⟩ :=
+      hbasis.infinite.exists_gt (max L N)
+    exact ⟨b, ⟨hbA, by omega⟩, by omega⟩
+  have hanchorFree :
+      ∀ b : {b // b ∈ K}, ∀ d : {d // d ∈ D},
+        ∃ E, E ∈ additiveSupportFamily A (h + 1) (d.1 + b.1) ∧
+          b.1 ∉ E := by
+    intro b d
+    obtain ⟨R, M, _hRcard, hMsub, hMcard, hMroot,
+        hMnonempty, hMmatching⟩ :=
+      hN (d.1 + b.1) (by
+        have hbLarge := b.2.2
+        omega)
+    by_contra hnone
+    push Not at hnone
+    have hbM : ∀ E ∈ M, b.1 ∈ E := by
+      intro E hEM
+      exact hnone E (hMsub hEM)
+    obtain ⟨lower, hlowerSub, hlowerCard⟩ :=
+      additiveSupportStar_descends_card hMsub hbM
+    have htarget : d.1 + b.1 - b.1 = d.1 := by omega
+    have hlowerSub' :
+        lower ⊆ additiveSupportFamily A h d.1 := by
+      simpa only [htarget] using hlowerSub
+    have hlowerBound :
+        lower.card ≤ (additiveSupportFamily A h d.1).card :=
+      Finset.card_le_card hlowerSub'
+    have hdDemand :
+        (additiveSupportFamily A h d.1).card ≤ demand := by
+      dsimp only [demand]
+      exact Finset.single_le_sum
+        (fun x _hx => Nat.zero_le
+          (additiveSupportFamily A h x).card)
+        d.2
+    omega
+  choose repair hrepair hrepairAvoid using hanchorFree
+  let repairUnionOn : {b // b ∈ K} → Finset ℕ := fun b =>
+    D.attach.biUnion fun d => repair b d
+  have hrepairUnionOnCard :
+      ∀ b, (repairUnionOn b).card ≤ (h + 1) * D.card := by
+    intro b
+    calc
+      (repairUnionOn b).card ≤
+          ∑ d ∈ D.attach, (repair b d).card := by
+        simpa only [repairUnionOn] using
+          Finset.card_biUnion_le
+            (s := D.attach) (t := fun d => repair b d)
+      _ ≤ ∑ _d ∈ D.attach, (h + 1) := by
+        gcongr with d hd
+        exact additiveSupportFamily_cardAtMost
+          A (h + 1) (d.1 + b.1) (repair b d) (hrepair b d)
+      _ = (h + 1) * D.card := by
+        simp [Nat.mul_comm]
+  let repairUnion : ℕ → Finset ℕ := fun b =>
+    if hb : b ∈ K then repairUnionOn ⟨b, hb⟩ else ∅
+  have hrepairUnionCard :
+      ∀ b ∈ K, (repairUnion b).card ≤ (h + 1) * D.card := by
+    intro b hbK
+    simp only [repairUnion, dif_pos hbK]
+    exact hrepairUnionOnCard ⟨b, hbK⟩
+  have hrepairUnionAvoids :
+      ∀ b ∈ K, b ∉ repairUnion b := by
+    intro b hbK
+    simp only [repairUnion, dif_pos hbK, repairUnionOn]
+    intro hbUnion
+    obtain ⟨d, _hdAttach, hbRepair⟩ :=
+      Finset.mem_biUnion.mp hbUnion
+    exact hrepairAvoid ⟨b, hbK⟩ d hbRepair
+  obtain ⟨B, hBK, hBInfinite, hfree⟩ :=
+    exists_infinite_freeSet_of_bounded_pointMap
+      hKInfinite repairUnion ((h + 1) * D.card)
+        hrepairUnionCard hrepairUnionAvoids
+  refine ⟨B, fun b hbB => (hBK hbB).1, hBInfinite, ?_⟩
+  intro d hdD b hbB
+  let b' : {b // b ∈ K} := ⟨b, hBK hbB⟩
+  let d' : {d // d ∈ D} := ⟨d, hdD⟩
+  refine ⟨repair b' d', ?_, ?_⟩
+  · simpa only [b', d'] using hrepair b' d'
+  · have hsubsetFin :
+        repair b' d' ⊆ repairUnion b := by
+      intro x hx
+      simp only [repairUnion, dif_pos (hBK hbB), repairUnionOn]
+      exact Finset.mem_biUnion.mpr
+        ⟨d', by simp, hx⟩
+    have hsubsetSet :
+        (repair b' d' : Set ℕ) ⊆ (repairUnion b : Set ℕ) := by
+      intro x hx
+      exact Finset.mem_coe.mpr
+        (hsubsetFin (Finset.mem_coe.mp hx))
+    exact Set.disjoint_of_subset_left hsubsetSet (hfree b hbB)
+
+/-- Fixed-difference specialization of the finite translate service
+theorem.  No gap hypothesis is required. -/
+theorem IsExactTupleAsymptoticBasis.exists_infiniteDeletion_servicing_fixedSuccessorTranslate
+    {A : Set ℕ} {h d : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A h) :
+    ∃ B : Set ℕ, B ⊆ A ∧ B.Infinite ∧
+      ∀ b ∈ B,
+        ∃ E ∈ additiveSupportFamily A (h + 1) (d + b),
+          Disjoint (E : Set ℕ) B := by
+  obtain ⟨B, hBA, hBInfinite, hservice⟩ :=
+    hbasis.exists_infiniteDeletion_servicing_finiteSuccessorTranslates
+      {d}
+  exact ⟨B, hBA, hBInfinite,
+    fun b hbB => hservice d (by simp) b hbB⟩
+
+/-- A counterexample must escape every prescribed finite family of
+difference labels.
+
+First pre-service all translates `d+B`, `d ∈ D`, on one infinite deletion
+`B`.  Strong deletion then supplies cofinally late targets destroyed by
+that same `B`; none can lie in a serviced translate.  Exactness at order
+`h` independently puts an arbitrarily large exact-label rooted matching at
+each sufficiently late successor target.
+
+Hence fixed or finitely recurrent differences are not a terminal
+obstruction.  Any surviving counterexample branch must make the represented
+difference labels themselves escape every finite set. -/
+theorem exactBasis_counterexample_forces_cofinalFailedRootedMatchings_off_finiteTranslates
+    {A : Set ℕ} {h : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1))
+    (D : Finset ℕ) :
+    ∃ B : Set ℕ, B ⊆ A ∧ B.Infinite ∧
+      (∀ d ∈ D, ∀ b ∈ B,
+        ∃ E ∈ additiveSupportFamily A (h + 1) (d + b),
+          Disjoint (E : Set ℕ) B) ∧
+      ∀ r L, ∃ n, L ≤ n ∧
+        DestroysAt (additiveSupportFamily A (h + 1)) B n ∧
+        (∀ d ∈ D, ∀ b ∈ B, n ≠ d + b) ∧
+        ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+          R.card < h + 1 ∧
+          M ⊆ additiveSupportFamily A (h + 1) n ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+            Disjoint (E \ R) (G \ R) := by
+  obtain ⟨B, hBA, hBInfinite, hservice⟩ :=
+    hbasis.exists_infiniteDeletion_servicing_finiteSuccessorTranslates D
+  refine ⟨B, hBA, hBInfinite, hservice, ?_⟩
+  have hstrong :
+      StrongInfiniteDeletion
+        (additiveSupportFamily A (h + 1)) A :=
+    strongExactDeletion_of_counterexample hcounter
+  intro r L
+  obtain ⟨N, hN⟩ :=
+    hbasis.eventually_successorExactRootedMatching r
+  obtain ⟨n, hn, hnDestroy⟩ :=
+    hstrong B hBA hBInfinite (max L N)
+  have hLn : L ≤ n :=
+    (le_max_left L N).trans hn
+  have hNn : N ≤ n :=
+    (le_max_right L N).trans hn
+  have hoff : ∀ d ∈ D, ∀ b ∈ B, n ≠ d + b := by
+    intro d hdD b hbB hndb
+    obtain ⟨E, hER, hEB⟩ :=
+      hservice d hdD b hbB
+    apply hnDestroy E
+    · simpa only [hndb] using hER
+    · exact hEB
+  exact ⟨n, hLn, hnDestroy, hoff, hN n hNn⟩
+
+/-- Quantitative escape form: after changing the fixed deletion for a
+prescribed scale `Δ`, every deleted anchor below a cofinally late failure
+has predecessor difference at least `Δ`.
+
+Thus the unsolved branch is forced to be genuinely moving in the arithmetic
+label, not merely in the choice of witness. -/
+theorem exactBasis_counterexample_forces_cofinalFailedRootedMatchings_with_largeReservoirDifferences
+    {A : Set ℕ} {h : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    ∀ Δ, ∃ B : Set ℕ, B ⊆ A ∧ B.Infinite ∧
+      ∀ r L, ∃ n, L ≤ n ∧
+        DestroysAt (additiveSupportFamily A (h + 1)) B n ∧
+        (∀ b ∈ B, b ≤ n → Δ ≤ n - b) ∧
+        ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+          R.card < h + 1 ∧
+          M ⊆ additiveSupportFamily A (h + 1) n ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+            Disjoint (E \ R) (G \ R) := by
+  intro Δ
+  obtain ⟨B, hBA, hBInfinite, _hservice, hfailure⟩ :=
+    exactBasis_counterexample_forces_cofinalFailedRootedMatchings_off_finiteTranslates
+      hbasis hcounter (Finset.range Δ)
+  refine ⟨B, hBA, hBInfinite, ?_⟩
+  intro r L
+  obtain ⟨n, hLn, hnDestroy, hoff, hmatching⟩ :=
+    hfailure r L
+  refine ⟨n, hLn, hnDestroy, ?_, hmatching⟩
+  intro b hbB hbn
+  by_contra hsmall
+  have hdMem : n - b ∈ Finset.range Δ := by
+    exact Finset.mem_range.mpr (Nat.lt_of_not_ge hsmall)
+  exact (hoff (n - b) hdMem b hbB) (by omega)
+
+/-- A single infinite deletion absorbs the entire lower-gap horn.
+
+The deletion `B` simultaneously services all exceptional order-`h` gap
+translates.  Run the rooted-matching/gap dichotomy with its finite anchor
+pool chosen inside this same `B`.  In the gap branch the target is
+`(n-b)+b`, so the prebuilt repair survives `B`; hence every sufficiently
+late target either already survives the deletion or has the requested
+exact-label rooted matching.
+
+Unlike the recurrent fixed-gap conclusion, neither the gap label nor the
+matching demand changes the deletion. -/
+theorem IsExactTupleAsymptoticBasis.exists_infiniteDeletion_exactRootedMatching_or_survival
+    {A : Set ℕ} {h : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A h) :
+    ∃ B : Set ℕ, B ⊆ A ∧ B.Infinite ∧
+      (∀ d, additiveSupportFamily A h d = ∅ →
+        ∀ b ∈ B,
+          ∃ E ∈ additiveSupportFamily A (h + 1) (d + b),
+            Disjoint (E : Set ℕ) B) ∧
+      ∀ r, ∃ N, ∀ n, N ≤ n →
+        (∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+            R.card < h + 1 ∧
+            M ⊆ additiveSupportFamily A (h + 1) n ∧
+            r < M.card ∧
+            (∀ E ∈ M, R ⊆ E) ∧
+            (∀ E ∈ M, (E \ R).Nonempty) ∧
+            ∀ E ∈ M, ∀ D ∈ M, E ≠ D →
+              Disjoint (E \ R) (D \ R)) ∨
+          ∃ E ∈ additiveSupportFamily A (h + 1) n,
+            Disjoint (E : Set ℕ) B := by
+  obtain ⟨B, hBA, hBInfinite, hservice⟩ :=
+    hbasis.exists_infiniteDeletion_servicing_all_gapTranslates
+  refine ⟨B, hBA, hBInfinite, hservice, ?_⟩
+  intro r
+  obtain ⟨N, hN⟩ :=
+    eventually_exactRootedMatching_or_lowerGap_onInfiniteReservoir
+      (A := A) (C := B) (k := h) hBA hBInfinite r
+  refine ⟨N, ?_⟩
+  intro n hn
+  obtain hmatching | ⟨b, hbB, hbn, hgap⟩ :=
+    hN n hn
+  · exact Or.inl hmatching
+  · right
+    obtain ⟨E, hER, hEB⟩ :=
+      hservice (n - b) hgap b hbB
+    have htarget : n - b + b = n :=
+      Nat.sub_add_cancel hbn
+    exact ⟨E, by simpa only [htarget] using hER, hEB⟩
+
+/-- If the desired successor deletion still fails, all gap migration has
+already been eliminated on one fixed infinite deletion.
+
+For every matching demand and every lateness threshold there is a failed
+target for that same deletion carrying an exact-label rooted matching of
+the demanded size.  Thus a hypothetical counterexample can no longer move
+between different predecessor gaps: its only remaining mechanism is a
+root of fewer than `h+1` deleted vertices recurring at cofinally late
+failure targets. -/
+theorem exactBasis_counterexample_forces_fixedDeletion_cofinalFailedRootedMatchings
+    {A : Set ℕ} {h : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    ∃ B : Set ℕ, B ⊆ A ∧ B.Infinite ∧
+      (∀ d, additiveSupportFamily A h d = ∅ →
+        ∀ b ∈ B,
+          ∃ E ∈ additiveSupportFamily A (h + 1) (d + b),
+            Disjoint (E : Set ℕ) B) ∧
+      ∀ r L, ∃ n, L ≤ n ∧
+        DestroysAt (additiveSupportFamily A (h + 1)) B n ∧
+        ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+          R.card < h + 1 ∧
+          M ⊆ additiveSupportFamily A (h + 1) n ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          ∀ E ∈ M, ∀ D ∈ M, E ≠ D →
+            Disjoint (E \ R) (D \ R) := by
+  obtain ⟨B, hBA, hBInfinite, hservice, hfork⟩ :=
+    hbasis.exists_infiniteDeletion_exactRootedMatching_or_survival
+  refine ⟨B, hBA, hBInfinite, hservice, ?_⟩
+  have hstrong :
+      StrongInfiniteDeletion
+        (additiveSupportFamily A (h + 1)) A :=
+    strongExactDeletion_of_counterexample hcounter
+  intro r L
+  obtain ⟨N, hN⟩ := hfork r
+  obtain ⟨n, hn, hnDestroy⟩ :=
+    hstrong B hBA hBInfinite (max L N)
+  have hLn : L ≤ n :=
+    (le_max_left L N).trans hn
+  have hNn : N ≤ n :=
+    (le_max_right L N).trans hn
+  obtain hmatching | ⟨E, hER, hEB⟩ :=
+    hN n hNn
+  · exact ⟨n, hLn, hnDestroy, hmatching⟩
+  · exact (hnDestroy E hER hEB).elim
 
 /-- The recurrent lower gap in the fixed-reservoir obstruction is genuinely
 fixed.
