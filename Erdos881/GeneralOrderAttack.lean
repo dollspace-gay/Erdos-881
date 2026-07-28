@@ -20580,6 +20580,119 @@ theorem minimalAdditiveDestroyer_has_prefixClearedUniversalAnchorFan
     simpa [repaired, foldr_insert_eq_toFinset_union] using hyRepair
   exact ⟨repaired, hrepairR, hrepairW, hrepairSub⟩
 
+/-- Reservoir-cleared universal anchor fan.
+
+When the destroyer lies in one side `B` of a partition `A ⊆ C ∪ B`, peel
+the private support against the *whole* of `B`, rather than only against a
+finite history.  Every removed summand is then in `B`, while the residual
+core lies in `C`.  Consequently every equal-length replacement tuple from
+`C` gives a successor support avoiding all of `B`.
+
+This removes the moving finite prefix from the normalization obstruction:
+failure of a same-sum replacement is witnessed by the one fixed deletion
+reservoir `B`. -/
+theorem minimalAdditiveDestroyer_has_reservoirClearedUniversalAnchorFan
+    {A C B : Set ℕ} {H q x : ℕ} {D : Finset ℕ}
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A H) D q)
+    (hxD : x ∈ D)
+    (hDB : (D : Set ℕ) ⊆ B)
+    (hCA : C ⊆ A)
+    (hACB : A ⊆ C ∪ B)
+    (hCB : Disjoint C B) :
+    ∃ hits : List ℕ, ∃ j t, ∃ core : Finset ℕ,
+      0 < hits.length ∧
+      hits.length + j = H ∧
+      (∀ y ∈ hits, y ∈ A ∧ y ∈ B) ∧
+      (∃ y ∈ D, y ∈ hits) ∧
+      q = hits.sum + t ∧
+      core ∈ additiveSupportFamily A j t ∧
+      (core : Set ℕ) ⊆ C ∧
+      ∀ pads : List ℕ,
+        pads.length = hits.length →
+        (∀ a ∈ pads, a ∈ C) →
+        ∃ repaired : Finset ℕ,
+          repaired ∈
+            additiveSupportFamily A H
+              (pads.sum + t) ∧
+          Disjoint (repaired : Set ℕ) B ∧
+          repaired ⊆ pads.toFinset ∪ core := by
+  classical
+  obtain ⟨E, hER, hED⟩ :=
+    hminimal.exists_uniqueHitSupport hxD
+  have hxE : x ∈ E := by
+    have hxInter : x ∈ E ∩ D := by
+      rw [hED]
+      simp
+    exact (Finset.mem_inter.mp hxInter).1
+  obtain ⟨hits, j, t, core, hlength, hhits,
+      hcoreR, hcoreB, htarget, hEeq⟩ :=
+    additiveSupport_peel_hits_to_survivingCore
+      H q E hER (S := B)
+  have hhitsNonempty : hits ≠ [] := by
+    intro hhitsEmpty
+    have hEcore : E = core := by
+      simpa [hhitsEmpty] using hEeq
+    exact Set.disjoint_left.mp hcoreB
+      (by
+        rw [← hEcore]
+        exact Finset.mem_coe.mpr hxE)
+      (hDB (Finset.mem_coe.mpr hxD))
+  have hxHits : x ∈ hits := by
+    by_contra hxNotHits
+    have hxUnion : x ∈ hits.toFinset ∪ core := by
+      rw [← foldr_insert_eq_toFinset_union]
+      rw [← hEeq]
+      exact hxE
+    rcases Finset.mem_union.mp hxUnion with hxHit | hxCore
+    · exact hxNotHits (List.mem_toFinset.mp hxHit)
+    · exact Set.disjoint_left.mp hcoreB
+        (Finset.mem_coe.mpr hxCore)
+        (hDB (Finset.mem_coe.mpr hxD))
+  have hcoreC : (core : Set ℕ) ⊆ C := by
+    intro y hyCore
+    have hyA :
+        y ∈ A :=
+      additiveSupportFamily_supportsIn
+        A j t core hcoreR y (Finset.mem_coe.mp hyCore)
+    rcases hACB hyA with hyC | hyB
+    · exact hyC
+    · exact (Set.disjoint_left.mp hcoreB hyCore hyB).elim
+  refine ⟨hits, j, t, core,
+    List.length_pos_iff.mpr hhitsNonempty,
+    hlength, hhits, ⟨x, hxD, hxHits⟩,
+    htarget, hcoreR, hcoreC, ?_⟩
+  intro pads hpadsLength hpadsC
+  let repaired : Finset ℕ :=
+    pads.foldr (fun y G => insert y G) core
+  have hpadsA : ∀ y ∈ pads, y ∈ A := by
+    intro y hyPads
+    exact hCA (hpadsC y hyPads)
+  have hrepairRaw :=
+    foldr_insert_mem_additiveSupportFamily hpadsA hcoreR
+  have hrepairR :
+      repaired ∈
+        additiveSupportFamily A H
+          (pads.sum + t) := by
+    rw [hpadsLength, hlength] at hrepairRaw
+    exact hrepairRaw
+  have hrepairB :
+      Disjoint (repaired : Set ℕ) B := by
+    rw [Set.disjoint_left]
+    intro y hyRepair hyB
+    have hyUnion : y ∈ pads.toFinset ∪ core := by
+      simpa [repaired, foldr_insert_eq_toFinset_union] using hyRepair
+    rcases Finset.mem_union.mp hyUnion with hyPads | hyCore
+    · exact Set.disjoint_left.mp hCB
+        (hpadsC y (List.mem_toFinset.mp hyPads)) hyB
+    · exact Set.disjoint_left.mp hcoreB
+        (Finset.mem_coe.mpr hyCore) hyB
+  have hrepairSub : repaired ⊆ pads.toFinset ∪ core := by
+    intro y hyRepair
+    simpa [repaired, foldr_insert_eq_toFinset_union] using hyRepair
+  exact ⟨repaired, hrepairR, hrepairB, hrepairSub⟩
+
 /-- Failure to replace one exact-length sum by clean points of one side of
 a partition is precisely a destroyer on the other side, up to the finite
 forbidden prefix.
@@ -20622,6 +20735,82 @@ theorem no_cleanTupleNormalization_forces_partitionDestroyer
     rw [List.sum_ofFn]
     exact hvsum
 
+/-- The reservoir-cleared fan turns the private successor obstruction into
+a non-moving lower-rank obstruction on the same fixed reservoir `B`.
+
+The original private support is split into its `B`-summands and a core in
+`C`.  If a tuple from `C` had the same length and sum as those `B`-summands,
+the universal fan would reconstruct the destroyed successor target while
+avoiding all of `B`, hence all of `D`.  Therefore no such normalization
+exists, and `B` itself destroys the exact hit sum at the peeled rank. -/
+theorem minimalAdditiveDestroyer_has_fixedReservoirLowerRankDescent
+    {A C B : Set ℕ} {H q x : ℕ} {D : Finset ℕ}
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A H) D q)
+    (hxD : x ∈ D)
+    (hDB : (D : Set ℕ) ⊆ B)
+    (hCA : C ⊆ A)
+    (hACB : A ⊆ C ∪ B)
+    (hCB : Disjoint C B) :
+    ∃ hits : List ℕ, ∃ j t, ∃ core : Finset ℕ,
+      0 < hits.length ∧
+      hits.length + j = H ∧
+      (∀ y ∈ hits, y ∈ A ∧ y ∈ B) ∧
+      (∃ y ∈ D, y ∈ hits) ∧
+      q = hits.sum + t ∧
+      core ∈ additiveSupportFamily A j t ∧
+      (core : Set ℕ) ⊆ C ∧
+      (∀ pads : List ℕ,
+        pads.length = hits.length →
+        (∀ a ∈ pads, a ∈ C) →
+        ∃ repaired : Finset ℕ,
+          repaired ∈
+            additiveSupportFamily A H
+              (pads.sum + t) ∧
+          Disjoint (repaired : Set ℕ) B ∧
+          repaired ⊆ pads.toFinset ∪ core) ∧
+      (∀ pads : List ℕ,
+        pads.length = hits.length →
+        (∀ a ∈ pads, a ∈ C) →
+        pads.sum ≠ hits.sum) ∧
+      DestroysAt
+        (additiveSupportFamily A hits.length)
+        B hits.sum := by
+  obtain ⟨hits, j, t, core, hhitsPos, hlength,
+      hhits, hblockHit, htarget, hcoreR, hcoreC, hfan⟩ :=
+    minimalAdditiveDestroyer_has_reservoirClearedUniversalAnchorFan
+      hminimal hxD hDB hCA hACB hCB
+  have hno : ∀ pads : List ℕ,
+      pads.length = hits.length →
+      (∀ a ∈ pads, a ∈ C) →
+      pads.sum ≠ hits.sum := by
+    intro pads hpadsLength hpadsC hpadsSum
+    obtain ⟨repaired, hrepairR, hrepairB, _hrepairSub⟩ :=
+      hfan pads hpadsLength hpadsC
+    have hrepairQ :
+        repaired ∈ additiveSupportFamily A H q := by
+      rw [hpadsSum, ← htarget] at hrepairR
+      exact hrepairR
+    exact hminimal.1 repaired hrepairQ
+      (hrepairB.mono_right hDB)
+  have hdestroyRaw :=
+    no_cleanTupleNormalization_forces_partitionDestroyer
+      (A := A) (C := C) (B := B)
+      (ℓ := hits.length) (n := hits.sum) (F := ∅)
+      hACB (by
+        intro pads hpadsLength hpads
+        exact hno pads hpadsLength fun a haPads =>
+          (hpads a haPads).1)
+  have hdestroy :
+      DestroysAt
+        (additiveSupportFamily A hits.length)
+        B hits.sum := by
+    simpa using hdestroyRaw
+  exact ⟨hits, j, t, core, hhitsPos, hlength,
+    hhits, hblockHit, htarget, hcoreR, hcoreC,
+    hfan, hno, hdestroy⟩
+
 /-- A list of summands in `A` gives a support at its exact length and sum.
 This is the occurrence-sensitive converse used to certify that the
 lower-rank destroyers produced by normalization failure are nonvacuous. -/
@@ -20643,6 +20832,185 @@ theorem list_foldr_mem_additiveSupportFamily
       exact Fin.elim0 i
   simpa using
     (foldr_insert_mem_additiveSupportFamily hxs hempty)
+
+/-- A successor counterexample forces cofinal nonvacuous lower-rank
+destruction on one fixed deletion reservoir.
+
+Split `A` into the disjoint infinite reservoirs `C,B`.  For a cutoff `L`,
+ask for a fresh successor-minimal destroyer disjoint from
+`{0, ..., L}` and peel one of its private supports against all of `B`.
+The peeled hit list contains a destroyer point above `L`, hence its sum is
+above `L`.  The reservoir-cleared fan then shows that this represented hit
+sum is destroyed by the same fixed set `B`, with no moving finite prefix,
+while its residual core and every clean replacement lie entirely on the
+retained side. -/
+theorem exactBasis_counterexample_forces_cofinalFixedReservoirLowerRankDescent
+    {A : Set ℕ} {h : ℕ}
+    (hhpos : 0 < h)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    ∃ C B : Set ℕ,
+      C ⊆ A ∧ C.Infinite ∧
+      B ⊆ A ∧ B.Infinite ∧
+      Disjoint C B ∧
+      A ⊆ C ∪ B ∧
+      ∀ L, ∃ q, ∃ D : Finset ℕ,
+        ∃ hits : List ℕ, ∃ j t, ∃ core : Finset ℕ,
+          L ≤ q ∧
+          L < hits.sum ∧
+          D.Nonempty ∧
+          (D : Set ℕ) ⊆ B ∧
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A (h + 1)) D q ∧
+          0 < hits.length ∧
+          hits.length + j = h + 1 ∧
+          (∀ y ∈ hits, y ∈ A ∧ y ∈ B) ∧
+          (∃ y ∈ D, y ∈ hits) ∧
+          (additiveSupportFamily A
+            hits.length hits.sum).Nonempty ∧
+          DestroysAt
+            (additiveSupportFamily A hits.length)
+            B hits.sum ∧
+          q = hits.sum + t ∧
+          core ∈ additiveSupportFamily A j t ∧
+          (core : Set ℕ) ⊆ C ∧
+          (∀ pads : List ℕ,
+            pads.length = hits.length →
+            (∀ a ∈ pads, a ∈ C) →
+            ∃ repaired : Finset ℕ,
+              repaired ∈
+                additiveSupportFamily A (h + 1)
+                  (pads.sum + t) ∧
+              Disjoint (repaired : Set ℕ) B ∧
+              repaired ⊆ pads.toFinset ∪ core) ∧
+          ∀ pads : List ℕ,
+            pads.length = hits.length →
+            (∀ a ∈ pads, a ∈ C) →
+            pads.sum ≠ hits.sum := by
+  classical
+  obtain ⟨C, B, hCA, hCInfinite, hBA, hBInfinite,
+      hCB, hACB, hstage⟩ :=
+    exactBasis_counterexample_forces_fixedReservoir_freshMatchings
+      hhpos hbasis hcounter
+  refine ⟨C, B, hCA, hCInfinite, hBA, hBInfinite,
+    hCB, hACB, ?_⟩
+  intro L
+  obtain ⟨q, D, hLq, hDnonempty, hDB, hDprefix,
+      hminimal, _hmatching⟩ :=
+    hstage (Finset.range (L + 1)) 0 L
+  obtain ⟨x, hxD⟩ := hDnonempty
+  have hDnonempty' : D.Nonempty := ⟨x, hxD⟩
+  obtain ⟨hits, j, t, core, hhitsPos, hlength,
+      hhits, hblockHit, htarget, hcoreR, hcoreC,
+      hfan, hno, hdestroy⟩ :=
+    minimalAdditiveDestroyer_has_fixedReservoirLowerRankDescent
+      hminimal hxD hDB hCA hACB hCB
+  obtain ⟨y, hyD, hyHits⟩ := hblockHit
+  have hblockHit' : ∃ y ∈ D, y ∈ hits :=
+    ⟨y, hyD, hyHits⟩
+  have hLy : L < y := by
+    have hyNotPrefix : y ∉ Finset.range (L + 1) := by
+      intro hyPrefix
+      exact Finset.disjoint_left.mp hDprefix hyD hyPrefix
+    have hyNotLt : ¬ y < L + 1 := by
+      simpa only [Finset.mem_range] using hyNotPrefix
+    omega
+  have hLsum : L < hits.sum :=
+    hLy.trans_le (List.le_sum_of_mem hyHits)
+  have hrepresented :
+      (additiveSupportFamily A
+        hits.length hits.sum).Nonempty := by
+    exact ⟨hits.foldr (fun z E => insert z E) ∅,
+      list_foldr_mem_additiveSupportFamily fun z hz =>
+        (hhits z hz).1⟩
+  exact ⟨q, D, hits, j, t, core,
+    hLq, hLsum, hDnonempty', hDB, hminimal,
+    hhitsPos, hlength, hhits, hblockHit',
+    hrepresented, hdestroy, htarget, hcoreR,
+    hcoreC, hfan, hno⟩
+
+/-- Fixed-rank payoff of the reservoir-cleared descent.
+
+Only the peeled length can vary, and it lies in the finite interval
+`1, ..., h+1`.  An infinite-fiber argument therefore fixes one positive
+rank `ℓ` at which the same reservoir `B` destroys genuinely represented
+targets cofinally.  Unlike the earlier moving-prefix conclusion, neither
+the deleted set nor an auxiliary finite injury set depends on the target. -/
+theorem exactBasis_counterexample_forces_fixedRankCofinalFixedReservoirDestruction
+    {A : Set ℕ} {h : ℕ}
+    (hhpos : 0 < h)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    ∃ C B : Set ℕ, ∃ ℓ,
+      C ⊆ A ∧ C.Infinite ∧
+      B ⊆ A ∧ B.Infinite ∧
+      Disjoint C B ∧
+      A ⊆ C ∪ B ∧
+      0 < ℓ ∧ ℓ ≤ h + 1 ∧
+      ∀ L, ∃ n,
+        L < n ∧
+        (additiveSupportFamily A ℓ n).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A ℓ) B n := by
+  classical
+  obtain ⟨C, B, hCA, hCInfinite, hBA, hBInfinite,
+      hCB, hACB, hcofinal⟩ :=
+    exactBasis_counterexample_forces_cofinalFixedReservoirLowerRankDescent
+      hhpos hbasis hcounter
+  choose q D hits j t core hdata using hcofinal
+  let slope : ℕ → Fin (h + 2) := fun i =>
+    ⟨(hits i).length, by
+      rcases hdata i with
+        ⟨_hiq, _hiSum, _hDnonempty, _hDB, _hminimal,
+          _hhitsPos, hlength, _hrest⟩
+      omega⟩
+  obtain ⟨ℓ, hℓFiber⟩ :=
+    Finite.exists_infinite_fiber slope
+  have hfiberEq :
+      slope ⁻¹' {ℓ} =
+        {i | (hits i).length = ℓ.1} := by
+    ext i
+    simp only [Set.mem_preimage, Set.mem_singleton_iff,
+      Set.mem_setOf_eq]
+    constructor
+    · intro hi
+      exact congrArg Fin.val hi
+    · intro hi
+      apply Fin.ext
+      exact hi
+  have hfixedSlope :
+      {i | (hits i).length = ℓ.1}.Infinite := by
+    have hpreimage :
+        (slope ⁻¹' {ℓ}).Infinite :=
+      Set.infinite_coe_iff.mp hℓFiber
+    rw [hfiberEq] at hpreimage
+    exact hpreimage
+  have hℓpos : 0 < ℓ.1 := by
+    obtain ⟨i, hiSlope⟩ := hfixedSlope.nonempty
+    rcases hdata i with
+      ⟨_hiq, _hiSum, _hDnonempty, _hDB, _hminimal,
+        hhitsPos, _hlength, _hrest⟩
+    rw [hiSlope] at hhitsPos
+    exact hhitsPos
+  have hℓle : ℓ.1 ≤ h + 1 := by
+    have := ℓ.isLt
+    omega
+  refine ⟨C, B, ℓ.1, hCA, hCInfinite, hBA, hBInfinite,
+    hCB, hACB, hℓpos, hℓle, ?_⟩
+  intro L
+  obtain ⟨i, hiSlope, hLi⟩ :=
+    hfixedSlope.exists_gt L
+  rcases hdata i with
+    ⟨_hiq, hiSum, _hDnonempty, _hDB, _hminimal,
+      _hhitsPos, _hlength, _hhits, _hblockHit,
+      hrepresented, hdestroy, _htarget, _hcoreR,
+      _hcoreC, _hfan, _hno⟩
+  have hLn : L < (hits i).sum :=
+    hLi.trans hiSum
+  rw [hiSlope] at hrepresented hdestroy
+  exact ⟨(hits i).sum, hLn, hrepresented, hdestroy⟩
 
 /-- Fixed-reservoir stage with both cross-block repair and matching growth.
 
