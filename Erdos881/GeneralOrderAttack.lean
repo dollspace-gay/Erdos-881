@@ -972,6 +972,675 @@ theorem additiveSupport_remove_hit_succ
     · exact ⟨i, hi⟩
     · exact ⟨i.succAbove j, by simpa [w, u] using hj⟩
 
+/-- Concatenate two exact additive representations.
+
+At support level the concatenated tuple has support `E ∪ G`, order
+`j + m`, and target `t + u`.  No disjointness between the two supports is
+required because tuple supports record values rather than occurrences. -/
+theorem union_mem_additiveSupportFamily_add
+    {A : Set ℕ} {j m t u : ℕ} {E G : Finset ℕ}
+    (hER : E ∈ additiveSupportFamily A j t)
+    (hGR : G ∈ additiveSupportFamily A m u) :
+    E ∪ G ∈ additiveSupportFamily A (j + m) (t + u) := by
+  classical
+  obtain ⟨v, hvA, hvsum, hEv⟩ :=
+    mem_additiveSupportFamily_iff.mp hER
+  obtain ⟨w, hwA, hwsum, hGw⟩ :=
+    mem_additiveSupportFamily_iff.mp hGR
+  let value : Fin (j + m) → ℕ :=
+    Fin.addCases (fun i => (v i).1) (fun i => (w i).1)
+  have hvalueLe : ∀ i, value i ≤ t + u := by
+    intro i
+    refine Fin.addCases ?_ ?_ i
+    · intro a
+      simpa [value] using
+        (Nat.le_of_lt_succ (v a).2).trans
+          (Nat.le_add_right t u)
+    · intro b
+      simpa [value] using
+        (Nat.le_of_lt_succ (w b).2).trans
+          (Nat.le_add_left u t)
+  let z : Fin (j + m) → Fin (t + u + 1) := fun i =>
+    ⟨value i, Nat.lt_succ_of_le (hvalueLe i)⟩
+  apply mem_additiveSupportFamily_iff.mpr
+  refine ⟨z, ?_, ?_, ?_⟩
+  · intro i
+    refine Fin.addCases ?_ ?_ i
+    · intro a
+      simpa [z, value] using hvA a
+    · intro b
+      simpa [z, value] using hwA b
+  · rw [Fin.sum_univ_add]
+    simpa [z, value] using congrArg₂ (· + ·) hvsum hwsum
+  · ext x
+    simp only [Finset.mem_union, mem_tupleSupport_iff]
+    constructor
+    · rintro ⟨i, hi⟩
+      revert hi
+      refine Fin.addCases ?_ ?_ i
+      · intro a hi
+        left
+        rw [← hEv, mem_tupleSupport_iff]
+        exact ⟨a, by simpa [z, value] using hi⟩
+      · intro b hi
+        right
+        rw [← hGw, mem_tupleSupport_iff]
+        exact ⟨b, by simpa [z, value] using hi⟩
+    · intro hx
+      rcases hx with hxE | hxG
+      · obtain ⟨i, hi⟩ := mem_tupleSupport_iff.mp
+          (hEv.symm ▸ hxE)
+        refine ⟨Fin.castAdd m i, ?_⟩
+        simpa [z, value] using hi
+      · obtain ⟨i, hi⟩ := mem_tupleSupport_iff.mp
+          (hGw.symm ▸ hxG)
+        refine ⟨Fin.natAdd j i, ?_⟩
+        simpa [z, value] using hi
+
+/-- A destroyer descends through any fixed surviving additive core.
+
+If an order-`j` support of `t` avoids `S`, but `S` destroys every
+order-`j+m` support of `t+u`, then `S` must destroy every order-`m`
+support of `u`.  Otherwise concatenating the two surviving supports would
+repair the larger target. -/
+theorem additiveDestroyer_descends_through_survivingCore
+    {A S : Set ℕ} {j m t u : ℕ} {H : Finset ℕ}
+    (hHR : H ∈ additiveSupportFamily A j t)
+    (hHS : Disjoint (H : Set ℕ) S)
+    (hdestroy :
+      DestroysAt
+        (additiveSupportFamily A (j + m)) S (t + u)) :
+    DestroysAt (additiveSupportFamily A m) S u := by
+  intro G hGR
+  by_contra hGS
+  have hGSAvoid : Disjoint (G : Set ℕ) S :=
+    hGS
+  have hUnionAvoid : Disjoint ((H ∪ G : Finset ℕ) : Set ℕ) S := by
+    rw [Set.disjoint_left]
+    intro x hxUnion hxS
+    rcases Finset.mem_union.mp (Finset.mem_coe.mp hxUnion) with
+      hxH | hxG
+    · exact Set.disjoint_left.mp hHS
+        (Finset.mem_coe.mpr hxH) hxS
+    · exact Set.disjoint_left.mp hGSAvoid
+        (Finset.mem_coe.mpr hxG) hxS
+  exact hdestroy (H ∪ G)
+    (union_mem_additiveSupportFamily_add hHR hGR)
+    hUnionAvoid
+
+/-- Finite-rank termination of repeated deletion injury.
+
+Starting from any exact order-`h` support, repeatedly remove an occurrence
+of a point lying in `S`.  Each removal lowers the additive order and target
+by that summand, while `additiveSupport_remove_hit_succ` reconstructs the
+old support exactly.  In at most `h` steps the remaining support is
+disjoint from `S`; rank zero cannot contain a further hit.
+
+The output records every removed summand, the exact residual target, and
+the exact reconstruction of the original support.  Repetitions are retained
+in the list even though supports themselves are finite sets. -/
+theorem additiveSupport_peel_hits_to_survivingCore
+    {A S : Set ℕ} :
+    ∀ h n (E : Finset ℕ),
+      E ∈ additiveSupportFamily A h n →
+      ∃ hits : List ℕ, ∃ j t : ℕ, ∃ H : Finset ℕ,
+        hits.length + j = h ∧
+        (∀ x ∈ hits, x ∈ A ∧ x ∈ S) ∧
+        H ∈ additiveSupportFamily A j t ∧
+        Disjoint (H : Set ℕ) S ∧
+        n = hits.sum + t ∧
+        E = hits.foldr (fun x G => insert x G) H := by
+  classical
+  intro h
+  induction h with
+  | zero =>
+      intro n E hER
+      have hEempty : E = ∅ := by
+        obtain ⟨v, _hvA, _hvsum, rfl⟩ :=
+          mem_additiveSupportFamily_iff.mp hER
+        apply Finset.not_nonempty_iff_eq_empty.mp
+        rintro ⟨x, hx⟩
+        obtain ⟨i, _hi⟩ := mem_tupleSupport_iff.mp hx
+        exact Fin.elim0 i
+      refine ⟨[], 0, n, E, by simp, by simp, hER, ?_, by simp, by simp⟩
+      rw [hEempty]
+      simp
+  | succ k ih =>
+      intro n E hER
+      by_cases hES : Disjoint (E : Set ℕ) S
+      · exact ⟨[], k + 1, n, E, by simp, by simp,
+          hER, hES, by simp, by simp⟩
+      · obtain ⟨x, hxE, hxS⟩ :=
+          Set.not_disjoint_iff.mp hES
+        have hxA : x ∈ A :=
+          additiveSupportFamily_supportsIn
+            A (k + 1) n E hER x
+              (Finset.mem_coe.mp hxE)
+        have hxn : x ≤ n :=
+          additiveSupportFamily_supportsBounded
+            A (k + 1) n E hER x
+              (Finset.mem_coe.mp hxE)
+        obtain ⟨E', hE'R, hEE'⟩ :=
+          additiveSupport_remove_hit_succ
+            hER (Finset.mem_coe.mp hxE)
+        obtain ⟨hits, j, t, H, hlength, hhits,
+            hHR, hHS, htarget, hE'eq⟩ :=
+          ih (n - x) E' hE'R
+        refine ⟨x :: hits, j, t, H, ?_, ?_, hHR,
+          hHS, ?_, ?_⟩
+        · simp only [List.length_cons]
+          omega
+        · intro y hy
+          rcases List.mem_cons.mp hy with rfl | hyHits
+          · exact ⟨hxA, hxS⟩
+          · exact hhits y hyHits
+        · simp only [List.sum_cons]
+          omega
+        · simp only [List.foldr_cons]
+          rw [hEE', hE'eq]
+
+/-- Strict form for a genuinely destroyed support.
+
+If `S` destroys the original support, the peeling list is nonempty, so the
+surviving core has strictly smaller additive rank.  This is the finite
+rank countdown needed for moving-stage composition: every real injury
+spends at least one summand and leaves an explicit lower-rank certificate
+which already survives the current deletion. -/
+theorem destroyed_additiveSupport_has_strictSurvivingCoreDecomposition
+    {A S : Set ℕ} {h n : ℕ} {E : Finset ℕ}
+    (hER : E ∈ additiveSupportFamily A h n)
+    (hdestroy : ¬ Disjoint (E : Set ℕ) S) :
+    ∃ hits : List ℕ, ∃ j t : ℕ, ∃ H : Finset ℕ,
+      hits ≠ [] ∧
+      hits.length + j = h ∧
+      j < h ∧
+      (∀ x ∈ hits, x ∈ A ∧ x ∈ S) ∧
+      H ∈ additiveSupportFamily A j t ∧
+      Disjoint (H : Set ℕ) S ∧
+      n = hits.sum + t ∧
+      E = hits.foldr (fun x G => insert x G) H := by
+  obtain ⟨hits, j, t, H, hlength, hhits,
+      hHR, hHS, htarget, hEeq⟩ :=
+    additiveSupport_peel_hits_to_survivingCore
+      h n E hER
+  have hhitsNonempty : hits ≠ [] := by
+    by_contra hhitsEmpty
+    subst hits
+    simp only [List.foldr_nil] at hEeq
+    exact hdestroy (hEeq ▸ hHS)
+  have hjh : j < h := by
+    have hlengthPos : 0 < hits.length :=
+      List.length_pos_iff.mpr hhitsNonempty
+    omega
+  exact ⟨hits, j, t, H, hhitsNonempty, hlength, hjh,
+    hhits, hHR, hHS, htarget, hEeq⟩
+
+/-- Unrestricted normalization of an infinite moving-injury family.
+
+Peel every chosen damaged support all the way to its first surviving core.
+There are only finitely many possible residual ranks, so one strict rank
+`j < h` occurs on an infinite subfamily.  The exact target equation then
+has the form
+
+`target n = (removed deleted mass) + (surviving residual target)`.
+
+If the residual targets have infinite image, thin them to an injective,
+cofinal lower-rank stream.  Otherwise one residual target is fixed on an
+infinite fiber; injectivity of the original targets forces the removed
+deleted masses to be injective and cofinal.  These are the only two shapes
+of a migrating injury after the finite rank countdown has been performed,
+and every displayed core already avoids its stage's forbidden set. -/
+theorem infinite_destroyedSupports_normalize_cofinalCore_or_fixedCoreMovingMass
+    {A I : Set ℕ} {h : ℕ}
+    {target : ℕ → ℕ}
+    {repair : ℕ → Finset ℕ}
+    {forbidden : ℕ → Set ℕ}
+    (hI : I.Infinite)
+    (htargetInj : Set.InjOn target I)
+    (hrepair : ∀ n ∈ I,
+      repair n ∈ additiveSupportFamily A h (target n))
+    (hdestroy : ∀ n ∈ I,
+      ¬ Disjoint (repair n : Set ℕ) (forbidden n)) :
+    ∃ J : Set ℕ, ∃ hits : ℕ → List ℕ, ∃ j : ℕ,
+      ∃ residual : ℕ → ℕ, ∃ core : ℕ → Finset ℕ,
+        J ⊆ I ∧
+        J.Infinite ∧
+        j < h ∧
+        (∀ n ∈ J,
+          hits n ≠ [] ∧
+          (hits n).length + j = h ∧
+          (∀ x ∈ hits n, x ∈ A ∧ x ∈ forbidden n) ∧
+          core n ∈ additiveSupportFamily A j (residual n) ∧
+          Disjoint (core n : Set ℕ) (forbidden n) ∧
+          target n = (hits n).sum + residual n ∧
+          repair n =
+            (hits n).foldr (fun x G => insert x G) (core n)) ∧
+        ((Set.InjOn residual J ∧
+            ∀ L, ∃ n ∈ J, L ≤ residual n) ∨
+          ∃ t,
+            (∀ n ∈ J, residual n = t) ∧
+            Set.InjOn (fun n => (hits n).sum) J ∧
+            ∀ L, ∃ n ∈ J, L ≤ (hits n).sum) := by
+  classical
+  let Datum := List ℕ × ℕ × ℕ × Finset ℕ
+  let IsPeeling : ℕ → Datum → Prop := fun n d =>
+    d.1 ≠ [] ∧
+    d.1.length + d.2.1 = h ∧
+    d.2.1 < h ∧
+    (∀ x ∈ d.1, x ∈ A ∧ x ∈ forbidden n) ∧
+    d.2.2.2 ∈ additiveSupportFamily A d.2.1 d.2.2.1 ∧
+    Disjoint (d.2.2.2 : Set ℕ) (forbidden n) ∧
+    target n = d.1.sum + d.2.2.1 ∧
+    repair n =
+      d.1.foldr (fun x G => insert x G) d.2.2.2
+  have hexists : ∀ n ∈ I, ∃ d : Datum, IsPeeling n d := by
+    intro n hn
+    obtain ⟨hits, j, t, H, hhits, hlength, hjh,
+        hhitsIn, hHR, hHS, htarget, hrepairEq⟩ :=
+      destroyed_additiveSupport_has_strictSurvivingCoreDecomposition
+        (hrepair n hn) (hdestroy n hn)
+    refine ⟨(hits, j, t, H), ?_⟩
+    exact ⟨hhits, hlength, hjh, hhitsIn, hHR,
+      hHS, htarget, hrepairEq⟩
+  let data : ℕ → Datum := fun n =>
+    if hn : ∃ d : Datum, IsPeeling n d then
+      Classical.choose hn
+    else ([], 0, 0, ∅)
+  have hdata : ∀ n ∈ I, IsPeeling n (data n) := by
+    intro n hn
+    have hnExists : ∃ d : Datum, IsPeeling n d :=
+      hexists n hn
+    simp only [data, dif_pos hnExists]
+    exact Classical.choose_spec hnExists
+  let hits : ℕ → List ℕ := fun n => (data n).1
+  let rank : ℕ → ℕ := fun n => (data n).2.1
+  let residual : ℕ → ℕ := fun n => (data n).2.2.1
+  let core : ℕ → Finset ℕ := fun n => (data n).2.2.2
+  have hpeel : ∀ n ∈ I,
+      hits n ≠ [] ∧
+      (hits n).length + rank n = h ∧
+      rank n < h ∧
+      (∀ x ∈ hits n, x ∈ A ∧ x ∈ forbidden n) ∧
+      core n ∈ additiveSupportFamily A (rank n) (residual n) ∧
+      Disjoint (core n : Set ℕ) (forbidden n) ∧
+      target n = (hits n).sum + residual n ∧
+      repair n =
+        (hits n).foldr (fun x G => insert x G) (core n) := by
+    intro n hn
+    simpa only [IsPeeling, hits, rank, residual, core] using
+      hdata n hn
+  have hrankImageFinite : (rank '' I).Finite := by
+    apply (Finset.range h).finite_toSet.subset
+    rintro j ⟨n, hn, rfl⟩
+    exact Finset.mem_coe.mpr
+      (Finset.mem_range.mpr (hpeel n hn).2.2.1)
+  have hinfiniteRankFiber : ∃ j ∈ rank '' I,
+      (I ∩ rank ⁻¹' ({j} : Set ℕ)).Infinite := by
+    by_contra hnoFiber
+    push Not at hnoFiber
+    apply hI
+    apply Set.Finite.of_finite_fibers rank hrankImageFinite
+    intro j hjImage
+    exact hnoFiber j hjImage
+  obtain ⟨j, hjImage, hI₀⟩ := hinfiniteRankFiber
+  let I₀ : Set ℕ := I ∩ rank ⁻¹' ({j} : Set ℕ)
+  have hI₀I : I₀ ⊆ I := Set.inter_subset_left
+  have hrankFixed : ∀ n ∈ I₀, rank n = j := by
+    intro n hn
+    simpa only [I₀] using hn.2
+  have hjh : j < h := by
+    obtain ⟨n, hnI, hrank⟩ := hjImage
+    rw [← hrank]
+    exact (hpeel n hnI).2.2.1
+  have hnormalized :
+      ∀ K : Set ℕ, K ⊆ I₀ →
+      ∀ n ∈ K,
+        hits n ≠ [] ∧
+        (hits n).length + j = h ∧
+        (∀ x ∈ hits n, x ∈ A ∧ x ∈ forbidden n) ∧
+        core n ∈ additiveSupportFamily A j (residual n) ∧
+        Disjoint (core n : Set ℕ) (forbidden n) ∧
+        target n = (hits n).sum + residual n ∧
+        repair n =
+          (hits n).foldr (fun x G => insert x G) (core n) := by
+    intro K hKI₀ n hnK
+    have hnI₀ : n ∈ I₀ := hKI₀ hnK
+    obtain ⟨hhits, hlength, _hrank, hhitsIn, hcoreR,
+        hcoreAvoid, htarget, hrepairEq⟩ :=
+      hpeel n (hI₀I hnI₀)
+    rw [hrankFixed n hnI₀] at hlength hcoreR
+    exact ⟨hhits, hlength, hhitsIn, hcoreR,
+      hcoreAvoid, htarget, hrepairEq⟩
+  by_cases hresidualImage : (residual '' I₀).Infinite
+  · obtain ⟨J, hJI₀, hresidualBij⟩ :=
+      Set.exists_subset_bijOn I₀ residual
+    have hJ : J.Infinite := by
+      intro hJFinite
+      apply hresidualImage
+      rw [← hresidualBij.image_eq]
+      exact hJFinite.image residual
+    have hcofinal : ∀ L, ∃ n ∈ J, L ≤ residual n := by
+      intro L
+      have himage : (residual '' J).Infinite := by
+        rw [hresidualBij.image_eq]
+        exact hresidualImage
+      obtain ⟨t, htImage, hLt⟩ := himage.exists_gt L
+      obtain ⟨n, hnJ, rfl⟩ := htImage
+      exact ⟨n, hnJ, Nat.le_of_lt hLt⟩
+    exact ⟨J, hits, j, residual, core,
+      hJI₀.trans hI₀I, hJ, hjh,
+      hnormalized J hJI₀,
+      Or.inl ⟨hresidualBij.injOn, hcofinal⟩⟩
+  · have hresidualFinite : (residual '' I₀).Finite :=
+      Set.not_infinite.mp hresidualImage
+    have hinfiniteResidualFiber : ∃ t ∈ residual '' I₀,
+        (I₀ ∩ residual ⁻¹' ({t} : Set ℕ)).Infinite := by
+      by_contra hnoFiber
+      push Not at hnoFiber
+      apply hI₀
+      apply Set.Finite.of_finite_fibers residual hresidualFinite
+      intro t htImage
+      exact hnoFiber t htImage
+    obtain ⟨t, _htImage, hJ⟩ := hinfiniteResidualFiber
+    let J : Set ℕ := I₀ ∩ residual ⁻¹' ({t} : Set ℕ)
+    have hJI₀ : J ⊆ I₀ := Set.inter_subset_left
+    have hresidualFixed : ∀ n ∈ J, residual n = t := by
+      intro n hn
+      simpa only [J] using hn.2
+    have hmassInj :
+        Set.InjOn (fun n => (hits n).sum) J := by
+      intro n hn m hm hmass
+      apply htargetInj
+        (hI₀I (hJI₀ hn)) (hI₀I (hJI₀ hm))
+      have hnTarget :=
+        (hnormalized J hJI₀ n hn).2.2.2.2.2.1
+      have hmTarget :=
+        (hnormalized J hJI₀ m hm).2.2.2.2.2.1
+      change (hits n).sum = (hits m).sum at hmass
+      calc
+        target n = (hits n).sum + residual n := hnTarget
+        _ = (hits n).sum + t := by rw [hresidualFixed n hn]
+        _ = (hits m).sum + t := by rw [hmass]
+        _ = (hits m).sum + residual m := by
+          rw [hresidualFixed m hm]
+        _ = target m := hmTarget.symm
+    have hmassCofinal :
+        ∀ L, ∃ n ∈ J, L ≤ (hits n).sum := by
+      intro L
+      have hmassImage :
+          ((fun n => (hits n).sum) '' J).Infinite :=
+        hJ.image hmassInj
+      obtain ⟨u, huImage, hLu⟩ := hmassImage.exists_gt L
+      obtain ⟨n, hnJ, rfl⟩ := huImage
+      exact ⟨n, hnJ, Nat.le_of_lt hLu⟩
+    exact ⟨J, hits, j, residual, core,
+      hJI₀.trans hI₀I, hJ, hjh,
+      hnormalized J hJI₀,
+      Or.inr ⟨t, hresidualFixed, hmassInj, hmassCofinal⟩⟩
+
+/-- The fixed-surviving-core horn forces genuine destruction at the
+complementary order.
+
+When an infinite family has one fixed residual target `t`, there are only
+finitely many possible order-`j` core supports.  Thin to one fixed core
+`H`.  Original target injectivity then makes the removed masses injective
+and cofinal.  Since `H` survives each stage, any surviving
+order-`h-j` representation of a removed mass would concatenate with `H`
+and repair the original failed target.  Hence every removed mass is itself
+destroyed at the complementary order.
+
+If `j > 0`, this is a strict order descent.  The sole non-descending edge
+case is `j = 0`, where the damaged representation consists entirely of
+deleted summands. -/
+theorem fixedResidual_survivingCores_force_cofinalComplementDestroyers
+    {A I : Set ℕ} {h j t : ℕ}
+    {target : ℕ → ℕ}
+    {hits : ℕ → List ℕ}
+    {core : ℕ → Finset ℕ}
+    {forbidden : ℕ → Set ℕ}
+    (hI : I.Infinite)
+    (htargetInj : Set.InjOn target I)
+    (hjh : j < h)
+    (hcore : ∀ n ∈ I,
+      core n ∈ additiveSupportFamily A j t ∧
+      Disjoint (core n : Set ℕ) (forbidden n))
+    (htarget : ∀ n ∈ I,
+      target n = (hits n).sum + t)
+    (hfailure : ∀ n ∈ I,
+      DestroysAt
+        (additiveSupportFamily A h)
+        (forbidden n) (target n)) :
+    ∃ K : Set ℕ, ∃ H : Finset ℕ,
+      K ⊆ I ∧
+      K.Infinite ∧
+      H ∈ additiveSupportFamily A j t ∧
+      (∀ n ∈ K,
+        core n = H ∧
+        Disjoint (H : Set ℕ) (forbidden n)) ∧
+      Set.InjOn (fun n => (hits n).sum) K ∧
+      (∀ L, ∃ n ∈ K, L ≤ (hits n).sum) ∧
+      (∀ n ∈ K,
+        DestroysAt
+          (additiveSupportFamily A (h - j))
+          (forbidden n) ((hits n).sum)) ∧
+      (0 < j → h - j < h) := by
+  classical
+  have hcoreImageFinite : (core '' I).Finite := by
+    apply
+      (additiveSupportFamily A j t).finite_toSet.subset
+    rintro H ⟨n, hn, rfl⟩
+    exact Finset.mem_coe.mpr (hcore n hn).1
+  have hinfiniteCoreFiber : ∃ H ∈ core '' I,
+      (I ∩ core ⁻¹' ({H} : Set (Finset ℕ))).Infinite := by
+    by_contra hnoFiber
+    push Not at hnoFiber
+    apply hI
+    apply Set.Finite.of_finite_fibers core hcoreImageFinite
+    intro H hHImage
+    exact hnoFiber H hHImage
+  obtain ⟨H, hHImage, hK⟩ := hinfiniteCoreFiber
+  let K : Set ℕ := I ∩ core ⁻¹' ({H} : Set (Finset ℕ))
+  have hKI : K ⊆ I := Set.inter_subset_left
+  have hcoreFixed : ∀ n ∈ K, core n = H := by
+    intro n hn
+    simpa only [K] using hn.2
+  obtain ⟨n₀, hn₀I, hn₀Core⟩ := hHImage
+  have hHR : H ∈ additiveSupportFamily A j t := by
+    rw [← hn₀Core]
+    exact (hcore n₀ hn₀I).1
+  have hmassInj :
+      Set.InjOn (fun n => (hits n).sum) K := by
+    intro n hn m hm hmass
+    apply htargetInj (hKI hn) (hKI hm)
+    change (hits n).sum = (hits m).sum at hmass
+    calc
+      target n = (hits n).sum + t := htarget n (hKI hn)
+      _ = (hits m).sum + t := by rw [hmass]
+      _ = target m := (htarget m (hKI hm)).symm
+  have hmassCofinal :
+      ∀ L, ∃ n ∈ K, L ≤ (hits n).sum := by
+    intro L
+    have himage :
+        ((fun n => (hits n).sum) '' K).Infinite :=
+      hK.image hmassInj
+    obtain ⟨u, huImage, hLu⟩ := himage.exists_gt L
+    obtain ⟨n, hnK, rfl⟩ := huImage
+    exact ⟨n, hnK, Nat.le_of_lt hLu⟩
+  have hcomplementDestroy :
+      ∀ n ∈ K,
+        DestroysAt
+          (additiveSupportFamily A (h - j))
+          (forbidden n) ((hits n).sum) := by
+    intro n hnK
+    have hjle : j ≤ h := Nat.le_of_lt hjh
+    have hrank : j + (h - j) = h :=
+      Nat.add_sub_of_le hjle
+    have htargetEq :
+        t + (hits n).sum = target n := by
+      rw [htarget n (hKI hnK)]
+      omega
+    apply additiveDestroyer_descends_through_survivingCore
+      hHR
+      (by
+        rw [← hcoreFixed n hnK]
+        exact (hcore n (hKI hnK)).2)
+    simpa only [hrank, htargetEq] using
+      hfailure n (hKI hnK)
+  refine ⟨K, H, hKI, hK, hHR, ?_, hmassInj,
+    hmassCofinal, hcomplementDestroy, ?_⟩
+  · intro n hnK
+    exact ⟨hcoreFixed n hnK, by
+      rw [← hcoreFixed n hnK]
+      exact (hcore n (hKI hnK)).2⟩
+  · intro hjpos
+    omega
+
+/-- Complete infinite-family rank fork for moving deletion stages.
+
+Choose one support at each injective failed target and peel all of its
+deleted summands.  The unrestricted normalization theorem leaves two
+possibilities:
+
+* cofinally many injective targets already have surviving cores at one
+  strict lower rank `j < h`; or
+* one surviving core is fixed, the complementary deleted masses are
+  injective and cofinal, and those masses are themselves destroyed at
+  order `h-j`.
+
+In the second horn positive surviving rank gives a strict complementary
+order descent.  Rank zero is isolated explicitly as the pure-deletion
+configuration in which every summand of the chosen representation was
+removed. -/
+theorem infinite_additiveDestroyers_rankFork
+    {A I : Set ℕ} {h : ℕ}
+    {target : ℕ → ℕ}
+    {repair : ℕ → Finset ℕ}
+    {forbidden : ℕ → Set ℕ}
+    (hI : I.Infinite)
+    (htargetInj : Set.InjOn target I)
+    (hrepair : ∀ n ∈ I,
+      repair n ∈ additiveSupportFamily A h (target n))
+    (hfailure : ∀ n ∈ I,
+      DestroysAt
+        (additiveSupportFamily A h)
+        (forbidden n) (target n)) :
+    (∃ J : Set ℕ, ∃ hits : ℕ → List ℕ, ∃ j : ℕ,
+      ∃ residual : ℕ → ℕ, ∃ core : ℕ → Finset ℕ,
+        J ⊆ I ∧
+        J.Infinite ∧
+        j < h ∧
+        Set.InjOn residual J ∧
+        (∀ L, ∃ n ∈ J, L ≤ residual n) ∧
+        (0 < j → h - j < h) ∧
+        ∀ n ∈ J,
+          hits n ≠ [] ∧
+          (hits n).length + j = h ∧
+          (∀ x ∈ hits n, x ∈ A ∧ x ∈ forbidden n) ∧
+          core n ∈ additiveSupportFamily A j (residual n) ∧
+          Disjoint (core n : Set ℕ) (forbidden n) ∧
+          target n = (hits n).sum + residual n ∧
+          repair n =
+            (hits n).foldr (fun x G => insert x G) (core n) ∧
+          DestroysAt
+            (additiveSupportFamily A (h - j))
+            (forbidden n) ((hits n).sum)) ∨
+      ∃ K : Set ℕ, ∃ hits : ℕ → List ℕ, ∃ j t : ℕ,
+        ∃ H : Finset ℕ,
+          K ⊆ I ∧
+          K.Infinite ∧
+          j < h ∧
+          H ∈ additiveSupportFamily A j t ∧
+          Set.InjOn (fun n => (hits n).sum) K ∧
+          (∀ L, ∃ n ∈ K, L ≤ (hits n).sum) ∧
+          (∀ n ∈ K,
+            hits n ≠ [] ∧
+            (hits n).length + j = h ∧
+            (∀ x ∈ hits n, x ∈ A ∧ x ∈ forbidden n) ∧
+            Disjoint (H : Set ℕ) (forbidden n) ∧
+            target n = (hits n).sum + t ∧
+            repair n =
+              (hits n).foldr (fun x G => insert x G) H ∧
+            DestroysAt
+              (additiveSupportFamily A (h - j))
+              (forbidden n) ((hits n).sum)) ∧
+          (0 < j → h - j < h) := by
+  have hchosenDestroyed : ∀ n ∈ I,
+      ¬ Disjoint (repair n : Set ℕ) (forbidden n) := by
+    intro n hn
+    exact hfailure n hn (repair n) (hrepair n hn)
+  obtain ⟨J, hits, j, residual, core, hJI, hJ, hjh,
+      hnormalized, hcofinalCore | hfixedCore⟩ :=
+    infinite_destroyedSupports_normalize_cofinalCore_or_fixedCoreMovingMass
+      hI htargetInj hrepair hchosenDestroyed
+  · left
+    have hcomplementDestroy :
+        ∀ n ∈ J,
+          DestroysAt
+            (additiveSupportFamily A (h - j))
+            (forbidden n) ((hits n).sum) := by
+      intro n hn
+      have hnData := hnormalized n hn
+      have hjle : j ≤ h := Nat.le_of_lt hjh
+      have hrank : j + (h - j) = h :=
+        Nat.add_sub_of_le hjle
+      have htargetEq :
+          residual n + (hits n).sum = target n := by
+        rw [hnData.2.2.2.2.2.1]
+        omega
+      apply additiveDestroyer_descends_through_survivingCore
+        hnData.2.2.2.1 hnData.2.2.2.2.1
+      simpa only [hrank, htargetEq] using
+        hfailure n (hJI hn)
+    refine ⟨J, hits, j, residual, core, hJI, hJ, hjh,
+      hcofinalCore.1, hcofinalCore.2, ?_, ?_⟩
+    · intro hjpos
+      omega
+    · intro n hn
+      exact ⟨(hnormalized n hn).1,
+        (hnormalized n hn).2.1,
+        (hnormalized n hn).2.2.1,
+        (hnormalized n hn).2.2.2.1,
+        (hnormalized n hn).2.2.2.2.1,
+        (hnormalized n hn).2.2.2.2.2.1,
+        (hnormalized n hn).2.2.2.2.2.2,
+        hcomplementDestroy n hn⟩
+  · obtain ⟨t, hresidualFixed, _hmassInj, _hmassCofinal⟩ :=
+      hfixedCore
+    have hcoreFixedInput : ∀ n ∈ J,
+        core n ∈ additiveSupportFamily A j t ∧
+        Disjoint (core n : Set ℕ) (forbidden n) := by
+      intro n hn
+      have hnData := hnormalized n hn
+      refine ⟨?_, hnData.2.2.2.2.1⟩
+      simpa only [hresidualFixed n hn] using
+        hnData.2.2.2.1
+    have htargetFixed : ∀ n ∈ J,
+        target n = (hits n).sum + t := by
+      intro n hn
+      simpa only [hresidualFixed n hn] using
+        (hnormalized n hn).2.2.2.2.2.1
+    obtain ⟨K, H, hKJ, hK, hHR, hcoreK, hmassInj,
+        hmassCofinal, hmassDestroy, hstrict⟩ :=
+      fixedResidual_survivingCores_force_cofinalComplementDestroyers
+        hJ (htargetInj.mono hJI) hjh
+        hcoreFixedInput htargetFixed
+        (fun n hn => hfailure n (hJI hn))
+    right
+    refine ⟨K, hits, j, t, H, hKJ.trans hJI, hK, hjh,
+      hHR, hmassInj, hmassCofinal, ?_, hstrict⟩
+    intro n hnK
+    have hnJ : n ∈ J := hKJ hnK
+    obtain ⟨hhits, hlength, hhitsIn, _hcoreR,
+        _hcoreAvoid, htargetEq, hrepairEq⟩ :=
+      hnormalized n hnJ
+    have hcoreEq : core n = H :=
+      (hcoreK n hnK).1
+    refine ⟨hhits, hlength, hhitsIn,
+      (hcoreK n hnK).2, ?_, ?_, hmassDestroy n hnK⟩
+    · simpa only [hresidualFixed n hnJ] using htargetEq
+    · rw [hcoreEq] at hrepairEq
+      exact hrepairEq
+
 /-- Gap-driven internal-anchor descent.  Suppose `T` destroys every
 order-`k+2` representation of `q+a`, and `b ∈ A \ T` lies below `q`.
 If `q-b` has no order-`k` representation, then `T.erase a` destroys every
