@@ -19298,6 +19298,132 @@ theorem cofinal_pureDeletionRootedMatchings_force_cofinal_prefixDisjointPureRoot
     hMroot, hMnonempty, hMmatching, hMinside⟩
   exact lt_of_le_of_lt (le_max_left r count) hMlarge
 
+/-- Cofinal successor targets whose every support lies in `B` force `B` to
+contain the entire predecessor basis.
+
+Indeed, fix `c ∈ A` and take such a target `q` beyond the predecessor
+representation threshold plus `c`.  Represent `q - c` at order `h` and
+insert `c`.  The resulting order-`h+1` support at `q` contains `c`, so the
+assumed internality puts `c` in `B`.
+
+This elementary insertion observation rules out the pure-containment branch
+as soon as the deletion reservoir omits even one basis element. -/
+theorem cofinal_internalSuccessorSupports_force_ambientSubset
+    {A B : Set ℕ} {h : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hinternal : ∀ L, ∃ q, L ≤ q ∧
+      ∀ E ∈ additiveSupportFamily A (h + 1) q,
+        ∀ x ∈ E, x ∈ B) :
+    A ⊆ B := by
+  obtain ⟨N, hN⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  intro c hcA
+  obtain ⟨q, hqLower, hqInside⟩ := hinternal (N + c)
+  have hcq : c ≤ q := by omega
+  have hNdiff : N ≤ q - c := by omega
+  obtain ⟨E, hER, _hEempty⟩ := hN (q - c) hNdiff
+  have hlift :
+      insert c E ∈ additiveSupportFamily A (h + 1) q := by
+    have h :=
+      insert_mem_additiveSupportFamily_succ hcA hER
+    have hsum : c + (q - c) = q := by omega
+    simpa only [hsum] using h
+  exact hqInside (insert c E) hlift c (by simp)
+
+/-- A successor counterexample has a fixed-anchor, consecutive-order
+failure stream on a proper infinite deletion.
+
+Start with the gap-service deletion and remove one of its points `c`.
+Removing a singleton preserves infinitude and all stored repairs.  Strong
+successor deletion then gives arbitrarily late targets `q` destroyed by the
+proper deletion.  Since `c ∈ A` but `c` is not deleted, successor
+transversal descent shows that the very same deletion destroys the
+predecessor target `q - c`.  Taking `q` beyond `c` plus the order-`h`
+representation threshold makes these predecessor targets cofinal and
+represented.
+
+Thus the moving difference is eliminated at the source: the order-`h` and
+order-`h+1` failures are paired by one fixed external anchor `c`. -/
+theorem exactBasis_counterexample_forces_properDeletion_cofinalAlignedFailures
+    {A : Set ℕ} {h : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    ∃ B : Set ℕ, ∃ c : ℕ,
+      B ⊆ A ∧
+      B.Infinite ∧
+      c ∈ A ∧
+      c ∉ B ∧
+      (∀ d, additiveSupportFamily A h d = ∅ →
+        ∀ b ∈ B,
+          ∃ E ∈ additiveSupportFamily A (h + 1) (d + b),
+            Disjoint (E : Set ℕ) B) ∧
+      ∀ L, ∃ q,
+        L ≤ q - c ∧
+        c ≤ q ∧
+        DestroysAt
+          (additiveSupportFamily A h) B (q - c) ∧
+        DestroysAt
+          (additiveSupportFamily A (h + 1)) B q ∧
+        ∃ E ∈ additiveSupportFamily A (h + 1) q,
+          c ∈ E ∧ c ∉ B := by
+  classical
+  obtain ⟨B₀, hB₀A, hB₀Infinite, hservice⟩ :=
+    hbasis.exists_infiniteDeletion_servicing_all_gapTranslates
+  obtain ⟨c, hcB₀⟩ := hB₀Infinite.nonempty
+  let B : Set ℕ := B₀ \ ({c} : Set ℕ)
+  have hBA : B ⊆ A := by
+    intro b hbB
+    exact hB₀A hbB.1
+  have hBInfinite : B.Infinite :=
+    hB₀Infinite.diff (Set.finite_singleton c)
+  have hcA : c ∈ A := hB₀A hcB₀
+  have hcB : c ∉ B := by
+    simp [B]
+  have hserviceB :
+      ∀ d, additiveSupportFamily A h d = ∅ →
+        ∀ b ∈ B,
+          ∃ E ∈ additiveSupportFamily A (h + 1) (d + b),
+            Disjoint (E : Set ℕ) B := by
+    intro d hdGap b hbB
+    obtain ⟨E, hER, hEB₀⟩ := hservice d hdGap b hbB.1
+    exact ⟨E, hER,
+      Set.disjoint_of_subset_right Set.diff_subset hEB₀⟩
+  have hstrong :
+      StrongInfiniteDeletion
+        (additiveSupportFamily A (h + 1)) A :=
+    strongExactDeletion_of_counterexample hcounter
+  obtain ⟨N, hN⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  refine ⟨B, c, hBA, hBInfinite, hcA, hcB, hserviceB, ?_⟩
+  intro L
+  obtain ⟨q, hqLower, hqDestroy⟩ :=
+    hstrong B hBA hBInfinite (N + c + L)
+  have hcq : c ≤ q := by omega
+  have hLdiff : L ≤ q - c := by omega
+  have hNdiff : N ≤ q - c := by omega
+  have hpredDestroy :
+      DestroysAt
+        (additiveSupportFamily A h) B (q - c) := by
+    obtain ⟨T, hTB, hTDestroy⟩ :=
+      exists_finiteDestroyer_subset hqDestroy
+    have hcT : c ∉ T := by
+      intro hcT
+      exact hcB (hTB (Finset.mem_coe.mpr hcT))
+    have hpredT :=
+      additiveSuccessorTransversalsDescend
+        A h T q hTDestroy c hcA hcT hcq
+    exact hpredT.mono hTB
+  obtain ⟨E, hER, _hEempty⟩ := hN (q - c) hNdiff
+  have hlift :
+      insert c E ∈ additiveSupportFamily A (h + 1) q := by
+    have h :=
+      insert_mem_additiveSupportFamily_succ hcA hER
+    have hsum : c + (q - c) = q := by omega
+    simpa only [hsum] using h
+  exact ⟨q, hLdiff, hcq, hpredDestroy, hqDestroy,
+    insert c E, hlift, by simp, hcB⟩
+
 /-- Global counterexample endpoint after attacking both sides of the
 rank-zero split.
 
