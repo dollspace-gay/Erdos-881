@@ -19703,6 +19703,79 @@ theorem alignedMinimalDestroyer_excess_bounded_or_anchorAvoidingRootedMatching
     exact ⟨R, M, hRcard, hMsub, hMcard, hMroot,
       hMnonempty, hMmatching⟩
 
+/-- Complete same-target size fork for nested consecutive-order minimal
+destroyers.
+
+If the predecessor-minimal core `P` is large, its private supports give a
+large rooted predecessor family.  If its excess inside `D` is large, the
+preceding theorem gives a rooted successor family avoiding the anchor.
+Otherwise the two strict bounds add, so the whole successor destroyer is
+bounded before its vertices are known.
+
+In the zero-normalized use (`c = 0`) both matching horns retain the same
+target `q`; the successor horn additionally consists entirely of zero-free
+supports. -/
+theorem alignedMinimalDestroyer_bounded_or_predecessorRootedMatching_or_anchorAvoiding
+    {A : Set ℕ} {h q c r : ℕ} {D P : Finset ℕ}
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (h + 1)) D q)
+    (hPD : P ⊆ D)
+    (hPminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) P (q - c)) :
+    D.card <
+        additiveRootedMatchingBound h r +
+          additiveRootedMatchingBound (h + 1) r ∨
+      (∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+        R.card < h ∧
+        M ⊆ additiveSupportFamily A h (q - c) ∧
+        r < M.card ∧
+        (∀ E ∈ M, R ⊆ E) ∧
+        (∀ E ∈ M, (E \ R).Nonempty) ∧
+        ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+          Disjoint (E \ R) (G \ R)) ∨
+      ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+        R.card < h + 1 ∧
+        M ⊆
+          (additiveSupportFamily A (h + 1) q).filter
+            (fun E => c ∉ E) ∧
+        r < M.card ∧
+        (∀ E ∈ M, R ⊆ E) ∧
+        (∀ E ∈ M, (E \ R).Nonempty) ∧
+        ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+          Disjoint (E \ R) (G \ R) := by
+  classical
+  by_cases hPsmall :
+      P.card < additiveRootedMatchingBound h r
+  · obtain hexcessSmall | hexcessMatching :=
+      alignedMinimalDestroyer_excess_bounded_or_anchorAvoidingRootedMatching
+        (r := r) hminimal hPD hPminimal.1
+    · left
+      have hdecomp :
+          (D \ P).card + P.card = D.card :=
+        Finset.card_sdiff_add_card_eq_card hPD
+      omega
+    · exact Or.inr (Or.inr hexcessMatching)
+  · right
+    left
+    have hPcard :
+        P.card ≤
+          (additiveSupportFamily A h (q - c)).card :=
+      hPminimal.card_le_supportFamily
+    have hlarge :
+        additiveRootedMatchingBound h r ≤
+          (additiveSupportFamily A h (q - c)).card :=
+      (Nat.le_of_not_gt hPsmall).trans hPcard
+    obtain ⟨R, M, hRcard, hMsub, hMcard, hMroot,
+        hMnonempty, hMmatching⟩ :=
+      additiveSupportSubfamily_has_large_rootedMatching
+        h r (q - c)
+          (additiveSupportFamily A h (q - c))
+          (fun _ hE => hE) hlarge
+    exact ⟨R, M, hRcard, hMsub, hMcard, hMroot,
+      hMnonempty, hMmatching⟩
+
 /-- Arbitrary finite-anchor fan of aligned consecutive-order failures.
 
 Remove a prescribed finite set of anchors `C ⊆ A` from the gap-service
@@ -23754,6 +23827,76 @@ theorem zeroNormalized_counterexample_forces_freshNestedExcessFork
       (c := 0) (r := r) hminimalH hD₀D hminimalDestroy
   exact ⟨q, D₀, D, hLq, hD₀D, hD₀nonempty,
     hDnonempty, hDB, hDF, hminimal, hminimalH, hexcess⟩
+
+/-- Counterexample-level complete size fork for the zero-normalized nested
+destroyers.
+
+At every fresh stage, either the entire successor destroyer has a uniform
+cardinality bound, the predecessor target carries a large rooted matching,
+or the same successor target carries a large zero-free rooted matching.
+There is no residual possibility in which the excess is bounded but the
+predecessor core grows without producing representation structure. -/
+theorem zeroNormalized_counterexample_forces_freshWholeDestroyerFork
+    {A : Set ℕ} {h : ℕ}
+    (hhpos : 0 < h)
+    (hzeroA : 0 ∈ A)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    ∃ C B : Set ℕ,
+      C ⊆ A ∧ C.Infinite ∧
+      B ⊆ A ∧ B.Infinite ∧
+      Disjoint C B ∧
+      A ⊆ C ∪ B ∧
+      0 ∈ C ∧
+      ∀ F : Finset ℕ, ∀ r L,
+        ∃ q, ∃ D₀ D : Finset ℕ,
+          L ≤ q ∧
+          D₀ ⊆ D ∧
+          D₀.Nonempty ∧ D.Nonempty ∧
+          (D : Set ℕ) ⊆ B ∧
+          Disjoint D F ∧
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A h) D₀ q ∧
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A (h + 1)) D q ∧
+          (D.card <
+              additiveRootedMatchingBound h r +
+                additiveRootedMatchingBound (h + 1) r ∨
+            (∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+              R.card < h ∧
+              M ⊆ additiveSupportFamily A h q ∧
+              r < M.card ∧
+              (∀ E ∈ M, R ⊆ E) ∧
+              (∀ E ∈ M, (E \ R).Nonempty) ∧
+              ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+                Disjoint (E \ R) (G \ R)) ∨
+            ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+              R.card < h + 1 ∧
+              M ⊆
+                (additiveSupportFamily A (h + 1) q).filter
+                  (fun E => 0 ∉ E) ∧
+              r < M.card ∧
+              (∀ E ∈ M, R ⊆ E) ∧
+              (∀ E ∈ M, (E \ R).Nonempty) ∧
+              ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+                Disjoint (E \ R) (G \ R)) := by
+  obtain ⟨C, B, hCA, hCInfinite, hBA, hBInfinite,
+      hCB, hACB, hzeroC, hstage⟩ :=
+    zeroNormalized_counterexample_forces_freshNestedExcessFork
+      hhpos hzeroA hbasis hcounter
+  refine ⟨C, B, hCA, hCInfinite, hBA, hBInfinite,
+    hCB, hACB, hzeroC, ?_⟩
+  intro F r L
+  obtain ⟨q, D₀, D, hLq, hD₀D, hD₀nonempty,
+      hDnonempty, hDB, hDF, hminimal, hminimalH, _hexcess⟩ :=
+    hstage F r L
+  have hwhole :=
+    alignedMinimalDestroyer_bounded_or_predecessorRootedMatching_or_anchorAvoiding
+      (c := 0) (r := r) hminimalH hD₀D
+        (by simpa using hminimal)
+  exact ⟨q, D₀, D, hLq, hD₀D, hD₀nonempty,
+    hDnonempty, hDB, hDF, hminimal, hminimalH, hwhole⟩
 
 /-- Infinite-anchor amplification of certificate descent.
 
