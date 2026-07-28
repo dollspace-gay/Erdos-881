@@ -12027,6 +12027,105 @@ theorem boundedFullTranslateDestroyers_paddedCertificate_large_or_supportGrowth
   · left
     omega
 
+/-- Exact-label matching normalization of padded binary migration.
+
+The coherent lower-difference growth horn lifts back to the same successor
+target with factor-two loss.  Thus, for every certificate bound and matching
+demand, the bounded-translate counterexample produces either a protected
+localized certificate larger than the bound, or a rooted matching of the
+requested size at an exact late order-`k+2` certificate target. -/
+theorem boundedFullTranslateDestroyers_paddedCertificate_large_or_exactRootedMatching
+    {A : Set ℕ} {k q₀ : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    (hfull :
+      HasBoundedFullTranslateDestroyersByAnchor A (k + 1) {q₀})
+    (hqrep : (additiveSupportFamily A (k + 1) q₀).Nonempty)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 2)) :
+    ∀ C r L,
+      (∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+        ∃ target : ℕ → ℕ → ℕ,
+        ∃ P : IsFiniteBlockPartition K cell,
+        ∃ Q : Finset ℕ,
+          K ⊆ A ∧ K.Infinite ∧
+          (Set.range fun i => target i 0).Infinite ∧
+          (∀ s : BlockSelector cell, ∀ i,
+            ∃ H ∈ additiveSupportFamily A (k + 2) (target i 0),
+              Disjoint (H : Set ℕ) (selectedSet s)) ∧
+          Q.Nonempty ∧
+          (∀ u ∈ Q, L ≤ u) ∧
+          (∀ s : BlockSelector cell, ∃ u ∈ Q,
+            DestroysAt (additiveSupportFamily A (k + 2))
+              (selectedSet s) u) ∧
+          (∀ u ∈ Q, ∃ s : BlockSelector cell,
+            DestroysAt (additiveSupportFamily A (k + 2))
+                (selectedSet s) u ∧
+            ∀ u' ∈ Q, u' ≠ u →
+              ¬ DestroysAt (additiveSupportFamily A (k + 2))
+                (selectedSet s) u') ∧
+          Disjoint (Q : Set ℕ)
+            (Set.range fun i => target i 0) ∧
+          C < Q.card) ∨
+        ∃ u R M,
+          L ≤ u ∧
+          R.card < k + 2 ∧
+          M ⊆ additiveSupportFamily A (k + 2) u ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          ∀ E ∈ M, ∀ D ∈ M, E ≠ D →
+            Disjoint (E \ R) (D \ R) := by
+  intro C r L
+  let threshold := additiveRootedMatchingBound (k + 2) r
+  let B := 2 * threshold
+  obtain ⟨K, cell, target, P, Q, hKA, hKInfinite, _hcapacity,
+      htargetInfinite, hsurvival, hQnonempty, hQlate, hcert,
+      hlocalized, hQsafe, hQlarge | hgrowth⟩ :=
+    boundedFullTranslateDestroyers_paddedCertificate_large_or_supportGrowth
+      hbasis hfull hqrep hcounter C B L
+  · left
+    exact ⟨K, cell, target, P, Q, hKA, hKInfinite,
+      htargetInfinite, hsurvival, hQnonempty, hQlate, hcert,
+      hlocalized, hQsafe, hQlarge⟩
+  · right
+    obtain ⟨u, huQ, huLarge⟩ |
+        ⟨u, huQ, d, hdA, hdu, hdLarge⟩ := hgrowth
+    · have hthreshold :
+          threshold ≤
+            (additiveSupportFamily A (k + 2) u).card := by
+        dsimp only [B] at huLarge
+        omega
+      obtain ⟨R, M, hRcard, hMsub, hMcard, hMroot,
+          hMnonempty, hMmatching⟩ :=
+        additiveSupportSubfamily_has_large_rootedMatching
+          (k + 2) r u
+            (additiveSupportFamily A (k + 2) u)
+            (fun _ h => h)
+            (by simpa only [threshold] using hthreshold)
+      exact ⟨u, R, M, hQlate u huQ, hRcard, hMsub,
+        hMcard, hMroot, hMnonempty, hMmatching⟩
+    · have hliftBound :=
+        lowerDifferenceSupportFamily_card_le_twice_exact
+          (k := k + 1) hdA hdu
+      have hliftBound' :
+          (additiveSupportFamily A (k + 1) (u - d)).card ≤
+            2 * (additiveSupportFamily A (k + 2) u).card := by
+        simpa [Nat.add_assoc] using hliftBound
+      have hthreshold :
+          threshold ≤
+            (additiveSupportFamily A (k + 2) u).card := by
+        dsimp only [B] at hdLarge
+        omega
+      obtain ⟨R, M, hRcard, hMsub, hMcard, hMroot,
+          hMnonempty, hMmatching⟩ :=
+        additiveSupportSubfamily_has_large_rootedMatching
+          (k + 2) r u
+            (additiveSupportFamily A (k + 2) u)
+            (fun _ h => h)
+            (by simpa only [threshold] using hthreshold)
+      exact ⟨u, R, M, hQlate u huQ, hRcard, hMsub,
+        hMcard, hMroot, hMnonempty, hMmatching⟩
+
 /-- Exact-label rooted-matching normalization of bounded certificates.
 
 Difference growth no longer drifts to `q-d`: the factor-two insertion lemma
