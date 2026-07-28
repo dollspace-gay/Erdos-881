@@ -1731,6 +1731,85 @@ theorem infinite_additiveDestroyers_rankFork
     · rw [hcoreEq] at hrepairEq
       exact hrepairEq
 
+/-- If every chosen damaged representation contains a point outside the
+forbidden set, the pure-deletion endpoint is impossible.
+
+Consequently both horns of the infinite destroyer normalization have a
+positive surviving rank and a strictly smaller complementary destruction
+order.  This is the usable induction form of the rank fork. -/
+theorem infinite_noncontained_additiveDestroyers_rankFork
+    {A I : Set ℕ} {h : ℕ}
+    {target : ℕ → ℕ}
+    {repair : ℕ → Finset ℕ}
+    {forbidden : ℕ → Set ℕ}
+    (hI : I.Infinite)
+    (htargetInj : Set.InjOn target I)
+    (hrepair : ∀ n ∈ I,
+      repair n ∈ additiveSupportFamily A h (target n))
+    (hfailure : ∀ n ∈ I,
+      DestroysAt
+        (additiveSupportFamily A h)
+        (forbidden n) (target n))
+    (hnoncontained : ∀ n ∈ I,
+      ∃ x ∈ repair n, x ∉ forbidden n) :
+    (∃ J : Set ℕ, ∃ hits : ℕ → List ℕ, ∃ j : ℕ,
+      ∃ residual : ℕ → ℕ, ∃ core : ℕ → Finset ℕ,
+        J ⊆ I ∧
+        J.Infinite ∧
+        j < h ∧
+        Set.InjOn residual J ∧
+        (∀ L, ∃ n ∈ J, L ≤ residual n) ∧
+        0 < j ∧
+        h - j < h ∧
+        ∀ n ∈ J,
+          hits n ≠ [] ∧
+          (hits n).length + j = h ∧
+          (∀ x ∈ hits n, x ∈ A ∧ x ∈ forbidden n) ∧
+          core n ∈ additiveSupportFamily A j (residual n) ∧
+          Disjoint (core n : Set ℕ) (forbidden n) ∧
+          target n = (hits n).sum + residual n ∧
+          repair n =
+            (hits n).foldr (fun x G => insert x G) (core n) ∧
+          DestroysAt
+            (additiveSupportFamily A (h - j))
+            (forbidden n) ((hits n).sum)) ∨
+      ∃ K : Set ℕ, ∃ hits : ℕ → List ℕ, ∃ j t : ℕ,
+        ∃ H : Finset ℕ,
+          K ⊆ I ∧
+          K.Infinite ∧
+          j < h ∧
+          H ∈ additiveSupportFamily A j t ∧
+          Set.InjOn (fun n => (hits n).sum) K ∧
+          (∀ L, ∃ n ∈ K, L ≤ (hits n).sum) ∧
+          (∀ n ∈ K,
+            hits n ≠ [] ∧
+            (hits n).length + j = h ∧
+            (∀ x ∈ hits n, x ∈ A ∧ x ∈ forbidden n) ∧
+            Disjoint (H : Set ℕ) (forbidden n) ∧
+            target n = (hits n).sum + t ∧
+            repair n =
+              (hits n).foldr (fun x G => insert x G) H ∧
+            DestroysAt
+              (additiveSupportFamily A (h - j))
+              (forbidden n) ((hits n).sum)) ∧
+          0 < j ∧
+          h - j < h := by
+  obtain hcofinal | hfixed :=
+    infinite_additiveDestroyers_rankFork
+      hI htargetInj hrepair hfailure
+  · exact Or.inl hcofinal
+  · right
+    obtain ⟨K, hits, j, t, H, hKI, hK, hjh, hHR,
+        hmassInj, hmassCofinal, hnormalized,
+        hpure | hstrict⟩ := hfixed
+    · obtain ⟨n, hnK⟩ := hK.nonempty
+      obtain ⟨x, hxRepair, hxOutside⟩ :=
+        hnoncontained n (hKI hnK)
+      exact (hxOutside (hpure.2.2.2 n hnK x hxRepair)).elim
+    · exact ⟨K, hits, j, t, H, hKI, hK, hjh, hHR,
+        hmassInj, hmassCofinal, hnormalized,
+        hstrict.1, hstrict.2⟩
+
 /-- Gap-driven internal-anchor descent.  Suppose `T` destroys every
 order-`k+2` representation of `q+a`, and `b ∈ A \ T` lies below `q`.
 If `q-b` has no order-`k` representation, then `T.erase a` destroys every
@@ -8730,6 +8809,55 @@ theorem additiveSupportStar_descends_card
     rw [Finset.card_image_iff.mpr hlowerInjective.injOn,
       Finset.card_attach]
 
+/-- Cardinal-preserving star descent also preserves containment in a fixed
+ambient set.  In particular, a rooted matching made wholly of deleted
+points remains wholly deleted after a common root point is removed. -/
+theorem additiveSupportStar_descends_card_inside
+    {A B : Set ℕ} {k m x : ℕ} {𝒢 : Finset (Finset ℕ)}
+    (hsub : 𝒢 ⊆ additiveSupportFamily A (k + 1) m)
+    (hx : ∀ E ∈ 𝒢, x ∈ E)
+    (hinside : ∀ E ∈ 𝒢, ∀ y ∈ E, y ∈ B) :
+    ∃ ℋ : Finset (Finset ℕ),
+      ℋ ⊆ additiveSupportFamily A k (m - x) ∧
+      ℋ.card = 𝒢.card ∧
+      ∀ H ∈ ℋ, ∀ y ∈ H, y ∈ B := by
+  classical
+  have hlower : ∀ E : {E // E ∈ 𝒢},
+      ∃ H ∈ additiveSupportFamily A k (m - x),
+        E.1 = insert x H := by
+    intro E
+    exact additiveSupport_remove_hit_succ
+      (hsub E.2) (hx E.1 E.2)
+  let lower : {E // E ∈ 𝒢} → Finset ℕ := fun E =>
+    (hlower E).choose
+  have hlowerR : ∀ E, lower E ∈
+      additiveSupportFamily A k (m - x) := by
+    intro E
+    exact (hlower E).choose_spec.1
+  have hreconstruct : ∀ E, E.1 = insert x (lower E) := by
+    intro E
+    exact (hlower E).choose_spec.2
+  have hlowerInside : ∀ E, ∀ y ∈ lower E, y ∈ B := by
+    intro E y hyLower
+    apply hinside E.1 E.2 y
+    rw [hreconstruct E]
+    exact Finset.mem_insert_of_mem hyLower
+  have hlowerInjective : Function.Injective lower := by
+    intro E D hED
+    apply Subtype.ext
+    rw [hreconstruct E, hreconstruct D, hED]
+  let ℋ := 𝒢.attach.image lower
+  refine ⟨ℋ, ?_, ?_, ?_⟩
+  · intro H hH
+    obtain ⟨E, _hEattach, rfl⟩ := Finset.mem_image.mp hH
+    exact hlowerR E
+  · dsimp only [ℋ]
+    rw [Finset.card_image_iff.mpr hlowerInjective.injOn,
+      Finset.card_attach]
+  · intro H hH y hyH
+    obtain ⟨E, _hEattach, rfl⟩ := Finset.mem_image.mp hH
+    exact hlowerInside E y hyH
+
 /-- The additive rank-descent fork.  A sufficiently large order-`k+1`
 support family either already contains a large matching, or one common hit
 can be removed while retaining more than `s` distinct supports at order
@@ -14882,6 +15010,86 @@ theorem exactBasis_counterexample_forces_fixedDeletion_cofinalFailedRootedMatchi
   · exact ⟨n, hLn, hnDestroy, hmatching⟩
   · exact (hnDestroy E hER hEB).elim
 
+/-- Counterexample-level form of the pure-deletion split.
+
+For the fixed deletion supplied by the gap-repair construction, either
+infinitely many failed targets admit a chosen representation with at least
+one surviving point, or arbitrarily late failed targets carry arbitrarily
+large rooted matchings all of whose supports lie wholly in the deletion.
+
+The first horn is exactly the hypothesis that eliminates the rank-zero
+endpoint of `infinite_additiveDestroyers_rankFork`.  The second horn is the
+only remaining pure-absorption enemy: it does not merely say that one chosen
+support was deleted, but that every support at the selected failed target is
+made entirely of deleted points. -/
+theorem exactBasis_counterexample_forces_noncontainedFailedRepairs_or_pureDeletionRootedMatchings
+    {A : Set ℕ} {h : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    ∃ B : Set ℕ,
+      B ⊆ A ∧
+      B.Infinite ∧
+      (∀ d, additiveSupportFamily A h d = ∅ →
+        ∀ b ∈ B,
+          ∃ E ∈ additiveSupportFamily A (h + 1) (d + b),
+            Disjoint (E : Set ℕ) B) ∧
+      ((∃ I : Set ℕ,
+          I.Infinite ∧
+          ∀ n ∈ I,
+            DestroysAt
+              (additiveSupportFamily A (h + 1)) B n ∧
+            ∃ E ∈ additiveSupportFamily A (h + 1) n,
+              ∃ x ∈ E, x ∉ B) ∨
+        ∀ r L, ∃ n, L ≤ n ∧
+          DestroysAt
+            (additiveSupportFamily A (h + 1)) B n ∧
+          ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+            R.card < h + 1 ∧
+            M ⊆ additiveSupportFamily A (h + 1) n ∧
+            r < M.card ∧
+            (∀ E ∈ M, R ⊆ E) ∧
+            (∀ E ∈ M, (E \ R).Nonempty) ∧
+            (∀ E ∈ M, ∀ D ∈ M, E ≠ D →
+              Disjoint (E \ R) (D \ R)) ∧
+            ∀ E ∈ M, ∀ x ∈ E, x ∈ B) := by
+  classical
+  obtain ⟨B, hBA, hBInfinite, hservice, hrooted⟩ :=
+    exactBasis_counterexample_forces_fixedDeletion_cofinalFailedRootedMatchings
+      hbasis hcounter
+  let I : Set ℕ := {n |
+    DestroysAt
+        (additiveSupportFamily A (h + 1)) B n ∧
+      ∃ E ∈ additiveSupportFamily A (h + 1) n,
+        ∃ x ∈ E, x ∉ B}
+  refine ⟨B, hBA, hBInfinite, hservice, ?_⟩
+  by_cases hI : I.Infinite
+  · left
+    exact ⟨I, hI, fun n hn => hn⟩
+  · right
+    have hIFinite : I.Finite :=
+      Set.not_infinite.mp hI
+    obtain ⟨U, hU⟩ :=
+      hIFinite.exists_le
+    intro r L
+    obtain ⟨n, hnLower, hnDestroy, R, M, hRcard,
+        hMsub, hMlarge, hMroot, hMnonempty, hMmatching⟩ :=
+      hrooted r (max L (U + 1))
+    have hLn : L ≤ n :=
+      (le_max_left L (U + 1)).trans hnLower
+    have hnNotI : n ∉ I := by
+      intro hnI
+      have hnU : n ≤ U := hU n hnI
+      have hUn : U + 1 ≤ n :=
+        (le_max_right L (U + 1)).trans hnLower
+      omega
+    refine ⟨n, hLn, hnDestroy, R, M, hRcard,
+      hMsub, hMlarge, hMroot, hMnonempty, hMmatching, ?_⟩
+    intro E hEM x hxE
+    by_contra hxB
+    apply hnNotI
+    exact ⟨hnDestroy, E, hMsub hEM, x, hxE, hxB⟩
+
 /-- The recurrent lower gap in the fixed-reservoir obstruction is genuinely
 fixed.
 
@@ -18642,6 +18850,87 @@ theorem additiveSupportFamily_forces_prefixDisjointRootedMatching_below
           t, S, L, hScard, hSF, hLsub, hLcard,
           hLroot, hLnonempty, hLmatching⟩
 
+/-- Prefix-avoiding rooted-matching descent with ambient-set memory.
+
+Starting from a large family all of whose support vertices lie in `B`,
+repeatedly remove common root points which collide with the old prefix
+`F`.  The order strictly drops at each collision, cardinality is preserved,
+and `additiveSupportStar_descends_card_inside` keeps every descended
+support inside `B`.  The process therefore terminates at a positive rank
+with a root disjoint from `F`, without losing the pure-deletion structure. -/
+theorem additiveSupportFamily_forces_prefixDisjointRootedMatching_below_inside
+    {A B : Set ℕ} :
+    ∀ h r m (F : Finset ℕ) (𝒢 : Finset (Finset ℕ)),
+      𝒢 ⊆ additiveSupportFamily A h m →
+      (∀ E ∈ 𝒢, ∀ x ∈ E, x ∈ B) →
+      additivePrefixAvoidingRootBound h r ≤ 𝒢.card →
+      ∃ j, 0 < j ∧ j ≤ h ∧
+        ∃ t R M,
+          R.card < j ∧
+          Disjoint R F ∧
+          M ⊆ additiveSupportFamily A j t ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          (∀ E ∈ M, ∀ D ∈ M, E ≠ D →
+            Disjoint (E \ R) (D \ R)) ∧
+          ∀ E ∈ M, ∀ x ∈ E, x ∈ B := by
+  intro h
+  induction h with
+  | zero =>
+      intro r m F 𝒢 h𝒢sub _hinside hlarge
+      have hcard :
+          𝒢.card ≤ (additiveSupportFamily A 0 m).card :=
+        Finset.card_le_card h𝒢sub
+      have hzero := additiveSupportFamily_zero_card_le_one A m
+      simp only [additivePrefixAvoidingRootBound] at hlarge
+      omega
+  | succ k ih =>
+      intro r m F 𝒢 h𝒢sub hinside hlarge
+      let s := max r (additivePrefixAvoidingRootBound k r)
+      have hrootedLarge :
+          additiveRootedMatchingBound (k + 1) s ≤ 𝒢.card := by
+        simpa [additivePrefixAvoidingRootBound, s] using hlarge
+      obtain ⟨R, M, hRcard, hMsub, hMcard, hMroot,
+          hMnonempty, hMmatching⟩ :=
+        additiveSupportSubfamily_has_large_rootedMatching
+          (A := A) (h := k + 1) (r := s) (m := m)
+          (𝒢 := 𝒢) h𝒢sub hrootedLarge
+      have hMsubFamily :
+          M ⊆ additiveSupportFamily A (k + 1) m :=
+        hMsub.trans h𝒢sub
+      have hMinside :
+          ∀ E ∈ M, ∀ x ∈ E, x ∈ B := by
+        intro E hEM
+        exact hinside E (hMsub hEM)
+      by_cases hRF : Disjoint R F
+      · refine ⟨k + 1, by omega, le_rfl, m, R, M,
+          hRcard, hRF, hMsubFamily, ?_, hMroot,
+          hMnonempty, hMmatching, hMinside⟩
+        exact lt_of_le_of_lt
+          (le_max_left r (additivePrefixAvoidingRootBound k r))
+          hMcard
+      · obtain ⟨d, hdR, _hdF⟩ :=
+          Finset.not_disjoint_iff.mp hRF
+        obtain ⟨ℋ, hℋsub, hℋcard, hℋinside⟩ :=
+          additiveSupportStar_descends_card_inside
+            hMsubFamily
+            (fun E hEM => hMroot E hEM hdR)
+            hMinside
+        have hℋlarge :
+            additivePrefixAvoidingRootBound k r ≤ ℋ.card := by
+          rw [hℋcard]
+          exact le_trans
+            (le_max_right r (additivePrefixAvoidingRootBound k r))
+            (Nat.le_of_lt hMcard)
+        obtain ⟨j, hjpos, hjk, t, S, L, hScard, hSF,
+            hLsub, hLcard, hLroot, hLnonempty, hLmatching,
+            hLinside⟩ :=
+          ih r (m - d) F ℋ hℋsub hℋinside hℋlarge
+        exact ⟨j, hjpos, le_trans hjk (Nat.le_succ k),
+          t, S, L, hScard, hSF, hLsub, hLcard,
+          hLroot, hLnonempty, hLmatching, hLinside⟩
+
 /-- Final form of the rank attack on bounded successor transversals.  Against
 any prescribed finite deletion prefix, arbitrarily large matching structure
 appears at some positive predecessor rank with a genuine common root
@@ -18790,6 +19079,145 @@ theorem additiveSupportFamily_card_le_lowerRankSupportCountBelow
             (additiveSupportFamily A i u).card)
         (fun _ _ => Nat.zero_le _) hjmem
     _ = additiveLowerRankSupportCountBelow A h L := rfl
+
+/-- Pure-deletion rooted matching absorption cannot hide in an old prefix or
+at bounded lower targets.
+
+If arbitrarily late destroyed order-`h` targets carry arbitrarily large
+rooted matchings wholly inside one deletion `B`, then after any prescribed
+finite prefix there are arbitrarily large rooted matchings, still wholly
+inside `B`, at a positive rank `j ≤ h`, with fresh root and arbitrarily
+large descended target.  Prefix collisions are paid for by rank descent;
+bounded target drift is excluded by asking for more supports than exist at
+all bounded targets and ranks.
+
+This turns the pure-absorption endpoint into cofinal fresh block material
+inside the same fixed deletion. -/
+theorem cofinal_pureDeletionRootedMatchings_force_cofinal_prefixDisjointPureRootedMatchings
+    {A B : Set ℕ} {h : ℕ}
+    (hpure : ∀ r L, ∃ n, L ≤ n ∧
+      DestroysAt (additiveSupportFamily A h) B n ∧
+      ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+        R.card < h ∧
+        M ⊆ additiveSupportFamily A h n ∧
+        r < M.card ∧
+        (∀ E ∈ M, R ⊆ E) ∧
+        (∀ E ∈ M, (E \ R).Nonempty) ∧
+        (∀ E ∈ M, ∀ D ∈ M, E ≠ D →
+          Disjoint (E \ R) (D \ R)) ∧
+        ∀ E ∈ M, ∀ x ∈ E, x ∈ B) :
+    ∀ F : Finset ℕ, ∀ r Ltarget Lcertificate,
+      ∃ n j t, ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+        Lcertificate ≤ n ∧
+        DestroysAt (additiveSupportFamily A h) B n ∧
+        0 < j ∧
+        j ≤ h ∧
+        Ltarget ≤ t ∧
+        R.card < j ∧
+        Disjoint R F ∧
+        M ⊆ additiveSupportFamily A j t ∧
+        r < M.card ∧
+        (∀ E ∈ M, R ⊆ E) ∧
+        (∀ E ∈ M, (E \ R).Nonempty) ∧
+        (∀ E ∈ M, ∀ D ∈ M, E ≠ D →
+          Disjoint (E \ R) (D \ R)) ∧
+        ∀ E ∈ M, ∀ x ∈ E, x ∈ B := by
+  intro F r Ltarget Lcertificate
+  let count :=
+    additiveLowerRankSupportCountBelow A h Ltarget
+  let demand := max r count
+  obtain ⟨n, hnLower, hnDestroy, _R₀, M₀, _hR₀card,
+      hM₀sub, hM₀large, _hM₀root, _hM₀nonempty,
+      _hM₀matching, hM₀inside⟩ :=
+    hpure (additivePrefixAvoidingRootBound h demand) Lcertificate
+  obtain ⟨j, hjpos, hjh, t, R, M, hRcard, hRF,
+      hMsub, hMlarge, hMroot, hMnonempty, hMmatching,
+      hMinside⟩ :=
+    additiveSupportFamily_forces_prefixDisjointRootedMatching_below_inside
+      (A := A) (B := B) (h := h) (r := demand) (m := n)
+      (F := F) (𝒢 := M₀)
+      hM₀sub hM₀inside (Nat.le_of_lt hM₀large)
+  have htLower : Ltarget ≤ t := by
+    by_contra hnot
+    have htSmall : t < Ltarget :=
+      Nat.lt_of_not_ge hnot
+    have hfamilyBound :
+        (additiveSupportFamily A j t).card ≤ count := by
+      exact additiveSupportFamily_card_le_lowerRankSupportCountBelow
+        hjh htSmall
+    have hmatchingBound :
+        M.card ≤ (additiveSupportFamily A j t).card :=
+      Finset.card_le_card hMsub
+    have hcountLarge : count < M.card :=
+      lt_of_le_of_lt (le_max_right r count) hMlarge
+    omega
+  refine ⟨n, j, t, R, M, hnLower, hnDestroy,
+    hjpos, hjh, htLower, hRcard, hRF, hMsub, ?_,
+    hMroot, hMnonempty, hMmatching, hMinside⟩
+  exact lt_of_le_of_lt (le_max_left r count) hMlarge
+
+/-- Global counterexample endpoint after attacking both sides of the
+rank-zero split.
+
+One fixed infinite deletion `B` has the gap-translate repair property and
+then satisfies exactly one of two actionable alternatives:
+
+* infinitely many failed targets have a damaged representation containing a
+  survivor, so `infinite_noncontained_additiveDestroyers_rankFork` forces
+  positive-rank strict destruction descent; or
+* the pure-deletion horn supplies cofinal, arbitrarily large rooted
+  matchings at positive rank, still wholly inside `B`, with roots avoiding
+  every prescribed finite history.
+
+Thus the pure endpoint cannot remain a static collection of wholly deleted
+successor supports: it becomes fresh cofinal block material at positive
+rank. -/
+theorem exactBasis_counterexample_forces_noncontainedRankInjury_or_cofinalFreshPureMatchings
+    {A : Set ℕ} {h : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    ∃ B : Set ℕ,
+      B ⊆ A ∧
+      B.Infinite ∧
+      (∀ d, additiveSupportFamily A h d = ∅ →
+        ∀ b ∈ B,
+          ∃ E ∈ additiveSupportFamily A (h + 1) (d + b),
+            Disjoint (E : Set ℕ) B) ∧
+      ((∃ I : Set ℕ,
+          I.Infinite ∧
+          ∀ n ∈ I,
+            DestroysAt
+              (additiveSupportFamily A (h + 1)) B n ∧
+            ∃ E ∈ additiveSupportFamily A (h + 1) n,
+              ∃ x ∈ E, x ∉ B) ∨
+        ∀ F : Finset ℕ, ∀ r Ltarget Lcertificate,
+          ∃ n j t, ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+            Lcertificate ≤ n ∧
+            DestroysAt
+              (additiveSupportFamily A (h + 1)) B n ∧
+            0 < j ∧
+            j ≤ h + 1 ∧
+            Ltarget ≤ t ∧
+            R.card < j ∧
+            Disjoint R F ∧
+            M ⊆ additiveSupportFamily A j t ∧
+            r < M.card ∧
+            (∀ E ∈ M, R ⊆ E) ∧
+            (∀ E ∈ M, (E \ R).Nonempty) ∧
+            (∀ E ∈ M, ∀ D ∈ M, E ≠ D →
+              Disjoint (E \ R) (D \ R)) ∧
+            ∀ E ∈ M, ∀ x ∈ E, x ∈ B) := by
+  obtain ⟨B, hBA, hBInfinite, hservice,
+      hnoncontained | hpure⟩ :=
+    exactBasis_counterexample_forces_noncontainedFailedRepairs_or_pureDeletionRootedMatchings
+      hbasis hcounter
+  · exact ⟨B, hBA, hBInfinite, hservice,
+      Or.inl hnoncontained⟩
+  · refine ⟨B, hBA, hBInfinite, hservice, Or.inr ?_⟩
+    exact
+      cofinal_pureDeletionRootedMatchings_force_cofinal_prefixDisjointPureRootedMatchings
+        hpure
 
 /-- A hypothetical negative successor deletion forces genuinely cofinal
 lower-order representation growth.
