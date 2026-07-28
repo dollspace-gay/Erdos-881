@@ -20455,6 +20455,100 @@ theorem minimalAdditiveDestroyer_has_prefixClearedRepeatedAnchorRepair
     hlength, hhitsW, htarget, hcoreR, hcoreW,
     hrepairR, hrepairW⟩
 
+/-- Fixed-reservoir stage with both cross-block repair and matching growth.
+
+Under the counterexample, fix the disjoint infinite anchor/deletion split
+`C,B`.  After an arbitrary finite history `F`, obtain a fresh nonempty
+minimal destroyer `D ⊆ B`.  Choose `a ∈ C` beyond both `F` and the requested
+target cutoff, and apply prefix-cleared repeated-anchor repair with
+`W = D ∪ F`.
+
+The resulting full successor-order support avoids every old deletion point
+and the entire new block `D`; its target is late because the nonempty hit
+list contributes at least one copy of the late anchor.  The same stage also
+retains the independently forced positive-rank matching.  Future stages may
+therefore put this repaired support into their forbidden prefix while still
+obtaining a new disjoint destroyer. -/
+theorem exactBasis_counterexample_forces_fixedReservoir_prefixClearedRepairs_and_matchings
+    {A : Set ℕ} {h : ℕ}
+    (hhpos : 0 < h)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    ∃ C B : Set ℕ,
+      C ⊆ A ∧ C.Infinite ∧
+      B ⊆ A ∧ B.Infinite ∧
+      Disjoint C B ∧
+      ∀ F : Finset ℕ, ∀ r L,
+        ∃ q, ∃ D : Finset ℕ, ∃ a,
+        ∃ hits : List ℕ, ∃ j t,
+        ∃ core repaired : Finset ℕ,
+          L ≤ q ∧
+          L < a ∧
+          a ∈ C ∧
+          D.Nonempty ∧
+          (D : Set ℕ) ⊆ B ∧
+          Disjoint D F ∧
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A (h + 1)) D q ∧
+          0 < hits.length ∧
+          hits.length + j = h + 1 ∧
+          (∀ y ∈ hits, y ∈ A ∧ y ∈ D ∪ F) ∧
+          q = hits.sum + t ∧
+          core ∈ additiveSupportFamily A j t ∧
+          Disjoint (core : Set ℕ) ((D ∪ F : Finset ℕ) : Set ℕ) ∧
+          repaired ∈ additiveSupportFamily A (h + 1)
+            (hits.length * a + t) ∧
+          L ≤ hits.length * a + t ∧
+          Disjoint (repaired : Set ℕ)
+            ((D ∪ F : Finset ℕ) : Set ℕ) ∧
+          ∃ rank, 0 < rank ∧ rank ≤ h + 1 ∧
+            ∃ m, ∃ M : Finset (Finset ℕ),
+              M ⊆ additiveSupportFamily A rank m ∧
+              IsMatching M ∧
+              r < M.card := by
+  classical
+  obtain ⟨C, B, hCA, hCInfinite, hBA, hBInfinite, hCB, hstage⟩ :=
+    exactBasis_counterexample_forces_fixedReservoir_freshMatchings
+      hhpos hbasis hcounter
+  refine ⟨C, B, hCA, hCInfinite, hBA, hBInfinite, hCB, ?_⟩
+  intro F r L
+  obtain ⟨q, D, hLq, hDnonempty, hDB, hDF,
+      hminimal, hmatching⟩ :=
+    hstage F r L
+  obtain ⟨x, hxD⟩ := hDnonempty
+  obtain ⟨a, haC, haLarge⟩ :=
+    hCInfinite.exists_gt (max L (F.sup id))
+  have haA : a ∈ A := hCA haC
+  have haW : a ∉ D ∪ F := by
+    intro haUnion
+    rcases Finset.mem_union.mp haUnion with haD | haF
+    · exact Set.disjoint_left.mp hCB haC
+        (hDB (Finset.mem_coe.mpr haD))
+    · have haSup : a ≤ F.sup id :=
+        Finset.le_sup (f := id) haF
+      omega
+  obtain ⟨hits, j, t, core, repaired, hhitsLength,
+      hlength, hhitsW, htarget, hcoreR, hcoreW,
+      hrepairR, hrepairW⟩ :=
+    minimalAdditiveDestroyer_has_prefixClearedRepeatedAnchorRepair
+      hminimal hxD (Finset.subset_union_left) haA haW
+  have hLa : L < a :=
+    (le_max_left L (F.sup id)).trans_lt haLarge
+  have haRepair : a ≤ hits.length * a + t := by
+    calc
+      a = 1 * a := by simp
+      _ ≤ hits.length * a :=
+        Nat.mul_le_mul_right a (Nat.succ_le_iff.mpr hhitsLength)
+      _ ≤ hits.length * a + t := Nat.le_add_right _ _
+  have hLrepair : L ≤ hits.length * a + t :=
+    (Nat.le_of_lt hLa).trans haRepair
+  exact ⟨q, D, a, hits, j, t, core, repaired,
+    hLq, hLa, haC, ⟨x, hxD⟩, hDB, hDF, hminimal,
+    hhitsLength, hlength, hhitsW, htarget,
+    hcoreR, hcoreW, hrepairR, hLrepair, hrepairW,
+    hmatching⟩
+
 /-- A successor-deletion counterexample forces unbounded exact
 representation growth in one of three aligned locations.
 
