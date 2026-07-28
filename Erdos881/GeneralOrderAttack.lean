@@ -23222,7 +23222,10 @@ theorem zeroNormalized_counterexample_forces_cofinalFixedReservoirPredecessorRan
         L < n ∧
         (additiveSupportFamily A ℓ n).Nonempty ∧
         DestroysAt
-          (additiveSupportFamily A ℓ) B n := by
+          (additiveSupportFamily A ℓ) B n ∧
+        (additiveSupportFamily A (ℓ + 1) n).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A (ℓ + 1)) B n := by
   classical
   obtain ⟨C₀, B₀, hC₀A, hC₀Infinite, hB₀A, hB₀Infinite,
       hC₀B₀, hAC₀B₀, hstage⟩ :=
@@ -23279,6 +23282,13 @@ theorem zeroNormalized_counterexample_forces_cofinalFixedReservoirPredecessorRan
     exact Finset.disjoint_left.mp hDF
       (Finset.mem_coe.mp h0D)
       (Finset.mem_union_right _ (by simp))
+  have hDBfull : (D : Set ℕ) ⊆ B := by
+    intro x hxD
+    refine ⟨hDB₀ hxD, ?_⟩
+    intro hx0
+    have hxEq : x = 0 := Set.mem_singleton_iff.mp hx0
+    subst x
+    exact hDzero hxD
   have hDdestroy :
       DestroysAt
         (additiveSupportFamily A h) (D : Set ℕ) q := by
@@ -23305,7 +23315,7 @@ theorem zeroNormalized_counterexample_forces_cofinalFixedReservoirPredecessorRan
     exact hDzero (Finset.mem_coe.mpr hxD)
   obtain ⟨x, hxD₀⟩ := hD₀nonempty
   obtain ⟨hits, j, t, core, hhitsPos, hlength,
-      hhits, hblockHit, _htarget, _hcoreR, _hcoreC,
+      hhits, hblockHit, htarget, hcoreR, hcoreC,
       _hfan, _hno, hdestroy⟩ :=
     minimalAdditiveDestroyer_has_fixedReservoirLowerRankDescent
       hminimal hxD₀ hDB hCA hACB hCB
@@ -23329,9 +23339,80 @@ theorem zeroNormalized_counterexample_forces_cofinalFixedReservoirPredecessorRan
     exact ⟨hits.foldr (fun z G => insert z G) ∅,
       list_foldr_mem_additiveSupportFamily fun z hz =>
         (hhits z hz).1⟩
+  have hrepresentedSucc :
+      (additiveSupportFamily A
+        (hits.length + 1) hits.sum).Nonempty := by
+    let lifted : List ℕ := 0 :: hits
+    have hliftedA : ∀ z ∈ lifted, z ∈ A := by
+      intro z hz
+      rcases List.mem_cons.mp hz with rfl | hzHits
+      · exact hzeroA
+      · exact (hhits z hzHits).1
+    refine ⟨lifted.foldr (fun z G => insert z G) ∅, ?_⟩
+    have hlifted :=
+      list_foldr_mem_additiveSupportFamily hliftedA
+    simpa [lifted, Nat.add_comm] using hlifted
+  have hdestroySucc :
+      DestroysAt
+        (additiveSupportFamily A (hits.length + 1))
+        B hits.sum := by
+    intro R hRR hRB
+    obtain ⟨v, hvA, hvsum, rfl⟩ :=
+      mem_additiveSupportFamily_iff.mp hRR
+    let pads : List ℕ :=
+      List.ofFn fun i => (v i : ℕ)
+    have hpadsLength :
+        pads.length = hits.length + 1 := by
+      simp [pads]
+    have hpadsSum : pads.sum = hits.sum := by
+      change
+        (List.ofFn fun i => (v i : ℕ)).sum = hits.sum
+      rw [List.sum_ofFn]
+      exact hvsum
+    have hpadsC : ∀ z ∈ pads, z ∈ C := by
+      intro z hzPads
+      obtain ⟨i, hiz⟩ := List.mem_ofFn.mp hzPads
+      have hzA : z ∈ A := by
+        simpa only [hiz] using hvA i
+      rcases hACB hzA with hzC | hzB
+      · exact hzC
+      · exfalso
+        apply Set.disjoint_left.mp hRB
+          (show z ∈ tupleSupport v by
+            apply mem_tupleSupport_iff.mpr
+            exact ⟨i, hiz⟩)
+          hzB
+    have hpadsA : ∀ z ∈ pads, z ∈ A := by
+      intro z hzPads
+      exact hCA (hpadsC z hzPads)
+    let repaired : Finset ℕ :=
+      pads.foldr (fun z G => insert z G) core
+    have hrepairRaw :=
+      foldr_insert_mem_additiveSupportFamily hpadsA hcoreR
+    have hrepairQ :
+        repaired ∈ additiveSupportFamily A (h + 1) q := by
+      have horder : pads.length + j = h + 1 := by
+        omega
+      have hsumTarget : pads.sum + t = q := by
+        omega
+      rw [horder, hsumTarget] at hrepairRaw
+      exact hrepairRaw
+    have hrepairB : Disjoint (repaired : Set ℕ) B := by
+      rw [Set.disjoint_left]
+      intro z hzRepair hzB
+      have hzUnion : z ∈ pads.toFinset ∪ core := by
+        simpa [repaired, foldr_insert_eq_toFinset_union] using hzRepair
+      rcases Finset.mem_union.mp hzUnion with hzPads | hzCore
+      · exact Set.disjoint_left.mp hCB
+          (hpadsC z (List.mem_toFinset.mp hzPads)) hzB
+      · exact Set.disjoint_left.mp hCB
+          (hcoreC (Finset.mem_coe.mpr hzCore)) hzB
+    exact hminimalH.1 repaired hrepairQ
+      (hrepairB.mono_right hDBfull)
   have hle : hits.length ≤ h := by omega
   exact ⟨hits.length, hits.sum, hhitsPos, hle,
-    hLsum, hrepresented, hdestroy⟩
+    hLsum, hrepresented, hdestroy,
+    hrepresentedSucc, hdestroySucc⟩
 
 /-- One predecessor rank occurs cofinally in the zero-normalized descent.
 
@@ -23357,7 +23438,10 @@ theorem zeroNormalized_counterexample_forces_fixedPredecessorRankCofinalDestruct
         L < n ∧
         (additiveSupportFamily A ℓ n).Nonempty ∧
         DestroysAt
-          (additiveSupportFamily A ℓ) B n := by
+          (additiveSupportFamily A ℓ) B n ∧
+        (additiveSupportFamily A (ℓ + 1) n).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A (ℓ + 1)) B n := by
   classical
   obtain ⟨C, B, hCA, hCInfinite, hBA, hBInfinite,
       hCB, hACB, hzeroC, hcofinal⟩ :=
@@ -23403,11 +23487,14 @@ theorem zeroNormalized_counterexample_forces_fixedPredecessorRankCofinalDestruct
     hfixedRank.exists_gt L
   rcases hdata i with
     ⟨_hrankPos, _hrankLe, hiTarget,
-      hrepresented, hdestroy⟩
+      hrepresented, hdestroy,
+      hrepresentedSucc, hdestroySucc⟩
   have hLtarget : L < target i :=
     hLi.trans hiTarget
   rw [hiRank] at hrepresented hdestroy
-  exact ⟨target i, hLtarget, hrepresented, hdestroy⟩
+  rw [hiRank] at hrepresentedSucc hdestroySucc
+  exact ⟨target i, hLtarget, hrepresented, hdestroy,
+    hrepresentedSucc, hdestroySucc⟩
 
 /-- Infinite-anchor amplification of certificate descent.
 
