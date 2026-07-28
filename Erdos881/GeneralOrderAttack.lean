@@ -3166,6 +3166,108 @@ theorem lowerGapRepair_extends_protectedOnReservoir_or_oldCollision
         exact Finset.mem_inter.mpr ⟨hdE, hdD⟩
     exact ⟨j, hjJ, E, hER, hsjE, hprivate⟩
 
+/-- Amplification of protected external-gap repair failures on a deletion
+reservoir.
+
+Trying the external gap against every private destroyer hit either produces
+a reservoir selector preserving the protected targets and `q`, or injects
+the destroyer into the union of the old-coordinate lower support families.
+Consequently more than `|J| * r` private hits force lower-order support
+growth at one old selected difference. -/
+theorem lowerGapRepair_manyPrivateHits_completeOnReservoir_or_oldGrowth
+    {A K : Set ℕ} {k q b r : ℕ}
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
+    (s : BlockSelector F) {D U J : Finset ℕ}
+    (hminimal : IsInclusionMinimalDestroyer
+      (additiveSupportFamily A (k + 1)) D q)
+    (hgap : additiveSupportFamily A k (q - b) = ∅)
+    (hUselected : Disjoint (U : Set ℕ) (selectedSet s))
+    (hcontemporary :
+      ∀ j, j ∉ J → U.card + (k + 1) < (F j).card)
+    (hmany : J.card * r < D.card) :
+    (∃ t : BlockSelector F,
+        Disjoint (U : Set ℕ) (selectedSet t) ∧
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q) ∨
+      ∃ j ∈ J,
+        r < (additiveSupportFamily A k
+          (q - (s j).1)).card := by
+  classical
+  by_cases hcompletion :
+      ∃ d : {d // d ∈ D}, ∃ t : BlockSelector F,
+        Disjoint (U : Set ℕ) (selectedSet t) ∧
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q
+  · left
+    obtain ⟨_d, t, htU, htq⟩ := hcompletion
+    exact ⟨t, htU, htq⟩
+  · right
+    have hcollision :
+        ∀ d : {d // d ∈ D},
+          ∃ j ∈ J, ∃ E ∈ additiveSupportFamily A (k + 1) q,
+            (s j).1 ∈ E ∧ E ∩ D = {d.1} := by
+      intro d
+      obtain hcomplete | hcollision :=
+        lowerGapRepair_extends_protectedOnReservoir_or_oldCollision
+          P s hminimal d.2 hgap hUselected hcontemporary
+      · exact (hcompletion ⟨d, hcomplete⟩).elim
+      · exact hcollision
+    choose oldIndex holdIndex upper hupperR holdUpper hprivate
+      using hcollision
+    have hlower :
+        ∀ d : {d // d ∈ D},
+          ∃ H ∈ additiveSupportFamily A k
+              (q - (s (oldIndex d)).1),
+            upper d = insert (s (oldIndex d)).1 H := by
+      intro d
+      exact additiveSupport_remove_hit_succ
+        (hupperR d) (holdUpper d)
+    choose lower hlowerR hreconstruct using hlower
+    let Target :=
+      Σ j : {j // j ∈ J},
+        {H // H ∈ additiveSupportFamily A k
+          (q - (s j.1).1)}
+    let encode : {d // d ∈ D} → Target := fun d =>
+      ⟨⟨oldIndex d, holdIndex d⟩,
+        ⟨lower d, hlowerR d⟩⟩
+    have hencode : Function.Injective encode := by
+      intro d e hde
+      have hj :
+          oldIndex d = oldIndex e :=
+        congrArg (fun z : Target => z.1.1) hde
+      have hH :
+          lower d = lower e :=
+        congrArg (fun z : Target => z.2.1) hde
+      apply Subtype.ext
+      have hupperEq : upper d = upper e := by
+        rw [hreconstruct d, hreconstruct e, hj, hH]
+      have hsingle :
+          ({d.1} : Finset ℕ) = {e.1} := by
+        rw [← hprivate d, ← hprivate e, hupperEq]
+      simpa using hsingle
+    have hdomainTarget :
+        D.card ≤ Fintype.card Target := by
+      simpa only [Fintype.card_coe] using
+        Fintype.card_le_of_injective encode hencode
+    by_contra hnone
+    push Not at hnone
+    have htargetBound :
+        Fintype.card Target ≤ J.card * r := by
+      rw [Fintype.card_sigma]
+      simp only [Fintype.card_coe]
+      calc
+        (∑ j : {j // j ∈ J},
+            (additiveSupportFamily A k
+              (q - (s j.1).1)).card) ≤
+            ∑ _j : {j // j ∈ J}, r := by
+          gcongr with j
+          exact hnone j.1 j.2
+        _ = J.card * r := by simp
+    exact (not_lt_of_ge
+      (hdomainTarget.trans htargetBound)) hmany
+
 /-- Protected completion of a lower-gap repair, with finite old-block
 exceptions.
 
@@ -11888,6 +11990,62 @@ theorem IsExactTupleAsymptoticBasis.eventually_largeMinimalDestroyer_protectedRe
     · exact Or.inr (Or.inr hrepair)
     · exact Or.inr (Or.inl holdGrowth)
 
+/-- Reservoir-relative protected finite-prefix composition.
+
+This is the external-gap analogue of
+`eventually_largeMinimalDestroyer_protectedRepair_or_growth`.  The block
+partition need cover only the deletion reservoir `K ⊆ A`: a lower-gap
+point returned by finite-prefix composition may lie anywhere in `A`,
+because the reservoir completion never needs to select that point. -/
+theorem IsExactTupleAsymptoticBasis.eventually_largeMinimalDestroyer_protectedReservoirRepair_or_growth
+    {A K : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
+    (J : Finset ℕ)
+    (B r w : ℕ) :
+    ∃ N, ∀ q, N ≤ q → ∀ U : Finset ℕ, U.card ≤ w →
+      ∀ s : BlockSelector F, ∀ D : Finset ℕ,
+      (additiveSupportFamily A (k + 1) q).Nonempty →
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (k + 1)) D q →
+      D.card ≤ B →
+      J.card * r < D.card →
+      Disjoint (U : Set ℕ) (selectedSet s) →
+      (∀ j, j ∉ J →
+        U.card + (k + 1) < (F j).card) →
+      ((∃ d ∈ D, d ≤ q ∧
+          B < (additiveSupportFamily A k (q - d)).card) ∨
+        (∃ j ∈ J,
+          r < (additiveSupportFamily A k
+            (q - (s j).1)).card) ∨
+        ∃ t : BlockSelector F,
+          Disjoint (U : Set ℕ) (selectedSet t) ∧
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet t) q) := by
+  obtain ⟨N, hN⟩ :=
+    hbasis.eventually_boundedDestroyer_forces_largeDifferenceFamily_or_lowerGap_avoiding
+      B w
+  refine ⟨N, ?_⟩
+  intro q hNq U hUcard s D hrepresented hminimal hDcard
+    hDlarge hUselected hcontemporary
+  obtain hpGrowth | ⟨b, _hbA, _hbU, _hbq, hbGap⟩ :=
+    hN U hUcard D hDcard q hNq hminimal.1
+  · left
+    obtain ⟨d, hdD, _hdA, hdq, ℋ, hℋsub, hBℋ⟩ :=
+      hpGrowth
+    have hℋfamily :
+        ℋ.card ≤
+          (additiveSupportFamily A k (q - d)).card :=
+      Finset.card_le_card hℋsub
+    exact ⟨d, hdD, hdq,
+      lt_of_lt_of_le hBℋ hℋfamily⟩
+  · obtain hrepair | holdGrowth :=
+      lowerGapRepair_manyPrivateHits_completeOnReservoir_or_oldGrowth
+        P s hminimal hbGap hUselected hcontemporary hDlarge
+    · exact Or.inr (Or.inr hrepair)
+    · exact Or.inr (Or.inl holdGrowth)
+
 /-- Large-destroyer certificate step: growth or strict target descent.
 
 Store supports for every currently surviving larger certificate target,
@@ -11926,6 +12084,71 @@ theorem IsExactTupleAsymptoticBasis.eventually_largeMinimalDestroyer_growth_or_s
             (selectedSet t) u) := by
   obtain ⟨N, hN⟩ :=
     hbasis.eventually_largeMinimalDestroyer_protectedRepair_or_growth
+      P J B r ((k + 1) * Q.card)
+  refine ⟨N, ?_⟩
+  intro q hNq s D hrepresented hcert hlarger hminimal
+    hDcard hDlarge hblocks
+  obtain ⟨U, hUcard, hUselected, hprotected⟩ :=
+    exists_protectedSupportUnion_of_survivingLargerTargets
+      s hlarger
+  have hcontemporary :
+      ∀ j, j ∉ J →
+        U.card + (k + 1) < (F j).card := by
+    intro j hjJ
+    exact lt_of_le_of_lt
+      (Nat.add_le_add_right hUcard (k + 1))
+      (hblocks j hjJ)
+  obtain hpGrowth | holdGrowth | hrepair :=
+    hN q hNq U hUcard s D hrepresented hminimal hDcard
+      hDlarge hUselected hcontemporary
+  · exact Or.inl hpGrowth
+  · exact Or.inr (Or.inl holdGrowth)
+  · right
+    right
+    obtain ⟨t, htU, htq⟩ := hrepair
+    obtain ⟨u, huQ, huq, huDestroy⟩ :=
+      protectedSelectorRepair_forces_strictCertificateDescent
+        hcert hprotected htU htq
+    exact ⟨t, u, huQ, huq, huDestroy⟩
+
+/-- Reservoir-relative large-destroyer certificate step.
+
+Protected external-gap completion makes the migration genuinely descending
+even though the partition covers only `K`: unless one of the two coherent
+lower-order support families grows, the repaired reservoir selector moves
+the obstruction to a strictly smaller target in the same finite
+certificate. -/
+theorem IsExactTupleAsymptoticBasis.eventually_largeMinimalDestroyer_onReservoir_growth_or_strictCertificateDescent
+    {A K : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
+    (J Q : Finset ℕ)
+    (B r : ℕ) :
+    ∃ N, ∀ q, N ≤ q → ∀ s : BlockSelector F, ∀ D : Finset ℕ,
+      (additiveSupportFamily A (k + 1) q).Nonempty →
+      (∀ t : BlockSelector F, ∃ u ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) (selectedSet t) u) →
+      (∀ u ∈ Q, q < u →
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1)) (selectedSet s) u) →
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (k + 1)) D q →
+      D.card ≤ B →
+      J.card * r < D.card →
+      (∀ j, j ∉ J →
+        (k + 1) * Q.card + (k + 1) < (F j).card) →
+      ((∃ d ∈ D, d ≤ q ∧
+          B < (additiveSupportFamily A k (q - d)).card) ∨
+        (∃ j ∈ J,
+          r < (additiveSupportFamily A k
+            (q - (s j).1)).card) ∨
+        ∃ t : BlockSelector F, ∃ u ∈ Q, u < q ∧
+          DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet t) u) := by
+  obtain ⟨N, hN⟩ :=
+    hbasis.eventually_largeMinimalDestroyer_protectedReservoirRepair_or_growth
       P J B r ((k + 1) * Q.card)
   refine ⟨N, ?_⟩
   intro q hNq s D hrepresented hcert hlarger hminimal
