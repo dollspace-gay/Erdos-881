@@ -20549,6 +20549,94 @@ theorem exactBasis_counterexample_forces_fixedReservoir_prefixClearedRepairs_and
     hcoreR, hcoreW, hrepairR, hLrepair, hrepairW,
     hmatching⟩
 
+/-- Compact supply interface extracted from the anchor-repair stage.
+
+This retains exactly the data needed for infinite recursion: beyond any
+cutoff and finite prefix, a fresh nonempty minimal destroyer block is paired
+with a later full-order support avoiding both that block and the prefix. -/
+theorem exactBasis_counterexample_forces_fixedReservoir_prefixClearedRepairSupply
+    {A : Set ℕ} {h : ℕ}
+    (hhpos : 0 < h)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    ∃ C B : Set ℕ,
+      C ⊆ A ∧ C.Infinite ∧
+      B ⊆ A ∧ B.Infinite ∧
+      Disjoint C B ∧
+      ∀ F : Finset ℕ, ∀ L,
+        ∃ q, ∃ D : Finset ℕ, ∃ n,
+        ∃ E : Finset ℕ,
+          L ≤ q ∧
+          D.Nonempty ∧
+          (D : Set ℕ) ⊆ B ∧
+          Disjoint D F ∧
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A (h + 1)) D q ∧
+          L ≤ n ∧
+          E ∈ additiveSupportFamily A (h + 1) n ∧
+          Disjoint (E : Set ℕ)
+            ((D ∪ F : Finset ℕ) : Set ℕ) := by
+  obtain ⟨C, B, hCA, hCInfinite, hBA, hBInfinite, hCB, hstage⟩ :=
+    exactBasis_counterexample_forces_fixedReservoir_prefixClearedRepairs_and_matchings
+      hhpos hbasis hcounter
+  refine ⟨C, B, hCA, hCInfinite, hBA, hBInfinite, hCB, ?_⟩
+  intro F L
+  obtain ⟨q, D, _a, hits, _j, t, _core, repaired,
+      hLq, _hLa, _haC, hDnonempty, hDB, hDF, hminimal,
+      _hhitsLength, _hlength, _hhitsW, _htarget,
+      _hcoreR, _hcoreW, hrepairR, hLrepair, hrepairW,
+      _hmatching⟩ :=
+    hstage F 0 L
+  exact ⟨q, D, hits.length * _a + t, repaired,
+    hLq, hDnonempty, hDB, hDF, hminimal,
+    hLrepair, hrepairR, hrepairW⟩
+
+/-- One recursive block-and-repair stage. -/
+structure FreshPrefixClearedRepairStep
+    (A B : Set ℕ) (H : ℕ) (used : Finset ℕ) (last : ℕ) where
+  failure : ℕ
+  block : Finset ℕ
+  target : ℕ
+  support : Finset ℕ
+  failure_gt : last < failure
+  block_nonempty : block.Nonempty
+  block_subset : (block : Set ℕ) ⊆ B
+  block_fresh : Disjoint block used
+  block_minimal :
+    IsInclusionMinimalDestroyer
+      (additiveSupportFamily A H) block failure
+  target_gt : last < target
+  support_mem : support ∈ additiveSupportFamily A H target
+  support_fresh :
+    Disjoint (support : Set ℕ)
+      ((block ∪ used : Finset ℕ) : Set ℕ)
+
+/-- Prefix-cleared repair supply provides every recursive stage. -/
+theorem freshPrefixClearedRepairStep_nonempty
+    {A B : Set ℕ} {H : ℕ}
+    (hsupply : ∀ F : Finset ℕ, ∀ L,
+      ∃ q, ∃ D : Finset ℕ, ∃ n,
+      ∃ E : Finset ℕ,
+        L ≤ q ∧
+        D.Nonempty ∧
+        (D : Set ℕ) ⊆ B ∧
+        Disjoint D F ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A H) D q ∧
+        L ≤ n ∧
+        E ∈ additiveSupportFamily A H n ∧
+        Disjoint (E : Set ℕ)
+          ((D ∪ F : Finset ℕ) : Set ℕ))
+    (used : Finset ℕ) (last : ℕ) :
+    Nonempty
+      (FreshPrefixClearedRepairStep A B H used last) := by
+  obtain ⟨q, D, n, E, hq, hDnonempty, hDB, hDF,
+      hminimal, hn, hER, hE⟩ :=
+    hsupply used (last + 1)
+  exact ⟨⟨q, D, n, E, by omega, hDnonempty,
+    hDB, hDF, hminimal, by omega, hER, hE⟩⟩
+
 /-- A successor-deletion counterexample forces unbounded exact
 representation growth in one of three aligned locations.
 
