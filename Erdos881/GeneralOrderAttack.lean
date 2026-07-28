@@ -19768,6 +19768,164 @@ theorem exactBasis_counterexample_forces_finiteAnchorFanMinimalDestroyers
         (hCA (Finset.mem_coe.mpr haC)) haD haq
   exact ⟨hLdiff, haq, ⟨G, hGR⟩, hpredDestroy⟩
 
+/-- A large finite anchor fan with a bounded common destroyer forces
+same-order support growth at one common translated target.
+
+For each anchor `a`, choose a support of `q - a` and one hit `p ∈ D`.
+Remove `p` and insert `a`; this gives an order-`h` support of the common
+target `q - p`.  Pigeonhole the anchors over `p ∈ D`.  For fixed `p`, one
+resulting support can receive at most `h` anchors, because it contains every
+anchor assigned to it and has cardinality at most `h`.
+
+Hence more than `|D| * h * r` anchors force more than `r` distinct supports
+at `q - p` for some `p ∈ D`.  This is the bounded-destroyer half of the
+anchor-fan amplifier. -/
+theorem large_finiteAnchorFan_forces_commonTarget_supportGrowth
+    {A : Set ℕ} {h q r : ℕ} {C D : Finset ℕ}
+    (hhpos : 0 < h)
+    (hfan : ∀ a ∈ C,
+      a ∈ A ∧
+      a ≤ q ∧
+      (additiveSupportFamily A h (q - a)).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A h) (D : Set ℕ) (q - a))
+    (hlarge : D.card * (h * r) < C.card) :
+    ∃ p ∈ D,
+      r < (additiveSupportFamily A h (q - p)).card := by
+  classical
+  let Anchor := {a // a ∈ C}
+  let source : Anchor → Finset ℕ := fun a =>
+    Classical.choose (hfan a.1 a.2).2.2.1
+  have hsource :
+      ∀ a : Anchor,
+        source a ∈ additiveSupportFamily A h (q - a.1) := by
+    intro a
+    exact Classical.choose_spec (hfan a.1 a.2).2.2.1
+  have hhitExists :
+      ∀ a : Anchor, ∃ p, p ∈ source a ∧ p ∈ D := by
+    intro a
+    obtain ⟨p, hpSource, hpD⟩ :=
+      Set.not_disjoint_iff.mp
+        ((hfan a.1 a.2).2.2.2 (source a) (hsource a))
+    exact ⟨p, Finset.mem_coe.mp hpSource, Finset.mem_coe.mp hpD⟩
+  let hit : Anchor → ℕ := fun a =>
+    Classical.choose (hhitExists a)
+  have hhitSource : ∀ a : Anchor, hit a ∈ source a := by
+    intro a
+    exact (Classical.choose_spec (hhitExists a)).1
+  have hhitD : ∀ a : Anchor, hit a ∈ D := by
+    intro a
+    exact (Classical.choose_spec (hhitExists a)).2
+  have hlowerExists :
+      ∀ a : Anchor,
+        ∃ H ∈ additiveSupportFamily A (h - 1)
+            ((q - a.1) - hit a),
+          source a = insert (hit a) H := by
+    intro a
+    have hsource' :
+        source a ∈
+          additiveSupportFamily A ((h - 1) + 1) (q - a.1) := by
+      simpa [Nat.sub_add_cancel hhpos] using hsource a
+    exact additiveSupport_remove_hit_succ hsource' (hhitSource a)
+  let lower : Anchor → Finset ℕ := fun a =>
+    Classical.choose (hlowerExists a)
+  have hlowerMem :
+      ∀ a : Anchor,
+        lower a ∈ additiveSupportFamily A (h - 1)
+          ((q - a.1) - hit a) := by
+    intro a
+    exact (Classical.choose_spec (hlowerExists a)).1
+  let lifted : Anchor → Finset ℕ := fun a =>
+    insert a.1 (lower a)
+  have hliftedMem :
+      ∀ a : Anchor,
+        lifted a ∈ additiveSupportFamily A h (q - hit a) := by
+    intro a
+    have hlift :=
+      insert_mem_additiveSupportFamily_succ
+        (hfan a.1 a.2).1 (hlowerMem a)
+    have hhitLe : hit a ≤ q - a.1 :=
+      additiveSupportFamily_supportsBounded
+        A h (q - a.1) (source a) (hsource a)
+          (hit a) (hhitSource a)
+    have htarget :
+        a.1 + ((q - a.1) - hit a) = q - hit a := by
+      have haq := (hfan a.1 a.2).2.1
+      omega
+    have horder : h - 1 + 1 = h :=
+      Nat.sub_add_cancel hhpos
+    simpa only [lifted, htarget, horder] using hlift
+  have hanchorLifted : ∀ a : Anchor, a.1 ∈ lifted a := by
+    intro a
+    simp [lifted]
+  by_contra hnone
+  have hsmall :
+      ∀ p ∈ D,
+        (additiveSupportFamily A h (q - p)).card ≤ r := by
+    intro p hpD
+    apply Nat.le_of_not_gt
+    intro hpLarge
+    exact hnone ⟨p, hpD, hpLarge⟩
+  let anchors : Finset Anchor := C.attach
+  have hhitMaps : ∀ a ∈ anchors, hit a ∈ D := by
+    intro a _ha
+    exact hhitD a
+  have hlargeAttach :
+      D.card * (h * r) < anchors.card := by
+    change D.card * (h * r) < C.attach.card
+    rw [Finset.card_attach]
+    exact hlarge
+  obtain ⟨p, hpD, hpFiberLarge⟩ :=
+    Finset.exists_lt_card_fiber_of_mul_lt_card_of_maps_to
+      hhitMaps hlargeAttach
+  let fiber : Finset Anchor :=
+    anchors.filter fun a => hit a = p
+  have hpFiberLarge' : h * r < fiber.card := by
+    simpa only [fiber] using hpFiberLarge
+  have hliftedMaps :
+      ∀ a ∈ fiber,
+        lifted a ∈ additiveSupportFamily A h (q - p) := by
+    intro a haFiber
+    have hap : hit a = p :=
+      (Finset.mem_filter.mp haFiber).2
+    simpa only [hap] using hliftedMem a
+  have hsecondLarge :
+      (additiveSupportFamily A h (q - p)).card * h <
+        fiber.card := by
+    calc
+      (additiveSupportFamily A h (q - p)).card * h ≤ r * h :=
+        Nat.mul_le_mul_right h (hsmall p hpD)
+      _ = h * r := Nat.mul_comm r h
+      _ < fiber.card := hpFiberLarge'
+  obtain ⟨G, hGfamily, hGFiberLarge⟩ :=
+    Finset.exists_lt_card_fiber_of_mul_lt_card_of_maps_to
+      hliftedMaps hsecondLarge
+  let sameSupport : Finset Anchor :=
+    fiber.filter fun a => lifted a = G
+  have hsameLarge : h < sameSupport.card := by
+    simpa only [sameSupport] using hGFiberLarge
+  have himageSub :
+      sameSupport.image Subtype.val ⊆ G := by
+    intro a haImage
+    obtain ⟨x, hxSame, hxa⟩ := Finset.mem_image.mp haImage
+    have hxEq : lifted x = G :=
+      (Finset.mem_filter.mp hxSame).2
+    rw [← hxa, ← hxEq]
+    exact hanchorLifted x
+  have hsameLeG :
+      sameSupport.card ≤ G.card := by
+    calc
+      sameSupport.card =
+          (sameSupport.image Subtype.val).card := by
+        symm
+        exact Finset.card_image_iff.mpr
+          Subtype.val_injective.injOn
+      _ ≤ G.card := Finset.card_le_card himageSub
+  have hGcard : G.card ≤ h :=
+    additiveSupportFamily_cardAtMost
+      A h (q - p) G hGfamily
+  omega
+
 /-- Global counterexample endpoint after attacking both sides of the
 rank-zero split.
 
