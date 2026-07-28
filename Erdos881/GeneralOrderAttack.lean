@@ -12322,6 +12322,58 @@ theorem boundedFullTranslateDestroyers_fixedGrowingCertificate_cofinalMatching_o
         hER, hGR, hxE, hyG, hyE, hxG, hHR, hEeq,
         hTR, hGeq⟩
 
+/-- Cofinal bounded repairs which avoid their own anchors can be fused into
+one infinite deletion.
+
+The cofinal anchors form an infinite set `K`.  Choose one repair support at
+`d + b` for every `b ∈ K`.  These supports have uniformly bounded
+cardinality and omit their own anchor, so the bounded point-map free-set
+theorem thins `K` to an infinite `B` avoided by every retained repair. -/
+theorem cofinal_anchorAvoidingSupports_have_infiniteFreeDeletion
+    {A : Set ℕ} {h d : ℕ}
+    (hcofinal : ∀ L, ∃ b E,
+      L ≤ b ∧
+      b ∈ A ∧
+      E ∈ additiveSupportFamily A h (d + b) ∧
+      b ∉ E) :
+    ∃ B : Set ℕ, B ⊆ A ∧ B.Infinite ∧
+      ∀ b ∈ B, ∃ E ∈ additiveSupportFamily A h (d + b),
+        Disjoint (E : Set ℕ) B := by
+  classical
+  let K : Set ℕ :=
+    {b | b ∈ A ∧
+      ∃ E ∈ additiveSupportFamily A h (d + b), b ∉ E}
+  have hKInfinite : K.Infinite := by
+    apply Set.infinite_of_forall_exists_gt
+    intro L
+    obtain ⟨b, E, hLb, hbA, hER, hbE⟩ :=
+      hcofinal (L + 1)
+    exact ⟨b, ⟨hbA, E, hER, hbE⟩, by omega⟩
+  let HasRepair : ℕ → Prop := fun b =>
+    ∃ E ∈ additiveSupportFamily A h (d + b), b ∉ E
+  let repair : ℕ → Finset ℕ := fun b =>
+    if hb : HasRepair b then Classical.choose hb else ∅
+  have hrepair : ∀ b ∈ K,
+      repair b ∈ additiveSupportFamily A h (d + b) ∧
+      b ∉ repair b := by
+    intro b hbK
+    have hbRepair : HasRepair b := hbK.2
+    simp only [repair, dif_pos hbRepair]
+    exact Classical.choose_spec hbRepair
+  have hrepairCard : ∀ b ∈ K, (repair b).card ≤ h := by
+    intro b hbK
+    exact additiveSupportFamily_cardAtMost A h (d + b)
+      (repair b) (hrepair b hbK).1
+  have hrepairAvoids : ∀ b ∈ K, b ∉ repair b := by
+    intro b hbK
+    exact (hrepair b hbK).2
+  obtain ⟨B, hBK, hBInfinite, hfree⟩ :=
+    exists_infinite_freeSet_of_bounded_pointMap
+      hKInfinite repair h hrepairCard hrepairAvoids
+  refine ⟨B, fun b hbB => (hBK hbB).1, hBInfinite, ?_⟩
+  intro b hbB
+  exact ⟨repair b, (hrepair b (hBK hbB)).1, hfree b hbB⟩
+
 /-- The recurrent lower gap in the fixed-reservoir obstruction is genuinely
 fixed.
 
@@ -12458,6 +12510,59 @@ theorem boundedFullTranslateDestroyers_fixedGrowingCertificate_cofinalMatching_o
       hLb, hbA, hqdb, hqv, hvQ', hQ'larger,
       hfanCapacity, hxBlock, hyBlock, hbx, hbE, hER, hGR,
       hxE, hyG, hyE, hxG, hHR, hEeq, hTR, hGeq⟩
+
+/-- Infinite-deletion payoff of the fixed-gap rectangle branch.
+
+For every matching demand, either exact rooted matchings occur cofinally at
+order `k+2`, or one fixed order-`k+1` gap `d` has an infinite set of
+translation anchors `B ⊆ A` such that every damaged target `d+b`, `b ∈ B`,
+already has an order-`k+2` support wholly outside `B`.
+
+This completes the simultaneous repair of the entire recurrent fixed-gap
+slice.  Any remaining counterexample certificate must therefore migrate
+away from all targets in `d + B`. -/
+theorem boundedFullTranslateDestroyers_cofinalMatching_or_fixedGapInfiniteRepairDeletion
+    {A : Set ℕ} {k q₀ : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    (hfull :
+      HasBoundedFullTranslateDestroyersByAnchor A (k + 1) {q₀})
+    (hqrep : (additiveSupportFamily A (k + 1) q₀).Nonempty)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 2)) :
+    ∀ r,
+      ((∀ L, ∃ q R M,
+          L ≤ q ∧
+          R.card < k + 2 ∧
+          M ⊆ additiveSupportFamily A (k + 2) q ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+            Disjoint (E \ R) (G \ R)) ∨
+        ∃ d, additiveSupportFamily A (k + 1) d = ∅ ∧
+          ∃ B : Set ℕ, B ⊆ A ∧ B.Infinite ∧
+            ∀ b ∈ B,
+              ∃ E ∈ additiveSupportFamily A (k + 2) (d + b),
+                Disjoint (E : Set ℕ) B) := by
+  intro r
+  obtain ⟨_K, _cell, _P, _hKA, _hKInfinite, _hcellCard,
+      hendpoint⟩ :=
+    boundedFullTranslateDestroyers_fixedGrowingCertificate_cofinalMatching_or_fixedGapRectangles
+      hbasis hfull hqrep hcounter
+  obtain hmatching | ⟨d, hdGap, hrectangles⟩ := hendpoint r
+  · exact Or.inl hmatching
+  · right
+    refine ⟨d, hdGap, ?_⟩
+    apply cofinal_anchorAvoidingSupports_have_infiniteFreeDeletion
+    intro L
+    obtain ⟨b, q, _v, _j, _Q', _x, _y, E, _G, _H, _T,
+        hLb, hbA, hqdb, _hqv, _hvQ', _hQ'larger,
+        _hfanCapacity, _hxBlock, _hyBlock, _hbx, hbE,
+        hER, _hGR, _hxE, _hyG, _hyE, _hxG, _hHR,
+        _hEeq, _hTR, _hGeq⟩ :=
+      hrectangles L
+    refine ⟨b, E, hLb, hbA, ?_, hbE⟩
+    simpa only [hqdb] using hER
 
 /-- Protected-set strengthening of the locked-prefix composition.
 
