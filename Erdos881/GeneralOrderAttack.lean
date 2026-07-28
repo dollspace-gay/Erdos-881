@@ -23898,6 +23898,160 @@ theorem zeroNormalized_counterexample_forces_freshWholeDestroyerFork
   exact ⟨q, D₀, D, hLq, hD₀D, hD₀nonempty,
     hDnonempty, hDB, hDF, hminimal, hminimalH, hwhole⟩
 
+/-- Finite-prefix composition eliminates the bounded horn of the
+zero-normalized whole-destroyer fork.
+
+Fix the requested matching size and target cutoff.  The two direct growth
+horns already give rooted matchings at the fresh damaged target `q`.  In the
+remaining horn the whole successor destroyer has a bound known in advance,
+so choose `q` beyond the uniform bounded-destroyer threshold.  Exact
+order-`h` composition exposes a larger order-`h` support family at a
+coherent difference.  Complete rank descent then gives a genuine matching.
+
+The descent target is still cofinal: before starting, enlarge the matching
+demand past the total number of all support families of ranks at most `h`
+below the requested cutoff.  A descended matching that large cannot land
+below the cutoff.
+
+Thus the bounded finite-prefix branch is gone.  Every fresh normalized
+stage produces either same-target predecessor rooted growth, same-target
+zero-free successor rooted growth, or cofinal lower-rank matching growth. -/
+theorem zeroNormalized_counterexample_forces_cofinalThreeWayMatchingGrowth
+    {A : Set ℕ} {h : ℕ}
+    (hhpos : 0 < h)
+    (hzeroA : 0 ∈ A)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    ∃ C B : Set ℕ,
+      C ⊆ A ∧ C.Infinite ∧
+      B ⊆ A ∧ B.Infinite ∧
+      Disjoint C B ∧
+      A ⊆ C ∪ B ∧
+      0 ∈ C ∧
+      ∀ F : Finset ℕ, ∀ r L,
+        ∃ q, ∃ D₀ D : Finset ℕ,
+          L ≤ q ∧
+          D₀ ⊆ D ∧
+          D₀.Nonempty ∧ D.Nonempty ∧
+          (D : Set ℕ) ⊆ B ∧
+          Disjoint D F ∧
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A h) D₀ q ∧
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A (h + 1)) D q ∧
+          ((∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+              R.card < h ∧
+              M ⊆ additiveSupportFamily A h q ∧
+              r < M.card ∧
+              (∀ E ∈ M, R ⊆ E) ∧
+              (∀ E ∈ M, (E \ R).Nonempty) ∧
+              ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+                Disjoint (E \ R) (G \ R)) ∨
+            (∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+              R.card < h + 1 ∧
+              M ⊆
+                (additiveSupportFamily A (h + 1) q).filter
+                  (fun E => 0 ∉ E) ∧
+              r < M.card ∧
+              (∀ E ∈ M, R ⊆ E) ∧
+              (∀ E ∈ M, (E \ R).Nonempty) ∧
+              ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+                Disjoint (E \ R) (G \ R)) ∨
+            ∃ j, 0 < j ∧ j ≤ h ∧
+              ∃ t, ∃ M : Finset (Finset ℕ),
+                L ≤ t ∧
+                M ⊆ additiveSupportFamily A j t ∧
+                IsMatching M ∧
+                r < M.card) := by
+  classical
+  obtain ⟨C, B, hCA, hCInfinite, hBA, hBInfinite,
+      hCB, hACB, hzeroC, hstage⟩ :=
+    zeroNormalized_counterexample_forces_freshWholeDestroyerFork
+      hhpos hzeroA hbasis hcounter
+  refine ⟨C, B, hCA, hCInfinite, hBA, hBInfinite,
+    hCB, hACB, hzeroC, ?_⟩
+  intro F r L
+  let count :=
+    additiveLowerRankSupportCountBelow A h L
+  let size := max r count
+  let destroyerBound :=
+    additiveRootedMatchingBound h size +
+      additiveRootedMatchingBound (h + 1) size
+  let capacity :=
+    max destroyerBound (additiveSupportRankBound h size)
+  obtain ⟨N, hN⟩ :=
+    hbasis.eventually_boundedSuccessorDestroyer_forces_largeDifferenceFamily
+      capacity
+  obtain ⟨q, D₀, D, hqLower, hD₀D, hD₀nonempty,
+      hDnonempty, hDB, hDF, hminimal, hminimalH,
+      hfork⟩ :=
+    hstage F size (max L N)
+  have hLq : L ≤ q :=
+    (le_max_left L N).trans hqLower
+  have hNq : N ≤ q :=
+    (le_max_right L N).trans hqLower
+  refine ⟨q, D₀, D, hLq, hD₀D, hD₀nonempty,
+    hDnonempty, hDB, hDF, hminimal, hminimalH, ?_⟩
+  rcases hfork with hDbounded | hpredRooted | hzeroFreeRooted
+  · right
+    right
+    have hDcapacity : D.card ≤ capacity := by
+      have hDboundLe : D.card ≤ destroyerBound := by
+        exact Nat.le_of_lt (by
+          simpa only [destroyerBound] using hDbounded)
+      exact hDboundLe.trans (le_max_left _ _)
+    obtain ⟨d, _hdD, _hdA, _hdq, lower,
+        hlowerSub, hlowerLarge⟩ :=
+      hN D hDcapacity q hNq hminimalH.1
+    have hfamilyLarge :
+        additiveSupportRankBound h size ≤
+          (additiveSupportFamily A h (q - d)).card := by
+      have hrankCapacity :
+          additiveSupportRankBound h size ≤ capacity :=
+        le_max_right _ _
+      have hlowerFamily :
+          lower.card ≤
+            (additiveSupportFamily A h (q - d)).card :=
+        Finset.card_le_card hlowerSub
+      exact hrankCapacity.trans
+        ((Nat.le_of_lt hlowerLarge).trans hlowerFamily)
+    obtain ⟨j, hjpos, hjh, t, M, hMsub,
+        hMmatching, hMlarge⟩ :=
+      additiveSupportRankBound_forces_matching_below
+        h (q - d) hfamilyLarge
+    have hLt : L ≤ t := by
+      by_contra hnot
+      have htSmall : t < L :=
+        Nat.lt_of_not_ge hnot
+      have hfamilyBound :
+          (additiveSupportFamily A j t).card ≤ count := by
+        exact additiveSupportFamily_card_le_lowerRankSupportCountBelow
+          hjh htSmall
+      have hMbound :
+          M.card ≤ (additiveSupportFamily A j t).card :=
+        Finset.card_le_card hMsub
+      have hcountSize : count ≤ size :=
+        le_max_right r count
+      omega
+    exact ⟨j, hjpos, hjh, t, M, hLt, hMsub,
+      hMmatching, lt_of_le_of_lt (le_max_left r count) hMlarge⟩
+  · left
+    obtain ⟨R, M, hRcard, hMsub, hMcard,
+        hMroot, hMnonempty, hMmatching⟩ :=
+      hpredRooted
+    exact ⟨R, M, hRcard, hMsub,
+      lt_of_le_of_lt (le_max_left r count) hMcard,
+      hMroot, hMnonempty, hMmatching⟩
+  · right
+    left
+    obtain ⟨R, M, hRcard, hMsub, hMcard,
+        hMroot, hMnonempty, hMmatching⟩ :=
+      hzeroFreeRooted
+    exact ⟨R, M, hRcard, hMsub,
+      lt_of_le_of_lt (le_max_left r count) hMcard,
+      hMroot, hMnonempty, hMmatching⟩
+
 /-- Infinite-anchor amplification of certificate descent.
 
 On one fixed infinite deletion partition, every requested finite number of
