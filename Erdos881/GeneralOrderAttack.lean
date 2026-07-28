@@ -5203,8 +5203,8 @@ reserve.  Old hit-coordinates use the supplied second-choice hypothesis.
 All non-hit coordinates are kept unchanged.  This separates the genuine
 old-block issue from the rest of the infinite selector completion. -/
 theorem blockAlignedRepairWitness_extends_protected_of_oldSecondChoices
-    {A : Set ℕ} {k q : ℕ}
-    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
+    {A C : Set ℕ} {k q : ℕ}
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition C F)
     (s : BlockSelector F) {D U J E : Finset ℕ} {i b : ℕ}
     (hbBlock : b ∈ (F i).erase (s i).1)
     (hbU : b ∉ U)
@@ -5320,8 +5320,8 @@ assumption was stronger than necessary.  This support-local form is the one
 compatible with scheduled unequal blocks: at most `k+1` block indices need
 fresh room during one repair. -/
 theorem blockAlignedRepairWitness_extends_protected_of_hitBlockCapacity
-    {A : Set ℕ} {k q : ℕ}
-    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
+    {A C : Set ℕ} {k q : ℕ}
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition C F)
     (s : BlockSelector F) {D U E : Finset ℕ} {i b : ℕ}
     (hbBlock : b ∈ (F i).erase (s i).1)
     (hbU : b ∉ U)
@@ -9628,6 +9628,85 @@ bound here is completely independent of `Q.card`. -/
 theorem blockAligned_at_certificateMax_rootedMatching_or_strictDescent
     {A : Set ℕ} {k q r : ℕ} {Q : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
+    (s : BlockSelector F) {D : Finset ℕ} {i : ℕ}
+    (hqMax : ∀ u ∈ Q, u ≤ q)
+    (hcert : ∀ t : BlockSelector F, ∃ u ∈ Q,
+      DestroysAt
+        (additiveSupportFamily A (k + 1)) (selectedSet t) u)
+    (hminimal : IsInclusionMinimalDestroyer
+      (additiveSupportFamily A (k + 1)) D q)
+    (hactive : (s i).1 ∈ D)
+    (hactiveLarge :
+      (k + 1) * additiveRootedMatchingBound (k + 1) r <
+        ((F i).erase (s i).1).card)
+    (hblocks : ∀ j,
+      (s j).1 ∈
+          supportVertices (additiveSupportFamily A (k + 1)) q →
+        k + 1 < (F j).card) :
+    (∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+        R.card < k + 1 ∧
+        M ⊆ additiveSupportFamily A (k + 1) q ∧
+        r < M.card ∧
+        (∀ E ∈ M, R ⊆ E) ∧
+        (∀ E ∈ M, (E \ R).Nonempty) ∧
+        ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+          Disjoint (E \ R) (G \ R)) ∨
+      ∃ t : BlockSelector F, ∃ u ∈ Q, u < q ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) u := by
+  classical
+  let c :
+      FiniteSupportChoice
+        (additiveSupportFamily A (k + 1)) ∅ := fun u =>
+    (Finset.notMem_empty u.1 u.2).elim
+  have hemptyLarger : ∀ u ∈ (∅ : Finset ℕ), q < u := by simp
+  have hlarge :
+      (k + 1) *
+          (additiveRootedMatchingBound (k + 1) r + 0) <
+        ((F i).erase (s i).1).card := by
+    simpa using hactiveLarge
+  obtain hgrowth | ⟨b, hbBlock, _hbProtected, hbAvoid⟩ |
+      ⟨S, hSempty, hSnonempty, _hScard, _hSlarger, _hcover⟩ :=
+    oldBlock_rootedMatching_or_safeSecondChoice_or_manyLargerDependencies
+      (V := (F i).erase (s i).1) c hemptyLarger hlarge
+  · exact Or.inl hgrowth
+  · right
+    have hrepair :
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (((D.erase (s i).1 ∪ {b} : Finset ℕ) : Set ℕ)) q :=
+      hminimal.swap_hit_for_avoidedPoint_repairs hactive hbAvoid
+    obtain ⟨E, hER, hEswap⟩ :=
+      not_destroysAt_iff.mp hrepair
+    have hhitCapacity :
+        ∀ j, (s j).1 ∈ E →
+          (∅ : Finset ℕ).card + (k + 1) < (F j).card := by
+      intro j hsjE
+      simpa using hblocks j
+        (Finset.mem_biUnion.mpr ⟨E, hER, hsjE⟩)
+    obtain ⟨t, _htEmpty, htq⟩ :=
+      blockAlignedRepairWitness_extends_protected_of_hitBlockCapacity
+        P s hbBlock (by simp) (by simp) hER hEswap hhitCapacity
+    obtain ⟨u, huQ, huDestroy⟩ := hcert t
+    have hune : u ≠ q := by
+      intro huq
+      subst u
+      exact htq huDestroy
+    exact ⟨t, u, huQ,
+      lt_of_le_of_ne (hqMax u huQ) hune, huDestroy⟩
+  · have hSEmpty : S = ∅ := Finset.subset_empty.mp hSempty
+    rw [hSEmpty] at hSnonempty
+    simp at hSnonempty
+
+/-- Reservoir-relative form of the maximum-certificate active-block step.
+
+The partition may cover only `C`; the repair-completion argument is purely
+block-combinatorial, while all represented supports remain supports over
+the ambient basis `A`. -/
+theorem blockAligned_at_certificateMax_rootedMatching_or_strictDescent_onReservoir
+    {A C : Set ℕ} {k q r : ℕ} {Q : Finset ℕ}
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition C F)
     (s : BlockSelector F) {D : Finset ℕ} {i : ℕ}
     (hqMax : ∀ u ∈ Q, u ≤ q)
     (hcert : ∀ t : BlockSelector F, ∃ u ∈ Q,
@@ -20770,7 +20849,7 @@ theorem cofinalFreshPureMatchings_have_coherentLiftedBlockSurvival
             Disjoint (E : Set ℕ) (selectedSet s)) ∧
         (∀ i,
           DestroysAt (additiveSupportFamily A h) B (failure i)) ∧
-        (∀ i, i + 2 < (cell i).card) ∧
+        (∀ i, (i + h + 2) ^ 2 < (cell i).card) ∧
         ∀ s : BlockSelector cell, ∀ i,
           ∃ E ∈ additiveSupportFamily A h (target i),
             Disjoint (E : Set ℕ) (selectedSet s) := by
@@ -20779,10 +20858,10 @@ theorem cofinalFreshPureMatchings_have_coherentLiftedBlockSurvival
     ⟨{c}, 0, 0⟩
   let chooseStep : (i : ℕ) → (st : PureLiftedBlockState) →
       FreshPureLiftedMatchingStep
-        A B h st.used st.lastTarget st.lastFailure (i + 2) :=
+        A B h st.used st.lastTarget st.lastFailure ((i + h + 2) ^ 2) :=
     fun i st => Classical.choice
       (freshPureLiftedMatchingStep_nonempty
-        hsupply st.used st.lastTarget st.lastFailure (i + 2))
+        hsupply st.used st.lastTarget st.lastFailure ((i + h + 2) ^ 2))
   let liftedTarget (i : ℕ) (st : PureLiftedBlockState) : ℕ :=
     (chooseStep i st).rawTarget +
       (h - (chooseStep i st).rank) * c
@@ -20913,7 +20992,7 @@ theorem cofinalFreshPureMatchings_have_coherentLiftedBlockSurvival
           (Finset.mem_filter.mp D.2).1 hne)
     simpa only [Fintype.card_coe] using
       Fintype.card_le_of_injective pick hpickInjective
-  have hgoodLarge : ∀ i, i + 2 < (good i).card := by
+  have hgoodLarge : ∀ i, (i + h + 2) ^ 2 < (good i).card := by
     intro i
     have hsplit :
         (good i).card + (bad i).card =
@@ -20922,7 +21001,7 @@ theorem cofinalFreshPureMatchings_have_coherentLiftedBlockSurvival
         (Finset.card_filter_add_card_filter_not
           (s := matching i) fun E => Disjoint E (used i))
     have hlarge := (step i).matching_large
-    change (used i).card + (i + 2) <
+    change (used i).card + (i + h + 2) ^ 2 <
       (matching i).card at hlarge
     have hbad := hbadCard i
     omega
@@ -20984,7 +21063,7 @@ theorem cofinalFreshPureMatchings_have_coherentLiftedBlockSurvival
           (hgoodSub i E.2) D.1 (hgoodSub i D.2) hne)
     simpa only [Fintype.card_coe] using
       Fintype.card_le_of_injective pick hpickInjective
-  have hcellLarge : ∀ i, i + 2 < (cell i).card := by
+  have hcellLarge : ∀ i, (i + h + 2) ^ 2 < (cell i).card := by
     intro i
     exact (hgoodLarge i).trans_le (hgoodCardLeCell i)
   have hcellInside : ∀ i, ∀ x ∈ cell i, x ∈ B := by
@@ -21049,8 +21128,13 @@ theorem cofinalFreshPureMatchings_have_coherentLiftedBlockSurvival
         Finset.mem_biUnion.mp hyCell
       exact (Finset.mem_sdiff.mp hyPetal).2 hyR
     have honeGood : 1 < (good i).card := by
-      have := hgoodLarge i
-      omega
+      have hlinearSquare : i + h + 2 < (i + h + 2) ^ 2 := by
+        have hmul :=
+          (Nat.mul_lt_mul_left (show 0 < i + h + 2 by omega)).2
+            (show 1 < i + h + 2 by omega)
+        simpa only [Nat.mul_one, pow_two] using hmul
+      exact (show 1 < i + h + 2 by omega) |>
+        (·.trans (hlinearSquare.trans (hgoodLarge i)))
     have hhit :
         ∀ E ∈ good i,
           ¬ Disjoint (E : Set ℕ) ({y} : Set ℕ) →
@@ -21241,7 +21325,15 @@ theorem cofinalFreshPureMatchings_have_coherentLiftedBlockSurvival
         refine ⟨lower, ?_, ?_⟩
         · simpa using hlowerSub
         · rw [hlowerCard, hrebuiltCard]
-          exact hgoodLarge i
+          have hlinearSquare :
+              i + (k + 1) + 2 < (i + (k + 1) + 2) ^ 2 := by
+            have hmul :=
+              (Nat.mul_lt_mul_left
+                (show 0 < i + (k + 1) + 2 by omega)).2
+                (show 1 < i + (k + 1) + 2 by omega)
+            simpa only [Nat.mul_one, pow_two] using hmul
+          exact (show i + 2 ≤ i + (k + 1) + 2 by omega) |>
+            (·.trans_lt (hlinearSquare.trans (hgoodLarge i)))
   intro s i
   obtain ⟨E, hER, hEselected⟩ :=
     hrawSurvival s i
@@ -21576,9 +21668,11 @@ theorem infiniteUncoveredBlocks_have_infiniteDeletion_preservingStreams
     (htargetSurvival : ∀ s : BlockSelector cell, ∀ i,
       ∃ E ∈ additiveSupportFamily A h (target i),
         Disjoint (E : Set ℕ) (selectedSet s)) :
-    ∃ S : Set ℕ,
+    ∃ S : Set ℕ, ∃ s : BlockSelector cell,
       S ⊆ K ∧
+      S ⊆ selectedSet s ∧
       S.Infinite ∧
+      (∀ x ∈ S, ∀ i, x ∉ hits i) ∧
       (∀ i,
         ∃ E ∈ additiveSupportFamily A (rank i) (rawTarget i),
           Disjoint (E : Set ℕ) S) ∧
@@ -21627,6 +21721,10 @@ theorem infiniteUncoveredBlocks_have_infiniteDeletion_preservingStreams
       rw [← hsPoint]
       exact hsHit
     exact hpointAvoid j hjU i hpointHit
+  have hSFresh : ∀ x ∈ S, ∀ i, x ∉ hits i := by
+    intro x hxS i hxi
+    exact Set.disjoint_left.mp (hhitsS i)
+      (Finset.mem_coe.mpr (List.mem_toFinset.mpr hxi)) hxS
   have hraw :
       ∀ i, ∃ E ∈ additiveSupportFamily A (rank i) (rawTarget i),
         Disjoint (E : Set ℕ) S := by
@@ -21670,7 +21768,194 @@ theorem infiniteUncoveredBlocks_have_infiniteDeletion_preservingStreams
       htargetSurvival s i
     exact ⟨H, hHR,
       Set.disjoint_of_subset_right hSSelected hHselected⟩
-  exact ⟨S, hSK, hSInfinite, hraw, hfailure, htarget⟩
+  exact ⟨S, s, hSK, hSSelected, hSInfinite, hSFresh,
+    hraw, hfailure, htarget⟩
+
+/-- A globally fresh surviving deletion cannot be a terminal branch.
+
+Strong deletion produces arbitrarily late targets destroyed by that same
+infinite set.  After passing to an inclusion-minimal finite destroyer, every
+active coordinate is still globally absent from all previous injury lists.
+The protected failure and normalized streams exclude those targets, while
+eventual containment puts every support at the new targets back inside the
+original pure deletion reservoir.
+
+Thus the uncovered-block horn regenerates a genuinely new finite injury
+layer rather than stalling the construction. -/
+theorem infiniteFreshDeletion_forces_cofinalFreshMinimalDestroyers
+    {A B S : Set ℕ} {h : ℕ}
+    {failure target : ℕ → ℕ} {hits : ℕ → List ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hstrong :
+      StrongInfiniteDeletion (additiveSupportFamily A h) A)
+    (hSA : S ⊆ A) (hSB : S ⊆ B) (hSInfinite : S.Infinite)
+    (hSFresh : ∀ x ∈ S, ∀ i, x ∉ hits i)
+    (hcontained : ∃ U, ∀ n, U < n →
+      DestroysAt (additiveSupportFamily A h) B n →
+      ∀ E ∈ additiveSupportFamily A h n,
+        ∀ x ∈ E, x ∈ B)
+    (hfailureSurvival : ∀ i,
+      ∃ G ∈ additiveSupportFamily A h (failure i),
+        Disjoint (G : Set ℕ) S)
+    (htargetSurvival : ∀ i,
+      ∃ H ∈ additiveSupportFamily A h (target i),
+        Disjoint (H : Set ℕ) S) :
+    ∀ N, ∃ q, ∃ D : Finset ℕ,
+      N ≤ q ∧
+      D.Nonempty ∧
+      (D : Set ℕ) ⊆ S ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q ∧
+      (∀ d ∈ D, ∀ i, d ∉ hits i) ∧
+      (∀ E ∈ additiveSupportFamily A h q,
+        ∀ x ∈ E, x ∈ B) ∧
+      q ∉ Set.range failure ∧
+      q ∉ Set.range target := by
+  classical
+  obtain ⟨Nrep, hNrep⟩ := hbasis
+  obtain ⟨U, hcontained⟩ := hcontained
+  intro N
+  obtain ⟨q, hqLate, hqDestroy⟩ :=
+    hstrong S hSA hSInfinite
+      (max N (max Nrep (U + 1)))
+  have hNq : N ≤ q :=
+    (le_max_left N (max Nrep (U + 1))).trans hqLate
+  have hNrepq : Nrep ≤ q :=
+    (le_max_left Nrep (U + 1)).trans
+      ((le_max_right N (max Nrep (U + 1))).trans hqLate)
+  obtain ⟨v, hvA, hvsum⟩ := hNrep q hNrepq
+  have hrepresented :
+      ∃ E ∈ additiveSupportFamily A h q,
+        Disjoint (E : Set ℕ) (∅ : Set ℕ) := by
+    apply (exists_surviving_additiveSupport_iff
+      (A := A) (B := (∅ : Set ℕ)) (h := h) (n := q)).2
+    exact ⟨v, (fun i => ⟨hvA i, by simp⟩), hvsum⟩
+  obtain ⟨E, hER, _hEempty⟩ := hrepresented
+  obtain ⟨D, hDS, hDdestroy⟩ :=
+    exists_finiteDestroyer_subset hqDestroy
+  obtain ⟨D₀, hD₀D, hminimal⟩ :=
+    exists_inclusionMinimalDestroyer_subset hDdestroy
+  have hD₀S : (D₀ : Set ℕ) ⊆ S := by
+    intro d hdD₀
+    exact hDS (Finset.mem_coe.mpr
+      (hD₀D (Finset.mem_coe.mp hdD₀)))
+  have hD₀nonempty : D₀.Nonempty := by
+    by_contra hD₀empty
+    have hD₀eq : D₀ = ∅ :=
+      Finset.not_nonempty_iff_eq_empty.mp hD₀empty
+    exact (hminimal.1 E hER) (by simp [hD₀eq])
+  have hD₀fresh : ∀ d ∈ D₀, ∀ i, d ∉ hits i := by
+    intro d hdD₀
+    exact hSFresh d (hD₀S (Finset.mem_coe.mpr hdD₀))
+  have hUq : U < q := by
+    have :
+        U + 1 ≤ max N (max Nrep (U + 1)) :=
+      (le_max_right Nrep (U + 1)).trans
+        (le_max_right N (max Nrep (U + 1)))
+    omega
+  have hqInside :
+      ∀ G ∈ additiveSupportFamily A h q,
+        ∀ x ∈ G, x ∈ B := by
+    exact hcontained q hUq (hqDestroy.mono hSB)
+  have hqNotFailure : q ∉ Set.range failure := by
+    rintro ⟨i, hi⟩
+    obtain ⟨G, hGR, hGS⟩ := hfailureSurvival i
+    rw [hi] at hGR
+    exact (hqDestroy G hGR) hGS
+  have hqNotTarget : q ∉ Set.range target := by
+    rintro ⟨i, hi⟩
+    obtain ⟨H, hHR, hHS⟩ := htargetSurvival i
+    rw [hi] at hHR
+    exact (hqDestroy H hHR) hHS
+  exact ⟨q, D₀, hNq, hD₀nonempty, hD₀S,
+    hminimal, hD₀fresh, hqInside,
+    hqNotFailure, hqNotTarget⟩
+
+/-- The regenerated fresh injury can be forced arbitrarily far out in the
+block partition.
+
+Delete the finitely many values chosen by `s` in the first `T` blocks from
+the infinite fresh set.  The remaining tail is still infinite.  Strong
+deletion applied to that tail yields a finite minimal destroyer all of whose
+block indices are at least `T`. -/
+theorem infiniteFreshSelectorDeletion_forces_cofinalLateBlockMinimalDestroyers
+    {A B K S : Set ℕ} {h : ℕ}
+    {cell : ℕ → Finset ℕ}
+    {failure target : ℕ → ℕ} {hits : ℕ → List ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (s : BlockSelector cell)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hstrong :
+      StrongInfiniteDeletion (additiveSupportFamily A h) A)
+    (hSA : S ⊆ A) (hSB : S ⊆ B)
+    (hSSelected : S ⊆ selectedSet s)
+    (hSInfinite : S.Infinite)
+    (hSFresh : ∀ x ∈ S, ∀ i, x ∉ hits i)
+    (hcontained : ∃ U, ∀ n, U < n →
+      DestroysAt (additiveSupportFamily A h) B n →
+      ∀ E ∈ additiveSupportFamily A h n,
+        ∀ x ∈ E, x ∈ B)
+    (hfailureSurvival : ∀ i,
+      ∃ G ∈ additiveSupportFamily A h (failure i),
+        Disjoint (G : Set ℕ) S)
+    (htargetSurvival : ∀ i,
+      ∃ H ∈ additiveSupportFamily A h (target i),
+        Disjoint (H : Set ℕ) S) :
+    ∀ N T, ∃ q, ∃ D : Finset ℕ,
+      N ≤ q ∧
+      D.Nonempty ∧
+      (D : Set ℕ) ⊆ S ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q ∧
+      (∀ d ∈ D, T ≤ blockIndex P d) ∧
+      (∀ d ∈ D, ∀ i, d ∉ hits i) ∧
+      (∀ E ∈ additiveSupportFamily A h q,
+        ∀ x ∈ E, x ∈ B) ∧
+      q ∉ Set.range failure ∧
+      q ∉ Set.range target := by
+  classical
+  intro N T
+  let lowValues : Finset ℕ :=
+    (Finset.range T).image fun j => (s j).1
+  let tail : Set ℕ := S \ (lowValues : Set ℕ)
+  have htailS : tail ⊆ S := Set.diff_subset
+  have htailInfinite : tail.Infinite := by
+    exact hSInfinite.diff lowValues.finite_toSet
+  have htailLate : ∀ x ∈ tail, T ≤ blockIndex P x := by
+    intro x hxTail
+    by_contra hnot
+    have hxLow : x ∈ lowValues := by
+      apply Finset.mem_image.mpr
+      refine ⟨blockIndex P x,
+        Finset.mem_range.mpr (Nat.lt_of_not_ge hnot), ?_⟩
+      exact (P.mem_selectedSet_iff s).mp
+        (hSSelected (htailS hxTail))
+    exact hxTail.2 (Finset.mem_coe.mpr hxLow)
+  have htailFailure : ∀ i,
+      ∃ G ∈ additiveSupportFamily A h (failure i),
+        Disjoint (G : Set ℕ) tail := by
+    intro i
+    obtain ⟨G, hGR, hGS⟩ := hfailureSurvival i
+    exact ⟨G, hGR,
+      Set.disjoint_of_subset_right htailS hGS⟩
+  have htailTarget : ∀ i,
+      ∃ H ∈ additiveSupportFamily A h (target i),
+        Disjoint (H : Set ℕ) tail := by
+    intro i
+    obtain ⟨H, hHR, hHS⟩ := htargetSurvival i
+    exact ⟨H, hHR,
+      Set.disjoint_of_subset_right htailS hHS⟩
+  obtain ⟨q, D, hNq, hDnonempty, hDtail, hminimal,
+      hDfresh, hqInside, hqFailure, hqTarget⟩ :=
+    infiniteFreshDeletion_forces_cofinalFreshMinimalDestroyers
+      hbasis hstrong
+      (htailS.trans hSA) (htailS.trans hSB) htailInfinite
+      (fun x hx => hSFresh x (htailS hx))
+      hcontained htailFailure htailTarget N
+  exact ⟨q, D, hNq, hDnonempty, hDtail.trans htailS,
+    hminimal, (fun d hd => htailLate d
+      (hDtail (Finset.mem_coe.mpr hd))),
+    hDfresh, hqInside, hqFailure, hqTarget⟩
 
 /-- Counterexample-level payoff of the coherent pure block assembly.
 
@@ -21735,18 +22020,32 @@ theorem exactBasis_counterexample_forces_noncontainedRankInjury_or_coherentPureB
               lower ⊆
                 additiveSupportFamily A h (failure i - x) ∧
               i + 2 < lower.card) ∧
-          ((∃ S : Set ℕ,
+          ((∃ S : Set ℕ, ∃ s : BlockSelector cell,
               S ⊆ K ∧
+              S ⊆ selectedSet s ∧
               S.Infinite ∧
+              (∀ x ∈ S, ∀ i, x ∉ hits i) ∧
               (∀ i,
                 ∃ E ∈ additiveSupportFamily A (rank i) (rawTarget i),
                   Disjoint (E : Set ℕ) S) ∧
               (∀ i,
                 ∃ G ∈ additiveSupportFamily A (h + 1) (failure i),
                   Disjoint (G : Set ℕ) S) ∧
-              ∀ i,
+              (∀ i,
                 ∃ H ∈ additiveSupportFamily A (h + 1) (target i),
-                  Disjoint (H : Set ℕ) S) ∨
+                  Disjoint (H : Set ℕ) S) ∧
+              ∀ N T, ∃ q, ∃ D : Finset ℕ,
+                N ≤ q ∧
+                D.Nonempty ∧
+                (D : Set ℕ) ⊆ S ∧
+                IsInclusionMinimalDestroyer
+                  (additiveSupportFamily A (h + 1)) D q ∧
+                (∀ d ∈ D, ∃ j, T ≤ j ∧ d ∈ cell j) ∧
+                (∀ d ∈ D, ∀ i, d ∉ hits i) ∧
+                (∀ E ∈ additiveSupportFamily A (h + 1) q,
+                  ∀ x ∈ E, x ∈ B) ∧
+                q ∉ Set.range failure ∧
+                q ∉ Set.range target) ∨
             ∃ j, 0 < j ∧ j ≤ h ∧
               ∀ r L, ∃ t,
                 ∃ M : Finset (Finset ℕ),
@@ -21765,7 +22064,7 @@ theorem exactBasis_counterexample_forces_noncontainedRankInjury_or_coherentPureB
           (∀ i,
             DestroysAt
               (additiveSupportFamily A (h + 1)) B (failure i)) ∧
-          (∀ i, i + 2 < (cell i).card) ∧
+          (∀ i, (i + h + 3) ^ 2 < (cell i).card) ∧
           (∀ s : BlockSelector cell, ∀ i,
             ∃ E ∈ additiveSupportFamily A (h + 1) (target i),
               Disjoint (E : Set ℕ) (selectedSet s)) ∧
@@ -21833,18 +22132,32 @@ theorem exactBasis_counterexample_forces_noncontainedRankInjury_or_coherentPureB
         (forwardListInjuries_have_infiniteUncoveredBlocks_or_cofinalLowerGrowth
           P.nonempty hhitsForward hhitGrowth)
     have hforwardMatchingEndpoint :
-        (∃ S : Set ℕ,
+        (∃ S : Set ℕ, ∃ s : BlockSelector cell,
             S ⊆ K ∧
+            S ⊆ selectedSet s ∧
             S.Infinite ∧
+            (∀ x ∈ S, ∀ i, x ∉ hits i) ∧
             (∀ i,
               ∃ E ∈ additiveSupportFamily A (rank i) (rawTarget i),
                 Disjoint (E : Set ℕ) S) ∧
             (∀ i,
               ∃ G ∈ additiveSupportFamily A (h + 1) (failure i),
                 Disjoint (G : Set ℕ) S) ∧
-            ∀ i,
+            (∀ i,
               ∃ H ∈ additiveSupportFamily A (h + 1) (target i),
-                Disjoint (H : Set ℕ) S) ∨
+                Disjoint (H : Set ℕ) S) ∧
+            ∀ N T, ∃ q, ∃ D : Finset ℕ,
+              N ≤ q ∧
+              D.Nonempty ∧
+              (D : Set ℕ) ⊆ S ∧
+              IsInclusionMinimalDestroyer
+                (additiveSupportFamily A (h + 1)) D q ∧
+              (∀ d ∈ D, ∃ j, T ≤ j ∧ d ∈ cell j) ∧
+              (∀ d ∈ D, ∀ i, d ∉ hits i) ∧
+              (∀ E ∈ additiveSupportFamily A (h + 1) q,
+                ∀ x ∈ E, x ∈ B) ∧
+              q ∉ Set.range failure ∧
+              q ∉ Set.range target) ∨
           ∃ j, 0 < j ∧ j ≤ h ∧
             ∀ r L, ∃ t,
               ∃ M : Finset (Finset ℕ),
@@ -21854,17 +22167,34 @@ theorem exactBasis_counterexample_forces_noncontainedRankInjury_or_coherentPureB
                 r < M.card := by
       rcases hforwardEndpoint with hU | hgrowth
       · left
-        apply
+        obtain ⟨S, s, hSK, hSSelected, hSInfinite, hSFresh,
+            hraw, hfailureSafe, htargetSafe⟩ :=
           infiniteUncoveredBlocks_have_infiniteDeletion_preservingStreams
             P hU
-        · intro i
-          rcases hcoherent i with
-            ⟨_hrankPos, _hrankLe, hlength, hhitsB,
-              hfailureEq, _htargetEq⟩
-          exact ⟨hlength,
-            (fun x hx => hBA (hhitsB x hx)), hfailureEq⟩
-        · exact hrawSurvival
-        · exact hsurvival
+            (fun i => by
+              rcases hcoherent i with
+                ⟨_hrankPos, _hrankLe, hlength, hhitsB,
+                  hfailureEq, _htargetEq⟩
+              exact ⟨hlength,
+                (fun x hx => hBA (hhitsB x hx)), hfailureEq⟩)
+            hrawSurvival hsurvival
+        refine ⟨S, s, hSK, hSSelected, hSInfinite, hSFresh,
+          hraw, hfailureSafe, htargetSafe, ?_⟩
+        intro N T
+        obtain ⟨q, D, hNq, hDnonempty, hDS, hminimal,
+            hDlate, hDfresh, hqInside, hqFailure, hqTarget⟩ :=
+          infiniteFreshSelectorDeletion_forces_cofinalLateBlockMinimalDestroyers
+            P s hbasis.succ
+            (strongExactDeletion_of_counterexample hcounter)
+            (hSK.trans hKA) (hSK.trans hKB) hSSelected
+            hSInfinite hSFresh ⟨U, hcontained⟩
+            hfailureSafe htargetSafe N T
+        refine ⟨q, D, hNq, hDnonempty, hDS, hminimal, ?_,
+          hDfresh, hqInside, hqFailure, hqTarget⟩
+        intro d hdD
+        refine ⟨blockIndex P d, hDlate d hdD, ?_⟩
+        exact P.mem_blockIndex
+          (hSK (hDS (Finset.mem_coe.mpr hdD)))
       · right
         apply
           cofinalLargeSupportFamilies_force_fixedRankCofinalMatching
