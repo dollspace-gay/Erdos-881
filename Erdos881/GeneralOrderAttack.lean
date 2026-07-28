@@ -21957,6 +21957,336 @@ theorem infiniteFreshSelectorDeletion_forces_cofinalLateBlockMinimalDestroyers
       (hDtail (Finset.mem_coe.mpr hd))),
     hDfresh, hqInside, hqFailure, hqTarget⟩
 
+/-- A quadratic block tail closes the maximum-target layer of every finite
+certificate.
+
+For a requested matching size, start the tail beyond the fixed
+maximum-target active-block budget.  Strong deletion supplies a localized
+finite certificate on that tail.  Its largest target has no larger
+certificate dependencies, so one active coordinate of its minimal
+destroyer forces either a rooted matching of the requested size or strict
+descent to a smaller target of the same certificate.
+
+The tail threshold is independent of the unknown certificate cardinality;
+this is the first complete break of the moving-prefix circle at the top
+certificate rank. -/
+theorem quadraticBlockTail_certificateMax_forces_rootedMatching_or_strictDescent
+    {A K : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    (hstrong :
+      StrongInfiniteDeletion
+        (additiveSupportFamily A (k + 1)) A)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hquadratic : ∀ i,
+      (i + k + 2) ^ 2 < (cell i).card) :
+    ∀ r N,
+      let start :=
+        (k + 1) * additiveRootedMatchingBound (k + 1) r + 1
+      let tailCell : ℕ → Finset ℕ := fun i => cell (start + i)
+      ∃ Q : Finset ℕ, ∃ q,
+        Q.Nonempty ∧
+        q ∈ Q ∧
+        (∀ u ∈ Q, N ≤ u) ∧
+        (∀ t : BlockSelector tailCell, ∃ u ∈ Q,
+          DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet t) u) ∧
+        ((∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+            R.card < k + 1 ∧
+            M ⊆ additiveSupportFamily A (k + 1) q ∧
+            r < M.card ∧
+            (∀ E ∈ M, R ⊆ E) ∧
+            (∀ E ∈ M, (E \ R).Nonempty) ∧
+            ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+              Disjoint (E \ R) (G \ R)) ∨
+          ∃ t : BlockSelector tailCell, ∃ u ∈ Q,
+            u < q ∧
+            DestroysAt
+              (additiveSupportFamily A (k + 1))
+              (selectedSet t) u) := by
+  classical
+  intro r N
+  let budget :=
+    (k + 1) * additiveRootedMatchingBound (k + 1) r
+  let start := budget + 1
+  let tailCell : ℕ → Finset ℕ := fun i => cell (start + i)
+  let Ktail : Set ℕ := {x | ∃ i, x ∈ tailCell i}
+  have hKtailK : Ktail ⊆ K := by
+    rintro x ⟨i, hxi⟩
+    exact (P.mem_iff x).2 ⟨start + i, hxi⟩
+  have Ptail : IsFiniteBlockPartition Ktail tailCell := by
+    refine ⟨?_, ?_, ?_⟩
+    · intro i
+      exact P.nonempty (start + i)
+    · intro i j hij
+      apply P.disjoint
+      omega
+    · intro x
+      simp only [Ktail, tailCell, Set.mem_setOf_eq]
+  obtain ⟨Nrep, hNrep⟩ := hbasis
+  obtain ⟨Q, hQnonempty, hQlate, hcert,
+      hlocalized, _hQsafe⟩ :=
+    strongDeletion_certificate_avoids_allCommonSurvivalTargets
+      hstrong (hKtailK.trans hKA) Ptail (max N Nrep)
+  let q := Q.max' hQnonempty
+  have hqQ : q ∈ Q := Q.max'_mem hQnonempty
+  obtain ⟨s, hqDestroy, _hother⟩ :=
+    hlocalized q hqQ
+  have hQlateN : ∀ u ∈ Q, N ≤ u := by
+    intro u huQ
+    exact (le_max_left N Nrep).trans (hQlate u huQ)
+  have hqRepLower : Nrep ≤ q :=
+    (le_max_right N Nrep).trans (hQlate q hqQ)
+  obtain ⟨v, hvA, hvsum⟩ := hNrep q hqRepLower
+  have hrepresented :
+      (additiveSupportFamily A (k + 1) q).Nonempty := by
+    obtain ⟨E, hER, _hEempty⟩ :=
+      (exists_surviving_additiveSupport_iff
+        (A := A) (B := (∅ : Set ℕ))
+        (h := k + 1) (n := q)).2
+          ⟨v, (fun i => ⟨hvA i, by simp⟩), hvsum⟩
+    exact ⟨E, hER⟩
+  obtain ⟨D, hDselected, _hDcard, hDdestroy⟩ :=
+    exists_finiteSelectedDestroyer_of_destroysAt
+      Ptail s hqDestroy
+  obtain ⟨D₀, hD₀D, hminimal⟩ :=
+    exists_inclusionMinimalDestroyer_subset hDdestroy
+  have hD₀selected : (D₀ : Set ℕ) ⊆ selectedSet s := by
+    intro d hdD₀
+    exact hDselected (Finset.mem_coe.mpr
+      (hD₀D (Finset.mem_coe.mp hdD₀)))
+  have hD₀nonempty : D₀.Nonempty := by
+    by_contra hD₀empty
+    rw [Finset.not_nonempty_iff_eq_empty.mp hD₀empty] at hminimal
+    obtain ⟨E, hER⟩ := hrepresented
+    exact hminimal.1 E hER (by simp)
+  obtain ⟨d, hdD₀⟩ := hD₀nonempty
+  let i := blockIndex Ptail d
+  have hactive : (s i).1 ∈ D₀ := by
+    have hdSelected :
+        d ∈ selectedSet s :=
+      hD₀selected (Finset.mem_coe.mpr hdD₀)
+    have hsi : (s i).1 = d := by
+      exact (Ptail.mem_selectedSet_iff s).mp hdSelected
+    simpa only [hsi] using hdD₀
+  have hqMax : ∀ u ∈ Q, u ≤ q := by
+    intro u huQ
+    exact Finset.le_max' Q u huQ
+  have hactiveLarge :
+      (k + 1) * additiveRootedMatchingBound (k + 1) r <
+        ((tailCell i).erase (s i).1).card := by
+    have hcell :=
+      hquadratic (start + i)
+    have hnSquare :
+        start + i + k + 2 <
+          (start + i + k + 2) ^ 2 := by
+      have hmul :=
+        (Nat.mul_lt_mul_left
+          (show 0 < start + i + k + 2 by omega)).2
+          (show 1 < start + i + k + 2 by omega)
+      simpa only [Nat.mul_one, pow_two] using hmul
+    have herase :
+        ((tailCell i).erase (s i).1).card + 1 =
+          (tailCell i).card :=
+      Finset.card_erase_add_one (s i).2
+    change
+      (start + i + k + 2) ^ 2 <
+        (tailCell i).card at hcell
+    dsimp only [start] at hnSquare hcell ⊢
+    dsimp only [budget] at hnSquare hcell ⊢
+    omega
+  have hblocks : ∀ j,
+      (s j).1 ∈
+          supportVertices
+            (additiveSupportFamily A (k + 1)) q →
+        k + 1 < (tailCell j).card := by
+    intro j _hsjSupport
+    have hcell := hquadratic (start + j)
+    have hnSquare :
+        start + j + k + 2 <
+          (start + j + k + 2) ^ 2 := by
+      have hmul :=
+        (Nat.mul_lt_mul_left
+          (show 0 < start + j + k + 2 by omega)).2
+          (show 1 < start + j + k + 2 by omega)
+      simpa only [Nat.mul_one, pow_two] using hmul
+    change
+      (start + j + k + 2) ^ 2 <
+        (tailCell j).card at hcell
+    omega
+  have hendpoint :=
+    blockAligned_at_certificateMax_rootedMatching_or_strictDescent_onReservoir
+      Ptail s hqMax hcert hminimal hactive
+        hactiveLarge hblocks
+  exact ⟨Q, q, hQnonempty, hqQ, hQlateN, hcert, hendpoint⟩
+
+/-- Matching-normalized bounded-certificate payoff on a deletion
+reservoir. -/
+theorem IsExactTupleAsymptoticBasis.eventually_boundedCertificate_onReservoir_forces_exactRootedMatching
+    {A K : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    (hKA : K ⊆ A)
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
+    (C r : ℕ) :
+    ∃ N, ∀ Q : Finset ℕ, Q.card ≤ C →
+      (∀ q ∈ Q, N ≤ q) →
+      (∀ s : BlockSelector F, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) (selectedSet s) q) →
+      (∀ j,
+        (k + 1) * C + (k + 1) < (F j).card) →
+      ∃ q ∈ Q, ∃ R : Finset ℕ,
+        ∃ M : Finset (Finset ℕ),
+          R.card < k + 1 ∧
+          M ⊆ additiveSupportFamily A (k + 1) q ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          ∀ E ∈ M, ∀ D ∈ M, E ≠ D →
+            Disjoint (E \ R) (D \ R) := by
+  let threshold := additiveRootedMatchingBound (k + 1) r
+  let B := 2 * threshold
+  obtain ⟨N, hN⟩ :=
+    hbasis.eventually_boundedCertificate_onReservoir_forces_supportGrowth
+      hKA P C B
+  refine ⟨N, ?_⟩
+  intro Q hQcard hlate hcert hblocks
+  obtain ⟨q, hqQ, hqLarge⟩ |
+      ⟨q, hqQ, d, hdA, hdq, hdLarge⟩ :=
+    hN Q hQcard hlate hcert hblocks
+  · have hthreshold :
+        threshold ≤
+          (additiveSupportFamily A (k + 1) q).card := by
+      dsimp only [B] at hqLarge
+      omega
+    obtain ⟨R, M, hRcard, hMsub, hMcard, hMroot,
+        hMnonempty, hMmatching⟩ :=
+      additiveSupportSubfamily_has_large_rootedMatching
+        (k + 1) r q
+          (additiveSupportFamily A (k + 1) q)
+          (fun _ h => h)
+          (by simpa only [threshold] using hthreshold)
+    exact ⟨q, hqQ, R, M, hRcard, hMsub, hMcard,
+      hMroot, hMnonempty, hMmatching⟩
+  · have _hliftBound :=
+      lowerDifferenceSupportFamily_card_le_twice_exact
+        (k := k) hdA hdq
+    have hthreshold :
+        threshold ≤
+          (additiveSupportFamily A (k + 1) q).card := by
+      dsimp only [B] at hdLarge
+      omega
+    obtain ⟨R, M, hRcard, hMsub, hMcard, hMroot,
+        hMnonempty, hMmatching⟩ :=
+      additiveSupportSubfamily_has_large_rootedMatching
+        (k + 1) r q
+          (additiveSupportFamily A (k + 1) q)
+          (fun _ h => h)
+          (by simpa only [threshold] using hthreshold)
+    exact ⟨q, hqQ, R, M, hRcard, hMsub, hMcard,
+      hMroot, hMnonempty, hMmatching⟩
+
+/-- On a quadratic block reservoir, an arbitrarily late certificate is
+either larger than any prescribed bound or already yields a large exact
+rooted matching.
+
+The tail is chosen after the proposed certificate bound `C` but before the
+certificate is produced.  Quadratic growth makes every block in that tail
+large enough for the complete finite strict-descent argument. -/
+theorem quadraticBlockTail_largeCertificate_or_exactRootedMatching
+    {A K : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    (hstrong :
+      StrongInfiniteDeletion
+        (additiveSupportFamily A (k + 1)) A)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hquadratic : ∀ i,
+      (i + k + 2) ^ 2 < (cell i).card) :
+    ∀ C r L,
+      let capacity := (k + 1) * C + (k + 1)
+      let start := capacity + 1
+      let tailCell : ℕ → Finset ℕ := fun i => cell (start + i)
+      (∃ Q : Finset ℕ,
+          Q.Nonempty ∧
+          (∀ q ∈ Q, L ≤ q) ∧
+          (∀ s : BlockSelector tailCell, ∃ q ∈ Q,
+            DestroysAt
+              (additiveSupportFamily A (k + 1))
+              (selectedSet s) q) ∧
+          C < Q.card) ∨
+        ∃ q R, ∃ M : Finset (Finset ℕ),
+          L ≤ q ∧
+          R.card < k + 1 ∧
+          M ⊆ additiveSupportFamily A (k + 1) q ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          ∀ E ∈ M, ∀ D ∈ M, E ≠ D →
+            Disjoint (E \ R) (D \ R) := by
+  classical
+  intro C r L
+  let capacity := (k + 1) * C + (k + 1)
+  let start := capacity + 1
+  let tailCell : ℕ → Finset ℕ := fun i => cell (start + i)
+  let Ktail : Set ℕ := {x | ∃ i, x ∈ tailCell i}
+  have hKtailK : Ktail ⊆ K := by
+    rintro x ⟨i, hxi⟩
+    exact (P.mem_iff x).2 ⟨start + i, hxi⟩
+  have Ptail : IsFiniteBlockPartition Ktail tailCell := by
+    refine ⟨?_, ?_, ?_⟩
+    · intro i
+      exact P.nonempty (start + i)
+    · intro i j hij
+      apply P.disjoint
+      omega
+    · intro x
+      simp only [Ktail, tailCell, Set.mem_setOf_eq]
+  have htailCapacity : ∀ j,
+      (k + 1) * C + (k + 1) <
+        (tailCell j).card := by
+    intro j
+    have hcell := hquadratic (start + j)
+    have hnSquare :
+        start + j + k + 2 <
+          (start + j + k + 2) ^ 2 := by
+      have hmul :=
+        (Nat.mul_lt_mul_left
+          (show 0 < start + j + k + 2 by omega)).2
+          (show 1 < start + j + k + 2 by omega)
+      simpa only [Nat.mul_one, pow_two] using hmul
+    change
+      (start + j + k + 2) ^ 2 <
+        (tailCell j).card at hcell
+    dsimp only [start, capacity] at hcell hnSquare ⊢
+    omega
+  obtain ⟨N, hN⟩ :=
+    hbasis.eventually_boundedCertificate_onReservoir_forces_exactRootedMatching
+      (hKtailK.trans hKA) Ptail C r
+  obtain ⟨Q, hQnonempty, hQlate, hcert,
+      _hlocalized, _hQsafe⟩ :=
+    strongDeletion_certificate_avoids_allCommonSurvivalTargets
+      hstrong (hKtailK.trans hKA) Ptail (max L N)
+  have hQlateL : ∀ q ∈ Q, L ≤ q := by
+    intro q hqQ
+    exact (le_max_left L N).trans (hQlate q hqQ)
+  by_cases hQcard : Q.card ≤ C
+  · right
+    have hQlateN : ∀ q ∈ Q, N ≤ q := by
+      intro q hqQ
+      exact (le_max_right L N).trans (hQlate q hqQ)
+    obtain ⟨q, hqQ, R, M, hRcard, hMsub, hMcard,
+        hMroot, hMnonempty, hMmatching⟩ :=
+      hN Q hQcard hQlateN hcert htailCapacity
+    exact ⟨q, R, M, hQlateL q hqQ, hRcard,
+      hMsub, hMcard, hMroot, hMnonempty, hMmatching⟩
+  · left
+    exact ⟨Q, hQnonempty, hQlateL, hcert,
+      Nat.lt_of_not_ge hQcard⟩
+
 /-- Counterexample-level payoff of the coherent pure block assembly.
 
 Either the fixed deletion has infinitely many noncontained damaged supports,
