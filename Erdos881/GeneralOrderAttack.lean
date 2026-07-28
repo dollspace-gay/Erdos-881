@@ -29031,6 +29031,7 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingle
       ∃ oldTarget : ℕ → ℕ,
         X ⊆ A ∧
         X.Infinite ∧
+        (∀ j, h < (cell j).card) ∧
         StrictMono oldTarget ∧
         (∀ s : BlockSelector cell, ∀ n,
           ∃ E ∈
@@ -29038,7 +29039,7 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingle
             Disjoint (E : Set ℕ) (selectedSet s)) ∧
         (∀ N, ∃ d, N ≤ d ∧
           additiveSupportFamily A (h - 1) d = ∅) ∧
-        ∀ s : BlockSelector cell, ∀ r N,
+        (∀ s : BlockSelector cell, ∀ r N,
           ∃ q, ∃ D : Finset ℕ,
             N ≤ q ∧
             D.Nonempty ∧
@@ -29054,7 +29055,38 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingle
                   (D : Set ℕ) n) ∨
               r < D.card) ∨
               ∃ b, b ∈ selectedSet s ∧ b ∉ D ∧ b ≤ q ∧
-                additiveSupportFamily A (h - 1) (q - b) = ∅) := by
+                additiveSupportFamily A (h - 1) (q - b) = ∅)) ∧
+        ∀ s : BlockSelector cell, ∀ q, ∀ D : Finset ℕ, ∀ b,
+          D.Nonempty →
+          (D : Set ℕ) ⊆ selectedSet s →
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A h) D q →
+          b ∈ selectedSet s →
+          b ∉ D →
+          additiveSupportFamily A (h - 1) (q - b) = ∅ →
+          ∀ U : Finset ℕ, ∀ r,
+            ∃ t : BlockSelector cell, ∃ q', ∃ D' : Finset ℕ,
+              (t (blockIndex P b)).1 = b ∧
+              ¬ DestroysAt
+                (additiveSupportFamily A h)
+                (selectedSet t) q ∧
+              q < q' ∧
+              D'.Nonempty ∧
+              (D' : Set ℕ) ⊆ selectedSet t ∧
+              Disjoint D' (U ∪ D) ∧
+              IsInclusionMinimalDestroyer
+                (additiveSupportFamily A h) D' q' ∧
+              (((∃ ℓ n,
+                  0 < ℓ ∧
+                  ℓ < h ∧
+                  (additiveSupportFamily A ℓ n).Nonempty ∧
+                  DestroysAt
+                    (additiveSupportFamily A ℓ)
+                    (D' : Set ℕ) n) ∨
+                r < D'.card) ∨
+                ∃ b', b' ∈ selectedSet t ∧
+                  b' ∉ U ∪ D ∧ b' ∉ D' ∧ b' ≤ q' ∧
+                  additiveSupportFamily A (h - 1) (q' - b') = ∅) := by
   classical
   obtain ⟨B, block, failure, root, matching,
       hBA, _hBInfinite, hfailureStrict, _hfailureCofinal,
@@ -29117,16 +29149,35 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingle
         Finset.card_erase_of_mem (hkept i hiL)]
       have hgrowth := hblockGrowth i hiL
       omega
-    let index : ℕ → ℕ := Nat.nth fun i => i ∈ L
-    have hindexL : ∀ n, index n ∈ L := by
+    let rawIndex : ℕ → ℕ := Nat.nth fun i => i ∈ L
+    have hrawIndexL : ∀ n, rawIndex n ∈ L := by
       intro n
       exact Nat.nth_mem_of_infinite hLInfinite n
-    have hindexStrict : StrictMono index :=
+    have hrawIndexStrict : StrictMono rawIndex :=
       Nat.nth_strictMono hLInfinite
-    have hindexRange : Set.range index = L :=
-      Nat.range_nth_of_infinite hLInfinite
+    let index : ℕ → ℕ := fun n => rawIndex (n + h + 1)
+    have hindexL : ∀ n, index n ∈ L := by
+      intro n
+      exact hrawIndexL (n + h + 1)
+    have hshiftStrict :
+        StrictMono (fun n : ℕ => n + h + 1) := by
+      intro i j hij
+      exact Nat.add_lt_add_right
+        (Nat.add_lt_add_right hij h) 1
+    have hindexStrict : StrictMono index :=
+      hrawIndexStrict.comp hshiftStrict
     let cell : ℕ → Finset ℕ := fun n =>
       (block (index n)).erase (kept (index n))
+    have hcellLarge : ∀ n, h < (cell n).card := by
+      intro n
+      have hindexLower : n + h + 1 ≤ index n :=
+        hrawIndexStrict.id_le (n + h + 1)
+      have hgrowth := hblockGrowth (index n) (hindexL n)
+      change h <
+        ((block (index n)).erase (kept (index n))).card
+      rw [Finset.card_erase_of_mem
+        (hkept (index n) (hindexL n))]
+      omega
     have hcellNonempty : ∀ n, (cell n).Nonempty := by
       intro n
       exact hcosingletonNonempty (index n) (hindexL n)
@@ -29139,27 +29190,24 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingle
         (hblockPairwise hindexNe).mono
           (Finset.erase_subset _ _)
           (Finset.erase_subset _ _)
-    have hcellMem : ∀ x, x ∈ X ↔ ∃ n, x ∈ cell n := by
-      intro x
-      constructor
-      · intro hxX
-        rw [hXeq] at hxX
-        obtain ⟨i, hiL, hxCell⟩ := hxX
-        have hiRange : i ∈ Set.range index := by
-          rw [hindexRange]
-          exact hiL
-        obtain ⟨n, rfl⟩ := hiRange
-        exact ⟨n, hxCell⟩
-      · rintro ⟨n, hxCell⟩
-        rw [hXeq]
-        exact ⟨index n, hindexL n, hxCell⟩
-    have P : IsFiniteBlockPartition X cell :=
-      ⟨hcellNonempty, hcellPairwise, hcellMem⟩
+    let K : Set ℕ := {x | ∃ n, x ∈ cell n}
+    have P : IsFiniteBlockPartition K cell :=
+      ⟨hcellNonempty, hcellPairwise, fun _ => Iff.rfl⟩
+    let s₀ : BlockSelector cell := fun n =>
+      ⟨(hcellNonempty n).choose,
+        (hcellNonempty n).choose_spec⟩
+    have hKInfinite : K.Infinite := by
+      exact (P.selectedSet_infinite s₀).mono
+        (P.selectedSet_subset s₀)
+    have hKX : K ⊆ X := by
+      rintro x ⟨n, hxCell⟩
+      rw [hXeq]
+      exact ⟨index n, hindexL n, hxCell⟩
     let oldTarget : ℕ → ℕ := fun n => failure (index n)
     have holdTargetStrict : StrictMono oldTarget :=
       hfailureStrict.comp hindexStrict
-    have hXA : X ⊆ A :=
-      hXB.trans hBA
+    have hKA : K ⊆ A :=
+      hKX.trans (hXB.trans hBA)
     have hsurvive :
         ∀ s : BlockSelector cell, ∀ n,
           ∃ E ∈
@@ -29169,7 +29217,7 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingle
       refine ⟨repair (index n),
         (hrepairData (index n) (hindexL n)).2.1, ?_⟩
       exact Set.disjoint_of_subset_right
-        (P.selectedSet_subset s)
+        ((P.selectedSet_subset s).trans hKX)
         (hrepairData (index n) (hindexL n)).2.2.2.1
     have hcofinalPrimitiveGaps :
         ∀ N, ∃ d, N ≤ d ∧
@@ -29195,9 +29243,15 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingle
               ∃ b, b ∈ selectedSet s ∧ b ∉ D ∧ b ≤ q ∧
                 additiveSupportFamily A (h - 1) (q - b) = ∅) :=
       hminimal.cofinal_selectorRankDescent_or_manyBlocks_or_lowerGap
-        hhpos hXA P
-    exact ⟨X, cell, P, oldTarget, hXA, hXInfinite,
-      holdTargetStrict, hsurvive, hcofinalPrimitiveGaps,
-      hcurrentAttack⟩
+        hhpos hKA P
+    refine ⟨K, cell, P, oldTarget, hKA, hKInfinite,
+      hcellLarge, holdTargetStrict, hsurvive, hcofinalPrimitiveGaps,
+      hcurrentAttack, ?_⟩
+    intro s q D b hDnonempty _hDselected hDminimal
+      hbSelected _hbD hgap U r
+    exact
+      hminimal.lowerGapSelectorSwitch_forces_freshLaterAttack
+        hhpos hKA P hcellLarge s hDnonempty hDminimal
+          hbSelected hgap U r
 
 end Erdos881
