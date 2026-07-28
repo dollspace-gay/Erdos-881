@@ -54,6 +54,148 @@ theorem finiteSupportChoiceUnion_restrict_subset
   refine ⟨q, by simp [q], ?_⟩
   exact hxE
 
+/-- A finite set covered by an exceptional set and a support-choice union
+only uses a locally bounded subcollection of the chosen supports.
+
+For every point of `V \ E`, choose one target whose selected support
+contains that point and retain only the targets so chosen.  The resulting
+target set has cardinality at most `V.card`, independently of the size of
+the original certificate. -/
+theorem exists_localSupportChoiceSubcover
+    {R : SupportFamily} {Q V E : Finset ℕ}
+    (c : FiniteSupportChoice R Q)
+    (hcover : V ⊆ E ∪ finiteSupportChoiceUnion c) :
+    ∃ P : Finset ℕ, ∃ hPQ : P ⊆ Q, P.card ≤ V.card ∧
+      V ⊆ E ∪
+        finiteSupportChoiceUnion
+          (restrictFiniteSupportChoice hPQ c) := by
+  classical
+  let Need : Finset ℕ := V \ E
+  have hwitness :
+      ∀ x : {x // x ∈ Need},
+        ∃ q : {n // n ∈ Q}, x.1 ∈ (c q).1 := by
+    intro x
+    have hxParts := Finset.mem_sdiff.mp x.2
+    have hxUnion : x.1 ∈ finiteSupportChoiceUnion c := by
+      have hxCover := hcover hxParts.1
+      rcases Finset.mem_union.mp hxCover with hxE | hxU
+      · exact (hxParts.2 hxE).elim
+      · exact hxU
+    obtain ⟨q, _hqAttach, hxSupport⟩ :=
+      Finset.mem_biUnion.mp hxUnion
+    exact ⟨q, hxSupport⟩
+  choose target htarget using hwitness
+  let P : Finset ℕ := Need.attach.image fun x => (target x).1
+  have hPQ : P ⊆ Q := by
+    intro q hqP
+    obtain ⟨x, _hxAttach, hxq⟩ := Finset.mem_image.mp hqP
+    rw [← hxq]
+    exact (target x).2
+  have hPcard : P.card ≤ V.card := by
+    calc
+      P.card ≤ Need.attach.card := Finset.card_image_le
+      _ = Need.card := Finset.card_attach
+      _ ≤ V.card :=
+        Finset.card_le_card (Finset.sdiff_subset : V \ E ⊆ V)
+  refine ⟨P, hPQ, hPcard, ?_⟩
+  intro x hxV
+  by_cases hxE : x ∈ E
+  · exact Finset.mem_union_left _ hxE
+  · apply Finset.mem_union_right E
+    let xNeed : {x // x ∈ Need} :=
+      ⟨x, Finset.mem_sdiff.mpr ⟨hxV, hxE⟩⟩
+    have htargetP : (target xNeed).1 ∈ P := by
+      apply Finset.mem_image.mpr
+      exact ⟨xNeed, by simp, rfl⟩
+    let p : {n // n ∈ P} := ⟨(target xNeed).1, htargetP⟩
+    apply Finset.mem_biUnion.mpr
+    refine ⟨p, by simp [p], ?_⟩
+    simpa [restrictFiniteSupportChoice, p] using htarget xNeed
+
+/-- Local second-choice/subcover dichotomy.
+
+Either `V` has a point outside both the exceptional set and the entire
+support-choice union, or the obstruction is already witnessed by at most
+`V.card` certificate targets. -/
+theorem exists_point_avoiding_or_localSupportChoiceSubcover
+    {R : SupportFamily} {Q V E : Finset ℕ}
+    (c : FiniteSupportChoice R Q) :
+    (∃ y ∈ V, y ∉ E ∧ y ∉ finiteSupportChoiceUnion c) ∨
+      ∃ P : Finset ℕ, ∃ hPQ : P ⊆ Q, P.card ≤ V.card ∧
+        V ⊆ E ∪
+          finiteSupportChoiceUnion
+            (restrictFiniteSupportChoice hPQ c) := by
+  classical
+  by_cases hchoice :
+      ∃ y ∈ V, y ∉ E ∧ y ∉ finiteSupportChoiceUnion c
+  · exact Or.inl hchoice
+  · right
+    apply exists_localSupportChoiceSubcover c
+    intro x hxV
+    by_cases hxE : x ∈ E
+    · exact Finset.mem_union_left _ hxE
+    · apply Finset.mem_union_right E
+      by_contra hxU
+      exact hchoice ⟨x, hxV, hxE, hxU⟩
+
+/-- Quantitative local obstruction to a simultaneous second choice.
+
+The finite family `M` is the immediate collision family and `c` stores one
+protected support per certificate target.  Either a point of `V` avoids
+both, or at most `V.card` protected targets already cover `V` together with
+`M`.  If the two kinds of supports have ranks at most `h` and `r`, the
+returned local dependency set satisfies the displayed sharp union bound. -/
+theorem exists_point_avoiding_families_or_localSupportChoiceSubcover
+    {R : SupportFamily} {Q V : Finset ℕ}
+    (c : FiniteSupportChoice R Q)
+    (M : Finset (Finset ℕ)) {h r : ℕ}
+    (hMcard : ∀ G ∈ M, G.card ≤ h)
+    (hRcard : SupportsCardAtMost R r) :
+    (∃ y ∈ V,
+        (∀ G ∈ M, y ∉ G) ∧
+        y ∉ finiteSupportChoiceUnion c) ∨
+      ∃ P : Finset ℕ, ∃ hPQ : P ⊆ Q,
+        P.card ≤ V.card ∧
+        V ⊆ M.biUnion id ∪
+          finiteSupportChoiceUnion
+            (restrictFiniteSupportChoice hPQ c) ∧
+        V.card ≤ h * M.card + r * P.card := by
+  classical
+  obtain ⟨y, hyV, hyMUnion, hyU⟩ |
+      ⟨P, hPQ, hPcard, hcover⟩ :=
+    exists_point_avoiding_or_localSupportChoiceSubcover
+      (V := V) (E := M.biUnion id) c
+  · left
+    refine ⟨y, hyV, ?_, hyU⟩
+    intro G hGM hyG
+    exact hyMUnion (Finset.mem_biUnion.mpr ⟨G, hGM, hyG⟩)
+  · right
+    have hMUnion :
+        (M.biUnion id).card ≤ h * M.card :=
+      biUnion_card_le_of_edge_card_le
+        (H := M) (M := M) (by simp) hMcard
+    have hrestrictedCard :
+        (finiteSupportChoiceUnion
+          (restrictFiniteSupportChoice hPQ c)).card ≤
+            r * P.card := by
+      exact finiteSupportChoiceUnion_card_le hRcard _
+    have hcoverCard :
+        V.card ≤
+          (M.biUnion id ∪
+            finiteSupportChoiceUnion
+              (restrictFiniteSupportChoice hPQ c)).card :=
+      Finset.card_le_card hcover
+    have hunionCard :
+        (M.biUnion id ∪
+          finiteSupportChoiceUnion
+            (restrictFiniteSupportChoice hPQ c)).card ≤
+          (M.biUnion id).card +
+            (finiteSupportChoiceUnion
+              (restrictFiniteSupportChoice hPQ c)).card :=
+      Finset.card_union_le _ _
+    refine ⟨P, hPQ, hPcard, hcover, ?_⟩
+    omega
+
 /-- Strong deletion amplifies the usual one-block dual certificate to an
 arbitrarily large family of distinct covered blocks.  The returned indices
 can all be forced beyond any prescribed starting block.

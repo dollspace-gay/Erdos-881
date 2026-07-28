@@ -1139,7 +1139,9 @@ theorem HasDiagonalAnchoredAlignedTranslateCellRows.toFullRows
   exact ⟨(hrows j).1.toFullFamily, (hrows j).2⟩
 
 /- Generic partition completion for a countable family of finite rows.  It
-retains an injective locator from every row cell to the block containing it. -/
+retains a bijective locator from every row cell to the block containing it:
+the construction has exactly one distinguished row cell in every completed
+block. -/
 theorem exists_finiteBlockPartition_for_disjointRows
     {A : Set ℕ} {rows : ℕ → Finset (Finset ℕ)}
     (hrowsNonempty : ∀ j, (rows j).Nonempty)
@@ -1149,7 +1151,7 @@ theorem exists_finiteBlockPartition_for_disjointRows
     (hcross : ArePairwiseDisjointDestroyerRows rows) :
     ∃ F : ℕ → Finset ℕ, ∃ _P : IsFiniteBlockPartition A F,
       ∃ locate : (Σ j, {C : Finset ℕ // C ∈ rows j}) → ℕ,
-        Function.Injective locate ∧
+        Function.Bijective locate ∧
         ∀ c, c.2.1 ⊆ F (locate c) := by
   classical
   let CellIndex := Σ j, {C : Finset ℕ // C ∈ rows j}
@@ -1206,7 +1208,7 @@ theorem exists_finiteBlockPartition_for_disjointRows
         exact ⟨x, Finset.mem_coe.mpr hx, Finset.mem_coe.mpr hx⟩ }
   obtain ⟨F, P, hcore⟩ := S.exists_finiteBlockPartition
   let locate : CellIndex → ℕ := fun c => e.symm c
-  have hlocate : Function.Injective locate := e.symm.injective
+  have hlocate : Function.Bijective locate := e.symm.bijective
   refine ⟨F, P, locate, hlocate, ?_⟩
   intro c
   have hc := hcore (locate c)
@@ -1248,7 +1250,7 @@ theorem HasDiagonalAnchoredAlignedTranslateCellRows.exists_rowPartition
       (fun j => (hrows j).1.2.2.1)
       hcross
   exact ⟨enumerate, henumerate, rows, hrows, hcross,
-    F, P, locate, hlocate, hcell⟩
+    F, P, locate, hlocate.1, hcell⟩
 
 /- Flatten the globally disjoint rows into a countable core sequence and use
 the existing partition-completion construction.  This is the literal bridge

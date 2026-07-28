@@ -1,3 +1,602 @@
+# CERTIFICATE-SAFE OLD-BLOCK COMPOSITION: MIGRATION TERMINATES (2026-07-27)
+
+The old-coordinate branch has now crossed the certificate-safety barrier.
+This is a genuine elimination of a former branch, not another reformulation
+of it.
+
+- `lockedPrefixSurvival_extends_avoiding_protected` is the support-local
+  completion theorem.  If the intrinsic locked prefix does not destroy the
+  current target, choose one surviving support and reroute only selector
+  coordinates which hit that support.  No locked block is touched, and all
+  new values avoid both the repair support and the stored supports of larger
+  certificate targets.
+- `exists_maximalDestroyedCertificateTarget` chooses the maximum target
+  still destroyed by a selector.  It packages the exact invariant needed
+  for iteration: every larger certificate target survives.
+- `lockedPrefix_destroys_or_rankGrowthCertificateDescent` and
+  `blockAligned_intrinsicLockedPrefix_destruction_or_rankGrowthDescent`
+  show that failure of the protected completion is not an uncontrolled
+  migration.  It returns a strictly smaller destroyed target together with
+  the proof that every larger target survives for the new selector.
+- The locked prefix has a target-independent bound in the absence of
+  current-order rooted matching growth.  Therefore
+  `eventually_lockedPrefix_matching_or_gap_or_rankGrowthDescent` feeds
+  genuine locked-prefix destruction into the uniform
+  finite-prefix/difference theorem.  Its represented-difference horn is
+  normalized to a predecessor rooted matching; its only arithmetic escape
+  is a real predecessor gap.
+- `eventually_finiteCertificate_matching_or_lowerGap` terminates migration
+  by strong induction.  Starting from the maximum destroyed certificate
+  target, every descent moves to a strictly smaller target while retaining
+  survival of all larger targets.  A finite certificate therefore cannot
+  support endless repair migration.
+- `cofinal_rootedMatching_or_lowerGap` composes the result directly with
+  strong infinite deletion.  It needs neither a bound on certificate
+  cardinality nor the diagonal-row hypothesis used by the earlier scheduled
+  route.
+- `largeSupportFamily_forces_cofinal_prefixDisjointRootedMatching` removes
+  all three losses in the matching horn.  Common-root collisions are
+  consumed by strict rank descent, a finite support count forces the
+  translated target arbitrarily late, and fresh padding restores the
+  original order without changing the petals.
+- Consequently
+  `cofinal_prefixDisjointRootedMatching_or_lowerGap` is the strongest
+  unconditional endpoint of this attack: against every finite prefix and
+  every size and target demand, a hypothetical strongly minimal
+  order-`k+1` basis has a cofinal order-`k+1` rooted matching whose root
+  avoids that prefix, or a late certificate target in a genuine translate
+  `b + Gap_k(A)`.
+
+Thus repeated old-coordinate collisions and certificate migration are no
+longer open mathematics.  Erdős 881 for all `k ≥ 3` is still not claimed:
+the remaining branch is the recurrent lower-gap translate.  Closing the
+problem now requires either making those gap repairs persistent under all
+later block choices, or converting their recurrence into the adaptive
+matching-growth/cofinite-cover hypothesis already consumed by the sparse
+infinite-deletion theorem.
+
+# REPEATED OLD-COLLISION AMPLIFICATION AND UPPER-RANK DESCENT (2026-07-27)
+
+The old-coordinate collision branch has now been split by actual block
+capacity, and the bounded-certificate migration has been made to terminate.
+This is new mathematical progress, not another renaming of the obstruction.
+
+- `exists_localSupportChoiceSubcover` and
+  `exists_point_avoiding_families_or_localSupportChoiceSubcover` remove the
+  global certificate-cardinality loss.  If one old block has no point
+  avoiding the immediate collision family and all protected supports, then
+  at most the cardinality of that block's own vertices identifies a
+  subcollection of protected targets which already covers the block.  The
+  quantitative union bound retains the ranks of both support families.
+- `oldBlock_exactGrowth_or_safeSecondChoice_or_localLargerDependency`
+  applies this compression to the entire exact support family at the
+  current target.  Its alternatives are exact support growth, a point which
+  is a verified safe replacement and avoids all stored larger-target
+  supports, or an explicit bounded set of strictly larger dependencies.
+- `oldBlock_rootedMatching_or_safeSecondChoice_or_manyLargerDependencies`
+  normalizes the first horn.  Once the block is larger than the rooted
+  matching threshold plus `m` protected supports, the last horn contains
+  more than `m` distinct strictly larger targets.
+- `blockAligned_at_certificateMax_rootedMatching_or_strictDescent` observes
+  that the dependency horn is impossible at the maximum certificate
+  target.  A single large active block therefore forces an exact rooted
+  matching or strict descent, with no dependence on `Q.card`.
+- `blockAlignedRepairWitness_extends_protected_of_hitBlockCapacity` proves
+  that selector completion needs capacity only in blocks actually met by
+  the chosen repair support—at most `k+1` blocks—not in every block of the
+  partition.
+- `blockAligned_upperRankCapacity_rootedMatching_or_strictDescent` combines
+  these gains at an arbitrary descent stage.  Every occurrence of the full
+  certificate cardinality is replaced by
+  `|{u ∈ Q : q < u}|`, and the completion capacity is required only at
+  selected coordinates occurring in supports of `q`.
+- `certificateUpperRank_strictly_grows_under_descent` makes termination
+  quantitative: if the certificate moves from `q` to `u < q`, the number
+  of certificate targets above the current one strictly increases.
+  `blockAligned_upperRankCapacity_rootedMatching_or_rankGrowthDescent`
+  records this monotone measure in the descent output.
+- `blockAlignedRepairWitness_extends_protected_or_hitBlockCollision`
+  removes the last irrelevant capacity assumptions.  A chosen repair
+  support needs room only at selected coordinates which that very support
+  hits; every untouched block is left unchanged.
+- `blockAlignedSafeSwap_upperCertificate_forces_descent_or_oldCollision`
+  retains the actual private collision support when support-local
+  completion fails.  Its alternatives are now strict downward certificate
+  migration or a support `E` with `E ∩ D = {d}` at an exceptional old
+  block.
+- `blockAligned_manyActivePoints_force_rootedMatching_or_rankGrowthDescent_or_oldGrowth`
+  runs this fork at every contemporary active point.  If descent never
+  occurs, the private supports inject those points into the lower-order
+  support families at the exceptional old coordinates.  More than
+  `|J|r` active points therefore force more than `r` coherent
+  representations at one old coordinate.
+- `blockAligned_manyActivePoints_force_matchingGrowth_or_rankGrowthDescent`
+  normalizes that lower-order support growth.  Every output is now a
+  genuine large rooted matching at order `k+1`, strict upper-rank descent,
+  or a genuine large rooted matching at order `k`.
+- `deficientRepairHitBlocks` makes `J` canonical: it contains exactly the
+  blocks met by supports at `q` which fail the active-choice or completion
+  threshold.  It has cardinality at most the number of support vertices at
+  `q`.  `blockAligned_intrinsicDeficientBlocks_force_matchingGrowth_or_rankGrowthDescent`
+  applies the amplification with this intrinsic set, so no externally
+  chosen old prefix remains in the local theorem.
+- `blockAligned_matchingGrowth_or_rankGrowthDescent_or_boundedDestroyer`
+  removes even the density hypothesis.  If too few destroyer points lie
+  outside the intrinsic deficient blocks, the old part contributes at most
+  one point per block.  In the absence of current-order matching growth,
+  the support family and hence its support-vertex union are bounded by the
+  rooted-matching threshold.  The whole minimal destroyer is therefore
+  bounded by the explicit target- and certificate-independent constant
+  `oldCollisionConcentrationBound k r`.
+- `additiveSupportFamily_hitFilter_card_le_lowerDifference` proves that all
+  order-`k+1` supports at `q` containing one fixed old selected summand
+  inject into the order-`k` supports at the corresponding difference.
+  Consequently, if that lower family has at most `r` members, the union of
+  every possible collision support at that coordinate has at most
+  `(k+1)r` vertices.
+- `exists_blockChoice_avoiding_protected_and_allHitSupports` uses that bound
+  to choose one point of the old block outside both the protected
+  certificate union and **every** possible repair support through the old
+  coordinate.  This is a universal second choice, not a choice made after
+  one collision witness has been fixed.
+- `blockAlignedRepairWitness_extends_protected_or_smallOldCollision` and
+  `blockAlignedSafeSwap_certificate_forces_smallOldCollision` show that a
+  failed protected repair can now collide only at an old block of size at
+  most `|U| + (k+1)r`.
+- `positiveOrder_targetLocalized_manyContemporaryPoints_force_growth_usingSecondChoices`
+  repeats the private-support injection using only those undersized old
+  blocks.  The pigeonhole denominator is therefore the number of genuinely
+  capacity-deficient blocks, not the size of the whole old prefix.
+- `eventually_boundedMinimalDestroyer_protectedRepair_or_growth` closes the
+  complementary all-block-capacity case for every bounded minimal
+  destroyer, including the formerly troublesome small destroyers.
+- `eventually_boundedCertificate_forces_supportGrowth` feeds those repairs
+  into strict target descent and invokes
+  `finiteSelectorCertificate_impossible_of_strictRepairStep`.  A bounded
+  late certificate must force actual support growth; repeated migration
+  cannot cycle.
+- `eventually_boundedCertificate_forces_matching` normalizes that growth to
+  a genuine matching.  Finally,
+  `exists_fixedPartition_largeCertificate_or_arbitraryMatching` fixes one
+  partition whose block size depends only on the proposed certificate bound
+  `C`, then handles every later matching demand `r`.  The partition no
+  longer has to be rebuilt as `r` grows.
+- `lowerDifferenceSupportFamily_card_le_twice_exact` now prevents the
+  difference horn from losing its target label.  Splitting the supports at
+  `q-d` according to whether they contain `d` shows that their cardinality
+  is at most twice the order-`k+1` support cardinality at the original
+  target `q`.
+- Consequently
+  `eventually_boundedCertificate_forces_exactRootedMatching` and
+  `exists_fixedPartition_largeCertificate_or_cofinalExactRootedMatching`
+  strengthen the bounded-certificate payoff: the large delta systems occur
+  cofinally at the original order and at actual late certificate targets,
+  not at an uncontrolled lower-rank difference.
+
+This still does **not** prove Erdős 881 for all `k ≥ 3`, but the repeated
+old-collision branch requested in the preceding status is now closed
+without a density assumption.  At each stage there are only four outcomes:
+current-order matching growth, lower-order matching growth, strict descent
+which consumes the finite upper-rank budget, or a minimal destroyer bounded
+by `oldCollisionConcentrationBound k r`.  The remaining global composition
+is now concrete: feed that last uniform bound into the existing late
+finite-prefix/two-block repair theorem while retaining protection only for
+the larger certificate targets.  The point requiring care is that the
+older theorem localized every target other than `q`, whereas the new
+terminating descent intentionally leaves smaller targets free to become the
+next state.
+
+# OLD-COLLISION AMPLIFICATION: REPRESENTED-DIFFERENCE ESCAPE CLOSED (2026-07-27)
+
+The old collision left by the previous block split has now been amplified
+into genuine matching growth.  This is a mathematical closure, not merely a
+rephrasing of the obstruction.
+
+- `blockAlignedRepairWitness_extends_protected_or_oldCollision` retains the
+  actual support witnessing a safe finite swap.  It either completes the
+  protected selector or returns an old selected point lying in that support.
+- `blockAlignedSafeSwap_certificate_forces_oldCollision` adds the crucial
+  private-hit identity
+  `E ∩ D = {s i}`.  Hence collision supports obtained from different active
+  points of one minimal destroyer are necessarily distinct.
+- `positiveOrder_targetLocalized_activeBlock_growth_or_oldCollision`
+  threads that private support through the active-block incidence fork.
+- `positiveOrder_targetLocalized_manyContemporaryPoints_force_growth`
+  performs the amplification.  For every contemporary `d ∈ D`, remove the
+  returned old summand from its private collision support.  The map
+  `d ↦ (old block index, lower support)` is injective: equal lower data
+  reconstruct equal upper supports, and intersecting with `D` recovers
+  `d`.  Thus more than `|J|r` contemporary points force more than `r`
+  lower-order supports at one coherent difference.
+- `eventually_targetLocalized_destroyer_growth_or_twoBlockRepair` closes the
+  complementary case.  If there are at most `|J|r` contemporary points,
+  the entire destroyer has a uniform bound: at most `|J|` old points plus
+  `|J|r` contemporary points.  Uniform finite-prefix composition applies to
+  the whole destroyer and yields support growth or a lower-order gap, which
+  is converted to a complete selector repair.
+- `eventually_targetLocalized_destroyer_matching_or_twoBlockRepair`
+  normalizes either support-growth horn through the finite-rank descent.
+  Its final outcome is exactly: an arbitrarily large genuine matching at
+  some positive rank at most `k`, or a full selector preserving the repaired
+  target.
+
+This removes the former one-off represented-old-difference horn.  Erdős 881
+for all `k ≥ 3` is still not claimed.  The remaining local branch is now the
+complete selector repair: it preserves the localized target `q`, but may
+destroy another member of the finite certificate.  Globally, the scheduled
+partition must also synchronize the old cutoff `J` with the late threshold
+and contemporary capacity.  The next attack is therefore certificate-safe
+second-choice repair (or a strictly descending migration argument), followed
+by that scheduled quantifier integration.
+
+# OLD/CONTEMPORARY DESTROYER SPLIT COMPLETED (2026-07-27)
+
+The proposed block split is now formalized as an exhaustive theorem, with
+the lower-gap horn converted all the way to a full selector repair.
+
+- `lowerGapRepair_extends_to_twoBlockSelectorSurvival` starts from a
+  lower-order gap swap, selects the gap point in its actual partition block,
+  retains every still-damaged selected value, and reroutes all other blocks
+  outside one surviving support.  Thus a gap point in a different block is
+  no longer an alignment obstruction.
+- `blockAlignedSafeSwap_extends_protected_or_oldDifference` needs the large
+  protected-union capacity only on contemporary blocks.  It either completes
+  the protected repair, or identifies an old selected summand `d` for which
+  `q-d` is represented one order lower.
+- `blockAlignedSafeSwap_certificate_forces_oldDifference` uses the protected
+  supports for the other certificate targets: the completed repair would
+  contradict the entire certificate, so the old represented difference is
+  forced.
+- `positiveOrder_targetLocalized_activeBlock_growth_or_oldDifference`
+  combines that completion with the same-block incidence count.  An active
+  contemporary coordinate forces more than `r` supports at a coherent
+  lower-order difference unless an old selected summand is exposed.
+- `eventually_oldBlockDestroyer_growth_or_twoBlockRepair` handles the other
+  side.  If the whole minimal destroyer lies in a prescribed finite set of
+  old blocks, the corresponding old selector prefix destroys the target.
+  The uniform finite-prefix theorem then forces a lower-order support family
+  larger than the old prefix, or a lower-order gap; the gap is converted to
+  a complete selector preserving the target.
+- `eventually_targetLocalized_destroyer_oldContemporarySplit` packages the
+  exhaustive classification: a minimal destroyer either has a contemporary
+  coordinate and enters the protected incidence fork, or is wholly old and
+  enters finite-prefix growth-or-repair.
+
+This is genuine closure of the wholly-old horn, but it is not yet a proof of
+all `k ≥ 3`.  The remaining contemporary escape is precise: a support
+surviving the aligned repair may meet an old selected coordinate that is
+*not itself in the minimal destroyer*.  Removing it represents `q-d`, but
+the old prefix need not destroy `q`; consequently the finite-prefix theorem
+cannot be applied to that one collision without an additional argument.
+The next attack must either accumulate repeated old collisions into
+large/matching growth at a fixed old difference, or obtain a second
+old-block choice which avoids both the repair support and the protected
+certificate supports.
+
+# BLOCK-ALIGNED REPAIR WITH COLLATERAL TARGETS PROTECTED (2026-07-27)
+
+The same-block repair branch has now been carried through a full finite
+selector certificate.  This is stronger than the previous one-target
+migration statement.
+
+- `positiveOrder_minimalDestroyer_activeBlock_safeSwap_avoiding_or_differenceGrowth`
+  runs the external-anchor incidence count using only alternatives outside
+  an arbitrary protected finite union.
+- `blockAlignedSafeSwap_extends_avoiding_protectedUnion` completes a finite
+  safe swap to a full infinite block selector while avoiding that protected
+  union and preserving the repaired target.
+- `exists_protectedSupportUnion_of_targetLocalization` chooses one surviving
+  support for every other target of a cardinal-minimal certificate.  Their
+  union avoids the localized selector and has cardinality at most
+  `(k+1)|Q|`.
+- `blockAlignedSafeSwap_impossible_of_protectedCertificateSupports` shows
+  that a replacement outside this union cannot merely migrate the
+  obstruction: it would preserve every target in the certificate and hence
+  contradict the certificate.
+- `positiveOrder_targetLocalizedCertificate_largeBlocks_forces_supportGrowth`
+  therefore eliminates the safe horn whenever the blocks contain both the
+  incidence budget and the protected supports.
+- `arbitrarilyLate_largeMinimalCertificate_or_supportGrowth`, followed by
+  finite-rank normalization in
+  `arbitrarilyLate_largeMinimalCertificate_or_matching`, gives the current
+  exhaustive endpoint: for every prescribed `C` and `r`, either a
+  cardinal-minimal target-localized certificate has more than `C` targets,
+  or there is a genuine matching of more than `r` additive supports at some
+  positive rank at most the original order.
+
+The partition side has also been strengthened.
+`IsFiniteBlockPartition.exists_coarsening_preserving_evenBlocks_with_cardLower`
+uses even blocks as service cores and all odd blocks as finite fillers to
+give independently prescribed lower cardinalities.
+`exists_scheduledLargeAnchoredPartition` combines this with the scheduled
+anchor construction, so large block capacities can be fixed before a
+certificate is revealed.
+
+This still does **not** settle all `k ≥ 3`.  The remaining horn is no longer
+an unaligned safe replacement: it is an unbounded cardinal-minimal
+certificate.  The precise scale issue is that a minimal destroyer for a very
+large target may use an old block whose finite capacity was scheduled at an
+earlier scale.  The next composition must either force an essential damaged
+summand into a contemporaneous large service block, or use the coherent
+finite-prefix difference theorem on the old-block part and the protected
+repair theorem on the late-block part.
+
+# SCHEDULED COHERENT DIFFERENCE COMPOSITION: MOVING PREFIX CLOSED (2026-07-27)
+
+The finite-prefix/difference branch has advanced through its former
+quantitative obstruction.  It is no longer necessary to compare a moving
+target against a threshold chosen only after its deletion prefix is known.
+
+- The universal diagonal is thinned to exactly one distinguished cell per
+  row.  Consequently `damagePrefix M` now has exactly `M` points, rather than
+  merely being finite.
+- `card_rootedMatching_le_destroyer_of_rootDisjoint` proves the repair/counting
+  step: if the common root avoids a destructive prefix, pairwise-disjoint
+  petals inject into that prefix.
+- `large_destroyedRootedMatching_descends_through_prefix` gives the opposite
+  outcome.  A rooted matching larger than the prefix forces a deleted common
+  summand `d`; removing it preserves the whole family at the coherent
+  lower-order difference `q-d`.
+- `eventually_boundedDestroyer_forces_largeDifferenceFamily_or_lowerGap`
+  makes the late threshold uniform over every destroyer of cardinality at
+  most `M`.  It depends on `M`, not on the destroyer's actual vertices.
+- `exists_scheduledThinAnchoredPartition` schedules the `M`-th row anchor
+  beyond the uniform `M`-point threshold and retains a bijection between rows
+  and completed partition blocks.
+- `strongDeletion_forces_scheduledCoherentDifferenceSystem` uses those
+  anchors as one fixed selector.  Its destroyers are literal initial
+  segments of that one infinite selector.  Arbitrarily long prefixes force
+  either more than `M` lower-order supports at some `q-d` with `d` in the
+  same prefix, or a genuine lower-order gap `q-b`.
+- `strongDeletion_forces_cofinalDifferenceMatching_or_lowerGap` applies the
+  finite-rank descent: the large-difference branch yields arbitrarily large
+  genuine matchings at a positive rank at most `k`.
+- `finiteTranslateGrowth_or_cofinalDifferenceMatching_or_lowerGap` packages
+  the exhaustive outcome for a hypothetical strongly minimal order-`k+1`
+  basis.
+- `lowerOrderGap_point_avoids_successorSupports` and
+  `swap_hit_for_lowerGap_repairs` identify the arithmetic value of the
+  remaining horn: a witness `q-b ∈ Gap_k(A)` is absent from every
+  order-`k+1` support of `q`, so replacing any private hit of an
+  inclusion-minimal destroyer by `b` repairs `q` exactly.
+
+This closes the moving-prefix synchronization and performs the requested
+finite-prefix/difference composition.  It does **not** yet settle all
+`k ≥ 3`.  The remaining mathematical branch is now explicit: in the
+primitive-order case, the maximum certificate targets may repeatedly fall
+in lower-gap translates `b + Gap_k(A)`.  The next attack must either align
+those already verified safe gap replacements with the blocks of the
+coherent deleted summands, or show that their recurrence upgrades the other
+finite-translate matching-growth branch to a cofinite target cover.
+
+# UNIVERSAL PRE-CERTIFICATE PARTITION: INFINITE TAIL NEUTRALIZED (2026-07-27)
+
+The quantifier order has now been handled as far as bounded support alone
+allows.  The new construction is genuinely universal: its partition, a base
+selector, and a nested exhaustion of that selector are all fixed before any
+strong-deletion certificate is returned.
+
+- `exists_finiteBlockPartition_for_disjointRows` now retains the bijective
+  cell-to-block locator already present in its construction.
+- `HasDiagonalAnchoredAlignedTranslateCellRows.
+  exists_universalPartition_localizingFiniteTargets` thins the diagonal to
+  the nested labels `range (j+1)`, completes those cells to one partition, and
+  fixes a base selector together with monotone finite sets
+  `damagePrefix M`.  These prefixes exhaust the base selector.
+- Once an arbitrary finite target set `Q` is revealed, the selector keeps the
+  base choices in rows below `sum Q + 1` and chooses the distinguished large
+  anchor in every later row.  Every later choice is larger than every target
+  in `Q`, so it cannot meet any support at those targets.  Any destruction of
+  a member of `Q` is therefore already caused by the single coherent finite
+  prefix `damagePrefix (sum Q + 1)`.
+- `finiteDestroyer_has_lowerOrderDifference` converts such finite-prefix
+  destruction at a represented order-`k+1` target `q` into a concrete
+  `d` in that prefix for which `q-d` is represented at order `k`.
+- `finiteTranslateGrowth_or_universalFinitePrefixDifferences` is the
+  exhaustive consequence for a hypothetical strongly minimal positive-order
+  basis: either finite-translate matching growth occurs, or one universal
+  partition and one coherent infinite base selector produce arbitrarily late
+  finite-prefix destroyers with represented lower-order differences.
+
+This is a substantive construction, but not yet the full `k ≥ 3` solution.
+The infinite cross-block collision problem and the partition/certificate
+quantifier swap are gone.  The remaining non-growth branch is now the
+finite-prefix/difference composition problem: use the represented differences
+`q-d`, with all `d` drawn from nested prefixes of one fixed infinite selector,
+to construct a support avoiding the destructive prefix or force matching
+growth.
+
+# FINITE-CERTIFICATE FUSION: FIXED-Q SOLVED, QUANTIFIER BARRIER EXHIBITED (2026-07-27)
+
+The shared-reservoir construction has now been completed for an arbitrary
+fixed nonempty finite target set `Q`.
+
+- `exists_lowerTriangularBinaryRepairSequence_avoiding_of_freshWitnesses`
+  starts the infinite binary-cell recursion beyond any prescribed finite
+  service set.
+- `finiteTargets_have_sharedBinaryRepairReservoir` chooses one
+  anchor-private successor repair for every `q ∈ Q`, puts all of those
+  service cells and repairs into one protected first block, and grows one
+  infinite tail of cells outside the entire finite service set.  A single
+  selector—the guard core in block zero and the core in every tail
+  block—avoids every service repair.  Removing each translate anchor yields
+  a surviving support at the original target `q`.  Thus all targets in `Q`
+  survive simultaneously on one infinite reservoir; there is no
+  target-by-target Ramsey thinning and no lost label class.
+
+This also identifies the exact limitation of that construction.  The
+partition it produces depends on `Q`, whereas strong deletion returns its
+finite certificate only after a partition has already been fixed.
+`strongDeletion_coexists_with_targetDependentFiniteSurvival_univ_one`
+formalizes a concrete counterconfiguration: at additive order one on
+`A = ℕ`, strong infinite deletion holds, but every individual finite `Q`
+admits a `Q`-dependent partition and selector preserving all of `Q`.
+Therefore the quantifiers cannot be swapped.
+
+The collision/fusion problem for a revealed finite certificate is solved.
+The remaining global task is stricter: prebuild one universal partition,
+independent of the future certificate, whose blocks contain enough guarded
+service structure to run the fixed-`Q` selector after `Q` is revealed.  No
+full `k ≥ 3` solution is claimed here.
+
+# GENERAL-ORDER ATTACK: GAP-FREE BINARY REPAIRS AND CERTIFICATE MIGRATION (2026-07-27)
+
+The bounded-successor-transversal branch has now advanced beyond the
+primitive-gap restriction.
+
+- `IsExactTupleAsymptoticBasis.eventually_not_anchorSingletonDestroyer`
+  proves that for a fixed predecessor target `q`, the moving anchor `a`
+  cannot remain a singleton destroyer of `q+a` arbitrarily far out.  Testing
+  such a singleton against sufficiently many external basis elements would
+  force strictly more order-`h` supports of the fixed `q` than its finite
+  support family contains.
+- `representedTranslate_destroyer_has_binaryRepairCell` minimizes a
+  protected late destroyer.  The padded predecessor support forces the
+  anchor into the minimal core; the singleton theorem forces a second core
+  point; and minimality supplies two successor supports meeting the
+  resulting binary cell at opposite endpoints.
+- `boundedFullTranslateDestroyers_recurrentBinaryRepairCells` and
+  `exists_lowerTriangularBinaryRepairSequence` iterate those cells while
+  protecting every earlier cell and repair.  These theorems require only
+  that `q` is represented.  No lower-order gap is used.
+- `exists_infinite_crossDisjoint_binaryRepairs` Ramsey-thins the
+  lower-triangular sequence.  Uniform support rank rules out the collision
+  clique, so both repairs of every retained cell avoid every other retained
+  cell.
+- `LowerTriangularBinaryRepairSequence.exists_binaryCommonSurvivalPartition`
+  reindexes the thinning as a genuine finite block partition.  Every
+  selector leaves a successor support at every target in an infinite
+  translate stream.
+- `strongExactDeletion_of_counterexample` converts failure of every
+  infinite successor deletion into strong successor-order deletion.
+  `boundedFullTranslateDestroyers_forces_certificateMigration` then applies
+  finite-block compactness: arbitrarily late minimal selector certificates
+  exist, but all their targets must migrate away from the protected stream.
+- `singletonTranslateGrowth_or_binaryCertificateMigration` is the resulting
+  exhaustive fixed-translate alternative under a hypothetical
+  counterexample.  Every represented `q` has either matching growth on
+  `q+A`, or a binary common-survival partition with forced certificate
+  migration.  The tail form
+  `eventually_singletonTranslateGrowth_or_binaryMigration` holds for every
+  sufficiently large `q`.
+
+This is a genuine strengthening of the attack: the former terminal
+gap-translate obstruction is no longer the boundary.  The remaining
+mathematics is now a global fusion problem.  The local partitions and
+relative matching-growth cores depend on `q`; one must combine enough of
+them into a single infinite deletion whose protected target sets cover a
+tail.  An arbitrary infinite Ramsey thinning is insufficient because it can
+discard whole predecessor-label classes.  No full `k ≥ 3` solution is
+claimed here.
+
+# GENERAL-ORDER ATTACK: BOUNDED TRANSVERSALS DESCEND TO BOUNDED ROOTS (2026-07-27)
+
+`Erdos881/GeneralOrderAttack.lean` now carries the most plausible
+general-order contradiction route substantially past the former
+moving-transversal endpoint.
+
+The attack can first be reduced to a genuinely primitive order.
+
+- `IsStronglyMinimalExactBasis.descend_to_exactOrder`: if `A` is already an
+  exact basis at a lower order, strong minimality descends to that order;
+- `IsStronglyMinimalExactBasis.exists_leastStrongOrder`: every instance
+  therefore has a least positive exact order at which it is still strongly
+  minimal;
+- `IsStronglyMinimalExactBasis.exists_primitiveHardOrder`: in the remaining
+  non-order-two case that least order is at least three, and its predecessor
+  order is genuinely not a basis.  Thus the general problem reduces to
+  primitive order-`h` bases with cofinal order-`h-1` gaps.
+- `not_exactTupleAsymptoticBasis_iff_cofinal_emptySupport` and
+  `cofinal_representedExtensions_of_lowerOrderGaps`: those gaps can be
+  chosen arbitrarily late, and above any fixed `b∈A` their extensions
+  `q=d+b` are nevertheless represented at order `h`.  Hence the input
+  needed by the gap descent occurs cofinally, not exceptionally.
+
+The new order-uniform incidence engine is:
+
+- `crossAnchor_erasedCore_destroys_predecessor`: an earlier external anchor
+  turns a later internal-anchor successor destroyer into an erased-core
+  predecessor destroyer;
+- `large_externalAnchorSet_forces_supportGrowth_anchorFork` and its rooted
+  form: tests below the predecessor target retain its exact label.  Either
+  the large (rooted) support family lands at the certificate target `q`
+  itself, or its responsible hit is localized in `T.erase a`;
+- `gapAnchor_erasedCore_destroys_predecessor`: if `q-b` is a genuine
+  lower-order gap, a hit at the translate anchor is impossible, so
+  `T.erase a` really does destroy the predecessor target `q+a-b`;
+- `boundedFullTranslateDestroyers_descend_over_gap`: after protecting one
+  support of `q=d+b`, the whole bounded recurrent obstruction descends from
+  successor destroyers over `q+A` to one-order-lower destroyers over the gap
+  translate `d+A`; because the translate anchor is genuinely present and
+  erased, a uniform bound `m` improves to `m-1`;
+- `additiveSupport_swap_external_succ`: swapping an external anchor with a
+  chosen transversal hit preserves the representation order and moves the
+  support to the common target `n-x`;
+- `large_externalAnchorSet_forces_supportGrowth_succ`: a bounded successor
+  transversal tested against sufficiently many external basis elements
+  forces arbitrarily many predecessor supports at one translated target;
+- `recurrentLargeSupportStars_of_boundedFullTranslateDestroyers`: the
+  bounded recurrent moving branch therefore produces unbounded predecessor
+  support stars at every positive order.
+
+Large support count is then converted into actual matching structure by a
+finite rank descent:
+
+- `large_boundedHypergraph_matching_or_star`: a large rank-`d` hypergraph
+  either has a large matching or a large one-vertex star;
+- `additiveSupport_remove_hit_succ` and
+  `additiveSupportStar_descends_card`: removing the common hit lowers the
+  additive order by one without losing cardinality;
+- `additiveSupportRankBound_forces_matching_below`: this process cannot pass
+  order zero, whose support family has cardinality at most one;
+- `additiveSupportSubfamily_has_large_rootedMatching`: retaining the removed
+  summands gives a large delta system at the original order, with a root of
+  cardinality strictly smaller than the order; the root is genuinely
+  contained in every retained support;
+- `recurrentRootedPredecessorMatchings_of_boundedMovingOnFiniteTranslates`:
+  on every recurrent finite translate family, the bounded-transversal branch
+  produces arbitrarily large predecessor matchings outside such a bounded
+  root.
+
+The finite-prefix synchronization has also been completed.
+
+- `rootedMatching_disjointPrefix_or_descends`: a common root either avoids
+  the current deletion prefix, or an old prefix summand lies in every
+  support and can be removed without losing cardinality;
+- `additiveSupportFamily_forces_prefixDisjointRootedMatching_below`: iterating
+  that fork must terminate before order zero, producing a positive lower
+  rank whose common root avoids the prescribed prefix;
+- `recurrentPrefixDisjointRootedMatchings_of_boundedMovingOnFiniteTranslates`
+  and
+  `finiteCoreTranslateGrowth_or_recurrentPrefixDisjointRootedMatchings`:
+  this fresh-rooted-matching output is now the exact exhaustive bad branch on
+  every finite translate family.
+- `cofinalPrefixDisjointRootedMatchings_of_boundedFullTranslateDestroyers`:
+  the descended target can be forced arbitrarily late by requesting more
+  supports than exist at all bounded lower-rank targets;
+- `lift_rootedMatching_to_strictHigherOrder`: one fresh basis element,
+  repeated as padding, lifts a lower-rank rooted matching back to the
+  original order without changing its petals;
+- `cofinalOriginalOrderRootedMatchings_of_boundedFullTranslateDestroyers`:
+  consequently the moving branch has arbitrarily large, arbitrarily late
+  rooted matchings at the original order, with roots disjoint from every
+  prescribed finite prefix.
+
+Thus the internal-anchor horn can no longer hide in an unstructured bounded
+transversal or in repeated old-prefix overlap: all overlap is forced into
+fewer than `k` fresh common summands at the original order.
+
+The remaining synchronization problem has narrowed to the terminal
+gap-translate obstruction.  Away from lower-order gaps, the distinguished
+anchor fork keeps the certificate target exactly; over a gap `d`, bounded
+successor transversals descend to bounded full destroyers of the *current*
+order along `d+A`.  What is not yet proved is that strong order-`h` deletion
+cannot coexist with this bounded gap-translate family.  That is now the
+specific interface to attack; no further unlabelled rank or prefix descent
+is required before it.
+
+This is genuine progress on the open `k ≥ 3` case, not a solution claim.
+
 # GENERAL ORDER: k = 0,1,2 SOLVED — k ≥ 3 OPEN (2026-07-27, later)
 
 An independent audit established that the previous entry overstated
