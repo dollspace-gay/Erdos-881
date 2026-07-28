@@ -1068,6 +1068,48 @@ theorem additiveDestroyer_descends_through_survivingCore
     (union_mem_additiveSupportFamily_add hHR hGR)
     hUnionAvoid
 
+/-- An order-zero additive support can only represent target zero, and its
+support is empty. -/
+theorem additiveSupportFamily_zero_target_and_support
+    {A : Set ℕ} {t : ℕ} {H : Finset ℕ}
+    (hHR : H ∈ additiveSupportFamily A 0 t) :
+    t = 0 ∧ H = ∅ := by
+  obtain ⟨v, _hvA, hvsum, rfl⟩ :=
+    mem_additiveSupportFamily_iff.mp hHR
+  constructor
+  · simpa using hvsum.symm
+  · apply Finset.not_nonempty_iff_eq_empty.mp
+    rintro ⟨x, hx⟩
+    obtain ⟨i, _hi⟩ := mem_tupleSupport_iff.mp hx
+    exact Fin.elim0 i
+
+/-- Reconstructing a support by list insertion adds exactly the values
+appearing in the list. -/
+theorem foldr_insert_eq_toFinset_union
+    (hits : List ℕ) (H : Finset ℕ) :
+    hits.foldr (fun y G => insert y G) H =
+      hits.toFinset ∪ H := by
+  classical
+  induction hits with
+  | nil => simp
+  | cons x hits ih =>
+      simp only [List.foldr_cons, List.toFinset_cons, ih,
+        Finset.insert_union]
+
+/-- Inserting a list of points already in `S` into a finite support
+contained in `S` keeps the reconstructed support inside `S`. -/
+theorem foldr_insert_subset_of_mem
+    {S : Set ℕ} {hits : List ℕ} {H : Finset ℕ}
+    (hhits : ∀ x ∈ hits, x ∈ S)
+    (hH : ∀ x ∈ H, x ∈ S) :
+    ∀ x ∈ hits.foldr (fun y G => insert y G) H, x ∈ S := by
+  classical
+  intro x hx
+  rw [foldr_insert_eq_toFinset_union] at hx
+  rcases Finset.mem_union.mp hx with hxHits | hxH
+  · exact hhits x (List.mem_toFinset.mp hxHits)
+  · exact hH x hxH
+
 /-- Finite-rank termination of repeated deletion injury.
 
 Starting from any exact order-`h` support, repeatedly remove an occurrence
@@ -1502,15 +1544,18 @@ deleted summands.  The unrestricted normalization theorem leaves two
 possibilities:
 
 * cofinally many injective targets already have surviving cores at one
-  strict lower rank `j < h`; or
+  positive strict lower rank `0 < j < h`, so complementary destruction
+  also has strict lower order; or
 * one surviving core is fixed, the complementary deleted masses are
   injective and cofinal, and those masses are themselves destroyed at
   order `h-j`.
 
-In the second horn positive surviving rank gives a strict complementary
-order descent.  Rank zero is isolated explicitly as the pure-deletion
-configuration in which every summand of the chosen representation was
-removed. -/
+Rank zero cannot occur in the first horn: every order-zero core has target
+zero, contradicting injectivity of the residual targets on an infinite
+set.  In the second horn positive surviving rank gives strict
+complementary-order descent, while rank zero is identified exactly as the
+pure-deletion configuration: fixed target zero, empty core, and the entire
+chosen representation inside the forbidden set. -/
 theorem infinite_additiveDestroyers_rankFork
     {A I : Set ℕ} {h : ℕ}
     {target : ℕ → ℕ}
@@ -1531,7 +1576,8 @@ theorem infinite_additiveDestroyers_rankFork
         j < h ∧
         Set.InjOn residual J ∧
         (∀ L, ∃ n ∈ J, L ≤ residual n) ∧
-        (0 < j → h - j < h) ∧
+        0 < j ∧
+        h - j < h ∧
         ∀ n ∈ J,
           hits n ≠ [] ∧
           (hits n).length + j = h ∧
@@ -1563,7 +1609,9 @@ theorem infinite_additiveDestroyers_rankFork
             DestroysAt
               (additiveSupportFamily A (h - j))
               (forbidden n) ((hits n).sum)) ∧
-          (0 < j → h - j < h) := by
+          ((j = 0 ∧ t = 0 ∧ H = ∅ ∧
+              ∀ n ∈ K, ∀ x ∈ repair n, x ∈ forbidden n) ∨
+            (0 < j ∧ h - j < h)) := by
   have hchosenDestroyed : ∀ n ∈ I,
       ¬ Disjoint (repair n : Set ℕ) (forbidden n) := by
     intro n hn
@@ -1591,10 +1639,25 @@ theorem infinite_additiveDestroyers_rankFork
         hnData.2.2.2.1 hnData.2.2.2.2.1
       simpa only [hrank, htargetEq] using
         hfailure n (hJI hn)
+    have hjpos : 0 < j := by
+      by_contra hjnot
+      have hjzero : j = 0 :=
+        Nat.eq_zero_of_not_pos hjnot
+      have himageInfinite :
+          (residual '' J).Infinite :=
+        hJ.image hcofinalCore.1
+      apply himageInfinite
+      apply Set.Finite.subset (Set.finite_singleton 0)
+      rintro x ⟨n, hn, rfl⟩
+      have hnCore :
+          core n ∈ additiveSupportFamily A j (residual n) :=
+        (hnormalized n hn).2.2.2.1
+      have hzero :=
+        additiveSupportFamily_zero_target_and_support
+          (hjzero ▸ hnCore)
+      simpa using hzero.1
     refine ⟨J, hits, j, residual, core, hJI, hJ, hjh,
-      hcofinalCore.1, hcofinalCore.2, ?_, ?_⟩
-    · intro hjpos
-      omega
+      hcofinalCore.1, hcofinalCore.2, hjpos, by omega, ?_⟩
     · intro n hn
       exact ⟨(hnormalized n hn).1,
         (hnormalized n hn).2.1,
@@ -1625,9 +1688,36 @@ theorem infinite_additiveDestroyers_rankFork
         hJ (htargetInj.mono hJI) hjh
         hcoreFixedInput htargetFixed
         (fun n hn => hfailure n (hJI hn))
+    have hpureOrStrict :
+        (j = 0 ∧ t = 0 ∧ H = ∅ ∧
+            ∀ n ∈ K, ∀ x ∈ repair n, x ∈ forbidden n) ∨
+          (0 < j ∧ h - j < h) := by
+      by_cases hjzero : j = 0
+      · left
+        have hzero :
+            t = 0 ∧ H = ∅ :=
+          additiveSupportFamily_zero_target_and_support
+            (hjzero ▸ hHR)
+        refine ⟨hjzero, hzero.1, hzero.2, ?_⟩
+        intro n hnK x hxRepair
+        have hnJ : n ∈ J := hKJ hnK
+        obtain ⟨_hhits, _hlength, hhitsIn, _hcoreR,
+            _hcoreAvoid, _htargetEq, hrepairEq⟩ :=
+          hnormalized n hnJ
+        have hcoreEq : core n = H :=
+          (hcoreK n hnK).1
+        rw [hcoreEq] at hrepairEq
+        rw [hrepairEq] at hxRepair
+        exact foldr_insert_subset_of_mem
+          (fun y hy => (hhitsIn y hy).2)
+          (by simpa [hzero.2]) x hxRepair
+      · right
+        have hjpos : 0 < j :=
+          Nat.pos_of_ne_zero hjzero
+        exact ⟨hjpos, hstrict hjpos⟩
     right
     refine ⟨K, hits, j, t, H, hKJ.trans hJI, hK, hjh,
-      hHR, hmassInj, hmassCofinal, ?_, hstrict⟩
+      hHR, hmassInj, hmassCofinal, ?_, hpureOrStrict⟩
     intro n hnK
     have hnJ : n ∈ J := hKJ hnK
     obtain ⟨hhits, hlength, hhitsIn, _hcoreR,
