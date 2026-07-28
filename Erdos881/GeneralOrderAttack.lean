@@ -19424,6 +19424,226 @@ theorem exactBasis_counterexample_forces_properDeletion_cofinalAlignedFailures
   exact ⟨q, hLdiff, hcq, hpredDestroy, hqDestroy,
     insert c E, hlift, by simp, hcB⟩
 
+/-- Finite, prefix-fresh form of the fixed-anchor alignment.
+
+For every finite history `F`, delete its points from the proper reservoir
+`B` and apply strong successor deletion to the remaining infinite set.
+Compact the resulting failure to an inclusion-minimal finite destroyer `D`.
+The fixed omitted anchor `c` is outside `D`, so the same `D` also destroys
+the predecessor target `q - c`.
+
+This is the direct finite object on which the two consecutive orders can be
+compared: `D` is fresh, successor-minimal, and simultaneously a predecessor
+transversal at the fixed difference. -/
+theorem exactBasis_counterexample_forces_cofinalFreshAlignedMinimalDestroyers
+    {A : Set ℕ} {h : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    ∃ B : Set ℕ, ∃ c : ℕ,
+      B ⊆ A ∧
+      B.Infinite ∧
+      c ∈ A ∧
+      c ∉ B ∧
+      (∀ d, additiveSupportFamily A h d = ∅ →
+        ∀ b ∈ B,
+          ∃ E ∈ additiveSupportFamily A (h + 1) (d + b),
+            Disjoint (E : Set ℕ) B) ∧
+      ∀ F : Finset ℕ, ∀ L,
+        ∃ q, ∃ D : Finset ℕ,
+          L ≤ q - c ∧
+          c ≤ q ∧
+          D.Nonempty ∧
+          (D : Set ℕ) ⊆ B ∧
+          Disjoint D F ∧
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A (h + 1)) D q ∧
+          DestroysAt
+            (additiveSupportFamily A h) (D : Set ℕ) (q - c) := by
+  classical
+  obtain ⟨B, c, hBA, hBInfinite, hcA, hcB,
+      hservice, _haligned⟩ :=
+    exactBasis_counterexample_forces_properDeletion_cofinalAlignedFailures
+      hbasis hcounter
+  have hstrong :
+      StrongInfiniteDeletion
+        (additiveSupportFamily A (h + 1)) A :=
+    strongExactDeletion_of_counterexample hcounter
+  obtain ⟨N, hN⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  refine ⟨B, c, hBA, hBInfinite, hcA, hcB, hservice, ?_⟩
+  intro F L
+  let S : Set ℕ := B \ (F : Set ℕ)
+  have hSInfinite : S.Infinite :=
+    hBInfinite.diff F.finite_toSet
+  have hSA : S ⊆ A :=
+    Set.diff_subset.trans hBA
+  obtain ⟨q, hqLower, hqDestroy⟩ :=
+    hstrong S hSA hSInfinite (N + c + L)
+  have hcq : c ≤ q := by omega
+  have hLdiff : L ≤ q - c := by omega
+  have hNdiff : N ≤ q - c := by omega
+  obtain ⟨T, hTS, hTDestroy⟩ :=
+    exists_finiteDestroyer_subset hqDestroy
+  obtain ⟨D, hDT, hminimal⟩ :=
+    exists_inclusionMinimalDestroyer_subset hTDestroy
+  have hDS : (D : Set ℕ) ⊆ S := by
+    intro d hdD
+    exact hTS (Finset.mem_coe.mpr
+      (hDT (Finset.mem_coe.mp hdD)))
+  have hDB : (D : Set ℕ) ⊆ B :=
+    hDS.trans Set.diff_subset
+  have hDF : Disjoint D F := by
+    rw [Finset.disjoint_left]
+    intro d hdD hdF
+    exact (hDS (Finset.mem_coe.mpr hdD)).2
+      (Finset.mem_coe.mpr hdF)
+  have hcD : c ∉ D := by
+    intro hcD
+    exact hcB (hDB (Finset.mem_coe.mpr hcD))
+  have hpredDestroy :
+      DestroysAt
+        (additiveSupportFamily A h) (D : Set ℕ) (q - c) :=
+    additiveSuccessorTransversalsDescend
+      A h D q hminimal.1 c hcA hcD hcq
+  obtain ⟨E, hER, _hEempty⟩ := hN (q - c) hNdiff
+  have hlift :
+      insert c E ∈ additiveSupportFamily A (h + 1) q := by
+    have h :=
+      insert_mem_additiveSupportFamily_succ hcA hER
+    have hsum : c + (q - c) = q := by omega
+    simpa only [hsum] using h
+  have hDnonempty : D.Nonempty := by
+    by_contra hDempty
+    have hDeq : D = ∅ :=
+      Finset.not_nonempty_iff_eq_empty.mp hDempty
+    exact (hminimal.1 (insert c E) hlift) (by simp [hDeq])
+  exact ⟨q, D, hLdiff, hcq, hDnonempty, hDB,
+    hDF, hminimal, hpredDestroy⟩
+
+/-- Excess successor-destroyer points inject into anchor-avoiding successor
+supports.
+
+Let `D` be inclusion-minimal for the successor target `q`, and let `P ⊆ D`
+already destroy the predecessor target `q - c`.  For every
+`x ∈ D \ P`, take the private successor support meeting `D` only at `x`.
+That support cannot contain `c`: removing `c` would give a predecessor
+support, which `P` must hit, forcing its unique hit `x` back into `P`.
+
+Private supports at distinct excess points are distinct, so the excess
+cardinality is bounded by the number of genuinely new, `c`-avoiding
+successor supports.  This is the quantitative bridge from paired
+transversals to representation growth. -/
+theorem alignedMinimalDestroyer_excess_le_anchorAvoidingSupports
+    {A : Set ℕ} {h q c : ℕ} {D P : Finset ℕ}
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (h + 1)) D q)
+    (hPD : P ⊆ D)
+    (hPdestroy :
+      DestroysAt
+        (additiveSupportFamily A h) (P : Set ℕ) (q - c)) :
+    (D \ P).card ≤
+      ((additiveSupportFamily A (h + 1) q).filter
+        fun E => c ∉ E).card := by
+  classical
+  let privateSupportRaw :
+      ∀ x : {x // x ∈ D \ P}, Finset ℕ := fun x =>
+    (hminimal.exists_uniqueHitSupport
+      (Finset.mem_sdiff.mp x.2).1).choose
+  have hprivateMem :
+      ∀ x : {x // x ∈ D \ P},
+        privateSupportRaw x ∈
+          additiveSupportFamily A (h + 1) q := by
+    intro x
+    exact (hminimal.exists_uniqueHitSupport
+      (Finset.mem_sdiff.mp x.2).1).choose_spec.1
+  have hprivateUnique :
+      ∀ x : {x // x ∈ D \ P},
+        privateSupportRaw x ∩ D = {x.1} := by
+    intro x
+    exact (hminimal.exists_uniqueHitSupport
+      (Finset.mem_sdiff.mp x.2).1).choose_spec.2
+  have hprivateAvoid :
+      ∀ x : {x // x ∈ D \ P},
+        c ∉ privateSupportRaw x := by
+    intro x hcx
+    obtain ⟨H, hHR, hprivateEq⟩ :=
+      additiveSupport_remove_hit_succ (hprivateMem x) hcx
+    obtain ⟨y, hyH, hyP⟩ :=
+      Set.not_disjoint_iff.mp (hPdestroy H hHR)
+    have hyPrivate : y ∈ privateSupportRaw x := by
+      rw [hprivateEq]
+      exact Finset.mem_insert_of_mem (Finset.mem_coe.mp hyH)
+    have hyD : y ∈ D :=
+      hPD (Finset.mem_coe.mp hyP)
+    have hySingleton : y ∈ ({x.1} : Finset ℕ) := by
+      rw [← hprivateUnique x]
+      exact Finset.mem_inter.mpr ⟨hyPrivate, hyD⟩
+    have hyx : y = x.1 := by
+      simpa using hySingleton
+    have hxP : x.1 ∈ P := by
+      rw [← hyx]
+      exact Finset.mem_coe.mp hyP
+    exact (Finset.mem_sdiff.mp x.2).2 hxP
+  let privateSupport :
+      {x // x ∈ D \ P} →
+        {E // E ∈
+          (additiveSupportFamily A (h + 1) q).filter
+            fun G => c ∉ G} := fun x =>
+    ⟨privateSupportRaw x,
+      Finset.mem_filter.mpr ⟨hprivateMem x, hprivateAvoid x⟩⟩
+  have hinjective : Function.Injective privateSupport := by
+    intro x y hxy
+    apply Subtype.ext
+    have hsupport :
+        privateSupportRaw x = privateSupportRaw y :=
+      congrArg Subtype.val hxy
+    have hsingle :
+        ({x.1} : Finset ℕ) = {y.1} := by
+      rw [← hprivateUnique x, ← hprivateUnique y, hsupport]
+    simpa using hsingle
+  simpa only [Fintype.card_coe] using
+    Fintype.card_le_of_injective privateSupport hinjective
+
+/-- Cardinal form of the fixed-anchor two-order bridge.
+
+Choose an inclusion-minimal predecessor destroyer `P ⊆ D`.  Its cardinality
+is at most the number of predecessor supports.  The preceding injection
+bounds `D \ P` by the anchor-avoiding successor supports.  Adding the two
+parts bounds the entire successor-minimal destroyer.
+
+Consequently an unbounded aligned destroyer cannot be a new third
+obstruction: it must pay for its size in one of two exact representation
+families, at `q - c` or at `q`. -/
+theorem alignedMinimalDestroyer_card_le_twoOrderSupportMass
+    {A : Set ℕ} {h q c : ℕ} {D : Finset ℕ}
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (h + 1)) D q)
+    (hpredDestroy :
+      DestroysAt
+        (additiveSupportFamily A h) (D : Set ℕ) (q - c)) :
+    D.card ≤
+      (additiveSupportFamily A h (q - c)).card +
+        ((additiveSupportFamily A (h + 1) q).filter
+          fun E => c ∉ E).card := by
+  obtain ⟨P, hPD, hPminimal⟩ :=
+    exists_inclusionMinimalDestroyer_subset hpredDestroy
+  have hPcard :
+      P.card ≤ (additiveSupportFamily A h (q - c)).card :=
+    hPminimal.card_le_supportFamily
+  have hexcess :
+      (D \ P).card ≤
+        ((additiveSupportFamily A (h + 1) q).filter
+          fun E => c ∉ E).card :=
+    alignedMinimalDestroyer_excess_le_anchorAvoidingSupports
+      hminimal hPD hPminimal.1
+  have hsplit :
+      (D \ P).card = D.card - P.card :=
+    Finset.card_sdiff_of_subset hPD
+  omega
+
 /-- Global counterexample endpoint after attacking both sides of the
 rank-zero split.
 
