@@ -11500,6 +11500,88 @@ theorem localLargerLockedGapDependency_has_strictSuccessor
   exact ⟨u, (Finset.mem_filter.mp huUpper).1,
     hQ'larger u huQ'⟩
 
+/-- Geometric core of a local larger-target dependency.
+
+On a block with more alternatives than one support can contain, choose an
+alternative `y` outside the current repair support `E`.  The dependency
+cover puts `y` in the stored support `G` of some strictly larger target
+`v`.  Conversely, the old selected point `x` cannot lie in `G`, because
+all stored supports survive the current selector.  Thus `E` and `G` have
+opposite private endpoints `x,y` in one block.  Removing those endpoints
+produces coherent predecessor supports at `q-x` and `v-y`. -/
+theorem localLargerLockedGapDependency_has_crossedSupportRectangle
+    {A K : Set ℕ} {k q : ℕ} {Q : Finset ℕ}
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
+    (s : BlockSelector F)
+    (hblocks : ∀ j, k + 1 < ((F j).erase (s j).1).card)
+    (hdependency :
+      HasLocalLargerLockedGapDependency A k P Q q s) :
+    ∃ b, b ∈ A ∧ b ≤ q ∧
+      additiveSupportFamily A k (q - b) = ∅ ∧
+      ∃ v ∈ Q, q < v ∧
+      ∃ j x y E G H L,
+        x = (s j).1 ∧
+        y ∈ (F j).erase x ∧
+        E ∈ additiveSupportFamily A (k + 1) q ∧
+        G ∈ additiveSupportFamily A (k + 1) v ∧
+        x ∈ E ∧ y ∈ G ∧ y ∉ E ∧ x ∉ G ∧
+        H ∈ additiveSupportFamily A k (q - x) ∧
+        E = insert x H ∧
+        L ∈ additiveSupportFamily A k (v - y) ∧
+        G = insert y L := by
+  classical
+  dsimp only [HasLocalLargerLockedGapDependency] at hdependency
+  obtain ⟨hprivate, c, hcDisjoint, j, hjJ, E, hER, hsjE,
+      Q', hQ'Upper, hQ'card, hQ'larger, hcover,
+      hblockCard⟩ := hdependency
+  dsimp only [HasPrivateLockedGapCollision] at hprivate
+  obtain ⟨_hqDestroy, _hlarger, b, D, d, j₀, E₀, H₀,
+      hbA, hbq, hgap, _hDsub, _hminimal, _hdD, _hj₀J,
+      _hE₀R, _hsj₀E₀, _hprivate, _hH₀R, _hE₀reconstruct,
+      _hj₀Location⟩ := hprivate
+  let V : Finset ℕ := (F j).erase (s j).1
+  have hEcard :
+      E.card ≤ k + 1 :=
+    additiveSupportFamily_cardAtMost A (k + 1) q E hER
+  have hEV : E.card < V.card :=
+    hEcard.trans_lt (by simpa only [V] using hblocks j)
+  have hnotSubset : ¬ V ⊆ E := by
+    intro hVE
+    exact (not_lt_of_ge (Finset.card_le_card hVE)) hEV
+  obtain ⟨y, hyV, hyE⟩ := Finset.not_subset.mp hnotSubset
+  have hyProtected :
+      y ∈ finiteSupportChoiceUnion
+        (restrictFiniteSupportChoice hQ'Upper c) := by
+    obtain hyE' | hyProtected := Finset.mem_union.mp (hcover hyV)
+    · exact (hyE hyE').elim
+    · exact hyProtected
+  obtain ⟨u, _huAttach, hySupport⟩ :=
+    Finset.mem_biUnion.mp hyProtected
+  let uUpper : {n // n ∈ Q.filter fun w => q < w} :=
+    ⟨u.1, hQ'Upper u.2⟩
+  let G : Finset ℕ := (c uUpper).1
+  have hGR :
+      G ∈ additiveSupportFamily A (k + 1) u.1 :=
+    (c uUpper).2
+  have hyG : y ∈ G := by
+    simpa only [G, uUpper, restrictFiniteSupportChoice] using hySupport
+  have hxG : (s j).1 ∉ G := by
+    intro hxG
+    apply Set.disjoint_left.mp hcDisjoint
+      (Finset.mem_coe.mpr
+        (finiteSupportChoice_subset_union c uUpper hxG))
+    exact ⟨j, rfl⟩
+  obtain ⟨H, hHR, hEreconstruct⟩ :=
+    additiveSupport_remove_hit_succ hER hsjE
+  obtain ⟨L, hLR, hGreconstruct⟩ :=
+    additiveSupport_remove_hit_succ hGR hyG
+  refine ⟨b, hbA, hbq, hgap, u.1, ?_, hQ'larger u.1 u.2,
+    j, (s j).1, y, E, G, H, L, rfl, ?_,
+    hER, hGR, hsjE, hyG, hyE, hxG,
+    hHR, hEreconstruct, hLR, hGreconstruct⟩
+  · exact (Finset.mem_filter.mp (hQ'Upper u.2)).1
+  · simpa only [V] using hyV
+
 /-- The top certificate target cannot carry the local upward dependency on
 large blocks. -/
 theorem not_localLargerLockedGapDependency_of_certificateMaximum
