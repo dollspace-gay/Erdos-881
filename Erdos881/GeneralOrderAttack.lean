@@ -21203,7 +21203,9 @@ theorem exactBasis_counterexample_forces_coherentInfiniteUniversalAnchorFans
                   (additiveSupportFamily A ℓ)
                   (B ∪ (W : Set ℕ)) (hits i).sum) ∨
             ∃ r, 0 < r ∧ r ≤ h + 1 ∧
-              {i | (core i).Nonempty ∧ rank i = r}.Infinite)) ∧
+              {i | (core i).Nonempty ∧ rank i = r}.Infinite ∧
+              ∀ L, ∃ i, L < residual i ∧
+                (core i).Nonempty ∧ rank i = r)) ∧
         ∀ i,
           DestroysAt
             (additiveSupportFamily A (h + 1)) K (failure i) := by
@@ -21508,7 +21510,9 @@ theorem exactBasis_counterexample_forces_coherentInfiniteUniversalAnchorFans
               (additiveSupportFamily A ℓ.1)
               (B ∪ (W : Set ℕ)) (hits i).sum) ∨
         ∃ r, 0 < r ∧ r ≤ h + 1 ∧
-          {i | (core i).Nonempty ∧ rank i = r}.Infinite := by
+          {i | (core i).Nonempty ∧ rank i = r}.Infinite ∧
+          ∀ L, ∃ i, L < residual i ∧
+            (core i).Nonempty ∧ rank i = r := by
     let CoreStages : Set ℕ := {i | (core i).Nonempty}
     by_cases hCoreInfinite : CoreStages.Infinite
     · right
@@ -21550,9 +21554,45 @@ theorem exactBasis_counterexample_forces_coherentInfiniteUniversalAnchorFans
           (additiveSupportFamily_zero_target_and_support hcoreR).2
         rw [hcoreEmpty] at hiCore
         exact Finset.not_nonempty_empty hiCore
+      let RankStages : Set ℕ :=
+        {i | (core i).Nonempty ∧ rank i = r.1}
+      let corePoint : RankStages → ℕ := fun i =>
+        i.2.1.choose
+      have hcorePointMem : ∀ i : RankStages,
+          corePoint i ∈ core i.1 :=
+        fun i => i.2.1.choose_spec
+      have hcorePointInjective :
+          Function.Injective corePoint := by
+        intro i j hpoint
+        apply Subtype.ext
+        by_contra hij
+        exact Finset.disjoint_left.mp (hcorePairwise hij)
+          (hcorePointMem i) (hpoint ▸ hcorePointMem j)
+      have hRankStages' : RankStages.Infinite := by
+        simpa only [RankStages] using hRankStages
+      letI : Infinite RankStages := hRankStages'.to_subtype
+      have hpointRangeInfinite :
+          (Set.range corePoint).Infinite :=
+        Set.infinite_range_of_injective hcorePointInjective
+      have hresidualCofinal :
+          ∀ L, ∃ i, L < residual i ∧
+            (core i).Nonempty ∧ rank i = r.1 := by
+        intro L
+        obtain ⟨x, ⟨i, rfl⟩, hLx⟩ :=
+          hpointRangeInfinite.exists_gt L
+        refine ⟨i.1, hLx.trans_le ?_, i.2.1, i.2.2⟩
+        exact additiveSupportFamily_supportsBounded
+          A (rank i.1) (residual i.1) (core i.1)
+            (by
+              have hcoreR := (step i.1).core_mem
+              change core i.1 ∈
+                additiveSupportFamily A (rank i.1) (residual i.1)
+                at hcoreR
+              exact hcoreR)
+            (corePoint i) (hcorePointMem i)
       exact ⟨r.1, hrpos, by
         have := r.isLt
-        omega, hRankStages⟩
+        omega, hRankStages, hresidualCofinal⟩
     · left
       have hCoreFinite : CoreStages.Finite :=
         Set.not_infinite.mp hCoreInfinite
