@@ -11323,24 +11323,25 @@ def HasLocalLargerLockedGapDependency
     (A : Set ℕ) (k : ℕ) {K : Set ℕ} {F : ℕ → Finset ℕ}
     (P : IsFiniteBlockPartition K F) (Q : Finset ℕ)
     (q : ℕ) (s : BlockSelector F) : Prop :=
-  let Upper := Q.filter fun u => q < u
-  let completionNeed := (k + 1) * Upper.card + (k + 1)
-  let J := deficientRepairHitBlocks P s
-    (additiveSupportFamily A (k + 1)) q 0 completionNeed
-  ∃ c :
-      FiniteSupportChoice
-        (additiveSupportFamily A (k + 1)) Upper,
-    Disjoint (finiteSupportChoiceUnion c : Set ℕ) (selectedSet s) ∧
-    ∃ j ∈ J, ∃ E ∈ additiveSupportFamily A (k + 1) q,
-      (s j).1 ∈ E ∧
-      ∃ Q' : Finset ℕ, ∃ hQ'Upper : Q' ⊆ Upper,
-        Q'.card ≤ ((F j).erase (s j).1).card ∧
-        (∀ u ∈ Q', q < u) ∧
-        (F j).erase (s j).1 ⊆
-          E ∪ finiteSupportChoiceUnion
-            (restrictFiniteSupportChoice hQ'Upper c) ∧
-        ((F j).erase (s j).1).card ≤
-          (k + 1) * (Q'.card + 1)
+  HasPrivateLockedGapCollision A k P Q q s ∧
+    let Upper := Q.filter fun u => q < u
+    let completionNeed := (k + 1) * Upper.card + (k + 1)
+    let J := deficientRepairHitBlocks P s
+      (additiveSupportFamily A (k + 1)) q 0 completionNeed
+    ∃ c :
+        FiniteSupportChoice
+          (additiveSupportFamily A (k + 1)) Upper,
+      Disjoint (finiteSupportChoiceUnion c : Set ℕ) (selectedSet s) ∧
+      ∃ j ∈ J, ∃ E ∈ additiveSupportFamily A (k + 1) q,
+        (s j).1 ∈ E ∧
+        ∃ Q' : Finset ℕ, ∃ hQ'Upper : Q' ⊆ Upper,
+          Q'.card ≤ ((F j).erase (s j).1).card ∧
+          (∀ u ∈ Q', q < u) ∧
+          (F j).erase (s j).1 ⊆
+            E ∪ finiteSupportChoiceUnion
+              (restrictFiniteSupportChoice hQ'Upper c) ∧
+          ((F j).erase (s j).1).card ≤
+            (k + 1) * (Q'.card + 1)
 
 /-- A private locked gap collision is not terminal.
 
@@ -11374,6 +11375,7 @@ theorem privateLockedGapCollision_forces_rankGrowthDescent_or_localLargerDepende
   let completionNeed := (k + 1) * Upper.card + (k + 1)
   let J := deficientRepairHitBlocks P s
     (additiveSupportFamily A (k + 1)) q 0 completionNeed
+  have hcollisionFull := hcollision
   change
     DestroysAt
         (additiveSupportFamily A (k + 1)) (selectedSet s) q ∧
@@ -11463,7 +11465,7 @@ theorem privateLockedGapCollision_forces_rankGrowthDescent_or_localLargerDepende
         hQ'larger, hcover, hblockCard⟩ := hdependency
     change HasLocalLargerLockedGapDependency A k P Q q s
     dsimp only [HasLocalLargerLockedGapDependency]
-    refine ⟨c, hcDisjoint, j, ?_, E, hER, hsjE,
+    refine ⟨hcollisionFull, c, hcDisjoint, j, ?_, E, hER, hsjE,
       Q', hQ'Upper, hQ'card, hQ'larger, hcover, hblockCard⟩
     simpa only [J, completionNeed, Upper] using hjJ
 
@@ -11483,7 +11485,7 @@ theorem localLargerLockedGapDependency_has_strictSuccessor
     ∃ u ∈ Q, q < u := by
   classical
   dsimp only [HasLocalLargerLockedGapDependency] at hdependency
-  obtain ⟨c, hcDisjoint, j, hjJ, E, hER, hsjE,
+  obtain ⟨hprivate, c, hcDisjoint, j, hjJ, E, hER, hsjE,
       Q', hQ'Upper, hQ'card, hQ'larger, hcover,
       hblockCard⟩ := hdependency
   have hQ'nonempty : Q'.Nonempty := by
