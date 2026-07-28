@@ -28632,6 +28632,34 @@ theorem large_destroyedRootedMatching_forces_strictOccurrenceRankDescent
     hhitsStrict, hlength, hhitsRoot, htarget,
     hcoreR, hcoreD, hhitSupport, hhitDestroy⟩
 
+/-- A predecessor-gap anchor is redundant in a minimal successor-order
+destroyer.
+
+The gap says that the anchor occurs in no support at the successor target.
+If it belonged to the destroyer, erasing it would therefore leave a
+destroyer, contradicting inclusion-minimality. -/
+theorem lowerGap_anchor_not_mem_minimalSuccessorDestroyer
+    {A : Set ℕ} {k q b : ℕ} {D : Finset ℕ}
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (k + 1)) D q)
+    (hgap : additiveSupportFamily A k (q - b) = ∅) :
+    b ∉ D := by
+  intro hbD
+  apply hminimal.2 b hbD
+  intro E hER
+  have hbE : b ∉ E :=
+    lowerOrderGap_point_avoids_successorSupports hgap E hER
+  obtain ⟨x, hxE, hxD⟩ :=
+    Set.not_disjoint_iff.mp (hminimal.1 E hER)
+  apply Set.not_disjoint_iff.mpr
+  refine ⟨x, hxE, Finset.mem_coe.mpr ?_⟩
+  apply Finset.mem_erase.mpr
+  refine ⟨?_, Finset.mem_coe.mp hxD⟩
+  intro hxb
+  subst x
+  exact hbE (Finset.mem_coe.mp hxE)
+
 /-- Direct current-order attack on an arbitrary infinite deletion reservoir.
 
 Apply strong minimality at the original order `h`, compact the resulting
@@ -28663,7 +28691,7 @@ theorem IsStronglyMinimalExactBasis.cofinal_strictOccurrenceRankDescent_or_large
             (additiveSupportFamily A ℓ)
             (D : Set ℕ) n) ∨
         r < D.card) ∨
-        ∃ b, b ∈ S ∧ b ≤ q ∧
+        ∃ b, b ∈ S ∧ b ∉ D ∧ b ≤ q ∧
           additiveSupportFamily A (h - 1) (q - b) = ∅) := by
   classical
   have hpredSucc : h - 1 + 1 = h := by
@@ -28725,7 +28753,15 @@ theorem IsStronglyMinimalExactBasis.cofinal_strictOccurrenceRankDescent_or_large
       right
       exact hrM.trans_le (Nat.le_of_not_gt hDM)
   · right
-    exact hgap
+    obtain ⟨b, hbS, hbq, hgap⟩ := hgap
+    have hDminimalPred :
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A (h - 1 + 1)) D q := by
+      simpa only [hpredSucc] using hDminimal
+    exact ⟨b, hbS,
+      lowerGap_anchor_not_mem_minimalSuccessorDestroyer
+        hDminimalPred hgap,
+      hbq, hgap⟩
 
 /-- Selector form of the current-order attack.
 
@@ -28754,7 +28790,7 @@ theorem IsStronglyMinimalExactBasis.cofinal_selectorRankDescent_or_manyBlocks_or
               (additiveSupportFamily A ℓ)
               (D : Set ℕ) n) ∨
           r < D.card) ∨
-          ∃ b, b ∈ selectedSet s ∧ b ≤ q ∧
+          ∃ b, b ∈ selectedSet s ∧ b ∉ D ∧ b ≤ q ∧
             additiveSupportFamily A (h - 1) (q - b) = ∅) := by
   intro s
   exact hminimal.cofinal_strictOccurrenceRankDescent_or_largeDestroyer_or_lowerGap
@@ -28824,7 +28860,7 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingle
                   (additiveSupportFamily A ℓ)
                   (D : Set ℕ) n) ∨
               r < D.card) ∨
-              ∃ b, b ∈ selectedSet s ∧ b ≤ q ∧
+              ∃ b, b ∈ selectedSet s ∧ b ∉ D ∧ b ≤ q ∧
                 additiveSupportFamily A (h - 1) (q - b) = ∅) := by
   classical
   obtain ⟨B, block, failure, root, matching,
@@ -28963,7 +28999,7 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingle
                   (additiveSupportFamily A ℓ)
                   (D : Set ℕ) n) ∨
               r < D.card) ∨
-              ∃ b, b ∈ selectedSet s ∧ b ≤ q ∧
+              ∃ b, b ∈ selectedSet s ∧ b ∉ D ∧ b ≤ q ∧
                 additiveSupportFamily A (h - 1) (q - b) = ∅) :=
       hminimal.cofinal_selectorRankDescent_or_manyBlocks_or_lowerGap
         hhpos hXA P
