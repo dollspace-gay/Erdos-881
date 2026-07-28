@@ -28798,6 +28798,199 @@ theorem IsStronglyMinimalExactBasis.cofinal_selectorRankDescent_or_manyBlocks_or
     ((P.selectedSet_subset s).trans hKA)
     (P.selectedSet_infinite s)
 
+/-- Reservoir-relative two-block realization of a lower-gap repair.
+
+The additive basis is `A`, while the selector blocks need only partition an
+infinite reservoir `K ⊆ A`.  Select the gap anchor in its own reservoir
+block, retain the still-active old destroyer coordinates, and reroute every
+other block outside one private repair support. -/
+theorem lowerGapRepair_extends_to_twoBlockSelectorSurvival_onReservoir
+    {A K : Set ℕ} {k q b d : ℕ}
+    {cell : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K cell)
+    (s : BlockSelector cell) {D : Finset ℕ}
+    (hminimal : IsInclusionMinimalDestroyer
+      (additiveSupportFamily A (k + 1)) D q)
+    (hdD : d ∈ D)
+    (hbK : b ∈ K)
+    (hgap : additiveSupportFamily A k (q - b) = ∅)
+    (hblocks : ∀ j, k + 1 < (cell j).card) :
+    ∃ t : BlockSelector cell,
+      (t (blockIndex P b)).1 = b ∧
+      ¬ DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (selectedSet t) q := by
+  classical
+  have hrepair :
+      ¬ DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (((D.erase d ∪ {b} : Finset ℕ) : Set ℕ)) q :=
+    hminimal.swap_hit_for_lowerGap_repairs hdD hgap
+  obtain ⟨E, hER, hEswap⟩ :=
+    not_destroysAt_iff.mp hrepair
+  have hEcard : E.card ≤ k + 1 :=
+    additiveSupportFamily_cardAtMost A (k + 1) q E hER
+  have houtside : ∀ j, (cell j \ E).Nonempty := by
+    intro j
+    by_contra hempty
+    have hsubset : cell j ⊆ E := by
+      intro x hxCell
+      by_contra hxE
+      exact hempty
+        ⟨x, Finset.mem_sdiff.mpr ⟨hxCell, hxE⟩⟩
+    have hcard := Finset.card_le_card hsubset
+    have hlarge := hblocks j
+    omega
+  choose outside houtsideSpec using houtside
+  let anchorBlock := blockIndex P b
+  have hbBlock : b ∈ cell anchorBlock :=
+    P.mem_blockIndex hbK
+  let t : BlockSelector cell := fun j =>
+    if hjAnchor : j = anchorBlock then
+      ⟨b, by
+        subst j
+        exact hbBlock⟩
+    else if hjD : (s j).1 ∈ D.erase d then
+      s j
+    else
+      ⟨outside j, (Finset.mem_sdiff.mp (houtsideSpec j)).1⟩
+  have htAnchor : (t anchorBlock).1 = b := by
+    dsimp [t]
+    rw [dif_pos rfl]
+  refine ⟨t, htAnchor, ?_⟩
+  apply not_destroysAt_iff.mpr
+  refine ⟨E, hER, ?_⟩
+  rw [Set.disjoint_left]
+  intro x hxE hxSelected
+  obtain ⟨j, hjx⟩ := hxSelected
+  by_cases hjAnchor : j = anchorBlock
+  · have htx : (t j).1 = b := by
+      subst j
+      exact htAnchor
+    have hxb : x = b := hjx.symm.trans htx
+    apply Set.disjoint_left.mp hEswap hxE
+    exact Finset.mem_coe.mpr (by
+      rw [hxb]
+      exact Finset.mem_union_right _
+        (Finset.mem_singleton_self b))
+  by_cases hjD : (s j).1 ∈ D.erase d
+  · have htx : (t j).1 = (s j).1 := by
+      dsimp [t]
+      rw [dif_neg hjAnchor, if_pos hjD]
+    have hxs : x = (s j).1 := hjx.symm.trans htx
+    apply Set.disjoint_left.mp hEswap hxE
+    exact Finset.mem_coe.mpr (by
+      rw [hxs]
+      exact Finset.mem_union_left _ hjD)
+  · have htx : (t j).1 = outside j := by
+      dsimp [t]
+      rw [dif_neg hjAnchor, if_neg hjD]
+    have hxOutside : x = outside j := hjx.symm.trans htx
+    apply (Finset.mem_sdiff.mp (houtsideSpec j)).2
+    rw [← hxOutside]
+    exact hxE
+
+/-- Switch at a fresh primitive-gap anchor and force a fresh later injury.
+
+The two-block selector switch repairs the old current-order target `q`.
+Remove an arbitrary protected finite prefix `U` together with the entire
+old minimal destroyer `D` from the repaired selector.  This leaves an
+infinite selector subreservoir.  Original order-`h` strong minimality then
+produces a strictly later minimal destroyer `D'`, disjoint from `U ∪ D`.
+The same-target rooted/gap fork classifies that fresh injury immediately.
+
+Thus repeated primitive-gap outcomes cannot recycle an old finite
+destroyer: every repetition spends a new set of block coordinates. -/
+theorem IsStronglyMinimalExactBasis.lowerGapSelectorSwitch_forces_freshLaterAttack
+    {A K : Set ℕ} {h q b : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hminimal : IsStronglyMinimalExactBasis A h)
+    (hhpos : 0 < h)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hblocks : ∀ j, h < (cell j).card)
+    (s : BlockSelector cell)
+    {D : Finset ℕ}
+    (hDnonempty : D.Nonempty)
+    (hDminimal : IsInclusionMinimalDestroyer
+      (additiveSupportFamily A h) D q)
+    (hbSelected : b ∈ selectedSet s)
+    (hgap : additiveSupportFamily A (h - 1) (q - b) = ∅) :
+    ∀ U : Finset ℕ, ∀ r,
+      ∃ t : BlockSelector cell, ∃ q', ∃ D' : Finset ℕ,
+        (t (blockIndex P b)).1 = b ∧
+        ¬ DestroysAt
+          (additiveSupportFamily A h)
+          (selectedSet t) q ∧
+        q < q' ∧
+        D'.Nonempty ∧
+        (D' : Set ℕ) ⊆ selectedSet t ∧
+        Disjoint D' (U ∪ D) ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A h) D' q' ∧
+        (((∃ ℓ n,
+            0 < ℓ ∧
+            ℓ < h ∧
+            (additiveSupportFamily A ℓ n).Nonempty ∧
+            DestroysAt
+              (additiveSupportFamily A ℓ)
+              (D' : Set ℕ) n) ∨
+          r < D'.card) ∨
+          ∃ b', b' ∈ selectedSet t ∧
+            b' ∉ U ∪ D ∧ b' ∉ D' ∧ b' ≤ q' ∧
+            additiveSupportFamily A (h - 1) (q' - b') = ∅) := by
+  classical
+  have hpredSucc : h - 1 + 1 = h := by
+    omega
+  have hbK : b ∈ K :=
+    P.selectedSet_subset s hbSelected
+  obtain ⟨d, hdD⟩ := hDnonempty
+  have hDminimalPred :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (h - 1 + 1)) D q := by
+    simpa only [hpredSucc] using hDminimal
+  have hblocksPred :
+      ∀ j, h - 1 + 1 < (cell j).card := by
+    simpa only [hpredSucc] using hblocks
+  obtain ⟨t, htAnchor, htRepair⟩ :=
+    lowerGapRepair_extends_to_twoBlockSelectorSurvival_onReservoir
+      P s hDminimalPred hdD hbK hgap hblocksPred
+  have htRepairH :
+      ¬ DestroysAt
+        (additiveSupportFamily A h)
+        (selectedSet t) q := by
+    simpa only [hpredSucc] using htRepair
+  intro U r
+  let S : Set ℕ :=
+    selectedSet t \ ((U ∪ D : Finset ℕ) : Set ℕ)
+  have hSInfinite : S.Infinite :=
+    (P.selectedSet_infinite t).diff (U ∪ D).finite_toSet
+  have hSA : S ⊆ A := by
+    intro x hxS
+    exact hKA (P.selectedSet_subset t hxS.1)
+  obtain ⟨q', D', hq'Lower, hD'nonempty, hD'S,
+      hD'minimal, hD'outcome⟩ :=
+    hminimal.cofinal_strictOccurrenceRankDescent_or_largeDestroyer_or_lowerGap
+      hhpos hSA hSInfinite r (q + 1)
+  have hqq' : q < q' := by
+    omega
+  have hD'selected :
+      (D' : Set ℕ) ⊆ selectedSet t := by
+    intro x hxD'
+    exact (hD'S hxD').1
+  have hD'fresh : Disjoint D' (U ∪ D) := by
+    rw [Finset.disjoint_left]
+    intro x hxD' hxOld
+    exact (hD'S (Finset.mem_coe.mpr hxD')).2
+      (Finset.mem_coe.mpr hxOld)
+  refine ⟨t, q', D', htAnchor, htRepairH, hqq',
+    hD'nonempty, hD'selected, hD'fresh, hD'minimal, ?_⟩
+  rcases hD'outcome with hdescentOrLarge | hgap'
+  · exact Or.inl hdescentOrLarge
+  · right
+    obtain ⟨b', hb'S, hb'D', hb'q', hgap'⟩ := hgap'
+    exact ⟨b', (hb'S).1, (hb'S).2, hb'D',
+      hb'q', hgap'⟩
+
 /-- Primitive counterexample fork with a direct current-order attack in the
 co-singleton branch.
 
