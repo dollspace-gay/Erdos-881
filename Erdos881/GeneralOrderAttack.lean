@@ -20183,6 +20183,83 @@ theorem infiniteAnchorShield_strongDeletion_forces_cofinalFreshMatchings
   exact ⟨q, D, hLq, hDnonempty, hDB, hDF,
     hminimal, hmatching⟩
 
+/-- Counterexample-level fixed-reservoir form of the anchor-shield attack.
+
+Enumerate the infinite basis and split the enumeration into its even and
+odd subsequences.  These give disjoint infinite anchor and deletion
+reservoirs `C,B ⊆ A`.  Strong deletion on the fixed odd reservoir, combined
+with arbitrarily large finite shields from the even reservoir, produces
+after every finite history a new successor-minimal destroyer and an
+arbitrarily large matching at a positive rank.
+
+Unlike a bare cofinal-growth conclusion, the same `B` carries every fresh
+destroyer.  This is the quantifier shape needed for an infinite block
+construction. -/
+theorem exactBasis_counterexample_forces_fixedReservoir_freshMatchings
+    {A : Set ℕ} {h : ℕ}
+    (hhpos : 0 < h)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    ∃ C B : Set ℕ,
+      C ⊆ A ∧ C.Infinite ∧
+      B ⊆ A ∧ B.Infinite ∧
+      Disjoint C B ∧
+      ∀ F : Finset ℕ, ∀ r L,
+        ∃ q, ∃ D : Finset ℕ,
+          L ≤ q ∧
+          D.Nonempty ∧
+          (D : Set ℕ) ⊆ B ∧
+          Disjoint D F ∧
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A (h + 1)) D q ∧
+          ∃ j, 0 < j ∧ j ≤ h + 1 ∧
+            ∃ t, ∃ M : Finset (Finset ℕ),
+              M ⊆ additiveSupportFamily A j t ∧
+              IsMatching M ∧
+              r < M.card := by
+  classical
+  let e : ℕ → ℕ := Nat.nth fun x => x ∈ A
+  have heA : ∀ n, e n ∈ A := by
+    intro n
+    exact Nat.nth_mem_of_infinite hbasis.infinite n
+  have heInjective : Function.Injective e := by
+    exact Nat.nth_injective hbasis.infinite
+  let even : ℕ → ℕ := fun n => e (2 * n)
+  let odd : ℕ → ℕ := fun n => e (2 * n + 1)
+  let C : Set ℕ := Set.range even
+  let B : Set ℕ := Set.range odd
+  have hevenInjective : Function.Injective even := by
+    intro i j hij
+    have hindex : 2 * i = 2 * j :=
+      heInjective hij
+    omega
+  have hoddInjective : Function.Injective odd := by
+    intro i j hij
+    have hindex : 2 * i + 1 = 2 * j + 1 :=
+      heInjective hij
+    omega
+  have hCA : C ⊆ A := by
+    rintro x ⟨n, rfl⟩
+    exact heA (2 * n)
+  have hBA : B ⊆ A := by
+    rintro x ⟨n, rfl⟩
+    exact heA (2 * n + 1)
+  have hCInfinite : C.Infinite := by
+    exact Set.infinite_range_of_injective hevenInjective
+  have hBInfinite : B.Infinite := by
+    exact Set.infinite_range_of_injective hoddInjective
+  have hCB : Disjoint C B := by
+    rw [Set.disjoint_left]
+    rintro x ⟨i, rfl⟩ ⟨j, hj⟩
+    have hindex : 2 * j + 1 = 2 * i :=
+      heInjective hj
+    omega
+  refine ⟨C, B, hCA, hCInfinite, hBA, hBInfinite, hCB, ?_⟩
+  exact infiniteAnchorShield_strongDeletion_forces_cofinalFreshMatchings
+    hhpos hbasis hCA hCInfinite hBA hBInfinite hCB
+      (strongExactDeletion_of_counterexample hcounter)
+
 /-- A successor-deletion counterexample forces unbounded exact
 representation growth in one of three aligned locations.
 
