@@ -11519,7 +11519,11 @@ theorem localLargerLockedGapDependency_has_crossedSupportRectangle
     ∃ b, b ∈ A ∧ b ≤ q ∧
       additiveSupportFamily A k (q - b) = ∅ ∧
       ∃ v ∈ Q, q < v ∧
-      ∃ j x y E G H L,
+      ∃ j Q' x y E G H L,
+        Q' ⊆ Q.filter (fun u => q < u) ∧
+        v ∈ Q' ∧
+        ((F j).erase (s j).1).card ≤
+          (k + 1) * (Q'.card + 1) ∧
         x = (s j).1 ∧
         y ∈ (F j).erase x ∧
         b ≠ x ∧
@@ -11582,7 +11586,8 @@ theorem localLargerLockedGapDependency_has_crossedSupportRectangle
     rw [hgap] at hHR
     simpa using hHR
   refine ⟨b, hbA, hbq, hgap, u.1, ?_, hQ'larger u.1 u.2,
-    j, (s j).1, y, E, G, H, L, rfl, ?_,
+    j, Q', (s j).1, y, E, G, H, L, hQ'Upper, u.2,
+    hblockCard, rfl, ?_,
     hbx, hER, hGR, hsjE, hyG, hyE, hxG,
     hHR, hEreconstruct, hLR, hGreconstruct⟩
   · exact (Finset.mem_filter.mp (hQ'Upper u.2)).1
@@ -12193,6 +12198,125 @@ theorem boundedFullTranslateDestroyers_fixedGrowingCertificate_exactRootedMatchi
         P s (by simpa only [Nat.add_assoc] using hblocks)
           hdependency'
     exact ⟨u, huQ, s, hdependency', v, hvQ, huv⟩
+
+/-- Cofinal geometric form of the fixed-reservoir endpoint.
+
+On the one growing block system chosen before every demand, either exact
+rooted matchings of a fixed requested size occur arbitrarily late, or the
+crossed gap rectangle itself occurs arbitrarily late.  In the second case
+the lower gap and both represented predecessor differences are retained,
+and the two crossed endpoints lie in one actual reservoir block.
+
+This removes the last run-by-run ambiguity from the obstruction: failure of
+cofinal matching growth forces recurrence of one concrete arithmetic
+geometry on a fixed partition. -/
+theorem boundedFullTranslateDestroyers_fixedGrowingCertificate_cofinalMatching_or_crossedRectangles
+    {A : Set ℕ} {k q₀ : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    (hfull :
+      HasBoundedFullTranslateDestroyersByAnchor A (k + 1) {q₀})
+    (hqrep : (additiveSupportFamily A (k + 1) q₀).Nonempty)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 2)) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ P : IsFiniteBlockPartition K cell,
+        K ⊆ A ∧ K.Infinite ∧
+        (∀ i, (cell i).card = 2 * (i + k + 2)) ∧
+        ∀ r,
+          ((∀ L, ∃ q R M,
+              L ≤ q ∧
+              R.card < k + 2 ∧
+              M ⊆ additiveSupportFamily A (k + 2) q ∧
+              r < M.card ∧
+              (∀ E ∈ M, R ⊆ E) ∧
+              (∀ E ∈ M, (E \ R).Nonempty) ∧
+              ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+                Disjoint (E \ R) (G \ R)) ∨
+            ∀ L, ∃ q b v j, ∃ Q' : Finset ℕ,
+              ∃ x y E G H T,
+              L ≤ q ∧
+              b ∈ A ∧ b ≤ q ∧
+              additiveSupportFamily A (k + 1) (q - b) = ∅ ∧
+              q < v ∧
+              v ∈ Q' ∧
+              (∀ u ∈ Q', q < u) ∧
+              ((cell j).erase x).card ≤
+                (k + 2) * (Q'.card + 1) ∧
+              x ∈ cell j ∧
+              y ∈ (cell j).erase x ∧
+              b ≠ x ∧
+              E ∈ additiveSupportFamily A (k + 2) q ∧
+              G ∈ additiveSupportFamily A (k + 2) v ∧
+              x ∈ E ∧ y ∈ G ∧ y ∉ E ∧ x ∉ G ∧
+              H ∈ additiveSupportFamily A (k + 1) (q - x) ∧
+              E = insert x H ∧
+              T ∈ additiveSupportFamily A (k + 1) (v - y) ∧
+              G = insert y T) := by
+  classical
+  obtain ⟨K, cell, _target, P, hKA, hKInfinite, hcellCard,
+      _htargetInfinite, _hsurvival, hendpoint⟩ :=
+    boundedFullTranslateDestroyers_fixedGrowingCertificate_exactRootedMatching_or_localLargerDependency
+      hbasis hfull hqrep hcounter
+  refine ⟨K, cell, P, hKA, hKInfinite, hcellCard, ?_⟩
+  intro r
+  let MatchAt : ℕ → Prop := fun L =>
+    ∃ q R M,
+      L ≤ q ∧
+      R.card < k + 2 ∧
+      M ⊆ additiveSupportFamily A (k + 2) q ∧
+      r < M.card ∧
+      (∀ E ∈ M, R ⊆ E) ∧
+      (∀ E ∈ M, (E \ R).Nonempty) ∧
+      ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+        Disjoint (E \ R) (G \ R)
+  by_cases hmatching : ∀ L, MatchAt L
+  · left
+    intro L
+    simpa only [MatchAt] using hmatching L
+  · right
+    obtain ⟨L₀, hL₀⟩ := not_forall.mp hmatching
+    intro L
+    obtain ⟨Q, _hQnonempty, hQlate, _hcert, _hlocalized,
+        _hQsafe, houtcome⟩ :=
+      hendpoint r (max L L₀)
+    obtain ⟨q, hqQ, R, M, hRcard, hMsub, hMcard,
+        hMroot, hMnonempty, hMmatching⟩ |
+        ⟨q, hqQ, s, hdependency, _v₀, _hv₀Q, _hqv₀⟩ :=
+      houtcome
+    · exfalso
+      apply hL₀
+      refine ⟨q, R, M, ?_, hRcard, hMsub, hMcard,
+        hMroot, hMnonempty, hMmatching⟩
+      exact (le_max_right L L₀).trans (hQlate q hqQ)
+    · have hblocks :
+          ∀ i, k + 2 < ((cell i).erase (s i).1).card := by
+        intro i
+        rw [Finset.card_erase_of_mem (s i).2, hcellCard i]
+        omega
+      obtain ⟨b, hbA, hbq, hgap, v, _hvQ, hqv,
+          j, Q', x, y, E, G, H, T, hQ'Upper, hvQ',
+          hfanCapacity, hx, hyBlock, hbx,
+          hER, hGR, hxE, hyG, hyE, hxG, hHR, hEeq,
+          hTR, hGeq⟩ :=
+        localLargerLockedGapDependency_has_crossedSupportRectangle
+          P s (by simpa only [Nat.add_assoc] using hblocks)
+            hdependency
+      have hxBlock : x ∈ cell j := by
+        rw [hx]
+        exact (s j).2
+      have hQ'larger : ∀ u ∈ Q', q < u := by
+        intro u huQ'
+        exact (Finset.mem_filter.mp (hQ'Upper huQ')).2
+      have hfanCapacity' :
+          ((cell j).erase x).card ≤
+            (k + 2) * (Q'.card + 1) := by
+        simpa only [hx, Nat.add_assoc] using hfanCapacity
+      exact ⟨q, b, v, j, Q', x, y, E, G, H, T,
+        (le_max_left L L₀).trans (hQlate q hqQ),
+        hbA, hbq, hgap, hqv, hvQ', hQ'larger,
+        hfanCapacity', hxBlock, hyBlock, hbx,
+        hER, hGR, hxE, hyG, hyE, hxG, hHR, hEeq,
+        hTR, hGeq⟩
 
 /-- Protected-set strengthening of the locked-prefix composition.
 
