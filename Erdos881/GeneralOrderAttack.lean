@@ -20494,11 +20494,13 @@ theorem exactBasis_counterexample_forces_fixedReservoir_prefixClearedRepairs_and
           0 < hits.length ∧
           hits.length + j = h + 1 ∧
           (∀ y ∈ hits, y ∈ A ∧ y ∈ D ∪ F) ∧
+          (∀ y ∈ hits, y < a) ∧
           q = hits.sum + t ∧
           core ∈ additiveSupportFamily A j t ∧
           Disjoint (core : Set ℕ) ((D ∪ F : Finset ℕ) : Set ℕ) ∧
           repaired ∈ additiveSupportFamily A (h + 1)
             (hits.length * a + t) ∧
+          q < hits.length * a + t ∧
           L ≤ hits.length * a + t ∧
           Disjoint (repaired : Set ℕ)
             ((D ∪ F : Finset ℕ) : Set ℕ) ∧
@@ -20518,23 +20520,40 @@ theorem exactBasis_counterexample_forces_fixedReservoir_prefixClearedRepairs_and
     hstage F r L
   obtain ⟨x, hxD⟩ := hDnonempty
   obtain ⟨a, haC, haLarge⟩ :=
-    hCInfinite.exists_gt (max L (F.sup id))
+    hCInfinite.exists_gt (max L ((D ∪ F).sup id))
   have haA : a ∈ A := hCA haC
   have haW : a ∉ D ∪ F := by
     intro haUnion
-    rcases Finset.mem_union.mp haUnion with haD | haF
-    · exact Set.disjoint_left.mp hCB haC
-        (hDB (Finset.mem_coe.mpr haD))
-    · have haSup : a ≤ F.sup id :=
-        Finset.le_sup (f := id) haF
-      omega
+    have haSup : a ≤ (D ∪ F).sup id :=
+      Finset.le_sup (f := id) haUnion
+    exact (not_lt_of_ge haSup)
+      ((le_max_right L ((D ∪ F).sup id)).trans_lt haLarge)
   obtain ⟨hits, j, t, core, repaired, hhitsLength,
       hlength, hhitsW, htarget, hcoreR, hcoreW,
       hrepairR, hrepairW⟩ :=
     minimalAdditiveDestroyer_has_prefixClearedRepeatedAnchorRepair
       hminimal hxD (Finset.subset_union_left) haA haW
   have hLa : L < a :=
-    (le_max_left L (F.sup id)).trans_lt haLarge
+    (le_max_left L ((D ∪ F).sup id)).trans_lt haLarge
+  have hhitsLt : ∀ y ∈ hits, y < a := by
+    intro y hyHits
+    have hySup : y ≤ (D ∪ F).sup id :=
+      Finset.le_sup (f := id) (hhitsW y hyHits).2
+    exact hySup.trans_lt
+      ((le_max_right L ((D ∪ F).sup id)).trans_lt haLarge)
+  have hhitsExists : ∃ y, y ∈ hits := by
+    exact List.exists_mem_of_ne_nil hits
+      (List.length_pos_iff.mp hhitsLength)
+  have hhitsSumLt : hits.sum < hits.length * a := by
+    have hsum :=
+      List.sum_lt_sum (l := hits) id (fun _ => a)
+        (fun y hy => Nat.le_of_lt (hhitsLt y hy))
+        (by
+          obtain ⟨y, hyHits⟩ := hhitsExists
+          exact ⟨y, hyHits, hhitsLt y hyHits⟩)
+    simpa using hsum
+  have hqRepair : q < hits.length * a + t := by
+    omega
   have haRepair : a ≤ hits.length * a + t := by
     calc
       a = 1 * a := by simp
@@ -20545,8 +20564,8 @@ theorem exactBasis_counterexample_forces_fixedReservoir_prefixClearedRepairs_and
     (Nat.le_of_lt hLa).trans haRepair
   exact ⟨q, D, a, hits, j, t, core, repaired,
     hLq, hLa, haC, ⟨x, hxD⟩, hDB, hDF, hminimal,
-    hhitsLength, hlength, hhitsW, htarget,
-    hcoreR, hcoreW, hrepairR, hLrepair, hrepairW,
+    hhitsLength, hlength, hhitsW, hhitsLt, htarget,
+    hcoreR, hcoreW, hrepairR, hqRepair, hLrepair, hrepairW,
     hmatching⟩
 
 /-- Compact supply interface extracted from the anchor-repair stage.
@@ -20573,6 +20592,7 @@ theorem exactBasis_counterexample_forces_fixedReservoir_prefixClearedRepairSuppl
           Disjoint D F ∧
           IsInclusionMinimalDestroyer
             (additiveSupportFamily A (h + 1)) D q ∧
+          q < n ∧
           L ≤ n ∧
           E ∈ additiveSupportFamily A (h + 1) n ∧
           Disjoint (E : Set ℕ)
@@ -20584,13 +20604,13 @@ theorem exactBasis_counterexample_forces_fixedReservoir_prefixClearedRepairSuppl
   intro F L
   obtain ⟨q, D, _a, hits, _j, t, _core, repaired,
       hLq, _hLa, _haC, hDnonempty, hDB, hDF, hminimal,
-      _hhitsLength, _hlength, _hhitsW, _htarget,
-      _hcoreR, _hcoreW, hrepairR, hLrepair, hrepairW,
+      _hhitsLength, _hlength, _hhitsW, _hhitsLt, _htarget,
+      _hcoreR, _hcoreW, hrepairR, hqRepair, hLrepair, hrepairW,
       _hmatching⟩ :=
     hstage F 0 L
   exact ⟨q, D, hits.length * _a + t, repaired,
     hLq, hDnonempty, hDB, hDF, hminimal,
-    hLrepair, hrepairR, hrepairW⟩
+    hqRepair, hLrepair, hrepairR, hrepairW⟩
 
 /-- One recursive block-and-repair stage. -/
 structure FreshPrefixClearedRepairStep
@@ -20606,6 +20626,7 @@ structure FreshPrefixClearedRepairStep
   block_minimal :
     IsInclusionMinimalDestroyer
       (additiveSupportFamily A H) block failure
+  failure_lt_target : failure < target
   target_gt : last < target
   support_mem : support ∈ additiveSupportFamily A H target
   support_fresh :
@@ -20624,6 +20645,7 @@ theorem freshPrefixClearedRepairStep_nonempty
         Disjoint D F ∧
         IsInclusionMinimalDestroyer
           (additiveSupportFamily A H) D q ∧
+        q < n ∧
         L ≤ n ∧
         E ∈ additiveSupportFamily A H n ∧
         Disjoint (E : Set ℕ)
@@ -20632,10 +20654,10 @@ theorem freshPrefixClearedRepairStep_nonempty
     Nonempty
       (FreshPrefixClearedRepairStep A B H used last) := by
   obtain ⟨q, D, n, E, hq, hDnonempty, hDB, hDF,
-      hminimal, hn, hER, hE⟩ :=
+      hminimal, hqn, hn, hER, hE⟩ :=
     hsupply used (last + 1)
   exact ⟨⟨q, D, n, E, by omega, hDnonempty,
-    hDB, hDF, hminimal, by omega, hER, hE⟩⟩
+    hDB, hDF, hminimal, hqn, by omega, hER, hE⟩⟩
 
 /-- A putative successor counterexample yields one coherent infinite
 deletion assembled from fresh minimal-destroyer blocks, together with a
@@ -20670,7 +20692,9 @@ theorem exactBasis_counterexample_forces_coherentInfinitePrefixClearedDeletion
           IsInclusionMinimalDestroyer
             (additiveSupportFamily A (h + 1))
             (block i) (failure i)) ∧
+        StrictMono failure ∧
         StrictMono target ∧
+        (∀ i, failure i < target i) ∧
         (∀ i, target i < failure (i + 1)) ∧
         (∀ N, ∃ i, N ≤ failure i) ∧
         (∀ i,
@@ -20743,12 +20767,18 @@ theorem exactBasis_counterexample_forces_coherentInfinitePrefixClearedDeletion
     change (state (i + 1)).2 < target (i + 1) at hnext
     rw [hlast_succ] at hnext
     exact hnext
+  have hfailureTarget : ∀ i, failure i < target i :=
+    fun i => (step i).failure_lt_target
   have htargetFailure : ∀ i, target i < failure (i + 1) := by
     intro i
     have hnext := (step (i + 1)).failure_gt
     change (state (i + 1)).2 < failure (i + 1) at hnext
     rw [hlast_succ] at hnext
     exact hnext
+  have hfailureStrict : StrictMono failure := by
+    apply strictMono_nat_of_lt_succ
+    intro i
+    exact (hfailureTarget i).trans (htargetFailure i)
   have hfailureCofinal : ∀ N, ∃ i, N ≤ failure i := by
     intro N
     refine ⟨N + 1, ?_⟩
@@ -20813,8 +20843,8 @@ theorem exactBasis_counterexample_forces_coherentInfinitePrefixClearedDeletion
   refine ⟨B, K, block, failure, target, support,
     hBA, hBInfinite, hKB, hKInfinite, ?_,
     (fun i => (step i).block_nonempty), hblockPairwise,
-    (fun i => (step i).block_minimal), htargetStrict,
-    htargetFailure, hfailureCofinal,
+    (fun i => (step i).block_minimal), hfailureStrict,
+    htargetStrict, hfailureTarget, htargetFailure, hfailureCofinal,
     (fun i => (step i).support_mem),
     hsupportK, ?_⟩
   · intro x
