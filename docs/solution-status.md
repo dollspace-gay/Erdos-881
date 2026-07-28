@@ -1,3 +1,25 @@
+# FRESH RECURRENT GAP REPAIRS (2026-07-27)
+
+The remaining lower-gap branch can now be made genuinely fresh at every
+finite stage.
+
+- `eventually_lockedPrefix_matching_or_freshGap_or_rankGrowthDescent`
+  threads an arbitrary bounded protected set through the locked-prefix
+  composition and forces every predecessor-gap point outside it.
+- `eventually_finiteCertificate_matching_or_freshLowerGap` preserves that
+  exclusion through the terminating target descent.
+- `cofinal_rootedMatching_or_freshLowerGap` globalizes the result with
+  strong deletion.
+- `cofinal_prefixDisjointRootedMatching_or_freshLowerGap` normalizes both
+  matching-growth horns back to the original order.  Against the same
+  arbitrary finite prefix, its matching root is disjoint from the prefix
+  and its alternative gap-repair point is not in the prefix.
+
+Thus recurrent gap repairs can no longer stall by recycling finitely many
+old vertices.  The remaining task is persistence: fuse the fresh repairs
+and fresh rooted-matching petals into one infinite deletion while ensuring
+that later choices do not re-damage supports locked at earlier targets.
+
 # CERTIFICATE-SAFE OLD-BLOCK COMPOSITION: MIGRATION TERMINATES (2026-07-27)
 
 The old-coordinate branch has now crossed the certificate-safety barrier.

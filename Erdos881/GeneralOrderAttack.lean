@@ -9967,6 +9967,139 @@ theorem IsExactTupleAsymptoticBasis.eventually_lockedPrefix_matching_or_gap_or_r
     · exact Or.inr (Or.inr (Or.inr hgap))
   · exact Or.inr (Or.inr (Or.inl hdescent))
 
+/-- Protected-set strengthening of the locked-prefix composition.
+
+The predecessor-gap repair point is chosen outside an arbitrary finite set
+`W` of bounded cardinality.  Thus certificate migration can be iterated
+while keeping every previously locked repair point and support vertex
+untouched. -/
+theorem IsExactTupleAsymptoticBasis.eventually_lockedPrefix_matching_or_freshGap_or_rankGrowthDescent
+    {A : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
+    (r w : ℕ) :
+    ∃ N, ∀ W : Finset ℕ, W.card ≤ w →
+      ∀ Q : Finset ℕ, ∀ q, N ≤ q → ∀ s : BlockSelector F,
+      q ∈ Q →
+      (∀ t : BlockSelector F, ∃ u ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) (selectedSet t) u) →
+      (∀ u ∈ Q, q < u →
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1)) (selectedSet s) u) →
+      (∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+          R.card < k + 1 ∧
+          M ⊆ additiveSupportFamily A (k + 1) q ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+            Disjoint (E \ R) (G \ R)) ∨
+        (∃ d, d ∈ A ∧ d ≤ q ∧
+          ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+            R.card < k ∧
+            M ⊆ additiveSupportFamily A k (q - d) ∧
+            r < M.card ∧
+            (∀ E ∈ M, R ⊆ E) ∧
+            (∀ E ∈ M, (E \ R).Nonempty) ∧
+            ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+              Disjoint (E \ R) (G \ R)) ∨
+        (∃ t : BlockSelector F, ∃ u ∈ Q, u < q ∧
+          (Q.filter fun v => q < v).card <
+            (Q.filter fun v => u < v).card ∧
+          DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet t) u ∧
+          ∀ v ∈ Q, u < v →
+            ¬ DestroysAt
+              (additiveSupportFamily A (k + 1))
+              (selectedSet t) v) ∨
+        ∃ b, b ∈ A ∧ b ∉ W ∧ b ≤ q ∧
+          additiveSupportFamily A k (q - b) = ∅ := by
+  classical
+  let B := lockedPrefixCompositionBound k r
+  obtain ⟨N, hN⟩ :=
+    hbasis.eventually_boundedDestroyer_forces_largeDifferenceFamily_or_lowerGap_avoiding
+      B w
+  refine ⟨N, ?_⟩
+  intro W hWcard Q q hn s hqQ hcert hlarger
+  by_cases hcurrent :
+      ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+        R.card < k + 1 ∧
+        M ⊆ additiveSupportFamily A (k + 1) q ∧
+        r < M.card ∧
+        (∀ E ∈ M, R ⊆ E) ∧
+        (∀ E ∈ M, (E \ R).Nonempty) ∧
+        ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+          Disjoint (E \ R) (G \ R)
+  · exact Or.inl hcurrent
+  have hfamilySmall :
+      (additiveSupportFamily A (k + 1) q).card <
+        additiveRootedMatchingBound (k + 1) r := by
+    by_contra hnot
+    apply hcurrent
+    exact additiveSupportSubfamily_has_large_rootedMatching
+      (k + 1) r q (additiveSupportFamily A (k + 1) q)
+      Finset.Subset.rfl (Nat.le_of_not_gt hnot)
+  have hvertices :
+      (supportVertices (additiveSupportFamily A (k + 1)) q).card ≤
+        (k + 1) * additiveRootedMatchingBound (k + 1) r := by
+    calc
+      (supportVertices
+          (additiveSupportFamily A (k + 1)) q).card ≤
+          (k + 1) *
+            (additiveSupportFamily A (k + 1) q).card := by
+        exact biUnion_card_le_of_edge_card_le
+          (H := additiveSupportFamily A (k + 1) q)
+          (M := additiveSupportFamily A (k + 1) q)
+          (by simp) (fun E hE =>
+            additiveSupportFamily_cardAtMost A (k + 1) q E hE)
+      _ ≤ (k + 1) *
+          additiveRootedMatchingBound (k + 1) r :=
+        Nat.mul_le_mul_left (k + 1) (Nat.le_of_lt hfamilySmall)
+  let completionNeed :=
+    (k + 1) * (Q.filter fun u => q < u).card + (k + 1)
+  let J := deficientRepairHitBlocks P s
+    (additiveSupportFamily A (k + 1)) q 0 completionNeed
+  let L : Finset ℕ := J.image fun j => (s j).1
+  have hstep :
+      (L.card ≤
+          (supportVertices
+            (additiveSupportFamily A (k + 1)) q).card ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) (L : Set ℕ) q) ∨
+        ∃ t : BlockSelector F, ∃ u ∈ Q, u < q ∧
+          (Q.filter fun v => q < v).card <
+            (Q.filter fun v => u < v).card ∧
+          DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet t) u ∧
+          ∀ v ∈ Q, u < v →
+            ¬ DestroysAt
+              (additiveSupportFamily A (k + 1))
+              (selectedSet t) v := by
+    simpa only [L, J, completionNeed] using
+      blockAligned_intrinsicLockedPrefix_destruction_or_rankGrowthDescent
+        P s hqQ hcert hlarger
+  obtain ⟨hLcard, hLdestroy⟩ | hdescent := hstep
+  · have hLB : L.card ≤ B :=
+      (hLcard.trans hvertices).trans (Nat.le_max_left _ _)
+    obtain hgrowth | hgap :=
+      hN W hWcard L hLB q hn hLdestroy
+    · right
+      left
+      obtain ⟨d, _hdL, hdA, hdq, ℋ, hℋsub, hBℋ⟩ := hgrowth
+      refine ⟨d, hdA, hdq, ?_⟩
+      obtain ⟨R, M, hRcard, hMsub, hMcard, hMroot,
+          hMnonempty, hMdisjoint⟩ :=
+        additiveSupportSubfamily_has_large_rootedMatching
+          k r (q - d) ℋ hℋsub
+          (le_trans (Nat.le_max_right _ _) (Nat.le_of_lt hBℋ))
+      exact ⟨R, M, hRcard, hMsub.trans hℋsub, hMcard,
+        hMroot, hMnonempty, hMdisjoint⟩
+    · exact Or.inr (Or.inr (Or.inr hgap))
+  · exact Or.inr (Or.inr (Or.inl hdescent))
+
 /-- Gap-free certificate-safe composition at the successor of an exact
 basis order.
 
@@ -10388,6 +10521,92 @@ theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_matching_or_low
     exists_maximalDestroyedCertificateTarget hcert initial
   exact hterminate q hqQ initial hqDestroy hqLarger
 
+/-- Finite-certificate migration with a fresh predecessor-gap point.
+
+The strong-induction termination is unchanged, but its arithmetic escape is
+now forced outside the caller's finite protected set `W`. -/
+theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_matching_or_freshLowerGap
+    {A : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
+    (r w : ℕ) :
+    ∃ N, ∀ W : Finset ℕ, W.card ≤ w →
+      ∀ Q : Finset ℕ,
+      (∀ q ∈ Q, N ≤ q) →
+      (∀ s : BlockSelector F, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) (selectedSet s) q) →
+      ((∃ q ∈ Q, ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+          R.card < k + 1 ∧
+          M ⊆ additiveSupportFamily A (k + 1) q ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+            Disjoint (E \ R) (G \ R)) ∨
+        (∃ q ∈ Q, ∃ d, d ∈ A ∧ d ≤ q ∧
+          ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+            R.card < k ∧
+            M ⊆ additiveSupportFamily A k (q - d) ∧
+            r < M.card ∧
+            (∀ E ∈ M, R ⊆ E) ∧
+            (∀ E ∈ M, (E \ R).Nonempty) ∧
+            ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+              Disjoint (E \ R) (G \ R)) ∨
+        ∃ q ∈ Q, ∃ b, b ∈ A ∧ b ∉ W ∧ b ≤ q ∧
+          additiveSupportFamily A k (q - b) = ∅) := by
+  classical
+  obtain ⟨N, hstep⟩ :=
+    hbasis.eventually_lockedPrefix_matching_or_freshGap_or_rankGrowthDescent
+      P r w
+  refine ⟨N, ?_⟩
+  intro W hWcard Q hQlate hcert
+  let Outcome : Prop :=
+    ((∃ q ∈ Q, ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+        R.card < k + 1 ∧
+        M ⊆ additiveSupportFamily A (k + 1) q ∧
+        r < M.card ∧
+        (∀ E ∈ M, R ⊆ E) ∧
+        (∀ E ∈ M, (E \ R).Nonempty) ∧
+        ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+          Disjoint (E \ R) (G \ R)) ∨
+      (∃ q ∈ Q, ∃ d, d ∈ A ∧ d ≤ q ∧
+        ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+          R.card < k ∧
+          M ⊆ additiveSupportFamily A k (q - d) ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+            Disjoint (E \ R) (G \ R)) ∨
+      ∃ q ∈ Q, ∃ b, b ∈ A ∧ b ∉ W ∧ b ≤ q ∧
+        additiveSupportFamily A k (q - b) = ∅)
+  have hterminate :
+      ∀ q, q ∈ Q → ∀ s : BlockSelector F,
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) (selectedSet s) q →
+        (∀ v ∈ Q, q < v →
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1)) (selectedSet s) v) →
+        Outcome := by
+    intro q
+    induction q using Nat.strong_induction_on with
+    | h q ih =>
+        intro hqQ s hqDestroy hlarger
+        obtain hcurrent | hlower | hdescent | hgap :=
+          hstep W hWcard Q q (hQlate q hqQ) s hqQ hcert hlarger
+        · exact Or.inl ⟨q, hqQ, hcurrent⟩
+        · exact Or.inr (Or.inl ⟨q, hqQ, hlower⟩)
+        · obtain ⟨t, u, huQ, huq, _hrank,
+              huDestroy, huLarger⟩ := hdescent
+          exact ih u huq huQ t huDestroy huLarger
+        · exact Or.inr (Or.inr ⟨q, hqQ, hgap⟩)
+  let initial : BlockSelector F :=
+    fun j => ⟨(P.nonempty j).choose, (P.nonempty j).choose_spec⟩
+  obtain ⟨q, hqQ, hqDestroy, hqLarger⟩ :=
+    exists_maximalDestroyedCertificateTarget hcert initial
+  exact hterminate q hqQ initial hqDestroy hqLarger
+
 /-- Strong deletion globalizes the terminating certificate composition.
 
 No bound on the certificate cardinality and no diagonal-row hypothesis is
@@ -10435,6 +10654,62 @@ theorem IsStronglyMinimalExactBasis.cofinal_rootedMatching_or_lowerGap
     intro q hqQ
     exact (le_max_left L N).trans (hQlate q hqQ)
   obtain hcurrent | hlower | hgap := hN Q hLateN hcert
+  · obtain ⟨q, hqQ, hmatch⟩ := hcurrent
+    exact Or.inl ⟨q, hLateL q hqQ, hmatch⟩
+  · obtain ⟨q, hqQ, hmatch⟩ := hlower
+    exact Or.inr (Or.inl ⟨q, hLateL q hqQ, hmatch⟩)
+  · obtain ⟨q, hqQ, hgap⟩ := hgap
+    exact Or.inr (Or.inr ⟨q, hLateL q hqQ, hgap⟩)
+
+/-- Strong deletion with a genuinely fresh recurrent gap repair.
+
+For every finite protected set `W`, matching demand, and target threshold,
+the arithmetic escape point can be chosen in `A \ W`.  This is the
+finite-injury form of the global dichotomy: successive gap repairs need
+never reuse a previously locked vertex. -/
+theorem IsStronglyMinimalExactBasis.cofinal_rootedMatching_or_freshLowerGap
+    {A : Set ℕ} {k : ℕ}
+    (hminimal : IsStronglyMinimalExactBasis A (k + 1)) :
+    ∀ W : Finset ℕ, ∀ r L,
+      ((∃ q, L ≤ q ∧ ∃ R : Finset ℕ,
+          ∃ M : Finset (Finset ℕ),
+            R.card < k + 1 ∧
+            M ⊆ additiveSupportFamily A (k + 1) q ∧
+            r < M.card ∧
+            (∀ E ∈ M, R ⊆ E) ∧
+            (∀ E ∈ M, (E \ R).Nonempty) ∧
+            ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+              Disjoint (E \ R) (G \ R)) ∨
+        (∃ q, L ≤ q ∧ ∃ d, d ∈ A ∧ d ≤ q ∧
+          ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+            R.card < k ∧
+            M ⊆ additiveSupportFamily A k (q - d) ∧
+            r < M.card ∧
+            (∀ E ∈ M, R ⊆ E) ∧
+            (∀ E ∈ M, (E \ R).Nonempty) ∧
+            ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+              Disjoint (E \ R) (G \ R)) ∨
+        ∃ q, L ≤ q ∧ ∃ b, b ∈ A ∧ b ∉ W ∧ b ≤ q ∧
+          additiveSupportFamily A k (q - b) = ∅) := by
+  classical
+  obtain ⟨F, P, _hFcard⟩ :=
+    exists_finiteBlockPartition_exactCard
+      hminimal.1.infinite (show 0 < 1 by omega)
+  intro W r L
+  obtain ⟨N, hN⟩ :=
+    hminimal.1.eventually_finiteCertificate_matching_or_freshLowerGap
+      P r W.card
+  obtain ⟨Q, hQlate, hcert⟩ :=
+    (finiteBlockCertificates_of_strongInfiniteDeletion hminimal.2)
+      F P (max L N)
+  have hLateN : ∀ q ∈ Q, N ≤ q := by
+    intro q hqQ
+    exact (le_max_right L N).trans (hQlate q hqQ)
+  have hLateL : ∀ q ∈ Q, L ≤ q := by
+    intro q hqQ
+    exact (le_max_left L N).trans (hQlate q hqQ)
+  obtain hcurrent | hlower | hgap :=
+    hN W le_rfl Q hLateN hcert
   · obtain ⟨q, hqQ, hmatch⟩ := hcurrent
     exact Or.inl ⟨q, hLateL q hqQ, hmatch⟩
   · obtain ⟨q, hqQ, hmatch⟩ := hlower
@@ -14075,6 +14350,51 @@ theorem IsStronglyMinimalExactBasis.cofinal_prefixDisjointRootedMatching_or_lowe
       (additivePrefixAvoidingRootBound k size)
   obtain hcurrent | hlower | hgap :=
     hminimal.cofinal_rootedMatching_or_lowerGap demand L
+  · obtain ⟨q, _hLq, R, M, _hRcard, hMsub, hMcard,
+        _hMroot, _hMnonempty, _hMmatching⟩ := hcurrent
+    left
+    apply largeSupportFamily_forces_cofinal_prefixDisjointRootedMatching
+      hminimal.1 (h := k + 1) (r := r) (L := L) (F := F)
+        le_rfl hMsub
+    exact (le_max_left _ _).trans (Nat.le_of_lt hMcard)
+  · obtain ⟨q, _hLq, d, _hdA, _hdq, R, M, _hRcard,
+        hMsub, hMcard, _hMroot, _hMnonempty, _hMmatching⟩ :=
+      hlower
+    left
+    apply largeSupportFamily_forces_cofinal_prefixDisjointRootedMatching
+      hminimal.1 (h := k) (r := r) (L := L) (F := F)
+        (Nat.le_succ k) hMsub
+    exact (le_max_right _ _).trans (Nat.le_of_lt hMcard)
+  · exact Or.inr hgap
+
+/-- Fully prefix-avoiding terminal dichotomy.
+
+Both terminal objects are fresh relative to the same finite set `F`: the
+matching root is disjoint from `F`, while the predecessor-gap repair point
+does not belong to `F`.  This removes reuse of old repair vertices from the
+recurrent-gap branch. -/
+theorem IsStronglyMinimalExactBasis.cofinal_prefixDisjointRootedMatching_or_freshLowerGap
+    {A : Set ℕ} {k : ℕ}
+    (hminimal : IsStronglyMinimalExactBasis A (k + 1)) :
+    ∀ F : Finset ℕ, ∀ r L,
+      (∃ t R M,
+          L ≤ t ∧ R.card < k + 1 ∧ Disjoint R F ∧
+          M ⊆ additiveSupportFamily A (k + 1) t ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          ∀ E ∈ M, ∀ D ∈ M, E ≠ D →
+            Disjoint (E \ R) (D \ R)) ∨
+        ∃ q, L ≤ q ∧ ∃ b, b ∈ A ∧ b ∉ F ∧ b ≤ q ∧
+          additiveSupportFamily A k (q - b) = ∅ := by
+  intro F r L
+  let size :=
+    max r (additiveLowerRankSupportCountBelow A (k + 1) L)
+  let demand :=
+    max (additivePrefixAvoidingRootBound (k + 1) size)
+      (additivePrefixAvoidingRootBound k size)
+  obtain hcurrent | hlower | hgap :=
+    hminimal.cofinal_rootedMatching_or_freshLowerGap F demand L
   · obtain ⟨q, _hLq, R, M, _hRcard, hMsub, hMcard,
         _hMroot, _hMnonempty, _hMmatching⟩ := hcurrent
     left
