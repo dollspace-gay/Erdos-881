@@ -9595,8 +9595,8 @@ certificate must then migrate strictly downward, and its upper-rank measure
 strictly increases.  Therefore failure of a full certificate-safe repair is
 exactly genuine destruction by the finite locked prefix. -/
 theorem lockedPrefix_destroys_or_rankGrowthCertificateDescent
-    {A : Set ℕ} {k q : ℕ} {Q U J : Finset ℕ}
-    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
+    {A K : Set ℕ} {k q : ℕ} {Q U J : Finset ℕ}
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
     (s : BlockSelector F)
     (hqQ : q ∈ Q)
     (hcert : ∀ t : BlockSelector F, ∃ u ∈ Q,
@@ -9659,8 +9659,8 @@ either the selected values in `J` genuinely destroy `q`, or the certificate
 migrates strictly downward.  The destructive locked prefix has cardinality
 at most the support-vertex count at `q`. -/
 theorem blockAligned_intrinsicLockedPrefix_destruction_or_rankGrowthDescent
-    {A : Set ℕ} {k q : ℕ} {Q : Finset ℕ}
-    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
+    {A K : Set ℕ} {k q : ℕ} {Q : Finset ℕ}
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
     (s : BlockSelector F)
     (hqQ : q ∈ Q)
     (hcert : ∀ t : BlockSelector F, ∃ u ∈ Q,
@@ -10619,9 +10619,9 @@ descent.  The only remaining arithmetic horn is now an actual lower-order
 gap point; every represented-difference horn is normalized to a rooted
 matching. -/
 theorem IsExactTupleAsymptoticBasis.eventually_lockedPrefix_matching_or_gap_or_rankGrowthDescent
-    {A : Set ℕ} {k : ℕ}
+    {A K : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
-    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
     (r : ℕ) :
     ∃ N, ∀ Q : Finset ℕ, ∀ q, N ≤ q → ∀ s : BlockSelector F,
       q ∈ Q →
@@ -10749,9 +10749,9 @@ The predecessor-gap repair point is chosen outside an arbitrary finite set
 while keeping every previously locked repair point and support vertex
 untouched. -/
 theorem IsExactTupleAsymptoticBasis.eventually_lockedPrefix_matching_or_freshGap_or_rankGrowthDescent
-    {A : Set ℕ} {k : ℕ}
+    {A K : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
-    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
     (r w : ℕ) :
     ∃ N, ∀ W : Finset ℕ, W.card ≤ w →
       ∀ Q : Finset ℕ, ∀ q, N ≤ q → ∀ s : BlockSelector F,
@@ -10888,9 +10888,9 @@ impossible.  The exhaustive outputs are therefore only current-order
 matching growth, coherent predecessor matching growth, or strict
 certificate descent. -/
 theorem IsExactTupleAsymptoticBasis.eventually_successorLockedPrefix_matching_or_rankGrowthDescent
-    {A : Set ℕ} {k : ℕ}
+    {A K : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
-    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
     (r : ℕ) :
     ∃ N, ∀ Q : Finset ℕ, ∀ q, N ≤ q → ∀ s : BlockSelector F,
       q ∈ Q →
@@ -11020,9 +11020,9 @@ Strong induction on that target eliminates the last alternative.
 Thus repeated certificate migration at the order relevant to Erdős 881 is
 not merely well founded: it must terminate in concrete matching growth. -/
 theorem IsExactTupleAsymptoticBasis.eventually_successorFiniteCertificate_matching
-    {A : Set ℕ} {k : ℕ}
+    {A K : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
-    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
     (r : ℕ) :
     ∃ N, ∀ Q : Finset ℕ,
       (∀ q ∈ Q, N ≤ q) →
@@ -11109,9 +11109,9 @@ of `Q` nor the sizes of the partition blocks are bounded in advance.  Thus
 every sufficiently late finite successor certificate contains an exact-label
 large delta system. -/
 theorem IsExactTupleAsymptoticBasis.eventually_successorFiniteCertificate_exactRootedMatching
-    {A : Set ℕ} {k : ℕ}
+    {A K : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
-    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
     (r : ℕ) :
     ∃ N, ∀ Q : Finset ℕ,
       (∀ q ∈ Q, N ≤ q) →
@@ -11217,9 +11217,9 @@ therefore eliminates migration altogether: on every sufficiently late
 finite certificate there is current-order rooted matching growth, coherent
 lower-order rooted matching growth, or a genuine lower-order gap. -/
 theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_matching_or_lowerGap
-    {A : Set ℕ} {k : ℕ}
+    {A K : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
-    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
     (r : ℕ) :
     ∃ N, ∀ Q : Finset ℕ,
       (∀ q ∈ Q, N ≤ q) →
@@ -11301,9 +11301,9 @@ theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_matching_or_low
 The strong-induction termination is unchanged, but its arithmetic escape is
 now forced outside the caller's finite protected set `W`. -/
 theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_matching_or_freshLowerGap
-    {A : Set ℕ} {k : ℕ}
+    {A K : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
-    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
     (r w : ℕ) :
     ∃ N, ∀ W : Finset ℕ, W.card ≤ w →
       ∀ Q : Finset ℕ,
