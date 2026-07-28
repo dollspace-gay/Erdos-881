@@ -13017,6 +13017,385 @@ theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_prefixSafeInfiniteDe
     exact ⟨t, R, M, hLt, hRcard, hMsub, hMcard,
       hMroot, hMnonempty, hMmatching⟩
 
+/-- Unbounded support growth on one affine translate admits a repair after
+only bounded injury to a finite protected prefix.
+
+Suppose the order-`j` support families at `d+b-c`, with `b ∈ A`, have
+unbounded cardinality cofinally in `b`.  Filter away the supports containing
+the moving anchor `b`; that star has a uniform bound, because after removing
+`b` its target is at most `d`.  If no remaining support avoids the finite
+prefix `W`, pigeonhole one fixed `w ∈ W` which occurs in an unbounded
+subfamily, remove `w`, and recurse at order `j-1` and affine offset `c+w`.
+
+The recursion cannot pass order zero, whose support family has cardinality
+at most one.  Reinserting every removed old summand reconstructs an
+order-`j` support at the original target.  Consequently at most `j` points
+of `W` are sacrificed, while the final repairs avoid both the moving anchor
+and every retained point of `W`.
+
+This is the terminating certificate-migration argument: each genuine old
+collision spends one unit of additive rank, rather than merely renaming the
+obstruction. -/
+theorem cofinal_affineSupportGrowth_has_boundedPrefixInjury
+    {A : Set ℕ} :
+    ∀ j d c (W : Finset ℕ),
+      (∀ r L, ∃ b,
+        L ≤ b ∧ b ∈ A ∧
+        r < (additiveSupportFamily A j (d + b - c)).card) →
+      ∃ S : Finset ℕ,
+        S ⊆ W ∧
+        S.card ≤ j ∧
+        (∀ x ∈ S, x ∈ A) ∧
+        ∀ L, ∃ b E,
+          L ≤ b ∧
+          b ∈ A ∧
+          E ∈ additiveSupportFamily A j (d + b - c) ∧
+          b ∉ E ∧
+          Disjoint (E : Set ℕ) ((W \ S : Finset ℕ) : Set ℕ) := by
+  classical
+  intro j
+  induction j with
+  | zero =>
+      intro d c W hgrowth
+      obtain ⟨b, _hbLower, _hbA, hlarge⟩ := hgrowth 1 0
+      have hsmall :=
+        additiveSupportFamily_zero_card_le_one A (d + b - c)
+      omega
+  | succ k ih =>
+      intro d c W hgrowth
+      let SafeAt : ℕ → Prop := fun b =>
+        ∃ E ∈ additiveSupportFamily A (k + 1) (d + b - c),
+          b ∉ E ∧
+          Disjoint (E : Set ℕ) (W : Set ℕ)
+      by_cases hsafeCofinal :
+          ∀ L, ∃ b, L ≤ b ∧ b ∈ A ∧ SafeAt b
+      · refine ⟨∅, by simp, by simp, by simp, ?_⟩
+        intro L
+        obtain ⟨b, hbLower, hbA, E, hER, hbE, hEW⟩ :=
+          hsafeCofinal L
+        exact ⟨b, E, hbLower, hbA, hER, hbE, by simpa using hEW⟩
+      · obtain ⟨L₀, hL₀⟩ := not_forall.mp hsafeCofinal
+        let anchorBound :=
+          ∑ t ∈ Finset.range (d + 1),
+            (additiveSupportFamily A k t).card
+        have hdiagonal :
+            ∀ X, ∃ y, X < y ∧
+              ∃ w ∈ W, w ∈ A ∧ ∃ b,
+                y ≤ b ∧ b ∈ A ∧
+                y <
+                  (additiveSupportFamily A k
+                    (d + b - (c + w))).card := by
+          intro X
+          let y := X + 1
+          let demand := anchorBound + W.card * (y + 1)
+          obtain ⟨b, hbLower, hbA, hbLarge⟩ :=
+            hgrowth demand (max y L₀)
+          have hyb : y ≤ b :=
+            (le_max_left y L₀).trans hbLower
+          have hL₀b : L₀ ≤ b :=
+            (le_max_right y L₀).trans hbLower
+          have hnotSafe : ¬ SafeAt b := by
+            intro hbSafe
+            exact hL₀ ⟨b, hL₀b, hbA, hbSafe⟩
+          let H :=
+            additiveSupportFamily A (k + 1) (d + b - c)
+          let Hb : Finset (Finset ℕ) :=
+            H.filter fun E => b ∈ E
+          let H₀ : Finset (Finset ℕ) :=
+            H.filter fun E => b ∉ E
+          have hHbSub :
+              Hb ⊆ additiveSupportFamily A (k + 1) (d + b - c) := by
+            intro E hEHb
+            exact (Finset.mem_filter.mp hEHb).1
+          have hbHb : ∀ E ∈ Hb, b ∈ E := by
+            intro E hEHb
+            exact (Finset.mem_filter.mp hEHb).2
+          have hHbBound : Hb.card ≤ anchorBound := by
+            by_cases hHbEmpty : Hb = ∅
+            · simp [hHbEmpty]
+            · have hHbNonempty : Hb.Nonempty :=
+                Finset.nonempty_iff_ne_empty.mpr hHbEmpty
+              obtain ⟨E, hEHb⟩ := hHbNonempty
+              have hER := hHbSub hEHb
+              have hbE := hbHb E hEHb
+              have hbTarget : b ≤ d + b - c :=
+                additiveSupportFamily_supportsBounded
+                  A (k + 1) (d + b - c) E hER b hbE
+              obtain ⟨lower, hlowerSub, hlowerCard⟩ :=
+                additiveSupportStar_descends_card hHbSub hbHb
+              have htargetSmall : d + b - c - b < d + 1 := by
+                omega
+              have hfamilyBound :
+                  (additiveSupportFamily A k
+                    (d + b - c - b)).card ≤ anchorBound := by
+                dsimp only [anchorBound]
+                exact Finset.single_le_sum
+                  (f := fun t =>
+                    (additiveSupportFamily A k t).card)
+                  (fun _ _ => Nat.zero_le _)
+                  (Finset.mem_range.mpr htargetSmall)
+              calc
+                Hb.card = lower.card := hlowerCard.symm
+                _ ≤
+                    (additiveSupportFamily A k
+                      (d + b - c - b)).card :=
+                  Finset.card_le_card hlowerSub
+                _ ≤ anchorBound := hfamilyBound
+          have hsplit : Hb.card + H₀.card = H.card := by
+            simpa only [Hb, H₀] using
+              (Finset.card_filter_add_card_filter_not
+                (s := H) (p := fun E => b ∈ E))
+          have hH₀large : W.card * (y + 1) < H₀.card := by
+            dsimp only [demand] at hbLarge
+            dsimp only [H] at hsplit
+            omega
+          have hH₀Sub :
+              H₀ ⊆ additiveSupportFamily A (k + 1) (d + b - c) := by
+            intro E hEH₀
+            exact (Finset.mem_filter.mp hEH₀).1
+          have hbH₀ : ∀ E ∈ H₀, b ∉ E := by
+            intro E hEH₀
+            exact (Finset.mem_filter.mp hEH₀).2
+          have hhitW :
+              ∀ E ∈ H₀,
+                ¬ Disjoint (E : Set ℕ) (W : Set ℕ) := by
+            intro E hEH₀ hEW
+            exact hnotSafe
+              ⟨E, hH₀Sub hEH₀, hbH₀ E hEH₀, hEW⟩
+          have hH₀Nonempty : H₀.Nonempty := by
+            rw [← Finset.card_pos]
+            exact lt_of_le_of_lt (Nat.zero_le _) hH₀large
+          let default : ℕ := 0
+          let hit : Finset ℕ → ℕ := fun E =>
+            if hE : E ∈ H₀ then
+              Classical.choose
+                (Set.not_disjoint_iff.mp (hhitW E hE))
+            else default
+          have hhitE : ∀ E ∈ H₀, hit E ∈ E := by
+            intro E hEH
+            simp only [hit, dif_pos hEH]
+            exact Finset.mem_coe.mp
+              (Classical.choose_spec
+                (Set.not_disjoint_iff.mp (hhitW E hEH))).1
+          have hhitW' : ∀ E ∈ H₀, hit E ∈ W := by
+            intro E hEH
+            simp only [hit, dif_pos hEH]
+            exact Finset.mem_coe.mp
+              (Classical.choose_spec
+                (Set.not_disjoint_iff.mp (hhitW E hEH))).2
+          obtain ⟨w, hwW, hwFiber⟩ :=
+            Finset.exists_lt_card_fiber_of_mul_lt_card_of_maps_to
+              hhitW' hH₀large
+          let Hw : Finset (Finset ℕ) :=
+            H₀.filter fun E => hit E = w
+          have hHwSub :
+              Hw ⊆ additiveSupportFamily A (k + 1) (d + b - c) := by
+            intro E hEHw
+            exact hH₀Sub (Finset.mem_filter.mp hEHw).1
+          have hwHw : ∀ E ∈ Hw, w ∈ E := by
+            intro E hEHw
+            obtain ⟨hEH₀, hhit⟩ := Finset.mem_filter.mp hEHw
+            simpa only [hhit] using hhitE E hEH₀
+          obtain ⟨lower, hlowerSub, hlowerCard⟩ :=
+            additiveSupportStar_descends_card hHwSub hwHw
+          have hHwNonempty : Hw.Nonempty := by
+            rw [← Finset.card_pos]
+            exact lt_of_le_of_lt (Nat.zero_le _) hwFiber
+          obtain ⟨E, hEHw⟩ := hHwNonempty
+          have hwA :
+              w ∈ A :=
+            additiveSupportFamily_supportsIn
+              A (k + 1) (d + b - c) E
+                (hHwSub hEHw) w (hwHw E hEHw)
+          have hlowerLarge :
+              y <
+                (additiveSupportFamily A k
+                  (d + b - (c + w))).card := by
+            have htarget :
+                d + b - c - w = d + b - (c + w) := by
+              omega
+            rw [← htarget]
+            exact lt_of_lt_of_le
+              (by
+                rw [hlowerCard]
+                dsimp only [Hw]
+                omega)
+              (Finset.card_le_card hlowerSub)
+          exact ⟨y, by omega, w, hwW, hwA,
+            b, hyb, hbA, hlowerLarge⟩
+        obtain ⟨w, hwW, hwCofinal⟩ :=
+          finite_cofinal_pigeonhole hdiagonal
+        have hwA : w ∈ A := by
+          obtain ⟨y, _hy, hwA, _b, _hyb, _hbA, _hgrowth⟩ :=
+            hwCofinal 0
+          exact hwA
+        have hlowerGrowth :
+            ∀ r L, ∃ b,
+              L ≤ b ∧ b ∈ A ∧
+              r <
+                (additiveSupportFamily A k
+                  (d + b - (c + w))).card := by
+          intro r L
+          obtain ⟨y, hyLarge, _hwA, b, hyb, hbA, hfamily⟩ :=
+            hwCofinal (max r L)
+          exact ⟨b,
+            (le_max_right r L).trans (Nat.le_of_lt hyLarge) |>.trans hyb,
+            hbA,
+            lt_trans (le_max_left r L |>.trans_lt hyLarge) hfamily⟩
+        obtain ⟨S, hSW, hScard, hSA, hrepair⟩ :=
+          ih d (c + w) (W.erase w) hlowerGrowth
+        refine ⟨insert w S, ?_, ?_, ?_, ?_⟩
+        · intro x hx
+          rcases Finset.mem_insert.mp hx with rfl | hxS
+          · exact hwW
+          · exact Finset.mem_of_mem_erase (hSW hxS)
+        · have hwS : w ∉ S := by
+            intro hwS'
+            exact (Finset.mem_erase.mp (hSW hwS')).1 rfl
+          rw [Finset.card_insert_of_notMem hwS]
+          omega
+        · intro x hx
+          rcases Finset.mem_insert.mp hx with rfl | hxS
+          · exact hwA
+          · exact hSA x hxS
+        · intro L
+          obtain ⟨b, E, hbLower, hbA, hER, hbE, hEavoid⟩ :=
+            hrepair (max L (c + w + 1))
+          have hLb : L ≤ b :=
+            (le_max_left L (c + w + 1)).trans hbLower
+          have hcw : c + w < b :=
+            (le_max_right L (c + w + 1)).trans hbLower
+          have hwb : w ≠ b := by omega
+          have htarget :
+              w + (d + b - (c + w)) = d + b - c := by
+            omega
+          refine ⟨b, insert w E, hLb, hbA, ?_, ?_, ?_⟩
+          · simpa only [htarget] using
+              insert_mem_additiveSupportFamily_succ hwA hER
+          · intro hbInsert
+            rcases Finset.mem_insert.mp hbInsert with hbw | hbE'
+            · exact hwb hbw.symm
+            · exact hbE hbE'
+          · rw [Set.disjoint_left]
+            intro x hxInsert hxRetained
+            have hxRetainedFin :
+                x ∈ W \ insert w S :=
+              Finset.mem_coe.mp hxRetained
+            have hxW : x ∈ W :=
+              (Finset.mem_sdiff.mp hxRetainedFin).1
+            have hxNotInsert : x ∉ insert w S :=
+              (Finset.mem_sdiff.mp hxRetainedFin).2
+            rcases Finset.mem_insert.mp
+                (Finset.mem_coe.mp hxInsert) with rfl | hxE
+            · exact hxNotInsert (Finset.mem_insert_self _ S)
+            · have hxErase : x ∈ W.erase w := by
+                apply Finset.mem_erase.mpr
+                exact ⟨fun hxw => hxNotInsert
+                  (hxw ▸ Finset.mem_insert_self w S), hxW⟩
+              have hxNotS : x ∉ S := by
+                intro hxS
+                exact hxNotInsert (Finset.mem_insert_of_mem hxS)
+              exact Set.disjoint_left.mp hEavoid
+                (Finset.mem_coe.mpr hxE)
+                (Finset.mem_coe.mpr
+                  (Finset.mem_sdiff.mpr ⟨hxErase, hxNotS⟩))
+
+/-- Exact bases supply the cofinal affine growth needed by the terminating
+injury theorem at the successor order.
+
+For every demand, exactness gives a sufficiently late rooted
+order-`h+1` matching.  Choose its target on the fixed translate `d+A`; the
+matching is a subfamily, so the full support family has the required
+cardinality.  Applying
+`cofinal_affineSupportGrowth_has_boundedPrefixInjury` with zero affine
+offset leaves at most `h+1` wounded prefix points. -/
+theorem IsExactTupleAsymptoticBasis.cofinal_fixedSuccessorTranslateRepair_after_boundedPrefixInjury
+    {A : Set ℕ} {h d : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (W : Finset ℕ) :
+    ∃ S : Finset ℕ,
+      S ⊆ W ∧
+      S.card ≤ h + 1 ∧
+      (∀ x ∈ S, x ∈ A) ∧
+      ∀ L, ∃ b E,
+        L ≤ b ∧
+        b ∈ A ∧
+        E ∈ additiveSupportFamily A (h + 1) (d + b) ∧
+        b ∉ E ∧
+        Disjoint (E : Set ℕ) ((W \ S : Finset ℕ) : Set ℕ) := by
+  apply
+    cofinal_affineSupportGrowth_has_boundedPrefixInjury
+      (A := A) (j := h + 1) (d := d) (c := 0) (W := W)
+  intro r L
+  obtain ⟨N, hN⟩ :=
+    hbasis.eventually_successorExactRootedMatching r
+  obtain ⟨b, hbA, hbLarge⟩ :=
+    hbasis.infinite.exists_gt (max L N)
+  obtain ⟨R, M, _hRcard, hMsub, hMcard, _hMroot,
+      _hMnonempty, _hMmatching⟩ :=
+    hN (d + b) (by omega)
+  refine ⟨b, by omega, hbA, ?_⟩
+  exact lt_of_lt_of_le hMcard
+    (Finset.card_le_card hMsub)
+
+/-- Full fixed-translate repair after bounded prefix injury.
+
+Starting from any finite deletion prefix `W ⊆ A`, sacrifice at most `h+1`
+old points and fuse the cofinal reconstructed repairs by the bounded
+free-set theorem.  The resulting infinite set `B` is disjoint from every
+retained old point, and `D = (W \ S) ∪ B` is an infinite deletion subset of
+`A`.  Every new anchor `b ∈ B` has an order-`h+1` representation of `d+b`
+whose support avoids the entire combined deletion `D`.
+
+Unlike the earlier repair/growth dichotomy, this statement has no migration
+horn: the rank descent has terminated and returned an actual certificate. -/
+theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_boundedInjuryInfiniteDeletion
+    {A : Set ℕ} {h d : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (W : Finset ℕ) (hWA : ∀ x ∈ W, x ∈ A) :
+    ∃ S : Finset ℕ, ∃ B : Set ℕ,
+      S ⊆ W ∧
+      S.card ≤ h + 1 ∧
+      B ⊆ A ∧
+      B.Infinite ∧
+      Disjoint B ((W \ S : Finset ℕ) : Set ℕ) ∧
+      let D : Set ℕ := ((W \ S : Finset ℕ) : Set ℕ) ∪ B
+      D ⊆ A ∧
+      D.Infinite ∧
+      ∀ b ∈ B, ∃ E ∈ additiveSupportFamily A (h + 1) (d + b),
+        Disjoint (E : Set ℕ) D := by
+  obtain ⟨S, hSW, hScard, _hSA, hcofinal⟩ :=
+    hbasis.cofinal_fixedSuccessorTranslateRepair_after_boundedPrefixInjury
+      W
+  obtain ⟨B, hBA, hBInfinite, hBRetained, hrepair⟩ :=
+    cofinal_anchorAvoidingSupports_avoidingFinite_have_infiniteFreeDeletion
+      (W \ S)
+      (by
+        intro L
+        obtain ⟨b, E, hbLower, hbA, hER, hbE, hEretained⟩ :=
+          hcofinal L
+        exact ⟨b, E, hbLower, hbA, hER, hbE, hEretained⟩)
+  refine ⟨S, B, hSW, hScard, hBA, hBInfinite,
+    hBRetained, ?_⟩
+  dsimp only
+  constructor
+  · intro x hxD
+    rcases hxD with hxRetained | hxB
+    · exact hWA x
+        (Finset.mem_sdiff.mp (Finset.mem_coe.mp hxRetained)).1
+    · exact hBA hxB
+  constructor
+  · exact hBInfinite.mono (Set.subset_union_right)
+  · intro b hbB
+    obtain ⟨E, hER, hEB, hERetained⟩ :=
+      hrepair b hbB
+    refine ⟨E, hER, ?_⟩
+    rw [Set.disjoint_left]
+    intro x hxE hxD
+    rcases hxD with hxRetained | hxB
+    · exact Set.disjoint_left.mp hERetained hxE hxRetained
+    · exact Set.disjoint_left.mp hEB hxE hxB
+
 /-- A counterexample must escape every prescribed finite family of
 difference labels.
 
