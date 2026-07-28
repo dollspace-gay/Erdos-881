@@ -19926,6 +19926,141 @@ theorem large_finiteAnchorFan_forces_commonTarget_supportGrowth
       A h (q - p) G hGfamily
   omega
 
+/-- The complete quantitative escape analysis for a large anchor fan.
+
+Fix one anchor `a ∈ C`.  If the common destroyer has more than `2r`
+points, the two-order support-mass bound forces more than `r` predecessor
+supports at `q - a` or more than `r` successor supports at `q` which avoid
+`a`.  If the destroyer has at most `2r` points, the anchor-fan amplifier
+forces more than `r` supports at one common translated target `q - p`.
+
+Thus a fan larger than `(2r) * (h*r)` cannot be absorbed while all three
+relevant representation families remain bounded by `r`. -/
+theorem large_finiteAnchorFan_forces_twoOrder_or_commonTarget_supportGrowth
+    {A : Set ℕ} {h q r : ℕ} {C D : Finset ℕ}
+    (hhpos : 0 < h)
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (h + 1)) D q)
+    {a : ℕ} (haC : a ∈ C)
+    (hfan : ∀ b ∈ C,
+      b ∈ A ∧
+      b ≤ q ∧
+      (additiveSupportFamily A h (q - b)).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A h) (D : Set ℕ) (q - b))
+    (hlarge : (2 * r) * (h * r) < C.card) :
+    r < (additiveSupportFamily A h (q - a)).card ∨
+      r < ((additiveSupportFamily A (h + 1) q).filter
+        fun E => a ∉ E).card ∨
+      ∃ p ∈ D,
+        r < (additiveSupportFamily A h (q - p)).card := by
+  by_cases hDsmall : D.card ≤ 2 * r
+  · right
+    right
+    apply large_finiteAnchorFan_forces_commonTarget_supportGrowth
+      hhpos hfan
+    exact lt_of_le_of_lt
+      (Nat.mul_le_mul_right (h * r) hDsmall) hlarge
+  · have hDlarge : 2 * r < D.card :=
+      Nat.lt_of_not_ge hDsmall
+    have hmass :=
+      alignedMinimalDestroyer_card_le_twoOrderSupportMass
+        hminimal (hfan a haC).2.2.2
+    by_cases hpred :
+        r < (additiveSupportFamily A h (q - a)).card
+    · exact Or.inl hpred
+    by_cases hsucc :
+        r < ((additiveSupportFamily A (h + 1) q).filter
+          fun E => a ∉ E).card
+    · exact Or.inr (Or.inl hsucc)
+    have hpredLe :
+        (additiveSupportFamily A h (q - a)).card ≤ r :=
+      Nat.le_of_not_gt hpred
+    have hsuccLe :
+        ((additiveSupportFamily A (h + 1) q).filter
+          fun E => a ∉ E).card ≤ r :=
+      Nat.le_of_not_gt hsucc
+    omega
+
+/-- A successor-deletion counterexample forces unbounded exact
+representation growth in one of three aligned locations.
+
+Given an old prefix `F`, a lateness threshold `L`, and a requested
+representation count `r`, choose more than `(2r) * (h*r)` anchors.  The
+finite-anchor construction supplies a fresh common successor-minimal
+destroyer.  The preceding quantitative escape analysis then forces growth
+either at one anchored predecessor target, among the anchor-avoiding
+successor supports, or at a common translate obtained from a destroyer
+coordinate.
+
+This rules out the entire bounded-complexity branch of the counterexample:
+no uniform bound can simultaneously control the destroyers and the exact
+support families created by their aligned repairs. -/
+theorem exactBasis_counterexample_forces_cofinalFresh_threeWaySupportGrowth
+    {A : Set ℕ} {h : ℕ}
+    (hhpos : 0 < h)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    ∀ r, ∀ F : Finset ℕ, ∀ L,
+      ∃ q, ∃ D : Finset ℕ, ∃ a,
+        a ∈ A ∧
+        L ≤ q - a ∧
+        a ≤ q ∧
+        D.Nonempty ∧
+        (D : Set ℕ) ⊆ A ∧
+        Disjoint D F ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A (h + 1)) D q ∧
+        DestroysAt
+          (additiveSupportFamily A h) (D : Set ℕ) (q - a) ∧
+        (r < (additiveSupportFamily A h (q - a)).card ∨
+          r < ((additiveSupportFamily A (h + 1) q).filter
+            fun E => a ∉ E).card ∨
+          ∃ p ∈ D,
+            r < (additiveSupportFamily A h (q - p)).card) := by
+  classical
+  intro r F L
+  let size := (2 * r) * (h * r) + 1
+  obtain ⟨C, hCA, hCcard⟩ :=
+    hbasis.infinite.exists_subset_card_eq size
+  have hCnonempty : C.Nonempty := by
+    apply Finset.card_pos.mp
+    rw [hCcard]
+    simp [size]
+  obtain ⟨a, haC⟩ := hCnonempty
+  obtain ⟨B, hBA, _hBInfinite, _hBC, _hservice, hfanExists⟩ :=
+    exactBasis_counterexample_forces_finiteAnchorFanMinimalDestroyers
+      hbasis hcounter C hCA
+  obtain ⟨q, D, hDnonempty, hDB, hDF, hminimal, hfan⟩ :=
+    hfanExists F L
+  have hfan' : ∀ b ∈ C,
+      b ∈ A ∧
+      b ≤ q ∧
+      (additiveSupportFamily A h (q - b)).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A h) (D : Set ℕ) (q - b) := by
+    intro b hbC
+    exact ⟨hCA (Finset.mem_coe.mpr hbC),
+      (hfan b hbC).2.1, (hfan b hbC).2.2.1,
+      (hfan b hbC).2.2.2⟩
+  have hgrowth :
+      r < (additiveSupportFamily A h (q - a)).card ∨
+        r < ((additiveSupportFamily A (h + 1) q).filter
+          fun E => a ∉ E).card ∨
+        ∃ p ∈ D,
+          r < (additiveSupportFamily A h (q - p)).card := by
+    apply
+      large_finiteAnchorFan_forces_twoOrder_or_commonTarget_supportGrowth
+        hhpos hminimal haC hfan'
+    rw [hCcard]
+    simp [size]
+  exact ⟨q, D, a, hCA (Finset.mem_coe.mpr haC),
+    (hfan a haC).1, (hfan a haC).2.1,
+    hDnonempty, hDB.trans hBA, hDF,
+    hminimal, (hfan a haC).2.2.2, hgrowth⟩
+
 /-- Global counterexample endpoint after attacking both sides of the
 rank-zero split.
 
