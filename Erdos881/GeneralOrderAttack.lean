@@ -11088,6 +11088,271 @@ theorem IsExactTupleAsymptoticBasis.eventually_lockedPrefix_matching_or_rankGrow
               hcollision⟩))
   · exact Or.inr (Or.inr (Or.inl hdescent))
 
+/-- The terminal collision object left after a genuine predecessor gap has
+been fed back into protected reservoir completion. -/
+def HasPrivateLockedGapCollision
+    (A : Set ℕ) (k : ℕ) {K : Set ℕ} {F : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K F) (Q : Finset ℕ)
+    (q : ℕ) (s : BlockSelector F) : Prop :=
+  ∃ b D d j E H,
+    b ∈ A ∧ b ≤ q ∧
+    additiveSupportFamily A k (q - b) = ∅ ∧
+    let completionNeed :=
+      (k + 1) * (Q.filter fun u => q < u).card + (k + 1)
+    let J := deficientRepairHitBlocks P s
+      (additiveSupportFamily A (k + 1)) q 0 completionNeed
+    D ⊆ J.image (fun i => (s i).1) ∧
+    IsInclusionMinimalDestroyer
+      (additiveSupportFamily A (k + 1)) D q ∧
+    d ∈ D ∧ j ∈ J ∧
+    E ∈ additiveSupportFamily A (k + 1) q ∧
+    (s j).1 ∈ E ∧ E ∩ D = {d} ∧
+    H ∈ additiveSupportFamily A k (q - (s j).1) ∧
+    E = insert (s j).1 H ∧
+    ((s j).1 = d ∨
+      (s j).1 ∈
+        (J.image (fun i => (s i).1)).erase d \ D)
+
+/-- Unrestricted finite-certificate termination after consuming the gap
+horn.
+
+Strong induction follows strict maximal-target descent exactly as in the
+earlier migration theorem.  Since external gaps are now repaired rather
+than returned, the induction can terminate only in current-order matching
+growth, coherent predecessor matching growth, or a private locked
+gap-collision rectangle.  No bound on `Q.card` or on all reservoir block
+sizes is assumed. -/
+theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_matching_or_gapCollision
+    {A K : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
+    (r : ℕ) :
+    ∃ N, ∀ Q : Finset ℕ,
+      (∀ q ∈ Q, N ≤ q) →
+      (∀ s : BlockSelector F, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) (selectedSet s) q) →
+      ((∃ q ∈ Q, ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+          R.card < k + 1 ∧
+          M ⊆ additiveSupportFamily A (k + 1) q ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+            Disjoint (E \ R) (G \ R)) ∨
+        (∃ q ∈ Q, ∃ d, d ∈ A ∧ d ≤ q ∧
+          ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+            R.card < k ∧
+            M ⊆ additiveSupportFamily A k (q - d) ∧
+            r < M.card ∧
+            (∀ E ∈ M, R ⊆ E) ∧
+            (∀ E ∈ M, (E \ R).Nonempty) ∧
+            ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+              Disjoint (E \ R) (G \ R)) ∨
+        ∃ q ∈ Q, ∃ s : BlockSelector F,
+          HasPrivateLockedGapCollision A k P Q q s) := by
+  classical
+  obtain ⟨N, hstep⟩ :=
+    hbasis.eventually_lockedPrefix_matching_or_rankGrowthDescent_or_gapCollision
+      P r
+  refine ⟨N, ?_⟩
+  intro Q hQlate hcert
+  let Outcome : Prop :=
+    ((∃ q ∈ Q, ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+        R.card < k + 1 ∧
+        M ⊆ additiveSupportFamily A (k + 1) q ∧
+        r < M.card ∧
+        (∀ E ∈ M, R ⊆ E) ∧
+        (∀ E ∈ M, (E \ R).Nonempty) ∧
+        ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+          Disjoint (E \ R) (G \ R)) ∨
+      (∃ q ∈ Q, ∃ d, d ∈ A ∧ d ≤ q ∧
+        ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+          R.card < k ∧
+          M ⊆ additiveSupportFamily A k (q - d) ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+            Disjoint (E \ R) (G \ R)) ∨
+      ∃ q ∈ Q, ∃ s : BlockSelector F,
+        HasPrivateLockedGapCollision A k P Q q s)
+  have hterminate :
+      ∀ q, q ∈ Q → ∀ s : BlockSelector F,
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) (selectedSet s) q →
+        (∀ v ∈ Q, q < v →
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1)) (selectedSet s) v) →
+        Outcome := by
+    intro q
+    induction q using Nat.strong_induction_on with
+    | h q ih =>
+        intro hqQ s hqDestroy hlarger
+        obtain hcurrent | hlower | hdescent | hcollision :=
+          hstep Q q (hQlate q hqQ) s hqQ hcert hlarger
+        · exact Or.inl ⟨q, hqQ, hcurrent⟩
+        · exact Or.inr (Or.inl ⟨q, hqQ, hlower⟩)
+        · obtain ⟨t, u, huQ, huq, _hrank,
+              huDestroy, huLarger⟩ := hdescent
+          exact ih u huq huQ t huDestroy huLarger
+        · exact Or.inr (Or.inr
+            ⟨q, hqQ, s, by
+              change HasPrivateLockedGapCollision A k P Q q s
+              exact hcollision⟩)
+  let initial : BlockSelector F :=
+    fun j => ⟨(P.nonempty j).choose, (P.nonempty j).choose_spec⟩
+  obtain ⟨q, hqQ, hqDestroy, hqLarger⟩ :=
+    exists_maximalDestroyedCertificateTarget hcert initial
+  exact hterminate q hqQ initial hqDestroy hqLarger
+
+/-- Exact-label normalization of unrestricted gap-consuming migration.
+
+The coherent predecessor matching horn lifts back to the same certificate
+target with factor-two cardinal loss.  Consequently every sufficiently late
+finite reservoir certificate contains a requested exact-label rooted
+matching, unless it contains a private locked gap-collision rectangle. -/
+theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_exactRootedMatching_or_gapCollision
+    {A K : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
+    (r : ℕ) :
+    ∃ N, ∀ Q : Finset ℕ,
+      (∀ q ∈ Q, N ≤ q) →
+      (∀ s : BlockSelector F, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) (selectedSet s) q) →
+      (∃ q ∈ Q, ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+          R.card < k + 1 ∧
+          M ⊆ additiveSupportFamily A (k + 1) q ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+            Disjoint (E \ R) (G \ R)) ∨
+        ∃ q ∈ Q, ∃ s : BlockSelector F,
+          HasPrivateLockedGapCollision A k P Q q s := by
+  let threshold := additiveRootedMatchingBound (k + 1) r
+  let migrationNeed := max r (2 * threshold)
+  obtain ⟨N, hN⟩ :=
+    hbasis.eventually_finiteCertificate_matching_or_gapCollision
+      P migrationNeed
+  refine ⟨N, ?_⟩
+  intro Q hQlate hcert
+  obtain ⟨q, hqQ, R, M, hRcard, hMsub, hMlarge,
+      hMroot, hMnonempty, hMmatching⟩ |
+      ⟨q, hqQ, d, hdA, hdq, R, M, _hRcard, hMsub,
+        hMlarge, _hMroot, _hMnonempty, _hMmatching⟩ |
+      hcollision :=
+    hN Q hQlate hcert
+  · left
+    exact ⟨q, hqQ, R, M, hRcard, hMsub,
+      lt_of_le_of_lt (Nat.le_max_left _ _) hMlarge,
+      hMroot, hMnonempty, hMmatching⟩
+  · left
+    have hlowerLarge :
+        2 * threshold <
+          (additiveSupportFamily A k (q - d)).card := by
+      exact lt_of_le_of_lt
+        (Nat.le_max_right _ _) <|
+          lt_of_lt_of_le hMlarge (Finset.card_le_card hMsub)
+    have hliftBound :=
+      lowerDifferenceSupportFamily_card_le_twice_exact
+        (k := k) hdA hdq
+    have hthreshold :
+        threshold ≤
+          (additiveSupportFamily A (k + 1) q).card := by
+      omega
+    obtain ⟨R', M', hR'card, hM'sub, hM'card, hM'root,
+        hM'nonempty, hM'matching⟩ :=
+      additiveSupportSubfamily_has_large_rootedMatching
+        (k + 1) r q
+        (additiveSupportFamily A (k + 1) q)
+        Finset.Subset.rfl
+        (by simpa only [threshold] using hthreshold)
+    exact ⟨q, hqQ, R', M', hR'card, hM'sub, hM'card,
+      hM'root, hM'nonempty, hM'matching⟩
+  · exact Or.inr hcollision
+
+/-- Direct growing-reservoir endpoint of unrestricted gap-consuming
+migration.
+
+Under a hypothetical negative successor deletion, the grouped binary
+reservoir supplies arbitrarily late target-localized certificates.  The
+unrestricted termination theorem applies to those certificates with no
+cardinality bound.  Thus every matching demand and lateness threshold
+forces either an exact order-`k+2` rooted matching at an actual certificate
+target or one private locked gap-collision rectangle on the same reservoir.
+The former large-certificate escape is absent. -/
+theorem boundedFullTranslateDestroyers_growingCertificate_exactRootedMatching_or_gapCollision
+    {A : Set ℕ} {k q₀ : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    (hfull :
+      HasBoundedFullTranslateDestroyersByAnchor A (k + 1) {q₀})
+    (hqrep : (additiveSupportFamily A (k + 1) q₀).Nonempty)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 2)) :
+    ∀ r L,
+      ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+        ∃ target : ℕ → ℕ → ℕ,
+        ∃ P : IsFiniteBlockPartition K cell,
+        ∃ Q : Finset ℕ,
+          K ⊆ A ∧ K.Infinite ∧
+          (∀ i, (cell i).card = 2 * (i + k + 2)) ∧
+          (Set.range fun i => target i 0).Infinite ∧
+          (∀ s : BlockSelector cell, ∀ i j,
+            j < i + k + 2 →
+            ∃ H ∈ additiveSupportFamily A (k + 2) (target i j),
+              Disjoint (H : Set ℕ) (selectedSet s)) ∧
+          Q.Nonempty ∧
+          (∀ u ∈ Q, L ≤ u) ∧
+          (∀ s : BlockSelector cell, ∃ u ∈ Q,
+            DestroysAt (additiveSupportFamily A (k + 2))
+              (selectedSet s) u) ∧
+          (∀ u ∈ Q, ∃ s : BlockSelector cell,
+            DestroysAt (additiveSupportFamily A (k + 2))
+                (selectedSet s) u ∧
+            ∀ u' ∈ Q, u' ≠ u →
+              ¬ DestroysAt (additiveSupportFamily A (k + 2))
+                (selectedSet s) u') ∧
+          Disjoint (Q : Set ℕ)
+            (Set.range fun i => target i 0) ∧
+          ((∃ u ∈ Q, ∃ R : Finset ℕ,
+              ∃ M : Finset (Finset ℕ),
+              R.card < k + 2 ∧
+              M ⊆ additiveSupportFamily A (k + 2) u ∧
+              r < M.card ∧
+              (∀ E ∈ M, R ⊆ E) ∧
+              (∀ E ∈ M, (E \ R).Nonempty) ∧
+              ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+                Disjoint (E \ R) (G \ R)) ∨
+            ∃ u ∈ Q, ∃ s : BlockSelector cell,
+              HasPrivateLockedGapCollision A (k + 1) P Q u s) := by
+  intro r L
+  obtain ⟨K, cell, target, P, hKA, hKInfinite, hcellCard,
+      htargetInfinite, hsurvival, hcertificates⟩ :=
+    boundedFullTranslateDestroyers_forces_growingBlockCertificateMigration
+      hbasis hfull hqrep hcounter
+  have hbasisSucc :
+      IsExactTupleAsymptoticBasis A (k + 2) := by
+    simpa only [Nat.add_assoc] using hbasis.succ
+  obtain ⟨N, hN⟩ :=
+    hbasisSucc.eventually_finiteCertificate_exactRootedMatching_or_gapCollision
+      P r
+  obtain ⟨Q, hQnonempty, hQlate, hcert, hlocalized, hQsafe⟩ :=
+    hcertificates (max L N)
+  have hlateL : ∀ u ∈ Q, L ≤ u := by
+    intro u huQ
+    exact (le_max_left L N).trans (hQlate u huQ)
+  have hlateN : ∀ u ∈ Q, N ≤ u := by
+    intro u huQ
+    exact (le_max_right L N).trans (hQlate u huQ)
+  have houtcome := hN Q hlateN hcert
+  refine ⟨K, cell, target, P, Q, hKA, hKInfinite, hcellCard,
+    htargetInfinite, hsurvival, hQnonempty, hlateL, hcert,
+    hlocalized, hQsafe, ?_⟩
+  simpa only [Nat.add_assoc] using houtcome
+
 /-- Protected-set strengthening of the locked-prefix composition.
 
 The predecessor-gap repair point is chosen outside an arbitrary finite set
