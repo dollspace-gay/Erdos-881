@@ -20637,6 +20637,193 @@ theorem freshPrefixClearedRepairStep_nonempty
   exact ⟨⟨q, D, n, E, by omega, hDnonempty,
     hDB, hDF, hminimal, by omega, hER, hE⟩⟩
 
+/-- A putative successor counterexample yields one coherent infinite
+deletion assembled from fresh minimal-destroyer blocks, together with a
+cofinal stream of full-order repairs which avoid the entire deletion.
+
+The recursion protects both every earlier block and every earlier repaired
+support.  Consequently a later block cannot damage an earlier repair, while
+the prefix-cleared repair at its own stage already avoids all earlier
+blocks.  This is the global cross-block conclusion missing from the local
+anchor repair: every displayed support is disjoint from the union `K` of
+all blocks, not merely from the block which created it.
+
+At the same time, `K` destroys every `failure i`.  The relation
+`target i < failure (i + 1)` and strict growth of `target` show that these
+destroyed targets are cofinal. -/
+theorem exactBasis_counterexample_forces_coherentInfinitePrefixClearedDeletion
+    {A : Set ℕ} {h : ℕ}
+    (hhpos : 0 < h)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    ∃ B K : Set ℕ,
+      ∃ block : ℕ → Finset ℕ,
+      ∃ failure target : ℕ → ℕ,
+      ∃ support : ℕ → Finset ℕ,
+        B ⊆ A ∧ B.Infinite ∧
+        K ⊆ B ∧ K.Infinite ∧
+        (∀ x, x ∈ K ↔ ∃ i, x ∈ block i) ∧
+        (∀ i, (block i).Nonempty) ∧
+        Pairwise (fun i j => Disjoint (block i) (block j)) ∧
+        (∀ i,
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A (h + 1))
+            (block i) (failure i)) ∧
+        StrictMono target ∧
+        (∀ i, target i < failure (i + 1)) ∧
+        (∀ N, ∃ i, N ≤ failure i) ∧
+        (∀ i,
+          support i ∈
+            additiveSupportFamily A (h + 1) (target i)) ∧
+        (∀ i, Disjoint (support i : Set ℕ) K) ∧
+        ∀ i,
+          DestroysAt
+            (additiveSupportFamily A (h + 1)) K (failure i) := by
+  classical
+  obtain ⟨_C, B, _hCA, _hCInfinite, hBA, hBInfinite, _hCB,
+      hsupply⟩ :=
+    exactBasis_counterexample_forces_fixedReservoir_prefixClearedRepairSupply
+      hhpos hbasis hcounter
+  let State := Finset ℕ × ℕ
+  let initial : State := (∅, 0)
+  let chooseStep : (i : ℕ) → (st : State) →
+      FreshPrefixClearedRepairStep
+        A B (h + 1) st.1 st.2 :=
+    fun _i st => Classical.choice
+      (freshPrefixClearedRepairStep_nonempty hsupply st.1 st.2)
+  let advance : ℕ → State → State := fun i st =>
+    (((st.1 ∪ (chooseStep i st).block) ∪
+        (chooseStep i st).support),
+      (chooseStep i st).target)
+  let state : ℕ → State := fun i =>
+    Nat.rec initial (fun j st => advance j st) i
+  let step (i : ℕ) := chooseStep i (state i)
+  let used (i : ℕ) : Finset ℕ := (state i).1
+  let block (i : ℕ) : Finset ℕ := (step i).block
+  let failure (i : ℕ) : ℕ := (step i).failure
+  let target (i : ℕ) : ℕ := (step i).target
+  let support (i : ℕ) : Finset ℕ := (step i).support
+  have hstate_succ : ∀ i, state (i + 1) = advance i (state i) := by
+    intro i
+    simp [state]
+  have hused_succ : ∀ i,
+      used (i + 1) =
+        (used i ∪ block i) ∪ support i := by
+    intro i
+    change (state (i + 1)).1 =
+      (((state i).1 ∪ (chooseStep i (state i)).block) ∪
+        (chooseStep i (state i)).support)
+    rw [hstate_succ]
+  have hlast_succ : ∀ i, (state (i + 1)).2 = target i := by
+    intro i
+    change (state (i + 1)).2 =
+      (chooseStep i (state i)).target
+    rw [hstate_succ]
+  have hused_step : ∀ i, used i ⊆ used (i + 1) := by
+    intro i
+    rw [hused_succ]
+    exact Finset.Subset.trans Finset.subset_union_left
+      Finset.subset_union_left
+  have hused_mono : Monotone used :=
+    monotone_nat_of_le_succ hused_step
+  have hblock_into_next : ∀ i, block i ⊆ used (i + 1) := by
+    intro i x hx
+    rw [hused_succ]
+    exact Finset.mem_union_left _
+      (Finset.mem_union_right _ hx)
+  have hsupport_into_next : ∀ i, support i ⊆ used (i + 1) := by
+    intro i x hx
+    rw [hused_succ]
+    exact Finset.mem_union_right _ hx
+  have htargetStrict : StrictMono target := by
+    apply strictMono_nat_of_lt_succ
+    intro i
+    have hnext := (step (i + 1)).target_gt
+    change (state (i + 1)).2 < target (i + 1) at hnext
+    rw [hlast_succ] at hnext
+    exact hnext
+  have htargetFailure : ∀ i, target i < failure (i + 1) := by
+    intro i
+    have hnext := (step (i + 1)).failure_gt
+    change (state (i + 1)).2 < failure (i + 1) at hnext
+    rw [hlast_succ] at hnext
+    exact hnext
+  have hfailureCofinal : ∀ N, ∃ i, N ≤ failure i := by
+    intro N
+    refine ⟨N + 1, ?_⟩
+    exact (htargetStrict.id_le N).trans
+      (Nat.le_of_lt (htargetFailure N))
+  have hblockPairwise :
+      Pairwise (fun i j => Disjoint (block i) (block j)) := by
+    intro i j hij
+    rcases lt_or_gt_of_ne hij with hij | hji
+    · have hinto : block i ⊆ used j :=
+        (hblock_into_next i).trans
+          (hused_mono (Nat.succ_le_of_lt hij))
+      rw [Finset.disjoint_left]
+      intro x hxi hxj
+      exact Finset.disjoint_left.mp (step j).block_fresh
+        hxj (hinto hxi)
+    · have hinto : block j ⊆ used i :=
+        (hblock_into_next j).trans
+          (hused_mono (Nat.succ_le_of_lt hji))
+      rw [Finset.disjoint_left]
+      intro x hxi hxj
+      exact Finset.disjoint_left.mp (step i).block_fresh
+        hxi (hinto hxj)
+  let K : Set ℕ := {x | ∃ i, x ∈ block i}
+  have hKB : K ⊆ B := by
+    rintro x ⟨i, hxi⟩
+    exact (step i).block_subset (Finset.mem_coe.mpr hxi)
+  let point (i : ℕ) := (step i).block_nonempty.choose
+  have hpointBlock : ∀ i, point i ∈ block i :=
+    fun i => (step i).block_nonempty.choose_spec
+  have hpointInjective : Function.Injective point := by
+    intro i j hpoint
+    by_contra hij
+    exact Finset.disjoint_left.mp (hblockPairwise hij)
+      (hpointBlock i) (hpoint ▸ hpointBlock j)
+  have hKInfinite : K.Infinite := by
+    apply (Set.infinite_range_of_injective hpointInjective).mono
+    rintro x ⟨i, rfl⟩
+    exact ⟨i, hpointBlock i⟩
+  have hsupportK : ∀ i, Disjoint (support i : Set ℕ) K := by
+    intro i
+    rw [Set.disjoint_left]
+    rintro x hxSupport ⟨j, hxBlock⟩
+    rcases lt_trichotomy j i with hji | hji | hij
+    · have hxUsed : x ∈ used i :=
+        hused_mono (Nat.succ_le_of_lt hji)
+          (hblock_into_next j hxBlock)
+      exact Set.disjoint_left.mp (step i).support_fresh
+        hxSupport
+        (Finset.mem_coe.mpr
+          (Finset.mem_union_right _ hxUsed))
+    · subst j
+      exact Set.disjoint_left.mp (step i).support_fresh
+        hxSupport
+        (Finset.mem_coe.mpr
+          (Finset.mem_union_left _ hxBlock))
+    · have hxUsed : x ∈ used j :=
+        hused_mono (Nat.succ_le_of_lt hij)
+          (hsupport_into_next i (Finset.mem_coe.mp hxSupport))
+      exact Finset.disjoint_left.mp (step j).block_fresh
+        hxBlock hxUsed
+  refine ⟨B, K, block, failure, target, support,
+    hBA, hBInfinite, hKB, hKInfinite, ?_,
+    (fun i => (step i).block_nonempty), hblockPairwise,
+    (fun i => (step i).block_minimal), htargetStrict,
+    htargetFailure, hfailureCofinal,
+    (fun i => (step i).support_mem),
+    hsupportK, ?_⟩
+  · intro x
+    rfl
+  · intro i
+    exact (step i).block_minimal.1.mono <| by
+      intro x hx
+      exact ⟨i, Finset.mem_coe.mp hx⟩
+
 /-- A successor-deletion counterexample forces unbounded exact
 representation growth in one of three aligned locations.
 
