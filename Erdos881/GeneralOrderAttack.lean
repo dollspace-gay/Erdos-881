@@ -20205,6 +20205,7 @@ theorem exactBasis_counterexample_forces_fixedReservoir_freshMatchings
       C ⊆ A ∧ C.Infinite ∧
       B ⊆ A ∧ B.Infinite ∧
       Disjoint C B ∧
+      A ⊆ C ∪ B ∧
       ∀ F : Finset ℕ, ∀ r L,
         ∃ q, ∃ D : Finset ℕ,
           L ≤ q ∧
@@ -20255,7 +20256,24 @@ theorem exactBasis_counterexample_forces_fixedReservoir_freshMatchings
     have hindex : 2 * j + 1 = 2 * i :=
       heInjective hj
     omega
-  refine ⟨C, B, hCA, hCInfinite, hBA, hBInfinite, hCB, ?_⟩
+  have hACB : A ⊆ C ∪ B := by
+    intro x hxA
+    obtain ⟨n, _hnFinite, hnx⟩ :=
+      Nat.exists_lt_card_nth_eq hxA
+    rw [← hnx]
+    rcases Nat.even_or_odd n with ⟨m, hm⟩ | ⟨m, hm⟩
+    · left
+      refine ⟨m, ?_⟩
+      dsimp only [even]
+      congr 1
+      omega
+    · right
+      refine ⟨m, ?_⟩
+      dsimp only [odd]
+      congr 1
+      omega
+  refine ⟨C, B, hCA, hCInfinite, hBA, hBInfinite,
+    hCB, hACB, ?_⟩
   exact infiniteAnchorShield_strongDeletion_forces_cofinalFreshMatchings
     hhpos hbasis hCA hCInfinite hBA hBInfinite hCB
       (strongExactDeletion_of_counterexample hcounter)
@@ -20455,17 +20473,17 @@ theorem minimalAdditiveDestroyer_has_prefixClearedRepeatedAnchorRepair
     hlength, hhitsW, htarget, hcoreR, hcoreW,
     hrepairR, hrepairW⟩
 
-/-- One prefix-cleared private support supplies repairs for every external
-anchor, with one common core.
+/-- One prefix-cleared private support supplies repairs for every clean
+replacement tuple, with one common core.
 
 Unlike choosing a separate repair for each anchor, the private support is
 chosen and peeled only once.  Hence `hits`, `j`, `t`, and `core` are fixed
-before the anchor is introduced.  For every `a ∈ C \ W`, reinserting
-`hits.length` copies of `a` gives an order-`H` support at the affine target
-`hits.length * a + t`.  Its finite support is contained in
-`insert a core`, which is the property needed to protect the whole infinite
-anchor fan by reserving only `core` and keeping the later deletion disjoint
-from `C`. -/
+before the replacements are introduced.  Any list `pads` of the same
+length, drawn from `C \ W`, gives an order-`H` support at
+`pads.sum + t`.  Its finite support is contained in
+`pads.toFinset ∪ core`, which is the property needed to protect the whole
+translated exact-sumset fan by reserving only `core` and keeping the later
+deletion disjoint from `C`. -/
 theorem minimalAdditiveDestroyer_has_prefixClearedUniversalAnchorFan
     {A C : Set ℕ} {H q x : ℕ} {D W : Finset ℕ}
     (hminimal :
@@ -20478,16 +20496,19 @@ theorem minimalAdditiveDestroyer_has_prefixClearedUniversalAnchorFan
       0 < hits.length ∧
       hits.length + j = H ∧
       (∀ y ∈ hits, y ∈ A ∧ y ∈ W) ∧
+      (∃ y ∈ D, y ∈ hits) ∧
       q = hits.sum + t ∧
       core ∈ additiveSupportFamily A j t ∧
       Disjoint (core : Set ℕ) (W : Set ℕ) ∧
-      ∀ a ∈ C, a ∉ W →
+      ∀ pads : List ℕ,
+        pads.length = hits.length →
+        (∀ a ∈ pads, a ∈ C ∧ a ∉ W) →
         ∃ repaired : Finset ℕ,
           repaired ∈
             additiveSupportFamily A H
-              (hits.length * a + t) ∧
+              (pads.sum + t) ∧
           Disjoint (repaired : Set ℕ) (W : Set ℕ) ∧
-          repaired ⊆ insert a core := by
+          repaired ⊆ pads.toFinset ∪ core := by
   classical
   obtain ⟨E, hER, hED⟩ :=
     hminimal.exists_uniqueHitSupport hxD
@@ -20515,29 +20536,33 @@ theorem minimalAdditiveDestroyer_has_prefixClearedUniversalAnchorFan
       (Finset.mem_coe.mpr (hDW hxD))
   have hhitsLength : 0 < hits.length :=
     List.length_pos_iff.mpr hhitsNonempty
+  have hxHits : x ∈ hits := by
+    by_contra hxNotHits
+    have hxUnion : x ∈ hits.toFinset ∪ core := by
+      rw [← foldr_insert_eq_toFinset_union]
+      rw [← hEeq]
+      exact hxE
+    rcases Finset.mem_union.mp hxUnion with hxHit | hxCore
+    · exact hxNotHits (List.mem_toFinset.mp hxHit)
+    · exact Set.disjoint_left.mp hcoreW
+        (Finset.mem_coe.mpr hxCore)
+        (Finset.mem_coe.mpr (hDW hxD))
   refine ⟨hits, j, t, core, hhitsLength, hlength,
-    hhitsW, htarget, hcoreR, hcoreW, ?_⟩
-  intro a haC haW
-  have haA : a ∈ A := hCA haC
-  let pads : List ℕ := List.replicate hits.length a
+    hhitsW, ⟨x, hxD, hxHits⟩, htarget,
+    hcoreR, hcoreW, ?_⟩
+  intro pads hpadsLength hpads
   let repaired : Finset ℕ :=
     pads.foldr (fun y G => insert y G) core
   have hpadsA : ∀ y ∈ pads, y ∈ A := by
     intro y hyPads
-    have hya : y = a :=
-      (List.mem_replicate.mp hyPads).2
-    simpa only [hya] using haA
+    exact hCA (hpads y hyPads).1
   have hrepairRaw :=
     foldr_insert_mem_additiveSupportFamily hpadsA hcoreR
-  have hpadsLength : pads.length = hits.length := by
-    simp [pads]
-  have hpadsSum : pads.sum = hits.length * a := by
-    simp [pads]
   have hrepairR :
       repaired ∈
         additiveSupportFamily A H
-          (hits.length * a + t) := by
-    rw [hpadsLength, hlength, hpadsSum] at hrepairRaw
+          (pads.sum + t) := by
+    rw [hpadsLength, hlength] at hrepairRaw
     exact hrepairRaw
   have hrepairW :
       Disjoint (repaired : Set ℕ) (W : Set ℕ) := by
@@ -20546,21 +20571,56 @@ theorem minimalAdditiveDestroyer_has_prefixClearedUniversalAnchorFan
     have hyUnion : y ∈ pads.toFinset ∪ core := by
       simpa [repaired, foldr_insert_eq_toFinset_union] using hyRepair
     rcases Finset.mem_union.mp hyUnion with hyPads | hyCore
-    · have hya : y = a :=
-        (List.mem_toFinset.mp hyPads |> List.mem_replicate.mp).2
-      exact haW (hya ▸ Finset.mem_coe.mp hyW)
+    · exact (hpads y (List.mem_toFinset.mp hyPads)).2
+        (Finset.mem_coe.mp hyW)
     · exact Set.disjoint_left.mp hcoreW
         (Finset.mem_coe.mpr hyCore) hyW
-  have hrepairSub : repaired ⊆ insert a core := by
+  have hrepairSub : repaired ⊆ pads.toFinset ∪ core := by
     intro y hyRepair
-    have hyUnion : y ∈ pads.toFinset ∪ core := by
-      simpa [repaired, foldr_insert_eq_toFinset_union] using hyRepair
-    rcases Finset.mem_union.mp hyUnion with hyPads | hyCore
-    · have hya : y = a :=
-        (List.mem_toFinset.mp hyPads |> List.mem_replicate.mp).2
-      simpa only [hya] using Finset.mem_insert_self a core
-    · exact Finset.mem_insert_of_mem hyCore
+    simpa [repaired, foldr_insert_eq_toFinset_union] using hyRepair
   exact ⟨repaired, hrepairR, hrepairW, hrepairSub⟩
+
+/-- Failure to replace one exact-length sum by clean points of one side of
+a partition is precisely a destroyer on the other side, up to the finite
+forbidden prefix.
+
+This converts the arithmetic non-normalization left by the universal tuple
+fan into the lower-rank support-family language used by the matching and
+rank-descent engines. -/
+theorem no_cleanTupleNormalization_forces_partitionDestroyer
+    {A C B : Set ℕ} {ℓ n : ℕ} {F : Finset ℕ}
+    (hACB : A ⊆ C ∪ B)
+    (hno : ∀ pads : List ℕ,
+      pads.length = ℓ →
+      (∀ a ∈ pads, a ∈ C ∧ a ∉ F) →
+      pads.sum ≠ n) :
+    DestroysAt
+      (additiveSupportFamily A ℓ)
+      (B ∪ (F : Set ℕ)) n := by
+  rw [destroysAt_additiveSupportFamily_iff]
+  rintro ⟨v, hv, hvsum⟩
+  let pads : List ℕ := List.ofFn v
+  have hpadsLength : pads.length = ℓ := by
+    simp [pads]
+  have hpadsClean : ∀ a ∈ pads, a ∈ C ∧ a ∉ F := by
+    intro a haPads
+    obtain ⟨i, hia⟩ := List.mem_ofFn.mp haPads
+    have hvi := hv i
+    have haA : a ∈ A := by
+      simpa only [hia] using hvi.1
+    have haNotUnion : a ∉ B ∪ (F : Set ℕ) := by
+      simpa only [hia] using hvi.2
+    constructor
+    · rcases hACB haA with haC | haB
+      · exact haC
+      · exact (haNotUnion (Or.inl haB)).elim
+    · intro haF
+      exact haNotUnion
+        (Or.inr (Finset.mem_coe.mpr haF))
+  exact (hno pads hpadsLength hpadsClean) <| by
+    change (List.ofFn v).sum = n
+    rw [List.sum_ofFn]
+    exact hvsum
 
 /-- Fixed-reservoir stage with both cross-block repair and matching growth.
 
@@ -20617,7 +20677,8 @@ theorem exactBasis_counterexample_forces_fixedReservoir_prefixClearedRepairs_and
               IsMatching M ∧
               r < M.card := by
   classical
-  obtain ⟨C, B, hCA, hCInfinite, hBA, hBInfinite, hCB, hstage⟩ :=
+  obtain ⟨C, B, hCA, hCInfinite, hBA, hBInfinite, hCB,
+      _hACB, hstage⟩ :=
     exactBasis_counterexample_forces_fixedReservoir_freshMatchings
       hhpos hbasis hcounter
   refine ⟨C, B, hCA, hCInfinite, hBA, hBInfinite, hCB, ?_⟩
@@ -20704,7 +20765,8 @@ theorem exactBasis_counterexample_forces_fixedReservoir_prefixClearedRepairSuppl
           E ∈ additiveSupportFamily A (h + 1) n ∧
           Disjoint (E : Set ℕ)
             ((D ∪ F : Finset ℕ) : Set ℕ) := by
-  obtain ⟨C, B, hCA, hCInfinite, hBA, hBInfinite, hCB, hstage⟩ :=
+  obtain ⟨C, B, hCA, hCInfinite, hBA, hBInfinite, hCB,
+      hstage⟩ :=
     exactBasis_counterexample_forces_fixedReservoir_prefixClearedRepairs_and_matchings
       hhpos hbasis hcounter
   refine ⟨C, B, hCA, hCInfinite, hBA, hBInfinite, hCB, ?_⟩
@@ -20787,21 +20849,24 @@ structure FreshUniversalAnchorFanStep
   length_eq : hits.length + rank = H
   hits_mem :
     ∀ y ∈ hits, y ∈ A ∧ y ∈ block ∪ used
+  block_hit : ∃ y ∈ block, y ∈ hits
   failure_eq : failure = hits.sum + residual
   core_mem :
     core ∈ additiveSupportFamily A rank residual
   core_fresh :
     Disjoint (core : Set ℕ)
       ((block ∪ used : Finset ℕ) : Set ℕ)
-  anchor_fan :
-    ∀ a ∈ C, a ∉ block ∪ used →
+  tuple_fan :
+    ∀ pads : List ℕ,
+      pads.length = hits.length →
+      (∀ a ∈ pads, a ∈ C ∧ a ∉ block ∪ used) →
       ∃ repaired : Finset ℕ,
         repaired ∈
           additiveSupportFamily A H
-            (hits.length * a + residual) ∧
+            (pads.sum + residual) ∧
         Disjoint (repaired : Set ℕ)
           ((block ∪ used : Finset ℕ) : Set ℕ) ∧
-        repaired ⊆ insert a core
+        repaired ⊆ pads.toFinset ∪ core
 
 /-- Fresh minimal destroyers and the universal-anchor repair lemma supply
 every common-core fan stage. -/
@@ -20824,12 +20889,13 @@ theorem freshUniversalAnchorFanStep_nonempty
     hfresh used (last + 1)
   obtain ⟨x, hxD⟩ := hDnonempty
   obtain ⟨hits, j, t, core, hhitsLength, hlength,
-      hhitsW, htarget, hcoreR, hcoreW, hfan⟩ :=
+      hhitsW, hblockHit, htarget, hcoreR, hcoreW, hfan⟩ :=
     minimalAdditiveDestroyer_has_prefixClearedUniversalAnchorFan
       hminimal hxD Finset.subset_union_left hCA
   exact ⟨⟨q, D, hits, j, t, core, by omega,
     ⟨x, hxD⟩, hDB, hDF, hminimal, hhitsLength,
-    hlength, hhitsW, htarget, hcoreR, hcoreW, hfan⟩⟩
+    hlength, hhitsW, hblockHit, htarget,
+    hcoreR, hcoreW, hfan⟩⟩
 
 /-- A putative successor counterexample yields one coherent infinite
 deletion assembled from fresh minimal-destroyer blocks, together with a
@@ -21031,15 +21097,17 @@ common-core anchor fan above every deleted failure.
 
 At stage `i`, one private support of the fresh minimal destroyer is peeled
 against the entire finite history.  Only its finite `core i` is added to the
-protected history.  Every unused `a ∈ C` then gives an order-`h+1` support
-at `hits i | * a + residual i`.  Since all later deletion blocks lie in the
-reservoir `B`, disjoint from `C`, and avoid the protected core, every support
-in every one of these infinite affine fans survives the final union `K`.
+protected history.  Every clean replacement list from `C` of the same
+length then gives an order-`h+1` support at its sum plus `residual i`.
+Since all later deletion blocks lie in the reservoir `B`, disjoint from
+`C`, and avoid the protected core, all of these translated exact-sumset
+supports survive the final union `K`.
 
-Thus the moving repair is no longer a single target capable of arbitrary
-evasion: over each cofinal destroyed failure there is a cofinite-in-`C`
-affine fan of globally surviving successor targets, with slope between
-`1` and `h+1`. -/
+Consequently the original hit sum has no equal-length clean normalization.
+Because `C,B` partition `A`, this is a genuine lower-rank destroyer:
+`B` together with the finite prefix destroys the hit sum.  A fixed positive
+rank occurs on infinitely many stages, and those destroyed lower-rank
+targets are cofinal. -/
 theorem exactBasis_counterexample_forces_coherentInfiniteUniversalAnchorFans
     {A : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
@@ -21055,6 +21123,7 @@ theorem exactBasis_counterexample_forces_coherentInfiniteUniversalAnchorFans
         C ⊆ A ∧ C.Infinite ∧
         B ⊆ A ∧ B.Infinite ∧
         Disjoint C B ∧
+        A ⊆ C ∪ B ∧
         K ⊆ B ∧ K.Infinite ∧
         (∀ x, x ∈ K ↔ ∃ i, x ∈ block i) ∧
         (∀ i, (block i).Nonempty) ∧
@@ -21068,11 +21137,26 @@ theorem exactBasis_counterexample_forces_coherentInfiniteUniversalAnchorFans
           (hits i).length + rank i = h + 1) ∧
         (∀ i, ∀ y ∈ hits i,
           y ∈ A ∧ y ∈ forbidden i) ∧
+        (∀ i, ∃ y ∈ block i, y ∈ hits i) ∧
         (∀ i, failure i = (hits i).sum + residual i) ∧
         (∀ i,
           core i ∈
             additiveSupportFamily A (rank i) (residual i)) ∧
         (∀ i, Disjoint (core i : Set ℕ) K) ∧
+        (∀ i, ∀ pads : List ℕ,
+          pads.length = (hits i).length →
+          (∀ a ∈ pads, a ∈ C ∧ a ∉ forbidden i) →
+          ∃ E ∈ additiveSupportFamily A (h + 1)
+              (pads.sum + residual i),
+            Disjoint (E : Set ℕ) K) ∧
+        (∀ i, ∀ pads : List ℕ,
+          pads.length = (hits i).length →
+          (∀ a ∈ pads, a ∈ C ∧ a ∉ forbidden i) →
+          pads.sum ≠ (hits i).sum) ∧
+        (∀ i,
+          DestroysAt
+            (additiveSupportFamily A (hits i).length)
+            (B ∪ (forbidden i : Set ℕ)) (hits i).sum) ∧
         (∀ i, ∀ a ∈ C, a ∉ forbidden i →
           ∃ E ∈ additiveSupportFamily A (h + 1)
               ((hits i).length * a + residual i),
@@ -21080,12 +21164,18 @@ theorem exactBasis_counterexample_forces_coherentInfiniteUniversalAnchorFans
         (∀ i L, ∃ a, a ∈ C ∧ L < a ∧
           a ∉ forbidden i) ∧
         (∃ ℓ, 0 < ℓ ∧ ℓ ≤ h + 1 ∧
-          {i | (hits i).length = ℓ}.Infinite) ∧
+          {i | (hits i).length = ℓ}.Infinite ∧
+          ∀ L, ∃ i, L < (hits i).sum ∧
+            (hits i).length = ℓ ∧
+            DestroysAt
+              (additiveSupportFamily A ℓ)
+              (B ∪ (forbidden i : Set ℕ)) (hits i).sum) ∧
         ∀ i,
           DestroysAt
             (additiveSupportFamily A (h + 1)) K (failure i) := by
   classical
-  obtain ⟨C, B, hCA, hCInfinite, hBA, hBInfinite, hCB, hstage⟩ :=
+  obtain ⟨C, B, hCA, hCInfinite, hBA, hBInfinite, hCB,
+      hACB, hstage⟩ :=
     exactBasis_counterexample_forces_fixedReservoir_freshMatchings
       hhpos hbasis hcounter
   have hfresh : ∀ F : Finset ℕ, ∀ L,
@@ -21197,6 +21287,16 @@ theorem exactBasis_counterexample_forces_coherentInfiniteUniversalAnchorFans
     apply (Set.infinite_range_of_injective hpointInjective).mono
     rintro x ⟨i, rfl⟩
     exact ⟨i, hpointBlock i⟩
+  let hitPoint (i : ℕ) := (step i).block_hit.choose
+  have hhitPointBlock : ∀ i, hitPoint i ∈ block i :=
+    fun i => (step i).block_hit.choose_spec.1
+  have hhitPointHits : ∀ i, hitPoint i ∈ hits i :=
+    fun i => (step i).block_hit.choose_spec.2
+  have hhitPointInjective : Function.Injective hitPoint := by
+    intro i j hpoint
+    by_contra hij
+    exact Finset.disjoint_left.mp (hblockPairwise hij)
+      (hhitPointBlock i) (hpoint ▸ hhitPointBlock j)
   have hcoreK : ∀ i, Disjoint (core i : Set ℕ) K := by
     intro i
     rw [Set.disjoint_left]
@@ -21219,22 +21319,39 @@ theorem exactBasis_counterexample_forces_coherentInfiniteUniversalAnchorFans
           (hcore_into_next i (Finset.mem_coe.mp hxCore))
       exact Finset.disjoint_left.mp (step j).block_fresh
         hxBlock hxUsed
+  have htupleK : ∀ i, ∀ pads : List ℕ,
+      pads.length = (hits i).length →
+      (∀ a ∈ pads, a ∈ C ∧ a ∉ forbidden i) →
+      ∃ E ∈ additiveSupportFamily A (h + 1)
+          (pads.sum + residual i),
+        Disjoint (E : Set ℕ) K := by
+    intro i pads hpadsLength hpads
+    obtain ⟨E, hER, _hEW, hEsub⟩ :=
+      (step i).tuple_fan pads hpadsLength hpads
+    refine ⟨E, hER, ?_⟩
+    rw [Set.disjoint_left]
+    intro x hxE hxK
+    rcases Finset.mem_union.mp
+        (hEsub (Finset.mem_coe.mp hxE)) with hxPads | hxCore
+    · have hxC : x ∈ C :=
+        (hpads x (List.mem_toFinset.mp hxPads)).1
+      exact Set.disjoint_left.mp hCB hxC (hKB hxK)
+    · exact Set.disjoint_left.mp (hcoreK i)
+        (Finset.mem_coe.mpr hxCore) hxK
   have hfanK : ∀ i, ∀ a ∈ C, a ∉ forbidden i →
       ∃ E ∈ additiveSupportFamily A (h + 1)
           ((hits i).length * a + residual i),
         Disjoint (E : Set ℕ) K := by
     intro i a haC haForbidden
-    obtain ⟨E, hER, _hEW, hEsub⟩ :=
-      (step i).anchor_fan a haC haForbidden
-    refine ⟨E, hER, ?_⟩
-    rw [Set.disjoint_left]
-    intro x hxE hxK
-    rcases Finset.mem_insert.mp
-        (hEsub (Finset.mem_coe.mp hxE)) with hxa | hxCore
-    · subst x
-      exact Set.disjoint_left.mp hCB haC (hKB hxK)
-    · exact Set.disjoint_left.mp (hcoreK i)
-        (Finset.mem_coe.mpr hxCore) hxK
+    let pads := List.replicate (hits i).length a
+    obtain ⟨E, hER, hEK⟩ :=
+      htupleK i pads (by simp [pads]) (by
+        intro x hxPads
+        have hxa : x = a :=
+          (List.mem_replicate.mp hxPads).2
+        simpa only [hxa] using ⟨haC, haForbidden⟩)
+    refine ⟨E, ?_, hEK⟩
+    simpa [pads] using hER
   have hfreshAnchor : ∀ i L, ∃ a, a ∈ C ∧ L < a ∧
       a ∉ forbidden i := by
     intro i L
@@ -21248,6 +21365,34 @@ theorem exactBasis_counterexample_forces_coherentInfiniteUniversalAnchorFans
       Finset.le_sup (f := id) haForbidden
     exact (not_lt_of_ge haSup)
       ((le_max_right L ((forbidden i).sup id)).trans_lt haLarge)
+  have hdestroyK : ∀ i,
+      DestroysAt
+        (additiveSupportFamily A (h + 1)) K (failure i) := by
+    intro i
+    exact (step i).block_minimal.1.mono <| by
+      intro x hx
+      exact ⟨i, Finset.mem_coe.mp hx⟩
+  have hnoCleanNormalization : ∀ i, ∀ pads : List ℕ,
+      pads.length = (hits i).length →
+      (∀ a ∈ pads, a ∈ C ∧ a ∉ forbidden i) →
+      pads.sum ≠ (hits i).sum := by
+    intro i pads hpadsLength hpads hsum
+    obtain ⟨E, hER, hEK⟩ :=
+      htupleK i pads hpadsLength hpads
+    have hEFailure :
+        E ∈ additiveSupportFamily A (h + 1) (failure i) := by
+      have hfailureEq := (step i).failure_eq
+      change failure i = (hits i).sum + residual i at hfailureEq
+      rw [hfailureEq, ← hsum]
+      exact hER
+    exact (hdestroyK i E hEFailure) hEK
+  have hlowerDestroy : ∀ i,
+      DestroysAt
+        (additiveSupportFamily A (hits i).length)
+        (B ∪ (forbidden i : Set ℕ)) (hits i).sum := by
+    intro i
+    exact no_cleanTupleNormalization_forces_partitionDestroyer
+      hACB (hnoCleanNormalization i)
   let slope : ℕ → Fin (h + 2) := fun i =>
     ⟨(hits i).length, by
       have := (step i).length_eq
@@ -21273,15 +21418,36 @@ theorem exactBasis_counterexample_forces_coherentInfiniteUniversalAnchorFans
       Set.infinite_coe_iff.mp hℓFiber
     rw [hfiberEq] at hpreimage
     exact hpreimage
+  have hfixedSlopeHitSums :
+      ∀ L, ∃ i, L < (hits i).sum ∧
+        (hits i).length = ℓ.1 ∧
+        DestroysAt
+          (additiveSupportFamily A ℓ.1)
+          (B ∪ (forbidden i : Set ℕ)) (hits i).sum := by
+    have himageInfinite :
+        (hitPoint '' {i | (hits i).length = ℓ.1}).Infinite :=
+      (Set.infinite_image_iff hhitPointInjective.injOn).mpr
+        hfixedSlope
+    intro L
+    obtain ⟨x, ⟨i, hiSlope, rfl⟩, hLx⟩ :=
+      himageInfinite.exists_gt L
+    refine ⟨i, hLx.trans_le ?_, hiSlope, ?_⟩
+    · exact List.le_sum_of_mem (hhitPointHits i)
+    · have hdestroy := hlowerDestroy i
+      rw [hiSlope] at hdestroy
+      exact hdestroy
   refine ⟨C, B, K, block, failure, hits, rank, residual,
     core, forbidden, hCA, hCInfinite, hBA, hBInfinite, hCB,
-    hKB, hKInfinite, ?_, (fun i => (step i).block_nonempty),
+    hACB, hKB, hKInfinite, ?_,
+    (fun i => (step i).block_nonempty),
     hblockPairwise, hfailureStrict,
     (fun i => (step i).block_minimal),
     (fun i => ⟨(step i).hits_nonempty, (step i).length_eq⟩),
     (fun i => (step i).hits_mem),
+    (fun i => (step i).block_hit),
     (fun i => (step i).failure_eq),
-    (fun i => (step i).core_mem), hcoreK, hfanK,
+    (fun i => (step i).core_mem), hcoreK, htupleK,
+    hnoCleanNormalization, hlowerDestroy, hfanK,
     hfreshAnchor,
     ⟨ℓ.1, by
       have hfiberNonempty := hfixedSlope.nonempty
@@ -21293,13 +21459,9 @@ theorem exactBasis_counterexample_forces_coherentInfiniteUniversalAnchorFans
       by
         have := ℓ.isLt
         omega,
-      hfixedSlope⟩, ?_⟩
+      hfixedSlope, hfixedSlopeHitSums⟩, hdestroyK⟩
   · intro x
     rfl
-  · intro i
-    exact (step i).block_minimal.1.mono <| by
-      intro x hx
-      exact ⟨i, Finset.mem_coe.mp hx⟩
 
 /-- A successor-deletion counterexample forces unbounded exact
 representation growth in one of three aligned locations.
