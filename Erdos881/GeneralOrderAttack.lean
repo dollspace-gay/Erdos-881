@@ -20362,6 +20362,99 @@ theorem minimalAdditiveDestroyer_has_repeatedAnchorRepair
     hellpos, hlength, hqeq, hcoreR, hcoreD,
     hrepairR, hrepairD⟩
 
+/-- Prefix-cleared form of repeated-anchor repair.
+
+Let `W` contain the current minimal destroyer and any finite collection of
+old deletion blocks or protected coordinates.  Peel *every* occurrence of
+every value in `W` from a private support.  The hit list is nonempty because
+it contains the private destroyer value.  Replacing the whole list by
+copies of one anchor outside `W` restores the original order and produces a
+support disjoint from the current destroyer and the entire old prefix.
+
+The exact old hit sum is retained in `q = hits.sum + t`; no normalization
+or distinctness assumption is made.  This is the unrestricted
+finite-prefix/repeated-multiplicity composition bridge. -/
+theorem minimalAdditiveDestroyer_has_prefixClearedRepeatedAnchorRepair
+    {A : Set ℕ} {H q x a : ℕ} {D W : Finset ℕ}
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A H) D q)
+    (hxD : x ∈ D)
+    (hDW : D ⊆ W)
+    (haA : a ∈ A)
+    (haW : a ∉ W) :
+    ∃ hits : List ℕ, ∃ j t, ∃ core repaired : Finset ℕ,
+      0 < hits.length ∧
+      hits.length + j = H ∧
+      (∀ y ∈ hits, y ∈ A ∧ y ∈ W) ∧
+      q = hits.sum + t ∧
+      core ∈ additiveSupportFamily A j t ∧
+      Disjoint (core : Set ℕ) (W : Set ℕ) ∧
+      repaired ∈
+        additiveSupportFamily A H (hits.length * a + t) ∧
+      Disjoint (repaired : Set ℕ) (W : Set ℕ) := by
+  classical
+  obtain ⟨E, hER, hED⟩ :=
+    hminimal.exists_uniqueHitSupport hxD
+  have hxE : x ∈ E := by
+    have hxInter : x ∈ E ∩ D := by
+      rw [hED]
+      simp
+    exact (Finset.mem_inter.mp hxInter).1
+  obtain ⟨hits, j, t, core, hlength, hhits,
+      hcoreR, hcoreW, htarget, hEeq⟩ :=
+    additiveSupport_peel_hits_to_survivingCore
+      H q E hER (S := (W : Set ℕ))
+  have hhitsW : ∀ y ∈ hits, y ∈ A ∧ y ∈ W := by
+    intro y hyHits
+    exact ⟨(hhits y hyHits).1,
+      Finset.mem_coe.mp (hhits y hyHits).2⟩
+  have hhitsNonempty : hits ≠ [] := by
+    intro hhitsEmpty
+    have hEcore : E = core := by
+      simpa [hhitsEmpty] using hEeq
+    exact Set.disjoint_left.mp hcoreW
+      (by
+        rw [← hEcore]
+        exact Finset.mem_coe.mpr hxE)
+      (Finset.mem_coe.mpr (hDW hxD))
+  have hhitsLength : 0 < hits.length :=
+    List.length_pos_iff.mpr hhitsNonempty
+  let pads : List ℕ := List.replicate hits.length a
+  let repaired : Finset ℕ :=
+    pads.foldr (fun y G => insert y G) core
+  have hpadsA : ∀ y ∈ pads, y ∈ A := by
+    intro y hyPads
+    have hya : y = a :=
+      (List.mem_replicate.mp hyPads).2
+    simpa only [hya] using haA
+  have hrepairRaw :=
+    foldr_insert_mem_additiveSupportFamily hpadsA hcoreR
+  have hpadsLength : pads.length = hits.length := by
+    simp [pads]
+  have hpadsSum : pads.sum = hits.length * a := by
+    simp [pads]
+  have hrepairR :
+      repaired ∈
+        additiveSupportFamily A H (hits.length * a + t) := by
+    rw [hpadsLength, hlength, hpadsSum] at hrepairRaw
+    exact hrepairRaw
+  have hrepairW :
+      Disjoint (repaired : Set ℕ) (W : Set ℕ) := by
+    rw [Set.disjoint_left]
+    intro y hyRepair hyW
+    have hyUnion : y ∈ pads.toFinset ∪ core := by
+      simpa [repaired, foldr_insert_eq_toFinset_union] using hyRepair
+    rcases Finset.mem_union.mp hyUnion with hyPads | hyCore
+    · have hya : y = a :=
+        (List.mem_toFinset.mp hyPads |> List.mem_replicate.mp).2
+      exact haW (hya ▸ Finset.mem_coe.mp hyW)
+    · exact Set.disjoint_left.mp hcoreW
+        (Finset.mem_coe.mpr hyCore) hyW
+  exact ⟨hits, j, t, core, repaired, hhitsLength,
+    hlength, hhitsW, htarget, hcoreR, hcoreW,
+    hrepairR, hrepairW⟩
+
 /-- A successor-deletion counterexample forces unbounded exact
 representation growth in one of three aligned locations.
 
