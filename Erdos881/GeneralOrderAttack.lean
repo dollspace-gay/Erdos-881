@@ -3014,7 +3014,10 @@ theorem lowerGapRepairWitness_extends_protectedOnReservoir_or_oldCollision
     (hUselected : Disjoint (U : Set ℕ) (selectedSet s))
     (hER : E ∈ additiveSupportFamily A (k + 1) q)
     (hcontemporary :
-      ∀ j, j ∉ J → U.card + (k + 1) < (F j).card) :
+      ∀ j, j ∉ J →
+        (s j).1 ∈
+          supportVertices (additiveSupportFamily A (k + 1)) q →
+        U.card + (k + 1) < (F j).card) :
     (∃ t : BlockSelector F,
         Disjoint (U : Set ℕ) (selectedSet t) ∧
         ¬ DestroysAt
@@ -3037,15 +3040,29 @@ theorem lowerGapRepairWitness_extends_protectedOnReservoir_or_oldCollision
     have houtside :
         ∀ j, j ∉ J → (F j \ W).Nonempty := by
       intro j hjJ
-      by_contra hempty
-      have hsubset : F j ⊆ W := by
-        intro x hxF
-        by_contra hxW
-        exact hempty
-          ⟨x, Finset.mem_sdiff.mpr ⟨hxF, hxW⟩⟩
-      have hcard := Finset.card_le_card hsubset
-      have hlarge := hcontemporary j hjJ
-      omega
+      by_cases hsjE : (s j).1 ∈ E
+      · by_contra hempty
+        have hsubset : F j ⊆ W := by
+          intro x hxF
+          by_contra hxW
+          exact hempty
+            ⟨x, Finset.mem_sdiff.mpr ⟨hxF, hxW⟩⟩
+        have hcard := Finset.card_le_card hsubset
+        have hsjVertices :
+            (s j).1 ∈
+              supportVertices (additiveSupportFamily A (k + 1)) q :=
+          Finset.mem_biUnion.mpr ⟨E, hER, hsjE⟩
+        have hlarge := hcontemporary j hjJ hsjVertices
+        omega
+      · exact ⟨(s j).1,
+          Finset.mem_sdiff.mpr
+            ⟨(s j).2, by
+              intro hsjW
+              obtain hsjU | hsjE' :=
+                Finset.mem_union.mp hsjW
+              · exact Set.disjoint_left.mp hUselected
+                  (Finset.mem_coe.mpr hsjU) ⟨j, rfl⟩
+              · exact hsjE hsjE'⟩⟩
     choose outside houtsideSpec using houtside
     let t : BlockSelector F := fun j =>
       if hsjE : (s j).1 ∈ E then
@@ -3113,7 +3130,10 @@ theorem lowerGapRepair_extends_protectedOnReservoir_or_oldCollision
     (hgap : additiveSupportFamily A k (q - b) = ∅)
     (hUselected : Disjoint (U : Set ℕ) (selectedSet s))
     (hcontemporary :
-      ∀ j, j ∉ J → U.card + (k + 1) < (F j).card) :
+      ∀ j, j ∉ J →
+        (s j).1 ∈
+          supportVertices (additiveSupportFamily A (k + 1)) q →
+        U.card + (k + 1) < (F j).card) :
     (∃ t : BlockSelector F,
         Disjoint (U : Set ℕ) (selectedSet t) ∧
         ¬ DestroysAt
@@ -3183,7 +3203,10 @@ theorem lowerGapRepair_manyPrivateHits_completeOnReservoir_or_oldGrowth
     (hgap : additiveSupportFamily A k (q - b) = ∅)
     (hUselected : Disjoint (U : Set ℕ) (selectedSet s))
     (hcontemporary :
-      ∀ j, j ∉ J → U.card + (k + 1) < (F j).card)
+      ∀ j, j ∉ J →
+        (s j).1 ∈
+          supportVertices (additiveSupportFamily A (k + 1)) q →
+        U.card + (k + 1) < (F j).card)
     (hmany : J.card * r < D.card) :
     (∃ t : BlockSelector F,
         Disjoint (U : Set ℕ) (selectedSet t) ∧
@@ -9780,6 +9803,8 @@ theorem lockedPrefix_lowerGap_forces_rankGrowthDescent_or_privateOldCollision
         ((((J.image fun j => (s j).1) : Finset ℕ) : Set ℕ)) q)
     (hgap : additiveSupportFamily A k (q - b) = ∅)
     (hcapacity : ∀ j, j ∉ J →
+      (s j).1 ∈
+        supportVertices (additiveSupportFamily A (k + 1)) q →
       U.card + (k + 1) < (F j).card) :
     (∃ t : BlockSelector F, ∃ u ∈ Q, u < q ∧
         (Q.filter fun v => q < v).card <
@@ -10855,6 +10880,214 @@ theorem IsExactTupleAsymptoticBasis.eventually_lockedPrefix_matching_or_gap_or_r
     · exact Or.inr (Or.inr (Or.inr hgap))
   · exact Or.inr (Or.inr (Or.inl hdescent))
 
+/-- Gap-consuming locked-prefix composition on a deletion reservoir.
+
+This strengthens
+`eventually_lockedPrefix_matching_or_gap_or_rankGrowthDescent` at the point
+needed by the growing-block attack.  A genuine predecessor gap is fed back
+into protected external-gap completion rather than returned as a terminal
+outcome.  Therefore every sufficiently late stage yields current-order
+matching growth, coherent predecessor matching growth, strict
+certificate-rank descent, or the explicit private old-coordinate collision
+which prevented the gap repair from completing. -/
+theorem IsExactTupleAsymptoticBasis.eventually_lockedPrefix_matching_or_rankGrowthDescent_or_gapCollision
+    {A K : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
+    (r : ℕ) :
+    ∃ N, ∀ Q : Finset ℕ, ∀ q, N ≤ q → ∀ s : BlockSelector F,
+      q ∈ Q →
+      (∀ t : BlockSelector F, ∃ u ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) (selectedSet t) u) →
+      (∀ u ∈ Q, q < u →
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1)) (selectedSet s) u) →
+      (∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+          R.card < k + 1 ∧
+          M ⊆ additiveSupportFamily A (k + 1) q ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+            Disjoint (E \ R) (G \ R)) ∨
+        (∃ d, d ∈ A ∧ d ≤ q ∧
+          ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+            R.card < k ∧
+            M ⊆ additiveSupportFamily A k (q - d) ∧
+            r < M.card ∧
+            (∀ E ∈ M, R ⊆ E) ∧
+            (∀ E ∈ M, (E \ R).Nonempty) ∧
+            ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+              Disjoint (E \ R) (G \ R)) ∨
+        (∃ t : BlockSelector F, ∃ u ∈ Q, u < q ∧
+          (Q.filter fun v => q < v).card <
+            (Q.filter fun v => u < v).card ∧
+          DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet t) u ∧
+          ∀ v ∈ Q, u < v →
+            ¬ DestroysAt
+              (additiveSupportFamily A (k + 1))
+              (selectedSet t) v) ∨
+        ∃ b D d j E H,
+          b ∈ A ∧ b ≤ q ∧
+          additiveSupportFamily A k (q - b) = ∅ ∧
+          let completionNeed :=
+            (k + 1) * (Q.filter fun u => q < u).card + (k + 1)
+          let J := deficientRepairHitBlocks P s
+            (additiveSupportFamily A (k + 1)) q 0 completionNeed
+          D ⊆ J.image (fun i => (s i).1) ∧
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A (k + 1)) D q ∧
+          d ∈ D ∧ j ∈ J ∧
+          E ∈ additiveSupportFamily A (k + 1) q ∧
+          (s j).1 ∈ E ∧ E ∩ D = {d} ∧
+          H ∈ additiveSupportFamily A k (q - (s j).1) ∧
+          E = insert (s j).1 H ∧
+          ((s j).1 = d ∨
+            (s j).1 ∈
+              (J.image (fun i => (s i).1)).erase d \ D) := by
+  classical
+  let B := lockedPrefixCompositionBound k r
+  obtain ⟨N₀, hN₀⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  obtain ⟨N₁, hN₁⟩ :=
+    hbasis.eventually_boundedDestroyer_forces_largeDifferenceFamily_or_lowerGap B
+  refine ⟨max N₀ N₁, ?_⟩
+  intro Q q hn s hqQ hcert hlarger
+  by_cases hcurrent :
+      ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+        R.card < k + 1 ∧
+        M ⊆ additiveSupportFamily A (k + 1) q ∧
+        r < M.card ∧
+        (∀ E ∈ M, R ⊆ E) ∧
+        (∀ E ∈ M, (E \ R).Nonempty) ∧
+        ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+          Disjoint (E \ R) (G \ R)
+  · exact Or.inl hcurrent
+  have hfamilySmall :
+      (additiveSupportFamily A (k + 1) q).card <
+        additiveRootedMatchingBound (k + 1) r := by
+    by_contra hnot
+    apply hcurrent
+    exact additiveSupportSubfamily_has_large_rootedMatching
+      (k + 1) r q (additiveSupportFamily A (k + 1) q)
+      Finset.Subset.rfl (Nat.le_of_not_gt hnot)
+  have hvertices :
+      (supportVertices (additiveSupportFamily A (k + 1)) q).card ≤
+        (k + 1) * additiveRootedMatchingBound (k + 1) r := by
+    calc
+      (supportVertices
+          (additiveSupportFamily A (k + 1)) q).card ≤
+          (k + 1) *
+            (additiveSupportFamily A (k + 1) q).card := by
+        exact biUnion_card_le_of_edge_card_le
+          (H := additiveSupportFamily A (k + 1) q)
+          (M := additiveSupportFamily A (k + 1) q)
+          (by simp) (fun E hE =>
+            additiveSupportFamily_cardAtMost A (k + 1) q E hE)
+      _ ≤ (k + 1) *
+          additiveRootedMatchingBound (k + 1) r :=
+        Nat.mul_le_mul_left (k + 1) (Nat.le_of_lt hfamilySmall)
+  let Upper : Finset ℕ := Q.filter fun u => q < u
+  let completionNeed := (k + 1) * Upper.card + (k + 1)
+  let J := deficientRepairHitBlocks P s
+    (additiveSupportFamily A (k + 1)) q 0 completionNeed
+  let L : Finset ℕ := J.image fun j => (s j).1
+  have hstep :
+      (L.card ≤
+          (supportVertices
+            (additiveSupportFamily A (k + 1)) q).card ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) (L : Set ℕ) q) ∨
+        ∃ t : BlockSelector F, ∃ u ∈ Q, u < q ∧
+          (Q.filter fun v => q < v).card <
+            (Q.filter fun v => u < v).card ∧
+          DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet t) u ∧
+          ∀ v ∈ Q, u < v →
+            ¬ DestroysAt
+              (additiveSupportFamily A (k + 1))
+              (selectedSet t) v := by
+    simpa only [L, J, completionNeed, Upper] using
+      blockAligned_intrinsicLockedPrefix_destruction_or_rankGrowthDescent
+        P s hqQ hcert hlarger
+  obtain ⟨hLcard, hLdestroy⟩ | hdescent := hstep
+  · have hLB : L.card ≤ B :=
+      (hLcard.trans hvertices).trans (Nat.le_max_left _ _)
+    obtain hgrowth | ⟨b, hbA, hbq, hgap⟩ :=
+      hN₁ L hLB q ((le_max_right N₀ N₁).trans hn) hLdestroy
+    · right
+      left
+      obtain ⟨d, _hdL, hdA, hdq, ℋ, hℋsub, hBℋ⟩ := hgrowth
+      refine ⟨d, hdA, hdq, ?_⟩
+      obtain ⟨R, M, hRcard, hMsub, hMcard, hMroot,
+          hMnonempty, hMdisjoint⟩ :=
+        additiveSupportSubfamily_has_large_rootedMatching
+          k r (q - d) ℋ hℋsub
+          (le_trans (Nat.le_max_right _ _) (Nat.le_of_lt hBℋ))
+      exact ⟨R, M, hRcard, hMsub.trans hℋsub, hMcard,
+        hMroot, hMnonempty, hMdisjoint⟩
+    · obtain ⟨G₀, hG₀R, _hG₀empty⟩ :=
+        hN₀ q ((le_max_left N₀ N₁).trans hn)
+      obtain ⟨c, hcDisjoint⟩ :=
+        exists_survivingLargerSupportChoice s hlarger
+      let U : Finset ℕ := finiteSupportChoiceUnion c
+      have hUcard : U.card ≤ (k + 1) * Upper.card := by
+        exact finiteSupportChoiceUnion_card_le
+          (additiveSupportFamily_cardAtMost A (k + 1)) c
+      have hprotected :
+          ∀ u ∈ Q, q < u →
+            ∃ E ∈ additiveSupportFamily A (k + 1) u,
+              (E : Set ℕ) ⊆ (U : Set ℕ) := by
+        intro u huQ hqu
+        let u' : {n // n ∈ Upper} :=
+          ⟨u, by
+            simpa only [Upper] using
+              (Finset.mem_filter.mpr ⟨huQ, hqu⟩)⟩
+        refine ⟨(c u').1, (c u').2, ?_⟩
+        intro x hx
+        exact Finset.mem_coe.mpr
+          (finiteSupportChoice_subset_union c u'
+            (Finset.mem_coe.mp hx))
+      have hcapacity :
+          ∀ j, j ∉ J →
+            (s j).1 ∈
+              supportVertices (additiveSupportFamily A (k + 1)) q →
+            U.card + (k + 1) < (F j).card := by
+        intro j hjJ hsjVertices
+        have hjImage :
+            j ∈ (supportVertices
+              (additiveSupportFamily A (k + 1)) q).image
+                (blockIndex P) := by
+          apply Finset.mem_image.mpr
+          refine ⟨(s j).1, hsjVertices, ?_⟩
+          exact P.blockIndex_eq_of_mem (s j).2
+        have hjGood :
+            0 < ((F j).erase (s j).1).card ∧
+              completionNeed < (F j).card := by
+          by_contra hnot
+          apply hjJ
+          exact Finset.mem_filter.mpr ⟨hjImage, hnot⟩
+        exact lt_of_le_of_lt
+          (Nat.add_le_add_right hUcard (k + 1)) hjGood.2
+      obtain hdescent | hcollision :=
+        lockedPrefix_lowerGap_forces_rankGrowthDescent_or_privateOldCollision
+          P s hqQ hcert hprotected
+            (by simpa only [U] using hcDisjoint)
+            ⟨G₀, hG₀R⟩
+            (by simpa only [L] using hLdestroy)
+            hgap hcapacity
+      · exact Or.inr (Or.inr (Or.inl hdescent))
+      · obtain ⟨D, d, j, E, H, hcollision⟩ := hcollision
+        exact Or.inr (Or.inr (Or.inr
+          ⟨b, D, d, j, E, H, hbA, hbq, hgap, by
+            simpa only [J, completionNeed, Upper] using
+              hcollision⟩))
+  · exact Or.inr (Or.inr (Or.inl hdescent))
+
 /-- Protected-set strengthening of the locked-prefix composition.
 
 The predecessor-gap repair point is chosen outside an arbitrary finite set
@@ -11714,7 +11947,7 @@ theorem IsExactTupleAsymptoticBasis.eventually_boundedMinimalDestroyer_protected
       lowerGapRepair_extends_protectedOnReservoir_or_oldCollision
         P s (J := ∅) hminimal hdD hbGap hUselected
           (by
-            intro j _hj
+            intro j _hj _hsjVertices
             exact hblocks j)
     · exact hrepair
     · simpa using hjEmpty
@@ -12608,7 +12841,8 @@ theorem IsExactTupleAsymptoticBasis.eventually_largeMinimalDestroyer_protectedRe
       lt_of_lt_of_le hBℋ hℋfamily⟩
   · obtain hrepair | holdGrowth :=
       lowerGapRepair_manyPrivateHits_completeOnReservoir_or_oldGrowth
-        P s hminimal hbGap hUselected hcontemporary hDlarge
+        P s hminimal hbGap hUselected
+          (fun j hjJ _hsjVertices => hcontemporary j hjJ) hDlarge
     · exact Or.inr (Or.inr hrepair)
     · exact Or.inr (Or.inl holdGrowth)
 
