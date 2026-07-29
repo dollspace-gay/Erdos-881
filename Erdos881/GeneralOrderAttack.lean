@@ -42642,4 +42642,188 @@ theorem exactBasis_counterexample_forces_coherentMovingRootFusion
   exact
     hbasis.failsFiniteCoreMatching_has_coherentMovingRootFusion hfail
 
+/-! ## Escaped certificates must migrate through protected gaps -/
+
+/-- No one finite target set can occupy cofinally many gaps of a strict
+natural-number stream.
+
+Indeed, take the largest member `q` of the finite set.  A bracket whose
+index is at least `q + 1` is impossible because strict monotonicity gives
+`i ≤ target i < q`.  This is the precise boundedness statement behind
+"no permanent finite certificate between the protected targets." -/
+theorem finiteTargetSet_not_cofinallyBracketed
+    {target : ℕ → ℕ} (htargetStrict : StrictMono target)
+    (Q : Finset ℕ) :
+    ¬ (Q.Nonempty ∧
+      ∀ L, ∃ q ∈ Q, ∃ i,
+        L ≤ i ∧ target i < q ∧ q < target (i + 1)) := by
+  rintro ⟨hQnonempty, hcofinal⟩
+  let qmax := Q.max' hQnonempty
+  obtain ⟨q, hqQ, i, hiLarge, hiLower, _hiUpper⟩ :=
+    hcofinal (qmax + 1)
+  have hqMax : q ≤ qmax :=
+    Finset.le_max' Q q hqQ
+  have hiTarget : i ≤ target i :=
+    htargetStrict.id_le i
+  omega
+
+/-- Late finite selector certificates migrate through cofinally many gaps of
+a strict common-survival stream.
+
+The terminating certificate theorem may be requested beyond an arbitrary
+protected-stream index `L`.  Every target in the resulting certificate is
+then bracketed by two *later* consecutive protected targets.  Disjointness
+from the protected range makes both bracket inequalities strict.  Hence a
+single finite target set cannot supply these cofinally bracketed
+certificates, by `finiteTargetSet_not_cofinallyBracketed`: the certificate
+labels must genuinely migrate.
+
+The conclusion retains the normalized matching/matching/gap alternative at
+each migrated certificate.  The fresh certificate still destroys every
+selector of the same fixed infinite partition and has already passed through
+the unrestricted finite-certificate descent. -/
+theorem commonSurvivalStream_forces_cofinallyBracketedTerminatedCertificates
+    {A X : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hstrong :
+      StrongInfiniteDeletion
+        (additiveSupportFamily A (k + 1)) A)
+    (hXA : X ⊆ A)
+    (P : IsFiniteBlockPartition X cell)
+    (target : ℕ → ℕ)
+    (htargetStrict : StrictMono target)
+    (hsurvive : ∀ s : BlockSelector cell, ∀ n,
+      ∃ E ∈ additiveSupportFamily A (k + 1) (target n),
+        Disjoint (E : Set ℕ) (selectedSet s)) :
+    ∀ r L, ∃ Q : Finset ℕ,
+      Q.Nonempty ∧
+      (∀ q ∈ Q, ∃ i,
+        L ≤ i ∧ target i < q ∧ q < target (i + 1)) ∧
+      (∀ s : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet s) q) ∧
+      Disjoint (Q : Set ℕ) (Set.range target) ∧
+      ((∃ q ∈ Q, ∃ R : Finset ℕ,
+          ∃ M : Finset (Finset ℕ),
+            R.card < k + 1 ∧
+            M ⊆ additiveSupportFamily A (k + 1) q ∧
+            r < M.card ∧
+            (∀ E ∈ M, R ⊆ E) ∧
+            (∀ E ∈ M, (E \ R).Nonempty) ∧
+            ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+              Disjoint (E \ R) (G \ R)) ∨
+        (∃ q ∈ Q, ∃ d, d ∈ A ∧ d ≤ q ∧
+          ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+            R.card < k ∧
+            M ⊆ additiveSupportFamily A k (q - d) ∧
+            r < M.card ∧
+            (∀ E ∈ M, R ⊆ E) ∧
+            (∀ E ∈ M, (E \ R).Nonempty) ∧
+            ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+              Disjoint (E \ R) (G \ R)) ∨
+        ∃ q ∈ Q, ∃ b, b ∈ A ∧ b ≤ q ∧
+          additiveSupportFamily A k (q - b) = ∅) := by
+  intro r L
+  let N := target (L + 1) + 1
+  obtain ⟨Q, hQnonempty, hQlate, hcert, hQsafe,
+      hnormalized⟩ :=
+    commonSurvivalStream_forces_terminatedEscapedCertificate
+      hbasis hstrong hXA P target htargetStrict hsurvive r N
+  refine ⟨Q, hQnonempty, ?_, hcert, hQsafe, hnormalized⟩
+  intro q hqQ
+  have htargetLq : target (L + 1) < q := by
+    have := hQlate q hqQ
+    dsimp only [N] at this
+    omega
+  have hfirst : target 0 < q := by
+    have hindex : 0 < L + 1 := by omega
+    exact (htargetStrict hindex).trans htargetLq
+  obtain ⟨i, hiLower, hiUpper⟩ :=
+    strictMono_exists_predecessor_bracket htargetStrict hfirst
+  have hLi : L ≤ i := by
+    by_contra hnot
+    have hiL : i < L := Nat.lt_of_not_ge hnot
+    have hsuccLe : i + 1 ≤ L + 1 := by omega
+    have htargetLe :
+        target (i + 1) ≤ target (L + 1) :=
+      htargetStrict.monotone hsuccLe
+    omega
+  have hqNeUpper : q ≠ target (i + 1) := by
+    intro hq
+    exact Set.disjoint_left.mp hQsafe
+      (Finset.mem_coe.mpr hqQ) ⟨i + 1, hq.symm⟩
+  exact ⟨i, hLi, hiLower,
+    lt_of_le_of_ne hiUpper hqNeUpper⟩
+
+/-- Counterexample-level form on the newly completed moving-root fusion.
+
+The same partition now carries both sides of the argument:
+
+* its growing blocks and strict target stream come from the fresh
+  moving-root fusion, after all old root collisions have been consumed;
+* every finite strong-deletion certificate is forced, at every requested
+  scale, into gaps with arbitrarily large indices and through the normalized
+  finite-certificate descent.
+
+Consequently no fixed finite target set can account for certificates in
+cofinally many gaps of the fused protected stream.  Any hypothetical
+counterexample must produce genuinely migrating certificates carrying the
+three arithmetic outcomes displayed below. -/
+theorem exactBasis_counterexample_forces_coherentMovingRootFusion_with_migratingCertificates
+    {A : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1)) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ target : ℕ → ℕ,
+        K ⊆ A ∧
+        K.Infinite ∧
+        IsFiniteBlockPartition K cell ∧
+        StrictMono target ∧
+        (∀ i, i + 2 < (cell i).card) ∧
+        (∀ s : BlockSelector cell, ∀ i,
+          ∃ E ∈ additiveSupportFamily A (k + 1) (target i),
+            Disjoint (E : Set ℕ) (selectedSet s)) ∧
+        ∀ r L, ∃ Q : Finset ℕ,
+          Q.Nonempty ∧
+          (∀ q ∈ Q, ∃ i,
+            L ≤ i ∧ target i < q ∧ q < target (i + 1)) ∧
+          (∀ s : BlockSelector cell, ∃ q ∈ Q,
+            DestroysAt
+              (additiveSupportFamily A (k + 1))
+              (selectedSet s) q) ∧
+          Disjoint (Q : Set ℕ) (Set.range target) ∧
+          ((∃ q ∈ Q, ∃ R : Finset ℕ,
+              ∃ M : Finset (Finset ℕ),
+                R.card < k + 1 ∧
+                M ⊆ additiveSupportFamily A (k + 1) q ∧
+                r < M.card ∧
+                (∀ E ∈ M, R ⊆ E) ∧
+                (∀ E ∈ M, (E \ R).Nonempty) ∧
+                ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+                  Disjoint (E \ R) (G \ R)) ∨
+            (∃ q ∈ Q, ∃ d, d ∈ A ∧ d ≤ q ∧
+              ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+                R.card < k ∧
+                M ⊆ additiveSupportFamily A k (q - d) ∧
+                r < M.card ∧
+                (∀ E ∈ M, R ⊆ E) ∧
+                (∀ E ∈ M, (E \ R).Nonempty) ∧
+                ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+                  Disjoint (E \ R) (G \ R)) ∨
+            ∃ q ∈ Q, ∃ b, b ∈ A ∧ b ≤ q ∧
+              additiveSupportFamily A k (q - b) = ∅) := by
+  obtain ⟨K, cell, target, hKA, hKInfinite, P,
+      htargetStrict, hcellLarge, hsurvive⟩ :=
+    exactBasis_counterexample_forces_coherentMovingRootFusion
+      hbasis hcounter
+  refine ⟨K, cell, target, hKA, hKInfinite, P,
+    htargetStrict, hcellLarge, hsurvive, ?_⟩
+  exact
+    commonSurvivalStream_forces_cofinallyBracketedTerminatedCertificates
+      hbasis (strongExactDeletion_of_counterexample hcounter)
+        hKA P target htargetStrict hsurvive
+
 end Erdos881
