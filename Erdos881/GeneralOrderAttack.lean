@@ -46346,6 +46346,200 @@ theorem cleanSupport_destroyedTranslate_forces_largeHole_or_boundaryLanding
     exact
       ⟨c, hfloorC, hcE, hcA, hcY, hshiftA⟩
 
+/-- Cofinal current-order destruction cannot remain arithmetically
+unrelated to a strict successor-order survival stream.
+
+Take a late order-`k` target `q` destroyed by `Y` and bracket it above a
+surviving order-`k+1` target `oldTarget n`.  Remove an average-bounded
+summand `a` from the clean successor support.  This leaves a clean
+order-`k` support at
+
+`p = oldTarget n - a`,
+
+while `q = p + δ` for one positive translation.  Scheduling the bracket
+far enough out preserves any prescribed lower bound on a point of that
+clean support.
+
+The direct translation-exit lemma then has only two literal outcomes:
+
+* a cofinally large clean point `c` has `c + δ ∉ A`; or
+* `c + δ` is an actual point of `Y`, and restoring that one point repairs
+  the same destroyed current-order target `q`.
+
+Thus original-order strong minimality and successor-order survival are
+welded at one target and one translation.  No unrelated cofinal streams or
+lower-rank represented-target conclusion remains in the statement. -/
+theorem cofinalCurrentDestruction_against_successorSurvival_forces_largeHole_or_boundaryRepair
+    {A Y : Set ℕ} {k : ℕ}
+    {oldTarget : ℕ → ℕ}
+    (hkpos : 0 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (holdStrict : StrictMono oldTarget)
+    (holdSurvival : ∀ n,
+      ∃ E ∈
+          additiveSupportFamily A (k + 1) (oldTarget n),
+        Disjoint (E : Set ℕ) Y)
+    (hcurrentDestroy : ∀ N, ∃ q, N ≤ q ∧
+      DestroysAt
+        (additiveSupportFamily A k) Y q) :
+    ∀ pointFloor targetFloor,
+      ∃ n q p δ, ∃ E H : Finset ℕ, ∃ c,
+        targetFloor < q ∧
+        pointFloor ≤ c ∧
+        oldTarget n < q ∧
+        q ≤ oldTarget (n + 1) ∧
+        E ∈
+          additiveSupportFamily A (k + 1) (oldTarget n) ∧
+        Disjoint (E : Set ℕ) Y ∧
+        H ∈ additiveSupportFamily A k p ∧
+        H ⊆ E ∧
+        Disjoint (H : Set ℕ) Y ∧
+        0 < δ ∧
+        q = p + δ ∧
+        (additiveSupportFamily A k q).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A k) Y q ∧
+        c ∈ H ∧
+        c ∈ A ∧
+        c ∉ Y ∧
+        (c + δ ∉ A ∨
+          (c + δ ∈ A ∧
+            c + δ ∈ Y ∧
+            ¬ DestroysAt
+              (additiveSupportFamily A k)
+              (Y \ {c + δ}) q)) := by
+  classical
+  obtain ⟨Nrep, hNrep⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  intro pointFloor targetFloor
+  let floor := max pointFloor (targetFloor + 1)
+  let scale := (k + 1) * floor + 1
+  let request :=
+    max (targetFloor + 1)
+      (max Nrep (oldTarget scale))
+  obtain ⟨q, hrequestQ, hqDestroy⟩ :=
+    hcurrentDestroy request
+  have htargetFloorQ : targetFloor < q := by
+    have htargetRequest :
+        targetFloor + 1 ≤ request := by
+      exact le_max_left _ _
+    omega
+  have hNrepQ : Nrep ≤ q := by
+    exact
+      (le_max_left Nrep (oldTarget scale)).trans
+        ((le_max_right (targetFloor + 1)
+          (max Nrep (oldTarget scale))).trans hrequestQ)
+  have holdScaleQ : oldTarget scale ≤ q := by
+    exact
+      (le_max_right Nrep (oldTarget scale)).trans
+        ((le_max_right (targetFloor + 1)
+          (max Nrep (oldTarget scale))).trans hrequestQ)
+  have hscalePos : 0 < scale := by
+    dsimp only [scale]
+    omega
+  have hfirst : oldTarget 0 < q := by
+    exact (holdStrict hscalePos).trans_le holdScaleQ
+  obtain ⟨n, hnLower, hnUpper⟩ :=
+    strictMono_exists_predecessor_bracket holdStrict hfirst
+  have hnScale :
+      (k + 1) * floor ≤ n := by
+    by_contra hnot
+    have hnSmall : n < (k + 1) * floor :=
+      Nat.lt_of_not_ge hnot
+    have hnextScale : n + 1 < scale := by
+      dsimp only [scale]
+      omega
+    have holdNextScale :
+        oldTarget (n + 1) < oldTarget scale :=
+      holdStrict hnextScale
+    omega
+  obtain ⟨E, hEmem, hEY⟩ :=
+    holdSurvival n
+  obtain ⟨a, haE, haAverage⟩ :=
+    additiveSupportFamily_exists_averageBoundedAnchor
+      (A := A) (k := k + 1) (q := oldTarget n)
+        (by omega) hEmem
+  have haOld : a ≤ oldTarget n :=
+    additiveSupportFamily_supportsBounded
+      A (k + 1) (oldTarget n) E hEmem a haE
+  obtain ⟨H, hHmemRaw, hEinsert⟩ :=
+    additiveSupport_remove_hit_succ hEmem haE
+  let p := oldTarget n - a
+  let δ := q - p
+  have hHmem :
+      H ∈ additiveSupportFamily A k p := by
+    simpa only [p] using hHmemRaw
+  have hHE : H ⊆ E := by
+    intro x hxH
+    rw [hEinsert]
+    exact Finset.mem_insert_of_mem hxH
+  have hHY : Disjoint (H : Set ℕ) Y := by
+    exact hEY.mono_left fun _x hxH =>
+      Finset.mem_coe.mpr
+        (hHE (Finset.mem_coe.mp hxH))
+  have hnOld : n ≤ oldTarget n :=
+    holdStrict.id_le n
+  have hpFloor : k * floor ≤ p := by
+    dsimp only [p]
+    have htargetScale :
+        (k + 1) * floor ≤ oldTarget n :=
+      hnScale.trans hnOld
+    have hpAdd :
+        oldTarget n - a + a = oldTarget n := by
+      omega
+    nlinarith
+  have hpOld : p ≤ oldTarget n := by
+    dsimp only [p]
+    omega
+  have hpQ : p < q :=
+    hpOld.trans_lt hnLower
+  have hδpos : 0 < δ := by
+    dsimp only [δ]
+    omega
+  have hqδ : q = p + δ := by
+    dsimp only [δ]
+    omega
+  obtain ⟨Q, hQmem, _hQnonempty⟩ :=
+    hNrep q hNrepQ
+  have hqNonempty :
+      (additiveSupportFamily A k q).Nonempty :=
+    ⟨Q, hQmem⟩
+  have hshiftDestroy :
+      DestroysAt
+        (additiveSupportFamily A k) Y (p + δ) := by
+    rw [← hqδ]
+    exact hqDestroy
+  obtain hhole | hlanding :=
+    cleanSupport_destroyedTranslate_forces_largeHole_or_boundaryLanding
+      hkpos hpFloor hHmem hHY hshiftDestroy
+  · obtain ⟨c, hfloorC, hcH, hcA, hcY, hhole⟩ :=
+      hhole
+    exact
+      ⟨n, q, p, δ, E, H, c, htargetFloorQ,
+        (le_max_left pointFloor (targetFloor + 1)).trans
+          hfloorC,
+        hnLower, hnUpper, hEmem, hEY, hHmem, hHE,
+        hHY, hδpos, hqδ, hqNonempty, hqDestroy,
+        hcH, hcA, hcY, Or.inl hhole⟩
+  · obtain ⟨c, hfloorC, hcH, hcA, hcY,
+      hshiftA, hshiftY, hrestoredSurvival⟩ :=
+      hlanding
+    have hrestoredAtQ :
+        ¬ DestroysAt
+          (additiveSupportFamily A k)
+          (Y \ {c + δ}) q := by
+      rw [hqδ]
+      exact hrestoredSurvival
+    exact
+      ⟨n, q, p, δ, E, H, c, htargetFloorQ,
+        (le_max_left pointFloor (targetFloor + 1)).trans
+          hfloorC,
+        hnLower, hnUpper, hEmem, hEY, hHmem, hHE,
+        hHY, hδpos, hqδ, hqNonempty, hqDestroy,
+        hcH, hcA, hcY,
+        Or.inr
+          ⟨hshiftA, hshiftY, hrestoredAtQ⟩⟩
+
 /-- Simultaneously descend a clean support and its destroyed translate.
 
 Suppose an order-`h` support at `p` avoids `Y`, while the represented target
@@ -51760,5 +51954,106 @@ theorem exactBasis_counterexample_forces_fusedStreams_or_eventualQuadraticTailTw
         htargetStrict, hcellLarge,
         HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady.onlyTwoRankDescent
           P htargetStrict hremainder⟩
+
+/-- Counterexample-level attack using the original strong minimality.
+
+The exact-basis pipeline already produces one infinite deletion `Y` with a
+strict successor-order survival stream, cofinal successor destruction, and
+represented destroyed predecessor differences.  For an actual instance of
+Problem 881, `Y` is also subject to strong minimality at the original order
+`k`.  Apply that current-order destruction stream to the preceding
+same-target translation theorem.
+
+The conclusion keeps both ranks on the same deletion.  At arbitrarily large
+point and target floors, a current-order failure `q` is bracketed above a
+clean successor endpoint.  Removing one average-bounded summand gives a
+clean current-order target `p` with `q = p + δ`, and then either:
+
+* a genuinely missing translated basis point `c + δ ∉ A`; or
+* an actual deleted point `c + δ ∈ Y` whose one-point restoration repairs
+  that same current-order target.
+
+This is the first counterexample-level capstone in the final fused route
+which uses the original order-`k` strong-minimality hypothesis rather than
+only exactness and successor counterexamplehood. -/
+theorem stronglyMinimal_counterexample_forces_cofinalCurrentTranslationBoundaryAttack
+    {A : Set ℕ} {k : ℕ}
+    (hk : 2 < k)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1)) :
+    ∃ Y : Set ℕ, ∃ oldTarget : ℕ → ℕ,
+      Y ⊆ A ∧
+      Y.Infinite ∧
+      StrictMono oldTarget ∧
+      (∀ n,
+        ∃ E ∈
+            additiveSupportFamily A (k + 1) (oldTarget n),
+          Disjoint (E : Set ℕ) Y) ∧
+      (∀ N, ∃ q, N ≤ q ∧
+        DestroysAt
+          (additiveSupportFamily A k) Y q) ∧
+      (∀ N, ∃ m, N ≤ m ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) Y m) ∧
+      (∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a,
+        L ≤ n ∧
+        oldTarget n < m ∧
+        m < oldTarget (n + 1) ∧
+        E ∈
+          additiveSupportFamily A (k + 1) (oldTarget n) ∧
+        Disjoint (E : Set ℕ) Y ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) Y m ∧
+        a ∈ E ∧
+        (k + 1) * a ≤ oldTarget n ∧
+        L ≤ m - a ∧
+        (additiveSupportFamily A k (m - a)).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A k) Y (m - a)) ∧
+      ∀ pointFloor targetFloor,
+        ∃ n q p δ, ∃ E H : Finset ℕ, ∃ c,
+          targetFloor < q ∧
+          pointFloor ≤ c ∧
+          oldTarget n < q ∧
+          q ≤ oldTarget (n + 1) ∧
+          E ∈
+            additiveSupportFamily A (k + 1) (oldTarget n) ∧
+          Disjoint (E : Set ℕ) Y ∧
+          H ∈ additiveSupportFamily A k p ∧
+          H ⊆ E ∧
+          Disjoint (H : Set ℕ) Y ∧
+          0 < δ ∧
+          q = p + δ ∧
+          (additiveSupportFamily A k q).Nonempty ∧
+          DestroysAt
+            (additiveSupportFamily A k) Y q ∧
+          c ∈ H ∧
+          c ∈ A ∧
+          c ∉ Y ∧
+          (c + δ ∉ A ∨
+            (c + δ ∈ A ∧
+              c + δ ∈ Y ∧
+              ¬ DestroysAt
+                (additiveSupportFamily A k)
+                (Y \ {c + δ}) q)) := by
+  obtain ⟨Y, oldTarget, hYA, hYInfinite,
+      holdStrict, holdSurvival, hsuccessorDestroy,
+      hrepresented⟩ :=
+    exactBasis_counterexample_forces_fusedSuccessorPredecessorStreams
+      hk hminimal.1 hcounter
+  have hcurrentDestroy :
+      ∀ N, ∃ q, N ≤ q ∧
+        DestroysAt
+          (additiveSupportFamily A k) Y q :=
+    hminimal.2 Y hYA hYInfinite
+  have hboundary :=
+    cofinalCurrentDestruction_against_successorSurvival_forces_largeHole_or_boundaryRepair
+      (by omega) hminimal.1 holdStrict holdSurvival
+        hcurrentDestroy
+  exact
+    ⟨Y, oldTarget, hYA, hYInfinite, holdStrict,
+      holdSurvival, hcurrentDestroy, hsuccessorDestroy,
+      hrepresented, hboundary⟩
 
 end Erdos881

@@ -1,3 +1,39 @@
+# GENERAL ORDER: STRONG MINIMALITY WELDED TO THE FUSED STREAM (2026-07-29)
+
+The original order-\(k\) minimality hypothesis now enters the fused
+successor-order endgame directly.  This removes an important mismatch in
+the previous pipeline, which had extracted strong successor-order geometry
+using exactness and counterexamplehood but had not yet made the same
+deletion pay its original-order minimality obligation.
+
+`cofinalCurrentDestruction_against_successorSurvival_forces_largeHole_or_boundaryRepair`
+brackets a cofinally late order-\(k\) target destroyed by \(Y\) above a
+surviving order-\(k+1\) target.  Removing an average-bounded summand from
+the protected successor support produces a clean order-\(k\) support at
+\(p\), with the destroyed target written using the same translation
+\[
+  q=p+\delta.
+\]
+At arbitrarily large point and target floors, translation exit now has
+only two literal outcomes:
+
+- a clean point \(c\) has a genuine missing translate
+  \(c+\delta\notin A\); or
+- \(c+\delta\in Y\), and restoring that single point makes the same
+  order-\(k\) target \(q\) survive.
+
+`stronglyMinimal_counterexample_forces_cofinalCurrentTranslationBoundaryAttack`
+welds this theorem to the counterexample-level fused stream.  Its one
+deletion simultaneously carries successor survival and destruction,
+represented predecessor failures, current-order destruction forced by
+strong minimality, and the same-target translation alternative above.
+
+This is not yet the general-order solution.  The next direct step is to
+homogenize the last mixed alternative.  Cofinal current-order one-point
+repairs will be diagonally fused into a single infinite residual deletion;
+the other branch gives cofinally large literal holes with their original
+source support and translation retained.
+
 # GENERAL ORDER: THE FOUR-HORN SPLIT COLLAPSES TO AFFINE DOUBLE SURVIVAL (2026-07-29)
 
 The exact-target branch is not optional after all.  The global theorem
