@@ -25441,6 +25441,7 @@ theorem freshPredecessorRootedMatchingSteps_have_commonSurvivalPartition_avoidin
       ∀ s : BlockSelector cell, ∀ i,
         ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
           R.card < k ∧
+          Disjoint (R : Set ℕ) K ∧
           i + 1 < M.card ∧
           M ⊆ additiveSupportFamily A k (target i) ∧
           (∀ E ∈ M, R ⊆ E) ∧
@@ -25834,8 +25835,35 @@ theorem freshPredecessorRootedMatchingSteps_have_commonSurvivalPartition_avoidin
   have hsurvivingGood : surviving ⊆ good i := by
     intro E hE
     exact (Finset.mem_filter.mp hE).1
+  have hrootK : Disjoint (root i : Set ℕ) K := by
+    rw [Set.disjoint_left]
+    rintro x hxRoot ⟨j, hxCell⟩
+    rcases lt_trichotomy j i with hji | hji | hij
+    · have hxUsed : x ∈ used i :=
+        hused_mono (Nat.succ_le_of_lt hji)
+          (hcell_into_next j hxCell)
+      exact Finset.disjoint_left.mp (step i).root_disjoint
+        (Finset.mem_coe.mp hxRoot) hxUsed
+    · subst j
+      obtain ⟨E, hEgood, hxPetal⟩ :=
+        Finset.mem_biUnion.mp hxCell
+      exact (Finset.mem_sdiff.mp hxPetal).2
+        (Finset.mem_coe.mp hxRoot)
+    · have hgoodNonempty : (good i).Nonempty := by
+        exact Finset.card_pos.mp
+          (by have := hgoodLarge i; omega)
+      obtain ⟨E, hEgood⟩ := hgoodNonempty
+      have hxE : x ∈ E :=
+        (step i).root_common E (hgoodSub i hEgood)
+          (Finset.mem_coe.mp hxRoot)
+      have hxUsedNext : x ∈ used (i + 1) :=
+        hmatching_into_next i E (hgoodSub i hEgood) hxE
+      have hxUsed : x ∈ used j :=
+        hused_mono (Nat.succ_le_of_lt hij) hxUsedNext
+      exact Finset.disjoint_left.mp (hcellPast j)
+        hxCell hxUsed
   refine ⟨root i, surviving, (step i).root_card,
-    hsurvivingLarge, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    hrootK, hsurvivingLarge, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · intro E hE
     exact (step i).matching_sub
       (hgoodSub i (hsurvivingGood hE))
@@ -25888,7 +25916,7 @@ theorem successorCounterexample_forces_cofinalPredecessorCommonSurvivalPartition
     hKReserved, P, htargetStrict, hretainedInjective,
     hretainedA, hKRetained, hcellLarge, ?_⟩
   intro s i
-  obtain ⟨_R, M, _hRcard, hMlarge, hMsub, _hMroot,
+  obtain ⟨_R, M, _hRcard, _hRK, hMlarge, hMsub, _hMroot,
       _hMnonempty, _hMmatching, hMselected, _hMcell⟩ :=
     hlargeSurvival s i
   have hMpos : 0 < M.card := by omega
@@ -42426,6 +42454,7 @@ theorem IsExactTupleAsymptoticBasis.failsFiniteCoreMatching_has_coherentMovingRo
         ∀ s : BlockSelector cell, ∀ i,
           ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
             R.card < k + 1 ∧
+            Disjoint (R : Set ℕ) K ∧
             i + 1 < M.card ∧
             M ⊆ additiveSupportFamily A (k + 1) (target i) ∧
             (∀ E ∈ M, R ⊆ E) ∧
@@ -42447,7 +42476,7 @@ theorem IsExactTupleAsymptoticBasis.failsFiniteCoreMatching_has_coherentMovingRo
     ⟨K, cell, target, hKA, hKInfinite, P, htarget,
       hcellLarge, ?_, hlargeSurvival⟩
   intro s i
-  obtain ⟨_R, M, _hRcard, hMlarge, hMsub, _hMroot,
+  obtain ⟨_R, M, _hRcard, _hRK, hMlarge, hMsub, _hMroot,
       _hMnonempty, _hMmatching, hMselected, _hMcell⟩ :=
     hlargeSurvival s i
   have hMpos : 0 < M.card := by omega
@@ -42712,6 +42741,7 @@ theorem exactBasis_counterexample_forces_coherentMovingRootFusion
         ∀ s : BlockSelector cell, ∀ i,
           ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
             R.card < k + 1 ∧
+            Disjoint (R : Set ℕ) K ∧
             i + 1 < M.card ∧
             M ⊆ additiveSupportFamily A (k + 1) (target i) ∧
             (∀ E ∈ M, R ⊆ E) ∧
@@ -42886,6 +42916,7 @@ theorem exactBasis_counterexample_forces_coherentMovingRootFusion_with_migrating
         (∀ s : BlockSelector cell, ∀ i,
           ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
             R.card < k + 1 ∧
+            Disjoint (R : Set ℕ) K ∧
             i + 1 < M.card ∧
             M ⊆ additiveSupportFamily A (k + 1) (target i) ∧
             (∀ E ∈ M, R ⊆ E) ∧
@@ -42993,6 +43024,395 @@ theorem alignedSurvivalDestruction_forces_translationExit
   · exact Set.disjoint_left.mp hHY
       (Finset.mem_coe.mpr hxH) hxY
 
+/-- Landing points of one common translation occupy distinct selector
+blocks.
+
+Translation by `δ` is injective, and a block selector contains at most one
+point from each partition block.  Thus the composite
+`a ↦ blockIndex P (a + δ)` is injective on every set whose translates land
+in the selector.  This is the exact cross-block dispersion hidden in the
+landing horn. -/
+theorem selectedTranslation_has_injective_destinationBlocks
+    {K : Set ℕ} {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (s : BlockSelector cell) {V : Finset ℕ} {δ : ℕ}
+    (hlanding :
+      ∀ a ∈ V, a + δ ∈ selectedSet s) :
+    (V.image fun a => blockIndex P (a + δ)).card = V.card := by
+  apply Finset.card_image_iff.mpr
+  intro a ha b hb hab
+  have hshift :
+      a + δ = b + δ :=
+    P.blockIndex_injOn_selectedSet s
+      (hlanding a ha) (hlanding b hb) hab
+  exact Nat.add_right_cancel hshift
+
+/-- A target-localized certificate turns a whole translation landing fan
+into a common destination-block cover.
+
+For every other certificate target choose one support surviving the
+localized selector, and let `U` be their union.  It has size at most
+`(k+1) * |Q \ {q}|`.  For a landing `y = a+δ`, translating the support at
+`t` gives a support `F` at `q` whose only selected point is `y`.
+
+If the block containing `y` had a point `b` outside `U ∪ F`, change only
+that selector coordinate from `y` to `b`.  Then `F` preserves `q`, while
+the supports in `U` preserve every other target of `Q`, contradicting the
+certificate.  Hence every landing destination block is covered by the same
+`U` together with its own translated repair support. -/
+theorem targetLocalizedCertificate_translationLanding_forces_commonBlockCover
+    {A K : Set ℕ} {k t q δ i : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (Q : Finset ℕ)
+    (hcert :
+      ∀ u : BlockSelector cell, ∃ r ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet u) r)
+    (s : BlockSelector cell)
+    (hlocalized :
+      ∀ r ∈ Q, r ≠ q →
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet s) r)
+    {R V : Finset ℕ}
+    (hsource :
+      ∀ a ∈ V, ∃ E : Finset ℕ,
+        E ∈ additiveSupportFamily A (k + 1) t ∧
+        Disjoint (E : Set ℕ) (selectedSet s) ∧
+        a ∈ E ∧ E ⊆ R ∪ cell i)
+    (hqt : q = t + δ)
+    (hlanding :
+      ∀ a ∈ V, a + δ ∈ selectedSet s) :
+    ∃ U : Finset ℕ,
+      U.card ≤ (k + 1) * (Q.erase q).card ∧
+      (∀ r ∈ Q.erase q, ∃ G : Finset ℕ,
+        G ∈ additiveSupportFamily A (k + 1) r ∧
+        G ⊆ U ∧
+        Disjoint (G : Set ℕ) (selectedSet s)) ∧
+      ∀ a ∈ V, ∃ F : Finset ℕ,
+        F ∈ additiveSupportFamily A (k + 1) q ∧
+        a + δ ∈ F ∧
+        Disjoint ((F.erase (a + δ) : Finset ℕ) : Set ℕ)
+          (selectedSet s) ∧
+        F ⊆ insert (a + δ) (R ∪ cell i) ∧
+        cell (blockIndex P (a + δ)) ⊆ U ∪ F := by
+  classical
+  have hotherExists :
+      ∀ r : {r // r ∈ Q.erase q},
+        ∃ G : Finset ℕ,
+          G ∈ additiveSupportFamily A (k + 1) r.1 ∧
+          Disjoint (G : Set ℕ) (selectedSet s) := by
+    intro r
+    have hrQ : r.1 ∈ Q :=
+      Finset.mem_of_mem_erase r.2
+    have hrq : r.1 ≠ q :=
+      (Finset.mem_erase.mp r.2).1
+    exact not_destroysAt_iff.mp
+      (hlocalized r.1 hrQ hrq)
+  choose other hotherMem hotherSelected using hotherExists
+  let U : Finset ℕ :=
+    Finset.univ.biUnion fun r : {r // r ∈ Q.erase q} =>
+      other r
+  have hotherSub :
+      ∀ r : {r // r ∈ Q.erase q}, other r ⊆ U := by
+    intro r x hx
+    exact Finset.mem_biUnion.mpr
+      ⟨r, Finset.mem_univ r, hx⟩
+  have hUcard :
+      U.card ≤ (k + 1) * (Q.erase q).card := by
+    calc
+      U.card ≤
+          ∑ r : {r // r ∈ Q.erase q}, (other r).card := by
+        simpa only [U] using
+          (Finset.card_biUnion_le :
+            (Finset.univ.biUnion
+              fun r : {r // r ∈ Q.erase q} =>
+                other r).card ≤
+              ∑ r ∈ (Finset.univ :
+                Finset {r // r ∈ Q.erase q}),
+                (other r).card)
+      _ ≤ ∑ _r : {r // r ∈ Q.erase q}, (k + 1) := by
+        apply Finset.sum_le_sum
+        intro r _hr
+        exact additiveSupportFamily_cardAtMost
+          A (k + 1) r.1 (other r) (hotherMem r)
+      _ = (k + 1) * (Q.erase q).card := by
+        simp [Nat.mul_comm]
+  refine ⟨U, hUcard, ?_, ?_⟩
+  · intro r hrErase
+    let r' : {r // r ∈ Q.erase q} := ⟨r, hrErase⟩
+    exact ⟨other r', hotherMem r',
+      hotherSub r', hotherSelected r'⟩
+  · intro a haV
+    obtain ⟨E, hEmem, hEselected, haE, hEconfined⟩ :=
+      hsource a haV
+    obtain ⟨H, hHmem, hEinsert⟩ :=
+      additiveSupport_remove_hit_succ hEmem haE
+    let y := a + δ
+    let F : Finset ℕ := insert y H
+    have hFmem :
+        F ∈ additiveSupportFamily A (k + 1) q := by
+      have hlift :=
+        insert_mem_additiveSupportFamily_succ
+          (hKA
+            (P.selectedSet_subset s
+              (hlanding a haV)))
+          hHmem
+      have htarget :
+          y + (t - a) = q := by
+        have haBound :=
+          additiveSupportFamily_supportsBounded
+            A (k + 1) t E hEmem a haE
+        dsimp only [y]
+        rw [hqt]
+        omega
+      simpa only [F, y, htarget] using hlift
+    have hyF : y ∈ F := by
+      exact Finset.mem_insert_self y H
+    have hFeraseSelected :
+        Disjoint ((F.erase y : Finset ℕ) : Set ℕ)
+          (selectedSet s) := by
+      rw [Set.disjoint_left]
+      intro x hxErase hxSelected
+      have hxErase' := Finset.mem_coe.mp hxErase
+      have hxH : x ∈ H := by
+        have hxF : x ∈ F :=
+          (Finset.mem_erase.mp hxErase').2
+        rcases Finset.mem_insert.mp hxF with hxy | hxH
+        · exact ((Finset.mem_erase.mp hxErase').1 hxy).elim
+        · exact hxH
+      exact Set.disjoint_left.mp hEselected
+        (Finset.mem_coe.mpr
+          (by rw [hEinsert]; exact Finset.mem_insert_of_mem hxH))
+        hxSelected
+    have hFconfined :
+        F ⊆ insert y (R ∪ cell i) := by
+      intro x hxF
+      rcases Finset.mem_insert.mp hxF with hxy | hxH
+      · exact Finset.mem_insert.mpr (Or.inl hxy)
+      · apply Finset.mem_insert.mpr
+        apply Or.inr
+        apply hEconfined
+        rw [hEinsert]
+        exact Finset.mem_insert_of_mem hxH
+    have hblockCover :
+        cell (blockIndex P y) ⊆ U ∪ F := by
+      intro b hbCell
+      by_contra hbCover
+      have hbU : b ∉ U := by
+        intro hbU
+        exact hbCover (Finset.mem_union_left F hbU)
+      have hbF : b ∉ F := by
+        intro hbF
+        exact hbCover (Finset.mem_union_right U hbF)
+      let j := blockIndex P y
+      have hsj : (s j).1 = y := by
+        exact (P.mem_selectedSet_iff s).mp
+          (hlanding a haV)
+      let u : BlockSelector cell := fun ℓ =>
+        if hℓ : ℓ = j then
+          ⟨b, by
+            subst ℓ
+            exact hbCell⟩
+        else s ℓ
+      have hFsurvive :
+          Disjoint (F : Set ℕ) (selectedSet u) := by
+        rw [Set.disjoint_left]
+        intro x hxF hxSelected
+        obtain ⟨ℓ, hℓx⟩ := hxSelected
+        by_cases hℓj : ℓ = j
+        · subst ℓ
+          have hbx : b = x := by
+            simpa only [u, dif_pos rfl] using hℓx
+          exact hbF (hbx ▸ Finset.mem_coe.mp hxF)
+        · have hsx : (s ℓ).1 = x := by
+            simpa only [u, dif_neg hℓj] using hℓx
+          by_cases hxy : x = y
+          · have hsjℓ : j = ℓ := by
+              apply P.selector_injective s
+              change (s j).1 = (s ℓ).1
+              calc
+                (s j).1 = y := hsj
+                _ = x := hxy.symm
+                _ = (s ℓ).1 := hsx.symm
+            exact hℓj hsjℓ.symm
+          · exact Set.disjoint_left.mp hFeraseSelected
+              (Finset.mem_coe.mpr
+                (Finset.mem_erase.mpr
+                  ⟨hxy, Finset.mem_coe.mp hxF⟩))
+              ⟨ℓ, hsx⟩
+      have hotherSurvive :
+          ∀ r : {r // r ∈ Q.erase q},
+            Disjoint (other r : Set ℕ) (selectedSet u) := by
+        intro r
+        rw [Set.disjoint_left]
+        intro x hxOther hxSelected
+        obtain ⟨ℓ, hℓx⟩ := hxSelected
+        by_cases hℓj : ℓ = j
+        · subst ℓ
+          have hbx : b = x := by
+            simpa only [u, dif_pos rfl] using hℓx
+          exact hbU
+            (hotherSub r
+              (hbx ▸ Finset.mem_coe.mp hxOther))
+        · have hsx : (s ℓ).1 = x := by
+            simpa only [u, dif_neg hℓj] using hℓx
+          exact Set.disjoint_left.mp (hotherSelected r)
+            hxOther ⟨ℓ, hsx⟩
+      obtain ⟨r, hrQ, hrDestroy⟩ := hcert u
+      by_cases hrq : r = q
+      · subst r
+        exact hrDestroy F hFmem hFsurvive
+      · let r' : {r // r ∈ Q.erase q} :=
+          ⟨r, Finset.mem_erase.mpr ⟨hrq, hrQ⟩⟩
+        exact hrDestroy (other r') (hotherMem r')
+          (hotherSurvive r')
+    exact ⟨F, hFmem, hyF, hFeraseSelected,
+      hFconfined, hblockCover⟩
+
+/-- If a translated repair comes from a root plus one source block, then
+on every other destination block it contributes only its landing point.
+Consequently the common cover in the preceding theorem covers the entire
+destination block except for that one selector point. -/
+theorem translatedRepairBlockCover_forces_coSingletonCover
+    {K : Set ℕ} {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    {R U F : Finset ℕ} {i j y : ℕ}
+    (hRK : Disjoint (R : Set ℕ) K)
+    (hji : j ≠ i)
+    (hFconfined : F ⊆ insert y (R ∪ cell i))
+    (hcover : cell j ⊆ U ∪ F) :
+    cell j \ {y} ⊆ U := by
+  intro x hx
+  have hxCell : x ∈ cell j :=
+    (Finset.mem_sdiff.mp hx).1
+  have hxy : x ≠ y := by
+    simpa using (Finset.mem_sdiff.mp hx).2
+  rcases Finset.mem_union.mp (hcover hxCell) with hxU | hxF
+  · exact hxU
+  · have hxConfined := hFconfined hxF
+    rcases Finset.mem_insert.mp hxConfined with hxy' | hxRest
+    · exact (hxy hxy').elim
+    · rcases Finset.mem_union.mp hxRest with hxR | hxCellI
+      · exact
+          (Set.disjoint_left.mp hRK
+            (Finset.mem_coe.mpr hxR)
+            ((P.mem_iff x).2 ⟨j, hxCell⟩)).elim
+      · exact
+          (Finset.disjoint_left.mp (P.disjoint hji)
+            hxCell hxCellI).elim
+
+/-- Cross-block co-singleton covers give a cardinal bound on the landing
+fan.
+
+Remove the possible landing in the source block `i`.  Every remaining
+destination block has a non-selected second point, and its co-singleton
+cover puts that point in `U`.  Choosing one such point per destination
+block is injective because the partition blocks are disjoint.  Hence all
+but at most one landing consume distinct points of the common cover `U`. -/
+theorem crossBlockCoSingletonLanding_card_le
+    {K : Set ℕ} {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (s : BlockSelector cell)
+    {V U : Finset ℕ} {δ i : ℕ}
+    (hblocks : ∀ j, 1 < (cell j).card)
+    (hlanding :
+      ∀ a ∈ V, a + δ ∈ selectedSet s)
+    (hcoSingleton :
+      ∀ a ∈ V, blockIndex P (a + δ) ≠ i →
+        cell (blockIndex P (a + δ)) \ {a + δ} ⊆ U) :
+    V.card ≤ U.card + 1 := by
+  classical
+  let J : Finset ℕ :=
+    V.image fun a => blockIndex P (a + δ)
+  let J' : Finset ℕ := J.erase i
+  have hJcard : J.card = V.card := by
+    simpa only [J] using
+      selectedTranslation_has_injective_destinationBlocks
+        P s hlanding
+  have hsource :
+      ∀ j : {j // j ∈ J'},
+        ∃ a, a ∈ V ∧
+          blockIndex P (a + δ) = j.1 := by
+    intro j
+    have hjJ : j.1 ∈ J :=
+      Finset.mem_of_mem_erase j.2
+    exact Finset.mem_image.mp hjJ
+  choose source hsourceMem hsourceIndex using hsource
+  have hsourceNe :
+      ∀ j : {j // j ∈ J'},
+        blockIndex P (source j + δ) ≠ i := by
+    intro j
+    rw [hsourceIndex j]
+    exact (Finset.mem_erase.mp j.2).1
+  have hselectedValue :
+      ∀ j : {j // j ∈ J'},
+        (s j.1).1 = source j + δ := by
+    intro j
+    have hs :=
+      (P.mem_selectedSet_iff s).mp
+        (hlanding (source j) (hsourceMem j))
+    rw [hsourceIndex j] at hs
+    exact hs
+  have hsecond :
+      ∀ j : {j // j ∈ J'},
+        (cell j.1 \ {source j + δ}).Nonempty := by
+    intro j
+    by_contra hempty
+    have hsubset :
+        cell j.1 ⊆ {source j + δ} := by
+      intro x hxCell
+      by_contra hxSingleton
+      exact hempty
+        ⟨x, Finset.mem_sdiff.mpr
+          ⟨hxCell, hxSingleton⟩⟩
+    have hcard :
+        (cell j.1).card ≤ 1 := by
+      simpa using Finset.card_le_card hsubset
+    exact (not_le_of_gt (hblocks j.1)) hcard
+  let pick :
+      {j // j ∈ J'} → {x // x ∈ U} := fun j =>
+    ⟨(hsecond j).choose,
+      hcoSingleton (source j) (hsourceMem j) (hsourceNe j)
+        (by
+          rw [hsourceIndex j]
+          exact (hsecond j).choose_spec)⟩
+  have hpickCell :
+      ∀ j : {j // j ∈ J'},
+        (pick j).1 ∈ cell j.1 := by
+    intro j
+    exact
+      (Finset.mem_sdiff.mp (hsecond j).choose_spec).1
+  have hpickInjective : Function.Injective pick := by
+    intro j ℓ hjℓ
+    apply Subtype.ext
+    calc
+      j.1 = blockIndex P (pick j).1 :=
+        (P.blockIndex_eq_of_mem (hpickCell j)).symm
+      _ = blockIndex P (pick ℓ).1 := by
+        rw [congrArg Subtype.val hjℓ]
+      _ = ℓ.1 :=
+        P.blockIndex_eq_of_mem (hpickCell ℓ)
+  have hJ'card : J'.card ≤ U.card := by
+    simpa only [Fintype.card_coe] using
+      Fintype.card_le_of_injective pick hpickInjective
+  have hJsubset : J ⊆ insert i J' := by
+    intro j hjJ
+    by_cases hji : j = i
+    · exact Finset.mem_insert.mpr (Or.inl hji)
+    · exact Finset.mem_insert.mpr
+        (Or.inr (Finset.mem_erase.mpr ⟨hji, hjJ⟩))
+  have hJle : J.card ≤ J'.card + 1 := by
+    calc
+      J.card ≤ (insert i J').card :=
+        Finset.card_le_card hJsubset
+      _ ≤ J'.card + 1 := Finset.card_insert_le i J'
+  rw [hJcard] at hJle
+  omega
+
 /-- Migrating certificates force cofinally large translation-exit fans.
 
 Use the entire rooted matching retained by the moving-root fusion, rather
@@ -43010,23 +43430,40 @@ Its translate by the one common gap has only two destinations:
 
 Moreover the petal matching gives `M.card ≤ V.card`, so this is an
 arbitrarily large arithmetic obstruction, not a bounded support artifact.
-This is the concrete shape forced by the formerly anonymous migrating
-certificate gap. -/
+The certificate is then shrunk to a cardinal-minimal target-localized one.
+Cross-block injection and the selector switch above force every non-source
+landing block to be co-singleton-covered by one common union `U` of supports
+for the other certificate targets.  Hence
+`Vin.card ≤ U.card + 1 ≤ (k+1) * |Q.erase q| + 1`.
+
+Thus the landing horn has been consumed into explicit certificate-cardinality
+growth: at every late gap either translated holes are already large, or the
+minimal certificate grows linearly with the gap index. -/
 theorem exactBasis_counterexample_forces_cofinalTranslationExitFans
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
     (hcounter : ∀ B, B ⊆ A → B.Infinite →
       ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1)) :
     ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ P : IsFiniteBlockPartition K cell,
       ∃ target : ℕ → ℕ,
         K ⊆ A ∧
         K.Infinite ∧
-        IsFiniteBlockPartition K cell ∧
         StrictMono target ∧
         (∀ i, i + 2 < (cell i).card) ∧
-        ∀ L, ∃ s : BlockSelector cell, ∃ i q δ,
+        ∀ L, ∃ Q : Finset ℕ,
+          ∃ s : BlockSelector cell, ∃ i q δ,
           ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
-          ∃ V Vin Vout : Finset ℕ,
+          ∃ V Vin Vout U : Finset ℕ,
+            q ∈ Q ∧
+            (∀ u : BlockSelector cell, ∃ r ∈ Q,
+              DestroysAt
+                (additiveSupportFamily A (k + 1))
+                (selectedSet u) r) ∧
+            (∀ r ∈ Q, r ≠ q →
+              ¬ DestroysAt
+                (additiveSupportFamily A (k + 1))
+                (selectedSet s) r) ∧
             L ≤ i ∧
             target i < q ∧
             q < target (i + 1) ∧
@@ -43036,6 +43473,7 @@ theorem exactBasis_counterexample_forces_cofinalTranslationExitFans
               (additiveSupportFamily A (k + 1))
               (selectedSet s) q ∧
             R.card < k + 1 ∧
+            Disjoint (R : Set ℕ) K ∧
             i + 1 < M.card ∧
             M ⊆ additiveSupportFamily A (k + 1) (target i) ∧
             (∀ E ∈ M, R ⊆ E) ∧
@@ -43059,16 +43497,39 @@ theorem exactBasis_counterexample_forces_cofinalTranslationExitFans
             (Vin.image fun a => a + δ).card = Vin.card ∧
             (((Vin.image fun a => a + δ) : Finset ℕ) : Set ℕ) ⊆
               selectedSet s ∧
+            (Vin.image fun a =>
+              blockIndex P (a + δ)).card = Vin.card ∧
+            U.card ≤ (k + 1) * (Q.erase q).card ∧
+            (∀ r ∈ Q.erase q, ∃ G : Finset ℕ,
+              G ∈ additiveSupportFamily A (k + 1) r ∧
+              G ⊆ U ∧
+              Disjoint (G : Set ℕ) (selectedSet s)) ∧
+            (∀ a ∈ Vin, ∃ F : Finset ℕ,
+              F ∈ additiveSupportFamily A (k + 1) q ∧
+              a + δ ∈ F ∧
+              Disjoint
+                ((F.erase (a + δ) : Finset ℕ) : Set ℕ)
+                (selectedSet s) ∧
+              F ⊆ insert (a + δ) (R ∪ cell i) ∧
+              cell (blockIndex P (a + δ)) ⊆ U ∪ F ∧
+              (blockIndex P (a + δ) ≠ i →
+                cell (blockIndex P (a + δ)) \ {a + δ} ⊆ U)) ∧
+            Vin.card ≤ U.card + 1 ∧
+            Vin.card ≤
+              (k + 1) * (Q.erase q).card + 1 ∧
             (∀ a ∈ Vout, a + δ ∉ A) ∧
             (i + 1 < 2 * Vout.card ∨
-              i + 1 < 2 * Vin.card) := by
+              i + 1 < 2 * Vin.card) ∧
+            (i + 1 < 2 * Vout.card ∨
+              i + 1 <
+                2 * ((k + 1) * (Q.erase q).card + 1)) := by
   classical
   obtain ⟨K, cell, target, hKA, hKInfinite, P,
       htargetStrict, hcellLarge, hsurvive,
       hlargeSurvive⟩ :=
     exactBasis_counterexample_forces_coherentMovingRootFusion
       hbasis hcounter
-  refine ⟨K, cell, target, hKA, hKInfinite, P,
+  refine ⟨K, cell, P, target, hKA, hKInfinite,
     htargetStrict, hcellLarge, ?_⟩
   intro L
   obtain ⟨Q, hQnonempty, hQbracket, hcert, _hQsafe,
@@ -43076,12 +43537,16 @@ theorem exactBasis_counterexample_forces_cofinalTranslationExitFans
     commonSurvivalStream_forces_cofinallyBracketedTerminatedCertificates
       hbasis (strongExactDeletion_of_counterexample hcounter)
         hKA P target htargetStrict hsurvive 0 L
-  let s : BlockSelector cell := fun j =>
+  obtain ⟨Q₀, hQ₀Q, hQ₀cert, hQ₀localized⟩ :=
+    exists_minimal_targetLocalized_subcertificate hcert
+  let s₀ : BlockSelector cell := fun j =>
     ⟨(P.nonempty j).choose, (P.nonempty j).choose_spec⟩
-  obtain ⟨q, hqQ, hqDestroy⟩ := hcert s
+  obtain ⟨q, hqQ₀, _hqDestroy₀⟩ := hQ₀cert s₀
+  obtain ⟨s, hqDestroy, hlocalized⟩ :=
+    hQ₀localized q hqQ₀
   obtain ⟨i, hiL, hiLower, hiUpper⟩ :=
-    hQbracket q hqQ
-  obtain ⟨R, M, hRcard, hMlarge, hMsub, hMroot,
+    hQbracket q (hQ₀Q hqQ₀)
+  obtain ⟨R, M, hRcard, hRK, hMlarge, hMsub, hMroot,
       hMnonempty, hMmatching, hMselected, hMcell⟩ :=
     hlargeSurvive s i
   let δ := q - target i
@@ -43186,6 +43651,70 @@ theorem exactBasis_counterexample_forces_cofinalTranslationExitFans
     obtain ⟨a, haVin, rfl⟩ :=
       Finset.mem_image.mp (Finset.mem_coe.mp hx)
     exact (hVinData a haVin).2
+  have hdestinationCard :
+      (Vin.image fun a =>
+        blockIndex P (a + δ)).card = Vin.card := by
+    exact selectedTranslation_has_injective_destinationBlocks
+      P s (fun a ha => (hVinData a ha).2)
+  have hsource :
+      ∀ a ∈ Vin, ∃ E : Finset ℕ,
+        E ∈ additiveSupportFamily A (k + 1) (target i) ∧
+        Disjoint (E : Set ℕ) (selectedSet s) ∧
+        a ∈ E ∧ E ⊆ R ∪ cell i := by
+    intro a haVin
+    obtain ⟨E, hEM, haPetal⟩ :=
+      Finset.mem_biUnion.mp (hVinV haVin)
+    refine ⟨E, hMsub hEM, hMselected E hEM,
+      (Finset.mem_sdiff.mp haPetal).1, ?_⟩
+    intro x hxE
+    by_cases hxR : x ∈ R
+    · exact Finset.mem_union_left _ hxR
+    · exact Finset.mem_union_right _
+        (hMcell
+          (Finset.mem_biUnion.mpr
+            ⟨E, hEM,
+              Finset.mem_sdiff.mpr ⟨hxE, hxR⟩⟩))
+  obtain ⟨U, hUcard, hotherSupports, hlandingCovers⟩ :=
+    targetLocalizedCertificate_translationLanding_forces_commonBlockCover
+      hKA P Q₀ hQ₀cert s hlocalized hsource hqdelta
+        (fun a ha => (hVinData a ha).2)
+  have hlandingCoversSharp :
+      ∀ a ∈ Vin, ∃ F : Finset ℕ,
+        F ∈ additiveSupportFamily A (k + 1) q ∧
+        a + δ ∈ F ∧
+        Disjoint
+          ((F.erase (a + δ) : Finset ℕ) : Set ℕ)
+          (selectedSet s) ∧
+        F ⊆ insert (a + δ) (R ∪ cell i) ∧
+        cell (blockIndex P (a + δ)) ⊆ U ∪ F ∧
+        (blockIndex P (a + δ) ≠ i →
+          cell (blockIndex P (a + δ)) \ {a + δ} ⊆ U) := by
+    intro a haVin
+    obtain ⟨F, hFmem, haF, hFselected,
+        hFconfined, hFcover⟩ :=
+      hlandingCovers a haVin
+    refine ⟨F, hFmem, haF, hFselected,
+      hFconfined, hFcover, ?_⟩
+    intro hdestNe
+    exact translatedRepairBlockCover_forces_coSingletonCover
+      P hRK hdestNe hFconfined hFcover
+  have hblocksTwo : ∀ j, 1 < (cell j).card := by
+    intro j
+    have := hcellLarge j
+    omega
+  have hVinU :
+      Vin.card ≤ U.card + 1 := by
+    apply crossBlockCoSingletonLanding_card_le
+      P s hblocksTwo (fun a ha => (hVinData a ha).2)
+    intro a ha hdestNe
+    obtain ⟨F, _hFmem, _haF, _hFselected,
+        _hFconfined, _hFcover, hcoSingleton⟩ :=
+      hlandingCoversSharp a ha
+    exact hcoSingleton hdestNe
+  have hVinCertificate :
+      Vin.card ≤
+        (k + 1) * (Q₀.erase q).card + 1 := by
+    omega
   have htranslationSplit :
       Vin.card + Vout.card = V.card := by
     simpa only [Vin, Vout, not_not] using
@@ -43201,13 +43730,23 @@ theorem exactBasis_counterexample_forces_cofinalTranslationExitFans
       have hVlarge : i + 1 < V.card :=
         hMlarge.trans_le hMcardV
       omega
-  exact ⟨s, i, q, δ, R, M, V, Vin, Vout,
-    hiL, hiLower, hiUpper,
-    hdeltaPos, hqdelta, hqDestroy, hRcard, hMlarge,
+  have hholeOrCertificateGrowth :
+      i + 1 < 2 * Vout.card ∨
+        i + 1 <
+          2 * ((k + 1) * (Q₀.erase q).card + 1) := by
+    rcases hholeOrLanding with hholes | hlandingLarge
+    · exact Or.inl hholes
+    · exact Or.inr (lt_of_lt_of_le hlandingLarge
+        (Nat.mul_le_mul_left 2 hVinCertificate))
+  exact ⟨Q₀, s, i, q, δ, R, M, V, Vin, Vout, U,
+    hqQ₀, hQ₀cert, hlocalized, hiL, hiLower, hiUpper,
+    hdeltaPos, hqdelta, hqDestroy, hRcard, hRK, hMlarge,
     hMsub, hMroot, hMnonempty, hMmatching, hMselected,
     rfl, hMcardV, hMcell, hVclean, htranslateExit,
     hVinV, hVoutV, hVinVout, hVsplit, hVinData,
-    hshiftCard, hshiftSelected, hVoutData,
-    hholeOrLanding⟩
+    hshiftCard, hshiftSelected, hdestinationCard,
+    hUcard, hotherSupports, hlandingCoversSharp,
+    hVinU, hVinCertificate, hVoutData,
+    hholeOrLanding, hholeOrCertificateGrowth⟩
 
 end Erdos881
