@@ -30847,6 +30847,41 @@ theorem largeMinimalDestroyer_forces_nontrivialRankDescent_or_protectedRepair_or
           (hmarkedData p hp).2.2.2.2⟩,
         hmarkedFst, hmarkedSnd⟩
 
+/-- Every nonempty selected minimal destroyer has a protected selector
+repair when the relevant blocks have uniform room.
+
+This is the direct private-support argument.  Choose any `x ∈ D`.
+Inclusion-minimality supplies a same-target support meeting `D` exactly at
+`x`; the marked-support completion then changes the `x`-block and reroutes
+the finitely many other support-hit blocks outside the protected union.
+-/
+theorem selectedMinimalDestroyer_extends_avoiding_protectedUnion
+    {A C : Set ℕ} {k q : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    (s : BlockSelector cell) {D U : Finset ℕ}
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (k + 1)) D q)
+    (hDnonempty : D.Nonempty)
+    (hDselected : (D : Set ℕ) ⊆ selectedSet s)
+    (hUselected :
+      Disjoint (U : Set ℕ) (selectedSet s))
+    (hblocks :
+      ∀ j, U.card + (k + 1) < (cell j).card) :
+    ∃ t : BlockSelector cell,
+      Disjoint (U : Set ℕ) (selectedSet t) ∧
+      ¬ DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (selectedSet t) q := by
+  obtain ⟨x, hxD⟩ := hDnonempty
+  obtain ⟨E, hER, hprivate⟩ :=
+    hminimal.exists_uniqueHitSupport hxD
+  obtain ⟨_i, _b, t, _hsi, _hbBlock, htU, htq⟩ :=
+    markedPrivateSupport_extends_avoiding_protectedUnion
+      P s hDselected hxD hUselected hER hprivate hblocks
+  exact ⟨t, htU, htq⟩
+
 /-- On a block selector, the entire large-destroyer branch collapses.
 
 With demand zero the private-core amplifier needs only `1 < D.card`.
@@ -30934,6 +30969,90 @@ theorem selectedLargeMinimalDestroyer_forces_nontrivialRankDescent_or_protectedR
     exact ⟨t, htU, by
       simpa only [hpredSucc] using htq⟩
 
+/-- An external predecessor gap also gives a protected repair on an
+arbitrary block reservoir.
+
+Minimality first supplies a same-target support surviving the finite swap
+`D.erase d ∪ {b}`.  No old selector choices need be retained here: choose
+one point outside `U ∪ E` in every reservoir block.  Uniform block capacity
+then makes the resulting selector avoid both the protected prefix and the
+repair support. -/
+theorem lowerGapRepair_extends_avoiding_protectedUnionOnReservoir
+    {A K : Set ℕ} {k q b d : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    {D U : Finset ℕ}
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (k + 1)) D q)
+    (hdD : d ∈ D)
+    (hgap :
+      additiveSupportFamily A k (q - b) = ∅)
+    (hblocks :
+      ∀ j, U.card + (k + 1) < (cell j).card) :
+    ∃ t : BlockSelector cell,
+      Disjoint (U : Set ℕ) (selectedSet t) ∧
+      ¬ DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (selectedSet t) q := by
+  classical
+  have hrepair :
+      ¬ DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (((D.erase d ∪ {b} : Finset ℕ) : Set ℕ)) q :=
+    hminimal.swap_hit_for_lowerGap_repairs hdD hgap
+  obtain ⟨E, hER, _hEswap⟩ :=
+    not_destroysAt_iff.mp hrepair
+  have hEcard : E.card ≤ k + 1 :=
+    additiveSupportFamily_cardAtMost
+      A (k + 1) q E hER
+  let W : Finset ℕ := U ∪ E
+  have hWcard : W.card ≤ U.card + (k + 1) := by
+    calc
+      W.card ≤ U.card + E.card := by
+        simpa only [W] using Finset.card_union_le U E
+      _ ≤ U.card + (k + 1) :=
+        Nat.add_le_add_left hEcard U.card
+  have houtside : ∀ j, (cell j \ W).Nonempty := by
+    intro j
+    by_contra hempty
+    have hsubset : cell j ⊆ W := by
+      intro x hxCell
+      by_contra hxW
+      exact hempty
+        ⟨x, Finset.mem_sdiff.mpr ⟨hxCell, hxW⟩⟩
+    have hcard :=
+      Finset.card_le_card hsubset
+    have hlarge := hblocks j
+    omega
+  choose outside houtsideSpec using houtside
+  let t : BlockSelector cell := fun j =>
+    ⟨outside j,
+      (Finset.mem_sdiff.mp (houtsideSpec j)).1⟩
+  have htU :
+      Disjoint (U : Set ℕ) (selectedSet t) := by
+    rw [Set.disjoint_left]
+    intro x hxU hxSelected
+    obtain ⟨j, hjx⟩ := hxSelected
+    have hxOutside : x = outside j :=
+      hjx.symm
+    exact
+      (Finset.mem_sdiff.mp (houtsideSpec j)).2
+        (Finset.mem_union_left E
+          (hxOutside ▸ Finset.mem_coe.mp hxU))
+  refine ⟨t, htU, ?_⟩
+  apply not_destroysAt_iff.mpr
+  refine ⟨E, hER, ?_⟩
+  rw [Set.disjoint_left]
+  intro x hxE hxSelected
+  obtain ⟨j, hjx⟩ := hxSelected
+  have hxOutside : x = outside j :=
+    hjx.symm
+  exact
+    (Finset.mem_sdiff.mp (houtsideSpec j)).2
+      (Finset.mem_union_right U
+        (hxOutside ▸ Finset.mem_coe.mp hxE))
+
 /-- The corrected cofinal selector fork with the large branch eliminated.
 
 Ask the four-way fork for a destroyer larger than one point.  The preceding
@@ -30990,6 +31109,331 @@ theorem IsStronglyMinimalExactBasis.cofinal_selectorNontrivialRankDescent_or_pro
         hDminimal, Or.inl (Or.inr hrepair)⟩
   · exact ⟨q, D, hLq, hDnonempty, hDselected,
       hDminimal, Or.inr hgap⟩
+
+/-- Cofinal selector attack with both cardinality horns consumed.
+
+The preceding three-way theorem has only one non-repair alternative besides
+rank descent: a primitive predecessor gap.  Choosing any hit of the
+nonempty minimal destroyer and applying the protected reservoir gap repair
+turns that horn into a same-target selector repair as well.  Therefore every
+late stage yields either genuine rank descent or an actual protected repair.
+-/
+theorem IsStronglyMinimalExactBasis.cofinal_selectorNontrivialRankDescent_or_protectedRepair
+    {A K : Set ℕ} {h : ℕ} {cell : ℕ → Finset ℕ}
+    (hminimal : IsStronglyMinimalExactBasis A h)
+    (hh : 1 < h)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (s : BlockSelector cell) (U : Finset ℕ)
+    (hUselected :
+      Disjoint (U : Set ℕ) (selectedSet s))
+    (hblocks : ∀ j, U.card + h < (cell j).card) :
+    ∀ L, ∃ q, ∃ D : Finset ℕ,
+      L ≤ q ∧
+      D.Nonempty ∧
+      (D : Set ℕ) ⊆ selectedSet s ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q ∧
+      ((∃ ℓ n,
+          1 < ℓ ∧
+          ℓ < h ∧
+          (additiveSupportFamily A ℓ n).Nonempty ∧
+          DestroysAt
+            (additiveSupportFamily A ℓ)
+            (D : Set ℕ) n) ∨
+        ∃ t : BlockSelector cell,
+          Disjoint (U : Set ℕ) (selectedSet t) ∧
+          ¬ DestroysAt
+            (additiveSupportFamily A h)
+            (selectedSet t) q) := by
+  intro L
+  obtain ⟨q, D, hLq, hDnonempty, hDselected,
+      hDminimal, houtcome⟩ :=
+    hminimal.cofinal_selectorNontrivialRankDescent_or_protectedRepair_or_lowerGap
+      hh hKA P s U hUselected hblocks L
+  rcases houtcome with (hdescent | hrepair) | hgap
+  · exact ⟨q, D, hLq, hDnonempty, hDselected,
+      hDminimal, Or.inl hdescent⟩
+  · exact ⟨q, D, hLq, hDnonempty, hDselected,
+      hDminimal, Or.inr hrepair⟩
+  · obtain ⟨b, _hbSelected, _hbD, _hbq, hgap⟩ :=
+      hgap
+    obtain ⟨d, hdD⟩ := hDnonempty
+    have hpredSucc : h - 1 + 1 = h := by omega
+    have hDminimalPred :
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A (h - 1 + 1)) D q := by
+      simpa only [hpredSucc] using hDminimal
+    have hblocksPred :
+        ∀ j, U.card + (h - 1 + 1) < (cell j).card := by
+      simpa only [hpredSucc] using hblocks
+    obtain ⟨t, htU, htq⟩ :=
+      lowerGapRepair_extends_avoiding_protectedUnionOnReservoir
+        P hDminimalPred hdD hgap hblocksPred
+    exact ⟨q, D, hLq, ⟨d, hdD⟩, hDselected,
+      hDminimal, Or.inr ⟨t, htU, by
+        simpa only [hpredSucc] using htq⟩⟩
+
+/-- A finite target-localized certificate must be too large for some block.
+
+For one localized target `q`, choose a surviving support for every other
+certificate target and put their union in `U`.  This union has cardinality
+at most `(k+1) * Q.card` and avoids the selector localizing `q`.  If every
+block had another `k+1` points of room, a private support of a minimal
+destroyer at `q` would extend to a selector avoiding `U` and preserving
+`q`.  The supports stored in `U` preserve all other targets, contradicting
+the certificate.
+
+This is the exact cardinal feedback left by the direct repair attack:
+certificate size must dominate the smallest available block. -/
+theorem targetLocalizedAdditiveCertificate_forces_blockCapacityFailure
+    {A K : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    {Q : Finset ℕ}
+    (hQnonempty : Q.Nonempty)
+    (hrepresented :
+      ∀ q ∈ Q,
+        (additiveSupportFamily A (k + 1) q).Nonempty)
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (hlocalized :
+      ∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q') :
+    ∃ j,
+      (cell j).card ≤
+        (k + 1) * Q.card + (k + 1) := by
+  classical
+  by_contra hnoSmall
+  simp only [not_exists, not_le] at hnoSmall
+  obtain ⟨q, hqQ⟩ := hQnonempty
+  obtain ⟨s, hqDestroy, hotherSurvives⟩ :=
+    hlocalized q hqQ
+  have hsupportExists :
+      ∀ p : {x // x ∈ Q.erase q},
+        ∃ E ∈ additiveSupportFamily A (k + 1) p.1,
+          Disjoint (E : Set ℕ) (selectedSet s) := by
+    intro p
+    have hpQ : p.1 ∈ Q :=
+      (Finset.mem_erase.mp p.2).2
+    have hpq : p.1 ≠ q :=
+      (Finset.mem_erase.mp p.2).1
+    exact not_destroysAt_iff.mp
+      (hotherSurvives p.1 hpQ hpq)
+  choose support hsupportMem hsupportDisjoint using
+    hsupportExists
+  let U : Finset ℕ :=
+    (Q.erase q).attach.biUnion support
+  have hUcard :
+      U.card ≤ (k + 1) * Q.card := by
+    calc
+      U.card ≤
+          ∑ p ∈ (Q.erase q).attach,
+            (support p).card := by
+        simpa only [U] using
+          (Finset.card_biUnion_le
+            (s := (Q.erase q).attach)
+            (t := support))
+      _ ≤
+          ∑ _p ∈ (Q.erase q).attach,
+            (k + 1) := by
+        gcongr with p hp
+        exact additiveSupportFamily_cardAtMost
+          A (k + 1) p.1 (support p)
+            (hsupportMem p)
+      _ = (k + 1) * (Q.erase q).card := by
+        simp [Nat.mul_comm]
+      _ ≤ (k + 1) * Q.card := by
+        exact Nat.mul_le_mul_left (k + 1)
+          Finset.card_erase_le
+  have hUselected :
+      Disjoint (U : Set ℕ) (selectedSet s) := by
+    rw [Set.disjoint_left]
+    intro x hxU hxSelected
+    obtain ⟨p, _hpAttach, hxSupport⟩ :=
+      Finset.mem_biUnion.mp
+        (Finset.mem_coe.mp hxU)
+    exact
+      Set.disjoint_left.mp (hsupportDisjoint p)
+        (Finset.mem_coe.mpr hxSupport) hxSelected
+  obtain ⟨D₁, hD₁selected, _hD₁card, hD₁destroy⟩ :=
+    exists_finiteSelectedDestroyer_of_destroysAt
+      P s hqDestroy
+  obtain ⟨D, hDD₁, hDminimal⟩ :=
+    exists_inclusionMinimalDestroyer_subset
+      hD₁destroy
+  have hDselected :
+      (D : Set ℕ) ⊆ selectedSet s := by
+    intro x hxD
+    exact hD₁selected
+      (Finset.mem_coe.mpr
+        (hDD₁ (Finset.mem_coe.mp hxD)))
+  have hDnonempty : D.Nonempty := by
+    by_contra hDempty
+    have hDeq : D = ∅ :=
+      Finset.not_nonempty_iff_eq_empty.mp hDempty
+    obtain ⟨E, hER⟩ :=
+      hrepresented q hqQ
+    exact hDminimal.1 E hER (by simp [hDeq])
+  have hblocks :
+      ∀ j, U.card + (k + 1) < (cell j).card := by
+    intro j
+    have hjLarge := hnoSmall j
+    omega
+  obtain ⟨t, htU, htq⟩ :=
+    selectedMinimalDestroyer_extends_avoiding_protectedUnion
+      P s hDminimal hDnonempty hDselected
+        hUselected hblocks
+  obtain ⟨r, hrQ, hrDestroy⟩ :=
+    hcert t
+  by_cases hrq : r = q
+  · exact htq (hrq ▸ hrDestroy)
+  · let p : {x // x ∈ Q.erase q} :=
+      ⟨r, Finset.mem_erase.mpr ⟨hrq, hrQ⟩⟩
+    have hsupportU :
+        (support p : Set ℕ) ⊆ (U : Set ℕ) := by
+      intro x hxSupport
+      apply Finset.mem_coe.mpr
+      exact Finset.mem_biUnion.mpr
+        ⟨p, by simp, Finset.mem_coe.mp hxSupport⟩
+    have hsupportT :
+        Disjoint (support p : Set ℕ)
+          (selectedSet t) :=
+      Set.disjoint_of_subset_left hsupportU htU
+    exact
+      (not_destroysAt_iff.mpr
+        ⟨support p, hsupportMem p,
+          hsupportT⟩) hrDestroy
+
+/-- Quadratic tails force localized certificates past every prescribed
+cardinality.
+
+Start beyond the capacity budget for `C` targets.  Strong deletion gives a
+late target-localized certificate on that tail.  If it had at most `C`
+targets, every tail block would exceed the bound in
+`targetLocalizedAdditiveCertificate_forces_blockCapacityFailure`, a
+contradiction.  Thus only the genuinely moving-cardinality regime remains.
+-/
+theorem quadraticBlockTail_forces_largeTargetLocalizedCertificate
+    {A K : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hbasis :
+      IsExactTupleAsymptoticBasis A (k + 1))
+    (hstrong :
+      StrongInfiniteDeletion
+        (additiveSupportFamily A (k + 1)) A)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hquadratic : ∀ i,
+      (i + k + 2) ^ 2 < (cell i).card) :
+    ∀ C L,
+      let capacity := (k + 1) * C + (k + 1)
+      let start := capacity + 1
+      let tailCell : ℕ → Finset ℕ :=
+        fun i => cell (start + i)
+      ∃ Q : Finset ℕ,
+        Q.Nonempty ∧
+        (∀ q ∈ Q, L ≤ q) ∧
+        (∀ s : BlockSelector tailCell, ∃ q ∈ Q,
+          DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q) ∧
+        (∀ q ∈ Q, ∃ s : BlockSelector tailCell,
+          DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q ∧
+          ∀ q' ∈ Q, q' ≠ q →
+            ¬ DestroysAt
+              (additiveSupportFamily A (k + 1))
+              (selectedSet s) q') ∧
+        C < Q.card := by
+  classical
+  intro C L
+  let capacity := (k + 1) * C + (k + 1)
+  let start := capacity + 1
+  let tailCell : ℕ → Finset ℕ :=
+    fun i => cell (start + i)
+  let Ktail : Set ℕ :=
+    {x | ∃ i, x ∈ tailCell i}
+  have hKtailK : Ktail ⊆ K := by
+    rintro x ⟨i, hxi⟩
+    exact (P.mem_iff x).2
+      ⟨start + i, hxi⟩
+  have Ptail :
+      IsFiniteBlockPartition Ktail tailCell := by
+    refine ⟨?_, ?_, ?_⟩
+    · intro i
+      exact P.nonempty (start + i)
+    · intro i j hij
+      apply P.disjoint
+      omega
+    · intro x
+      simp only [Ktail, tailCell,
+        Set.mem_setOf_eq]
+  have htailCapacity :
+      ∀ j, capacity < (tailCell j).card := by
+    intro j
+    have hcell := hquadratic (start + j)
+    have hnSquare :
+        start + j + k + 2 <
+          (start + j + k + 2) ^ 2 := by
+      have hmul :=
+        (Nat.mul_lt_mul_left
+          (show 0 < start + j + k + 2 by omega)).2
+          (show 1 < start + j + k + 2 by omega)
+      simpa only [Nat.mul_one, pow_two] using hmul
+    change
+      (start + j + k + 2) ^ 2 <
+        (tailCell j).card at hcell
+    dsimp only [start, capacity] at hcell hnSquare ⊢
+    omega
+  obtain ⟨Nrep, hNrep⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr
+      hbasis
+  obtain ⟨Q, hQnonempty, hQlate, hcert,
+      hlocalized, _hQsafe⟩ :=
+    strongDeletion_certificate_avoids_allCommonSurvivalTargets
+      hstrong (hKtailK.trans hKA) Ptail
+        (max L Nrep)
+  have hQlateL : ∀ q ∈ Q, L ≤ q := by
+    intro q hqQ
+    exact (le_max_left L Nrep).trans
+      (hQlate q hqQ)
+  have hrepresented :
+      ∀ q ∈ Q,
+        (additiveSupportFamily A (k + 1) q).Nonempty := by
+    intro q hqQ
+    obtain ⟨E, hER, _hEempty⟩ :=
+      hNrep q
+        ((le_max_right L Nrep).trans
+          (hQlate q hqQ))
+    exact ⟨E, hER⟩
+  have hQlarge : C < Q.card := by
+    by_contra hnotLarge
+    have hQsmall : Q.card ≤ C :=
+      Nat.le_of_not_gt hnotLarge
+    obtain ⟨j, hjSmall⟩ :=
+      targetLocalizedAdditiveCertificate_forces_blockCapacityFailure
+        Ptail hQnonempty hrepresented hcert hlocalized
+    have hbound :
+        (k + 1) * Q.card + (k + 1) ≤ capacity := by
+      dsimp only [capacity]
+      exact Nat.add_le_add_right
+        (Nat.mul_le_mul_left (k + 1) hQsmall)
+        (k + 1)
+    have hjLarge := htailCapacity j
+    omega
+  exact ⟨Q, hQnonempty, hQlateL,
+    hcert, hlocalized, hQlarge⟩
 
 /-- Matching-normalized form of the protected-prefix amplifier.
 
