@@ -1,3 +1,47 @@
+# GENERAL ORDER: THE PRIVATE LANDING IS PEELED COMPLETELY (2026-07-29)
+
+The multiplicity obstruction in the private-support descent has been
+removed.
+
+`privateLandingSupport_peels_to_cleanCore_sameDisplacement` peels a private
+support \(H\) against the whole original deletion \(Y\).  Although \(H\)
+is a finset and therefore hides tuple multiplicities, the peeling list
+records occurrences.  Its list is nonempty and every entry is the same
+landing value \(z\).  The theorem consequently gives
+
+\[
+  s=\ell z+t,\qquad q=\ell z+(t+\delta),\qquad
+  \ell+r=k,\qquad r<k,
+\]
+
+together with an order-\(r\) support \(K\) of \(t\) which is disjoint from
+all of \(Y\), and destruction by the residual deletion \(B\) of \(t+\delta\)
+at that same order \(r\).  The removed \(\ell\) copies of \(z\) survive
+\(B\), so the last destruction follows by genuine additive composition,
+not merely by recording a lower gap.
+
+The counterexample-level strict-split capstone now supplies this complete
+object cofinally while retaining both origins of the target:
+
+\[
+  q=m-a=\operatorname{currentTarget}(j)+\delta.
+\]
+
+Thus repeated old deleted points in one root are no longer an escape.  At
+every late aligned stage the hypothetical counterexample must expose a
+strictly lower-rank, \(Y\)-clean source whose translate by the same
+positive displacement is destroyed by \(B\).
+
+This is not yet the general-order solution.  The remaining issue is now
+mathematical rather than multiplicity bookkeeping: the residual rank
+\(r<k\) may be zero, and \(A\) need not be an asymptotic basis of order
+\(r\).  The next attack is to homogenize \(r\) on the cofinal stream and
+split it honestly.  A positive fixed \(r\) is eligible for another
+translation/descent composition; the \(r=0\) branch forces the rigid
+diagonal shape
+\(\operatorname{currentTarget}(j)=\ell z\), which must be compared with
+the injective landing stream and the independent identity \(q=m-a\).
+
 # GENERAL ORDER: PRIVATE LANDINGS NOW DESCEND WITH THE SAME DISPLACEMENT (2026-07-29)
 
 The residual-repair fusion now retains the representation that makes each

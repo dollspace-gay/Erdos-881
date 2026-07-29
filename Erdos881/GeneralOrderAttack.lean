@@ -31556,6 +31556,148 @@ theorem cleanSupport_markedPoint_descends_destroyedTranslate_sameDisplacement
     ⟨G, hGmem, hGH, hGB, hδpos,
       htranslated, hlowerDestroy⟩
 
+/-- Peel every occurrence of the sole deleted value in a private support.
+
+Suppose `H` represents `s` at order `k`, avoids the residual deletion `B`,
+and meets the larger deletion `Y` only at the marked value `z`.  Peeling
+`H` against all of `Y` removes a nonempty list of occurrences.  Privacy
+forces every entry of that list to equal `z`, including repetitions hidden
+by the finset support.
+
+The remaining support `G` is genuinely `Y`-clean and has strict lower
+rank `j < k`.  Because the removed copies of `z` also avoid `B`, they form
+a surviving additive prefix.  Destruction of
+
+`q = s + δ`
+
+therefore descends through that prefix to destruction of `t + δ` at order
+`j`.  The displacement `δ` is unchanged. -/
+theorem privateLandingSupport_peels_to_cleanCore_sameDisplacement
+    {A B Y : Set ℕ} {k s q δ z : ℕ}
+    {H : Finset ℕ}
+    (hBY : B ⊆ Y)
+    (hHmem :
+      H ∈ additiveSupportFamily A k s)
+    (hHB : Disjoint (H : Set ℕ) B)
+    (hzH : z ∈ H)
+    (hzY : z ∈ Y)
+    (hHY :
+      Disjoint (H : Set ℕ) (Y \ {z}))
+    (hδpos : 0 < δ)
+    (hqδ : q = s + δ)
+    (hqDestroy :
+      DestroysAt
+        (additiveSupportFamily A k) B q) :
+    ∃ hits : List ℕ, ∃ j t, ∃ G : Finset ℕ,
+      0 < hits.length ∧
+      hits.length + j = k ∧
+      j < k ∧
+      (∀ x ∈ hits, x = z) ∧
+      G ∈ additiveSupportFamily A j t ∧
+      G ⊆ H ∧
+      Disjoint (G : Set ℕ) Y ∧
+      Disjoint (G : Set ℕ) B ∧
+      H =
+        hits.foldr (fun x F => insert x F) G ∧
+      s = hits.length * z + t ∧
+      q = hits.length * z + (t + δ) ∧
+      0 < δ ∧
+      DestroysAt
+        (additiveSupportFamily A j) B (t + δ) := by
+  classical
+  obtain ⟨hits, j, t, G, hlength, hhits,
+      hGmem, hGY, htarget, hHeq⟩ :=
+    additiveSupport_peel_hits_to_survivingCore
+      k s H hHmem (S := Y)
+  have hhitsNonempty : hits ≠ [] := by
+    intro hhitsEmpty
+    have hHG : H = G := by
+      simpa [hhitsEmpty] using hHeq
+    exact
+      Set.disjoint_left.mp hGY
+        (Finset.mem_coe.mpr (hHG ▸ hzH)) hzY
+  have hhitsPos : 0 < hits.length :=
+    List.length_pos_iff.mpr hhitsNonempty
+  have hhitsEq : ∀ x ∈ hits, x = z := by
+    intro x hxHits
+    have hxH : x ∈ H := by
+      rw [hHeq, foldr_insert_eq_toFinset_union]
+      exact
+        Finset.mem_union.mpr
+          (Or.inl (List.mem_toFinset.mpr hxHits))
+    have hxY : x ∈ Y :=
+      (hhits x hxHits).2
+    by_contra hxz
+    exact
+      Set.disjoint_left.mp hHY
+        (Finset.mem_coe.mpr hxH)
+        ⟨hxY, by simpa using hxz⟩
+  have hhitsList :
+      hits = List.replicate hits.length z :=
+    List.eq_replicate_iff.mpr ⟨rfl, hhitsEq⟩
+  have hhitsSum :
+      hits.sum = hits.length * z := by
+    rw [hhitsList]
+    simp
+  have hGH : G ⊆ H := by
+    intro x hxG
+    rw [hHeq, foldr_insert_eq_toFinset_union]
+    exact Finset.mem_union.mpr (Or.inr hxG)
+  have hGB : Disjoint (G : Set ℕ) B :=
+    hGY.mono_right hBY
+  have hzNotB : z ∉ B := by
+    intro hzB
+    exact
+      Set.disjoint_left.mp hHB
+        (Finset.mem_coe.mpr hzH) hzB
+  let hitSupport : Finset ℕ :=
+    hits.foldr (fun x F => insert x F) ∅
+  have hhitSupportMem :
+      hitSupport ∈
+        additiveSupportFamily A hits.length hits.sum := by
+    exact
+      list_foldr_mem_additiveSupportFamily
+        (fun x hxHits => (hhits x hxHits).1)
+  have hhitSupportB :
+      Disjoint (hitSupport : Set ℕ) B := by
+    rw [Set.disjoint_left]
+    intro x hxPrefix hxB
+    have hxHits : x ∈ hits := by
+      have hxPrefixFin : x ∈ hitSupport :=
+        Finset.mem_coe.mp hxPrefix
+      dsimp only [hitSupport] at hxPrefixFin
+      rw [foldr_insert_eq_toFinset_union] at hxPrefixFin
+      simpa using hxPrefixFin
+    exact hzNotB (hhitsEq x hxHits ▸ hxB)
+  have hqSplit :
+      q = hits.sum + (t + δ) := by
+    omega
+  have hdestroySplit :
+      DestroysAt
+        (additiveSupportFamily A (hits.length + j))
+        B (hits.sum + (t + δ)) := by
+    rw [hlength, ← hqSplit]
+    exact hqDestroy
+  have hlowerDestroy :
+      DestroysAt
+        (additiveSupportFamily A j) B (t + δ) :=
+    additiveDestroyer_descends_through_survivingCore
+      hhitSupportMem hhitSupportB hdestroySplit
+  have hjk : j < k := by
+    omega
+  have hsMarked :
+      s = hits.length * z + t := by
+    rw [hhitsSum] at htarget
+    exact htarget
+  have hqMarked :
+      q = hits.length * z + (t + δ) := by
+    rw [hhitsSum] at hqSplit
+    exact hqSplit
+  exact
+    ⟨hits, j, t, G, hhitsPos, hlength, hjk,
+      hhitsEq, hGmem, hGH, hGY, hGB, hHeq,
+      hsMarked, hqMarked, hδpos, hlowerDestroy⟩
+
 /-- Every positive-order additive support contains an anchor no larger
 than the average of the represented tuple: `k * a ≤ q`.
 
@@ -53014,7 +53156,8 @@ theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_strictSplit
               (additiveSupportFamily A k) B
               (m - a)) ∧
           ∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a j q,
-            ∃ H G : Finset ℕ, ∃ δ,
+            ∃ H G K : Finset ℕ, ∃ δ,
+            ∃ hits : List ℕ, ∃ r t,
               L ≤ n ∧
               oldTarget n < m ∧
               m < oldTarget (n + 1) ∧
@@ -53050,6 +53193,25 @@ theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_strictSplit
               DestroysAt
                 (additiveSupportFamily A (k - 1))
                 B (q - landing j) ∧
+              0 < hits.length ∧
+              hits.length + r = k ∧
+              r < k ∧
+              (∀ x ∈ hits, x = landing j) ∧
+              K ∈
+                additiveSupportFamily A r t ∧
+              K ⊆ H ∧
+              Disjoint (K : Set ℕ) Y ∧
+              Disjoint (K : Set ℕ) B ∧
+              H =
+                hits.foldr
+                  (fun x F => insert x F) K ∧
+              currentTarget j =
+                hits.length * landing j + t ∧
+              q =
+                hits.length * landing j + (t + δ) ∧
+              DestroysAt
+                (additiveSupportFamily A r)
+                B (t + δ) ∧
               H.Nonempty ∧
               (additiveSupportFamily A k q).Nonempty ∧
               DestroysAt
@@ -53222,14 +53384,26 @@ theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_strictSplit
         (by omega) hHmem hHB hlandingH
           hδpos hqδ
           (hfan (landing j) hlandingH).2
+    obtain ⟨hits, r, t, K, hhitsPos, hlength,
+        hrk, hhitsEq, hKmem, hKH, hKY, hKB,
+        hHeq, hcurrentSplit, hqSplit, _hδpos,
+        hcoreDestroy⟩ :=
+      privateLandingSupport_peels_to_cleanCore_sameDisplacement
+        hBY hHmem hHB hlandingH
+          (hlandingRange j).1 hHprivate hδpos hqδ
+          hqDestroy
     exact
-      ⟨n, m, E, a, j, q, H, G, δ,
+      ⟨n, m, E, a, j, q, H, G, K, δ,
+        hits, r, t,
         hnL, hnLower, hnUpper, hEmem, hEB,
         hmDestroy, haE, haAverage, hqEq,
         hqFloor, hjFloor, hjLower, hjUpper,
         hHmem, hHB, ⟨hlandingH, hHprivate⟩,
         rfl, hδpos, hGmem, hGH, hGB,
         htranslated, hmarkedDestroy,
+        hhitsPos, hlength, hrk, hhitsEq,
+        hKmem, hKH, hKY, hKB, hHeq,
+        hcurrentSplit, hqSplit, hcoreDestroy,
         hHnonempty, hqNonempty, hqDestroy,
         hfan⟩
 
