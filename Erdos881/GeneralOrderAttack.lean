@@ -60212,4 +60212,700 @@ theorem
         hterminal.toExitOrFixedCoreArithmetic
           hk hC'C hminimal⟩
 
+/-- A fixed-core terminal fusion restricted to one infinite geometric
+class, with current-order strong minimality already applied at every
+localized threshold.
+
+`geometry upper nextOriginalTarget` distinguishes the two operational
+cases below.  On every retained stage the actual lower support obtained by
+removing the marked point from the fused support is recorded explicitly,
+so neither the affine translation nor the support decomposition can be
+lost when the geometric branch is consumed. -/
+def HasTerminalFixedCoreGeometricArithmeticFusion
+    (A B C D Y : Set ℕ) (k t ε : ℕ)
+    (landing target root repaired : ℕ → ℕ)
+    (geometry : ℕ → ℕ → Prop) : Prop :=
+  ∃ Z : Set ℕ,
+  ∃ source translation upper marked : ℕ → ℕ,
+  ∃ support : ℕ → Finset ℕ,
+  ∃ origin landingIndex rootShift : ℕ → ℕ,
+  ∃ sourceSupport : ℕ → Finset ℕ,
+  ∃ I : Set ℕ, ∃ core : Finset ℕ,
+    D ⊆ C ∧
+    Z ⊆ D ∧
+    Z ⊆ A ∧
+    Z.Infinite ∧
+    StrictMono source ∧
+    StrictMono translation ∧
+    StrictMono upper ∧
+    I.Infinite ∧
+    core ∈ additiveSupportFamily A (k - 1) t ∧
+    Disjoint (core : Set ℕ) C ∧
+    (∀ n,
+      t + ε ≤ source n ∧
+      0 < translation n ∧
+      translation n = source n - t ∧
+      support n ∈
+        additiveSupportFamily A k (upper n) ∧
+      marked n ∈ support n ∧
+      Disjoint (support n : Set ℕ) Z ∧
+      upper n - marked n = source n ∧
+      marked n = repaired (origin n) ∧
+      root (origin n) = landing (landingIndex n) ∧
+      root (origin n) ∈ Y \ B ∧
+      0 < rootShift n ∧
+      marked n = root (origin n) + rootShift n ∧
+      marked n ∈ A ∧
+      marked n ∈ B \ C ∧
+      target (origin n) = marked n + t ∧
+      sourceSupport n ∈
+        additiveSupportFamily A k (target (origin n)) ∧
+      marked n ∈ sourceSupport n ∧
+      Disjoint (sourceSupport n : Set ℕ) C ∧
+      upper n =
+        target (origin n) + translation n) ∧
+    (∀ n ∈ I,
+      source n = t + translation n ∧
+      Disjoint (sourceSupport n : Set ℕ) Z ∧
+      sourceSupport n = insert (marked n) core ∧
+      geometry (upper n) (target (origin n + 1)) ∧
+      ∃ translatedSupport : Finset ℕ,
+        translatedSupport ∈
+          additiveSupportFamily A (k - 1) (source n) ∧
+        Disjoint (translatedSupport : Set ℕ) Z ∧
+        support n =
+          insert (marked n) translatedSupport) ∧
+    ∀ L, ∃ n ∈ I,
+      HasFixedPredecessorArithmeticInjuryAtFloor
+        A Z k (source n) L
+
+/-- The fixed-core threshold stream has an exhaustive geometric split.
+
+On the infinite fixed-core set, partition stages according to whether the
+translated upper target still lies before the next target of its original
+source block.  One side is infinite.  Enumerating that side preserves the
+strict source and upper streams, so strong minimality produces arithmetic
+injury at every scale *inside the same geometric class*.
+
+The left branch is the block-aligned repair regime
+
+`upper n < target (origin n + 1)`.
+
+The right branch is literal boundary crossing
+
+`target (origin n + 1) ≤ upper n`.
+
+This is not a classification detached from the attack: both branches
+already carry the fixed core, the actual translated support, and localized
+destruction on one common infinite deletion. -/
+theorem
+    HasTerminalFixedSourceCoreAlignedFusion.sameBlock_or_crossBlock_arithmeticFusion
+    {A B C D Y : Set ℕ} {k t ε : ℕ}
+    {landing target root repaired : ℕ → ℕ}
+    (hk : 1 < k)
+    (hDC : D ⊆ C)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (hfused :
+      HasTerminalFixedSourceCoreAlignedFusion
+        A B C D Y k t ε landing target root repaired) :
+    HasTerminalFixedCoreGeometricArithmeticFusion
+        A B C D Y k t ε landing target root repaired
+          (fun upper nextTarget => upper < nextTarget) ∨
+      HasTerminalFixedCoreGeometricArithmeticFusion
+        A B C D Y k t ε landing target root repaired
+          (fun upper nextTarget => nextTarget ≤ upper) := by
+  classical
+  obtain ⟨Z, source, translation, upper, marked,
+      support, origin, landingIndex, rootShift,
+      sourceSupport, J, core,
+      hZD, hZA, hZInfinite,
+      hsourceStrict, htranslationStrict,
+      hupperStrict, hJInfinite,
+      hcoreMem, hcoreC, hdata, hcoreEq⟩ :=
+    hfused
+  have hbuild :
+      ∀ (geometry : ℕ → ℕ → Prop) (I : Set ℕ),
+        I ⊆ J →
+        I.Infinite →
+        (∀ n ∈ I,
+          geometry (upper n)
+            (target (origin n + 1))) →
+        HasTerminalFixedCoreGeometricArithmeticFusion
+          A B C D Y k t ε landing target root repaired
+            geometry := by
+    intro geometry I hIJ hIInfinite hgeometry
+    let index : ℕ → ℕ :=
+      Nat.nth fun n => n ∈ I
+    have hindexI :
+        ∀ n, index n ∈ I := by
+      intro n
+      exact Nat.nth_mem_of_infinite hIInfinite n
+    have hindexStrict : StrictMono index :=
+      Nat.nth_strictMono hIInfinite
+    have hrestrictedData :
+        ∀ n,
+          support (index n) ∈
+              additiveSupportFamily A k
+                (upper (index n)) ∧
+          marked (index n) ∈ support (index n) ∧
+          Disjoint
+            (support (index n) : Set ℕ) Z ∧
+          upper (index n) - marked (index n) =
+            source (index n) := by
+      intro n
+      exact
+        ⟨(hdata (index n)).2.2.2.1,
+          (hdata (index n)).2.2.2.2.1,
+          (hdata (index n)).2.2.2.2.2.1,
+          (hdata (index n)).2.2.2.2.2.2.1⟩
+    have hinjury :
+        ∀ L, ∃ n ∈ I,
+          HasFixedPredecessorArithmeticInjuryAtFloor
+            A Z k (source n) L := by
+      intro L
+      obtain ⟨r, hr⟩ :=
+        movingPredecessorStrictSurvivalStream_forces_arithmeticInjuryAtFloor
+          (A := A) (B := Z) (k := k)
+          (source := fun n => source (index n))
+          (upper := fun n => upper (index n))
+          (marked := fun n => marked (index n))
+          (support := fun n => support (index n))
+          hk hZA hZInfinite hminimal
+          (hsourceStrict.comp hindexStrict)
+          (hupperStrict.comp hindexStrict)
+          hrestrictedData L
+      exact
+        ⟨index r, hindexI r, by
+          simpa only using hr⟩
+    have hselected :
+        ∀ n ∈ I,
+          source n = t + translation n ∧
+          Disjoint (sourceSupport n : Set ℕ) Z ∧
+          sourceSupport n = insert (marked n) core ∧
+          geometry (upper n)
+            (target (origin n + 1)) ∧
+          ∃ translatedSupport : Finset ℕ,
+            translatedSupport ∈
+              additiveSupportFamily A (k - 1)
+                (source n) ∧
+            Disjoint
+              (translatedSupport : Set ℕ) Z ∧
+            support n =
+              insert (marked n) translatedSupport := by
+      intro n hnI
+      obtain ⟨hsourceFloor, _htranslationPos,
+          htranslationEq, hsupportMem,
+          hmarkedSupport, hsupportZ,
+          hpredecessor, _hmarkedRepaired,
+          _hrootLanding, _hrootRange,
+          _hrootShiftPos, _hmarkedRoot,
+          _hmarkedA, _hmarkedRange,
+          _htargetMarked, _hsourceSupportMem,
+          _hmarkedSourceSupport, hsourceSupportC,
+          _hupperAligned⟩ :=
+        hdata n
+      have hsourceEq :
+          source n = t + translation n := by
+        rw [htranslationEq]
+        omega
+      have hsourceSupportZ :
+          Disjoint (sourceSupport n : Set ℕ) Z :=
+        hsourceSupportC.mono_right
+          (hZD.trans hDC)
+      have hkPredSucc :
+          k - 1 + 1 = k := by
+        omega
+      have hsupportMemSucc :
+          support n ∈
+            additiveSupportFamily A ((k - 1) + 1)
+              (upper n) := by
+        rw [hkPredSucc]
+        exact hsupportMem
+      obtain ⟨translatedSupport,
+          htranslatedMemRaw,
+          hsupportEq⟩ :=
+        additiveSupport_remove_hit_succ
+          hsupportMemSucc hmarkedSupport
+      have htranslatedMem :
+          translatedSupport ∈
+            additiveSupportFamily A (k - 1)
+              (source n) := by
+        rw [← hpredecessor]
+        exact htranslatedMemRaw
+      have htranslatedSub :
+          translatedSupport ⊆ support n := by
+        intro x hx
+        rw [hsupportEq]
+        exact Finset.mem_insert_of_mem hx
+      have htranslatedZ :
+          Disjoint
+            (translatedSupport : Set ℕ) Z :=
+        hsupportZ.mono_left fun x hx =>
+          Finset.mem_coe.mpr
+            (htranslatedSub
+              (Finset.mem_coe.mp hx))
+      exact
+        ⟨hsourceEq, hsourceSupportZ,
+          hcoreEq n (hIJ hnI),
+          hgeometry n hnI,
+          translatedSupport, htranslatedMem,
+          htranslatedZ, hsupportEq⟩
+    exact
+      ⟨Z, source, translation, upper, marked,
+        support, origin, landingIndex, rootShift,
+        sourceSupport, I, core,
+        hDC, hZD, hZA, hZInfinite,
+        hsourceStrict, htranslationStrict,
+        hupperStrict, hIInfinite,
+        hcoreMem, hcoreC, hdata,
+        hselected, hinjury⟩
+  let Local : Set ℕ :=
+    {n | n ∈ J ∧
+      upper n < target (origin n + 1)}
+  by_cases hLocalInfinite : Local.Infinite
+  · left
+    exact
+      hbuild
+        (fun upper nextTarget => upper < nextTarget)
+        Local
+        (by
+          intro n hn
+          exact hn.1)
+        hLocalInfinite
+        (by
+          intro n hn
+          exact hn.2)
+  · right
+    have hLocalFinite : Local.Finite :=
+      Set.not_infinite.mp hLocalInfinite
+    let Cross : Set ℕ :=
+      J \ Local
+    have hCrossInfinite : Cross.Infinite := by
+      exact hJInfinite.diff hLocalFinite
+    apply
+      hbuild
+        (fun upper nextTarget => nextTarget ≤ upper)
+        Cross
+        (by
+          intro n hn
+          exact hn.1)
+        hCrossInfinite
+    intro n hnCross
+    have hnJ : n ∈ J :=
+      hnCross.1
+    have hnNotLocal : n ∉ Local :=
+      hnCross.2
+    by_contra hnot
+    have hlt :
+        upper n < target (origin n + 1) :=
+      Nat.lt_of_not_ge hnot
+    exact hnNotLocal ⟨hnJ, hlt⟩
+
+/-- Consume the same-block side of the geometric arithmetic fork.
+
+The original source indices occurring on the infinite local set must have
+infinite image.  Otherwise all local upper targets would lie below one
+fixed next-block boundary, contradicting strict growth of the upper
+stream.  Enumerate that infinite image and choose one local stage above
+each enumerated source index.
+
+The exact affine identity and the local inequality then give
+
+`target i < upper < target (i+1) ≤ target i_next`.
+
+Hence the original and translated supports form an honest interlaced
+double-survival stream on the same infinite deletion. -/
+theorem
+    HasTerminalFixedCoreGeometricArithmeticFusion.sameBlock_toInterlacedDoubleSurvival
+    {A B C D Y : Set ℕ} {k t ε : ℕ}
+    {landing target root repaired : ℕ → ℕ}
+    (hk : 1 < k)
+    (htargetStrict : StrictMono target)
+    (hlocal :
+      HasTerminalFixedCoreGeometricArithmeticFusion
+        A B C D Y k t ε landing target root repaired
+          (fun upper nextTarget => upper < nextTarget)) :
+    HasInterlacedDoubleSurvivalStream A (k - 1) := by
+  classical
+  obtain ⟨Z, source, translation, upper, marked,
+      support, origin, _landingIndex, _rootShift,
+      sourceSupport, I, _core,
+      hDC, hZD, hZA, hZInfinite,
+      _hsourceStrict, _htranslationStrict,
+      hupperStrict, hIInfinite,
+      _hcoreMem, _hcoreC, hdata,
+      hselected, _hinjury⟩ :=
+    hlocal
+  let OriginImage : Set ℕ :=
+    origin '' I
+  have hOriginImageInfinite :
+      OriginImage.Infinite := by
+    by_contra hnot
+    have hOriginImageFinite : OriginImage.Finite :=
+      Set.not_infinite.mp hnot
+    obtain ⟨M, hM⟩ :=
+      hOriginImageFinite.bddAbove
+    have hUpperImageInfinite :
+        (upper '' I).Infinite :=
+      (Set.infinite_image_iff
+        hupperStrict.injective.injOn).mpr hIInfinite
+    obtain ⟨u, ⟨n, hnI, rfl⟩, huLarge⟩ :=
+      hUpperImageInfinite.exists_gt
+        (target (M + 1))
+    obtain ⟨_hsourceEq, _hsourceSupportZ,
+        _hsourceCore, hlocalN,
+        _htranslatedSupport⟩ :=
+      hselected n hnI
+    have horiginBound :
+        origin n ≤ M :=
+      hM ⟨n, hnI, rfl⟩
+    have hnextBound :
+        target (origin n + 1) ≤
+          target (M + 1) :=
+      htargetStrict.monotone
+        (Nat.add_le_add_right horiginBound 1)
+    omega
+  let block : ℕ → ℕ :=
+    Nat.nth fun i => i ∈ OriginImage
+  have hblockImage :
+      ∀ n, block n ∈ OriginImage := by
+    intro n
+    exact
+      Nat.nth_mem_of_infinite
+        hOriginImageInfinite n
+  have hblockStrict : StrictMono block :=
+    Nat.nth_strictMono hOriginImageInfinite
+  have hstageExists :
+      ∀ n, ∃ stage, stage ∈ I ∧
+        origin stage = block n := by
+    intro n
+    exact hblockImage n
+  choose stage hstageI hstageOrigin using
+    hstageExists
+  let lowerTarget : ℕ → ℕ :=
+    fun n => target (block n)
+  let upperTarget : ℕ → ℕ :=
+    fun n => upper (stage n)
+  let displacement : ℕ → ℕ :=
+    fun n => translation (stage n)
+  have hlowerStrict : StrictMono lowerTarget :=
+    htargetStrict.comp hblockStrict
+  have hinterlaced :
+      ∀ n,
+        lowerTarget n < upperTarget n ∧
+        upperTarget n < lowerTarget (n + 1) := by
+    intro n
+    obtain ⟨_hsourceFloor, htranslationPos,
+        _htranslationEq, _hsupportMem,
+        _hmarkedSupport, _hsupportZ,
+        _hpredecessor, _hmarkedRepaired,
+        _hrootLanding, _hrootRange,
+        _hrootShiftPos, _hmarkedRoot,
+        _hmarkedA, _hmarkedRange,
+        _htargetMarked, _hsourceSupportMem,
+        _hmarkedSourceSupport,
+        _hsourceSupportC, hupperAligned⟩ :=
+      hdata (stage n)
+    obtain ⟨_hsourceEq, _hsourceSupportZ,
+        _hsourceCore, hlocalN,
+        _htranslatedSupport⟩ :=
+      hselected (stage n) (hstageI n)
+    have hblockStep :
+        block n + 1 ≤ block (n + 1) :=
+      Nat.succ_le_iff.mpr
+        (hblockStrict (Nat.lt_succ_self n))
+    constructor
+    · dsimp only [lowerTarget, upperTarget]
+      rw [← hstageOrigin n, hupperAligned]
+      exact Nat.lt_add_of_pos_right
+        htranslationPos
+    · dsimp only [upperTarget, lowerTarget]
+      calc
+        upper (stage n) <
+            target (origin (stage n) + 1) :=
+          hlocalN
+        _ = target (block n + 1) := by
+          rw [hstageOrigin n]
+        _ ≤ target (block (n + 1)) :=
+          htargetStrict.monotone hblockStep
+  have hupperStep :
+      ∀ n, upperTarget n < upperTarget (n + 1) := by
+    intro n
+    exact
+      (hinterlaced n).2.trans
+        (hinterlaced (n + 1)).1
+  have hupperStrict' : StrictMono upperTarget :=
+    strictMono_nat_of_lt_succ hupperStep
+  refine
+    ⟨Z, lowerTarget, upperTarget, displacement,
+      hZA, hZInfinite, hlowerStrict,
+      hupperStrict', hinterlaced, ?_, ?_, ?_, ?_⟩
+  · intro n
+    exact (hdata (stage n)).2.1
+  · intro n
+    dsimp only [upperTarget, lowerTarget, displacement]
+    obtain ⟨_hsourceFloor, _htranslationPos,
+        _htranslationEq, _hsupportMem,
+        _hmarkedSupport, _hsupportZ,
+        _hpredecessor, _hmarkedRepaired,
+        _hrootLanding, _hrootRange,
+        _hrootShiftPos, _hmarkedRoot,
+        _hmarkedA, _hmarkedRange,
+        _htargetMarked, _hsourceSupportMem,
+        _hmarkedSourceSupport,
+        _hsourceSupportC, hupperAligned⟩ :=
+      hdata (stage n)
+    rw [hstageOrigin n] at hupperAligned
+    exact hupperAligned
+  · intro n
+    refine
+      ⟨sourceSupport (stage n), ?_, ?_⟩
+    · obtain ⟨_hsourceFloor, _htranslationPos,
+          _htranslationEq, _hsupportMem,
+          _hmarkedSupport, _hsupportZ,
+          _hpredecessor, _hmarkedRepaired,
+          _hrootLanding, _hrootRange,
+          _hrootShiftPos, _hmarkedRoot,
+          _hmarkedA, _hmarkedRange,
+          _htargetMarked, hsourceSupportMem,
+          _hmarkedSourceSupport,
+          _hsourceSupportC, _hupperAligned⟩ :=
+        hdata (stage n)
+      have hmem :
+          sourceSupport (stage n) ∈
+            additiveSupportFamily A k
+              (lowerTarget n) := by
+        dsimp only [lowerTarget]
+        rw [← hstageOrigin n]
+        exact hsourceSupportMem
+      have hkPredSucc :
+          k - 1 + 1 = k := by
+        omega
+      simpa only [hkPredSucc] using hmem
+    · obtain ⟨_hsourceEq, hsourceSupportZ,
+          _hsourceCore, _hlocalN,
+          _htranslatedSupport⟩ :=
+        hselected (stage n) (hstageI n)
+      exact hsourceSupportZ
+  · intro n
+    obtain ⟨_hsourceFloor, _htranslationPos,
+        _htranslationEq, hsupportMem,
+        _hmarkedSupport, hsupportZ,
+        _hpredecessor, _hmarkedRepaired,
+        _hrootLanding, _hrootRange,
+        _hrootShiftPos, _hmarkedRoot,
+        _hmarkedA, _hmarkedRange,
+        _htargetMarked, _hsourceSupportMem,
+        _hmarkedSourceSupport,
+        _hsourceSupportC, _hupperAligned⟩ :=
+      hdata (stage n)
+    have hkPredSucc :
+        k - 1 + 1 = k := by
+      omega
+    exact
+      ⟨support (stage n),
+        by
+          simpa only [upperTarget, hkPredSucc] using
+            hsupportMem,
+        hsupportZ⟩
+
+/-- Consume the cross-block side into cofinally large gap-dominating
+translations with simultaneous arithmetic injury.
+
+Ask the existing threshold field at scale `t + L`.  Since `k-1` is
+positive, its source bound forces `L ≤ translation`.  Boundary crossing
+and the exact affine identity then show that this same translation
+dominates the entire next gap of its original source block. -/
+theorem
+    HasTerminalFixedCoreGeometricArithmeticFusion.crossBlock_forces_cofinalGapDominatingTranslations
+    {A B C D Y : Set ℕ} {k t ε : ℕ}
+    {landing target root repaired : ℕ → ℕ}
+    (hk : 1 < k)
+    (htargetStrict : StrictMono target)
+    (hcross :
+      HasTerminalFixedCoreGeometricArithmeticFusion
+        A B C D Y k t ε landing target root repaired
+          (fun upper nextTarget => nextTarget ≤ upper)) :
+    ∃ Z : Set ℕ,
+    ∃ source translation upper origin : ℕ → ℕ,
+    ∃ I : Set ℕ,
+      Z ⊆ D ∧
+      Z ⊆ A ∧
+      Z.Infinite ∧
+      StrictMono source ∧
+      StrictMono translation ∧
+      StrictMono upper ∧
+      I.Infinite ∧
+      (∀ n ∈ I,
+        source n = t + translation n ∧
+        upper n =
+          target (origin n) + translation n ∧
+        target (origin n + 1) ≤ upper n) ∧
+      ∀ L, ∃ n ∈ I,
+        L ≤ translation n ∧
+        target (origin n + 1) -
+            target (origin n) ≤
+          translation n ∧
+        HasFixedPredecessorArithmeticInjuryAtFloor
+          A Z k (source n) (t + L) := by
+  obtain ⟨Z, source, translation, upper, _marked,
+      _support, origin, _landingIndex, _rootShift,
+      _sourceSupport, I, _core,
+      _hDC, hZD, hZA, hZInfinite,
+      hsourceStrict, htranslationStrict,
+      hupperStrict, hIInfinite,
+      _hcoreMem, _hcoreC, hdata,
+      hselected, hinjury⟩ :=
+    hcross
+  refine
+    ⟨Z, source, translation, upper, origin, I,
+      hZD, hZA, hZInfinite,
+      hsourceStrict, htranslationStrict,
+      hupperStrict, hIInfinite, ?_, ?_⟩
+  · intro n hnI
+    obtain ⟨hsourceEq, _hsourceSupportZ,
+        _hsourceCore, hcrossN,
+        _htranslatedSupport⟩ :=
+      hselected n hnI
+    obtain ⟨_hsourceFloor, _htranslationPos,
+        _htranslationEq, _hsupportMem,
+        _hmarkedSupport, _hsupportZ,
+        _hpredecessor, _hmarkedRepaired,
+        _hrootLanding, _hrootRange,
+        _hrootShiftPos, _hmarkedRoot,
+        _hmarkedA, _hmarkedRange,
+        _htargetMarked, _hsourceSupportMem,
+        _hmarkedSourceSupport,
+        _hsourceSupportC, hupperAligned⟩ :=
+      hdata n
+    exact
+      ⟨hsourceEq, hupperAligned, hcrossN⟩
+  · intro L
+    obtain ⟨n, hnI, hinjuryN⟩ :=
+      hinjury (t + L)
+    obtain ⟨hsourceEq, _hsourceSupportZ,
+        _hsourceCore, hcrossN,
+        _htranslatedSupport⟩ :=
+      hselected n hnI
+    obtain ⟨_hsourceFloor, _htranslationPos,
+        _htranslationEq, _hsupportMem,
+        _hmarkedSupport, _hsupportZ,
+        _hpredecessor, _hmarkedRepaired,
+        _hrootLanding, _hrootRange,
+        _hrootShiftPos, _hmarkedRoot,
+        _hmarkedA, _hmarkedRange,
+        _htargetMarked, _hsourceSupportMem,
+        _hmarkedSourceSupport,
+        _hsourceSupportC, hupperAligned⟩ :=
+      hdata n
+    have hinjuryFloor :
+        (k - 1) * (t + L) ≤ source n := by
+      have hcopy := hinjuryN
+      unfold
+        HasFixedPredecessorArithmeticInjuryAtFloor at hcopy
+      obtain ⟨_η, _G, hfloor, _hrest⟩ :=
+        hcopy
+      exact hfloor
+    have htLSource :
+        t + L ≤ source n :=
+      (Nat.le_mul_of_pos_left
+        (t + L) (by omega : 0 < k - 1)).trans
+          hinjuryFloor
+    have htranslationFloor :
+        L ≤ translation n := by
+      omega
+    have hgapDominated :
+        target (origin n + 1) -
+              target (origin n) ≤
+            translation n := by
+      have htargetStep :
+          target (origin n) ≤
+            target (origin n + 1) :=
+        htargetStrict.monotone
+          (Nat.le_add_right (origin n) 1)
+      omega
+    exact
+      ⟨n, hnI, htranslationFloor,
+        hgapDominated, hinjuryN⟩
+
+/-- Operational cross-block endpoint: one common infinite deletion carries
+cofinally large exact translations which dominate their source-block gaps,
+and each such stage simultaneously carries localized lower-order
+arithmetic injury. -/
+def HasCofinalGapDominatingTerminalCrossBlockArithmetic
+    (A D : Set ℕ) (k t : ℕ)
+    (target : ℕ → ℕ) : Prop :=
+  ∃ Z : Set ℕ,
+  ∃ source translation upper origin : ℕ → ℕ,
+  ∃ I : Set ℕ,
+    Z ⊆ D ∧
+    Z ⊆ A ∧
+    Z.Infinite ∧
+    StrictMono source ∧
+    StrictMono translation ∧
+    StrictMono upper ∧
+    I.Infinite ∧
+    (∀ n ∈ I,
+      source n = t + translation n ∧
+      upper n =
+        target (origin n) + translation n ∧
+      target (origin n + 1) ≤ upper n) ∧
+    ∀ L, ∃ n ∈ I,
+      L ≤ translation n ∧
+      target (origin n + 1) -
+          target (origin n) ≤
+        translation n ∧
+      HasFixedPredecessorArithmeticInjuryAtFloor
+        A Z k (source n) (t + L)
+
+/-- Pack the raw cross-block consequence into its operational interface. -/
+theorem
+    HasTerminalFixedCoreGeometricArithmeticFusion.toCofinalGapDominatingTerminalCrossBlockArithmetic
+    {A B C D Y : Set ℕ} {k t ε : ℕ}
+    {landing target root repaired : ℕ → ℕ}
+    (hk : 1 < k)
+    (htargetStrict : StrictMono target)
+    (hcross :
+      HasTerminalFixedCoreGeometricArithmeticFusion
+        A B C D Y k t ε landing target root repaired
+          (fun upper nextTarget => nextTarget ≤ upper)) :
+    HasCofinalGapDominatingTerminalCrossBlockArithmetic
+      A D k t target := by
+  unfold
+    HasCofinalGapDominatingTerminalCrossBlockArithmetic
+  exact
+    hcross.crossBlock_forces_cofinalGapDominatingTranslations
+      hk htargetStrict
+
+/-- Fully operational geometric fork for a fixed-core terminal fusion.
+
+The local branch has already become an interlaced double-survival stream;
+the crossing branch has already become cofinal gap-dominating arithmetic
+injury.  No unprocessed geometric predicate remains in the conclusion. -/
+theorem
+    HasTerminalFixedSourceCoreAlignedFusion.interlacedDouble_or_gapDominatingCrossBlockArithmetic
+    {A B C D Y : Set ℕ} {k t ε : ℕ}
+    {landing target root repaired : ℕ → ℕ}
+    (hk : 1 < k)
+    (hDC : D ⊆ C)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (htargetStrict : StrictMono target)
+    (hfused :
+      HasTerminalFixedSourceCoreAlignedFusion
+        A B C D Y k t ε landing target root repaired) :
+    HasInterlacedDoubleSurvivalStream A (k - 1) ∨
+      HasCofinalGapDominatingTerminalCrossBlockArithmetic
+        A D k t target := by
+  obtain hlocal | hcross :=
+    hfused.sameBlock_or_crossBlock_arithmeticFusion
+      hk hDC hminimal
+  · exact
+      Or.inl
+        (hlocal.sameBlock_toInterlacedDoubleSurvival
+          hk htargetStrict)
+  · exact
+      Or.inr
+        (HasTerminalFixedCoreGeometricArithmeticFusion.toCofinalGapDominatingTerminalCrossBlockArithmetic
+          hk htargetStrict hcross)
+
 end Erdos881

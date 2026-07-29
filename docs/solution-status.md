@@ -1,3 +1,48 @@
+# GENERAL ORDER: THE TERMINAL GEOMETRIC FORK IS OPERATIONAL (2026-07-29)
+
+The fixed-core arithmetic stream has now been split at the actual next
+source-block boundary, and both sides have been converted into concrete
+objects that can be attacked.
+
+`HasTerminalFixedSourceCoreAlignedFusion.sameBlock_or_crossBlock_arithmeticFusion`
+partitions the fixed-core stages according to
+
+\[
+  \operatorname{upper}(n)
+    < \operatorname{target}(\operatorname{origin}(n)+1)
+\]
+
+or the reverse weak inequality.  The selected infinite side retains the
+same final deletion, literal source core, translated support, and
+localized lower-order injuries at every threshold.
+
+In the same-block branch,
+`HasTerminalFixedCoreGeometricArithmeticFusion.sameBlock_toInterlacedDoubleSurvival`
+proves that the source origins themselves are unbounded and extracts an
+honest interlaced double-survival stream at order \(k\).  Thus this branch
+is now ready to be compared directly with the original order-\(k\) strong
+minimality.
+
+In the crossing branch,
+`crossBlock_forces_cofinalGapDominatingTranslations` proves that for every
+scale there is one retained stage whose exact translation \(\Delta\)
+both exceeds that scale and dominates the next gap in the original target
+stream:
+
+\[
+  \operatorname{target}(i+1)-\operatorname{target}(i)\le\Delta.
+\]
+
+The same stage also carries a localized order-\((k-1)\) arithmetic injury.
+`interlacedDouble_or_gapDominatingCrossBlockArithmetic` packages these as
+the exhaustive operational fork.
+
+This is still not the full solution of Erdős 881 for \(k\ge3\).  The next
+direct step is to eliminate the same-block outcome using current-order
+strong minimality and predecessor destroyer fans, then compare the
+gap-dominating crossing outcome with the protected target-localized
+matching machinery.
+
 # GENERAL ORDER: THE FIXED CORE CROSSES EVERY ARITHMETIC THRESHOLD (2026-07-29)
 
 The terminal infinite-fusion branch has now been pushed through the
