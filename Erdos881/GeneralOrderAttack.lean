@@ -32445,6 +32445,860 @@ theorem prescribedCommonColumn_repeatedBlock_forces_largeBlock_or_commonPrivateH
       (hhit p hpR).2
     exact ⟨F, hFmem, by simpa only [hpHit] using hhitF⟩
 
+/-- Every cover row concentrated on one block has an anchored
+order-one-lower core.
+
+The selected point `a` of the repeated block lies in the row's private
+order-`k+1` support `F`.  Removing that occurrence gives an order-`k`
+support at the exact difference `p-a`, with `F = insert a H`.  The private
+marker is not discarded: the lower core still meets the row destroyer in
+at most the original singleton marker. -/
+theorem prescribedCommonColumn_repeatedBlock_has_anchoredLowerCores
+    {A : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {r : ℕ}
+    (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (T : Finset {q // q ∈ Q.erase r})
+    (coveredBlock : {q // q ∈ Q.erase r} → ℕ)
+    (hrows :
+      ∀ p ∈ T,
+        HasPrescribedCommonColumnCover
+          A k cell Q r hrQ E p (coveredBlock p))
+    (j : ℕ) :
+    ∃ anchor : {q // q ∈ Q.erase r} → ℕ,
+    ∃ core : {q // q ∈ Q.erase r} → Finset ℕ,
+      ∀ p ∈ T.filter (fun p => coveredBlock p = j),
+        anchor p ∈ cell j ∧
+        p.1 = anchor p + (p.1 - anchor p) ∧
+        core p ∈
+          additiveSupportFamily A k (p.1 - anchor p) ∧
+        ∃ D F : Finset ℕ, ∃ x,
+          D.Nonempty ∧
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A (k + 1)) D p.1 ∧
+          x ∈ D ∧
+          F ∈ additiveSupportFamily A (k + 1) p.1 ∧
+          F ∩ D = {x} ∧
+          F = insert (anchor p) (core p) ∧
+          core p ∩ D ⊆ {x} := by
+  classical
+  let R : Finset {q // q ∈ Q.erase r} :=
+    T.filter fun p => coveredBlock p = j
+  have hentryExists :
+      ∀ p : {q // q ∈ Q.erase r},
+        ∃ a : ℕ, ∃ H : Finset ℕ, p ∈ R →
+          a ∈ cell j ∧
+          p.1 = a + (p.1 - a) ∧
+          H ∈ additiveSupportFamily A k (p.1 - a) ∧
+          ∃ D F : Finset ℕ, ∃ x,
+            D.Nonempty ∧
+            IsInclusionMinimalDestroyer
+              (additiveSupportFamily A (k + 1)) D p.1 ∧
+            x ∈ D ∧
+            F ∈ additiveSupportFamily A (k + 1) p.1 ∧
+            F ∩ D = {x} ∧
+            F = insert a H ∧
+            H ∩ D ⊆ {x} := by
+    intro p
+    by_cases hpR : p ∈ R
+    · have hpT : p ∈ T :=
+        (Finset.mem_filter.mp hpR).1
+      have hpBlock : coveredBlock p = j :=
+        (Finset.mem_filter.mp hpR).2
+      obtain ⟨s, support, D, F, x, _hrSupport,
+          _hsupportMem, _hsupportDisjoint, hDnonempty,
+          _hDselected, hDminimal, hxD, hFmem,
+          hprivate, hselectedF, _hjCover⟩ :=
+        hrows p hpT
+      let a : ℕ := (s (coveredBlock p)).1
+      have haCell : a ∈ cell j := by
+        have haOwn :
+            (s (coveredBlock p)).1 ∈
+              cell (coveredBlock p) :=
+          (s (coveredBlock p)).2
+        simpa only [a, hpBlock] using haOwn
+      have haF : a ∈ F := by
+        simpa only [a] using hselectedF
+      have haLe : a ≤ p.1 :=
+        additiveSupportFamily_supportsBounded
+          A (k + 1) p.1 F hFmem a haF
+      obtain ⟨H, hHmem, hFH⟩ :=
+        additiveSupport_remove_hit_succ hFmem haF
+      have hdecomp : p.1 = a + (p.1 - a) := by
+        omega
+      have hcoreTrace : H ∩ D ⊆ {x} := by
+        intro z hzHD
+        have hzParts := Finset.mem_inter.mp hzHD
+        have hzFD : z ∈ F ∩ D := by
+          apply Finset.mem_inter.mpr
+          refine ⟨?_, hzParts.2⟩
+          rw [hFH]
+          exact Finset.mem_insert_of_mem hzParts.1
+        rw [hprivate] at hzFD
+        exact hzFD
+      exact ⟨a, H, fun _ => ⟨haCell, hdecomp,
+        hHmem, D, F, x, hDnonempty, hDminimal,
+        hxD, hFmem, hprivate, hFH, hcoreTrace⟩⟩
+    · exact ⟨0, ∅, fun hp => (hpR hp).elim⟩
+  choose anchor core hentry using hentryExists
+  exact ⟨anchor, core, by
+    intro p hpR
+    exact hentry p (by simpa only [R] using hpR)⟩
+
+/-- Removing an anchored point from a private support has only two possible
+marker behaviours.
+
+If the private marker remains in the lower core, the core still meets the
+destroyer in exactly that marker.  Otherwise the core is completely clear
+of the destroyer, and the removed anchor must itself have been the marker.
+This is the occurrence-sensitive split needed when the same lower core is
+carried by many different anchors. -/
+theorem privateSupport_remove_anchor_marker_survives_or_clears
+    {a x : ℕ} {D F H : Finset ℕ}
+    (hxD : x ∈ D)
+    (hprivate : F ∩ D = {x})
+    (hFH : F = insert a H) :
+    (H ∩ D = {x}) ∨
+      (Disjoint (H : Set ℕ) (D : Set ℕ) ∧ a = x) := by
+  classical
+  by_cases hxH : x ∈ H
+  · left
+    apply Finset.Subset.antisymm
+    · intro z hzHD
+      have hzFD : z ∈ F ∩ D := by
+        apply Finset.mem_inter.mpr
+        refine ⟨?_, (Finset.mem_inter.mp hzHD).2⟩
+        rw [hFH]
+        exact Finset.mem_insert_of_mem
+          (Finset.mem_inter.mp hzHD).1
+      simpa only [hprivate] using hzFD
+    · intro z hzSingleton
+      have hzx : z = x := Finset.mem_singleton.mp hzSingleton
+      subst z
+      exact Finset.mem_inter.mpr ⟨hxH, hxD⟩
+  · right
+    have hdisjoint :
+        Disjoint (H : Set ℕ) (D : Set ℕ) := by
+      rw [Set.disjoint_left]
+      intro z hzH hzD
+      have hzFD : z ∈ F ∩ D := by
+        apply Finset.mem_inter.mpr
+        refine ⟨?_, Finset.mem_coe.mp hzD⟩
+        rw [hFH]
+        exact Finset.mem_insert_of_mem
+          (Finset.mem_coe.mp hzH)
+      have hzx : z = x := by
+        rw [hprivate] at hzFD
+        exact Finset.mem_singleton.mp hzFD
+      exact hxH (hzx ▸ Finset.mem_coe.mp hzH)
+    have hxF : x ∈ F := by
+      have : x ∈ F ∩ D := by
+        rw [hprivate]
+        simp
+      exact (Finset.mem_inter.mp this).1
+    have hxaOr : x = a ∨ x ∈ H := by
+      rw [hFH] at hxF
+      exact Finset.mem_insert.mp hxF
+    exact ⟨hdisjoint, hxaOr.resolve_right hxH |>.symm⟩
+
+/-- Double pigeonhole for anchored lower cores.
+
+Each row has a distinct current target `p` and a factorization
+`p = anchor p + difference p`, with an order-`k` core at that difference.
+First pigeonhole by `difference`:
+
+* many values give genuine lower-target growth;
+* on a large fixed-difference fiber, pigeonhole the lower cores.
+
+Many distinct cores at that one target normalize to a rooted matching.
+Otherwise one exact core repeats, and the anchors are automatically
+injective because the current targets are distinct and the difference is
+fixed. -/
+theorem anchoredLowerCores_force_differenceGrowth_or_lowerRootedMatching_or_fixedCoreAnchorStar
+    {A : Set ℕ} {k anchorDemand differenceDemand matchingDemand : ℕ}
+    {Q : Finset ℕ} {r : ℕ}
+    (R : Finset {q // q ∈ Q.erase r})
+    (anchor : {q // q ∈ Q.erase r} → ℕ)
+    (core : {q // q ∈ Q.erase r} → Finset ℕ)
+    (hdata :
+      ∀ p ∈ R,
+        p.1 = anchor p + (p.1 - anchor p) ∧
+        core p ∈
+          additiveSupportFamily A k (p.1 - anchor p))
+    (hlarge :
+      (anchorDemand *
+          additiveRootedMatchingBound k matchingDemand) *
+        differenceDemand < R.card) :
+    (∃ V : Finset ℕ,
+        differenceDemand < V.card ∧
+        ∀ d ∈ V, ∃ p ∈ R,
+          d = p.1 - anchor p ∧
+          core p ∈ additiveSupportFamily A k d) ∨
+      (∃ d, ∃ root : Finset ℕ,
+        ∃ M : Finset (Finset ℕ),
+          root.card < k ∧
+          M ⊆ additiveSupportFamily A k d ∧
+          matchingDemand < M.card ∧
+          (∀ H ∈ M, root ⊆ H) ∧
+          (∀ H ∈ M, (H \ root).Nonempty) ∧
+          ∀ H ∈ M, ∀ G ∈ M, H ≠ G →
+            Disjoint (H \ root) (G \ root)) ∨
+      ∃ d, ∃ H : Finset ℕ,
+        ∃ U : Finset {q // q ∈ Q.erase r},
+          U ⊆ R ∧
+          anchorDemand < U.card ∧
+          H ∈ additiveSupportFamily A k d ∧
+          (∀ p ∈ U,
+            p.1 - anchor p = d ∧ core p = H) ∧
+          Set.InjOn anchor (U : Set {q // q ∈ Q.erase r}) := by
+  classical
+  let difference :
+      {q // q ∈ Q.erase r} → ℕ :=
+    fun p => p.1 - anchor p
+  obtain hmanyDifferences | hfixedDifference :=
+    large_finset_image_or_large_fiber
+      R difference
+        (anchorDemand *
+          additiveRootedMatchingBound k matchingDemand)
+        differenceDemand hlarge
+  · left
+    refine ⟨R.image difference, hmanyDifferences, ?_⟩
+    intro d hdImage
+    obtain ⟨p, hpR, rfl⟩ :=
+      Finset.mem_image.mp hdImage
+    exact ⟨p, hpR, rfl,
+      by simpa only [difference] using (hdata p hpR).2⟩
+  · right
+    obtain ⟨d, _hdImage, hdFiber⟩ :=
+      hfixedDifference
+    let S : Finset {q // q ∈ Q.erase r} :=
+      R.filter fun p => difference p = d
+    have hSlarge :
+        anchorDemand *
+            additiveRootedMatchingBound k matchingDemand <
+          S.card := by
+      simpa only [S] using hdFiber
+    obtain hmanyCores | hfixedCore :=
+      large_finset_image_or_large_fiber
+        S core anchorDemand
+          (additiveRootedMatchingBound k matchingDemand)
+          hSlarge
+    · left
+      have hcoreSub :
+          S.image core ⊆
+            additiveSupportFamily A k d := by
+        intro H hHImage
+        obtain ⟨p, hpS, rfl⟩ :=
+          Finset.mem_image.mp hHImage
+        have hpR : p ∈ R :=
+          (Finset.mem_filter.mp hpS).1
+        have hpDifference : difference p = d :=
+          (Finset.mem_filter.mp hpS).2
+        rw [← hpDifference]
+        simpa only [difference] using (hdata p hpR).2
+      have hcoreLarge :
+          additiveRootedMatchingBound k matchingDemand ≤
+            (S.image core).card :=
+        Nat.le_of_lt hmanyCores
+      obtain ⟨root, M, hrootCard, hMsub,
+          hMlarge, hMroot, hMpetal, hMmatching⟩ :=
+        additiveSupportSubfamily_has_large_rootedMatching
+          k matchingDemand d (S.image core)
+            hcoreSub hcoreLarge
+      exact ⟨d, root, M, hrootCard,
+        hMsub.trans hcoreSub, hMlarge, hMroot,
+        hMpetal, hMmatching⟩
+    · right
+      obtain ⟨H, hHImage, hHFiber⟩ :=
+        hfixedCore
+      let U : Finset {q // q ∈ Q.erase r} :=
+        S.filter fun p => core p = H
+      obtain ⟨p₀, hp₀S, hp₀Core⟩ :=
+        Finset.mem_image.mp hHImage
+      have hp₀R : p₀ ∈ R :=
+        (Finset.mem_filter.mp hp₀S).1
+      have hp₀Difference : difference p₀ = d :=
+        (Finset.mem_filter.mp hp₀S).2
+      have hHmem :
+          H ∈ additiveSupportFamily A k d := by
+        rw [← hp₀Core, ← hp₀Difference]
+        simpa only [difference] using
+          (hdata p₀ hp₀R).2
+      have hUR : U ⊆ R := by
+        intro p hpU
+        exact
+          (Finset.mem_filter.mp
+            (Finset.mem_filter.mp hpU).1).1
+      have hUdata :
+          ∀ p ∈ U,
+            p.1 - anchor p = d ∧ core p = H := by
+        intro p hpU
+        have hpS :
+            p ∈ S :=
+          (Finset.mem_filter.mp hpU).1
+        exact ⟨by simpa only [difference] using
+            (Finset.mem_filter.mp hpS).2,
+          (Finset.mem_filter.mp hpU).2⟩
+      have hanchorInjective :
+          Set.InjOn anchor
+            (U : Set {q // q ∈ Q.erase r}) := by
+        intro p hpU q hqU hpq
+        have hpR : p ∈ R := hUR hpU
+        have hqR : q ∈ R := hUR hqU
+        have hpDecomp := (hdata p hpR).1
+        have hqDecomp := (hdata q hqR).1
+        have hpDiff := (hUdata p hpU).1
+        have hqDiff := (hUdata q hqU).1
+        apply Subtype.ext
+        omega
+      exact ⟨d, H, U, hUR,
+        by simpa only [U] using hHFiber,
+        hHmem, hUdata, hanchorInjective⟩
+
+/-- Packaged anchored lower-core rows, retaining their original private
+destroyer traces. -/
+def HasAnchoredLowerCoreRows
+    (A : Set ℕ) (k : ℕ)
+    (cell : ℕ → Finset ℕ)
+    (Q : Finset ℕ) (r : ℕ)
+    (T : Finset {q // q ∈ Q.erase r})
+    (coveredBlock : {q // q ∈ Q.erase r} → ℕ)
+    (j : ℕ)
+    (anchor : {q // q ∈ Q.erase r} → ℕ)
+    (core : {q // q ∈ Q.erase r} → Finset ℕ) : Prop :=
+  ∀ p ∈ T.filter (fun p => coveredBlock p = j),
+    anchor p ∈ cell j ∧
+    p.1 = anchor p + (p.1 - anchor p) ∧
+    core p ∈
+      additiveSupportFamily A k (p.1 - anchor p) ∧
+    ∃ D F : Finset ℕ, ∃ x,
+      D.Nonempty ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (k + 1)) D p.1 ∧
+      x ∈ D ∧
+      F ∈ additiveSupportFamily A (k + 1) p.1 ∧
+      F ∩ D = {x} ∧
+      F = insert (anchor p) (core p) ∧
+      core p ∩ D ⊆ {x}
+
+/-- A large fixed-core anchor star has only two substantive behaviours.
+
+Choose the private destroyer and marker in every row.  Either many rows
+become completely clear after their distinct anchor is peeled; in those
+rows the anchor is the private marker and the same destroyer already
+destroys the order-one anchor target.  Or most markers survive inside the
+fixed order-`k` core.  Since that core has at most `k` points, one literal
+old coordinate is then the private marker for many distinct-anchor rows.
+
+This turns the fixed-core horn into the desired repair-versus-repeated-old-
+collision fork rather than leaving it as a static structural description. -/
+theorem fixedCoreAnchorStar_forces_clearedAnchors_or_repeatedSurvivingMarker
+    {A : Set ℕ}
+    {k clearDemand collisionDemand : ℕ}
+    {cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {r : ℕ}
+    {T : Finset {q // q ∈ Q.erase r}}
+    {coveredBlock : {q // q ∈ Q.erase r} → ℕ}
+    {j : ℕ}
+    {anchor : {q // q ∈ Q.erase r} → ℕ}
+    {core : {q // q ∈ Q.erase r} → Finset ℕ}
+    (hrows :
+      HasAnchoredLowerCoreRows
+        A k cell Q r T coveredBlock j anchor core)
+    {d : ℕ} {H : Finset ℕ}
+    {U : Finset {q // q ∈ Q.erase r}}
+    (hUR : U ⊆ T.filter (fun p => coveredBlock p = j))
+    (hlarge :
+      clearDemand + collisionDemand * k < U.card)
+    (hHmem : H ∈ additiveSupportFamily A k d)
+    (hUdata :
+      ∀ p ∈ U,
+        p.1 - anchor p = d ∧ core p = H)
+    (hanchorInj :
+      Set.InjOn anchor (U : Set {q // q ∈ Q.erase r})) :
+    ∃ destroyer :
+        {q // q ∈ Q.erase r} → Finset ℕ,
+    ∃ support :
+        {q // q ∈ Q.erase r} → Finset ℕ,
+    ∃ marker :
+        {q // q ∈ Q.erase r} → ℕ,
+      (∃ W : Finset {q // q ∈ Q.erase r},
+          W ⊆ U ∧
+          clearDemand < W.card ∧
+          Set.InjOn anchor
+            (W : Set {q // q ∈ Q.erase r}) ∧
+          ∀ p ∈ W,
+            (destroyer p).Nonempty ∧
+            IsInclusionMinimalDestroyer
+              (additiveSupportFamily A (k + 1))
+              (destroyer p) p.1 ∧
+            marker p ∈ destroyer p ∧
+            support p ∈
+              additiveSupportFamily A (k + 1) p.1 ∧
+            support p ∩ destroyer p = {marker p} ∧
+            support p = insert (anchor p) H ∧
+            Disjoint
+              (H : Set ℕ) (destroyer p : Set ℕ) ∧
+            anchor p = marker p ∧
+            anchor p ∈ A ∧
+            DestroysAt
+              (additiveSupportFamily A 1)
+              (destroyer p : Set ℕ) (anchor p)) ∨
+        ∃ x ∈ H,
+          ∃ W : Finset {q // q ∈ Q.erase r},
+            W ⊆ U ∧
+            collisionDemand < W.card ∧
+            Set.InjOn anchor
+              (W : Set {q // q ∈ Q.erase r}) ∧
+            ∀ p ∈ W,
+              (destroyer p).Nonempty ∧
+              IsInclusionMinimalDestroyer
+                (additiveSupportFamily A (k + 1))
+                (destroyer p) p.1 ∧
+              x ∈ destroyer p ∧
+              support p ∈
+                additiveSupportFamily A (k + 1) p.1 ∧
+              support p ∩ destroyer p = {x} ∧
+              support p = insert (anchor p) H ∧
+              H ∩ destroyer p = {x} := by
+  classical
+  have htraceExists :
+      ∀ p : {q // q ∈ Q.erase r},
+        ∃ D F : Finset ℕ, ∃ x,
+          p ∈ U →
+            D.Nonempty ∧
+            IsInclusionMinimalDestroyer
+              (additiveSupportFamily A (k + 1)) D p.1 ∧
+            x ∈ D ∧
+            F ∈ additiveSupportFamily A (k + 1) p.1 ∧
+            F ∩ D = {x} ∧
+            F = insert (anchor p) H := by
+    intro p
+    by_cases hpU : p ∈ U
+    · obtain ⟨_haCell, _hdecomp, _hcoreMem,
+          D, F, x, hDnonempty, hminimal,
+          hxD, hFmem, hprivate, hFcore, _hcoreTrace⟩ :=
+        hrows p (hUR hpU)
+      have hpCore : core p = H :=
+        (hUdata p hpU).2
+      exact ⟨D, F, x, fun _ => ⟨hDnonempty,
+        hminimal, hxD, hFmem, hprivate,
+        by simpa only [hpCore] using hFcore⟩⟩
+    · exact ⟨∅, ∅, 0, fun hp => (hpU hp).elim⟩
+  choose destroyer support marker htrace using htraceExists
+  refine ⟨destroyer, support, marker, ?_⟩
+  let Cleared : Finset {q // q ∈ Q.erase r} :=
+    U.filter fun p =>
+      Disjoint (H : Set ℕ) (destroyer p : Set ℕ)
+  let Surviving : Finset {q // q ∈ Q.erase r} :=
+    U.filter fun p =>
+      ¬ Disjoint (H : Set ℕ) (destroyer p : Set ℕ)
+  have hsplit :
+      Cleared.card + Surviving.card = U.card := by
+    simpa only [Cleared, Surviving] using
+      (Finset.card_filter_add_card_filter_not
+        (s := U)
+        (p := fun p =>
+          Disjoint (H : Set ℕ)
+            (destroyer p : Set ℕ)))
+  by_cases hClearedLarge : clearDemand < Cleared.card
+  · left
+    have hClearedU : Cleared ⊆ U := by
+      intro p hp
+      exact (Finset.mem_filter.mp hp).1
+    refine ⟨Cleared, hClearedU, hClearedLarge,
+      hanchorInj.mono (by
+        intro p hp
+        exact hClearedU hp), ?_⟩
+    intro p hpCleared
+    have hpU : p ∈ U := hClearedU hpCleared
+    have hpDisjoint :
+        Disjoint (H : Set ℕ)
+          (destroyer p : Set ℕ) :=
+      (Finset.mem_filter.mp hpCleared).2
+    obtain ⟨hDnonempty, hminimal, hxD,
+        hFmem, hprivate, hFanchor⟩ :=
+      htrace p hpU
+    have hmarkerSplit :=
+      privateSupport_remove_anchor_marker_survives_or_clears
+        hxD hprivate hFanchor
+    have hanchorMarker : anchor p = marker p := by
+      rcases hmarkerSplit with hsurvives | hclears
+      · have hmarkerHD :
+            marker p ∈ H ∩ destroyer p := by
+          rw [hsurvives]
+          simp
+        exact False.elim
+          (Set.disjoint_left.mp hpDisjoint
+            (Finset.mem_coe.mpr
+              (Finset.mem_inter.mp hmarkerHD).1)
+            (Finset.mem_coe.mpr
+              (Finset.mem_inter.mp hmarkerHD).2))
+      · exact hclears.2
+    have hanchorA : anchor p ∈ A := by
+      apply
+        additiveSupportFamily_supportsIn
+          A (k + 1) p.1 (support p) hFmem
+      rw [hFanchor]
+      simp
+    have hpDecomp :=
+      (hrows p (hUR hpU)).2.1
+    have hpDifference :=
+      (hUdata p hpU).1
+    have hpTarget :
+        p.1 = anchor p + d := by
+      omega
+    have hanchorDestroyed :
+        DestroysAt
+          (additiveSupportFamily A 1)
+          (destroyer p : Set ℕ) (anchor p) :=
+      complementarySurvivingCore_forces_hitTargetDestroyer
+        hminimal (by omega) hpTarget hHmem hpDisjoint
+    exact ⟨hDnonempty, hminimal, hxD, hFmem,
+      hprivate, hFanchor, hpDisjoint, hanchorMarker,
+      hanchorA, hanchorDestroyed⟩
+  · right
+    have hClearedSmall : Cleared.card ≤ clearDemand :=
+      Nat.le_of_not_gt hClearedLarge
+    have hSurvivingLarge :
+        collisionDemand * k < Surviving.card := by
+      omega
+    have hSurvivingU : Surviving ⊆ U := by
+      intro p hp
+      exact (Finset.mem_filter.mp hp).1
+    have hmarkerSurvives :
+        ∀ p ∈ Surviving,
+          H ∩ destroyer p = {marker p} := by
+      intro p hpSurviving
+      have hpU : p ∈ U :=
+        hSurvivingU hpSurviving
+      obtain ⟨_hDnonempty, _hminimal, hxD,
+          _hFmem, hprivate, hFanchor⟩ :=
+        htrace p hpU
+      rcases
+          privateSupport_remove_anchor_marker_survives_or_clears
+            hxD hprivate hFanchor with
+        hsurvives | hclears
+      · exact hsurvives
+      · exact
+          ((Finset.mem_filter.mp hpSurviving).2
+            hclears.1).elim
+    have hmarkerInH :
+        ∀ p ∈ Surviving, marker p ∈ H := by
+      intro p hpSurviving
+      have hmarkerHD :
+          marker p ∈ H ∩ destroyer p := by
+        rw [hmarkerSurvives p hpSurviving]
+        simp
+      exact (Finset.mem_inter.mp hmarkerHD).1
+    have hmarkerImageSub :
+        Surviving.image marker ⊆ H := by
+      intro x hxImage
+      obtain ⟨p, hpSurviving, rfl⟩ :=
+        Finset.mem_image.mp hxImage
+      exact hmarkerInH p hpSurviving
+    obtain hmanyMarkers | hrepeatedMarker :=
+      large_finset_image_or_large_fiber
+        Surviving marker collisionDemand k hSurvivingLarge
+    · have hmarkerImageSub :
+          Surviving.image marker ⊆ H :=
+        hmarkerImageSub
+      have hHcard : H.card ≤ k :=
+        additiveSupportFamily_cardAtMost A k d H hHmem
+      exact False.elim
+        (Nat.not_lt_of_ge
+          ((Finset.card_le_card hmarkerImageSub).trans
+            hHcard)
+          hmanyMarkers)
+    · obtain ⟨x, hxImage, hxFiber⟩ :=
+        hrepeatedMarker
+      have hxH : x ∈ H :=
+        hmarkerImageSub hxImage
+      let W : Finset {q // q ∈ Q.erase r} :=
+        Surviving.filter fun p => marker p = x
+      have hWU : W ⊆ U := by
+        intro p hpW
+        exact hSurvivingU
+          (Finset.mem_filter.mp hpW).1
+      refine ⟨x, hxH, W, hWU,
+        by simpa only [W] using hxFiber,
+        hanchorInj.mono (by
+          intro p hp
+          exact hWU hp), ?_⟩
+      intro p hpW
+      have hpSurviving : p ∈ Surviving :=
+        (Finset.mem_filter.mp hpW).1
+      have hpMarker : marker p = x :=
+        (Finset.mem_filter.mp hpW).2
+      obtain ⟨hDnonempty, hminimal, hxD,
+          hFmem, hprivate, hFanchor⟩ :=
+        htrace p (hWU hpW)
+      refine ⟨hDnonempty, hminimal, ?_, hFmem,
+        ?_, hFanchor, ?_⟩
+      · simpa only [← hpMarker] using hxD
+      · simpa only [← hpMarker] using hprivate
+      · simpa only [← hpMarker] using
+          hmarkerSurvives p hpSurviving
+
+/-- The arithmetic trichotomy carried by anchored lower-core rows. -/
+def HasAnchoredLowerCoreArithmeticFork
+    (A : Set ℕ) (k anchorDemand differenceDemand matchingDemand : ℕ)
+    (Q : Finset ℕ) (r : ℕ)
+    (R : Finset {q // q ∈ Q.erase r})
+    (anchor : {q // q ∈ Q.erase r} → ℕ)
+    (core : {q // q ∈ Q.erase r} → Finset ℕ) : Prop :=
+  (∃ V : Finset ℕ,
+      differenceDemand < V.card ∧
+      ∀ d ∈ V, ∃ p ∈ R,
+        d = p.1 - anchor p ∧
+        core p ∈ additiveSupportFamily A k d) ∨
+    (∃ d, ∃ root : Finset ℕ,
+      ∃ M : Finset (Finset ℕ),
+        root.card < k ∧
+        M ⊆ additiveSupportFamily A k d ∧
+        matchingDemand < M.card ∧
+        (∀ H ∈ M, root ⊆ H) ∧
+        (∀ H ∈ M, (H \ root).Nonempty) ∧
+        ∀ H ∈ M, ∀ G ∈ M, H ≠ G →
+          Disjoint (H \ root) (G \ root)) ∨
+    ∃ d, ∃ H : Finset ℕ,
+      ∃ U : Finset {q // q ∈ Q.erase r},
+        U ⊆ R ∧
+        anchorDemand < U.card ∧
+        H ∈ additiveSupportFamily A k d ∧
+        (∀ p ∈ U,
+          p.1 - anchor p = d ∧ core p = H) ∧
+        Set.InjOn anchor (U : Set {q // q ∈ Q.erase r})
+
+/-- Repeated-block cover rows force the full anchored arithmetic fork,
+while preserving the private destroyer trace of every row. -/
+theorem prescribedCommonColumn_repeatedBlock_forces_anchoredArithmeticFork
+    {A : Set ℕ}
+    {k anchorDemand differenceDemand matchingDemand : ℕ}
+    {cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {r : ℕ}
+    (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (T : Finset {q // q ∈ Q.erase r})
+    (coveredBlock : {q // q ∈ Q.erase r} → ℕ)
+    (hrows :
+      ∀ p ∈ T,
+        HasPrescribedCommonColumnCover
+          A k cell Q r hrQ E p (coveredBlock p))
+    (j : ℕ)
+    (hlarge :
+      (anchorDemand *
+          additiveRootedMatchingBound k matchingDemand) *
+        differenceDemand <
+          (T.filter fun p => coveredBlock p = j).card) :
+    ∃ anchor : {q // q ∈ Q.erase r} → ℕ,
+    ∃ core : {q // q ∈ Q.erase r} → Finset ℕ,
+      HasAnchoredLowerCoreRows
+          A k cell Q r T coveredBlock j anchor core ∧
+      HasAnchoredLowerCoreArithmeticFork
+        A k anchorDemand differenceDemand matchingDemand
+          Q r (T.filter fun p => coveredBlock p = j)
+          anchor core := by
+  obtain ⟨anchor, core, hcoreRows⟩ :=
+    prescribedCommonColumn_repeatedBlock_has_anchoredLowerCores
+      hrQ E T coveredBlock hrows j
+  refine ⟨anchor, core, hcoreRows, ?_⟩
+  unfold HasAnchoredLowerCoreArithmeticFork
+  apply
+    anchoredLowerCores_force_differenceGrowth_or_lowerRootedMatching_or_fixedCoreAnchorStar
+      (A := A) (k := k)
+      (R := T.filter fun p => coveredBlock p = j)
+      anchor core
+  · intro p hp
+    have hpData := hcoreRows p hp
+    exact ⟨hpData.2.1, hpData.2.2.1⟩
+  · exact hlarge
+
+/-- Refine the geometric common-column fork without a raw block-growth
+escape.
+
+In the spread horn retain the reduced cover stream.  In the concentrated
+horn, apply the anchored lower-core double pigeonhole to the repeated
+literal block.  Thus concentration produces difference growth, a
+same-target lower rooted matching, or a fixed-core anchor star; mere
+largeness of the block is no longer an endpoint. -/
+theorem commonColumnReducedCoverFork_forces_reducedStream_or_anchoredArithmeticFork
+    {A : Set ℕ}
+    {k L anchorDemand differenceDemand matchingDemand : ℕ}
+    {cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {r : ℕ}
+    (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (T : Finset {q // q ∈ Q.erase r})
+    (hfork :
+      HasCommonColumnReducedCoverFork
+        A k
+          ((anchorDemand *
+              additiveRootedMatchingBound k matchingDemand) *
+            differenceDemand)
+          L cell Q r hrQ E T) :
+    HasCommonColumnReducedCoverStream
+        A k L cell Q r hrQ E T ∨
+      ∃ coveredBlock : {q // q ∈ Q.erase r} → ℕ,
+      ∃ j ∈ T.image coveredBlock,
+      ∃ anchor : {q // q ∈ Q.erase r} → ℕ,
+      ∃ core : {q // q ∈ Q.erase r} → Finset ℕ,
+        (∀ p ∈ T,
+          HasPrescribedCommonColumnCover
+            A k cell Q r hrQ E p (coveredBlock p)) ∧
+        HasAnchoredLowerCoreRows
+          A k cell Q r T coveredBlock j anchor core ∧
+        HasAnchoredLowerCoreArithmeticFork
+          A k anchorDemand differenceDemand matchingDemand
+            Q r (T.filter fun p => coveredBlock p = j)
+            anchor core := by
+  unfold HasCommonColumnReducedCoverFork at hfork
+  obtain ⟨coveredBlock, hrows, hspread | hrepeated⟩ :=
+    hfork
+  · left
+    unfold HasCommonColumnReducedCoverStream
+    exact ⟨coveredBlock, hrows, hspread⟩
+  · right
+    obtain ⟨j, hjImage, hjLarge⟩ :=
+      hrepeated
+    obtain ⟨anchor, core, hcoreRows, harithmetic⟩ :=
+      prescribedCommonColumn_repeatedBlock_forces_anchoredArithmeticFork
+        (A := A) (k := k)
+        (anchorDemand := anchorDemand)
+        (differenceDemand := differenceDemand)
+        (matchingDemand := matchingDemand)
+        hrQ E T coveredBlock hrows j hjLarge
+    exact ⟨coveredBlock, j, hjImage, anchor, core,
+      hrows, hcoreRows, harithmetic⟩
+
+/-- Packaged concentration horn of the refined common-column geometry. -/
+def HasCommonColumnAnchoredArithmeticConcentration
+    (A : Set ℕ)
+    (k anchorDemand differenceDemand matchingDemand : ℕ)
+    (cell : ℕ → Finset ℕ)
+    (Q : Finset ℕ) (r : ℕ) (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (T : Finset {q // q ∈ Q.erase r}) : Prop :=
+  ∃ coveredBlock : {q // q ∈ Q.erase r} → ℕ,
+  ∃ j ∈ T.image coveredBlock,
+  ∃ anchor : {q // q ∈ Q.erase r} → ℕ,
+  ∃ core : {q // q ∈ Q.erase r} → Finset ℕ,
+    (∀ p ∈ T,
+      HasPrescribedCommonColumnCover
+        A k cell Q r hrQ E p (coveredBlock p)) ∧
+    HasAnchoredLowerCoreRows
+      A k cell Q r T coveredBlock j anchor core ∧
+    HasAnchoredLowerCoreArithmeticFork
+      A k anchorDemand differenceDemand matchingDemand
+        Q r (T.filter fun p => coveredBlock p = j)
+        anchor core
+
+/-- Large localized target families have no unstructured block-growth
+horn.
+
+The fixed-column argument first gives either an exact-target rooted
+matching at order `k+1`, or a repeated common support.  Its geometric
+spread gives reduced covers.  Its concentration is resolved by the
+anchored difference/core double pigeonhole. -/
+theorem targetLocalizedAdditiveFamily_forces_rootedMatching_or_reducedStream_or_anchoredArithmeticConcentration
+    {A C : Set ℕ}
+    {k L anchorDemand differenceDemand
+      lowerMatchingDemand currentMatchingDemand : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ}
+    (hrQ : r ∈ Q)
+    (hrepresented :
+      ∀ q ∈ Q,
+        (additiveSupportFamily A (k + 1) q).Nonempty)
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (hlocalized :
+      ∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q')
+    (hlarge :
+      (((anchorDemand *
+            additiveRootedMatchingBound k lowerMatchingDemand) *
+          differenceDemand) *
+        (k + 1 + L)) *
+          additiveRootedMatchingBound
+            (k + 1) currentMatchingDemand <
+        (Q.erase r).card) :
+    (∃ root : Finset ℕ, ∃ M : Finset (Finset ℕ),
+        root.card < k + 1 ∧
+        M ⊆ additiveSupportFamily A (k + 1) r ∧
+        currentMatchingDemand < M.card ∧
+        (∀ E ∈ M, root ⊆ E) ∧
+        (∀ E ∈ M, (E \ root).Nonempty) ∧
+        ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+          Disjoint (E \ root) (G \ root)) ∨
+      ∃ E ∈ additiveSupportFamily A (k + 1) r,
+        ∃ T : Finset {q // q ∈ Q.erase r},
+          HasCommonColumnReducedCoverStream
+              A k L cell Q r hrQ E T ∨
+            HasCommonColumnAnchoredArithmeticConcentration
+              A k anchorDemand differenceDemand
+                lowerMatchingDemand cell Q r hrQ E T := by
+  obtain hmatching | hgeometry :=
+    targetLocalizedAdditiveFamily_forces_rootedMatching_or_reducedCoverStream_or_repeatedBlock
+      (A := A) (k := k)
+      (K :=
+        (anchorDemand *
+            additiveRootedMatchingBound k lowerMatchingDemand) *
+          differenceDemand)
+      (L := L) (demand := currentMatchingDemand)
+      P hrQ hrepresented hcert hlocalized hlarge
+  · exact Or.inl hmatching
+  · right
+    obtain ⟨E, hER, T, _hTlarge, hfork⟩ :=
+      hgeometry
+    refine ⟨E, hER, T, ?_⟩
+    obtain hspread | hconcentrated :=
+      commonColumnReducedCoverFork_forces_reducedStream_or_anchoredArithmeticFork
+        (A := A) (k := k) (L := L)
+        (anchorDemand := anchorDemand)
+        (differenceDemand := differenceDemand)
+        (matchingDemand := lowerMatchingDemand)
+        hrQ E T hfork
+    · exact Or.inl hspread
+    · right
+      unfold HasCommonColumnAnchoredArithmeticConcentration
+      exact hconcentrated
+
+/-- Packaged conclusion of the fully refined localized-certificate
+arithmetic fork. -/
+def HasTargetLocalizedArithmeticOutcome
+    (A : Set ℕ)
+    (k L anchorDemand differenceDemand
+      lowerMatchingDemand currentMatchingDemand : ℕ)
+    (cell : ℕ → Finset ℕ)
+    (Q : Finset ℕ) (r : ℕ) (hrQ : r ∈ Q) : Prop :=
+  (∃ root : Finset ℕ, ∃ M : Finset (Finset ℕ),
+      root.card < k + 1 ∧
+      M ⊆ additiveSupportFamily A (k + 1) r ∧
+      currentMatchingDemand < M.card ∧
+      (∀ E ∈ M, root ⊆ E) ∧
+      (∀ E ∈ M, (E \ root).Nonempty) ∧
+      ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+        Disjoint (E \ root) (G \ root)) ∨
+    ∃ E ∈ additiveSupportFamily A (k + 1) r,
+      ∃ T : Finset {q // q ∈ Q.erase r},
+        HasCommonColumnReducedCoverStream
+            A k L cell Q r hrQ E T ∨
+          HasCommonColumnAnchoredArithmeticConcentration
+            A k anchorDemand differenceDemand
+              lowerMatchingDemand cell Q r hrQ E T
+
 /-- A common summand across supports at distinct target labels descends to
 the same number of distinct predecessor targets.
 
@@ -33051,6 +33905,132 @@ theorem quadraticBlockTail_forces_largeTargetLocalizedCertificate
     omega
   exact ⟨Q, hQnonempty, hQlateL,
     hcert, hlocalized, hQlarge⟩
+
+/-- Quadratic block tails force the fully refined localized arithmetic
+outcome at every prescribed scale.
+
+Ask the preceding certificate theorem for one more target than the complete
+fixed-column/concentration threshold.  After choosing any `r ∈ Q`, erasing
+`r` still leaves enough targets for
+`targetLocalizedAdditiveFamily_forces_rootedMatching_or_reducedStream_or_anchoredArithmeticConcentration`.
+
+Thus the actual strong-deletion certificate construction forces an
+exact-target rooted matching, a reduced common-column cover stream, or the
+anchored lower-core arithmetic trichotomy.  No unstructured block-size horn
+remains. -/
+theorem quadraticBlockTail_forces_targetLocalizedArithmeticOutcome
+    {A K : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hbasis :
+      IsExactTupleAsymptoticBasis A (k + 1))
+    (hstrong :
+      StrongInfiniteDeletion
+        (additiveSupportFamily A (k + 1)) A)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hquadratic : ∀ i,
+      (i + k + 2) ^ 2 < (cell i).card) :
+    ∀ targetFloor coverDemand anchorDemand
+        differenceDemand lowerMatchingDemand
+        currentMatchingDemand,
+      let geometricThreshold :=
+        (((anchorDemand *
+              additiveRootedMatchingBound
+                k lowerMatchingDemand) *
+            differenceDemand) *
+          (k + 1 + coverDemand)) *
+            additiveRootedMatchingBound
+              (k + 1) currentMatchingDemand
+      let certificateBound := geometricThreshold + 1
+      let capacity :=
+        (k + 1) * certificateBound + (k + 1)
+      let start := capacity + 1
+      let tailCell : ℕ → Finset ℕ :=
+        fun i => cell (start + i)
+      ∃ Q : Finset ℕ,
+        Q.Nonempty ∧
+        (∀ q ∈ Q, targetFloor ≤ q) ∧
+        certificateBound < Q.card ∧
+        ∃ r, ∃ hrQ : r ∈ Q,
+          HasTargetLocalizedArithmeticOutcome
+            A k coverDemand anchorDemand differenceDemand
+              lowerMatchingDemand currentMatchingDemand
+              tailCell Q r hrQ := by
+  classical
+  intro targetFloor coverDemand anchorDemand
+      differenceDemand lowerMatchingDemand
+      currentMatchingDemand
+  let geometricThreshold :=
+    (((anchorDemand *
+          additiveRootedMatchingBound
+            k lowerMatchingDemand) *
+        differenceDemand) *
+      (k + 1 + coverDemand)) *
+        additiveRootedMatchingBound
+          (k + 1) currentMatchingDemand
+  let certificateBound := geometricThreshold + 1
+  let capacity :=
+    (k + 1) * certificateBound + (k + 1)
+  let start := capacity + 1
+  let tailCell : ℕ → Finset ℕ :=
+    fun i => cell (start + i)
+  let Ktail : Set ℕ :=
+    {x | ∃ i, x ∈ tailCell i}
+  have Ptail :
+      IsFiniteBlockPartition Ktail tailCell := by
+    refine ⟨?_, ?_, ?_⟩
+    · intro i
+      exact P.nonempty (start + i)
+    · intro i j hij
+      apply P.disjoint
+      omega
+    · intro x
+      simp only [Ktail, tailCell,
+        Set.mem_setOf_eq]
+  obtain ⟨Nrep, hNrep⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr
+      hbasis
+  obtain ⟨Q, hQnonempty, hQlate, hcert,
+      hlocalized, hQlarge⟩ :=
+    quadraticBlockTail_forces_largeTargetLocalizedCertificate
+      hbasis hstrong hKA P hquadratic certificateBound
+        (max targetFloor Nrep)
+  have hQlateFloor :
+      ∀ q ∈ Q, targetFloor ≤ q := by
+    intro q hqQ
+    exact (le_max_left targetFloor Nrep).trans
+      (hQlate q hqQ)
+  have hrepresented :
+      ∀ q ∈ Q,
+        (additiveSupportFamily A (k + 1) q).Nonempty := by
+    intro q hqQ
+    obtain ⟨F, hFmem, _hFempty⟩ :=
+      hNrep q
+        ((le_max_right targetFloor Nrep).trans
+          (hQlate q hqQ))
+    exact ⟨F, hFmem⟩
+  have hQnonempty' : Q.Nonempty := hQnonempty
+  obtain ⟨r, hrQ⟩ := hQnonempty
+  have hcardErase :
+      (Q.erase r).card + 1 = Q.card :=
+    Finset.card_erase_add_one hrQ
+  have hlargeErase :
+      geometricThreshold < (Q.erase r).card := by
+    dsimp only [certificateBound] at hQlarge
+    omega
+  have houtcome :=
+    targetLocalizedAdditiveFamily_forces_rootedMatching_or_reducedStream_or_anchoredArithmeticConcentration
+      (A := A) (k := k)
+      (L := coverDemand)
+      (anchorDemand := anchorDemand)
+      (differenceDemand := differenceDemand)
+      (lowerMatchingDemand := lowerMatchingDemand)
+      (currentMatchingDemand := currentMatchingDemand)
+      Ptail hrQ hrepresented hcert hlocalized hlargeErase
+  refine ⟨Q, hQnonempty', hQlateFloor, hQlarge,
+    r, hrQ, ?_⟩
+  simpa only [HasTargetLocalizedArithmeticOutcome] using
+    houtcome
 
 /-- Matching-normalized form of the protected-prefix amplifier.
 
