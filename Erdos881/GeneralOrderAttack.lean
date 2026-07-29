@@ -40670,4 +40670,341 @@ theorem primitiveCounterexample_forces_strictRankDescent
       hDselected, hDminimal, hℓpos, hℓh,
       hrepresented, hdestroy⟩
 
+/-- A reduced common-column stream with more than `L + 1` covered blocks
+contains a literal block of index strictly larger than `L`, and the common
+support avoids that whole block.
+
+This is the operational content of the previously terminal spread horn.
+The row-cover data are not needed for the fusion itself: the common support
+and one fresh disjoint block already form a bounded repair/deletion pair. -/
+theorem HasCommonColumnReducedCoverStream.exists_disjointBlock_above
+    {A : Set ℕ} {k L : ℕ}
+    {cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {r : ℕ} {hrQ : r ∈ Q}
+    {E : Finset ℕ}
+    {T : Finset {q // q ∈ Q.erase r}}
+    (hstream :
+      HasCommonColumnReducedCoverStream
+        A k (L + 1) cell Q r hrQ E T) :
+    ∃ j, L < j ∧ Disjoint E (cell j) := by
+  classical
+  unfold HasCommonColumnReducedCoverStream at hstream
+  obtain ⟨coveredBlock, _hrows, J, _hJimage,
+      hJlarge, hJdata⟩ := hstream
+  have hnotSubset :
+      ¬ J ⊆ Finset.range (L + 1) := by
+    intro hsubset
+    have hcard :
+        J.card ≤ (Finset.range (L + 1)).card :=
+      Finset.card_le_card hsubset
+    simp only [Finset.card_range] at hcard
+    omega
+  obtain ⟨j, hjJ, hjRange⟩ :=
+    Finset.not_subset.mp hnotSubset
+  have hLj : L < j := by
+    simp only [Finset.mem_range, not_lt] at hjRange
+    omega
+  exact ⟨j, hLj, (hJdata j hjJ).1⟩
+
+/-- One recursively usable support/block pair from the reduced-stream horn.
+
+Both coordinates clear prescribed floors.  The represented target supplies
+the support to preserve, while the fresh literal block supplies the point
+to put into the eventual deletion. -/
+structure ReducedStreamFusionStep
+    (A : Set ℕ) (h : ℕ) (cell : ℕ → Finset ℕ)
+    (targetFloor blockFloor : ℕ) where
+  target : ℕ
+  support : Finset ℕ
+  blockIndex : ℕ
+  target_lower : targetFloor ≤ target
+  block_lower : blockFloor ≤ blockIndex
+  support_mem :
+    support ∈ additiveSupportFamily A (h + 1) target
+  support_block_disjoint :
+    Disjoint support (cell blockIndex)
+
+/-- Cofinal reduced common-column streams fuse into one honest infinite
+deletion carrying a strict successor-order survival stream.
+
+At stage `i`, request a reduced stream beyond both the preceding target and
+the preceding literal block.  The spread horn supplies a common
+order-`h+1` support `support i` and a later whole block disjoint from it.
+Choose one point from that block.  Strict growth of the block indices makes
+the points injective, and bounded cross-avoidance thins them so that every
+retained support avoids every retained point, not only its own block.
+
+Enumerating the retained stages gives the required strict target stream.
+Thus the reduced-stream horn now constructs an infinite deletion rather
+than terminating as finite certificate geometry. -/
+theorem cofinalReducedCoverStreams_fuse_infiniteDeletion
+    {A K : Set ℕ} {h : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hreduced :
+      ∀ targetFloor blockFloor,
+        ∃ Q : Finset ℕ, ∃ r, ∃ hrQ : r ∈ Q,
+        ∃ E : Finset ℕ,
+        ∃ T : Finset {q // q ∈ Q.erase r},
+          targetFloor ≤ r ∧
+          E ∈ additiveSupportFamily A (h + 1) r ∧
+          HasCommonColumnReducedCoverStream
+            A h (blockFloor + 1)
+              cell Q r hrQ E T) :
+    ∃ Y : Set ℕ, ∃ oldTarget : ℕ → ℕ,
+      Y ⊆ A ∧
+      Y.Infinite ∧
+      StrictMono oldTarget ∧
+      ∀ n,
+        ∃ E ∈
+            additiveSupportFamily A (h + 1) (oldTarget n),
+          Disjoint (E : Set ℕ) Y := by
+  classical
+  have hstepExists :
+      ∀ targetFloor blockFloor,
+        Nonempty
+          (ReducedStreamFusionStep
+            A h cell targetFloor blockFloor) := by
+    intro targetFloor blockFloor
+    obtain ⟨Q, r, hrQ, E, T, hrLower,
+        hEmem, hstream⟩ :=
+      hreduced targetFloor blockFloor
+    obtain ⟨j, hjLower, hEj⟩ :=
+      hstream.exists_disjointBlock_above
+    exact ⟨⟨r, E, j, hrLower,
+      Nat.le_of_lt hjLower, hEmem, hEj⟩⟩
+  let State := ℕ × ℕ
+  let initial : State := (0, 0)
+  let actualWitness : (s : State) →
+      ReducedStreamFusionStep
+        A h cell (s.1 + 1) (s.2 + 1) :=
+    fun s => Classical.choice
+      (hstepExists (s.1 + 1) (s.2 + 1))
+  let advance : State → State := fun s =>
+    ((actualWitness s).target,
+      (actualWitness s).blockIndex)
+  let state : ℕ → State := fun n =>
+    Nat.rec initial (fun _ s => advance s) n
+  let data (n : ℕ) := actualWitness (state n)
+  let target : ℕ → ℕ := fun n => (data n).target
+  let support : ℕ → Finset ℕ := fun n => (data n).support
+  let block : ℕ → ℕ := fun n => (data n).blockIndex
+  have hstateSucc : ∀ n,
+      state (n + 1) = advance (state n) := by
+    intro n
+    simp [state]
+  have htargetStep : ∀ n, target n < target (n + 1) := by
+    intro n
+    have hlower := (data (n + 1)).target_lower
+    calc
+      target n = (state (n + 1)).1 := by
+        simp [hstateSucc, advance, target, data]
+      _ < (state (n + 1)).1 + 1 :=
+        Nat.lt_succ_self _
+      _ ≤ target (n + 1) := hlower
+  have htargetStrict : StrictMono target :=
+    strictMono_nat_of_lt_succ htargetStep
+  have hblockStep : ∀ n, block n < block (n + 1) := by
+    intro n
+    have hlower := (data (n + 1)).block_lower
+    calc
+      block n = (state (n + 1)).2 := by
+        simp [hstateSucc, advance, block, data]
+      _ < (state (n + 1)).2 + 1 :=
+        Nat.lt_succ_self _
+      _ ≤ block (n + 1) := hlower
+  have hblockStrict : StrictMono block :=
+    strictMono_nat_of_lt_succ hblockStep
+  let point : ℕ → ℕ := fun n =>
+    (P.nonempty (block n)).choose
+  have hpointCell : ∀ n, point n ∈ cell (block n) := by
+    intro n
+    exact (P.nonempty (block n)).choose_spec
+  have hpointInj : Function.Injective point := by
+    intro m n hmn
+    apply hblockStrict.injective
+    calc
+      block m =
+          blockIndex P (point m) := by
+            symm
+            exact P.blockIndex_eq_of_mem (hpointCell m)
+      _ = blockIndex P (point n) := by rw [hmn]
+      _ = block n :=
+        P.blockIndex_eq_of_mem (hpointCell n)
+  have hsupportMem : ∀ n,
+      support n ∈
+        additiveSupportFamily A (h + 1) (target n) := by
+    intro n
+    exact (data n).support_mem
+  have hsupportCard : ∀ n ∈ (Set.univ : Set ℕ),
+      (support n).card ≤ h + 1 := by
+    intro n _hn
+    exact additiveSupportFamily_cardAtMost
+      A (h + 1) (target n) (support n)
+        (hsupportMem n)
+  obtain ⟨L, _hLuniv, hLInfinite, hcross⟩ :=
+    exists_infinite_crossAvoiding_injectiveImage
+      (Set.infinite_univ : (Set.univ : Set ℕ).Infinite)
+      point hpointInj.injOn support (h + 1)
+        hsupportCard
+  let Y : Set ℕ := point '' L
+  have hYInfinite : Y.Infinite := by
+    exact
+      (Set.infinite_image_iff
+        hpointInj.injOn).mpr
+          hLInfinite
+  have hYA : Y ⊆ A := by
+    rintro y ⟨n, hnL, rfl⟩
+    apply hKA
+    exact (P.mem_iff (point n)).2
+      ⟨block n, hpointCell n⟩
+  have hsupportY : ∀ n ∈ L,
+      Disjoint (support n : Set ℕ) Y := by
+    intro n hnL
+    rw [Set.disjoint_left]
+    rintro y hySupport ⟨d, hdL, rfl⟩
+    by_cases hnd : n = d
+    · subst d
+      exact Finset.disjoint_left.mp
+        (data n).support_block_disjoint
+          (Finset.mem_coe.mp hySupport)
+          (hpointCell n)
+    · exact hcross n hnL d hdL hnd
+        (Finset.mem_coe.mp hySupport)
+  let index : ℕ → ℕ := Nat.nth fun n => n ∈ L
+  have hindexL : ∀ n, index n ∈ L := by
+    intro n
+    exact Nat.nth_mem_of_infinite hLInfinite n
+  have hindexStrict : StrictMono index :=
+    Nat.nth_strictMono hLInfinite
+  let oldTarget : ℕ → ℕ := fun n => target (index n)
+  have holdTargetStrict : StrictMono oldTarget :=
+    htargetStrict.comp hindexStrict
+  refine ⟨Y, oldTarget, hYA, hYInfinite,
+    holdTargetStrict, ?_⟩
+  intro n
+  exact ⟨support (index n), hsupportMem (index n),
+    hsupportY (index n) (hindexL n)⟩
+
+/-- Counterexample-level consumption of the reduced-stream horn.
+
+The preceding fusion gives one infinite deletion `Y` and a strict stream of
+order-`h+1` supports avoiding it.  A hypothetical successor counterexample
+forces cofinally many order-`h+1` targets destroyed by that same `Y`.
+Bracketing the destroyed stream between consecutive surviving targets then
+produces both the full predecessor-destroyer fan and cofinally represented
+order-`h` destroyers.
+
+This is the requested direct passage from the formerly unused finite spread
+horn to the current-order arithmetic attack. -/
+theorem cofinalReducedCoverStreams_force_bracketedPredecessorDestroyers
+    {A K : Set ℕ} {h : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hhpos : 0 < h)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1))
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hreduced :
+      ∀ targetFloor blockFloor,
+        ∃ Q : Finset ℕ, ∃ r, ∃ hrQ : r ∈ Q,
+        ∃ E : Finset ℕ,
+        ∃ T : Finset {q // q ∈ Q.erase r},
+          targetFloor ≤ r ∧
+          E ∈ additiveSupportFamily A (h + 1) r ∧
+          HasCommonColumnReducedCoverStream
+            A h (blockFloor + 1)
+              cell Q r hrQ E T) :
+    ∃ Y : Set ℕ, ∃ oldTarget : ℕ → ℕ,
+      Y ⊆ A ∧
+      Y.Infinite ∧
+      StrictMono oldTarget ∧
+      (∀ n,
+        ∃ E ∈
+            additiveSupportFamily A (h + 1) (oldTarget n),
+          Disjoint (E : Set ℕ) Y) ∧
+      (∀ N, ∃ m, N ≤ m ∧
+        DestroysAt
+          (additiveSupportFamily A (h + 1)) Y m) ∧
+      (∀ L, ∃ n m, ∃ E : Finset ℕ,
+        L ≤ n ∧
+        oldTarget n < m ∧
+        m < oldTarget (n + 1) ∧
+        E ∈ additiveSupportFamily A (h + 1)
+          (oldTarget n) ∧
+        Disjoint (E : Set ℕ) Y ∧
+        E.Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A (h + 1)) Y m ∧
+        ∀ a ∈ E,
+          0 < m - a ∧
+          DestroysAt
+            (additiveSupportFamily A h) Y (m - a)) ∧
+      ∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a,
+        L ≤ n ∧
+        oldTarget n < m ∧
+        m < oldTarget (n + 1) ∧
+        E ∈ additiveSupportFamily A (h + 1)
+          (oldTarget n) ∧
+        Disjoint (E : Set ℕ) Y ∧
+        DestroysAt
+          (additiveSupportFamily A (h + 1)) Y m ∧
+        a ∈ E ∧
+        (h + 1) * a ≤ oldTarget n ∧
+        L ≤ m - a ∧
+        (additiveSupportFamily A h (m - a)).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A h) Y (m - a) := by
+  obtain ⟨Y, oldTarget, hYA, hYInfinite,
+      holdTargetStrict, holdSurvival⟩ :=
+    cofinalReducedCoverStreams_fuse_infiniteDeletion
+      hKA P hreduced
+  have hsuccessorDestroy :
+      ∀ N, ∃ m, N ≤ m ∧
+        DestroysAt
+          (additiveSupportFamily A (h + 1)) Y m :=
+    strongExactDeletion_of_counterexample hcounter
+      Y hYA hYInfinite
+  have hfans :
+      ∀ L, ∃ n m, ∃ E : Finset ℕ,
+        L ≤ n ∧
+        oldTarget n < m ∧
+        m < oldTarget (n + 1) ∧
+        E ∈ additiveSupportFamily A (h + 1)
+          (oldTarget n) ∧
+        Disjoint (E : Set ℕ) Y ∧
+        E.Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A (h + 1)) Y m ∧
+        ∀ a ∈ E,
+          0 < m - a ∧
+          DestroysAt
+            (additiveSupportFamily A h) Y (m - a) :=
+    bracketedDestroyedSuccessorTargets_force_predecessorDestroyerFans
+      holdTargetStrict holdSurvival hsuccessorDestroy
+  have hrepresented :
+      ∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a,
+        L ≤ n ∧
+        oldTarget n < m ∧
+        m < oldTarget (n + 1) ∧
+        E ∈ additiveSupportFamily A (h + 1)
+          (oldTarget n) ∧
+        Disjoint (E : Set ℕ) Y ∧
+        DestroysAt
+          (additiveSupportFamily A (h + 1)) Y m ∧
+        a ∈ E ∧
+        (h + 1) * a ≤ oldTarget n ∧
+        L ≤ m - a ∧
+        (additiveSupportFamily A h (m - a)).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A h) Y (m - a) :=
+    bracketedDestroyedSuccessorTargets_force_cofinalRepresentedPredecessorDestroyers
+      hhpos hbasis holdTargetStrict
+        holdSurvival hsuccessorDestroy
+  exact ⟨Y, oldTarget, hYA, hYInfinite,
+    holdTargetStrict, holdSurvival,
+    hsuccessorDestroy, hfans, hrepresented⟩
+
 end Erdos881
