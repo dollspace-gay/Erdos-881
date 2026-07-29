@@ -1,3 +1,58 @@
+# GENERAL ORDER: TERMINAL FUSION RETAINS ITS EXACT TARGET (2026-07-29)
+
+The infinite source-advance fusion has now been welded back to the
+arithmetic stage which created it.
+
+`IsTerminalFixedSourceMarkedPoint` records, for every selected marked
+summand \(x\), an original terminal stage \(i\), source landing \(j\),
+positive root translation, and a clean order-\(k\) source support with
+
+\[
+  x=\operatorname{repaired}(i),\qquad
+  \operatorname{root}(i)=\operatorname{landing}(j),\qquad
+  \operatorname{target}(i)=x+t.
+\]
+
+`cofinalBracketedMarkedSurvivalsOnSet_extract_strictStream` retains this
+entire witness when the common upper repairs are thinned to a strict
+stream.  `HasFixedPredecessorSurvivalStateOnMarkedSet` and its recursive
+step then preserve it through every later singleton restoration, because
+each step only passes to a subsequence of the marked stream.
+
+The free-set fusion has also been strengthened to retain its initial
+source floor.  If the recursion starts at \(t+\varepsilon\), every fused
+source \(d_n\) satisfies
+
+\[
+  t+\varepsilon\le d_n.
+\]
+
+Consequently `toTerminalAligned` defines the positive strict translation
+\(\Delta_n=d_n-t\) and proves the literal affine identity
+
+\[
+  \operatorname{upper}(n)
+    =\operatorname{target}(i_n)+\Delta_n.
+\]
+
+Both supports survive the same final infinite deletion: the fused support
+at `upper n`, and the retained original support at `target i_n`.  The
+landing block, repaired point, root translation, and exact target
+translation all remain available.
+
+`terminalFixedSource_fixedEpsilon_forces_gap_or_alignedIteration` attaches
+this provenance-preserving engine to the terminal fixed-\(\varepsilon\)
+fork.  After the two immediate genuine-gap alternatives, it yields either
+an earlier arithmetic exit whose recursive state still carries the same
+marked provenance, or the fully aligned infinite fusion above.
+
+This is still not the full solution of Erdős 881 for \(k\ge3\).  The next
+direct attack is now arithmetic rather than a coherence repair: remove the
+common marked summand from the retained original supports, use finiteness
+of the order-\(k-1\) support family at the fixed target \(t\) to fix one
+source core on an infinite subsequence, and split the resulting exact
+translations into same-block alignment versus forced cross-block growth.
+
 # GENERAL ORDER: THE INFINITE SOURCE-ADVANCE FUSION IS COMPLETE (2026-07-29)
 
 The global coherence obstruction left by the finite predecessor iteration
