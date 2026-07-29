@@ -41642,6 +41642,167 @@ theorem cofinalReducedCoverStreams_force_bracketedPredecessorDestroyers
     holdTargetStrict, holdSurvival,
     hsuccessorDestroy, hfans, hrepresented⟩
 
+/-- The nonvacuous form of the difference-growth horn.
+
+Merely retaining a large finite set of represented order-`k` targets would
+carry no information for an asymptotic basis.  This package therefore keeps
+the entire localized arithmetic source: every difference has the exact
+form
+
+`d = p - anchor p`
+
+for a distinct certificate-row label `p`; the anchor lies in the one
+repeated block, the lower core represents `d`, and the original private
+row trace is still available. -/
+def HasAlignedAnchoredDifferenceGrowth
+    (A : Set ℕ) (k differenceDemand : ℕ)
+    (cell : ℕ → Finset ℕ)
+    (Q : Finset ℕ) (r : ℕ) (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (T : Finset {q // q ∈ Q.erase r}) : Prop :=
+  ∃ coveredBlock : {q // q ∈ Q.erase r} → ℕ,
+  ∃ j ∈ T.image coveredBlock,
+  ∃ anchor : {q // q ∈ Q.erase r} → ℕ,
+  ∃ core : {q // q ∈ Q.erase r} → Finset ℕ,
+    (∀ p ∈ T,
+      HasPrescribedCommonColumnCover
+        A k cell Q r hrQ E p (coveredBlock p)) ∧
+    HasAnchoredLowerCoreRows
+      A k cell Q r hrQ E T
+        coveredBlock j anchor core ∧
+    ∃ V : Finset ℕ,
+      differenceDemand < V.card ∧
+      ∀ d ∈ V,
+        ∃ p ∈ T.filter (fun p => coveredBlock p = j),
+          d = p.1 - anchor p ∧
+          core p ∈ additiveSupportFamily A k d
+
+/-- Nonvacuity audit for aligned difference growth.
+
+Every retained difference is the image of an actual row label in
+`Q.erase r`.  Therefore the demanded difference cardinality forces the
+localized certificate itself to be larger than that demand.  This is the
+counting information lost by the weaker conclusion which remembered only
+that the differences were represented. -/
+theorem HasAlignedAnchoredDifferenceGrowth.certificate_large
+    {A : Set ℕ} {k differenceDemand : ℕ}
+    {cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {r : ℕ} {hrQ : r ∈ Q}
+    {E : Finset ℕ}
+    {T : Finset {q // q ∈ Q.erase r}}
+    (hgrowth :
+      HasAlignedAnchoredDifferenceGrowth
+        A k differenceDemand cell Q r hrQ E T) :
+    differenceDemand < (Q.erase r).card := by
+  classical
+  unfold HasAlignedAnchoredDifferenceGrowth at hgrowth
+  obtain ⟨coveredBlock, j, _hjImage, anchor, _core,
+      _hrows, _hcoreRows, V, hVlarge, hVdata⟩ :=
+    hgrowth
+  let R : Finset {q // q ∈ Q.erase r} :=
+    T.filter fun p => coveredBlock p = j
+  let difference :
+      {q // q ∈ Q.erase r} → ℕ :=
+    fun p => p.1 - anchor p
+  have hVsub : V ⊆ R.image difference := by
+    intro d hdV
+    obtain ⟨p, hpR, hd, _hcoreMem⟩ :=
+      hVdata d hdV
+    exact Finset.mem_image.mpr
+      ⟨p, by simpa only [R] using hpR,
+        by simpa only [difference] using hd.symm⟩
+  have hVcard :
+      V.card ≤ (Q.erase r).card := by
+    calc
+      V.card ≤ (R.image difference).card :=
+        Finset.card_le_card hVsub
+      _ ≤ R.card := Finset.card_image_le
+      _ ≤ T.card := by
+        exact Finset.card_le_card
+          (Finset.filter_subset _ _)
+      _ ≤ Finset.univ.card :=
+        Finset.card_le_card (Finset.subset_univ T)
+      _ = (Q.erase r).card := by simp
+  exact hVlarge.trans_le hVcard
+
+/-- Resolve the fixed-core leaf of an anchored arithmetic concentration
+without discarding the arithmetic coherence of the difference-growth
+branch. -/
+theorem anchoredArithmeticConcentration_forces_alignedGrowth_or_twoRankDescent_or_capacityFailure
+    {A C : Set ℕ}
+    {k clearDemand differenceDemand matchingDemand : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ} {hrQ : r ∈ Q}
+    {E : Finset ℕ}
+    {T : Finset {q // q ∈ Q.erase r}}
+    (hk : 2 < k)
+    (hconcentration :
+      HasCommonColumnAnchoredArithmeticConcentration
+        A k (clearDemand + k) differenceDemand
+          matchingDemand cell Q r hrQ E T)
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q) :
+    HasAlignedAnchoredDifferenceGrowth
+        A k differenceDemand cell Q r hrQ E T ∨
+      (∃ d, ∃ root : Finset ℕ,
+        ∃ M : Finset (Finset ℕ),
+          root.card < k ∧
+          M ⊆ additiveSupportFamily A k d ∧
+          matchingDemand < M.card ∧
+          (∀ H ∈ M, root ⊆ H) ∧
+          (∀ H ∈ M, (H \ root).Nonempty) ∧
+          ∀ H ∈ M, ∀ G ∈ M, H ≠ G →
+            Disjoint (H \ root) (G \ root)) ∨
+      (∃ q, ∃ D : Finset ℕ, ∃ n,
+        D.Nonempty ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A (k + 1)) D q ∧
+        (additiveSupportFamily A (k - 1) n).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A (k - 1))
+          (D : Set ℕ) n) ∨
+      ∃ i,
+        (cell i).card ≤
+          (k + 1) * Q.card + (k + 1) := by
+  classical
+  unfold HasCommonColumnAnchoredArithmeticConcentration at hconcentration
+  obtain ⟨coveredBlock, j, hjImage, anchor, core,
+      hrows, hcoreRows, harithmetic⟩ :=
+    hconcentration
+  unfold HasAnchoredLowerCoreArithmeticFork at harithmetic
+  rcases harithmetic with
+      hdifference | hmatching |
+        ⟨d, H, U, hUR, hUlarge, hHmem,
+          hUdata, hanchorInj⟩
+  · exact Or.inl
+      ⟨coveredBlock, j, hjImage, anchor, core,
+        hrows, hcoreRows, hdifference⟩
+  · exact Or.inr (Or.inl hmatching)
+  · by_cases hblocks :
+        ∀ i,
+          (k + 1) * Q.card + (k + 1) <
+            (cell i).card
+    · right
+      right
+      left
+      obtain ⟨p, hpU, D, n, hDnonempty,
+          hDminimal, hrepresented, hdestroy⟩ :=
+        fixedCoreAnchorStar_forces_twoRankDescent_of_certificate
+          (clearDemand := clearDemand)
+          P hk hcoreRows hUR hUlarge hHmem
+            hUdata hanchorInj hcert hblocks
+      exact ⟨p.1, D, n, hDnonempty, hDminimal,
+        hrepresented, hdestroy⟩
+    · right
+      right
+      right
+      push Not at hblocks
+      exact hblocks
+
 /-- Resolve the fixed-core leaf of an anchored arithmetic concentration.
 
 Difference growth and the lower same-target rooted matching are returned
@@ -41692,43 +41853,21 @@ theorem anchoredArithmeticConcentration_forces_growth_or_twoRankDescent_or_capac
       ∃ i,
         (cell i).card ≤
           (k + 1) * Q.card + (k + 1) := by
-  classical
-  unfold HasCommonColumnAnchoredArithmeticConcentration at hconcentration
-  obtain ⟨coveredBlock, j, _hjImage, anchor, core,
-      _hrows, hcoreRows, harithmetic⟩ :=
-    hconcentration
-  unfold HasAnchoredLowerCoreArithmeticFork at harithmetic
-  rcases harithmetic with
-      hdifference | hmatching |
-        ⟨d, H, U, hUR, hUlarge, hHmem,
-          hUdata, hanchorInj⟩
+  obtain hgrowth | hmatching | hdescent | hcapacity :=
+    anchoredArithmeticConcentration_forces_alignedGrowth_or_twoRankDescent_or_capacityFailure
+      P hk hconcentration hcert
   · left
-    obtain ⟨V, hVlarge, hVdata⟩ := hdifference
-    exact ⟨V, hVlarge, fun t htV => by
-      obtain ⟨p, _hpR, _ht, hcoreMem⟩ :=
-        hVdata t htV
-      exact ⟨core p, hcoreMem⟩⟩
+    unfold HasAlignedAnchoredDifferenceGrowth at hgrowth
+    obtain ⟨_coveredBlock, _j, _hjImage, _anchor, _core,
+        _hrows, _hcoreRows, V, hVlarge, hVdata⟩ :=
+      hgrowth
+    exact ⟨V, hVlarge, fun d hdV => by
+      obtain ⟨p, _hpRow, _hd, hcoreMem⟩ :=
+        hVdata d hdV
+      exact ⟨_, hcoreMem⟩⟩
   · exact Or.inr (Or.inl hmatching)
-  · by_cases hblocks :
-        ∀ i,
-          (k + 1) * Q.card + (k + 1) <
-            (cell i).card
-    · right
-      right
-      left
-      obtain ⟨p, hpU, D, n, hDnonempty,
-          hDminimal, hrepresented, hdestroy⟩ :=
-        fixedCoreAnchorStar_forces_twoRankDescent_of_certificate
-          (clearDemand := clearDemand)
-          P hk hcoreRows hUR hUlarge hHmem
-            hUdata hanchorInj hcert hblocks
-      exact ⟨p.1, D, n, hDnonempty, hDminimal,
-        hrepresented, hdestroy⟩
-    · right
-      right
-      right
-      push Not at hblocks
-      exact hblocks
+  · exact Or.inr (Or.inr (Or.inl hdescent))
+  · exact Or.inr (Or.inr (Or.inr hcapacity))
 
 /-- The literal tail offset used by the diagonal localized-arithmetic
 request.  The three growth demands and the cover demand are `n + 1`;
@@ -44586,7 +44725,7 @@ Every sufficiently late stage retains its source block and translation, but
 its terminal alternative is now one of five explicit outcomes:
 
 * translated-hole growth;
-* represented order-`k` difference growth;
+* aligned anchored order-`k` difference growth;
 * a large order-`k` rooted matching;
 * a represented two-rank injury at order `k-1`; or
 * a literal block whose size fails the certificate-capacity bound.
@@ -44625,10 +44764,10 @@ def HasEventuallyAlignedHolesOrResolvedArithmetic
       translatedHoles ⊆ sourcePetals ∧
       (∀ a ∈ translatedHoles, a + δ ∉ A) ∧
       (n < translatedHoles.card ∨
-        (∃ V : Finset ℕ,
-          n < V.card ∧
-          ∀ d ∈ V,
-            (additiveSupportFamily A k d).Nonempty) ∨
+        (∃ E ∈ additiveSupportFamily A (k + 1) q,
+          ∃ T : Finset {r // r ∈ Q.erase q},
+            HasAlignedAnchoredDifferenceGrowth
+              A k n cell Q q hqQ E T) ∨
         (∃ d, ∃ root : Finset ℕ,
           ∃ M : Finset (Finset ℕ),
             root.card < k ∧
@@ -44699,11 +44838,12 @@ theorem HasEventuallyAlignedHolesOrAnchoredConcentration.resolveConcentrations
           A k ((n - k) + k) n n cell Q q hqQ E T := by
       simpa only [Nat.sub_add_cancel hkn] using hconcentration
     have hresolved :=
-      anchoredArithmeticConcentration_forces_growth_or_twoRankDescent_or_capacityFailure
+      anchoredArithmeticConcentration_forces_alignedGrowth_or_twoRankDescent_or_capacityFailure
         (clearDemand := n - k) P hk hconcentration' hcert
     rcases hresolved with
         hdifference | hmatching | hdescent | hcapacity
-    · exact Or.inr (Or.inl hdifference)
+    · exact Or.inr (Or.inl
+        ⟨E, hEmem, T, hdifference⟩)
     · exact Or.inr (Or.inr (Or.inl hmatching))
     · exact Or.inr (Or.inr (Or.inr (Or.inl hdescent)))
     · exact Or.inr (Or.inr (Or.inr (Or.inr hcapacity)))
@@ -44978,7 +45118,7 @@ consumed.
 
 The same source block, translation, finite selector certificate, and
 source matching are retained.  Only four explicit arithmetic injuries
-remain: represented order-`k` difference growth, order-`k` rooted matching
+remain: aligned anchored order-`k` difference growth, order-`k` rooted matching
 growth, a represented order-`k-1` two-rank injury, or literal failure of
 the block-capacity threshold. -/
 def HasEventuallyAlignedResolvedArithmeticInjuries
@@ -45012,10 +45152,10 @@ def HasEventuallyAlignedResolvedArithmeticInjuries
       sourcePetals ⊆ cell i ∧
       translatedHoles ⊆ sourcePetals ∧
       (∀ a ∈ translatedHoles, a + δ ∉ A) ∧
-      ((∃ V : Finset ℕ,
-          n < V.card ∧
-          ∀ d ∈ V,
-            (additiveSupportFamily A k d).Nonempty) ∨
+      ((∃ E ∈ additiveSupportFamily A (k + 1) q,
+          ∃ T : Finset {r // r ∈ Q.erase q},
+            HasAlignedAnchoredDifferenceGrowth
+              A k n cell Q q hqQ E T) ∨
         (∃ d, ∃ root : Finset ℕ,
           ∃ M : Finset (Finset ℕ),
             root.card < k ∧

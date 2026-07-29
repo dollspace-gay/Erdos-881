@@ -13,10 +13,17 @@ counterexample-level endpoint.
   sends recurrent reduced common-column streams through the same endpoint.
 - `HasEventuallyAlignedHolesOrAnchoredConcentration.resolveConcentrations`
   feeds anchored concentration through the localized arithmetic threshold.
-  The concentration predicate disappears, leaving represented
+  The concentration predicate disappears, leaving aligned anchored
   order-`k` difference growth, order-`k` rooted matching growth, a
   represented order-`k-1` two-rank injury, or a literal block-capacity
   failure.
+- The difference-growth branch deliberately retains its certificate row
+  label `p`, block anchor, lower core, private row trace, and equation
+  `d = p - anchor p`.  The formal audit
+  `HasAlignedAnchoredDifferenceGrowth.certificate_large` shows that its
+  cardinal demand forces the localized certificate itself to grow.  The
+  weaker statement “many order-`k` targets are represented” is automatic
+  for a basis and is not used as a terminal outcome.
 - The fusion interface now records a chosen point rather than requiring
   the preserved support to avoid its entire block.  This exact
   strengthening lets
