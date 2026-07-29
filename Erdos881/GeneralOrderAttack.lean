@@ -29756,6 +29756,9 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_infiniteGapFusion
               (∀ n, ∃ E ∈
                 additiveSupportFamily A (h + 1) (oldTarget n),
                   Disjoint (E : Set ℕ) Y) ∧
+              (∀ N, ∃ n, N ≤ n ∧
+                DestroysAt
+                  (additiveSupportFamily A (h + 1)) Y n) ∧
               ∀ n, ¬ DestroysAt
                 (additiveSupportFamily A (h + 1))
                 Y (oldTarget n)) := by
@@ -29770,8 +29773,27 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_infiniteGapFusion
       hcosingleton
     refine ⟨K, cell, P, oldTarget, hKA, hKInfinite,
       holdTargetStrict, ?_⟩
-    exact
+    obtain hrank | hmany | hfusion :=
       hminimal.selectorRankDescent_or_manyBlocks_or_infiniteGapFusion
         hhpos hKA P hcellLarge oldTarget hsurvive
+    · exact Or.inl hrank
+    · exact Or.inr (Or.inl hmany)
+    · right
+      right
+      obtain ⟨Y, fusion, stageSelector, target, anchor,
+          destroyer, hYfusion, hYK, hYInfinite,
+          htargetStrict, hstageData, hdestroyY, hcross,
+          holdSurvivalY, holdNotDestroyed⟩ := hfusion
+      have hsuccessorDestroy :
+          ∀ N, ∃ n, N ≤ n ∧
+            DestroysAt
+              (additiveSupportFamily A (h + 1)) Y n :=
+        strongExactDeletion_of_counterexample hcounter
+          Y (hYK.trans hKA) hYInfinite
+      exact ⟨Y, fusion, stageSelector, target, anchor,
+        destroyer, hYfusion, hYK, hYInfinite,
+        htargetStrict, hstageData, hdestroyY, hcross,
+        holdSurvivalY, hsuccessorDestroy,
+        holdNotDestroyed⟩
 
 end Erdos881
