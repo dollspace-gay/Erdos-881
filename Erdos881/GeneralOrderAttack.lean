@@ -28850,6 +28850,149 @@ theorem markedPrivateCore_extends_avoiding_protectedUnion
     P s hDselected hxD hUselected
       hsupport hprivate hblocks
 
+/-- Capacity-free structural form of marked private-support completion.
+
+Only blocks whose selected coordinates lie in the private support need to
+move.  If each such block has a point outside `U ∪ E`, the usual protected
+completion succeeds.  Otherwise one actual support-hit block is completely
+covered by `U ∪ E`.  This retains the combinatorial witness hidden by the
+cardinality hypothesis in
+`markedPrivateSupport_extends_avoiding_protectedUnion`. -/
+theorem markedPrivateSupport_extends_avoiding_protectedUnion_or_coveredHitBlock
+    {A C : Set ℕ} {k q x : ℕ}
+    {F : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C F)
+    (s : BlockSelector F) {D U E : Finset ℕ}
+    (hDselected : (D : Set ℕ) ⊆ selectedSet s)
+    (hxD : x ∈ D)
+    (hUselected :
+      Disjoint (U : Set ℕ) (selectedSet s))
+    (hER :
+      E ∈ additiveSupportFamily A (k + 1) q)
+    (hprivate : E ∩ D = {x}) :
+    (∃ t : BlockSelector F,
+        Disjoint (U : Set ℕ) (selectedSet t) ∧
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q) ∨
+      ∃ j, (s j).1 ∈ E ∧ F j ⊆ U ∪ E := by
+  classical
+  let i := blockIndex P x
+  have hxSelected :
+      x ∈ selectedSet s :=
+    hDselected (Finset.mem_coe.mpr hxD)
+  have hsi : (s i).1 = x :=
+    (P.mem_selectedSet_iff s).mp hxSelected
+  have hxE : x ∈ E := by
+    have hxPrivate : x ∈ E ∩ D := by
+      rw [hprivate]
+      simp
+    exact (Finset.mem_inter.mp hxPrivate).1
+  let J : Finset ℕ :=
+    (E.filter fun z => z ∈ selectedSet s).image
+      (blockIndex P)
+  let W : Finset ℕ := U ∪ E
+  have hiJ : i ∈ J := by
+    apply Finset.mem_image.mpr
+    exact ⟨x,
+      Finset.mem_filter.mpr ⟨hxE, hxSelected⟩,
+      rfl⟩
+  by_cases hcovered :
+      ∃ j, j ∈ J ∧ F j ⊆ W
+  · right
+    obtain ⟨j, hjJ, hjCover⟩ := hcovered
+    have hsjE : (s j).1 ∈ E := by
+      obtain ⟨z, hzFilter, rfl⟩ :=
+        Finset.mem_image.mp hjJ
+      have hzE :=
+        (Finset.mem_filter.mp hzFilter).1
+      have hzSelected :=
+        (Finset.mem_filter.mp hzFilter).2
+      have hsz :
+          (s (blockIndex P z)).1 = z :=
+        (P.mem_selectedSet_iff s).mp hzSelected
+      rw [hsz]
+      exact hzE
+    exact ⟨j, hsjE, by
+      simpa only [W] using hjCover⟩
+  · left
+    have hsecond :
+        ∀ j, j ∈ J → (s j).1 ∈ E →
+          ∃ y ∈ F j, y ∉ U ∧ y ∉ E := by
+      intro j hjJ _hsjE
+      have houtside : (F j \ W).Nonempty := by
+        by_contra hempty
+        apply hcovered
+        refine ⟨j, hjJ, ?_⟩
+        intro y hyF
+        by_contra hyW
+        exact hempty
+          ⟨y, Finset.mem_sdiff.mpr ⟨hyF, hyW⟩⟩
+      obtain ⟨y, hyOutside⟩ := houtside
+      have hyF :=
+        (Finset.mem_sdiff.mp hyOutside).1
+      have hyW :=
+        (Finset.mem_sdiff.mp hyOutside).2
+      exact ⟨y, hyF,
+        fun hyU => hyW
+          (Finset.mem_union_left E hyU),
+        fun hyE => hyW
+          (Finset.mem_union_right U hyE)⟩
+    have hsiE : (s i).1 ∈ E := by
+      rw [hsi]
+      exact hxE
+    obtain ⟨b, hbF, hbU, hbE⟩ :=
+      hsecond i hiJ hsiE
+    have hbne : b ≠ (s i).1 := by
+      intro hbeq
+      exact hbE (hbeq ▸ hsiE)
+    have hbBlock :
+        b ∈ (F i).erase (s i).1 :=
+      Finset.mem_erase.mpr ⟨hbne, hbF⟩
+    have hEswap :
+        Disjoint (E : Set ℕ)
+          (((D.erase (s i).1 ∪ {b} :
+            Finset ℕ) : Set ℕ)) := by
+      rw [Set.disjoint_left]
+      intro y hyE hySwap
+      have hySwap' :
+          y ∈ D.erase (s i).1 ∪ {b} :=
+        Finset.mem_coe.mp hySwap
+      rcases Finset.mem_union.mp hySwap' with
+          hyD | hyb
+      · have hyD' : y ∈ D :=
+          (Finset.mem_erase.mp hyD).2
+        have hyPrivate : y ∈ ({x} : Finset ℕ) := by
+          rw [← hprivate]
+          exact Finset.mem_inter.mpr
+            ⟨Finset.mem_coe.mp hyE, hyD'⟩
+        have hyx : y = x := by
+          simpa using hyPrivate
+        have hynx : y ≠ x := by
+          rw [← hsi]
+          exact (Finset.mem_erase.mp hyD).1
+        exact hynx hyx
+      · have hyb' : y = b := by
+          simpa using hyb
+        subst y
+        exact hbE (Finset.mem_coe.mp hyE)
+    have hcontemporary :
+        ∀ j, j ∉ J → (s j).1 ∈ E →
+          U.card + (k + 1) < (F j).card := by
+      intro j hjJ hsjE
+      exfalso
+      apply hjJ
+      apply Finset.mem_image.mpr
+      refine ⟨(s j).1,
+        Finset.mem_filter.mpr
+          ⟨hsjE, ⟨j, rfl⟩⟩, ?_⟩
+      exact P.blockIndex_eq_of_mem (s j).2
+    obtain ⟨t, htU, htq⟩ :=
+      blockAlignedRepairWitness_extends_protected_of_oldSecondChoices
+        P s (J := J) hbBlock hbU hUselected
+          hER hEswap hsecond hcontemporary
+    exact ⟨t, htU, htq⟩
+
 /-- A predecessor-gap anchor is redundant in a minimal successor-order
 destroyer.
 
@@ -31173,6 +31316,290 @@ theorem IsStronglyMinimalExactBasis.cofinal_selectorNontrivialRankDescent_or_pro
     exact ⟨q, D, hLq, ⟨d, hdD⟩, hDselected,
       hDminimal, Or.inr ⟨t, htU, by
         simpa only [hpredSucc] using htq⟩⟩
+
+/-- A target-localized certificate contains a target-labelled full-block
+cover.
+
+Fix one localized target `q`.  For every other certificate target choose a
+support which survives its localizing selector and let `U` be their union.
+Compact the destruction at `q`, choose a point of the resulting minimal
+destroyer, and take its private support `E`.
+
+The capacity-free private-support fork either repairs `q` while avoiding
+`U`, which would preserve every certificate target and contradict the
+certificate, or covers one whole block by `U ∪ E`.  The conclusion retains
+the individual support chosen for every target rather than only the
+cardinality of their union.  Thus every finite certificate has a literal
+target-labelled cover matrix on some partition block. -/
+theorem targetLocalizedAdditiveCertificate_forces_labeledFullBlockCover
+    {A K : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    {Q : Finset ℕ}
+    (hQnonempty : Q.Nonempty)
+    (hrepresented :
+      ∀ q ∈ Q,
+        (additiveSupportFamily A (k + 1) q).Nonempty)
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (hlocalized :
+      ∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q') :
+    ∃ q, ∃ hqQ : q ∈ Q,
+      ∃ s : BlockSelector cell,
+      ∃ support : {p // p ∈ Q.erase q} → Finset ℕ,
+      ∃ D E : Finset ℕ, ∃ x j,
+        (∀ p,
+          support p ∈
+            additiveSupportFamily A (k + 1) p.1) ∧
+        (∀ p,
+          Disjoint (support p : Set ℕ)
+            (selectedSet s)) ∧
+        D.Nonempty ∧
+        (D : Set ℕ) ⊆ selectedSet s ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A (k + 1)) D q ∧
+        x ∈ D ∧
+        E ∈ additiveSupportFamily A (k + 1) q ∧
+        E ∩ D = {x} ∧
+        (s j).1 ∈ E ∧
+        cell j ⊆
+          (Q.erase q).attach.biUnion support ∪ E := by
+  classical
+  obtain ⟨q, hqQ⟩ := hQnonempty
+  obtain ⟨s, hqDestroy, hotherSurvives⟩ :=
+    hlocalized q hqQ
+  have hsupportExists :
+      ∀ p : {x // x ∈ Q.erase q},
+        ∃ E ∈ additiveSupportFamily A (k + 1) p.1,
+          Disjoint (E : Set ℕ) (selectedSet s) := by
+    intro p
+    have hpQ : p.1 ∈ Q :=
+      (Finset.mem_erase.mp p.2).2
+    have hpq : p.1 ≠ q :=
+      (Finset.mem_erase.mp p.2).1
+    exact not_destroysAt_iff.mp
+      (hotherSurvives p.1 hpQ hpq)
+  choose support hsupportMem hsupportDisjoint using
+    hsupportExists
+  let U : Finset ℕ :=
+    (Q.erase q).attach.biUnion support
+  have hUselected :
+      Disjoint (U : Set ℕ) (selectedSet s) := by
+    rw [Set.disjoint_left]
+    intro y hyU hySelected
+    obtain ⟨p, _hpAttach, hySupport⟩ :=
+      Finset.mem_biUnion.mp
+        (Finset.mem_coe.mp hyU)
+    exact
+      Set.disjoint_left.mp (hsupportDisjoint p)
+        (Finset.mem_coe.mpr hySupport) hySelected
+  obtain ⟨D₁, hD₁selected, _hD₁card, hD₁destroy⟩ :=
+    exists_finiteSelectedDestroyer_of_destroysAt
+      P s hqDestroy
+  obtain ⟨D, hDD₁, hDminimal⟩ :=
+    exists_inclusionMinimalDestroyer_subset
+      hD₁destroy
+  have hDselected :
+      (D : Set ℕ) ⊆ selectedSet s := by
+    intro y hyD
+    exact hD₁selected
+      (Finset.mem_coe.mpr
+        (hDD₁ (Finset.mem_coe.mp hyD)))
+  have hDnonempty : D.Nonempty := by
+    by_contra hDempty
+    have hDeq : D = ∅ :=
+      Finset.not_nonempty_iff_eq_empty.mp hDempty
+    obtain ⟨G, hGR⟩ :=
+      hrepresented q hqQ
+    exact hDminimal.1 G hGR (by simp [hDeq])
+  obtain ⟨x, hxD⟩ := hDnonempty
+  obtain ⟨E, hER, hprivate⟩ :=
+    hDminimal.exists_uniqueHitSupport hxD
+  obtain hrepair | hcovered :=
+    markedPrivateSupport_extends_avoiding_protectedUnion_or_coveredHitBlock
+      P s hDselected hxD hUselected hER hprivate
+  · obtain ⟨t, htU, htq⟩ := hrepair
+    obtain ⟨r, hrQ, hrDestroy⟩ := hcert t
+    by_cases hrq : r = q
+    · exact (htq (hrq ▸ hrDestroy)).elim
+    · let p : {z // z ∈ Q.erase q} :=
+        ⟨r, Finset.mem_erase.mpr ⟨hrq, hrQ⟩⟩
+      have hsupportU :
+          (support p : Set ℕ) ⊆ (U : Set ℕ) := by
+        intro y hySupport
+        apply Finset.mem_coe.mpr
+        exact Finset.mem_biUnion.mpr
+          ⟨p, by simp, Finset.mem_coe.mp hySupport⟩
+      have hsupportT :
+          Disjoint (support p : Set ℕ)
+            (selectedSet t) :=
+        Set.disjoint_of_subset_left hsupportU htU
+      exact
+        ((not_destroysAt_iff.mpr
+          ⟨support p, hsupportMem p,
+            hsupportT⟩) hrDestroy).elim
+  · obtain ⟨j, hsjE, hjCover⟩ := hcovered
+    exact ⟨q, hqQ, s, support, D, E, x, j,
+      hsupportMem, hsupportDisjoint, ⟨x, hxD⟩,
+      hDselected, hDminimal, hxD, hER, hprivate,
+      hsjE, by simpa only [U] using hjCover⟩
+
+/-- A bounded finite family covering `V` is either genuinely
+oversaturated or contains an almost-spanning matching.
+
+If total capacity exceeds `V.card` by more than `d`, this is the first
+horn.  Otherwise the greedy near-disjointness lemma loses at most `d`
+indices: all but `d` members of the family can be retained pairwise
+disjoint.  This is the exact matching-versus-oversaturation fork exposed by
+the labelled block cover. -/
+theorem coveredFinset_boundedFamily_forces_oversaturation_or_largeDisjointSubfamily
+    {ι α : Type*} [DecidableEq ι] [DecidableEq α]
+    (I : Finset ι) (f : ι → Finset α) (V : Finset α)
+    (h d : ℕ)
+    (hcover : V ⊆ I.biUnion f)
+    (hcard : ∀ i ∈ I, (f i).card ≤ h) :
+    V.card + d < h * I.card ∨
+      ∃ G : Finset ι,
+        G ⊆ I ∧
+        (G : Set ι).PairwiseDisjoint f ∧
+        I.card ≤ G.card + d := by
+  classical
+  by_cases hover : V.card + d < h * I.card
+  · exact Or.inl hover
+  · right
+    obtain ⟨G, hGI, hGpair, hnear⟩ :=
+      exists_pairwiseDisjoint_subfamily_with_card_union_bound
+        I f
+    refine ⟨G, hGI, hGpair, ?_⟩
+    have hVunion :
+        V.card ≤ (I.biUnion f).card :=
+      Finset.card_le_card hcover
+    have hsum :
+        (∑ i ∈ I, (f i).card) ≤ h * I.card := by
+      calc
+        (∑ i ∈ I, (f i).card) ≤
+            ∑ _i ∈ I, h := by
+          apply Finset.sum_le_sum
+          intro i hi
+          exact hcard i hi
+        _ = h * I.card := by
+          simp [Nat.mul_comm]
+    have hcapacity :
+        h * I.card ≤ V.card + d :=
+      Nat.le_of_not_gt hover
+    omega
+
+/-- Matching-versus-oversaturation form of the localized certificate
+obstruction.
+
+The preceding full-block theorem is repackaged as one support choice indexed
+by all certificate targets.  On the covered block, either the number of
+available support incidences exceeds the block by more than `d`, or supports
+for all but at most `d` certificate targets are pairwise disjoint.
+
+The first horn is explosive certificate growth.  The second is the matching
+structure needed by the root/difference machinery. -/
+theorem targetLocalizedAdditiveCertificate_forces_oversaturation_or_largeDisjointSupportSubfamily
+    {A K : Set ℕ} {k d : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    {Q : Finset ℕ}
+    (hQnonempty : Q.Nonempty)
+    (hrepresented :
+      ∀ q ∈ Q,
+        (additiveSupportFamily A (k + 1) q).Nonempty)
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (hlocalized :
+      ∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q') :
+    ∃ choice : {p // p ∈ Q} → Finset ℕ,
+      (∀ p,
+        choice p ∈
+          additiveSupportFamily A (k + 1) p.1) ∧
+      ∃ j,
+        cell j ⊆ Q.attach.biUnion choice ∧
+        ((cell j).card + d < (k + 1) * Q.card ∨
+          ∃ G : Finset {p // p ∈ Q},
+            G ⊆ Q.attach ∧
+            (G : Set {p // p ∈ Q}).PairwiseDisjoint
+              choice ∧
+            Q.card ≤ G.card + d) := by
+  classical
+  obtain ⟨q, hqQ, s, support, D, E, x, j,
+      hsupportMem, _hsupportDisjoint, _hDnonempty,
+      _hDselected, _hDminimal, _hxD, hER, _hprivate,
+      _hsjE, hjCover⟩ :=
+    targetLocalizedAdditiveCertificate_forces_labeledFullBlockCover
+      P hQnonempty hrepresented hcert hlocalized
+  let choice : {p // p ∈ Q} → Finset ℕ :=
+    fun p =>
+      if hpq : p.1 = q then E
+      else
+        support
+          ⟨p.1, Finset.mem_erase.mpr
+            ⟨hpq, p.2⟩⟩
+  have hchoiceMem :
+      ∀ p,
+        choice p ∈
+          additiveSupportFamily A (k + 1) p.1 := by
+    intro p
+    by_cases hpq : p.1 = q
+    · simpa only [choice, dif_pos hpq, hpq] using hER
+    · simpa only [choice, dif_neg hpq] using
+        hsupportMem
+          (⟨p.1, Finset.mem_erase.mpr
+            ⟨hpq, p.2⟩⟩ :
+              {z // z ∈ Q.erase q})
+  have hcoverChoice :
+      cell j ⊆ Q.attach.biUnion choice := by
+    intro y hyCell
+    rcases Finset.mem_union.mp (hjCover hyCell) with
+        hyU | hyE
+    · obtain ⟨p, _hpAttach, hySupport⟩ :=
+        Finset.mem_biUnion.mp hyU
+      have hpQ : p.1 ∈ Q :=
+        (Finset.mem_erase.mp p.2).2
+      have hpq : p.1 ≠ q :=
+        (Finset.mem_erase.mp p.2).1
+      let r : {z // z ∈ Q} := ⟨p.1, hpQ⟩
+      apply Finset.mem_biUnion.mpr
+      refine ⟨r, Finset.mem_attach Q r, ?_⟩
+      simpa [choice, r, hpq] using hySupport
+    · let r : {z // z ∈ Q} := ⟨q, hqQ⟩
+      apply Finset.mem_biUnion.mpr
+      refine ⟨r, Finset.mem_attach Q r, ?_⟩
+      simpa [choice, r] using hyE
+  obtain hover | hmatching :=
+    coveredFinset_boundedFamily_forces_oversaturation_or_largeDisjointSubfamily
+      Q.attach choice (cell j) (k + 1) d
+        hcoverChoice
+        (fun p _hp => additiveSupportFamily_cardAtMost
+          A (k + 1) p.1 (choice p)
+            (hchoiceMem p))
+  · exact ⟨choice, hchoiceMem, j, hcoverChoice,
+      Or.inl (by simpa using hover)⟩
+  · exact ⟨choice, hchoiceMem, j, hcoverChoice,
+      Or.inr (by simpa using hmatching)⟩
 
 /-- A finite target-localized certificate must be too large for some block.
 
