@@ -29714,6 +29714,169 @@ theorem bracketedDestroyedSuccessorTargets_force_cofinalRepresentedPredecessorDe
     haAverage, hLDifference, ⟨G, hGmem⟩,
     (hfan a haE).2⟩
 
+/-- A positive-order minimal destroyer with no represented strict
+lower-rank destruction is a singleton diagonal obstruction.
+
+For each `x ∈ D`, take a private support meeting `D` exactly at `x` and
+peel all of its `D`-summands.  If the surviving core had positive order,
+the complementary-core lemma would make the same `D` destroy the
+represented positive lower-rank sum of the peeled hits.  The no-descent
+hypothesis forbids this.  Hence all `h` occurrences in the private
+representation equal its unique hit `x`, so `q = h * x`.
+
+Applying this to two points of `D` and cancelling the positive factor `h`
+shows that the points coincide.  Thus `D = {x}`; moreover every order-`h`
+support at `q` contains `x`. -/
+theorem minimalAdditiveDestroyer_noStrictRankDescent_forces_singletonDiagonal
+    {A : Set ℕ} {h q : ℕ} {D : Finset ℕ}
+    (hhpos : 0 < h)
+    (hDnonempty : D.Nonempty)
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q)
+    (hnoDescent : ∀ ℓ n,
+      0 < ℓ → ℓ < h →
+      (additiveSupportFamily A ℓ n).Nonempty →
+      ¬ DestroysAt
+        (additiveSupportFamily A ℓ)
+        (D : Set ℕ) n) :
+    ∃ x,
+      D = {x} ∧
+      x ∈ A ∧
+      q = h * x ∧
+      ({x} : Finset ℕ) ∈ additiveSupportFamily A h q ∧
+      ∀ E ∈ additiveSupportFamily A h q, x ∈ E := by
+  classical
+  have hpointDiagonal : ∀ x ∈ D,
+      x ∈ A ∧ q = h * x := by
+    intro x hxD
+    obtain ⟨E, hEmem, hEprivate⟩ :=
+      hminimal.exists_uniqueHitSupport hxD
+    have hxE : x ∈ E := by
+      have hxInter : x ∈ E ∩ D := by
+        rw [hEprivate]
+        simp
+      exact (Finset.mem_inter.mp hxInter).1
+    have hxA : x ∈ A :=
+      additiveSupportFamily_supportsIn
+        A h q E hEmem x hxE
+    have hEDestroyed : ¬ Disjoint (E : Set ℕ) (D : Set ℕ) := by
+      apply Set.not_disjoint_iff.mpr
+      exact ⟨x, Finset.mem_coe.mpr hxE,
+        Finset.mem_coe.mpr hxD⟩
+    obtain ⟨hits, j, t, core, hhitsNonempty,
+        hlength, _hjh, hhits, hcoreMem, hcoreD,
+        htarget, hEeq⟩ :=
+      destroyed_additiveSupport_has_strictSurvivingCoreDecomposition
+        hEmem hEDestroyed
+    have hhitsPos : 0 < hits.length :=
+      List.length_pos_iff.mpr hhitsNonempty
+    have hhitSupport :
+        hits.foldr (fun y G => insert y G) ∅ ∈
+          additiveSupportFamily A hits.length hits.sum :=
+      list_foldr_mem_additiveSupportFamily
+        (fun y hy => (hhits y hy).1)
+    have hhitNonempty :
+        (additiveSupportFamily A hits.length hits.sum).Nonempty :=
+      ⟨hits.foldr (fun y G => insert y G) ∅,
+        hhitSupport⟩
+    have hhitDestroy :
+        DestroysAt
+          (additiveSupportFamily A hits.length)
+          (D : Set ℕ) hits.sum :=
+      complementarySurvivingCore_forces_hitTargetDestroyer
+        hminimal hlength htarget hcoreMem hcoreD
+    have hhitsLength : hits.length = h := by
+      by_contra hne
+      have hhitsStrict : hits.length < h := by
+        omega
+      exact
+        ((hnoDescent hits.length hits.sum
+          hhitsPos hhitsStrict hhitNonempty) hhitDestroy).elim
+    have hjzero : j = 0 := by
+      omega
+    have htzero : t = 0 := by
+      rw [hjzero] at hcoreMem
+      exact
+        (additiveSupportFamily_zero_target_and_support
+          hcoreMem).1
+    have hhitEq : ∀ y ∈ hits, y = x := by
+      intro y hyHits
+      have hyE : y ∈ E := by
+        rw [hEeq, foldr_insert_eq_toFinset_union]
+        exact Finset.mem_union_left core
+          (List.mem_toFinset.mpr hyHits)
+      have hyD : y ∈ D :=
+        Finset.mem_coe.mp (hhits y hyHits).2
+      have hyPrivate : y ∈ ({x} : Finset ℕ) := by
+        rw [← hEprivate]
+        exact Finset.mem_inter.mpr ⟨hyE, hyD⟩
+      simpa using hyPrivate
+    have hhitsSum : hits.sum = hits.length * x := by
+      have hrep :
+          hits = List.replicate hits.length x :=
+        List.eq_replicate_iff.mpr ⟨rfl, hhitEq⟩
+      rw [hrep, List.sum_replicate]
+      simp
+    refine ⟨hxA, ?_⟩
+    calc
+      q = hits.sum + t := htarget
+      _ = hits.length * x := by rw [htzero, Nat.add_zero, hhitsSum]
+      _ = h * x := by rw [hhitsLength]
+  obtain ⟨x, hxD⟩ := hDnonempty
+  have hxData := hpointDiagonal x hxD
+  have hDsingleton : D = {x} := by
+    ext y
+    constructor
+    · intro hyD
+      have hyData := hpointDiagonal y hyD
+      have hyx : y = x :=
+        Nat.eq_of_mul_eq_mul_left hhpos
+          (hyData.2.symm.trans hxData.2)
+      simpa [hyx]
+    · intro hy
+      have hyx : y = x := by simpa using hy
+      simpa [hyx] using hxD
+  have hsingletonMem :
+      ({x} : Finset ℕ) ∈ additiveSupportFamily A h q := by
+    have hfoldSucc : ∀ k,
+        (List.replicate (k + 1) x).foldr
+          (fun y (G : Finset ℕ) => insert y G) ∅ = {x} := by
+      intro k
+      induction k with
+      | zero => simp
+      | succ k ih =>
+          rw [List.replicate_succ, List.foldr_cons, ih]
+          simp
+    obtain ⟨k, hk⟩ :=
+      Nat.exists_eq_succ_of_ne_zero (Nat.ne_of_gt hhpos)
+    have hfold :
+        (List.replicate h x).foldr
+          (fun y (G : Finset ℕ) => insert y G) ∅ = {x} := by
+      rw [hk]
+      exact hfoldSucc k
+    have hraw :=
+      list_foldr_mem_additiveSupportFamily
+        (xs := List.replicate h x) (by
+          intro y hy
+          have hyx : y = x := by
+            simpa using (List.eq_of_mem_replicate hy)
+          simpa [hyx] using hxData.1)
+    simpa only [List.length_replicate, List.sum_replicate,
+      nsmul_eq_mul, hfold, hxData.2] using hraw
+  refine ⟨x, hDsingleton, hxData.1, hxData.2,
+    hsingletonMem, ?_⟩
+  intro E hEmem
+  have hhit := hminimal.1 E hEmem
+  obtain ⟨y, hyE, hyD⟩ :=
+    Set.not_disjoint_iff.mp hhit
+  have hyx : y = x := by
+    have : y ∈ ({x} : Finset ℕ) := by
+      rw [← hDsingleton]
+      exact Finset.mem_coe.mp hyD
+    simpa using this
+  exact hyx ▸ Finset.mem_coe.mp hyE
+
 /-- In the bounded, no-rank-descent terminal fusion branch, the stream
 alignment forces a primitive gap at the exact descended target.
 
@@ -29851,6 +30014,326 @@ theorem terminalFusion_bracketedSuccessorDestruction_forces_alignedPrimitiveGaps
       hdNonempty, hDnonempty, hDY, hDminimal,
       hDbound, hbSelector, hbNotD, hbD,
       hgapDifference⟩
+
+/-- The terminal aligned primitive-gap configuration is necessarily
+singleton-diagonal.
+
+The finite destroyer at `d = m - a` supplied by the preceding theorem lies
+inside the fused selector, so the terminal no-descent hypothesis applies
+to it.  Singleton-diagonal collapse therefore supplies one `x ∈ Y` with
+`d = h * x`; every order-`h` support of `d` contains `x`.  The primitive
+gap anchor `b` is different from this forced root.
+
+Thus arbitrarily late successor failures have the rigid affine form
+
+`m = a + h * x`,
+
+with `a` in a support avoiding `Y` and `x ∈ Y`. -/
+theorem terminalFusion_bracketedSuccessorDestruction_forces_alignedSingletonDiagonals
+    {A K Y : Set ℕ} {h bound : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hhpos : 0 < h)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (fusion : BlockSelector cell)
+    (hYfusion : Y ⊆ selectedSet fusion)
+    (hterminal : ∀ q, ∀ D : Finset ℕ,
+      D.Nonempty →
+      (D : Set ℕ) ⊆ selectedSet fusion →
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q →
+      D.card ≤ bound ∧
+      ∀ ℓ n,
+        0 < ℓ → ℓ < h →
+        (additiveSupportFamily A ℓ n).Nonempty →
+        ¬ DestroysAt
+          (additiveSupportFamily A ℓ)
+          (D : Set ℕ) n)
+    {oldTarget : ℕ → ℕ}
+    (holdStrict : StrictMono oldTarget)
+    (holdSurvival : ∀ n,
+      ∃ E ∈ additiveSupportFamily A (h + 1) (oldTarget n),
+        Disjoint (E : Set ℕ) Y)
+    (hsuccessorDestroy : ∀ N, ∃ m, N ≤ m ∧
+      DestroysAt
+        (additiveSupportFamily A (h + 1)) Y m) :
+    ∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a x b,
+      L ≤ n ∧
+      oldTarget n < m ∧
+      m < oldTarget (n + 1) ∧
+      E ∈ additiveSupportFamily A (h + 1) (oldTarget n) ∧
+      Disjoint (E : Set ℕ) Y ∧
+      DestroysAt
+        (additiveSupportFamily A (h + 1)) Y m ∧
+      a ∈ E ∧
+      (h + 1) * a ≤ oldTarget n ∧
+      L ≤ m - a ∧
+      x ∈ Y ∧
+      m - a = h * x ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) {x} (m - a) ∧
+      (∀ G ∈ additiveSupportFamily A h (m - a), x ∈ G) ∧
+      b ∈ selectedSet fusion ∧
+      b ≠ x ∧
+      b ≤ m - a ∧
+      additiveSupportFamily A (h - 1) (m - a - b) = ∅ := by
+  intro L
+  obtain ⟨n, m, E, a, D, b, hnL, hnLower, hnUpper,
+      hEmem, hEY, hmDestroy, haE, haAverage, hdL,
+      _hdNonempty, hDnonempty, hDY, hDminimal,
+      _hDbound, hbSelector, hbNotD, hbD, hgap⟩ :=
+    terminalFusion_bracketedSuccessorDestruction_forces_alignedPrimitiveGaps
+      hhpos hbasis hKA P fusion hYfusion hterminal
+        holdStrict holdSurvival hsuccessorDestroy L
+  obtain ⟨_hDbound', hDnoDescent⟩ :=
+    hterminal (m - a) D hDnonempty
+      (hDY.trans hYfusion) hDminimal
+  obtain ⟨x, hDsingleton, _hxA, hdiagonal,
+      _hsingletonMem, hallSupports⟩ :=
+    minimalAdditiveDestroyer_noStrictRankDescent_forces_singletonDiagonal
+      hhpos hDnonempty hDminimal hDnoDescent
+  have hxY : x ∈ Y := by
+    apply hDY
+    rw [hDsingleton]
+    simp
+  have hsingletonMinimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) {x} (m - a) := by
+    simpa only [hDsingleton] using hDminimal
+  have hbx : b ≠ x := by
+    intro hbx
+    apply hbNotD
+    rw [hDsingleton, hbx]
+    simp
+  exact ⟨n, m, E, a, x, b, hnL, hnLower, hnUpper,
+    hEmem, hEY, hmDestroy, haE, haAverage, hdL,
+    hxY, hdiagonal, hsingletonMinimal, hallSupports,
+    hbSelector, hbx, hbD, hgap⟩
+
+/-- One destroyed successor target amplifies every represented clean
+predecessor anchor into a distinct singleton-diagonal root in the fused
+deletion.
+
+For `a ∈ C ⊆ A \ Y`, successor descent makes `Y` destroy `m-a`.  Compact
+that failure inside `Y`; the terminal no-descent property and the
+singleton-diagonal theorem force a unique root `xₐ ∈ Y` with
+
+`m = a + h * xₐ`.
+
+The resulting order-`h+1` support `{a, xₐ}` meets `Y` exactly at `xₐ`.
+Distinct clean anchors have distinct roots, and the corresponding supports
+are pairwise disjoint.  This is the affine matching amplification needed
+to turn one late successor failure into cardinality pressure. -/
+theorem terminalFusion_destroyedSuccessorTarget_forces_cleanAnchorDiagonalMatching
+    {A Y : Set ℕ} {h bound m : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hhpos : 0 < h)
+    (fusion : BlockSelector cell)
+    (hYfusion : Y ⊆ selectedSet fusion)
+    (hterminal : ∀ q, ∀ D : Finset ℕ,
+      D.Nonempty →
+      (D : Set ℕ) ⊆ selectedSet fusion →
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q →
+      D.card ≤ bound ∧
+      ∀ ℓ n,
+        0 < ℓ → ℓ < h →
+        (additiveSupportFamily A ℓ n).Nonempty →
+        ¬ DestroysAt
+          (additiveSupportFamily A ℓ)
+          (D : Set ℕ) n)
+    (hmDestroy : DestroysAt
+      (additiveSupportFamily A (h + 1)) Y m)
+    (C : Finset ℕ)
+    (hCA : (C : Set ℕ) ⊆ A)
+    (hCY : Disjoint (C : Set ℕ) Y)
+    (hCm : ∀ a ∈ C, a ≤ m)
+    (hrepresented : ∀ a ∈ C,
+      (additiveSupportFamily A h (m - a)).Nonempty) :
+    ∃ root : ℕ → ℕ,
+      (∀ a ∈ C,
+        root a ∈ Y ∧
+        m - a = h * root a ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A h) {root a} (m - a) ∧
+        ({a, root a} : Finset ℕ) ∈
+          additiveSupportFamily A (h + 1) m ∧
+        ∀ z ∈ ({a, root a} : Finset ℕ),
+          z ∈ Y ↔ z = root a) ∧
+      Set.InjOn root (C : Set ℕ) ∧
+      ∀ a ∈ C, ∀ c ∈ C, a ≠ c →
+        Disjoint ({a, root a} : Finset ℕ)
+          ({c, root c} : Finset ℕ) := by
+  classical
+  have hrootExists : ∀ a, a ∈ C → ∃ x,
+      x ∈ Y ∧
+      m - a = h * x ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) {x} (m - a) ∧
+      ({x} : Finset ℕ) ∈
+        additiveSupportFamily A h (m - a) := by
+    intro a haC
+    have haA : a ∈ A :=
+      hCA (Finset.mem_coe.mpr haC)
+    have haY : a ∉ Y := by
+      intro haY
+      exact Set.disjoint_left.mp hCY
+        (Finset.mem_coe.mpr haC) haY
+    have hsingletonA :
+        ({a} : Finset ℕ) ∈ additiveSupportFamily A 1 a := by
+      have hraw :=
+        list_foldr_mem_additiveSupportFamily
+          (xs := [a]) (by simpa using haA)
+      simpa using hraw
+    have hsingletonY :
+        Disjoint (({a} : Finset ℕ) : Set ℕ) Y := by
+      simpa [Set.disjoint_singleton_left] using haY
+    have hcurrentDestroy :
+        DestroysAt
+          (additiveSupportFamily A h) Y (m - a) := by
+      apply additiveDestroyer_descends_through_survivingCore
+        hsingletonA hsingletonY
+      simpa only [Nat.one_add,
+        Nat.add_sub_of_le (hCm a haC)] using hmDestroy
+    obtain ⟨D₁, hD₁Y, hD₁Destroy⟩ :=
+      exists_finiteDestroyer_subset hcurrentDestroy
+    obtain ⟨D, hDD₁, hDminimal⟩ :=
+      exists_inclusionMinimalDestroyer_subset hD₁Destroy
+    have hDY : (D : Set ℕ) ⊆ Y := by
+      intro z hzD
+      exact hD₁Y
+        (Finset.mem_coe.mpr
+          (hDD₁ (Finset.mem_coe.mp hzD)))
+    have hDnonempty : D.Nonempty := by
+      by_contra hDempty
+      have hDeq : D = ∅ :=
+        Finset.not_nonempty_iff_eq_empty.mp hDempty
+      obtain ⟨G, hGmem⟩ := hrepresented a haC
+      exact hDminimal.1 G hGmem (by simp [hDeq])
+    obtain ⟨_hDbound, hDnoDescent⟩ :=
+      hterminal (m - a) D hDnonempty
+        (hDY.trans hYfusion) hDminimal
+    obtain ⟨x, hDsingleton, _hxA, hdiagonal,
+        hsingletonMem, _hallSupports⟩ :=
+      minimalAdditiveDestroyer_noStrictRankDescent_forces_singletonDiagonal
+        hhpos hDnonempty hDminimal hDnoDescent
+    have hxY : x ∈ Y := by
+      apply hDY
+      rw [hDsingleton]
+      simp
+    have hsingletonMinimal :
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A h) {x} (m - a) := by
+      simpa only [hDsingleton] using hDminimal
+    exact ⟨x, hxY, hdiagonal,
+      hsingletonMinimal, hsingletonMem⟩
+  have hrootExistsTotal : ∀ a, ∃ x,
+      a ∈ C →
+        x ∈ Y ∧
+        m - a = h * x ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A h) {x} (m - a) ∧
+        ({x} : Finset ℕ) ∈
+          additiveSupportFamily A h (m - a) := by
+    intro a
+    by_cases haC : a ∈ C
+    · obtain ⟨x, hx⟩ := hrootExists a haC
+      exact ⟨x, fun _ => hx⟩
+    · exact ⟨0, fun haC' => (haC haC').elim⟩
+  choose root hrootSpec using hrootExistsTotal
+  have hrootData : ∀ a ∈ C,
+      root a ∈ Y ∧
+      m - a = h * root a ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) {root a} (m - a) ∧
+      ({root a} : Finset ℕ) ∈
+        additiveSupportFamily A h (m - a) := by
+    intro a haC
+    exact hrootSpec a haC
+  have hsuccessorSupport : ∀ a ∈ C,
+      ({a, root a} : Finset ℕ) ∈
+        additiveSupportFamily A (h + 1) m := by
+    intro a haC
+    have haA : a ∈ A :=
+      hCA (Finset.mem_coe.mpr haC)
+    have hsingletonA :
+        ({a} : Finset ℕ) ∈ additiveSupportFamily A 1 a := by
+      have hraw :=
+        list_foldr_mem_additiveSupportFamily
+          (xs := [a]) (by simpa using haA)
+      simpa using hraw
+    have hraw :=
+      union_mem_additiveSupportFamily_add
+        (hrootData a haC).2.2.2 hsingletonA
+    simpa only [Finset.union_comm, Finset.singleton_union,
+      Nat.sub_add_cancel (hCm a haC)] using hraw
+  have hrootInj : Set.InjOn root (C : Set ℕ) := by
+    intro a haC c hcC hrootEq
+    have haMem : a ∈ C :=
+      Finset.mem_coe.mp haC
+    have hcMem : c ∈ C :=
+      Finset.mem_coe.mp hcC
+    have haM : a ≤ m :=
+      hCm a haMem
+    have hcM : c ≤ m :=
+      hCm c hcMem
+    have hdiffEq : m - a = m - c := by
+      rw [(hrootData a haMem).2.1,
+        (hrootData c hcMem).2.1, hrootEq]
+    omega
+  refine ⟨root, ?_, hrootInj, ?_⟩
+  · intro a haC
+    refine ⟨(hrootData a haC).1,
+      (hrootData a haC).2.1,
+      (hrootData a haC).2.2.1,
+      hsuccessorSupport a haC, ?_⟩
+    intro z hzSupport
+    have haNotY : a ∉ Y := by
+      intro haY
+      exact Set.disjoint_left.mp hCY
+        (Finset.mem_coe.mpr haC) haY
+    have hzCases : z = a ∨ z = root a := by
+      simpa only [Finset.mem_insert,
+        Finset.mem_singleton] using hzSupport
+    constructor
+    · intro hzY
+      rcases hzCases with rfl | hzx
+      · exact (haNotY hzY).elim
+      · exact hzx
+    · intro hzx
+      exact hzx.symm ▸ (hrootData a haC).1
+  · intro a haC c hcC hac
+    rw [Finset.disjoint_left]
+    intro z hza hzc
+    have hzaCases : z = a ∨ z = root a := by
+      simpa only [Finset.mem_insert,
+        Finset.mem_singleton] using hza
+    have hzcCases : z = c ∨ z = root c := by
+      simpa only [Finset.mem_insert,
+        Finset.mem_singleton] using hzc
+    have haNotY : a ∉ Y := by
+      intro haY
+      exact Set.disjoint_left.mp hCY
+        (Finset.mem_coe.mpr haC) haY
+    have hcNotY : c ∉ Y := by
+      intro hcY
+      exact Set.disjoint_left.mp hCY
+        (Finset.mem_coe.mpr hcC) hcY
+    rcases hzaCases with rfl | hzaRoot
+    · rcases hzcCases with hacc | haRootC
+      · exact hac hacc
+      · exact haNotY
+          (haRootC ▸ (hrootData c hcC).1)
+    · rcases hzcCases with hrootAC | hrootEq
+      · apply hcNotY
+        rw [← hrootAC, hzaRoot]
+        exact (hrootData a haC).1
+      · apply hac
+        apply hrootInj
+          (Finset.mem_coe.mpr haC)
+          (Finset.mem_coe.mpr hcC)
+        exact hzaRoot.symm.trans hrootEq
 
 /-- Bracketing a current-order destroyer below an old surviving successor
 target stream amplifies one primitive gap into a whole support of gap
