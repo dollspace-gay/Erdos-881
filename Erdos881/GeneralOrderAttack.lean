@@ -31452,6 +31452,112 @@ theorem targetLocalizedAdditiveCertificate_forces_labeledFullBlockCover_atTarget
       hDselected, hDminimal, hxD, hER, hprivate,
       hsjE, by simpa only [U] using hjCover⟩
 
+/-- Prescribed-survivor form of the labelled full-block theorem.
+
+Here the support chosen for every other certificate target is supplied as
+input.  Thus a support found repeatedly in a fixed certificate column can
+be forced into every corresponding cover matrix.  Failure of the resulting
+private repair still contradicts the certificate, so the prescribed rows
+must cover a whole block together with the private row at `q`. -/
+theorem targetLocalizedAdditiveCertificate_prescribedSurvivors_force_labeledFullBlockCover
+    {A K : Set ℕ} {k q : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    {Q : Finset ℕ}
+    (hqrepresented :
+      (additiveSupportFamily A (k + 1) q).Nonempty)
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ r ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) r)
+    (s : BlockSelector cell)
+    (hqDestroy :
+      DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (selectedSet s) q)
+    (support : {p // p ∈ Q.erase q} → Finset ℕ)
+    (hsupportMem :
+      ∀ p,
+        support p ∈
+          additiveSupportFamily A (k + 1) p.1)
+    (hsupportDisjoint :
+      ∀ p,
+        Disjoint (support p : Set ℕ)
+          (selectedSet s)) :
+    ∃ D E : Finset ℕ, ∃ x j,
+      D.Nonempty ∧
+      (D : Set ℕ) ⊆ selectedSet s ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (k + 1)) D q ∧
+      x ∈ D ∧
+      E ∈ additiveSupportFamily A (k + 1) q ∧
+      E ∩ D = {x} ∧
+      (s j).1 ∈ E ∧
+      cell j ⊆
+        (Q.erase q).attach.biUnion support ∪ E := by
+  classical
+  let U : Finset ℕ :=
+    (Q.erase q).attach.biUnion support
+  have hUselected :
+      Disjoint (U : Set ℕ) (selectedSet s) := by
+    rw [Set.disjoint_left]
+    intro y hyU hySelected
+    obtain ⟨p, _hpAttach, hySupport⟩ :=
+      Finset.mem_biUnion.mp
+        (Finset.mem_coe.mp hyU)
+    exact
+      Set.disjoint_left.mp (hsupportDisjoint p)
+        (Finset.mem_coe.mpr hySupport) hySelected
+  obtain ⟨D₁, hD₁selected, _hD₁card, hD₁destroy⟩ :=
+    exists_finiteSelectedDestroyer_of_destroysAt
+      P s hqDestroy
+  obtain ⟨D, hDD₁, hDminimal⟩ :=
+    exists_inclusionMinimalDestroyer_subset
+      hD₁destroy
+  have hDselected :
+      (D : Set ℕ) ⊆ selectedSet s := by
+    intro y hyD
+    exact hD₁selected
+      (Finset.mem_coe.mpr
+        (hDD₁ (Finset.mem_coe.mp hyD)))
+  have hDnonempty : D.Nonempty := by
+    by_contra hDempty
+    have hDeq : D = ∅ :=
+      Finset.not_nonempty_iff_eq_empty.mp hDempty
+    obtain ⟨G, hGR⟩ := hqrepresented
+    exact hDminimal.1 G hGR (by simp [hDeq])
+  obtain ⟨x, hxD⟩ := hDnonempty
+  obtain ⟨E, hER, hprivate⟩ :=
+    hDminimal.exists_uniqueHitSupport hxD
+  obtain hrepair | hcovered :=
+    markedPrivateSupport_extends_avoiding_protectedUnion_or_coveredHitBlock
+      P s hDselected hxD hUselected hER hprivate
+  · obtain ⟨t, htU, htq⟩ := hrepair
+    obtain ⟨r, hrQ, hrDestroy⟩ := hcert t
+    by_cases hrq : r = q
+    · exact (htq (hrq ▸ hrDestroy)).elim
+    · let p : {z // z ∈ Q.erase q} :=
+        ⟨r, Finset.mem_erase.mpr ⟨hrq, hrQ⟩⟩
+      have hsupportU :
+          (support p : Set ℕ) ⊆ (U : Set ℕ) := by
+        intro y hySupport
+        apply Finset.mem_coe.mpr
+        exact Finset.mem_biUnion.mpr
+          ⟨p, by simp, Finset.mem_coe.mp hySupport⟩
+      have hsupportT :
+          Disjoint (support p : Set ℕ)
+            (selectedSet t) :=
+        Set.disjoint_of_subset_left hsupportU htU
+      exact
+        ((not_destroysAt_iff.mpr
+          ⟨support p, hsupportMem p,
+            hsupportT⟩) hrDestroy).elim
+  · obtain ⟨j, hsjE, hjCover⟩ := hcovered
+    exact ⟨D, E, x, j, ⟨x, hxD⟩,
+      hDselected, hDminimal, hxD, hER, hprivate,
+      hsjE, by simpa only [U] using hjCover⟩
+
 /-- Every target of a target-localized certificate has its own labelled
 full-block cover, with that target furnishing the unique private row and
 all other rows chosen to avoid its localizing selector. -/
