@@ -5466,6 +5466,7 @@ theorem blockAlignedRepairWitness_extends_protected_or_oldCollision
           (s j).1 ∈ D.erase (s i).1 →
           (t j).1 = (s j).1) ∧
         Disjoint (U : Set ℕ) (selectedSet t) ∧
+        Disjoint (E : Set ℕ) (selectedSet t) ∧
         ¬ DestroysAt
           (additiveSupportFamily A (k + 1))
           (selectedSet t) q) ∨
@@ -5581,43 +5582,45 @@ theorem blockAlignedRepairWitness_extends_protected_or_oldCollision
         (Finset.mem_coe.mpr hsjE)
       exact Finset.mem_coe.mpr
         (Finset.mem_union_left _ hsjD)
-    refine ⟨t, hti, hkeepD, hUavoid, ?_⟩
-    apply not_destroysAt_iff.mpr
-    refine ⟨E, hER, ?_⟩
-    rw [Set.disjoint_left]
-    intro x hxE hxSelected
-    obtain ⟨j, hjx⟩ := hxSelected
-    by_cases hji : j = i
-    · have htx : (t j).1 = b := by
-        subst j
-        exact hti
-      have hxb : x = b := hjx.symm.trans htx
-      apply Set.disjoint_left.mp hEswap hxE
-      exact Finset.mem_coe.mpr (by
-        rw [hxb]
-        exact Finset.mem_union_right _
-          (Finset.mem_singleton_self b))
-    by_cases hsjE : (s j).1 ∈ E
-    · have hjOld : j ∉ J := by
-        intro hjJ
-        exact holdHit ⟨j, hjJ, hsjE⟩
-      have htx :
-          (t j).1 = outside j hjOld := by
-        dsimp [t]
-        rw [dif_neg hji, if_pos hsjE]
-        dsimp [alt]
-        rw [dif_neg hjOld]
-      have hxOutside : x = outside j hjOld :=
-        hjx.symm.trans htx
-      apply (Finset.mem_sdiff.mp
-        (houtsideSpec j hjOld)).2
-      apply Finset.mem_union_right U
-      rw [← hxOutside]
-      exact Finset.mem_coe.mp hxE
-    · have htx : (t j).1 = (s j).1 :=
-        hmissKeep j hji hsjE
-      have hxs : x = (s j).1 := hjx.symm.trans htx
-      exact hsjE (hxs ▸ Finset.mem_coe.mp hxE)
+    have hEavoid :
+        Disjoint (E : Set ℕ) (selectedSet t) := by
+      rw [Set.disjoint_left]
+      intro x hxE hxSelected
+      obtain ⟨j, hjx⟩ := hxSelected
+      by_cases hji : j = i
+      · have htx : (t j).1 = b := by
+          subst j
+          exact hti
+        have hxb : x = b := hjx.symm.trans htx
+        apply Set.disjoint_left.mp hEswap hxE
+        exact Finset.mem_coe.mpr (by
+          rw [hxb]
+          exact Finset.mem_union_right _
+            (Finset.mem_singleton_self b))
+      by_cases hsjE : (s j).1 ∈ E
+      · have hjOld : j ∉ J := by
+          intro hjJ
+          exact holdHit ⟨j, hjJ, hsjE⟩
+        have htx :
+            (t j).1 = outside j hjOld := by
+          dsimp [t]
+          rw [dif_neg hji, if_pos hsjE]
+          dsimp [alt]
+          rw [dif_neg hjOld]
+        have hxOutside : x = outside j hjOld :=
+          hjx.symm.trans htx
+        apply (Finset.mem_sdiff.mp
+          (houtsideSpec j hjOld)).2
+        apply Finset.mem_union_right U
+        rw [← hxOutside]
+        exact Finset.mem_coe.mp hxE
+      · have htx : (t j).1 = (s j).1 :=
+          hmissKeep j hji hsjE
+        have hxs : x = (s j).1 := hjx.symm.trans htx
+        exact hsjE (hxs ▸ Finset.mem_coe.mp hxE)
+    exact ⟨t, hti, hkeepD, hUavoid,
+      hEavoid, not_destroysAt_iff.mpr
+        ⟨E, hER, hEavoid⟩⟩
 
 /-- Protected completion with a finite old-block exception.
 
@@ -5650,7 +5653,8 @@ theorem blockAlignedSafeSwap_extends_protected_or_oldDifference
     blockAlignedRepairWitness_extends_protected_or_oldCollision
       P s hbBlock hbU hUselected hER hEswap
         (fun j _hji hjJ => hcontemporary j hjJ)
-  · obtain ⟨t, _hti, _hkeep, htU, htq⟩ := hcompletion
+  · obtain ⟨t, _hti, _hkeep, htU, _hEavoid, htq⟩ :=
+      hcompletion
     exact Or.inl ⟨t, htU, htq⟩
   · right
     have hsjLe : (s j).1 ≤ q :=
@@ -5758,7 +5762,8 @@ theorem blockAlignedSafeSwap_certificate_forces_oldCollision
   classical
   obtain ⟨E, hER, hEswap⟩ :=
     not_destroysAt_iff.mp hrepair
-  obtain ⟨t, _hti, _hkeep, hUavoid, hqSurvives⟩ |
+  obtain ⟨t, _hti, _hkeep, hUavoid, _hEavoid,
+      hqSurvives⟩ |
       ⟨j, hjJ, hsjE⟩ :=
     blockAlignedRepairWitness_extends_protected_or_oldCollision
       P s hbBlock hbU hUselected hER hEswap
@@ -33242,7 +33247,8 @@ theorem anchoredPrivateRow_markerSwap_extends_to_strictCertificate_or_oldCollisi
       P s hbBlock' hbU hUselected hFmem hFswap
         hcontemporary
   · left
-    obtain ⟨t, _hti, _hkeep, hUt, hpt⟩ := hcomplete
+    obtain ⟨t, _hti, _hkeep, hUt, _hFavoid,
+        hpt⟩ := hcomplete
     refine ⟨Hit, hHitCard, hHit, t, ?_⟩
     intro q hqQ hqDestroyed
     by_cases hqp : q = p.1
@@ -33347,6 +33353,10 @@ theorem anchoredPrivateRow_markerSwap_forces_oneBlockFailureTransfer_or_oldColli
           (additiveSupportFamily A (k + 1))
           (selectedSet after) q.1 ∧
         b ∈ surviving q ∧
+        (∀ z ∈ F,
+          z ∈ selectedSet before ↔ z = x) ∧
+        (∀ z ∈ surviving q,
+          z ∈ selectedSet after ↔ z = b) ∧
         Hp ∈ additiveSupportFamily A k (p.1 - x) ∧
         F = insert x Hp ∧
         Hq ∈ additiveSupportFamily A k (q.1 - b) ∧
@@ -33416,7 +33426,7 @@ theorem anchoredPrivateRow_markerSwap_forces_oneBlockFailureTransfer_or_oldColli
       P s hbBlock' hbU hUselected hFmem hFswap
         hcontemporary
   · obtain ⟨after, hafterI, hkeepD,
-        hUafter, hpAfter⟩ := hcomplete
+        hUafter, hFafter, hpAfter⟩ := hcomplete
     let before : BlockSelector cell := fun ℓ =>
       if hℓi : ℓ = i then
         ⟨(s i).1, by
@@ -33499,14 +33509,11 @@ theorem anchoredPrivateRow_markerSwap_forces_oneBlockFailureTransfer_or_oldColli
         (P.mem_selectedSet_iff before).mp hbSelected
       rw [hbi, hbeforeI] at hselectedAt
       exact hbx hselectedAt.symm
-    have hotherBefore :
+    have hsurvivingBefore :
         ∀ q' : {z // z ∈ Q.erase p.1},
-          ¬ DestroysAt
-            (additiveSupportFamily A (k + 1))
-            (selectedSet before) q'.1 := by
+          Disjoint (surviving q' : Set ℕ)
+            (selectedSet before) := by
       intro q'
-      apply not_destroysAt_iff.mpr
-      refine ⟨surviving q', hsurvivingMem q', ?_⟩
       rw [Set.disjoint_left]
       intro z hzSupport hzBefore
       by_cases hzb : z = b
@@ -33520,6 +33527,15 @@ theorem anchoredPrivateRow_markerSwap_forces_oneBlockFailureTransfer_or_oldColli
           exact ⟨q', Finset.mem_attach _ q',
             Finset.mem_coe.mp hzSupport⟩
         · exact hzBefore
+    have hotherBefore :
+        ∀ q' : {z // z ∈ Q.erase p.1},
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet before) q'.1 := by
+      intro q'
+      exact not_destroysAt_iff.mpr
+        ⟨surviving q', hsurvivingMem q',
+          hsurvivingBefore q'⟩
     obtain ⟨q, hqQ, hqAfter⟩ :=
       hcert after
     have hqp : q ≠ p.1 := by
@@ -33551,12 +33567,54 @@ theorem anchoredPrivateRow_markerSwap_forces_oneBlockFailureTransfer_or_oldColli
     obtain ⟨Hq, hHqMem, hGHq⟩ :=
       additiveSupport_remove_hit_succ
         (hsurvivingMem q') hbSupport
+    have hFbeforeExact :
+        ∀ z ∈ F,
+          z ∈ selectedSet before ↔ z = x := by
+      intro z hzF
+      constructor
+      · intro hzBefore
+        obtain ⟨ℓ, hℓz⟩ := hzBefore
+        change (before ℓ).1 = z at hℓz
+        by_cases hℓi : ℓ = i
+        · subst ℓ
+          exact hℓz.symm.trans hbeforeI
+        · exfalso
+          apply Set.disjoint_left.mp hFafter
+            (Finset.mem_coe.mpr hzF)
+          exact ⟨ℓ,
+            (hbeforeOther ℓ hℓi).symm.trans hℓz⟩
+      · intro hzx
+        exact ⟨i, by
+          change (before i).1 = z
+          exact hbeforeI.trans hzx.symm⟩
+    have hGafterExact :
+        ∀ z ∈ surviving q',
+          z ∈ selectedSet after ↔ z = b := by
+      intro z hzG
+      constructor
+      · intro hzAfter
+        obtain ⟨ℓ, hℓz⟩ := hzAfter
+        change (after ℓ).1 = z at hℓz
+        by_cases hℓi : ℓ = i
+        · subst ℓ
+          exact hℓz.symm.trans hafterI
+        · exfalso
+          apply Set.disjoint_left.mp
+            (hsurvivingBefore q')
+            (Finset.mem_coe.mpr hzG)
+          exact ⟨ℓ,
+            (hbeforeOther ℓ hℓi).trans hℓz⟩
+      · intro hzb
+        exact ⟨i, by
+          change (after i).1 = z
+          exact hafterI.trans hzb.symm⟩
     left
     exact ⟨before, after, q', Hp, Hq,
       hbeforeI, hafterI, hbeforeOther,
       hpBefore, hotherBefore, hpAfter,
       by simpa only [q'] using hqAfter,
-      hbSupport, hHpMem, hFHp, hHqMem, hGHq⟩
+      hbSupport, hFbeforeExact, hGafterExact,
+      hHpMem, hFHp, hHqMem, hGHq⟩
   · exact Or.inr holdCollision
 
 /-- The nontrivial arithmetic content of the old-collision horn.
@@ -33800,6 +33858,47 @@ theorem anchoredPrivateRow_distinctOldCollision_forces_nontrivialRankDescent
   exact ⟨(p.1 - a) - (s ℓ).1,
     by omega, by omega, ⟨K, hKmem⟩,
     hlowerDestroy⟩
+
+/-- In a branch where nontrivial lower-rank destruction has already been
+excluded, no private repair support can collide with a genuinely third old
+block. -/
+theorem anchoredPrivateRow_noRankDescent_excludes_distinctOldCollision
+    {A C : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ} (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (p : {q // q ∈ Q.erase r})
+    {j a i : ℕ} {H : Finset ℕ}
+    {s : BlockSelector cell}
+    {surviving :
+      {q // q ∈ Q.erase p.1} → Finset ℕ}
+    {D F J : Finset ℕ} {x : ℕ}
+    (hk : 2 < k)
+    (htrace :
+      HasAnchoredPrivateRowTrace
+        A k cell Q r hrQ E p j
+          a H s surviving D F x)
+    (hHmem :
+      H ∈ additiveSupportFamily A k (p.1 - a))
+    (hsi : (s i).1 = x)
+    (hij : i ≠ j)
+    (hiJ : i ∉ J)
+    (hjJ : j ∉ J)
+    (hnoDescent :
+      ∀ n,
+        (additiveSupportFamily A (k - 1) n).Nonempty →
+        ¬ DestroysAt
+          (additiveSupportFamily A (k - 1))
+          (D : Set ℕ) n) :
+    ¬ ∃ ℓ ∈ J, (s ℓ).1 ∈ F := by
+  intro hcollision
+  obtain ⟨n, _hrankLower, _hrankUpper,
+      hrepresented, hdestroy⟩ :=
+    anchoredPrivateRow_distinctOldCollision_forces_nontrivialRankDescent
+      P hrQ E p hk htrace hHmem hsi hij
+        hiJ hjJ hcollision
+  exact (hnoDescent n hrepresented) hdestroy
 
 /-- Double pigeonhole for anchored lower cores.
 
