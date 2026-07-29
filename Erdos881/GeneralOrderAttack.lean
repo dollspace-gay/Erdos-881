@@ -33980,6 +33980,56 @@ theorem successorDestruction_with_markedPrivateCore_forces_pairPrimitiveMarker
         hclean.1 hclean.2)
       hdestroy
 
+/-- A target has a double-cell support when one support contains two
+distinct points of one literal partition cell.
+
+This is strictly stronger geometric data than a wide reservoir support.
+In the fixed-core branch, supports are automatically wide because they
+contain the old marker and the moving anchor in different blocks.  A
+double-cell support instead records the genuine collision created when two
+different replacements from the marker block reach the same destination
+column. -/
+def HasDoubleCellSupportAt
+    (R : SupportFamily)
+    (cell : ℕ → Finset ℕ) (i q : ℕ) : Prop :=
+  ∃ G ∈ R q, ∃ b ∈ cell i, b ∈ G ∧
+    ∃ c ∈ cell i, c ∈ G ∧ b ≠ c
+
+/-- Two replacement points reaching the same stored column give a
+double-cell support at that destination; otherwise the destination labels
+are distinct. -/
+theorem twoMarkerFailureTransfers_force_distinctTargets_or_doubleCellSupport
+    {A : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {p : ℕ}
+    {surviving :
+      {q // q ∈ Q.erase p} → Finset ℕ}
+    (hsurvivingMem :
+      ∀ q,
+        surviving q ∈
+          additiveSupportFamily A (k + 1) q.1)
+    {i b c : ℕ}
+    (hbCell : b ∈ cell i)
+    (hcCell : c ∈ cell i)
+    (hbc : b ≠ c)
+    (qb qc : {q // q ∈ Q.erase p})
+    (hbSupport : b ∈ surviving qb)
+    (hcSupport : c ∈ surviving qc) :
+    qb.1 ≠ qc.1 ∨
+      HasDoubleCellSupportAt
+        (additiveSupportFamily A (k + 1))
+        cell i qb.1 := by
+  classical
+  by_cases htargets : qb.1 = qc.1
+  · right
+    have hsubtype : qb = qc :=
+      Subtype.ext htargets
+    subst qc
+    exact ⟨surviving qb, hsurvivingMem qb,
+      b, hbCell, hbSupport,
+      c, hcCell, hcSupport, hbc⟩
+  · exact Or.inl htargets
+
 /-- Two successful replacements in one marker block give two distinct
 destination labels unless they create a wide support immediately.
 
@@ -34010,21 +34060,23 @@ theorem twoMarkerFailureTransfers_force_distinctTargets_or_wideSupport
       HasWideReservoirSupportAt
         (additiveSupportFamily A (k + 1))
         C qb.1 := by
-  classical
-  by_cases htargets : qb.1 = qc.1
-  · right
-    have hsubtype : qb = qc :=
-      Subtype.ext htargets
-    subst qc
-    have hbC : b ∈ C :=
-      (P.mem_iff b).2 ⟨i, hbCell⟩
-    have hcC : c ∈ C :=
-      (P.mem_iff c).2 ⟨i, hcCell⟩
-    exact ⟨surviving qb, hsurvivingMem qb,
-      b, ⟨Finset.mem_coe.mpr hbSupport, hbC⟩,
-      c, ⟨Finset.mem_coe.mpr hcSupport, hcC⟩,
-      hbc⟩
+  obtain htargets | hdouble :=
+    twoMarkerFailureTransfers_force_distinctTargets_or_doubleCellSupport
+      hsurvivingMem hbCell hcCell hbc qb qc
+        hbSupport hcSupport
   · exact Or.inl htargets
+  · right
+    obtain ⟨G, hGmem, b', hb'Cell, hb'G,
+        c', hc'Cell, hc'G, hb'c'⟩ :=
+      hdouble
+    have hbC : b' ∈ C :=
+      (P.mem_iff b').2 ⟨i, hb'Cell⟩
+    have hcC : c' ∈ C :=
+      (P.mem_iff c').2 ⟨i, hc'Cell⟩
+    exact ⟨G, hGmem,
+      b', ⟨Finset.mem_coe.mpr hb'G, hbC⟩,
+      c', ⟨Finset.mem_coe.mpr hc'G, hcC⟩,
+      hb'c'⟩
 
 /-- Hall amplification for two genuine anchored exits at every certificate
 target.
@@ -34323,6 +34375,179 @@ theorem twoAnchoredExits_off_singleRoot_force_cycleOn
       next hnextNe
   exact ⟨next, hnextEdge, hnextNe,
     p, period, hperiodLower, hperiod⟩
+
+/-- More exits than omitted certificate targets force an internal cycle.
+
+Let `V ⊆ Q` be a family of source targets and let `B` index distinct
+anchored exits from every source.  If `|B| > |Q \ V|`, injectivity prevents
+all exits of any source from landing outside `V`.  Choosing one internal
+exit at each source gives a fixed-point-free self-map of `V`, and hence a
+nontrivial anchored escape cycle.
+
+This is the boundary-capacity form of the co-singleton argument.  It is
+designed for the fixed-marker-block branch: a large block can supply enough
+uniform replacements to beat all certificate labels omitted from the
+repeated-row family, without first proving that family is literally
+co-singleton. -/
+theorem anchoredExits_exceed_boundary_force_cycleOn
+    {R : SupportFamily}
+    {Q V B : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hVnonempty : V.Nonempty)
+    (hVQ : V ⊆ Q)
+    (hboundary : (Q \ V).card < B.card)
+    (exit :
+      {p // p ∈ V} → {b // b ∈ B} →
+        {q // q ∈ Q})
+    (hexitInjective :
+      ∀ p, Function.Injective (exit p))
+    (hexitNe :
+      ∀ p b,
+        exit p b ≠
+          ⟨p.1, hVQ p.2⟩)
+    (hedge :
+      ∀ p b,
+        HasAnchoredCertificateEscapeTransition
+          R Q cell p.1 (exit p b).1) :
+    HasAnchoredCertificateEscapeCycleOn
+      R Q cell V := by
+  classical
+  have hinternal :
+      ∀ p : {q // q ∈ V},
+        ∃ b : {z // z ∈ B},
+          (exit p b).1 ∈ V := by
+    intro p
+    by_contra hnone
+    have hnone' :
+        ∀ b : {z // z ∈ B},
+          (exit p b).1 ∉ V := by
+      intro b hbV
+      exact hnone ⟨b, hbV⟩
+    let outside :
+        {b // b ∈ B} → {q // q ∈ Q \ V} :=
+      fun b =>
+        ⟨(exit p b).1,
+          Finset.mem_sdiff.mpr
+            ⟨(exit p b).2, hnone' b⟩⟩
+    have houtsideInjective :
+        Function.Injective outside := by
+      intro b c hbc
+      apply hexitInjective p
+      apply Subtype.ext
+      exact congrArg
+        (fun z : {q // q ∈ Q \ V} => z.1)
+        hbc
+    have hcapacity :
+        B.card ≤ (Q \ V).card := by
+      simpa only [Fintype.card_coe] using
+        Fintype.card_le_of_injective
+          outside houtsideInjective
+    exact (Nat.not_le_of_lt hboundary) hcapacity
+  choose chosen hchosen using hinternal
+  let next : {q // q ∈ V} → {q // q ∈ V} :=
+    fun p =>
+      ⟨(exit p (chosen p)).1, hchosen p⟩
+  have hnextNe :
+      ∀ p : {q // q ∈ V}, next p ≠ p := by
+    intro p hnext
+    apply hexitNe p (chosen p)
+    apply Subtype.ext
+    change (next p).1 = p.1
+    exact congrArg
+      (fun z : {q // q ∈ V} => z.1)
+      hnext
+  have hnextEdge :
+      ∀ p,
+        HasAnchoredCertificateEscapeTransition
+          R Q cell p.1 (next p).1 := by
+    intro p
+    exact hedge p (chosen p)
+  obtain ⟨p₀, hp₀V⟩ := hVnonempty
+  letI : Nonempty {q // q ∈ V} :=
+    ⟨⟨p₀, hp₀V⟩⟩
+  obtain ⟨p, period, hperiodLower, hperiod⟩ :=
+    finite_selfMap_without_fixedPoint_has_nontrivialCycle
+      next hnextNe
+  exact ⟨next, hnextEdge, hnextNe,
+    p, period, hperiodLower, hperiod⟩
+
+/-- Local many-exit forks amplify to either their exceptional target
+property or an internal anchored cycle.
+
+Each source in `V` either exposes `Bad` somewhere in the certificate or
+supplies an injective `B`-indexed family of destinations different from
+itself.  If `Bad` never occurs, the local destination families satisfy the
+boundary-capacity theorem above. -/
+theorem badOrManyAnchoredExitsAtEverySource_exceed_boundary_force_bad_or_cycleOn
+    {R : SupportFamily}
+    {Bad : ℕ → Prop}
+    {Q V B : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hVnonempty : V.Nonempty)
+    (hVQ : V ⊆ Q)
+    (hboundary : (Q \ V).card < B.card)
+    (hlocal :
+      ∀ p : {q // q ∈ V},
+        (∃ q ∈ Q,
+          Bad q) ∨
+        ∃ destination :
+            {b // b ∈ B} →
+              {q // q ∈ Q.erase p.1},
+          Function.Injective destination ∧
+          ∀ b,
+            HasAnchoredCertificateEscapeTransition
+              R Q cell p.1 (destination b).1) :
+    (∃ q ∈ Q,
+        Bad q) ∨
+      HasAnchoredCertificateEscapeCycleOn
+        R Q cell V := by
+  classical
+  by_cases hbad :
+      ∃ q ∈ Q,
+        Bad q
+  · exact Or.inl hbad
+  · right
+    have hdestinationExists :
+        ∀ p : {q // q ∈ V},
+          ∃ destination :
+              {b // b ∈ B} →
+                {q // q ∈ Q.erase p.1},
+            Function.Injective destination ∧
+            ∀ b,
+              HasAnchoredCertificateEscapeTransition
+                R Q cell p.1 (destination b).1 := by
+      intro p
+      rcases hlocal p with hpBad | hpExit
+      · exact False.elim (hbad hpBad)
+      · exact hpExit
+    choose destination hinjective hedge using
+      hdestinationExists
+    let exit :
+        {p // p ∈ V} → {b // b ∈ B} →
+          {q // q ∈ Q} :=
+      fun p b =>
+        ⟨(destination p b).1,
+          (Finset.mem_erase.mp
+            (destination p b).2).2⟩
+    apply anchoredExits_exceed_boundary_force_cycleOn
+      hVnonempty hVQ hboundary exit
+    · intro p
+      intro b c hbc
+      apply hinjective p
+      apply Subtype.ext
+      exact congrArg
+        (fun z : {q // q ∈ Q} => z.1)
+        hbc
+    · intro p b heq
+      have hvalue :
+          (destination p b).1 = p.1 :=
+        congrArg
+          (fun z : {q // q ∈ Q} => z.1)
+          heq
+      exact (Finset.mem_erase.mp
+        (destination p b).2).1 hvalue
+    · intro p b
+      exact hedge p b
 
 /-- Package two marker replacements at one source as the exact local input
 for the Hall amplifier.
@@ -35149,6 +35374,109 @@ theorem anchoredPrivateRow_noRankDescent_largeFreshBlocks_force_oldMarker
       (Nat.not_lt_of_ge hiBound)
         (hfreshLarge i hiJ)
 
+/-- Uniformly large blocks force a genuine two-rank injury from one
+anchored private row.
+
+Assume every block is larger than the total capacity of one stored
+order-`k+1` support per certificate target plus the private support.  If
+the row destroyer caused no represented order-`k-1` injury, apply the
+marker-block cover theorem with an empty old-coordinate set.  It would
+bound the marker block by exactly that capacity, contradicting its strict
+lower bound.
+
+Thus in the uniformly-large-block regime the escape graph is not needed:
+one row already forces a nontrivial descent from current order `k+1` to
+order `k-1`. -/
+theorem anchoredPrivateRow_allBlocksAboveCertificateCapacity_forces_twoRankDescent
+    {A C : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ} (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (p : {q // q ∈ Q.erase r})
+    {j a i : ℕ} {H : Finset ℕ}
+    {s : BlockSelector cell}
+    {surviving :
+      {q // q ∈ Q.erase p.1} → Finset ℕ}
+    {D F U : Finset ℕ} {x : ℕ}
+    (hk : 2 < k)
+    (htrace :
+      HasAnchoredPrivateRowTrace
+        A k cell Q r hrQ E p j
+          a H s surviving D F x)
+    (hHmem :
+      H ∈ additiveSupportFamily A k (p.1 - a))
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (hU :
+      U =
+        (Q.erase p.1).attach.biUnion
+          surviving)
+    (hsi : (s i).1 = x)
+    (hij : i ≠ j)
+    (hblocks :
+      ∀ ℓ,
+        (k + 1) * Q.card + (k + 1) <
+          (cell ℓ).card) :
+    ∃ n,
+      (additiveSupportFamily A (k - 1) n).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A (k - 1))
+        (D : Set ℕ) n := by
+  classical
+  have hsurvivingMem :
+      ∀ q,
+        surviving q ∈
+          additiveSupportFamily A (k + 1) q.1 :=
+    htrace.2.1
+  have hUcard :
+      U.card ≤ (k + 1) * Q.card := by
+    rw [hU]
+    calc
+      ((Q.erase p.1).attach.biUnion
+          surviving).card ≤
+          ∑ q ∈ (Q.erase p.1).attach,
+            (surviving q).card := by
+        exact Finset.card_biUnion_le
+      _ ≤
+          ∑ _q ∈ (Q.erase p.1).attach,
+            (k + 1) := by
+        gcongr with q hq
+        exact additiveSupportFamily_cardAtMost
+          A (k + 1) q.1 (surviving q)
+            (hsurvivingMem q)
+      _ = (k + 1) * (Q.erase p.1).card := by
+        simp [Nat.mul_comm]
+      _ ≤ (k + 1) * Q.card := by
+        exact Nat.mul_le_mul_left (k + 1)
+          Finset.card_erase_le
+  have hcontemporary :
+      ∀ ℓ, ℓ ≠ i → ℓ ∉ (∅ : Finset ℕ) →
+        U.card + (k + 1) < (cell ℓ).card := by
+    intro ℓ _hℓi _hℓEmpty
+    exact lt_of_le_of_lt
+      (Nat.add_le_add_right hUcard (k + 1))
+      (hblocks ℓ)
+  by_contra hnone
+  have hnoDescent :
+      ∀ n,
+        (additiveSupportFamily A (k - 1) n).Nonempty →
+        ¬ DestroysAt
+          (additiveSupportFamily A (k - 1))
+          (D : Set ℕ) n := by
+    intro n hrepresented hdestroy
+    exact hnone ⟨n, hrepresented, hdestroy⟩
+  have hmarkerBound :=
+    (anchoredPrivateRow_noRankDescent_forces_markerBlockCover_and_bound
+      P hrQ E p hk htrace hHmem hcert hU hsi
+        hij (by simp) (by simp) hcontemporary
+        hnoDescent).2
+  exact (Nat.not_lt_of_ge hmarkerBound)
+    (hblocks i)
+
 /-- Two admissible points in the marker block turn an actual no-descent
 private row into the local Hall input.
 
@@ -35261,6 +35589,161 @@ theorem anchoredPrivateRow_noRankDescent_twoMarkerSwaps_force_wideSupport_or_two
       hwide⟩
   · right
     simpa only [pQ] using htwo
+
+/-- A whole set of admissible marker replacements gives equally many
+distinct anchored exits, unless a double-cell support already occurs.
+
+The completion lemma only needs large blocks away from the marker block.
+Therefore, even when the marker block belongs to the old exceptional set
+`J`, we may run the completion with `J.erase i`: the marker block is
+excluded separately by `ℓ ≠ i`.  This removes the previously artificial
+obstruction that an "old" marker could not be pivoted.
+
+For each `b ∈ B`, no rank descent eliminates the genuine old-coordinate
+collision and produces a provenance-retaining escape edge.  If two
+replacement points had the same destination, the common stored support
+would contain both distinct points of the marker block.  Outside that
+genuinely stronger horn, the destination map is injective. -/
+theorem anchoredPrivateRow_noRankDescent_manyMarkerSwaps_force_doubleCellSupport_or_manyExits
+    {A C : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ} (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (p : {q // q ∈ Q.erase r})
+    {j a i : ℕ} {H : Finset ℕ}
+    {s : BlockSelector cell}
+    {surviving :
+      {q // q ∈ Q.erase p.1} → Finset ℕ}
+    {D F J U B : Finset ℕ} {x : ℕ}
+    (hk : 2 < k)
+    (htrace :
+      HasAnchoredPrivateRowTrace
+        A k cell Q r hrQ E p j
+          a H s surviving D F x)
+    (hHmem :
+      H ∈ additiveSupportFamily A k (p.1 - a))
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (hU :
+      U =
+        (Q.erase p.1).attach.biUnion
+          surviving)
+    (hsi : (s i).1 = x)
+    (hij : i ≠ j)
+    (hjJ : j ∉ J)
+    (hBblock : B ⊆ (cell i).erase x)
+    (hBF : ∀ b ∈ B, b ∉ F)
+    (hcontemporary :
+      ∀ ℓ, ℓ ≠ i → ℓ ∉ J →
+        U.card + (k + 1) < (cell ℓ).card)
+    (hnoDescent :
+      ∀ n,
+        (additiveSupportFamily A (k - 1) n).Nonempty →
+        ¬ DestroysAt
+          (additiveSupportFamily A (k - 1))
+          (D : Set ℕ) n) :
+    (∃ q ∈ Q,
+        HasDoubleCellSupportAt
+          (additiveSupportFamily A (k + 1))
+          cell i q) ∨
+      ∃ destination :
+          {b // b ∈ B} →
+            {q // q ∈ Q.erase p.1},
+        Function.Injective destination ∧
+        ∀ b,
+          ∃ w : AnchoredCertificateEscapeTransitionData
+              (additiveSupportFamily A (k + 1))
+              Q cell p.1 (destination b).1,
+            w.newPoint = b.1 ∧
+            w.anchorSupport =
+              surviving (destination b) := by
+  classical
+  have hentry :
+      ∀ b : {z // z ∈ B},
+        ∃ q : {z // z ∈ Q.erase p.1},
+        ∃ w : AnchoredCertificateEscapeTransitionData
+            (additiveSupportFamily A (k + 1))
+            Q cell p.1 q.1,
+          w.newPoint = b.1 ∧
+          w.anchorSupport = surviving q := by
+    intro b
+    let Ub : Finset ℕ := U.erase b.1
+    have hUb :
+        Ub =
+          ((Q.erase p.1).attach.biUnion
+            surviving).erase b.1 := by
+      simpa only [Ub, hU]
+    have hiErase : i ∉ J.erase i := by
+      simp
+    have hjErase : j ∉ J.erase i := by
+      intro hj
+      exact hjJ (Finset.mem_erase.mp hj).2
+    have hcontemporaryB :
+        ∀ ℓ, ℓ ≠ i → ℓ ∉ J.erase i →
+          Ub.card + (k + 1) < (cell ℓ).card := by
+      intro ℓ hℓi hℓErase
+      have hℓJ : ℓ ∉ J := by
+        intro hℓJ
+        exact hℓErase
+          (Finset.mem_erase.mpr ⟨hℓi, hℓJ⟩)
+      have hUbCard : Ub.card ≤ U.card :=
+        Finset.card_le_card
+          (Finset.erase_subset b.1 U)
+      exact lt_of_le_of_lt
+        (Nat.add_le_add_right hUbCard (k + 1))
+        (hcontemporary ℓ hℓi hℓJ)
+    obtain ⟨q, _Hp, _Hq, w,
+        _hwi, _hwx, hwb, hwG,
+        _hHpMem, _hFHp, _hHqMem, _hGHq,
+        _hFbefore, _hGafter⟩ :=
+      anchoredPrivateRow_noRankDescent_markerSwap_forces_coherentEscapeData
+        P hrQ E p hk htrace hHmem hcert hUb hsi
+          hij hiErase hjErase (hBblock b.2)
+          (hBF b.1 b.2) hcontemporaryB
+          hnoDescent
+    exact ⟨q, w, hwb, hwG⟩
+  choose destination edge hnew hanchor using hentry
+  by_cases hdouble :
+      ∃ q ∈ Q,
+        HasDoubleCellSupportAt
+          (additiveSupportFamily A (k + 1))
+          cell i q
+  · exact Or.inl hdouble
+  · right
+    refine ⟨destination, ?_, ?_⟩
+    · intro b c hbcDestination
+      by_contra hbc
+      have hbSupport :
+          b.1 ∈ surviving (destination b) := by
+        rw [← hanchor b, ← hnew b]
+        exact (edge b).newPoint_anchor
+      have hcSupport :
+          c.1 ∈ surviving (destination c) := by
+        rw [← hanchor c, ← hnew c]
+        exact (edge c).newPoint_anchor
+      obtain htargets | hdoubleSupport :=
+        twoMarkerFailureTransfers_force_distinctTargets_or_doubleCellSupport
+          htrace.2.1
+            ((Finset.mem_erase.mp
+              (hBblock b.2)).2)
+            ((Finset.mem_erase.mp
+              (hBblock c.2)).2)
+            (fun h => hbc (Subtype.ext h))
+            (destination b) (destination c)
+            hbSupport hcSupport
+      · exact htargets
+          (congrArg Subtype.val hbcDestination)
+      · apply hdouble
+        exact ⟨(destination b).1,
+          (Finset.mem_erase.mp
+            (destination b).2).2,
+          hdoubleSupport⟩
+    · intro b
+      exact ⟨edge b, hnew b, hanchor b⟩
 
 /-- Double pigeonhole for anchored lower cores.
 
@@ -36054,6 +36537,115 @@ theorem repeatedSurvivingMarker_forces_safeSwap_or_fixedOldBlockCovers
         · exact Finset.mem_union_right
             (guard p) hzH
 
+/-- The repeated fixed-core horn of the actual certificate forces a
+nontrivial two-rank descent.
+
+Ask the fixed-core split for more than one row carrying the same surviving
+marker.  Block alignment discards at most the row whose moving anchor
+equals that marker, so one genuine row remains with marker and anchor in
+different cells.  The certificate construction already makes every block
+larger than its full support capacity.  The one-row capacity theorem then
+forces that row's current-order minimal destroyer to destroy a represented
+order-`k-1` target.
+
+Thus, for `k > 2`, the repeated fixed-core branch is not terminal and does
+not require an infinite escape-cycle iteration. -/
+theorem fixedCoreAnchorStar_forces_twoRankDescent_of_certificate
+    {A C : Set ℕ}
+    {k clearDemand : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ}
+    {hrQ : r ∈ Q} {E : Finset ℕ}
+    {T : Finset {q // q ∈ Q.erase r}}
+    {coveredBlock : {q // q ∈ Q.erase r} → ℕ}
+    {j : ℕ}
+    {anchor : {q // q ∈ Q.erase r} → ℕ}
+    {core : {q // q ∈ Q.erase r} → Finset ℕ}
+    (hk : 2 < k)
+    (hrows :
+      HasAnchoredLowerCoreRows
+        A k cell Q r hrQ E T
+          coveredBlock j anchor core)
+    {d : ℕ} {H : Finset ℕ}
+    {U : Finset {q // q ∈ Q.erase r}}
+    (hUR : U ⊆ T.filter (fun p => coveredBlock p = j))
+    (hlarge :
+      clearDemand + k < U.card)
+    (hHmem :
+      H ∈ additiveSupportFamily A k d)
+    (hUdata :
+      ∀ p ∈ U,
+        p.1 - anchor p = d ∧ core p = H)
+    (hanchorInj :
+      Set.InjOn anchor
+        (U : Set {q // q ∈ Q.erase r}))
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (hblocks :
+      ∀ i,
+        (k + 1) * Q.card + (k + 1) <
+          (cell i).card) :
+    ∃ p ∈ U, ∃ D : Finset ℕ, ∃ n,
+      D.Nonempty ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (k + 1))
+        D p.1 ∧
+      (additiveSupportFamily A (k - 1) n).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A (k - 1))
+        (D : Set ℕ) n := by
+  classical
+  have hlarge' :
+      clearDemand + 1 * k < U.card := by
+    simpa using hlarge
+  obtain ⟨selector, surviving, destroyer,
+      support, _marker, x, hxH, W, hWU,
+      hWlarge, hWanchor, hWrows⟩ :=
+    fixedCoreAnchorStar_forces_repeatedSurvivingMarker_of_certificate
+      (clearDemand := clearDemand)
+      (collisionDemand := 1)
+      P hrows hUR hlarge' hHmem hUdata
+        hanchorInj hcert hblocks
+  obtain ⟨i, V, guard, _hxCell, hij, hVW,
+      hWVcard, _hVanchor, hprotected,
+      _hsafeOrCover⟩ :=
+    repeatedSurvivingMarker_forces_safeSwap_or_fixedOldBlockCovers
+      P hWlarge hWanchor hWrows
+  have hVnonempty : V.Nonempty := by
+    by_contra hVempty
+    have hVcardZero : V.card = 0 :=
+      Finset.card_eq_zero.mpr
+        (Finset.not_nonempty_iff_eq_empty.mp hVempty)
+    omega
+  obtain ⟨p, hpV⟩ := hVnonempty
+  have hpW : p ∈ W := hVW hpV
+  have hpU : p ∈ U := hWU hpW
+  have hpTrace :=
+    (hWrows p hpW).1
+  have hHrow :
+      H ∈
+        additiveSupportFamily A k
+          (p.1 - anchor p) := by
+    rw [(hUdata p hpU).1]
+    exact hHmem
+  obtain ⟨n, hrepresented, hdestroy⟩ :=
+    anchoredPrivateRow_allBlocksAboveCertificateCapacity_forces_twoRankDescent
+      P hrQ E p hk hpTrace hHrow hcert
+        (hprotected p hpV).2.1
+        (hprotected p hpV).1 hij hblocks
+  obtain ⟨_hrCommon, _hsurvivingMem,
+      _hsurvivingDisjoint, _hAtJ, hDnonempty,
+      _hDselected, hDminimal, _hxD, _hFmem,
+      _hprivate, _hFanchor, _hblockCover⟩ :=
+    hpTrace
+  exact ⟨p, hpU, destroyer p, n,
+    hDnonempty, hDminimal,
+    hrepresented, hdestroy⟩
+
 /-- A large repeated marker block supplies two uniform replacement points
 outside every private support in the fixed-core row family.
 
@@ -36160,6 +36752,267 @@ theorem repeatedFixedCoreRows_largeMarkerBlock_has_twoUniformReplacements
         hcParts.1
         (hcAnchor ▸ hanchorCell)
     · exact hcParts.2 hcCore
+
+/-- The full complement of the fixed core inside the marker block is a
+uniform replacement reservoir for every repeated row.
+
+This is the cardinal version of
+`repeatedFixedCoreRows_largeMarkerBlock_has_twoUniformReplacements`.
+Writing `B = cell i \ H`, every point of `B` avoids every private support
+`insert (anchor p) H`: it is outside `H`, and block disjointness prevents
+it from being the moving anchor in block `j`.  Moreover
+`|cell i| ≤ |B| + k`, since the common order-`k` core has at most `k`
+points. -/
+theorem repeatedFixedCoreRows_has_uniformReplacementReservoir
+    {A C : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ}
+    {hrQ : r ∈ Q} {E : Finset ℕ}
+    {i j : ℕ}
+    {anchor : {q // q ∈ Q.erase r} → ℕ}
+    {H : Finset ℕ}
+    {V : Finset {q // q ∈ Q.erase r}}
+    {selector :
+      {q // q ∈ Q.erase r} → BlockSelector cell}
+    {surviving :
+      ∀ p : {q // q ∈ Q.erase r},
+        {q // q ∈ Q.erase p.1} → Finset ℕ}
+    {destroyer support :
+      {q // q ∈ Q.erase r} → Finset ℕ}
+    {x d : ℕ}
+    (hij : i ≠ j)
+    (hxH : x ∈ H)
+    (hHmem :
+      H ∈ additiveSupportFamily A k d)
+    (hrows :
+      ∀ p ∈ V,
+        HasAnchoredPrivateRowTrace
+          A k cell Q r hrQ E p j
+            (anchor p) H
+            (selector p) (surviving p)
+            (destroyer p) (support p) x) :
+    ∃ B : Finset ℕ,
+      B = cell i \ H ∧
+      B ⊆ (cell i).erase x ∧
+      (cell i).card ≤ B.card + k ∧
+      ∀ p ∈ V, ∀ b ∈ B,
+        b ∉ support p := by
+  classical
+  let B : Finset ℕ := cell i \ H
+  have hHcard : H.card ≤ k :=
+    additiveSupportFamily_cardAtMost
+      A k d H hHmem
+  have hinterCard :
+      (cell i ∩ H).card ≤ k :=
+    (Finset.card_le_card
+      (Finset.inter_subset_right)).trans hHcard
+  have hcard :
+      (cell i).card ≤ B.card + k := by
+    have hdecomp :
+        B.card + (cell i ∩ H).card =
+          (cell i).card := by
+      simpa only [B] using
+        Finset.card_sdiff_add_card_inter
+          (cell i) H
+    omega
+  have hBblock : B ⊆ (cell i).erase x := by
+    intro b hbB
+    have hbParts :
+        b ∈ cell i ∧ b ∉ H :=
+      Finset.mem_sdiff.mp
+        (by simpa only [B] using hbB)
+    apply Finset.mem_erase.mpr
+    exact ⟨fun hbx => hbParts.2 (hbx ▸ hxH),
+      hbParts.1⟩
+  refine ⟨B, rfl, hBblock, hcard, ?_⟩
+  intro p hpV b hbB hbSupport
+  have hbParts :
+      b ∈ cell i ∧ b ∉ H :=
+    Finset.mem_sdiff.mp
+      (by simpa only [B] using hbB)
+  obtain ⟨_hrCommon, _hsurvivingMem,
+      _hsurvivingDisjoint, hAtJ, _hDnonempty,
+      _hDselected, _hminimal, _hxD, _hFmem,
+      _hprivate, hFanchor, _hblockCover⟩ :=
+    hrows p hpV
+  have hanchorCell : anchor p ∈ cell j := by
+    rw [← hAtJ]
+    exact (selector p j).2
+  have hbAnchorOrCore :
+      b = anchor p ∨ b ∈ H := by
+    rw [hFanchor] at hbSupport
+    exact Finset.mem_insert.mp hbSupport
+  rcases hbAnchorOrCore with hbAnchor | hbCore
+  · exact Finset.disjoint_left.mp
+      (P.disjoint hij)
+      hbParts.1
+      (hbAnchor ▸ hanchorCell)
+  · exact hbParts.2 hbCore
+
+/-- A repeated fixed-core family whose marker block beats its certificate
+boundary forces a double-cell support or an internal anchored cycle.
+
+Let `V` be the repeated row family and let its target labels be
+`labels = V.image Subtype.val`.  The uniform reservoir
+`B = cell i \ H` loses at most `k` points from the marker block.  Hence the
+displayed marker-block inequality gives `|Q \ labels| < |B|`.
+
+For every row and every `b ∈ B`, remove the marker block from the old
+exception list and apply the no-rank-descent pivot theorem.  The resulting
+destinations are injective unless a double-cell support occurs.  The
+boundary-capacity amplifier then forces a nontrivial escape cycle entirely
+among the repeated target labels.
+
+This is a direct closure of the old-marker branch: neither literal
+co-singleton equality nor a fresh-marker assumption is needed. -/
+theorem repeatedFixedCoreRows_noRankDescent_largeMarkerBoundary_force_doubleCellSupport_or_escapeCycle
+    {A C : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ}
+    {hrQ : r ∈ Q} {E : Finset ℕ}
+    {i j : ℕ}
+    {anchor : {q // q ∈ Q.erase r} → ℕ}
+    {H : Finset ℕ}
+    {V : Finset {q // q ∈ Q.erase r}}
+    {selector :
+      {q // q ∈ Q.erase r} → BlockSelector cell}
+    {surviving :
+      ∀ p : {q // q ∈ Q.erase r},
+        {q // q ∈ Q.erase p.1} → Finset ℕ}
+    {destroyer support guard :
+      {q // q ∈ Q.erase r} → Finset ℕ}
+    {x d : ℕ}
+    (J : Finset ℕ)
+    (hk : 2 < k)
+    (hVnonempty : V.Nonempty)
+    (hij : i ≠ j)
+    (hjJ : j ∉ J)
+    (hxH : x ∈ H)
+    (hHmem :
+      H ∈ additiveSupportFamily A k d)
+    (hdifference :
+      ∀ p ∈ V, p.1 - anchor p = d)
+    (hrows :
+      ∀ p ∈ V,
+        HasAnchoredPrivateRowTrace
+          A k cell Q r hrQ E p j
+            (anchor p) H
+            (selector p) (surviving p)
+            (destroyer p) (support p) x)
+    (hguard :
+      ∀ p ∈ V,
+        guard p =
+          (Q.erase p.1).attach.biUnion
+            (surviving p))
+    (hguardCard :
+      ∀ p ∈ V,
+        (guard p).card ≤
+          (k + 1) * Q.card)
+    (hselects :
+      ∀ p ∈ V, (selector p i).1 = x)
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (hfresh :
+      ∀ ℓ, ℓ ≠ i → ℓ ∉ J →
+        (k + 1) * Q.card + (k + 1) <
+          (cell ℓ).card)
+    (hnoDescent :
+      ∀ p ∈ V, ∀ n,
+        (additiveSupportFamily A (k - 1) n).Nonempty →
+        ¬ DestroysAt
+          (additiveSupportFamily A (k - 1))
+          (destroyer p : Set ℕ) n)
+    (hmarkerBoundary :
+      (Q \ (V.image fun p => p.1)).card + k <
+        (cell i).card) :
+    (∃ q ∈ Q,
+        HasDoubleCellSupportAt
+          (additiveSupportFamily A (k + 1))
+          cell i q) ∨
+      HasAnchoredCertificateEscapeCycleOn
+        (additiveSupportFamily A (k + 1))
+        Q cell (V.image fun p => p.1) := by
+  classical
+  obtain ⟨B, _hBdef, hBblock, hcellCard, hBavoids⟩ :=
+    repeatedFixedCoreRows_has_uniformReplacementReservoir
+      P hij hxH hHmem hrows
+  have hboundary :
+      (Q \ (V.image fun p => p.1)).card < B.card := by
+    omega
+  have hlabelsNonempty :
+      (V.image fun p => p.1).Nonempty := by
+    obtain ⟨p, hpV⟩ := hVnonempty
+    exact ⟨p.1, Finset.mem_image.mpr
+      ⟨p, hpV, rfl⟩⟩
+  have hlabelsQ :
+      V.image (fun p => p.1) ⊆ Q := by
+    intro q hq
+    obtain ⟨p, _hpV, hpq⟩ :=
+      Finset.mem_image.mp hq
+    rw [← hpq]
+    exact (Finset.mem_erase.mp p.2).2
+  apply
+    badOrManyAnchoredExitsAtEverySource_exceed_boundary_force_bad_or_cycleOn
+      hlabelsNonempty hlabelsQ hboundary
+  intro p
+  obtain ⟨pRow, hpRowV, hpRowValue⟩ :=
+    Finset.mem_image.mp p.2
+  have hHrow :
+      H ∈
+        additiveSupportFamily A k
+          (pRow.1 - anchor pRow) := by
+    rw [hdifference pRow hpRowV]
+    exact hHmem
+  have hcontemporary :
+      ∀ ℓ, ℓ ≠ i → ℓ ∉ J →
+        (guard pRow).card + (k + 1) <
+          (cell ℓ).card := by
+    intro ℓ hℓi hℓJ
+    exact lt_of_le_of_lt
+      (Nat.add_le_add_right
+        (hguardCard pRow hpRowV) (k + 1))
+      (hfresh ℓ hℓi hℓJ)
+  obtain hdouble | hexits :=
+    anchoredPrivateRow_noRankDescent_manyMarkerSwaps_force_doubleCellSupport_or_manyExits
+      P hrQ E pRow hk (hrows pRow hpRowV) hHrow
+        hcert (hguard pRow hpRowV)
+        (hselects pRow hpRowV) hij hjJ hBblock
+        (fun b hbB =>
+          hBavoids pRow hpRowV b hbB)
+        hcontemporary
+        (hnoDescent pRow hpRowV)
+  · exact Or.inl hdouble
+  · right
+    obtain ⟨destination, hinjective, hdata⟩ :=
+      hexits
+    let destination' :
+        {b // b ∈ B} →
+          {q // q ∈ Q.erase p.1} :=
+      fun b =>
+        ⟨(destination b).1, by
+          rw [← hpRowValue]
+          exact (destination b).2⟩
+    refine ⟨destination', ?_, ?_⟩
+    · intro b c hbc
+      apply hinjective
+      apply Subtype.ext
+      exact congrArg
+        (fun z : {q // q ∈ Q.erase p.1} => z.1)
+        hbc
+    · intro b
+      obtain ⟨w, _hnew, _hanchor⟩ :=
+        hdata b
+      have hedge :
+          HasAnchoredCertificateEscapeTransition
+            (additiveSupportFamily A (k + 1))
+            Q cell pRow.1 (destination b).1 :=
+        ⟨w⟩
+      simpa only [destination', hpRowValue] using hedge
 
 /-- Amplify one point of a repeatedly covered old block through the
 row/target incidence matrix.
@@ -36604,6 +37457,104 @@ theorem prescribedCommonColumn_repeatedBlock_forces_anchoredArithmeticFork
     have hpData := hcoreRows p hp
     exact ⟨hpData.2.1, hpData.2.2.1⟩
   · exact hlarge
+
+/-- In the uniformly-large certificate construction, the fixed-core horn
+of the anchored arithmetic fork forces a genuine two-rank descent.
+
+Choose the anchor-star demand as `clearDemand + k`.  Difference growth and
+the same-target lower rooted matching are retained unchanged.  In the
+fixed-core horn, its repeated anchor family is large enough to invoke
+`fixedCoreAnchorStar_forces_twoRankDescent_of_certificate`, replacing the
+former terminal concentration object by an explicit current-order minimal
+destroyer which also destroys a represented order-`k-1` target. -/
+theorem prescribedCommonColumn_repeatedBlock_forces_differenceGrowth_or_lowerRootedMatching_or_twoRankDescent
+    {A C : Set ℕ}
+    {k clearDemand differenceDemand matchingDemand : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ}
+    (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (T : Finset {q // q ∈ Q.erase r})
+    (coveredBlock : {q // q ∈ Q.erase r} → ℕ)
+    (hrows :
+      ∀ p ∈ T,
+        HasPrescribedCommonColumnCover
+          A k cell Q r hrQ E p (coveredBlock p))
+    (j : ℕ)
+    (hk : 2 < k)
+    (hlarge :
+      ((clearDemand + k) *
+          additiveRootedMatchingBound k matchingDemand) *
+        differenceDemand <
+          (T.filter fun p => coveredBlock p = j).card)
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (hblocks :
+      ∀ i,
+        (k + 1) * Q.card + (k + 1) <
+          (cell i).card) :
+    ∃ anchor : {q // q ∈ Q.erase r} → ℕ,
+    ∃ core : {q // q ∈ Q.erase r} → Finset ℕ,
+      HasAnchoredLowerCoreRows
+          A k cell Q r hrQ E T
+            coveredBlock j anchor core ∧
+      ((∃ V : Finset ℕ,
+          differenceDemand < V.card ∧
+          ∀ d ∈ V,
+            ∃ p ∈
+                T.filter fun p =>
+                  coveredBlock p = j,
+              d = p.1 - anchor p ∧
+              core p ∈
+                additiveSupportFamily A k d) ∨
+        (∃ d, ∃ root : Finset ℕ,
+          ∃ M : Finset (Finset ℕ),
+            root.card < k ∧
+            M ⊆ additiveSupportFamily A k d ∧
+            matchingDemand < M.card ∧
+            (∀ H ∈ M, root ⊆ H) ∧
+            (∀ H ∈ M, (H \ root).Nonempty) ∧
+            ∀ H ∈ M, ∀ G ∈ M, H ≠ G →
+              Disjoint (H \ root) (G \ root)) ∨
+        ∃ p ∈ T.filter
+            (fun p => coveredBlock p = j),
+        ∃ D : Finset ℕ, ∃ n,
+          D.Nonempty ∧
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A (k + 1))
+            D p.1 ∧
+          (additiveSupportFamily A (k - 1) n).Nonempty ∧
+          DestroysAt
+            (additiveSupportFamily A (k - 1))
+            (D : Set ℕ) n) := by
+  classical
+  obtain ⟨anchor, core, hcoreRows, harithmetic⟩ :=
+    prescribedCommonColumn_repeatedBlock_forces_anchoredArithmeticFork
+      (A := A) (k := k)
+      (anchorDemand := clearDemand + k)
+      (differenceDemand := differenceDemand)
+      (matchingDemand := matchingDemand)
+      hrQ E T coveredBlock hrows j hlarge
+  refine ⟨anchor, core, hcoreRows, ?_⟩
+  rcases harithmetic with
+      hdifference | hmatching | hfixed
+  · exact Or.inl hdifference
+  · exact Or.inr (Or.inl hmatching)
+  · right
+    right
+    obtain ⟨d, H, U, hUR, hUlarge,
+        hHmem, hUdata, hanchorInj⟩ :=
+      hfixed
+    obtain ⟨p, hpU, D, n, hdescent⟩ :=
+      fixedCoreAnchorStar_forces_twoRankDescent_of_certificate
+        (d := d) (H := H) (U := U)
+        P hk hcoreRows hUR hUlarge hHmem
+          hUdata hanchorInj hcert hblocks
+    exact ⟨p, hUR hpU, D, n, hdescent⟩
 
 /-- Refine the geometric common-column fork without a raw block-growth
 escape.
