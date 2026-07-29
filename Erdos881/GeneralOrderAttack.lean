@@ -59892,4 +59892,324 @@ theorem
           cofinalCapturedFixedRootRepairs_fuse_residualDeletion
             hBInfinite hrootRepairs
 
+/-- One arithmetic-threshold injury carried by a terminal fusion without
+forgetting its fixed source core or its exact affine origin.
+
+The scalar `source` is simultaneously the predecessor of the fused upper
+support and the translate `t + translation` of the fixed core target.
+Thus unpacking the final `HasFixedPredecessorArithmeticInjuryAtFloor`
+witness gives a clean order-`k-1` support at `t + translation` and
+destruction at `t + translation + η`, while the original order-`k` source
+support is still literally `insert marked core`. -/
+def HasTerminalFixedCoreAlignedArithmeticInjuryAtFloor
+    (A B C D Y : Set ℕ) (k t ε L : ℕ)
+    (landing target root repaired : ℕ → ℕ) : Prop :=
+  ∃ Z : Set ℕ,
+  ∃ source translation upper marked i j rootShift : ℕ,
+  ∃ support sourceSupport core translatedSupport : Finset ℕ,
+    Z ⊆ D ∧
+    Z ⊆ A ∧
+    Z.Infinite ∧
+    t + ε ≤ source ∧
+    0 < translation ∧
+    source = t + translation ∧
+    support ∈ additiveSupportFamily A k upper ∧
+    marked ∈ support ∧
+    Disjoint (support : Set ℕ) Z ∧
+    upper - marked = source ∧
+    marked = repaired i ∧
+    root i = landing j ∧
+    root i ∈ Y \ B ∧
+    0 < rootShift ∧
+    marked = root i + rootShift ∧
+    marked ∈ A ∧
+    marked ∈ B \ C ∧
+    target i = marked + t ∧
+    sourceSupport ∈
+      additiveSupportFamily A k (target i) ∧
+    marked ∈ sourceSupport ∧
+    Disjoint (sourceSupport : Set ℕ) C ∧
+    Disjoint (sourceSupport : Set ℕ) Z ∧
+    core ∈ additiveSupportFamily A (k - 1) t ∧
+    Disjoint (core : Set ℕ) C ∧
+    sourceSupport = insert marked core ∧
+    translatedSupport ∈
+      additiveSupportFamily A (k - 1) source ∧
+    Disjoint (translatedSupport : Set ℕ) Z ∧
+    support = insert marked translatedSupport ∧
+    upper = target i + translation ∧
+    HasFixedPredecessorArithmeticInjuryAtFloor
+      A Z k source L
+
+/-- Every localized arithmetic threshold is reached on the infinite
+fixed-core fiber itself.
+
+Enumerate the infinite set of stages on which the untranslated source
+support is `insert marked core`.  Source and upper targets remain strict
+after this restriction, so the moving-predecessor arithmetic theorem
+applies to the restricted stream.  Its chosen stage therefore retains the
+same terminal index, landing block, positive translation, and literal
+fixed core.
+
+This is the promised provenance-preserving threshold crossing: the
+arithmetic injury is no longer produced on an unrelated stage after the
+finite-fiber argument. -/
+theorem
+    HasTerminalFixedSourceCoreAlignedFusion.forcesFixedCoreAlignedArithmeticInjuryAtFloor
+    {A B C D Y : Set ℕ} {k t ε : ℕ}
+    {landing target root repaired : ℕ → ℕ}
+    (hk : 1 < k)
+    (hDC : D ⊆ C)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (hfused :
+      HasTerminalFixedSourceCoreAlignedFusion
+        A B C D Y k t ε landing target root repaired) :
+    ∀ L,
+      HasTerminalFixedCoreAlignedArithmeticInjuryAtFloor
+        A B C D Y k t ε L
+          landing target root repaired := by
+  classical
+  obtain ⟨Z, source, translation, upper, marked,
+      support, origin, landingIndex, rootShift,
+      sourceSupport, J, core,
+      hZD, hZA, hZInfinite,
+      hsourceStrict, _htranslationStrict,
+      hupperStrict, hJInfinite,
+      hcoreMem, hcoreC, hdata, hcoreEq⟩ :=
+    hfused
+  let index : ℕ → ℕ :=
+    Nat.nth fun n => n ∈ J
+  have hindexJ :
+      ∀ n, index n ∈ J := by
+    intro n
+    exact Nat.nth_mem_of_infinite hJInfinite n
+  have hindexStrict : StrictMono index :=
+    Nat.nth_strictMono hJInfinite
+  have hrestrictedData :
+      ∀ n,
+        support (index n) ∈
+            additiveSupportFamily A k (upper (index n)) ∧
+        marked (index n) ∈ support (index n) ∧
+        Disjoint (support (index n) : Set ℕ) Z ∧
+        upper (index n) - marked (index n) =
+          source (index n) := by
+    intro n
+    exact
+      ⟨(hdata (index n)).2.2.2.1,
+        (hdata (index n)).2.2.2.2.1,
+        (hdata (index n)).2.2.2.2.2.1,
+        (hdata (index n)).2.2.2.2.2.2.1⟩
+  intro L
+  obtain ⟨n, hinjury⟩ :=
+    movingPredecessorStrictSurvivalStream_forces_arithmeticInjuryAtFloor
+      (A := A) (B := Z) (k := k)
+      (source := fun r => source (index r))
+      (upper := fun r => upper (index r))
+      (marked := fun r => marked (index r))
+      (support := fun r => support (index r))
+      hk hZA hZInfinite hminimal
+      (hsourceStrict.comp hindexStrict)
+      (hupperStrict.comp hindexStrict)
+      hrestrictedData L
+  let stage := index n
+  obtain ⟨hsourceFloor, htranslationPos,
+      htranslationEq, hsupportMem,
+      hmarkedSupport, hsupportZ,
+      hpredecessor, hmarkedRepaired,
+      hrootLanding, hrootRange, hrootShiftPos,
+      hmarkedRoot, hmarkedA, hmarkedRange,
+      htargetMarked, hsourceSupportMem,
+      hmarkedSourceSupport, hsourceSupportC,
+      hupperAligned⟩ :=
+    hdata stage
+  have hsourceEq :
+      source stage = t + translation stage := by
+    rw [htranslationEq]
+    omega
+  have hsourceSupportZ :
+      Disjoint (sourceSupport stage : Set ℕ) Z :=
+    hsourceSupportC.mono_right
+      (hZD.trans hDC)
+  have hkPredSucc :
+      k - 1 + 1 = k := by
+    omega
+  have hsupportMemSucc :
+      support stage ∈
+        additiveSupportFamily A ((k - 1) + 1)
+          (upper stage) := by
+    rw [hkPredSucc]
+    exact hsupportMem
+  obtain ⟨translatedSupport,
+      htranslatedSupportMemRaw,
+      hsupportTranslatedEq⟩ :=
+    additiveSupport_remove_hit_succ
+      hsupportMemSucc hmarkedSupport
+  have htranslatedSupportMem :
+      translatedSupport ∈
+        additiveSupportFamily A (k - 1)
+          (source stage) := by
+    rw [← hpredecessor]
+    exact htranslatedSupportMemRaw
+  have htranslatedSupportSub :
+      translatedSupport ⊆ support stage := by
+    intro x hx
+    rw [hsupportTranslatedEq]
+    exact Finset.mem_insert_of_mem hx
+  have htranslatedSupportZ :
+      Disjoint (translatedSupport : Set ℕ) Z :=
+    hsupportZ.mono_left fun x hx =>
+      Finset.mem_coe.mpr
+        (htranslatedSupportSub
+          (Finset.mem_coe.mp hx))
+  refine
+    ⟨Z, source stage, translation stage,
+      upper stage, marked stage, origin stage,
+      landingIndex stage, rootShift stage,
+      support stage, sourceSupport stage, core,
+      translatedSupport,
+      hZD, hZA, hZInfinite, hsourceFloor,
+      htranslationPos, hsourceEq, hsupportMem,
+      hmarkedSupport, hsupportZ, hpredecessor,
+      hmarkedRepaired, hrootLanding, hrootRange,
+      hrootShiftPos, hmarkedRoot, hmarkedA,
+      hmarkedRange, htargetMarked,
+      hsourceSupportMem, hmarkedSourceSupport,
+      hsourceSupportC, hsourceSupportZ,
+      hcoreMem, hcoreC, hcoreEq stage (hindexJ n),
+      htranslatedSupportMem, htranslatedSupportZ,
+      hsupportTranslatedEq, hupperAligned, ?_⟩
+  simpa only [stage] using hinjury
+
+/-- The exact terminal fusion itself reaches every arithmetic threshold
+with one fixed source core and all terminal coordinates retained. -/
+theorem
+    HasTerminalAlignedMovingPredecessorSurvivalFusion.forcesFixedCoreAlignedArithmeticInjuries
+    {A B C D Y : Set ℕ} {k t ε : ℕ}
+    {landing target root repaired : ℕ → ℕ}
+    (hk : 1 < k)
+    (hDC : D ⊆ C)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (hfused :
+      HasTerminalAlignedMovingPredecessorSurvivalFusion
+        A B C D Y k t ε landing target root repaired) :
+    ∀ L,
+      HasTerminalFixedCoreAlignedArithmeticInjuryAtFloor
+        A B C D Y k t ε L
+          landing target root repaired :=
+  HasTerminalFixedSourceCoreAlignedFusion.forcesFixedCoreAlignedArithmeticInjuryAtFloor
+    hk hDC hminimal
+    (hfused.fixesSourceCore (by omega))
+
+/-- Terminal predecessor iteration after the infinite-fusion branch has
+been pushed through every localized arithmetic threshold. -/
+def HasTerminalAlignedPredecessorExitOrFixedCoreArithmetic
+    (A B C D Y : Set ℕ) (k t ε : ℕ)
+    (landing target root repaired : ℕ → ℕ) : Prop :=
+  (∃ D' : Set ℕ, ∃ d',
+      D' ⊆ D ∧
+      HasFixedPredecessorSurvivalStateOnMarkedSet
+        A D'
+          (IsTerminalFixedSourceMarkedPoint
+            A B C Y k t landing target root repaired)
+          k d' ∧
+      (HasCofinalFixedPredecessorArithmeticInjury
+          A D' k d' ∨
+        HasFixedPredecessorArithmeticGap
+          A D' k d')) ∨
+    ∀ L,
+      HasTerminalFixedCoreAlignedArithmeticInjuryAtFloor
+        A B C D Y k t ε L
+          landing target root repaired
+
+/-- Consume the infinite side of the terminal predecessor endpoint while
+leaving an earlier recursive arithmetic exit unchanged. -/
+theorem
+    HasTerminalAlignedPredecessorExitOrFusion.toExitOrFixedCoreArithmetic
+    {A B C D Y : Set ℕ} {k t ε : ℕ}
+    {landing target root repaired : ℕ → ℕ}
+    (hk : 1 < k)
+    (hDC : D ⊆ C)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (hterminal :
+      HasTerminalAlignedPredecessorExitOrFusion
+        A B C D Y k t ε landing target root repaired) :
+    HasTerminalAlignedPredecessorExitOrFixedCoreArithmetic
+      A B C D Y k t ε landing target root repaired := by
+  obtain hexit | hfused := hterminal
+  · exact Or.inl hexit
+  · exact
+      Or.inr
+        (hfused.forcesFixedCoreAlignedArithmeticInjuries
+          hk hDC hminimal)
+
+/-- The terminal fixed-displacement theorem with the infinite branch
+promoted from an aligned survival fusion to fixed-core arithmetic injury
+at every scale.
+
+In the boundary-repair branch the descendant deletion is `C' ⊆ C`, so the
+original source supports are clean on the final deletion.  The preceding
+conversion can therefore be applied without any additional hypothesis. -/
+theorem
+    terminalFixedSource_fixedEpsilon_forces_gap_or_fixedCoreArithmetic
+    {A B C Y : Set ℕ} {k t ε : ℕ}
+    {currentTarget landing : ℕ → ℕ}
+    {target root repaired : ℕ → ℕ}
+    {K : Finset ℕ}
+    (hk : 1 < k)
+    (hCA : C ⊆ A)
+    (hCInfinite : C.Infinite)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (htargetStrict : StrictMono target)
+    (hKmem :
+      K ∈ additiveSupportFamily A (k - 1) t)
+    (hKC : Disjoint (K : Set ℕ) C)
+    (hfixed :
+      ∀ L,
+        HasTerminalFixedSourceTranslateStageAt
+          A B C Y k t currentTarget landing
+            target root repaired ε L) :
+    additiveSupportFamily A (k - 1) (t + ε) = ∅ ∨
+      ((∃ ℓ v, ∃ Q : Finset ℕ,
+          0 < ℓ ∧
+          ℓ < k - 1 ∧
+          Q ∈ additiveSupportFamily A ℓ v ∧
+          Q ⊆ K ∧
+          Disjoint (Q : Set ℕ) C ∧
+          additiveSupportFamily A ℓ (v + ε) = ∅) ∨
+        ∃ c, ∃ C' : Set ℕ,
+          c ∈ K ∧
+          c ∈ A ∧
+          c ∉ C ∧
+          c + ε ∈ A ∧
+          c + ε ∈ C ∧
+          C' = C \ {c + ε} ∧
+          C' ⊆ C ∧
+          C'.Infinite ∧
+          HasTerminalAlignedPredecessorExitOrFixedCoreArithmetic
+            A B C C' Y k t ε
+              landing target root repaired) := by
+  obtain hgap | hlower | hrepair :=
+    terminalFixedSource_fixedEpsilon_forces_gap_or_alignedIteration
+      (A := A) (B := B) (C := C) (Y := Y)
+      (k := k) (t := t) (ε := ε)
+      (currentTarget := currentTarget)
+      (landing := landing) (target := target)
+      (root := root) (repaired := repaired)
+      (K := K) hk hCA hCInfinite hminimal
+        htargetStrict hKmem hKC hfixed
+  · exact Or.inl hgap
+  · exact Or.inr (Or.inl hlower)
+  · right
+    right
+    obtain ⟨c, C', hcK, hcA, hcC,
+        hshiftA, hshiftC, hC'eq, hC'C,
+        hC'Infinite, hterminal⟩ :=
+      hrepair
+    exact
+      ⟨c, C', hcK, hcA, hcC,
+        hshiftA, hshiftC, hC'eq, hC'C,
+        hC'Infinite,
+        hterminal.toExitOrFixedCoreArithmetic
+          hk hC'C hminimal⟩
+
 end Erdos881

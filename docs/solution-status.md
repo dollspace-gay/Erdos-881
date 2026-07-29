@@ -1,3 +1,57 @@
+# GENERAL ORDER: THE FIXED CORE CROSSES EVERY ARITHMETIC THRESHOLD (2026-07-29)
+
+The terminal infinite-fusion branch has now been pushed through the
+localized arithmetic theorem without losing its exact source coordinates.
+
+`HasTerminalFixedCoreAlignedArithmeticInjuryAtFloor` records, in one
+witness:
+
+- the final infinite deletion \(Z\);
+- the original terminal index and landing block;
+- the fixed order-\((k-1)\) core \(K\) at \(t\);
+- the original support \(\{x\}\cup K\) at
+  \(\operatorname{target}(i)=x+t\);
+- the positive translation \(\Delta\);
+- the fused support at
+  \(\operatorname{target}(i)+\Delta\); and
+- the literal order-\((k-1)\) translated support obtained by removing
+  \(x\) from that fused support.
+
+Consequently the same stage contains the exact chain
+
+\[
+  K\in\mathcal S_{k-1}(t),\qquad
+  G_\Delta\in\mathcal S_{k-1}(t+\Delta),
+\]
+
+with
+
+\[
+  F_{\mathrm{old}}=\{x\}\cup K,\qquad
+  F_{\mathrm{new}}=\{x\}\cup G_\Delta.
+\]
+
+Both relevant supports are clean on the retained deletion, and the
+localized injury destroys a further translate
+\(t+\Delta+\eta\) at order \(k-1\).  The source satisfies the prescribed
+threshold \((k-1)L\le t+\Delta\).
+
+`HasTerminalFixedSourceCoreAlignedFusion.forcesFixedCoreAlignedArithmeticInjuryAtFloor`
+proves this at every scale by enumerating only the infinite fixed-core
+fiber before applying strong minimality.  Thus the arithmetic theorem can
+no longer choose an unrelated stage.  The capstone
+`terminalFixedSource_fixedEpsilon_forces_gap_or_fixedCoreArithmetic`
+replaces the old terminal-fusion conclusion by this fixed-core arithmetic
+attack at all thresholds, while leaving genuine earlier gaps or recursive
+arithmetic exits intact.
+
+This is still not the full solution of Erdős 881 for \(k\ge3\).  The next
+direct comparison is geometric: use the retained original target and
+translation to split the threshold stages into same-block alignments,
+where the old and new supports can repair the localized destruction, and
+cross-block stages, where the exact affine identities force persistent
+growth across the protected target stream.
+
 # GENERAL ORDER: TERMINAL SOURCES FIX ONE LITERAL CORE (2026-07-29)
 
 The exact-target terminal fusion now exposes the arithmetic coherence of
