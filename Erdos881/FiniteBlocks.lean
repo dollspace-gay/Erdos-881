@@ -517,6 +517,55 @@ theorem IsFiniteBlockPartition.mem_selectedSet_iff
   · intro hx
     exact ⟨blockIndex P x, hx⟩
 
+/-- A selector meets every partition block in exactly one point, so the
+block-index map is injective on its selected set. -/
+theorem IsFiniteBlockPartition.blockIndex_injOn_selectedSet
+    {A : Set ℕ} {F : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition A F) (s : BlockSelector F) :
+    Set.InjOn (blockIndex P) (selectedSet s) := by
+  intro x hx y hy hindex
+  rw [P.mem_selectedSet_iff s] at hx hy
+  calc
+    x = (s (blockIndex P x)).1 := hx.symm
+    _ = (s (blockIndex P y)).1 := by rw [hindex]
+    _ = y := hy
+
+/-- Any partial block transversal extends to a full selector.
+
+The hypothesis says that `T` contains at most one point from each block.
+On a block met by `T`, choose that unique point; on every other block use
+the partition's nonempty default.  This is the compact extension step used
+when an infinite union of block-disjoint finite destroyers is fused into
+one deletion selector. -/
+theorem IsFiniteBlockPartition.exists_selector_containing
+    {A T : Set ℕ} {F : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition A F)
+    (hTA : T ⊆ A)
+    (hindex : Set.InjOn (blockIndex P) T) :
+    ∃ s : BlockSelector F, T ⊆ selectedSet s := by
+  classical
+  have hchoice : ∀ i, ∃ x, x ∈ F i ∧
+      ∀ y ∈ T, blockIndex P y = i → x = y := by
+    intro i
+    by_cases hmet : ∃ y, y ∈ T ∧ blockIndex P y = i
+    · obtain ⟨y, hyT, hyIndex⟩ := hmet
+      refine ⟨y, ?_, ?_⟩
+      · rw [← hyIndex]
+        exact P.mem_blockIndex (hTA hyT)
+      · intro z hzT hzIndex
+        exact hindex hyT hzT (hyIndex.trans hzIndex.symm)
+    · obtain ⟨x, hxCell⟩ := P.nonempty i
+      refine ⟨x, hxCell, ?_⟩
+      intro y hyT hyIndex
+      exact (hmet ⟨y, hyT, hyIndex⟩).elim
+  choose point hpointCell hpointUnique using hchoice
+  let s : BlockSelector F := fun i =>
+    ⟨point i, hpointCell i⟩
+  refine ⟨s, ?_⟩
+  intro x hxT
+  rw [P.mem_selectedSet_iff s]
+  exact hpointUnique (blockIndex P x) x hxT rfl
+
 /-- Destruction at `n` depends only on the block coordinates containing
 vertices of supports for `n`. -/
 theorem destroysAt_dependsOnFinset

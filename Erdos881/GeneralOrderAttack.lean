@@ -29055,6 +29055,362 @@ theorem IsStronglyMinimalExactBasis.lowerGapSelectorSwitch_forces_newBlockLaterD
   exact Finset.disjoint_left.mp hD'fresh hxD'
     (Finset.mem_union_left D hxU)
 
+/-- One coherent stage of the persistent primitive-gap iteration.
+
+`usedBlocks` records every block occupied before the current stage.  The
+freshness field is therefore the invariant which turns the eventual union
+of the finite destroyers into a partial block selector. -/
+structure FreshGapDestroyerState
+    (A K : Set ℕ) (h : ℕ) {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell) where
+  selector : BlockSelector cell
+  target : ℕ
+  destroyer : Finset ℕ
+  anchor : ℕ
+  usedBlocks : Finset ℕ
+  destroyer_nonempty : destroyer.Nonempty
+  destroyer_selected :
+    (destroyer : Set ℕ) ⊆ selectedSet selector
+  destroyer_minimal :
+    IsInclusionMinimalDestroyer
+      (additiveSupportFamily A h) destroyer target
+  anchor_selected : anchor ∈ selectedSet selector
+  anchor_not_destroyer : anchor ∉ destroyer
+  anchor_le : anchor ≤ target
+  lower_gap :
+    additiveSupportFamily A (h - 1) (target - anchor) = ∅
+  destroyer_blocks_fresh :
+    ∀ x ∈ destroyer, blockIndex P x ∉ usedBlocks
+
+/-- Infinite primitive-gap iteration, fused to one deletion.
+
+There are three genuine outcomes.  Either the current-order attack already
+descends to a positive smaller occurrence rank, or it has destroyers of
+unbounded cardinality across selector blocks, or primitive-gap switching
+can be iterated forever.
+
+In the last case every new destroyer occupies completely new block
+coordinates.  Their union is therefore an infinite partial selector and
+extends to one full selector `fusion`.  Any old successor-order support
+which survives every full selector also survives this entire infinite
+union.  Thus the conclusion is a single coherent infinite deletion, not a
+collection of unrelated finite gap certificates. -/
+theorem IsStronglyMinimalExactBasis.selectorRankDescent_or_manyBlocks_or_infiniteGapFusion
+    {A K : Set ℕ} {h : ℕ} {cell : ℕ → Finset ℕ}
+    (hminimal : IsStronglyMinimalExactBasis A h)
+    (hhpos : 0 < h)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hblocks : ∀ j, h < (cell j).card)
+    (oldTarget : ℕ → ℕ)
+    (holdSurvival : ∀ s : BlockSelector cell, ∀ n,
+      ∃ E ∈ additiveSupportFamily A (h + 1) (oldTarget n),
+        Disjoint (E : Set ℕ) (selectedSet s)) :
+    (∃ s : BlockSelector cell, ∃ q, ∃ D : Finset ℕ,
+      ∃ ℓ n,
+        D.Nonempty ∧
+        (D : Set ℕ) ⊆ selectedSet s ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A h) D q ∧
+        0 < ℓ ∧ ℓ < h ∧
+        (additiveSupportFamily A ℓ n).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A ℓ) (D : Set ℕ) n) ∨
+    (∀ r, ∃ s : BlockSelector cell, ∃ q,
+      ∃ D : Finset ℕ,
+        D.Nonempty ∧
+        (D : Set ℕ) ⊆ selectedSet s ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A h) D q ∧
+        r < D.card) ∨
+    ∃ Y : Set ℕ, ∃ fusion : BlockSelector cell,
+      ∃ stageSelector : ℕ → BlockSelector cell,
+      ∃ target anchor : ℕ → ℕ,
+      ∃ destroyer : ℕ → Finset ℕ,
+        Y ⊆ selectedSet fusion ∧
+        Y ⊆ K ∧
+        Y.Infinite ∧
+        StrictMono target ∧
+        (∀ i,
+          (destroyer i).Nonempty ∧
+          (destroyer i : Set ℕ) ⊆ Y ∧
+          (destroyer i : Set ℕ) ⊆
+            selectedSet (stageSelector i) ∧
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A h)
+            (destroyer i) (target i) ∧
+          anchor i ∈ selectedSet (stageSelector i) ∧
+          anchor i ∉ destroyer i ∧
+          anchor i ≤ target i ∧
+          additiveSupportFamily A (h - 1)
+            (target i - anchor i) = ∅) ∧
+        (∀ i, DestroysAt
+          (additiveSupportFamily A h) Y (target i)) ∧
+        (∀ i j, i ≠ j → ∀ x ∈ destroyer i,
+          ∀ y ∈ destroyer j,
+            blockIndex P x ≠ blockIndex P y) ∧
+        (∀ n, ∃ E ∈
+          additiveSupportFamily A (h + 1) (oldTarget n),
+            Disjoint (E : Set ℕ) Y) ∧
+        ∀ n, ¬ DestroysAt
+          (additiveSupportFamily A (h + 1)) Y (oldTarget n) := by
+  classical
+  let RankDescent : Prop :=
+    ∃ s : BlockSelector cell, ∃ q, ∃ D : Finset ℕ,
+      ∃ ℓ n,
+        D.Nonempty ∧
+        (D : Set ℕ) ⊆ selectedSet s ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A h) D q ∧
+        0 < ℓ ∧ ℓ < h ∧
+        (additiveSupportFamily A ℓ n).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A ℓ) (D : Set ℕ) n
+  let ManyBlocks : ℕ → Prop := fun r =>
+    ∃ s : BlockSelector cell, ∃ q, ∃ D : Finset ℕ,
+      D.Nonempty ∧
+      (D : Set ℕ) ⊆ selectedSet s ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q ∧
+      r < D.card
+  by_cases hRank : RankDescent
+  · exact Or.inl hRank
+  by_cases hMany : ∀ r, ManyBlocks r
+  · exact Or.inr (Or.inl hMany)
+  right
+  right
+  obtain ⟨r, hrNoMany⟩ :=
+    Classical.not_forall.mp hMany
+  let s₀ : BlockSelector cell := fun j =>
+    ⟨(P.nonempty j).choose, (P.nonempty j).choose_spec⟩
+  have hinitial :
+      Nonempty (FreshGapDestroyerState A K h P) := by
+    obtain ⟨q, D, _hq, hDnonempty, hDselected,
+        hDminimal, hDoutcome⟩ :=
+      hminimal.cofinal_selectorRankDescent_or_manyBlocks_or_lowerGap
+        hhpos hKA P s₀ r 0
+    rcases hDoutcome with (hdescent | hlarge) | hgap
+    · obtain ⟨ℓ, n, hℓpos, hℓh, hsupport,
+          hdestroy⟩ := hdescent
+      exact (hRank ⟨s₀, q, D, ℓ, n, hDnonempty,
+        hDselected, hDminimal, hℓpos, hℓh,
+        hsupport, hdestroy⟩).elim
+    · exact (hrNoMany ⟨s₀, q, D, hDnonempty,
+        hDselected, hDminimal, hlarge⟩).elim
+    · obtain ⟨b, hbSelected, hbD, hbq, hgap⟩ := hgap
+      exact ⟨{
+        selector := s₀
+        target := q
+        destroyer := D
+        anchor := b
+        usedBlocks := ∅
+        destroyer_nonempty := hDnonempty
+        destroyer_selected := hDselected
+        destroyer_minimal := hDminimal
+        anchor_selected := hbSelected
+        anchor_not_destroyer := hbD
+        anchor_le := hbq
+        lower_gap := hgap
+        destroyer_blocks_fresh := by simp
+      }⟩
+  have hnext : ∀ st : FreshGapDestroyerState A K h P,
+      ∃ st' : FreshGapDestroyerState A K h P,
+        st.target < st'.target ∧
+        st'.usedBlocks =
+          st.usedBlocks ∪
+            st.destroyer.image (blockIndex P) := by
+    intro st
+    let Locked : Finset ℕ :=
+      st.usedBlocks ∪
+        st.destroyer.image (blockIndex P)
+    let U : Finset ℕ := Locked.biUnion cell
+    obtain ⟨t, q', D', _htAnchor, _htRepair, hqq',
+        hD'nonempty, hD'selected, hD'fresh,
+        hD'minimal, hD'outcome⟩ :=
+      hminimal.lowerGapSelectorSwitch_forces_freshLaterAttack
+        hhpos hKA P hblocks st.selector
+        st.destroyer_nonempty st.destroyer_minimal
+        st.anchor_selected st.lower_gap U r
+    rcases hD'outcome with (hdescent | hlarge) | hgap'
+    · obtain ⟨ℓ, n, hℓpos, hℓh, hsupport,
+          hdestroy⟩ := hdescent
+      exact (hRank ⟨t, q', D', ℓ, n, hD'nonempty,
+        hD'selected, hD'minimal, hℓpos, hℓh,
+        hsupport, hdestroy⟩).elim
+    · exact (hrNoMany ⟨t, q', D', hD'nonempty,
+        hD'selected, hD'minimal, hlarge⟩).elim
+    · obtain ⟨b', hb'Selected, _hb'U, hb'D',
+          hb'q', hgap'⟩ := hgap'
+      have hD'blocksFresh :
+          ∀ x ∈ D',
+            blockIndex P x ∉ Locked := by
+        intro x hxD' hxLocked
+        have hxK : x ∈ K :=
+          P.selectedSet_subset t
+            (hD'selected (Finset.mem_coe.mpr hxD'))
+        have hxU : x ∈ U := by
+          apply Finset.mem_biUnion.mpr
+          exact ⟨blockIndex P x, hxLocked,
+            P.mem_blockIndex hxK⟩
+        exact Finset.disjoint_left.mp hD'fresh hxD'
+          (Finset.mem_union_left st.destroyer hxU)
+      refine ⟨{
+        selector := t
+        target := q'
+        destroyer := D'
+        anchor := b'
+        usedBlocks := Locked
+        destroyer_nonempty := hD'nonempty
+        destroyer_selected := hD'selected
+        destroyer_minimal := hD'minimal
+        anchor_selected := hb'Selected
+        anchor_not_destroyer := hb'D'
+        anchor_le := hb'q'
+        lower_gap := hgap'
+        destroyer_blocks_fresh := hD'blocksFresh
+      }, hqq', ?_⟩
+      rfl
+  let initial : FreshGapDestroyerState A K h P :=
+    Classical.choice hinitial
+  let advance (st : FreshGapDestroyerState A K h P) :
+      FreshGapDestroyerState A K h P :=
+    Classical.choose (hnext st)
+  have hadvance : ∀ st : FreshGapDestroyerState A K h P,
+      st.target < (advance st).target ∧
+      (advance st).usedBlocks =
+        st.usedBlocks ∪
+          st.destroyer.image (blockIndex P) := by
+    intro st
+    exact Classical.choose_spec (hnext st)
+  let state : ℕ → FreshGapDestroyerState A K h P :=
+    fun i => Nat.rec initial (fun _ st => advance st) i
+  let stageSelector (i : ℕ) := (state i).selector
+  let target (i : ℕ) := (state i).target
+  let destroyer (i : ℕ) := (state i).destroyer
+  let anchor (i : ℕ) := (state i).anchor
+  let used (i : ℕ) := (state i).usedBlocks
+  have hstate_succ : ∀ i,
+      state (i + 1) = advance (state i) := by
+    intro i
+    simp [state]
+  have htargetStrict : StrictMono target := by
+    apply strictMono_nat_of_lt_succ
+    intro i
+    change (state i).target < (state (i + 1)).target
+    rw [hstate_succ]
+    exact (hadvance (state i)).1
+  have hused_succ : ∀ i,
+      used (i + 1) =
+        used i ∪ (destroyer i).image (blockIndex P) := by
+    intro i
+    change (state (i + 1)).usedBlocks =
+      (state i).usedBlocks ∪
+        (state i).destroyer.image (blockIndex P)
+    rw [hstate_succ]
+    exact (hadvance (state i)).2
+  have hused_step : ∀ i, used i ⊆ used (i + 1) := by
+    intro i
+    rw [hused_succ]
+    exact Finset.subset_union_left
+  have hused_mono : Monotone used :=
+    monotone_nat_of_le_succ hused_step
+  have hdestroyerIndexIntoNext :
+      ∀ i, ∀ x ∈ destroyer i,
+        blockIndex P x ∈ used (i + 1) := by
+    intro i x hxD
+    rw [hused_succ]
+    exact Finset.mem_union_right _
+      (Finset.mem_image.mpr ⟨x, hxD, rfl⟩)
+  have hcross_lt : ∀ i j, i < j →
+      ∀ x ∈ destroyer i, ∀ y ∈ destroyer j,
+        blockIndex P x ≠ blockIndex P y := by
+    intro i j hij x hxD y hyD hindex
+    have hxUsed : blockIndex P x ∈ used j :=
+      hused_mono (Nat.succ_le_of_lt hij)
+        (hdestroyerIndexIntoNext i x hxD)
+    exact (state j).destroyer_blocks_fresh y hyD
+      (hindex ▸ hxUsed)
+  have hcross : ∀ i j, i ≠ j →
+      ∀ x ∈ destroyer i, ∀ y ∈ destroyer j,
+        blockIndex P x ≠ blockIndex P y := by
+    intro i j hij
+    rcases lt_or_gt_of_ne hij with hijlt | hjilt
+    · exact hcross_lt i j hijlt
+    · intro x hxD y hyD hindex
+      exact hcross_lt j i hjilt y hyD x hxD hindex.symm
+  let Y : Set ℕ := {x | ∃ i, x ∈ destroyer i}
+  have hdestroyerY : ∀ i,
+      (destroyer i : Set ℕ) ⊆ Y := by
+    intro i x hxD
+    exact ⟨i, Finset.mem_coe.mp hxD⟩
+  have hYK : Y ⊆ K := by
+    rintro x ⟨i, hxD⟩
+    exact P.selectedSet_subset (stageSelector i)
+      ((state i).destroyer_selected
+        (Finset.mem_coe.mpr hxD))
+  have hindexY :
+      Set.InjOn (blockIndex P) Y := by
+    rintro x ⟨i, hxi⟩ y ⟨j, hyj⟩ hindex
+    rcases lt_trichotomy i j with hij | hij | hji
+    · exact (hcross_lt i j hij x hxi y hyj hindex).elim
+    · subst j
+      exact P.blockIndex_injOn_selectedSet (stageSelector i)
+        ((state i).destroyer_selected
+          (Finset.mem_coe.mpr hxi))
+        ((state i).destroyer_selected
+          (Finset.mem_coe.mpr hyj))
+        hindex
+    · exact
+        (hcross_lt j i hji y hyj x hxi hindex.symm).elim
+  let point (i : ℕ) :=
+    (state i).destroyer_nonempty.choose
+  have hpointDestroyer : ∀ i, point i ∈ destroyer i :=
+    fun i => (state i).destroyer_nonempty.choose_spec
+  have hpointInjective : Function.Injective point := by
+    intro i j hpoint
+    by_contra hij
+    have hindex :
+        blockIndex P (point i) =
+          blockIndex P (point j) :=
+      congrArg (blockIndex P) hpoint
+    exact hcross i j hij (point i) (hpointDestroyer i)
+      (point j) (hpointDestroyer j) hindex
+  have hYInfinite : Y.Infinite := by
+    apply (Set.infinite_range_of_injective hpointInjective).mono
+    rintro x ⟨i, rfl⟩
+    exact ⟨i, hpointDestroyer i⟩
+  have hdestroyY : ∀ i, DestroysAt
+      (additiveSupportFamily A h) Y (target i) := by
+    intro i
+    exact (state i).destroyer_minimal.1.mono
+      (hdestroyerY i)
+  obtain ⟨fusion, hYfusion⟩ :=
+    P.exists_selector_containing hYK hindexY
+  have holdSurvivalY : ∀ n, ∃ E ∈
+      additiveSupportFamily A (h + 1) (oldTarget n),
+        Disjoint (E : Set ℕ) Y := by
+    intro n
+    obtain ⟨E, hEmem, hEfusion⟩ :=
+      holdSurvival fusion n
+    exact ⟨E, hEmem,
+      Set.disjoint_of_subset_right hYfusion hEfusion⟩
+  refine ⟨Y, fusion, stageSelector, target, anchor,
+    destroyer, hYfusion, hYK, hYInfinite,
+    htargetStrict, ?_, hdestroyY, hcross,
+    holdSurvivalY, ?_⟩
+  · intro i
+    exact ⟨(state i).destroyer_nonempty,
+      hdestroyerY i,
+      (state i).destroyer_selected,
+      (state i).destroyer_minimal,
+      (state i).anchor_selected,
+      (state i).anchor_not_destroyer,
+      (state i).anchor_le,
+      (state i).lower_gap⟩
+  · intro n
+    obtain ⟨E, hEmem, hEY⟩ := holdSurvivalY n
+    exact not_destroysAt_iff.mpr ⟨E, hEmem, hEY⟩
+
 /-- Primitive counterexample fork with a direct current-order attack in the
 co-singleton branch.
 
@@ -29317,5 +29673,105 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingle
       hminimal.lowerGapSelectorSwitch_forces_freshLaterAttack
         hhpos hKA P hcellLarge s hDnonempty hDminimal
           hbSelected hgap U r
+
+/-- Counterexample-level form of the infinite primitive-gap fusion.
+
+The root-capture side is the already fused same-target deletion.  On the
+co-singleton side, the current-order attack and the selector-switch theorem
+are no longer merely retained as local interfaces: the preceding fusion
+theorem consumes them.  It yields strict rank descent, unbounded
+cross-block destroyers, or one infinite union of fresh destroyers against
+which the entire old successor-target stream survives. -/
+theorem primitiveCounterexample_forces_rootPetalDeletion_or_infiniteGapFusion
+    {A : Set ℕ} {h : ℕ}
+    (hhpos : 0 < h)
+    (hminimal : IsStronglyMinimalExactBasis A h)
+    (hnotLower : ¬ IsExactTupleAsymptoticBasis A (h - 1))
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    (∃ X I : Set ℕ, ∃ target : ℕ → ℕ,
+        ∃ repair : ℕ → Finset ℕ,
+          X ⊆ A ∧
+          X.Infinite ∧
+          I.Infinite ∧
+          StrictMono target ∧
+          (∀ L, ∃ n ∈ I, L ≤ target n) ∧
+          ∀ n ∈ I,
+            repair n ∈
+              additiveSupportFamily A (h + 1) (target n) ∧
+            Disjoint (repair n : Set ℕ) X ∧
+            ¬ DestroysAt
+              (additiveSupportFamily A (h + 1))
+              X (target n)) ∨
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ P : IsFiniteBlockPartition K cell,
+      ∃ oldTarget : ℕ → ℕ,
+        K ⊆ A ∧
+        K.Infinite ∧
+        StrictMono oldTarget ∧
+        ((∃ s : BlockSelector cell, ∃ q,
+            ∃ D : Finset ℕ, ∃ ℓ n,
+              D.Nonempty ∧
+              (D : Set ℕ) ⊆ selectedSet s ∧
+              IsInclusionMinimalDestroyer
+                (additiveSupportFamily A h) D q ∧
+              0 < ℓ ∧ ℓ < h ∧
+              (additiveSupportFamily A ℓ n).Nonempty ∧
+              DestroysAt
+                (additiveSupportFamily A ℓ)
+                (D : Set ℕ) n) ∨
+          (∀ r, ∃ s : BlockSelector cell, ∃ q,
+            ∃ D : Finset ℕ,
+              D.Nonempty ∧
+              (D : Set ℕ) ⊆ selectedSet s ∧
+              IsInclusionMinimalDestroyer
+                (additiveSupportFamily A h) D q ∧
+              r < D.card) ∨
+          ∃ Y : Set ℕ, ∃ fusion : BlockSelector cell,
+            ∃ stageSelector : ℕ → BlockSelector cell,
+            ∃ target anchor : ℕ → ℕ,
+            ∃ destroyer : ℕ → Finset ℕ,
+              Y ⊆ selectedSet fusion ∧
+              Y ⊆ K ∧
+              Y.Infinite ∧
+              StrictMono target ∧
+              (∀ i,
+                (destroyer i).Nonempty ∧
+                (destroyer i : Set ℕ) ⊆ Y ∧
+                (destroyer i : Set ℕ) ⊆
+                  selectedSet (stageSelector i) ∧
+                IsInclusionMinimalDestroyer
+                  (additiveSupportFamily A h)
+                  (destroyer i) (target i) ∧
+                anchor i ∈ selectedSet (stageSelector i) ∧
+                anchor i ∉ destroyer i ∧
+                anchor i ≤ target i ∧
+                additiveSupportFamily A (h - 1)
+                  (target i - anchor i) = ∅) ∧
+              (∀ i, DestroysAt
+                (additiveSupportFamily A h) Y (target i)) ∧
+              (∀ i j, i ≠ j → ∀ x ∈ destroyer i,
+                ∀ y ∈ destroyer j,
+                  blockIndex P x ≠ blockIndex P y) ∧
+              (∀ n, ∃ E ∈
+                additiveSupportFamily A (h + 1) (oldTarget n),
+                  Disjoint (E : Set ℕ) Y) ∧
+              ∀ n, ¬ DestroysAt
+                (additiveSupportFamily A (h + 1))
+                Y (oldTarget n)) := by
+  obtain hroot | hcosingleton :=
+    primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingletonAttack
+      hhpos hminimal hnotLower hcounter
+  · exact Or.inl hroot
+  · right
+    obtain ⟨K, cell, P, oldTarget, hKA, hKInfinite,
+        hcellLarge, holdTargetStrict, hsurvive,
+        _hcofinalGaps, _hcurrentAttack, _hswitch⟩ :=
+      hcosingleton
+    refine ⟨K, cell, P, oldTarget, hKA, hKInfinite,
+      holdTargetStrict, ?_⟩
+    exact
+      hminimal.selectorRankDescent_or_manyBlocks_or_infiniteGapFusion
+        hhpos hKA P hcellLarge oldTarget hsurvive
 
 end Erdos881
