@@ -45331,6 +45331,60 @@ theorem additiveSupportFamily_exists_floorBoundedAnchor
   exact Nat.le_of_mul_le_mul_left
     (hfloor.trans hpBound) hhpos
 
+/-- Restoring one translated boundary point repairs the translated target.
+
+Remove one occurrence of `c` from the clean representation of `p` and
+insert `c + δ`.  The resulting support represents `p + δ`; its old core
+still avoids `Y`, and its only possible point in `Y` is the newly inserted
+point.  Hence it survives after that point is restored. -/
+theorem cleanSupport_boundaryPoint_survives_after_restoring
+    {A Y : Set ℕ} {h p c δ : ℕ}
+    {E : Finset ℕ}
+    (hhpos : 0 < h)
+    (hEmem : E ∈ additiveSupportFamily A h p)
+    (hEY : Disjoint (E : Set ℕ) Y)
+    (hcE : c ∈ E)
+    (hshiftA : c + δ ∈ A) :
+    ¬ DestroysAt
+      (additiveSupportFamily A h)
+      (Y \ {c + δ}) (p + δ) := by
+  classical
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero
+    (by omega : h ≠ 0)
+  intro hstillDestroy
+  obtain ⟨H, hHmem, hEinsert⟩ :=
+    additiveSupport_remove_hit_succ hEmem hcE
+  have hrepair :
+      insert (c + δ) H ∈
+        additiveSupportFamily A (k + 1)
+          (p + δ) := by
+    have hlift :=
+      insert_mem_additiveSupportFamily_succ
+        hshiftA hHmem
+    have hcP :
+        c ≤ p :=
+      additiveSupportFamily_supportsBounded
+        A (k + 1) p E hEmem c hcE
+    have htarget :
+        c + δ + (p - c) = p + δ := by
+      omega
+    simpa only [htarget] using hlift
+  apply hstillDestroy (insert (c + δ) H) hrepair
+  rw [Set.disjoint_left]
+  intro x hxRepair hxRestored
+  rcases
+      Finset.mem_insert.mp
+        (Finset.mem_coe.mp hxRepair) with
+    hxShift | hxH
+  · subst x
+    exact hxRestored.2 (by simp)
+  · exact Set.disjoint_left.mp hEY
+      (Finset.mem_coe.mpr
+        (by
+          rw [hEinsert]
+          exact Finset.mem_insert_of_mem hxH))
+      hxRestored.1
+
 /-- Direct large-point form of the aligned translation exit.
 
 If a clean order-`h` support represents `p ≥ h * floor` and its translate
@@ -45391,40 +45445,9 @@ theorem cleanSupport_destroyedTranslate_forces_largeHole_or_boundaryLanding
     have hrestoredSurvival :
         ¬ DestroysAt
           (additiveSupportFamily A (k + 1))
-          (Y \ {c + δ}) (p + δ) := by
-      intro hstillDestroy
-      obtain ⟨H, hHmem, hEinsert⟩ :=
-        additiveSupport_remove_hit_succ hEmem hcE
-      have hrepair :
-          insert (c + δ) H ∈
-            additiveSupportFamily A (k + 1)
-              (p + δ) := by
-        have hlift :=
-          insert_mem_additiveSupportFamily_succ
-            hshiftA hHmem
-        have hcP :
-            c ≤ p :=
-          additiveSupportFamily_supportsBounded
-            A (k + 1) p E hEmem c hcE
-        have htarget :
-            c + δ + (p - c) = p + δ := by
-          omega
-        simpa only [htarget] using hlift
-      apply hstillDestroy (insert (c + δ) H) hrepair
-      rw [Set.disjoint_left]
-      intro x hxRepair hxRestored
-      rcases
-          Finset.mem_insert.mp
-            (Finset.mem_coe.mp hxRepair) with
-        hxShift | hxH
-      · subst x
-        exact hxRestored.2 (by simp)
-      · exact Set.disjoint_left.mp hEY
-          (Finset.mem_coe.mpr
-            (by
-              rw [hEinsert]
-              exact Finset.mem_insert_of_mem hxH))
-          hxRestored.1
+          (Y \ {c + δ}) (p + δ) :=
+      cleanSupport_boundaryPoint_survives_after_restoring
+        (by omega) hEmem hEY hcE hshiftA
     exact
       ⟨c, hfloorC, hcE, hcA, hcY,
         hshiftA, hshiftY, hrestoredSurvival⟩
@@ -45871,6 +45894,69 @@ theorem HasFusedBoundaryRepairAt.mono
       hEY, hmDestroy, hL.trans hcFloor,
       hcE, hcA, hcY, hshiftA, hshiftY,
       hrestoredSurvival⟩
+
+/-- Failure of one boundary-repair floor forces a universal translation
+hole law above that floor.
+
+Take any later protected gap, any clean lower-endpoint support, and any
+support point `c ≥ L`.  If `c + δ` belonged to `A`, translation exit would
+put it in `Y`, while
+`cleanSupport_boundaryPoint_survives_after_restoring` would repair the
+destroyed upper endpoint after restoring that point.  Those data are
+exactly a forbidden `HasFusedBoundaryRepairAt` stage.  Therefore every such
+large support point has its translate outside `A`. -/
+theorem not_boundaryRepairAt_forces_all_largeSupportPoint_translates_missing
+    {A Y : Set ℕ} {k : ℕ}
+    {oldTarget : ℕ → ℕ} {L n m : ℕ}
+    {E : Finset ℕ} {c : ℕ}
+    (hnoRepair :
+      ¬ HasFusedBoundaryRepairAt
+        A Y k oldTarget L)
+    (hnFloor : L ≤ n)
+    (hnLower : oldTarget n < m)
+    (hnUpper : m < oldTarget (n + 1))
+    (hEmem :
+      E ∈ additiveSupportFamily A (k + 1)
+        (oldTarget n))
+    (hEY : Disjoint (E : Set ℕ) Y)
+    (hmDestroy :
+      DestroysAt
+        (additiveSupportFamily A (k + 1)) Y m)
+    (hcFloor : L ≤ c)
+    (hcE : c ∈ E) :
+    c + (m - oldTarget n) ∉ A := by
+  intro hshiftA
+  let δ := m - oldTarget n
+  have hδpos : 0 < δ := by
+    dsimp only [δ]
+    omega
+  have hmδ : m = oldTarget n + δ := by
+    dsimp only [δ]
+    omega
+  have hcA : c ∈ A :=
+    additiveSupportFamily_supportsIn
+      A (k + 1) (oldTarget n) E hEmem c hcE
+  have hcY : c ∉ Y := by
+    intro hcY
+    exact Set.disjoint_left.mp hEY
+      (Finset.mem_coe.mpr hcE) hcY
+  have hshiftY : c + δ ∈ Y := by
+    apply alignedSurvivalDestruction_forces_translationExit
+      hEmem hEY hmδ hmDestroy c hcE
+    exact hshiftA
+  have hrestoredSurvival :
+      ¬ DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (Y \ {c + δ}) m := by
+    rw [hmδ]
+    exact cleanSupport_boundaryPoint_survives_after_restoring
+      (by omega) hEmem hEY hcE hshiftA
+  apply hnoRepair
+  exact
+    ⟨n, m, δ, E, c, hnFloor, hnLower, hnUpper,
+      hδpos, hmδ, hEmem, hEY, hmDestroy,
+      hcFloor, hcE, hcA, hcY, hshiftA,
+      hshiftY, hrestoredSurvival⟩
 
 /-- The literal translation boundary can be homogenized cofinally.
 

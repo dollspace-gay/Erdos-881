@@ -41,13 +41,21 @@ membership information at cofinally large basis points.
   cofinal, then beyond one floor no boundary repair exists and every
   sufficiently late mixed stage is forced to be a literal translated
   hole.
+- `not_boundaryRepairAt_forces_all_largeSupportPoint_translates_missing`
+  upgrades that pure branch from an existential witness to a universal
+  law.  Above the failed repair floor, for every protected gap, every
+  clean lower-endpoint support, and every sufficiently large point `c` in
+  that support, the aligned translate `c + δ` is outside `A`.  Otherwise
+  `cleanSupport_boundaryPoint_survives_after_restoring` constructs exactly
+  the forbidden co-singleton repair.
 
 Both horns are nonvacuous membership statements; no bare “represented
 target” conclusion is used.  This does **not** yet settle the general
 problem.  The next direct attack is either to iterate the strict-split
 self-replication while accumulating all repaired survival streams, or to
-use eventual purity in the remaining hole horn to force enough translated
-nonmembers from the bounded supports to contradict exact-order coverage.
+combine this universal hole law with the represented destroyed
+order-`k` predecessor in the same bracket, forcing coordinate exchange or
+a strict lower-rank translated gap.
 
 # GENERAL ORDER: FOUR ALIGNED HORNS CONSUMED (2026-07-29)
 
