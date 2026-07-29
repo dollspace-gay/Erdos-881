@@ -1,3 +1,32 @@
+# GENERAL ORDER: MOVING-ROOT FUSION IS QUADRATIC AT SOURCE (2026-07-29)
+
+The coherent moving-root construction now builds in the exact quadratic
+block growth needed by the existing after-the-fact cardinal feedback
+theorem.
+
+- `freshPredecessorRootedMatchingSteps_have_commonSurvivalPartition_avoiding`
+  requests `(i + k + 2)^2` fresh petals at stage `i`, rather than weakening
+  its arbitrary-demand supply to a merely linear block.
+- The recursive selector argument still leaves more than `i+1` surviving
+  supports after an arbitrary block selector; the stronger block-cardinality
+  conclusion is therefore obtained without weakening the protected-target
+  survival stream.
+- At successor order, the moving-root block `cell i` now satisfies
+  `(i + k + 3)^2 < |cell i|`.  This bound is retained through the migrating
+  certificate, translation-exit fan, aligned arithmetic, translated-hole,
+  and current-order matching capstones.
+- The older public common-survival wrapper continues to expose its original
+  linear conclusion by deriving it from the square, so existing consumers
+  that do not need cardinal feedback remain unchanged.
+
+This is an enabling strengthening, not a solution by itself.  A capacity
+witness for the full partition may still occur in an arbitrarily old block.
+The next direct step is therefore to run the target-localized certificate on
+the prescribed quadratic tail and bracket its target against the same
+protected stream.  That discards every old block while retaining the source
+block and translation, allowing the existing capacity rerun to act on the
+aligned configuration rather than on a separate certificate.
+
 # GENERAL ORDER: CURRENT-ORDER MATCHING INJURY CONSUMED (2026-07-29)
 
 The unbounded order-`k` rooted-matching member of the final aligned

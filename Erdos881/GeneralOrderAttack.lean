@@ -25437,7 +25437,7 @@ theorem freshPredecessorRootedMatchingSteps_have_commonSurvivalPartition_avoidin
       Function.Injective retained ∧
       (∀ j, retained j ∈ A) ∧
       Disjoint K (Set.range retained) ∧
-      (∀ i, i + 2 < (cell i).card) ∧
+      (∀ i, (i + k + 2) ^ 2 < (cell i).card) ∧
       ∀ s : BlockSelector cell, ∀ i,
         ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
           R.card < k ∧
@@ -25455,9 +25455,10 @@ theorem freshPredecessorRootedMatchingSteps_have_commonSurvivalPartition_avoidin
   let State := Finset ℕ × ℕ
   let initial : State := (reserved, 0)
   let chooseStep : (i : ℕ) → (st : State) →
-      FreshPredecessorRootedMatchingStep A k st.1 st.2 (i + 2) :=
+      FreshPredecessorRootedMatchingStep
+        A k st.1 st.2 ((i + k + 2) ^ 2) :=
     fun _i st => Classical.choice
-      (hsupply st.1 st.2 (_i + 2))
+      (hsupply st.1 st.2 ((_i + k + 2) ^ 2))
   let occupied : ℕ → State → Finset ℕ := fun i st =>
     st.1 ∪ (chooseStep i st).matching.biUnion id
   let chooseAnchor : (i : ℕ) → (st : State) →
@@ -25575,7 +25576,8 @@ theorem freshPredecessorRootedMatchingSteps_have_commonSurvivalPartition_avoidin
         ((step i).petals_disjoint E.1 hEM D.1 hDM hne)
     simpa only [Fintype.card_coe] using
       Fintype.card_le_of_injective pick hpickInjective
-  have hgoodLarge : ∀ i, i + 2 < (good i).card := by
+  have hgoodLarge :
+      ∀ i, (i + k + 2) ^ 2 < (good i).card := by
     intro i
     have hsplit :
         (good i).card + (bad i).card = (matching i).card := by
@@ -25583,7 +25585,9 @@ theorem freshPredecessorRootedMatchingSteps_have_commonSurvivalPartition_avoidin
         (Finset.card_filter_add_card_filter_not
           (s := matching i) fun E => Disjoint E (used i))
     have hlarge := (step i).matching_large
-    change (used i).card + (i + 2) < (matching i).card at hlarge
+    change
+      (used i).card + (i + k + 2) ^ 2 <
+        (matching i).card at hlarge
     have hbad := hbadCard i
     omega
   have hgoodSub : ∀ i, good i ⊆ matching i := by
@@ -25652,7 +25656,8 @@ theorem freshPredecessorRootedMatchingSteps_have_commonSurvivalPartition_avoidin
           (hgoodSub i E.2) D.1 (hgoodSub i D.2) hne)
     simpa only [Fintype.card_coe] using
       Fintype.card_le_of_injective pick hpickInjective
-  have hcellLarge : ∀ i, i + 2 < (cell i).card := by
+  have hcellLarge :
+      ∀ i, (i + k + 2) ^ 2 < (cell i).card := by
     intro i
     exact (hgoodLarge i).trans_le (hgoodCardLeCell i)
   have hcellA : ∀ i, ∀ x ∈ cell i, x ∈ A := by
@@ -25830,7 +25835,21 @@ theorem freshPredecessorRootedMatchingSteps_have_commonSurvivalPartition_avoidin
         (s := good i)
         (fun E => Disjoint (E : Set ℕ) (selectedSet s)))
   have hsurvivingLarge : i + 1 < surviving.card := by
-    have hlarge := hgoodLarge i
+    have hlargeSquare := hgoodLarge i
+    have hlarge : i + 2 < (good i).card := by
+      have hsquare :
+          i + 2 < (i + k + 2) ^ 2 := by
+        have hbase :
+            i + 2 ≤ i + k + 2 := by omega
+        have hmul :=
+          (Nat.mul_lt_mul_left
+            (show 0 < i + k + 2 by omega)).2
+              (show 1 < i + k + 2 by omega)
+        have hbaseSquare :
+            i + k + 2 < (i + k + 2) ^ 2 := by
+          simpa only [Nat.mul_one, pow_two] using hmul
+        exact hbase.trans_lt hbaseSquare
+      exact hsquare.trans hlargeSquare
     omega
   have hsurvivingGood : surviving ⊆ good i := by
     intro E hE
@@ -25907,11 +25926,26 @@ theorem successorCounterexample_forces_cofinalPredecessorCommonSurvivalPartition
           Disjoint (E : Set ℕ) (selectedSet s) := by
   obtain ⟨K, cell, target, retained, hKA, hKInfinite,
       hKReserved, P, htargetStrict, hretainedInjective,
-      hretainedA, hKRetained, hcellLarge, hlargeSurvival⟩ :=
+      hretainedA, hKRetained, hcellQuadratic,
+      hlargeSurvival⟩ :=
     freshPredecessorRootedMatchingSteps_have_commonSurvivalPartition_avoiding
       hbasis.infinite
       (freshPredecessorRootedMatchingStep_nonempty hbasis hcounter)
       reserved
+  have hcellLarge : ∀ i, i + 2 < (cell i).card := by
+    intro i
+    have hbase :
+        i + 2 ≤ i + k + 2 := by omega
+    have hmul :=
+      (Nat.mul_lt_mul_left
+        (show 0 < i + k + 2 by omega)).2
+          (show 1 < i + k + 2 by omega)
+    have hbaseSquare :
+        i + k + 2 < (i + k + 2) ^ 2 := by
+      simpa only [Nat.mul_one, pow_two] using hmul
+    exact
+      (hbase.trans_lt hbaseSquare).trans
+        (hcellQuadratic i)
   refine ⟨K, cell, target, retained, hKA, hKInfinite,
     hKReserved, P, htargetStrict, hretainedInjective,
     hretainedA, hKRetained, hcellLarge, ?_⟩
@@ -42611,7 +42645,7 @@ theorem IsExactTupleAsymptoticBasis.failsFiniteCoreMatching_has_coherentMovingRo
         K.Infinite ∧
         IsFiniteBlockPartition K cell ∧
         StrictMono target ∧
-        (∀ i, i + 2 < (cell i).card) ∧
+        (∀ i, (i + k + 3) ^ 2 < (cell i).card) ∧
         (∀ s : BlockSelector cell, ∀ i,
           ∃ E ∈ additiveSupportFamily A (k + 1) (target i),
             Disjoint (E : Set ℕ) (selectedSet s)) ∧
@@ -42630,7 +42664,8 @@ theorem IsExactTupleAsymptoticBasis.failsFiniteCoreMatching_has_coherentMovingRo
             M.biUnion (fun E => E \ R) ⊆ cell i := by
   obtain ⟨K, cell, target, _retained, hKA, hKInfinite,
       _hKempty, P, htarget, _hretainedInjective,
-      _hretainedA, _hKretained, hcellLarge, hlargeSurvival⟩ :=
+      _hretainedA, _hKretained, hcellQuadratic,
+      hlargeSurvival⟩ :=
     freshPredecessorRootedMatchingSteps_have_commonSurvivalPartition_avoiding
       hbasis.infinite
       (freshPredecessorRootedMatchingStep_nonempty_of_failsFiniteCoreMatching
@@ -42638,7 +42673,8 @@ theorem IsExactTupleAsymptoticBasis.failsFiniteCoreMatching_has_coherentMovingRo
       ∅
   refine
     ⟨K, cell, target, hKA, hKInfinite, P, htarget,
-      hcellLarge, ?_, hlargeSurvival⟩
+      (by simpa only [Nat.add_assoc] using hcellQuadratic),
+      ?_, hlargeSurvival⟩
   intro s i
   obtain ⟨_R, M, _hRcard, _hRK, hMlarge, hMsub, _hMroot,
       _hMnonempty, _hMmatching, hMselected, _hMcell⟩ :=
@@ -42898,7 +42934,7 @@ theorem exactBasis_counterexample_forces_coherentMovingRootFusion
         K.Infinite ∧
         IsFiniteBlockPartition K cell ∧
         StrictMono target ∧
-        (∀ i, i + 2 < (cell i).card) ∧
+        (∀ i, (i + k + 3) ^ 2 < (cell i).card) ∧
         (∀ s : BlockSelector cell, ∀ i,
           ∃ E ∈ additiveSupportFamily A (k + 1) (target i),
             Disjoint (E : Set ℕ) (selectedSet s)) ∧
@@ -43073,7 +43109,7 @@ theorem exactBasis_counterexample_forces_coherentMovingRootFusion_with_migrating
         K.Infinite ∧
         IsFiniteBlockPartition K cell ∧
         StrictMono target ∧
-        (∀ i, i + 2 < (cell i).card) ∧
+        (∀ i, (i + k + 3) ^ 2 < (cell i).card) ∧
         (∀ s : BlockSelector cell, ∀ i,
           ∃ E ∈ additiveSupportFamily A (k + 1) (target i),
             Disjoint (E : Set ℕ) (selectedSet s)) ∧
@@ -43614,7 +43650,7 @@ theorem exactBasis_counterexample_forces_cofinalTranslationExitFans
         K ⊆ A ∧
         K.Infinite ∧
         StrictMono target ∧
-        (∀ i, i + 2 < (cell i).card) ∧
+        (∀ i, (i + k + 3) ^ 2 < (cell i).card) ∧
         ∀ L, ∃ Q : Finset ℕ,
           ∃ s : BlockSelector cell, ∃ i q δ,
           ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
@@ -43882,8 +43918,16 @@ theorem exactBasis_counterexample_forces_cofinalTranslationExitFans
       P hRK hdestNe hFconfined hFcover
   have hblocksTwo : ∀ j, 1 < (cell j).card := by
     intro j
-    have := hcellLarge j
-    omega
+    have hbaseSquare :
+        j + k + 3 < (j + k + 3) ^ 2 := by
+      have hmul :=
+        (Nat.mul_lt_mul_left
+          (show 0 < j + k + 3 by omega)).2
+            (show 1 < j + k + 3 by omega)
+      simpa only [Nat.mul_one, pow_two] using hmul
+    exact
+      (show 1 < j + k + 3 by omega).trans
+        (hbaseSquare.trans (hcellLarge j))
   have hVinU :
       Vin.card ≤ U.card + 1 := by
     apply crossBlockCoSingletonLanding_card_le
@@ -43968,7 +44012,7 @@ theorem exactBasis_counterexample_forces_cofinalTranslationHoles_or_alignedArith
         K.Infinite ∧
         IsFiniteBlockPartition K cell ∧
         StrictMono target ∧
-        (∀ i, i + 2 < (cell i).card) ∧
+        (∀ i, (i + k + 3) ^ 2 < (cell i).card) ∧
         ∀ holeDemand gapFloor coverDemand anchorDemand
             differenceDemand lowerMatchingDemand
             currentMatchingDemand,
@@ -44431,7 +44475,7 @@ theorem exactBasis_counterexample_forces_exactMatchingFusion_or_eventualAlignedR
       K.Infinite ∧
       IsFiniteBlockPartition K cell ∧
       StrictMono target ∧
-      (∀ i, i + 2 < (cell i).card) ∧
+      (∀ i, (i + k + 3) ^ 2 < (cell i).card) ∧
       (HasFusedSuccessorPredecessorStreams A k ∨
         HasEventuallyAlignedHolesOrNonmatchingArithmetic
           A k cell target) := by
@@ -44704,7 +44748,7 @@ theorem exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedHolesOrC
       K.Infinite ∧
       IsFiniteBlockPartition K cell ∧
       StrictMono target ∧
-      (∀ i, i + 2 < (cell i).card) ∧
+      (∀ i, (i + k + 3) ^ 2 < (cell i).card) ∧
       (HasFusedSuccessorPredecessorStreams A k ∨
         HasEventuallyAlignedHolesOrAnchoredConcentration
           A k cell target) := by
@@ -44862,7 +44906,7 @@ theorem exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedResolved
       K.Infinite ∧
       IsFiniteBlockPartition K cell ∧
       StrictMono target ∧
-      (∀ i, i + 2 < (cell i).card) ∧
+      (∀ i, (i + k + 3) ^ 2 < (cell i).card) ∧
       (HasFusedSuccessorPredecessorStreams A k ∨
         HasEventuallyAlignedHolesOrResolvedArithmetic
           A k cell target) := by
@@ -45275,7 +45319,7 @@ theorem exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedArithmet
       K.Infinite ∧
       IsFiniteBlockPartition K cell ∧
       StrictMono target ∧
-      (∀ i, i + 2 < (cell i).card) ∧
+      (∀ i, (i + k + 3) ^ 2 < (cell i).card) ∧
       (HasFusedSuccessorPredecessorStreams A k ∨
         HasEventuallyAlignedResolvedArithmeticInjuries
           A k cell target) := by
@@ -46913,7 +46957,7 @@ theorem exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedArithmet
         K.Infinite ∧
         IsFiniteBlockPartition K cell ∧
         StrictMono target ∧
-        (∀ i, i + 2 < (cell i).card) ∧
+        (∀ i, (i + k + 3) ^ 2 < (cell i).card) ∧
         HasEventuallyAlignedResolvedArithmeticWithoutCurrentMatching
           A k cell target := by
   obtain ⟨K, cell, target, hKA, hKInfinite, P,
