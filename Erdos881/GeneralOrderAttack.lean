@@ -31331,12 +31331,11 @@ certificate, or covers one whole block by `U ∪ E`.  The conclusion retains
 the individual support chosen for every target rather than only the
 cardinality of their union.  Thus every finite certificate has a literal
 target-labelled cover matrix on some partition block. -/
-theorem targetLocalizedAdditiveCertificate_forces_labeledFullBlockCover
+theorem targetLocalizedAdditiveCertificate_forces_labeledFullBlockCover_atTarget
     {A K : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
     (P : IsFiniteBlockPartition K cell)
-    {Q : Finset ℕ}
-    (hQnonempty : Q.Nonempty)
+    {Q : Finset ℕ} {q : ℕ}
     (hrepresented :
       ∀ q ∈ Q,
         (additiveSupportFamily A (k + 1) q).Nonempty)
@@ -31353,9 +31352,9 @@ theorem targetLocalizedAdditiveCertificate_forces_labeledFullBlockCover
         ∀ q' ∈ Q, q' ≠ q →
           ¬ DestroysAt
             (additiveSupportFamily A (k + 1))
-            (selectedSet s) q') :
-    ∃ q, ∃ hqQ : q ∈ Q,
-      ∃ s : BlockSelector cell,
+            (selectedSet s) q')
+    (hqQ : q ∈ Q) :
+    ∃ s : BlockSelector cell,
       ∃ support : {p // p ∈ Q.erase q} → Finset ℕ,
       ∃ D E : Finset ℕ, ∃ x j,
         (∀ p,
@@ -31375,7 +31374,6 @@ theorem targetLocalizedAdditiveCertificate_forces_labeledFullBlockCover
         cell j ⊆
           (Q.erase q).attach.biUnion support ∪ E := by
   classical
-  obtain ⟨q, hqQ⟩ := hQnonempty
   obtain ⟨s, hqDestroy, hotherSurvives⟩ :=
     hlocalized q hqQ
   have hsupportExists :
@@ -31449,10 +31447,280 @@ theorem targetLocalizedAdditiveCertificate_forces_labeledFullBlockCover
           ⟨support p, hsupportMem p,
             hsupportT⟩) hrDestroy).elim
   · obtain ⟨j, hsjE, hjCover⟩ := hcovered
-    exact ⟨q, hqQ, s, support, D, E, x, j,
+    exact ⟨s, support, D, E, x, j,
       hsupportMem, hsupportDisjoint, ⟨x, hxD⟩,
       hDselected, hDminimal, hxD, hER, hprivate,
       hsjE, by simpa only [U] using hjCover⟩
+
+/-- Every target of a target-localized certificate has its own labelled
+full-block cover, with that target furnishing the unique private row and
+all other rows chosen to avoid its localizing selector. -/
+theorem targetLocalizedAdditiveCertificate_forces_labeledFullBlockCover_atEveryTarget
+    {A K : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    {Q : Finset ℕ}
+    (hrepresented :
+      ∀ q ∈ Q,
+        (additiveSupportFamily A (k + 1) q).Nonempty)
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (hlocalized :
+      ∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q') :
+    ∀ q ∈ Q,
+      ∃ s : BlockSelector cell,
+      ∃ support : {p // p ∈ Q.erase q} → Finset ℕ,
+      ∃ D E : Finset ℕ, ∃ x j,
+        (∀ p,
+          support p ∈
+            additiveSupportFamily A (k + 1) p.1) ∧
+        (∀ p,
+          Disjoint (support p : Set ℕ)
+            (selectedSet s)) ∧
+        D.Nonempty ∧
+        (D : Set ℕ) ⊆ selectedSet s ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A (k + 1)) D q ∧
+        x ∈ D ∧
+        E ∈ additiveSupportFamily A (k + 1) q ∧
+        E ∩ D = {x} ∧
+        (s j).1 ∈ E ∧
+        cell j ⊆
+          (Q.erase q).attach.biUnion support ∪ E := by
+  intro q hqQ
+  exact
+    targetLocalizedAdditiveCertificate_forces_labeledFullBlockCover_atTarget
+      P hrepresented hcert hlocalized hqQ
+
+/-- Existential wrapper for one row of the universal labelled-cover
+family. -/
+theorem targetLocalizedAdditiveCertificate_forces_labeledFullBlockCover
+    {A K : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    {Q : Finset ℕ}
+    (hQnonempty : Q.Nonempty)
+    (hrepresented :
+      ∀ q ∈ Q,
+        (additiveSupportFamily A (k + 1) q).Nonempty)
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (hlocalized :
+      ∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q') :
+    ∃ q, ∃ hqQ : q ∈ Q,
+      ∃ s : BlockSelector cell,
+      ∃ support : {p // p ∈ Q.erase q} → Finset ℕ,
+      ∃ D E : Finset ℕ, ∃ x j,
+        (∀ p,
+          support p ∈
+            additiveSupportFamily A (k + 1) p.1) ∧
+        (∀ p,
+          Disjoint (support p : Set ℕ)
+            (selectedSet s)) ∧
+        D.Nonempty ∧
+        (D : Set ℕ) ⊆ selectedSet s ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A (k + 1)) D q ∧
+        x ∈ D ∧
+        E ∈ additiveSupportFamily A (k + 1) q ∧
+        E ∩ D = {x} ∧
+        (s j).1 ∈ E ∧
+        cell j ⊆
+          (Q.erase q).attach.biUnion support ∪ E := by
+  obtain ⟨q, hqQ⟩ := hQnonempty
+  obtain ⟨s, support, D, E, x, j, hdata⟩ :=
+    targetLocalizedAdditiveCertificate_forces_labeledFullBlockCover_atTarget
+      P hrepresented hcert hlocalized hqQ
+  exact ⟨q, hqQ, s, support, D, E, x, j, hdata⟩
+
+/-- A large localized target set creates growth down every fixed support
+column, unless one support survives many distinct localizing selectors.
+
+Fix `r ∈ Q`.  For every other target `q`, choose its localizing selector.
+Since that selector destroys only `q` inside `Q`, choose an order-`k+1`
+support of `r` which it misses.  Pigeonhole the resulting column by its
+support value.  Either there are many distinct supports at the *same*
+target `r`, or one fixed support of `r` is simultaneously witnessed to
+survive many different target localizers.
+
+This is the direct second-order payoff of universal localization: growing
+certificate cardinality can no longer remain anonymous. -/
+theorem targetLocalizedAdditiveFamily_fixedColumn_supportGrowth_or_repeatedCommonSurvival
+    {A : Set ℕ} {k K R : ℕ}
+    {cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {r : ℕ}
+    (hrQ : r ∈ Q)
+    (hlocalized :
+      ∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q')
+    (hlarge : K * R < (Q.erase r).card) :
+    (∃ M : Finset (Finset ℕ),
+        M ⊆ additiveSupportFamily A (k + 1) r ∧
+        R < M.card) ∨
+      ∃ E ∈ additiveSupportFamily A (k + 1) r,
+        ∃ T : Finset {q // q ∈ Q.erase r},
+          T ⊆ (Q.erase r).attach ∧
+          K < T.card ∧
+          ∀ p ∈ T, ∃ s : BlockSelector cell,
+            DestroysAt
+              (additiveSupportFamily A (k + 1))
+              (selectedSet s) p.1 ∧
+            (∀ q' ∈ Q, q' ≠ p.1 →
+              ¬ DestroysAt
+                (additiveSupportFamily A (k + 1))
+                (selectedSet s) q') ∧
+            Disjoint (E : Set ℕ) (selectedSet s) := by
+  classical
+  have hselectorExists :
+      ∀ p : {q // q ∈ Q.erase r},
+        ∃ s : BlockSelector cell,
+          DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) p.1 ∧
+          (∀ q' ∈ Q, q' ≠ p.1 →
+            ¬ DestroysAt
+              (additiveSupportFamily A (k + 1))
+              (selectedSet s) q') ∧
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) r := by
+    intro p
+    have hpQ : p.1 ∈ Q :=
+      (Finset.mem_erase.mp p.2).2
+    have hpr : p.1 ≠ r :=
+      (Finset.mem_erase.mp p.2).1
+    obtain ⟨s, hpDestroy, hother⟩ :=
+      hlocalized p.1 hpQ
+    exact ⟨s, hpDestroy, hother,
+      hother r hrQ hpr.symm⟩
+  choose localizer hlocalizerData using hselectorExists
+  have hsupportExists :
+      ∀ p : {q // q ∈ Q.erase r},
+        ∃ E ∈ additiveSupportFamily A (k + 1) r,
+          Disjoint (E : Set ℕ)
+            (selectedSet (localizer p)) := by
+    intro p
+    exact not_destroysAt_iff.mp
+      (hlocalizerData p).2.2
+  choose column hcolumnMem hcolumnDisjoint using
+    hsupportExists
+  have hlargeAttach :
+      K * R < (Q.erase r).attach.card := by
+    simpa using hlarge
+  obtain hgrowth | hrepeated :=
+    large_finset_image_or_large_fiber
+      (Q.erase r).attach column K R hlargeAttach
+  · left
+    refine ⟨(Q.erase r).attach.image column, ?_,
+      hgrowth⟩
+    intro E hE
+    obtain ⟨p, _hpAttach, rfl⟩ :=
+      Finset.mem_image.mp hE
+    exact hcolumnMem p
+  · right
+    obtain ⟨E, hEimage, hEfiber⟩ := hrepeated
+    obtain ⟨p₀, _hp₀Attach, hp₀E⟩ :=
+      Finset.mem_image.mp hEimage
+    have hER :
+        E ∈ additiveSupportFamily A (k + 1) r := by
+      rw [← hp₀E]
+      exact hcolumnMem p₀
+    let T :=
+      (Q.erase r).attach.filter fun p => column p = E
+    refine ⟨E, hER, T, Finset.filter_subset _ _,
+      by simpa only [T] using hEfiber, ?_⟩
+    intro p hpT
+    have hpColumn : column p = E :=
+      (Finset.mem_filter.mp hpT).2
+    refine ⟨localizer p, (hlocalizerData p).1,
+      (hlocalizerData p).2.1, ?_⟩
+    rw [← hpColumn]
+    exact hcolumnDisjoint p
+
+/-- Rooted-matching normalization of fixed-column growth.
+
+If the localized target set is larger than
+`K * additiveRootedMatchingBound (k+1) demand` away from `r`, then either
+the fixed column already contains a rooted matching with more than
+`demand` petals at the exact target `r`, or one fixed support of `r`
+survives more than `K` distinct localizing selectors. -/
+theorem targetLocalizedAdditiveFamily_fixedColumn_rootedMatching_or_repeatedCommonSurvival
+    {A : Set ℕ} {k K demand : ℕ}
+    {cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {r : ℕ}
+    (hrQ : r ∈ Q)
+    (hlocalized :
+      ∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q')
+    (hlarge :
+      K * additiveRootedMatchingBound (k + 1) demand <
+        (Q.erase r).card) :
+    (∃ root : Finset ℕ, ∃ M : Finset (Finset ℕ),
+        root.card < k + 1 ∧
+        M ⊆ additiveSupportFamily A (k + 1) r ∧
+        demand < M.card ∧
+        (∀ E ∈ M, root ⊆ E) ∧
+        (∀ E ∈ M, (E \ root).Nonempty) ∧
+        ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+          Disjoint (E \ root) (G \ root)) ∨
+      ∃ E ∈ additiveSupportFamily A (k + 1) r,
+        ∃ T : Finset {q // q ∈ Q.erase r},
+          T ⊆ (Q.erase r).attach ∧
+          K < T.card ∧
+          ∀ p ∈ T, ∃ s : BlockSelector cell,
+            DestroysAt
+              (additiveSupportFamily A (k + 1))
+              (selectedSet s) p.1 ∧
+            (∀ q' ∈ Q, q' ≠ p.1 →
+              ¬ DestroysAt
+                (additiveSupportFamily A (k + 1))
+                (selectedSet s) q') ∧
+            Disjoint (E : Set ℕ) (selectedSet s) := by
+  obtain hgrowth | hrepeated :=
+    targetLocalizedAdditiveFamily_fixedColumn_supportGrowth_or_repeatedCommonSurvival
+      (A := A) (k := k) hrQ hlocalized hlarge
+  · obtain ⟨𝒢, h𝒢sub, h𝒢large⟩ := hgrowth
+    obtain ⟨root, M, hrootCard, hM𝒢, hMcard,
+        hMroot, hMnonempty, hMmatching⟩ :=
+      additiveSupportSubfamily_has_large_rootedMatching
+        (k + 1) demand r 𝒢 h𝒢sub
+          (Nat.le_of_lt h𝒢large)
+    exact Or.inl ⟨root, M, hrootCard,
+      hM𝒢.trans h𝒢sub, hMcard, hMroot,
+      hMnonempty, hMmatching⟩
+  · exact Or.inr hrepeated
 
 /-- A bounded finite family covering `V` is either genuinely
 oversaturated or contains an almost-spanning matching.
