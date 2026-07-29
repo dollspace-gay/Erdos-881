@@ -47985,6 +47985,671 @@ theorem HasAlignedTranslatedSurvivalDestructionStream.source_survives
     hdestroy (support n)
       (hsupportMem n) (hsupportY n)
 
+/-- Cofinal literal translation-hole fans with their full rooted source
+matching retained.
+
+The fan at index `n` has more than `n` distinct source-petal points, all
+of whose translates by the one aligned positive displacement are absent
+from `A`. -/
+def HasCofinalLiteralTranslatedHoleFans
+    (A : Set ℕ) (k : ℕ) : Prop :=
+  ∃ sourceTarget destroyedTarget displacement : ℕ → ℕ,
+  ∃ sourceRoot : ℕ → Finset ℕ,
+  ∃ sourceMatching : ℕ → Finset (Finset ℕ),
+  ∃ holes : ℕ → Finset ℕ,
+    StrictMono sourceTarget ∧
+    StrictMono destroyedTarget ∧
+    (∀ n,
+      sourceTarget n < destroyedTarget n ∧
+      destroyedTarget n < sourceTarget (n + 1)) ∧
+    (∀ n, 0 < displacement n) ∧
+    (∀ n,
+      destroyedTarget n =
+        sourceTarget n + displacement n) ∧
+    (∀ n, (sourceRoot n).card < k + 1) ∧
+    (∀ n,
+      sourceMatching n ⊆
+        additiveSupportFamily A (k + 1) (sourceTarget n)) ∧
+    (∀ n, ∀ E ∈ sourceMatching n,
+      sourceRoot n ⊆ E) ∧
+    (∀ n, ∀ E ∈ sourceMatching n,
+      (E \ sourceRoot n).Nonempty) ∧
+    (∀ n, ∀ E ∈ sourceMatching n,
+      ∀ G ∈ sourceMatching n, E ≠ G →
+        Disjoint (E \ sourceRoot n) (G \ sourceRoot n)) ∧
+    ∀ n,
+      holes n ⊆
+        (sourceMatching n).biUnion
+          (fun E => E \ sourceRoot n) ∧
+      n < (holes n).card ∧
+      ∀ a ∈ holes n, a + displacement n ∉ A
+
+/-- One infinite deletion preserving both levels of a strictly interlaced
+successor-order target stream. -/
+def HasInterlacedDoubleSurvivalStream
+    (A : Set ℕ) (k : ℕ) : Prop :=
+  ∃ deletion : Set ℕ,
+  ∃ lowerTarget upperTarget displacement : ℕ → ℕ,
+    deletion ⊆ A ∧
+    deletion.Infinite ∧
+    StrictMono lowerTarget ∧
+    StrictMono upperTarget ∧
+    (∀ n,
+      lowerTarget n < upperTarget n ∧
+      upperTarget n < lowerTarget (n + 1)) ∧
+    (∀ n, 0 < displacement n) ∧
+    (∀ n,
+      upperTarget n =
+        lowerTarget n + displacement n) ∧
+    (∀ n,
+      ∃ E ∈
+        additiveSupportFamily A (k + 1) (lowerTarget n),
+        Disjoint (E : Set ℕ) deletion) ∧
+    ∀ n,
+      ∃ F ∈
+        additiveSupportFamily A (k + 1) (upperTarget n),
+        Disjoint (F : Set ℕ) deletion
+
+/-- Junk test for the cofinal literal-hole fan endpoint.
+
+At index `|Aᶜ|`, translation by the positive stage displacement injects
+more than `|Aᶜ|` holes into the finite complement, an immediate
+cardinality contradiction. -/
+theorem finiteComplement_forbids_cofinalLiteralTranslatedHoleFans
+    {A : Set ℕ} {k : ℕ}
+    (hcomplement : Aᶜ.Finite) :
+    ¬ HasCofinalLiteralTranslatedHoleFans A k := by
+  classical
+  intro hfans
+  obtain ⟨_source, _destroyed, displacement,
+      _root, _matching, holes, _hsourceStrict,
+      _hdestroyedStrict, _hinterlaced, _hδpos,
+      _hqδ, _hrootCard, _hmatchingSub, _hrootSub,
+      _hpetalNonempty, _hpetalMatching, hholes⟩ :=
+    hfans
+  let n := hcomplement.toFinset.card
+  have hshiftSubset :
+      (holes n).image (fun a => a + displacement n) ⊆
+        hcomplement.toFinset := by
+    intro x hx
+    obtain ⟨a, haHole, rfl⟩ :=
+      Finset.mem_image.mp hx
+    exact hcomplement.mem_toFinset.mpr
+      ((hholes n).2.2 a haHole)
+  have hshiftInjective :
+      Set.InjOn (fun a => a + displacement n)
+        (holes n : Set ℕ) := by
+    intro a _ha b _hb hab
+    exact Nat.add_right_cancel hab
+  have hcard :
+      (holes n).card ≤ hcomplement.toFinset.card := by
+    rw [← Finset.card_image_iff.mpr hshiftInjective]
+    exact Finset.card_le_card hshiftSubset
+  exact (Nat.not_lt_of_ge hcard) (hholes n).2.1
+
+/-- Merge the two interlaced surviving target streams into one strict
+stream on the same infinite deletion.
+
+Even indices use the lower targets and odd indices use the inserted upper
+targets.  This is the interface needed to feed the doubled branch back
+through the existing destroyed-target bracketing machinery without
+discarding half of its new information. -/
+theorem HasInterlacedDoubleSurvivalStream.mergedSurvivalStream
+    {A : Set ℕ} {k : ℕ}
+    (hdouble :
+      HasInterlacedDoubleSurvivalStream A k) :
+    ∃ deletion : Set ℕ, ∃ target : ℕ → ℕ,
+      deletion ⊆ A ∧
+      deletion.Infinite ∧
+      StrictMono target ∧
+      ∀ n,
+        ∃ E ∈
+          additiveSupportFamily A (k + 1) (target n),
+          Disjoint (E : Set ℕ) deletion := by
+  classical
+  obtain ⟨X, lower, upper, _displacement,
+      hXA, hXInfinite,
+      _hlowerStrict, _hupperStrict, hinterlaced,
+      _hdisplacementPos, _hupperEq,
+      hlowerSurvival, hupperSurvival⟩ :=
+    hdouble
+  let merged : ℕ → ℕ :=
+    Stream'.interleave lower upper
+  have hmergedEven :
+      ∀ n, merged (2 * n) = lower n := by
+    intro n
+    simpa only [merged] using
+      (Stream'.get_interleave_left n lower upper)
+  have hmergedOdd :
+      ∀ n, merged (2 * n + 1) = upper n := by
+    intro n
+    simpa only [merged] using
+      (Stream'.get_interleave_right n lower upper)
+  have hmergedStep :
+      ∀ n, merged n < merged (n + 1) := by
+    intro n
+    rcases Nat.even_or_odd n with
+        ⟨m, hm⟩ | ⟨m, hm⟩
+    · have hn : n = 2 * m := by omega
+      subst n
+      rw [hn, hmergedEven, hmergedOdd]
+      exact (hinterlaced m).1
+    · have hn : n = 2 * m + 1 := by omega
+      subst n
+      have hnext :
+          2 * m + 1 + 1 = 2 * (m + 1) := by
+        omega
+      rw [hmergedOdd, hnext, hmergedEven]
+      exact (hinterlaced m).2
+  refine
+    ⟨X, merged, hXA, hXInfinite,
+      strictMono_nat_of_lt_succ hmergedStep, ?_⟩
+  intro n
+  rcases Nat.even_or_odd n with
+      ⟨m, hm⟩ | ⟨m, hm⟩
+  · have hn : n = 2 * m := by omega
+    subst n
+    rw [hn, hmergedEven]
+    exact hlowerSurvival m
+  · have hn : n = 2 * m + 1 := by omega
+    subst n
+    rw [hmergedOdd]
+    exact hupperSurvival m
+
+/-- Cofinal successor-order failures in the open gaps between two surviving
+target streams, together with the represented current-order predecessor
+failures obtained by descending through the left endpoint support. -/
+def HasCofinalRepresentedPredecessorFailuresInGaps
+    (A X : Set ℕ) (k : ℕ)
+    (leftTarget rightTarget : ℕ → ℕ) : Prop :=
+  ∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a,
+    L ≤ n ∧
+    leftTarget n < m ∧
+    m < rightTarget n ∧
+    E ∈
+      additiveSupportFamily A (k + 1) (leftTarget n) ∧
+    Disjoint (E : Set ℕ) X ∧
+    DestroysAt
+      (additiveSupportFamily A (k + 1)) X m ∧
+    a ∈ E ∧
+    (k + 1) * a ≤ leftTarget n ∧
+    L ≤ m - a ∧
+    (additiveSupportFamily A k (m - a)).Nonempty ∧
+    DestroysAt
+      (additiveSupportFamily A k) X (m - a)
+
+/-- The doubled-survival branch re-enters the arithmetic attack without
+losing the aligned displacement.
+
+Merge the lower and upper surviving targets and bracket the cofinal
+successor-order failures forced by the counterexample.  Parity gives a
+genuine cardinal fork: failures occur cofinally either inside the aligned
+gaps
+
+`lower n < m < upper n = lower n + displacement n`,
+
+or inside the intervening cross-gaps
+
+`upper n < m < lower (n + 1)`.
+
+In either case the same infinite deletion destroys cofinally represented
+order-`k` predecessor differences.  The explicit displacement equation and
+both original survival streams remain in the conclusion, so this does not
+collapse the branch back to the older unaligned fused endpoint. -/
+theorem HasInterlacedDoubleSurvivalStream.forces_aligned_or_crossGap_failures
+    {A : Set ℕ} {k : ℕ}
+    (hkpos : 0 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1))
+    (hdouble :
+      HasInterlacedDoubleSurvivalStream A k) :
+    ∃ X : Set ℕ,
+    ∃ lower upper displacement : ℕ → ℕ,
+      X ⊆ A ∧
+      X.Infinite ∧
+      StrictMono lower ∧
+      StrictMono upper ∧
+      (∀ n,
+        lower n < upper n ∧
+        upper n < lower (n + 1)) ∧
+      (∀ n, 0 < displacement n) ∧
+      (∀ n,
+        upper n = lower n + displacement n) ∧
+      (∀ n,
+        ∃ E ∈
+          additiveSupportFamily A (k + 1) (lower n),
+          Disjoint (E : Set ℕ) X) ∧
+      (∀ n,
+        ∃ E ∈
+          additiveSupportFamily A (k + 1) (upper n),
+          Disjoint (E : Set ℕ) X) ∧
+      (HasCofinalRepresentedPredecessorFailuresInGaps
+          A X k lower upper ∨
+        HasCofinalRepresentedPredecessorFailuresInGaps
+          A X k upper (fun n => lower (n + 1))) := by
+  classical
+  obtain ⟨X, lower, upper, displacement,
+      hXA, hXInfinite, hlowerStrict, hupperStrict,
+      hinterlaced, hdisplacementPos, hupperEq,
+      hlowerSurvival, hupperSurvival⟩ :=
+    hdouble
+  let merged : ℕ → ℕ :=
+    Stream'.interleave lower upper
+  have hmergedEven :
+      ∀ n, merged (2 * n) = lower n := by
+    intro n
+    simpa only [merged] using
+      (Stream'.get_interleave_left n lower upper)
+  have hmergedOdd :
+      ∀ n, merged (2 * n + 1) = upper n := by
+    intro n
+    simpa only [merged] using
+      (Stream'.get_interleave_right n lower upper)
+  have hmergedStep :
+      ∀ n, merged n < merged (n + 1) := by
+    intro n
+    rcases Nat.even_or_odd n with
+        ⟨r, hr⟩ | ⟨r, hr⟩
+    · have hn : n = 2 * r := by omega
+      subst n
+      rw [hn, hmergedEven, hmergedOdd]
+      exact (hinterlaced r).1
+    · have hn : n = 2 * r + 1 := by omega
+      subst n
+      have hnext :
+          2 * r + 1 + 1 = 2 * (r + 1) := by
+        omega
+      rw [hmergedOdd, hnext, hmergedEven]
+      exact (hinterlaced r).2
+  have hmergedStrict : StrictMono merged :=
+    strictMono_nat_of_lt_succ hmergedStep
+  have hmergedSurvival :
+      ∀ n,
+        ∃ E ∈
+          additiveSupportFamily A (k + 1) (merged n),
+          Disjoint (E : Set ℕ) X := by
+    intro n
+    rcases Nat.even_or_odd n with
+        ⟨r, hr⟩ | ⟨r, hr⟩
+    · have hn : n = 2 * r := by omega
+      subst n
+      rw [hn, hmergedEven]
+      exact hlowerSurvival r
+    · have hn : n = 2 * r + 1 := by omega
+      subst n
+      rw [hmergedOdd]
+      exact hupperSurvival r
+  have hsuccessorDestroy :
+      ∀ N, ∃ m, N ≤ m ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) X m :=
+    strongExactDeletion_of_counterexample
+      hcounter X hXA hXInfinite
+  have hrepresented :=
+    bracketedDestroyedSuccessorTargets_force_cofinalRepresentedPredecessorDestroyers
+      hkpos hbasis hmergedStrict hmergedSurvival
+        hsuccessorDestroy
+  let InsideWitness : ℕ → ℕ → Prop := fun L n =>
+    ∃ m, ∃ E : Finset ℕ, ∃ a,
+      lower n < m ∧
+      m < upper n ∧
+      E ∈
+        additiveSupportFamily A (k + 1) (lower n) ∧
+      Disjoint (E : Set ℕ) X ∧
+      DestroysAt
+        (additiveSupportFamily A (k + 1)) X m ∧
+      a ∈ E ∧
+      (k + 1) * a ≤ lower n ∧
+      L ≤ m - a ∧
+      (additiveSupportFamily A k (m - a)).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A k) X (m - a)
+  refine
+    ⟨X, lower, upper, displacement, hXA, hXInfinite,
+      hlowerStrict, hupperStrict, hinterlaced,
+      hdisplacementPos, hupperEq, hlowerSurvival,
+      hupperSurvival, ?_⟩
+  by_cases hinside :
+      ∀ L, ∃ n, L ≤ n ∧ InsideWitness L n
+  · left
+    intro L
+    obtain ⟨n, hnL, m, E, a, hnm, hmu,
+        hEmem, hEX, hmDestroy, haE, haAverage,
+        hdiffL, hdiffNonempty, hdiffDestroy⟩ :=
+      hinside L
+    exact
+      ⟨n, m, E, a, hnL, hnm, hmu, hEmem,
+        hEX, hmDestroy, haE, haAverage, hdiffL,
+        hdiffNonempty, hdiffDestroy⟩
+  · right
+    obtain ⟨L₀, hL₀⟩ :=
+      not_forall.mp hinside
+    intro L
+    let request := 2 * max L L₀
+    obtain ⟨j, m, E, a, hjRequest,
+        hjm, hmj, hEmem, hEX, hmDestroy,
+        haE, haAverage, hdiffRequest,
+        hdiffNonempty, hdiffDestroy⟩ :=
+      hrepresented request
+    rcases Nat.even_or_odd j with
+        ⟨n, hn⟩ | ⟨n, hn⟩
+    · have hj : j = 2 * n := by omega
+      have hnL₀ : L₀ ≤ n := by
+        dsimp only [request] at hjRequest
+        omega
+      apply False.elim
+      apply hL₀
+      refine ⟨n, hnL₀, m, E, a, ?_, ?_, ?_,
+        hEX, hmDestroy, haE, ?_, ?_, hdiffNonempty,
+        hdiffDestroy⟩
+      · simpa only [hj, hmergedEven] using hjm
+      · have hnext :
+            j + 1 = 2 * n + 1 := by omega
+        simpa only [hnext, hmergedOdd] using hmj
+      · simpa only [hj, hmergedEven] using hEmem
+      · simpa only [hj, hmergedEven] using haAverage
+      · dsimp only [request] at hdiffRequest
+        omega
+    · have hj : j = 2 * n + 1 := by omega
+      have hnL : L ≤ n := by
+        dsimp only [request] at hjRequest
+        omega
+      have hnext :
+          j + 1 = 2 * (n + 1) := by omega
+      refine ⟨n, m, E, a, hnL, ?_, ?_, ?_,
+        hEX, hmDestroy, haE, ?_, ?_, hdiffNonempty,
+        hdiffDestroy⟩
+      · simpa only [hj, hmergedOdd] using hjm
+      · simpa only [hnext, hmergedEven] using hmj
+      · simpa only [hj, hmergedOdd] using hEmem
+      · simpa only [hj, hmergedOdd] using haAverage
+      · dsimp only [request] at hdiffRequest
+        omega
+
+/-- The aligned translated stream has only two global cardinal outcomes.
+
+If non-singleton minimal destroyers occur infinitely often, erase one
+chosen point from each and apply whole-block co-singleton fusion.  The
+private repairs preserve the destroyed targets, while the old protected
+supports preserve the source targets because the new deletion is a subset
+of the old one.  This yields a doubled interlaced survival stream.
+
+Otherwise the pairwise-disjoint destroyers are eventually singletons.
+For every late source rooted matching, translation exit injects all
+basis-valued petal translates into that singleton.  Since the matching
+size grows with the stream index, the remaining literal holes form
+cofinally large fans.
+
+Thus the finite-destroyer cardinal fork is consumed into two operational
+infinite objects; there is no bounded third branch. -/
+theorem HasAlignedTranslatedSurvivalDestructionStream.holeFans_or_doubleSurvival
+    {A : Set ℕ} {k : ℕ}
+    (hstream :
+      HasAlignedTranslatedSurvivalDestructionStream A k) :
+    HasCofinalLiteralTranslatedHoleFans A k ∨
+      HasInterlacedDoubleSurvivalStream A k := by
+  classical
+  obtain ⟨Y, source, destroyedTarget, displacement,
+      support, destroyer, sourceRoot, sourceMatching,
+      hYA, hYInfinite, hsourceStrict,
+      hdestroyedStrict, hinterlaced, hδpos, hqδ,
+      hsupportMem, hsupportY, hrootCard,
+      hmatchingLarge, hmatchingSub, hrootSub,
+      hpetalNonempty, hpetalMatching, hmatchingD,
+      hDnonempty, hDY, hDpairwise, hDminimal,
+      _hdestroyed⟩ :=
+    hstream
+  let I : Set ℕ :=
+    {n | 1 < (destroyer n).card}
+  by_cases hIInfinite : I.Infinite
+  · right
+    let kept : ℕ → ℕ := fun n =>
+      (hDnonempty n).choose
+    have hkept :
+        ∀ n, kept n ∈ destroyer n := by
+      intro n
+      exact (hDnonempty n).choose_spec
+    have hcosingleton :
+        ∀ n ∈ I,
+          ((destroyer n).erase (kept n)).Nonempty := by
+      intro n hnI
+      rw [← Finset.card_pos,
+        Finset.card_erase_of_mem (hkept n)]
+      change 1 < (destroyer n).card at hnI
+      omega
+    obtain ⟨L, X, repair, hLI, hLInfinite, hXeq,
+        hXA, hXInfinite, hrepairData, _hdescent⟩ :=
+      freshMinimalDestroyer_cosingletons_fuse_at_certificateMax
+        destroyer destroyedTarget kept hIInfinite
+        (fun n _hnI => (hDY n).trans hYA)
+        (fun i _hiI j _hjI hij => hDpairwise i j hij)
+        (fun n _hnI => hkept n)
+        hcosingleton
+        (fun n _hnI => hDminimal n)
+    have hXY : X ⊆ Y := by
+      rw [hXeq]
+      rintro x ⟨i, hiL, hxErase⟩
+      exact hDY i
+        (Finset.mem_coe.mpr
+          (Finset.mem_of_mem_erase hxErase))
+    let index : ℕ → ℕ := Nat.nth fun n => n ∈ L
+    have hindexL : ∀ n, index n ∈ L := by
+      intro n
+      exact Nat.nth_mem_of_infinite hLInfinite n
+    have hindexStrict : StrictMono index :=
+      Nat.nth_strictMono hLInfinite
+    refine
+      ⟨X, fun n => source (index n),
+        fun n => destroyedTarget (index n),
+        fun n => displacement (index n),
+        hXA, hXInfinite,
+        hsourceStrict.comp hindexStrict,
+        hdestroyedStrict.comp hindexStrict,
+        ?_, ?_, ?_, ?_, ?_⟩
+    · intro n
+      refine ⟨?_, ?_⟩
+      · change
+          source (index n) <
+            destroyedTarget (index n)
+        rw [hqδ (index n)]
+        exact Nat.lt_add_of_pos_right
+          (hδpos (index n))
+      · change
+          destroyedTarget (index n) <
+            source (index (n + 1))
+        calc
+          destroyedTarget (index n) <
+              source (index n + 1) :=
+            hinterlaced (index n)
+          _ ≤ source (index (n + 1)) :=
+            hsourceStrict.monotone
+              (Nat.succ_le_iff.mpr
+                (hindexStrict (Nat.lt_succ_self n)))
+    · intro n
+      exact hδpos (index n)
+    · intro n
+      exact hqδ (index n)
+    · intro n
+      exact
+        ⟨support (index n), hsupportMem (index n),
+          Set.disjoint_of_subset_right hXY
+            (hsupportY (index n))⟩
+    · intro n
+      exact
+        ⟨repair (index n),
+          (hrepairData (index n) (hindexL n)).2.1,
+          (hrepairData (index n) (hindexL n)).2.2.2.1⟩
+  · left
+    have hIFinite : I.Finite :=
+      Set.not_infinite.mp hIInfinite
+    obtain ⟨bound, hbound⟩ :=
+      hIFinite.bddAbove
+    let index : ℕ → ℕ := fun n => bound + 1 + n
+    have hindexStrict : StrictMono index := by
+      intro i j hij
+      dsimp only [index]
+      omega
+    have hDsmall :
+        ∀ n, (destroyer (index n)).card ≤ 1 := by
+      intro n
+      by_contra hlarge
+      have hmemI : index n ∈ I := by
+        exact (show 1 < (destroyer (index n)).card by omega)
+      have hle := hbound hmemI
+      dsimp only [index] at hle
+      omega
+    let V : ℕ → Finset ℕ := fun n =>
+      (sourceMatching (index n)).biUnion
+        (fun E => E \ sourceRoot (index n))
+    let Vin : ℕ → Finset ℕ := fun n =>
+      (V n).filter fun a =>
+        a + displacement (index n) ∈ A
+    let holes : ℕ → Finset ℕ := fun n =>
+      (V n).filter fun a =>
+        a + displacement (index n) ∉ A
+    have hMcardV :
+        ∀ n,
+          (sourceMatching (index n)).card ≤
+            (V n).card := by
+      intro n
+      let pick :
+          {E // E ∈ sourceMatching (index n)} →
+            {x // x ∈ V n} := fun E =>
+        ⟨(hpetalNonempty (index n) E.1 E.2).choose,
+          Finset.mem_biUnion.mpr
+            ⟨E.1, E.2,
+              (hpetalNonempty
+                (index n) E.1 E.2).choose_spec⟩⟩
+      have hpickPetal :
+          ∀ E : {E // E ∈ sourceMatching (index n)},
+            (pick E).1 ∈
+              E.1 \ sourceRoot (index n) := by
+        intro E
+        exact
+          (hpetalNonempty
+            (index n) E.1 E.2).choose_spec
+      have hpickInjective : Function.Injective pick := by
+        intro E G hEG
+        apply Subtype.ext
+        by_contra hne
+        have hpointEq : (pick E).1 = (pick G).1 :=
+          congrArg Subtype.val hEG
+        exact
+          (Finset.not_disjoint_iff.mpr
+            ⟨(pick E).1, hpickPetal E,
+              hpointEq ▸ hpickPetal G⟩)
+          (hpetalMatching (index n)
+            E.1 E.2 G.1 G.2 hne)
+      simpa only [Fintype.card_coe] using
+        Fintype.card_le_of_injective pick hpickInjective
+    have htranslateExit :
+        ∀ n, ∀ a ∈ V n,
+          a + displacement (index n) ∈ A →
+            a + displacement (index n) ∈
+              destroyer (index n) := by
+      intro n a haV haShiftA
+      obtain ⟨E, hEM, haPetal⟩ :=
+        Finset.mem_biUnion.mp haV
+      exact
+        alignedSurvivalDestruction_forces_translationExit
+          (hmatchingSub (index n) hEM)
+          (by
+            simpa using
+              hmatchingD (index n) E hEM)
+          (hqδ (index n))
+          (hDminimal (index n)).1
+          a (Finset.mem_sdiff.mp haPetal).1 haShiftA
+    have hVinCard :
+        ∀ n, (Vin n).card ≤
+          (destroyer (index n)).card := by
+      intro n
+      have hshiftSubset :
+          (Vin n).image
+              (fun a => a + displacement (index n)) ⊆
+            destroyer (index n) := by
+        intro x hx
+        obtain ⟨a, haVin, rfl⟩ :=
+          Finset.mem_image.mp hx
+        exact htranslateExit n a
+          (Finset.mem_filter.mp haVin).1
+          (Finset.mem_filter.mp haVin).2
+      have hshiftInjective :
+          Set.InjOn
+            (fun a => a + displacement (index n))
+            (Vin n : Set ℕ) := by
+        intro a _ha b _hb hab
+        exact Nat.add_right_cancel hab
+      rw [← Finset.card_image_iff.mpr hshiftInjective]
+      exact Finset.card_le_card hshiftSubset
+    have hholesLarge :
+        ∀ n, n < (holes n).card := by
+      intro n
+      have hsplit :
+          (Vin n).card + (holes n).card = (V n).card := by
+        simpa only [Vin, holes, not_not] using
+          (Finset.card_filter_add_card_filter_not
+            (s := V n)
+            (fun a =>
+              a + displacement (index n) ∈ A))
+      have hmatching :=
+        hmatchingLarge (index n)
+      have hMV := hMcardV n
+      have hVin := hVinCard n
+      have hD := hDsmall n
+      have hnIndex : n ≤ index n := by
+        dsimp only [index]
+        omega
+      omega
+    refine
+      ⟨fun n => source (index n),
+        fun n => destroyedTarget (index n),
+        fun n => displacement (index n),
+        fun n => sourceRoot (index n),
+        fun n => sourceMatching (index n),
+        holes,
+        hsourceStrict.comp hindexStrict,
+        hdestroyedStrict.comp hindexStrict,
+        ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · intro n
+      refine ⟨?_, ?_⟩
+      · change
+          source (index n) <
+            destroyedTarget (index n)
+        rw [hqδ (index n)]
+        exact Nat.lt_add_of_pos_right
+          (hδpos (index n))
+      · have hindexSucc :
+            index (n + 1) = index n + 1 := by
+          simp [index, Nat.add_assoc]
+        change
+          destroyedTarget (index n) <
+            source (index (n + 1))
+        rw [hindexSucc]
+        exact hinterlaced (index n)
+    · intro n
+      exact hδpos (index n)
+    · intro n
+      exact hqδ (index n)
+    · intro n
+      exact hrootCard (index n)
+    · intro n
+      exact hmatchingSub (index n)
+    · intro n E hEM
+      exact hrootSub (index n) E hEM
+    · intro n E hEM
+      exact hpetalNonempty (index n) E hEM
+    · intro n E hEM G hGM hEG
+      exact
+        hpetalMatching (index n)
+          E hEM G hGM hEG
+    · intro n
+      refine
+        ⟨Finset.filter_subset _ _,
+          hholesLarge n, ?_⟩
+      intro a haHole
+      exact (Finset.mem_filter.mp haHole).2
+
 /-- A cofinal supply of exact finite translated pairs fuses into one
 aligned infinite deletion.
 
@@ -48448,6 +49113,24 @@ theorem exactBasis_counterexample_forces_alignedTranslatedStream
     hKA P htargetStrict
   intro scale
   exact (hstages scale).exists_alignedTailPair P
+
+/-- Counterexample-level cardinal consumption of the complete aligned
+destroyer stream.
+
+Every hypothetical hard-order counterexample therefore forces either
+cofinally large literal translated-hole fans, or one infinite deletion on
+which both targets of a strictly interlaced translated pair stream survive.
+The finite minimal destroyer size is no longer a terminal parameter. -/
+theorem exactBasis_counterexample_forces_holeFans_or_doubleSurvival
+    {A : Set ℕ} {k : ℕ}
+    (hk : 2 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1)) :
+    HasCofinalLiteralTranslatedHoleFans A k ∨
+      HasInterlacedDoubleSurvivalStream A k :=
+  (exactBasis_counterexample_forces_alignedTranslatedStream
+    hk hbasis hcounter).holeFans_or_doubleSurvival
 
 /-- A cofinal supply of ambient pointed fusion steps produces the complete
 fused successor/predecessor endpoint.

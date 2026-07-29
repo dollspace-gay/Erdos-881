@@ -1,3 +1,52 @@
+# GENERAL ORDER: ALIGNED DESTROYER CARDINALITY FORK CONSUMED (2026-07-29)
+
+The finite size of the fused minimal destroyers is no longer an open
+parameter.  The machine-checked theorem
+`HasAlignedTranslatedSurvivalDestructionStream.holeFans_or_doubleSurvival`
+turns the complete aligned stream into exactly two operational infinite
+objects:
+
+- if non-singleton destroyers recur, remove one chosen point from each and
+  fuse all co-singletons.  Minimality repairs every corresponding upper
+  target, while the original protected supports preserve the lower
+  targets.  One infinite deletion therefore preserves both levels of a
+  strictly interlaced stream;
+- otherwise the destroyers are eventually singletons.  Translation exit
+  injects all basis-valued petal translates into that singleton, so the
+  remaining literal holes grow cofinally.  The resulting
+  `HasCofinalLiteralTranslatedHoleFans` retains the full source rooted
+  matching and the common stage displacement.
+
+The doubled branch explicitly retains
+
+\[
+  t_n<q_n<t_{n+1},
+  \qquad q_n=t_n+\delta_n,
+\]
+
+rather than forgetting the displacement during fusion.
+`HasInterlacedDoubleSurvivalStream.forces_aligned_or_crossGap_failures`
+then merges the two surviving streams only long enough to bracket the
+cofinal failures forced by a hypothetical counterexample.  A parity
+argument gives a direct arithmetic fork on the same deletion:
+
+- cofinally many failures lie in the aligned gaps
+  `t_n < m < q_n = t_n + δ_n`; or
+- cofinally many lie in the cross-gaps `q_n < m < t_(n+1)`.
+
+In either case, descending through the surviving left-end support produces
+cofinally represented order-`k` predecessor targets destroyed by that same
+infinite deletion.  Thus the large-destroyer horn has been returned to the
+primitive-gap/difference-composition attack without sacrificing its
+translation alignment.
+
+This still does not settle general order.  The live tasks are now concrete:
+apply the exact order-`k` representations of the literal translates in the
+hole-fan branch to force either disjoint repair structure or repeated-anchor
+rank descent; and use the retained equation in the inside-gap branch to
+compose its represented predecessor failures with the aligned source
+differences.
+
 # GENERAL ORDER: COMPLETE ALIGNED DESTROYERS FUSED (2026-07-29)
 
 The quadratic-tail construction no longer throws away the finite
