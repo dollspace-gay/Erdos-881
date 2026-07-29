@@ -30335,6 +30335,382 @@ theorem terminalFusion_destroyedSuccessorTarget_forces_cleanAnchorDiagonalMatchi
           (Finset.mem_coe.mpr hcC)
         exact hzaRoot.symm.trans hrootEq
 
+/-- A strict stream of fixed-order represented targets whose supports all
+avoid `Y` forces infinitely many clean basis points outside `Y`.
+
+If `A \ Y` were finite, its elements would have a common maximum `M`.
+Every entry of every surviving order-`k` tuple would then be at most `M`,
+so all targets in the stream would be at most `k * M`, contradicting
+strict growth. -/
+theorem strictSurvivingAdditiveTargetStream_forces_cleanComplementInfinite
+    {A Y : Set ℕ} {k : ℕ} {target : ℕ → ℕ}
+    (htarget : StrictMono target)
+    (hsurvive : ∀ n,
+      ∃ E ∈ additiveSupportFamily A k (target n),
+        Disjoint (E : Set ℕ) Y) :
+    (A \ Y).Infinite := by
+  classical
+  by_contra hnotInfinite
+  have hfinite : (A \ Y).Finite :=
+    Set.not_infinite.mp hnotInfinite
+  let clean : Finset ℕ := hfinite.toFinset
+  let M : ℕ := clean.sup id
+  have hcleanBound : ∀ x ∈ A \ Y, x ≤ M := by
+    intro x hx
+    dsimp only [M, clean]
+    simpa only [id_eq] using
+      (Finset.le_sup
+        (s := hfinite.toFinset) (f := id)
+        (hfinite.mem_toFinset.mpr hx))
+  have htargetBound : ∀ n, target n ≤ k * M := by
+    intro n
+    obtain ⟨E, hEmem, hEY⟩ := hsurvive n
+    obtain ⟨v, hvA, hvsum, hvSupport⟩ :=
+      mem_additiveSupportFamily_iff.mp hEmem
+    have hentryClean : ∀ i, (v i : ℕ) ∈ A \ Y := by
+      intro i
+      refine ⟨hvA i, ?_⟩
+      intro hviY
+      exact Set.disjoint_left.mp hEY
+        (Finset.mem_coe.mpr (by
+          rw [← hvSupport]
+          exact mem_tupleSupport_iff.mpr ⟨i, rfl⟩))
+        hviY
+    calc
+      target n = ∑ i, (v i : ℕ) := hvsum.symm
+      _ ≤ ∑ _i : Fin k, M := by
+        apply Finset.sum_le_sum
+        intro i _hi
+        exact hcleanBound (v i : ℕ) (hentryClean i)
+      _ = k * M := by simp
+  let n := k * M + 1
+  have hnTarget : n ≤ target n :=
+    htarget.id_le n
+  have := htargetBound n
+  omega
+
+/-- Cofinal successor destruction in a terminal fusion forces arbitrarily
+large same-target affine matchings.
+
+Choose any prescribed number of clean anchors from the infinite reservoir
+`A \ Y`.  Exactness of `A` at order `h` supplies a common threshold beyond
+which every predecessor `m-a` is represented.  Taking a destroyed
+successor target above that threshold plus the largest chosen anchor makes
+all those predecessors available simultaneously.  The finite affine
+amplification theorem then gives pairwise disjoint supports
+
+`{a, root a}`, with `m = a + h * root a`,
+
+whose anchors lie outside `Y` and whose distinct roots lie inside `Y`. -/
+theorem terminalFusion_cofinalSuccessorDestruction_forces_unboundedCleanAnchorDiagonalMatchings
+    {A Y : Set ℕ} {h bound : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hhpos : 0 < h)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (fusion : BlockSelector cell)
+    (hYfusion : Y ⊆ selectedSet fusion)
+    (hterminal : ∀ q, ∀ D : Finset ℕ,
+      D.Nonempty →
+      (D : Set ℕ) ⊆ selectedSet fusion →
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q →
+      D.card ≤ bound ∧
+      ∀ ℓ n,
+        0 < ℓ → ℓ < h →
+        (additiveSupportFamily A ℓ n).Nonempty →
+        ¬ DestroysAt
+          (additiveSupportFamily A ℓ)
+          (D : Set ℕ) n)
+    (hcleanInfinite : (A \ Y).Infinite)
+    (hsuccessorDestroy : ∀ N, ∃ m, N ≤ m ∧
+      DestroysAt
+        (additiveSupportFamily A (h + 1)) Y m) :
+    ∀ r, ∃ m, ∃ C : Finset ℕ, ∃ root : ℕ → ℕ,
+      r < C.card ∧
+      (C : Set ℕ) ⊆ A \ Y ∧
+      DestroysAt
+        (additiveSupportFamily A (h + 1)) Y m ∧
+      (∀ a ∈ C,
+        root a ∈ Y ∧
+        m - a = h * root a ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A h) {root a} (m - a) ∧
+        ({a, root a} : Finset ℕ) ∈
+          additiveSupportFamily A (h + 1) m ∧
+        ∀ z ∈ ({a, root a} : Finset ℕ),
+          z ∈ Y ↔ z = root a) ∧
+      Set.InjOn root (C : Set ℕ) ∧
+      ∀ a ∈ C, ∀ c ∈ C, a ≠ c →
+        Disjoint ({a, root a} : Finset ℕ)
+          ({c, root c} : Finset ℕ) := by
+  classical
+  obtain ⟨N, hN⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  intro r
+  obtain ⟨C, hCclean, hCcard⟩ :=
+    hcleanInfinite.exists_subset_card_eq (r + 1)
+  let M : ℕ := C.sup id
+  obtain ⟨m, hmLower, hmDestroy⟩ :=
+    hsuccessorDestroy (N + M)
+  have hanchorBound : ∀ a ∈ C, a ≤ M := by
+    intro a haC
+    dsimp only [M]
+    simpa only [id_eq] using
+      (Finset.le_sup (s := C) (f := id) haC)
+  have hCm : ∀ a ∈ C, a ≤ m := by
+    intro a haC
+    have haM := hanchorBound a haC
+    omega
+  have hrepresented : ∀ a ∈ C,
+      (additiveSupportFamily A h (m - a)).Nonempty := by
+    intro a haC
+    have haM := hanchorBound a haC
+    have hNdiff : N ≤ m - a := by omega
+    obtain ⟨E, hEmem, _hEempty⟩ :=
+      hN (m - a) hNdiff
+    exact ⟨E, hEmem⟩
+  have hCA : (C : Set ℕ) ⊆ A := by
+    intro a haC
+    exact (hCclean haC).1
+  have hCY : Disjoint (C : Set ℕ) Y := by
+    rw [Set.disjoint_left]
+    intro a haC haY
+    exact (hCclean haC).2 haY
+  obtain ⟨root, hrootData, hrootInj, hmatching⟩ :=
+    terminalFusion_destroyedSuccessorTarget_forces_cleanAnchorDiagonalMatching
+      hhpos fusion hYfusion hterminal hmDestroy C
+        hCA hCY hCm hrepresented
+  exact ⟨m, C, root, by omega, hCclean, hmDestroy,
+    hrootData, hrootInj, hmatching⟩
+
+/-- In the terminal fusion branch, cofinal successor destruction collapses
+the entire clean complement `A \ Y` into one residue class modulo `h`.
+
+Given two clean anchors `a,c`, take a destroyed successor target far enough
+that both predecessors are represented at order `h`.  Singleton-diagonal
+amplification gives
+
+`m - a = h * xₐ` and `m - c = h * x_c`.
+
+Thus both anchors are congruent to the common target modulo `h`, and hence
+to each other. -/
+theorem terminalFusion_cofinalSuccessorDestruction_forces_cleanResidueCollapse
+    {A Y : Set ℕ} {h bound : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hhpos : 0 < h)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (fusion : BlockSelector cell)
+    (hYfusion : Y ⊆ selectedSet fusion)
+    (hterminal : ∀ q, ∀ D : Finset ℕ,
+      D.Nonempty →
+      (D : Set ℕ) ⊆ selectedSet fusion →
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q →
+      D.card ≤ bound ∧
+      ∀ ℓ n,
+        0 < ℓ → ℓ < h →
+        (additiveSupportFamily A ℓ n).Nonempty →
+        ¬ DestroysAt
+          (additiveSupportFamily A ℓ)
+          (D : Set ℕ) n)
+    (hcleanInfinite : (A \ Y).Infinite)
+    (hsuccessorDestroy : ∀ N, ∃ m, N ≤ m ∧
+      DestroysAt
+        (additiveSupportFamily A (h + 1)) Y m) :
+    ∃ a ∈ A \ Y, ∀ c ∈ A \ Y,
+      Nat.ModEq h c a := by
+  classical
+  obtain ⟨N, hN⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  obtain ⟨a, haClean⟩ := hcleanInfinite.nonempty
+  refine ⟨a, haClean, ?_⟩
+  intro c hcClean
+  let C : Finset ℕ := {a, c}
+  obtain ⟨m, hmLower, hmDestroy⟩ :=
+    hsuccessorDestroy (N + max a c)
+  have hCclean : (C : Set ℕ) ⊆ A \ Y := by
+    intro z hzC
+    have hzCases : z = a ∨ z = c := by
+      simpa only [C, Finset.mem_coe, Finset.mem_insert,
+        Finset.mem_singleton] using hzC
+    rcases hzCases with rfl | rfl
+    · exact haClean
+    · exact hcClean
+  have hCm : ∀ z ∈ C, z ≤ m := by
+    intro z hzC
+    have hzCases : z = a ∨ z = c := by
+      simpa only [C, Finset.mem_insert,
+        Finset.mem_singleton] using hzC
+    rcases hzCases with rfl | rfl <;> omega
+  have hrepresented : ∀ z ∈ C,
+      (additiveSupportFamily A h (m - z)).Nonempty := by
+    intro z hzC
+    have hzCases : z = a ∨ z = c := by
+      simpa only [C, Finset.mem_insert,
+        Finset.mem_singleton] using hzC
+    have hzMax : z ≤ max a c := by
+      rcases hzCases with rfl | rfl
+      · exact le_max_left _ _
+      · exact le_max_right _ _
+    have hNdiff : N ≤ m - z := by omega
+    obtain ⟨E, hEmem, _hEempty⟩ :=
+      hN (m - z) hNdiff
+    exact ⟨E, hEmem⟩
+  have hCA : (C : Set ℕ) ⊆ A :=
+    fun _ hzC => (hCclean hzC).1
+  have hCY : Disjoint (C : Set ℕ) Y := by
+    rw [Set.disjoint_left]
+    intro z hzC hzY
+    exact (hCclean hzC).2 hzY
+  obtain ⟨root, hrootData, _hrootInj, _hmatching⟩ :=
+    terminalFusion_destroyedSuccessorTarget_forces_cleanAnchorDiagonalMatching
+      hhpos fusion hYfusion hterminal hmDestroy C
+        hCA hCY hCm hrepresented
+  have haC : a ∈ C := by simp [C]
+  have hcC : c ∈ C := by simp [C]
+  have hmModA : Nat.ModEq h m a := by
+    unfold Nat.ModEq
+    calc
+      m % h = ((m - a) + a) % h := by
+        rw [Nat.sub_add_cancel (hCm a haC)]
+      _ = (h * root a + a) % h := by
+        rw [(hrootData a haC).2.1]
+      _ = a % h := by simp
+  have hmModC : Nat.ModEq h m c := by
+    unfold Nat.ModEq
+    calc
+      m % h = ((m - c) + c) % h := by
+        rw [Nat.sub_add_cancel (hCm c hcC)]
+      _ = (h * root c + c) % h := by
+        rw [(hrootData c hcC).2.1]
+      _ = c % h := by simp
+  exact hmModC.symm.trans hmModA
+
+/-- The terminal fusion branch is impossible at every order `h > 1`.
+
+Residue collapse puts all clean basis points in one class `a mod h`, so
+every order-`h+1` tuple avoiding `Y` also has target congruent to `a`.
+Choose the late target `n = a + h*N + 1`, where `N` is an eventual
+order-`h` representation threshold.  It is not congruent to `a`, hence it
+is destroyed by `Y`.  But descending through the clean anchor `a` and
+applying terminal singleton-diagonal collapse forces
+`n - a = h*x`, which says that `n` *is* congruent to `a`: contradiction. -/
+theorem terminalFusion_cofinalSuccessorDestruction_impossible
+    {A Y : Set ℕ} {h bound : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hh : 1 < h)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (fusion : BlockSelector cell)
+    (hYfusion : Y ⊆ selectedSet fusion)
+    (hterminal : ∀ q, ∀ D : Finset ℕ,
+      D.Nonempty →
+      (D : Set ℕ) ⊆ selectedSet fusion →
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q →
+      D.card ≤ bound ∧
+      ∀ ℓ n,
+        0 < ℓ → ℓ < h →
+        (additiveSupportFamily A ℓ n).Nonempty →
+        ¬ DestroysAt
+          (additiveSupportFamily A ℓ)
+          (D : Set ℕ) n)
+    (hcleanInfinite : (A \ Y).Infinite)
+    (hsuccessorDestroy : ∀ N, ∃ m, N ≤ m ∧
+      DestroysAt
+        (additiveSupportFamily A (h + 1)) Y m) :
+    False := by
+  classical
+  have hhpos : 0 < h := by omega
+  obtain ⟨a, haClean, hcleanResidue⟩ :=
+    terminalFusion_cofinalSuccessorDestruction_forces_cleanResidueCollapse
+      hhpos hbasis fusion hYfusion hterminal
+        hcleanInfinite hsuccessorDestroy
+  obtain ⟨N, hN⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  let n : ℕ := a + h * N + 1
+  have han : a ≤ n := by
+    dsimp only [n]
+    omega
+  have hNdiff : N ≤ n - a := by
+    have hNmul : N ≤ h * N :=
+      Nat.le_mul_of_pos_left N hhpos
+    dsimp only [n]
+    omega
+  have hnNotMod : ¬ Nat.ModEq h n a := by
+    intro hnMod
+    have hdiv : h ∣ n - a :=
+      (Nat.modEq_iff_dvd' han).mp hnMod.symm
+    have hdiff : n - a = h * N + 1 := by
+      dsimp only [n]
+      omega
+    rw [hdiff] at hdiv
+    have hdivOne : h ∣ 1 :=
+      (Nat.dvd_add_iff_right (dvd_mul_right h N)).mpr hdiv
+    have hone : h = 1 :=
+      Nat.dvd_one.mp hdivOne
+    omega
+  have hnDestroy :
+      DestroysAt
+        (additiveSupportFamily A (h + 1)) Y n := by
+    rw [destroysAt_additiveSupportFamily_iff]
+    rintro ⟨v, hvClean, hvsum⟩
+    have hsumMod :
+        Nat.ModEq h
+          (∑ i, v i)
+          (∑ _i : Fin (h + 1), a) := by
+      apply Nat.ModEq.sum
+      intro i _hi
+      exact hcleanResidue (v i) (hvClean i)
+    have hconstantMod :
+        Nat.ModEq h ((h + 1) * a) a := by
+      unfold Nat.ModEq
+      rw [Nat.add_mul]
+      simp
+    apply hnNotMod
+    have hnSumMod :
+        Nat.ModEq h n (∑ _i : Fin (h + 1), a) := by
+      simpa only [hvsum] using hsumMod
+    have hsumConstant :
+        (∑ _i : Fin (h + 1), a) = (h + 1) * a := by
+      simp
+    rw [hsumConstant] at hnSumMod
+    exact hnSumMod.trans hconstantMod
+  let C : Finset ℕ := {a}
+  have haC : a ∈ C := by simp [C]
+  have hCA : (C : Set ℕ) ⊆ A := by
+    intro z hzC
+    have hza : z = a := by simpa [C] using hzC
+    exact hza.symm ▸ haClean.1
+  have hCY : Disjoint (C : Set ℕ) Y := by
+    rw [Set.disjoint_left]
+    intro z hzC hzY
+    have hza : z = a := by simpa [C] using hzC
+    exact haClean.2 (hza ▸ hzY)
+  have hCm : ∀ z ∈ C, z ≤ n := by
+    intro z hzC
+    have hza : z = a := by simpa [C] using hzC
+    exact hza.symm ▸ han
+  have hrepresented : ∀ z ∈ C,
+      (additiveSupportFamily A h (n - z)).Nonempty := by
+    intro z hzC
+    have hza : z = a := by simpa [C] using hzC
+    subst z
+    obtain ⟨E, hEmem, _hEempty⟩ :=
+      hN (n - a) hNdiff
+    exact ⟨E, hEmem⟩
+  obtain ⟨root, hrootData, _hrootInj, _hmatching⟩ :=
+    terminalFusion_destroyedSuccessorTarget_forces_cleanAnchorDiagonalMatching
+      hhpos fusion hYfusion hterminal hnDestroy C
+        hCA hCY hCm hrepresented
+  apply hnNotMod
+  unfold Nat.ModEq
+  calc
+    n % h = ((n - a) + a) % h := by
+      rw [Nat.sub_add_cancel han]
+    _ = (h * root a + a) % h := by
+      rw [(hrootData a haC).2.1]
+    _ = a % h := by simp
+
 /-- Bracketing a current-order destroyer below an old surviving successor
 target stream amplifies one primitive gap into a whole support of gap
 anchors.
@@ -30817,9 +31193,31 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_infiniteGapFusion
               (∀ n, ∃ E ∈
                 additiveSupportFamily A (h + 1) (oldTarget n),
                   Disjoint (E : Set ℕ) Y) ∧
+              (A \ Y).Infinite ∧
               (∀ N, ∃ n, N ≤ n ∧
                 DestroysAt
                   (additiveSupportFamily A (h + 1)) Y n) ∧
+              (∀ r, ∃ m, ∃ C : Finset ℕ,
+                ∃ root : ℕ → ℕ,
+                  r < C.card ∧
+                  (C : Set ℕ) ⊆ A \ Y ∧
+                  DestroysAt
+                    (additiveSupportFamily A (h + 1)) Y m ∧
+                  (∀ a ∈ C,
+                    root a ∈ Y ∧
+                    m - a = h * root a ∧
+                    IsInclusionMinimalDestroyer
+                      (additiveSupportFamily A h)
+                      {root a} (m - a) ∧
+                    ({a, root a} : Finset ℕ) ∈
+                      additiveSupportFamily A (h + 1) m ∧
+                    ∀ z ∈ ({a, root a} : Finset ℕ),
+                      z ∈ Y ↔ z = root a) ∧
+                  Set.InjOn root (C : Set ℕ) ∧
+                  ∀ a ∈ C, ∀ c ∈ C, a ≠ c →
+                    Disjoint
+                      ({a, root a} : Finset ℕ)
+                      ({c, root c} : Finset ℕ)) ∧
               (∀ L, ∃ n m,
                 L ≤ n ∧
                 oldTarget n < m ∧
@@ -30925,6 +31323,35 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_infiniteGapFusion
               (additiveSupportFamily A (h + 1)) Y n :=
         strongExactDeletion_of_counterexample hcounter
           Y (hYK.trans hKA) hYInfinite
+      have hcleanInfinite : (A \ Y).Infinite :=
+        strictSurvivingAdditiveTargetStream_forces_cleanComplementInfinite
+          holdTargetStrict holdSurvivalY
+      have hunboundedAffineMatchings :
+          ∀ r, ∃ m, ∃ C : Finset ℕ,
+            ∃ root : ℕ → ℕ,
+              r < C.card ∧
+              (C : Set ℕ) ⊆ A \ Y ∧
+              DestroysAt
+                (additiveSupportFamily A (h + 1)) Y m ∧
+              (∀ a ∈ C,
+                root a ∈ Y ∧
+                m - a = h * root a ∧
+                IsInclusionMinimalDestroyer
+                  (additiveSupportFamily A h)
+                  {root a} (m - a) ∧
+                ({a, root a} : Finset ℕ) ∈
+                  additiveSupportFamily A (h + 1) m ∧
+                ∀ z ∈ ({a, root a} : Finset ℕ),
+                  z ∈ Y ↔ z = root a) ∧
+              Set.InjOn root (C : Set ℕ) ∧
+              ∀ a ∈ C, ∀ c ∈ C, a ≠ c →
+                Disjoint
+                  ({a, root a} : Finset ℕ)
+                  ({c, root c} : Finset ℕ) :=
+        terminalFusion_cofinalSuccessorDestruction_forces_unboundedCleanAnchorDiagonalMatchings
+          hhpos hminimal.1 fusion hYfusion
+            hterminalBoundAndNoDescent hcleanInfinite
+            hsuccessorDestroy
       have hsuccessorBrackets :
           ∀ L, ∃ n m,
             L ≤ n ∧
@@ -31024,7 +31451,8 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_infiniteGapFusion
         htargetStrict, hterminalBoundAndNoDescent,
         hstageData, hnoRankDescent,
         hdestroyY, hcross,
-        holdSurvivalY, hsuccessorDestroy,
+        holdSurvivalY, hcleanInfinite, hsuccessorDestroy,
+        hunboundedAffineMatchings,
         hsuccessorBrackets, hpredecessorDestroyerFans,
         hcofinalRepresentedPredecessorDestroyers,
         halignedPrimitiveGaps, hgapFans,
