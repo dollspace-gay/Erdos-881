@@ -1,3 +1,57 @@
+# GENERAL ORDER: THE FOUR-HORN SPLIT COLLAPSES TO AFFINE DOUBLE SURVIVAL (2026-07-29)
+
+The exact-target branch is not optional after all.  The global theorem
+`IsExactTupleAsymptoticBasis.eventually_successorExactRootedMatching`
+already says that every sufficiently late successor target carries an
+arbitrarily large rooted matching.  Scheduling the aligned stage beyond
+that uniform threshold makes its retained
+
+\[
+  q_i=\operatorname{target}(i)+\delta_i
+\]
+
+an exact-target rooted-matching stage automatically.
+`exactBasis_counterexample_forces_cofinalAlignedExactTargetRootedMatchings`
+formalizes this quantifier alignment.
+
+The fusion itself is also simpler than the previous normalization route.
+Choose one support of `q_i`.  It has at most `k+1` distinct values, while
+the source matching has more than `k+1` pairwise-disjoint nonempty petals.
+Hence one source-petal point misses that support; another source petal gives
+a support of `target i` missing the same point.
+`AlignedDoubleSurvivalFusionStep` packages these two supports and the
+marked point.  Bounded cross-avoidance applied to the union of the two
+supports then fuses the points into one infinite deletion while preserving
+both support streams and the affine equation.
+
+The resulting machine-checked capstones are:
+
+- `exactBasis_counterexample_forces_interlacedDoubleSurvival`: every
+  hypothetical successor counterexample produces one infinite deletion
+  preserving both levels of a strictly interlaced affine stream;
+- `exactBasis_counterexample_forces_aligned_or_crossGap_failures`: on that
+  same deletion, counterexample destruction produces cofinally represented
+  order-`k` predecessor failures either inside the aligned gaps or inside
+  the intervening cross-gaps.
+
+This bypasses the exact/reduced/translated-hole/concentration classification
+on the main route.  In particular, the previous translated-hole residual
+matching and certificate-capacity weld is no longer the next obligation.
+
+This is still not the full general-order solution.  Double survival is an
+operational object, not itself a contradiction (fat sets may carry such
+streams).  The remaining direct fork is now much smaller:
+
+- aligned failures lie strictly between
+  `t_n` and `t_n + δ_n`, with both endpoints surviving;
+- cross-gap failures lie strictly between
+  `t_n + δ_n` and `t_(n+1)`, again with both endpoints surviving.
+
+The next attack is to use the two surviving endpoint representations
+simultaneously with the represented destroyed predecessor supplied by the
+failure theorem.  The affine inside-gap case is the more constrained side;
+failure of its repair must push cofinally into the cross-gap side.
+
 # GENERAL ORDER: TRANSLATED-HOLE CONCENTRATION TERMINATES (2026-07-29)
 
 The literal translated-hole branch has now been passed through the original

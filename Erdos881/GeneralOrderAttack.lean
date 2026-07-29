@@ -48425,6 +48425,626 @@ def HasInterlacedDoubleSurvivalStream
         additiveSupportFamily A (k + 1) (upperTarget n),
         Disjoint (F : Set ℕ) deletion
 
+/-- One affine-aligned pair of successor-order supports, together with a
+point in the source block which misses both supports.
+
+The source-block floor is the only recursive parameter.  Strict growth of
+the ambient target stream then makes both target coordinates grow, while
+`upperTarget < target (sourceIndex + 1)` preserves the interlacing after
+passing to any strictly increasing subsequence of source indices. -/
+structure AlignedDoubleSurvivalFusionStep
+    (A : Set ℕ) (k : ℕ)
+    (cell : ℕ → Finset ℕ) (target : ℕ → ℕ)
+    (sourceIndexFloor : ℕ) where
+  sourceIndex : ℕ
+  upperTarget : ℕ
+  displacement : ℕ
+  lowerSupport : Finset ℕ
+  upperSupport : Finset ℕ
+  point : ℕ
+  sourceIndex_lower : sourceIndexFloor ≤ sourceIndex
+  lower_lt_upper : target sourceIndex < upperTarget
+  upper_lt_next : upperTarget < target (sourceIndex + 1)
+  displacement_pos : 0 < displacement
+  upper_eq :
+    upperTarget = target sourceIndex + displacement
+  lowerSupport_mem :
+    lowerSupport ∈
+      additiveSupportFamily A (k + 1) (target sourceIndex)
+  upperSupport_mem :
+    upperSupport ∈
+      additiveSupportFamily A (k + 1) upperTarget
+  point_mem : point ∈ cell sourceIndex
+  lowerSupport_point_disjoint :
+    Disjoint lowerSupport {point}
+  upperSupport_point_disjoint :
+    Disjoint upperSupport {point}
+
+/-- Cofinal affine-aligned two-support steps fuse into one infinite deletion
+which preserves both levels of the interlaced target stream.
+
+At each stage put the two protected supports into one bounded repair set.
+The marked deletion points lie in strictly later pairwise-disjoint ambient
+blocks, hence are injective.  Bounded cross-avoidance thins the stages so
+that each two-support repair misses every other marked point; the defining
+step already makes it miss its own point.  The retained affine identity is
+therefore not lost during fusion. -/
+theorem cofinalAlignedDoubleSurvivalFusionSteps_fuse_infiniteDeletion
+    {A K : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (htargetStrict : StrictMono target)
+    (hstepExists :
+      ∀ sourceIndexFloor,
+        Nonempty
+          (AlignedDoubleSurvivalFusionStep
+            A k cell target sourceIndexFloor)) :
+    HasInterlacedDoubleSurvivalStream A k := by
+  classical
+  let actualWitness : (floor : ℕ) →
+      AlignedDoubleSurvivalFusionStep
+        A k cell target (floor + 1) :=
+    fun floor => Classical.choice (hstepExists (floor + 1))
+  let sourceIndex : ℕ → ℕ :=
+    fun n =>
+      Nat.rec (actualWitness 0).sourceIndex
+        (fun _ previous =>
+          (actualWitness previous).sourceIndex) n
+  have hsourceIndex_zero :
+      sourceIndex 0 = (actualWitness 0).sourceIndex := rfl
+  have hsourceIndex_succ :
+      ∀ n,
+        sourceIndex (n + 1) =
+          (actualWitness (sourceIndex n)).sourceIndex := by
+    intro n
+    rfl
+  let data (n : ℕ) :=
+    actualWitness
+      (if n = 0 then 0 else sourceIndex (n - 1))
+  have hdata_zero :
+      data 0 = actualWitness 0 := by
+    simp [data]
+  have hdata_succ :
+      ∀ n, data (n + 1) = actualWitness (sourceIndex n) := by
+    intro n
+    simp [data]
+  have hdata_sourceIndex :
+      ∀ n, (data n).sourceIndex = sourceIndex n := by
+    intro n
+    cases n with
+    | zero =>
+        rw [hdata_zero, hsourceIndex_zero]
+    | succ n =>
+        rw [hdata_succ, hsourceIndex_succ]
+  have hsourceIndexStep :
+      ∀ n, sourceIndex n < sourceIndex (n + 1) := by
+    intro n
+    rw [hsourceIndex_succ]
+    exact Nat.lt_of_lt_of_le
+      (Nat.lt_succ_self (sourceIndex n))
+      (actualWitness (sourceIndex n)).sourceIndex_lower
+  have hsourceIndexStrict : StrictMono sourceIndex :=
+    strictMono_nat_of_lt_succ hsourceIndexStep
+  let lowerTarget : ℕ → ℕ :=
+    fun n => target (sourceIndex n)
+  let upperTarget : ℕ → ℕ :=
+    fun n => (data n).upperTarget
+  let displacement : ℕ → ℕ :=
+    fun n => (data n).displacement
+  let lowerSupport : ℕ → Finset ℕ :=
+    fun n => (data n).lowerSupport
+  let upperSupport : ℕ → Finset ℕ :=
+    fun n => (data n).upperSupport
+  let point : ℕ → ℕ :=
+    fun n => (data n).point
+  let repair : ℕ → Finset ℕ :=
+    fun n => lowerSupport n ∪ upperSupport n
+  have hlowerTargetStrict : StrictMono lowerTarget :=
+    htargetStrict.comp hsourceIndexStrict
+  have hupperTargetStep :
+      ∀ n, upperTarget n < upperTarget (n + 1) := by
+    intro n
+    calc
+      upperTarget n <
+          target (sourceIndex n + 1) := by
+        dsimp only [upperTarget]
+        rw [← hdata_sourceIndex n]
+        exact (data n).upper_lt_next
+      _ ≤ target (sourceIndex (n + 1)) :=
+        htargetStrict.monotone
+          (Nat.succ_le_iff.mpr (hsourceIndexStep n))
+      _ < upperTarget (n + 1) := by
+        simpa only [upperTarget, hdata_sourceIndex] using
+          (data (n + 1)).lower_lt_upper
+  have hupperTargetStrict : StrictMono upperTarget :=
+    strictMono_nat_of_lt_succ hupperTargetStep
+  have hpointCell :
+      ∀ n, point n ∈ cell (sourceIndex n) := by
+    intro n
+    simpa only [point, hdata_sourceIndex] using
+      (data n).point_mem
+  have hpointInjective : Function.Injective point := by
+    intro i j hij
+    apply hsourceIndexStrict.injective
+    calc
+      sourceIndex i =
+          blockIndex P (point i) := by
+        symm
+        exact P.blockIndex_eq_of_mem (hpointCell i)
+      _ = blockIndex P (point j) := by rw [hij]
+      _ = sourceIndex j :=
+        P.blockIndex_eq_of_mem (hpointCell j)
+  have hlowerSupportMem :
+      ∀ n,
+        lowerSupport n ∈
+          additiveSupportFamily A (k + 1) (lowerTarget n) := by
+    intro n
+    simpa only [lowerSupport, lowerTarget,
+      hdata_sourceIndex] using
+        (data n).lowerSupport_mem
+  have hupperSupportMem :
+      ∀ n,
+        upperSupport n ∈
+          additiveSupportFamily A (k + 1) (upperTarget n) := by
+    intro n
+    exact (data n).upperSupport_mem
+  have hrepairCard :
+      ∀ n ∈ (Set.univ : Set ℕ),
+        (repair n).card ≤ (k + 1) + (k + 1) := by
+    intro n _hn
+    calc
+      (repair n).card ≤
+          (lowerSupport n).card +
+            (upperSupport n).card := by
+        exact Finset.card_union_le _ _
+      _ ≤ (k + 1) + (k + 1) := by
+        exact Nat.add_le_add
+          (additiveSupportFamily_cardAtMost
+            A (k + 1) (lowerTarget n) (lowerSupport n)
+              (hlowerSupportMem n))
+          (additiveSupportFamily_cardAtMost
+            A (k + 1) (upperTarget n) (upperSupport n)
+              (hupperSupportMem n))
+  obtain ⟨L, _hLuniv, hLInfinite, hcross⟩ :=
+    exists_infinite_crossAvoiding_injectiveImage
+      (Set.infinite_univ : (Set.univ : Set ℕ).Infinite)
+      point hpointInjective.injOn repair
+        ((k + 1) + (k + 1)) hrepairCard
+  let deletion : Set ℕ := point '' L
+  have hdeletionInfinite : deletion.Infinite :=
+    (Set.infinite_image_iff
+      hpointInjective.injOn).mpr hLInfinite
+  have hdeletionA : deletion ⊆ A := by
+    rintro x ⟨n, _hnL, rfl⟩
+    apply hKA
+    exact (P.mem_iff (point n)).2
+      ⟨sourceIndex n, hpointCell n⟩
+  have hrepairOwn :
+      ∀ n, Disjoint (repair n) {point n} := by
+    intro n
+    rw [Finset.disjoint_left]
+    intro x hxRepair hxPoint
+    have hx : x = point n := by simpa using hxPoint
+    subst x
+    rcases Finset.mem_union.mp hxRepair with
+        hxLower | hxUpper
+    · exact Finset.disjoint_left.mp
+        (data n).lowerSupport_point_disjoint
+          hxLower (by simp [point])
+    · exact Finset.disjoint_left.mp
+        (data n).upperSupport_point_disjoint
+          hxUpper (by simp [point])
+  have hrepairDeletion :
+      ∀ n ∈ L,
+        Disjoint (repair n : Set ℕ) deletion := by
+    intro n hnL
+    rw [Set.disjoint_left]
+    rintro x hxRepair ⟨d, hdL, rfl⟩
+    by_cases hnd : n = d
+    · subst d
+      exact Finset.disjoint_left.mp (hrepairOwn n)
+        (Finset.mem_coe.mp hxRepair) (by simp)
+    · exact hcross n hnL d hdL hnd
+        (Finset.mem_coe.mp hxRepair)
+  have hlowerDeletion :
+      ∀ n ∈ L,
+        Disjoint (lowerSupport n : Set ℕ) deletion := by
+    intro n hnL
+    exact Set.disjoint_of_subset_left
+      (fun x hx =>
+        Finset.mem_coe.mpr
+          (Finset.mem_union_left _
+            (Finset.mem_coe.mp hx)))
+      (hrepairDeletion n hnL)
+  have hupperDeletion :
+      ∀ n ∈ L,
+        Disjoint (upperSupport n : Set ℕ) deletion := by
+    intro n hnL
+    exact Set.disjoint_of_subset_left
+      (fun x hx =>
+        Finset.mem_coe.mpr
+          (Finset.mem_union_right _
+            (Finset.mem_coe.mp hx)))
+      (hrepairDeletion n hnL)
+  let index : ℕ → ℕ := Nat.nth fun n => n ∈ L
+  have hindexL : ∀ n, index n ∈ L := by
+    intro n
+    exact Nat.nth_mem_of_infinite hLInfinite n
+  have hindexStrict : StrictMono index :=
+    Nat.nth_strictMono hLInfinite
+  let retainedLower : ℕ → ℕ :=
+    fun n => lowerTarget (index n)
+  let retainedUpper : ℕ → ℕ :=
+    fun n => upperTarget (index n)
+  let retainedDisplacement : ℕ → ℕ :=
+    fun n => displacement (index n)
+  refine
+    ⟨deletion, retainedLower, retainedUpper,
+      retainedDisplacement, hdeletionA, hdeletionInfinite,
+      hlowerTargetStrict.comp hindexStrict,
+      hupperTargetStrict.comp hindexStrict,
+      ?_, ?_, ?_, ?_, ?_⟩
+  · intro n
+    constructor
+    · change
+        lowerTarget (index n) < upperTarget (index n)
+      simpa only [lowerTarget, upperTarget,
+        hdata_sourceIndex] using
+          (data (index n)).lower_lt_upper
+    · change
+        upperTarget (index n) <
+          lowerTarget (index (n + 1))
+      calc
+        upperTarget (index n) <
+            target (sourceIndex (index n) + 1) := by
+          dsimp only [upperTarget]
+          rw [← hdata_sourceIndex (index n)]
+          exact (data (index n)).upper_lt_next
+        _ ≤ target (sourceIndex (index (n + 1))) :=
+          htargetStrict.monotone
+            (Nat.succ_le_iff.mpr
+              (hsourceIndexStrict
+                (hindexStrict (Nat.lt_succ_self n))))
+  · intro n
+    exact (data (index n)).displacement_pos
+  · intro n
+    change
+      upperTarget (index n) =
+        lowerTarget (index n) +
+          displacement (index n)
+    simpa only [upperTarget, lowerTarget, displacement,
+      hdata_sourceIndex] using
+        (data (index n)).upper_eq
+  · intro n
+    exact
+      ⟨lowerSupport (index n),
+        hlowerSupportMem (index n),
+        hlowerDeletion (index n) (hindexL n)⟩
+  · intro n
+    exact
+      ⟨upperSupport (index n),
+        hupperSupportMem (index n),
+        hupperDeletion (index n) (hindexL n)⟩
+
+/-- A cofinal aligned exact-target rooted matching supplies an affine
+two-support fusion step at every late source block.
+
+Choose one exact support at `q`.  It has at most `k+1` values, whereas the
+source matching beyond block `i ≥ k+1` has more than `k+1` pairwise-disjoint
+nonempty petals.  Hence their petal union contains a point outside the
+chosen exact support.  Deleting that point preserves the exact support; a
+different source petal preserves `target i`. -/
+theorem HasCofinalAlignedExactTargetRootedMatchings.alignedDoubleSurvivalStepSupply
+    {A : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (hgrowth :
+      HasCofinalAlignedExactTargetRootedMatchings
+        A k cell target) :
+    ∀ sourceIndexFloor,
+      Nonempty
+        (AlignedDoubleSurvivalFusionStep
+          A k cell target sourceIndexFloor) := by
+  classical
+  intro sourceIndexFloor
+  let requestedFloor := max sourceIndexFloor (k + 1)
+  obtain ⟨i, q, δ, sourceRoot, sourceMatching,
+      sourcePetals, exactRoot, exactMatching,
+      hiFloor, hiLower, hiUpper, hδpos, hqδ,
+      _hsourceRootCard, hsourceLarge, hsourceSub,
+      _hsourceRoot, hsourcePetal, hsourceMatching,
+      hsourcePetals, hsourceCell, _hexactRootCard,
+      hexactSub, hexactLarge, _hexactRoot,
+      _hexactPetal, _hexactMatching⟩ :=
+    hgrowth requestedFloor 0
+  have hexactNonempty : exactMatching.Nonempty := by
+    exact Finset.card_pos.mp (by omega)
+  obtain ⟨upperSupport, hupperMatching⟩ :=
+    hexactNonempty
+  have hupperMem :
+      upperSupport ∈
+        additiveSupportFamily A (k + 1) q :=
+    hexactSub hupperMatching
+  have hupperCard :
+      upperSupport.card ≤ k + 1 :=
+    additiveSupportFamily_cardAtMost
+      A (k + 1) q upperSupport hupperMem
+  let pick :
+      {E // E ∈ sourceMatching} →
+        {x // x ∈ sourcePetals} := fun E =>
+    ⟨(hsourcePetal E.1 E.2).choose,
+      by
+        rw [hsourcePetals]
+        exact Finset.mem_biUnion.mpr
+          ⟨E.1, E.2,
+            (hsourcePetal E.1 E.2).choose_spec⟩⟩
+  have hpickPetal :
+      ∀ E : {E // E ∈ sourceMatching},
+        (pick E).1 ∈ E.1 \ sourceRoot := by
+    intro E
+    exact (hsourcePetal E.1 E.2).choose_spec
+  have hpickInjective : Function.Injective pick := by
+    intro E G hEG
+    apply Subtype.ext
+    by_contra hne
+    have hpointEq : (pick E).1 = (pick G).1 :=
+      congrArg Subtype.val hEG
+    exact
+      (Finset.not_disjoint_iff.mpr
+        ⟨(pick E).1, hpickPetal E,
+          hpointEq ▸ hpickPetal G⟩)
+      (hsourceMatching E.1 E.2 G.1 G.2 hne)
+  have hsourceCardPetals :
+      sourceMatching.card ≤ sourcePetals.card := by
+    simpa only [Fintype.card_coe] using
+      Fintype.card_le_of_injective pick hpickInjective
+  have hiLarge : k + 1 ≤ i := by
+    exact (le_max_right sourceIndexFloor (k + 1)).trans
+      hiFloor
+  have hupperLtPetals :
+      upperSupport.card < sourcePetals.card := by
+    omega
+  have hnotSubset : ¬ sourcePetals ⊆ upperSupport := by
+    intro hsubset
+    exact (Nat.not_lt_of_ge
+      (Finset.card_le_card hsubset)) hupperLtPetals
+  obtain ⟨point, hpointPetals, hpointUpper⟩ :=
+    Finset.not_subset.mp hnotSubset
+  have hpointCell : point ∈ cell i :=
+    hsourceCell hpointPetals
+  have hpointNotRoot : point ∉ sourceRoot := by
+    rw [hsourcePetals] at hpointPetals
+    obtain ⟨E, _hEM, hpointPetal⟩ :=
+      Finset.mem_biUnion.mp hpointPetals
+    exact (Finset.mem_sdiff.mp hpointPetal).2
+  have hhit :
+      ∀ E ∈ sourceMatching,
+        ¬ Disjoint (E : Set ℕ) ({point} : Set ℕ) →
+          ∃ x ∈ ({point} : Finset ℕ),
+            x ∈ E \ sourceRoot := by
+    intro E _hEM hEpoint
+    obtain ⟨x, hxE, hxPoint⟩ :=
+      Set.not_disjoint_iff.mp hEpoint
+    have hx : x = point := by simpa using hxPoint
+    subst x
+    exact
+      ⟨point, by simp,
+        Finset.mem_sdiff.mpr
+          ⟨Finset.mem_coe.mp hxE, hpointNotRoot⟩⟩
+  have honeLtSource :
+      ({point} : Finset ℕ).card <
+        sourceMatching.card := by
+    simp only [Finset.card_singleton]
+    omega
+  obtain ⟨lowerSupport, hlowerMatching,
+      hlowerPoint⟩ :=
+    exists_surviving_support
+      hsourceMatching hhit honeLtSource
+  have hupperPoint :
+      Disjoint upperSupport {point} := by
+    rw [Finset.disjoint_left]
+    intro x hxUpper hxPoint
+    have hx : x = point := by simpa using hxPoint
+    exact hpointUpper (hx ▸ hxUpper)
+  exact
+    ⟨⟨i, q, δ, lowerSupport, upperSupport, point,
+      (le_max_left sourceIndexFloor (k + 1)).trans hiFloor,
+      hiLower, hiUpper, hδpos, hqδ,
+      hsourceSub hlowerMatching, hupperMem, hpointCell,
+      by simpa using hlowerPoint, hupperPoint⟩⟩
+
+/-- The exact-target horn itself already yields the doubled affine survival
+stream; no target renormalization is required.
+
+The preceding finite step keeps one representation of `q = target i + δ`
+and one representation of `target i` alive at the same marked deletion
+point.  The two-support fusion protects these pairs across all other stages
+and therefore retains the original aligned gap after passing to one
+infinite deletion. -/
+theorem HasCofinalAlignedExactTargetRootedMatchings.fusesInterlacedDoubleSurvival
+    {A K : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (hgrowth :
+      HasCofinalAlignedExactTargetRootedMatchings
+        A k cell target)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (htargetStrict : StrictMono target) :
+    HasInterlacedDoubleSurvivalStream A k :=
+  cofinalAlignedDoubleSurvivalFusionSteps_fuse_infiniteDeletion
+    hKA P htargetStrict
+      hgrowth.alignedDoubleSurvivalStepSupply
+
+/-- The aligned exact-target horn is in fact cofinal in every hypothetical
+successor counterexample.
+
+For a requested exact-matching size, first take the uniform threshold from
+`eventually_successorExactRootedMatching`.  Then request the aligned
+translation stage beyond both that threshold and the prescribed source
+block.  Its target `q` lies strictly above `target i`, hence above the
+uniform threshold, so `q` automatically carries the requested exact rooted
+matching.  Thus the exact-target outcome is not a genuine optional branch
+once the original order-`k` basis hypothesis is used globally. -/
+theorem exactBasis_counterexample_forces_cofinalAlignedExactTargetRootedMatchings
+    {A : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1)) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+    ∃ target : ℕ → ℕ,
+      K ⊆ A ∧
+      K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      StrictMono target ∧
+      (∀ i, (i + k + 3) ^ 2 < (cell i).card) ∧
+      HasCofinalAlignedExactTargetRootedMatchings
+        A k cell target := by
+  classical
+  obtain ⟨K, cell, target, hKA, hKInfinite, P,
+      htargetStrict, hcellLarge, hstage⟩ :=
+    exactBasis_counterexample_forces_cofinalTranslationHoles_or_alignedArithmeticOutcome
+      hbasis hcounter
+  refine
+    ⟨K, cell, target, hKA, hKInfinite, P,
+      htargetStrict, hcellLarge, ?_⟩
+  intro gapFloor demand
+  obtain ⟨Nmatch, hNmatch⟩ :=
+    hbasis.eventually_successorExactRootedMatching demand
+  let scheduledFloor := max gapFloor Nmatch
+  obtain ⟨_Q, _s, i, q, δ, sourceRoot, sourceMatching,
+      sourcePetals, _Vin, _Vout, _hqQ,
+      _hcert, hiFloor, hiLower, hiUpper, hδpos, hqδ,
+      _hqDestroy, hsourceRootCard, _hsourceK,
+      hsourceLarge, hsourceSub, hsourceRoot,
+      hsourcePetal, hsourceMatching, _hsourceSelected,
+      hsourcePetals, hsourceCell, _hVinSource,
+      _hVoutSource, _hVinVout, _hsourceSplit,
+      _hVinData, _hVoutData, _hfinal⟩ :=
+    hstage 0 scheduledFloor 0 0 0 0 0
+  have hiGap : gapFloor ≤ i := by
+    exact (le_max_left gapFloor Nmatch).trans hiFloor
+  have hqLate : Nmatch ≤ q := by
+    have hNmatchI : Nmatch ≤ i :=
+      (le_max_right gapFloor Nmatch).trans hiFloor
+    exact hNmatchI.trans
+      ((htargetStrict.id_le i).trans
+        (Nat.le_of_lt hiLower))
+  obtain ⟨exactRoot, exactMatching, hexactRootCard,
+      hexactSub, hexactLarge, hexactRoot,
+      hexactPetal, hexactMatching⟩ :=
+    hNmatch q hqLate
+  exact
+    ⟨i, q, δ, sourceRoot, sourceMatching,
+      sourcePetals, exactRoot, exactMatching,
+      hiGap, hiLower, hiUpper, hδpos, hqδ,
+      hsourceRootCard, hsourceLarge, hsourceSub,
+      hsourceRoot, hsourcePetal, hsourceMatching,
+      hsourcePetals, hsourceCell, hexactRootCard,
+      hexactSub, hexactLarge, hexactRoot,
+      hexactPetal, hexactMatching⟩
+
+/-- Every hypothetical successor counterexample therefore carries one
+infinite deletion preserving both levels of a strictly interlaced affine
+target stream.
+
+This bypasses the exact/reduced/hole/concentration classification entirely:
+the global eventual exact-root theorem supplies the exact side at every
+scheduled aligned stage, and the two-support fusion preserves both sides. -/
+theorem exactBasis_counterexample_forces_interlacedDoubleSurvival
+    {A : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1)) :
+    HasInterlacedDoubleSurvivalStream A k := by
+  obtain ⟨K, cell, target, hKA, _hKInfinite, P,
+      htargetStrict, _hcellLarge, hgrowth⟩ :=
+    exactBasis_counterexample_forces_cofinalAlignedExactTargetRootedMatchings
+      hbasis hcounter
+  exact
+    hgrowth.fusesInterlacedDoubleSurvival
+      hKA P htargetStrict
+
+/-- Junk test for the affine double-survival endpoint.
+
+The full set of naturals already has such a stream at `k = 0`: delete all
+even numbers and use the singleton supports at `4n+1` and `4n+3`.  Thus
+double survival is deliberately an operational counterexample consequence,
+not a proposition which should be treated as intrinsically contradictory
+for intervals or fat sets. -/
+theorem univ_has_interlacedDoubleSurvivalStream_orderZero :
+    HasInterlacedDoubleSurvivalStream Set.univ 0 := by
+  classical
+  let deletion : Set ℕ := Set.range fun n => 2 * n
+  let lower : ℕ → ℕ := fun n => 4 * n + 1
+  let upper : ℕ → ℕ := fun n => 4 * n + 3
+  let displacement : ℕ → ℕ := fun _ => 2
+  have hdoubleInjective :
+      Function.Injective (fun n : ℕ => 2 * n) := by
+    intro i j hij
+    exact Nat.eq_of_mul_eq_mul_left (by decide) hij
+  have hdeletionInfinite : deletion.Infinite := by
+    exact Set.infinite_range_of_injective
+      hdoubleInjective
+  have hlowerStrict : StrictMono lower := by
+    intro i j hij
+    dsimp only [lower]
+    omega
+  have hupperStrict : StrictMono upper := by
+    intro i j hij
+    dsimp only [upper]
+    omega
+  have hsingleton :
+      ∀ a,
+        ({a} : Finset ℕ) ∈
+          additiveSupportFamily (Set.univ : Set ℕ) 1 a := by
+    intro a
+    have hraw :=
+      list_foldr_mem_additiveSupportFamily
+        (A := (Set.univ : Set ℕ))
+        (xs := [a]) (by simp)
+    simpa using hraw
+  have hlowerDeletion :
+      ∀ n,
+        Disjoint
+          ((({lower n} : Finset ℕ) : Set ℕ))
+          deletion := by
+    intro n
+    rw [Set.disjoint_left]
+    rintro x hxSingleton ⟨m, rfl⟩
+    have hx : 2 * m = lower n := by simpa using hxSingleton
+    dsimp only [lower] at hx
+    omega
+  have hupperDeletion :
+      ∀ n,
+        Disjoint
+          ((({upper n} : Finset ℕ) : Set ℕ))
+          deletion := by
+    intro n
+    rw [Set.disjoint_left]
+    rintro x hxSingleton ⟨m, rfl⟩
+    have hx : 2 * m = upper n := by simpa using hxSingleton
+    dsimp only [upper] at hx
+    omega
+  refine
+    ⟨deletion, lower, upper, displacement,
+      Set.subset_univ deletion, hdeletionInfinite,
+      hlowerStrict, hupperStrict, ?_, ?_, ?_, ?_, ?_⟩
+  · intro n
+    constructor <;> dsimp only [lower, upper] <;> omega
+  · intro n
+    dsimp only [displacement]
+    omega
+  · intro n
+    rfl
+  · intro n
+    exact
+      ⟨{lower n}, by simpa using hsingleton (lower n),
+        hlowerDeletion n⟩
+  · intro n
+    exact
+      ⟨{upper n}, by simpa using hsingleton (upper n),
+        hupperDeletion n⟩
+
 /-- Junk test for the cofinal literal-hole fan endpoint.
 
 At index `|Aᶜ|`, translation by the positive stage displacement injects
@@ -49070,6 +49690,95 @@ theorem HasInterlacedDoubleSurvivalStream.forces_aligned_or_crossGap_failures
       · simpa only [hj, hmergedOdd] using haAverage
       · dsimp only [request] at hdiffRequest
         omega
+
+/-- The recurrent exact-target horn feeds the retained affine pair directly
+into the existing aligned/cross-gap arithmetic fork.
+
+This is stronger than first projecting the horn to an unlabelled survival
+stream: both original target levels and `q = target i + δ` survive on the
+same infinite deletion before counterexample destruction is invoked. -/
+theorem HasCofinalAlignedExactTargetRootedMatchings.forces_aligned_or_crossGap_failures
+    {A K : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (hgrowth :
+      HasCofinalAlignedExactTargetRootedMatchings
+        A k cell target)
+    (hkpos : 0 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1))
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (htargetStrict : StrictMono target) :
+    ∃ X : Set ℕ,
+    ∃ lower upper displacement : ℕ → ℕ,
+      X ⊆ A ∧
+      X.Infinite ∧
+      StrictMono lower ∧
+      StrictMono upper ∧
+      (∀ n,
+        lower n < upper n ∧
+        upper n < lower (n + 1)) ∧
+      (∀ n, 0 < displacement n) ∧
+      (∀ n,
+        upper n = lower n + displacement n) ∧
+      (∀ n,
+        ∃ E ∈
+          additiveSupportFamily A (k + 1) (lower n),
+          Disjoint (E : Set ℕ) X) ∧
+      (∀ n,
+        ∃ E ∈
+          additiveSupportFamily A (k + 1) (upper n),
+          Disjoint (E : Set ℕ) X) ∧
+      (HasCofinalRepresentedPredecessorFailuresInGaps
+          A X k lower upper ∨
+        HasCofinalRepresentedPredecessorFailuresInGaps
+          A X k upper (fun n => lower (n + 1))) :=
+  (hgrowth.fusesInterlacedDoubleSurvival
+      hKA P htargetStrict).forces_aligned_or_crossGap_failures
+        hkpos hbasis hcounter
+
+/-- Universal counterexample-level affine failure fork.
+
+The unconditional double-survival theorem removes the earlier horn
+classification.  Counterexample destruction can now be bracketed directly
+against the interlaced stream, so every hypothetical counterexample yields
+cofinally many represented order-`k` failures either inside the aligned
+gaps or inside the intervening cross-gaps, on the very same infinite
+deletion. -/
+theorem exactBasis_counterexample_forces_aligned_or_crossGap_failures
+    {A : Set ℕ} {k : ℕ}
+    (hkpos : 0 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1)) :
+    ∃ X : Set ℕ,
+    ∃ lower upper displacement : ℕ → ℕ,
+      X ⊆ A ∧
+      X.Infinite ∧
+      StrictMono lower ∧
+      StrictMono upper ∧
+      (∀ n,
+        lower n < upper n ∧
+        upper n < lower (n + 1)) ∧
+      (∀ n, 0 < displacement n) ∧
+      (∀ n,
+        upper n = lower n + displacement n) ∧
+      (∀ n,
+        ∃ E ∈
+          additiveSupportFamily A (k + 1) (lower n),
+          Disjoint (E : Set ℕ) X) ∧
+      (∀ n,
+        ∃ E ∈
+          additiveSupportFamily A (k + 1) (upper n),
+          Disjoint (E : Set ℕ) X) ∧
+      (HasCofinalRepresentedPredecessorFailuresInGaps
+          A X k lower upper ∨
+        HasCofinalRepresentedPredecessorFailuresInGaps
+          A X k upper (fun n => lower (n + 1))) :=
+  (exactBasis_counterexample_forces_interlacedDoubleSurvival
+      hbasis hcounter).forces_aligned_or_crossGap_failures
+        hkpos hbasis hcounter
 
 /-- The aligned translated stream has only two global cardinal outcomes.
 
