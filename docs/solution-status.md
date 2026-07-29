@@ -1,3 +1,42 @@
+# GENERAL ORDER: ALIGNED QUADRATIC TAIL REMOVES CAPACITY (2026-07-29)
+
+The protected-gap alignment and the quadratic after-the-fact rerun now act
+on the same target-private certificate.  Literal block-capacity failure is
+no longer a terminal alternative in this strengthened pipeline.
+
+- `quadraticBlockTail_forces_largeTargetLocalizedCertificate` now retains
+  both representation of every certificate target and disjointness from
+  the complete set of targets which survive every selector of the chosen
+  tail.
+- `quadraticBlockTail_forces_largeBracketedTargetLocalizedCertificate`
+  uses persistence of the protected target stream on every block tail.
+  Consequently every large localized certificate label is strictly
+  bracketed between consecutive protected targets, and its bracket index
+  lies beyond the tail start.
+- `quadraticBlockTail_forces_alignedTargetLocalizedArithmeticOutcome`
+  extends the target-private tail selector over the discarded prefix and
+  invokes the moving-root matching at the lower bracket endpoint.  It
+  retains the same source block, the same selector, and
+  `q = target i + δ` while applying the complete localized arithmetic fork
+  on the tail.
+- `HasCapacityResolvedTargetLocalizedArithmeticOutcome` has no bare
+  small-block member.  If anchored concentration exposes one, the existing
+  quadratic feedback reruns that same certificate and replaces it by an
+  exact-target rooted matching, a support avoiding a strictly later tail
+  block, or a repeated-block cluster above the full anchored threshold.
+- The counterexample capstone
+  `exactBasis_counterexample_forces_cofinalQuadraticTailAlignedResolvedArithmetic`
+  supplies such a protected-gap-aligned, capacity-resolved stage at every
+  diagonal scale.
+
+This closes the old-block loophole in the capacity attack; it does not yet
+settle general order.  The remaining diagonal alternatives are now
+fusion-ready exact-target/reduced/later-block geometry, current-order
+matching growth, coherent anchored difference growth, represented
+two-rank destruction, and the repeated-block cluster.  The next direct
+fork is to fuse every cofinally recurring fusion-ready alternative,
+leaving only the last three arithmetic branches.
+
 # GENERAL ORDER: MOVING-ROOT FUSION IS QUADRATIC AT SOURCE (2026-07-29)
 
 The coherent moving-root construction now builds in the exact quadratic

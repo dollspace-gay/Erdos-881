@@ -38882,6 +38882,12 @@ theorem quadraticBlockTail_forces_largeTargetLocalizedCertificate
             ¬ DestroysAt
               (additiveSupportFamily A (k + 1))
               (selectedSet s) q') ∧
+        (∀ q ∈ Q,
+          (additiveSupportFamily A (k + 1) q).Nonempty) ∧
+        Disjoint (Q : Set ℕ)
+          (commonSurvivalTargets
+            (additiveSupportFamily A (k + 1))
+            tailCell) ∧
         C < Q.card := by
   classical
   intro C L
@@ -38927,7 +38933,7 @@ theorem quadraticBlockTail_forces_largeTargetLocalizedCertificate
     hasEventuallySurvivingSupport_empty_additive_iff.mpr
       hbasis
   obtain ⟨Q, hQnonempty, hQlate, hcert,
-      hlocalized, _hQsafe⟩ :=
+      hlocalized, hQsafe⟩ :=
     strongDeletion_certificate_avoids_allCommonSurvivalTargets
       hstrong (hKtailK.trans hKA) Ptail
         (max L Nrep)
@@ -38960,7 +38966,332 @@ theorem quadraticBlockTail_forces_largeTargetLocalizedCertificate
     have hjLarge := htailCapacity j
     omega
   exact ⟨Q, hQnonempty, hQlateL,
-    hcert, hlocalized, hQlarge⟩
+    hcert, hlocalized, hrepresented, hQsafe, hQlarge⟩
+
+/-- A quadratic-tail certificate can be bracketed against the same
+protected target stream.
+
+Start after both the prescribed protected index and the quadratic
+certificate capacity.  Universal survival of every protected target
+persists on this tail.  The cardinal-minimal certificate is disjoint from
+all such universally surviving targets, so every one of its late labels
+lies strictly between two consecutive protected targets.  The bracketing
+index remains inside the tail, while the certificate retains its
+target-private selector and its forced cardinal growth. -/
+theorem quadraticBlockTail_forces_largeBracketedTargetLocalizedCertificate
+    {A K : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (hbasis :
+      IsExactTupleAsymptoticBasis A (k + 1))
+    (hstrong :
+      StrongInfiniteDeletion
+        (additiveSupportFamily A (k + 1)) A)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hquadratic : ∀ i,
+      (i + k + 2) ^ 2 < (cell i).card)
+    (htargetStrict : StrictMono target)
+    (hsurvive : ∀ s : BlockSelector cell, ∀ n,
+      ∃ E ∈ additiveSupportFamily A (k + 1) (target n),
+        Disjoint (E : Set ℕ) (selectedSet s)) :
+    ∀ C L,
+      let capacity := (k + 1) * C + (k + 1)
+      let start := capacity + 1
+      let tailCell : ℕ → Finset ℕ :=
+        fun i => cell (start + i)
+      ∃ Q : Finset ℕ,
+        Q.Nonempty ∧
+        (∀ q ∈ Q, ∃ i,
+          start ≤ i ∧
+          L ≤ i ∧
+          target i < q ∧
+          q < target (i + 1)) ∧
+        (∀ s : BlockSelector tailCell, ∃ q ∈ Q,
+          DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q) ∧
+        (∀ q ∈ Q, ∃ s : BlockSelector tailCell,
+          DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q ∧
+          ∀ q' ∈ Q, q' ≠ q →
+            ¬ DestroysAt
+              (additiveSupportFamily A (k + 1))
+              (selectedSet s) q') ∧
+        (∀ q ∈ Q,
+          (additiveSupportFamily A (k + 1) q).Nonempty) ∧
+        C < Q.card := by
+  classical
+  intro C L
+  let capacity := (k + 1) * C + (k + 1)
+  let start := capacity + 1
+  let tailCell : ℕ → Finset ℕ :=
+    fun i => cell (start + i)
+  let base := max start L
+  let targetFloor := target (base + 1) + 1
+  obtain ⟨Q, hQnonempty, hQlate, hcert,
+      hlocalized, hrepresented, hQsafe, hQlarge⟩ :=
+    quadraticBlockTail_forces_largeTargetLocalizedCertificate
+      hbasis hstrong hKA P hquadratic C targetFloor
+  refine
+    ⟨Q, hQnonempty, ?_, hcert, hlocalized,
+      hrepresented, hQlarge⟩
+  intro q hqQ
+  have htargetBaseQ :
+      target (base + 1) < q := by
+    have := hQlate q hqQ
+    dsimp only [targetFloor] at this
+    omega
+  have htargetZeroQ : target 0 < q := by
+    have hindex : 0 < base + 1 := by omega
+    exact (htargetStrict hindex).trans htargetBaseQ
+  obtain ⟨i, hiLower, hiUpper⟩ :=
+    strictMono_exists_predecessor_bracket
+      htargetStrict htargetZeroQ
+  have hbaseI : base ≤ i := by
+    by_contra hnot
+    have hiBase : i < base := Nat.lt_of_not_ge hnot
+    have hsuccLe : i + 1 ≤ base + 1 := by omega
+    have htargetLe :
+        target (i + 1) ≤ target (base + 1) :=
+      htargetStrict.monotone hsuccLe
+    omega
+  have htargetSafe :
+      target (i + 1) ∈
+        commonSurvivalTargets
+          (additiveSupportFamily A (k + 1))
+          tailCell := by
+    exact
+      IsCommonSurvivalTarget.of_blockTail
+        P (hsurvive · (i + 1)) start
+  have hqNeUpper : q ≠ target (i + 1) := by
+    intro hq
+    exact Set.disjoint_left.mp hQsafe
+      (Finset.mem_coe.mpr hqQ)
+      (hq ▸ htargetSafe)
+  refine ⟨i, ?_, ?_, hiLower,
+    lt_of_le_of_ne hiUpper hqNeUpper⟩
+  · exact (le_max_left start L).trans hbaseI
+  · exact (le_max_right start L).trans hbaseI
+
+/-- Quadratic cardinal feedback and protected-gap alignment can be imposed
+simultaneously.
+
+Choose the target-localized certificate on the quadratic tail whose first
+block lies beyond the complete finite arithmetic threshold.  The preceding
+bracketing theorem puts a chosen private target `q` strictly above
+`target i`, with `i` still in that tail.  Extend its private tail selector
+arbitrarily over the discarded prefix and invoke the protected moving-root
+matching at `target i`.  Restricting back to the tail preserves every
+moving petal.
+
+The conclusion therefore carries, in one configuration:
+
+* the target-private tail certificate and all represented certificate
+  labels;
+* the exact translation `q = target i + δ`;
+* the large rooted matching inside the original source block `cell i`,
+  disjoint from the same private tail selector; and
+* the complete target-localized arithmetic outcome at `q`.
+
+No old block can appear in the arithmetic outcome, because its partition is
+the prescribed quadratic tail from the outset. -/
+theorem quadraticBlockTail_forces_alignedTargetLocalizedArithmeticOutcome
+    {A K : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (hbasis :
+      IsExactTupleAsymptoticBasis A (k + 1))
+    (hstrong :
+      StrongInfiniteDeletion
+        (additiveSupportFamily A (k + 1)) A)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hquadratic : ∀ i,
+      (i + k + 2) ^ 2 < (cell i).card)
+    (htargetStrict : StrictMono target)
+    (hsurvive : ∀ s : BlockSelector cell, ∀ n,
+      ∃ E ∈ additiveSupportFamily A (k + 1) (target n),
+        Disjoint (E : Set ℕ) (selectedSet s))
+    (hlargeSurvive : ∀ s : BlockSelector cell, ∀ i,
+      ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+        R.card < k + 1 ∧
+        Disjoint (R : Set ℕ) K ∧
+        i + 1 < M.card ∧
+        M ⊆ additiveSupportFamily A (k + 1) (target i) ∧
+        (∀ E ∈ M, R ⊆ E) ∧
+        (∀ E ∈ M, (E \ R).Nonempty) ∧
+        (∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+          Disjoint (E \ R) (G \ R)) ∧
+        (∀ E ∈ M,
+          Disjoint (E : Set ℕ) (selectedSet s)) ∧
+        M.biUnion (fun E => E \ R) ⊆ cell i) :
+    ∀ L coverDemand anchorDemand differenceDemand
+        lowerMatchingDemand currentMatchingDemand,
+      let geometricThreshold :=
+        (((anchorDemand *
+              additiveRootedMatchingBound
+                k lowerMatchingDemand) *
+            differenceDemand) *
+          (k + 1 + coverDemand)) *
+            additiveRootedMatchingBound
+              (k + 1) currentMatchingDemand
+      let certificateBound := geometricThreshold + 1
+      let capacity :=
+        (k + 1) * certificateBound + (k + 1)
+      let start := capacity + 1
+      let tailCell : ℕ → Finset ℕ :=
+        fun j => cell (start + j)
+      ∃ Q : Finset ℕ, ∃ s : BlockSelector tailCell,
+      ∃ i q δ, ∃ R : Finset ℕ,
+      ∃ M : Finset (Finset ℕ), ∃ hqQ : q ∈ Q,
+        (∀ u : BlockSelector tailCell, ∃ r ∈ Q,
+          DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet u) r) ∧
+        (∀ r ∈ Q, ∃ u : BlockSelector tailCell,
+          DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet u) r ∧
+          ∀ r' ∈ Q, r' ≠ r →
+            ¬ DestroysAt
+              (additiveSupportFamily A (k + 1))
+              (selectedSet u) r') ∧
+        (∀ r ∈ Q,
+          (additiveSupportFamily A (k + 1) r).Nonempty) ∧
+        start ≤ i ∧
+        L ≤ i ∧
+        target i < q ∧
+        q < target (i + 1) ∧
+        0 < δ ∧
+        q = target i + δ ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet s) q ∧
+        R.card < k + 1 ∧
+        Disjoint (R : Set ℕ) K ∧
+        i + 1 < M.card ∧
+        M ⊆ additiveSupportFamily A (k + 1) (target i) ∧
+        (∀ E ∈ M, R ⊆ E) ∧
+        (∀ E ∈ M, (E \ R).Nonempty) ∧
+        (∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+          Disjoint (E \ R) (G \ R)) ∧
+        (∀ E ∈ M,
+          Disjoint (E : Set ℕ) (selectedSet s)) ∧
+        M.biUnion (fun E => E \ R) ⊆ cell i ∧
+        M.biUnion (fun E => E \ R) ⊆
+          tailCell (i - start) ∧
+        HasTargetLocalizedArithmeticOutcome
+          A k coverDemand anchorDemand differenceDemand
+            lowerMatchingDemand currentMatchingDemand
+            tailCell Q q hqQ := by
+  classical
+  intro L coverDemand anchorDemand differenceDemand
+      lowerMatchingDemand currentMatchingDemand
+  let geometricThreshold :=
+    (((anchorDemand *
+          additiveRootedMatchingBound
+            k lowerMatchingDemand) *
+        differenceDemand) *
+      (k + 1 + coverDemand)) *
+        additiveRootedMatchingBound
+          (k + 1) currentMatchingDemand
+  let certificateBound := geometricThreshold + 1
+  let capacity :=
+    (k + 1) * certificateBound + (k + 1)
+  let start := capacity + 1
+  let tailCell : ℕ → Finset ℕ :=
+    fun j => cell (start + j)
+  let Ktail : Set ℕ :=
+    {x | ∃ j, x ∈ tailCell j}
+  have Ptail :
+      IsFiniteBlockPartition Ktail tailCell := by
+    refine ⟨?_, ?_, ?_⟩
+    · intro j
+      exact P.nonempty (start + j)
+    · intro j ℓ hjℓ
+      apply P.disjoint
+      omega
+    · intro x
+      simp only [Ktail, tailCell, Set.mem_setOf_eq]
+  obtain ⟨Q, hQnonempty, hQbracket, hcert,
+      hlocalized, hrepresented, hQlarge⟩ :=
+    quadraticBlockTail_forces_largeBracketedTargetLocalizedCertificate
+      hbasis hstrong hKA P hquadratic htargetStrict
+        hsurvive certificateBound L
+  obtain ⟨q, hqQ⟩ := hQnonempty
+  obtain ⟨i, hiStart, hiL, hiLower, hiUpper⟩ :=
+    hQbracket q hqQ
+  obtain ⟨s, hqDestroy, hotherSurvives⟩ :=
+    hlocalized q hqQ
+  let fullSelector : BlockSelector cell := fun j =>
+    if hj : start ≤ j then
+      ⟨(s (j - start)).1, by
+        have hmem := (s (j - start)).2
+        have hmem' :
+            (s (j - start)).1 ∈
+              cell (start + (j - start)) := by
+          simpa only [tailCell] using hmem
+        simpa only [Nat.add_sub_of_le hj] using hmem'⟩
+    else
+      ⟨(P.nonempty j).choose, (P.nonempty j).choose_spec⟩
+  have htailSelected :
+      selectedSet s ⊆ selectedSet fullSelector := by
+    rintro x ⟨j, rfl⟩
+    refine ⟨start + j, ?_⟩
+    change (fullSelector (start + j)).1 = (s j).1
+    dsimp only [fullSelector]
+    rw [dif_pos (Nat.le_add_right start j)]
+    have hindex : start + j - start = j := by omega
+    exact congrArg (fun ℓ => (s ℓ).1) hindex
+  obtain ⟨R, M, hRcard, hRK, hMlarge, hMsub,
+      hMroot, hMnonempty, hMmatching,
+      hMfullSelected, hMcell⟩ :=
+    hlargeSurvive fullSelector i
+  have hMselected :
+      ∀ E ∈ M,
+        Disjoint (E : Set ℕ) (selectedSet s) := by
+    intro E hEM
+    exact
+      Set.disjoint_of_subset_right
+        htailSelected (hMfullSelected E hEM)
+  let δ := q - target i
+  have hδpos : 0 < δ := by
+    dsimp only [δ]
+    omega
+  have hqδ : q = target i + δ := by
+    dsimp only [δ]
+    omega
+  have hMtail :
+      M.biUnion (fun E => E \ R) ⊆
+        tailCell (i - start) := by
+    have hindex : start + (i - start) = i :=
+      Nat.add_sub_of_le hiStart
+    simpa only [tailCell, hindex] using hMcell
+  have hcardErase :
+      (Q.erase q).card + 1 = Q.card :=
+    Finset.card_erase_add_one hqQ
+  have hlargeErase :
+      geometricThreshold < (Q.erase q).card := by
+    dsimp only [certificateBound] at hQlarge
+    omega
+  have houtcome :=
+    targetLocalizedAdditiveFamily_forces_rootedMatching_or_reducedStream_or_anchoredArithmeticConcentration
+      (A := A) (k := k)
+      (L := coverDemand)
+      (anchorDemand := anchorDemand)
+      (differenceDemand := differenceDemand)
+      (lowerMatchingDemand := lowerMatchingDemand)
+      (currentMatchingDemand := currentMatchingDemand)
+      Ptail hqQ hrepresented hcert hlocalized hlargeErase
+  refine
+    ⟨Q, s, i, q, δ, R, M, hqQ,
+      hcert, hlocalized, hrepresented, hiStart, hiL,
+      hiLower, hiUpper, hδpos, hqδ, hqDestroy,
+      hRcard, hRK, hMlarge, hMsub, hMroot,
+      hMnonempty, hMmatching, hMselected, hMcell,
+      hMtail, ?_⟩
+  simpa only [HasTargetLocalizedArithmeticOutcome] using
+    houtcome
 
 /-- Quadratic block tails force the fully refined localized arithmetic
 outcome at every prescribed scale.
@@ -39061,7 +39392,7 @@ theorem quadraticBlockTail_forces_targetLocalizedArithmeticOutcome
     hasEventuallySurvivingSupport_empty_additive_iff.mpr
       hbasis
   obtain ⟨Q, hQnonempty, hQlate, hcert,
-      hlocalized, hQlarge⟩ :=
+      hlocalized, _hrepresented, _hQsafe, hQlarge⟩ :=
     quadraticBlockTail_forces_largeTargetLocalizedCertificate
       hbasis hstrong hKA P hquadratic certificateBound
         (max targetFloor Nrep)
@@ -46972,5 +47303,288 @@ theorem exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedArithmet
     · exact Or.inr
         ⟨K, cell, target, hKA, hKInfinite, P,
           htargetStrict, hcellLarge, hremainder'⟩
+
+/-- Capacity-resolved form of one target-localized arithmetic outcome on a
+quadratic tail.
+
+The first five alternatives are the exact-target matching, reduced stream,
+aligned difference growth, current-order matching, and two-rank descent.
+The last two are the genuine output of rerunning a capacity witness:
+a support avoiding a strictly later tail block, or a repeated-block
+cluster above the full anchored threshold.  A bare small-block alternative
+does not occur. -/
+def HasCapacityResolvedTargetLocalizedArithmeticOutcome
+    (A : Set ℕ) (k n : ℕ)
+    (cell : ℕ → Finset ℕ)
+    (Q : Finset ℕ) (q : ℕ) (hqQ : q ∈ Q) : Prop :=
+  (∃ root : Finset ℕ,
+      ∃ M : Finset (Finset ℕ),
+        root.card < k + 1 ∧
+        M ⊆ additiveSupportFamily A (k + 1) q ∧
+        n + 1 < M.card ∧
+        (∀ E ∈ M, root ⊆ E) ∧
+        (∀ E ∈ M, (E \ root).Nonempty) ∧
+        ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+          Disjoint (E \ root) (G \ root)) ∨
+    (∃ E ∈ additiveSupportFamily A (k + 1) q,
+      ∃ T : Finset {r // r ∈ Q.erase q},
+        HasCommonColumnReducedCoverStream
+          A k (n + 1) cell Q q hqQ E T) ∨
+    (∃ E ∈ additiveSupportFamily A (k + 1) q,
+      ∃ T : Finset {r // r ∈ Q.erase q},
+        HasAlignedAnchoredDifferenceGrowth
+          A k (n + 1) cell Q q hqQ E T) ∨
+    HasCurrentOrderRootedMatchingAt A k (n + 1) ∨
+    (∃ r, ∃ D : Finset ℕ, ∃ d,
+      D.Nonempty ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (k + 1)) D r ∧
+      (additiveSupportFamily A (k - 1) d).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A (k - 1))
+        (D : Set ℕ) d) ∨
+    (∃ E ∈ additiveSupportFamily A (k + 1) q,
+      ∃ i j, i < j ∧ Disjoint E (cell j)) ∨
+    ∃ E ∈ additiveSupportFamily A (k + 1) q,
+      ∃ T : Finset {r // r ∈ Q.erase q},
+      ∃ coveredBlock : {r // r ∈ Q.erase q} → ℕ,
+      ∃ j ∈ T.image coveredBlock,
+        (∀ p ∈ T,
+          HasPrescribedCommonColumnCover
+            A k cell Q q hqQ E p (coveredBlock p)) ∧
+        (((n + 1 + k) *
+            additiveRootedMatchingBound k (n + 1)) *
+          (n + 1)) <
+            (T.filter fun p =>
+              coveredBlock p = j).card
+
+/-- One diagonal quadratic-tail stage with the protected source alignment
+retained after capacity resolution.
+
+The certificate, its private selector, the source rooted matching, and the
+identity `q = target i + δ` all live in one record.  The terminal arithmetic
+outcome is capacity-free in the precise sense of
+`HasCapacityResolvedTargetLocalizedArithmeticOutcome`. -/
+def HasQuadraticTailAlignedResolvedArithmeticAt
+    (A K : Set ℕ) (k : ℕ)
+    (cell : ℕ → Finset ℕ) (target : ℕ → ℕ)
+    (n : ℕ) : Prop :=
+  let start := localizedArithmeticDiagonalStart k n
+  let tailCell : ℕ → Finset ℕ :=
+    fun j => cell (start + j)
+  ∃ Q : Finset ℕ, ∃ s : BlockSelector tailCell,
+  ∃ i q δ, ∃ R : Finset ℕ,
+  ∃ M : Finset (Finset ℕ), ∃ hqQ : q ∈ Q,
+    (∀ u : BlockSelector tailCell, ∃ r ∈ Q,
+      DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (selectedSet u) r) ∧
+    (∀ r ∈ Q, ∃ u : BlockSelector tailCell,
+      DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (selectedSet u) r ∧
+      ∀ r' ∈ Q, r' ≠ r →
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet u) r') ∧
+    (∀ r ∈ Q,
+      (additiveSupportFamily A (k + 1) r).Nonempty) ∧
+    start ≤ i ∧
+    n ≤ i ∧
+    target i < q ∧
+    q < target (i + 1) ∧
+    0 < δ ∧
+    q = target i + δ ∧
+    DestroysAt
+      (additiveSupportFamily A (k + 1))
+      (selectedSet s) q ∧
+    R.card < k + 1 ∧
+    Disjoint (R : Set ℕ) K ∧
+    i + 1 < M.card ∧
+    M ⊆ additiveSupportFamily A (k + 1) (target i) ∧
+    (∀ E ∈ M, R ⊆ E) ∧
+    (∀ E ∈ M, (E \ R).Nonempty) ∧
+    (∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+      Disjoint (E \ R) (G \ R)) ∧
+    (∀ E ∈ M,
+      Disjoint (E : Set ℕ) (selectedSet s)) ∧
+    M.biUnion (fun E => E \ R) ⊆ cell i ∧
+    M.biUnion (fun E => E \ R) ⊆
+      tailCell (i - start) ∧
+    HasCapacityResolvedTargetLocalizedArithmeticOutcome
+      A k n tailCell Q q hqQ
+
+/-- Counterexample-level diagonal alignment with the capacity horn removed.
+
+Instantiate the quadratic moving-root fusion with the exact diagonal
+localized-arithmetic schedule.  Exact-target matching and reduced streams
+are retained as fusion-ready alternatives.  Anchored concentration is
+resolved immediately; if it exposes a small tail block, the quadratic
+feedback theorem reruns the same localized certificate and replaces that
+capacity witness by exact-target matching, a strictly later avoided block,
+or a repeated-block cluster.
+
+Thus every scale of a hypothetical hard-order counterexample has one
+protected-gap-aligned, target-private stage with no terminal old-block or
+small-block escape. -/
+theorem exactBasis_counterexample_forces_cofinalQuadraticTailAlignedResolvedArithmetic
+    {A : Set ℕ} {k : ℕ}
+    (hk : 2 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1)) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+    ∃ target : ℕ → ℕ,
+      K ⊆ A ∧
+      K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      StrictMono target ∧
+      (∀ i, (i + k + 3) ^ 2 < (cell i).card) ∧
+      ∀ n,
+        HasQuadraticTailAlignedResolvedArithmeticAt
+          A K k cell target n := by
+  classical
+  obtain ⟨K, cell, target, hKA, hKInfinite, P,
+      htargetStrict, hcellLarge, hsurvive,
+      hlargeSurvive⟩ :=
+    exactBasis_counterexample_forces_coherentMovingRootFusion
+      hbasis hcounter
+  have hquadratic :
+      ∀ i, (i + k + 2) ^ 2 < (cell i).card := by
+    intro i
+    exact
+      (Nat.pow_le_pow_left (by omega) 2).trans_lt
+        (hcellLarge i)
+  refine
+    ⟨K, cell, target, hKA, hKInfinite, P,
+      htargetStrict, hcellLarge, ?_⟩
+  intro n
+  let start := localizedArithmeticDiagonalStart k n
+  let tailCell : ℕ → Finset ℕ :=
+    fun j => cell (start + j)
+  have haligned :=
+    quadraticBlockTail_forces_alignedTargetLocalizedArithmeticOutcome
+      hbasis.succ
+      (strongExactDeletion_of_counterexample hcounter)
+      hKA P hquadratic htargetStrict hsurvive hlargeSurvive
+      n (n + 1) (n + 1 + k) (n + 1) (n + 1) (n + 1)
+  obtain ⟨Q, s, i, q, δ, R, M, hqQ,
+      hcert, hlocalized, hrepresented, hiStart, hiScale,
+      hiLower, hiUpper, hδpos, hqδ, hqDestroy,
+      hRcard, hRK, hMlarge, hMsub, hMroot,
+      hMnonempty, hMmatching, hMselected, hMcell,
+      hMtail, houtcome⟩ :=
+    haligned
+  have hstartEq :
+      start =
+        (((k + 1) *
+            (((((n + 1 + k) *
+                additiveRootedMatchingBound k (n + 1)) *
+              (n + 1)) *
+              (k + 1 + (n + 1))) *
+              additiveRootedMatchingBound
+                (k + 1) (n + 1) + 1) +
+            (k + 1)) + 1) := by
+    rfl
+  have hcert' :
+      ∀ u : BlockSelector tailCell, ∃ r ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet u) r := by
+    simpa only [tailCell, start, hstartEq] using hcert
+  have hlocalized' :
+      ∀ r ∈ Q, ∃ u : BlockSelector tailCell,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet u) r ∧
+        ∀ r' ∈ Q, r' ≠ r →
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet u) r' := by
+    simpa only [tailCell, start, hstartEq] using hlocalized
+  have hqDestroy' :
+      DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (selectedSet
+          (show BlockSelector tailCell from
+            (by simpa only [tailCell, start, hstartEq] using s))) q := by
+    simpa only [tailCell, start, hstartEq] using hqDestroy
+  let s' : BlockSelector tailCell := by
+    simpa only [tailCell, start, hstartEq] using s
+  have hMselected' :
+      ∀ E ∈ M,
+        Disjoint (E : Set ℕ) (selectedSet s') := by
+    simpa only [s', tailCell, start, hstartEq] using hMselected
+  have hMtail' :
+      M.biUnion (fun E => E \ R) ⊆
+        tailCell (i - start) := by
+    simpa only [tailCell, start, hstartEq] using hMtail
+  have houtcome' :
+      HasTargetLocalizedArithmeticOutcome
+        A k (n + 1) (n + 1 + k) (n + 1)
+          (n + 1) (n + 1) tailCell Q q hqQ := by
+    simpa only [tailCell, start, hstartEq] using houtcome
+  refine
+    ⟨Q, s', i, q, δ, R, M, hqQ,
+      hcert', hlocalized', hrepresented, ?_, hiScale,
+      hiLower, hiUpper, hδpos, hqδ, ?_,
+      hRcard, hRK, hMlarge, hMsub, hMroot,
+      hMnonempty, hMmatching, hMselected', hMcell,
+      hMtail', ?_⟩
+  · simpa only [start, hstartEq] using hiStart
+  · simpa only [s'] using hqDestroy'
+  · simp only [HasTargetLocalizedArithmeticOutcome] at houtcome'
+    rcases houtcome' with hexact |
+        ⟨E, hEmem, T, hstream | hconcentration⟩
+    · exact Or.inl hexact
+    · exact Or.inr (Or.inl ⟨E, hEmem, T, hstream⟩)
+    · let Ktail : Set ℕ :=
+        {x | ∃ j, x ∈ tailCell j}
+      have Ptail :
+          IsFiniteBlockPartition Ktail tailCell := by
+        refine ⟨?_, ?_, ?_⟩
+        · intro j
+          exact P.nonempty (start + j)
+        · intro j ℓ hjℓ
+          apply P.disjoint
+          omega
+        · intro x
+          simp only [Ktail, tailCell, Set.mem_setOf_eq]
+      have hresolved :=
+        anchoredArithmeticConcentration_forces_alignedGrowth_or_twoRankDescent_or_capacityFailure
+          (clearDemand := n + 1)
+          Ptail hk hconcentration hcert'
+      rcases hresolved with
+          hdifference | hmatching | hdescent | hcapacity
+      · exact Or.inr
+          (Or.inr (Or.inl ⟨E, hEmem, T, hdifference⟩))
+      · exact Or.inr
+          (Or.inr (Or.inr (Or.inl hmatching)))
+      · exact Or.inr
+          (Or.inr (Or.inr (Or.inr (Or.inl hdescent))))
+      · obtain ⟨j, hsmall⟩ := hcapacity
+        have hfeedback :=
+          diagonalCapacityFailure_forces_laterReducedBlock_or_growth
+            (A := A) (K := K) (k := k) (n := n)
+            hKA P hquadratic hqQ hrepresented
+              (by
+                simpa only [tailCell, start] using hcert')
+              (by
+                simpa only [tailCell, start] using hlocalized')
+              j
+              (by
+                simpa only [tailCell, start] using hsmall)
+        rcases hfeedback with
+            hexact' | hlater | hrepeated
+        · exact Or.inl hexact'
+        · obtain ⟨E', hE'mem, j', hjj', hE'j'⟩ :=
+            hlater
+          exact Or.inr
+            (Or.inr (Or.inr (Or.inr
+              (Or.inr (Or.inl
+                ⟨E', hE'mem, j, j', hjj', hE'j'⟩)))))
+        · exact Or.inr
+            (Or.inr (Or.inr (Or.inr
+              (Or.inr (Or.inr hrepeated)))))
 
 end Erdos881
