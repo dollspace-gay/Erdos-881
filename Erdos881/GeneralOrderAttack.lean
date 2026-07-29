@@ -46692,4 +46692,241 @@ theorem HasFusedSuccessorPredecessorStreams.forces_cofinalBoundaryRepairs_or_fix
     · simpa only [hrankEq] using hGmem
     · simpa only [hrankEq] using hgap
 
+/-- One unbounded rooted-matching injury at the original basis order.
+
+Unlike a large set of merely represented targets, this records many
+supports of one common target with pairwise-disjoint moving petals. -/
+def HasCurrentOrderRootedMatchingAt
+    (A : Set ℕ) (k demand : ℕ) : Prop :=
+  ∃ d, ∃ root : Finset ℕ,
+    ∃ M : Finset (Finset ℕ),
+      root.card < k ∧
+      M ⊆ additiveSupportFamily A k d ∧
+      demand < M.card ∧
+      (∀ H ∈ M, root ⊆ H) ∧
+      (∀ H ∈ M, (H \ root).Nonempty) ∧
+      ∀ H ∈ M, ∀ G ∈ M, H ≠ G →
+        Disjoint (H \ root) (G \ root)
+
+/-- Lowering the cardinal demand preserves a current-order rooted-matching
+stage. -/
+theorem HasCurrentOrderRootedMatchingAt.mono
+    {A : Set ℕ} {k demand demand' : ℕ}
+    (hstage :
+      HasCurrentOrderRootedMatchingAt A k demand)
+    (hdemand : demand' ≤ demand) :
+    HasCurrentOrderRootedMatchingAt A k demand' := by
+  obtain ⟨d, root, M, hrootCard, hMsub,
+      hMlarge, hMroot, hMpetal, hMmatching⟩ :=
+    hstage
+  exact
+    ⟨d, root, M, hrootCard, hMsub,
+      lt_of_le_of_lt hdemand hMlarge,
+      hMroot, hMpetal, hMmatching⟩
+
+/-- Unbounded current-order rooted matchings, at every requested
+cardinality. -/
+def HasCofinalCurrentOrderRootedMatchings
+    (A : Set ℕ) (k : ℕ) : Prop :=
+  ∀ demand,
+    HasCurrentOrderRootedMatchingAt A k demand
+
+/-- Unbounded rooted matchings at order `k` supply every fresh
+order-`k+1` fusion step.
+
+For the current finite history, request a raw matching beyond the complete
+prefix-clearing and bounded-target threshold.  Normalize it with
+`largeSupportFamily_forces_cofinal_prefixDisjointRootedMatching`, using
+the successor basis `hbasis.succ` as the target order.  Any rank lost while
+clearing the old root is padded back to `k+1`, so the resulting petals avoid
+the whole history and the represented target clears `last`. -/
+theorem HasCofinalCurrentOrderRootedMatchings.freshSuccessorStepSupply
+    {A : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hgrowth :
+      HasCofinalCurrentOrderRootedMatchings A k) :
+    ∀ used last demand,
+      Nonempty
+        (FreshPredecessorRootedMatchingStep
+          A (k + 1) used last demand) := by
+  intro used last demand
+  let size :=
+    max (used.card + demand)
+      (additiveLowerRankSupportCountBelow
+        A (k + 1) (last + 1))
+  let need :=
+    additivePrefixAvoidingRootBound k size
+  obtain ⟨d, _rawRoot, rawM, _hrawRootCard,
+      hrawSub, hrawLarge, _hrawRoot, _hrawPetal,
+      _hrawMatching⟩ :=
+    hgrowth need
+  obtain ⟨t, root, M, htLate, hrootCard,
+      hrootUsed, hMsub, hMlarge, hMroot,
+      hMpetal, hMmatching⟩ :=
+    largeSupportFamily_forces_cofinal_prefixDisjointRootedMatching
+      (H := k + 1) (h := k)
+      (r := used.card + demand) (L := last + 1)
+      (m := d) (F := used)
+      hbasis.succ (by omega) hrawSub
+        (by
+          exact Nat.le_of_lt
+            (by simpa only [need, size] using hrawLarge))
+  exact
+    ⟨⟨t, root, M, by omega, hrootCard,
+      hrootUsed, hMsub, hMlarge, hMroot,
+      hMpetal, hMmatching⟩⟩
+
+/-- A recurrent current-order rooted-matching injury is consumed by the
+same infinite-deletion endpoint as the aligned successor matching.
+
+The preceding step supply constructs pairwise fresh petal blocks at order
+`k+1`.  Selecting one point from each block leaves a strict stream of
+successor targets represented off the resulting infinite deletion `Y`.
+Counterexample destruction supplies the opposing destroyed stream, and
+the existing bracketing theorem produces represented destroyed order-`k`
+predecessors on that same `Y`. -/
+theorem HasCofinalCurrentOrderRootedMatchings.fusesInfiniteDeletion
+    {A : Set ℕ} {k : ℕ}
+    (hkpos : 0 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1))
+    (hgrowth :
+      HasCofinalCurrentOrderRootedMatchings A k) :
+    HasFusedSuccessorPredecessorStreams A k := by
+  classical
+  obtain ⟨K, cell, oldTarget, _retained,
+      hKA, hKInfinite, _hKreserved, P, holdStrict,
+      _hretainedInjective, _hretainedA, _hKretained,
+      _hcellLarge, hlargeSurvival⟩ :=
+    freshPredecessorRootedMatchingSteps_have_commonSurvivalPartition_avoiding
+      hbasis.infinite
+      (hgrowth.freshSuccessorStepSupply hbasis)
+      ∅
+  let s : BlockSelector cell := fun i =>
+    ⟨(P.nonempty i).choose, (P.nonempty i).choose_spec⟩
+  let Y : Set ℕ := selectedSet s
+  have hYA : Y ⊆ A :=
+    (P.selectedSet_subset s).trans hKA
+  have hYInfinite : Y.Infinite :=
+    P.selectedSet_infinite s
+  have holdSurvival :
+      ∀ n,
+        ∃ E ∈
+            additiveSupportFamily A (k + 1)
+              (oldTarget n),
+          Disjoint (E : Set ℕ) Y := by
+    intro n
+    obtain ⟨_root, M, _hrootCard, _hrootK,
+        hMlarge, hMsub, _hMroot, _hMpetal,
+        _hMmatching, hMselected, _hMcell⟩ :=
+      hlargeSurvival s n
+    have hMnonempty : M.Nonempty :=
+      Finset.card_pos.mp (by omega)
+    obtain ⟨E, hEM⟩ := hMnonempty
+    exact ⟨E, hMsub hEM, hMselected E hEM⟩
+  have hsuccessorDestroy :
+      ∀ N, ∃ m, N ≤ m ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) Y m :=
+    strongExactDeletion_of_counterexample hcounter
+      Y hYA hYInfinite
+  have hrepresented :=
+    bracketedDestroyedSuccessorTargets_force_cofinalRepresentedPredecessorDestroyers
+      hkpos hbasis holdStrict holdSurvival
+        hsuccessorDestroy
+  exact
+    ⟨Y, oldTarget, hYA, hYInfinite, holdStrict,
+      holdSurvival, hsuccessorDestroy, hrepresented⟩
+
+/-- The eventual aligned arithmetic remainder after recurrent
+current-order rooted matchings have been removed.
+
+The original same-block/translation data are retained verbatim.  The
+additional cutoff says that no order-`k` rooted matching of diagonal size
+can occur at any later scale, so the matching member of the old four-way
+injury fork is formally impossible there. -/
+def HasEventuallyAlignedResolvedArithmeticWithoutCurrentMatching
+    (A : Set ℕ) (k : ℕ)
+    (cell : ℕ → Finset ℕ) (target : ℕ → ℕ) : Prop :=
+  HasEventuallyAlignedResolvedArithmeticInjuries
+      A k cell target ∧
+    ∃ N, ∀ n, N ≤ n →
+      ¬ HasCurrentOrderRootedMatchingAt A k n
+
+/-- Resolve the recurrent order-`k` rooted-matching member of the aligned
+arithmetic endpoint.
+
+If such stages recur cofinally, monotonicity turns them into unbounded
+current-order rooted matchings and the preceding theorem fuses them into
+one infinite deletion.  Otherwise one cutoff excludes that injury at every
+later diagonal scale while retaining the full aligned remainder. -/
+theorem HasEventuallyAlignedResolvedArithmeticInjuries.resolveCurrentOrderRootedMatchings
+    {A : Set ℕ} {k : ℕ}
+    (hkpos : 0 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1))
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (hremainder :
+      HasEventuallyAlignedResolvedArithmeticInjuries
+        A k cell target) :
+    HasFusedSuccessorPredecessorStreams A k ∨
+      HasEventuallyAlignedResolvedArithmeticWithoutCurrentMatching
+        A k cell target := by
+  classical
+  by_cases hcofinal :
+      ∀ N, ∃ n, N ≤ n ∧
+        HasCurrentOrderRootedMatchingAt A k n
+  · left
+    have hgrowth :
+        HasCofinalCurrentOrderRootedMatchings A k := by
+      intro demand
+      obtain ⟨n, hnDemand, hnStage⟩ :=
+        hcofinal demand
+      exact hnStage.mono hnDemand
+    exact
+      hgrowth.fusesInfiniteDeletion
+        hkpos hbasis hcounter
+  · right
+    push Not at hcofinal
+    exact ⟨hremainder, hcofinal⟩
+
+/-- Counterexample-level endpoint after the current-order matching injury
+has also been consumed.
+
+Every hypothetical hard-order counterexample now produces the fused
+successor/predecessor deletion directly, or an aligned arithmetic stream
+in which recurrent order-`k` rooted matching growth is excluded.  Thus the
+remaining aligned injuries are the coherent-difference, two-rank, and
+after-the-fact capacity-feedback mechanisms. -/
+theorem exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedArithmeticWithoutCurrentMatching
+    {A : Set ℕ} {k : ℕ}
+    (hk : 2 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1)) :
+    HasFusedSuccessorPredecessorStreams A k ∨
+      ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ target : ℕ → ℕ,
+        K ⊆ A ∧
+        K.Infinite ∧
+        IsFiniteBlockPartition K cell ∧
+        StrictMono target ∧
+        (∀ i, i + 2 < (cell i).card) ∧
+        HasEventuallyAlignedResolvedArithmeticWithoutCurrentMatching
+          A k cell target := by
+  obtain ⟨K, cell, target, hKA, hKInfinite, P,
+      htargetStrict, hcellLarge, hfused | hremainder⟩ :=
+    exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedArithmeticInjuries
+      hk hbasis hcounter
+  · exact Or.inl hfused
+  · obtain hfused | hremainder' :=
+      hremainder.resolveCurrentOrderRootedMatchings
+        (by omega) hbasis hcounter
+    · exact Or.inl hfused
+    · exact Or.inr
+        ⟨K, cell, target, hKA, hKInfinite, P,
+          htargetStrict, hcellLarge, hremainder'⟩
+
 end Erdos881

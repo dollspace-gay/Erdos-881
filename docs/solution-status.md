@@ -1,3 +1,37 @@
+# GENERAL ORDER: CURRENT-ORDER MATCHING INJURY CONSUMED (2026-07-29)
+
+The unbounded order-`k` rooted-matching member of the final aligned
+arithmetic fork is no longer a terminal alternative.
+
+- `HasCurrentOrderRootedMatchingAt` records the nonvacuous geometry:
+  arbitrarily many supports of one order-`k` target with a bounded common
+  root and pairwise-disjoint nonempty petals.
+- `freshSuccessorStepSupply` asks for enough of those supports to absorb
+  the complete old-prefix and bounded-target thresholds.  The existing
+  normalization theorem clears the old root and pads any descended rank
+  to order `k+1`, preserving the petal cardinality.
+- `HasCofinalCurrentOrderRootedMatchings.fusesInfiniteDeletion` runs the
+  coherent rooted-matching recursion.  It produces one infinite deletion
+  with a strict surviving successor stream; counterexample destruction and
+  predecessor bracketing then supply the full
+  `HasFusedSuccessorPredecessorStreams` endpoint on that same deletion.
+- `resolveCurrentOrderRootedMatchings` applies the cofinal/eventual fork to
+  the aligned arithmetic remainder.  Recurrence is consumed by the fusion
+  above.  Otherwise one explicit cutoff excludes a diagonal-size
+  order-`k` rooted matching at every later scale.
+- The counterexample-level capstone
+  `exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedArithmeticWithoutCurrentMatching`
+  therefore leaves, outside the fused engine, only coherent anchored
+  difference growth, represented two-rank destruction, and the
+  after-the-fact capacity-feedback branch.
+
+This removes a genuine cardinal branch; it does not settle the theorem.
+The next direct elimination target is capacity feedback, using the existing
+quadratic-tail rerun to turn every small-block witness into a later
+block-avoidance step or a repeated-block cluster.  After that, the
+coherent-difference and two-rank branches are the remaining arithmetic
+obstructions.
+
 # GENERAL ORDER: LOWER-RANK TRANSLATION GAPS STABILIZE (2026-07-29)
 
 The no-boundary side of the fused-stream fork can no longer escape by
