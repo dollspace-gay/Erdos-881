@@ -1,3 +1,70 @@
+# GENERAL ORDER: THE INFINITE SOURCE-ADVANCE FUSION IS COMPLETE (2026-07-29)
+
+The global coherence obstruction left by the finite predecessor iteration
+has now been removed.
+
+`FixedPredecessorAdvanceChain` records a genuinely infinite run of the
+terminal state transition.  Its deletions are nested, its restored points
+\(x_n\) are pairwise distinct, and its predecessor values grow strictly.
+`descendantExit_or_infiniteAdvanceChain` proves that every recursive state
+either reaches arithmetic injury/gap in a descendant state or supplies
+such an infinite chain.
+
+The key observation is that exhaustion of the nested deletion is not a
+failure.  Before \(x_n\) is restored, every support in the \(n\)-th state
+avoids the current deletion, and therefore avoids \(x_n\).  Choose one
+increasingly late order-\(k\) support \(F_n\) at each stage.  The map
+
+\[
+  x_n\longmapsto F_n
+\]
+
+has uniformly bounded finite values and never maps a point to a set
+containing itself.  The existing bounded point-map free-set theorem
+therefore gives an infinite set \(B\subseteq\{x_n:n\in\mathbb N\}\) such
+that every \(F_n\) indexed by a point of \(B\) is disjoint from all of
+\(B\).
+
+`FixedPredecessorAdvanceChain.fuses_restoredPoints` formalizes exactly this
+argument.  After increasingly enumerating the corresponding stages, one
+fixed infinite deletion \(B\subseteq D\) carries:
+
+- a strict stream of clean order-\(k\) supports;
+- a marked point in each support;
+- a strict stream of predecessors obtained by removing those marked
+  points.
+
+Thus no protected-reserve hypothesis is needed: if the old reserve is
+exhausted, a free infinite subset of the restored points becomes the new
+reserve.
+
+`movingPredecessorStrictSurvivalStream_forces_arithmeticInjuryAtFloor`
+then brackets strong-minimality failures between these fused surviving
+targets.  At every prescribed floor \(L\), on the same deletion \(B\), it
+produces a clean order-\(k-1\) predecessor \(d\) with
+
+\[
+  (k-1)L\le d
+\]
+
+and a destroyed translate \(d+\eta\).  Finite simultaneous descent turns
+this into a same-rank gap, a strict lower-rank gap beyond \(L\), or a
+translated clean point entering \(B\).
+
+The packaged endpoint
+`descendantExit_or_fusedArithmeticInjury` is the desired infinite
+iteration/fusion theorem: a recursive terminal state yields either an
+earlier fixed-state arithmetic exit or one common infinite deletion with
+arithmetic injury at every scale.
+
+This is still not the full Erdős 881 solution.  What remains is no longer
+the finite-to-infinite coherence problem.  The next direct attack is to
+align the fused arithmetic injuries with the original exact target and
+translation.  The three possible injury shapes must be consumed by the
+existing exact-target repair/matching machinery: repair the destroyed
+target, force forbidden same-target matching growth, or fuse the translated
+holes.
+
 # GENERAL ORDER: TERMINAL SOURCE ADVANCE NOW ITERATES TO EVERY FINITE SCALE (2026-07-29)
 
 The codimension-one source advance is now a genuine recursive engine.

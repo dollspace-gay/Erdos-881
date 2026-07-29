@@ -51928,6 +51928,774 @@ theorem
         hstate.reachesEveryArithmeticThresholdOrInjury
           hk hminimal⟩
 
+/-! ## Infinite free-set fusion of predecessor advances
+
+Finite source iteration leaves an apparent diagonal leak: the union of the
+successively restored singleton points could exhaust the original
+deletion.  That case is actually the useful one.  Before `xₙ` is restored,
+every support in the current state avoids the current deletion and hence
+avoids `xₙ`.  Attach one bounded order-`k` support to each `xₙ` and apply
+the bounded point-map free-set theorem.  It returns an infinite set of
+restored points which simultaneously avoids all of its attached supports.
+
+Thus either the nested deletions retain an obvious infinite reserve, or
+the restored points themselves contain a coherent infinite deletion.  The
+construction below packages the latter conclusion without requiring the
+nested intersection to be infinite.
+-/
+
+/-- An infinite sequence of genuine singleton predecessor advances. -/
+structure FixedPredecessorAdvanceChain
+    (A D : Set ℕ) (k d : ℕ) where
+  deletion : ℕ → Set ℕ
+  predecessor : ℕ → ℕ
+  removed : ℕ → ℕ
+  survival :
+    ∀ n,
+      HasFixedPredecessorSurvivalState
+        A (deletion n) k (predecessor n)
+  deletion_zero : deletion 0 = D
+  predecessor_zero : predecessor 0 = d
+  removed_mem : ∀ n, removed n ∈ deletion n
+  removed_mem_A : ∀ n, removed n ∈ A
+  deletion_succ :
+    ∀ n, deletion (n + 1) = deletion n \ {removed n}
+  predecessor_step :
+    ∀ n, predecessor n < predecessor (n + 1)
+
+/-- Proposition-valued wrapper for an infinite predecessor-advance chain. -/
+def HasInfiniteFixedPredecessorAdvanceChain
+    (A D : Set ℕ) (k d : ℕ) : Prop :=
+  Nonempty (FixedPredecessorAdvanceChain A D k d)
+
+/-- The deletions occurring along an advance chain form a decreasing
+sequence. -/
+theorem FixedPredecessorAdvanceChain.deletion_antitone
+    {A D : Set ℕ} {k d : ℕ}
+    (chain : FixedPredecessorAdvanceChain A D k d) :
+    Antitone chain.deletion := by
+  apply antitone_nat_of_succ_le
+  intro n
+  rw [chain.deletion_succ n]
+  exact Set.diff_subset
+
+/-- The predecessor labels along an advance chain are strictly increasing. -/
+theorem FixedPredecessorAdvanceChain.predecessor_strict
+    {A D : Set ℕ} {k d : ℕ}
+    (chain : FixedPredecessorAdvanceChain A D k d) :
+    StrictMono chain.predecessor :=
+  strictMono_nat_of_lt_succ chain.predecessor_step
+
+/-- A singleton advance never restores the same point twice. -/
+theorem FixedPredecessorAdvanceChain.removed_injective
+    {A D : Set ℕ} {k d : ℕ}
+    (chain : FixedPredecessorAdvanceChain A D k d) :
+    Function.Injective chain.removed := by
+  intro i j hij
+  by_contra hne
+  rcases Nat.lt_or_gt_of_ne hne with hijIndex | hjiIndex
+  · have hfuture :
+        chain.removed j ∈ chain.deletion (i + 1) := by
+      exact
+        chain.deletion_antitone
+          (Nat.succ_le_of_lt hijIndex)
+          (chain.removed_mem j)
+    have hremovedNot :
+        chain.removed i ∉ chain.deletion (i + 1) := by
+      rw [chain.deletion_succ i]
+      simp
+    rw [hij] at hremovedNot
+    exact hremovedNot hfuture
+  · have hfuture :
+        chain.removed i ∈ chain.deletion (j + 1) := by
+      exact
+        chain.deletion_antitone
+          (Nat.succ_le_of_lt hjiIndex)
+          (chain.removed_mem i)
+    have hremovedNot :
+        chain.removed j ∉ chain.deletion (j + 1) := by
+      rw [chain.deletion_succ j]
+      simp
+    rw [← hij] at hremovedNot
+    exact hremovedNot hfuture
+
+/-- A state below the original deletion, used to run classical dependent
+choice without losing the subset invariant. -/
+structure FixedPredecessorStateBelow
+    (A D : Set ℕ) (k : ℕ) where
+  deletion : Set ℕ
+  predecessor : ℕ
+  deletion_subset : deletion ⊆ D
+  survival :
+    HasFixedPredecessorSurvivalState
+      A deletion k predecessor
+
+/-- One selected successor of a predecessor state below the original
+deletion. -/
+structure FixedPredecessorAdvanceChoice
+    (A D : Set ℕ) (k : ℕ)
+    (state : FixedPredecessorStateBelow A D k) where
+  point : ℕ
+  successor : FixedPredecessorStateBelow A D k
+  point_mem : point ∈ state.deletion
+  point_mem_A : point ∈ A
+  successor_deletion :
+    successor.deletion = state.deletion \ {point}
+  predecessor_lt :
+    state.predecessor < successor.predecessor
+
+/-- If no descendant state has already reached arithmetic injury or a
+genuine gap, classical iteration produces an infinite singleton-advance
+chain. -/
+theorem
+    HasFixedPredecessorSurvivalState.descendantExit_or_infiniteAdvanceChain
+    {A D : Set ℕ} {k d : ℕ}
+    (hk : 1 < k)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (hstate :
+      HasFixedPredecessorSurvivalState A D k d) :
+    (∃ D' : Set ℕ, ∃ d',
+        D' ⊆ D ∧
+        HasFixedPredecessorSurvivalState A D' k d' ∧
+        (HasCofinalFixedPredecessorArithmeticInjury
+            A D' k d' ∨
+          HasFixedPredecessorArithmeticGap
+            A D' k d')) ∨
+      HasInfiniteFixedPredecessorAdvanceChain
+        A D k d := by
+  classical
+  by_cases hexit :
+      ∃ D' : Set ℕ, ∃ d',
+        D' ⊆ D ∧
+        HasFixedPredecessorSurvivalState A D' k d' ∧
+        (HasCofinalFixedPredecessorArithmeticInjury
+            A D' k d' ∨
+          HasFixedPredecessorArithmeticGap
+            A D' k d')
+  · exact Or.inl hexit
+  · right
+    have hchoice :
+        ∀ state : FixedPredecessorStateBelow A D k,
+          Nonempty
+            (FixedPredecessorAdvanceChoice
+              A D k state) := by
+      intro state
+      obtain hinjury | hgap |
+          ⟨x, D', d', hxD, hxA, hD'eq,
+            hD'D, hdd', hstate'⟩ :=
+        state.survival.step hk hminimal
+      · exfalso
+        exact
+          hexit
+            ⟨state.deletion, state.predecessor,
+              state.deletion_subset, state.survival,
+              Or.inl hinjury⟩
+      · exfalso
+        exact
+          hexit
+            ⟨state.deletion, state.predecessor,
+              state.deletion_subset, state.survival,
+              Or.inr hgap⟩
+      · let successor :
+            FixedPredecessorStateBelow A D k := {
+          deletion := D'
+          predecessor := d'
+          deletion_subset :=
+            hD'D.trans state.deletion_subset
+          survival := hstate'
+        }
+        exact
+          ⟨{
+            point := x
+            successor := successor
+            point_mem := hxD
+            point_mem_A := hxA
+            successor_deletion := hD'eq
+            predecessor_lt := hdd'
+          }⟩
+    let chooseStep
+        (state : FixedPredecessorStateBelow A D k) :
+        FixedPredecessorAdvanceChoice A D k state :=
+      Classical.choice (hchoice state)
+    let initial : FixedPredecessorStateBelow A D k := {
+      deletion := D
+      predecessor := d
+      deletion_subset := Set.Subset.rfl
+      survival := hstate
+    }
+    let stateAt : ℕ → FixedPredecessorStateBelow A D k :=
+      Nat.rec initial
+        (fun _ state => (chooseStep state).successor)
+    let removed : ℕ → ℕ := fun n =>
+      (chooseStep (stateAt n)).point
+    refine
+      ⟨{
+        deletion := fun n => (stateAt n).deletion
+        predecessor := fun n => (stateAt n).predecessor
+        removed := removed
+        survival := fun n => (stateAt n).survival
+        deletion_zero := rfl
+        predecessor_zero := rfl
+        removed_mem := ?_
+        removed_mem_A := ?_
+        deletion_succ := ?_
+        predecessor_step := ?_
+      }⟩
+    · intro n
+      exact (chooseStep (stateAt n)).point_mem
+    · intro n
+      exact (chooseStep (stateAt n)).point_mem_A
+    · intro n
+      change
+        (stateAt (n + 1)).deletion =
+          (stateAt n).deletion \ {removed n}
+      change
+        ((chooseStep (stateAt n)).successor).deletion =
+          (stateAt n).deletion \
+            {(chooseStep (stateAt n)).point}
+      exact
+        (chooseStep (stateAt n)).successor_deletion
+    · intro n
+      change
+        (stateAt n).predecessor <
+          (stateAt (n + 1)).predecessor
+      change
+        (stateAt n).predecessor <
+          ((chooseStep (stateAt n)).successor).predecessor
+      exact
+        (chooseStep (stateAt n)).predecessor_lt
+
+/-- Every infinite subset of `ℕ` admits a strictly increasing stream. -/
+theorem infiniteNatSet_extract_strictStream
+    {S : Set ℕ} (hS : S.Infinite) :
+    ∃ index : ℕ → ℕ,
+      StrictMono index ∧
+      ∀ n, index n ∈ S := by
+  classical
+  have hnext :
+      ∀ L, ∃ x, x ∈ S ∧ L < x := by
+    intro L
+    obtain ⟨x, hxS, hLx⟩ :=
+      hS.exists_gt L
+    exact ⟨x, hxS, hLx⟩
+  choose next hnextS hnextGt using hnext
+  let index : ℕ → ℕ :=
+    Nat.rec (next 0)
+      (fun _ previous => next previous)
+  have hindexMem :
+      ∀ n, index n ∈ S := by
+    intro n
+    cases n with
+    | zero =>
+        exact hnextS 0
+    | succ n =>
+        exact hnextS (index n)
+  have hindexStep :
+      ∀ n, index n < index (n + 1) := by
+    intro n
+    exact hnextGt (index n)
+  exact
+    ⟨index,
+      strictMono_nat_of_lt_succ hindexStep,
+      hindexMem⟩
+
+/-- One coherent infinite deletion carrying a strict stream of clean
+order-`k` supports whose marked predecessors grow strictly. -/
+def HasCofinalMovingPredecessorSurvivalFusion
+    (A D : Set ℕ) (k : ℕ) : Prop :=
+  ∃ B : Set ℕ,
+    B ⊆ D ∧
+    B ⊆ A ∧
+    B.Infinite ∧
+    ∃ source upper marked : ℕ → ℕ,
+    ∃ support : ℕ → Finset ℕ,
+      StrictMono source ∧
+      StrictMono upper ∧
+      ∀ n,
+        support n ∈
+          additiveSupportFamily A k (upper n) ∧
+        marked n ∈ support n ∧
+        Disjoint (support n : Set ℕ) B ∧
+        upper n - marked n = source n
+
+/-- The restored points of an infinite advance chain contain a coherent
+infinite deletion.
+
+Choose one increasingly late support from each state.  Its cardinality is
+at most `k`, and it avoids the point restored at that stage.  The bounded
+point-map free-set theorem thins the restored points to an infinite `B`
+which avoids every selected support indexed by `B`.  Enumerating the
+corresponding stages increasingly makes both the upper targets and their
+predecessors strict. -/
+theorem FixedPredecessorAdvanceChain.fuses_restoredPoints
+    {A D : Set ℕ} {k d : ℕ}
+    (chain : FixedPredecessorAdvanceChain A D k d) :
+    HasCofinalMovingPredecessorSurvivalFusion
+      A D k := by
+  classical
+  have hstreams :
+      ∀ n,
+        ∃ upper marked : ℕ → ℕ,
+        ∃ support : ℕ → Finset ℕ,
+          StrictMono upper ∧
+          ∀ i,
+            support i ∈
+              additiveSupportFamily A k (upper i) ∧
+            marked i ∈ support i ∧
+            Disjoint (support i : Set ℕ)
+              (chain.deletion n) ∧
+            upper i - marked i =
+              chain.predecessor n := by
+    intro n
+    exact (chain.survival n).2.2
+  choose upper marked support
+      hupper hsupport using hstreams
+  let slot : ℕ → ℕ :=
+    Nat.rec 0
+      (fun n previous =>
+        upper n previous + 1)
+  let chosenUpper : ℕ → ℕ := fun n =>
+    upper n (slot n)
+  let chosenMarked : ℕ → ℕ := fun n =>
+    marked n (slot n)
+  let chosenSupport : ℕ → Finset ℕ := fun n =>
+    support n (slot n)
+  have hchosenUpperStep :
+      ∀ n, chosenUpper n < chosenUpper (n + 1) := by
+    intro n
+    have hslot :
+        slot (n + 1) = chosenUpper n + 1 := by
+      rfl
+    have hle :
+        slot (n + 1) ≤
+          upper (n + 1) (slot (n + 1)) :=
+      (hupper (n + 1)).id_le (slot (n + 1))
+    have hfirst :
+        chosenUpper n < slot (n + 1) := by
+      rw [hslot]
+      omega
+    have hsecond :
+        slot (n + 1) ≤ chosenUpper (n + 1) := by
+      exact hle
+    exact hfirst.trans_le hsecond
+  have hchosenUpperStrict :
+      StrictMono chosenUpper :=
+    strictMono_nat_of_lt_succ hchosenUpperStep
+  have hchosen :
+      ∀ n,
+        chosenSupport n ∈
+          additiveSupportFamily A k
+            (chosenUpper n) ∧
+        chosenMarked n ∈ chosenSupport n ∧
+        Disjoint (chosenSupport n : Set ℕ)
+          (chain.deletion n) ∧
+        chosenUpper n - chosenMarked n =
+          chain.predecessor n := by
+    intro n
+    exact hsupport n (slot n)
+  let K : Set ℕ := Set.range chain.removed
+  have hKInfinite : K.Infinite :=
+    Set.infinite_range_of_injective
+      chain.removed_injective
+  let stageIndex : ℕ → ℕ := fun x =>
+    if hx : x ∈ K then
+      Classical.choose hx
+    else 0
+  have hremoved_stageIndex :
+      ∀ x, x ∈ K →
+        chain.removed (stageIndex x) = x := by
+    intro x hx
+    simpa only [stageIndex, dif_pos hx] using
+      Classical.choose_spec hx
+  have hstageIndex_removed :
+      ∀ n, stageIndex (chain.removed n) = n := by
+    intro n
+    apply chain.removed_injective
+    exact
+      hremoved_stageIndex
+        (chain.removed n) ⟨n, rfl⟩
+  let attached : ℕ → Finset ℕ := fun x =>
+    chosenSupport (stageIndex x)
+  have hattachedCard :
+      ∀ x ∈ K, (attached x).card ≤ k := by
+    intro x hxK
+    exact
+      additiveSupportFamily_cardAtMost
+        A k
+        (chosenUpper (stageIndex x))
+        (attached x)
+        (hchosen (stageIndex x)).1
+  have hattachedAvoid :
+      ∀ x ∈ K, x ∉ attached x := by
+    intro x hxK hxAttached
+    have hxDeletion :
+        x ∈ chain.deletion (stageIndex x) := by
+      have hmem :=
+        chain.removed_mem (stageIndex x)
+      rw [hremoved_stageIndex x hxK] at hmem
+      exact hmem
+    exact
+      Set.disjoint_left.mp
+        (hchosen (stageIndex x)).2.2.1
+        (Finset.mem_coe.mpr hxAttached)
+        hxDeletion
+  obtain ⟨B, hBK, hBInfinite, hfree⟩ :=
+    exists_infinite_freeSet_of_bounded_pointMap
+      hKInfinite attached k
+        hattachedCard hattachedAvoid
+  have hBD : B ⊆ D := by
+    intro x hxB
+    obtain ⟨n, rfl⟩ := hBK hxB
+    have hsubset :
+        chain.deletion n ⊆ chain.deletion 0 :=
+      chain.deletion_antitone (Nat.zero_le n)
+    rw [chain.deletion_zero] at hsubset
+    exact hsubset (chain.removed_mem n)
+  have hBA : B ⊆ A := by
+    intro x hxB
+    obtain ⟨n, rfl⟩ := hBK hxB
+    exact chain.removed_mem_A n
+  let J : Set ℕ :=
+    chain.removed ⁻¹' B
+  have hJInfinite : J.Infinite := by
+    exact hBInfinite.preimage hBK
+  obtain ⟨index, hindexStrict, hindexJ⟩ :=
+    infiniteNatSet_extract_strictStream
+      hJInfinite
+  let source : ℕ → ℕ := fun n =>
+    chain.predecessor (index n)
+  let fusedUpper : ℕ → ℕ := fun n =>
+    chosenUpper (index n)
+  let fusedMarked : ℕ → ℕ := fun n =>
+    chosenMarked (index n)
+  let fusedSupport : ℕ → Finset ℕ := fun n =>
+    chosenSupport (index n)
+  have hsourceStrict :
+      StrictMono source :=
+    chain.predecessor_strict.comp hindexStrict
+  have hfusedUpperStrict :
+      StrictMono fusedUpper :=
+    hchosenUpperStrict.comp hindexStrict
+  refine
+    ⟨B, hBD, hBA, hBInfinite,
+      source, fusedUpper, fusedMarked,
+      fusedSupport, hsourceStrict,
+      hfusedUpperStrict, ?_⟩
+  intro n
+  have hremovedB :
+      chain.removed (index n) ∈ B :=
+    hindexJ n
+  have hsupportB :
+      Disjoint
+        (chosenSupport (index n) : Set ℕ) B := by
+    have hfreeAt :=
+      hfree
+        (chain.removed (index n))
+        hremovedB
+    simpa only [attached,
+      hstageIndex_removed (index n)] using hfreeAt
+  exact
+    ⟨(hchosen (index n)).1,
+      (hchosen (index n)).2.1,
+      hsupportB,
+      (hchosen (index n)).2.2.2⟩
+
+/-- Every recursive predecessor state either reaches a descendant
+arithmetic exit or fuses its infinite advance chain into one deletion with
+strictly growing clean predecessors. -/
+theorem
+    HasFixedPredecessorSurvivalState.descendantExit_or_movingFusion
+    {A D : Set ℕ} {k d : ℕ}
+    (hk : 1 < k)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (hstate :
+      HasFixedPredecessorSurvivalState A D k d) :
+    (∃ D' : Set ℕ, ∃ d',
+        D' ⊆ D ∧
+        HasFixedPredecessorSurvivalState A D' k d' ∧
+        (HasCofinalFixedPredecessorArithmeticInjury
+            A D' k d' ∨
+          HasFixedPredecessorArithmeticGap
+            A D' k d')) ∨
+      HasCofinalMovingPredecessorSurvivalFusion
+        A D k := by
+  obtain hexit | hchain :=
+    hstate.descendantExit_or_infiniteAdvanceChain
+      hk hminimal
+  · exact Or.inl hexit
+  · obtain ⟨chain⟩ := hchain
+    exact Or.inr chain.fuses_restoredPoints
+
+/-- One fixed infinite deletion carrying arithmetic injury at every
+requested scale, with the clean predecessor allowed to move along the fused
+strict stream. -/
+def HasCofinalMovingPredecessorArithmeticInjuryFusion
+    (A D : Set ℕ) (k : ℕ) : Prop :=
+  ∃ B : Set ℕ,
+    B ⊆ D ∧
+    B ⊆ A ∧
+    B.Infinite ∧
+    ∀ L, ∃ d,
+      HasFixedPredecessorArithmeticInjuryAtFloor
+        A B k d L
+
+/-- A strict clean survival stream with strictly growing marked
+predecessors forces arithmetic injury at every scale on the same deletion.
+
+Bracket a destroyed order-`k` target between consecutive clean upper
+targets.  Removing the marked summand from the lower support gives a clean
+order-`k-1` representation of `source n`; descending the destroyed upper
+target through that same summand gives destruction of
+`source n + η`.  Since `source` is strict, choosing the bracket index past
+`(k-1)L` puts the clean predecessor itself beyond the localized arithmetic
+threshold. -/
+theorem
+    movingPredecessorStrictSurvivalStream_forces_arithmeticInjuryAtFloor
+    {A B : Set ℕ} {k : ℕ}
+    {source upper marked : ℕ → ℕ}
+    {support : ℕ → Finset ℕ}
+    (hk : 1 < k)
+    (hBA : B ⊆ A)
+    (hBInfinite : B.Infinite)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (hsourceStrict : StrictMono source)
+    (hupperStrict : StrictMono upper)
+    (hsurvival :
+      ∀ n,
+        support n ∈
+          additiveSupportFamily A k (upper n) ∧
+        marked n ∈ support n ∧
+        Disjoint (support n : Set ℕ) B ∧
+        upper n - marked n = source n) :
+    ∀ L, ∃ n,
+      HasFixedPredecessorArithmeticInjuryAtFloor
+        A B k (source n) L := by
+  classical
+  obtain ⟨j, hj⟩ :=
+    Nat.exists_eq_succ_of_ne_zero
+      (Nat.ne_of_gt (by omega : 0 < k))
+  subst k
+  have hupperSurvive :
+      ∀ n,
+        ¬ DestroysAt
+          (additiveSupportFamily A (j + 1))
+          B (upper n) := by
+    intro n
+    exact
+      not_destroysAt_iff.mpr
+        ⟨support n, (hsurvival n).1,
+          (hsurvival n).2.2.1⟩
+  have hdestroy :
+      ∀ N, ∃ v, N ≤ v ∧
+        DestroysAt
+          (additiveSupportFamily A (j + 1))
+          B v :=
+    hminimal.2 B hBA hBInfinite
+  obtain ⟨Nrep, hrepresented⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr
+      hminimal.1
+  intro L
+  obtain ⟨n, v, hnFloor, hnLower, hnUpper,
+      hvDestroy⟩ :=
+    cofinalDestroyedTargets_bracketed_by_strictSurvivalStream
+      hupperStrict hupperSurvive hdestroy
+        (max ((j + 1 - 1) * L) Nrep)
+  have hthresholdIndex :
+      (j + 1 - 1) * L ≤ n :=
+    (le_max_left
+      ((j + 1 - 1) * L) Nrep).trans
+        hnFloor
+  have hfloor :
+      (j + 1 - 1) * L ≤ source n :=
+    hthresholdIndex.trans
+      (hsourceStrict.id_le n)
+  have hNrepIndex :
+      Nrep ≤ n :=
+    (le_max_right
+      ((j + 1 - 1) * L) Nrep).trans
+        hnFloor
+  have hNrepV : Nrep ≤ v :=
+    hNrepIndex.trans
+      ((hupperStrict.id_le n).trans
+        (Nat.le_of_lt hnLower))
+  obtain ⟨V, hVmem, _hVnonempty⟩ :=
+    hrepresented v hNrepV
+  have hvNonempty :
+      (additiveSupportFamily A (j + 1) v).Nonempty :=
+    ⟨V, hVmem⟩
+  have hFmem :=
+    (hsurvival n).1
+  have hmarkedF :=
+    (hsurvival n).2.1
+  have hFB :=
+    (hsurvival n).2.2.1
+  have hpredecessor :=
+    (hsurvival n).2.2.2
+  have hmarkedA :
+      marked n ∈ A :=
+    additiveSupportFamily_supportsIn
+      A (j + 1) (upper n) (support n)
+        hFmem (marked n) hmarkedF
+  have hmarkedUpper :
+      marked n ≤ upper n :=
+    additiveSupportFamily_supportsBounded
+      A (j + 1) (upper n) (support n)
+        hFmem (marked n) hmarkedF
+  have hmarkedV :
+      marked n ≤ v :=
+    hmarkedUpper.trans (Nat.le_of_lt hnLower)
+  have hmarkedB :
+      marked n ∉ B := by
+    intro hmarkedB
+    exact
+      Set.disjoint_left.mp hFB
+        (Finset.mem_coe.mpr hmarkedF)
+        hmarkedB
+  obtain ⟨G, hGmemRaw, hFdecomp⟩ :=
+    additiveSupport_remove_hit_succ
+      hFmem hmarkedF
+  have hGF : G ⊆ support n := by
+    intro x hxG
+    rw [hFdecomp]
+    exact Finset.mem_insert_of_mem hxG
+  have hGB :
+      Disjoint (G : Set ℕ) B :=
+    hFB.mono_left fun x hxG =>
+      Finset.mem_coe.mpr
+        (hGF (Finset.mem_coe.mp hxG))
+  have hGmem :
+      G ∈
+        additiveSupportFamily A (j + 1 - 1)
+          (source n) := by
+    rw [← hpredecessor]
+    simpa using hGmemRaw
+  have hsingleton :
+      ({marked n} : Finset ℕ) ∈
+        additiveSupportFamily A 1 (marked n) := by
+    have hraw :=
+      list_foldr_mem_additiveSupportFamily
+        (xs := [marked n])
+        (by simpa using hmarkedA)
+    simpa using hraw
+  have hsingletonB :
+      Disjoint
+        ((({marked n} : Finset ℕ) : Set ℕ)) B := by
+    simpa [Set.disjoint_singleton_left] using
+      hmarkedB
+  have hlowerDestroyRaw :
+      DestroysAt
+        (additiveSupportFamily A (j + 1 - 1))
+        B (v - marked n) := by
+    apply additiveDestroyer_descends_through_survivingCore
+      hsingleton hsingletonB
+    simpa only [Nat.add_sub_cancel, Nat.add_comm,
+      Nat.add_sub_of_le hmarkedV] using hvDestroy
+  let η := v - upper n
+  have hηpos : 0 < η := by
+    dsimp only [η]
+    omega
+  have hlowerAligned :
+      v - marked n = source n + η := by
+    dsimp only [η]
+    omega
+  have hlowerDestroy :
+      DestroysAt
+        (additiveSupportFamily A (j + 1 - 1))
+        B (source n + η) := by
+    rw [← hlowerAligned]
+    exact hlowerDestroyRaw
+  refine ⟨n, ?_⟩
+  unfold
+    HasFixedPredecessorArithmeticInjuryAtFloor
+  refine
+    ⟨η, G, hfloor, hηpos, hGmem, hGB,
+      hlowerDestroy, ?_⟩
+  by_cases hgap :
+      additiveSupportFamily A (j + 1 - 1)
+        (source n + η) = ∅
+  · exact Or.inl hgap
+  · have hshiftNonempty :
+        (additiveSupportFamily A (j + 1 - 1)
+          (source n + η)).Nonempty :=
+      Finset.nonempty_iff_ne_empty.mpr hgap
+    obtain hlower | hboundary :=
+      cleanSupport_destroyedTranslate_forces_lowerGap_or_boundaryLanding
+        (A := A) (Y := B)
+        (h := j + 1 - 1) (floor := L)
+        (p := source n) (δ := η)
+        (by omega) hfloor hGmem hGB
+          hshiftNonempty hlowerDestroy
+    · obtain ⟨ℓ, w, Q, hℓpos, hℓpred,
+          hLw, hQmem, hQG, hQB, hQgap⟩ :=
+        hlower
+      exact
+        Or.inr
+          (Or.inl
+            ⟨ℓ, w, Q, hℓpos, hℓpred,
+              hLw, hQmem, hQG, hQB, hQgap⟩)
+    · obtain ⟨c, hLc, hcG, hcA, hcB,
+          hshiftA, hshiftB⟩ :=
+        hboundary
+      exact
+        Or.inr
+          (Or.inr
+            ⟨c, hLc, hcG, hcA, hcB,
+              hshiftA, hshiftB⟩)
+
+/-- The free-set fusion reaches every localized arithmetic threshold on
+its one fixed infinite deletion. -/
+theorem
+    HasCofinalMovingPredecessorSurvivalFusion.forces_arithmeticInjuryFusion
+    {A D : Set ℕ} {k : ℕ}
+    (hk : 1 < k)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (hfused :
+      HasCofinalMovingPredecessorSurvivalFusion
+        A D k) :
+    HasCofinalMovingPredecessorArithmeticInjuryFusion
+      A D k := by
+  obtain ⟨B, hBD, hBA, hBInfinite,
+      source, upper, marked, support,
+      hsourceStrict, hupperStrict,
+      hsurvival⟩ :=
+    hfused
+  refine
+    ⟨B, hBD, hBA, hBInfinite, ?_⟩
+  intro L
+  obtain ⟨n, hinjury⟩ :=
+    movingPredecessorStrictSurvivalStream_forces_arithmeticInjuryAtFloor
+      hk hBA hBInfinite hminimal
+        hsourceStrict hupperStrict hsurvival L
+  exact ⟨source n, hinjury⟩
+
+/-- Infinite iteration has now been consumed: a recursive predecessor
+state either exits at a descendant fixed state, or produces one infinite
+deletion carrying arithmetic injury at every scale. -/
+theorem
+    HasFixedPredecessorSurvivalState.descendantExit_or_fusedArithmeticInjury
+    {A D : Set ℕ} {k d : ℕ}
+    (hk : 1 < k)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (hstate :
+      HasFixedPredecessorSurvivalState A D k d) :
+    (∃ D' : Set ℕ, ∃ d',
+        D' ⊆ D ∧
+        HasFixedPredecessorSurvivalState A D' k d' ∧
+        (HasCofinalFixedPredecessorArithmeticInjury
+            A D' k d' ∨
+          HasFixedPredecessorArithmeticGap
+            A D' k d')) ∨
+      HasCofinalMovingPredecessorArithmeticInjuryFusion
+        A D k := by
+  obtain hexit | hfused :=
+    hstate.descendantExit_or_movingFusion
+      hk hminimal
+  · exact Or.inl hexit
+  · exact
+      Or.inr
+        (hfused.forces_arithmeticInjuryFusion
+          hk hminimal)
+
 /-- The fused successor/predecessor object has an explicit cofinal
 arithmetic shape.
 
