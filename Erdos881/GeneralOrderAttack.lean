@@ -29127,10 +29127,23 @@ theorem IsStronglyMinimalExactBasis.selectorRankDescent_or_manyBlocks_or_infinit
       ∃ stageSelector : ℕ → BlockSelector cell,
       ∃ target anchor : ℕ → ℕ,
       ∃ destroyer : ℕ → Finset ℕ,
+      ∃ bound : ℕ,
         Y ⊆ selectedSet fusion ∧
         Y ⊆ K ∧
         Y.Infinite ∧
         StrictMono target ∧
+        (∀ q, ∀ D : Finset ℕ,
+          D.Nonempty →
+          (D : Set ℕ) ⊆ selectedSet fusion →
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A h) D q →
+          D.card ≤ bound ∧
+          ∀ ℓ n,
+            0 < ℓ → ℓ < h →
+            (additiveSupportFamily A ℓ n).Nonempty →
+            ¬ DestroysAt
+              (additiveSupportFamily A ℓ)
+              (D : Set ℕ) n) ∧
         (∀ i,
           (destroyer i).Nonempty ∧
           (destroyer i : Set ℕ) ⊆ Y ∧
@@ -29404,6 +29417,28 @@ theorem IsStronglyMinimalExactBasis.selectorRankDescent_or_manyBlocks_or_infinit
       hℓpos, hℓh, hnonempty, hdestroy⟩
   obtain ⟨fusion, hYfusion⟩ :=
     P.exists_selector_containing hYK hindexY
+  have hterminalBoundAndNoDescent :
+      ∀ q, ∀ D : Finset ℕ,
+        D.Nonempty →
+        (D : Set ℕ) ⊆ selectedSet fusion →
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A h) D q →
+        D.card ≤ r ∧
+        ∀ ℓ n,
+          0 < ℓ → ℓ < h →
+          (additiveSupportFamily A ℓ n).Nonempty →
+          ¬ DestroysAt
+            (additiveSupportFamily A ℓ)
+            (D : Set ℕ) n := by
+    intro q D hDnonempty hDfusion hDminimal
+    constructor
+    · by_contra hDlarge
+      exact hrNoMany ⟨fusion, q, D, hDnonempty,
+        hDfusion, hDminimal, Nat.lt_of_not_ge hDlarge⟩
+    · intro ℓ n hℓpos hℓh hnonempty hdestroy
+      exact hRank ⟨fusion, q, D, ℓ, n, hDnonempty,
+        hDfusion, hDminimal, hℓpos, hℓh,
+        hnonempty, hdestroy⟩
   have holdSurvivalY : ∀ n, ∃ E ∈
       additiveSupportFamily A (h + 1) (oldTarget n),
         Disjoint (E : Set ℕ) Y := by
@@ -29413,8 +29448,9 @@ theorem IsStronglyMinimalExactBasis.selectorRankDescent_or_manyBlocks_or_infinit
     exact ⟨E, hEmem,
       Set.disjoint_of_subset_right hYfusion hEfusion⟩
   refine ⟨Y, fusion, stageSelector, target, anchor,
-    destroyer, hYfusion, hYK, hYInfinite,
-    htargetStrict, ?_, hnoRankDescent,
+    destroyer, r, hYfusion, hYK, hYInfinite,
+    htargetStrict, hterminalBoundAndNoDescent,
+    ?_, hnoRankDescent,
     hdestroyY, hcross,
     holdSurvivalY, ?_⟩
   · intro i
@@ -29495,6 +29531,326 @@ theorem cofinalDestroyedTargets_bracketed_by_strictSurvivalStream
     apply hsurvive (n + 1)
     simpa only [heq] using hmDestroy
   exact ⟨n, m, hnL, hnLower, hmUpper, hmDestroy⟩
+
+/-- A destroyed successor target bracketed above a surviving target
+descends simultaneously through every anchor in the surviving support.
+
+The lower support `E` avoids the deletion `Y`.  Hence each `a ∈ E` is an
+available order-one core.  Composing that core with any hypothetical
+surviving order-`h` representation of `m - a` would repair the destroyed
+order-`h+1` target `m`.  Thus `Y` destroys all of the predecessor
+differences `m - a` at once.
+
+This is the direct arithmetic alignment of the two successor-target
+streams: every destroyed target in a gap of the surviving stream carries
+a whole coherent fan of current-order destroyed differences, indexed by
+one support at the lower endpoint. -/
+theorem bracketedDestroyedSuccessorTargets_force_predecessorDestroyerFans
+    {A Y : Set ℕ} {h : ℕ}
+    {oldTarget : ℕ → ℕ}
+    (holdStrict : StrictMono oldTarget)
+    (holdSurvival : ∀ n,
+      ∃ E ∈ additiveSupportFamily A (h + 1) (oldTarget n),
+        Disjoint (E : Set ℕ) Y)
+    (hsuccessorDestroy : ∀ N, ∃ m, N ≤ m ∧
+      DestroysAt
+        (additiveSupportFamily A (h + 1)) Y m) :
+    ∀ L, ∃ n m, ∃ E : Finset ℕ,
+      L ≤ n ∧
+      oldTarget n < m ∧
+      m < oldTarget (n + 1) ∧
+      E ∈ additiveSupportFamily A (h + 1) (oldTarget n) ∧
+      Disjoint (E : Set ℕ) Y ∧
+      E.Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A (h + 1)) Y m ∧
+      ∀ a ∈ E,
+        0 < m - a ∧
+        DestroysAt
+          (additiveSupportFamily A h) Y (m - a) := by
+  classical
+  have holdNotDestroyed : ∀ n,
+      ¬ DestroysAt
+        (additiveSupportFamily A (h + 1)) Y (oldTarget n) := by
+    intro n
+    obtain ⟨E, hEmem, hEY⟩ := holdSurvival n
+    exact not_destroysAt_iff.mpr ⟨E, hEmem, hEY⟩
+  intro L
+  obtain ⟨n, m, hnL, hnLower, hnUpper, hmDestroy⟩ :=
+    cofinalDestroyedTargets_bracketed_by_strictSurvivalStream
+      holdStrict holdNotDestroyed hsuccessorDestroy L
+  obtain ⟨E, hEmem, hEY⟩ := holdSurvival n
+  have hEnonempty : E.Nonempty :=
+    additiveSupportFamily_supportsNonempty
+      A (by omega) (oldTarget n) E hEmem
+  refine ⟨n, m, E, hnL, hnLower, hnUpper,
+    hEmem, hEY, hEnonempty, hmDestroy, ?_⟩
+  intro a haE
+  have haA : a ∈ A :=
+    additiveSupportFamily_supportsIn
+      A (h + 1) (oldTarget n) E hEmem a haE
+  have haOld : a ≤ oldTarget n :=
+    additiveSupportFamily_supportsBounded
+      A (h + 1) (oldTarget n) E hEmem a haE
+  have haM : a ≤ m :=
+    haOld.trans (Nat.le_of_lt hnLower)
+  have haY : a ∉ Y := by
+    intro haY
+    exact Set.disjoint_left.mp hEY
+      (Finset.mem_coe.mpr haE) haY
+  refine ⟨by omega, ?_⟩
+  have hsingleton :
+      ({a} : Finset ℕ) ∈ additiveSupportFamily A 1 a := by
+    have hraw :=
+      list_foldr_mem_additiveSupportFamily
+        (xs := [a]) (by simpa using haA)
+    simpa using hraw
+  have hsingletonY :
+      Disjoint (({a} : Finset ℕ) : Set ℕ) Y := by
+    simpa [Set.disjoint_singleton_left] using haY
+  apply additiveDestroyer_descends_through_survivingCore
+    hsingleton hsingletonY
+  simpa only [Nat.one_add, Nat.add_sub_of_le haM] using hmDestroy
+
+/-- Every positive-order additive support contains an anchor no larger
+than the average of the represented tuple: `k * a ≤ q`.
+
+The support is a finset and forgets multiplicity, so choose its least
+element.  It is no larger than every one of the `k` tuple entries; summing
+those inequalities gives the claim. -/
+theorem additiveSupportFamily_exists_averageBoundedAnchor
+    {A : Set ℕ} {k q : ℕ} (hk : 0 < k)
+    {E : Finset ℕ}
+    (hE : E ∈ additiveSupportFamily A k q) :
+    ∃ a ∈ E, k * a ≤ q := by
+  classical
+  obtain ⟨v, _hvA, hvsum, hEv⟩ :=
+    mem_additiveSupportFamily_iff.mp hE
+  have hEnonempty : E.Nonempty :=
+    additiveSupportFamily_supportsNonempty A hk q E hE
+  let a := E.min' hEnonempty
+  have haE : a ∈ E :=
+    E.min'_mem hEnonempty
+  refine ⟨a, haE, ?_⟩
+  have hamin : ∀ i : Fin k, a ≤ (v i : ℕ) := by
+    intro i
+    apply E.min'_le
+    rw [← hEv]
+    exact mem_tupleSupport_iff.mpr ⟨i, rfl⟩
+  have hsum :
+      (∑ _i : Fin k, a) ≤
+        ∑ i : Fin k, (v i : ℕ) := by
+    exact Finset.sum_le_sum fun i _hi => hamin i
+  simpa only [Finset.sum_const, Finset.card_fin,
+    nsmul_eq_mul, hvsum] using hsum
+
+/-- The aligned predecessor-destroyer fan contains cofinally large,
+represented current-order targets.
+
+Choose the least anchor in the surviving lower-endpoint support.  Its
+average bound gives `2 * a ≤ oldTarget n` as soon as `h > 0`.  Requesting
+a bracket with index at least twice the eventual-representation threshold
+then forces `m - a` beyond that threshold.  Consequently the successor
+failure descends not merely to a formal family but to a nonempty
+order-`h` support family, still destroyed by the same fused deletion. -/
+theorem bracketedDestroyedSuccessorTargets_force_cofinalRepresentedPredecessorDestroyers
+    {A Y : Set ℕ} {h : ℕ}
+    {oldTarget : ℕ → ℕ}
+    (hhpos : 0 < h)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (holdStrict : StrictMono oldTarget)
+    (holdSurvival : ∀ n,
+      ∃ E ∈ additiveSupportFamily A (h + 1) (oldTarget n),
+        Disjoint (E : Set ℕ) Y)
+    (hsuccessorDestroy : ∀ N, ∃ m, N ≤ m ∧
+      DestroysAt
+        (additiveSupportFamily A (h + 1)) Y m) :
+    ∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a,
+      L ≤ n ∧
+      oldTarget n < m ∧
+      m < oldTarget (n + 1) ∧
+      E ∈ additiveSupportFamily A (h + 1) (oldTarget n) ∧
+      Disjoint (E : Set ℕ) Y ∧
+      DestroysAt
+        (additiveSupportFamily A (h + 1)) Y m ∧
+      a ∈ E ∧
+      (h + 1) * a ≤ oldTarget n ∧
+      L ≤ m - a ∧
+      (additiveSupportFamily A h (m - a)).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A h) Y (m - a) := by
+  obtain ⟨N, hN⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
+  intro L
+  let cutoff := max L N
+  obtain ⟨n, m, E, hnLarge, hnLower, hnUpper,
+      hEmem, hEY, _hEnonempty, hmDestroy, hfan⟩ :=
+    bracketedDestroyedSuccessorTargets_force_predecessorDestroyerFans
+      holdStrict holdSurvival hsuccessorDestroy (2 * cutoff)
+  obtain ⟨a, haE, haAverage⟩ :=
+    additiveSupportFamily_exists_averageBoundedAnchor
+      (A := A) (k := h + 1) (q := oldTarget n)
+        (by omega) hEmem
+  have htwoRank : 2 ≤ h + 1 := by omega
+  have htwoA : 2 * a ≤ oldTarget n :=
+    (Nat.mul_le_mul_right a htwoRank).trans haAverage
+  have hnOld : n ≤ oldTarget n :=
+    holdStrict.id_le n
+  have htwoCutoff : 2 * cutoff ≤ oldTarget n :=
+    hnLarge.trans hnOld
+  have hcutoffDifference : cutoff ≤ m - a := by
+    omega
+  have hLDifference : L ≤ m - a :=
+    (le_max_left L N).trans hcutoffDifference
+  have hNDifference : N ≤ m - a :=
+    (le_max_right L N).trans hcutoffDifference
+  obtain ⟨G, hGmem, _hGempty⟩ :=
+    hN (m - a) hNDifference
+  have hLn : L ≤ n := by
+    dsimp only [cutoff] at hnLarge
+    omega
+  exact ⟨n, m, E, a, hLn,
+    hnLower, hnUpper, hEmem, hEY, hmDestroy, haE,
+    haAverage, hLDifference, ⟨G, hGmem⟩,
+    (hfan a haE).2⟩
+
+/-- In the bounded, no-rank-descent terminal fusion branch, the stream
+alignment forces a primitive gap at the exact descended target.
+
+Start with a destroyed successor target `m` bracketed by two old surviving
+targets and descend through a small anchor `a` in the lower support.  The
+preceding theorem makes `d = m - a` a late represented order-`h` target
+destroyed by `Y`.  Compact that failure to a minimal finite `D ⊆ Y`.
+
+At this same `d`, the reservoir rooted-matching/gap fork has only two
+outcomes.  A rooted matching is larger than the terminal bound on `D`, so
+the occurrence-sensitive decomposition would give a prohibited strict
+rank descent.  Therefore the other outcome holds: a selector anchor `b`
+with the primitive gap `R_{h-1}(d-b)=∅`.  This puts successor destruction,
+current destruction, and the primitive gap on one affine target instead of
+on merely cofinal unrelated streams. -/
+theorem terminalFusion_bracketedSuccessorDestruction_forces_alignedPrimitiveGaps
+    {A K Y : Set ℕ} {h bound : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hhpos : 0 < h)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (fusion : BlockSelector cell)
+    (hYfusion : Y ⊆ selectedSet fusion)
+    (hterminal : ∀ q, ∀ D : Finset ℕ,
+      D.Nonempty →
+      (D : Set ℕ) ⊆ selectedSet fusion →
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q →
+      D.card ≤ bound ∧
+      ∀ ℓ n,
+        0 < ℓ → ℓ < h →
+        (additiveSupportFamily A ℓ n).Nonempty →
+        ¬ DestroysAt
+          (additiveSupportFamily A ℓ)
+          (D : Set ℕ) n)
+    {oldTarget : ℕ → ℕ}
+    (holdStrict : StrictMono oldTarget)
+    (holdSurvival : ∀ n,
+      ∃ E ∈ additiveSupportFamily A (h + 1) (oldTarget n),
+        Disjoint (E : Set ℕ) Y)
+    (hsuccessorDestroy : ∀ N, ∃ m, N ≤ m ∧
+      DestroysAt
+        (additiveSupportFamily A (h + 1)) Y m) :
+    ∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a,
+      ∃ D : Finset ℕ, ∃ b,
+      L ≤ n ∧
+      oldTarget n < m ∧
+      m < oldTarget (n + 1) ∧
+      E ∈ additiveSupportFamily A (h + 1) (oldTarget n) ∧
+      Disjoint (E : Set ℕ) Y ∧
+      DestroysAt
+        (additiveSupportFamily A (h + 1)) Y m ∧
+      a ∈ E ∧
+      (h + 1) * a ≤ oldTarget n ∧
+      L ≤ m - a ∧
+      (additiveSupportFamily A h (m - a)).Nonempty ∧
+      D.Nonempty ∧
+      (D : Set ℕ) ⊆ Y ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D (m - a) ∧
+      D.card ≤ bound ∧
+      b ∈ selectedSet fusion ∧
+      b ∉ D ∧
+      b ≤ m - a ∧
+      additiveSupportFamily A (h - 1) (m - a - b) = ∅ := by
+  classical
+  have hselectorA : selectedSet fusion ⊆ A :=
+    (P.selectedSet_subset fusion).trans hKA
+  obtain ⟨Nfork, hNfork⟩ :=
+    eventually_exactRootedMatching_or_lowerGap_onInfiniteReservoir
+      (A := A) (C := selectedSet fusion) (k := h - 1)
+      hselectorA (P.selectedSet_infinite fusion) bound
+  intro L
+  obtain ⟨n, m, E, a, hnLarge, hnLower, hnUpper,
+      hEmem, hEY, hmDestroy, haE, haAverage,
+      hdLarge, hdNonempty, hdDestroy⟩ :=
+    bracketedDestroyedSuccessorTargets_force_cofinalRepresentedPredecessorDestroyers
+      hhpos hbasis holdStrict holdSurvival hsuccessorDestroy
+        (max L Nfork)
+  obtain ⟨D₁, hD₁Y, hD₁Destroy⟩ :=
+    exists_finiteDestroyer_subset hdDestroy
+  obtain ⟨D, hDD₁, hDminimal⟩ :=
+    exists_inclusionMinimalDestroyer_subset hD₁Destroy
+  have hDY : (D : Set ℕ) ⊆ Y := by
+    intro x hxD
+    exact hD₁Y
+      (Finset.mem_coe.mpr
+        (hDD₁ (Finset.mem_coe.mp hxD)))
+  have hDnonempty : D.Nonempty := by
+    by_contra hDempty
+    have hDeq : D = ∅ :=
+      Finset.not_nonempty_iff_eq_empty.mp hDempty
+    obtain ⟨G, hGmem⟩ := hdNonempty
+    exact hDminimal.1 G hGmem (by simp [hDeq])
+  obtain ⟨hDbound, hDnoDescent⟩ :=
+    hterminal (m - a) D hDnonempty
+      (hDY.trans hYfusion) hDminimal
+  have hNforkD : Nfork ≤ m - a :=
+    (le_max_right L Nfork).trans hdLarge
+  have hpredSucc : h - 1 + 1 = h := by
+    omega
+  obtain hrooted | hgap :=
+    hNfork (m - a) hNforkD
+  · obtain ⟨R, M, _hRcard, hMsub, hMcard,
+        _hMroot, hMpetal, hMmatching⟩ := hrooted
+    have hMsubH :
+        M ⊆ additiveSupportFamily A h (m - a) := by
+      simpa only [hpredSucc] using hMsub
+    have hDM : D.card < M.card :=
+      hDbound.trans_lt hMcard
+    obtain ⟨_G, _hGM, hits, _j, _t, _core,
+        hhitsPos, hhitsStrict, _hlength, _hhitsRoot,
+        _htarget, _hcoreR, _hcoreD,
+        hhitNonempty, hhitDestroy⟩ :=
+      large_destroyedRootedMatching_forces_strictOccurrenceRankDescent
+        hDminimal hMsubH hMpetal hMmatching hDM
+    exact
+      ((hDnoDescent hits.length hits.sum
+        hhitsPos hhitsStrict hhitNonempty) hhitDestroy).elim
+  · obtain ⟨b, hbSelector, hbD, hgapDifference⟩ := hgap
+    have hDminimalPred :
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A (h - 1 + 1))
+          D (m - a) := by
+      simpa only [hpredSucc] using hDminimal
+    have hbNotD : b ∉ D :=
+      lowerGap_anchor_not_mem_minimalSuccessorDestroyer
+        hDminimalPred hgapDifference
+    exact ⟨n, m, E, a, D, b,
+      (le_max_left L Nfork).trans hnLarge,
+      hnLower, hnUpper, hEmem, hEY, hmDestroy,
+      haE, haAverage,
+      (le_max_left L Nfork).trans hdLarge,
+      hdNonempty, hDnonempty, hDY, hDminimal,
+      hDbound, hbSelector, hbNotD, hbD,
+      hgapDifference⟩
 
 /-- Bracketing a current-order destroyer below an old surviving successor
 target stream amplifies one primitive gap into a whole support of gap
@@ -29934,10 +30290,23 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_infiniteGapFusion
             ∃ stageSelector : ℕ → BlockSelector cell,
             ∃ target anchor : ℕ → ℕ,
             ∃ destroyer : ℕ → Finset ℕ,
+            ∃ bound : ℕ,
               Y ⊆ selectedSet fusion ∧
               Y ⊆ K ∧
               Y.Infinite ∧
               StrictMono target ∧
+              (∀ q, ∀ D : Finset ℕ,
+                D.Nonempty →
+                (D : Set ℕ) ⊆ selectedSet fusion →
+                IsInclusionMinimalDestroyer
+                  (additiveSupportFamily A h) D q →
+                D.card ≤ bound ∧
+                ∀ ℓ n,
+                  0 < ℓ → ℓ < h →
+                  (additiveSupportFamily A ℓ n).Nonempty →
+                  ¬ DestroysAt
+                    (additiveSupportFamily A ℓ)
+                    (D : Set ℕ) n) ∧
               (∀ i,
                 (destroyer i).Nonempty ∧
                 (destroyer i : Set ℕ) ⊆ Y ∧
@@ -29974,6 +30343,59 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_infiniteGapFusion
                 m < oldTarget (n + 1) ∧
                 DestroysAt
                   (additiveSupportFamily A (h + 1)) Y m) ∧
+              (∀ L, ∃ n m, ∃ E : Finset ℕ,
+                L ≤ n ∧
+                oldTarget n < m ∧
+                m < oldTarget (n + 1) ∧
+                E ∈ additiveSupportFamily A (h + 1)
+                  (oldTarget n) ∧
+                Disjoint (E : Set ℕ) Y ∧
+                E.Nonempty ∧
+                DestroysAt
+                  (additiveSupportFamily A (h + 1)) Y m ∧
+                ∀ a ∈ E,
+                  0 < m - a ∧
+                  DestroysAt
+                    (additiveSupportFamily A h) Y (m - a)) ∧
+              (∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a,
+                L ≤ n ∧
+                oldTarget n < m ∧
+                m < oldTarget (n + 1) ∧
+                E ∈ additiveSupportFamily A (h + 1)
+                  (oldTarget n) ∧
+                Disjoint (E : Set ℕ) Y ∧
+                DestroysAt
+                  (additiveSupportFamily A (h + 1)) Y m ∧
+                a ∈ E ∧
+                (h + 1) * a ≤ oldTarget n ∧
+                L ≤ m - a ∧
+                (additiveSupportFamily A h (m - a)).Nonempty ∧
+                DestroysAt
+                  (additiveSupportFamily A h) Y (m - a)) ∧
+              (∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a,
+                ∃ D : Finset ℕ, ∃ b,
+                L ≤ n ∧
+                oldTarget n < m ∧
+                m < oldTarget (n + 1) ∧
+                E ∈ additiveSupportFamily A (h + 1)
+                  (oldTarget n) ∧
+                Disjoint (E : Set ℕ) Y ∧
+                DestroysAt
+                  (additiveSupportFamily A (h + 1)) Y m ∧
+                a ∈ E ∧
+                (h + 1) * a ≤ oldTarget n ∧
+                L ≤ m - a ∧
+                (additiveSupportFamily A h (m - a)).Nonempty ∧
+                D.Nonempty ∧
+                (D : Set ℕ) ⊆ Y ∧
+                IsInclusionMinimalDestroyer
+                  (additiveSupportFamily A h) D (m - a) ∧
+                D.card ≤ bound ∧
+                b ∈ selectedSet fusion ∧
+                b ∉ D ∧
+                b ≤ m - a ∧
+                additiveSupportFamily A (h - 1)
+                  (m - a - b) = ∅) ∧
               (1 < h → ∀ L, ∃ i n, ∃ E : Finset ℕ,
                 L ≤ i ∧
                 oldTarget n < target i ∧
@@ -30009,8 +30431,9 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_infiniteGapFusion
     · right
       right
       obtain ⟨Y, fusion, stageSelector, target, anchor,
-          destroyer, hYfusion, hYK, hYInfinite,
-          htargetStrict, hstageData, hnoRankDescent,
+          destroyer, bound, hYfusion, hYK, hYInfinite,
+          htargetStrict, hterminalBoundAndNoDescent,
+          hstageData, hnoRankDescent,
           hdestroyY, hcross,
           holdSurvivalY, holdNotDestroyed⟩ := hfusion
       have hsuccessorDestroy :
@@ -30028,6 +30451,71 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_infiniteGapFusion
               (additiveSupportFamily A (h + 1)) Y m :=
         cofinalDestroyedTargets_bracketed_by_strictSurvivalStream
           holdTargetStrict holdNotDestroyed hsuccessorDestroy
+      have hpredecessorDestroyerFans :
+          ∀ L, ∃ n m, ∃ E : Finset ℕ,
+            L ≤ n ∧
+            oldTarget n < m ∧
+            m < oldTarget (n + 1) ∧
+            E ∈ additiveSupportFamily A (h + 1)
+              (oldTarget n) ∧
+            Disjoint (E : Set ℕ) Y ∧
+            E.Nonempty ∧
+            DestroysAt
+              (additiveSupportFamily A (h + 1)) Y m ∧
+            ∀ a ∈ E,
+              0 < m - a ∧
+              DestroysAt
+                (additiveSupportFamily A h) Y (m - a) :=
+        bracketedDestroyedSuccessorTargets_force_predecessorDestroyerFans
+          holdTargetStrict holdSurvivalY hsuccessorDestroy
+      have hcofinalRepresentedPredecessorDestroyers :
+          ∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a,
+            L ≤ n ∧
+            oldTarget n < m ∧
+            m < oldTarget (n + 1) ∧
+            E ∈ additiveSupportFamily A (h + 1)
+              (oldTarget n) ∧
+            Disjoint (E : Set ℕ) Y ∧
+            DestroysAt
+              (additiveSupportFamily A (h + 1)) Y m ∧
+            a ∈ E ∧
+            (h + 1) * a ≤ oldTarget n ∧
+            L ≤ m - a ∧
+            (additiveSupportFamily A h (m - a)).Nonempty ∧
+            DestroysAt
+              (additiveSupportFamily A h) Y (m - a) :=
+        bracketedDestroyedSuccessorTargets_force_cofinalRepresentedPredecessorDestroyers
+          hhpos hminimal.1 holdTargetStrict
+            holdSurvivalY hsuccessorDestroy
+      have halignedPrimitiveGaps :
+          ∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a,
+            ∃ D : Finset ℕ, ∃ b,
+            L ≤ n ∧
+            oldTarget n < m ∧
+            m < oldTarget (n + 1) ∧
+            E ∈ additiveSupportFamily A (h + 1)
+              (oldTarget n) ∧
+            Disjoint (E : Set ℕ) Y ∧
+            DestroysAt
+              (additiveSupportFamily A (h + 1)) Y m ∧
+            a ∈ E ∧
+            (h + 1) * a ≤ oldTarget n ∧
+            L ≤ m - a ∧
+            (additiveSupportFamily A h (m - a)).Nonempty ∧
+            D.Nonempty ∧
+            (D : Set ℕ) ⊆ Y ∧
+            IsInclusionMinimalDestroyer
+              (additiveSupportFamily A h) D (m - a) ∧
+            D.card ≤ bound ∧
+            b ∈ selectedSet fusion ∧
+            b ∉ D ∧
+            b ≤ m - a ∧
+            additiveSupportFamily A (h - 1)
+              (m - a - b) = ∅ :=
+        terminalFusion_bracketedSuccessorDestruction_forces_alignedPrimitiveGaps
+          hhpos hminimal.1 hKA P fusion hYfusion
+            hterminalBoundAndNoDescent holdTargetStrict
+            holdSurvivalY hsuccessorDestroy
       have hgapFans :
           1 < h → ∀ L, ∃ i n, ∃ E : Finset ℕ,
             L ≤ i ∧
@@ -30049,11 +30537,14 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_infiniteGapFusion
             (fun i => (hstageData i).2.2.2.1)
             hnoRankDescent holdSurvivalY
       exact ⟨Y, fusion, stageSelector, target, anchor,
-        destroyer, hYfusion, hYK, hYInfinite,
-        htargetStrict, hstageData, hnoRankDescent,
+        destroyer, bound, hYfusion, hYK, hYInfinite,
+        htargetStrict, hterminalBoundAndNoDescent,
+        hstageData, hnoRankDescent,
         hdestroyY, hcross,
         holdSurvivalY, hsuccessorDestroy,
-        hsuccessorBrackets, hgapFans,
+        hsuccessorBrackets, hpredecessorDestroyerFans,
+        hcofinalRepresentedPredecessorDestroyers,
+        halignedPrimitiveGaps, hgapFans,
         holdNotDestroyed⟩
 
 end Erdos881
