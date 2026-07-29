@@ -38394,6 +38394,18 @@ theorem quadraticBlockTail_forces_targetLocalizedArithmeticOutcome
         Q.Nonempty ∧
         (∀ q ∈ Q, targetFloor ≤ q) ∧
         certificateBound < Q.card ∧
+        (∀ s : BlockSelector tailCell, ∃ q ∈ Q,
+          DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q) ∧
+        (∀ q ∈ Q, ∃ s : BlockSelector tailCell,
+          DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q ∧
+          ∀ q' ∈ Q, q' ≠ q →
+            ¬ DestroysAt
+              (additiveSupportFamily A (k + 1))
+              (selectedSet s) q') ∧
         ∃ r, ∃ hrQ : r ∈ Q,
           HasTargetLocalizedArithmeticOutcome
             A k coverDemand anchorDemand differenceDemand
@@ -38471,7 +38483,7 @@ theorem quadraticBlockTail_forces_targetLocalizedArithmeticOutcome
       (currentMatchingDemand := currentMatchingDemand)
       Ptail hrQ hrepresented hcert hlocalized hlargeErase
   refine ⟨Q, hQnonempty', hQlateFloor, hQlarge,
-    r, hrQ, ?_⟩
+    hcert, hlocalized, r, hrQ, ?_⟩
   simpa only [HasTargetLocalizedArithmeticOutcome] using
     houtcome
 
@@ -40724,34 +40736,22 @@ structure ReducedStreamFusionStep
   support_block_disjoint :
     Disjoint support (cell blockIndex)
 
-/-- Cofinal reduced common-column streams fuse into one honest infinite
-deletion carrying a strict successor-order survival stream.
+/-- Any cofinal supply of support/fresh-block pairs fuses to one infinite
+deletion carrying a strict surviving target stream.
 
-At stage `i`, request a reduced stream beyond both the preceding target and
-the preceding literal block.  The spread horn supplies a common
-order-`h+1` support `support i` and a later whole block disjoint from it.
-Choose one point from that block.  Strict growth of the block indices makes
-the points injective, and bounded cross-avoidance thins them so that every
-retained support avoids every retained point, not only its own block.
-
-Enumerating the retained stages gives the required strict target stream.
-Thus the reduced-stream horn now constructs an infinite deletion rather
-than terminating as finite certificate geometry. -/
-theorem cofinalReducedCoverStreams_fuse_infiniteDeletion
+This is the choice-free interface needed when the pairs come from different
+localized certificates (and therefore from differently shifted tails of one
+ambient block partition). -/
+theorem cofinalReducedFusionSteps_fuse_infiniteDeletion
     {A K : Set ℕ} {h : ℕ}
     {cell : ℕ → Finset ℕ}
     (hKA : K ⊆ A)
     (P : IsFiniteBlockPartition K cell)
-    (hreduced :
+    (hstepExists :
       ∀ targetFloor blockFloor,
-        ∃ Q : Finset ℕ, ∃ r, ∃ hrQ : r ∈ Q,
-        ∃ E : Finset ℕ,
-        ∃ T : Finset {q // q ∈ Q.erase r},
-          targetFloor ≤ r ∧
-          E ∈ additiveSupportFamily A (h + 1) r ∧
-          HasCommonColumnReducedCoverStream
-            A h (blockFloor + 1)
-              cell Q r hrQ E T) :
+        Nonempty
+          (ReducedStreamFusionStep
+            A h cell targetFloor blockFloor)) :
     ∃ Y : Set ℕ, ∃ oldTarget : ℕ → ℕ,
       Y ⊆ A ∧
       Y.Infinite ∧
@@ -40761,19 +40761,6 @@ theorem cofinalReducedCoverStreams_fuse_infiniteDeletion
             additiveSupportFamily A (h + 1) (oldTarget n),
           Disjoint (E : Set ℕ) Y := by
   classical
-  have hstepExists :
-      ∀ targetFloor blockFloor,
-        Nonempty
-          (ReducedStreamFusionStep
-            A h cell targetFloor blockFloor) := by
-    intro targetFloor blockFloor
-    obtain ⟨Q, r, hrQ, E, T, hrLower,
-        hEmem, hstream⟩ :=
-      hreduced targetFloor blockFloor
-    obtain ⟨j, hjLower, hEj⟩ :=
-      hstream.exists_disjointBlock_above
-    exact ⟨⟨r, E, j, hrLower,
-      Nat.le_of_lt hjLower, hEmem, hEj⟩⟩
   let State := ℕ × ℕ
   let initial : State := (0, 0)
   let actualWitness : (s : State) →
@@ -40886,6 +40873,59 @@ theorem cofinalReducedCoverStreams_fuse_infiniteDeletion
   intro n
   exact ⟨support (index n), hsupportMem (index n),
     hsupportY (index n) (hindexL n)⟩
+
+/-- Cofinal reduced common-column streams fuse into one honest infinite
+deletion carrying a strict successor-order survival stream.
+
+At stage `i`, request a reduced stream beyond both the preceding target and
+the preceding literal block.  The spread horn supplies a common
+order-`h+1` support `support i` and a later whole block disjoint from it.
+Choose one point from that block.  Strict growth of the block indices makes
+the points injective, and bounded cross-avoidance thins them so that every
+retained support avoids every retained point, not only its own block.
+
+Enumerating the retained stages gives the required strict target stream.
+Thus the reduced-stream horn now constructs an infinite deletion rather
+than terminating as finite certificate geometry. -/
+theorem cofinalReducedCoverStreams_fuse_infiniteDeletion
+    {A K : Set ℕ} {h : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hreduced :
+      ∀ targetFloor blockFloor,
+        ∃ Q : Finset ℕ, ∃ r, ∃ hrQ : r ∈ Q,
+        ∃ E : Finset ℕ,
+        ∃ T : Finset {q // q ∈ Q.erase r},
+          targetFloor ≤ r ∧
+          E ∈ additiveSupportFamily A (h + 1) r ∧
+          HasCommonColumnReducedCoverStream
+            A h (blockFloor + 1)
+              cell Q r hrQ E T) :
+    ∃ Y : Set ℕ, ∃ oldTarget : ℕ → ℕ,
+      Y ⊆ A ∧
+      Y.Infinite ∧
+      StrictMono oldTarget ∧
+      ∀ n,
+        ∃ E ∈
+            additiveSupportFamily A (h + 1) (oldTarget n),
+          Disjoint (E : Set ℕ) Y := by
+  classical
+  have hstepExists :
+      ∀ targetFloor blockFloor,
+        Nonempty
+          (ReducedStreamFusionStep
+            A h cell targetFloor blockFloor) := by
+    intro targetFloor blockFloor
+    obtain ⟨Q, r, hrQ, E, T, hrLower,
+        hEmem, hstream⟩ :=
+      hreduced targetFloor blockFloor
+    obtain ⟨j, hjLower, hEj⟩ :=
+      hstream.exists_disjointBlock_above
+    exact ⟨⟨r, E, j, hrLower,
+      Nat.le_of_lt hjLower, hEmem, hEj⟩⟩
+  exact cofinalReducedFusionSteps_fuse_infiniteDeletion
+    hKA P hstepExists
 
 /-- Counterexample-level consumption of the reduced-stream horn.
 
@@ -41006,5 +41046,342 @@ theorem cofinalReducedCoverStreams_force_bracketedPredecessorDestroyers
   exact ⟨Y, oldTarget, hYA, hYInfinite,
     holdTargetStrict, holdSurvival,
     hsuccessorDestroy, hfans, hrepresented⟩
+
+/-- Resolve the fixed-core leaf of an anchored arithmetic concentration.
+
+Difference growth and the lower same-target rooted matching are returned
+unchanged.  A fixed core either invokes the existing two-rank descent
+theorem, or exhibits the precise block whose cardinality fails to dominate
+the newly discovered certificate.  Thus the fixed-core object itself is no
+longer a terminal horn; the only escape is the moving-cardinality
+obstruction. -/
+theorem anchoredArithmeticConcentration_forces_growth_or_twoRankDescent_or_capacityFailure
+    {A C : Set ℕ}
+    {k clearDemand differenceDemand matchingDemand : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ} {hrQ : r ∈ Q}
+    {E : Finset ℕ}
+    {T : Finset {q // q ∈ Q.erase r}}
+    (hk : 2 < k)
+    (hconcentration :
+      HasCommonColumnAnchoredArithmeticConcentration
+        A k (clearDemand + k) differenceDemand
+          matchingDemand cell Q r hrQ E T)
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q) :
+    (∃ V : Finset ℕ,
+        differenceDemand < V.card ∧
+        ∀ d ∈ V,
+          (additiveSupportFamily A k d).Nonempty) ∨
+      (∃ d, ∃ root : Finset ℕ,
+        ∃ M : Finset (Finset ℕ),
+          root.card < k ∧
+          M ⊆ additiveSupportFamily A k d ∧
+          matchingDemand < M.card ∧
+          (∀ H ∈ M, root ⊆ H) ∧
+          (∀ H ∈ M, (H \ root).Nonempty) ∧
+          ∀ H ∈ M, ∀ G ∈ M, H ≠ G →
+            Disjoint (H \ root) (G \ root)) ∨
+      (∃ q, ∃ D : Finset ℕ, ∃ n,
+        D.Nonempty ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A (k + 1)) D q ∧
+        (additiveSupportFamily A (k - 1) n).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A (k - 1))
+          (D : Set ℕ) n) ∨
+      ∃ i,
+        (cell i).card ≤
+          (k + 1) * Q.card + (k + 1) := by
+  classical
+  unfold HasCommonColumnAnchoredArithmeticConcentration at hconcentration
+  obtain ⟨coveredBlock, j, _hjImage, anchor, core,
+      _hrows, hcoreRows, harithmetic⟩ :=
+    hconcentration
+  unfold HasAnchoredLowerCoreArithmeticFork at harithmetic
+  rcases harithmetic with
+      hdifference | hmatching |
+        ⟨d, H, U, hUR, hUlarge, hHmem,
+          hUdata, hanchorInj⟩
+  · left
+    obtain ⟨V, hVlarge, hVdata⟩ := hdifference
+    exact ⟨V, hVlarge, fun t htV => by
+      obtain ⟨p, _hpR, _ht, hcoreMem⟩ :=
+        hVdata t htV
+      exact ⟨core p, hcoreMem⟩⟩
+  · exact Or.inr (Or.inl hmatching)
+  · by_cases hblocks :
+        ∀ i,
+          (k + 1) * Q.card + (k + 1) <
+            (cell i).card
+    · right
+      right
+      left
+      obtain ⟨p, hpU, D, n, hDnonempty,
+          hDminimal, hrepresented, hdestroy⟩ :=
+        fixedCoreAnchorStar_forces_twoRankDescent_of_certificate
+          (clearDemand := clearDemand)
+          P hk hcoreRows hUR hUlarge hHmem
+            hUdata hanchorInj hcert hblocks
+      exact ⟨p.1, D, n, hDnonempty, hDminimal,
+        hrepresented, hdestroy⟩
+    · right
+      right
+      right
+      push Not at hblocks
+      exact hblocks
+
+/-- The literal tail offset used by the diagonal localized-arithmetic
+request.  The three growth demands and the cover demand are `n + 1`;
+the anchor-star demand is `n + 1 + k`, so its fixed-core leaf can be
+resolved with clear demand `n + 1`. -/
+def localizedArithmeticDiagonalStart (k n : ℕ) : ℕ :=
+  let geometricThreshold :=
+    ((((n + 1 + k) *
+          additiveRootedMatchingBound k (n + 1)) *
+        (n + 1)) *
+      (k + 1 + (n + 1))) *
+        additiveRootedMatchingBound (k + 1) (n + 1)
+  let certificateBound := geometricThreshold + 1
+  let capacity :=
+    (k + 1) * certificateBound + (k + 1)
+  capacity + 1
+
+/-- At diagonal scale `n`, the actual localized certificate has a reduced
+common-column stream on its prescribed quadratic tail. -/
+def HasDiagonalLocalizedReducedStream
+    (A : Set ℕ) (k : ℕ)
+    (cell : ℕ → Finset ℕ) (n : ℕ) : Prop :=
+  let start := localizedArithmeticDiagonalStart k n
+  let tailCell : ℕ → Finset ℕ :=
+    fun i => cell (start + i)
+  ∃ Q : Finset ℕ, ∃ r, ∃ hrQ : r ∈ Q,
+    ∃ E : Finset ℕ,
+    ∃ T : Finset {q // q ∈ Q.erase r},
+      (∀ q ∈ Q, n ≤ q) ∧
+      E ∈ additiveSupportFamily A (k + 1) r ∧
+      HasCommonColumnReducedCoverStream
+        A k (n + 1) tailCell Q r hrQ E T
+
+/-- Counterexample-level cardinality fork for the localized arithmetic
+attack.
+
+Run the fully refined localized certificate theorem on the diagonal
+sequence of demands.  If reduced streams occur cofinally, their varying
+quadratic tails still give cofinal support/fresh-block pairs in the one
+ambient partition.  The generic fusion theorem therefore makes one
+infinite deletion, and the existing bracketing theorem supplies cofinally
+represented predecessor destroyers.
+
+Otherwise there is a genuine cutoff: at every later scale no reduced
+stream exists.  Unfolding the actual localized outcome then forces
+unbounded successor rooted matchings, represented-difference growth,
+lower rooted matchings, a genuine two-rank injury, or an explicit block
+whose size fails to dominate the moving certificate.  In particular the
+fixed-core concentration is consumed rather than retained as an endpoint.
+-/
+theorem quadraticBlockTail_counterexample_fusesReducedStreams_or_forces_eventualResolvedArithmetic
+    {A K : Set ℕ} {h : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hh : 2 < h)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1))
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hquadratic : ∀ i,
+      (i + h + 2) ^ 2 < (cell i).card) :
+    (∃ Y : Set ℕ, ∃ oldTarget : ℕ → ℕ,
+        Y ⊆ A ∧
+        Y.Infinite ∧
+        StrictMono oldTarget ∧
+        (∀ n,
+          ∃ E ∈
+              additiveSupportFamily A (h + 1) (oldTarget n),
+            Disjoint (E : Set ℕ) Y) ∧
+        (∀ N, ∃ m, N ≤ m ∧
+          DestroysAt
+            (additiveSupportFamily A (h + 1)) Y m) ∧
+        ∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a,
+          L ≤ n ∧
+          oldTarget n < m ∧
+          m < oldTarget (n + 1) ∧
+          E ∈ additiveSupportFamily A (h + 1)
+            (oldTarget n) ∧
+          Disjoint (E : Set ℕ) Y ∧
+          DestroysAt
+            (additiveSupportFamily A (h + 1)) Y m ∧
+          a ∈ E ∧
+          (h + 1) * a ≤ oldTarget n ∧
+          L ≤ m - a ∧
+          (additiveSupportFamily A h (m - a)).Nonempty ∧
+          DestroysAt
+            (additiveSupportFamily A h) Y (m - a)) ∨
+      ∃ N, ∀ n, N ≤ n →
+        let start := localizedArithmeticDiagonalStart h n
+        let tailCell : ℕ → Finset ℕ :=
+          fun i => cell (start + i)
+        ∃ Q : Finset ℕ, ∃ r, ∃ hrQ : r ∈ Q,
+          (∀ q ∈ Q, n ≤ q) ∧
+          ((∃ root : Finset ℕ,
+              ∃ M : Finset (Finset ℕ),
+                root.card < h + 1 ∧
+                M ⊆ additiveSupportFamily A (h + 1) r ∧
+                n + 1 < M.card ∧
+                (∀ E ∈ M, root ⊆ E) ∧
+                (∀ E ∈ M, (E \ root).Nonempty) ∧
+                ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+                  Disjoint (E \ root) (G \ root)) ∨
+            (∃ V : Finset ℕ,
+                n + 1 < V.card ∧
+                ∀ d ∈ V,
+                  (additiveSupportFamily A h d).Nonempty) ∨
+            (∃ d, ∃ root : Finset ℕ,
+              ∃ M : Finset (Finset ℕ),
+                root.card < h ∧
+                M ⊆ additiveSupportFamily A h d ∧
+                n + 1 < M.card ∧
+                (∀ H ∈ M, root ⊆ H) ∧
+                (∀ H ∈ M, (H \ root).Nonempty) ∧
+                ∀ H ∈ M, ∀ G ∈ M, H ≠ G →
+                  Disjoint (H \ root) (G \ root)) ∨
+            (∃ q, ∃ D : Finset ℕ, ∃ d,
+              D.Nonempty ∧
+              IsInclusionMinimalDestroyer
+                (additiveSupportFamily A (h + 1)) D q ∧
+              (additiveSupportFamily A (h - 1) d).Nonempty ∧
+              DestroysAt
+                (additiveSupportFamily A (h - 1))
+                (D : Set ℕ) d) ∨
+            ∃ i,
+              (tailCell i).card ≤
+                (h + 1) * Q.card + (h + 1)) := by
+  classical
+  let hstrong :
+      StrongInfiniteDeletion
+        (additiveSupportFamily A (h + 1)) A :=
+    strongExactDeletion_of_counterexample hcounter
+  by_cases hcofinal :
+      ∀ N, ∃ n, N ≤ n ∧
+        HasDiagonalLocalizedReducedStream A h cell n
+  · left
+    have hstepExists :
+        ∀ targetFloor blockFloor,
+          Nonempty
+            (ReducedStreamFusionStep
+              A h cell targetFloor blockFloor) := by
+      intro targetFloor blockFloor
+      obtain ⟨n, hnFloor, Q, r, hrQ, E, T,
+          hQlate, hEmem, hstream⟩ :=
+        hcofinal (max targetFloor blockFloor)
+      obtain ⟨j, hjn, hEj⟩ :=
+        hstream.exists_disjointBlock_above
+      let start := localizedArithmeticDiagonalStart h n
+      have htargetLower : targetFloor ≤ r := by
+        exact (le_max_left targetFloor blockFloor).trans
+          (hnFloor.trans (hQlate r hrQ))
+      have hblockLower :
+          blockFloor ≤ start + j := by
+        have hfloorN :
+            blockFloor ≤ n :=
+          (le_max_right targetFloor blockFloor).trans hnFloor
+        omega
+      refine ⟨⟨r, E, start + j, htargetLower,
+        hblockLower, hEmem, ?_⟩⟩
+      simpa only [start] using hEj
+    obtain ⟨Y, oldTarget, hYA, hYInfinite,
+        holdStrict, holdSurvival⟩ :=
+      cofinalReducedFusionSteps_fuse_infiniteDeletion
+        hKA P hstepExists
+    have hsuccessorDestroy :
+        ∀ N, ∃ m, N ≤ m ∧
+          DestroysAt
+            (additiveSupportFamily A (h + 1)) Y m :=
+      hstrong Y hYA hYInfinite
+    have hrepresented :
+        ∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a,
+          L ≤ n ∧
+          oldTarget n < m ∧
+          m < oldTarget (n + 1) ∧
+          E ∈ additiveSupportFamily A (h + 1)
+            (oldTarget n) ∧
+          Disjoint (E : Set ℕ) Y ∧
+          DestroysAt
+            (additiveSupportFamily A (h + 1)) Y m ∧
+          a ∈ E ∧
+          (h + 1) * a ≤ oldTarget n ∧
+          L ≤ m - a ∧
+          (additiveSupportFamily A h (m - a)).Nonempty ∧
+          DestroysAt
+            (additiveSupportFamily A h) Y (m - a) :=
+      bracketedDestroyedSuccessorTargets_force_cofinalRepresentedPredecessorDestroyers
+        (by omega) hbasis holdStrict holdSurvival hsuccessorDestroy
+    exact ⟨Y, oldTarget, hYA, hYInfinite,
+      holdStrict, holdSurvival, hsuccessorDestroy,
+      hrepresented⟩
+  · right
+    push Not at hcofinal
+    obtain ⟨N, hN⟩ := hcofinal
+    refine ⟨N, ?_⟩
+    intro n hn
+    obtain ⟨Q, _hQnonempty, hQlate, _hQlarge,
+        hcert, _hlocalized, r, hrQ, houtcome⟩ :=
+      quadraticBlockTail_forces_targetLocalizedArithmeticOutcome
+        hbasis.succ hstrong hKA P hquadratic
+          n (n + 1) (n + 1 + h) (n + 1)
+            (n + 1) (n + 1)
+    have hnotStream :
+        ¬ HasDiagonalLocalizedReducedStream A h cell n :=
+      hN n hn
+    simp only [HasTargetLocalizedArithmeticOutcome] at houtcome
+    rcases houtcome with hroot |
+        ⟨E, hEmem, T, hstream | hconcentration⟩
+    · exact ⟨Q, r, hrQ, hQlate, Or.inl hroot⟩
+    · exfalso
+      apply hnotStream
+      refine ⟨Q, r, hrQ, E, T, hQlate, hEmem, ?_⟩
+      simpa only [localizedArithmeticDiagonalStart] using hstream
+    · let start := localizedArithmeticDiagonalStart h n
+      let tailCell : ℕ → Finset ℕ :=
+        fun i => cell (start + i)
+      let Ktail : Set ℕ :=
+        {x | ∃ i, x ∈ tailCell i}
+      have Ptail :
+          IsFiniteBlockPartition Ktail tailCell := by
+        refine ⟨?_, ?_, ?_⟩
+        · intro i
+          exact P.nonempty (start + i)
+        · intro i j hij
+          apply P.disjoint
+          omega
+        · intro x
+          simp only [Ktail, tailCell, Set.mem_setOf_eq]
+      have hconcentration' :
+          HasCommonColumnAnchoredArithmeticConcentration
+            A h (n + 1 + h) (n + 1) (n + 1)
+              tailCell Q r hrQ E T := by
+        simpa only [tailCell, start,
+          localizedArithmeticDiagonalStart] using
+            hconcentration
+      have hresolved :=
+        anchoredArithmeticConcentration_forces_growth_or_twoRankDescent_or_capacityFailure
+          (clearDemand := n + 1)
+          Ptail hh hconcentration' hcert
+      rcases hresolved with
+          hdifference | hlower | hdescent | hcapacity
+      · exact ⟨Q, r, hrQ, hQlate,
+          Or.inr (Or.inl hdifference)⟩
+      · exact ⟨Q, r, hrQ, hQlate,
+          Or.inr (Or.inr (Or.inl hlower))⟩
+      · exact ⟨Q, r, hrQ, hQlate,
+          Or.inr (Or.inr (Or.inr
+            (Or.inl hdescent)))⟩
+      · exact ⟨Q, r, hrQ, hQlate,
+          Or.inr (Or.inr (Or.inr
+            (Or.inr hcapacity)))⟩
 
 end Erdos881
