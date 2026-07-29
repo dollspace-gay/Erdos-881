@@ -1,3 +1,64 @@
+# GENERAL ORDER: THE FIXED-ROOT REPAIR HORN IS FUSED AND DESCENDS AGAIN (2026-07-29)
+
+The residual-target alternatives are now welded back to one arbitrary
+strongly minimal counterexample.
+
+`stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_residualArithmeticInjury_or_capturedRootExit`
+is exhaustive.  Apart from the original current-order hole horn, the
+counterexample must produce one of:
+
+- a cofinal residual arithmetic injury with its source block and
+  displacement retained;
+- cofinal holes at captured moving roots; or
+- a fixed residual target and support whose translated-root repairs fuse
+  on one strict residual deletion.
+
+The last horn no longer loses its arithmetic data.
+`HasCapturedFixedRootRepairAt` remembers the moving root \(z_j\), repaired
+point \(w_j=z_j+\delta\), both target brackets, and \(q=m-a\).
+`cofinalCapturedFixedRootRepairs_fuse_residualDeletion` constructs one
+infinite \(C\subset B\) with strict streams of roots, repaired points, and
+targets.  Every selected target was destroyed by \(B\) but survives \(C\);
+the original source data remains attached to every selected stage.
+
+The survival is now made explicit rather than existential.
+`cleanSupport_boundaryPoint_has_privateTranslatedSupport` removes one
+occurrence of the moving root and inserts its translate.
+`HasFusedCapturedFixedRootRepairStream.forces_coherentPrivatePredecessorLadder`
+therefore proves
+
+\[
+ q_i-w_i=s_i-z_i=(k-r-1)z_i+t
+\]
+
+and supplies a \(B\)-clean order-\((k-1)\) support of this predecessor.
+Reinserting \(w_i\) gives an order-\(k\) support of \(q_i\) private to
+\(B\).
+
+Strong minimality then acts on \(C\).
+`forces_secondLevelAlignedLowerDestruction` brackets new \(C\)-destroyed
+targets \(u_i\) between consecutive fused survivors and proves, for
+\(\varepsilon_i=u_i-q_i>0\),
+
+\[
+ u_i-w_i=(q_i-w_i)+\varepsilon_i,
+\]
+
+with destruction at order \(k-1\) by \(C\).
+If \(r<k-1\), the predecessor coefficient \(k-r-1\) is positive, so these
+sources grow cofinally.
+`forces_secondLevelCofinalArithmeticInjury_of_lt_pred` applies arithmetic
+descent again and forces another same-rank gap, strict lower-rank gap, or
+translated boundary point.
+
+This is not yet the full solution.  The fixed-root repair horn has now
+been reduced to its sharp terminal case \(r=k-1\).  There the predecessor
+identity collapses to \(q_i-w_i=t\), so the next direct attack is on the
+coherent translations \(t+\varepsilon_i\): unbounded
+\(\varepsilon_i\) gives cofinal translated injuries from one fixed core,
+while bounded \(\varepsilon_i\) fixes one repaired lower target whose
+single restoration repairs infinitely many aligned upper targets.
+
 # GENERAL ORDER: BOTH RESIDUAL-TARGET HORNS NOW CAUSE ARITHMETIC INJURY (2026-07-29)
 
 The residual-target fork is no longer only a description of how a
