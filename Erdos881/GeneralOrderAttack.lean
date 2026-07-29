@@ -51077,6 +51077,857 @@ theorem
         hindexStrict, hupperStrict,
         hstream, hadvance⟩
 
+/-- Recursive state for the terminal arithmetic-concentration attack.
+
+The strict order-`k` survival stream has one fixed marked predecessor `d`.
+The deletion itself is part of the state, so a boundary repair can replace
+it by a smaller infinite deletion and continue at a larger predecessor. -/
+def HasFixedPredecessorSurvivalState
+    (A D : Set ℕ) (k d : ℕ) : Prop :=
+  D ⊆ A ∧
+  D.Infinite ∧
+  ∃ upper marked : ℕ → ℕ,
+  ∃ support : ℕ → Finset ℕ,
+    StrictMono upper ∧
+    ∀ n,
+      support n ∈
+        additiveSupportFamily A k (upper n) ∧
+      marked n ∈ support n ∧
+      Disjoint (support n : Set ℕ) D ∧
+      upper n - marked n = d
+
+/-- One positive predecessor-advance stage, retaining the clean source
+support and the destroyed translated target. -/
+def HasFixedPredecessorAdvanceStageAt
+    (A D : Set ℕ) (k d : ℕ)
+    (upper marked : ℕ → ℕ)
+    (η L : ℕ) : Prop :=
+  ∃ n v, ∃ G F : Finset ℕ,
+    L ≤ n ∧
+    upper n < v ∧
+    v < upper (n + 1) ∧
+    0 < η ∧
+    v = upper n + η ∧
+    F ∈ additiveSupportFamily A k (upper n) ∧
+    marked n ∈ F ∧
+    Disjoint (F : Set ℕ) D ∧
+    upper n - marked n = d ∧
+    G ∈ additiveSupportFamily A (k - 1) d ∧
+    G ⊆ F ∧
+    Disjoint (G : Set ℕ) D ∧
+    (additiveSupportFamily A k v).Nonempty ∧
+    DestroysAt
+      (additiveSupportFamily A k) D v ∧
+    0 < v - marked n ∧
+    v - marked n = d + η ∧
+    DestroysAt
+      (additiveSupportFamily A (k - 1))
+      D (d + η)
+
+/-- Lowering the requested floor preserves an advance stage. -/
+theorem HasFixedPredecessorAdvanceStageAt.mono_floor
+    {A D : Set ℕ} {k d η : ℕ}
+    {upper marked : ℕ → ℕ}
+    {L M : ℕ}
+    (hLM : L ≤ M)
+    (hstage :
+      HasFixedPredecessorAdvanceStageAt
+        A D k d upper marked η M) :
+    HasFixedPredecessorAdvanceStageAt
+      A D k d upper marked η L := by
+  obtain ⟨n, v, G, F, hnM, hrest⟩ :=
+    hstage
+  exact
+    ⟨n, v, G, F, hLM.trans hnM, hrest⟩
+
+/-- Cofinal translated injury produced from one fixed predecessor state.
+
+The source remains `d`, but the actual gap or boundary point escapes every
+floor because the displacement does. -/
+def HasCofinalFixedPredecessorArithmeticInjury
+    (A D : Set ℕ) (k d : ℕ) : Prop :=
+  ∀ L,
+    ∃ η, ∃ G : Finset ℕ,
+      L ≤ η ∧
+      0 < η ∧
+      G ∈ additiveSupportFamily A (k - 1) d ∧
+      Disjoint (G : Set ℕ) D ∧
+      DestroysAt
+        (additiveSupportFamily A (k - 1))
+        D (d + η) ∧
+      (additiveSupportFamily A (k - 1)
+          (d + η) = ∅ ∨
+        ((∃ ℓ v, ∃ Q : Finset ℕ,
+            0 < ℓ ∧
+            ℓ < k - 1 ∧
+            Q ∈ additiveSupportFamily A ℓ v ∧
+            Q ⊆ G ∧
+            Disjoint (Q : Set ℕ) D ∧
+            L ≤ v + η ∧
+            additiveSupportFamily A ℓ
+              (v + η) = ∅) ∨
+          ∃ c,
+            c ∈ G ∧
+            c ∈ A ∧
+            c ∉ D ∧
+            L ≤ c + η ∧
+            c + η ∈ A ∧
+            c + η ∈ D))
+
+/-- A genuine finite-rank translated gap reached from a fixed predecessor
+state. -/
+def HasFixedPredecessorArithmeticGap
+    (A D : Set ℕ) (k d : ℕ) : Prop :=
+  ∃ η, ∃ G : Finset ℕ,
+    0 < η ∧
+    G ∈ additiveSupportFamily A (k - 1) d ∧
+    Disjoint (G : Set ℕ) D ∧
+    DestroysAt
+      (additiveSupportFamily A (k - 1))
+      D (d + η) ∧
+    (additiveSupportFamily A (k - 1)
+        (d + η) = ∅ ∨
+      ∃ ℓ v, ∃ Q : Finset ℕ,
+        0 < ℓ ∧
+        ℓ < k - 1 ∧
+        Q ∈ additiveSupportFamily A ℓ v ∧
+        Q ⊆ G ∧
+        Disjoint (Q : Set ℕ) D ∧
+        additiveSupportFamily A ℓ
+          (v + η) = ∅)
+
+/-- The displacement labels of a cofinal fixed-predecessor advance stream
+either grow cofinally or one positive displacement recurs cofinally. -/
+theorem
+    cofinal_fixedPredecessorAdvanceStages_displacementGrowth_or_fixed
+    {A D : Set ℕ} {k d : ℕ}
+    {upper marked : ℕ → ℕ}
+    (hstage :
+      ∀ L, ∃ η,
+        HasFixedPredecessorAdvanceStageAt
+          A D k d upper marked η L) :
+    (∀ displacementFloor stageFloor,
+      ∃ η, displacementFloor ≤ η ∧
+        HasFixedPredecessorAdvanceStageAt
+          A D k d upper marked η stageFloor) ∨
+      ∃ η, 0 < η ∧ ∀ stageFloor,
+        HasFixedPredecessorAdvanceStageAt
+          A D k d upper marked η stageFloor := by
+  classical
+  by_cases hgrowth :
+      ∀ displacementFloor stageFloor,
+        ∃ η, displacementFloor ≤ η ∧
+          HasFixedPredecessorAdvanceStageAt
+            A D k d upper marked η stageFloor
+  · exact Or.inl hgrowth
+  · right
+    obtain ⟨displacementFloor, hnotGrowth⟩ :=
+      not_forall.mp hgrowth
+    obtain ⟨stageFloor₀, hbounded⟩ :=
+      not_forall.mp hnotGrowth
+    push Not at hbounded
+    let displacements : Finset ℕ :=
+      Finset.range displacementFloor
+    let P : ℕ → ℕ → Prop := fun η L =>
+      HasFixedPredecessorAdvanceStageAt
+        A D k d upper marked η L
+    have hcofinal :
+        ∀ X, ∃ L, X < L ∧
+          ∃ η ∈ displacements, P η L := by
+      intro X
+      let L := max (X + 1) stageFloor₀
+      obtain ⟨η, hηStage⟩ :=
+        hstage L
+      have hηBound : η < displacementFloor := by
+        by_contra hnot
+        exact hbounded η
+          (Nat.le_of_not_gt hnot)
+          (HasFixedPredecessorAdvanceStageAt.mono_floor
+            (le_max_right (X + 1) stageFloor₀)
+            hηStage)
+      exact
+        ⟨L,
+          (Nat.lt_succ_self X).trans_le
+            (le_max_left (X + 1) stageFloor₀),
+          η, Finset.mem_range.mpr hηBound,
+          hηStage⟩
+    obtain ⟨η, _hηRange, hηCofinal⟩ :=
+      finite_cofinal_pigeonhole hcofinal
+    obtain ⟨M, _hM, hηStage⟩ :=
+      hηCofinal 0
+    obtain ⟨_n, _v, _G, _F, _hnM,
+        _hnLower, _hnUpper, hηpos,
+        _hrest⟩ :=
+      hηStage
+    refine
+      ⟨η, hηpos, ?_⟩
+    intro stageFloor
+    obtain ⟨M, hstageFloorM, hstageM⟩ :=
+      hηCofinal stageFloor
+    exact
+      HasFixedPredecessorAdvanceStageAt.mono_floor
+        (Nat.le_of_lt hstageFloorM)
+        hstageM
+
+/-- One operational step of the recursive fixed-predecessor attack.
+
+There are only three outcomes:
+
+* cofinally growing displacements force cofinal translated arithmetic
+  injury;
+* a fixed displacement exposes a genuine same-rank or lower-rank gap; or
+* one translated boundary point is restored, leaving a smaller infinite
+  deletion which carries the same strict survival state at the strictly
+  larger predecessor `d+η`.
+
+The third horn is an actual recursive state transition, not a renamed
+repair branch. -/
+theorem HasFixedPredecessorSurvivalState.step
+    {A D : Set ℕ} {k d : ℕ}
+    (hk : 1 < k)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (hstate :
+      HasFixedPredecessorSurvivalState A D k d) :
+    HasCofinalFixedPredecessorArithmeticInjury A D k d ∨
+      HasFixedPredecessorArithmeticGap A D k d ∨
+      ∃ x, ∃ D' : Set ℕ, ∃ d',
+        x ∈ D ∧
+        x ∈ A ∧
+        D' = D \ {x} ∧
+        D' ⊆ D ∧
+        d < d' ∧
+        HasFixedPredecessorSurvivalState A D' k d' := by
+  classical
+  obtain ⟨hDA, hDInfinite, upper, marked, support,
+      hupperStrict, hsurvivalData⟩ :=
+    hstate
+  have hsurvival :
+      ∀ n, ∃ F : Finset ℕ,
+        F ∈ additiveSupportFamily A k (upper n) ∧
+        marked n ∈ F ∧
+        Disjoint (F : Set ℕ) D ∧
+        upper n - marked n = d := by
+    intro n
+    exact ⟨support n, hsurvivalData n⟩
+  have hadvance :=
+    fixedPredecessorStrictSurvivalStream_forces_largerTranslatedLowerDestruction
+      (A := A) (D := D) (k := k) (d := d)
+      (upper := upper) (marked := marked)
+      (by omega) hDA hDInfinite hminimal
+        hupperStrict hsurvival
+  have hstage :
+      ∀ L, ∃ η,
+        HasFixedPredecessorAdvanceStageAt
+          A D k d upper marked η L := by
+    intro L
+    obtain ⟨n, v, η, G, F, hdata⟩ :=
+      hadvance L
+    exact
+      ⟨η, n, v, G, F, hdata⟩
+  obtain hgrowth | ⟨η, hηpos, hfixed⟩ :=
+    cofinal_fixedPredecessorAdvanceStages_displacementGrowth_or_fixed
+      hstage
+  · left
+    unfold HasCofinalFixedPredecessorArithmeticInjury
+    intro L
+    obtain ⟨η, hLη, hηStage⟩ :=
+      hgrowth L L
+    obtain ⟨_n, _v, G, _F, _hnL,
+        _hnLower, _hnUpper, hηpos,
+        _hvη, _hFmem, _hmarkedF, _hFD,
+        _hpredecessor, hGmem, _hGF, hGD,
+        _hvNonempty, _hvDestroy,
+        _hlowerPositive, _hlowerAligned,
+        hshiftDestroy⟩ :=
+      hηStage
+    refine
+      ⟨η, G, hLη, hηpos, hGmem, hGD,
+        hshiftDestroy, ?_⟩
+    by_cases hgap :
+        additiveSupportFamily A (k - 1)
+          (d + η) = ∅
+    · exact Or.inl hgap
+    · have hshiftNonempty :
+          (additiveSupportFamily A (k - 1)
+            (d + η)).Nonempty :=
+        Finset.nonempty_iff_ne_empty.mpr hgap
+      obtain hlower | hboundary :=
+        cleanSupport_destroyedTranslate_forces_lowerGap_or_boundaryLanding
+          (A := A) (Y := D)
+          (h := k - 1) (floor := 0)
+          (p := d) (δ := η)
+          (by omega) (by simp) hGmem hGD
+            hshiftNonempty hshiftDestroy
+      · obtain ⟨ℓ, v, Q, hℓpos, hℓpred,
+            _hzeroV, hQmem, hQG, hQD, hQgap⟩ :=
+          hlower
+        exact
+          Or.inr
+            (Or.inl
+              ⟨ℓ, v, Q, hℓpos, hℓpred,
+                hQmem, hQG, hQD,
+                hLη.trans (Nat.le_add_left η v),
+                hQgap⟩)
+      · obtain ⟨c, _hzeroC, hcG, hcA, hcD,
+            hshiftA, hshiftD⟩ :=
+          hboundary
+        exact
+          Or.inr
+            (Or.inr
+              ⟨c, hcG, hcA, hcD,
+                hLη.trans (Nat.le_add_left η c),
+                hshiftA, hshiftD⟩)
+  · obtain ⟨_n₀, _v₀, G, _F₀, _hn₀,
+        _hnLower₀, _hnUpper₀, _hηpos₀,
+        _hvη₀, _hFmem₀, _hmarkedF₀, _hFD₀,
+        _hpredecessor₀, hGmem, _hGF₀, hGD,
+        _hvNonempty₀, _hvDestroy₀,
+        _hlowerPositive₀, _hlowerAligned₀,
+        hshiftDestroy⟩ :=
+      hfixed 0
+    by_cases hgap :
+        additiveSupportFamily A (k - 1)
+          (d + η) = ∅
+    · right
+      left
+      exact
+        ⟨η, G, hηpos, hGmem, hGD,
+          hshiftDestroy, Or.inl hgap⟩
+    · have hshiftNonempty :
+          (additiveSupportFamily A (k - 1)
+            (d + η)).Nonempty :=
+        Finset.nonempty_iff_ne_empty.mpr hgap
+      obtain hlower | hboundary :=
+        cleanSupport_destroyedTranslate_forces_lowerGap_or_boundaryLanding
+          (A := A) (Y := D)
+          (h := k - 1) (floor := 0)
+          (p := d) (δ := η)
+          (by omega) (by simp) hGmem hGD
+            hshiftNonempty hshiftDestroy
+      · right
+        left
+        obtain ⟨ℓ, v, Q, hℓpos, hℓpred,
+            _hzeroV, hQmem, hQG, hQD, hQgap⟩ :=
+          hlower
+        exact
+          ⟨η, G, hηpos, hGmem, hGD,
+            hshiftDestroy, Or.inr
+              ⟨ℓ, v, Q, hℓpos, hℓpred,
+                hQmem, hQG, hQD, hQgap⟩⟩
+      · right
+        right
+        obtain ⟨c, _hzeroC, hcG, hcA, hcD,
+            hshiftA, hshiftD⟩ :=
+          hboundary
+        let x := c + η
+        let D' : Set ℕ := D \ {x}
+        let d' := d + η
+        have hxD : x ∈ D := by
+          exact hshiftD
+        have hxA : x ∈ A := by
+          exact hshiftA
+        have hD'D : D' ⊆ D :=
+          Set.diff_subset
+        have hD'A : D' ⊆ A :=
+          hD'D.trans hDA
+        have hD'Infinite : D'.Infinite := by
+          exact hDInfinite.diff
+            (Set.finite_singleton x)
+        have hdD' : d < d' := by
+          dsimp only [d']
+          omega
+        have hlowerSurvive :
+            ¬ DestroysAt
+              (additiveSupportFamily A (k - 1))
+              D' d' := by
+          dsimp only [D', d', x]
+          exact
+            cleanSupport_boundaryPoint_survives_after_restoring
+              (by omega) hGmem hGD hcG hshiftA
+        have hsupply :
+            ∀ L,
+              ∃ n v, ∃ Frepair : Finset ℕ,
+                L ≤ n ∧
+                upper n < v ∧
+                v < upper (n + 1) ∧
+                Frepair ∈
+                  additiveSupportFamily A k v ∧
+                marked n ∈ Frepair ∧
+                Disjoint (Frepair : Set ℕ) D' ∧
+                v - marked n = d' := by
+          intro L
+          obtain ⟨n, v, _Gstage, F, hnL,
+              hnLower, hnUpper, _hηposStage,
+              hvη, hFmem, hmarkedF, hFD,
+              hpredecessor, _hGmemStage,
+              _hGFstage, _hGDstage,
+              _hvNonempty, _hvDestroy,
+              _hlowerPositive, hlowerAligned,
+              _hlowerDestroy⟩ :=
+            hfixed L
+          obtain ⟨R, hRmem, hRD'⟩ :=
+            not_destroysAt_iff.mp hlowerSurvive
+          have hmarkedA :
+              marked n ∈ A :=
+            additiveSupportFamily_supportsIn
+              A k (upper n) F hFmem
+                (marked n) hmarkedF
+          have hmarkedUpper :
+              marked n ≤ upper n :=
+            additiveSupportFamily_supportsBounded
+              A k (upper n) F hFmem
+                (marked n) hmarkedF
+          have hmarkedD :
+              marked n ∉ D := by
+            intro hmarkedD
+            exact Set.disjoint_left.mp hFD
+              (Finset.mem_coe.mpr hmarkedF)
+                hmarkedD
+          have hmarkedD' :
+              marked n ∉ D' :=
+            fun hmarkedD' =>
+              hmarkedD (hD'D hmarkedD')
+          have hvDecomp :
+              v = marked n + d' := by
+            dsimp only [d']
+            rw [hvη]
+            omega
+          let Frepair : Finset ℕ :=
+            insert (marked n) R
+          have hFrepairMem :
+              Frepair ∈
+                additiveSupportFamily A k v := by
+            have hlift :=
+              insert_mem_additiveSupportFamily_succ
+                hmarkedA hRmem
+            have hkSplit : k - 1 + 1 = k := by
+              omega
+            rw [hkSplit, ← hvDecomp] at hlift
+            exact hlift
+          have hFrepairD' :
+              Disjoint (Frepair : Set ℕ) D' := by
+            rw [Set.disjoint_left]
+            intro y hyF hyD'
+            rcases Finset.mem_insert.mp
+                (Finset.mem_coe.mp hyF) with
+              hyMarked | hyR
+            · subst y
+              exact hmarkedD' hyD'
+            · exact Set.disjoint_left.mp hRD'
+                (Finset.mem_coe.mpr hyR) hyD'
+          have hvMarked :
+              v - marked n = d' := by
+            rw [hvDecomp]
+            exact Nat.add_sub_cancel_left _ _
+          exact
+            ⟨n, v, Frepair, hnL, hnLower,
+              hnUpper, hFrepairMem, by simp [Frepair],
+              hFrepairD', hvMarked⟩
+        obtain ⟨index, upper', support',
+            _hindexStrict, hupper'Strict,
+            hstream'⟩ :=
+          cofinalBracketedMarkedSurvivals_extract_strictStream
+            (A := A) (D := D') (k := k) (d := d')
+            (base := upper) (marked := marked)
+            hupperStrict hsupply
+        let marked' : ℕ → ℕ := fun n =>
+          marked (index n)
+        have hstate' :
+            HasFixedPredecessorSurvivalState
+              A D' k d' := by
+          exact
+            ⟨hD'A, hD'Infinite, upper', marked',
+              support', hupper'Strict, fun n =>
+                ⟨(hstream' n).2.2.1,
+                  (hstream' n).2.2.2.1,
+                  (hstream' n).2.2.2.2.1,
+                  (hstream' n).2.2.2.2.2⟩⟩
+        exact
+          ⟨x, D', d', hxD, hxA, rfl,
+            hD'D, hdD', hstate'⟩
+
+/-- Finite iteration of the operational state transition.
+
+After `N` non-injury steps, at most `N` points have been restored, the
+remaining deletion is the original deletion minus that finite set, and
+the predecessor has increased by at least `N`.  If an arithmetic injury
+or gap occurs earlier, its intermediate infinite state is returned
+instead. -/
+theorem HasFixedPredecessorSurvivalState.iterate_or_injury
+    {A D : Set ℕ} {k d : ℕ}
+    (hk : 1 < k)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (hstate :
+      HasFixedPredecessorSurvivalState A D k d) :
+    ∀ N,
+      (∃ D₀ : Set ℕ, ∃ d₀,
+          D₀ ⊆ D ∧
+          HasFixedPredecessorSurvivalState
+            A D₀ k d₀ ∧
+          (HasCofinalFixedPredecessorArithmeticInjury
+              A D₀ k d₀ ∨
+            HasFixedPredecessorArithmeticGap
+              A D₀ k d₀)) ∨
+        ∃ R : Finset ℕ, ∃ D' : Set ℕ, ∃ d',
+          R.card ≤ N ∧
+          (R : Set ℕ) ⊆ D ∧
+          D' = D \ (R : Set ℕ) ∧
+          d + N ≤ d' ∧
+          HasFixedPredecessorSurvivalState
+            A D' k d' := by
+  intro N
+  induction N generalizing D d with
+  | zero =>
+      right
+      exact
+        ⟨∅, D, d, by simp, by simp,
+          by simp, by simp, hstate⟩
+  | succ N ih =>
+      obtain hinjury | hgap | ⟨x, D₁, d₁,
+          hxD, _hxA, hD₁eq, hD₁D,
+          hdd₁, hstate₁⟩ :=
+        hstate.step hk hminimal
+      · left
+        exact
+          ⟨D, d, Set.Subset.rfl, hstate,
+            Or.inl hinjury⟩
+      · left
+        exact
+          ⟨D, d, Set.Subset.rfl, hstate,
+            Or.inr hgap⟩
+      · obtain hreach |
+            ⟨R, D', d', hRcard, hRD₁,
+              hD'eq, hd₁N, hstate'⟩ :=
+          ih hstate₁
+        · left
+          obtain ⟨D₀, d₀, hD₀D₁,
+              hstate₀, hinjury₀⟩ :=
+            hreach
+          exact
+            ⟨D₀, d₀, hD₀D₁.trans hD₁D,
+              hstate₀, hinjury₀⟩
+        · right
+          let R' : Finset ℕ :=
+            insert x R
+          have hxNotR : x ∉ R := by
+            intro hxR
+            have hxD₁ :
+                x ∈ D₁ :=
+              hRD₁ (Finset.mem_coe.mpr hxR)
+            rw [hD₁eq] at hxD₁
+            exact hxD₁.2 (by simp)
+          have hR'card :
+              R'.card ≤ N + 1 := by
+            dsimp only [R']
+            rw [Finset.card_insert_of_notMem hxNotR]
+            omega
+          have hR'D :
+              (R' : Set ℕ) ⊆ D := by
+            intro y hyR'
+            have hy :
+                y = x ∨ y ∈ R := by
+              simpa only [R', Finset.mem_insert,
+                Finset.mem_coe] using hyR'
+            rcases hy with rfl | hyR
+            · exact hxD
+            · exact hD₁D
+                (hRD₁ (Finset.mem_coe.mpr hyR))
+          have hD'original :
+              D' = D \ (R' : Set ℕ) := by
+            rw [hD'eq, hD₁eq]
+            ext y
+            simp only [Set.mem_diff, Set.mem_singleton_iff,
+              Finset.mem_coe, R', Finset.mem_insert]
+            tauto
+          have hdAdvance :
+              d + (N + 1) ≤ d' := by
+            have hsucc : d + 1 ≤ d₁ := by
+              omega
+            omega
+          exact
+            ⟨R', D', d', hR'card, hR'D,
+              hD'original, hdAdvance, hstate'⟩
+
+/-- Arithmetic injury at a prescribed floor from a sufficiently large
+fixed predecessor. -/
+def HasFixedPredecessorArithmeticInjuryAtFloor
+    (A D : Set ℕ) (k d L : ℕ) : Prop :=
+  ∃ η, ∃ G : Finset ℕ,
+    (k - 1) * L ≤ d ∧
+    0 < η ∧
+    G ∈ additiveSupportFamily A (k - 1) d ∧
+    Disjoint (G : Set ℕ) D ∧
+    DestroysAt
+      (additiveSupportFamily A (k - 1))
+      D (d + η) ∧
+    (additiveSupportFamily A (k - 1)
+        (d + η) = ∅ ∨
+      ((∃ ℓ v, ∃ Q : Finset ℕ,
+          0 < ℓ ∧
+          ℓ < k - 1 ∧
+          L ≤ v ∧
+          Q ∈ additiveSupportFamily A ℓ v ∧
+          Q ⊆ G ∧
+          Disjoint (Q : Set ℕ) D ∧
+          additiveSupportFamily A ℓ
+            (v + η) = ∅) ∨
+        ∃ c,
+          L ≤ c ∧
+          c ∈ G ∧
+          c ∈ A ∧
+          c ∉ D ∧
+          c + η ∈ A ∧
+          c + η ∈ D))
+
+/-- Once a recursive state's predecessor crosses the arithmetic threshold,
+one more strong-minimality bracket forces injury at that requested floor. -/
+theorem
+    HasFixedPredecessorSurvivalState.largeSource_forces_arithmeticInjuryAtFloor
+    {A D : Set ℕ} {k d L : ℕ}
+    (hk : 1 < k)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (hfloor : (k - 1) * L ≤ d)
+    (hstate :
+      HasFixedPredecessorSurvivalState A D k d) :
+    HasFixedPredecessorArithmeticInjuryAtFloor
+      A D k d L := by
+  classical
+  obtain ⟨hDA, hDInfinite, upper, marked, support,
+      hupperStrict, hsurvivalData⟩ :=
+    hstate
+  have hsurvival :
+      ∀ n, ∃ F : Finset ℕ,
+        F ∈ additiveSupportFamily A k (upper n) ∧
+        marked n ∈ F ∧
+        Disjoint (F : Set ℕ) D ∧
+        upper n - marked n = d := by
+    intro n
+    exact
+      ⟨support n, hsurvivalData n⟩
+  obtain ⟨_n, _v, η, G, _F,
+      _hnZero, _hnLower, _hnUpper,
+      hηpos, _hvη, _hFmem, _hmarkedF,
+      _hFD, _hpredecessor, hGmem, _hGF,
+      hGD, _hvNonempty, _hvDestroy,
+      _hlowerPositive, _hlowerAligned,
+      hshiftDestroy⟩ :=
+    fixedPredecessorStrictSurvivalStream_forces_largerTranslatedLowerDestruction
+      (A := A) (D := D) (k := k) (d := d)
+      (upper := upper) (marked := marked)
+      (by omega) hDA hDInfinite hminimal
+        hupperStrict hsurvival 0
+  unfold HasFixedPredecessorArithmeticInjuryAtFloor
+  refine
+    ⟨η, G, hfloor, hηpos, hGmem, hGD,
+      hshiftDestroy, ?_⟩
+  by_cases hgap :
+      additiveSupportFamily A (k - 1)
+        (d + η) = ∅
+  · exact Or.inl hgap
+  · have hshiftNonempty :
+        (additiveSupportFamily A (k - 1)
+          (d + η)).Nonempty :=
+      Finset.nonempty_iff_ne_empty.mpr hgap
+    obtain hlower | hboundary :=
+      cleanSupport_destroyedTranslate_forces_lowerGap_or_boundaryLanding
+        (A := A) (Y := D)
+        (h := k - 1) (floor := L)
+        (p := d) (δ := η)
+        (by omega) hfloor hGmem hGD
+          hshiftNonempty hshiftDestroy
+    · obtain ⟨ℓ, v, Q, hℓpos, hℓpred,
+          hLv, hQmem, hQG, hQD, hQgap⟩ :=
+        hlower
+      exact
+        Or.inr
+          (Or.inl
+            ⟨ℓ, v, Q, hℓpos, hℓpred,
+              hLv, hQmem, hQG, hQD, hQgap⟩)
+    · obtain ⟨c, hLc, hcG, hcA, hcD,
+          hshiftA, hshiftD⟩ :=
+        hboundary
+      exact
+        Or.inr
+          (Or.inr
+            ⟨c, hLc, hcG, hcA, hcD,
+              hshiftA, hshiftD⟩)
+
+/-- Finite iteration always reaches the requested arithmetic scale unless
+an injury or genuine gap occurs earlier.
+
+Take `N=(k-1)*L`.  If all `N` recursive steps choose boundary repair, the
+predecessor has grown by at least `N` while only finitely many points were
+removed.  The final infinite state therefore satisfies the floor invariant
+and yields arithmetic injury at scale `L`. -/
+theorem
+    HasFixedPredecessorSurvivalState.iterate_to_arithmeticThreshold
+    {A D : Set ℕ} {k d : ℕ}
+    (hk : 1 < k)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (hstate :
+      HasFixedPredecessorSurvivalState A D k d) :
+    ∀ L,
+      (∃ D₀ : Set ℕ, ∃ d₀,
+          D₀ ⊆ D ∧
+          HasFixedPredecessorSurvivalState
+            A D₀ k d₀ ∧
+          (HasCofinalFixedPredecessorArithmeticInjury
+              A D₀ k d₀ ∨
+            HasFixedPredecessorArithmeticGap
+              A D₀ k d₀)) ∨
+        ∃ R : Finset ℕ, ∃ D' : Set ℕ, ∃ d',
+          R.card ≤ (k - 1) * L ∧
+          (R : Set ℕ) ⊆ D ∧
+          D' = D \ (R : Set ℕ) ∧
+          HasFixedPredecessorSurvivalState
+            A D' k d' ∧
+          HasFixedPredecessorArithmeticInjuryAtFloor
+            A D' k d' L := by
+  intro L
+  obtain hinjury |
+      ⟨R, D', d', hRcard, hRD, hD'eq,
+        hdLarge, hstate'⟩ :=
+    hstate.iterate_or_injury hk hminimal
+      ((k - 1) * L)
+  · exact Or.inl hinjury
+  · right
+    have hfloor :
+        (k - 1) * L ≤ d' := by
+      exact
+        (Nat.le_add_left
+          ((k - 1) * L) d).trans hdLarge
+    exact
+      ⟨R, D', d', hRcard, hRD, hD'eq,
+        hstate',
+        hstate'.largeSource_forces_arithmeticInjuryAtFloor
+          hk hminimal hfloor⟩
+
+/-- Packaged all-threshold conclusion of finite predecessor-state
+iteration. -/
+def ReachesEveryFixedPredecessorArithmeticThresholdOrInjury
+    (A D : Set ℕ) (k d : ℕ) : Prop :=
+  ∀ L,
+    (∃ D₀ : Set ℕ, ∃ d₀,
+        D₀ ⊆ D ∧
+        HasFixedPredecessorSurvivalState
+          A D₀ k d₀ ∧
+        (HasCofinalFixedPredecessorArithmeticInjury
+            A D₀ k d₀ ∨
+          HasFixedPredecessorArithmeticGap
+            A D₀ k d₀)) ∨
+      ∃ R : Finset ℕ, ∃ D' : Set ℕ, ∃ d',
+        R.card ≤ (k - 1) * L ∧
+        (R : Set ℕ) ⊆ D ∧
+        D' = D \ (R : Set ℕ) ∧
+        HasFixedPredecessorSurvivalState
+          A D' k d' ∧
+        HasFixedPredecessorArithmeticInjuryAtFloor
+          A D' k d' L
+
+/-- Every recursive state reaches all arithmetic thresholds by finite
+iteration. -/
+theorem
+    HasFixedPredecessorSurvivalState.reachesEveryArithmeticThresholdOrInjury
+    {A D : Set ℕ} {k d : ℕ}
+    (hk : 1 < k)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (hstate :
+      HasFixedPredecessorSurvivalState A D k d) :
+    ReachesEveryFixedPredecessorArithmeticThresholdOrInjury
+      A D k d := by
+  unfold
+    ReachesEveryFixedPredecessorArithmeticThresholdOrInjury
+  exact
+    hstate.iterate_to_arithmeticThreshold
+      hk hminimal
+
+/-- The fixed terminal displacement now reaches every arithmetic threshold
+unless it exposes a genuine gap immediately.
+
+In the boundary-repair horn, the strict common-upper stream is packaged as
+a recursive state at predecessor `t+ε` on
+`C' = C \ {c+ε}`.  The finite iteration theorem then applies for every
+requested floor. -/
+theorem
+    terminalFixedSource_fixedEpsilon_forces_gap_or_allThresholdIteration
+    {A B C Y : Set ℕ} {k t ε : ℕ}
+    {currentTarget landing : ℕ → ℕ}
+    {target root repaired : ℕ → ℕ}
+    {K : Finset ℕ}
+    (hk : 1 < k)
+    (hCA : C ⊆ A)
+    (hCInfinite : C.Infinite)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (htargetStrict : StrictMono target)
+    (hKmem :
+      K ∈ additiveSupportFamily A (k - 1) t)
+    (hKC : Disjoint (K : Set ℕ) C)
+    (hfixed :
+      ∀ L,
+        HasTerminalFixedSourceTranslateStageAt
+          A B C Y k t currentTarget landing
+            target root repaired ε L) :
+    additiveSupportFamily A (k - 1) (t + ε) = ∅ ∨
+      ((∃ ℓ v, ∃ Q : Finset ℕ,
+          0 < ℓ ∧
+          ℓ < k - 1 ∧
+          Q ∈ additiveSupportFamily A ℓ v ∧
+          Q ⊆ K ∧
+          Disjoint (Q : Set ℕ) C ∧
+          additiveSupportFamily A ℓ (v + ε) = ∅) ∨
+        ∃ c, ∃ C' : Set ℕ,
+          c ∈ K ∧
+          c ∈ A ∧
+          c ∉ C ∧
+          c + ε ∈ A ∧
+          c + ε ∈ C ∧
+          C' = C \ {c + ε} ∧
+          C' ⊆ C ∧
+          HasFixedPredecessorSurvivalState
+            A C' k (t + ε) ∧
+          ReachesEveryFixedPredecessorArithmeticThresholdOrInjury
+            A C' k (t + ε)) := by
+  classical
+  obtain hgap | hlower | hadvance :=
+    terminalFixedSource_fixedEpsilon_forces_gap_or_strictSourceAdvance
+      (A := A) (B := B) (C := C) (Y := Y)
+      (k := k) (t := t) (ε := ε)
+      (currentTarget := currentTarget)
+      (landing := landing) (target := target)
+      (root := root) (repaired := repaired)
+      (K := K) hk hCA hCInfinite hminimal
+        htargetStrict hKmem hKC hfixed
+  · exact Or.inl hgap
+  · exact Or.inr (Or.inl hlower)
+  · right
+    right
+    obtain ⟨c, C', index, upper, support,
+        hcK, hcA, hcC, hshiftA, hshiftC,
+        hC'eq, hC'C, hC'Infinite,
+        _hindexStrict, hupperStrict,
+        hstream, _hadvance⟩ :=
+      hadvance
+    let marked : ℕ → ℕ := fun n =>
+      repaired (index n)
+    have hC'A : C' ⊆ A :=
+      hC'C.trans hCA
+    have hstate :
+        HasFixedPredecessorSurvivalState
+          A C' k (t + ε) := by
+      exact
+        ⟨hC'A, hC'Infinite, upper, marked,
+          support, hupperStrict, fun n =>
+            ⟨(hstream n).2.2.1,
+              (hstream n).2.2.2.1,
+              (hstream n).2.2.2.2.1,
+              (hstream n).2.2.2.2.2⟩⟩
+    exact
+      ⟨c, C', hcK, hcA, hcC,
+        hshiftA, hshiftC, hC'eq, hC'C,
+        hstate,
+        hstate.reachesEveryArithmeticThresholdOrInjury
+          hk hminimal⟩
+
 /-- The fused successor/predecessor object has an explicit cofinal
 arithmetic shape.
 

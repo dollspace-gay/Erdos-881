@@ -1,3 +1,55 @@
+# GENERAL ORDER: TERMINAL SOURCE ADVANCE NOW ITERATES TO EVERY FINITE SCALE (2026-07-29)
+
+The codimension-one source advance is now a genuine recursive engine.
+
+`HasFixedPredecessorSurvivalState` packages exactly the data preserved by
+one terminal repair: an infinite deletion \(D\), a fixed predecessor \(d\),
+and a strict order-\(k\) survival stream with marked summands whose removal
+always gives \(d\).
+
+`HasFixedPredecessorSurvivalState.step` proves an operational trichotomy:
+
+- cofinally growing displacements give cofinal translated arithmetic
+  injury;
+- a fixed displacement exposes a genuine same-rank or lower-rank gap; or
+- one translated boundary point is restored, leaving
+  \(D'=D\setminus\{x\}\) infinite and carrying the same state at a strictly
+  larger predecessor \(d'>d\).
+
+Thus the repair horn is an actual state transition, not a reclassification.
+
+`iterate_or_injury` performs this transition \(N\) times.  If no injury
+appears earlier, it returns a finset \(R\) with
+
+\[
+  |R|\le N,\qquad D'=D\setminus R,\qquad d+N\le d',
+\]
+
+and a valid recursive state on \(D'\).  In particular, only finitely many
+points are restored during every finite run, so the deletion remains
+infinite.
+
+`largeSource_forces_arithmeticInjuryAtFloor` consumes a state once
+\((k-1)L\le d\).  Taking \(N=(k-1)L\),
+`iterate_to_arithmeticThreshold` proves that every requested floor is
+reached after finitely many state transitions unless an injury or genuine
+gap occurs earlier.
+
+Finally,
+`terminalFixedSource_fixedEpsilon_forces_gap_or_allThresholdIteration`
+attaches this iteration back to the fixed-\(\varepsilon\) terminal horn.
+That horn now yields an immediate gap or one smaller infinite deletion
+whose recursive state reaches every arithmetic threshold.
+
+This is still not the full solution.  The remaining obstruction is global
+rather than finite: the finite removal sets used for different requested
+floors need not be nested, and an infinite nested run could in principle
+remove all points of the starting deletion.  The next direct attack is a
+protected/diagonal fusion of these finite runs.  A boundary collision with
+the protected reserve must be converted into the fixed-point/common-repair
+mechanism; otherwise fresh boundary points can be fused while an infinite
+reserve remains.
+
 # GENERAL ORDER: THE CODIMENSION-ONE TERMINAL LOOP NOW ADVANCES (2026-07-29)
 
 The remaining fixed-root repair case \(r=k-1\) has been normalized and its
