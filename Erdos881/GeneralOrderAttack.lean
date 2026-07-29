@@ -47726,7 +47726,8 @@ def HasQuadraticTailArithmeticResidueAt
   let tailCell : ℕ → Finset ℕ :=
     fun j => cell (start + j)
   ∃ Q : Finset ℕ, ∃ q, ∃ hqQ : q ∈ Q,
-    (∃ E ∈ additiveSupportFamily A (k + 1) q,
+    n ≤ q ∧
+    ((∃ E ∈ additiveSupportFamily A (k + 1) q,
       ∃ T : Finset {r // r ∈ Q.erase q},
         HasAlignedAnchoredDifferenceGrowth
           A k (n + 1) tailCell Q q hqQ E T) ∨
@@ -47749,7 +47750,251 @@ def HasQuadraticTailArithmeticResidueAt
             additiveRootedMatchingBound k (n + 1)) *
           (n + 1)) <
             (T.filter fun p =>
-              coveredBlock p = j).card
+              coveredBlock p = j).card)
+
+/-- The fixed-core output of the anchored arithmetic fork, with the
+original prescribed-cover rows and all their private destroyer traces
+retained.
+
+This is stronger than a bare repeated representation of one difference:
+the anchors are injective in one literal block, every target label has the
+same translated predecessor `d`, and every lower core is the same support
+`H`. -/
+def HasAlignedFixedCoreAnchorStar
+    (A : Set ℕ) (k anchorDemand : ℕ)
+    (cell : ℕ → Finset ℕ)
+    (Q : Finset ℕ) (r : ℕ) (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (T : Finset {q // q ∈ Q.erase r}) : Prop :=
+  ∃ coveredBlock : {q // q ∈ Q.erase r} → ℕ,
+  ∃ j ∈ T.image coveredBlock,
+  ∃ anchor : {q // q ∈ Q.erase r} → ℕ,
+  ∃ core : {q // q ∈ Q.erase r} → Finset ℕ,
+    (∀ p ∈ T,
+      HasPrescribedCommonColumnCover
+        A k cell Q r hrQ E p (coveredBlock p)) ∧
+    HasAnchoredLowerCoreRows
+      A k cell Q r hrQ E T
+        coveredBlock j anchor core ∧
+    ∃ d, ∃ H : Finset ℕ,
+    ∃ U : Finset {q // q ∈ Q.erase r},
+      U ⊆ T.filter (fun p => coveredBlock p = j) ∧
+      anchorDemand < U.card ∧
+      H ∈ additiveSupportFamily A k d ∧
+      (∀ p ∈ U,
+        p.1 - anchor p = d ∧ core p = H) ∧
+      Set.InjOn anchor (U : Set {q // q ∈ Q.erase r})
+
+/-- Arithmetic remainder after the repeated-block cluster has itself been
+passed through the anchored arithmetic fork.
+
+The former third branch is replaced by its genuinely coherent fixed-core
+leaf.  The rooted-matching leaf is deliberately absent: it will be consumed
+by the already stored current-order matching cutoff. -/
+def HasQuadraticTailNormalizedArithmeticAt
+    (A : Set ℕ) (k n : ℕ)
+    (cell : ℕ → Finset ℕ) : Prop :=
+  let start := localizedArithmeticDiagonalStart k n
+  let tailCell : ℕ → Finset ℕ :=
+    fun j => cell (start + j)
+  ∃ Q : Finset ℕ, ∃ q, ∃ hqQ : q ∈ Q,
+    n ≤ q ∧
+    ((∃ E ∈ additiveSupportFamily A (k + 1) q,
+      ∃ T : Finset {r // r ∈ Q.erase q},
+        HasAlignedAnchoredDifferenceGrowth
+          A k (n + 1) tailCell Q q hqQ E T) ∨
+    (∃ r, ∃ D : Finset ℕ, ∃ d,
+      D.Nonempty ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (k + 1)) D r ∧
+      (additiveSupportFamily A (k - 1) d).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A (k - 1))
+        (D : Set ℕ) d) ∨
+    ∃ E ∈ additiveSupportFamily A (k + 1) q,
+      ∃ T : Finset {r // r ∈ Q.erase q},
+        HasAlignedFixedCoreAnchorStar
+          A k (n + 1 + k) tailCell Q q hqQ E T)
+
+/-- The repeated-block residue has no fourth behaviour.
+
+Its exact cardinal hypothesis is the threshold of
+`prescribedCommonColumn_repeatedBlock_forces_anchoredArithmeticFork`.
+Consequently it either joins the existing aligned-difference branch,
+already supplies the current-order rooted matching needed by the fusion
+engine, or becomes one coherent fixed-core anchor star. -/
+theorem HasQuadraticTailArithmeticResidueAt.normalizeRepeatedBlock
+    {A : Set ℕ} {k n : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hresidue :
+      HasQuadraticTailArithmeticResidueAt A k n cell) :
+    HasQuadraticTailNormalizedArithmeticAt A k n cell ∨
+      HasCurrentOrderRootedMatchingAt A k (n + 1) := by
+  classical
+  unfold HasQuadraticTailArithmeticResidueAt at hresidue
+  unfold HasQuadraticTailNormalizedArithmeticAt
+  obtain ⟨Q, q, hqQ, hqLower,
+      hdifference | hdescent | hrepeated⟩ :=
+    hresidue
+  · left
+    exact ⟨Q, q, hqQ, hqLower, Or.inl hdifference⟩
+  · left
+    exact
+      ⟨Q, q, hqQ, hqLower,
+        Or.inr (Or.inl hdescent)⟩
+  · obtain ⟨E, hEmem, T, coveredBlock, j,
+        hjImage, hrows, hlarge⟩ :=
+      hrepeated
+    obtain ⟨anchor, core, hcoreRows, harithmetic⟩ :=
+      prescribedCommonColumn_repeatedBlock_forces_anchoredArithmeticFork
+        (A := A) (k := k)
+        (anchorDemand := n + 1 + k)
+        (differenceDemand := n + 1)
+        (matchingDemand := n + 1)
+        hqQ E T coveredBlock hrows j hlarge
+    unfold HasAnchoredLowerCoreArithmeticFork at harithmetic
+    rcases harithmetic with
+        hdifference | hmatching |
+          ⟨d, H, U, hUR, hUlarge, hHmem,
+            hUdata, hanchorInj⟩
+    · left
+      exact
+        ⟨Q, q, hqQ, hqLower, Or.inl
+          ⟨E, hEmem, T, coveredBlock, j, hjImage,
+            anchor, core, hrows, hcoreRows,
+            hdifference⟩⟩
+    · right
+      exact hmatching
+    · left
+      exact
+        ⟨Q, q, hqQ, hqLower, Or.inr (Or.inr
+          ⟨E, hEmem, T, coveredBlock, j, hjImage,
+            anchor, core, hrows, hcoreRows,
+            d, H, U, hUR, hUlarge, hHmem,
+            hUdata, hanchorInj⟩)⟩
+
+/-- An aligned fixed-core anchor star always exposes a point of its common
+anchor block outside the distinguished successor support.
+
+The support contains at most `k+1` points.  The star contains more than
+`anchorDemand` injective anchors, and `anchorDemand ≥ k+1`; hence its anchor
+image cannot be covered by the support.  This is precisely the cardinal
+fact needed by the pointed infinite-fusion interface. -/
+theorem HasAlignedFixedCoreAnchorStar.exists_point_outside_support
+    {A : Set ℕ} {k anchorDemand : ℕ}
+    {cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {r : ℕ} {hrQ : r ∈ Q}
+    {E : Finset ℕ}
+    {T : Finset {q // q ∈ Q.erase r}}
+    (hstar :
+      HasAlignedFixedCoreAnchorStar
+        A k anchorDemand cell Q r hrQ E T)
+    (hEmem :
+      E ∈ additiveSupportFamily A (k + 1) r)
+    (hdemand : k + 1 ≤ anchorDemand) :
+    ∃ j, ∃ point,
+      point ∈ cell j ∧ Disjoint E {point} := by
+  classical
+  unfold HasAlignedFixedCoreAnchorStar at hstar
+  obtain ⟨coveredBlock, j, _hjImage, anchor, _core,
+      _hrows, hcoreRows, _d, _H, U, hUR, hUlarge,
+      _hHmem, _hUdata, hanchorInj⟩ :=
+    hstar
+  have hEcard : E.card ≤ k + 1 :=
+    additiveSupportFamily_cardAtMost
+      A (k + 1) r E hEmem
+  have hanchorImageCard :
+      (U.image anchor).card = U.card :=
+    Finset.card_image_iff.mpr hanchorInj
+  have hEImage :
+      E.card < (U.image anchor).card := by
+    rw [hanchorImageCard]
+    exact hEcard.trans_lt (hdemand.trans_lt hUlarge)
+  have hnotSubset :
+      ¬ U.image anchor ⊆ E := by
+    intro hsubset
+    exact
+      (Nat.not_lt_of_ge
+        (Finset.card_le_card hsubset)) hEImage
+  obtain ⟨point, hpointImage, hpointE⟩ :=
+    Finset.not_subset.mp hnotSubset
+  obtain ⟨p, hpU, hpAnchor⟩ :=
+    Finset.mem_image.mp hpointImage
+  have hpointCell : point ∈ cell j := by
+    rw [← hpAnchor]
+    exact (hcoreRows p (hUR hpU)).1
+  refine ⟨j, point, hpointCell, ?_⟩
+  rw [Finset.disjoint_left]
+  intro x hxE hxPoint
+  have hx : x = point := by simpa using hxPoint
+  subst x
+  exact hpointE hxE
+
+/-- The final arithmetic residue after both the repeated-cluster matching
+horn and its fixed-core leaf have been exposed to their existing fusion
+interfaces. -/
+def HasQuadraticTailCoreArithmeticAt
+    (A : Set ℕ) (k n : ℕ)
+    (cell : ℕ → Finset ℕ) : Prop :=
+  let start := localizedArithmeticDiagonalStart k n
+  let tailCell : ℕ → Finset ℕ :=
+    fun j => cell (start + j)
+  ∃ Q : Finset ℕ, ∃ q, ∃ hqQ : q ∈ Q,
+    n ≤ q ∧
+    ((∃ E ∈ additiveSupportFamily A (k + 1) q,
+      ∃ T : Finset {r // r ∈ Q.erase q},
+        HasAlignedAnchoredDifferenceGrowth
+          A k (n + 1) tailCell Q q hqQ E T) ∨
+    ∃ r, ∃ D : Finset ℕ, ∃ d,
+      D.Nonempty ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (k + 1)) D r ∧
+      (additiveSupportFamily A (k - 1) d).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A (k - 1))
+        (D : Set ℕ) d)
+
+/-- The fixed-core leaf is already a fusion-ready pointed support/block
+pair.
+
+Choose an injective anchor outside the distinguished support.  Its block is
+in the quadratic tail and therefore clears the ambient block floor `n`;
+the retained target lower bound clears the target floor.  Thus the
+fixed-core star cannot survive a late `ReducedStreamFusionStep` cutoff. -/
+theorem HasQuadraticTailNormalizedArithmeticAt.coreArithmetic_or_pointedFusion
+    {A : Set ℕ} {k n : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hnormalized :
+      HasQuadraticTailNormalizedArithmeticAt A k n cell) :
+    HasQuadraticTailCoreArithmeticAt A k n cell ∨
+      Nonempty (ReducedStreamFusionStep A k cell n n) := by
+  classical
+  let start := localizedArithmeticDiagonalStart k n
+  let tailCell : ℕ → Finset ℕ :=
+    fun j => cell (start + j)
+  unfold HasQuadraticTailNormalizedArithmeticAt at hnormalized
+  unfold HasQuadraticTailCoreArithmeticAt
+  obtain ⟨Q, q, hqQ, hqLower,
+      hdifference | hdescent | hfixed⟩ :=
+    hnormalized
+  · left
+    exact
+      ⟨Q, q, hqQ, hqLower, Or.inl hdifference⟩
+  · left
+    exact
+      ⟨Q, q, hqQ, hqLower, Or.inr hdescent⟩
+  · right
+    obtain ⟨E, hEmem, T, hstar⟩ := hfixed
+    obtain ⟨j, point, hpointCell, hpointDisjoint⟩ :=
+      hstar.exists_point_outside_support
+        hEmem (by omega)
+    refine
+      ⟨⟨q, E, start + j, point, hqLower, ?_,
+        hEmem, ?_, hpointDisjoint⟩⟩
+    · exact
+        (le_localizedArithmeticDiagonalStart k n).trans
+          (Nat.le_add_right start j)
+    · simpa only [tailCell] using hpointCell
 
 /-- Every capacity-resolved aligned stage either exposes one of the three
 fusion-ready predicates, or belongs to the genuine arithmetic residue.
@@ -47833,12 +48078,16 @@ theorem HasQuadraticTailAlignedResolvedArithmeticAt.fusionReady_or_arithmeticRes
   · right
     right
     right
-    exact ⟨Q, q, hqQ, Or.inl hdifference⟩
+    exact
+      ⟨Q, q, hqQ, htargetFloor,
+        Or.inl hdifference⟩
   · exact Or.inr (Or.inl hcurrent)
   · right
     right
     right
-    exact ⟨Q, q, hqQ, Or.inr (Or.inl hdescent)⟩
+    exact
+      ⟨Q, q, hqQ, htargetFloor,
+        Or.inr (Or.inl hdescent)⟩
   · right
     right
     left
@@ -47862,7 +48111,9 @@ theorem HasQuadraticTailAlignedResolvedArithmeticAt.fusionReady_or_arithmeticRes
   · right
     right
     right
-    exact ⟨Q, q, hqQ, Or.inr (Or.inr hrepeated)⟩
+    exact
+      ⟨Q, q, hqQ, htargetFloor,
+        Or.inr (Or.inr hrepeated)⟩
 
 /-- The eventual no-fusion-ready endpoint really contains only the three
 advertised arithmetic residues.
@@ -47898,6 +48149,87 @@ theorem HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady.onlyArithm
   · exact (hnotCurrent hcurrent).elim
   · exact (hnotFusion hfusion).elim
   · exact harithmetic
+
+/-- After the repeated-block cluster is expanded, the stored late
+current-order cutoff removes its rooted-matching horn.
+
+The complete aligned stage is still returned at the same index.  In
+particular its source block, private selector, and translation identity
+`q = target i + δ` remain available beside the normalized arithmetic
+object; this is not an unaligned extraction from another stage. -/
+theorem HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady.onlyNormalizedArithmetic
+    {A K : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (htargetStrict : StrictMono target)
+    (hremainder :
+      HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady
+        A K k cell target) :
+    ∃ N, ∀ n, N ≤ n →
+      HasQuadraticTailAlignedResolvedArithmeticAt
+          A K k cell target n ∧
+        HasQuadraticTailNormalizedArithmeticAt A k n cell := by
+  obtain ⟨N, hstage⟩ := hremainder
+  refine ⟨N, ?_⟩
+  intro n hn
+  obtain ⟨haligned, hnotExact, hnotCurrent,
+      hnotFusion⟩ :=
+    hstage n hn
+  refine ⟨haligned, ?_⟩
+  have harithmetic :
+      HasQuadraticTailArithmeticResidueAt A k n cell := by
+    rcases
+        haligned.fusionReady_or_arithmeticResidue
+          P htargetStrict with
+        hexact | hcurrent | hfusion | harithmetic
+    · exact (hnotExact hexact).elim
+    · exact (hnotCurrent hcurrent).elim
+    · exact (hnotFusion hfusion).elim
+    · exact harithmetic
+  rcases harithmetic.normalizeRepeatedBlock with
+      hnormalized | hcurrent
+  · exact hnormalized
+  · exact (hnotCurrent hcurrent).elim
+
+/-- All repeated-block geometry is fusion-ready and hence disappears after
+the existing late pointed-fusion cutoff.
+
+Only two arithmetic mechanisms now remain at every sufficiently late
+aligned stage: coherent anchored difference growth, or an actual
+represented two-rank destroyer. -/
+theorem HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady.onlyCoreArithmetic
+    {A K : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (htargetStrict : StrictMono target)
+    (hremainder :
+      HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady
+        A K k cell target) :
+    ∃ N, ∀ n, N ≤ n →
+      HasQuadraticTailAlignedResolvedArithmeticAt
+          A K k cell target n ∧
+        HasQuadraticTailCoreArithmeticAt A k n cell := by
+  obtain ⟨Nnormalized, hnormalized⟩ :=
+    HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady.onlyNormalizedArithmetic
+      P htargetStrict hremainder
+  obtain ⟨Ncutoff, hcutoff⟩ := hremainder
+  refine ⟨max Ncutoff Nnormalized, ?_⟩
+  intro n hn
+  have hnCutoff : Ncutoff ≤ n :=
+    (le_max_left Ncutoff Nnormalized).trans hn
+  have hnNormalized : Nnormalized ≤ n :=
+    (le_max_right Ncutoff Nnormalized).trans hn
+  obtain ⟨haligned, hnormalizedStage⟩ :=
+    hnormalized n hnNormalized
+  obtain ⟨_halignedCutoff, _hnotExact,
+      _hnotCurrent, hnotFusion⟩ :=
+    hcutoff n hnCutoff
+  refine ⟨haligned, ?_⟩
+  rcases
+      hnormalizedStage.coreArithmetic_or_pointedFusion with
+      hcore | hfusion
+  · exact hcore
+  · exact (hnotFusion hfusion).elim
 
 /-- Consume every cofinally recurring fusion-ready member of the
 capacity-resolved diagonal endpoint.
@@ -48036,5 +48368,45 @@ theorem exactBasis_counterexample_forces_fusedStreams_or_eventualQuadraticTailAr
   · exact Or.inr
       ⟨K, cell, target, hKA, hKInfinite, P,
         htargetStrict, hcellLarge, hremainder⟩
+
+/-- Counterexample-level endpoint after the repeated-block cluster has
+also been consumed.
+
+The former third arithmetic residue cannot persist: its fixed-core leaf
+contains an anchor outside the distinguished support and therefore gives
+the very pointed fusion step excluded by the global cutoff.  A hypothetical
+hard-order counterexample now yields the fused infinite deletion directly,
+or at every late protected-gap-aligned stage only coherent differences or
+a represented two-rank destroyer. -/
+theorem exactBasis_counterexample_forces_fusedStreams_or_eventualQuadraticTailCoreArithmetic
+    {A : Set ℕ} {k : ℕ}
+    (hk : 2 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1)) :
+    HasFusedSuccessorPredecessorStreams A k ∨
+      ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ target : ℕ → ℕ,
+        K ⊆ A ∧
+        K.Infinite ∧
+        IsFiniteBlockPartition K cell ∧
+        StrictMono target ∧
+        (∀ i, (i + k + 3) ^ 2 < (cell i).card) ∧
+        ∃ N, ∀ n, N ≤ n →
+          HasQuadraticTailAlignedResolvedArithmeticAt
+              A K k cell target n ∧
+            HasQuadraticTailCoreArithmeticAt A k n cell := by
+  obtain hfused |
+      ⟨K, cell, target, hKA, hKInfinite, P,
+        htargetStrict, hcellLarge, hremainder⟩ :=
+    exactBasis_counterexample_forces_fusedStreams_or_eventualQuadraticTailArithmeticWithoutFusionReady
+      hk hbasis hcounter
+  · exact Or.inl hfused
+  · right
+    exact
+      ⟨K, cell, target, hKA, hKInfinite, P,
+        htargetStrict, hcellLarge,
+        HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady.onlyCoreArithmetic
+          P htargetStrict hremainder⟩
 
 end Erdos881

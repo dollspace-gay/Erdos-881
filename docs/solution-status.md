@@ -1,3 +1,39 @@
+# GENERAL ORDER: REPEATED-BLOCK RESIDUE CONSUMED (2026-07-29)
+
+The capacity-feedback repeated-block cluster is no longer a terminal
+arithmetic branch.  Its exact cardinal threshold was already strong enough
+to feed the anchored arithmetic fork, and the fixed-core leaf of that fork
+is itself pointed-fusion-ready.
+
+- `HasAlignedFixedCoreAnchorStar` retains the prescribed cover rows,
+  private destroyer traces, one common order-`k` core, one common
+  predecessor difference, and injectively many anchors in a literal tail
+  block.
+- `HasQuadraticTailArithmeticResidueAt.normalizeRepeatedBlock` applies the
+  existing anchored arithmetic fork at the exact stored threshold.  The
+  repeated cluster becomes aligned difference growth, current-order rooted
+  matching, or the fixed-core anchor star.
+- The already stored late current-order cutoff removes the matching leaf.
+- `HasAlignedFixedCoreAnchorStar.exists_point_outside_support` observes
+  that an order-`k+1` support has at most `k+1` points, while the star has
+  more than `n+1+k` injective anchors.  One anchor therefore lies outside
+  the distinguished support.  Because it lies in the same late tail block,
+  that support and anchor form a `ReducedStreamFusionStep`.
+- `onlyCoreArithmetic` uses the existing late pointed-fusion cutoff to
+  remove the fixed-core leaf outright.  No cleared-marker iteration or new
+  capacity assumption is needed.
+- The strengthened counterexample capstone is
+  `exactBasis_counterexample_forces_fusedStreams_or_eventualQuadraticTailCoreArithmetic`.
+
+This is a genuine branch elimination, not merely a finer classification.
+Every hypothetical hard-order counterexample now produces the fused
+infinite deletion or, at every sufficiently late protected-gap-aligned
+stage, exactly one of two remaining mechanisms: coherent anchored
+difference growth or a represented two-rank destroyer.  General order is
+still open; the next direct attack is the cardinal recurrence fork between
+those two mechanisms, followed by difference composition in the first horn
+and minimal-order descent in the second.
+
 # GENERAL ORDER: ALL FUSION-READY TAIL BRANCHES CONSUMED (2026-07-29)
 
 The capacity-resolved quadratic-tail endpoint has been passed through one
