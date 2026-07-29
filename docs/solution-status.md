@@ -33,12 +33,24 @@ nontrivial ranks `2,...,h-1`.
   is the corrected exhaustive fork: either there is a represented destroyed
   rank `ℓ` with `1 < ℓ < h`, or all but at most one coordinate have the
   coherent private-core form.
+- `privateCores_largeSet_forces_protectedRepair_or_lowerDifferenceGrowth`
+  performs the first cross-stage composition against a finite old prefix
+  `U`.  A private core avoiding `U` is an immediately protected repair.  If
+  every core meets `U`, one old point `u` occurs in many private supports;
+  removing `u` gives the same number of distinct order-`h-1` supports at
+  the single coherent difference `q-u`.
+- `largeMinimalDestroyer_forces_nontrivialRankDescent_or_protectedRepair_or_lowerDifferenceRootedMatching`
+  adds the exact cardinal threshold and normalizes the growth horn.  A
+  destroyer larger than
+  `|U| * additiveRootedMatchingBound (h-1) r + 1` forces genuine rank
+  descent, a prefix-avoiding private repair, or a rooted matching larger
+  than `r` at one exact old difference.
 
-This is the live mathematical boundary.  The next attack must compose the
-many represented differences `q-x` without losing their common parent
-target `q`: either two private cores cross-repair one another, or repeated
-core collisions force a same-target rooted matching/root capture.  No full
-`k ≥ 3` solution is claimed.
+Thus the finite-prefix composition now pays exactly as desired for large
+destroyers.  The live boundary is the complementary bounded-destroyer
+regime: schedule a prefix-independent threshold, or fuse the protected
+private repairs while preventing later blocks from hitting earlier repair
+supports.  No full `k ≥ 3` solution is claimed.
 
 # FRESH RECURRENT GAP REPAIRS (2026-07-27)
 

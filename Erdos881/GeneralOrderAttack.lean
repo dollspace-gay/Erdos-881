@@ -30092,6 +30092,312 @@ theorem minimalAdditiveDestroyer_nontrivialRankDescent_or_privateCores_off_oneDi
     exact hdescent
       ⟨ℓ, n, hℓtwo, hℓh, hrepresented, hdestroy⟩
 
+/-- Finite-prefix amplifier for the private-core branch.
+
+Let `X ⊆ D` consist of non-diagonal destroyer points and let `U` be an old
+protected prefix disjoint from `D`.  If one private predecessor core avoids
+`U`, it is already a protected repair.  Otherwise choose one old hit from
+each core.  More than `U.card * r` points force one `u ∈ U` into more than
+`r` private supports.  Removing `u` from those supports gives distinct
+order-`h-1` supports at the common target `q-u`; their intersections with
+`D` remain the distinct singleton markers `{x}`. -/
+theorem privateCores_largeSet_forces_protectedRepair_or_lowerDifferenceGrowth
+    {A : Set ℕ} {h q r : ℕ} {D U X : Finset ℕ}
+    (hh : 1 < h)
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q)
+    (hnoNontrivialDescent : ∀ ℓ n,
+      1 < ℓ → ℓ < h →
+      (additiveSupportFamily A ℓ n).Nonempty →
+      ¬ DestroysAt
+        (additiveSupportFamily A ℓ)
+        (D : Set ℕ) n)
+    (hUD : Disjoint U D)
+    (hXD : X ⊆ D)
+    (hXnonDiagonal : ∀ x ∈ X, q ≠ h * x)
+    (hlarge : U.card * r < X.card) :
+    (∃ x ∈ X, ∃ core : Finset ℕ,
+        core ∈ additiveSupportFamily A (h - 1) (q - x) ∧
+        Disjoint core D ∧
+        Disjoint core U ∧
+        insert x core ∈ additiveSupportFamily A h q ∧
+        insert x core ∩ D = {x}) ∨
+      ∃ u ∈ U,
+        r < (additiveSupportFamily A (h - 1) (q - u)).card := by
+  classical
+  have hcoreExists : ∀ x, x ∈ X → ∃ core : Finset ℕ,
+      core ∈ additiveSupportFamily A (h - 1) (q - x) ∧
+      Disjoint core D ∧
+      insert x core ∈ additiveSupportFamily A h q ∧
+      insert x core ∩ D = {x} := by
+    intro x hxX
+    obtain hxDiagonal | ⟨t, core, hcoreMem, hcoreD,
+        htarget, hsupport, hprivate⟩ :=
+      minimalAdditiveDestroyer_noNontrivialRankDescent_forces_privateCoreNormalForm
+        hh hminimal hnoNontrivialDescent x (hXD hxX)
+    · exact (hXnonDiagonal x hxX hxDiagonal).elim
+    · have hxt : q - x = t := by omega
+      exact ⟨core, hxt ▸ hcoreMem,
+        Finset.disjoint_coe.mp hcoreD,
+        hsupport, hprivate⟩
+  let core : {x // x ∈ X} → Finset ℕ := fun x =>
+    (hcoreExists x.1 x.2).choose
+  have hcoreData : ∀ x : {x // x ∈ X},
+      core x ∈ additiveSupportFamily A (h - 1) (q - x.1) ∧
+      Disjoint (core x) D ∧
+      insert x.1 (core x) ∈ additiveSupportFamily A h q ∧
+      insert x.1 (core x) ∩ D = {x.1} := by
+    intro x
+    exact (hcoreExists x.1 x.2).choose_spec
+  by_cases hrepair : ∃ x : {x // x ∈ X},
+      Disjoint (core x) U
+  · left
+    obtain ⟨x, hxRepair⟩ := hrepair
+    exact ⟨x.1, x.2, core x,
+      (hcoreData x).1, (hcoreData x).2.1,
+      hxRepair, (hcoreData x).2.2.1,
+      (hcoreData x).2.2.2⟩
+  · have hhitExists : ∀ x : {x // x ∈ X},
+        ∃ u ∈ U, u ∈ core x := by
+      intro x
+      have hnotDisjoint : ¬ Disjoint (core x) U := by
+        intro hxDisjoint
+        exact hrepair ⟨x, hxDisjoint⟩
+      have hnotDisjoint' : ¬ Disjoint U (core x) := by
+        intro hxDisjoint
+        exact hnotDisjoint hxDisjoint.symm
+      exact Finset.not_disjoint_iff.mp hnotDisjoint'
+    let hit : {x // x ∈ X} → ℕ := fun x =>
+      (hhitExists x).choose
+    have hhitU : ∀ x : {x // x ∈ X}, hit x ∈ U :=
+      fun x => (hhitExists x).choose_spec.1
+    have hhitCore : ∀ x : {x // x ∈ X}, hit x ∈ core x :=
+      fun x => (hhitExists x).choose_spec.2
+    have hlargeSubtype :
+        U.card * r < (Finset.univ : Finset {x // x ∈ X}).card := by
+      simpa using hlarge
+    obtain ⟨u, huU, huFiber⟩ :=
+      Finset.exists_lt_card_fiber_of_mul_lt_card_of_maps_to
+        (s := (Finset.univ : Finset {x // x ∈ X}))
+        (t := U) (f := hit)
+        (fun x _hx => hhitU x) hlargeSubtype
+    let fiber : Finset {x // x ∈ X} :=
+      Finset.univ.filter fun x => hit x = u
+    have hfiberLarge : r < fiber.card := by
+      simpa only [fiber] using huFiber
+    have hpredSucc : h - 1 + 1 = h := by omega
+    have hlowerExists : ∀ x : {x // x ∈ fiber},
+        ∃ H ∈ additiveSupportFamily A (h - 1) (q - u),
+          insert x.1.1 (core x.1) = insert u H := by
+      intro x
+      have hxHit : hit x.1 = u :=
+        (Finset.mem_filter.mp x.2).2
+      have huCore : u ∈ core x.1 := by
+        rw [← hxHit]
+        exact hhitCore x.1
+      have hsource :
+          insert x.1.1 (core x.1) ∈
+            additiveSupportFamily A (h - 1 + 1) q := by
+        simpa only [hpredSucc] using (hcoreData x.1).2.2.1
+      obtain ⟨H, hHmem, hsourceEq⟩ :=
+        additiveSupport_remove_hit_succ hsource
+          (Finset.mem_insert_of_mem huCore)
+      exact ⟨H, hHmem, hsourceEq⟩
+    let lower : {x // x ∈ fiber} → Finset ℕ := fun x =>
+      (hlowerExists x).choose
+    have hlowerMem : ∀ x : {x // x ∈ fiber},
+        lower x ∈ additiveSupportFamily A (h - 1) (q - u) :=
+      fun x => (hlowerExists x).choose_spec.1
+    have hsourceLower : ∀ x : {x // x ∈ fiber},
+        insert x.1.1 (core x.1) = insert u (lower x) :=
+      fun x => (hlowerExists x).choose_spec.2
+    have hlowerPrivate : ∀ x : {x // x ∈ fiber},
+        lower x ∩ D = {x.1.1} := by
+      intro x
+      have hxD : x.1.1 ∈ D :=
+        hXD x.1.2
+      have huNotD : u ∉ D :=
+        Finset.disjoint_left.mp hUD huU
+      have hxLower : x.1.1 ∈ lower x := by
+        have hxSource :
+            x.1.1 ∈ insert u (lower x) := by
+          rw [← hsourceLower x]
+          simp
+        rcases Finset.mem_insert.mp hxSource with hxu | hxLower
+        · exact (huNotD (hxu ▸ hxD)).elim
+        · exact hxLower
+      ext z
+      constructor
+      · intro hz
+        have hzLower : z ∈ lower x :=
+          (Finset.mem_inter.mp hz).1
+        have hzD : z ∈ D :=
+          (Finset.mem_inter.mp hz).2
+        have hzSource : z ∈ insert x.1.1 (core x.1) := by
+          rw [hsourceLower x]
+          exact Finset.mem_insert_of_mem hzLower
+        have hzPrivate :
+            z ∈ ({x.1.1} : Finset ℕ) := by
+          rw [← (hcoreData x.1).2.2.2]
+          exact Finset.mem_inter.mpr ⟨hzSource, hzD⟩
+        exact hzPrivate
+      · intro hz
+        have hzx : z = x.1.1 := by simpa using hz
+        subst z
+        exact Finset.mem_inter.mpr ⟨hxLower, hxD⟩
+    let lowerMap : {x // x ∈ fiber} →
+        {H // H ∈ additiveSupportFamily A (h - 1) (q - u)} :=
+      fun x => ⟨lower x, hlowerMem x⟩
+    have hlowerInjective : Function.Injective lowerMap := by
+      intro x y hxy
+      apply Subtype.ext
+      apply Subtype.ext
+      have hlowerEq : lower x = lower y :=
+        congrArg Subtype.val hxy
+      have hsingleton :
+          ({x.1.1} : Finset ℕ) = {y.1.1} := by
+        rw [← hlowerPrivate x, ← hlowerPrivate y, hlowerEq]
+      exact Finset.singleton_injective hsingleton
+    have hfiberCard :
+        fiber.card ≤
+          (additiveSupportFamily A (h - 1) (q - u)).card := by
+      simpa only [Fintype.card_coe] using
+        Fintype.card_le_of_injective lowerMap hlowerInjective
+    exact Or.inr ⟨u, huU,
+      hfiberLarge.trans_le hfiberCard⟩
+
+/-- Large-destroyer form of the protected-prefix amplifier.
+
+If `D` has more than `U.card * r + 1` points, then after discarding the
+unique possible diagonal point there are still more than `U.card * r`
+private-core coordinates.  Consequently a large minimal destroyer forces
+one of three concrete outcomes: genuine rank descent `1 < ℓ < h`, a
+private predecessor core avoiding the whole old prefix, or more than `r`
+same-target predecessor supports at one coherent old difference `q-u`. -/
+theorem largeMinimalDestroyer_forces_nontrivialRankDescent_or_protectedRepair_or_lowerDifferenceGrowth
+    {A : Set ℕ} {h q r : ℕ} {D U : Finset ℕ}
+    (hh : 1 < h)
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q)
+    (hUD : Disjoint U D)
+    (hlarge : U.card * r + 1 < D.card) :
+    (∃ ℓ n,
+        1 < ℓ ∧
+        ℓ < h ∧
+        (additiveSupportFamily A ℓ n).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A ℓ)
+          (D : Set ℕ) n) ∨
+      (∃ x ∈ D, ∃ core : Finset ℕ,
+        core ∈ additiveSupportFamily A (h - 1) (q - x) ∧
+        Disjoint core D ∧
+        Disjoint core U ∧
+        insert x core ∈ additiveSupportFamily A h q ∧
+        insert x core ∩ D = {x}) ∨
+      ∃ u ∈ U,
+        r < (additiveSupportFamily A (h - 1) (q - u)).card := by
+  classical
+  by_cases hdescent : ∃ ℓ n,
+      1 < ℓ ∧
+      ℓ < h ∧
+      (additiveSupportFamily A ℓ n).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A ℓ)
+        (D : Set ℕ) n
+  · exact Or.inl hdescent
+  · right
+    have hnoNontrivialDescent : ∀ ℓ n,
+        1 < ℓ → ℓ < h →
+        (additiveSupportFamily A ℓ n).Nonempty →
+        ¬ DestroysAt
+          (additiveSupportFamily A ℓ)
+          (D : Set ℕ) n := by
+      intro ℓ n hℓtwo hℓh hrepresented hdestroy
+      exact hdescent
+        ⟨ℓ, n, hℓtwo, hℓh, hrepresented, hdestroy⟩
+    let X : Finset ℕ := D.filter fun x => q ≠ h * x
+    let diagonal : Finset ℕ := D.filter fun x => q = h * x
+    have hdiagCard : diagonal.card ≤ 1 := by
+      rw [Finset.card_le_one]
+      intro x hx y hy
+      have hxEq : q = h * x :=
+        (Finset.mem_filter.mp hx).2
+      have hyEq : q = h * y :=
+        (Finset.mem_filter.mp hy).2
+      exact
+        Nat.eq_of_mul_eq_mul_left (by omega)
+          (hxEq.symm.trans hyEq)
+    have hsplit : X.card + diagonal.card = D.card := by
+      simpa only [X, diagonal, not_ne_iff] using
+        (Finset.card_filter_add_card_filter_not
+          (s := D) (fun x => q ≠ h * x))
+    have hXlarge : U.card * r < X.card := by omega
+    obtain hrepair | hgrowth :=
+      privateCores_largeSet_forces_protectedRepair_or_lowerDifferenceGrowth
+        hh hminimal hnoNontrivialDescent hUD
+          (Finset.filter_subset _ _)
+          (fun x hxX => (Finset.mem_filter.mp hxX).2)
+          hXlarge
+    · left
+      obtain ⟨x, hxX, core, hcoreMem, hcoreD,
+          hcoreU, hsupport, hprivate⟩ := hrepair
+      exact ⟨x, (Finset.mem_filter.mp hxX).1,
+        core, hcoreMem, hcoreD, hcoreU,
+        hsupport, hprivate⟩
+    · exact Or.inr hgrowth
+
+/-- Matching-normalized form of the protected-prefix amplifier.  The
+lower-difference growth horn is converted at its exact target `q-u` into a
+rooted matching of any prescribed size. -/
+theorem largeMinimalDestroyer_forces_nontrivialRankDescent_or_protectedRepair_or_lowerDifferenceRootedMatching
+    {A : Set ℕ} {h q demand : ℕ} {D U : Finset ℕ}
+    (hh : 1 < h)
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q)
+    (hUD : Disjoint U D)
+    (hlarge :
+      U.card * additiveRootedMatchingBound (h - 1) demand + 1 <
+        D.card) :
+    (∃ ℓ n,
+        1 < ℓ ∧
+        ℓ < h ∧
+        (additiveSupportFamily A ℓ n).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A ℓ)
+          (D : Set ℕ) n) ∨
+      (∃ x ∈ D, ∃ core : Finset ℕ,
+        core ∈ additiveSupportFamily A (h - 1) (q - x) ∧
+        Disjoint core D ∧
+        Disjoint core U ∧
+        insert x core ∈ additiveSupportFamily A h q ∧
+        insert x core ∩ D = {x}) ∨
+      ∃ u ∈ U, ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+        R.card < h - 1 ∧
+        M ⊆ additiveSupportFamily A (h - 1) (q - u) ∧
+        demand < M.card ∧
+        (∀ E ∈ M, R ⊆ E) ∧
+        (∀ E ∈ M, (E \ R).Nonempty) ∧
+        ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+          Disjoint (E \ R) (G \ R) := by
+  obtain hdescent | hrepair | ⟨u, huU, hgrowth⟩ :=
+    largeMinimalDestroyer_forces_nontrivialRankDescent_or_protectedRepair_or_lowerDifferenceGrowth
+      hh hminimal hUD hlarge
+  · exact Or.inl hdescent
+  · exact Or.inr (Or.inl hrepair)
+  · right
+    right
+    obtain ⟨R, M, hRcard, hMsub, hMlarge,
+        hMroot, hMpetal, hMmatching⟩ :=
+      additiveSupportSubfamily_has_large_rootedMatching
+        (A := A) (h - 1) demand (q - u)
+        (additiveSupportFamily A (h - 1) (q - u))
+        Finset.Subset.rfl (Nat.le_of_lt hgrowth)
+    exact ⟨u, huU, R, M, hRcard, hMsub,
+      hMlarge, hMroot, hMpetal, hMmatching⟩
+
 /-- In the bounded, no-rank-descent terminal fusion branch, the stream
 alignment forces a primitive gap at the exact descended target.
 
