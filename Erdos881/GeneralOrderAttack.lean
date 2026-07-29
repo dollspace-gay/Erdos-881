@@ -34789,6 +34789,266 @@ theorem anchoredPrivateRow_noRankDescent_markerSwap_forces_coherentEscapeData
         P hrQ E p hk htrace hHmem hsi hij
           hiJ hjJ hnoDescent) hcollision)
 
+/-- No-descent collapses the whole contemporaneous marker-block branch.
+
+If a point `b` of the marker block lay outside both the union `U` of all
+stored off-diagonal supports and the private support `F`, then the coherent
+marker-swap theorem would produce an escape edge whose destination anchor
+support contains `b`.  That anchor support is one of the supports already
+used to define `U`, a contradiction.
+
+Consequently the literal marker block is covered by `U ∪ F`.  Since `U`
+contains at most one order-`k+1` support per certificate target and `F` is
+itself an order-`k+1` support, this also gives the quantitative bound
+`|cell i| ≤ (k+1)|Q| + (k+1)`.  Thus a no-descent marker cannot remain in a
+genuinely later, larger block. -/
+theorem anchoredPrivateRow_noRankDescent_forces_markerBlockCover_and_bound
+    {A C : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ} (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (p : {q // q ∈ Q.erase r})
+    {j a i : ℕ} {H : Finset ℕ}
+    {s : BlockSelector cell}
+    {surviving :
+      {q // q ∈ Q.erase p.1} → Finset ℕ}
+    {D F J U : Finset ℕ} {x : ℕ}
+    (hk : 2 < k)
+    (htrace :
+      HasAnchoredPrivateRowTrace
+        A k cell Q r hrQ E p j
+          a H s surviving D F x)
+    (hHmem :
+      H ∈ additiveSupportFamily A k (p.1 - a))
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (hU :
+      U =
+        (Q.erase p.1).attach.biUnion
+          surviving)
+    (hsi : (s i).1 = x)
+    (hij : i ≠ j)
+    (hiJ : i ∉ J)
+    (hjJ : j ∉ J)
+    (hcontemporary :
+      ∀ ℓ, ℓ ≠ i → ℓ ∉ J →
+        U.card + (k + 1) < (cell ℓ).card)
+    (hnoDescent :
+      ∀ n,
+        (additiveSupportFamily A (k - 1) n).Nonempty →
+        ¬ DestroysAt
+          (additiveSupportFamily A (k - 1))
+          (D : Set ℕ) n) :
+    cell i ⊆ U ∪ F ∧
+      (cell i).card ≤
+        (k + 1) * Q.card + (k + 1) := by
+  classical
+  have htraceFields := htrace
+  obtain ⟨_hrCommon, hsurvivingMem,
+      _hsurvivingDisjoint, _hAtJ, _hDnonempty,
+      _hDselected, _hminimal, _hxD, hFmem,
+      hprivate, _hFanchor, _hblockCover⟩ :=
+    htraceFields
+  have hxF : x ∈ F := by
+    have hxFD : x ∈ F ∩ D := by
+      rw [hprivate]
+      simp
+    exact (Finset.mem_inter.mp hxFD).1
+  have hcover : cell i ⊆ U ∪ F := by
+    intro b hbCell
+    by_contra hbCovered
+    have hbU : b ∉ U := by
+      intro hb
+      exact hbCovered (Finset.mem_union_left F hb)
+    have hbF : b ∉ F := by
+      intro hb
+      exact hbCovered (Finset.mem_union_right U hb)
+    have hbx : b ≠ x := by
+      intro hbx
+      exact hbF (hbx ▸ hxF)
+    have hbBlock : b ∈ (cell i).erase x :=
+      Finset.mem_erase.mpr ⟨hbx, hbCell⟩
+    let Ub : Finset ℕ := U.erase b
+    have hUb :
+        Ub =
+          ((Q.erase p.1).attach.biUnion
+            surviving).erase b := by
+      simpa only [Ub, hU]
+    have hcontemporaryB :
+        ∀ ℓ, ℓ ≠ i → ℓ ∉ J →
+          Ub.card + (k + 1) < (cell ℓ).card := by
+      intro ℓ hℓi hℓJ
+      have hUbCard : Ub.card ≤ U.card := by
+        exact Finset.card_le_card
+          (Finset.erase_subset b U)
+      exact lt_of_le_of_lt
+        (Nat.add_le_add_right hUbCard (k + 1))
+        (hcontemporary ℓ hℓi hℓJ)
+    obtain ⟨q, _Hp, _Hq, w,
+        _hwi, _hwx, hwb, hwG,
+        _hHpMem, _hFHp, _hHqMem, _hGHq,
+        _hFbefore, _hGafter⟩ :=
+      anchoredPrivateRow_noRankDescent_markerSwap_forces_coherentEscapeData
+        P hrQ E p hk htrace hHmem hcert hUb hsi
+          hij hiJ hjJ hbBlock hbF hcontemporaryB
+          hnoDescent
+    have hbSupport : b ∈ surviving q := by
+      rw [← hwG, ← hwb]
+      exact w.newPoint_anchor
+    apply hbU
+    rw [hU]
+    apply Finset.mem_biUnion.mpr
+    exact ⟨q, Finset.mem_attach _ q, hbSupport⟩
+  refine ⟨hcover, ?_⟩
+  have hUcard :
+      U.card ≤ (k + 1) * Q.card := by
+    rw [hU]
+    calc
+      ((Q.erase p.1).attach.biUnion
+          surviving).card ≤
+          ∑ q ∈ (Q.erase p.1).attach,
+            (surviving q).card := by
+        exact Finset.card_biUnion_le
+      _ ≤
+          ∑ _q ∈ (Q.erase p.1).attach,
+            (k + 1) := by
+        gcongr with q hq
+        exact additiveSupportFamily_cardAtMost
+          A (k + 1) q.1 (surviving q)
+            (hsurvivingMem q)
+      _ = (k + 1) * (Q.erase p.1).card := by
+        simp [Nat.mul_comm]
+      _ ≤ (k + 1) * Q.card := by
+        exact Nat.mul_le_mul_left (k + 1)
+          Finset.card_erase_le
+  have hFcard : F.card ≤ k + 1 :=
+    additiveSupportFamily_cardAtMost
+      A (k + 1) p.1 F hFmem
+  calc
+    (cell i).card ≤ (U ∪ F).card :=
+      Finset.card_le_card hcover
+    _ ≤ U.card + F.card := Finset.card_union_le U F
+    _ ≤ (k + 1) * Q.card + (k + 1) :=
+      Nat.add_le_add hUcard hFcard
+
+/-- Dichotomy form of the marker-block bound.
+
+For a no-descent private row, the marker either lies in the declared old
+block set `J`, or its block satisfies the explicit certificate-capacity
+bound.  Hence if every block outside `J` is larger than that bound, the
+marker is forced into `J`. -/
+theorem anchoredPrivateRow_noRankDescent_forces_oldMarkerBlock_or_bound
+    {A C : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ} (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (p : {q // q ∈ Q.erase r})
+    {j a i : ℕ} {H : Finset ℕ}
+    {s : BlockSelector cell}
+    {surviving :
+      {q // q ∈ Q.erase p.1} → Finset ℕ}
+    {D F J U : Finset ℕ} {x : ℕ}
+    (hk : 2 < k)
+    (htrace :
+      HasAnchoredPrivateRowTrace
+        A k cell Q r hrQ E p j
+          a H s surviving D F x)
+    (hHmem :
+      H ∈ additiveSupportFamily A k (p.1 - a))
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (hU :
+      U =
+        (Q.erase p.1).attach.biUnion
+          surviving)
+    (hsi : (s i).1 = x)
+    (hij : i ≠ j)
+    (hjJ : j ∉ J)
+    (hcontemporary :
+      ∀ ℓ, ℓ ≠ i → ℓ ∉ J →
+        U.card + (k + 1) < (cell ℓ).card)
+    (hnoDescent :
+      ∀ n,
+        (additiveSupportFamily A (k - 1) n).Nonempty →
+        ¬ DestroysAt
+          (additiveSupportFamily A (k - 1))
+          (D : Set ℕ) n) :
+    i ∈ J ∨
+      (cell i).card ≤
+        (k + 1) * Q.card + (k + 1) := by
+  by_cases hiJ : i ∈ J
+  · exact Or.inl hiJ
+  · right
+    exact
+      (anchoredPrivateRow_noRankDescent_forces_markerBlockCover_and_bound
+        P hrQ E p hk htrace hHmem hcert hU hsi
+          hij hiJ hjJ hcontemporary hnoDescent).2
+
+/-- If all non-old blocks exceed the certificate-capacity bound, a
+no-descent marker is literally old. -/
+theorem anchoredPrivateRow_noRankDescent_largeFreshBlocks_force_oldMarker
+    {A C : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ} (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (p : {q // q ∈ Q.erase r})
+    {j a i : ℕ} {H : Finset ℕ}
+    {s : BlockSelector cell}
+    {surviving :
+      {q // q ∈ Q.erase p.1} → Finset ℕ}
+    {D F J U : Finset ℕ} {x : ℕ}
+    (hk : 2 < k)
+    (htrace :
+      HasAnchoredPrivateRowTrace
+        A k cell Q r hrQ E p j
+          a H s surviving D F x)
+    (hHmem :
+      H ∈ additiveSupportFamily A k (p.1 - a))
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (hU :
+      U =
+        (Q.erase p.1).attach.biUnion
+          surviving)
+    (hsi : (s i).1 = x)
+    (hij : i ≠ j)
+    (hjJ : j ∉ J)
+    (hcontemporary :
+      ∀ ℓ, ℓ ≠ i → ℓ ∉ J →
+        U.card + (k + 1) < (cell ℓ).card)
+    (hfreshLarge :
+      ∀ ℓ, ℓ ∉ J →
+        (k + 1) * Q.card + (k + 1) <
+          (cell ℓ).card)
+    (hnoDescent :
+      ∀ n,
+        (additiveSupportFamily A (k - 1) n).Nonempty →
+        ¬ DestroysAt
+          (additiveSupportFamily A (k - 1))
+          (D : Set ℕ) n) :
+    i ∈ J := by
+  obtain hiJ | hiBound :=
+    anchoredPrivateRow_noRankDescent_forces_oldMarkerBlock_or_bound
+      P hrQ E p hk htrace hHmem hcert hU hsi
+        hij hjJ hcontemporary hnoDescent
+  · exact hiJ
+  · by_contra hiJ
+    exact
+      (Nat.not_lt_of_ge hiBound)
+        (hfreshLarge i hiJ)
+
 /-- Two admissible points in the marker block turn an actual no-descent
 private row into the local Hall input.
 
