@@ -25,13 +25,29 @@ membership information at cofinally large basis points.
 - `forces_cofinalLargeTranslationHoles_or_cofinalBoundaryRepairs`
   homogenizes the mixed outcome: every fused stream has either cofinally
   large missing translates or cofinally many one-point boundary repairs.
+- `cofinalBoundaryRepairs_fuse_residualDeletion` performs the infinite
+  co-singleton iteration.  It alternates a repaired landing with a later
+  reserved point of `Y`, producing an infinite residual deletion `B`,
+  an infinite restored part `Y \ B`, and one strict stream of formerly
+  destroyed upper targets which all survive deletion by `B`.
+- `cofinalBoundaryRepairs_regenerate_fusedStreams_on_strictSplit` applies
+  counterexample destruction and predecessor bracketing on that same
+  residual `B`.  Hence the boundary horn reproduces the complete fused
+  endpoint on a strict infinite split, with a new interlaced survival
+  stream.
+- The boundary-first fork
+  `forces_cofinalBoundaryRepairs_or_eventuallyPureLargeTranslationHoles`
+  now isolates the other case sharply: if the repair iteration is not
+  cofinal, then beyond one floor no boundary repair exists and every
+  sufficiently late mixed stage is forced to be a literal translated
+  hole.
 
 Both horns are nonvacuous membership statements; no bare “represented
 target” conclusion is used.  This does **not** yet settle the general
-problem.  The next direct attack is to iterate the co-singleton repairs
-without exhausting `Y`; in the other horn, the missing translated points
-must be combined with the retained protected brackets to force a repair or
-an infinite deletion.
+problem.  The next direct attack is either to iterate the strict-split
+self-replication while accumulating all repaired survival streams, or to
+use eventual purity in the remaining hole horn to force enough translated
+nonmembers from the bounded supports to contradict exact-order coverage.
 
 # GENERAL ORDER: FOUR ALIGNED HORNS CONSUMED (2026-07-29)
 

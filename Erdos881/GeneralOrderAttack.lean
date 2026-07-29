@@ -45828,6 +45828,50 @@ def HasFusedBoundaryRepairAt
       (additiveSupportFamily A (k + 1))
       (Y \ {c + δ}) m
 
+/-- Lowering the requested floor preserves a literal-hole stage. -/
+theorem HasFusedLargeTranslationHoleAt.mono
+    {A Y : Set ℕ} {k : ℕ}
+    {oldTarget : ℕ → ℕ} {L L' : ℕ}
+    (hstage :
+      HasFusedLargeTranslationHoleAt
+        A Y k oldTarget L)
+    (hL : L' ≤ L) :
+    HasFusedLargeTranslationHoleAt
+      A Y k oldTarget L' := by
+  obtain ⟨n, m, δ, E, c, hnFloor,
+      hnLower, hnUpper, hδpos, hmδ, hEmem,
+      hEY, hmDestroy, hcFloor, hcE, hcA,
+      hcY, hhole⟩ :=
+    hstage
+  exact
+    ⟨n, m, δ, E, c, hL.trans hnFloor,
+      hnLower, hnUpper, hδpos, hmδ, hEmem,
+      hEY, hmDestroy, hL.trans hcFloor,
+      hcE, hcA, hcY, hhole⟩
+
+/-- Lowering the requested floor preserves a boundary-repair stage. -/
+theorem HasFusedBoundaryRepairAt.mono
+    {A Y : Set ℕ} {k : ℕ}
+    {oldTarget : ℕ → ℕ} {L L' : ℕ}
+    (hstage :
+      HasFusedBoundaryRepairAt
+        A Y k oldTarget L)
+    (hL : L' ≤ L) :
+    HasFusedBoundaryRepairAt
+      A Y k oldTarget L' := by
+  obtain ⟨n, m, δ, E, c, hnFloor,
+      hnLower, hnUpper, hδpos, hmδ, hEmem,
+      hEY, hmDestroy, hcFloor, hcE, hcA,
+      hcY, hshiftA, hshiftY,
+      hrestoredSurvival⟩ :=
+    hstage
+  exact
+    ⟨n, m, δ, E, c, hL.trans hnFloor,
+      hnLower, hnUpper, hδpos, hmδ, hEmem,
+      hEY, hmDestroy, hL.trans hcFloor,
+      hcE, hcA, hcY, hshiftA, hshiftY,
+      hrestoredSurvival⟩
+
 /-- The literal translation boundary can be homogenized cofinally.
 
 If literal-hole stages are not cofinal, one floor `L₀` admits no such
@@ -45890,5 +45934,379 @@ theorem HasFusedSuccessorPredecessorStreams.forces_cofinalLargeTranslationHoles_
           (le_max_left L L₀).trans hcLarge,
           hcE, hcA, hcY, hshiftA, hshiftY,
           hrestoredSurvival⟩
+
+/-- Boundary-first homogeneous form of the fused translation fork.
+
+If boundary repairs are cofinal, return them because they admit the
+infinite strict-split fusion below.  Otherwise one floor `L₀` has no
+boundary-repair stage; monotonicity then excludes boundary repairs at every
+larger floor.  Applying the mixed theorem above `max L L₀` forces a literal
+hole, so the other branch is not merely cofinally hole-bearing but
+eventually *pure*: the one-point repair mechanism is genuinely absent. -/
+theorem HasFusedSuccessorPredecessorStreams.forces_cofinalBoundaryRepairs_or_eventuallyPureLargeTranslationHoles
+    {A : Set ℕ} {k : ℕ}
+    (hfused :
+      HasFusedSuccessorPredecessorStreams A k) :
+    ∃ Y : Set ℕ, ∃ oldTarget : ℕ → ℕ,
+      Y ⊆ A ∧
+      Y.Infinite ∧
+      StrictMono oldTarget ∧
+      ((∀ L,
+          HasFusedBoundaryRepairAt
+            A Y k oldTarget L) ∨
+        ∃ L₀,
+          (∀ L, L₀ ≤ L →
+            ¬ HasFusedBoundaryRepairAt
+              A Y k oldTarget L) ∧
+          ∀ L,
+            HasFusedLargeTranslationHoleAt
+              A Y k oldTarget L) := by
+  classical
+  obtain ⟨Y, oldTarget, hYA, hYInfinite,
+      holdStrict, hmixed⟩ :=
+    hfused.forces_cofinalLargeTranslationHole_or_boundaryLanding
+  refine
+    ⟨Y, oldTarget, hYA, hYInfinite, holdStrict, ?_⟩
+  by_cases hrepairs :
+      ∀ L,
+        HasFusedBoundaryRepairAt
+          A Y k oldTarget L
+  · exact Or.inl hrepairs
+  · right
+    push Not at hrepairs
+    obtain ⟨L₀, hL₀⟩ := hrepairs
+    refine ⟨L₀, ?_, ?_⟩
+    · intro L hL₀L hrepair
+      exact hL₀ (hrepair.mono hL₀L)
+    · intro L
+      obtain ⟨n, m, δ, E, c, hnLarge,
+          hnLower, hnUpper, hδpos, hmδ, hEmem,
+          hEY, hmDestroy, hcLarge, hcE, hcA,
+          hcY, hhole | hlanding⟩ :=
+        hmixed (max L L₀)
+      · exact
+          ⟨n, m, δ, E, c,
+            (le_max_left L L₀).trans hnLarge,
+            hnLower, hnUpper, hδpos, hmδ, hEmem,
+            hEY, hmDestroy,
+            (le_max_left L L₀).trans hcLarge,
+            hcE, hcA, hcY, hhole⟩
+      · exfalso
+        apply hL₀
+        obtain ⟨hshiftA, hshiftY,
+            hrestoredSurvival⟩ :=
+          hlanding
+        exact
+          ⟨n, m, δ, E, c,
+            (le_max_right L L₀).trans hnLarge,
+            hnLower, hnUpper, hδpos, hmδ, hEmem,
+            hEY, hmDestroy,
+            (le_max_right L L₀).trans hcLarge,
+            hcE, hcA, hcY, hshiftA, hshiftY,
+            hrestoredSurvival⟩
+
+/-- Cofinal one-point repairs can be fused without exhausting the original
+deletion.
+
+At stage `r`, take a boundary repair above `r + 1`, then reserve a still
+larger point of `Y`.  Iteration gives the strict alternation
+
+`repaired target < reserved point < next repaired target`.
+
+The reserved points form an infinite residual deletion `B`.  Every landing
+point lies in `Y \ B`, so the restored part is infinite as well.  Since
+`B ⊆ Y \ {landing}` at each stage, all selected upper targets survive
+deletion by the single common set `B`.  This is the first genuine infinite
+iteration of the co-singleton repair rather than a collection of unrelated
+one-point repairs. -/
+theorem cofinalBoundaryRepairs_fuse_residualDeletion
+    {A Y : Set ℕ} {k : ℕ}
+    {oldTarget : ℕ → ℕ}
+    (holdStrict : StrictMono oldTarget)
+    (hYInfinite : Y.Infinite)
+    (hrepairs :
+      ∀ L,
+        HasFusedBoundaryRepairAt
+          A Y k oldTarget L) :
+    ∃ B : Set ℕ, ∃ newTarget : ℕ → ℕ,
+      B ⊆ Y ∧
+      B.Infinite ∧
+      (Y \ B).Infinite ∧
+      StrictMono newTarget ∧
+      (∀ i,
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1))
+          B (newTarget i)) ∧
+      ∀ i, ∃ n,
+        oldTarget n < newTarget i ∧
+        newTarget i < oldTarget (n + 1) := by
+  classical
+  unfold HasFusedBoundaryRepairAt at hrepairs
+  choose bracket failed displacement support source
+      hbracketFloor hlower hupper hdisplacementPos
+      hfailedEq hsupportMem hsupportY _hfailedDestroy
+      hsourceFloor hsourceMem _hsourceA _hsourceY
+      _hlandingA hlandingY hrestoredSurvival
+    using hrepairs
+  let landing : ℕ → ℕ :=
+    fun L => source L + displacement L
+  have hfailedAbove : ∀ L, L < failed L := by
+    intro L
+    exact
+      (hbracketFloor L).trans_lt
+        ((holdStrict.id_le (bracket L)).trans_lt
+          (hlower L))
+  have hlandingAbove : ∀ L, L < landing L := by
+    intro L
+    dsimp only [landing]
+    have hsource := hsourceFloor L
+    have hshift := hdisplacementPos L
+    omega
+  have hlandingInY : ∀ L, landing L ∈ Y := by
+    intro L
+    exact hlandingY L
+  let reserve : ℕ → ℕ := fun L =>
+    (hYInfinite.exists_gt
+      (max (failed L) (landing L))).choose
+  have hreserveY : ∀ L, reserve L ∈ Y := by
+    intro L
+    exact
+      (hYInfinite.exists_gt
+        (max (failed L) (landing L))).choose_spec.1
+  have hfailedReserve : ∀ L, failed L < reserve L := by
+    intro L
+    exact (le_max_left (failed L) (landing L)).trans_lt
+      (hYInfinite.exists_gt
+        (max (failed L) (landing L))).choose_spec.2
+  have hlandingReserve : ∀ L, landing L < reserve L := by
+    intro L
+    exact (le_max_right (failed L) (landing L)).trans_lt
+      (hYInfinite.exists_gt
+        (max (failed L) (landing L))).choose_spec.2
+  let state : ℕ → ℕ := fun i =>
+    Nat.rec 0 (fun _ r => reserve (r + 1)) i
+  have hstateSucc : ∀ i,
+      state (i + 1) = reserve (state i + 1) := by
+    intro i
+    simp [state]
+  have hstateStep : ∀ i, state i < state (i + 1) := by
+    intro i
+    rw [hstateSucc]
+    exact (Nat.lt_succ_self (state i)).trans
+      ((hfailedAbove (state i + 1)).trans
+        (hfailedReserve (state i + 1)))
+  have hstateStrict : StrictMono state :=
+    strictMono_nat_of_lt_succ hstateStep
+  let floor : ℕ → ℕ := fun i => state i + 1
+  let kept : ℕ → ℕ := fun i => state (i + 1)
+  let restored : ℕ → ℕ := fun i => landing (floor i)
+  let newTarget : ℕ → ℕ := fun i => failed (floor i)
+  have hkeptEq : ∀ i,
+      kept i = reserve (floor i) := by
+    intro i
+    simp only [kept, floor, hstateSucc]
+  have hnewKept : ∀ i, newTarget i < kept i := by
+    intro i
+    rw [hkeptEq]
+    exact hfailedReserve (floor i)
+  have hstateNew : ∀ i,
+      state i < newTarget i := by
+    intro i
+    exact (Nat.lt_succ_self (state i)).trans
+      (hfailedAbove (floor i))
+  have hrestoredKept : ∀ i, restored i < kept i := by
+    intro i
+    rw [hkeptEq]
+    exact hlandingReserve (floor i)
+  have hstateRestored : ∀ i,
+      state i < restored i := by
+    intro i
+    exact (Nat.lt_succ_self (state i)).trans
+      (hlandingAbove (floor i))
+  have hnewTargetStep :
+      ∀ i, newTarget i < newTarget (i + 1) := by
+    intro i
+    exact (hnewKept i).trans
+      (by
+        simpa only [kept] using hstateNew (i + 1))
+  have hnewTargetStrict : StrictMono newTarget :=
+    strictMono_nat_of_lt_succ hnewTargetStep
+  have hkeptInjective : Function.Injective kept := by
+    intro i j hij
+    apply Nat.succ.inj
+    apply hstateStrict.injective
+    simpa only [kept] using hij
+  let B : Set ℕ := Set.range kept
+  have hBY : B ⊆ Y := by
+    rintro x ⟨i, rfl⟩
+    rw [hkeptEq]
+    exact hreserveY (floor i)
+  have hBInfinite : B.Infinite := by
+    exact Set.infinite_range_of_injective hkeptInjective
+  have hkeptNeRestored :
+      ∀ i j, kept j ≠ restored i := by
+    intro i j
+    rcases lt_trichotomy j i with hji | rfl | hij
+    · have hsuccLe : j + 1 ≤ i := by omega
+      have hle :
+          kept j ≤ state i := by
+        exact hstateStrict.monotone hsuccLe
+      exact ne_of_lt (hle.trans_lt (hstateRestored i))
+    · exact ne_of_gt (hrestoredKept j)
+    · have hlt : kept i < kept j := by
+        dsimp only [kept]
+        exact hstateStrict (Nat.succ_lt_succ hij)
+      exact ne_of_gt ((hrestoredKept i).trans hlt)
+  have hrestoredNotB : ∀ i, restored i ∉ B := by
+    intro i hiB
+    obtain ⟨j, hj⟩ := hiB
+    exact hkeptNeRestored i j hj
+  have hrestoredInjective :
+      Function.Injective restored := by
+    intro i j hij
+    rcases lt_trichotomy i j with hij' | rfl | hji'
+    · have hlt : restored i < restored j := by
+        calc
+          restored i < kept i := hrestoredKept i
+          _ ≤ state j := by
+            dsimp only [kept]
+            exact hstateStrict.monotone
+              (Nat.succ_le_iff.mpr hij')
+          _ < restored j := hstateRestored j
+      omega
+    · rfl
+    · have hlt : restored j < restored i := by
+        calc
+          restored j < kept j := hrestoredKept j
+          _ ≤ state i := by
+            dsimp only [kept]
+            exact hstateStrict.monotone
+              (Nat.succ_le_iff.mpr hji')
+          _ < restored i := hstateRestored i
+      omega
+  have hrestoredRange :
+      Set.range restored ⊆ Y \ B := by
+    rintro x ⟨i, rfl⟩
+    exact
+      ⟨hlandingInY (floor i),
+        hrestoredNotB i⟩
+  have hrestoredInfinite :
+      (Set.range restored).Infinite :=
+    Set.infinite_range_of_injective hrestoredInjective
+  have hYdiffBInfinite : (Y \ B).Infinite :=
+    hrestoredInfinite.mono hrestoredRange
+  have hBwithoutLanding :
+      ∀ i, B ⊆ Y \ {restored i} := by
+    intro i x hxB
+    exact
+      ⟨hBY hxB, by
+        intro hxSingleton
+        have hx : x = restored i := by simpa using hxSingleton
+        subst x
+        exact hrestoredNotB i hxB⟩
+  have hnewSurvival :
+      ∀ i,
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1))
+          B (newTarget i) := by
+    intro i
+    obtain ⟨F, hFmem, hFsurvive⟩ :=
+      not_destroysAt_iff.mp
+        (hrestoredSurvival (floor i))
+    apply not_destroysAt_iff.mpr
+    refine ⟨F, hFmem, ?_⟩
+    exact hFsurvive.mono_right
+      (hBwithoutLanding i)
+  refine
+    ⟨B, newTarget, hBY, hBInfinite,
+      hYdiffBInfinite, hnewTargetStrict,
+      hnewSurvival, ?_⟩
+  intro i
+  exact
+    ⟨bracket (floor i), hlower (floor i),
+      hupper (floor i)⟩
+
+/-- The boundary-repair horn reproduces the complete fused endpoint on a
+strict infinite split of its deletion.
+
+The preceding theorem supplies an infinite residual `B ⊆ Y`, an infinite
+restored part `Y \ B`, and a strict stream of repaired successor targets
+surviving `B`.  The counterexample hypothesis forces cofinal successor
+destruction on that same `B`; predecessor bracketing then reconstructs the
+represented destroyed order-`k` differences.  Thus the boundary horn is a
+self-replication mechanism, but now with a genuine descent of the deletion
+and a new interlaced survival stream. -/
+theorem cofinalBoundaryRepairs_regenerate_fusedStreams_on_strictSplit
+    {A Y : Set ℕ} {k : ℕ}
+    {oldTarget : ℕ → ℕ}
+    (hkpos : 0 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1))
+    (hYA : Y ⊆ A)
+    (holdStrict : StrictMono oldTarget)
+    (hYInfinite : Y.Infinite)
+    (hrepairs :
+      ∀ L,
+        HasFusedBoundaryRepairAt
+          A Y k oldTarget L) :
+    ∃ B : Set ℕ, ∃ newTarget : ℕ → ℕ,
+      B ⊆ Y ∧
+      B.Infinite ∧
+      (Y \ B).Infinite ∧
+      StrictMono newTarget ∧
+      (∀ n,
+        ∃ E ∈
+          additiveSupportFamily A (k + 1)
+            (newTarget n),
+          Disjoint (E : Set ℕ) B) ∧
+      (∀ N, ∃ m, N ≤ m ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) B m) ∧
+      ∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a,
+        L ≤ n ∧
+        newTarget n < m ∧
+        m < newTarget (n + 1) ∧
+        E ∈
+          additiveSupportFamily A (k + 1)
+            (newTarget n) ∧
+        Disjoint (E : Set ℕ) B ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) B m ∧
+        a ∈ E ∧
+        (k + 1) * a ≤ newTarget n ∧
+        L ≤ m - a ∧
+        (additiveSupportFamily A k (m - a)).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A k) B (m - a) := by
+  obtain ⟨B, newTarget, hBY, hBInfinite,
+      hrestoredInfinite, hnewStrict,
+      hnewSurvivalRaw, _hinterlaced⟩ :=
+    cofinalBoundaryRepairs_fuse_residualDeletion
+      holdStrict hYInfinite hrepairs
+  have hBA : B ⊆ A :=
+    hBY.trans hYA
+  have hnewSurvival :
+      ∀ n,
+        ∃ E ∈
+          additiveSupportFamily A (k + 1)
+            (newTarget n),
+          Disjoint (E : Set ℕ) B := by
+    intro n
+    exact not_destroysAt_iff.mp
+      (hnewSurvivalRaw n)
+  have hnewDestroy :
+      ∀ N, ∃ m, N ≤ m ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) B m :=
+    strongExactDeletion_of_counterexample hcounter
+      B hBA hBInfinite
+  have hrepresented :=
+    bracketedDestroyedSuccessorTargets_force_cofinalRepresentedPredecessorDestroyers
+      hkpos hbasis hnewStrict hnewSurvival hnewDestroy
+  exact
+    ⟨B, newTarget, hBY, hBInfinite,
+      hrestoredInfinite, hnewStrict, hnewSurvival,
+      hnewDestroy, hrepresented⟩
 
 end Erdos881
