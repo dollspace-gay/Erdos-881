@@ -60908,4 +60908,247 @@ theorem
         (HasTerminalFixedCoreGeometricArithmeticFusion.toCofinalGapDominatingTerminalCrossBlockArithmetic
           hk htargetStrict hcross)
 
+/-- Cofinal current-order destroyer fans inside prescribed gaps.
+
+The left endpoint survives an infinite deletion at order `k`, while a
+target strictly inside the gap is destroyed at that order.  Every point
+of one surviving left-endpoint support therefore produces a destroyed
+order-`k-1` predecessor difference. -/
+def HasCofinalPredecessorDestroyerFansInGaps
+    (A X : Set ℕ) (k : ℕ)
+    (leftTarget rightTarget : ℕ → ℕ) : Prop :=
+  ∀ L, ∃ n m, ∃ E : Finset ℕ,
+    L ≤ n ∧
+    leftTarget n < m ∧
+    m < rightTarget n ∧
+    E ∈
+      additiveSupportFamily A k (leftTarget n) ∧
+    Disjoint (E : Set ℕ) X ∧
+    E.Nonempty ∧
+    DestroysAt
+      (additiveSupportFamily A k) X m ∧
+    ∀ a ∈ E,
+      0 < m - a ∧
+      DestroysAt
+        (additiveSupportFamily A (k - 1))
+        X (m - a)
+
+/-- Current-order strong minimality attacks an interlaced double-survival
+stream in one of its two literal gap classes.
+
+Merge the lower and upper surviving targets.  The original order-`k`
+strong-minimality hypothesis supplies cofinally many destroyed order-`k`
+targets on the same deletion; the predecessor-fan theorem brackets them
+between consecutive merged targets and descends each one through every
+point of the surviving left support.  Parity then gives an exhaustive
+fork:
+
+* cofinally many fans occur in the affine same-block gaps
+  `lower n < m < upper n`; or
+* cofinally many fans occur in the intervening gaps
+  `upper n < m < lower (n+1)`.
+
+Unlike the successor-counterexample fork, this theorem needs no
+order-`k-1` basis assumption: it uses the original current-order strong
+minimality directly. -/
+theorem
+    HasInterlacedDoubleSurvivalStream.forces_currentOrder_aligned_or_crossGap_predecessorFans
+    {A : Set ℕ} {k : ℕ}
+    (hk : 1 < k)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (hdouble :
+      HasInterlacedDoubleSurvivalStream A (k - 1)) :
+    ∃ X : Set ℕ,
+    ∃ lower upper displacement : ℕ → ℕ,
+      X ⊆ A ∧
+      X.Infinite ∧
+      StrictMono lower ∧
+      StrictMono upper ∧
+      (∀ n,
+        lower n < upper n ∧
+        upper n < lower (n + 1)) ∧
+      (∀ n, 0 < displacement n) ∧
+      (∀ n,
+        upper n = lower n + displacement n) ∧
+      (∀ n,
+        ∃ E ∈
+          additiveSupportFamily A k (lower n),
+          Disjoint (E : Set ℕ) X) ∧
+      (∀ n,
+        ∃ E ∈
+          additiveSupportFamily A k (upper n),
+          Disjoint (E : Set ℕ) X) ∧
+      (HasCofinalPredecessorDestroyerFansInGaps
+          A X k lower upper ∨
+        HasCofinalPredecessorDestroyerFansInGaps
+          A X k upper (fun n => lower (n + 1))) := by
+  classical
+  obtain ⟨X, lower, upper, displacement,
+      hXA, hXInfinite, hlowerStrict, hupperStrict,
+      hinterlaced, hdisplacementPos, hupperEq,
+      hlowerSurvivalRaw, hupperSurvivalRaw⟩ :=
+    hdouble
+  have hkPredSucc : k - 1 + 1 = k := by
+    omega
+  have hlowerSurvival :
+      ∀ n,
+        ∃ E ∈ additiveSupportFamily A k (lower n),
+          Disjoint (E : Set ℕ) X := by
+    simpa only [hkPredSucc] using hlowerSurvivalRaw
+  have hupperSurvival :
+      ∀ n,
+        ∃ E ∈ additiveSupportFamily A k (upper n),
+          Disjoint (E : Set ℕ) X := by
+    simpa only [hkPredSucc] using hupperSurvivalRaw
+  let merged : ℕ → ℕ :=
+    Stream'.interleave lower upper
+  have hmergedEven :
+      ∀ n, merged (2 * n) = lower n := by
+    intro n
+    simpa only [merged] using
+      (Stream'.get_interleave_left n lower upper)
+  have hmergedOdd :
+      ∀ n, merged (2 * n + 1) = upper n := by
+    intro n
+    simpa only [merged] using
+      (Stream'.get_interleave_right n lower upper)
+  have hmergedStep :
+      ∀ n, merged n < merged (n + 1) := by
+    intro n
+    rcases Nat.even_or_odd n with
+        ⟨r, hr⟩ | ⟨r, hr⟩
+    · have hn : n = 2 * r := by omega
+      subst n
+      rw [hn, hmergedEven, hmergedOdd]
+      exact (hinterlaced r).1
+    · have hn : n = 2 * r + 1 := by omega
+      subst n
+      have hnext :
+          2 * r + 1 + 1 = 2 * (r + 1) := by
+        omega
+      rw [hmergedOdd, hnext, hmergedEven]
+      exact (hinterlaced r).2
+  have hmergedStrict : StrictMono merged :=
+    strictMono_nat_of_lt_succ hmergedStep
+  have hmergedSurvival :
+      ∀ n,
+        ∃ E ∈ additiveSupportFamily A k (merged n),
+          Disjoint (E : Set ℕ) X := by
+    intro n
+    rcases Nat.even_or_odd n with
+        ⟨r, hr⟩ | ⟨r, hr⟩
+    · have hn : n = 2 * r := by omega
+      subst n
+      rw [hn, hmergedEven]
+      exact hlowerSurvival r
+    · have hn : n = 2 * r + 1 := by omega
+      subst n
+      rw [hmergedOdd]
+      exact hupperSurvival r
+  have hcurrentDestroy :
+      ∀ N, ∃ m, N ≤ m ∧
+        DestroysAt
+          (additiveSupportFamily A k) X m :=
+    hminimal.2 X hXA hXInfinite
+  have hmergedSurvivalRaw :
+      ∀ n,
+        ∃ E ∈
+          additiveSupportFamily A
+            ((k - 1) + 1) (merged n),
+          Disjoint (E : Set ℕ) X := by
+    simpa only [hkPredSucc] using hmergedSurvival
+  have hcurrentDestroyRaw :
+      ∀ N, ∃ m, N ≤ m ∧
+        DestroysAt
+          (additiveSupportFamily A
+            ((k - 1) + 1)) X m := by
+    simpa only [hkPredSucc] using hcurrentDestroy
+  have hfansRaw :=
+    bracketedDestroyedSuccessorTargets_force_predecessorDestroyerFans
+      (h := k - 1) hmergedStrict
+        hmergedSurvivalRaw hcurrentDestroyRaw
+  have hfans :
+      ∀ L, ∃ j m, ∃ E : Finset ℕ,
+        L ≤ j ∧
+        merged j < m ∧
+        m < merged (j + 1) ∧
+        E ∈ additiveSupportFamily A k (merged j) ∧
+        Disjoint (E : Set ℕ) X ∧
+        E.Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A k) X m ∧
+        ∀ a ∈ E,
+          0 < m - a ∧
+          DestroysAt
+            (additiveSupportFamily A (k - 1))
+            X (m - a) := by
+    simpa only [hkPredSucc] using hfansRaw
+  let InsideWitness : ℕ → ℕ → Prop := fun L n =>
+    ∃ m, ∃ E : Finset ℕ,
+      lower n < m ∧
+      m < upper n ∧
+      E ∈ additiveSupportFamily A k (lower n) ∧
+      Disjoint (E : Set ℕ) X ∧
+      E.Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A k) X m ∧
+      ∀ a ∈ E,
+        0 < m - a ∧
+        DestroysAt
+          (additiveSupportFamily A (k - 1))
+          X (m - a)
+  refine
+    ⟨X, lower, upper, displacement, hXA, hXInfinite,
+      hlowerStrict, hupperStrict, hinterlaced,
+      hdisplacementPos, hupperEq, hlowerSurvival,
+      hupperSurvival, ?_⟩
+  by_cases hinside :
+      ∀ L, ∃ n, L ≤ n ∧ InsideWitness L n
+  · left
+    intro L
+    obtain ⟨n, hnL, m, E, hnm, hmu,
+        hEmem, hEX, hEnonempty, hmDestroy,
+        hfan⟩ :=
+      hinside L
+    exact
+      ⟨n, m, E, hnL, hnm, hmu, hEmem,
+        hEX, hEnonempty, hmDestroy, hfan⟩
+  · right
+    obtain ⟨L₀, hL₀⟩ :=
+      not_forall.mp hinside
+    intro L
+    let request := 2 * max L L₀
+    obtain ⟨j, m, E, hjRequest,
+        hjm, hmj, hEmem, hEX, hEnonempty,
+        hmDestroy, hfan⟩ :=
+      hfans request
+    rcases Nat.even_or_odd j with
+        ⟨n, hn⟩ | ⟨n, hn⟩
+    · have hj : j = 2 * n := by omega
+      have hnL₀ : L₀ ≤ n := by
+        dsimp only [request] at hjRequest
+        omega
+      apply False.elim
+      apply hL₀
+      refine
+        ⟨n, hnL₀, m, E, ?_, ?_, ?_,
+          hEX, hEnonempty, hmDestroy, hfan⟩
+      · simpa only [hj, hmergedEven] using hjm
+      · have hnext :
+            j + 1 = 2 * n + 1 := by omega
+        simpa only [hnext, hmergedOdd] using hmj
+      · simpa only [hj, hmergedEven] using hEmem
+    · have hj : j = 2 * n + 1 := by omega
+      have hnL : L ≤ n := by
+        dsimp only [request] at hjRequest
+        omega
+      have hnext :
+          j + 1 = 2 * (n + 1) := by omega
+      refine
+        ⟨n, m, E, hnL, ?_, ?_, ?_,
+          hEX, hEnonempty, hmDestroy, hfan⟩
+      · simpa only [hj, hmergedOdd] using hjm
+      · simpa only [hnext, hmergedEven] using hmj
+      · simpa only [hj, hmergedOdd] using hEmem
+
 end Erdos881

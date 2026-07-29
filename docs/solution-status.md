@@ -1,3 +1,29 @@
+# GENERAL ORDER: CURRENT MINIMALITY INJURES THE SAME-BLOCK STREAM (2026-07-29)
+
+The same-block output of the terminal geometric fork has now been fed
+directly into the original order-\(k\) strong-minimality hypothesis.
+
+`HasInterlacedDoubleSurvivalStream.forces_currentOrder_aligned_or_crossGap_predecessorFans`
+merges the interlaced lower and translated targets on their common
+infinite deletion.  Strong minimality forces cofinally many destroyed
+order-\(k\) targets between consecutive surviving targets.  At every such
+target, descending through all points of the surviving left support gives
+an entire fan of destroyed order-\((k-1)\) differences.
+
+Parity makes the conclusion geometric: these fans occur cofinally either
+inside the affine lower-to-translated gaps, or inside the intervening
+translated-to-next-block gaps.  This invocation uses the original
+order-\(k\) minimality directly and requires no order-\((k-1)\) basis
+assumption.
+
+This is still not the full solution of Erdős 881 for \(k\ge3\).  The next
+direct step is to retain the literal fixed source support
+\(\{x_n\}\cup K\) in the first fan branch.  Its marked-point difference
+then lies strictly between the fixed represented target \(t\) and its
+represented translate \(t+\Delta_n\), giving the intended repair-or-gap
+comparison at the same source block and translation.  The intervening-gap
+branch will be joined to the already proved boundary-crossing alternative.
+
 # GENERAL ORDER: THE TERMINAL GEOMETRIC FORK IS OPERATIONAL (2026-07-29)
 
 The fixed-core arithmetic stream has now been split at the actual next
