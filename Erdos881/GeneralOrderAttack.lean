@@ -43456,10 +43456,22 @@ theorem exactBasis_counterexample_forces_cofinalTranslationExitFans
           ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
           ∃ V Vin Vout U : Finset ℕ,
             q ∈ Q ∧
+            (∀ r ∈ Q, ∃ j,
+              L ≤ j ∧
+              target j < r ∧
+              r < target (j + 1)) ∧
             (∀ u : BlockSelector cell, ∃ r ∈ Q,
               DestroysAt
                 (additiveSupportFamily A (k + 1))
                 (selectedSet u) r) ∧
+            (∀ r ∈ Q, ∃ u : BlockSelector cell,
+              DestroysAt
+                (additiveSupportFamily A (k + 1))
+                (selectedSet u) r ∧
+              ∀ r' ∈ Q, r' ≠ r →
+                ¬ DestroysAt
+                  (additiveSupportFamily A (k + 1))
+                  (selectedSet u) r') ∧
             (∀ r ∈ Q, r ≠ q →
               ¬ DestroysAt
                 (additiveSupportFamily A (k + 1))
@@ -43539,6 +43551,12 @@ theorem exactBasis_counterexample_forces_cofinalTranslationExitFans
         hKA P target htargetStrict hsurvive 0 L
   obtain ⟨Q₀, hQ₀Q, hQ₀cert, hQ₀localized⟩ :=
     exists_minimal_targetLocalized_subcertificate hcert
+  have hQ₀bracket :
+      ∀ r ∈ Q₀, ∃ j,
+        L ≤ j ∧ target j < r ∧
+          r < target (j + 1) := by
+    intro r hrQ₀
+    exact hQbracket r (hQ₀Q hrQ₀)
   let s₀ : BlockSelector cell := fun j =>
     ⟨(P.nonempty j).choose, (P.nonempty j).choose_spec⟩
   obtain ⟨q, hqQ₀, _hqDestroy₀⟩ := hQ₀cert s₀
@@ -43739,7 +43757,8 @@ theorem exactBasis_counterexample_forces_cofinalTranslationExitFans
     · exact Or.inr (lt_of_lt_of_le hlandingLarge
         (Nat.mul_le_mul_left 2 hVinCertificate))
   exact ⟨Q₀, s, i, q, δ, R, M, V, Vin, Vout, U,
-    hqQ₀, hQ₀cert, hlocalized, hiL, hiLower, hiUpper,
+    hqQ₀, hQ₀bracket, hQ₀cert, hQ₀localized,
+    hlocalized, hiL, hiLower, hiUpper,
     hdeltaPos, hqdelta, hqDestroy, hRcard, hRK, hMlarge,
     hMsub, hMroot, hMnonempty, hMmatching, hMselected,
     rfl, hMcardV, hMcell, hVclean, htranslateExit,
@@ -43748,5 +43767,192 @@ theorem exactBasis_counterexample_forces_cofinalTranslationExitFans
     hUcard, hotherSupports, hlandingCoversSharp,
     hVinU, hVinCertificate, hVoutData,
     hholeOrLanding, hholeOrCertificateGrowth⟩
+
+/-- Forced certificate growth crosses every prescribed localized arithmetic
+threshold without losing the translation alignment that produced it.
+
+Fix a desired translated-hole cardinality and all five demands in
+`HasTargetLocalizedArithmeticOutcome`.  Let `C` be the exact product
+threshold required by
+`targetLocalizedAdditiveFamily_forces_rootedMatching_or_reducedStream_or_anchoredArithmeticConcentration`.
+Request a migrating gap whose index lies beyond both `2 * holeDemand` and
+`2 * ((k+1) * C + 1)`.
+
+The cross-block estimate from
+`exactBasis_counterexample_forces_cofinalTranslationExitFans` says that
+this gap has either:
+
+* more than `holeDemand` source-block points whose common `δ`-translate
+  leaves `A`; or
+* more than `C` other targets in the same cardinal-minimal localized
+  certificate.
+
+In the second case every certificate target is late enough to be
+represented at order `k+1`, so the existing arithmetic theorem applies at
+the *same* target `q`.  The conclusion deliberately retains the original
+source block `cell i`, rooted family `M`, and identity
+`q = target i + δ`: the arithmetic outcome has crossed the threshold
+without detaching from the migrating translation that forced its growth. -/
+theorem exactBasis_counterexample_forces_cofinalTranslationHoles_or_alignedArithmeticOutcome
+    {A : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1)) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ target : ℕ → ℕ,
+        K ⊆ A ∧
+        K.Infinite ∧
+        IsFiniteBlockPartition K cell ∧
+        StrictMono target ∧
+        (∀ i, i + 2 < (cell i).card) ∧
+        ∀ holeDemand gapFloor coverDemand anchorDemand
+            differenceDemand lowerMatchingDemand
+            currentMatchingDemand,
+          ∃ Q : Finset ℕ, ∃ s : BlockSelector cell,
+          ∃ i q δ, ∃ R : Finset ℕ,
+          ∃ M : Finset (Finset ℕ),
+          ∃ V Vin Vout : Finset ℕ,
+          ∃ hqQ : q ∈ Q,
+            gapFloor ≤ i ∧
+            target i < q ∧
+            q < target (i + 1) ∧
+            0 < δ ∧
+            q = target i + δ ∧
+            DestroysAt
+              (additiveSupportFamily A (k + 1))
+              (selectedSet s) q ∧
+            R.card < k + 1 ∧
+            Disjoint (R : Set ℕ) K ∧
+            i + 1 < M.card ∧
+            M ⊆ additiveSupportFamily A (k + 1) (target i) ∧
+            (∀ E ∈ M, R ⊆ E) ∧
+            (∀ E ∈ M, (E \ R).Nonempty) ∧
+            (∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+              Disjoint (E \ R) (G \ R)) ∧
+            (∀ E ∈ M,
+              Disjoint (E : Set ℕ) (selectedSet s)) ∧
+            V = M.biUnion (fun E => E \ R) ∧
+            V ⊆ cell i ∧
+            Vin ⊆ V ∧
+            Vout ⊆ V ∧
+            Disjoint Vin Vout ∧
+            V = Vin ∪ Vout ∧
+            (∀ a ∈ Vin,
+              a + δ ∈ A ∧ a + δ ∈ selectedSet s) ∧
+            (∀ a ∈ Vout, a + δ ∉ A) ∧
+            (holeDemand < Vout.card ∨
+              HasTargetLocalizedArithmeticOutcome
+                A k coverDemand anchorDemand
+                  differenceDemand lowerMatchingDemand
+                  currentMatchingDemand cell Q q hqQ) := by
+  classical
+  obtain ⟨K, cell, P, target, hKA, hKInfinite,
+      htargetStrict, hcellLarge, hfans⟩ :=
+    exactBasis_counterexample_forces_cofinalTranslationExitFans
+      hbasis hcounter
+  refine ⟨K, cell, target, hKA, hKInfinite, P,
+    htargetStrict, hcellLarge, ?_⟩
+  intro holeDemand gapFloor coverDemand anchorDemand
+      differenceDemand lowerMatchingDemand
+      currentMatchingDemand
+  let threshold :=
+    (((anchorDemand *
+          additiveRootedMatchingBound k lowerMatchingDemand) *
+        differenceDemand) *
+      (k + 1 + coverDemand)) *
+        additiveRootedMatchingBound
+          (k + 1) currentMatchingDemand
+  obtain ⟨Nrep, hNrep⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr
+      hbasis.succ
+  let scheduledFloor :=
+    max gapFloor
+      (max Nrep
+        (max (2 * holeDemand)
+          (2 * ((k + 1) * threshold + 1))))
+  obtain ⟨Q, s, i, q, δ, R, M, V, Vin, Vout, _U,
+      hqQ, hQbracket, hcert, hlocalized,
+      _hlocalizedQ, hiScheduled, hiLower, hiUpper,
+      hdeltaPos, hqdelta, hqDestroy, hRcard, hRK,
+      hMlarge, hMsub, hMroot, hMnonempty, hMmatching,
+      hMselected, hVeq, _hMcardV, hVcell, _hVclean,
+      _htranslateExit, hVinV, hVoutV, hVinVout,
+      hVsplit, hVinData, _hshiftCard, _hshiftSelected,
+      _hdestinationCard, _hUcard, _hotherSupports,
+      _hlandingCovers, _hVinU, _hVinCertificate,
+      hVoutData, _hholeOrLanding,
+      hholeOrCertificateGrowth⟩ :=
+    hfans scheduledFloor
+  have hiGap : gapFloor ≤ i := by
+    exact (le_max_left gapFloor _).trans hiScheduled
+  have hiHoleSchedule : 2 * holeDemand ≤ i := by
+    exact
+      (le_max_left (2 * holeDemand)
+        (2 * ((k + 1) * threshold + 1))).trans
+        ((le_max_right Nrep _).trans
+          ((le_max_right gapFloor _).trans hiScheduled))
+  have hiCertificateSchedule :
+      2 * ((k + 1) * threshold + 1) ≤ i := by
+    exact
+      (le_max_right (2 * holeDemand)
+        (2 * ((k + 1) * threshold + 1))).trans
+        ((le_max_right Nrep _).trans
+          ((le_max_right gapFloor _).trans hiScheduled))
+  have hrepresented :
+      ∀ r ∈ Q,
+        (additiveSupportFamily A (k + 1) r).Nonempty := by
+    intro r hrQ
+    obtain ⟨j, hjScheduled, hjLower, _hjUpper⟩ :=
+      hQbracket r hrQ
+    have hNrepScheduled : Nrep ≤ scheduledFloor := by
+      exact (le_max_left Nrep _).trans
+        (le_max_right gapFloor _)
+    have hjTarget : j ≤ target j :=
+      htargetStrict.id_le j
+    have hNrepR : Nrep ≤ r := by
+      exact hNrepScheduled.trans
+        (hjScheduled.trans
+          (hjTarget.trans (Nat.le_of_lt hjLower)))
+    obtain ⟨E, hEmem, _hEempty⟩ :=
+      hNrep r hNrepR
+    exact ⟨E, hEmem⟩
+  have hholesOrLargeCertificate :
+      holeDemand < Vout.card ∨
+        threshold < (Q.erase q).card := by
+    by_cases hholes : holeDemand < Vout.card
+    · exact Or.inl hholes
+    · right
+      have hVoutSmall : Vout.card ≤ holeDemand :=
+        Nat.le_of_not_gt hholes
+      rcases hholeOrCertificateGrowth with
+          hholeIndex | hcertificateIndex
+      · omega
+      · by_contra hnotLarge
+        have hQsmall :
+            (Q.erase q).card ≤ threshold :=
+          Nat.le_of_not_gt hnotLarge
+        have hscaled :
+            (k + 1) * (Q.erase q).card ≤
+              (k + 1) * threshold :=
+          Nat.mul_le_mul_left (k + 1) hQsmall
+        omega
+  refine ⟨Q, s, i, q, δ, R, M, V, Vin, Vout, hqQ,
+    hiGap, hiLower, hiUpper, hdeltaPos, hqdelta,
+    hqDestroy, hRcard, hRK, hMlarge, hMsub, hMroot,
+    hMnonempty, hMmatching, hMselected, hVeq, hVcell,
+    hVinV, hVoutV, hVinVout, hVsplit, hVinData,
+    hVoutData, ?_⟩
+  rcases hholesOrLargeCertificate with hholes | hQlarge
+  · exact Or.inl hholes
+  · right
+    exact
+      targetLocalizedAdditiveFamily_forces_rootedMatching_or_reducedStream_or_anchoredArithmeticConcentration
+        (A := A) (k := k) (L := coverDemand)
+        (anchorDemand := anchorDemand)
+        (differenceDemand := differenceDemand)
+        (lowerMatchingDemand := lowerMatchingDemand)
+        (currentMatchingDemand := currentMatchingDemand)
+        P hqQ hrepresented hcert hlocalized
+          (by simpa only [threshold] using hQlarge)
 
 end Erdos881
