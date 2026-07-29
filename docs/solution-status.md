@@ -1,3 +1,53 @@
+# GENERAL ORDER: RESIDUAL RANK AND TARGET MIGRATION ARE HOMOGENIZED (2026-07-29)
+
+The complete private-core stages can no longer evade composition by
+changing lower rank from one stage to the next.
+
+`HasAlignedPrivateCoreStageAtTarget` packages one stage while retaining
+both independent origins
+
+\[
+  q=m-a=\operatorname{currentTarget}(j)+\delta,
+\]
+
+the private support, its complete repeated-landing peel, the \(Y\)-clean
+residual core at target \(t\), and destruction of \(t+\delta\) by the same
+residual deletion \(B\).
+
+`cofinal_alignedPrivateCoreStages_fixRank` applies finite cofinal
+pigeonhole only to the rank label.  It produces one fixed \(r<k\) at every
+stage floor without discarding any of the arithmetic data.
+`stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_fixedRankPrivateCoreStream`
+welds this directly to the strongly minimal counterexample theorem.
+
+At that fixed rank,
+`cofinal_alignedPrivateCoreStages_targetGrowth_or_fixed` proves the exact
+remaining target fork:
+
+- \(t\) can be forced beyond every target floor while the aligned stage is
+  arbitrarily late; or
+- one literal residual target \(t\) occurs at every stage floor.
+
+Thus the bounded side is now the genuine common-root arithmetic
+concentration horn, not a moving family of small targets.
+
+The rank-zero terminal case has also been calculated completely.
+`HasAlignedPrivateCoreStageAtTarget.rankZero_forces_diagonal` proves
+
+\[
+  t=0,\qquad H=\{z_j\},\qquad
+  \operatorname{currentTarget}(j)=kz_j,\qquad
+  q=m-a=kz_j+\delta.
+\]
+
+This is not yet the general-order solution.  The next direct use of the
+fork is asymmetric.  For fixed \(r>0\) and cofinal \(t\), feed the
+\(B\)-clean support at \(t\) and destroyed translate \(t+\delta\) through
+the existing simultaneous-descent theorem, obtaining a lower gap or an
+actual translated landing.  In the fixed-\(t\) horn, finite pigeonhole
+must additionally fix the residual support \(K\), after which the moving
+part is exactly repeated copies of the injective landing \(z_j\).
+
 # GENERAL ORDER: THE PRIVATE LANDING IS PEELED COMPLETELY (2026-07-29)
 
 The multiplicity obstruction in the private-support descent has been

@@ -31698,6 +31698,321 @@ theorem privateLandingSupport_peels_to_cleanCore_sameDisplacement
       hhitsEq, hGmem, hGH, hGY, hGB, hHeq,
       hsMarked, hqMarked, hδpos, hlowerDestroy⟩
 
+/-- One fully aligned private-core stage at a prescribed floor.
+
+This packages the data which survive the complete landing peel: the target
+still has its successor-predecessor origin `q = m - a`, its current-stream
+origin `q = currentTarget j + δ`, and a strict lower-rank clean core whose
+translate by that same `δ` is destroyed. -/
+def HasAlignedPrivateCoreStageAtTarget
+    (A B Y : Set ℕ) (k r : ℕ)
+    (oldTarget currentTarget landing : ℕ → ℕ)
+    (t L : ℕ) : Prop :=
+  ∃ n m, ∃ E : Finset ℕ, ∃ a j q,
+    ∃ H K : Finset ℕ, ∃ δ,
+    ∃ hits : List ℕ,
+      L ≤ n ∧
+      L ≤ j ∧
+      L ≤ q ∧
+      oldTarget n < m ∧
+      m < oldTarget (n + 1) ∧
+      E ∈
+        additiveSupportFamily A (k + 1)
+          (oldTarget n) ∧
+      Disjoint (E : Set ℕ) B ∧
+      DestroysAt
+        (additiveSupportFamily A (k + 1)) B m ∧
+      a ∈ E ∧
+      (k + 1) * a ≤ oldTarget n ∧
+      q = m - a ∧
+      currentTarget j < q ∧
+      q < currentTarget (j + 1) ∧
+      H ∈
+        additiveSupportFamily A k
+          (currentTarget j) ∧
+      Disjoint (H : Set ℕ) B ∧
+      landing j ∈ H ∧
+      Disjoint (H : Set ℕ)
+        (Y \ {landing j}) ∧
+      δ = q - currentTarget j ∧
+      0 < δ ∧
+      0 < hits.length ∧
+      hits.length + r = k ∧
+      (∀ x ∈ hits, x = landing j) ∧
+      K ∈ additiveSupportFamily A r t ∧
+      K ⊆ H ∧
+      Disjoint (K : Set ℕ) Y ∧
+      Disjoint (K : Set ℕ) B ∧
+      H =
+        hits.foldr (fun x F => insert x F) K ∧
+      currentTarget j =
+        hits.length * landing j + t ∧
+      q =
+        hits.length * landing j + (t + δ) ∧
+      (additiveSupportFamily A k q).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A k) B q ∧
+      DestroysAt
+        (additiveSupportFamily A r) B (t + δ)
+
+/-- An aligned private-core stage with its residual target existentially
+hidden.  The target-refined form above is used for the next
+growth-versus-concentration split. -/
+def HasAlignedPrivateCoreStageAt
+    (A B Y : Set ℕ) (k r : ℕ)
+    (oldTarget currentTarget landing : ℕ → ℕ)
+    (L : ℕ) : Prop :=
+  ∃ t,
+    HasAlignedPrivateCoreStageAtTarget
+      A B Y k r oldTarget currentTarget landing t L
+
+/-- Lowering the requested floor preserves a target-refined stage. -/
+theorem HasAlignedPrivateCoreStageAtTarget.mono_floor
+    {A B Y : Set ℕ} {k r t : ℕ}
+    {oldTarget currentTarget landing : ℕ → ℕ}
+    {L M : ℕ}
+    (hLM : L ≤ M)
+    (hstage :
+      HasAlignedPrivateCoreStageAtTarget
+        A B Y k r oldTarget currentTarget landing t M) :
+    HasAlignedPrivateCoreStageAtTarget
+      A B Y k r oldTarget currentTarget landing t L := by
+  obtain ⟨n, m, E, a, j, q, H, K, δ, hits,
+      hnM, hjM, hqM, hrest⟩ :=
+    hstage
+  exact
+    ⟨n, m, E, a, j, q, H, K, δ, hits,
+      hLM.trans hnM, hLM.trans hjM, hLM.trans hqM,
+      hrest⟩
+
+/-- Lowering the requested floor preserves an aligned private-core stage. -/
+theorem HasAlignedPrivateCoreStageAt.mono_floor
+    {A B Y : Set ℕ} {k r : ℕ}
+    {oldTarget currentTarget landing : ℕ → ℕ}
+    {L M : ℕ}
+    (hLM : L ≤ M)
+    (hstage :
+      HasAlignedPrivateCoreStageAt
+        A B Y k r oldTarget currentTarget landing M) :
+    HasAlignedPrivateCoreStageAt
+      A B Y k r oldTarget currentTarget landing L := by
+  obtain ⟨t, htargetStage⟩ :=
+    hstage
+  exact
+    ⟨t,
+      HasAlignedPrivateCoreStageAtTarget.mono_floor
+        hLM htargetStage⟩
+
+/-- Finite-rank homogenization of the fully aligned stages.
+
+If every floor admits a stage at some strict lower rank, one fixed rank
+`r < k` occurs at all floors after cofinal thinning.  All arithmetic,
+private-support, and same-displacement data remain inside the stage
+predicate; only the finite rank label is pigeonholed. -/
+theorem cofinal_alignedPrivateCoreStages_fixRank
+    {A B Y : Set ℕ} {k : ℕ}
+    {oldTarget currentTarget landing : ℕ → ℕ}
+    (hstage : ∀ L, ∃ r, r < k ∧
+      HasAlignedPrivateCoreStageAt
+        A B Y k r oldTarget currentTarget landing L) :
+    ∃ r, r < k ∧ ∀ L,
+      HasAlignedPrivateCoreStageAt
+        A B Y k r oldTarget currentTarget landing L := by
+  classical
+  let ranks : Finset ℕ := Finset.range k
+  let P : ℕ → ℕ → Prop := fun r L =>
+    HasAlignedPrivateCoreStageAt
+      A B Y k r oldTarget currentTarget landing L
+  have hcofinal :
+      ∀ X, ∃ L, X < L ∧ ∃ r ∈ ranks, P r L := by
+    intro X
+    let L := X + 1
+    obtain ⟨r, hrk, hrStage⟩ :=
+      hstage L
+    exact
+      ⟨L, by omega, r, Finset.mem_range.mpr hrk,
+        hrStage⟩
+  obtain ⟨r, hrRanks, hrCofinal⟩ :=
+    finite_cofinal_pigeonhole hcofinal
+  have hrk : r < k :=
+    Finset.mem_range.mp hrRanks
+  refine ⟨r, hrk, ?_⟩
+  intro L
+  obtain ⟨M, hLM, hrStage⟩ :=
+    hrCofinal L
+  exact
+    HasAlignedPrivateCoreStageAt.mono_floor
+      (Nat.le_of_lt hLM) hrStage
+
+/-- A fixed-rank private-core stream has only two residual-target shapes.
+
+Either its clean residual target `t` can be required above every target
+floor while the aligned stage remains arbitrarily late, or one literal
+target `t` recurs at every stage floor.  The second conclusion is stronger
+than mere boundedness: finite cofinal pigeonhole fixes the arithmetic root
+target once and for all. -/
+theorem cofinal_alignedPrivateCoreStages_targetGrowth_or_fixed
+    {A B Y : Set ℕ} {k r : ℕ}
+    {oldTarget currentTarget landing : ℕ → ℕ}
+    (hstage : ∀ L,
+      HasAlignedPrivateCoreStageAt
+        A B Y k r oldTarget currentTarget landing L) :
+    (∀ targetFloor stageFloor,
+      ∃ t, targetFloor ≤ t ∧
+        HasAlignedPrivateCoreStageAtTarget
+          A B Y k r oldTarget currentTarget landing
+            t stageFloor) ∨
+      ∃ t, ∀ stageFloor,
+        HasAlignedPrivateCoreStageAtTarget
+          A B Y k r oldTarget currentTarget landing
+            t stageFloor := by
+  classical
+  by_cases hgrowth :
+      ∀ targetFloor stageFloor,
+        ∃ t, targetFloor ≤ t ∧
+          HasAlignedPrivateCoreStageAtTarget
+            A B Y k r oldTarget currentTarget landing
+              t stageFloor
+  · exact Or.inl hgrowth
+  · right
+    obtain ⟨targetFloor, htargetFloor⟩ :=
+      not_forall.mp hgrowth
+    obtain ⟨stageFloor₀, hbounded⟩ :=
+      not_forall.mp htargetFloor
+    push Not at hbounded
+    let targets : Finset ℕ :=
+      Finset.range targetFloor
+    let P : ℕ → ℕ → Prop := fun t L =>
+      HasAlignedPrivateCoreStageAtTarget
+        A B Y k r oldTarget currentTarget landing t L
+    have hcofinal :
+        ∀ X, ∃ L, X < L ∧ ∃ t ∈ targets, P t L := by
+      intro X
+      let L := max (X + 1) stageFloor₀
+      obtain ⟨t, htStage⟩ :=
+        hstage L
+      have htTarget : t < targetFloor := by
+        by_contra htNot
+        have htargetLe : targetFloor ≤ t :=
+          Nat.le_of_not_gt htNot
+        exact
+          hbounded t htargetLe
+            (HasAlignedPrivateCoreStageAtTarget.mono_floor
+              (le_max_right (X + 1) stageFloor₀)
+              htStage)
+      exact
+        ⟨L,
+          (Nat.lt_succ_self X).trans_le
+            (le_max_left (X + 1) stageFloor₀),
+          t, Finset.mem_range.mpr htTarget, htStage⟩
+    obtain ⟨t, _htTargets, htCofinal⟩ :=
+      finite_cofinal_pigeonhole hcofinal
+    refine ⟨t, ?_⟩
+    intro stageFloor
+    obtain ⟨L, hstageFloorL, htStage⟩ :=
+      htCofinal stageFloor
+    exact
+      HasAlignedPrivateCoreStageAtTarget.mono_floor
+        (Nat.le_of_lt hstageFloorL) htStage
+
+/-- Rank zero is a rigid diagonal, not an anonymous terminal gap.
+
+At residual rank zero the clean core represents only target zero and has
+empty support.  Every peeled occurrence equals the landing point and their
+number is exactly `k`; hence the private current support is the singleton
+`{landing j}` (with multiplicity hidden by the finset), while
+
+`currentTarget j = k * landing j`
+
+and the independently aligned destroyed target remains
+
+`q = m - a = k * landing j + δ`.
+-/
+theorem HasAlignedPrivateCoreStageAtTarget.rankZero_forces_diagonal
+    {A B Y : Set ℕ} {k t L : ℕ}
+    {oldTarget currentTarget landing : ℕ → ℕ}
+    (hstage :
+      HasAlignedPrivateCoreStageAtTarget
+        A B Y k 0 oldTarget currentTarget landing t L) :
+    t = 0 ∧
+      ∃ n m, ∃ E : Finset ℕ, ∃ a j q,
+      ∃ H : Finset ℕ, ∃ δ,
+        L ≤ n ∧
+        L ≤ j ∧
+        L ≤ q ∧
+        oldTarget n < m ∧
+        m < oldTarget (n + 1) ∧
+        E ∈
+          additiveSupportFamily A (k + 1)
+            (oldTarget n) ∧
+        Disjoint (E : Set ℕ) B ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) B m ∧
+        a ∈ E ∧
+        q = m - a ∧
+        currentTarget j < q ∧
+        q < currentTarget (j + 1) ∧
+        H = {landing j} ∧
+        H ∈
+          additiveSupportFamily A k
+            (currentTarget j) ∧
+        Disjoint (H : Set ℕ) B ∧
+        δ = q - currentTarget j ∧
+        0 < δ ∧
+        currentTarget j = k * landing j ∧
+        q = k * landing j + δ ∧
+        (additiveSupportFamily A k q).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A k) B q := by
+  classical
+  obtain ⟨n, m, E, a, j, q, H, K, δ, hits,
+      hnL, hjL, hqL, hnLower, hnUpper,
+      hEmem, hEB, hmDestroy, haE, _haAverage,
+      hqEq, hjLower, hjUpper, hHmem, hHB,
+      _hlandingH, _hHprivate, hδEq, hδpos,
+      hhitsPos, hlength, hhitsEq, hKmem,
+      _hKH, _hKY, _hKB, hHeq,
+      hcurrentSplit, hqSplit, hqNonempty,
+      hqDestroy, _hcoreDestroy⟩ :=
+    hstage
+  obtain ⟨htzero, hKempty⟩ :=
+    additiveSupportFamily_zero_target_and_support
+      hKmem
+  have hhitsLength : hits.length = k := by
+    omega
+  have hHsingleton : H = {landing j} := by
+    rw [hHeq, foldr_insert_eq_toFinset_union,
+      hKempty]
+    simp only [Finset.union_empty]
+    ext x
+    simp only [List.mem_toFinset, Finset.mem_singleton]
+    constructor
+    · intro hxHits
+      exact hhitsEq x hxHits
+    · intro hx
+      subst x
+      obtain ⟨y, hyHits⟩ :=
+        List.exists_mem_of_ne_nil hits
+          (List.length_pos_iff.mp hhitsPos)
+      have hyEq : y = landing j :=
+        hhitsEq y hyHits
+      simpa only [hyEq] using hyHits
+  have hcurrentDiagonal :
+      currentTarget j = k * landing j := by
+    rw [hhitsLength, htzero] at hcurrentSplit
+    simpa using hcurrentSplit
+  have hqDiagonal :
+      q = k * landing j + δ := by
+    rw [hhitsLength, htzero] at hqSplit
+    simpa using hqSplit
+  exact
+    ⟨htzero, n, m, E, a, j, q, H, δ,
+      hnL, hjL, hqL, hnLower, hnUpper,
+      hEmem, hEB, hmDestroy, haE, hqEq,
+      hjLower, hjUpper, hHsingleton, hHmem,
+      hHB, hδEq, hδpos, hcurrentDiagonal,
+      hqDiagonal, hqNonempty, hqDestroy⟩
+
 /-- Every positive-order additive support contains an anchor no larger
 than the average of the represented tuple: `k * a ≤ q`.
 
@@ -53406,5 +53721,105 @@ theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_strictSplit
         hcurrentSplit, hqSplit, hcoreDestroy,
         hHnonempty, hqNonempty, hqDestroy,
         hfan⟩
+
+/-- The clean-core rank no longer migrates.
+
+The preceding counterexample capstone supplies a strict lower rank at each
+late aligned stage.  Applying finite cofinal pigeonhole to that rank while
+keeping the complete stage predicate intact yields one fixed `r < k`
+cofinally.  Thus the hypothetical counterexample must choose between the
+literal translated-hole horn and a single lower-order arithmetic stream;
+it cannot evade composition by changing the residual rank from stage to
+stage. -/
+theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_fixedRankPrivateCoreStream
+    {A : Set ℕ} {k : ℕ}
+    (hk : 2 < k)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1)) :
+    ∃ Y : Set ℕ, ∃ oldTarget : ℕ → ℕ,
+      Y ⊆ A ∧
+      Y.Infinite ∧
+      StrictMono oldTarget ∧
+      (∀ n,
+        ∃ E ∈
+            additiveSupportFamily A (k + 1)
+              (oldTarget n),
+          Disjoint (E : Set ℕ) Y) ∧
+      ((∀ pointFloor targetFloor,
+          HasCurrentLargeTranslationHoleAt
+            A Y k oldTarget pointFloor targetFloor) ∨
+        ∃ B : Set ℕ, ∃ currentTarget landing : ℕ → ℕ,
+        ∃ r,
+          B ⊆ Y ∧
+          B.Infinite ∧
+          (Y \ B).Infinite ∧
+          StrictMono currentTarget ∧
+          Function.Injective landing ∧
+          (∀ i, landing i ∈ Y \ B) ∧
+          r < k ∧
+          ∀ L,
+            HasAlignedPrivateCoreStageAt
+              A B Y k r oldTarget currentTarget landing L) := by
+  obtain ⟨Y, oldTarget, hYA, hYInfinite,
+      holdStrict, holdSurvival, hholes | hsplit⟩ :=
+    stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_strictSplitTwoRankStreams
+      hk hminimal hcounter
+  · exact
+      ⟨Y, oldTarget, hYA, hYInfinite,
+        holdStrict, holdSurvival, Or.inl hholes⟩
+  · refine
+      ⟨Y, oldTarget, hYA, hYInfinite,
+        holdStrict, holdSurvival, ?_⟩
+    right
+    obtain ⟨B, currentTarget, landing,
+        hBY, hBInfinite, hYdiffBInfinite,
+        hcurrentStrict, hlandingInjective,
+        hlandingRange, _hprivateLandingSupport,
+        _hcurrentDestroyedY, _hcurrentSurvivalB,
+        _hcurrentSurvivalSupports, _holdSurvivalB,
+        _hcurrentDestroyB, _hcurrentLower,
+        _hsuccessorDestroyB, _hrepresentedB,
+        hvaryingRank⟩ :=
+      hsplit
+    have hstage :
+        ∀ L, ∃ r, r < k ∧
+          HasAlignedPrivateCoreStageAt
+            A B Y k r oldTarget currentTarget landing L := by
+      intro L
+      obtain ⟨n, m, E, a, j, q, H, G, K, δ,
+          hits, r, t,
+          hnL, hnLower, hnUpper, hEmem, hEB,
+          hmDestroy, haE, haAverage, hqEq,
+          hqFloor, hjFloor, hjLower, hjUpper,
+          hHmem, hHB, hprivate, hδEq, hδpos,
+          _hGmem, _hGH, _hGB, _htranslated,
+          _hmarkedDestroy,
+          hhitsPos, hlength, hrk, hhitsEq,
+          hKmem, hKH, hKY, hKB, hHeq,
+          hcurrentSplit, hqSplit, hcoreDestroy,
+          _hHnonempty, hqNonempty, hqDestroy,
+          _hfan⟩ :=
+        hvaryingRank L
+      exact
+        ⟨r, hrk, t,
+          n, m, E, a, j, q, H, K, δ, hits,
+          hnL, hjFloor, hqFloor,
+          hnLower, hnUpper, hEmem, hEB,
+          hmDestroy, haE, haAverage, hqEq,
+          hjLower, hjUpper, hHmem, hHB,
+          hprivate.1, hprivate.2,
+          hδEq, hδpos, hhitsPos, hlength,
+          hhitsEq, hKmem, hKH, hKY, hKB,
+          hHeq, hcurrentSplit, hqSplit,
+          hqNonempty, hqDestroy, hcoreDestroy⟩
+    obtain ⟨r, hrk, hfixedRank⟩ :=
+      cofinal_alignedPrivateCoreStages_fixRank
+        hstage
+    exact
+      ⟨B, currentTarget, landing, r,
+        hBY, hBInfinite, hYdiffBInfinite,
+        hcurrentStrict, hlandingInjective,
+        hlandingRange, hrk, hfixedRank⟩
 
 end Erdos881
