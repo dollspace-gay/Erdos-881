@@ -33629,6 +33629,89 @@ The destination support survives `before` and contains the newly inserted
 point `b`.  Extensionality identifies `after` with the canonical
 one-block override, supplying all fields of
 `AnchoredCertificateEscapeTransitionData`. -/
+theorem oneBlockFailureTransfer_has_anchoredCertificateEscapeTransitionData
+    {A : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {p q i x b : ℕ}
+    {before after : BlockSelector cell}
+    {G : Finset ℕ}
+    (hpQ : p ∈ Q)
+    (hqQ : q ∈ Q)
+    (hbeforeI : (before i).1 = x)
+    (hafterI : (after i).1 = b)
+    (hsame :
+      ∀ ℓ, ℓ ≠ i →
+        (before ℓ).1 = (after ℓ).1)
+    (hpDestroy :
+      DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (selectedSet before) p)
+    (hprivate :
+      ∀ r ∈ Q, r ≠ p →
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet before) r)
+    (hbCell : b ∈ cell i)
+    (hbx : b ≠ x)
+    (hqDestroy :
+      DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (selectedSet after) q)
+    (hGmem :
+      G ∈ additiveSupportFamily A (k + 1) q)
+    (hGbefore :
+      Disjoint (G : Set ℕ)
+        (selectedSet before))
+    (hbG : b ∈ G) :
+    ∃ w : AnchoredCertificateEscapeTransitionData
+        (additiveSupportFamily A (k + 1))
+        Q cell p q,
+      w.cellIndex = i ∧
+      w.markedPoint = x ∧
+      w.baseSelector = before ∧
+      w.newPoint = b ∧
+      w.anchorSupport = G ∧
+      overrideBlockSelector
+          w.baseSelector w.cellIndex
+            ⟨w.newPoint, w.newPoint_mem⟩ =
+        after := by
+  classical
+  have hxCell : x ∈ cell i := by
+    rw [← hbeforeI]
+    exact (before i).2
+  let replacement : {z // z ∈ cell i} :=
+    ⟨b, hbCell⟩
+  have hoverride :
+      overrideBlockSelector before i replacement =
+        after := by
+    funext ℓ
+    apply Subtype.ext
+    by_cases hiℓ : i = ℓ
+    · subst ℓ
+      simpa only [replacement, overrideBlockSelector,
+        dif_pos rfl] using hafterI.symm
+    · have hℓi : ℓ ≠ i := by
+        exact fun h => hiℓ h.symm
+      simpa only [replacement, overrideBlockSelector,
+        dif_neg hiℓ] using hsame ℓ hℓi
+  have hqOverride :
+      DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (selectedSet
+          (overrideBlockSelector before i replacement)) q := by
+    rw [hoverride]
+    exact hqDestroy
+  let w : AnchoredCertificateEscapeTransitionData
+      (additiveSupportFamily A (k + 1))
+      Q cell p q :=
+    ⟨i, x, hxCell, before, hpDestroy,
+      hprivate, hbeforeI, b, hbCell, hbx,
+      hqOverride, G, hGmem, hGbefore, hbG⟩
+  refine ⟨w, rfl, rfl, rfl, rfl, rfl, ?_⟩
+  simpa only [w, replacement] using hoverride
+
+/-- Proposition-level wrapper around the provenance-retaining one-block
+edge constructor. -/
 theorem oneBlockFailureTransfer_has_anchoredCertificateEscapeTransition
     {A : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -33637,7 +33720,6 @@ theorem oneBlockFailureTransfer_has_anchoredCertificateEscapeTransition
     {G : Finset ℕ}
     (hpQ : p ∈ Q)
     (hqQ : q ∈ Q)
-    (hqp : q ≠ p)
     (hbeforeI : (before i).1 = x)
     (hafterI : (after i).1 = b)
     (hsame :
@@ -33667,35 +33749,13 @@ theorem oneBlockFailureTransfer_has_anchoredCertificateEscapeTransition
     HasAnchoredCertificateEscapeTransition
       (additiveSupportFamily A (k + 1))
       Q cell p q := by
-  classical
-  have hxCell : x ∈ cell i := by
-    rw [← hbeforeI]
-    exact (before i).2
-  let replacement : {z // z ∈ cell i} :=
-    ⟨b, hbCell⟩
-  have hoverride :
-      overrideBlockSelector before i replacement =
-        after := by
-    funext ℓ
-    apply Subtype.ext
-    by_cases hiℓ : i = ℓ
-    · subst ℓ
-      simpa only [replacement, overrideBlockSelector,
-        dif_pos rfl] using hafterI.symm
-    · have hℓi : ℓ ≠ i := by
-        exact fun h => hiℓ h.symm
-      simpa only [replacement, overrideBlockSelector,
-        dif_neg hiℓ] using hsame ℓ hℓi
-  have hqOverride :
-      DestroysAt
-        (additiveSupportFamily A (k + 1))
-        (selectedSet
-          (overrideBlockSelector before i replacement)) q := by
-    rw [hoverride]
-    exact hqDestroy
-  exact ⟨⟨i, x, hxCell, before, hpDestroy,
-    hprivate, hbeforeI, b, hbCell, hbx,
-    hqOverride, G, hGmem, hGbefore, hbG⟩⟩
+  obtain ⟨w, _hwi, _hwx, _hwBefore,
+      _hwb, _hwG, _hwOverride⟩ :=
+    oneBlockFailureTransfer_has_anchoredCertificateEscapeTransitionData
+      hpQ hqQ hbeforeI hafterI hsame hpDestroy
+        hprivate hbCell hbx hqDestroy
+        hGmem hGbefore hbG
+  exact ⟨w⟩
 
 /-- Generic finite-cycle closure for anchored certificate transitions.
 
@@ -33965,6 +34025,360 @@ theorem twoMarkerFailureTransfers_force_distinctTargets_or_wideSupport
       c, ⟨Finset.mem_coe.mpr hcSupport, hcC⟩,
       hbc⟩
   · exact Or.inl htargets
+
+/-- Hall amplification for two genuine anchored exits at every certificate
+target.
+
+If the two-point exit neighborhoods satisfy Hall, choose a system of
+distinct representatives.  On the finite certificate this choice is
+surjective, has no fixed points, and therefore contains a nontrivial
+anchored escape cycle.
+
+If Hall fails, count the two Boolean exit incidences from every source in a
+deficient set.  Some destination receives more than two incidences; side
+injectivity makes their source targets distinct.  Thus the alternative is
+not a vague boundary loss but at least three concrete incoming anchored
+edges at one target. -/
+theorem twoExitAnchoredTransitions_force_cycleCover_or_threeIncoming
+    {R : SupportFamily}
+    {Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hQ : Q.Nonempty)
+    (exit :
+      {q // q ∈ Q} → Bool → {q // q ∈ Q})
+    (hexitInjective :
+      ∀ p, Function.Injective (exit p))
+    (hexitNe :
+      ∀ p side, exit p side ≠ p)
+    (hedge :
+      ∀ p side,
+        HasAnchoredCertificateEscapeTransition
+          R Q cell p.1 (exit p side).1) :
+    (∃ next : {q // q ∈ Q} → {q // q ∈ Q},
+        Function.Surjective next ∧
+        (∀ p,
+          HasAnchoredCertificateEscapeTransition
+            R Q cell p.1 (next p).1) ∧
+        HasAnchoredCertificateEscapeCycle
+          R Q cell) ∨
+      ∃ y : {q // q ∈ Q},
+        ∃ T : Finset {q // q ∈ Q},
+          2 < T.card ∧
+          ∀ p ∈ T,
+            ∃ side,
+              exit p side = y ∧
+              HasAnchoredCertificateEscapeTransition
+                R Q cell p.1 y.1 := by
+  classical
+  let neighbors :
+      {q // q ∈ Q} → Finset {q // q ∈ Q} :=
+    fun p =>
+      (Finset.univ : Finset Bool).image (exit p)
+  by_cases hHall :
+      ∀ S : Finset {q // q ∈ Q},
+        S.card ≤ (S.biUnion neighbors).card
+  · left
+    obtain ⟨next, hnextInjective, hnextMem⟩ :=
+      (Finset.all_card_le_biUnion_card_iff_existsInjective'
+        neighbors).mp hHall
+    have hnextSurjective : Function.Surjective next :=
+      Finite.surjective_of_injective hnextInjective
+    have hside :
+        ∀ p, ∃ side, exit p side = next p := by
+      intro p
+      have hmem :
+          next p ∈
+            (Finset.univ : Finset Bool).image
+              (exit p) := by
+        simpa only [neighbors] using hnextMem p
+      obtain ⟨side, _hsideUniv, hsideEq⟩ :=
+        Finset.mem_image.mp hmem
+      exact ⟨side, hsideEq⟩
+    have hnextNe : ∀ p, next p ≠ p := by
+      intro p
+      obtain ⟨side, hsideEq⟩ := hside p
+      rw [← hsideEq]
+      exact hexitNe p side
+    have hnextEdge :
+        ∀ p,
+          HasAnchoredCertificateEscapeTransition
+            R Q cell p.1 (next p).1 := by
+      intro p
+      obtain ⟨side, hsideEq⟩ := hside p
+      rw [← hsideEq]
+      exact hedge p side
+    obtain ⟨q₀, hq₀Q⟩ := hQ
+    letI : Nonempty {q // q ∈ Q} :=
+      ⟨⟨q₀, hq₀Q⟩⟩
+    obtain ⟨q, period, hperiodLower, hperiod⟩ :=
+      finite_selfMap_without_fixedPoint_has_nontrivialCycle
+        next hnextNe
+    have hcycle :
+        HasAnchoredCertificateEscapeCycle
+          R Q cell :=
+      ⟨next, hnextEdge, hnextNe,
+        q, period, hperiodLower, hperiod⟩
+    exact ⟨next, hnextSurjective,
+      hnextEdge, hcycle⟩
+  · right
+    obtain ⟨S, hdeficientRaw⟩ :=
+      not_forall.mp hHall
+    have hdeficient :
+        (S.biUnion neighbors).card < S.card := by
+      omega
+    let holes : Finset {q // q ∈ Q} :=
+      S.biUnion neighbors
+    let pigeons :
+        Finset ({q // q ∈ Q} × Bool) :=
+      S.product Finset.univ
+    let destination :
+        ({q // q ∈ Q} × Bool) →
+          {q // q ∈ Q} :=
+      fun pair => exit pair.1 pair.2
+    have hmaps :
+        ∀ pair ∈ pigeons,
+          destination pair ∈ holes := by
+      intro pair hpair
+      have hpS :
+          pair.1 ∈ S :=
+        (Finset.mem_product.mp hpair).1
+      apply Finset.mem_biUnion.mpr
+      refine ⟨pair.1, hpS, ?_⟩
+      apply Finset.mem_image.mpr
+      exact ⟨pair.2, Finset.mem_univ _,
+        rfl⟩
+    have hholesSmall : holes.card < S.card := by
+      simpa only [holes] using hdeficient
+    have hpigeonsLarge :
+        holes.card * 2 < pigeons.card := by
+      calc
+        holes.card * 2 < S.card * 2 :=
+          (Nat.mul_lt_mul_right
+            (show 0 < 2 by omega)).2 hholesSmall
+        _ = pigeons.card := by
+          simp [pigeons]
+    obtain ⟨y, _hyHoles, hyFiber⟩ :=
+      Finset.exists_lt_card_fiber_of_mul_lt_card_of_maps_to
+        (f := destination)
+        (s := pigeons) (t := holes)
+        hmaps hpigeonsLarge
+    let incoming :
+        Finset ({q // q ∈ Q} × Bool) :=
+      pigeons.filter fun pair =>
+        destination pair = y
+    let source :
+        ({q // q ∈ Q} × Bool) →
+          {q // q ∈ Q} :=
+      fun pair => pair.1
+    let T : Finset {q // q ∈ Q} :=
+      incoming.image source
+    have hsourceInjective :
+        Set.InjOn source
+          (incoming :
+            Set ({q // q ∈ Q} × Bool)) := by
+      rintro ⟨p, side⟩ hpIncoming
+        ⟨q, side'⟩ hqIncoming hsourceEq
+      simp only [source] at hsourceEq
+      subst q
+      have hsideEq :
+          exit p side = exit p side' := by
+        exact
+          (Finset.mem_filter.mp hpIncoming).2.trans
+            (Finset.mem_filter.mp
+              hqIncoming).2.symm
+      have : side = side' :=
+        hexitInjective p hsideEq
+      subst side'
+      rfl
+    have hTcard : T.card = incoming.card :=
+      Finset.card_image_of_injOn hsourceInjective
+    have hTlarge : 2 < T.card := by
+      rw [hTcard]
+      simpa only [incoming, destination,
+        pigeons] using hyFiber
+    refine ⟨y, T, hTlarge, ?_⟩
+    intro p hpT
+    obtain ⟨pair, hpairIncoming, hpairSource⟩ :=
+      Finset.mem_image.mp hpT
+    have hpairSource' : pair.1 = p := by
+      simpa only [source] using hpairSource
+    subst p
+    have hdestination :
+        exit pair.1 pair.2 = y :=
+      (Finset.mem_filter.mp hpairIncoming).2
+    refine ⟨pair.2, ?_, ?_⟩
+    · exact hdestination
+    · rw [← hdestination]
+      exact hedge pair.1 pair.2
+
+/-- A source target has two genuine anchored exits to two different
+certificate targets. -/
+def HasTwoAnchoredCertificateEscapeExitsAt
+    (R : SupportFamily) (Q : Finset ℕ)
+    (cell : ℕ → Finset ℕ)
+    (p : {q // q ∈ Q}) : Prop :=
+  ∃ exit : Bool → {q // q ∈ Q},
+    Function.Injective exit ∧
+    (∀ side, exit side ≠ p) ∧
+    ∀ side,
+      HasAnchoredCertificateEscapeTransition
+        R Q cell p.1 (exit side).1
+
+/-- Package two marker replacements at one source as the exact local input
+for the Hall amplifier.
+
+If the stored destination labels coincide, the earlier incidence lemma
+returns a wide support.  Otherwise the two destination subtypes define an
+injective Boolean exit map, and their retained transition witnesses give a
+two-exit anchored fork. -/
+theorem twoMarkerAnchoredTransitions_force_wideSupport_or_twoExitFork
+    {A C : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ}
+    (p : {q // q ∈ Q})
+    {surviving :
+      {q // q ∈ Q.erase p.1} → Finset ℕ}
+    (hsurvivingMem :
+      ∀ q,
+        surviving q ∈
+          additiveSupportFamily A (k + 1) q.1)
+    {i b c : ℕ}
+    (hbCell : b ∈ cell i)
+    (hcCell : c ∈ cell i)
+    (hbc : b ≠ c)
+    (qb qc : {q // q ∈ Q.erase p.1})
+    (hbSupport : b ∈ surviving qb)
+    (hcSupport : c ∈ surviving qc)
+    (hbEdge :
+      HasAnchoredCertificateEscapeTransition
+        (additiveSupportFamily A (k + 1))
+        Q cell p.1 qb.1)
+    (hcEdge :
+      HasAnchoredCertificateEscapeTransition
+        (additiveSupportFamily A (k + 1))
+        Q cell p.1 qc.1) :
+    HasWideReservoirSupportAt
+        (additiveSupportFamily A (k + 1))
+        C qb.1 ∨
+      HasTwoAnchoredCertificateEscapeExitsAt
+        (additiveSupportFamily A (k + 1))
+        Q cell p := by
+  classical
+  obtain htargets | hwide :=
+    twoMarkerFailureTransfers_force_distinctTargets_or_wideSupport
+      P hsurvivingMem hbCell hcCell hbc
+        qb qc hbSupport hcSupport
+  · right
+    let qbQ : {q // q ∈ Q} :=
+      ⟨qb.1, (Finset.mem_erase.mp qb.2).2⟩
+    let qcQ : {q // q ∈ Q} :=
+      ⟨qc.1, (Finset.mem_erase.mp qc.2).2⟩
+    let exit : Bool → {q // q ∈ Q} :=
+      fun side => if side then qbQ else qcQ
+    have hexitInjective :
+        Function.Injective exit := by
+      intro left right hlr
+      cases left <;> cases right
+      · rfl
+      · have hval := congrArg Subtype.val hlr
+        exact (htargets hval.symm).elim
+      · have hval := congrArg Subtype.val hlr
+        exact (htargets hval).elim
+      · rfl
+    have hexitNe :
+        ∀ side, exit side ≠ p := by
+      intro side heq
+      have hval := congrArg Subtype.val heq
+      cases side
+      · exact
+          (Finset.mem_erase.mp qc.2).1 hval
+      · exact
+          (Finset.mem_erase.mp qb.2).1 hval
+    refine ⟨exit, hexitInjective, hexitNe, ?_⟩
+    intro side
+    cases side
+    · simpa only [exit, Bool.false_eq_true,
+        ↓reduceIte, qcQ] using hcEdge
+    · simpa only [exit, ↓reduceIte, qbQ] using hbEdge
+  · exact Or.inl hwide
+
+/-- Global weld of the two-marker fork to the Hall amplifier.
+
+If any source already produces a wide destination support, retain it.
+Otherwise choose the two concrete exits supplied at every certificate
+target and apply
+`twoExitAnchoredTransitions_force_cycleCover_or_threeIncoming`.  The only
+remaining outcomes are a surjective anchored cycle cover or three distinct
+incoming anchored edges at one target. -/
+theorem twoExitOrWideAtEveryTarget_force_wide_or_cycleCover_or_threeIncoming
+    {R : SupportFamily}
+    {K : Set ℕ}
+    {Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hQ : Q.Nonempty)
+    (hlocal :
+      ∀ p : {q // q ∈ Q},
+        (∃ q ∈ Q,
+          HasWideReservoirSupportAt R K q) ∨
+        HasTwoAnchoredCertificateEscapeExitsAt
+          R Q cell p) :
+    (∃ q ∈ Q,
+        HasWideReservoirSupportAt R K q) ∨
+      (∃ next : {q // q ∈ Q} → {q // q ∈ Q},
+          Function.Surjective next ∧
+          (∀ p,
+            HasAnchoredCertificateEscapeTransition
+              R Q cell p.1 (next p).1) ∧
+          HasAnchoredCertificateEscapeCycle
+            R Q cell) ∨
+      ∃ y : {q // q ∈ Q},
+        ∃ T : Finset {q // q ∈ Q},
+          2 < T.card ∧
+          ∀ p ∈ T,
+            HasAnchoredCertificateEscapeTransition
+              R Q cell p.1 y.1 := by
+  classical
+  by_cases hwide :
+      ∃ q ∈ Q,
+        HasWideReservoirSupportAt R K q
+  · exact Or.inl hwide
+  · right
+    have htwo :
+        ∀ p : {q // q ∈ Q},
+          HasTwoAnchoredCertificateEscapeExitsAt
+            R Q cell p := by
+      intro p
+      rcases hlocal p with hpWide | hpTwo
+      · exact False.elim (hwide hpWide)
+      · exact hpTwo
+    let exit :
+        {q // q ∈ Q} → Bool → {q // q ∈ Q} :=
+      fun p =>
+        Classical.choose (htwo p)
+    have hexitInjective :
+        ∀ p, Function.Injective (exit p) := by
+      intro p
+      exact (Classical.choose_spec (htwo p)).1
+    have hexitNe :
+        ∀ p side, exit p side ≠ p := by
+      intro p
+      exact (Classical.choose_spec (htwo p)).2.1
+    have hedge :
+        ∀ p side,
+          HasAnchoredCertificateEscapeTransition
+            R Q cell p.1 (exit p side).1 := by
+      intro p
+      exact (Classical.choose_spec (htwo p)).2.2
+    obtain hcycleCover | hincoming :=
+      twoExitAnchoredTransitions_force_cycleCover_or_threeIncoming
+        hQ exit hexitInjective hexitNe hedge
+    · exact Or.inl hcycleCover
+    · right
+      obtain ⟨y, T, hTlarge, hTdata⟩ :=
+        hincoming
+      exact ⟨y, T, hTlarge, fun p hpT =>
+        (hTdata p hpT).choose_spec.2⟩
 
 /-- The nontrivial arithmetic content of the old-collision horn.
 
@@ -34248,6 +34662,245 @@ theorem anchoredPrivateRow_noRankDescent_excludes_distinctOldCollision
       P hrQ E p hk htrace hHmem hsi hij
         hiJ hjJ hcollision
   exact (hnoDescent n hrepresented) hdestroy
+
+/-- In the genuine no-descent branch, an admissible marker replacement
+cannot escape through an old-coordinate collision.  It therefore produces
+an actual anchored certificate edge, while retaining both coherent
+order-`k` cores and the exact one-point traces on the source and destination
+supports.
+
+This is the concrete weld from a private row of the counterexample attack
+to the finite escape graph.  In particular, the graph edge no longer loses
+which replacement point created it or which lower difference it carries. -/
+theorem anchoredPrivateRow_noRankDescent_markerSwap_forces_coherentEscapeData
+    {A C : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ} (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (p : {q // q ∈ Q.erase r})
+    {j a i b : ℕ} {H : Finset ℕ}
+    {s : BlockSelector cell}
+    {surviving :
+      {q // q ∈ Q.erase p.1} → Finset ℕ}
+    {D F J U : Finset ℕ} {x : ℕ}
+    (hk : 2 < k)
+    (htrace :
+      HasAnchoredPrivateRowTrace
+        A k cell Q r hrQ E p j
+          a H s surviving D F x)
+    (hHmem :
+      H ∈ additiveSupportFamily A k (p.1 - a))
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (hU :
+      U =
+        ((Q.erase p.1).attach.biUnion
+          surviving).erase b)
+    (hsi : (s i).1 = x)
+    (hij : i ≠ j)
+    (hiJ : i ∉ J)
+    (hjJ : j ∉ J)
+    (hbBlock : b ∈ (cell i).erase x)
+    (hbF : b ∉ F)
+    (hcontemporary :
+      ∀ ℓ, ℓ ≠ i → ℓ ∉ J →
+        U.card + (k + 1) < (cell ℓ).card)
+    (hnoDescent :
+      ∀ n,
+        (additiveSupportFamily A (k - 1) n).Nonempty →
+        ¬ DestroysAt
+          (additiveSupportFamily A (k - 1))
+          (D : Set ℕ) n) :
+    ∃ q : {z // z ∈ Q.erase p.1},
+    ∃ Hp Hq : Finset ℕ,
+    ∃ w : AnchoredCertificateEscapeTransitionData
+        (additiveSupportFamily A (k + 1))
+        Q cell p.1 q.1,
+      w.cellIndex = i ∧
+      w.markedPoint = x ∧
+      w.newPoint = b ∧
+      w.anchorSupport = surviving q ∧
+      Hp ∈ additiveSupportFamily A k (p.1 - x) ∧
+      F = insert x Hp ∧
+      Hq ∈ additiveSupportFamily A k (q.1 - b) ∧
+      surviving q = insert b Hq ∧
+      (∀ z ∈ F,
+        z ∈ selectedSet w.baseSelector ↔ z = x) ∧
+      ∀ z ∈ surviving q,
+        z ∈ selectedSet
+            (overrideBlockSelector
+              w.baseSelector w.cellIndex
+              ⟨w.newPoint, w.newPoint_mem⟩) ↔
+          z = b := by
+  classical
+  have htraceFields := htrace
+  obtain ⟨_hrCommon, hsurvivingMem,
+      _hsurvivingDisjoint, _hAtJ, _hDnonempty,
+      _hDselected, _hminimal, _hxD, _hFmem,
+      _hprivate, _hFanchor, _hblockCover⟩ :=
+    htraceFields
+  obtain htransfer | hcollision :=
+    anchoredPrivateRow_markerSwap_forces_oneBlockFailureTransfer_or_oldCollision
+      P hrQ E p htrace hcert hU hsi hbBlock hbF
+        hcontemporary
+  · obtain ⟨before, after, q, Hp, Hq,
+        hbeforeI, hafterI, hsame,
+        hpDestroy, hotherBefore, _hpAfter,
+        hqDestroy, hbSupport, hGbefore,
+        hFbeforeExact, hGafterExact,
+        hHpMem, hFHp, hHqMem, hGHq⟩ :=
+      htransfer
+    have hpQ : p.1 ∈ Q :=
+      (Finset.mem_erase.mp p.2).2
+    have hqQ : q.1 ∈ Q :=
+      (Finset.mem_erase.mp q.2).2
+    have hprivateAll :
+        ∀ z ∈ Q, z ≠ p.1 →
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet before) z := by
+      intro z hzQ hzp
+      let z' : {z // z ∈ Q.erase p.1} :=
+        ⟨z, Finset.mem_erase.mpr ⟨hzp, hzQ⟩⟩
+      exact hotherBefore z'
+    have hbCell : b ∈ cell i :=
+      (Finset.mem_erase.mp hbBlock).2
+    have hbx : b ≠ x :=
+      (Finset.mem_erase.mp hbBlock).1
+    obtain ⟨w, hwi, hwx, hwBefore,
+        hwb, hwG, hoverride⟩ :=
+      oneBlockFailureTransfer_has_anchoredCertificateEscapeTransitionData
+        hpQ hqQ hbeforeI hafterI hsame hpDestroy
+          hprivateAll hbCell hbx hqDestroy
+          (hsurvivingMem q) hGbefore hbSupport
+    refine ⟨q, Hp, Hq, w, hwi, hwx, hwb,
+      hwG, hHpMem, hFHp, hHqMem, hGHq,
+      ?_, ?_⟩
+    · simpa only [hwBefore] using hFbeforeExact
+    · intro z hzSupport
+      rw [hoverride]
+      exact hGafterExact z hzSupport
+  · exact False.elim
+      ((anchoredPrivateRow_noRankDescent_excludes_distinctOldCollision
+        P hrQ E p hk htrace hHmem hsi hij
+          hiJ hjJ hnoDescent) hcollision)
+
+/-- Two admissible points in the marker block turn an actual no-descent
+private row into the local Hall input.
+
+Each point separately gives a provenance-retaining escape edge by the
+previous theorem.  If both flips destroy the same target, that target's
+stored support contains both distinct reservoir points and is already
+wide.  Otherwise the two concrete edges form two distinct exits from the
+source certificate target. -/
+theorem anchoredPrivateRow_noRankDescent_twoMarkerSwaps_force_wideSupport_or_twoExitFork
+    {A C : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ} (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (p : {q // q ∈ Q.erase r})
+    {j a i b c : ℕ} {H : Finset ℕ}
+    {s : BlockSelector cell}
+    {surviving :
+      {q // q ∈ Q.erase p.1} → Finset ℕ}
+    {D F J Ub Uc : Finset ℕ} {x : ℕ}
+    (hk : 2 < k)
+    (htrace :
+      HasAnchoredPrivateRowTrace
+        A k cell Q r hrQ E p j
+          a H s surviving D F x)
+    (hHmem :
+      H ∈ additiveSupportFamily A k (p.1 - a))
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (hUb :
+      Ub =
+        ((Q.erase p.1).attach.biUnion
+          surviving).erase b)
+    (hUc :
+      Uc =
+        ((Q.erase p.1).attach.biUnion
+          surviving).erase c)
+    (hsi : (s i).1 = x)
+    (hij : i ≠ j)
+    (hiJ : i ∉ J)
+    (hjJ : j ∉ J)
+    (hbBlock : b ∈ (cell i).erase x)
+    (hcBlock : c ∈ (cell i).erase x)
+    (hbc : b ≠ c)
+    (hbF : b ∉ F)
+    (hcF : c ∉ F)
+    (hcontemporaryB :
+      ∀ ℓ, ℓ ≠ i → ℓ ∉ J →
+        Ub.card + (k + 1) < (cell ℓ).card)
+    (hcontemporaryC :
+      ∀ ℓ, ℓ ≠ i → ℓ ∉ J →
+        Uc.card + (k + 1) < (cell ℓ).card)
+    (hnoDescent :
+      ∀ n,
+        (additiveSupportFamily A (k - 1) n).Nonempty →
+        ¬ DestroysAt
+          (additiveSupportFamily A (k - 1))
+          (D : Set ℕ) n) :
+    (∃ q ∈ Q,
+        HasWideReservoirSupportAt
+          (additiveSupportFamily A (k + 1))
+          C q) ∨
+      HasTwoAnchoredCertificateEscapeExitsAt
+        (additiveSupportFamily A (k + 1))
+        Q cell
+          ⟨p.1, (Finset.mem_erase.mp p.2).2⟩ := by
+  classical
+  have htraceFields := htrace
+  obtain ⟨_hrCommon, hsurvivingMem,
+      _hsurvivingDisjoint, _hAtJ, _hDnonempty,
+      _hDselected, _hminimal, _hxD, _hFmem,
+      _hprivate, _hFanchor, _hblockCover⟩ :=
+    htraceFields
+  obtain ⟨qb, _Hpb, _Hqb, wb,
+      _hwbi, _hwbx, hwbb, hwbG,
+      _hHpbMem, _hFHpb, _hHqbMem, _hGHqb,
+      _hFbeforeB, _hGafterB⟩ :=
+    anchoredPrivateRow_noRankDescent_markerSwap_forces_coherentEscapeData
+      P hrQ E p hk htrace hHmem hcert hUb hsi
+        hij hiJ hjJ hbBlock hbF hcontemporaryB
+        hnoDescent
+  obtain ⟨qc, _Hpc, _Hqc, wc,
+      _hwci, _hwcx, hwcc, hwcG,
+      _hHpcMem, _hFHpc, _hHqcMem, _hGHqc,
+      _hFbeforeC, _hGafterC⟩ :=
+    anchoredPrivateRow_noRankDescent_markerSwap_forces_coherentEscapeData
+      P hrQ E p hk htrace hHmem hcert hUc hsi
+        hij hiJ hjJ hcBlock hcF hcontemporaryC
+        hnoDescent
+  have hbSupport : b ∈ surviving qb := by
+    rw [← hwbG, ← hwbb]
+    exact wb.newPoint_anchor
+  have hcSupport : c ∈ surviving qc := by
+    rw [← hwcG, ← hwcc]
+    exact wc.newPoint_anchor
+  let pQ : {q // q ∈ Q} :=
+    ⟨p.1, (Finset.mem_erase.mp p.2).2⟩
+  obtain hwide | htwo :=
+    twoMarkerAnchoredTransitions_force_wideSupport_or_twoExitFork
+      P pQ hsurvivingMem
+        (Finset.mem_erase.mp hbBlock).2
+        (Finset.mem_erase.mp hcBlock).2
+        hbc qb qc hbSupport hcSupport
+        ⟨wb⟩ ⟨wc⟩
+  · left
+    exact ⟨qb.1, (Finset.mem_erase.mp qb.2).2,
+      hwide⟩
+  · right
+    simpa only [pQ] using htwo
 
 /-- Double pigeonhole for anchored lower cores.
 
