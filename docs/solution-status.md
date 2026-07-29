@@ -1,3 +1,38 @@
+# GENERAL ORDER: LOWER-RANK TRANSLATION GAPS STABILIZE (2026-07-29)
+
+The no-boundary side of the fused-stream fork can no longer escape by
+changing lower rank from stage to stage.
+
+- `cleanSupport_destroyedTranslate_forces_lowerGap_or_boundaryLanding`
+  now retains the key localization invariant through the whole finite
+  descent: every returned lower support `G` is contained in the original
+  clean protected support `E`.  A rank-one boundary endpoint is likewise
+  still an actual point of `E`.
+- `forces_cofinalBoundaryRepairs_or_cofinalContainedLowerTranslationGaps`
+  uses that containment to eliminate the boundary endpoint after one
+  failed repair floor.  A boundary point would repair the same destroyed
+  bracket, contradicting the chosen failure.  What remains cofinally is a
+  literal translated gap
+  `additiveSupportFamily A ℓ (u + δ) = ∅`, with `G ⊆ E`, at some
+  `0 < ℓ < k` and with the exact bracket displacement
+  `m = oldTarget n + δ`.
+- `HasFusedContainedLowerTranslationGapAt` packages precisely this
+  same-bracket, same-translation configuration.
+- `forces_cofinalBoundaryRepairs_or_fixedRankCofinalContainedLowerTranslationGaps`
+  applies the finite pigeonhole principle to the ranks `1,...,k-1`.
+  Unless boundary repairs occur cofinally, one fixed rank `ℓ` supplies
+  contained translated gaps above every floor.
+
+This is a genuine stabilization result, not yet a contradiction.  The
+rank may be `ℓ = 1`; then the conclusion is a protected basis point whose
+translate is missing, information already present in the universal
+literal-hole branch.  The missing amplification is therefore cardinal:
+one must force many same-`δ` holes inside a single protected bracket (so
+the existing translated-hole fusion applies), or, for `ℓ ≥ 2`, compose an
+order-`k` representation of `u + δ` with `G ⊆ E` to repair the destroyed
+target or descend a genuinely smaller invariant.  No full `k ≥ 3`
+solution is claimed.
+
 # GENERAL ORDER: FUSED STREAMS FORCE A LITERAL TRANSLATION BOUNDARY (2026-07-29)
 
 The fused surviving/destroyed stream has now been converted into literal

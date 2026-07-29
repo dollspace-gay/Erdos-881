@@ -45489,10 +45489,12 @@ theorem cleanSupport_destroyedTranslate_forces_lowerGap_or_boundaryLanding
         ℓ < h ∧
         floor ≤ u ∧
         H ∈ additiveSupportFamily A ℓ u ∧
+        H ⊆ E ∧
         Disjoint (H : Set ℕ) Y ∧
         additiveSupportFamily A ℓ (u + δ) = ∅) ∨
       ∃ c,
         floor ≤ c ∧
+        c ∈ E ∧
         c ∈ A ∧
         c ∉ Y ∧
         c + δ ∈ A ∧
@@ -45534,7 +45536,7 @@ theorem cleanSupport_destroyedTranslate_forces_lowerGap_or_boundaryLanding
             have hfloorP : floor ≤ p := by
               simpa using hfloor
             exact
-              ⟨p, hfloorP, hpA, hpY,
+              ⟨p, hfloorP, hpE, hpA, hpY,
                 hshiftA, hshiftY⟩
           · have hkpos : 0 < k := by omega
             obtain ⟨b, hbE, hbAverage⟩ :=
@@ -45553,6 +45555,10 @@ theorem cleanSupport_destroyedTranslate_forces_lowerGap_or_boundaryLanding
                 (Finset.mem_coe.mpr hbE) hbY
             obtain ⟨H, hHmem, hEinsert⟩ :=
               additiveSupport_remove_hit_succ hEmem hbE
+            have hHE : H ⊆ E := by
+              intro x hxH
+              rw [hEinsert]
+              exact Finset.mem_insert_of_mem hxH
             have hHY : Disjoint (H : Set ℕ) Y := by
               rw [Set.disjoint_left]
               intro x hxH hxY
@@ -45586,7 +45592,7 @@ theorem cleanSupport_destroyedTranslate_forces_lowerGap_or_boundaryLanding
                 ⟨k, p - b, H, hkpos, by omega,
                   (Nat.le_mul_of_pos_left floor hkpos).trans
                     hlowerFloor,
-                  hHmem, hHY, hgap⟩
+                  hHmem, hHE, hHY, hgap⟩
             · have hlowerNonempty :
                   (additiveSupportFamily A k
                     ((p - b) + δ)).Nonempty :=
@@ -45596,12 +45602,19 @@ theorem cleanSupport_destroyedTranslate_forces_lowerGap_or_boundaryLanding
                   hHmem hHY hlowerNonempty hlowerDestroy
               · left
                 obtain ⟨ℓ, u, G, hℓpos, hℓk,
-                    hfloorU, hGmem, hGY, hGgap⟩ :=
+                    hfloorU, hGmem, hGH, hGY, hGgap⟩ :=
                   hlowerGap
                 exact
                   ⟨ℓ, u, G, hℓpos, hℓk.trans (by omega),
-                    hfloorU, hGmem, hGY, hGgap⟩
-              · exact Or.inr hboundary
+                    hfloorU, hGmem, hGH.trans hHE,
+                    hGY, hGgap⟩
+              · right
+                obtain ⟨c, hfloorC, hcH, hcA, hcY,
+                    hshiftA, hshiftY⟩ :=
+                  hboundary
+                exact
+                  ⟨c, hfloorC, hHE hcH, hcA, hcY,
+                    hshiftA, hshiftY⟩
 
 /-- The fused successor/predecessor object has an explicit cofinal
 arithmetic shape.
@@ -45700,8 +45713,19 @@ theorem HasFusedSuccessorPredecessorStreams.forces_cofinalLowerGap_or_boundaryLa
     cleanSupport_destroyedTranslate_forces_lowerGap_or_boundaryLanding
       hkpos hpFloor hHmem hHY
         hpShiftNonempty hpShiftDestroy
-  · exact ⟨δ, hδpos, Or.inl hgap⟩
-  · exact ⟨δ, hδpos, Or.inr hboundary⟩
+  · obtain ⟨ℓ, u, G, hℓpos, hℓk, hLu,
+        hGmem, _hGH, hGY, hGgap⟩ :=
+      hgap
+    exact
+      ⟨δ, hδpos, Or.inl
+        ⟨ℓ, u, G, hℓpos, hℓk, hLu,
+          hGmem, hGY, hGgap⟩⟩
+  · obtain ⟨c, hLc, _hcH, hcA, hcY,
+        hshiftA, hshiftY⟩ :=
+      hboundary
+    exact
+      ⟨δ, hδpos, Or.inr
+        ⟨c, hLc, hcA, hcY, hshiftA, hshiftY⟩⟩
 
 /-- The fused stream has a cofinal literal translation boundary.
 
@@ -46394,5 +46418,278 @@ theorem cofinalBoundaryRepairs_regenerate_fusedStreams_on_strictSplit
     ⟨B, newTarget, hBY, hBInfinite,
       hrestoredInfinite, hnewStrict, hnewSurvival,
       hnewDestroy, hrepresented⟩
+
+/-- The fused branch now has a terminating arithmetic alternative.
+
+If one-point boundary repairs occur at every floor, they feed the strict
+split/self-replication theorem above.  Otherwise fix a floor `L₀` with no
+boundary repair.  For a requested `L`, choose a represented destroyed
+order-`k` predecessor far beyond `max L L₀`, remove its average-bounded
+anchor, and run simultaneous rank descent.
+
+The descent's boundary endpoint would still be a point of the original
+clean successor support.  Restoring its translate would therefore create
+the forbidden boundary-repair stage at `L₀`.  Hence only the other endpoint
+is possible: a clean support, contained in the original protected support,
+whose translate by the very same bracket displacement is a genuine gap at
+some strict positive rank below `k`. -/
+theorem HasFusedSuccessorPredecessorStreams.forces_cofinalBoundaryRepairs_or_cofinalContainedLowerTranslationGaps
+    {A : Set ℕ} {k : ℕ}
+    (hkpos : 0 < k)
+    (hfused :
+      HasFusedSuccessorPredecessorStreams A k) :
+    ∃ Y : Set ℕ, ∃ oldTarget : ℕ → ℕ,
+      Y ⊆ A ∧
+      Y.Infinite ∧
+      StrictMono oldTarget ∧
+      ((∀ L,
+          HasFusedBoundaryRepairAt
+            A Y k oldTarget L) ∨
+        ∀ L, ∃ n m δ, ∃ E : Finset ℕ,
+          ∃ ℓ u, ∃ G : Finset ℕ,
+            L ≤ n ∧
+            oldTarget n < m ∧
+            m < oldTarget (n + 1) ∧
+            0 < δ ∧
+            m = oldTarget n + δ ∧
+            E ∈
+              additiveSupportFamily A (k + 1)
+                (oldTarget n) ∧
+            Disjoint (E : Set ℕ) Y ∧
+            DestroysAt
+              (additiveSupportFamily A (k + 1)) Y m ∧
+            0 < ℓ ∧
+            ℓ < k ∧
+            L ≤ u ∧
+            G ∈ additiveSupportFamily A ℓ u ∧
+            G ⊆ E ∧
+            Disjoint (G : Set ℕ) Y ∧
+            additiveSupportFamily A ℓ (u + δ) = ∅) := by
+  classical
+  obtain ⟨Y, oldTarget, hYA, hYInfinite,
+      holdStrict, _holdSurvival, _hsuccessorDestroy,
+      hrepresented⟩ :=
+    hfused
+  refine
+    ⟨Y, oldTarget, hYA, hYInfinite, holdStrict, ?_⟩
+  by_cases hrepairs :
+      ∀ L,
+        HasFusedBoundaryRepairAt
+          A Y k oldTarget L
+  · exact Or.inl hrepairs
+  · right
+    push Not at hrepairs
+    obtain ⟨L₀, hnoRepair⟩ := hrepairs
+    intro L
+    let floor := max L L₀
+    obtain ⟨n, m, E, a, hnLarge, hnLower, hnUpper,
+        hEmem, hEY, hmDestroy, haE, haAverage,
+        _hdLarge, hdNonempty, hdDestroy⟩ :=
+      hrepresented ((k + 1) * floor)
+    have hfloorN : floor ≤ n := by
+      exact
+        (Nat.le_mul_of_pos_left floor (by omega)).trans
+          hnLarge
+    have hLN : L ≤ n :=
+      (le_max_left L L₀).trans hfloorN
+    have hL₀N : L₀ ≤ n :=
+      (le_max_right L L₀).trans hfloorN
+    have hnTarget : n ≤ oldTarget n :=
+      holdStrict.id_le n
+    have haTarget : a ≤ oldTarget n :=
+      additiveSupportFamily_supportsBounded
+        A (k + 1) (oldTarget n) E hEmem a haE
+    let p := oldTarget n - a
+    let δ := m - oldTarget n
+    have hδpos : 0 < δ := by
+      dsimp only [δ]
+      omega
+    have hmδ : m = oldTarget n + δ := by
+      dsimp only [δ]
+      omega
+    obtain ⟨H, hHmem, hEinsert⟩ :=
+      additiveSupport_remove_hit_succ hEmem haE
+    have hHE : H ⊆ E := by
+      intro x hxH
+      rw [hEinsert]
+      exact Finset.mem_insert_of_mem hxH
+    have hHY : Disjoint (H : Set ℕ) Y := by
+      exact hEY.mono_left
+        (fun _x hxH => Finset.mem_coe.mpr
+          (hHE (Finset.mem_coe.mp hxH)))
+    have hpFloor : k * floor ≤ p := by
+      dsimp only [p]
+      have htargetFloor :
+          (k + 1) * floor ≤ oldTarget n :=
+        hnLarge.trans hnTarget
+      have hpAdd :
+          oldTarget n - a + a = oldTarget n := by
+        omega
+      nlinarith
+    have htranslatedTarget :
+        p + δ = m - a := by
+      dsimp only [p, δ]
+      omega
+    have hpShiftNonempty :
+        (additiveSupportFamily A k
+          (p + δ)).Nonempty := by
+      rw [htranslatedTarget]
+      exact hdNonempty
+    have hpShiftDestroy :
+        DestroysAt
+          (additiveSupportFamily A k) Y
+            (p + δ) := by
+      rw [htranslatedTarget]
+      exact hdDestroy
+    obtain hgap | hboundary :=
+      cleanSupport_destroyedTranslate_forces_lowerGap_or_boundaryLanding
+        hkpos hpFloor hHmem hHY
+          hpShiftNonempty hpShiftDestroy
+    · obtain ⟨ℓ, u, G, hℓpos, hℓk, hfloorU,
+          hGmem, hGH, hGY, hGgap⟩ :=
+        hgap
+      exact
+        ⟨n, m, δ, E, ℓ, u, G, hLN,
+          hnLower, hnUpper, hδpos, hmδ,
+          hEmem, hEY, hmDestroy, hℓpos, hℓk,
+          (le_max_left L L₀).trans hfloorU,
+          hGmem, hGH.trans hHE, hGY, hGgap⟩
+    · exfalso
+      apply hnoRepair
+      obtain ⟨c, hfloorC, hcH, hcA, hcY,
+          hshiftA, hshiftY⟩ :=
+        hboundary
+      have hcE : c ∈ E :=
+        hHE hcH
+      have hrestoredSurvival :
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (Y \ {c + δ}) m := by
+        rw [hmδ]
+        exact
+          cleanSupport_boundaryPoint_survives_after_restoring
+            (by omega) hEmem hEY hcE hshiftA
+      exact
+        ⟨n, m, δ, E, c, hL₀N, hnLower,
+          hnUpper, hδpos, hmδ, hEmem, hEY,
+          hmDestroy,
+          (le_max_right L L₀).trans hfloorC,
+          hcE, hcA, hcY, hshiftA, hshiftY,
+          hrestoredSurvival⟩
+
+/-- One contained translated-gap stage at a prescribed strict lower rank.
+
+The gap support remains inside the clean support of the protected successor
+target, and the translation is exactly the displacement to the destroyed
+target in the same protected gap. -/
+def HasFusedContainedLowerTranslationGapAt
+    (A Y : Set ℕ) (k : ℕ)
+    (oldTarget : ℕ → ℕ) (ℓ L : ℕ) : Prop :=
+  ∃ n m δ, ∃ E : Finset ℕ, ∃ u,
+    ∃ G : Finset ℕ,
+      L ≤ n ∧
+      oldTarget n < m ∧
+      m < oldTarget (n + 1) ∧
+      0 < δ ∧
+      m = oldTarget n + δ ∧
+      E ∈
+        additiveSupportFamily A (k + 1)
+          (oldTarget n) ∧
+      Disjoint (E : Set ℕ) Y ∧
+      DestroysAt
+        (additiveSupportFamily A (k + 1)) Y m ∧
+      L ≤ u ∧
+      G ∈ additiveSupportFamily A ℓ u ∧
+      G ⊆ E ∧
+      Disjoint (G : Set ℕ) Y ∧
+      additiveSupportFamily A ℓ (u + δ) = ∅
+
+/-- The strict lower rank in the contained-gap branch can be fixed
+cofinally.
+
+Choose one gap stage at each integer scale.  Its rank lies in the finite
+type `Fin k`; an infinite fiber therefore fixes one rank `ℓ`.  Taking a
+fiber index above the requested floor preserves every cofinal bound carried
+by that stage. -/
+theorem HasFusedSuccessorPredecessorStreams.forces_cofinalBoundaryRepairs_or_fixedRankCofinalContainedLowerTranslationGaps
+    {A : Set ℕ} {k : ℕ}
+    (hkpos : 0 < k)
+    (hfused :
+      HasFusedSuccessorPredecessorStreams A k) :
+    ∃ Y : Set ℕ, ∃ oldTarget : ℕ → ℕ,
+      Y ⊆ A ∧
+      Y.Infinite ∧
+      StrictMono oldTarget ∧
+      ((∀ L,
+          HasFusedBoundaryRepairAt
+            A Y k oldTarget L) ∨
+        ∃ ℓ,
+          0 < ℓ ∧
+          ℓ < k ∧
+          ∀ L,
+            HasFusedContainedLowerTranslationGapAt
+              A Y k oldTarget ℓ L) := by
+  classical
+  obtain ⟨Y, oldTarget, hYA, hYInfinite,
+      holdStrict, hfinal⟩ :=
+    hfused.forces_cofinalBoundaryRepairs_or_cofinalContainedLowerTranslationGaps
+      hkpos
+  refine
+    ⟨Y, oldTarget, hYA, hYInfinite, holdStrict, ?_⟩
+  rcases hfinal with hrepairs | hgaps
+  · exact Or.inl hrepairs
+  · right
+    choose n m δ E rank u G hdata using hgaps
+    have hrankPos : ∀ i, 0 < rank i := by
+      intro i
+      rcases hdata i with
+        ⟨_hin, _hlower, _hupper, _hδpos, _hmδ,
+          _hEmem, _hEY, _hmDestroy, hpos, _hlt,
+          _hiu, _hGmem, _hGE, _hGY, _hgap⟩
+      exact hpos
+    have hrankLt : ∀ i, rank i < k := by
+      intro i
+      rcases hdata i with
+        ⟨_hin, _hlower, _hupper, _hδpos, _hmδ,
+          _hEmem, _hEY, _hmDestroy, _hpos, hlt,
+          _hiu, _hGmem, _hGE, _hGY, _hgap⟩
+      exact hlt
+    let color : ℕ → Fin k :=
+      fun i => ⟨rank i, hrankLt i⟩
+    obtain ⟨r, hrFiber⟩ :=
+      Finite.exists_infinite_fiber color
+    have hpreimage :
+        (color ⁻¹' {r}).Infinite :=
+      Set.infinite_coe_iff.mp hrFiber
+    have hrpos : 0 < r.1 := by
+      obtain ⟨i, hiFiber⟩ := hpreimage.nonempty
+      have hcolorEq : color i = r := by
+        simpa only [Set.mem_preimage,
+          Set.mem_singleton_iff] using hiFiber
+      have hrankEq : rank i = r.1 :=
+        congrArg Fin.val hcolorEq
+      rw [← hrankEq]
+      exact hrankPos i
+    refine ⟨r.1, hrpos, r.2, ?_⟩
+    intro L
+    obtain ⟨i, hiFiber, hLi⟩ :=
+      hpreimage.exists_gt L
+    have hcolorEq : color i = r := by
+      simpa only [Set.mem_preimage,
+        Set.mem_singleton_iff] using hiFiber
+    have hrankEq : rank i = r.1 :=
+      congrArg Fin.val hcolorEq
+    rcases hdata i with
+      ⟨hin, hlower, hupper, hδpos, hmδ,
+        hEmem, hEY, hmDestroy, _hrankPos,
+        _hrankLt, hiu, hGmem, hGE, hGY, hgap⟩
+    refine
+      ⟨n i, m i, δ i, E i, u i, G i,
+        (Nat.le_of_lt hLi).trans hin, hlower,
+        hupper, hδpos, hmδ, hEmem, hEY,
+        hmDestroy, (Nat.le_of_lt hLi).trans hiu,
+        ?_, hGE, hGY, ?_⟩
+    · simpa only [hrankEq] using hGmem
+    · simpa only [hrankEq] using hgap
 
 end Erdos881
