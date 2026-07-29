@@ -32834,6 +32834,158 @@ theorem anchoredPrivateRow_clearedCore_repairs_entireCertificate
     refine ⟨surviving q', hsurvivingMem q', ?_⟩
     exact htU.mono_left hsupportU
 
+/-- Direct marked-point attack on one full private row.
+
+The private marker belongs to one definite block of the partition and the
+row selector chooses it there.  Protect all other certificate targets by
+the stored support union `U`.  Either that marker block has a second point
+outside `U` and the private support, in which case replacing the marker
+gives a verified finite-swap repair of the current target, or the entire
+literal marker block is covered by `U ∪ F`.
+
+Unlike an abstract capacity alternative, the second horn names the exact
+fixed block which must be repeatedly covered in the surviving-marker
+branch. -/
+theorem anchoredPrivateRow_markerSwap_or_markerBlockCovered
+    {A C : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ} (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (p : {q // q ∈ Q.erase r})
+    {j a : ℕ} {H : Finset ℕ}
+    {s : BlockSelector cell}
+    {surviving :
+      {q // q ∈ Q.erase p.1} → Finset ℕ}
+    {D F : Finset ℕ} {x : ℕ}
+    (htrace :
+      HasAnchoredPrivateRowTrace
+        A k cell Q r hrQ E p j
+          a H s surviving D F x) :
+    ∃ i, ∃ U : Finset ℕ,
+      U =
+        (Q.erase p.1).attach.biUnion surviving ∧
+      x ∈ cell i ∧
+      (s i).1 = x ∧
+      Disjoint (U : Set ℕ) (selectedSet s) ∧
+      U.card ≤ (k + 1) * Q.card ∧
+      ((∃ b ∈ (cell i).erase x,
+          b ∉ U ∧
+          b ∉ F ∧
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (((D.erase x ∪ {b} :
+              Finset ℕ) : Set ℕ)) p.1) ∨
+        cell i ⊆ U ∪ F) := by
+  classical
+  obtain ⟨_hrCommon, hsurvivingMem,
+      hsurvivingDisjoint, _hsj, _hDnonempty,
+      hDselected, _hminimal, hxD, hFmem,
+      hprivate, _hFanchor⟩ :=
+    htrace
+  have hxSelected : x ∈ selectedSet s :=
+    hDselected (Finset.mem_coe.mpr hxD)
+  have hxC : x ∈ C :=
+    P.selectedSet_subset s hxSelected
+  let i : ℕ := blockIndex P x
+  have hxi : x ∈ cell i := by
+    simpa only [i] using P.mem_blockIndex hxC
+  have hsi : (s i).1 = x := by
+    simpa only [i] using
+      (P.mem_selectedSet_iff s).mp hxSelected
+  let U : Finset ℕ :=
+    (Q.erase p.1).attach.biUnion surviving
+  have hUcard :
+      U.card ≤ (k + 1) * Q.card := by
+    calc
+      U.card ≤
+          ∑ q ∈ (Q.erase p.1).attach,
+            (surviving q).card := by
+        simpa only [U] using
+          (Finset.card_biUnion_le
+            (s := (Q.erase p.1).attach)
+            (t := surviving))
+      _ ≤
+          ∑ _q ∈ (Q.erase p.1).attach,
+            (k + 1) := by
+        gcongr with q hq
+        exact additiveSupportFamily_cardAtMost
+          A (k + 1) q.1 (surviving q)
+            (hsurvivingMem q)
+      _ = (k + 1) * (Q.erase p.1).card := by
+        simp [Nat.mul_comm]
+      _ ≤ (k + 1) * Q.card := by
+        exact Nat.mul_le_mul_left (k + 1)
+          Finset.card_erase_le
+  have hUselected :
+      Disjoint (U : Set ℕ) (selectedSet s) := by
+    rw [Set.disjoint_left]
+    intro z hzU hzSelected
+    obtain ⟨q, _hqAttach, hzSupport⟩ :=
+      Finset.mem_biUnion.mp
+        (show z ∈ U from Finset.mem_coe.mp hzU)
+    exact Set.disjoint_left.mp
+      (hsurvivingDisjoint q)
+      (Finset.mem_coe.mpr hzSupport) hzSelected
+  refine ⟨i, U, rfl, hxi, hsi, hUselected,
+    hUcard, ?_⟩
+  by_cases hroom :
+      (cell i \ (U ∪ F)).Nonempty
+  · left
+    obtain ⟨b, hbRoom⟩ := hroom
+    have hbParts := Finset.mem_sdiff.mp hbRoom
+    have hbCell : b ∈ cell i := hbParts.1
+    have hbU : b ∉ U := by
+      intro hb
+      exact hbParts.2
+        (Finset.mem_union_left F hb)
+    have hbF : b ∉ F := by
+      intro hb
+      exact hbParts.2
+        (Finset.mem_union_right U hb)
+    have hbx' : b ≠ x := by
+      intro hbx
+      have hxF : x ∈ F := by
+        have hxFD : x ∈ F ∩ D := by
+          rw [hprivate]
+          simp
+        exact (Finset.mem_inter.mp hxFD).1
+      exact hbF (hbx ▸ hxF)
+    have hrepair :
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (((D.erase x ∪ {b} :
+            Finset ℕ) : Set ℕ)) p.1 := by
+      apply not_destroysAt_iff.mpr
+      refine ⟨F, hFmem, ?_⟩
+      rw [Set.disjoint_left]
+      intro z hzF hzSwap
+      have hzSwapFin :
+          z ∈ D.erase x ∪ {b} :=
+        Finset.mem_coe.mp hzSwap
+      rcases Finset.mem_union.mp hzSwapFin with
+          hzD | hzb
+      · have hzParts := Finset.mem_erase.mp hzD
+        have hzFD : z ∈ F ∩ D :=
+          Finset.mem_inter.mpr
+            ⟨Finset.mem_coe.mp hzF, hzParts.2⟩
+        have hzx : z = x := by
+          rw [hprivate] at hzFD
+          exact Finset.mem_singleton.mp hzFD
+        exact hzParts.1 hzx
+      · have hzb' : z = b :=
+          Finset.mem_singleton.mp hzb
+        exact hbF
+          (hzb' ▸ Finset.mem_coe.mp hzF)
+    exact ⟨b, Finset.mem_erase.mpr
+      ⟨hbx', hbCell⟩, hbU, hbF, hrepair⟩
+  · right
+    intro z hzCell
+    by_contra hzUnion
+    exact hroom
+      ⟨z, Finset.mem_sdiff.mpr
+        ⟨hzCell, hzUnion⟩⟩
+
 /-- Double pigeonhole for anchored lower cores.
 
 Each row has a distinct current target `p` and a factorization
@@ -33387,6 +33539,503 @@ theorem fixedCoreAnchorStar_forces_repeatedSurvivingMarker_of_certificate
       ((htSurvives q hqQ) hqDestroyed)
   · exact ⟨selector, surviving, destroyer,
       support, marker, hcollision⟩
+
+/-- Repeated surviving markers align to one fixed old block.
+
+Discard the at most one row whose injective anchor equals the common marker
+`x`.  On every remaining row the marker block
+`i = blockIndex P x` differs from the moving anchor block `j`.  Apply the
+single-row marked-swap theorem in parallel.
+
+Either some row supplies a verified marker swap, or every remaining row
+covers the same literal old block by its protected support union `U p`
+together with the fixed lower core `H`.  The moving anchor disappears from
+the cover because it lies in the disjoint block `j`.  This is the
+block-aligned old-coordinate obstruction needed for the next matching
+amplification. -/
+theorem repeatedSurvivingMarker_forces_safeSwap_or_fixedOldBlockCovers
+    {A C : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ}
+    {hrQ : r ∈ Q} {E : Finset ℕ}
+    {j : ℕ}
+    {anchor : {q // q ∈ Q.erase r} → ℕ}
+    {H : Finset ℕ}
+    {W : Finset {q // q ∈ Q.erase r}}
+    {selector :
+      {q // q ∈ Q.erase r} → BlockSelector cell}
+    {surviving :
+      ∀ p : {q // q ∈ Q.erase r},
+        {q // q ∈ Q.erase p.1} → Finset ℕ}
+    {destroyer support :
+      {q // q ∈ Q.erase r} → Finset ℕ}
+    {x : ℕ}
+    (hWlarge : 1 < W.card)
+    (hanchorInj :
+      Set.InjOn anchor
+        (W : Set {q // q ∈ Q.erase r}))
+    (hrows :
+      ∀ p ∈ W,
+        HasAnchoredPrivateRowTrace
+          A k cell Q r hrQ E p j
+            (anchor p) H
+            (selector p) (surviving p)
+            (destroyer p) (support p) x ∧
+        H ∩ destroyer p = {x}) :
+    ∃ i, ∃ V : Finset {q // q ∈ Q.erase r},
+    ∃ guard :
+        {q // q ∈ Q.erase r} → Finset ℕ,
+      x ∈ cell i ∧
+      i ≠ j ∧
+      V ⊆ W ∧
+      W.card ≤ V.card + 1 ∧
+      Set.InjOn anchor
+        (V : Set {q // q ∈ Q.erase r}) ∧
+      (∀ p ∈ V,
+        (selector p i).1 = x ∧
+        guard p =
+          (Q.erase p.1).attach.biUnion
+            (surviving p) ∧
+        Disjoint
+          (guard p : Set ℕ)
+          (selectedSet (selector p)) ∧
+        (guard p).card ≤
+          (k + 1) * Q.card) ∧
+      ((∃ p ∈ V,
+          ∃ b ∈ (cell i).erase x,
+            b ∉ guard p ∧
+            b ∉ support p ∧
+            ¬ DestroysAt
+              (additiveSupportFamily A (k + 1))
+              ((((destroyer p).erase x ∪ {b} :
+                Finset ℕ) : Set ℕ)) p.1) ∨
+        ∀ p ∈ V,
+          cell i ⊆ guard p ∪ H) := by
+  classical
+  let V : Finset {q // q ∈ Q.erase r} :=
+    W.filter fun p => anchor p ≠ x
+  let Exceptional : Finset {q // q ∈ Q.erase r} :=
+    W.filter fun p => ¬ anchor p ≠ x
+  have hExceptionalCard : Exceptional.card ≤ 1 := by
+    rw [Finset.card_le_one]
+    intro p hp q hq
+    have hpParts :=
+      Finset.mem_filter.mp hp
+    have hqParts :=
+      Finset.mem_filter.mp hq
+    apply hanchorInj hpParts.1 hqParts.1
+    exact
+      (not_ne_iff.mp hpParts.2).trans
+        (not_ne_iff.mp hqParts.2).symm
+  have hsplit :
+      V.card + Exceptional.card = W.card := by
+    simpa only [V, Exceptional] using
+      (Finset.card_filter_add_card_filter_not
+        (s := W) (p := fun p => anchor p ≠ x))
+  have hWVcard : W.card ≤ V.card + 1 := by
+    omega
+  have hVnonempty : V.Nonempty := by
+    by_contra hVempty
+    have hVcardZero : V.card = 0 :=
+      Finset.card_eq_zero.mpr
+        (Finset.not_nonempty_iff_eq_empty.mp hVempty)
+    omega
+  have hVW : V ⊆ W := by
+    intro p hp
+    exact (Finset.mem_filter.mp hp).1
+  obtain ⟨p₀, hp₀V⟩ := hVnonempty
+  have hp₀W : p₀ ∈ W := hVW hp₀V
+  have hp₀Trace := (hrows p₀ hp₀W).1
+  obtain ⟨i₀, U₀, _hU₀eq, hxCell₀,
+      _hp₀Selects, _hU₀selected, _hU₀card,
+      _hp₀Fork⟩ :=
+    anchoredPrivateRow_markerSwap_or_markerBlockCovered
+      P hrQ E p₀ hp₀Trace
+  let i : ℕ := blockIndex P x
+  have hi₀ : i = i₀ := by
+    exact P.blockIndex_eq_of_mem hxCell₀
+  have hxCell : x ∈ cell i := by
+    simpa only [hi₀] using hxCell₀
+  have hentryExists :
+      ∀ p : {q // q ∈ Q.erase r},
+        ∃ U : Finset ℕ, p ∈ V →
+          (selector p i).1 = x ∧
+          U =
+            (Q.erase p.1).attach.biUnion
+              (surviving p) ∧
+          Disjoint
+            (U : Set ℕ)
+            (selectedSet (selector p)) ∧
+          U.card ≤ (k + 1) * Q.card ∧
+          ((∃ b ∈ (cell i).erase x,
+              b ∉ U ∧
+              b ∉ support p ∧
+              ¬ DestroysAt
+                (additiveSupportFamily A (k + 1))
+                ((((destroyer p).erase x ∪ {b} :
+                  Finset ℕ) : Set ℕ)) p.1) ∨
+            cell i ⊆ U ∪ support p) := by
+    intro p
+    by_cases hpV : p ∈ V
+    · have hpW : p ∈ W := hVW hpV
+      obtain ⟨ip, U, hUeq, hxCellp,
+          hpSelects, hUselected, hUcard,
+          hpFork⟩ :=
+        anchoredPrivateRow_markerSwap_or_markerBlockCovered
+          P hrQ E p (hrows p hpW).1
+      have hip : i = ip :=
+        P.blockIndex_eq_of_mem hxCellp
+      exact ⟨U, fun _ => ⟨by
+          rw [hip]
+          exact hpSelects,
+        hUeq, hUselected, hUcard,
+        by
+          rw [hip]
+          exact hpFork⟩⟩
+    · exact ⟨∅, fun hp => (hpV hp).elim⟩
+  choose guard hprotected using hentryExists
+  have hprotectedData :
+      ∀ p ∈ V,
+        (selector p i).1 = x ∧
+        guard p =
+          (Q.erase p.1).attach.biUnion
+            (surviving p) ∧
+        Disjoint
+          (guard p : Set ℕ)
+          (selectedSet (selector p)) ∧
+        (guard p).card ≤
+          (k + 1) * Q.card := by
+    intro p hpV
+    have hpData := hprotected p hpV
+    exact ⟨hpData.1, hpData.2.1,
+      hpData.2.2.1, hpData.2.2.2.1⟩
+  have hiNej : i ≠ j := by
+    intro hij
+    have hp₀AnchorNe :
+        anchor p₀ ≠ x :=
+      (Finset.mem_filter.mp hp₀V).2
+    obtain ⟨_hrCommon, _hsurvivingMem,
+        _hsurvivingDisjoint, hp₀AtJ,
+        _hDnonempty, _hDselected, _hminimal,
+        _hxD, _hFmem, _hprivate, _hFanchor⟩ :=
+      hp₀Trace
+    have hp₀AtI :
+        (selector p₀ i).1 = x :=
+      (hprotectedData p₀ hp₀V).1
+    apply hp₀AnchorNe
+    rw [← hp₀AtJ, ← hij]
+    exact hp₀AtI
+  refine ⟨i, V, guard, hxCell, hiNej,
+    hVW, hWVcard, hanchorInj.mono (by
+      intro p hp
+      exact hVW hp),
+    hprotectedData, ?_⟩
+  by_cases hsafe :
+      ∃ p ∈ V,
+        ∃ b ∈ (cell i).erase x,
+          b ∉ guard p ∧
+          b ∉ support p ∧
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            ((((destroyer p).erase x ∪ {b} :
+              Finset ℕ) : Set ℕ)) p.1
+  · exact Or.inl hsafe
+  · right
+    intro p hpV z hzCell
+    have hpW : p ∈ W := hVW hpV
+    have hpFork := (hprotected p hpV).2.2.2.2
+    rcases hpFork with hpSafe | hpCover
+    · exact False.elim
+        (hsafe ⟨p, hpV, hpSafe⟩)
+    · rcases Finset.mem_union.mp
+          (hpCover hzCell) with
+        hzProtected | hzSupport
+      · exact Finset.mem_union_left H hzProtected
+      · obtain ⟨_hrCommon, _hsurvivingMem,
+            _hsurvivingDisjoint, hpAtJ,
+            _hDnonempty, _hDselected, _hminimal,
+            _hxD, _hFmem, _hprivate, hFanchor⟩ :=
+          (hrows p hpW).1
+        have hzAnchorOrH :
+            z = anchor p ∨ z ∈ H := by
+          rw [hFanchor] at hzSupport
+          exact Finset.mem_insert.mp hzSupport
+        rcases hzAnchorOrH with hzAnchor | hzH
+        · have hanchorCell :
+              anchor p ∈ cell j := by
+            rw [← hpAtJ]
+            exact (selector p j).2
+          exact False.elim
+            (Finset.disjoint_left.mp
+              (P.disjoint hiNej)
+              hzCell
+              (hzAnchor ▸ hanchorCell))
+        · exact Finset.mem_union_right
+            (guard p) hzH
+
+/-- Amplify one point of a repeatedly covered old block through the
+row/target incidence matrix.
+
+Fix `b ∈ cell i \ H`.  In every cover row, `b` must lie in one of the
+stored supports for a target different from that row label.  Pigeonhole the
+chosen target column and then the exact chosen support:
+
+* many column labels give genuine label growth;
+* many distinct supports in one column normalize to a same-target rooted
+  matching;
+* one exact support repeats and survives the selectors of many different
+  rows.
+
+The last horn is the common-survival object needed to iterate certificate
+descent; the middle horn is immediate matching growth. -/
+theorem fixedOldBlockCovers_force_labelGrowth_or_rootedMatching_or_repeatedCommonSurvival
+    {A : Set ℕ} {k labelDemand repeatDemand matchingDemand : ℕ}
+    {cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {r : ℕ}
+    {hrQ : r ∈ Q} {E : Finset ℕ}
+    {i j b : ℕ} {H : Finset ℕ}
+    {V : Finset {q // q ∈ Q.erase r}}
+    {selector :
+      {q // q ∈ Q.erase r} → BlockSelector cell}
+    {surviving :
+      ∀ p : {q // q ∈ Q.erase r},
+        {q // q ∈ Q.erase p.1} → Finset ℕ}
+    {destroyer support guard :
+      {q // q ∈ Q.erase r} → Finset ℕ}
+    {anchor : {q // q ∈ Q.erase r} → ℕ}
+    {x : ℕ}
+    (hbCell : b ∈ cell i)
+    (hbH : b ∉ H)
+    (hguard :
+      ∀ p ∈ V,
+        guard p =
+          (Q.erase p.1).attach.biUnion
+            (surviving p))
+    (hcover :
+      ∀ p ∈ V,
+        cell i ⊆ guard p ∪ H)
+    (hrows :
+      ∀ p ∈ V,
+        HasAnchoredPrivateRowTrace
+          A k cell Q r hrQ E p j
+            (anchor p) H
+            (selector p) (surviving p)
+            (destroyer p) (support p) x)
+    (hlarge :
+      (repeatDemand *
+          additiveRootedMatchingBound
+            (k + 1) matchingDemand) *
+        labelDemand < V.card) :
+    (∃ L : Finset ℕ,
+        labelDemand < L.card ∧
+        L ⊆ Q ∧
+        ∀ q ∈ L,
+          ∃ p ∈ V, q ≠ p.1 ∧
+            ∃ hqp : q ∈ Q.erase p.1,
+              b ∈ surviving p ⟨q, hqp⟩) ∨
+      (∃ q, ∃ root : Finset ℕ,
+        ∃ M : Finset (Finset ℕ),
+          q ∈ Q ∧
+          root.card < k + 1 ∧
+          M ⊆ additiveSupportFamily A (k + 1) q ∧
+          matchingDemand < M.card ∧
+          (∀ F ∈ M, root ⊆ F) ∧
+          (∀ F ∈ M, (F \ root).Nonempty) ∧
+          ∀ F ∈ M, ∀ G ∈ M, F ≠ G →
+            Disjoint (F \ root) (G \ root)) ∨
+      ∃ q ∈ Q, ∃ F : Finset ℕ,
+        F ∈ additiveSupportFamily A (k + 1) q ∧
+        b ∈ F ∧
+        ∃ R : Finset {p // p ∈ V},
+          repeatDemand < R.card ∧
+          ∀ p ∈ R,
+            ∃ hqp : q ∈ Q.erase p.1.1,
+              surviving p.1 ⟨q, hqp⟩ = F ∧
+              Disjoint
+                (F : Set ℕ)
+                (selectedSet (selector p.1)) := by
+  classical
+  have hcolumnExists :
+      ∀ p : {p // p ∈ V},
+        ∃ q : {q // q ∈ Q.erase p.1.1},
+          b ∈ surviving p.1 q := by
+    intro p
+    have hbCovered :
+        b ∈ guard p.1 ∪ H :=
+      hcover p.1 p.2 hbCell
+    have hbGuard : b ∈ guard p.1 := by
+      rcases Finset.mem_union.mp hbCovered with
+          hbGuard | hbCore
+      · exact hbGuard
+      · exact False.elim (hbH hbCore)
+    rw [hguard p.1 p.2] at hbGuard
+    obtain ⟨q, _hqAttach, hbSupport⟩ :=
+      Finset.mem_biUnion.mp hbGuard
+    exact ⟨q, hbSupport⟩
+  choose column hcolumnHit using hcolumnExists
+  let label : {p // p ∈ V} → ℕ :=
+    fun p => (column p).1
+  let chosen : {p // p ∈ V} → Finset ℕ :=
+    fun p => surviving p.1 (column p)
+  have hchosenMem :
+      ∀ p : {p // p ∈ V},
+        chosen p ∈
+          additiveSupportFamily A (k + 1) (label p) := by
+    intro p
+    obtain ⟨_hrCommon, hsurvivingMem,
+        _hsurvivingDisjoint, _hAtJ,
+        _hDnonempty, _hDselected, _hminimal,
+        _hxD, _hFmem, _hprivate, _hFanchor⟩ :=
+      hrows p.1 p.2
+    exact hsurvivingMem (column p)
+  have hchosenHit :
+      ∀ p : {p // p ∈ V}, b ∈ chosen p := by
+    intro p
+    exact hcolumnHit p
+  have hlabelQ :
+      ∀ p : {p // p ∈ V}, label p ∈ Q := by
+    intro p
+    exact (Finset.mem_erase.mp (column p).2).2
+  have hlabelNe :
+      ∀ p : {p // p ∈ V}, label p ≠ p.1.1 := by
+    intro p
+    exact (Finset.mem_erase.mp (column p).2).1
+  have hlargeAttach :
+      (repeatDemand *
+          additiveRootedMatchingBound
+            (k + 1) matchingDemand) *
+        labelDemand < V.attach.card := by
+    simpa using hlarge
+  obtain hmanyLabels | hfixedLabel :=
+    large_finset_image_or_large_fiber
+      V.attach label
+        (repeatDemand *
+          additiveRootedMatchingBound
+            (k + 1) matchingDemand)
+        labelDemand hlargeAttach
+  · left
+    let L : Finset ℕ := V.attach.image label
+    have hLQ : L ⊆ Q := by
+      intro q hqL
+      obtain ⟨p, _hpAttach, rfl⟩ :=
+        Finset.mem_image.mp hqL
+      exact hlabelQ p
+    refine ⟨L, by simpa only [L] using hmanyLabels,
+      hLQ, ?_⟩
+    intro q hqL
+    obtain ⟨p, _hpAttach, hpLabel⟩ :=
+      Finset.mem_image.mp hqL
+    have hcolumnValue :
+        (column p).1 = q := by
+      simpa only [label] using hpLabel
+    have hqp :
+        q ∈ Q.erase p.1.1 := by
+      simpa only [← hcolumnValue] using
+        (column p).2
+    refine ⟨p.1, p.2, ?_, hqp, ?_⟩
+    · simpa only [← hpLabel] using hlabelNe p
+    · have hcolumnEq :
+          column p = ⟨q, hqp⟩ := by
+        apply Subtype.ext
+        exact hcolumnValue
+      simpa only [← hcolumnEq] using hcolumnHit p
+  · right
+    obtain ⟨q, hqImage, hqFiber⟩ :=
+      hfixedLabel
+    let S : Finset {p // p ∈ V} :=
+      V.attach.filter fun p => label p = q
+    have hSlarge :
+        repeatDemand *
+            additiveRootedMatchingBound
+              (k + 1) matchingDemand <
+          S.card := by
+      simpa only [S] using hqFiber
+    have hqQ : q ∈ Q := by
+      obtain ⟨p, _hpAttach, hpLabel⟩ :=
+        Finset.mem_image.mp hqImage
+      rw [← hpLabel]
+      exact hlabelQ p
+    obtain hmanySupports | hfixedSupport :=
+      large_finset_image_or_large_fiber
+        S chosen repeatDemand
+          (additiveRootedMatchingBound
+            (k + 1) matchingDemand)
+          hSlarge
+    · left
+      have hchosenSub :
+          S.image chosen ⊆
+            additiveSupportFamily A (k + 1) q := by
+        intro F hFImage
+        obtain ⟨p, hpS, rfl⟩ :=
+          Finset.mem_image.mp hFImage
+        have hpLabel :
+            label p = q :=
+          (Finset.mem_filter.mp hpS).2
+        simpa only [hpLabel] using hchosenMem p
+      have hchosenLarge :
+          additiveRootedMatchingBound
+              (k + 1) matchingDemand ≤
+            (S.image chosen).card :=
+        Nat.le_of_lt hmanySupports
+      obtain ⟨root, M, hrootCard, hMsub,
+          hMlarge, hMroot, hMpetal,
+          hMdisjoint⟩ :=
+        additiveSupportSubfamily_has_large_rootedMatching
+          (k + 1) matchingDemand q
+            (S.image chosen)
+            hchosenSub hchosenLarge
+      exact ⟨q, root, M, hqQ, hrootCard,
+        hMsub.trans hchosenSub, hMlarge,
+        hMroot, hMpetal, hMdisjoint⟩
+    · right
+      obtain ⟨F, hFImage, hFFiber⟩ :=
+        hfixedSupport
+      obtain ⟨p₀, hp₀S, hp₀Chosen⟩ :=
+        Finset.mem_image.mp hFImage
+      have hp₀Label :
+          label p₀ = q :=
+        (Finset.mem_filter.mp hp₀S).2
+      have hFmem :
+          F ∈ additiveSupportFamily A (k + 1) q := by
+        rw [← hp₀Chosen, ← hp₀Label]
+        exact hchosenMem p₀
+      have hbF : b ∈ F := by
+        rw [← hp₀Chosen]
+        exact hchosenHit p₀
+      let R : Finset {p // p ∈ V} :=
+        S.filter fun p => chosen p = F
+      refine ⟨q, hqQ, F, hFmem, hbF,
+        R, by simpa only [R] using hFFiber, ?_⟩
+      intro p hpR
+      have hpS :
+          p ∈ S :=
+        (Finset.mem_filter.mp hpR).1
+      have hpLabel :
+          label p = q :=
+        (Finset.mem_filter.mp hpS).2
+      have hpChosen :
+          chosen p = F :=
+        (Finset.mem_filter.mp hpR).2
+      have hqp :
+          q ∈ Q.erase p.1.1 := by
+        have hcolumnMem := (column p).2
+        simpa only [← hpLabel, label] using
+          hcolumnMem
+      have hcolumnEq :
+          column p = ⟨q, hqp⟩ := by
+        apply Subtype.ext
+        simpa only [label] using hpLabel
+      obtain ⟨_hrCommon, _hsurvivingMem,
+          hsurvivingDisjoint, _hAtJ,
+          _hDnonempty, _hDselected, _hminimal,
+          _hxD, _hFmem, _hprivate, _hFanchor⟩ :=
+        hrows p.1 p.2
+      refine ⟨hqp, ?_, ?_⟩
+      · rw [← hcolumnEq]
+        exact hpChosen
+      · rw [← hpChosen]
+        exact hsurvivingDisjoint (column p)
 
 /-- The arithmetic trichotomy carried by anchored lower-core rows. -/
 def HasAnchoredLowerCoreArithmeticFork
