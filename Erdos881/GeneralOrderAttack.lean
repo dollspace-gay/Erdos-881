@@ -31458,4 +31458,87 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_infiniteGapFusion
         halignedPrimitiveGaps, hgapFans,
         holdNotDestroyed⟩
 
+/-- Counterexample-level fork after eliminating terminal fusion.
+
+At every order `h > 1`, the residue-collapse contradiction removes the
+infinite terminal-fusion horn from
+`primitiveCounterexample_forces_rootPetalDeletion_or_infiniteGapFusion`.
+Thus a primitive counterexample must already exhibit one of the genuinely
+growing alternatives: the root-petal deletion, strict positive
+occurrence-rank descent, or minimal destroyers of unbounded cardinality
+across selector blocks. -/
+theorem primitiveCounterexample_forces_rootPetalDeletion_or_rankDescent_or_manyBlocks
+    {A : Set ℕ} {h : ℕ}
+    (hh : 1 < h)
+    (hminimal : IsStronglyMinimalExactBasis A h)
+    (hnotLower : ¬ IsExactTupleAsymptoticBasis A (h - 1))
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    (∃ X I : Set ℕ, ∃ target : ℕ → ℕ,
+        ∃ repair : ℕ → Finset ℕ,
+          X ⊆ A ∧
+          X.Infinite ∧
+          I.Infinite ∧
+          StrictMono target ∧
+          (∀ L, ∃ n ∈ I, L ≤ target n) ∧
+          ∀ n ∈ I,
+            repair n ∈
+              additiveSupportFamily A (h + 1) (target n) ∧
+            Disjoint (repair n : Set ℕ) X ∧
+            ¬ DestroysAt
+              (additiveSupportFamily A (h + 1))
+              X (target n)) ∨
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ P : IsFiniteBlockPartition K cell,
+      ∃ oldTarget : ℕ → ℕ,
+        K ⊆ A ∧
+        K.Infinite ∧
+        StrictMono oldTarget ∧
+        ((∃ s : BlockSelector cell, ∃ q,
+            ∃ D : Finset ℕ, ∃ ℓ n,
+              D.Nonempty ∧
+              (D : Set ℕ) ⊆ selectedSet s ∧
+              IsInclusionMinimalDestroyer
+                (additiveSupportFamily A h) D q ∧
+              0 < ℓ ∧ ℓ < h ∧
+              (additiveSupportFamily A ℓ n).Nonempty ∧
+              DestroysAt
+                (additiveSupportFamily A ℓ)
+                (D : Set ℕ) n) ∨
+          ∀ r, ∃ s : BlockSelector cell, ∃ q,
+            ∃ D : Finset ℕ,
+              D.Nonempty ∧
+              (D : Set ℕ) ⊆ selectedSet s ∧
+              IsInclusionMinimalDestroyer
+                (additiveSupportFamily A h) D q ∧
+              r < D.card) := by
+  have hhpos : 0 < h := by omega
+  obtain hroot | hcosingleton :=
+    primitiveCounterexample_forces_rootPetalDeletion_or_infiniteGapFusion
+      hhpos hminimal hnotLower hcounter
+  · exact Or.inl hroot
+  · right
+    obtain ⟨K, cell, P, oldTarget, hKA, hKInfinite,
+        holdTargetStrict, hrank | hmany | hterminal⟩ :=
+      hcosingleton
+    · exact ⟨K, cell, P, oldTarget, hKA, hKInfinite,
+        holdTargetStrict, Or.inl hrank⟩
+    · exact ⟨K, cell, P, oldTarget, hKA, hKInfinite,
+        holdTargetStrict, Or.inr hmany⟩
+    · obtain ⟨Y, fusion, _stageSelector, _target, _anchor,
+          _destroyer, _bound, hYfusion, _hYK, _hYInfinite,
+          _htargetStrict, hterminalBoundAndNoDescent,
+          _hstageData, _hnoRankDescent, _hdestroyY, _hcross,
+          _holdSurvivalY, hcleanInfinite, hsuccessorDestroy,
+          _hunboundedAffineMatchings, _hsuccessorBrackets,
+          _hpredecessorDestroyerFans,
+          _hcofinalRepresentedPredecessorDestroyers,
+          _halignedPrimitiveGaps, _hgapFans,
+          _holdNotDestroyed⟩ := hterminal
+      exact
+        (terminalFusion_cofinalSuccessorDestruction_impossible
+          hh hminimal.1 fusion hYfusion
+            hterminalBoundAndNoDescent hcleanInfinite
+            hsuccessorDestroy).elim
+
 end Erdos881
