@@ -34224,6 +34224,106 @@ def HasTwoAnchoredCertificateEscapeExitsAt
       HasAnchoredCertificateEscapeTransition
         R Q cell p.1 (exit side).1
 
+/-- Two exits at every non-root certificate target force an internal cycle.
+
+Let `r` be the one distinguished target omitted from the source family.
+For each `p ∈ Q.erase r`, its two exits are distinct, so they cannot both
+equal `r`.  Choose an exit which is not `r`.  This gives a fixed-point-free
+self-map of `Q.erase r`; finiteness then forces a nontrivial anchored escape
+cycle entirely among the non-root targets.
+
+This removes the co-singleton boundary loophole directly: two marker
+replacements cannot all escape into the one omitted certificate column. -/
+theorem twoAnchoredExits_off_singleRoot_force_cycleOn
+    {R : SupportFamily}
+    {Q : Finset ℕ} {r : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hrQ : r ∈ Q)
+    (hVnonempty : (Q.erase r).Nonempty)
+    (htwo :
+      ∀ p : {q // q ∈ Q.erase r},
+        HasTwoAnchoredCertificateEscapeExitsAt
+          R Q cell
+            ⟨p.1, (Finset.mem_erase.mp p.2).2⟩) :
+    HasAnchoredCertificateEscapeCycleOn
+      R Q cell (Q.erase r) := by
+  classical
+  let source :
+      {q // q ∈ Q.erase r} → {q // q ∈ Q} :=
+    fun p =>
+      ⟨p.1, (Finset.mem_erase.mp p.2).2⟩
+  let exit :
+      {q // q ∈ Q.erase r} →
+        Bool → {q // q ∈ Q} :=
+    fun p => Classical.choose (htwo p)
+  have hexitInjective :
+      ∀ p, Function.Injective (exit p) := by
+    intro p
+    exact (Classical.choose_spec (htwo p)).1
+  have hexitNe :
+      ∀ p side, exit p side ≠ source p := by
+    intro p
+    simpa only [exit, source] using
+      (Classical.choose_spec (htwo p)).2.1
+  have hexitEdge :
+      ∀ p side,
+        HasAnchoredCertificateEscapeTransition
+          R Q cell p.1 (exit p side).1 := by
+    intro p
+    simpa only [exit] using
+      (Classical.choose_spec (htwo p)).2.2
+  have hsideExists :
+      ∀ p : {q // q ∈ Q.erase r},
+        ∃ side, (exit p side).1 ≠ r := by
+    intro p
+    by_cases hfalse : (exit p false).1 ≠ r
+    · exact ⟨false, hfalse⟩
+    · refine ⟨true, ?_⟩
+      intro htrue
+      have hfalseEq : (exit p false).1 = r :=
+        not_ne_iff.mp hfalse
+      have hexitsEq :
+          exit p false = exit p true := by
+        apply Subtype.ext
+        exact hfalseEq.trans htrue.symm
+      have hsides : false = true :=
+        hexitInjective p hexitsEq
+      simp at hsides
+  let side :
+      {q // q ∈ Q.erase r} → Bool :=
+    fun p => Classical.choose (hsideExists p)
+  let next :
+      {q // q ∈ Q.erase r} →
+        {q // q ∈ Q.erase r} :=
+    fun p =>
+      ⟨(exit p (side p)).1,
+        Finset.mem_erase.mpr
+          ⟨Classical.choose_spec (hsideExists p),
+            (exit p (side p)).2⟩⟩
+  have hnextNe :
+      ∀ p : {q // q ∈ Q.erase r}, next p ≠ p := by
+    intro p hnext
+    apply hexitNe p (side p)
+    apply Subtype.ext
+    change (next p).1 = p.1
+    exact congrArg
+      (fun z : {q // q ∈ Q.erase r} => z.1)
+      hnext
+  have hnextEdge :
+      ∀ p,
+        HasAnchoredCertificateEscapeTransition
+          R Q cell p.1 (next p).1 := by
+    intro p
+    exact hexitEdge p (side p)
+  obtain ⟨p₀, hp₀V⟩ := hVnonempty
+  letI : Nonempty {q // q ∈ Q.erase r} :=
+    ⟨⟨p₀, hp₀V⟩⟩
+  obtain ⟨p, period, hperiodLower, hperiod⟩ :=
+    finite_selfMap_without_fixedPoint_has_nontrivialCycle
+      next hnextNe
+  exact ⟨next, hnextEdge, hnextNe,
+    p, period, hperiodLower, hperiod⟩
+
 /-- Package two marker replacements at one source as the exact local input
 for the Hall amplifier.
 
