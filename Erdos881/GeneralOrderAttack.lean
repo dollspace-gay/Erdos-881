@@ -35954,6 +35954,113 @@ theorem repeatedSurvivingMarker_forces_safeSwap_or_fixedOldBlockCovers
         · exact Finset.mem_union_right
             (guard p) hzH
 
+/-- A large repeated marker block supplies two uniform replacement points
+outside every private support in the fixed-core row family.
+
+The common core `H` has at most `k` points, whereas `cell i` has more than
+`k+1`.  Hence `cell i \ H` contains two distinct points `b,c`.  Both differ
+from the common marker `x ∈ H`.  Every row support is
+`insert (anchor p) H`; its anchor lies in the disjoint block `j`, so neither
+`b` nor `c` can equal the anchor.  Thus the same two marker replacements
+avoid every private support simultaneously. -/
+theorem repeatedFixedCoreRows_largeMarkerBlock_has_twoUniformReplacements
+    {A C : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ}
+    {hrQ : r ∈ Q} {E : Finset ℕ}
+    {i j : ℕ}
+    {anchor : {q // q ∈ Q.erase r} → ℕ}
+    {H : Finset ℕ}
+    {V : Finset {q // q ∈ Q.erase r}}
+    {selector :
+      {q // q ∈ Q.erase r} → BlockSelector cell}
+    {surviving :
+      ∀ p : {q // q ∈ Q.erase r},
+        {q // q ∈ Q.erase p.1} → Finset ℕ}
+    {destroyer support :
+      {q // q ∈ Q.erase r} → Finset ℕ}
+    {x d : ℕ}
+    (hij : i ≠ j)
+    (hxH : x ∈ H)
+    (hHmem :
+      H ∈ additiveSupportFamily A k d)
+    (hcellLarge : k + 1 < (cell i).card)
+    (hrows :
+      ∀ p ∈ V,
+        HasAnchoredPrivateRowTrace
+          A k cell Q r hrQ E p j
+            (anchor p) H
+            (selector p) (surviving p)
+            (destroyer p) (support p) x) :
+    ∃ b c,
+      b ∈ (cell i).erase x ∧
+      c ∈ (cell i).erase x ∧
+      b ≠ c ∧
+      ∀ p ∈ V,
+        b ∉ support p ∧ c ∉ support p := by
+  classical
+  have hHcard : H.card ≤ k :=
+    additiveSupportFamily_cardAtMost
+      A k d H hHmem
+  have hinterCard :
+      (cell i ∩ H).card ≤ k :=
+    (Finset.card_le_card
+      (Finset.inter_subset_right)).trans hHcard
+  have hdecomp :
+      (cell i \ H).card +
+          (cell i ∩ H).card =
+        (cell i).card :=
+    Finset.card_sdiff_add_card_inter (cell i) H
+  have houtsideTwo : 1 < (cell i \ H).card := by
+    omega
+  obtain ⟨b, hbOutside, c, hcOutside, hbc⟩ :=
+    Finset.one_lt_card.mp houtsideTwo
+  have hbParts := Finset.mem_sdiff.mp hbOutside
+  have hcParts := Finset.mem_sdiff.mp hcOutside
+  have hbx : b ≠ x := by
+    intro hbx
+    exact hbParts.2 (hbx ▸ hxH)
+  have hcx : c ≠ x := by
+    intro hcx
+    exact hcParts.2 (hcx ▸ hxH)
+  refine ⟨b, c,
+    Finset.mem_erase.mpr ⟨hbx, hbParts.1⟩,
+    Finset.mem_erase.mpr ⟨hcx, hcParts.1⟩,
+    hbc, ?_⟩
+  intro p hpV
+  obtain ⟨_hrCommon, _hsurvivingMem,
+      _hsurvivingDisjoint, hAtJ, _hDnonempty,
+      _hDselected, _hminimal, _hxD, _hFmem,
+      _hprivate, hFanchor, _hblockCover⟩ :=
+    hrows p hpV
+  have hanchorCell : anchor p ∈ cell j := by
+    rw [← hAtJ]
+    exact (selector p j).2
+  constructor
+  · intro hbSupport
+    have hbAnchorOrCore :
+        b = anchor p ∨ b ∈ H := by
+      rw [hFanchor] at hbSupport
+      exact Finset.mem_insert.mp hbSupport
+    rcases hbAnchorOrCore with hbAnchor | hbCore
+    · exact Finset.disjoint_left.mp
+        (P.disjoint hij)
+        hbParts.1
+        (hbAnchor ▸ hanchorCell)
+    · exact hbParts.2 hbCore
+  · intro hcSupport
+    have hcAnchorOrCore :
+        c = anchor p ∨ c ∈ H := by
+      rw [hFanchor] at hcSupport
+      exact Finset.mem_insert.mp hcSupport
+    rcases hcAnchorOrCore with hcAnchor | hcCore
+    · exact Finset.disjoint_left.mp
+        (P.disjoint hij)
+        hcParts.1
+        (hcAnchor ▸ hanchorCell)
+    · exact hcParts.2 hcCore
+
 /-- Amplify one point of a repeatedly covered old block through the
 row/target incidence matrix.
 
