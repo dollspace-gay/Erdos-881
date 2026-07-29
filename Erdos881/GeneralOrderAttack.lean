@@ -11626,6 +11626,245 @@ theorem rootedMatching_disjointPrefix_or_descends
         (fun G hGM => hMroot G hGM hdR)
     exact ⟨d, hdR, hdF, hdA, hdm, ℋ, hℋsub, hℋcard⟩
 
+/-- A transversal of the nonempty outside-`F` parts of a rooted matching
+can hit only one petal per transversal point, unless it meets the common
+root.  Supports contained in `F` spend distinct points of `F \ R` instead.
+
+Consequently, while `T` is disjoint from the root, the whole rooted matching
+has cardinality at most `|F| + |T|`.  This is the finite counting step which
+prevents a bounded moving outside transversal from hiding indefinitely
+behind an old finite core. -/
+theorem card_rootedMatching_le_core_add_outsideTransversal_of_rootDisjoint
+    {A : Set ℕ} {k m : ℕ}
+    {F R T : Finset ℕ} {M : Finset (Finset ℕ)}
+    (hMsub : M ⊆ additiveSupportFamily A (k + 1) m)
+    (hMnonempty : ∀ E ∈ M, (E \ R).Nonempty)
+    (hMmatching :
+      ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+        Disjoint (E \ R) (G \ R))
+    (htrans :
+      IsTransversal
+        (outsideSupportHypergraph
+          (additiveSupportFamily A (k + 1)) F m) T)
+    (hrootT : Disjoint R T) :
+    M.card ≤ F.card + T.card := by
+  classical
+  let D : Finset ℕ := (F \ R) ∪ T
+  have hrootD : Disjoint R D := by
+    rw [Finset.disjoint_left]
+    intro x hxR hxD
+    rcases Finset.mem_union.mp hxD with hxFR | hxT
+    · exact (Finset.mem_sdiff.mp hxFR).2 hxR
+    · exact Finset.disjoint_left.mp hrootT hxR hxT
+  have hDcard : D.card ≤ F.card + T.card := by
+    calc
+      D.card ≤ (F \ R).card + T.card := by
+        change ((F \ R) ∪ T).card ≤ (F \ R).card + T.card
+        exact Finset.card_union_le (F \ R) T
+      _ ≤ F.card + T.card := by
+        exact Nat.add_le_add_right
+          (Finset.card_le_card Finset.sdiff_subset) T.card
+  have hDhit :
+      ∀ E ∈ M, ¬ Disjoint (E : Set ℕ) (D : Set ℕ) := by
+    intro E hEM
+    rw [Set.not_disjoint_iff]
+    by_cases hEF : (E \ F).Nonempty
+    · have hEout :
+          E \ F ∈
+            outsideSupportHypergraph
+              (additiveSupportFamily A (k + 1)) F m := by
+        apply Finset.mem_erase.mpr
+        exact
+          ⟨Finset.nonempty_iff_ne_empty.mp hEF,
+            Finset.mem_image.mpr ⟨E, hMsub hEM, rfl⟩⟩
+      obtain ⟨x, hx⟩ := htrans (E \ F) hEout
+      obtain ⟨hxOut, hxT⟩ := Finset.mem_inter.mp hx
+      exact
+        ⟨x,
+          Finset.mem_coe.mpr (Finset.mem_sdiff.mp hxOut).1,
+          Finset.mem_coe.mpr
+            (Finset.mem_union.mpr (Or.inr hxT))⟩
+    · obtain ⟨x, hxPetal⟩ := hMnonempty E hEM
+      have hxF : x ∈ F := by
+        by_contra hxF
+        exact hEF
+          ⟨x, Finset.mem_sdiff.mpr
+            ⟨(Finset.mem_sdiff.mp hxPetal).1, hxF⟩⟩
+      exact
+        ⟨x,
+          Finset.mem_coe.mpr (Finset.mem_sdiff.mp hxPetal).1,
+          Finset.mem_coe.mpr
+            (Finset.mem_union.mpr
+              (Or.inl
+                (Finset.mem_sdiff.mpr
+                  ⟨hxF, (Finset.mem_sdiff.mp hxPetal).2⟩)))⟩
+  have hhitPetal :
+      ∀ E ∈ M, ¬ Disjoint (E : Set ℕ) (D : Set ℕ) →
+        ∃ x ∈ D, x ∈ E \ R := by
+    intro E _hEM hED
+    obtain ⟨x, hxE, hxD⟩ := Set.not_disjoint_iff.mp hED
+    have hxR : x ∉ R := by
+      intro hxR
+      exact Finset.disjoint_left.mp hrootD
+        hxR (Finset.mem_coe.mp hxD)
+    exact
+      ⟨x, Finset.mem_coe.mp hxD,
+        Finset.mem_sdiff.mpr ⟨Finset.mem_coe.mp hxE, hxR⟩⟩
+  by_contra hnotle
+  have hlarge : D.card < M.card :=
+    lt_of_le_of_lt hDcard (Nat.lt_of_not_ge hnotle)
+  obtain ⟨E, hEM, hED⟩ :=
+    exists_surviving_support hMmatching hhitPetal hlarge
+  exact (hDhit E hEM) hED
+
+/-- **Finite moving-root capture.**  If a rooted matching is larger than an
+old finite core plus a transversal of all nonempty outside-core supports,
+then the transversal itself contains a common root point.
+
+This is stronger than capture by `F ∪ T`: the captured summand is genuinely
+new (`d ∈ T`), not an old point of `F`. -/
+theorem large_rootedMatching_outsideTransversal_captures_movingRoot
+    {A : Set ℕ} {k m : ℕ}
+    {F R T : Finset ℕ} {M : Finset (Finset ℕ)}
+    (hMsub : M ⊆ additiveSupportFamily A (k + 1) m)
+    (hMnonempty : ∀ E ∈ M, (E \ R).Nonempty)
+    (hMmatching :
+      ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+        Disjoint (E \ R) (G \ R))
+    (htrans :
+      IsTransversal
+        (outsideSupportHypergraph
+          (additiveSupportFamily A (k + 1)) F m) T)
+    (hlarge : F.card + T.card < M.card) :
+    ∃ d ∈ R, d ∈ T := by
+  classical
+  by_contra hnone
+  push Not at hnone
+  have hrootT : Disjoint R T := by
+    rw [Finset.disjoint_left]
+    exact fun d hdR hdT => hnone d hdR hdT
+  have hle :=
+    card_rootedMatching_le_core_add_outsideTransversal_of_rootDisjoint
+      hMsub hMnonempty hMmatching htrans hrootT
+  omega
+
+/-- Arithmetic form of finite moving-root capture.  When the moving
+transversal avoids the old core, the captured point is new, belongs to the
+basis, and removing it from every support preserves the full matching
+cardinality at the exact predecessor target `m - d`. -/
+theorem large_rootedMatching_outsideTransversal_descends_through_movingRoot
+    {A : Set ℕ} {k m : ℕ}
+    {F R T : Finset ℕ} {M : Finset (Finset ℕ)}
+    (hMsub : M ⊆ additiveSupportFamily A (k + 1) m)
+    (hMroot : ∀ E ∈ M, R ⊆ E)
+    (hMnonempty : ∀ E ∈ M, (E \ R).Nonempty)
+    (hMmatching :
+      ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+        Disjoint (E \ R) (G \ R))
+    (htrans :
+      IsTransversal
+        (outsideSupportHypergraph
+          (additiveSupportFamily A (k + 1)) F m) T)
+    (hTF : Disjoint T F)
+    (hlarge : F.card + T.card < M.card) :
+    ∃ d ∈ R, d ∈ T ∧ d ∉ F ∧ d ∈ A ∧ d ≤ m ∧
+      ∃ ℋ : Finset (Finset ℕ),
+        ℋ ⊆ additiveSupportFamily A k (m - d) ∧
+        ℋ.card = M.card := by
+  classical
+  obtain ⟨d, hdR, hdT⟩ :=
+    large_rootedMatching_outsideTransversal_captures_movingRoot
+      hMsub hMnonempty hMmatching htrans hlarge
+  have hdF : d ∉ F := by
+    intro hdF
+    exact Finset.disjoint_left.mp hTF hdT hdF
+  have hMpos : 0 < M.card :=
+    lt_of_le_of_lt (Nat.zero_le _) hlarge
+  obtain ⟨E, hEM⟩ := Finset.card_pos.mp hMpos
+  have hdE : d ∈ E := hMroot E hEM hdR
+  have hdA : d ∈ A :=
+    additiveSupportFamily_supportsIn
+      A (k + 1) m E (hMsub hEM) d hdE
+  have hdm : d ≤ m :=
+    additiveSupportFamily_supportsBounded
+      A (k + 1) m E (hMsub hEM) d hdE
+  obtain ⟨ℋ, hℋsub, hℋcard⟩ :=
+    additiveSupportStar_descends_card hMsub
+      (fun G hGM => hMroot G hGM hdR)
+  exact ⟨d, hdR, hdT, hdF, hdA, hdm, ℋ, hℋsub, hℋcard⟩
+
+/-- Failure of every finite protected core forces cofinally many genuinely
+moving root captures.
+
+For a fixed old core `F`, bounded-matching failure supplies a uniformly
+bounded outside transversal `T` at arbitrarily late successor targets.
+Ask the unconditional successor rooted-matching theorem for more than
+`|F| + bound + r` petals.  Finite moving-root capture then puts a *new*
+common summand `d` inside `T`, and exact support removal leaves more than
+`r` distinct order-`k` supports at the coherent difference `n - d`.
+
+The bound is chosen before either the requested multiplicity or the late
+threshold.  This is the scheduling form needed for an infinite fusion: each
+iteration may enlarge `F`, demand more lower-order representations, and move
+past all earlier coordinates. -/
+theorem IsExactTupleAsymptoticBasis.cofinal_movingRootCapture_of_failsFiniteCoreMatching
+    {A : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hfail :
+      FailsFiniteCoreMatching
+        (additiveSupportFamily A (k + 1)) A) :
+    ∀ F : Finset ℕ, (F : Set ℕ) ⊆ A →
+      ∃ bound, ∀ r L, ∃ n T R M d lower,
+        L ≤ n ∧
+        (∀ x ∈ T, x ∈ A) ∧
+        Disjoint T F ∧
+        T.card ≤ bound ∧
+        IsTransversal
+          (outsideSupportHypergraph
+            (additiveSupportFamily A (k + 1)) F n) T ∧
+        R.card < k + 1 ∧
+        M ⊆ additiveSupportFamily A (k + 1) n ∧
+        r < M.card ∧
+        F.card + T.card < M.card ∧
+        (∀ E ∈ M, R ⊆ E) ∧
+        (∀ E ∈ M, (E \ R).Nonempty) ∧
+        (∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+          Disjoint (E \ R) (G \ R)) ∧
+        d ∈ R ∧ d ∈ T ∧ d ∉ F ∧ d ∈ A ∧ d ≤ n ∧
+        lower ⊆ additiveSupportFamily A k (n - d) ∧
+        lower.card = M.card := by
+  intro F hFA
+  have hmoving :
+      HasBoundedMovingOutsideTransversals
+        (additiveSupportFamily A (k + 1)) A :=
+    boundedMovingOutsideTransversals_of_failsFiniteCoreMatching
+      (additiveSupportFamily_supportsIn A (k + 1))
+      (additiveSupportFamily_cardAtMost A (k + 1))
+      hfail
+  obtain ⟨bound, hbound⟩ := hmoving F hFA
+  refine ⟨bound, ?_⟩
+  intro r L
+  obtain ⟨N, hN⟩ :=
+    hbasis.eventually_successorExactRootedMatching
+      (F.card + bound + r)
+  obtain ⟨n, T, hn, hTA, hTF, hTcard, htrans⟩ :=
+    hbound (max L N)
+  obtain ⟨R, M, hRcard, hMsub, hMlarge, hMroot,
+      hMnonempty, hMmatching⟩ :=
+    hN n (le_trans (Nat.le_max_right L N) hn)
+  have hcoreLarge : F.card + T.card < M.card := by
+    omega
+  obtain ⟨d, hdR, hdT, hdF, hdA, hdn, lower,
+      hlowerSub, hlowerCard⟩ :=
+    large_rootedMatching_outsideTransversal_descends_through_movingRoot
+      hMsub hMroot hMnonempty hMmatching htrans hTF hcoreLarge
+  exact
+    ⟨n, T, R, M, d, lower,
+      le_trans (Nat.le_max_left L N) hn,
+      hTA, hTF, hTcard, htrans, hRcard, hMsub,
+      by omega, hcoreLarge, hMroot, hMnonempty, hMmatching,
+      hdR, hdT, hdF, hdA, hdn, hlowerSub, hlowerCard⟩
+
 /-- A deletion prefix cannot destroy more pairwise-disjoint petals than it
 has vertices while remaining disjoint from their common root.
 
@@ -41720,6 +41959,104 @@ def HasFiniteProtectedSuccessorRootedGrowth
       (∀ E ∈ M, (E \ root).Nonempty) ∧
       ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
         Disjoint (E \ root) (G \ root)
+
+/-- Matching growth outside one finite core already gives protected rooted
+growth inside that same core.
+
+Take a very large outside matching and delta-systemize the corresponding
+additive supports.  Since the matching's outside-`F` parts are pairwise
+disjoint, any point common to two members of the resulting rooted matching
+must lie in `F`.  Asking for at least two petals makes this argument
+nonvacuous. -/
+theorem OutsideMatchingTendsToInfinity.hasFiniteProtectedSuccessorRootedGrowth
+    {A : Set ℕ} {k : ℕ} {F : Finset ℕ}
+    (hgrowth :
+      OutsideMatchingTendsToInfinity
+        (additiveSupportFamily A (k + 1)) F) :
+    HasFiniteProtectedSuccessorRootedGrowth A k := by
+  classical
+  refine ⟨F, ?_⟩
+  intro demand
+  let r := max demand 1
+  obtain ⟨N, hN⟩ :=
+    hgrowth (additiveRootedMatchingBound (k + 1) r)
+  refine ⟨N, ?_⟩
+  intro n hn
+  obtain ⟨𝒢, h𝒢sub, h𝒢large, _h𝒢outside, h𝒢disjoint⟩ :=
+    lt_matchingNumber_outsideSupportHypergraph_iff.mp
+      (hN n hn)
+  obtain ⟨root, M, hrootCard, hMsub𝒢, hMlarge,
+      hMroot, hMnonempty, hMmatching⟩ :=
+    additiveSupportSubfamily_has_large_rootedMatching
+      (k + 1) r n 𝒢 h𝒢sub (Nat.le_of_lt h𝒢large)
+  have hMtwo : 1 < M.card := by
+    exact lt_of_le_of_lt (Nat.le_max_right demand 1) hMlarge
+  obtain ⟨E, hEM, G, hGM, hEG⟩ :=
+    Finset.one_lt_card.mp hMtwo
+  have hrootF : root ⊆ F := by
+    intro x hxroot
+    by_contra hxF
+    have hxEout : x ∈ E \ F :=
+      Finset.mem_sdiff.mpr ⟨hMroot E hEM hxroot, hxF⟩
+    have hxGout : x ∈ G \ F :=
+      Finset.mem_sdiff.mpr ⟨hMroot G hGM hxroot, hxF⟩
+    exact Finset.disjoint_left.mp
+      (h𝒢disjoint E (hMsub𝒢 hEM)
+        G (hMsub𝒢 hGM) hEG)
+      hxEout hxGout
+  exact
+    ⟨root, M, hrootCard, hrootF,
+      fun E hEM => h𝒢sub (hMsub𝒢 hEM),
+      lt_of_le_of_lt (Nat.le_max_left demand 1) hMlarge,
+      hMroot, hMnonempty, hMmatching⟩
+
+/-- Unconditional finite-root-capture fork for every exact order-`k` basis.
+
+Either one fixed finite core contains roots of arbitrarily large successor
+matchings at every late target, in which case the direct sparse deletion
+below solves the successor problem, or failure of every such outside core
+forces cofinally many fresh moving-root captures with cardinality-preserving
+order-`k` difference families.
+
+Thus the bounded-transversal branch no longer has an ambiguous `F ∪ T`
+capture: its root point is certified to lie in the moving part `T \ F`. -/
+theorem IsExactTupleAsymptoticBasis.finiteProtectedRootedGrowth_or_cofinalMovingRootCapture
+    {A : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A k) :
+    HasFiniteProtectedSuccessorRootedGrowth A k ∨
+      ∀ F : Finset ℕ, (F : Set ℕ) ⊆ A →
+        ∃ bound, ∀ r L, ∃ n T R M d lower,
+          L ≤ n ∧
+          (∀ x ∈ T, x ∈ A) ∧
+          Disjoint T F ∧
+          T.card ≤ bound ∧
+          IsTransversal
+            (outsideSupportHypergraph
+              (additiveSupportFamily A (k + 1)) F n) T ∧
+          R.card < k + 1 ∧
+          M ⊆ additiveSupportFamily A (k + 1) n ∧
+          r < M.card ∧
+          F.card + T.card < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          (∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+            Disjoint (E \ R) (G \ R)) ∧
+          d ∈ R ∧ d ∈ T ∧ d ∉ F ∧ d ∈ A ∧ d ≤ n ∧
+          lower ⊆ additiveSupportFamily A k (n - d) ∧
+          lower.card = M.card := by
+  classical
+  by_cases hfail :
+      FailsFiniteCoreMatching
+        (additiveSupportFamily A (k + 1)) A
+  · exact Or.inr
+      (hbasis.cofinal_movingRootCapture_of_failsFiniteCoreMatching hfail)
+  · left
+    unfold FailsFiniteCoreMatching at hfail
+    push Not at hfail
+    obtain ⟨F, _hFA, hgrowth⟩ := hfail
+    exact
+      OutsideMatchingTendsToInfinity.hasFiniteProtectedSuccessorRootedGrowth
+        hgrowth
 
 /-- Finite protected-root growth supplies the exact reservoir-relative
 two-repair invariant used by the direct sparse-deletion recursion. -/
