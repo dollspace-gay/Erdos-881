@@ -28721,10 +28721,10 @@ theorem large_destroyedRootedMatching_forces_nontrivialRankDescent_or_markedPriv
       hxData.1, by omega, core, hcoreMem', hcoreD,
       hsupport, hprivate⟩
 
-/-- A marked private core completes to a protected selector repair.
+/-- A marked private support completes to a protected selector repair.
 
 Assume the destroyer lies in one block selector and the private support
-`insert x core` meets it exactly at `x`.  In the block selecting `x`, choose
+`E` meets it exactly at `x`.  In the block selecting `x`, choose
 one replacement point outside both the protected prefix and that support.
 The private support then survives the finite swap.  Uniform block capacity
 feeds this witness into the existing protected completion theorem, producing
@@ -28732,16 +28732,16 @@ a full selector which avoids the prefix and preserves the target.
 
 This is the promised operational form of the rank-one branch: it is a
 strict repair step, not a terminal descent label. -/
-theorem markedPrivateCore_extends_avoiding_protectedUnion
+theorem markedPrivateSupport_extends_avoiding_protectedUnion
     {A C : Set ℕ} {k q x : ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition C F)
-    (s : BlockSelector F) {D U core : Finset ℕ}
+    (s : BlockSelector F) {D U E : Finset ℕ}
     (hDselected : (D : Set ℕ) ⊆ selectedSet s)
     (hxD : x ∈ D)
     (hUselected : Disjoint (U : Set ℕ) (selectedSet s))
     (hsupport :
-      insert x core ∈ additiveSupportFamily A (k + 1) q)
-    (hprivate : insert x core ∩ D = {x})
+      E ∈ additiveSupportFamily A (k + 1) q)
+    (hprivate : E ∩ D = {x})
     (hblocks : ∀ j, U.card + (k + 1) < (F j).card) :
     ∃ i b, ∃ t : BlockSelector F,
       (s i).1 = x ∧
@@ -28757,7 +28757,6 @@ theorem markedPrivateCore_extends_avoiding_protectedUnion
     hDselected (Finset.mem_coe.mpr hxD)
   have hsi : (s i).1 = x := by
     exact (P.mem_selectedSet_iff s).mp hxSelected
-  let E : Finset ℕ := insert x core
   let W : Finset ℕ := U ∪ E
   have hEcard : E.card ≤ k + 1 := by
     exact additiveSupportFamily_cardAtMost
@@ -28792,7 +28791,10 @@ theorem markedPrivateCore_extends_avoiding_protectedUnion
   have hbx : b ≠ x := by
     intro hbx
     subst b
-    exact hbE (Finset.mem_insert_self x core)
+    have hxPrivate : x ∈ E ∩ D := by
+      rw [hprivate]
+      simp
+    exact hbE (Finset.mem_inter.mp hxPrivate).1
   have hbBlock : b ∈ (F i).erase (s i).1 := by
     rw [hsi]
     exact Finset.mem_erase.mpr ⟨hbx, hbF⟩
@@ -28823,6 +28825,30 @@ theorem markedPrivateCore_extends_avoiding_protectedUnion
       P s hbBlock hbU hUselected hsupport hEswap
         (fun j _hsjSupport => hblocks j)
   exact ⟨i, b, t, hsi, hbBlock, htU, htq⟩
+
+/-- Core-shaped wrapper for
+`markedPrivateSupport_extends_avoiding_protectedUnion`. -/
+theorem markedPrivateCore_extends_avoiding_protectedUnion
+    {A C : Set ℕ} {k q x : ℕ}
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition C F)
+    (s : BlockSelector F) {D U core : Finset ℕ}
+    (hDselected : (D : Set ℕ) ⊆ selectedSet s)
+    (hxD : x ∈ D)
+    (hUselected : Disjoint (U : Set ℕ) (selectedSet s))
+    (hsupport :
+      insert x core ∈ additiveSupportFamily A (k + 1) q)
+    (hprivate : insert x core ∩ D = {x})
+    (hblocks : ∀ j, U.card + (k + 1) < (F j).card) :
+    ∃ i b, ∃ t : BlockSelector F,
+      (s i).1 = x ∧
+      b ∈ (F i).erase (s i).1 ∧
+      Disjoint (U : Set ℕ) (selectedSet t) ∧
+      ¬ DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (selectedSet t) q :=
+  markedPrivateSupport_extends_avoiding_protectedUnion
+    P s hDselected hxD hUselected
+      hsupport hprivate hblocks
 
 /-- A predecessor-gap anchor is redundant in a minimal successor-order
 destroyer.
@@ -30507,8 +30533,18 @@ theorem privateCores_largeSet_forces_protectedRepair_or_lowerDifferenceGrowth
         Disjoint core U ∧
         insert x core ∈ additiveSupportFamily A h q ∧
         insert x core ∩ D = {x}) ∨
-      ∃ u ∈ U,
-        r < (additiveSupportFamily A (h - 1) (q - u)).card := by
+      ∃ u ∈ U, ∃ marked : Finset (ℕ × Finset ℕ),
+        r < marked.card ∧
+        (∀ p ∈ marked,
+          p.1 ∈ X ∧
+          p.2 ∈ additiveSupportFamily A (h - 1) (q - u) ∧
+          p.2 ∩ D = {p.1} ∧
+          insert u p.2 ∈ additiveSupportFamily A h q ∧
+          insert u p.2 ∩ D = {p.1}) ∧
+        Set.InjOn
+          (fun p : ℕ × Finset ℕ => p.1) (marked : Set _) ∧
+        Set.InjOn
+          (fun p : ℕ × Finset ℕ => p.2) (marked : Set _) := by
   classical
   have hcoreExists : ∀ x, x ∈ X → ∃ core : Finset ℕ,
       core ∈ additiveSupportFamily A (h - 1) (q - x) ∧
@@ -30643,13 +30679,72 @@ theorem privateCores_largeSet_forces_protectedRepair_or_lowerDifferenceGrowth
           ({x.1.1} : Finset ℕ) = {y.1.1} := by
         rw [← hlowerPrivate x, ← hlowerPrivate y, hlowerEq]
       exact Finset.singleton_injective hsingleton
-    have hfiberCard :
-        fiber.card ≤
-          (additiveSupportFamily A (h - 1) (q - u)).card := by
-      simpa only [Fintype.card_coe] using
-        Fintype.card_le_of_injective lowerMap hlowerInjective
-    exact Or.inr ⟨u, huU,
-      hfiberLarge.trans_le hfiberCard⟩
+    let markedEmbedding :
+        {x // x ∈ fiber} ↪ (ℕ × Finset ℕ) :=
+      ⟨fun x => (x.1.1, lower x), by
+        intro x y hxy
+        apply Subtype.ext
+        apply Subtype.ext
+        exact congrArg Prod.fst hxy⟩
+    let marked : Finset (ℕ × Finset ℕ) :=
+      Finset.univ.map markedEmbedding
+    have hmarkedCard : marked.card = fiber.card := by
+      simp only [marked, Finset.card_map, Finset.card_univ,
+        Fintype.card_coe]
+    have hmarkedData : ∀ p ∈ marked,
+        p.1 ∈ X ∧
+        p.2 ∈ additiveSupportFamily A (h - 1) (q - u) ∧
+        p.2 ∩ D = {p.1} ∧
+        insert u p.2 ∈ additiveSupportFamily A h q ∧
+        insert u p.2 ∩ D = {p.1} := by
+      intro p hp
+      obtain ⟨x, _hxUniv, rfl⟩ :=
+        Finset.mem_map.mp hp
+      exact ⟨x.1.2, hlowerMem x, hlowerPrivate x,
+        by
+          change
+            insert u (lower x) ∈
+              additiveSupportFamily A h q
+          rw [← hsourceLower x]
+          exact (hcoreData x.1).2.2.1,
+        by
+          change
+            insert u (lower x) ∩ D = {x.1.1}
+          rw [← hsourceLower x]
+          exact (hcoreData x.1).2.2.2⟩
+    have hmarkedFst :
+        Set.InjOn
+          (fun p : ℕ × Finset ℕ => p.1)
+          (marked : Set (ℕ × Finset ℕ)) := by
+      intro p hp z hz hpz
+      obtain ⟨x, _hxUniv, rfl⟩ :=
+        Finset.mem_map.mp (Finset.mem_coe.mp hp)
+      obtain ⟨y, _hyUniv, rfl⟩ :=
+        Finset.mem_map.mp (Finset.mem_coe.mp hz)
+      have hxy : x = y := by
+        apply Subtype.ext
+        apply Subtype.ext
+        exact hpz
+      subst y
+      rfl
+    have hmarkedSnd :
+        Set.InjOn
+          (fun p : ℕ × Finset ℕ => p.2)
+          (marked : Set (ℕ × Finset ℕ)) := by
+      intro p hp z hz hpz
+      obtain ⟨x, _hxUniv, rfl⟩ :=
+        Finset.mem_map.mp (Finset.mem_coe.mp hp)
+      obtain ⟨y, _hyUniv, rfl⟩ :=
+        Finset.mem_map.mp (Finset.mem_coe.mp hz)
+      have hxyMap : lowerMap x = lowerMap y :=
+        Subtype.ext hpz
+      have hxy : x = y :=
+        hlowerInjective hxyMap
+      subst y
+      rfl
+    exact Or.inr ⟨u, huU, marked,
+      by simpa only [hmarkedCard] using hfiberLarge,
+      hmarkedData, hmarkedFst, hmarkedSnd⟩
 
 /-- Large-destroyer form of the protected-prefix amplifier.
 
@@ -30680,8 +30775,18 @@ theorem largeMinimalDestroyer_forces_nontrivialRankDescent_or_protectedRepair_or
         Disjoint core U ∧
         insert x core ∈ additiveSupportFamily A h q ∧
         insert x core ∩ D = {x}) ∨
-      ∃ u ∈ U,
-        r < (additiveSupportFamily A (h - 1) (q - u)).card := by
+      ∃ u ∈ U, ∃ marked : Finset (ℕ × Finset ℕ),
+        r < marked.card ∧
+        (∀ p ∈ marked,
+          p.1 ∈ D ∧
+          p.2 ∈ additiveSupportFamily A (h - 1) (q - u) ∧
+          p.2 ∩ D = {p.1} ∧
+          insert u p.2 ∈ additiveSupportFamily A h q ∧
+          insert u p.2 ∩ D = {p.1}) ∧
+        Set.InjOn
+          (fun p : ℕ × Finset ℕ => p.1) (marked : Set _) ∧
+        Set.InjOn
+          (fun p : ℕ × Finset ℕ => p.2) (marked : Set _) := by
   classical
   by_cases hdescent : ∃ ℓ n,
       1 < ℓ ∧
@@ -30730,11 +30835,170 @@ theorem largeMinimalDestroyer_forces_nontrivialRankDescent_or_protectedRepair_or
       exact ⟨x, (Finset.mem_filter.mp hxX).1,
         core, hcoreMem, hcoreD, hcoreU,
         hsupport, hprivate⟩
-    · exact Or.inr hgrowth
+    · obtain ⟨u, huU, marked, hmarkedLarge,
+          hmarkedData, hmarkedFst, hmarkedSnd⟩ :=
+        hgrowth
+      exact Or.inr ⟨u, huU, marked, hmarkedLarge,
+        fun p hp => ⟨
+          (Finset.mem_filter.mp (hmarkedData p hp).1).1,
+          (hmarkedData p hp).2.1,
+          (hmarkedData p hp).2.2.1,
+          (hmarkedData p hp).2.2.2.1,
+          (hmarkedData p hp).2.2.2.2⟩,
+        hmarkedFst, hmarkedSnd⟩
 
-/-- Matching-normalized form of the protected-prefix amplifier.  The
-lower-difference growth horn is converted at its exact target `q-u` into a
-rooted matching of any prescribed size. -/
+/-- On a block selector, the entire large-destroyer branch collapses.
+
+With demand zero the private-core amplifier needs only `1 < D.card`.
+Its direct horn is already a marked private support.  In the pigeonhole
+horn, every retained lower support comes with the reinserted same-target
+support `insert u H` and its singleton destroyer trace.  Either support can
+therefore be completed to a selector avoiding the protected prefix.
+
+Thus a non-singleton selected minimal destroyer forces genuine rank descent
+or an actual protected same-target repair; anonymous lower-family growth is
+not a third terminal outcome. -/
+theorem selectedLargeMinimalDestroyer_forces_nontrivialRankDescent_or_protectedRepair
+    {A C : Set ℕ} {h q : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    (s : BlockSelector cell) {D U : Finset ℕ}
+    (hh : 1 < h)
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q)
+    (hDselected : (D : Set ℕ) ⊆ selectedSet s)
+    (hUselected :
+      Disjoint (U : Set ℕ) (selectedSet s))
+    (hblocks : ∀ j, U.card + h < (cell j).card)
+    (hDtwo : 1 < D.card) :
+    (∃ ℓ n,
+        1 < ℓ ∧
+        ℓ < h ∧
+        (additiveSupportFamily A ℓ n).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A ℓ)
+          (D : Set ℕ) n) ∨
+      ∃ t : BlockSelector cell,
+        Disjoint (U : Set ℕ) (selectedSet t) ∧
+        ¬ DestroysAt
+          (additiveSupportFamily A h)
+          (selectedSet t) q := by
+  classical
+  have hpredSucc : h - 1 + 1 = h := by omega
+  have hlargeZero : U.card * 0 + 1 < D.card := by
+    simpa using hDtwo
+  obtain hdescent | hrepair |
+      ⟨u, _huU, marked, hmarkedLarge,
+        hmarkedData, _hmarkedFst, _hmarkedSnd⟩ :=
+    largeMinimalDestroyer_forces_nontrivialRankDescent_or_protectedRepair_or_lowerDifferenceGrowth
+      hh hminimal
+        (Finset.disjoint_coe.mp
+          (hUselected.mono_right hDselected))
+        hlargeZero
+  · exact Or.inl hdescent
+  · right
+    obtain ⟨x, hxD, core, _hcoreMem, _hcoreD,
+        _hcoreU, hsupport, hprivate⟩ :=
+      hrepair
+    have hsupportPred :
+        insert x core ∈
+          additiveSupportFamily A (h - 1 + 1) q := by
+      simpa only [hpredSucc] using hsupport
+    have hblocksPred :
+        ∀ j, U.card + (h - 1 + 1) < (cell j).card := by
+      simpa only [hpredSucc] using hblocks
+    obtain ⟨_i, _b, t, _hsi, _hbBlock, htU, htq⟩ :=
+      markedPrivateSupport_extends_avoiding_protectedUnion
+        P s hDselected hxD hUselected
+          hsupportPred hprivate hblocksPred
+    exact ⟨t, htU, by
+      simpa only [hpredSucc] using htq⟩
+  · right
+    have hmarkedNonempty : marked.Nonempty := by
+      rw [← Finset.card_pos]
+      omega
+    obtain ⟨p, hpMarked⟩ := hmarkedNonempty
+    have hpData := hmarkedData p hpMarked
+    have hsupportPred :
+        insert u p.2 ∈
+          additiveSupportFamily A (h - 1 + 1) q := by
+      simpa only [hpredSucc] using hpData.2.2.2.1
+    have hblocksPred :
+        ∀ j, U.card + (h - 1 + 1) < (cell j).card := by
+      simpa only [hpredSucc] using hblocks
+    obtain ⟨_i, _b, t, _hsi, _hbBlock, htU, htq⟩ :=
+      markedPrivateSupport_extends_avoiding_protectedUnion
+        P s hDselected hpData.1 hUselected
+          hsupportPred hpData.2.2.2.2 hblocksPred
+    exact ⟨t, htU, by
+      simpa only [hpredSucc] using htq⟩
+
+/-- The corrected cofinal selector fork with the large branch eliminated.
+
+Ask the four-way fork for a destroyer larger than one point.  The preceding
+theorem converts exactly that horn into either genuine nontrivial rank
+descent or a protected same-target selector repair.  Hence only three
+honest outcomes remain: descent, repair, or a primitive predecessor gap. -/
+theorem IsStronglyMinimalExactBasis.cofinal_selectorNontrivialRankDescent_or_protectedRepair_or_lowerGap
+    {A K : Set ℕ} {h : ℕ} {cell : ℕ → Finset ℕ}
+    (hminimal : IsStronglyMinimalExactBasis A h)
+    (hh : 1 < h)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (s : BlockSelector cell) (U : Finset ℕ)
+    (hUselected :
+      Disjoint (U : Set ℕ) (selectedSet s))
+    (hblocks : ∀ j, U.card + h < (cell j).card) :
+    ∀ L, ∃ q, ∃ D : Finset ℕ,
+      L ≤ q ∧
+      D.Nonempty ∧
+      (D : Set ℕ) ⊆ selectedSet s ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q ∧
+      (((∃ ℓ n,
+            1 < ℓ ∧
+            ℓ < h ∧
+            (additiveSupportFamily A ℓ n).Nonempty ∧
+            DestroysAt
+              (additiveSupportFamily A ℓ)
+              (D : Set ℕ) n) ∨
+          ∃ t : BlockSelector cell,
+            Disjoint (U : Set ℕ) (selectedSet t) ∧
+            ¬ DestroysAt
+              (additiveSupportFamily A h)
+              (selectedSet t) q) ∨
+        ∃ b, b ∈ selectedSet s ∧ b ∉ D ∧ b ≤ q ∧
+          additiveSupportFamily A (h - 1) (q - b) = ∅) := by
+  have hhpos : 0 < h := by omega
+  intro L
+  obtain ⟨q, D, hLq, hDnonempty, hDselected,
+      hDminimal, houtcome⟩ :=
+    hminimal.cofinal_selectorNontrivialRankDescent_or_protectedRepair_or_manyBlocks_or_lowerGap
+      hhpos hKA P s U hUselected hblocks 1 L
+  rcases houtcome with ((hdescent | hrepair) | hlarge) | hgap
+  · exact ⟨q, D, hLq, hDnonempty, hDselected,
+      hDminimal, Or.inl (Or.inl hdescent)⟩
+  · exact ⟨q, D, hLq, hDnonempty, hDselected,
+      hDminimal, Or.inl (Or.inr hrepair)⟩
+  · obtain hdescent | hrepair :=
+      selectedLargeMinimalDestroyer_forces_nontrivialRankDescent_or_protectedRepair
+        P s hh hDminimal hDselected hUselected hblocks hlarge
+    · exact ⟨q, D, hLq, hDnonempty, hDselected,
+        hDminimal, Or.inl (Or.inl hdescent)⟩
+    · exact ⟨q, D, hLq, hDnonempty, hDselected,
+        hDminimal, Or.inl (Or.inr hrepair)⟩
+  · exact ⟨q, D, hLq, hDnonempty, hDselected,
+      hDminimal, Or.inr hgap⟩
+
+/-- Matching-normalized form of the protected-prefix amplifier.
+
+The lower-difference growth horn is converted at its exact target `q-u`
+into a rooted matching of any prescribed size.  Unlike the earlier
+cardinality-only normalization, this version keeps the private marker of
+every lower support.  Distinct matching members therefore have disjoint
+traces on `D`; as soon as two petals are requested, their common root is
+forced to be disjoint from `D`. -/
 theorem largeMinimalDestroyer_forces_nontrivialRankDescent_or_protectedRepair_or_lowerDifferenceRootedMatching
     {A : Set ℕ} {h q demand : ℕ} {D U : Finset ℕ}
     (hh : 1 < h)
@@ -30764,23 +31028,102 @@ theorem largeMinimalDestroyer_forces_nontrivialRankDescent_or_protectedRepair_or
         demand < M.card ∧
         (∀ E ∈ M, R ⊆ E) ∧
         (∀ E ∈ M, (E \ R).Nonempty) ∧
+        (∀ E ∈ M, ∃ x ∈ D, E ∩ D = {x}) ∧
+        (∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+          Disjoint (E ∩ D) (G ∩ D)) ∧
+        (1 < demand → Disjoint R D) ∧
         ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
           Disjoint (E \ R) (G \ R) := by
-  obtain hdescent | hrepair | ⟨u, huU, hgrowth⟩ :=
+  classical
+  obtain hdescent | hrepair |
+      ⟨u, huU, marked, hmarkedLarge, hmarkedData,
+        hmarkedFst, hmarkedSnd⟩ :=
     largeMinimalDestroyer_forces_nontrivialRankDescent_or_protectedRepair_or_lowerDifferenceGrowth
       hh hminimal hUD hlarge
   · exact Or.inl hdescent
   · exact Or.inr (Or.inl hrepair)
   · right
     right
+    let supportEmbedding :
+        {p // p ∈ marked} ↪ Finset ℕ :=
+      ⟨fun p => p.1.2, by
+        intro p z hpz
+        apply Subtype.ext
+        exact hmarkedSnd p.2 z.2 hpz⟩
+    let family : Finset (Finset ℕ) :=
+      Finset.univ.map supportEmbedding
+    have hfamilyCard : family.card = marked.card := by
+      simp only [family, Finset.card_map, Finset.card_univ,
+        Fintype.card_coe]
+    have hfamilySub :
+        family ⊆
+          additiveSupportFamily A (h - 1) (q - u) := by
+      intro E hE
+      obtain ⟨p, _hpUniv, rfl⟩ :=
+        Finset.mem_map.mp hE
+      exact (hmarkedData p.1 p.2).2.1
+    have hfamilyLarge :
+        additiveRootedMatchingBound (h - 1) demand ≤
+          family.card := by
+      rw [hfamilyCard]
+      exact Nat.le_of_lt hmarkedLarge
     obtain ⟨R, M, hRcard, hMsub, hMlarge,
         hMroot, hMpetal, hMmatching⟩ :=
       additiveSupportSubfamily_has_large_rootedMatching
         (A := A) (h - 1) demand (q - u)
-        (additiveSupportFamily A (h - 1) (q - u))
-        Finset.Subset.rfl (Nat.le_of_lt hgrowth)
-    exact ⟨u, huU, R, M, hRcard, hMsub,
-      hMlarge, hMroot, hMpetal, hMmatching⟩
+        family hfamilySub hfamilyLarge
+    have hMsubFamily : M ⊆ family := hMsub
+    have hMsubSupport :
+        M ⊆ additiveSupportFamily A (h - 1) (q - u) :=
+      hMsub.trans hfamilySub
+    have hMtrace : ∀ E ∈ M,
+        ∃ x ∈ D, E ∩ D = {x} := by
+      intro E hEM
+      obtain ⟨p, _hpUniv, hpE⟩ :=
+        Finset.mem_map.mp (hMsubFamily hEM)
+      subst E
+      exact ⟨p.1.1, (hmarkedData p.1 p.2).1,
+        (hmarkedData p.1 p.2).2.2.1⟩
+    have hMtraceDisjoint :
+        ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+          Disjoint (E ∩ D) (G ∩ D) := by
+      intro E hEM G hGM hEG
+      obtain ⟨p, _hpUniv, hpE⟩ :=
+        Finset.mem_map.mp (hMsubFamily hEM)
+      obtain ⟨z, _hzUniv, hzG⟩ :=
+        Finset.mem_map.mp (hMsubFamily hGM)
+      subst E
+      subst G
+      have hmarkerNe : p.1.1 ≠ z.1.1 := by
+        intro hmarker
+        have hpz : p.1 = z.1 :=
+          hmarkedFst p.2 z.2 hmarker
+        exact hEG (congrArg Prod.snd hpz)
+      change Disjoint (p.1.2 ∩ D) (z.1.2 ∩ D)
+      rw [(hmarkedData p.1 p.2).2.2.1,
+        (hmarkedData z.1 z.2).2.2.1]
+      exact Finset.disjoint_singleton.mpr hmarkerNe
+    have hrootDisjoint :
+        1 < demand → Disjoint R D := by
+      intro hdemand
+      have htwo : 1 < M.card :=
+        hdemand.trans hMlarge
+      obtain ⟨E, hEM, G, hGM, hEG⟩ :=
+        Finset.one_lt_card.mp htwo
+      rw [Finset.disjoint_left]
+      intro d hdR hdD
+      have hdE : d ∈ E :=
+        hMroot E hEM hdR
+      have hdG : d ∈ G :=
+        hMroot G hGM hdR
+      exact
+        Finset.disjoint_left.mp
+          (hMtraceDisjoint E hEM G hGM hEG)
+          (Finset.mem_inter.mpr ⟨hdE, hdD⟩)
+          (Finset.mem_inter.mpr ⟨hdG, hdD⟩)
+    exact ⟨u, huU, R, M, hRcard, hMsubSupport,
+      hMlarge, hMroot, hMpetal, hMtrace,
+      hMtraceDisjoint, hrootDisjoint, hMmatching⟩
 
 /-- In the bounded, no-rank-descent terminal fusion branch, the stream
 alignment forces a primitive gap at the exact descended target.
