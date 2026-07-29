@@ -28632,6 +28632,198 @@ theorem large_destroyedRootedMatching_forces_strictOccurrenceRankDescent
     hhitsStrict, hlength, hhitsRoot, htarget,
     hcoreR, hcoreD, hhitSupport, hhitDestroy⟩
 
+/-- A large destroyed rooted matching has an honest nontrivial-rank
+outcome or an exact marked private core.
+
+The occurrence descent above may stop after one hit.  That case is not
+reported as rank descent here.  Its unique hit `x` lies simultaneously in
+the destroyer and in the common root.  The surviving complementary core has
+order `H - 1`, represents `q - x`, and is disjoint from the whole destroyer;
+reinserting `x` gives a same-target support whose intersection with the
+destroyer is exactly `{x}`.
+
+Thus the automatic rank-one endpoint is converted into selector-ready
+repair data.  The other horn is genuinely nontrivial: its destroyed
+represented rank is strictly between one and `H`. -/
+theorem large_destroyedRootedMatching_forces_nontrivialRankDescent_or_markedPrivateCore
+    {A : Set ℕ} {H q : ℕ}
+    {D R : Finset ℕ} {M : Finset (Finset ℕ)}
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A H) D q)
+    (hMsub : M ⊆ additiveSupportFamily A H q)
+    (hMpetal : ∀ E ∈ M, (E \ R).Nonempty)
+    (hMmatching :
+      ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+        Disjoint (E \ R) (G \ R))
+    (hlarge : D.card < M.card) :
+    (∃ ℓ n,
+        1 < ℓ ∧
+        ℓ < H ∧
+        (additiveSupportFamily A ℓ n).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A ℓ)
+          (D : Set ℕ) n) ∨
+      ∃ x ∈ D, x ∈ R ∧ x ∈ A ∧ x ≤ q ∧
+        ∃ core : Finset ℕ,
+          core ∈ additiveSupportFamily A (H - 1) (q - x) ∧
+          Disjoint (core : Set ℕ) (D : Set ℕ) ∧
+          insert x core ∈ additiveSupportFamily A H q ∧
+          insert x core ∩ D = {x} := by
+  classical
+  obtain ⟨_E, _hEM, hits, j, t, core,
+      hhitsPos, hhitsStrict, hlength, hhitsRoot,
+      htarget, hcoreMem, hcoreD, hhitSupport,
+      hhitDestroy⟩ :=
+    large_destroyedRootedMatching_forces_strictOccurrenceRankDescent
+      hminimal hMsub hMpetal hMmatching hlarge
+  by_cases hhitsNontrivial : 1 < hits.length
+  · exact Or.inl ⟨hits.length, hits.sum,
+      hhitsNontrivial, hhitsStrict, hhitSupport, hhitDestroy⟩
+  · have hhitsOne : hits.length = 1 := by omega
+    obtain ⟨x, rfl⟩ := List.length_eq_one_iff.mp hhitsOne
+    have hxData : x ∈ A ∧ x ∈ D ∧ x ∈ R :=
+      hhitsRoot x (by simp)
+    have hj : j = H - 1 := by
+      simp only [List.length_cons, List.length_nil] at hlength
+      omega
+    have htarget' : q = x + t := by
+      simpa using htarget
+    have hqx : q - x = t := by omega
+    have hcoreMem' :
+        core ∈ additiveSupportFamily A (H - 1) (q - x) := by
+      simpa only [hj, hqx] using hcoreMem
+    have hsupport :
+        insert x core ∈ additiveSupportFamily A H q := by
+      have hinsert :=
+        insert_mem_additiveSupportFamily_succ hxData.1 hcoreMem
+      have horder : j + 1 = H := by omega
+      rw [horder, ← htarget'] at hinsert
+      exact hinsert
+    have hprivate : insert x core ∩ D = {x} := by
+      ext z
+      constructor
+      · intro hz
+        have hzInsert : z = x ∨ z ∈ core :=
+          Finset.mem_insert.mp (Finset.mem_inter.mp hz).1
+        have hzD : z ∈ D := (Finset.mem_inter.mp hz).2
+        rcases hzInsert with hzx | hzCore
+        · simpa [hzx]
+        · exact
+            (Finset.disjoint_left.mp
+              (Finset.disjoint_coe.mp hcoreD) hzCore hzD).elim
+      · intro hz
+        have hzx : z = x := by simpa using hz
+        subst z
+        exact Finset.mem_inter.mpr
+          ⟨Finset.mem_insert_self x core, hxData.2.1⟩
+    exact Or.inr ⟨x, hxData.2.1, hxData.2.2,
+      hxData.1, by omega, core, hcoreMem', hcoreD,
+      hsupport, hprivate⟩
+
+/-- A marked private core completes to a protected selector repair.
+
+Assume the destroyer lies in one block selector and the private support
+`insert x core` meets it exactly at `x`.  In the block selecting `x`, choose
+one replacement point outside both the protected prefix and that support.
+The private support then survives the finite swap.  Uniform block capacity
+feeds this witness into the existing protected completion theorem, producing
+a full selector which avoids the prefix and preserves the target.
+
+This is the promised operational form of the rank-one branch: it is a
+strict repair step, not a terminal descent label. -/
+theorem markedPrivateCore_extends_avoiding_protectedUnion
+    {A C : Set ℕ} {k q x : ℕ}
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition C F)
+    (s : BlockSelector F) {D U core : Finset ℕ}
+    (hDselected : (D : Set ℕ) ⊆ selectedSet s)
+    (hxD : x ∈ D)
+    (hUselected : Disjoint (U : Set ℕ) (selectedSet s))
+    (hsupport :
+      insert x core ∈ additiveSupportFamily A (k + 1) q)
+    (hprivate : insert x core ∩ D = {x})
+    (hblocks : ∀ j, U.card + (k + 1) < (F j).card) :
+    ∃ i b, ∃ t : BlockSelector F,
+      (s i).1 = x ∧
+      b ∈ (F i).erase (s i).1 ∧
+      Disjoint (U : Set ℕ) (selectedSet t) ∧
+      ¬ DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (selectedSet t) q := by
+  classical
+  let i := blockIndex P x
+  have hxSelected :
+      x ∈ selectedSet s :=
+    hDselected (Finset.mem_coe.mpr hxD)
+  have hsi : (s i).1 = x := by
+    exact (P.mem_selectedSet_iff s).mp hxSelected
+  let E : Finset ℕ := insert x core
+  let W : Finset ℕ := U ∪ E
+  have hEcard : E.card ≤ k + 1 := by
+    exact additiveSupportFamily_cardAtMost
+      A (k + 1) q E hsupport
+  have hWcard : W.card ≤ U.card + (k + 1) := by
+    calc
+      W.card ≤ U.card + E.card := by
+        simpa only [W] using Finset.card_union_le U E
+      _ ≤ U.card + (k + 1) :=
+        Nat.add_le_add_left hEcard U.card
+  have houtside : (F i \ W).Nonempty := by
+    by_contra hempty
+    have hsubset : F i ⊆ W := by
+      intro y hyF
+      by_contra hyW
+      exact hempty
+        ⟨y, Finset.mem_sdiff.mpr ⟨hyF, hyW⟩⟩
+    have hcard := Finset.card_le_card hsubset
+    have hlarge := hblocks i
+    omega
+  obtain ⟨b, hbOutside⟩ := houtside
+  have hbF : b ∈ F i :=
+    (Finset.mem_sdiff.mp hbOutside).1
+  have hbW : b ∉ W :=
+    (Finset.mem_sdiff.mp hbOutside).2
+  have hbU : b ∉ U := by
+    intro hbU
+    exact hbW (Finset.mem_union_left E hbU)
+  have hbE : b ∉ E := by
+    intro hbE
+    exact hbW (Finset.mem_union_right U hbE)
+  have hbx : b ≠ x := by
+    intro hbx
+    subst b
+    exact hbE (Finset.mem_insert_self x core)
+  have hbBlock : b ∈ (F i).erase (s i).1 := by
+    rw [hsi]
+    exact Finset.mem_erase.mpr ⟨hbx, hbF⟩
+  have hEswap :
+      Disjoint (E : Set ℕ)
+        (((D.erase (s i).1 ∪ {b} : Finset ℕ) : Set ℕ)) := by
+    rw [Set.disjoint_left]
+    intro y hyE hySwap
+    have hySwap' :
+        y ∈ D.erase (s i).1 ∪ {b} :=
+      Finset.mem_coe.mp hySwap
+    rcases Finset.mem_union.mp hySwap' with hyD | hyb
+    · have hyD' : y ∈ D := (Finset.mem_erase.mp hyD).2
+      have hyPrivate : y ∈ ({x} : Finset ℕ) := by
+        rw [← hprivate]
+        exact Finset.mem_inter.mpr
+          ⟨Finset.mem_coe.mp hyE, hyD'⟩
+      have hyx : y = x := by simpa using hyPrivate
+      have hynx : y ≠ x := by
+        rw [← hsi]
+        exact (Finset.mem_erase.mp hyD).1
+      exact hynx hyx
+    · have hyb' : y = b := by simpa using hyb
+      subst y
+      exact hbE (Finset.mem_coe.mp hyE)
+  obtain ⟨t, htU, htq⟩ :=
+    blockAlignedRepairWitness_extends_protected_of_hitBlockCapacity
+      P s hbBlock hbU hUselected hsupport hEswap
+        (fun j _hsjSupport => hblocks j)
+  exact ⟨i, b, t, hsi, hbBlock, htU, htq⟩
+
 /-- A predecessor-gap anchor is redundant in a minimal successor-order
 destroyer.
 
@@ -28762,6 +28954,198 @@ theorem IsStronglyMinimalExactBasis.cofinal_strictOccurrenceRankDescent_or_large
       lowerGap_anchor_not_mem_minimalSuccessorDestroyer
         hDminimalPred hgap,
       hbq, hgap⟩
+
+/-- Corrected current-order fork on an arbitrary infinite reservoir.
+
+This is the nonvacuous replacement for
+`cofinal_strictOccurrenceRankDescent_or_largeDestroyer_or_lowerGap`.
+When the same-target rooted matching beats the finite destroyer, its
+occurrence decomposition is split at rank one:
+
+* two or more hits give genuine represented destruction at
+  `1 < ℓ < h`;
+* one hit gives an exact marked private order-`h-1` core at `q-x`.
+
+The remaining alternatives are unchanged: the destroyer itself is larger
+than the requested demand, or the reservoir supplies a primitive
+order-`h-1` gap anchor. -/
+theorem IsStronglyMinimalExactBasis.cofinal_nontrivialRankDescent_or_markedPrivateCore_or_largeDestroyer_or_lowerGap
+    {A S : Set ℕ} {h : ℕ}
+    (hminimal : IsStronglyMinimalExactBasis A h)
+    (hhpos : 0 < h)
+    (hSA : S ⊆ A)
+    (hSInfinite : S.Infinite) :
+    ∀ r L, ∃ q, ∃ D : Finset ℕ,
+      L ≤ q ∧
+      D.Nonempty ∧
+      (D : Set ℕ) ⊆ S ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q ∧
+      ((((∃ ℓ n,
+            1 < ℓ ∧
+            ℓ < h ∧
+            (additiveSupportFamily A ℓ n).Nonempty ∧
+            DestroysAt
+              (additiveSupportFamily A ℓ)
+              (D : Set ℕ) n) ∨
+          ∃ x ∈ D, x ∈ S ∧ x ∈ A ∧ x ≤ q ∧
+            ∃ core : Finset ℕ,
+              core ∈
+                additiveSupportFamily A (h - 1) (q - x) ∧
+              Disjoint (core : Set ℕ) (D : Set ℕ) ∧
+              insert x core ∈ additiveSupportFamily A h q ∧
+              insert x core ∩ D = {x}) ∨
+        r < D.card) ∨
+        ∃ b, b ∈ S ∧ b ∉ D ∧ b ≤ q ∧
+          additiveSupportFamily A (h - 1) (q - b) = ∅) := by
+  classical
+  have hpredSucc : h - 1 + 1 = h := by omega
+  obtain ⟨Nbasis, hNbasis⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr
+      hminimal.1
+  intro r L
+  obtain ⟨Nfork, hNfork⟩ :=
+    eventually_exactRootedMatching_or_lowerGap_onInfiniteReservoir
+      (A := A) (C := S) (k := h - 1)
+      hSA hSInfinite r
+  obtain ⟨q, hqLower, hqDestroy⟩ :=
+    hminimal.2 S hSA hSInfinite
+      (max L (max Nbasis Nfork))
+  obtain ⟨D₁, hD₁S, hD₁Destroy⟩ :=
+    exists_finiteDestroyer_subset hqDestroy
+  obtain ⟨D, hDD₁, hDminimal⟩ :=
+    exists_inclusionMinimalDestroyer_subset hD₁Destroy
+  have hDS : (D : Set ℕ) ⊆ S := by
+    intro x hxD
+    exact hD₁S
+      (Finset.mem_coe.mpr
+        (hDD₁ (Finset.mem_coe.mp hxD)))
+  have hDnonempty : D.Nonempty := by
+    by_contra hDempty
+    have hDeq : D = ∅ :=
+      Finset.not_nonempty_iff_eq_empty.mp hDempty
+    have hNbasisq : Nbasis ≤ q :=
+      (le_max_left Nbasis Nfork).trans
+        ((le_max_right L (max Nbasis Nfork)).trans hqLower)
+    obtain ⟨E, hER, _hEempty⟩ :=
+      hNbasis q hNbasisq
+    exact hDminimal.1 E hER (by simp [hDeq])
+  have hLq : L ≤ q :=
+    (le_max_left L (max Nbasis Nfork)).trans hqLower
+  have hNforkq : Nfork ≤ q :=
+    (le_max_right Nbasis Nfork).trans
+      ((le_max_right L (max Nbasis Nfork)).trans hqLower)
+  refine ⟨q, D, hLq, hDnonempty, hDS, hDminimal, ?_⟩
+  obtain hrooted | hgap := hNfork q hNforkq
+  · obtain ⟨R, M, _hRcard, hMsub, hrM, _hMroot,
+        hMpetal, hMmatching⟩ := hrooted
+    have hMsubH :
+        M ⊆ additiveSupportFamily A h q := by
+      simpa only [hpredSucc] using hMsub
+    by_cases hDM : D.card < M.card
+    · left
+      left
+      obtain hdescent | ⟨x, hxD, _hxR, hxA, hxq,
+          core, hcoreMem, hcoreD, hsupport,
+          hprivate⟩ :=
+        large_destroyedRootedMatching_forces_nontrivialRankDescent_or_markedPrivateCore
+          hDminimal hMsubH hMpetal hMmatching hDM
+      · exact Or.inl hdescent
+      · exact Or.inr ⟨x, hxD,
+          hDS (Finset.mem_coe.mpr hxD), hxA, hxq,
+          core, hcoreMem, hcoreD, hsupport, hprivate⟩
+    · left
+      right
+      exact hrM.trans_le (Nat.le_of_not_gt hDM)
+  · right
+    obtain ⟨b, hbS, hbq, hgap⟩ := hgap
+    have hDminimalPred :
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A (h - 1 + 1)) D q := by
+      simpa only [hpredSucc] using hDminimal
+    exact ⟨b, hbS,
+      lowerGap_anchor_not_mem_minimalSuccessorDestroyer
+        hDminimalPred hgap,
+      hbq, hgap⟩
+
+/-- Protected selector form of the corrected four-way current-order fork.
+
+The marked private-core horn is immediately consumed by
+`markedPrivateCore_extends_avoiding_protectedUnion`.  Consequently the
+selector-level alternatives are now exactly:
+
+* genuine nontrivial rank descent;
+* a full selector avoiding `U` on which the current target survives;
+* a destroyer larger than the requested demand, hence using that many
+  distinct selector blocks;
+* a primitive lower-gap anchor.
+
+No automatic rank-one conclusion remains. -/
+theorem IsStronglyMinimalExactBasis.cofinal_selectorNontrivialRankDescent_or_protectedRepair_or_manyBlocks_or_lowerGap
+    {A K : Set ℕ} {h : ℕ} {cell : ℕ → Finset ℕ}
+    (hminimal : IsStronglyMinimalExactBasis A h)
+    (hhpos : 0 < h)
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (s : BlockSelector cell) (U : Finset ℕ)
+    (hUselected : Disjoint (U : Set ℕ) (selectedSet s))
+    (hblocks : ∀ j, U.card + h < (cell j).card) :
+    ∀ r L, ∃ q, ∃ D : Finset ℕ,
+      L ≤ q ∧
+      D.Nonempty ∧
+      (D : Set ℕ) ⊆ selectedSet s ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q ∧
+      ((((∃ ℓ n,
+            1 < ℓ ∧
+            ℓ < h ∧
+            (additiveSupportFamily A ℓ n).Nonempty ∧
+            DestroysAt
+              (additiveSupportFamily A ℓ)
+              (D : Set ℕ) n) ∨
+          ∃ t : BlockSelector cell,
+            Disjoint (U : Set ℕ) (selectedSet t) ∧
+            ¬ DestroysAt
+              (additiveSupportFamily A h)
+              (selectedSet t) q) ∨
+        r < D.card) ∨
+        ∃ b, b ∈ selectedSet s ∧ b ∉ D ∧ b ≤ q ∧
+          additiveSupportFamily A (h - 1) (q - b) = ∅) := by
+  have hpredSucc : h - 1 + 1 = h := by omega
+  intro r L
+  obtain ⟨q, D, hLq, hDnonempty, hDselected,
+      hDminimal, houtcome⟩ :=
+    hminimal.cofinal_nontrivialRankDescent_or_markedPrivateCore_or_largeDestroyer_or_lowerGap
+      hhpos ((P.selectedSet_subset s).trans hKA)
+        (P.selectedSet_infinite s) r L
+  rcases houtcome with ((hdescent | hmarked) | hlarge) | hgap
+  · exact ⟨q, D, hLq, hDnonempty, hDselected,
+      hDminimal, Or.inl (Or.inl (Or.inl hdescent))⟩
+  · obtain ⟨x, hxD, _hxSelected, _hxA, _hxq,
+        core, _hcoreMem, _hcoreD, hsupport,
+        hprivate⟩ := hmarked
+    have hsupportPred :
+        insert x core ∈
+          additiveSupportFamily A (h - 1 + 1) q := by
+      simpa only [hpredSucc] using hsupport
+    have hblocksPred :
+        ∀ j, U.card + (h - 1 + 1) < (cell j).card := by
+      simpa only [hpredSucc] using hblocks
+    obtain ⟨_i, _b, t, _hsi, _hbBlock, htU, htq⟩ :=
+      markedPrivateCore_extends_avoiding_protectedUnion
+        P s hDselected hxD hUselected
+          hsupportPred hprivate hblocksPred
+    have htqH :
+        ¬ DestroysAt
+          (additiveSupportFamily A h)
+          (selectedSet t) q := by
+      simpa only [hpredSucc] using htq
+    exact ⟨q, D, hLq, hDnonempty, hDselected,
+      hDminimal, Or.inl (Or.inl (Or.inr ⟨t, htU, htqH⟩))⟩
+  · exact ⟨q, D, hLq, hDnonempty, hDselected,
+      hDminimal, Or.inl (Or.inr hlarge)⟩
+  · exact ⟨q, D, hLq, hDnonempty, hDselected,
+      hDminimal, Or.inr hgap⟩
 
 /-- Selector form of the current-order attack.
 
