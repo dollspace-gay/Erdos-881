@@ -1,3 +1,53 @@
+# GENERAL ORDER: CURRENT REPAIRS FUSE TO A TWO-RANK RESIDUAL STREAM (2026-07-29)
+
+The mixed current-order translation alternative has been homogenized and
+its repair side has been consumed by an infinite fusion.
+
+`HasOnePointRepairAt` isolates the rank-independent content of a
+one-point repair.  Its explicit junk audit
+`cofinalOnePointRepairStages_can_be_junk` verifies that cofinal repair
+stages alone are not contradictory: even the singleton support family on
+the full vertex set has them.  The interface is therefore used only as
+input to the operational theorem
+`cofinalOnePointRepairs_fuse_residualDeletion`.
+
+That theorem schedules both repaired targets and landing points above the
+previous stage, then reserves a still larger point of the deletion.  It
+produces one infinite \(B\subseteq Y\) such that \(Y\setminus B\) is also
+infinite and a strict target stream which was destroyed by \(Y\) but
+survives deletion by \(B\).
+
+The literal alternative remains arithmetically rich:
+`HasCurrentLargeTranslationHoleAt` retains
+
+\[
+  H\subseteq E,\qquad q=p+\delta,\qquad c+\delta\notin A,
+\]
+
+with \(E\) and \(H\) both avoiding the same deletion.
+`cofinalCurrentTranslationBoundaryAttack_forces_cofinalHoles_or_repairs`
+separates this branch cofinally; its fused form consumes the repair branch
+immediately.
+
+Finally,
+`stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_strictSplitTwoRankStreams`
+feeds the residual deletion back through both hypotheses of Problem 881.
+Unless rich literal holes occur cofinally, one strict \(B\) now carries:
+
+- a strict order-\(k\) survival stream and cofinal order-\(k\) destruction
+  from strong minimality;
+- the old order-\(k+1\) survival stream and cofinal order-\(k+1\)
+  destruction from counterexamplehood;
+- cofinally represented destroyed order-\(k\) successor differences; and
+- a second bracketing descent from the new current-order stream, giving
+  coherent destroyed order-\((k-1)\) differences across every point of
+  each protected support.
+
+This is not yet the general-order solution.  The repair loop is gone; the
+remaining direct task is to align the represented order-\(k\) predecessor
+stream with the new coherent order-\((k-1)\) fan on the same \(B\), while
+the other branch is the retained literal translated-hole family.
+
 # GENERAL ORDER: STRONG MINIMALITY WELDED TO THE FUSED STREAM (2026-07-29)
 
 The original order-\(k\) minimality hypothesis now enters the fused

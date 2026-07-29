@@ -46540,6 +46540,448 @@ theorem cofinalCurrentDestruction_against_successorSurvival_forces_largeHole_or_
         Or.inr
           ⟨hshiftA, hshiftY, hrestoredAtQ⟩⟩
 
+/-- One target destroyed by `Y` but repaired by restoring one cofinally
+large point `z`.
+
+This rank-independent interface records exactly the information used by
+the diagonal fusion argument below.  In the additive application the
+point is the translated landing `c + δ`; the source support and
+translation are retained separately on the literal-hole side. -/
+def HasOnePointRepairAt
+    (R : SupportFamily) (Y : Set ℕ)
+    (pointFloor targetFloor : ℕ) : Prop :=
+  ∃ q z,
+    targetFloor < q ∧
+    pointFloor < z ∧
+    z ∈ Y ∧
+    DestroysAt R Y q ∧
+    ¬ DestroysAt R (Y \ {z}) q
+
+/-- Junk audit for the cofinal one-point-repair interface.
+
+The interface by itself is deliberately not a contradiction: the singleton
+support family on the full vertex set has such a repair at every pair of
+floors.  Consequently later arguments use the interface only to perform
+the strict residual-deletion fusion, never as evidence that additive
+structure has already failed. -/
+theorem cofinalOnePointRepairStages_can_be_junk :
+    ∀ pointFloor targetFloor,
+      HasOnePointRepairAt
+        (fun n => ({{n}} : Finset (Finset ℕ)))
+        Set.univ pointFloor targetFloor := by
+  intro pointFloor targetFloor
+  let q := max pointFloor targetFloor + 1
+  refine ⟨q, q, ?_, ?_, Set.mem_univ q, ?_, ?_⟩
+  · dsimp only [q]
+    omega
+  · dsimp only [q]
+    omega
+  · intro E hE
+    have hEq : E = {q} := by
+      simpa using hE
+    subst E
+    apply Set.not_disjoint_iff.mpr
+    exact ⟨q, by simp, by simp⟩
+  · apply not_destroysAt_iff.mpr
+    refine ⟨{q}, by simp, ?_⟩
+    simp
+
+/-- Cofinal one-point repairs fuse into one strict residual deletion.
+
+At stage `i`, request both the failed target and its landing point above
+the previous reserved point.  Reserve a still larger point of `Y`.  The
+resulting alternation
+
+`previous reserve < failed target, landing < next reserve`
+
+makes both chosen streams injective.  The reserved points form an infinite
+set `B ⊆ Y`; all landing points lie in the infinite complement `Y \ B`.
+Since `B ⊆ Y \ {landing i}`, every selected target survives deletion by
+the one common set `B`, even though it was destroyed by the original
+`Y`. -/
+theorem cofinalOnePointRepairs_fuse_residualDeletion
+    {R : SupportFamily} {Y : Set ℕ}
+    (hYInfinite : Y.Infinite)
+    (hrepairs :
+      ∀ pointFloor targetFloor,
+        HasOnePointRepairAt
+          R Y pointFloor targetFloor) :
+    ∃ B : Set ℕ, ∃ target landing : ℕ → ℕ,
+      B ⊆ Y ∧
+      B.Infinite ∧
+      (Y \ B).Infinite ∧
+      StrictMono target ∧
+      Function.Injective landing ∧
+      (∀ i, landing i ∈ Y \ B) ∧
+      (∀ i, DestroysAt R Y (target i)) ∧
+      ∀ i, ¬ DestroysAt R B (target i) := by
+  classical
+  have honeFloor :
+      ∀ L, HasOnePointRepairAt R Y L L := by
+    intro L
+    exact hrepairs L L
+  unfold HasOnePointRepairAt at honeFloor
+  choose failed landingAt hfailedAbove hlandingAbove
+      hlandingY hfailedDestroy hrestoredSurvival
+    using honeFloor
+  let reserve : ℕ → ℕ := fun L =>
+    (hYInfinite.exists_gt
+      (max (failed L) (landingAt L))).choose
+  have hreserveY : ∀ L, reserve L ∈ Y := by
+    intro L
+    exact
+      (hYInfinite.exists_gt
+        (max (failed L) (landingAt L))).choose_spec.1
+  have hfailedReserve : ∀ L, failed L < reserve L := by
+    intro L
+    exact
+      (le_max_left (failed L) (landingAt L)).trans_lt
+        (hYInfinite.exists_gt
+          (max (failed L) (landingAt L))).choose_spec.2
+  have hlandingReserve :
+      ∀ L, landingAt L < reserve L := by
+    intro L
+    exact
+      (le_max_right (failed L) (landingAt L)).trans_lt
+        (hYInfinite.exists_gt
+          (max (failed L) (landingAt L))).choose_spec.2
+  let state : ℕ → ℕ := fun i =>
+    Nat.rec 0 (fun _ r => reserve (r + 1)) i
+  have hstateSucc : ∀ i,
+      state (i + 1) = reserve (state i + 1) := by
+    intro i
+    simp [state]
+  have hstateStep : ∀ i, state i < state (i + 1) := by
+    intro i
+    rw [hstateSucc]
+    exact
+      (Nat.lt_succ_self (state i)).trans
+        ((hfailedAbove (state i + 1)).trans
+          (hfailedReserve (state i + 1)))
+  have hstateStrict : StrictMono state :=
+    strictMono_nat_of_lt_succ hstateStep
+  let floor : ℕ → ℕ := fun i => state i + 1
+  let kept : ℕ → ℕ := fun i => state (i + 1)
+  let target : ℕ → ℕ := fun i => failed (floor i)
+  let landing : ℕ → ℕ := fun i => landingAt (floor i)
+  have hkeptEq : ∀ i,
+      kept i = reserve (floor i) := by
+    intro i
+    simp only [kept, floor, hstateSucc]
+  have htargetKept : ∀ i, target i < kept i := by
+    intro i
+    rw [hkeptEq]
+    exact hfailedReserve (floor i)
+  have hstateTarget : ∀ i, state i < target i := by
+    intro i
+    exact
+      (Nat.lt_succ_self (state i)).trans
+        (hfailedAbove (floor i))
+  have hlandingKept : ∀ i, landing i < kept i := by
+    intro i
+    rw [hkeptEq]
+    exact hlandingReserve (floor i)
+  have hstateLanding : ∀ i, state i < landing i := by
+    intro i
+    exact
+      (Nat.lt_succ_self (state i)).trans
+        (hlandingAbove (floor i))
+  have htargetStep :
+      ∀ i, target i < target (i + 1) := by
+    intro i
+    exact
+      (htargetKept i).trans
+        (by
+          simpa only [kept] using hstateTarget (i + 1))
+  have htargetStrict : StrictMono target :=
+    strictMono_nat_of_lt_succ htargetStep
+  have hkeptInjective : Function.Injective kept := by
+    intro i j hij
+    apply Nat.succ.inj
+    apply hstateStrict.injective
+    simpa only [kept] using hij
+  let B : Set ℕ := Set.range kept
+  have hBY : B ⊆ Y := by
+    rintro x ⟨i, rfl⟩
+    rw [hkeptEq]
+    exact hreserveY (floor i)
+  have hBInfinite : B.Infinite :=
+    Set.infinite_range_of_injective hkeptInjective
+  have hkeptNeLanding :
+      ∀ i j, kept j ≠ landing i := by
+    intro i j
+    rcases lt_trichotomy j i with hji | rfl | hij
+    · have hsuccLe : j + 1 ≤ i := by omega
+      have hle : kept j ≤ state i := by
+        exact hstateStrict.monotone hsuccLe
+      exact ne_of_lt (hle.trans_lt (hstateLanding i))
+    · exact ne_of_gt (hlandingKept j)
+    · have hlt : kept i < kept j := by
+        dsimp only [kept]
+        exact hstateStrict (Nat.succ_lt_succ hij)
+      exact ne_of_gt ((hlandingKept i).trans hlt)
+  have hlandingNotB : ∀ i, landing i ∉ B := by
+    intro i hiB
+    obtain ⟨j, hj⟩ := hiB
+    exact hkeptNeLanding i j hj
+  have hlandingInjective :
+      Function.Injective landing := by
+    intro i j hij
+    rcases lt_trichotomy i j with hij' | rfl | hji'
+    · have hlt : landing i < landing j := by
+        calc
+          landing i < kept i := hlandingKept i
+          _ ≤ state j := by
+            dsimp only [kept]
+            exact hstateStrict.monotone
+              (Nat.succ_le_iff.mpr hij')
+          _ < landing j := hstateLanding j
+      omega
+    · rfl
+    · have hlt : landing j < landing i := by
+        calc
+          landing j < kept j := hlandingKept j
+          _ ≤ state i := by
+            dsimp only [kept]
+            exact hstateStrict.monotone
+              (Nat.succ_le_iff.mpr hji')
+          _ < landing i := hstateLanding i
+      omega
+  have hlandingRange :
+      Set.range landing ⊆ Y \ B := by
+    rintro x ⟨i, rfl⟩
+    exact
+      ⟨hlandingY (floor i),
+        hlandingNotB i⟩
+  have hlandingInfinite :
+      (Set.range landing).Infinite :=
+    Set.infinite_range_of_injective hlandingInjective
+  have hYdiffBInfinite : (Y \ B).Infinite :=
+    hlandingInfinite.mono hlandingRange
+  have hBwithoutLanding :
+      ∀ i, B ⊆ Y \ {landing i} := by
+    intro i x hxB
+    exact
+      ⟨hBY hxB, by
+        intro hxSingleton
+        have hx : x = landing i := by
+          simpa using hxSingleton
+        subst x
+        exact hlandingNotB i hxB⟩
+  have htargetSurvival :
+      ∀ i, ¬ DestroysAt R B (target i) := by
+    intro i
+    obtain ⟨F, hFmem, hFsurvive⟩ :=
+      not_destroysAt_iff.mp
+        (hrestoredSurvival (floor i))
+    apply not_destroysAt_iff.mpr
+    refine ⟨F, hFmem, ?_⟩
+    exact
+      hFsurvive.mono_right
+        (hBwithoutLanding i)
+  exact
+    ⟨B, target, landing, hBY, hBInfinite,
+      hYdiffBInfinite, htargetStrict,
+      hlandingInjective,
+      fun i => hlandingRange ⟨i, rfl⟩,
+      fun i => hfailedDestroy (floor i),
+      htargetSurvival⟩
+
+/-- One current-order literal-hole stage, retaining the full protected
+successor block, its clean current-order sub-support, and the common
+translation.
+
+Unlike the rank-independent repair interface, this is intentionally rich:
+the unresolved hole branch must remember that `H ⊆ E`, that both supports
+avoid the same deletion, and that the missing point is exactly `c + δ`
+while the damaged target is exactly `q = p + δ`. -/
+def HasCurrentLargeTranslationHoleAt
+    (A Y : Set ℕ) (k : ℕ)
+    (oldTarget : ℕ → ℕ)
+    (pointFloor targetFloor : ℕ) : Prop :=
+  ∃ n q p δ, ∃ E H : Finset ℕ, ∃ c,
+    targetFloor < q ∧
+    pointFloor ≤ c ∧
+    oldTarget n < q ∧
+    q ≤ oldTarget (n + 1) ∧
+    E ∈
+      additiveSupportFamily A (k + 1)
+        (oldTarget n) ∧
+    Disjoint (E : Set ℕ) Y ∧
+    H ∈ additiveSupportFamily A k p ∧
+    H ⊆ E ∧
+    Disjoint (H : Set ℕ) Y ∧
+    0 < δ ∧
+    q = p + δ ∧
+    (additiveSupportFamily A k q).Nonempty ∧
+    DestroysAt
+      (additiveSupportFamily A k) Y q ∧
+    c ∈ H ∧
+    c ∈ A ∧
+    c ∉ Y ∧
+    c + δ ∉ A
+
+/-- Homogenize the current-order translation boundary.
+
+If rich literal-hole stages occur above every pair of floors, retain them.
+Otherwise fix one pair of floors at which no such hole exists.  Requesting
+the mixed theorem above the maxima of that pair and any new pair makes its
+literal-hole outcome impossible, so the same witness must be a one-point
+repair.  The landing `c + δ` is strictly above the requested point floor
+because `δ > 0`.
+
+The repair side is deliberately passed to the junk-audited generic
+interface: its mathematical content comes from the residual-deletion
+fusion, not from the bare existence of repair stages. -/
+theorem cofinalCurrentTranslationBoundaryAttack_forces_cofinalHoles_or_repairs
+    {A Y : Set ℕ} {k : ℕ}
+    {oldTarget : ℕ → ℕ}
+    (hmixed :
+      ∀ pointFloor targetFloor,
+        ∃ n q p δ, ∃ E H : Finset ℕ, ∃ c,
+          targetFloor < q ∧
+          pointFloor ≤ c ∧
+          oldTarget n < q ∧
+          q ≤ oldTarget (n + 1) ∧
+          E ∈
+            additiveSupportFamily A (k + 1)
+              (oldTarget n) ∧
+          Disjoint (E : Set ℕ) Y ∧
+          H ∈ additiveSupportFamily A k p ∧
+          H ⊆ E ∧
+          Disjoint (H : Set ℕ) Y ∧
+          0 < δ ∧
+          q = p + δ ∧
+          (additiveSupportFamily A k q).Nonempty ∧
+          DestroysAt
+            (additiveSupportFamily A k) Y q ∧
+          c ∈ H ∧
+          c ∈ A ∧
+          c ∉ Y ∧
+          (c + δ ∉ A ∨
+            (c + δ ∈ A ∧
+              c + δ ∈ Y ∧
+              ¬ DestroysAt
+                (additiveSupportFamily A k)
+                (Y \ {c + δ}) q))) :
+    (∀ pointFloor targetFloor,
+      HasCurrentLargeTranslationHoleAt
+        A Y k oldTarget pointFloor targetFloor) ∨
+    ∀ pointFloor targetFloor,
+      HasOnePointRepairAt
+        (additiveSupportFamily A k) Y
+        pointFloor targetFloor := by
+  classical
+  by_cases hholes :
+      ∀ pointFloor targetFloor,
+        HasCurrentLargeTranslationHoleAt
+          A Y k oldTarget pointFloor targetFloor
+  · exact Or.inl hholes
+  · right
+    push Not at hholes
+    obtain ⟨pointFloor₀, targetFloor₀, hnoHole⟩ :=
+      hholes
+    intro pointFloor targetFloor
+    obtain ⟨n, q, p, δ, E, H, c,
+        hqFloor, hcFloor, hnLower, hnUpper,
+        hEmem, hEY, hHmem, hHE, hHY,
+        hδpos, hqδ, hqNonempty, hqDestroy,
+        hcH, hcA, hcY, hhole | hrepair⟩ :=
+      hmixed
+        (max pointFloor pointFloor₀)
+        (max targetFloor targetFloor₀)
+    · exfalso
+      apply hnoHole
+      exact
+        ⟨n, q, p, δ, E, H, c,
+          (le_max_right targetFloor targetFloor₀).trans_lt
+            hqFloor,
+          (le_max_right pointFloor pointFloor₀).trans
+            hcFloor,
+          hnLower, hnUpper, hEmem, hEY, hHmem,
+          hHE, hHY, hδpos, hqδ, hqNonempty,
+          hqDestroy, hcH, hcA, hcY, hhole⟩
+    · obtain ⟨hlandingA, hlandingY,
+        hrestoredSurvival⟩ :=
+        hrepair
+      refine
+        ⟨q, c + δ,
+          (le_max_left targetFloor targetFloor₀).trans_lt
+            hqFloor,
+          ?_, hlandingY, hqDestroy,
+          hrestoredSurvival⟩
+      have hcRequested :
+          pointFloor ≤ c :=
+        (le_max_left pointFloor pointFloor₀).trans
+          hcFloor
+      omega
+
+/-- Consume the homogeneous repair branch immediately.
+
+The only unresolved alternative left by the mixed current-order attack is
+therefore a rich cofinal literal-hole family.  If that family is absent,
+the rank-independent diagonal theorem produces one infinite residual
+deletion with a strict stream of targets which were destroyed by `Y` but
+all survive the common smaller deletion. -/
+theorem cofinalCurrentTranslationBoundaryAttack_forces_holes_or_fusedRepairStream
+    {A Y : Set ℕ} {k : ℕ}
+    {oldTarget : ℕ → ℕ}
+    (hYInfinite : Y.Infinite)
+    (hmixed :
+      ∀ pointFloor targetFloor,
+        ∃ n q p δ, ∃ E H : Finset ℕ, ∃ c,
+          targetFloor < q ∧
+          pointFloor ≤ c ∧
+          oldTarget n < q ∧
+          q ≤ oldTarget (n + 1) ∧
+          E ∈
+            additiveSupportFamily A (k + 1)
+              (oldTarget n) ∧
+          Disjoint (E : Set ℕ) Y ∧
+          H ∈ additiveSupportFamily A k p ∧
+          H ⊆ E ∧
+          Disjoint (H : Set ℕ) Y ∧
+          0 < δ ∧
+          q = p + δ ∧
+          (additiveSupportFamily A k q).Nonempty ∧
+          DestroysAt
+            (additiveSupportFamily A k) Y q ∧
+          c ∈ H ∧
+          c ∈ A ∧
+          c ∉ Y ∧
+          (c + δ ∉ A ∨
+            (c + δ ∈ A ∧
+              c + δ ∈ Y ∧
+              ¬ DestroysAt
+                (additiveSupportFamily A k)
+                (Y \ {c + δ}) q))) :
+    (∀ pointFloor targetFloor,
+      HasCurrentLargeTranslationHoleAt
+        A Y k oldTarget pointFloor targetFloor) ∨
+    ∃ B : Set ℕ, ∃ target landing : ℕ → ℕ,
+      B ⊆ Y ∧
+      B.Infinite ∧
+      (Y \ B).Infinite ∧
+      StrictMono target ∧
+      Function.Injective landing ∧
+      (∀ i, landing i ∈ Y \ B) ∧
+      (∀ i,
+        DestroysAt
+          (additiveSupportFamily A k) Y
+          (target i)) ∧
+      ∀ i,
+        ¬ DestroysAt
+          (additiveSupportFamily A k) B
+          (target i) := by
+  rcases
+      cofinalCurrentTranslationBoundaryAttack_forces_cofinalHoles_or_repairs
+        hmixed with hholes | hrepairs
+  · exact Or.inl hholes
+  · exact
+      Or.inr
+        (cofinalOnePointRepairs_fuse_residualDeletion
+          hYInfinite hrepairs)
+
 /-- Simultaneously descend a clean support and its destroyed translate.
 
 Suppose an order-`h` support at `p` avoids `Y`, while the represented target
@@ -52055,5 +52497,210 @@ theorem stronglyMinimal_counterexample_forces_cofinalCurrentTranslationBoundaryA
     ⟨Y, oldTarget, hYA, hYInfinite, holdStrict,
       holdSurvival, hcurrentDestroy, hsuccessorDestroy,
       hrepresented, hboundary⟩
+
+/-- The current-order repair horn is now fully fused at counterexample
+level.
+
+If rich translated holes are not cofinal, all sufficiently scheduled mixed
+stages are one-point repairs.  Their diagonal fusion gives a strict split
+`B ⊂ Y` with infinitely many restored landing points in `Y \ B`.  On this
+single `B`:
+
+* the selected current-order targets survive;
+* strong minimality forces cofinal current-order destruction;
+* the original protected successor stream still survives because
+  `B ⊆ Y`;
+* counterexamplehood forces cofinal successor-order destruction; and
+* successor bracketing again supplies represented destroyed current-order
+  predecessors.
+
+Thus the repair branch is no longer an escaping co-singleton loop.  It is
+one two-rank survival/destruction configuration on a strict residual
+deletion.  The only other branch retains cofinal literal holes with their
+source support and translation intact. -/
+theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_strictSplitTwoRankStreams
+    {A : Set ℕ} {k : ℕ}
+    (hk : 2 < k)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1)) :
+    ∃ Y : Set ℕ, ∃ oldTarget : ℕ → ℕ,
+      Y ⊆ A ∧
+      Y.Infinite ∧
+      StrictMono oldTarget ∧
+      (∀ n,
+        ∃ E ∈
+            additiveSupportFamily A (k + 1)
+              (oldTarget n),
+          Disjoint (E : Set ℕ) Y) ∧
+      ((∀ pointFloor targetFloor,
+          HasCurrentLargeTranslationHoleAt
+            A Y k oldTarget pointFloor targetFloor) ∨
+        ∃ B : Set ℕ, ∃ currentTarget landing : ℕ → ℕ,
+          B ⊆ Y ∧
+          B.Infinite ∧
+          (Y \ B).Infinite ∧
+          StrictMono currentTarget ∧
+          Function.Injective landing ∧
+          (∀ i, landing i ∈ Y \ B) ∧
+          (∀ i,
+            DestroysAt
+              (additiveSupportFamily A k) Y
+              (currentTarget i)) ∧
+          (∀ i,
+            ¬ DestroysAt
+              (additiveSupportFamily A k) B
+              (currentTarget i)) ∧
+          (∀ i,
+            ∃ H ∈
+                additiveSupportFamily A k
+                  (currentTarget i),
+              Disjoint (H : Set ℕ) B) ∧
+          (∀ n,
+            ∃ E ∈
+                additiveSupportFamily A (k + 1)
+                  (oldTarget n),
+              Disjoint (E : Set ℕ) B) ∧
+          (∀ N, ∃ q, N ≤ q ∧
+            DestroysAt
+              (additiveSupportFamily A k) B q) ∧
+          (∀ L, ∃ n q, ∃ H : Finset ℕ,
+            L ≤ n ∧
+            currentTarget n < q ∧
+            q < currentTarget (n + 1) ∧
+            H ∈
+              additiveSupportFamily A k
+                (currentTarget n) ∧
+            Disjoint (H : Set ℕ) B ∧
+            H.Nonempty ∧
+            DestroysAt
+              (additiveSupportFamily A k) B q ∧
+            ∀ a ∈ H,
+              0 < q - a ∧
+              DestroysAt
+                (additiveSupportFamily A (k - 1))
+                B (q - a)) ∧
+          (∀ N, ∃ m, N ≤ m ∧
+            DestroysAt
+              (additiveSupportFamily A (k + 1)) B m) ∧
+          ∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a,
+            L ≤ n ∧
+            oldTarget n < m ∧
+            m < oldTarget (n + 1) ∧
+            E ∈
+              additiveSupportFamily A (k + 1)
+                (oldTarget n) ∧
+            Disjoint (E : Set ℕ) B ∧
+            DestroysAt
+              (additiveSupportFamily A (k + 1)) B m ∧
+            a ∈ E ∧
+            (k + 1) * a ≤ oldTarget n ∧
+            L ≤ m - a ∧
+            (additiveSupportFamily A k (m - a)).Nonempty ∧
+            DestroysAt
+              (additiveSupportFamily A k) B
+              (m - a)) := by
+  obtain ⟨Y, oldTarget, hYA, hYInfinite,
+      holdStrict, holdSurvival, _hcurrentDestroyY,
+      _hsuccessorDestroyY, _hrepresentedY, hmixed⟩ :=
+    stronglyMinimal_counterexample_forces_cofinalCurrentTranslationBoundaryAttack
+      hk hminimal hcounter
+  refine
+    ⟨Y, oldTarget, hYA, hYInfinite,
+      holdStrict, holdSurvival, ?_⟩
+  obtain hholes |
+      ⟨B, currentTarget, landing, hBY, hBInfinite,
+        hYdiffBInfinite, hcurrentStrict,
+        hlandingInjective, hlandingRange,
+        hcurrentDestroyedY, hcurrentSurvivalB⟩ :=
+    cofinalCurrentTranslationBoundaryAttack_forces_holes_or_fusedRepairStream
+      hYInfinite hmixed
+  · exact Or.inl hholes
+  · right
+    have hBA : B ⊆ A :=
+      hBY.trans hYA
+    have holdSurvivalB :
+        ∀ n,
+          ∃ E ∈
+              additiveSupportFamily A (k + 1)
+                (oldTarget n),
+            Disjoint (E : Set ℕ) B := by
+      intro n
+      obtain ⟨E, hEmem, hEY⟩ :=
+        holdSurvival n
+      exact
+        ⟨E, hEmem, hEY.mono_right hBY⟩
+    have hcurrentDestroyB :
+        ∀ N, ∃ q, N ≤ q ∧
+          DestroysAt
+            (additiveSupportFamily A k) B q :=
+      hminimal.2 B hBA hBInfinite
+    have hcurrentSurvivalSupports :
+        ∀ i,
+          ∃ H ∈
+              additiveSupportFamily A k
+                (currentTarget i),
+            Disjoint (H : Set ℕ) B := by
+      intro i
+      exact
+        not_destroysAt_iff.mp
+          (hcurrentSurvivalB i)
+    have hkPredSucc : k - 1 + 1 = k := by
+      omega
+    have hcurrentSurvivalPred :
+        ∀ i,
+          ∃ H ∈
+              additiveSupportFamily A ((k - 1) + 1)
+                (currentTarget i),
+            Disjoint (H : Set ℕ) B := by
+      rw [hkPredSucc]
+      exact hcurrentSurvivalSupports
+    have hcurrentDestroyPred :
+        ∀ N, ∃ q, N ≤ q ∧
+          DestroysAt
+            (additiveSupportFamily A ((k - 1) + 1))
+            B q := by
+      rw [hkPredSucc]
+      exact hcurrentDestroyB
+    have hcurrentLowerRaw :=
+      bracketedDestroyedSuccessorTargets_force_predecessorDestroyerFans
+        (h := k - 1) hcurrentStrict
+          hcurrentSurvivalPred hcurrentDestroyPred
+    have hcurrentLower :
+        ∀ L, ∃ n q, ∃ H : Finset ℕ,
+          L ≤ n ∧
+          currentTarget n < q ∧
+          q < currentTarget (n + 1) ∧
+          H ∈
+            additiveSupportFamily A k
+              (currentTarget n) ∧
+          Disjoint (H : Set ℕ) B ∧
+          H.Nonempty ∧
+          DestroysAt
+            (additiveSupportFamily A k) B q ∧
+          ∀ a ∈ H,
+            0 < q - a ∧
+            DestroysAt
+              (additiveSupportFamily A (k - 1))
+              B (q - a) := by
+      simpa only [hkPredSucc] using hcurrentLowerRaw
+    have hsuccessorDestroyB :
+        ∀ N, ∃ m, N ≤ m ∧
+          DestroysAt
+            (additiveSupportFamily A (k + 1)) B m :=
+      strongExactDeletion_of_counterexample
+        hcounter B hBA hBInfinite
+    have hrepresentedB :=
+      bracketedDestroyedSuccessorTargets_force_cofinalRepresentedPredecessorDestroyers
+        (by omega) hminimal.1 holdStrict
+          holdSurvivalB hsuccessorDestroyB
+    exact
+      ⟨B, currentTarget, landing, hBY, hBInfinite,
+        hYdiffBInfinite, hcurrentStrict,
+        hlandingInjective, hlandingRange,
+        hcurrentDestroyedY, hcurrentSurvivalB,
+        hcurrentSurvivalSupports, holdSurvivalB,
+        hcurrentDestroyB, hcurrentLower,
+        hsuccessorDestroyB, hrepresentedB⟩
 
 end Erdos881
