@@ -5077,8 +5077,8 @@ other coordinate outside `U ∪ E`, where `E` is a support surviving the
 finite swap.  The resulting selector simultaneously avoids `U` and
 preserves the repaired target. -/
 theorem blockAlignedSafeSwap_extends_avoiding_protectedUnion
-    {A : Set ℕ} {k q : ℕ}
-    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
+    {A C : Set ℕ} {k q : ℕ}
+    {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition C F)
     (s : BlockSelector F) {D U : Finset ℕ} {i b : ℕ}
     (hbBlock : b ∈ (F i).erase (s i).1)
     (hbU : b ∉ U)
@@ -32445,6 +32445,44 @@ theorem prescribedCommonColumn_repeatedBlock_forces_largeBlock_or_commonPrivateH
       (hhit p hpR).2
     exact ⟨F, hFmem, by simpa only [hpHit] using hhitF⟩
 
+/-- Full repair data carried by one anchored private row.
+
+Besides the current private support and destroyer, retain the actual block
+selector and one support avoiding it for every other certificate target.
+The distinguished `r`-support is still the prescribed common column `E`.
+These witnesses are what allow a later change of the anchor in its block to
+be checked against every target, rather than only against the current row. -/
+def HasAnchoredPrivateRowTrace
+    (A : Set ℕ) (k : ℕ)
+    (cell : ℕ → Finset ℕ)
+    (Q : Finset ℕ) (r : ℕ) (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (p : {q // q ∈ Q.erase r})
+    (j : ℕ)
+    (a : ℕ) (H : Finset ℕ)
+    (s : BlockSelector cell)
+    (surviving :
+      {q // q ∈ Q.erase p.1} → Finset ℕ)
+    (D F : Finset ℕ) (x : ℕ) : Prop :=
+  surviving
+      ⟨r, Finset.mem_erase.mpr
+        ⟨(Finset.mem_erase.mp p.2).1.symm, hrQ⟩⟩ = E ∧
+  (∀ q,
+    surviving q ∈
+      additiveSupportFamily A (k + 1) q.1) ∧
+  (∀ q,
+    Disjoint (surviving q : Set ℕ)
+      (selectedSet s)) ∧
+  (s j).1 = a ∧
+  D.Nonempty ∧
+  (D : Set ℕ) ⊆ selectedSet s ∧
+  IsInclusionMinimalDestroyer
+    (additiveSupportFamily A (k + 1)) D p.1 ∧
+  x ∈ D ∧
+  F ∈ additiveSupportFamily A (k + 1) p.1 ∧
+  F ∩ D = {x} ∧
+  F = insert a H
+
 /-- Every cover row concentrated on one block has an anchored
 order-one-lower core.
 
@@ -32473,14 +32511,14 @@ theorem prescribedCommonColumn_repeatedBlock_has_anchoredLowerCores
         p.1 = anchor p + (p.1 - anchor p) ∧
         core p ∈
           additiveSupportFamily A k (p.1 - anchor p) ∧
+        ∃ s : BlockSelector cell,
+        ∃ surviving :
+            {q // q ∈ Q.erase p.1} → Finset ℕ,
         ∃ D F : Finset ℕ, ∃ x,
-          D.Nonempty ∧
-          IsInclusionMinimalDestroyer
-            (additiveSupportFamily A (k + 1)) D p.1 ∧
-          x ∈ D ∧
-          F ∈ additiveSupportFamily A (k + 1) p.1 ∧
-          F ∩ D = {x} ∧
-          F = insert (anchor p) (core p) ∧
+          HasAnchoredPrivateRowTrace
+            A k cell Q r hrQ E p j
+              (anchor p) (core p)
+              s surviving D F x ∧
           core p ∩ D ⊆ {x} := by
   classical
   let R : Finset {q // q ∈ Q.erase r} :=
@@ -32491,14 +32529,13 @@ theorem prescribedCommonColumn_repeatedBlock_has_anchoredLowerCores
           a ∈ cell j ∧
           p.1 = a + (p.1 - a) ∧
           H ∈ additiveSupportFamily A k (p.1 - a) ∧
+          ∃ s : BlockSelector cell,
+          ∃ surviving :
+              {q // q ∈ Q.erase p.1} → Finset ℕ,
           ∃ D F : Finset ℕ, ∃ x,
-            D.Nonempty ∧
-            IsInclusionMinimalDestroyer
-              (additiveSupportFamily A (k + 1)) D p.1 ∧
-            x ∈ D ∧
-            F ∈ additiveSupportFamily A (k + 1) p.1 ∧
-            F ∩ D = {x} ∧
-            F = insert a H ∧
+            HasAnchoredPrivateRowTrace
+              A k cell Q r hrQ E p j
+                a H s surviving D F x ∧
             H ∩ D ⊆ {x} := by
     intro p
     by_cases hpR : p ∈ R
@@ -32506,9 +32543,9 @@ theorem prescribedCommonColumn_repeatedBlock_has_anchoredLowerCores
         (Finset.mem_filter.mp hpR).1
       have hpBlock : coveredBlock p = j :=
         (Finset.mem_filter.mp hpR).2
-      obtain ⟨s, support, D, F, x, _hrSupport,
-          _hsupportMem, _hsupportDisjoint, hDnonempty,
-          _hDselected, hDminimal, hxD, hFmem,
+      obtain ⟨s, support, D, F, x, hrSupport,
+          hsupportMem, hsupportDisjoint, hDnonempty,
+          hDselected, hDminimal, hxD, hFmem,
           hprivate, hselectedF, _hjCover⟩ :=
         hrows p hpT
       let a : ℕ := (s (coveredBlock p)).1
@@ -32538,8 +32575,17 @@ theorem prescribedCommonColumn_repeatedBlock_has_anchoredLowerCores
         rw [hprivate] at hzFD
         exact hzFD
       exact ⟨a, H, fun _ => ⟨haCell, hdecomp,
-        hHmem, D, F, x, hDnonempty, hDminimal,
-        hxD, hFmem, hprivate, hFH, hcoreTrace⟩⟩
+        hHmem, s, support, D, F, x,
+        ⟨hrSupport, hsupportMem, hsupportDisjoint,
+          by
+            have hsj :
+                (s j).1 =
+                  (s (coveredBlock p)).1 := by
+              rw [hpBlock]
+            simpa only [a] using hsj,
+          hDnonempty, hDselected, hDminimal,
+          hxD, hFmem, hprivate, hFH⟩,
+        hcoreTrace⟩⟩
     · exact ⟨0, ∅, fun hp => (hpR hp).elim⟩
   choose anchor core hentry using hentryExists
   exact ⟨anchor, core, by
@@ -32601,6 +32647,192 @@ theorem privateSupport_remove_anchor_marker_survives_or_clears
       rw [hFH] at hxF
       exact Finset.mem_insert.mp hxF
     exact ⟨hdisjoint, hxaOr.resolve_right hxH |>.symm⟩
+
+/-- A cleared anchored row repairs the whole localized certificate.
+
+Let `U` be the union of the stored supports for every target other than the
+current row target.  The original selector avoids `U`.  Choose a second
+point in the anchor block outside both `U` and the current private support.
+Because the lower core avoids the destroyer, that private support survives
+the finite swap.  The block-aligned extension lemma then builds a selector
+which preserves the current target while still avoiding `U`, hence
+preserves every other certificate target as well.
+
+Thus, once every block has the standard
+`(k+1) * |Q| + (k+1)` reserve, a cleared-core row contradicts the
+certificate property outright. -/
+theorem anchoredPrivateRow_clearedCore_repairs_entireCertificate
+    {A C : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ} (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (p : {q // q ∈ Q.erase r})
+    {j a : ℕ} {H : Finset ℕ}
+    {s : BlockSelector cell}
+    {surviving :
+      {q // q ∈ Q.erase p.1} → Finset ℕ}
+    {D F : Finset ℕ} {x : ℕ}
+    (htrace :
+      HasAnchoredPrivateRowTrace
+        A k cell Q r hrQ E p j
+          a H s surviving D F x)
+    (hclear : Disjoint (H : Set ℕ) (D : Set ℕ))
+    (hblocks :
+      ∀ i,
+        (k + 1) * Q.card + (k + 1) <
+          (cell i).card) :
+    ∃ t : BlockSelector cell,
+      ∀ q ∈ Q,
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q := by
+  classical
+  obtain ⟨_hrCommon, hsurvivingMem,
+      hsurvivingDisjoint, hsj, _hDnonempty,
+      _hDselected, hminimal, hxD, hFmem,
+      hprivate, hFanchor⟩ :=
+    htrace
+  have hanchorMarker : a = x := by
+    rcases
+        privateSupport_remove_anchor_marker_survives_or_clears
+          hxD hprivate hFanchor with
+      hsurvives | hclears
+    · have hxHD : x ∈ H ∩ D := by
+        rw [hsurvives]
+        simp
+      exact False.elim
+        (Set.disjoint_left.mp hclear
+          (Finset.mem_coe.mpr
+            (Finset.mem_inter.mp hxHD).1)
+          (Finset.mem_coe.mpr
+            (Finset.mem_inter.mp hxHD).2))
+    · exact hclears.2
+  let U : Finset ℕ :=
+    (Q.erase p.1).attach.biUnion surviving
+  have hUcard :
+      U.card ≤ (k + 1) * Q.card := by
+    calc
+      U.card ≤
+          ∑ q ∈ (Q.erase p.1).attach,
+            (surviving q).card := by
+        simpa only [U] using
+          (Finset.card_biUnion_le
+            (s := (Q.erase p.1).attach)
+            (t := surviving))
+      _ ≤
+          ∑ _q ∈ (Q.erase p.1).attach,
+            (k + 1) := by
+        gcongr with q hq
+        exact additiveSupportFamily_cardAtMost
+          A (k + 1) q.1 (surviving q)
+            (hsurvivingMem q)
+      _ = (k + 1) * (Q.erase p.1).card := by
+        simp [Nat.mul_comm]
+      _ ≤ (k + 1) * Q.card := by
+        exact Nat.mul_le_mul_left (k + 1)
+          Finset.card_erase_le
+  have hUselected :
+      Disjoint (U : Set ℕ) (selectedSet s) := by
+    rw [Set.disjoint_left]
+    intro z hzU hzSelected
+    obtain ⟨q, _hqAttach, hzSupport⟩ :=
+      Finset.mem_biUnion.mp
+        (show z ∈ U from Finset.mem_coe.mp hzU)
+    exact Set.disjoint_left.mp
+      (hsurvivingDisjoint q)
+      (Finset.mem_coe.mpr hzSupport) hzSelected
+  have hFcard : F.card ≤ k + 1 :=
+    additiveSupportFamily_cardAtMost
+      A (k + 1) p.1 F hFmem
+  have hroom :
+      (cell j \ (U ∪ F)).Nonempty := by
+    by_contra hempty
+    have hcellSub : cell j ⊆ U ∪ F := by
+      intro z hzCell
+      by_contra hzUnion
+      exact hempty
+        ⟨z, Finset.mem_sdiff.mpr
+          ⟨hzCell, hzUnion⟩⟩
+    have hcellCard :
+        (cell j).card ≤ U.card + F.card :=
+      (Finset.card_le_card hcellSub).trans
+        (Finset.card_union_le U F)
+    have hjLarge := hblocks j
+    omega
+  obtain ⟨b, hbRoom⟩ := hroom
+  have hbParts :=
+    Finset.mem_sdiff.mp hbRoom
+  have hbCell : b ∈ cell j := hbParts.1
+  have hbU : b ∉ U := by
+    intro hb
+    exact hbParts.2 (Finset.mem_union_left F hb)
+  have hbF : b ∉ F := by
+    intro hb
+    exact hbParts.2 (Finset.mem_union_right U hb)
+  have haF : a ∈ F := by
+    rw [hFanchor]
+    simp
+  have hba : b ≠ a := by
+    intro hba
+    exact hbF (hba ▸ haF)
+  have hbBlock :
+      b ∈ (cell j).erase (s j).1 := by
+    apply Finset.mem_erase.mpr
+    exact ⟨by simpa only [hsj] using hba,
+      hbCell⟩
+  have hrepair :
+      ¬ DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (((D.erase (s j).1 ∪ {b} :
+          Finset ℕ) : Set ℕ)) p.1 := by
+    apply not_destroysAt_iff.mpr
+    refine ⟨F, hFmem, ?_⟩
+    rw [Set.disjoint_left]
+    intro z hzF hzSwap
+    have hzSwapFin :
+        z ∈ D.erase (s j).1 ∪ {b} :=
+      Finset.mem_coe.mp hzSwap
+    rcases Finset.mem_union.mp hzSwapFin with
+        hzD | hzb
+    · have hzParts := Finset.mem_erase.mp hzD
+      have hzFD : z ∈ F ∩ D :=
+        Finset.mem_inter.mpr
+          ⟨Finset.mem_coe.mp hzF, hzParts.2⟩
+      have hzx : z = x := by
+        rw [hprivate] at hzFD
+        exact Finset.mem_singleton.mp hzFD
+      exact hzParts.1
+        (by simpa only [hsj, hanchorMarker] using hzx)
+    · have hzb' : z = b :=
+        Finset.mem_singleton.mp hzb
+      exact hbF
+        (hzb' ▸ Finset.mem_coe.mp hzF)
+  have hblocksU :
+      ∀ i, U.card + (k + 1) < (cell i).card := by
+    intro i
+    exact lt_of_le_of_lt
+      (Nat.add_le_add_right hUcard (k + 1))
+      (hblocks i)
+  obtain ⟨t, _htj, htU, htp⟩ :=
+    blockAlignedSafeSwap_extends_avoiding_protectedUnion
+      P s hbBlock hbU hUselected hrepair hblocksU
+  refine ⟨t, ?_⟩
+  intro q hqQ
+  by_cases hqp : q = p.1
+  · simpa only [hqp] using htp
+  · let q' : {z // z ∈ Q.erase p.1} :=
+      ⟨q, Finset.mem_erase.mpr ⟨hqp, hqQ⟩⟩
+    have hsupportU :
+        (surviving q' : Set ℕ) ⊆ (U : Set ℕ) := by
+      intro z hzSupport
+      apply Finset.mem_coe.mpr
+      apply Finset.mem_biUnion.mpr
+      exact ⟨q', Finset.mem_attach _ q',
+        Finset.mem_coe.mp hzSupport⟩
+    apply not_destroysAt_iff.mpr
+    refine ⟨surviving q', hsurvivingMem q', ?_⟩
+    exact htU.mono_left hsupportU
 
 /-- Double pigeonhole for anchored lower cores.
 
@@ -32761,7 +32993,8 @@ destroyer traces. -/
 def HasAnchoredLowerCoreRows
     (A : Set ℕ) (k : ℕ)
     (cell : ℕ → Finset ℕ)
-    (Q : Finset ℕ) (r : ℕ)
+    (Q : Finset ℕ) (r : ℕ) (hrQ : r ∈ Q)
+    (E : Finset ℕ)
     (T : Finset {q // q ∈ Q.erase r})
     (coveredBlock : {q // q ∈ Q.erase r} → ℕ)
     (j : ℕ)
@@ -32772,14 +33005,14 @@ def HasAnchoredLowerCoreRows
     p.1 = anchor p + (p.1 - anchor p) ∧
     core p ∈
       additiveSupportFamily A k (p.1 - anchor p) ∧
+    ∃ s : BlockSelector cell,
+    ∃ surviving :
+        {q // q ∈ Q.erase p.1} → Finset ℕ,
     ∃ D F : Finset ℕ, ∃ x,
-      D.Nonempty ∧
-      IsInclusionMinimalDestroyer
-        (additiveSupportFamily A (k + 1)) D p.1 ∧
-      x ∈ D ∧
-      F ∈ additiveSupportFamily A (k + 1) p.1 ∧
-      F ∩ D = {x} ∧
-      F = insert (anchor p) (core p) ∧
+      HasAnchoredPrivateRowTrace
+        A k cell Q r hrQ E p j
+          (anchor p) (core p)
+          s surviving D F x ∧
       core p ∩ D ⊆ {x}
 
 /-- A large fixed-core anchor star has only two substantive behaviours.
@@ -32798,6 +33031,7 @@ theorem fixedCoreAnchorStar_forces_clearedAnchors_or_repeatedSurvivingMarker
     {k clearDemand collisionDemand : ℕ}
     {cell : ℕ → Finset ℕ}
     {Q : Finset ℕ} {r : ℕ}
+    {hrQ : r ∈ Q} {E : Finset ℕ}
     {T : Finset {q // q ∈ Q.erase r}}
     {coveredBlock : {q // q ∈ Q.erase r} → ℕ}
     {j : ℕ}
@@ -32805,7 +33039,8 @@ theorem fixedCoreAnchorStar_forces_clearedAnchors_or_repeatedSurvivingMarker
     {core : {q // q ∈ Q.erase r} → Finset ℕ}
     (hrows :
       HasAnchoredLowerCoreRows
-        A k cell Q r T coveredBlock j anchor core)
+        A k cell Q r hrQ E T
+          coveredBlock j anchor core)
     {d : ℕ} {H : Finset ℕ}
     {U : Finset {q // q ∈ Q.erase r}}
     (hUR : U ⊆ T.filter (fun p => coveredBlock p = j))
@@ -32817,6 +33052,11 @@ theorem fixedCoreAnchorStar_forces_clearedAnchors_or_repeatedSurvivingMarker
         p.1 - anchor p = d ∧ core p = H)
     (hanchorInj :
       Set.InjOn anchor (U : Set {q // q ∈ Q.erase r})) :
+    ∃ selector :
+        {q // q ∈ Q.erase r} → BlockSelector cell,
+    ∃ surviving :
+        ∀ p : {q // q ∈ Q.erase r},
+          {q // q ∈ Q.erase p.1} → Finset ℕ,
     ∃ destroyer :
         {q // q ∈ Q.erase r} → Finset ℕ,
     ∃ support :
@@ -32829,15 +33069,11 @@ theorem fixedCoreAnchorStar_forces_clearedAnchors_or_repeatedSurvivingMarker
           Set.InjOn anchor
             (W : Set {q // q ∈ Q.erase r}) ∧
           ∀ p ∈ W,
-            (destroyer p).Nonempty ∧
-            IsInclusionMinimalDestroyer
-              (additiveSupportFamily A (k + 1))
-              (destroyer p) p.1 ∧
-            marker p ∈ destroyer p ∧
-            support p ∈
-              additiveSupportFamily A (k + 1) p.1 ∧
-            support p ∩ destroyer p = {marker p} ∧
-            support p = insert (anchor p) H ∧
+            HasAnchoredPrivateRowTrace
+              A k cell Q r hrQ E p j
+                (anchor p) H
+                (selector p) (surviving p)
+                (destroyer p) (support p) (marker p) ∧
             Disjoint
               (H : Set ℕ) (destroyer p : Set ℕ) ∧
             anchor p = marker p ∧
@@ -32852,42 +33088,50 @@ theorem fixedCoreAnchorStar_forces_clearedAnchors_or_repeatedSurvivingMarker
             Set.InjOn anchor
               (W : Set {q // q ∈ Q.erase r}) ∧
             ∀ p ∈ W,
-              (destroyer p).Nonempty ∧
-              IsInclusionMinimalDestroyer
-                (additiveSupportFamily A (k + 1))
-                (destroyer p) p.1 ∧
-              x ∈ destroyer p ∧
-              support p ∈
-                additiveSupportFamily A (k + 1) p.1 ∧
-              support p ∩ destroyer p = {x} ∧
-              support p = insert (anchor p) H ∧
+              HasAnchoredPrivateRowTrace
+                A k cell Q r hrQ E p j
+                  (anchor p) H
+                  (selector p) (surviving p)
+                  (destroyer p) (support p) x ∧
               H ∩ destroyer p = {x} := by
   classical
+  have hUnonempty : U.Nonempty := by
+    by_contra hUempty
+    have hUcardZero : U.card = 0 :=
+      Finset.card_eq_zero.mpr
+        (Finset.not_nonempty_iff_eq_empty.mp hUempty)
+    omega
+  obtain ⟨p₀, hp₀U⟩ := hUnonempty
+  obtain ⟨_hp₀Cell, _hp₀Decomp, _hp₀Core,
+      defaultSelector, _defaultSurviving,
+      _defaultD, _defaultF, _defaultMarker,
+      _defaultTrace, _hp₀CoreTrace⟩ :=
+    hrows p₀ (hUR hp₀U)
   have htraceExists :
       ∀ p : {q // q ∈ Q.erase r},
+        ∃ s : BlockSelector cell,
+        ∃ G : {q // q ∈ Q.erase p.1} → Finset ℕ,
         ∃ D F : Finset ℕ, ∃ x,
           p ∈ U →
-            D.Nonempty ∧
-            IsInclusionMinimalDestroyer
-              (additiveSupportFamily A (k + 1)) D p.1 ∧
-            x ∈ D ∧
-            F ∈ additiveSupportFamily A (k + 1) p.1 ∧
-            F ∩ D = {x} ∧
-            F = insert (anchor p) H := by
+            HasAnchoredPrivateRowTrace
+              A k cell Q r hrQ E p j
+                (anchor p) H s G D F x := by
     intro p
     by_cases hpU : p ∈ U
     · obtain ⟨_haCell, _hdecomp, _hcoreMem,
-          D, F, x, hDnonempty, hminimal,
-          hxD, hFmem, hprivate, hFcore, _hcoreTrace⟩ :=
+          s, G, D, F, x, hfullTrace, _hcoreTrace⟩ :=
         hrows p (hUR hpU)
       have hpCore : core p = H :=
         (hUdata p hpU).2
-      exact ⟨D, F, x, fun _ => ⟨hDnonempty,
-        hminimal, hxD, hFmem, hprivate,
-        by simpa only [hpCore] using hFcore⟩⟩
-    · exact ⟨∅, ∅, 0, fun hp => (hpU hp).elim⟩
-  choose destroyer support marker htrace using htraceExists
-  refine ⟨destroyer, support, marker, ?_⟩
+      exact ⟨s, G, D, F, x, fun _ => by
+        simpa only [hpCore] using hfullTrace⟩
+    · exact ⟨defaultSelector, fun _ => ∅,
+        ∅, ∅, 0,
+        fun hp => (hpU hp).elim⟩
+  choose selector surviving destroyer support marker htrace
+    using htraceExists
+  refine ⟨selector, surviving, destroyer,
+    support, marker, ?_⟩
   let Cleared : Finset {q // q ∈ Q.erase r} :=
     U.filter fun p =>
       Disjoint (H : Set ℕ) (destroyer p : Set ℕ)
@@ -32917,7 +33161,11 @@ theorem fixedCoreAnchorStar_forces_clearedAnchors_or_repeatedSurvivingMarker
         Disjoint (H : Set ℕ)
           (destroyer p : Set ℕ) :=
       (Finset.mem_filter.mp hpCleared).2
-    obtain ⟨hDnonempty, hminimal, hxD,
+    have hpTraceOut := htrace p hpU
+    obtain ⟨_hrCommon, _hsurvivingMem,
+        _hsurvivingDisjoint, _hanchorSelected,
+        _hDnonempty,
+        _hDselected, hminimal, hxD,
         hFmem, hprivate, hFanchor⟩ :=
       htrace p hpU
     have hmarkerSplit :=
@@ -32955,8 +33203,7 @@ theorem fixedCoreAnchorStar_forces_clearedAnchors_or_repeatedSurvivingMarker
           (destroyer p : Set ℕ) (anchor p) :=
       complementarySurvivingCore_forces_hitTargetDestroyer
         hminimal (by omega) hpTarget hHmem hpDisjoint
-    exact ⟨hDnonempty, hminimal, hxD, hFmem,
-      hprivate, hFanchor, hpDisjoint, hanchorMarker,
+    exact ⟨hpTraceOut, hpDisjoint, hanchorMarker,
       hanchorA, hanchorDestroyed⟩
   · right
     have hClearedSmall : Cleared.card ≤ clearDemand :=
@@ -32973,7 +33220,10 @@ theorem fixedCoreAnchorStar_forces_clearedAnchors_or_repeatedSurvivingMarker
       intro p hpSurviving
       have hpU : p ∈ U :=
         hSurvivingU hpSurviving
-      obtain ⟨_hDnonempty, _hminimal, hxD,
+      obtain ⟨_hrCommon, _hsurvivingMem,
+          _hsurvivingDisjoint, _hanchorSelected,
+          _hDnonempty,
+          _hDselected, _hminimal, hxD,
           _hFmem, hprivate, hFanchor⟩ :=
         htrace p hpU
       rcases
@@ -33031,15 +33281,112 @@ theorem fixedCoreAnchorStar_forces_clearedAnchors_or_repeatedSurvivingMarker
         (Finset.mem_filter.mp hpW).1
       have hpMarker : marker p = x :=
         (Finset.mem_filter.mp hpW).2
-      obtain ⟨hDnonempty, hminimal, hxD,
-          hFmem, hprivate, hFanchor⟩ :=
-        htrace p (hWU hpW)
-      refine ⟨hDnonempty, hminimal, ?_, hFmem,
-        ?_, hFanchor, ?_⟩
-      · simpa only [← hpMarker] using hxD
-      · simpa only [← hpMarker] using hprivate
-      · simpa only [← hpMarker] using
-          hmarkerSurvives p hpSurviving
+      have hpTrace := htrace p (hWU hpW)
+      have hpTraceX :
+          HasAnchoredPrivateRowTrace
+            A k cell Q r hrQ E p j
+              (anchor p) H
+              (selector p) (surviving p)
+              (destroyer p) (support p) x := by
+        simpa only [hpMarker] using hpTrace
+      refine ⟨hpTraceX, ?_⟩
+      simpa only [hpMarker] using
+        hmarkerSurvives p hpSurviving
+
+/-- Under the actual finite-certificate hypothesis, the cleared side of the
+fixed-core split is impossible.
+
+Any cleared row supplies, by
+`anchoredPrivateRow_clearedCore_repairs_entireCertificate`, one selector
+preserving every target in `Q`, contradicting the certificate.  Therefore a
+large fixed-core anchor star must concentrate on one literal old marker
+inside `H`, while its anchors remain injective. -/
+theorem fixedCoreAnchorStar_forces_repeatedSurvivingMarker_of_certificate
+    {A C : Set ℕ}
+    {k clearDemand collisionDemand : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ}
+    {hrQ : r ∈ Q} {E : Finset ℕ}
+    {T : Finset {q // q ∈ Q.erase r}}
+    {coveredBlock : {q // q ∈ Q.erase r} → ℕ}
+    {j : ℕ}
+    {anchor : {q // q ∈ Q.erase r} → ℕ}
+    {core : {q // q ∈ Q.erase r} → Finset ℕ}
+    (hrows :
+      HasAnchoredLowerCoreRows
+        A k cell Q r hrQ E T
+          coveredBlock j anchor core)
+    {d : ℕ} {H : Finset ℕ}
+    {U : Finset {q // q ∈ Q.erase r}}
+    (hUR : U ⊆ T.filter (fun p => coveredBlock p = j))
+    (hlarge :
+      clearDemand + collisionDemand * k < U.card)
+    (hHmem : H ∈ additiveSupportFamily A k d)
+    (hUdata :
+      ∀ p ∈ U,
+        p.1 - anchor p = d ∧ core p = H)
+    (hanchorInj :
+      Set.InjOn anchor (U : Set {q // q ∈ Q.erase r}))
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (hblocks :
+      ∀ i,
+        (k + 1) * Q.card + (k + 1) <
+          (cell i).card) :
+    ∃ selector :
+        {q // q ∈ Q.erase r} → BlockSelector cell,
+    ∃ surviving :
+        ∀ p : {q // q ∈ Q.erase r},
+          {q // q ∈ Q.erase p.1} → Finset ℕ,
+    ∃ destroyer :
+        {q // q ∈ Q.erase r} → Finset ℕ,
+    ∃ support :
+        {q // q ∈ Q.erase r} → Finset ℕ,
+    ∃ marker :
+        {q // q ∈ Q.erase r} → ℕ,
+    ∃ x ∈ H,
+      ∃ W : Finset {q // q ∈ Q.erase r},
+        W ⊆ U ∧
+        collisionDemand < W.card ∧
+        Set.InjOn anchor
+          (W : Set {q // q ∈ Q.erase r}) ∧
+        ∀ p ∈ W,
+          HasAnchoredPrivateRowTrace
+            A k cell Q r hrQ E p j
+              (anchor p) H
+              (selector p) (surviving p)
+              (destroyer p) (support p) x ∧
+          H ∩ destroyer p = {x} := by
+  obtain ⟨selector, surviving, destroyer,
+      support, marker, hcleared | hcollision⟩ :=
+    fixedCoreAnchorStar_forces_clearedAnchors_or_repeatedSurvivingMarker
+      hrows hUR hlarge hHmem hUdata hanchorInj
+  · obtain ⟨W, _hWU, hWlarge, _hWanchor,
+        hWdata⟩ :=
+      hcleared
+    have hWnonempty : W.Nonempty := by
+      by_contra hWempty
+      have hWcardZero : W.card = 0 :=
+        Finset.card_eq_zero.mpr
+          (Finset.not_nonempty_iff_eq_empty.mp hWempty)
+      omega
+    obtain ⟨p, hpW⟩ := hWnonempty
+    obtain ⟨hpTrace, hpClear, _hpAnchorMarker,
+        _hpAnchorA, _hpAnchorDestroyed⟩ :=
+      hWdata p hpW
+    obtain ⟨t, htSurvives⟩ :=
+      anchoredPrivateRow_clearedCore_repairs_entireCertificate
+        P hrQ E p hpTrace hpClear hblocks
+    obtain ⟨q, hqQ, hqDestroyed⟩ :=
+      hcert t
+    exact False.elim
+      ((htSurvives q hqQ) hqDestroyed)
+  · exact ⟨selector, surviving, destroyer,
+      support, marker, hcollision⟩
 
 /-- The arithmetic trichotomy carried by anchored lower-core rows. -/
 def HasAnchoredLowerCoreArithmeticFork
@@ -33095,7 +33442,8 @@ theorem prescribedCommonColumn_repeatedBlock_forces_anchoredArithmeticFork
     ∃ anchor : {q // q ∈ Q.erase r} → ℕ,
     ∃ core : {q // q ∈ Q.erase r} → Finset ℕ,
       HasAnchoredLowerCoreRows
-          A k cell Q r T coveredBlock j anchor core ∧
+          A k cell Q r hrQ E T
+            coveredBlock j anchor core ∧
       HasAnchoredLowerCoreArithmeticFork
         A k anchorDemand differenceDemand matchingDemand
           Q r (T.filter fun p => coveredBlock p = j)
@@ -33148,7 +33496,8 @@ theorem commonColumnReducedCoverFork_forces_reducedStream_or_anchoredArithmeticF
           HasPrescribedCommonColumnCover
             A k cell Q r hrQ E p (coveredBlock p)) ∧
         HasAnchoredLowerCoreRows
-          A k cell Q r T coveredBlock j anchor core ∧
+          A k cell Q r hrQ E T
+            coveredBlock j anchor core ∧
         HasAnchoredLowerCoreArithmeticFork
           A k anchorDemand differenceDemand matchingDemand
             Q r (T.filter fun p => coveredBlock p = j)
@@ -33188,7 +33537,8 @@ def HasCommonColumnAnchoredArithmeticConcentration
       HasPrescribedCommonColumnCover
         A k cell Q r hrQ E p (coveredBlock p)) ∧
     HasAnchoredLowerCoreRows
-      A k cell Q r T coveredBlock j anchor core ∧
+      A k cell Q r hrQ E T
+        coveredBlock j anchor core ∧
     HasAnchoredLowerCoreArithmeticFork
       A k anchorDemand differenceDemand matchingDemand
         Q r (T.filter fun p => coveredBlock p = j)
