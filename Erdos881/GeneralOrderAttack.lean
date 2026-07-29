@@ -43955,4 +43955,378 @@ theorem exactBasis_counterexample_forces_cofinalTranslationHoles_or_alignedArith
         P hqQ hrepresented hcert hlocalized
           (by simpa only [threshold] using hQlarge)
 
+/-- One prescribed-scale occurrence of the exact-target horn, with the
+source matching and its translation retained.
+
+There is a rooted matching of the requested size at `q`, together with the
+original block-localized rooted matching at `target i` and the exact affine
+identity
+
+`q = target i + δ`.
+
+This is precisely the first horn of
+`exactBasis_counterexample_forces_cofinalTranslationHoles_or_alignedArithmeticOutcome`;
+none of the source-block data is discarded merely because the second
+matching lives at `q`. -/
+def HasAlignedExactTargetRootedMatchingAt
+    (A : Set ℕ) (k : ℕ)
+    (cell : ℕ → Finset ℕ) (target : ℕ → ℕ)
+    (gapFloor demand : ℕ) : Prop :=
+  ∃ i q δ, ∃ sourceRoot : Finset ℕ,
+    ∃ sourceMatching : Finset (Finset ℕ),
+    ∃ sourcePetals : Finset ℕ,
+    ∃ exactRoot : Finset ℕ,
+    ∃ exactMatching : Finset (Finset ℕ),
+      gapFloor ≤ i ∧
+      target i < q ∧
+      q < target (i + 1) ∧
+      0 < δ ∧
+      q = target i + δ ∧
+      sourceRoot.card < k + 1 ∧
+      i + 1 < sourceMatching.card ∧
+      sourceMatching ⊆
+        additiveSupportFamily A (k + 1) (target i) ∧
+      (∀ E ∈ sourceMatching, sourceRoot ⊆ E) ∧
+      (∀ E ∈ sourceMatching, (E \ sourceRoot).Nonempty) ∧
+      (∀ E ∈ sourceMatching, ∀ G ∈ sourceMatching, E ≠ G →
+        Disjoint (E \ sourceRoot) (G \ sourceRoot)) ∧
+      sourcePetals =
+        sourceMatching.biUnion (fun E => E \ sourceRoot) ∧
+      sourcePetals ⊆ cell i ∧
+      exactRoot.card < k + 1 ∧
+      exactMatching ⊆ additiveSupportFamily A (k + 1) q ∧
+      demand < exactMatching.card ∧
+      (∀ E ∈ exactMatching, exactRoot ⊆ E) ∧
+      (∀ E ∈ exactMatching, (E \ exactRoot).Nonempty) ∧
+      ∀ E ∈ exactMatching, ∀ G ∈ exactMatching, E ≠ G →
+        Disjoint (E \ exactRoot) (G \ exactRoot)
+
+/-- Cofinal recurrence of the aligned exact-target horn at every requested
+source-block floor and matching scale. -/
+def HasCofinalAlignedExactTargetRootedMatchings
+    (A : Set ℕ) (k : ℕ)
+    (cell : ℕ → Finset ℕ) (target : ℕ → ℕ) : Prop :=
+  ∀ gapFloor demand,
+    HasAlignedExactTargetRootedMatchingAt
+      A k cell target gapFloor demand
+
+/-- An aligned exact-target stage remains valid after lowering its requested
+block floor and matching demand. -/
+theorem HasAlignedExactTargetRootedMatchingAt.mono
+    {A : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    {gapFloor demand gapFloor' demand' : ℕ}
+    (hstage :
+      HasAlignedExactTargetRootedMatchingAt
+        A k cell target gapFloor demand)
+    (hgap : gapFloor' ≤ gapFloor)
+    (hdemand : demand' ≤ demand) :
+    HasAlignedExactTargetRootedMatchingAt
+      A k cell target gapFloor' demand' := by
+  obtain ⟨i, q, δ, sourceRoot, sourceMatching,
+      sourcePetals, exactRoot, exactMatching,
+      hiFloor, hiLower, hiUpper, hδpos, hqδ,
+      hsourceRootCard, hsourceLarge, hsourceSub,
+      hsourceRoot, hsourcePetal, hsourceMatching,
+      hsourcePetals, hsourceCell, hexactRootCard,
+      hexactSub, hexactLarge, hexactRoot,
+      hexactPetal, hexactMatching⟩ :=
+    hstage
+  exact
+    ⟨i, q, δ, sourceRoot, sourceMatching, sourcePetals,
+      exactRoot, exactMatching, hgap.trans hiFloor,
+      hiLower, hiUpper, hδpos, hqδ, hsourceRootCard,
+      hsourceLarge, hsourceSub, hsourceRoot, hsourcePetal,
+      hsourceMatching, hsourcePetals, hsourceCell,
+      hexactRootCard, hexactSub,
+      lt_of_le_of_lt hdemand hexactLarge,
+      hexactRoot, hexactPetal, hexactMatching⟩
+
+/-- Cofinal aligned exact-target growth supplies every prefix-cleared
+fixed-order stage needed by the infinite block-fusion recursion.
+
+For the current finite history `used`, request an exact-target matching
+larger than the complete prefix-clearing and bounded-target threshold.
+`largeSupportFamily_forces_cofinal_prefixDisjointRootedMatching` consumes
+all old root collisions, forces the normalized target beyond `last`, and
+pads back to order `k+1` without changing the petals.  The originating
+stage still comes from a source block `i` and translation `δ` satisfying
+`q = target i + δ`; the projection to `FreshPredecessorRootedMatchingStep`
+uses only the stronger normalized consequence. -/
+theorem HasCofinalAlignedExactTargetRootedMatchings.freshStepSupply
+    {A : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (hgrowth :
+      HasCofinalAlignedExactTargetRootedMatchings
+        A k cell target) :
+    ∀ used last demand,
+      Nonempty
+        (FreshPredecessorRootedMatchingStep
+          A (k + 1) used last demand) := by
+  intro used last demand
+  let size :=
+    max (used.card + demand)
+      (additiveLowerRankSupportCountBelow
+        A (k + 1) (last + 1))
+  let need :=
+    additivePrefixAvoidingRootBound (k + 1) size
+  obtain ⟨_i, q, _δ, _sourceRoot, _sourceMatching,
+      _sourcePetals, _exactRoot, exactMatching,
+      _hiFloor, _hiLower, _hiUpper, _hδpos, _hqδ,
+      _hsourceRootCard, _hsourceLarge, _hsourceSub,
+      _hsourceRoot, _hsourcePetal, _hsourceMatching,
+      _hsourcePetals, _hsourceCell, _hexactRootCard,
+      hexactSub, hexactLarge, _hexactRoot,
+      _hexactPetal, _hexactMatching⟩ :=
+    hgrowth 0 need
+  obtain ⟨t, R, M, htLate, hRcard, hRused,
+      hMsub, hMlarge, hMroot, hMpetal, hMmatching⟩ :=
+    largeSupportFamily_forces_cofinal_prefixDisjointRootedMatching
+      hbasis.succ (H := k + 1) (h := k + 1)
+        (r := used.card + demand) (L := last + 1)
+        (m := q) (F := used) le_rfl hexactSub
+        (by
+          exact Nat.le_of_lt
+            (by simpa only [need] using hexactLarge))
+  exact
+    ⟨⟨t, R, M, by omega, hRcard, hRused, hMsub,
+      hMlarge, hMroot, hMpetal, hMmatching⟩⟩
+
+/-- The common infinite-deletion endpoint of both the exact-target matching
+fusion and the reduced-stream fusion.
+
+One infinite `Y` simultaneously carries a strict surviving successor stream,
+cofinally many destroyed successor targets, and cofinally represented
+predecessor differences destroyed by the same `Y`. -/
+def HasFusedSuccessorPredecessorStreams
+    (A : Set ℕ) (k : ℕ) : Prop :=
+  ∃ Y : Set ℕ, ∃ oldTarget : ℕ → ℕ,
+    Y ⊆ A ∧
+    Y.Infinite ∧
+    StrictMono oldTarget ∧
+    (∀ n,
+      ∃ E ∈ additiveSupportFamily A (k + 1) (oldTarget n),
+        Disjoint (E : Set ℕ) Y) ∧
+    (∀ N, ∃ m, N ≤ m ∧
+      DestroysAt
+        (additiveSupportFamily A (k + 1)) Y m) ∧
+    ∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a,
+      L ≤ n ∧
+      oldTarget n < m ∧
+      m < oldTarget (n + 1) ∧
+      E ∈ additiveSupportFamily A (k + 1) (oldTarget n) ∧
+      Disjoint (E : Set ℕ) Y ∧
+      DestroysAt
+        (additiveSupportFamily A (k + 1)) Y m ∧
+      a ∈ E ∧
+      (k + 1) * a ≤ oldTarget n ∧
+      L ≤ m - a ∧
+      (additiveSupportFamily A k (m - a)).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A k) Y (m - a)
+
+/-- The cofinally recurring aligned exact-target horn is not a terminal
+counterexample branch.
+
+Normalize it through every finite history and run the existing rooted
+matching fusion.  Choosing one point from each resulting petal block gives
+one infinite deletion `Y` on which a strict stream of order-`k+1` targets
+survives.  The counterexample hypothesis forces cofinally many other
+order-`k+1` targets to be destroyed by that same `Y`.  Bracketing those
+failures between the surviving targets then produces cofinally represented
+order-`k` differences which are also destroyed by `Y`.
+
+Thus recurrent exact-target growth has been fed all the way through the
+same infinite-deletion and arithmetic-composition endpoint already used for
+the reduced-stream horn. -/
+theorem HasCofinalAlignedExactTargetRootedMatchings.fusesInfiniteDeletion
+    {A : Set ℕ} {k : ℕ}
+    (hkpos : 0 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1))
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (hgrowth :
+      HasCofinalAlignedExactTargetRootedMatchings
+        A k cell target) :
+    HasFusedSuccessorPredecessorStreams A k := by
+  classical
+  obtain ⟨K, freshCell, oldTarget, _retained,
+      hKA, hKInfinite, _hKreserved, P, holdStrict,
+      _hretainedInjective, _hretainedA, _hKretained,
+      _hcellLarge, hsurvival⟩ :=
+    freshPredecessorRootedMatchingSteps_have_commonSurvivalPartition_avoiding
+      hbasis.infinite
+      (hgrowth.freshStepSupply hbasis)
+      ∅
+  let s : BlockSelector freshCell := fun i =>
+    ⟨(P.nonempty i).choose, (P.nonempty i).choose_spec⟩
+  let Y : Set ℕ := selectedSet s
+  have hYA : Y ⊆ A :=
+    (P.selectedSet_subset s).trans hKA
+  have hYInfinite : Y.Infinite :=
+    P.selectedSet_infinite s
+  have holdSurvival :
+      ∀ n,
+        ∃ E ∈ additiveSupportFamily A (k + 1) (oldTarget n),
+          Disjoint (E : Set ℕ) Y := by
+    intro n
+    obtain ⟨_R, M, _hRcard, _hRK, hMlarge,
+        hMsub, _hMroot, _hMpetal, _hMmatching,
+        hMselected, _hMcell⟩ :=
+      hsurvival s n
+    have hMpos : 0 < M.card := by omega
+    obtain ⟨E, hEM⟩ := Finset.card_pos.mp hMpos
+    exact ⟨E, hMsub hEM, hMselected E hEM⟩
+  have hsuccessorDestroy :
+      ∀ N, ∃ m, N ≤ m ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) Y m :=
+    strongExactDeletion_of_counterexample hcounter
+      Y hYA hYInfinite
+  have hrepresented :=
+    bracketedDestroyedSuccessorTargets_force_cofinalRepresentedPredecessorDestroyers
+      hkpos hbasis holdStrict holdSurvival hsuccessorDestroy
+  exact ⟨Y, oldTarget, hYA, hYInfinite, holdStrict,
+    holdSurvival, hsuccessorDestroy, hrepresented⟩
+
+/-- Eventual remainder after the cofinally recurring exact-target horn has
+been removed.
+
+At every sufficiently large diagonal scale the same source-block/translation
+configuration now yields either more than `n` translated holes, or the
+nonmatching half of the target-localized arithmetic theorem: a reduced
+common-column stream or an anchored arithmetic concentration. -/
+def HasEventuallyAlignedHolesOrNonmatchingArithmetic
+    (A : Set ℕ) (k : ℕ)
+    (cell : ℕ → Finset ℕ) (target : ℕ → ℕ) : Prop :=
+  ∃ N, ∀ n, N ≤ n →
+    ∃ Q : Finset ℕ, ∃ i q δ,
+    ∃ sourceRoot : Finset ℕ,
+    ∃ sourceMatching : Finset (Finset ℕ),
+    ∃ sourcePetals translatedHoles : Finset ℕ,
+    ∃ hqQ : q ∈ Q,
+      n ≤ i ∧
+      target i < q ∧
+      q < target (i + 1) ∧
+      0 < δ ∧
+      q = target i + δ ∧
+      sourceRoot.card < k + 1 ∧
+      i + 1 < sourceMatching.card ∧
+      sourceMatching ⊆
+        additiveSupportFamily A (k + 1) (target i) ∧
+      (∀ E ∈ sourceMatching, sourceRoot ⊆ E) ∧
+      (∀ E ∈ sourceMatching, (E \ sourceRoot).Nonempty) ∧
+      (∀ E ∈ sourceMatching, ∀ G ∈ sourceMatching, E ≠ G →
+        Disjoint (E \ sourceRoot) (G \ sourceRoot)) ∧
+      sourcePetals =
+        sourceMatching.biUnion (fun E => E \ sourceRoot) ∧
+      sourcePetals ⊆ cell i ∧
+      translatedHoles ⊆ sourcePetals ∧
+      (∀ a ∈ translatedHoles, a + δ ∉ A) ∧
+      (n < translatedHoles.card ∨
+        ∃ E ∈ additiveSupportFamily A (k + 1) q,
+          ∃ T : Finset {r // r ∈ Q.erase q},
+            HasCommonColumnReducedCoverStream
+                A k n cell Q q hqQ E T ∨
+              HasCommonColumnAnchoredArithmeticConcentration
+                A k n n n cell Q q hqQ E T)
+
+/-- Counterexample-level elimination of the recurrent exact-target branch.
+
+Run the aligned arithmetic theorem on the diagonal sequence of scales.
+If exact-target rooted matchings recur cofinally, their retained
+`q = target i + δ` stages satisfy
+`HasCofinalAlignedExactTargetRootedMatchings`; the preceding theorem fuses
+them into one infinite deletion with surviving and destroyed successor
+streams and represented destroyed predecessor differences.
+
+If they do not recur cofinally, there is a genuine cutoff.  Beyond it,
+unfolding the same localized arithmetic outcome leaves only translated-hole
+growth, reduced common-column streams, or anchored arithmetic concentration.
+Thus the exact-target horn has been consumed rather than left as a fourth
+open branch. -/
+theorem exactBasis_counterexample_forces_exactMatchingFusion_or_eventualAlignedRemainder
+    {A : Set ℕ} {k : ℕ}
+    (hkpos : 0 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1)) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+    ∃ target : ℕ → ℕ,
+      K ⊆ A ∧
+      K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      StrictMono target ∧
+      (∀ i, i + 2 < (cell i).card) ∧
+      (HasFusedSuccessorPredecessorStreams A k ∨
+        HasEventuallyAlignedHolesOrNonmatchingArithmetic
+          A k cell target) := by
+  classical
+  obtain ⟨K, cell, target, hKA, hKInfinite, P,
+      htargetStrict, hcellLarge, hstage⟩ :=
+    exactBasis_counterexample_forces_cofinalTranslationHoles_or_alignedArithmeticOutcome
+      hbasis hcounter
+  refine ⟨K, cell, target, hKA, hKInfinite, P,
+    htargetStrict, hcellLarge, ?_⟩
+  by_cases hexactCofinal :
+      ∀ N, ∃ n, N ≤ n ∧
+        HasAlignedExactTargetRootedMatchingAt
+          A k cell target n n
+  · left
+    have hgrowth :
+        HasCofinalAlignedExactTargetRootedMatchings
+          A k cell target := by
+      intro gapFloor demand
+      obtain ⟨n, hnLarge, hnStage⟩ :=
+        hexactCofinal (max gapFloor demand)
+      exact hnStage.mono
+        ((le_max_left gapFloor demand).trans hnLarge)
+        ((le_max_right gapFloor demand).trans hnLarge)
+    exact hgrowth.fusesInfiniteDeletion hkpos hbasis hcounter
+  · right
+    push Not at hexactCofinal
+    obtain ⟨N, hN⟩ := hexactCofinal
+    refine ⟨N, ?_⟩
+    intro n hn
+    obtain ⟨Q, _s, i, q, δ, sourceRoot, sourceMatching,
+        sourcePetals, _Vin, translatedHoles, hqQ,
+        hiFloor, hiLower, hiUpper, hδpos, hqδ,
+        _hqDestroy, hsourceRootCard, _hsourceK,
+        hsourceLarge, hsourceSub, hsourceRoot,
+        hsourcePetal, hsourceMatching, _hsourceSelected,
+        hsourcePetals, hsourceCell, _hVinSource,
+        hholesSource, _hVinHoles, _hsourceSplit,
+        _hVinData, hholesData, hfinal⟩ :=
+      hstage n n n n n n n
+    refine
+      ⟨Q, i, q, δ, sourceRoot, sourceMatching,
+        sourcePetals, translatedHoles, hqQ,
+        hiFloor, hiLower, hiUpper, hδpos, hqδ,
+        hsourceRootCard, hsourceLarge, hsourceSub,
+        hsourceRoot, hsourcePetal, hsourceMatching,
+        hsourcePetals, hsourceCell, hholesSource,
+        hholesData, ?_⟩
+    rcases hfinal with hholes | houtcome
+    · exact Or.inl hholes
+    · simp only [HasTargetLocalizedArithmeticOutcome] at houtcome
+      rcases houtcome with hexact | hnonmatching
+      · exfalso
+        apply hN n hn
+        obtain ⟨exactRoot, exactMatching,
+            hexactRootCard, hexactSub, hexactLarge,
+            hexactRoot, hexactPetal, hexactMatching⟩ :=
+          hexact
+        exact
+          ⟨i, q, δ, sourceRoot, sourceMatching,
+            sourcePetals, exactRoot, exactMatching,
+            hiFloor, hiLower, hiUpper, hδpos, hqδ,
+            hsourceRootCard, hsourceLarge, hsourceSub,
+            hsourceRoot, hsourcePetal, hsourceMatching,
+            hsourcePetals, hsourceCell, hexactRootCard,
+            hexactSub, hexactLarge, hexactRoot,
+            hexactPetal, hexactMatching⟩
+      · exact Or.inr hnonmatching
+
 end Erdos881
