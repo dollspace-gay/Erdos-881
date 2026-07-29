@@ -1,3 +1,49 @@
+# GENERAL ORDER: TERMINAL SOURCES FIX ONE LITERAL CORE (2026-07-29)
+
+The exact-target terminal fusion now exposes the arithmetic coherence of
+its migrating marked points.
+
+For every fused stage, the retained original order-\(k\) support represents
+
+\[
+  \operatorname{target}(i_n)=x_n+t
+\]
+
+and contains the marked summand \(x_n\).  Removing that occurrence leaves
+an order-\((k-1)\) support of the one fixed target \(t\).  The family of
+such supports is finite.  Therefore
+`terminalAlignedSourceSupports_fix_removedCore` thins to an infinite set
+of stages and fixes one literal finset \(K\) with
+
+\[
+  K\in\mathcal S_{k-1}(t),\qquad
+  F_n=\{x_n\}\cup K
+\]
+
+at every retained stage.  If the original supports avoid the current
+deletion, the fixed core does as well.
+
+`HasTerminalFixedSourceCoreAlignedFusion` packages that fixed core together
+with the final infinite deletion, strict source/translation/upper streams,
+the original terminal index and landing block, both clean order-\(k\)
+supports, and the exact affine identity
+
+\[
+  \operatorname{upper}(n)
+    =\operatorname{target}(i_n)+\Delta_n.
+\]
+
+The method is now genuinely rigid at the source: certificates can no
+longer evade comparison by changing their untranslated lower support.
+The next direct fork is geometric.  Either infinitely many translated
+targets remain before the next original target, producing an interlaced
+same-block double-survival stream, or the translations repeatedly cross
+source-block boundaries and force persistent growth.  A bounded origin
+fiber is a third rigid subcase: one fixed original target then carries
+strictly unbounded translations.
+
+This is still not the full solution of Erdős 881 for \(k\ge3\).
+
 # GENERAL ORDER: TERMINAL FUSION RETAINS ITS EXACT TARGET (2026-07-29)
 
 The infinite source-advance fusion has now been welded back to the

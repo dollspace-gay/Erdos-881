@@ -52803,6 +52803,260 @@ theorem
       hmarkedSourceSupport, hsourceSupportC,
       hupperAligned⟩
 
+/-- Infinitely many terminal source supports have one identical removed
+core.
+
+Every source support represents `marked n + t` and contains `marked n`.
+Removing that occurrence therefore leaves an order-`k-1` support of the
+single fixed target `t`.  There are only finitely many such support
+finsets, so one of them occurs on an infinite fiber.  Cleanliness of the
+source supports makes the fixed core clean as well.
+
+This is the arithmetic coherence hidden by the migrating marked points:
+after thinning, all untranslated predecessors literally lie over one
+fixed lower support. -/
+theorem terminalAlignedSourceSupports_fix_removedCore
+    {A C : Set ℕ} {k t : ℕ}
+    {sourceTarget marked : ℕ → ℕ}
+    {sourceSupport : ℕ → Finset ℕ}
+    (hkpos : 0 < k)
+    (hdata :
+      ∀ n,
+        sourceTarget n = marked n + t ∧
+        sourceSupport n ∈
+          additiveSupportFamily A k (sourceTarget n) ∧
+        marked n ∈ sourceSupport n ∧
+        Disjoint (sourceSupport n : Set ℕ) C) :
+    ∃ J : Set ℕ, ∃ core : Finset ℕ,
+      J.Infinite ∧
+      core ∈ additiveSupportFamily A (k - 1) t ∧
+      Disjoint (core : Set ℕ) C ∧
+      ∀ n ∈ J,
+        sourceSupport n = insert (marked n) core := by
+  classical
+  obtain ⟨j, hj⟩ :=
+    Nat.exists_eq_succ_of_ne_zero
+      (Nat.ne_of_gt hkpos)
+  subst k
+  have hcoreExists :
+      ∀ n, ∃ core : Finset ℕ,
+        core ∈ additiveSupportFamily A j t ∧
+        sourceSupport n =
+          insert (marked n) core := by
+    intro n
+    obtain ⟨core, hcoreMemRaw, hsourceEq⟩ :=
+      additiveSupport_remove_hit_succ
+        (hdata n).2.1 (hdata n).2.2.1
+    have hmarkedTarget :
+        marked n ≤ sourceTarget n :=
+      additiveSupportFamily_supportsBounded
+        A (j + 1) (sourceTarget n)
+          (sourceSupport n) (hdata n).2.1
+          (marked n) (hdata n).2.2.1
+    have hdiff :
+        sourceTarget n - marked n = t := by
+      rw [(hdata n).1]
+      omega
+    exact
+      ⟨core, by simpa only [hdiff] using hcoreMemRaw,
+        hsourceEq⟩
+  choose core hcoreMem hsourceEq using hcoreExists
+  have hcoreC :
+      ∀ n, Disjoint (core n : Set ℕ) C := by
+    intro n
+    apply
+      (hdata n).2.2.2.mono_left
+    intro x hxCore
+    exact
+      Finset.mem_coe.mpr
+        (by
+          rw [hsourceEq n]
+          exact
+            Finset.mem_insert_of_mem
+              (Finset.mem_coe.mp hxCore))
+  let supports : Finset (Finset ℕ) :=
+    additiveSupportFamily A j t
+  let color : ℕ → {G // G ∈ supports} := fun n =>
+    ⟨core n, by
+      simpa only [supports] using hcoreMem n⟩
+  obtain ⟨fixed, hfixedFiber⟩ :=
+    Finite.exists_infinite_fiber color
+  let J : Set ℕ :=
+    color ⁻¹' {fixed}
+  have hJInfinite : J.Infinite := by
+    exact
+      Set.infinite_coe_iff.mp
+        (by simpa only [J] using hfixedFiber)
+  have hfixedMem :
+      fixed.1 ∈ additiveSupportFamily A j t := by
+    simpa only [supports] using fixed.2
+  have hfixedC :
+      Disjoint (fixed.1 : Set ℕ) C := by
+    obtain ⟨n, hnJ⟩ :=
+      hJInfinite.nonempty
+    have hcolorEq :
+        color n = fixed := by
+      simpa only [J, Set.mem_preimage,
+        Set.mem_singleton_iff] using hnJ
+    have hcoreEq :
+        core n = fixed.1 :=
+      congrArg Subtype.val hcolorEq
+    rw [← hcoreEq]
+    exact hcoreC n
+  refine
+    ⟨J, fixed.1, hJInfinite, ?_,
+      hfixedC, ?_⟩
+  · simpa using hfixedMem
+  · intro n hnJ
+    have hcolorEq :
+        color n = fixed := by
+      simpa only [J, Set.mem_preimage,
+        Set.mem_singleton_iff] using hnJ
+    have hcoreEq :
+        core n = fixed.1 :=
+      congrArg Subtype.val hcolorEq
+    rw [← hcoreEq]
+    exact hsourceEq n
+
+/-- A terminal aligned fusion with one literal source core fixed on an
+infinite set of stages. -/
+def HasTerminalFixedSourceCoreAlignedFusion
+    (A B C D Y : Set ℕ) (k t ε : ℕ)
+    (landing target root repaired : ℕ → ℕ) : Prop :=
+  ∃ Z : Set ℕ,
+  ∃ source translation upper marked : ℕ → ℕ,
+  ∃ support : ℕ → Finset ℕ,
+  ∃ origin landingIndex rootShift : ℕ → ℕ,
+  ∃ sourceSupport : ℕ → Finset ℕ,
+  ∃ J : Set ℕ, ∃ core : Finset ℕ,
+    Z ⊆ D ∧
+    Z ⊆ A ∧
+    Z.Infinite ∧
+    StrictMono source ∧
+    StrictMono translation ∧
+    StrictMono upper ∧
+    J.Infinite ∧
+    core ∈ additiveSupportFamily A (k - 1) t ∧
+    Disjoint (core : Set ℕ) C ∧
+    (∀ n,
+      t + ε ≤ source n ∧
+      0 < translation n ∧
+      translation n = source n - t ∧
+      support n ∈
+        additiveSupportFamily A k (upper n) ∧
+      marked n ∈ support n ∧
+      Disjoint (support n : Set ℕ) Z ∧
+      upper n - marked n = source n ∧
+      marked n = repaired (origin n) ∧
+      root (origin n) = landing (landingIndex n) ∧
+      root (origin n) ∈ Y \ B ∧
+      0 < rootShift n ∧
+      marked n = root (origin n) + rootShift n ∧
+      marked n ∈ A ∧
+      marked n ∈ B \ C ∧
+      target (origin n) = marked n + t ∧
+      sourceSupport n ∈
+        additiveSupportFamily A k (target (origin n)) ∧
+      marked n ∈ sourceSupport n ∧
+      Disjoint (sourceSupport n : Set ℕ) C ∧
+      upper n =
+        target (origin n) + translation n) ∧
+    ∀ n ∈ J,
+      sourceSupport n = insert (marked n) core
+
+/-- Fix the untranslated source core inside a terminal aligned fusion.
+
+The selected origin functions make the source-block provenance explicit;
+the preceding finite-fiber theorem then fixes the removed core without
+altering the final deletion or either strict target/translation stream. -/
+theorem
+    HasTerminalAlignedMovingPredecessorSurvivalFusion.fixesSourceCore
+    {A B C D Y : Set ℕ} {k t ε : ℕ}
+    {landing target root repaired : ℕ → ℕ}
+    (hkpos : 0 < k)
+    (hfused :
+      HasTerminalAlignedMovingPredecessorSurvivalFusion
+        A B C D Y k t ε landing target root repaired) :
+    HasTerminalFixedSourceCoreAlignedFusion
+      A B C D Y k t ε landing target root repaired := by
+  classical
+  obtain ⟨Z, hZD, hZA, hZInfinite,
+      source, translation, upper, marked, support,
+      hsourceStrict, htranslationStrict,
+      hupperStrict, hdata⟩ :=
+    hfused
+  have horigin :
+      ∀ n,
+        ∃ i j rootShift,
+        ∃ sourceSupport : Finset ℕ,
+          marked n = repaired i ∧
+          root i = landing j ∧
+          root i ∈ Y \ B ∧
+          0 < rootShift ∧
+          marked n = root i + rootShift ∧
+          marked n ∈ A ∧
+          marked n ∈ B \ C ∧
+          target i = marked n + t ∧
+          sourceSupport ∈
+            additiveSupportFamily A k (target i) ∧
+          marked n ∈ sourceSupport ∧
+          Disjoint (sourceSupport : Set ℕ) C ∧
+          upper n = target i + translation n := by
+    intro n
+    obtain ⟨_hsourceFloor, _htranslationPos,
+        _htranslationEq, _hsupportMem,
+        _hmarkedSupport, _hsupportZ,
+        _hpredecessor, i, j, rootShift,
+        sourceSupport, hrest⟩ :=
+      hdata n
+    exact
+      ⟨i, j, rootShift, sourceSupport, hrest⟩
+  choose origin landingIndex rootShift
+      sourceSupport horiginData using horigin
+  have hfixedInput :
+      ∀ n,
+        target (origin n) = marked n + t ∧
+        sourceSupport n ∈
+          additiveSupportFamily A k
+            (target (origin n)) ∧
+        marked n ∈ sourceSupport n ∧
+        Disjoint (sourceSupport n : Set ℕ) C := by
+    intro n
+    obtain ⟨_hmarkedRepaired, _hrootLanding,
+        _hrootRange, _hrootShiftPos,
+        _hmarkedRoot, _hmarkedA, _hmarkedRange,
+        htargetMarked, hsourceSupportMem,
+        hmarkedSourceSupport, hsourceSupportC,
+        _hupperAligned⟩ :=
+      horiginData n
+    exact
+      ⟨htargetMarked, hsourceSupportMem,
+        hmarkedSourceSupport, hsourceSupportC⟩
+  obtain ⟨J, core, hJInfinite, hcoreMem,
+      hcoreC, hcoreEq⟩ :=
+    terminalAlignedSourceSupports_fix_removedCore
+      (A := A) (C := C) (k := k) (t := t)
+      (sourceTarget := fun n => target (origin n))
+      (marked := marked) (sourceSupport := sourceSupport)
+      hkpos hfixedInput
+  refine
+    ⟨Z, source, translation, upper, marked, support,
+      origin, landingIndex, rootShift, sourceSupport,
+      J, core, hZD, hZA, hZInfinite,
+      hsourceStrict, htranslationStrict, hupperStrict,
+      hJInfinite, hcoreMem, hcoreC, ?_, hcoreEq⟩
+  intro n
+  obtain ⟨hsourceFloor, htranslationPos,
+      htranslationEq, hsupportMem,
+      hmarkedSupport, hsupportZ,
+      hpredecessor, _horigin⟩ :=
+    hdata n
+  exact
+    ⟨hsourceFloor, htranslationPos,
+      htranslationEq, hsupportMem,
+      hmarkedSupport, hsupportZ,
+      hpredecessor, horiginData n⟩
+
 /-- Forget the initial source floor while retaining marked provenance. -/
 theorem
     HasCofinalMovingPredecessorSurvivalFusionAboveOnMarkedSet.toMarkedFusion
