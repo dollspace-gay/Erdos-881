@@ -8931,6 +8931,59 @@ theorem additiveSupportStar_descends_card
     rw [Finset.card_image_iff.mpr hlowerInjective.injOn,
       Finset.card_attach]
 
+/-- Cardinal-preserving star descent while retaining a second common point.
+
+If `x` and `d` belong to every support and `d ≠ x`, removing one occurrence
+of `x` leaves `d` in every descended support.  This is the distinguished-root
+memory needed when old prefix points are peeled while one genuinely fresh
+moving root must survive the entire rank descent. -/
+theorem additiveSupportStar_descends_card_preserving_common
+    {A : Set ℕ} {k m x d : ℕ} {𝒢 : Finset (Finset ℕ)}
+    (hsub : 𝒢 ⊆ additiveSupportFamily A (k + 1) m)
+    (hx : ∀ E ∈ 𝒢, x ∈ E)
+    (hd : ∀ E ∈ 𝒢, d ∈ E)
+    (hdx : d ≠ x) :
+    ∃ ℋ : Finset (Finset ℕ),
+      ℋ ⊆ additiveSupportFamily A k (m - x) ∧
+      ℋ.card = 𝒢.card ∧
+      ∀ H ∈ ℋ, d ∈ H := by
+  classical
+  have hlower : ∀ E : {E // E ∈ 𝒢},
+      ∃ H ∈ additiveSupportFamily A k (m - x),
+        E.1 = insert x H := by
+    intro E
+    exact additiveSupport_remove_hit_succ
+      (hsub E.2) (hx E.1 E.2)
+  let lower : {E // E ∈ 𝒢} → Finset ℕ := fun E =>
+    (hlower E).choose
+  have hlowerR : ∀ E, lower E ∈
+      additiveSupportFamily A k (m - x) := by
+    intro E
+    exact (hlower E).choose_spec.1
+  have hreconstruct : ∀ E, E.1 = insert x (lower E) := by
+    intro E
+    exact (hlower E).choose_spec.2
+  have hdLower : ∀ E, d ∈ lower E := by
+    intro E
+    have hdUpper : d ∈ E.1 := hd E.1 E.2
+    rw [hreconstruct E] at hdUpper
+    exact (Finset.mem_insert.mp hdUpper).resolve_left hdx
+  have hlowerInjective : Function.Injective lower := by
+    intro E D hED
+    apply Subtype.ext
+    rw [hreconstruct E, hreconstruct D, hED]
+  let ℋ := 𝒢.attach.image lower
+  refine ⟨ℋ, ?_, ?_, ?_⟩
+  · intro H hH
+    obtain ⟨E, _hEattach, rfl⟩ := Finset.mem_image.mp hH
+    exact hlowerR E
+  · dsimp only [ℋ]
+    rw [Finset.card_image_iff.mpr hlowerInjective.injOn,
+      Finset.card_attach]
+  · intro H hH
+    obtain ⟨E, _hEattach, rfl⟩ := Finset.mem_image.mp hH
+    exact hdLower E
+
 /-- Cardinal-preserving star descent also preserves containment in a fixed
 ambient set.  In particular, a rooted matching made wholly of deleted
 points remains wholly deleted after a common root point is removed. -/
@@ -19940,6 +19993,143 @@ theorem additiveSupportFamily_forces_prefixDisjointRootedMatching_below
           t, S, L, hScard, hSF, hLsub, hLcard,
           hLroot, hLnonempty, hLmatching⟩
 
+/-- In a rooted matching with at least two members, every point common to
+all supports belongs to the root.  Otherwise it would lie in two disjoint
+petals. -/
+theorem common_mem_root_of_one_lt_rootedMatching
+    {R : Finset ℕ} {M : Finset (Finset ℕ)} {d : ℕ}
+    (htwo : 1 < M.card)
+    (hdM : ∀ E ∈ M, d ∈ E)
+    (hMmatching :
+      ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+        Disjoint (E \ R) (G \ R)) :
+    d ∈ R := by
+  classical
+  by_contra hdR
+  obtain ⟨E, hEM, G, hGM, hEG⟩ :=
+    Finset.one_lt_card.mp htwo
+  exact Finset.disjoint_left.mp
+    (hMmatching E hEM G hGM hEG)
+    (Finset.mem_sdiff.mpr ⟨hdM E hEM, hdR⟩)
+    (Finset.mem_sdiff.mpr ⟨hdM G hGM, hdR⟩)
+
+/-- Prefix clearing with a distinguished fresh common root.
+
+Starting from a large support family whose every member contains `d`, where
+`d` is outside the old prefix `F`, repeatedly delta-systemize and remove any
+common root point lying in `F`.  Star descent preserves `d` because the
+removed point cannot equal it.  Every new delta system has at least two
+members, so the common-point lemma puts `d` back into its root.
+
+The output records the complete list of consumed old root points and the
+exact target equation.  Thus all additional old deleted points are paid for
+by strict rank descent, while the genuinely fresh moving root survives in a
+root disjoint from the whole prefix. -/
+theorem additiveSupportFamily_forces_prefixDisjointRootedMatching_below_preservingCommon
+    {A : Set ℕ} :
+    ∀ h r m (F : Finset ℕ) (𝒢 : Finset (Finset ℕ)) (d : ℕ),
+      𝒢 ⊆ additiveSupportFamily A h m →
+      (∀ E ∈ 𝒢, d ∈ E) →
+      d ∉ F →
+      additivePrefixAvoidingRootBound h (max r 1) ≤ 𝒢.card →
+      ∃ j, 0 < j ∧ j ≤ h ∧
+        ∃ hits : List ℕ, ∃ t R M,
+          hits.length + j = h ∧
+          (∀ x ∈ hits, x ∈ F ∧ x ≠ d) ∧
+          m = hits.sum + t ∧
+          R.card < j ∧
+          Disjoint R F ∧
+          d ∈ R ∧
+          M ⊆ additiveSupportFamily A j t ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+            Disjoint (E \ R) (G \ R) := by
+  intro h
+  induction h with
+  | zero =>
+      intro r m F 𝒢 d h𝒢sub _hd𝒢 _hdF hlarge
+      have hcard :
+          𝒢.card ≤ (additiveSupportFamily A 0 m).card :=
+        Finset.card_le_card h𝒢sub
+      have hzero := additiveSupportFamily_zero_card_le_one A m
+      simp only [additivePrefixAvoidingRootBound] at hlarge
+      omega
+  | succ k ih =>
+      intro r m F 𝒢 d h𝒢sub hd𝒢 hdF hlarge
+      let demand := max r 1
+      let s :=
+        max demand (additivePrefixAvoidingRootBound k demand)
+      have hrootedLarge :
+          additiveRootedMatchingBound (k + 1) s ≤ 𝒢.card := by
+        simpa [additivePrefixAvoidingRootBound, demand, s] using hlarge
+      obtain ⟨R, M, hRcard, hMsub, hMcard, hMroot,
+          hMnonempty, hMmatching⟩ :=
+        additiveSupportSubfamily_has_large_rootedMatching
+          (A := A) (h := k + 1) (r := s) (m := m)
+          (𝒢 := 𝒢) h𝒢sub hrootedLarge
+      have hMsubFamily :
+          M ⊆ additiveSupportFamily A (k + 1) m :=
+        hMsub.trans h𝒢sub
+      have hdM : ∀ E ∈ M, d ∈ E := by
+        intro E hEM
+        exact hd𝒢 E (hMsub hEM)
+      have hMtwo : 1 < M.card := by
+        have honeDemand : 1 ≤ demand := by
+          exact Nat.le_max_right r 1
+        have hdemandS : demand ≤ s := Nat.le_max_left _ _
+        omega
+      have hdR : d ∈ R :=
+        common_mem_root_of_one_lt_rootedMatching
+          hMtwo hdM hMmatching
+      by_cases hRF : Disjoint R F
+      · refine ⟨k + 1, by omega, le_rfl, [], m, R, M,
+          by simp, by simp, by simp, hRcard, hRF, hdR,
+          hMsubFamily, ?_, hMroot, hMnonempty, hMmatching⟩
+        have hrDemand : r ≤ demand := Nat.le_max_left _ _
+        have hdemandS : demand ≤ s := Nat.le_max_left _ _
+        omega
+      · obtain ⟨x, hxR, hxF⟩ :=
+          Finset.not_disjoint_iff.mp hRF
+        have hdx : d ≠ x := by
+          intro hdx
+          subst x
+          exact hdF hxF
+        have hxM : ∀ E ∈ M, x ∈ E := by
+          intro E hEM
+          exact hMroot E hEM hxR
+        obtain ⟨E, hEM⟩ := Finset.card_pos.mp (by omega : 0 < M.card)
+        have hxm : x ≤ m :=
+          additiveSupportFamily_supportsBounded
+            A (k + 1) m E (hMsubFamily hEM) x (hxM E hEM)
+        obtain ⟨ℋ, hℋsub, hℋcard, hdℋ⟩ :=
+          additiveSupportStar_descends_card_preserving_common
+            hMsubFamily hxM hdM hdx
+        have hℋlarge :
+            additivePrefixAvoidingRootBound k (max r 1) ≤ ℋ.card := by
+          rw [hℋcard]
+          have hthresholdS :
+              additivePrefixAvoidingRootBound k demand ≤ s :=
+            Nat.le_max_right _ _
+          simpa only [demand] using
+            hthresholdS.trans (Nat.le_of_lt hMcard)
+        obtain ⟨j, hjpos, hjk, hits, t, S, L,
+            hlength, hhits, htarget, hScard, hSF, hdS,
+            hLsub, hLcard, hLroot, hLnonempty, hLmatching⟩ :=
+          ih r (m - x) F ℋ d hℋsub hdℋ hdF hℋlarge
+        refine ⟨j, hjpos, hjk.trans (Nat.le_succ k),
+          x :: hits, t, S, L, ?_, ?_, ?_, hScard, hSF, hdS,
+          hLsub, hLcard, hLroot, hLnonempty, hLmatching⟩
+        · simp only [List.length_cons]
+          omega
+        · intro y hy
+          rcases List.mem_cons.mp hy with rfl | hyHits
+          · exact ⟨hxF, hdx.symm⟩
+          · exact hhits y hyHits
+        · simp only [List.sum_cons]
+          omega
+
 /-- Prefix-avoiding rooted-matching descent with ambient-set memory.
 
 Starting from a large family all of whose support vertices lie in `B`,
@@ -24904,6 +25094,35 @@ theorem additiveSupport_lift_to_order_le
     rw [hcount, horder]
     exact hlift
 
+/-- Lift a rooted matching back to a higher order by repeating a point which
+is already in its common root.
+
+Because `d` belongs to every support, inserting it does not change any
+support finset.  The same family, root, and petals therefore survive
+verbatim at order `h`; only the target is translated by `(h-j) * d`.
+This is precisely why the fresh moving root is more useful than an arbitrary
+padding anchor: prefix clearing can lower the rank, and the captured root
+raises it again without introducing a new support vertex or damaging any
+cross-stage disjointness. -/
+theorem rootedMatching_lift_to_order_by_repeating_common
+    {A : Set ℕ} {j h t d : ℕ}
+    {R : Finset ℕ} {M : Finset (Finset ℕ)}
+    (hjh : j ≤ h)
+    (hdA : d ∈ A)
+    (hdR : d ∈ R)
+    (hMsub : M ⊆ additiveSupportFamily A j t)
+    (hMroot : ∀ E ∈ M, R ⊆ E) :
+    M ⊆
+      additiveSupportFamily A h (t + (h - j) * d) := by
+  intro E hEM
+  have hlift :=
+    additiveSupport_lift_to_order_le
+      hjh hdA (hMsub hEM)
+  by_cases hjtop : j = h
+  · simpa [hjtop] using hlift
+  · rw [if_neg hjtop] at hlift
+    simpa [Finset.insert_eq_of_mem (hMroot E hEM hdR)] using hlift
+
 /-- Lift a rooted matching from a strict lower order `j` back to order `h`.
 Choose one basis element outside the finite prefix, root, and every support,
 and use it repeatedly as padding.  Because the padding point is fresh, the
@@ -25202,11 +25421,13 @@ strictly increasing, hence infinite, predecessor target stream.
 This is an actual infinite deletion object, not merely a sequence of local
 certificates; the only remaining migration is that strong deletion must
 place its late finite certificates outside this entire protected stream. -/
-theorem successorCounterexample_forces_cofinalPredecessorCommonSurvivalPartition_avoiding
+theorem freshPredecessorRootedMatchingSteps_have_commonSurvivalPartition_avoiding
     {A : Set ℕ} {k : ℕ}
-    (hbasis : IsExactTupleAsymptoticBasis A k)
-    (hcounter : ∀ B, B ⊆ A → B.Infinite →
-      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1))
+    (hA : A.Infinite)
+    (hsupply : ∀ used last demand,
+      Nonempty
+        (FreshPredecessorRootedMatchingStep
+          A k used last demand))
     (reserved : Finset ℕ) :
     ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ, ∃ target : ℕ → ℕ,
       ∃ retained : ℕ → ℕ,
@@ -25226,14 +25447,13 @@ theorem successorCounterexample_forces_cofinalPredecessorCommonSurvivalPartition
   let chooseStep : (i : ℕ) → (st : State) →
       FreshPredecessorRootedMatchingStep A k st.1 st.2 (i + 2) :=
     fun _i st => Classical.choice
-      (freshPredecessorRootedMatchingStep_nonempty
-        hbasis hcounter st.1 st.2 (_i + 2))
+      (hsupply st.1 st.2 (_i + 2))
   let occupied : ℕ → State → Finset ℕ := fun i st =>
     st.1 ∪ (chooseStep i st).matching.biUnion id
   let chooseAnchor : (i : ℕ) → (st : State) →
       FreshBasisPoint A (occupied i st) :=
     fun i st => Classical.choice
-      (freshBasisPoint_nonempty hbasis.infinite (occupied i st))
+      (freshBasisPoint_nonempty hA (occupied i st))
   let advance : ℕ → State → State := fun i st =>
     (occupied i st ∪ {(chooseAnchor i st).point},
       (chooseStep i st).target)
@@ -25582,6 +25802,32 @@ theorem successorCounterexample_forces_cofinalPredecessorCommonSurvivalPartition
         exact (s j).2
       exact Finset.disjoint_left.mp (hcellPast j)
         hxCellJ hxUsed
+
+/-- Counterexample specialization of the generic rooted-matching fusion
+engine. -/
+theorem successorCounterexample_forces_cofinalPredecessorCommonSurvivalPartition_avoiding
+    {A : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1))
+    (reserved : Finset ℕ) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ, ∃ target : ℕ → ℕ,
+      ∃ retained : ℕ → ℕ,
+      K ⊆ A ∧ K.Infinite ∧ Disjoint K (reserved : Set ℕ) ∧
+      IsFiniteBlockPartition K cell ∧
+      StrictMono target ∧
+      Function.Injective retained ∧
+      (∀ j, retained j ∈ A) ∧
+      Disjoint K (Set.range retained) ∧
+      (∀ i, i + 2 < (cell i).card) ∧
+      ∀ s : BlockSelector cell, ∀ i,
+        ∃ E ∈ additiveSupportFamily A k (target i),
+          Disjoint (E : Set ℕ) (selectedSet s) := by
+  exact
+    freshPredecessorRootedMatchingSteps_have_commonSurvivalPartition_avoiding
+      hbasis.infinite
+      (freshPredecessorRootedMatchingStep_nonempty hbasis hcounter)
+      reserved
 
 /-- The unreserved form of the coherent predecessor common-survival
 partition. -/
@@ -41929,6 +42175,200 @@ theorem quadraticBlockTail_counterexample_fusesReducedStreams_or_forces_eventual
             localizedArithmeticDiagonalStart] using
               hrepeated
 
+/-! ## Fresh moving-root fusion through an old prefix -/
+
+/-- Cofinal fixed-order fusion of the fresh moving-root branch.
+
+Assume finite-core matching fails.  At an arbitrarily late successor target,
+finite moving-root capture supplies a large rooted matching and a fresh
+common point `d ∉ F`.  The distinguished prefix-clearing theorem consumes
+every additional common root point lying in the old prefix `F`, recording
+them in `hits` and preserving `d` throughout the rank descent.  A cardinal
+demand larger than every bounded lower-rank support family forces the
+residual target `t` to be arbitrarily late.
+
+Finally repeat `d` to restore the original order `k+1`.  Since `d` is
+already common, this changes no support and no petal.  The result is a
+cofinal fixed-order rooted-matching supply whose root avoids the entire old
+prefix and still contains the genuinely fresh moving root.  This is the
+stagewise hypothesis required by the existing infinite block-fusion
+recursion. -/
+theorem IsExactTupleAsymptoticBasis.cofinal_fixedOrderPrefixClearedMovingRootFusion_of_failsFiniteCoreMatching
+    {A : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hfail :
+      FailsFiniteCoreMatching
+        (additiveSupportFamily A (k + 1)) A) :
+    ∀ F : Finset ℕ, (F : Set ℕ) ⊆ A →
+      ∀ r Lcapture Ltarget,
+        ∃ n T d j, ∃ hits : List ℕ, ∃ t normalized R M,
+          Lcapture ≤ n ∧
+          Ltarget ≤ t ∧
+          t ≤ normalized ∧
+          (∀ x ∈ T, x ∈ A) ∧
+          Disjoint T F ∧
+          d ∈ T ∧ d ∉ F ∧ d ∈ A ∧ d ≤ n ∧
+          0 < j ∧ j ≤ k + 1 ∧
+          hits.length + j = k + 1 ∧
+          (∀ x ∈ hits, x ∈ F ∧ x ≠ d) ∧
+          n = hits.sum + t ∧
+          normalized = t + (k + 1 - j) * d ∧
+          R.card < k + 1 ∧
+          Disjoint R F ∧
+          d ∈ R ∧
+          M ⊆ additiveSupportFamily A (k + 1) normalized ∧
+          r < M.card ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+            Disjoint (E \ R) (G \ R) := by
+  intro F hFA r Lcapture Ltarget
+  let count :=
+    additiveLowerRankSupportCountBelow A (k + 1) Ltarget
+  let size := max r count
+  let need :=
+    additivePrefixAvoidingRootBound (k + 1) (max size 1)
+  obtain ⟨bound, hcapture⟩ :=
+    hbasis.cofinal_movingRootCapture_of_failsFiniteCoreMatching
+      hfail F hFA
+  obtain ⟨n, T, R₀, M₀, d, _lower,
+      hnCapture, hTA, hTF, _hTcard, _htrans,
+      _hR₀card, hM₀sub, hM₀large, _hcoreLarge,
+      hM₀root, _hM₀nonempty, _hM₀matching,
+      hdR₀, hdT, hdF, hdA, hdn,
+      _hlowerSub, _hlowerCard⟩ :=
+    hcapture need Lcapture
+  have hdM₀ : ∀ E ∈ M₀, d ∈ E := by
+    intro E hEM
+    exact hM₀root E hEM hdR₀
+  obtain ⟨j, hjpos, hjle, hits, t, R, M,
+      hlength, hhits, htarget, hRcard, hRF, hdR,
+      hMsub, hMlarge, hMroot, hMnonempty, hMmatching⟩ :=
+    additiveSupportFamily_forces_prefixDisjointRootedMatching_below_preservingCommon
+      (A := A) (h := k + 1) (r := size) (m := n)
+      (F := F) (𝒢 := M₀) (d := d)
+      hM₀sub hdM₀ hdF (by
+        exact Nat.le_of_lt hM₀large)
+  have htLate : Ltarget ≤ t := by
+    by_contra hnot
+    have htSmall : t < Ltarget := Nat.lt_of_not_ge hnot
+    have hfamilyBound :
+        (additiveSupportFamily A j t).card ≤ count := by
+      exact additiveSupportFamily_card_le_lowerRankSupportCountBelow
+        hjle htSmall
+    have hmatchingBound :
+        M.card ≤ (additiveSupportFamily A j t).card :=
+      Finset.card_le_card hMsub
+    have hcountSize : count ≤ size := Nat.le_max_right _ _
+    omega
+  let normalized := t + (k + 1 - j) * d
+  have hMnormalized :
+      M ⊆ additiveSupportFamily A (k + 1) normalized := by
+    simpa only [normalized] using
+      rootedMatching_lift_to_order_by_repeating_common
+        hjle hdA hdR hMsub hMroot
+  have hnormalizedLower : t ≤ normalized :=
+    Nat.le_add_right _ _
+  have hRcardTop : R.card < k + 1 :=
+    hRcard.trans_le hjle
+  refine
+    ⟨n, T, d, j, hits, t, normalized, R, M,
+      hnCapture, htLate, hnormalizedLower, hTA, hTF,
+      hdT, hdF, hdA, hdn, hjpos, hjle, hlength,
+      hhits, htarget, rfl, hRcardTop, hRF, hdR,
+      hMnormalized, ?_, hMroot, hMnonempty, hMmatching⟩
+  exact lt_of_le_of_lt (Nat.le_max_left r count) hMlarge
+
+/-- The prefix-cleared moving-root theorem supplies every stage of the
+fixed-order common-survival recursion, even when the finite `used` set
+contains vertices outside `A`.
+
+Only `used ∩ A` can meet an additive support.  Clear that finite core,
+request more than `|used| + demand` petals, and use the cofinal residual
+target bound to move beyond `last`.  The captured moving root is contained
+in the resulting root and hence in every support inserted into the
+recursion's protected history. -/
+theorem freshPredecessorRootedMatchingStep_nonempty_of_failsFiniteCoreMatching
+    {A : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hfail :
+      FailsFiniteCoreMatching
+        (additiveSupportFamily A (k + 1)) A)
+    (used : Finset ℕ) (last demand : ℕ) :
+    Nonempty
+      (FreshPredecessorRootedMatchingStep
+        A (k + 1) used last demand) := by
+  classical
+  let F : Finset ℕ := used.filter fun x => x ∈ A
+  have hFA : (F : Set ℕ) ⊆ A := by
+    intro x hxF
+    exact (Finset.mem_filter.mp (Finset.mem_coe.mp hxF)).2
+  obtain ⟨_n, _T, _d, _j, _hits, _t, normalized, R, M,
+      _hnLate, htLate, htNormalized, _hTA, _hTF,
+      _hdT, _hdF, _hdA, _hdn, _hjpos, _hjle,
+      _hlength, _hhits, _htarget, _hnormalized,
+      hRcard, hRF, _hdR, hMsub, hMlarge,
+      hMroot, hMnonempty, hMmatching⟩ :=
+    hbasis.cofinal_fixedOrderPrefixClearedMovingRootFusion_of_failsFiniteCoreMatching
+      hfail F hFA (used.card + demand) 0 (last + 1)
+  have hMpos : 0 < M.card := by omega
+  obtain ⟨E, hEM⟩ := Finset.card_pos.mp hMpos
+  have hRA : ∀ x ∈ R, x ∈ A := by
+    intro x hxR
+    exact additiveSupportFamily_supportsIn
+      A (k + 1) normalized E (hMsub hEM)
+        x (hMroot E hEM hxR)
+  have hRused : Disjoint R used := by
+    rw [Finset.disjoint_left]
+    intro x hxR hxUsed
+    apply Finset.disjoint_left.mp hRF hxR
+    exact Finset.mem_filter.mpr ⟨hxUsed, hRA x hxR⟩
+  exact
+    ⟨⟨normalized, R, M, by omega, hRcard, hRused,
+      hMsub, hMlarge, hMroot, hMnonempty, hMmatching⟩⟩
+
+/-- **Infinite fusion of the fresh moving-root branch.**
+
+When finite-core matching fails, the captured roots can now be fused into
+one genuine infinite deletion partition.  At each stage all vertices of
+the prefix-cleared matching—including its fresh common root—enter the
+protected history.  The next root and petals avoid that history.  After
+discarding the at most `|used|` petals which meet the past, the union of the
+remaining petals is the next block.
+
+Consequently the blocks are pairwise disjoint subsets of `A`, their union
+is infinite, their normalized order-`k+1` targets are strictly increasing,
+and every block selector preserves every target in that stream.  Additional
+old deleted root points have already been consumed before a stage enters
+this recursion, so they cannot reappear as a cross-block injury. -/
+theorem IsExactTupleAsymptoticBasis.failsFiniteCoreMatching_has_coherentMovingRootFusion
+    {A : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hfail :
+      FailsFiniteCoreMatching
+        (additiveSupportFamily A (k + 1)) A) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ target : ℕ → ℕ,
+        K ⊆ A ∧
+        K.Infinite ∧
+        IsFiniteBlockPartition K cell ∧
+        StrictMono target ∧
+        (∀ i, i + 2 < (cell i).card) ∧
+        ∀ s : BlockSelector cell, ∀ i,
+          ∃ E ∈ additiveSupportFamily A (k + 1) (target i),
+            Disjoint (E : Set ℕ) (selectedSet s) := by
+  obtain ⟨K, cell, target, _retained, hKA, hKInfinite,
+      _hKempty, P, htarget, _hretainedInjective,
+      _hretainedA, _hKretained, hcellLarge, hsurvival⟩ :=
+    freshPredecessorRootedMatchingSteps_have_commonSurvivalPartition_avoiding
+      hbasis.infinite
+      (freshPredecessorRootedMatchingStep_nonempty_of_failsFiniteCoreMatching
+        hbasis hfail)
+      ∅
+  exact
+    ⟨K, cell, target, hKA, hKInfinite, P, htarget,
+      hcellLarge, hsurvival⟩
+
 /-! ## Direct protected-representation fusion
 
 The preceding sections attack a hypothetical counterexample.  The
@@ -42156,5 +42596,50 @@ theorem IsExactTupleAsymptoticBasis.exists_infiniteDeletion_succBasis_of_finiteP
       hbasis
         hgrowth.to_finiteRetainedCoreTwoRepairs
         ⟨0, by simp⟩
+
+/-- Counterexample-level form of the completed moving-root fusion.
+
+If finite-core matching did not fail, outside matching growth at one finite
+core would give protected rooted growth and hence an infinite deletion
+preserving the full successor basis, contradicting `hcounter`.  Therefore a
+hypothetical counterexample lies in the moving-root branch, where the
+preceding theorem fuses the fresh roots after clearing every old-prefix
+collision.
+
+This promotes the local capture theorem to an actual counterexample-level
+infinite object: a block deletion with a strictly increasing common-survival
+stream at the full successor order. -/
+theorem exactBasis_counterexample_forces_coherentMovingRootFusion
+    {A : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1)) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ target : ℕ → ℕ,
+        K ⊆ A ∧
+        K.Infinite ∧
+        IsFiniteBlockPartition K cell ∧
+        StrictMono target ∧
+        (∀ i, i + 2 < (cell i).card) ∧
+        ∀ s : BlockSelector cell, ∀ i,
+          ∃ E ∈ additiveSupportFamily A (k + 1) (target i),
+            Disjoint (E : Set ℕ) (selectedSet s) := by
+  have hfail :
+      FailsFiniteCoreMatching
+        (additiveSupportFamily A (k + 1)) A := by
+    by_contra hnot
+    unfold FailsFiniteCoreMatching at hnot
+    push Not at hnot
+    obtain ⟨F, _hFA, hgrowth⟩ := hnot
+    have hprotected :
+        HasFiniteProtectedSuccessorRootedGrowth A k :=
+      OutsideMatchingTendsToInfinity.hasFiniteProtectedSuccessorRootedGrowth
+        hgrowth
+    obtain ⟨B, hBA, hBInfinite, hsurvive⟩ :=
+      hbasis.exists_infiniteDeletion_succBasis_of_finiteProtectedRootedGrowth
+        hprotected
+    exact hcounter B hBA hBInfinite hsurvive
+  exact
+    hbasis.failsFiniteCoreMatching_has_coherentMovingRootFusion hfail
 
 end Erdos881
