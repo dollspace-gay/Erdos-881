@@ -1,3 +1,67 @@
+# GENERAL ORDER: COMPLETE ALIGNED DESTROYERS FUSED (2026-07-29)
+
+The quadratic-tail construction no longer throws away the finite
+destroyer attached to each protected source gap.  Every hypothetical
+hard-order counterexample now produces one infinite deletion carrying
+strictly interlaced translated pairs
+
+\[
+  t_n < q_n < t_{n+1},
+  \qquad q_n=t_n+\delta_n,
+\]
+
+where `t_n` survives, `q_n` is destroyed, and a pairwise-disjoint finite
+inclusion-minimal destroyer `D_n` of `q_n` is contained in the common
+deletion.
+
+- `AlignedTailSurvivalDestroyerPair` retains the source index, `q`,
+  `δ`, a protected support, the full growing source rooted matching, and
+  the finite minimal destroyer.  It also records that every destroyer
+  coordinate lies beyond the requested ambient block floor.
+- `HasQuadraticTailAlignedResolvedArithmeticAt.exists_alignedTailPair`
+  compacts the private selector destroyer and minimizes it.  Every member
+  of the retained source matching avoids the resulting `D`, while
+  `q = target i + δ` remains unchanged.
+- `cofinalAlignedTailPairs_fuse_translatedStream` recursively puts the
+  finite destroyers in fresh block coordinates, thins them using
+  whole-block cross-avoidance, and takes their union.  The retained source
+  supports avoid the union, while every retained destroyer lies inside it.
+- `exactBasis_counterexample_forces_alignedTranslatedStream` is the
+  counterexample-level capstone.  It is stronger than the earlier generic
+  fused endpoint because the actual destroyed targets, translations,
+  minimal destroyers, and growing source matchings all survive fusion.
+
+The translation law now gives a direct cardinal attack.  Let `V_n` be the
+union of the disjoint petals of the source matching.  Any `a ∈ V_n` with
+`a+δ_n ∈ A` must translate into `D_n`; translation is injective.  Hence at
+most `|D_n|` petal points translate back into `A`, and every other petal
+point is a literal translated hole.  The machine-checked theorem
+`AlignedTailSurvivalDestroyerPair.largeHoles_or_largeDestroyer` proves
+
+\[
+  n+1 < 2\,|\operatorname{holes}_n|
+  \quad\text{or}\quad
+  n+1 < 2\,|D_n|
+\]
+
+at scale `n`.
+
+This is genuine pressure, but it is not yet the general-order solution.
+The junk test
+`finiteComplement_alignedPair_forces_largeDestroyer` shows exactly how a
+fat set can satisfy the geometry: its complement bounds the hole side, so
+the minimal destroyers must grow without bound.  The next direct fork is
+therefore operational rather than classificatory:
+
+- unbounded holes feed the translated-hole infinite-deletion engine;
+- unbounded pairwise-disjoint `D_n` feed co-singleton fusion, restoring
+  one point of each minimal destroyer and producing an interlaced doubled
+  survival stream.
+
+The remaining mathematical task is to show that repeated co-singleton
+restoration cannot self-replicate indefinitely, or that the hole branch
+forces a deletion which survives every sufficiently large target.
+
 # GENERAL ORDER: QUADRATIC-TAIL ARITHMETIC RESIDUE ELIMINATED (2026-07-29)
 
 The entire non-fused quadratic-tail remainder has collapsed.  The key fact

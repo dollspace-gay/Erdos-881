@@ -47563,6 +47563,736 @@ def HasQuadraticTailAlignedResolvedArithmeticAt
     HasCapacityResolvedTargetLocalizedArithmeticOutcome
       A k n tailCell Q q hqQ
 
+/-- One exact translated survival/destruction pair extracted from a
+quadratic-tail aligned stage.
+
+The source support represents `target sourceIndex`, while the finite
+inclusion-minimal destroyer kills the strictly later target
+`destroyedTarget = target sourceIndex + displacement`.  The two finite
+sets are disjoint.  Every destroyer point lies in `K`, and its ambient
+block coordinate clears `scale`; this is the freshness datum needed to
+fuse pairs from successively later stages without losing the translation
+identity. -/
+structure AlignedTailSurvivalDestroyerPair
+    (A K : Set ℕ) (k : ℕ)
+    (cell : ℕ → Finset ℕ) (target : ℕ → ℕ)
+    (P : IsFiniteBlockPartition K cell)
+    (scale : ℕ) where
+  sourceIndex : ℕ
+  destroyedTarget : ℕ
+  displacement : ℕ
+  support : Finset ℕ
+  destroyer : Finset ℕ
+  sourceRoot : Finset ℕ
+  sourceMatching : Finset (Finset ℕ)
+  sourceIndex_lower : scale ≤ sourceIndex
+  source_lt_destroyed :
+    target sourceIndex < destroyedTarget
+  destroyed_lt_next :
+    destroyedTarget < target (sourceIndex + 1)
+  displacement_pos : 0 < displacement
+  destroyed_eq :
+    destroyedTarget = target sourceIndex + displacement
+  support_mem :
+    support ∈
+      additiveSupportFamily A (k + 1) (target sourceIndex)
+  sourceRoot_card : sourceRoot.card < k + 1
+  sourceRoot_disjoint_K :
+    Disjoint (sourceRoot : Set ℕ) K
+  sourceMatching_large :
+    sourceIndex + 1 < sourceMatching.card
+  sourceMatching_sub :
+    sourceMatching ⊆
+      additiveSupportFamily A (k + 1) (target sourceIndex)
+  sourceRoot_sub :
+    ∀ E ∈ sourceMatching, sourceRoot ⊆ E
+  sourcePetal_nonempty :
+    ∀ E ∈ sourceMatching, (E \ sourceRoot).Nonempty
+  sourcePetal_matching :
+    ∀ E ∈ sourceMatching, ∀ G ∈ sourceMatching, E ≠ G →
+      Disjoint (E \ sourceRoot) (G \ sourceRoot)
+  sourceMatching_destroyer_disjoint :
+    ∀ E ∈ sourceMatching, Disjoint E destroyer
+  sourcePetals_block :
+    sourceMatching.biUnion (fun E => E \ sourceRoot) ⊆
+      cell sourceIndex
+  destroyer_nonempty : destroyer.Nonempty
+  destroyer_subset_K : (destroyer : Set ℕ) ⊆ K
+  destroyer_minimal :
+    IsInclusionMinimalDestroyer
+      (additiveSupportFamily A (k + 1))
+      destroyer destroyedTarget
+  support_destroyer_disjoint :
+    Disjoint support destroyer
+  destroyer_block_lower :
+    ∀ x ∈ destroyer, scale ≤ blockIndex P x
+
+/-- Every protected quadratic-tail stage contains an exact finite pair.
+
+First compact the private selector destroyer of `q` to a finite destroyer
+and minimize it by inclusion.  Any member of the retained source matching
+then represents `target i` and avoids that destroyer, since it avoids the
+whole selector.  The selector lives on the diagonal tail, so every point
+of the finite destroyer occupies an ambient block of index at least `n`.
+
+Unlike the earlier pointed-fusion conversion, this extraction retains the
+destroyed target, its entire minimal destroyer, and
+`q = target i + δ` simultaneously. -/
+theorem HasQuadraticTailAlignedResolvedArithmeticAt.exists_alignedTailPair
+    {A K : Set ℕ} {k n : ℕ}
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (hstage :
+      HasQuadraticTailAlignedResolvedArithmeticAt
+        A K k cell target n) :
+    Nonempty
+      (AlignedTailSurvivalDestroyerPair
+        A K k cell target P n) := by
+  classical
+  let start := localizedArithmeticDiagonalStart k n
+  let tailCell : ℕ → Finset ℕ :=
+    fun j => cell (start + j)
+  let Ktail : Set ℕ :=
+    {x | ∃ j, x ∈ tailCell j}
+  have hKtailK : Ktail ⊆ K := by
+    rintro x ⟨j, hxj⟩
+    exact (P.mem_iff x).2
+      ⟨start + j, hxj⟩
+  have Ptail :
+      IsFiniteBlockPartition Ktail tailCell := by
+    refine ⟨?_, ?_, ?_⟩
+    · intro j
+      exact P.nonempty (start + j)
+    · intro i j hij
+      apply P.disjoint
+      omega
+    · intro x
+      simp only [Ktail, tailCell, Set.mem_setOf_eq]
+  unfold HasQuadraticTailAlignedResolvedArithmeticAt at hstage
+  obtain ⟨Q, s, i, q, δ, R, M, hqQ,
+      _hcert, _hlocalized, hrepresented, _hQlower,
+      _hiStart, hiScale, hiLower, hiUpper, hδpos,
+      hqδ, hqDestroy, hRcard, hRK, hMlarge,
+      hMsub, hMroot, hMpetal, hMmatching,
+      hMselected, hMcell, _hMtail, _houtcome⟩ :=
+    hstage
+  obtain ⟨D₀, hD₀selected, hD₀destroy⟩ :=
+    exists_finiteDestroyer_subset hqDestroy
+  obtain ⟨D, hDD₀, hDminimal⟩ :=
+    exists_inclusionMinimalDestroyer_subset hD₀destroy
+  have hDselected :
+      (D : Set ℕ) ⊆ selectedSet s := by
+    intro x hxD
+    exact hD₀selected
+      (Finset.mem_coe.mpr
+        (hDD₀ (Finset.mem_coe.mp hxD)))
+  have hDnonempty : D.Nonempty := by
+    rw [Finset.nonempty_iff_ne_empty]
+    intro hDempty
+    obtain ⟨G, hGmem⟩ := hrepresented q hqQ
+    apply hDminimal.1 G hGmem
+    subst D
+    simp
+  have hMnonempty : M.Nonempty :=
+    Finset.card_pos.mp (by omega)
+  obtain ⟨E, hEM⟩ := hMnonempty
+  have hMD :
+      ∀ F ∈ M, Disjoint F D := by
+    intro F hFM
+    rw [Finset.disjoint_left]
+    intro x hxF hxD
+    exact Set.disjoint_left.mp (hMselected F hFM)
+      (Finset.mem_coe.mpr hxF)
+      (hDselected (Finset.mem_coe.mpr hxD))
+  have hED : Disjoint E D :=
+    hMD E hEM
+  have hDK : (D : Set ℕ) ⊆ K := by
+    intro x hxD
+    exact hKtailK
+      (Ptail.selectedSet_subset s (hDselected hxD))
+  have hDblock :
+      ∀ x ∈ D, n ≤ blockIndex P x := by
+    intro x hxD
+    have hxTail :
+        x ∈ Ktail :=
+      Ptail.selectedSet_subset s
+        (hDselected (Finset.mem_coe.mpr hxD))
+    obtain ⟨j, hxj⟩ := hxTail
+    have hblock :
+        blockIndex P x = start + j :=
+      P.blockIndex_eq_of_mem hxj
+    rw [hblock]
+    exact
+      (le_localizedArithmeticDiagonalStart k n).trans
+        (Nat.le_add_right start j)
+  exact
+    ⟨⟨i, q, δ, E, D, R, M, hiScale, hiLower,
+      hiUpper, hδpos, hqδ, hMsub hEM, hRcard,
+      hRK, hMlarge, hMsub, hMroot, hMpetal,
+      hMmatching, hMD, hMcell, hDnonempty, hDK,
+      hDminimal, hED, hDblock⟩⟩
+
+/-- The exact cardinal fork inside one aligned finite pair.
+
+Let `V` be the union of the disjoint petals of the large source matching.
+If `a ∈ V` and `a + δ ∈ A`, translating the source support containing
+`a` gives a representation of the destroyed target.  Since the old part
+of that support avoids `D`, destruction forces `a + δ ∈ D`.  Translation
+is injective, so at most `|D|` points of `V` can have their translate in
+`A`.  All remaining points are literal translated holes.
+
+The petal matching has more than `scale + 1` members and injects into `V`.
+Consequently either the literal-hole set or the minimal destroyer has
+cardinality greater than half the scale.  This is the direct cardinal
+pressure which was absent after passing to a one-point fusion endpoint. -/
+theorem AlignedTailSurvivalDestroyerPair.largeHoles_or_largeDestroyer
+    {A K : Set ℕ} {k scale : ℕ}
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    {P : IsFiniteBlockPartition K cell}
+    (pair :
+      AlignedTailSurvivalDestroyerPair
+        A K k cell target P scale) :
+    ∃ holes : Finset ℕ,
+      holes ⊆
+        pair.sourceMatching.biUnion
+          (fun E => E \ pair.sourceRoot) ∧
+      holes ⊆ cell pair.sourceIndex ∧
+      (∀ a ∈ holes,
+        a + pair.displacement ∉ A) ∧
+      (scale + 1 < 2 * holes.card ∨
+        scale + 1 < 2 * pair.destroyer.card) := by
+  classical
+  let V :=
+    pair.sourceMatching.biUnion
+      (fun E => E \ pair.sourceRoot)
+  let Vin := V.filter fun a =>
+    a + pair.displacement ∈ A
+  let holes := V.filter fun a =>
+    a + pair.displacement ∉ A
+  let pick :
+      {E // E ∈ pair.sourceMatching} →
+        {x // x ∈ V} := fun E =>
+    ⟨(pair.sourcePetal_nonempty E.1 E.2).choose,
+      Finset.mem_biUnion.mpr
+        ⟨E.1, E.2,
+          (pair.sourcePetal_nonempty E.1 E.2).choose_spec⟩⟩
+  have hpickPetal :
+      ∀ E : {E // E ∈ pair.sourceMatching},
+        (pick E).1 ∈ E.1 \ pair.sourceRoot := by
+    intro E
+    exact
+      (pair.sourcePetal_nonempty E.1 E.2).choose_spec
+  have hpickInjective : Function.Injective pick := by
+    intro E G hEG
+    apply Subtype.ext
+    by_contra hne
+    have hpointEq : (pick E).1 = (pick G).1 :=
+      congrArg Subtype.val hEG
+    exact
+      (Finset.not_disjoint_iff.mpr
+        ⟨(pick E).1, hpickPetal E,
+          hpointEq ▸ hpickPetal G⟩)
+      (pair.sourcePetal_matching
+        E.1 E.2 G.1 G.2 hne)
+  have hMcardV :
+      pair.sourceMatching.card ≤ V.card := by
+    simpa only [Fintype.card_coe] using
+      Fintype.card_le_of_injective pick hpickInjective
+  have htranslateExit :
+      ∀ a ∈ V, a + pair.displacement ∈ A →
+        a + pair.displacement ∈ pair.destroyer := by
+    intro a haV haShiftA
+    obtain ⟨E, hEM, haPetal⟩ :=
+      Finset.mem_biUnion.mp haV
+    exact
+      alignedSurvivalDestruction_forces_translationExit
+        (pair.sourceMatching_sub hEM)
+        (by
+          simpa using
+            pair.sourceMatching_destroyer_disjoint E hEM)
+        pair.destroyed_eq pair.destroyer_minimal.1
+        a (Finset.mem_sdiff.mp haPetal).1 haShiftA
+  have hshiftSubset :
+      Vin.image (fun a => a + pair.displacement) ⊆
+        pair.destroyer := by
+    intro x hx
+    obtain ⟨a, haVin, rfl⟩ :=
+      Finset.mem_image.mp hx
+    exact htranslateExit a
+      (Finset.mem_filter.mp haVin).1
+      (Finset.mem_filter.mp haVin).2
+  have hshiftInjective :
+      Set.InjOn (fun a => a + pair.displacement)
+        (Vin : Set ℕ) := by
+    intro a _ha b _hb hab
+    exact Nat.add_right_cancel hab
+  have hVinCard :
+      Vin.card ≤ pair.destroyer.card := by
+    rw [← Finset.card_image_iff.mpr hshiftInjective]
+    exact Finset.card_le_card hshiftSubset
+  have hsplit :
+      Vin.card + holes.card = V.card := by
+    simpa only [Vin, holes, not_not] using
+      (Finset.card_filter_add_card_filter_not
+        (s := V)
+        (fun a => a + pair.displacement ∈ A))
+  have hscaleV : scale + 1 < V.card := by
+    exact
+      (Nat.succ_le_succ pair.sourceIndex_lower).trans_lt
+        (pair.sourceMatching_large.trans_le hMcardV)
+  refine
+    ⟨holes, Finset.filter_subset _ _,
+      (Finset.filter_subset _ _).trans
+        pair.sourcePetals_block, ?_, ?_⟩
+  · intro a haHole
+    exact (Finset.mem_filter.mp haHole).2
+  · by_cases hholes :
+        scale + 1 < 2 * holes.card
+    · exact Or.inl hholes
+    · right
+      omega
+
+/-- Junk test for the aligned-pair cardinal fork.
+
+A finite complement uniformly bounds every literal translated-hole set:
+translation by the stage displacement injects those holes into `Aᶜ`.
+Therefore, once the requested scale is at least twice the complement
+cardinality, the hole side of `largeHoles_or_largeDestroyer` is impossible
+and the finite minimal destroyer must be larger than the complement.
+
+Thus the aligned-stream endpoint is not being treated as intrinsically
+contradictory for fat sets.  On such sets it necessarily enters the
+large-destroyer/co-singleton branch. -/
+theorem finiteComplement_alignedPair_forces_largeDestroyer
+    {A K : Set ℕ} {k scale : ℕ}
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    {P : IsFiniteBlockPartition K cell}
+    (hcomplement : Aᶜ.Finite)
+    (pair :
+      AlignedTailSurvivalDestroyerPair
+        A K k cell target P scale)
+    (hscale :
+      2 * hcomplement.toFinset.card ≤ scale) :
+    hcomplement.toFinset.card < pair.destroyer.card := by
+  classical
+  obtain ⟨holes, _hholesPetals, _hholesBlock,
+      hholesData, hlarge⟩ :=
+    pair.largeHoles_or_largeDestroyer
+  have hshiftSubset :
+      holes.image (fun a => a + pair.displacement) ⊆
+        hcomplement.toFinset := by
+    intro x hx
+    obtain ⟨a, haHole, rfl⟩ :=
+      Finset.mem_image.mp hx
+    exact hcomplement.mem_toFinset.mpr
+      (hholesData a haHole)
+  have hshiftInjective :
+      Set.InjOn (fun a => a + pair.displacement)
+        (holes : Set ℕ) := by
+    intro a _ha b _hb hab
+    exact Nat.add_right_cancel hab
+  have hholesCard :
+      holes.card ≤ hcomplement.toFinset.card := by
+    rw [← Finset.card_image_iff.mpr hshiftInjective]
+    exact Finset.card_le_card hshiftSubset
+  rcases hlarge with hholesLarge | hdestroyerLarge
+  · omega
+  · omega
+
+/-- One infinite deletion carrying an exact translated stream of surviving
+and destroyed successor-order targets.
+
+At every index, `support n` witnesses survival of `sourceTarget n`, while
+the contained inclusion-minimal `destroyer n` witnesses destruction of
+`destroyedTarget n = sourceTarget n + displacement n`.  Both target
+streams are strictly increasing.  This retains substantially more
+arithmetic information than an unaligned survival/destruction stream. -/
+def HasAlignedTranslatedSurvivalDestructionStream
+    (A : Set ℕ) (k : ℕ) : Prop :=
+  ∃ deletion : Set ℕ,
+  ∃ sourceTarget destroyedTarget displacement : ℕ → ℕ,
+  ∃ support destroyer sourceRoot : ℕ → Finset ℕ,
+  ∃ sourceMatching : ℕ → Finset (Finset ℕ),
+    deletion ⊆ A ∧
+    deletion.Infinite ∧
+    StrictMono sourceTarget ∧
+    StrictMono destroyedTarget ∧
+    (∀ n, destroyedTarget n < sourceTarget (n + 1)) ∧
+    (∀ n, 0 < displacement n) ∧
+    (∀ n,
+      destroyedTarget n =
+        sourceTarget n + displacement n) ∧
+    (∀ n,
+      support n ∈
+        additiveSupportFamily A (k + 1) (sourceTarget n)) ∧
+    (∀ n, Disjoint (support n : Set ℕ) deletion) ∧
+    (∀ n, (sourceRoot n).card < k + 1) ∧
+    (∀ n, n + 1 < (sourceMatching n).card) ∧
+    (∀ n,
+      sourceMatching n ⊆
+        additiveSupportFamily A (k + 1) (sourceTarget n)) ∧
+    (∀ n, ∀ E ∈ sourceMatching n, sourceRoot n ⊆ E) ∧
+    (∀ n, ∀ E ∈ sourceMatching n,
+      (E \ sourceRoot n).Nonempty) ∧
+    (∀ n, ∀ E ∈ sourceMatching n,
+      ∀ G ∈ sourceMatching n, E ≠ G →
+        Disjoint (E \ sourceRoot n) (G \ sourceRoot n)) ∧
+    (∀ n, ∀ E ∈ sourceMatching n,
+      Disjoint E (destroyer n)) ∧
+    (∀ n, (destroyer n).Nonempty) ∧
+    (∀ n, (destroyer n : Set ℕ) ⊆ deletion) ∧
+    (∀ i j, i ≠ j →
+      Disjoint (destroyer i) (destroyer j)) ∧
+    (∀ n,
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (k + 1))
+        (destroyer n) (destroyedTarget n)) ∧
+    ∀ n,
+      DestroysAt
+        (additiveSupportFamily A (k + 1))
+        deletion (destroyedTarget n)
+
+/-- The source half of an aligned translated stream genuinely survives
+the common infinite deletion. -/
+theorem HasAlignedTranslatedSurvivalDestructionStream.source_survives
+    {A : Set ℕ} {k : ℕ}
+    (hstream :
+      HasAlignedTranslatedSurvivalDestructionStream A k) :
+    ∃ deletion : Set ℕ,
+    ∃ sourceTarget : ℕ → ℕ,
+      deletion ⊆ A ∧
+      deletion.Infinite ∧
+      StrictMono sourceTarget ∧
+      ∀ n,
+      ¬ DestroysAt
+        (additiveSupportFamily A (k + 1))
+        deletion (sourceTarget n) := by
+  obtain ⟨Y, source, _destroyed, _displacement,
+      support, _destroyer, _sourceRoot,
+      _sourceMatching, hYA, hYInfinite,
+      hsourceStrict, _hdestroyedStrict,
+      _hinterlaced, _hdisplacementPos, _hdestroyedEq,
+      hsupportMem, hsupportY, _hrootCard,
+      _hmatchingLarge, _hmatchingSub, _hrootSub,
+      _hpetalNonempty, _hpetalMatching,
+      _hmatchingD, _hDnonempty, _hDY,
+      _hDpairwise, _hDminimal, _hdestroyed⟩ :=
+    hstream
+  refine ⟨Y, source, hYA, hYInfinite,
+    hsourceStrict, ?_⟩
+  intro n hdestroy
+  exact
+    hdestroy (support n)
+      (hsupportMem n) (hsupportY n)
+
+/-- A cofinal supply of exact finite translated pairs fuses into one
+aligned infinite deletion.
+
+Request each new pair beyond both the previous source block and the
+largest block occupied by the previous finite destroyer.  Consequently
+the destroyers are pairwise disjoint and use successively fresh block
+coordinates.  Bounded whole-block cross-avoidance then thins the sequence
+so that every retained support avoids every other retained destroyer.
+Their union is infinite, preserves all retained source supports, and
+contains every retained minimal destroyer.
+
+The inequalities
+`q_i < target (sourceIndex_i + 1) ≤ target sourceIndex_(i+1) < q_(i+1)`
+make the destroyed targets strict as well as the source targets. -/
+theorem cofinalAlignedTailPairs_fuse_translatedStream
+    {A K : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (htargetStrict : StrictMono target)
+    (hpairExists :
+      ∀ scale,
+        Nonempty
+          (AlignedTailSurvivalDestroyerPair
+            A K k cell target P scale)) :
+    HasAlignedTranslatedSurvivalDestructionStream A k := by
+  classical
+  let State := ℕ × ℕ
+  let initial : State := (0, 0)
+  let requestScale : State → ℕ := fun s =>
+    max (s.1 + 1) (s.2 + 1)
+  let actualWitness : (s : State) →
+      AlignedTailSurvivalDestroyerPair
+        A K k cell target P (requestScale s) :=
+    fun s => Classical.choice
+      (hpairExists (requestScale s))
+  let witnessMaxBlock : State → ℕ := fun s =>
+    (((actualWitness s).destroyer.image
+      (blockIndex P)).max'
+        ((actualWitness s).destroyer_nonempty.image
+          (blockIndex P)))
+  let advance : State → State := fun s =>
+    ((actualWitness s).sourceIndex,
+      witnessMaxBlock s)
+  let state : ℕ → State := fun n =>
+    Nat.rec initial (fun _ s => advance s) n
+  let data (n : ℕ) := actualWitness (state n)
+  let sourceIndex : ℕ → ℕ := fun n =>
+    (data n).sourceIndex
+  let source : ℕ → ℕ := fun n =>
+    target (sourceIndex n)
+  let destroyedTarget : ℕ → ℕ := fun n =>
+    (data n).destroyedTarget
+  let displacement : ℕ → ℕ := fun n =>
+    (data n).displacement
+  let support : ℕ → Finset ℕ := fun n =>
+    (data n).support
+  let destroyer : ℕ → Finset ℕ := fun n =>
+    (data n).destroyer
+  let sourceRoot : ℕ → Finset ℕ := fun n =>
+    (data n).sourceRoot
+  let sourceMatching : ℕ → Finset (Finset ℕ) := fun n =>
+    (data n).sourceMatching
+  let blockMax : ℕ → ℕ := fun n =>
+    witnessMaxBlock (state n)
+  have hstateSucc : ∀ n,
+      state (n + 1) = advance (state n) := by
+    intro n
+    simp [state]
+  have hsourceIndexStep :
+      ∀ n, sourceIndex n < sourceIndex (n + 1) := by
+    intro n
+    have hlower := (data (n + 1)).sourceIndex_lower
+    calc
+      sourceIndex n = (state (n + 1)).1 := by
+        simp [hstateSucc, advance, sourceIndex, data]
+      _ < (state (n + 1)).1 + 1 :=
+        Nat.lt_succ_self _
+      _ ≤ requestScale (state (n + 1)) :=
+        Nat.le_max_left _ _
+      _ ≤ sourceIndex (n + 1) := hlower
+  have hsourceIndexStrict : StrictMono sourceIndex :=
+    strictMono_nat_of_lt_succ hsourceIndexStep
+  have hsourceStrict : StrictMono source :=
+    htargetStrict.comp hsourceIndexStrict
+  have hblockLe :
+      ∀ n, ∀ x ∈ destroyer n,
+        blockIndex P x ≤ blockMax n := by
+    intro n x hxD
+    apply Finset.le_max'
+    exact Finset.mem_image.mpr
+      ⟨x, hxD, rfl⟩
+  have hnextBlockLower :
+      ∀ n, ∀ x ∈ destroyer (n + 1),
+        blockMax n < blockIndex P x := by
+    intro n x hxD
+    have hlower :=
+      (data (n + 1)).destroyer_block_lower x hxD
+    calc
+      blockMax n = (state (n + 1)).2 := by
+        simp [hstateSucc, advance, blockMax]
+      _ < (state (n + 1)).2 + 1 :=
+        Nat.lt_succ_self _
+      _ ≤ requestScale (state (n + 1)) :=
+        Nat.le_max_right _ _
+      _ ≤ blockIndex P x := hlower
+  have hblockMaxStep :
+      ∀ n, blockMax n < blockMax (n + 1) := by
+    intro n
+    let x := (data (n + 1)).destroyer_nonempty.choose
+    have hxD : x ∈ destroyer (n + 1) :=
+      (data (n + 1)).destroyer_nonempty.choose_spec
+    exact
+      (hnextBlockLower n x hxD).trans_le
+        (hblockLe (n + 1) x hxD)
+  have hblockMaxStrict : StrictMono blockMax :=
+    strictMono_nat_of_lt_succ hblockMaxStep
+  have hfutureBlock :
+      ∀ m n, m < n → ∀ x ∈ destroyer n,
+        blockMax m < blockIndex P x := by
+    intro m n hmn x hxD
+    obtain ⟨t, rfl⟩ :=
+      Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
+    have hmt : m ≤ t := by omega
+    exact
+      (hblockMaxStrict.monotone hmt).trans_lt
+        (hnextBlockLower t x hxD)
+  have hdestroyersDisjoint :
+      ∀ i ∈ (Set.univ : Set ℕ),
+        ∀ j ∈ (Set.univ : Set ℕ), i ≠ j →
+          Disjoint (destroyer i) (destroyer j) := by
+    intro i _hi j _hj hij
+    rw [Finset.disjoint_left]
+    intro x hxi hxj
+    rcases lt_or_gt_of_ne hij with hijlt | hjilt
+    · have hfuture :=
+        hfutureBlock i j hijlt x hxj
+      have hpast := hblockLe i x hxi
+      omega
+    · have hfuture :=
+        hfutureBlock j i hjilt x hxi
+      have hpast := hblockLe j x hxj
+      omega
+  have hsupportCard :
+      ∀ i ∈ (Set.univ : Set ℕ),
+        (support i).card ≤ k + 1 := by
+    intro i _hi
+    exact additiveSupportFamily_cardAtMost
+      A (k + 1) (source i) (support i)
+        (data i).support_mem
+  obtain ⟨L, _hLuniv, hLInfinite, hcross⟩ :=
+    exists_infinite_crossDisjoint_of_pairwiseDisjointBlocks
+      (Set.infinite_univ : (Set.univ : Set ℕ).Infinite)
+      destroyer support hdestroyersDisjoint hsupportCard
+  let Y : Set ℕ :=
+    {x | ∃ i ∈ L, x ∈ destroyer i}
+  let point : ℕ → ℕ := fun i =>
+    (data i).destroyer_nonempty.choose
+  have hpointMem :
+      ∀ i, point i ∈ destroyer i := by
+    intro i
+    exact (data i).destroyer_nonempty.choose_spec
+  have hpointInjOn : Set.InjOn point L := by
+    intro i hiL j hjL hpointEq
+    by_contra hij
+    have hdisjoint :=
+      hdestroyersDisjoint i (Set.mem_univ i)
+        j (Set.mem_univ j) hij
+    apply Finset.disjoint_left.mp hdisjoint
+      (hpointMem i)
+    rw [hpointEq]
+    exact hpointMem j
+  have hpointImageInfinite :
+      (point '' L).Infinite :=
+    hLInfinite.image hpointInjOn
+  have hpointImageY : point '' L ⊆ Y := by
+    rintro x ⟨i, hiL, rfl⟩
+    exact ⟨i, hiL, hpointMem i⟩
+  have hYInfinite : Y.Infinite :=
+    hpointImageInfinite.mono hpointImageY
+  have hYA : Y ⊆ A := by
+    rintro x ⟨i, hiL, hxD⟩
+    exact hKA
+      ((data i).destroyer_subset_K
+        (Finset.mem_coe.mpr hxD))
+  have hsupportY :
+      ∀ i ∈ L,
+        Disjoint (support i : Set ℕ) Y := by
+    intro i hiL
+    rw [Set.disjoint_left]
+    intro x hxSupport hxY
+    obtain ⟨j, hjL, hxD⟩ := hxY
+    by_cases hij : i = j
+    · subst j
+      exact Finset.disjoint_left.mp
+        (data i).support_destroyer_disjoint
+        (Finset.mem_coe.mp hxSupport) hxD
+    · exact Finset.disjoint_left.mp
+        (hcross i hiL j hjL hij)
+        (Finset.mem_coe.mp hxSupport) hxD
+  have hdestroyerY :
+      ∀ i ∈ L, (destroyer i : Set ℕ) ⊆ Y := by
+    intro i hiL x hxD
+    exact
+      ⟨i, hiL, Finset.mem_coe.mp hxD⟩
+  have hdestroyed :
+      ∀ i ∈ L,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          Y (destroyedTarget i) := by
+    intro i hiL
+    exact
+      (data i).destroyer_minimal.1.mono
+        (hdestroyerY i hiL)
+  have hdestroyedStep :
+      ∀ n,
+        destroyedTarget n <
+          destroyedTarget (n + 1) := by
+    intro n
+    calc
+      destroyedTarget n <
+          target (sourceIndex n + 1) :=
+        (data n).destroyed_lt_next
+      _ ≤ target (sourceIndex (n + 1)) :=
+        htargetStrict.monotone
+          (Nat.succ_le_iff.mpr
+            (hsourceIndexStep n))
+      _ < destroyedTarget (n + 1) :=
+        (data (n + 1)).source_lt_destroyed
+  have hdestroyedStrict : StrictMono destroyedTarget :=
+    strictMono_nat_of_lt_succ hdestroyedStep
+  let index : ℕ → ℕ := Nat.nth fun i => i ∈ L
+  have hindexL : ∀ n, index n ∈ L := by
+    intro n
+    exact Nat.nth_mem_of_infinite hLInfinite n
+  have hindexStrict : StrictMono index :=
+    Nat.nth_strictMono hLInfinite
+  refine
+    ⟨Y, fun n => source (index n),
+      fun n => destroyedTarget (index n),
+      fun n => displacement (index n),
+      fun n => support (index n),
+      fun n => destroyer (index n),
+      fun n => sourceRoot (index n),
+      fun n => sourceMatching (index n),
+      hYA, hYInfinite,
+      hsourceStrict.comp hindexStrict,
+      hdestroyedStrict.comp hindexStrict,
+      ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+      ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · intro n
+    calc
+      destroyedTarget (index n) <
+          target (sourceIndex (index n) + 1) :=
+        (data (index n)).destroyed_lt_next
+      _ ≤ target (sourceIndex (index (n + 1))) :=
+        htargetStrict.monotone
+          (Nat.succ_le_iff.mpr
+            (hsourceIndexStrict
+              (hindexStrict (Nat.lt_succ_self n))))
+  · intro n
+    exact (data (index n)).displacement_pos
+  · intro n
+    exact (data (index n)).destroyed_eq
+  · intro n
+    exact (data (index n)).support_mem
+  · intro n
+    exact hsupportY (index n) (hindexL n)
+  · intro n
+    exact (data (index n)).sourceRoot_card
+  · intro n
+    have hnIndex : n ≤ index n :=
+      hindexStrict.id_le n
+    have hindexSource :
+        index n ≤ sourceIndex (index n) :=
+      hsourceIndexStrict.id_le (index n)
+    exact
+      (Nat.succ_le_succ
+        (hnIndex.trans hindexSource)).trans_lt
+        (data (index n)).sourceMatching_large
+  · intro n
+    exact (data (index n)).sourceMatching_sub
+  · intro n E hEM
+    exact (data (index n)).sourceRoot_sub E hEM
+  · intro n E hEM
+    exact (data (index n)).sourcePetal_nonempty E hEM
+  · intro n E hEM G hGM hEG
+    exact
+      (data (index n)).sourcePetal_matching
+        E hEM G hGM hEG
+  · intro n E hEM
+    exact
+      (data (index n)).sourceMatching_destroyer_disjoint
+        E hEM
+  · intro n
+    exact (data (index n)).destroyer_nonempty
+  · intro n
+    exact hdestroyerY (index n) (hindexL n)
+  · intro i j hij
+    exact hdestroyersDisjoint
+      (index i) (Set.mem_univ _)
+      (index j) (Set.mem_univ _)
+      (hindexStrict.injective.ne hij)
+  · intro n
+    exact (data (index n)).destroyer_minimal
+  · intro n
+    exact hdestroyed (index n) (hindexL n)
+
 /-- Counterexample-level diagonal alignment with the capacity horn removed.
 
 Instantiate the quadratic moving-root fusion with the exact diagonal
@@ -47694,6 +48424,30 @@ theorem exactBasis_counterexample_forces_cofinalQuadraticTailAlignedResolvedArit
         (Or.inr (Or.inr (Or.inr (Or.inl
           ⟨E, hEmem, j, point,
             hpointCell, hpointDisjoint⟩))))
+
+/-- A hypothetical hard-order counterexample forces one infinite deletion
+with cofinally aligned translated survival/destruction pairs.
+
+This applies the pair extraction to every diagonal stage and then fuses
+the complete finite destroyers, rather than selecting one disposable point
+from each stage.  Hence the equation
+`destroyedTarget n = sourceTarget n + displacement n` survives all the
+way to the counterexample-level conclusion. -/
+theorem exactBasis_counterexample_forces_alignedTranslatedStream
+    {A : Set ℕ} {k : ℕ}
+    (hk : 2 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1)) :
+    HasAlignedTranslatedSurvivalDestructionStream A k := by
+  obtain ⟨K, cell, target, hKA, _hKInfinite, P,
+      htargetStrict, _hcellLarge, hstages⟩ :=
+    exactBasis_counterexample_forces_cofinalQuadraticTailAlignedResolvedArithmetic
+      hk hbasis hcounter
+  apply cofinalAlignedTailPairs_fuse_translatedStream
+    hKA P htargetStrict
+  intro scale
+  exact (hstages scale).exists_alignedTailPair P
 
 /-- A cofinal supply of ambient pointed fusion steps produces the complete
 fused successor/predecessor endpoint.
