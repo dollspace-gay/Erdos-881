@@ -1,3 +1,55 @@
+# GENERAL ORDER: PRIVATE LANDINGS NOW DESCEND WITH THE SAME DISPLACEMENT (2026-07-29)
+
+The residual-repair fusion now retains the representation that makes each
+landing point operational.  For every fused stage \(i\), there is an
+order-\(k\) support \(H_i\) of the surviving current target such that
+
+\[
+  z_i\in H_i,\qquad H_i\cap Y=\{z_i\}.
+\]
+
+The second equality is encoded without assuming multiplicity information:
+the support avoids \(Y\setminus\{z_i\}\), and the fact that \(Y\) destroyed
+the target forces it to contain \(z_i\).  Thus \(z_i\) is the support's
+unique deleted value even if the underlying additive tuple uses that value
+more than once.
+
+`successorPredecessorFailures_bracketed_by_currentSurvival_force_alignedLowerFans`
+now transports arbitrary support-local data through the same-target
+alignment.  In particular, the counterexample capstone retains at one
+cofinal stage:
+
+\[
+  q=m-a=\operatorname{currentTarget}(j)+\delta,
+\]
+
+the private support \(H\) at `currentTarget j`, and destruction of every
+\(q-b\) for \(b\in H\).
+
+`cleanSupport_markedPoint_descends_destroyedTranslate_sameDisplacement`
+then removes one occurrence of the marked landing \(z_j\).  It produces a
+clean order-\((k-1)\) support \(G\subseteq H\) at
+
+\[
+  \operatorname{currentTarget}(j)-z_j
+\]
+
+whose translate by the *same* positive displacement is the already
+destroyed target:
+
+\[
+  q-z_j=
+  \bigl(\operatorname{currentTarget}(j)-z_j\bigr)+\delta.
+\]
+
+This is a genuine rank descent rather than a new classification of the
+failure.  It is not yet the general-order solution: one removed occurrence
+does not make \(G\) disjoint from \(Y\) when the additive tuple contains
+the landing value repeatedly.  The next direct attack is to peel all
+occurrences of that sole \(Y\)-value at once, descend the destroyed
+translate by the same total contribution, and expose a \(Y\)-clean
+lower-rank core.  Iterating that construction is aimed at rank zero.
+
 # GENERAL ORDER: RESIDUAL STREAMS ALIGNED AT ONE REPRESENTED TARGET (2026-07-29)
 
 The two destruction streams on the strict residual deletion are now

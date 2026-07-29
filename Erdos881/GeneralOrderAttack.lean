@@ -31322,13 +31322,15 @@ finite-prefix/difference composition needed after current repair fusion. -/
 theorem successorPredecessorFailures_bracketed_by_currentSurvival_force_alignedLowerFans
     {A B : Set ℕ} {k : ℕ}
     {oldTarget currentTarget : ℕ → ℕ}
+    {Good : ℕ → Finset ℕ → Prop}
     (hkpos : 0 < k)
     (hcurrentStrict : StrictMono currentTarget)
     (hcurrentSurvival : ∀ j,
       ∃ H ∈
           additiveSupportFamily A k
             (currentTarget j),
-        Disjoint (H : Set ℕ) B)
+        Disjoint (H : Set ℕ) B ∧
+        Good j H)
     (hsuccessorPredecessor :
       ∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a,
         L ≤ n ∧
@@ -31368,6 +31370,7 @@ theorem successorPredecessorFailures_bracketed_by_currentSurvival_force_alignedL
           additiveSupportFamily A k
             (currentTarget j) ∧
         Disjoint (H : Set ℕ) B ∧
+        Good j H ∧
         H.Nonempty ∧
         (additiveSupportFamily A k q).Nonempty ∧
         DestroysAt
@@ -31383,7 +31386,7 @@ theorem successorPredecessorFailures_bracketed_by_currentSurvival_force_alignedL
         (additiveSupportFamily A k) B
         (currentTarget j) := by
     intro j
-    obtain ⟨H, hHmem, hHB⟩ :=
+    obtain ⟨H, hHmem, hHB, _hGood⟩ :=
       hcurrentSurvival j
     exact
       not_destroysAt_iff.mpr
@@ -31427,7 +31430,7 @@ theorem successorPredecessorFailures_bracketed_by_currentSurvival_force_alignedL
           (additiveSupportFamily A k) B q := by
       simpa only [q] using hqDestroyRaw
     simpa only [heq] using hqDestroy
-  obtain ⟨H, hHmem, hHB⟩ :=
+  obtain ⟨H, hHmem, hHB, hGood⟩ :=
     hcurrentSurvival j
   have hHnonempty : H.Nonempty :=
     additiveSupportFamily_supportsNonempty
@@ -31453,7 +31456,7 @@ theorem successorPredecessorFailures_bracketed_by_currentSurvival_force_alignedL
       hnLower, hnUpper, hEmem, hEB,
       hmDestroy, haE, haAverage, rfl,
       hqL, hjL, hjLower, hjUpperStrict,
-      hHmem, hHB, hHnonempty,
+      hHmem, hHB, hGood, hHnonempty,
       hqNonempty, hqDestroy, ?_⟩
   intro b hbH
   have hbA : b ∈ A :=
@@ -31485,6 +31488,73 @@ theorem successorPredecessorFailures_bracketed_by_currentSurvival_force_alignedL
   have hkRank : 1 + (k - 1) = k := by omega
   simpa only [hkRank, Nat.add_sub_of_le hbQ]
     using hqDestroy
+
+/-- A marked point in a clean support lowers a destroyed translate by one
+rank without changing its displacement.
+
+Suppose `H` represents `s` at order `k`, avoids `B`, and contains `z`.
+Removing one occurrence of `z` gives a support `G` at order `k-1` and
+target `s-z`, still avoiding `B`.  If `q = s+δ`, then
+
+`q-z = (s-z)+δ`.
+
+Hence any already known order-`k-1` destruction at `q-z` is not an
+unrelated primitive gap: it is the translate by the very same `δ` of the
+new clean lower-rank support.  Repeated occurrences of `z` cause no
+problem—the occurrence-sensitive removal theorem lowers the tuple order
+by exactly one while the finset inclusion `G ⊆ H` preserves avoidance. -/
+theorem cleanSupport_markedPoint_descends_destroyedTranslate_sameDisplacement
+    {A B : Set ℕ} {k s q δ z : ℕ}
+    {H : Finset ℕ}
+    (hkpos : 0 < k)
+    (hHmem :
+      H ∈ additiveSupportFamily A k s)
+    (hHB : Disjoint (H : Set ℕ) B)
+    (hzH : z ∈ H)
+    (hδpos : 0 < δ)
+    (hqδ : q = s + δ)
+    (hlowerDestroy :
+      DestroysAt
+        (additiveSupportFamily A (k - 1))
+        B (q - z)) :
+    ∃ G : Finset ℕ,
+      G ∈
+        additiveSupportFamily A (k - 1) (s - z) ∧
+      G ⊆ H ∧
+      Disjoint (G : Set ℕ) B ∧
+      0 < δ ∧
+      q - z = (s - z) + δ ∧
+      DestroysAt
+        (additiveSupportFamily A (k - 1))
+        B (q - z) := by
+  have hkPredSucc : k - 1 + 1 = k := by
+    omega
+  have hHmemSucc :
+      H ∈
+        additiveSupportFamily A ((k - 1) + 1) s := by
+    rw [hkPredSucc]
+    exact hHmem
+  obtain ⟨G, hGmem, hHinsert⟩ :=
+    additiveSupport_remove_hit_succ
+      hHmemSucc hzH
+  have hGH : G ⊆ H := by
+    intro x hxG
+    rw [hHinsert]
+    exact Finset.mem_insert_of_mem hxG
+  have hGB : Disjoint (G : Set ℕ) B := by
+    exact
+      hHB.mono_left fun _x hxG =>
+        Finset.mem_coe.mpr
+          (hGH (Finset.mem_coe.mp hxG))
+  have hzS : z ≤ s :=
+    additiveSupportFamily_supportsBounded
+      A k s H hHmem z hzH
+  have htranslated :
+      q - z = (s - z) + δ := by
+    omega
+  exact
+    ⟨G, hGmem, hGH, hGB, hδpos,
+      htranslated, hlowerDestroy⟩
 
 /-- Every positive-order additive support contains an anchor no larger
 than the average of the represented tuple: `k * a ≤ q`.
@@ -46914,6 +46984,10 @@ theorem cofinalOnePointRepairs_fuse_residualDeletion
       StrictMono target ∧
       Function.Injective landing ∧
       (∀ i, landing i ∈ Y \ B) ∧
+      (∀ i, ∃ F ∈ R (target i),
+        landing i ∈ F ∧
+        Disjoint (F : Set ℕ)
+          (Y \ {landing i})) ∧
       (∀ i, DestroysAt R Y (target i)) ∧
       ∀ i, ¬ DestroysAt R B (target i) := by
   classical
@@ -47069,6 +47143,32 @@ theorem cofinalOnePointRepairs_fuse_residualDeletion
           simpa using hxSingleton
         subst x
         exact hlandingNotB i hxB⟩
+  have hprivateLandingSupport :
+      ∀ i, ∃ F ∈ R (target i),
+        landing i ∈ F ∧
+        Disjoint (F : Set ℕ)
+          (Y \ {landing i}) := by
+    intro i
+    obtain ⟨F, hFmem, hFavoid⟩ :=
+      not_destroysAt_iff.mp
+        (hrestoredSurvival (floor i))
+    have hFhitY :
+        ¬ Disjoint (F : Set ℕ) Y :=
+      hfailedDestroy (floor i) F hFmem
+    obtain ⟨y, hyF, hyY⟩ :=
+      Set.not_disjoint_iff.mp hFhitY
+    have hyLanding : y = landing i := by
+      by_contra hyNe
+      have hyNotSingleton :
+          y ∉ ({landing i} : Set ℕ) := by
+        simpa using hyNe
+      exact
+        Set.disjoint_left.mp hFavoid
+          hyF ⟨hyY, hyNotSingleton⟩
+    refine ⟨F, hFmem, ?_, hFavoid⟩
+    exact
+      Finset.mem_coe.mp
+        (hyLanding ▸ hyF)
   have htargetSurvival :
       ∀ i, ¬ DestroysAt R B (target i) := by
     intro i
@@ -47085,6 +47185,7 @@ theorem cofinalOnePointRepairs_fuse_residualDeletion
       hYdiffBInfinite, htargetStrict,
       hlandingInjective,
       fun i => hlandingRange ⟨i, rfl⟩,
+      hprivateLandingSupport,
       fun i => hfailedDestroy (floor i),
       htargetSurvival⟩
 
@@ -47266,6 +47367,11 @@ theorem cofinalCurrentTranslationBoundaryAttack_forces_holes_or_fusedRepairStrea
       StrictMono target ∧
       Function.Injective landing ∧
       (∀ i, landing i ∈ Y \ B) ∧
+      (∀ i, ∃ F ∈
+          additiveSupportFamily A k (target i),
+        landing i ∈ F ∧
+        Disjoint (F : Set ℕ)
+          (Y \ {landing i})) ∧
       (∀ i,
         DestroysAt
           (additiveSupportFamily A k) Y
@@ -52844,6 +52950,12 @@ theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_strictSplit
           StrictMono currentTarget ∧
           Function.Injective landing ∧
           (∀ i, landing i ∈ Y \ B) ∧
+          (∀ i, ∃ F ∈
+              additiveSupportFamily A k
+                (currentTarget i),
+            landing i ∈ F ∧
+            Disjoint (F : Set ℕ)
+              (Y \ {landing i})) ∧
           (∀ i,
             DestroysAt
               (additiveSupportFamily A k) Y
@@ -52902,7 +53014,7 @@ theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_strictSplit
               (additiveSupportFamily A k) B
               (m - a)) ∧
           ∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a j q,
-            ∃ H : Finset ℕ,
+            ∃ H G : Finset ℕ, ∃ δ,
               L ≤ n ∧
               oldTarget n < m ∧
               m < oldTarget (n + 1) ∧
@@ -52923,6 +53035,21 @@ theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_strictSplit
                 additiveSupportFamily A k
                   (currentTarget j) ∧
               Disjoint (H : Set ℕ) B ∧
+              (landing j ∈ H ∧
+                Disjoint (H : Set ℕ)
+                  (Y \ {landing j})) ∧
+              δ = q - currentTarget j ∧
+              0 < δ ∧
+              G ∈
+                additiveSupportFamily A (k - 1)
+                  (currentTarget j - landing j) ∧
+              G ⊆ H ∧
+              Disjoint (G : Set ℕ) B ∧
+              q - landing j =
+                (currentTarget j - landing j) + δ ∧
+              DestroysAt
+                (additiveSupportFamily A (k - 1))
+                B (q - landing j) ∧
               H.Nonempty ∧
               (additiveSupportFamily A k q).Nonempty ∧
               DestroysAt
@@ -52944,6 +53071,7 @@ theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_strictSplit
       ⟨B, currentTarget, landing, hBY, hBInfinite,
         hYdiffBInfinite, hcurrentStrict,
         hlandingInjective, hlandingRange,
+        hprivateLandingSupport,
         hcurrentDestroyedY, hcurrentSurvivalB⟩ :=
     cofinalCurrentTranslationBoundaryAttack_forces_holes_or_fusedRepairStream
       hYInfinite hmixed
@@ -52977,6 +53105,32 @@ theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_strictSplit
       exact
         not_destroysAt_iff.mp
           (hcurrentSurvivalB i)
+    have hBwithoutLanding :
+        ∀ i, B ⊆ Y \ {landing i} := by
+      intro i x hxB
+      exact
+        ⟨hBY hxB, by
+          intro hxSingleton
+          have hx : x = landing i := by
+            simpa using hxSingleton
+          subst x
+          exact (hlandingRange i).2 hxB⟩
+    have hprivateCurrentSurvival :
+        ∀ i,
+          ∃ H ∈
+              additiveSupportFamily A k
+                (currentTarget i),
+            Disjoint (H : Set ℕ) B ∧
+            (landing i ∈ H ∧
+              Disjoint (H : Set ℕ)
+                (Y \ {landing i})) := by
+      intro i
+      obtain ⟨H, hHmem, hlandingH, hHprivate⟩ :=
+        hprivateLandingSupport i
+      exact
+        ⟨H, hHmem,
+          hHprivate.mono_right (hBwithoutLanding i),
+          hlandingH, hHprivate⟩
     have hkPredSucc : k - 1 + 1 = k := by
       omega
     have hcurrentSurvivalPred :
@@ -53028,16 +53182,55 @@ theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_strictSplit
           holdSurvivalB hsuccessorDestroyB
     have halignedB :=
       successorPredecessorFailures_bracketed_by_currentSurvival_force_alignedLowerFans
+        (Good := fun j H =>
+          landing j ∈ H ∧
+            Disjoint (H : Set ℕ)
+              (Y \ {landing j}))
         (by omega) hcurrentStrict
-          hcurrentSurvivalSupports hrepresentedB
-    exact
+          hprivateCurrentSurvival hrepresentedB
+    refine
       ⟨B, currentTarget, landing, hBY, hBInfinite,
         hYdiffBInfinite, hcurrentStrict,
         hlandingInjective, hlandingRange,
+        hprivateLandingSupport,
         hcurrentDestroyedY, hcurrentSurvivalB,
         hcurrentSurvivalSupports, holdSurvivalB,
         hcurrentDestroyB, hcurrentLower,
         hsuccessorDestroyB, hrepresentedB,
-        halignedB⟩
+        ?_⟩
+    intro L
+    obtain ⟨n, m, E, a, j, q, H,
+        hnL, hnLower, hnUpper, hEmem, hEB,
+        hmDestroy, haE, haAverage, hqEq,
+        hqFloor, hjFloor, hjLower, hjUpper,
+        hHmem, hHB, hGood, hHnonempty,
+        hqNonempty, hqDestroy, hfan⟩ :=
+      halignedB L
+    obtain ⟨hlandingH, hHprivate⟩ :=
+      hGood
+    let δ := q - currentTarget j
+    have hδpos : 0 < δ := by
+      dsimp only [δ]
+      omega
+    have hqδ :
+        q = currentTarget j + δ := by
+      dsimp only [δ]
+      omega
+    obtain ⟨G, hGmem, hGH, hGB, _hδpos,
+        htranslated, hmarkedDestroy⟩ :=
+      cleanSupport_markedPoint_descends_destroyedTranslate_sameDisplacement
+        (by omega) hHmem hHB hlandingH
+          hδpos hqδ
+          (hfan (landing j) hlandingH).2
+    exact
+      ⟨n, m, E, a, j, q, H, G, δ,
+        hnL, hnLower, hnUpper, hEmem, hEB,
+        hmDestroy, haE, haAverage, hqEq,
+        hqFloor, hjFloor, hjLower, hjUpper,
+        hHmem, hHB, ⟨hlandingH, hHprivate⟩,
+        rfl, hδpos, hGmem, hGH, hGB,
+        htranslated, hmarkedDestroy,
+        hHnonempty, hqNonempty, hqDestroy,
+        hfan⟩
 
 end Erdos881
