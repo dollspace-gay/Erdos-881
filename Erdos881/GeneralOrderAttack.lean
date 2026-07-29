@@ -60908,6 +60908,66 @@ theorem
         (HasTerminalFixedCoreGeometricArithmeticFusion.toCofinalGapDominatingTerminalCrossBlockArithmetic
           hk htargetStrict hcross)
 
+/-- A prescribed surviving support below a destroyed target gives a
+predecessor-destroyer fan through every one of its points.
+
+This pointwise form is deliberately stronger than choosing an arbitrary
+surviving support after bracketing: callers can retain a literal support
+decomposition, such as the terminal fixed-core support
+`insert marked core`. -/
+theorem destroyedAdditiveTarget_descends_through_prescribedLowerSupport
+    {A X : Set ℕ} {k lowerTarget m : ℕ}
+    {E : Finset ℕ}
+    (hk : 0 < k)
+    (hlower : lowerTarget < m)
+    (hEmem :
+      E ∈ additiveSupportFamily A k lowerTarget)
+    (hEX : Disjoint (E : Set ℕ) X)
+    (hmDestroy :
+      DestroysAt
+        (additiveSupportFamily A k) X m) :
+    E.Nonempty ∧
+      ∀ a ∈ E,
+        0 < m - a ∧
+        DestroysAt
+          (additiveSupportFamily A (k - 1))
+          X (m - a) := by
+  classical
+  have hEnonempty : E.Nonempty :=
+    additiveSupportFamily_supportsNonempty
+      A hk lowerTarget E hEmem
+  refine ⟨hEnonempty, ?_⟩
+  intro a haE
+  have haA : a ∈ A :=
+    additiveSupportFamily_supportsIn
+      A k lowerTarget E hEmem a haE
+  have haLower : a ≤ lowerTarget :=
+    additiveSupportFamily_supportsBounded
+      A k lowerTarget E hEmem a haE
+  have haM : a ≤ m :=
+    haLower.trans (Nat.le_of_lt hlower)
+  have haX : a ∉ X := by
+    intro haX
+    exact Set.disjoint_left.mp hEX
+      (Finset.mem_coe.mpr haE) haX
+  have hsingleton :
+      ({a} : Finset ℕ) ∈
+        additiveSupportFamily A 1 a := by
+    have hraw :=
+      list_foldr_mem_additiveSupportFamily
+        (xs := [a]) (by simpa using haA)
+    simpa using hraw
+  have hsingletonX :
+      Disjoint (({a} : Finset ℕ) : Set ℕ) X := by
+    simpa [Set.disjoint_singleton_left] using haX
+  have hkRank : 1 + (k - 1) = k := by
+    omega
+  refine ⟨by omega, ?_⟩
+  apply additiveDestroyer_descends_through_survivingCore
+    hsingleton hsingletonX
+  simpa only [hkRank, Nat.add_sub_of_le haM]
+    using hmDestroy
+
 /-- Cofinal current-order destroyer fans inside prescribed gaps.
 
 The left endpoint survives an infinite deletion at order `k`, while a
@@ -60932,6 +60992,191 @@ def HasCofinalPredecessorDestroyerFansInGaps
       DestroysAt
         (additiveSupportFamily A (k - 1))
         X (m - a)
+
+/-- Split current-order destruction across an explicit interlaced stream
+while preserving the prescribed support at every lower endpoint.
+
+The even gaps use `lowerSupport n` literally; no existential support
+witness is re-chosen after the destroyed target has been bracketed.  This
+is the interface needed to retain a fixed-core decomposition. -/
+theorem
+    interlacedSurvival_currentDestroyers_force_prescribedEndpointFans
+    {A X : Set ℕ} {k : ℕ}
+    {lower upper : ℕ → ℕ}
+    {lowerSupport upperSupport : ℕ → Finset ℕ}
+    (hk : 0 < k)
+    (hinterlaced :
+      ∀ n,
+        lower n < upper n ∧
+        upper n < lower (n + 1))
+    (hlowerSupport :
+      ∀ n,
+        lowerSupport n ∈
+            additiveSupportFamily A k (lower n) ∧
+          Disjoint (lowerSupport n : Set ℕ) X)
+    (hupperSupport :
+      ∀ n,
+        upperSupport n ∈
+            additiveSupportFamily A k (upper n) ∧
+          Disjoint (upperSupport n : Set ℕ) X)
+    (hcurrentDestroy :
+      ∀ N, ∃ m, N ≤ m ∧
+        DestroysAt
+          (additiveSupportFamily A k) X m) :
+    (∀ L, ∃ n m,
+      L ≤ n ∧
+      lower n < m ∧
+      m < upper n ∧
+      DestroysAt
+        (additiveSupportFamily A k) X m ∧
+      (lowerSupport n).Nonempty ∧
+      ∀ a ∈ lowerSupport n,
+        0 < m - a ∧
+        DestroysAt
+          (additiveSupportFamily A (k - 1))
+          X (m - a)) ∨
+    (∀ L, ∃ n m,
+      L ≤ n ∧
+      upper n < m ∧
+      m < lower (n + 1) ∧
+      DestroysAt
+        (additiveSupportFamily A k) X m ∧
+      (upperSupport n).Nonempty ∧
+      ∀ a ∈ upperSupport n,
+        0 < m - a ∧
+        DestroysAt
+          (additiveSupportFamily A (k - 1))
+          X (m - a)) := by
+  classical
+  let merged : ℕ → ℕ :=
+    Stream'.interleave lower upper
+  have hmergedEven :
+      ∀ n, merged (2 * n) = lower n := by
+    intro n
+    simpa only [merged] using
+      (Stream'.get_interleave_left n lower upper)
+  have hmergedOdd :
+      ∀ n, merged (2 * n + 1) = upper n := by
+    intro n
+    simpa only [merged] using
+      (Stream'.get_interleave_right n lower upper)
+  have hmergedStep :
+      ∀ n, merged n < merged (n + 1) := by
+    intro n
+    rcases Nat.even_or_odd n with
+        ⟨r, hr⟩ | ⟨r, hr⟩
+    · have hn : n = 2 * r := by omega
+      subst n
+      rw [hn, hmergedEven, hmergedOdd]
+      exact (hinterlaced r).1
+    · have hn : n = 2 * r + 1 := by omega
+      subst n
+      have hnext :
+          2 * r + 1 + 1 = 2 * (r + 1) := by
+        omega
+      rw [hmergedOdd, hnext, hmergedEven]
+      exact (hinterlaced r).2
+  have hmergedStrict : StrictMono merged :=
+    strictMono_nat_of_lt_succ hmergedStep
+  have hmergedSurvival :
+      ∀ n,
+        ∃ E ∈ additiveSupportFamily A k (merged n),
+          Disjoint (E : Set ℕ) X := by
+    intro n
+    rcases Nat.even_or_odd n with
+        ⟨r, hr⟩ | ⟨r, hr⟩
+    · have hn : n = 2 * r := by omega
+      subst n
+      refine
+        ⟨lowerSupport r, ?_, ?_⟩
+      · simpa only [hn, hmergedEven] using
+          (hlowerSupport r).1
+      · exact (hlowerSupport r).2
+    · have hn : n = 2 * r + 1 := by omega
+      subst n
+      exact
+        ⟨upperSupport r,
+          by
+            simpa only [hmergedOdd] using
+              (hupperSupport r).1,
+          (hupperSupport r).2⟩
+  have hmergedNotDestroyed :
+      ∀ n,
+        ¬ DestroysAt
+          (additiveSupportFamily A k) X
+            (merged n) := by
+    intro n
+    obtain ⟨E, hEmem, hEX⟩ :=
+      hmergedSurvival n
+    exact
+      not_destroysAt_iff.mpr
+        ⟨E, hEmem, hEX⟩
+  have hbrackets :
+      ∀ L, ∃ j m,
+        L ≤ j ∧
+        merged j < m ∧
+        m < merged (j + 1) ∧
+        DestroysAt
+          (additiveSupportFamily A k) X m :=
+    cofinalDestroyedTargets_bracketed_by_strictSurvivalStream
+      hmergedStrict hmergedNotDestroyed hcurrentDestroy
+  let InsideWitness : ℕ → ℕ → Prop := fun _L n =>
+    ∃ m,
+      lower n < m ∧
+      m < upper n ∧
+      DestroysAt
+        (additiveSupportFamily A k) X m
+  by_cases hinside :
+      ∀ L, ∃ n, L ≤ n ∧ InsideWitness L n
+  · left
+    intro L
+    obtain ⟨n, hnL, m, hnm, hmu, hmDestroy⟩ :=
+      hinside L
+    obtain ⟨hEnonempty, hfan⟩ :=
+      destroyedAdditiveTarget_descends_through_prescribedLowerSupport
+        hk hnm (hlowerSupport n).1
+          (hlowerSupport n).2 hmDestroy
+    exact
+      ⟨n, m, hnL, hnm, hmu, hmDestroy,
+        hEnonempty, hfan⟩
+  · right
+    obtain ⟨L₀, hL₀⟩ :=
+      not_forall.mp hinside
+    intro L
+    let request := 2 * max L L₀
+    obtain ⟨j, m, hjRequest,
+        hjm, hmj, hmDestroy⟩ :=
+      hbrackets request
+    rcases Nat.even_or_odd j with
+        ⟨n, hn⟩ | ⟨n, hn⟩
+    · have hj : j = 2 * n := by omega
+      have hnL₀ : L₀ ≤ n := by
+        dsimp only [request] at hjRequest
+        omega
+      apply False.elim
+      apply hL₀
+      refine ⟨n, hnL₀, m, ?_, ?_, hmDestroy⟩
+      · simpa only [hj, hmergedEven] using hjm
+      · have hnext :
+            j + 1 = 2 * n + 1 := by omega
+        simpa only [hnext, hmergedOdd] using hmj
+    · have hj : j = 2 * n + 1 := by omega
+      have hnL : L ≤ n := by
+        dsimp only [request] at hjRequest
+        omega
+      have hnext :
+          j + 1 = 2 * (n + 1) := by omega
+      have hupperM : upper n < m := by
+        simpa only [hj, hmergedOdd] using hjm
+      have hmNext : m < lower (n + 1) := by
+        simpa only [hnext, hmergedEven] using hmj
+      obtain ⟨hEnonempty, hfan⟩ :=
+        destroyedAdditiveTarget_descends_through_prescribedLowerSupport
+          hk hupperM (hupperSupport n).1
+            (hupperSupport n).2 hmDestroy
+      exact
+        ⟨n, m, hnL, hupperM, hmNext,
+          hmDestroy, hEnonempty, hfan⟩
 
 /-- Current-order strong minimality attacks an interlaced double-survival
 stream in one of its two literal gap classes.
@@ -61150,5 +61395,609 @@ theorem
       · simpa only [hj, hmergedOdd] using hjm
       · simpa only [hnext, hmergedEven] using hmj
       · simpa only [hj, hmergedOdd] using hEmem
+
+/-- Lowering the requested arithmetic floor preserves a fixed-predecessor
+injury. -/
+theorem HasFixedPredecessorArithmeticInjuryAtFloor.mono_floor
+    {A D : Set ℕ} {k d L L' : ℕ}
+    (hL : L' ≤ L)
+    (hinjury :
+      HasFixedPredecessorArithmeticInjuryAtFloor
+        A D k d L) :
+    HasFixedPredecessorArithmeticInjuryAtFloor
+      A D k d L' := by
+  obtain ⟨η, G, hfloor, hηpos, hGmem,
+      hGD, hshiftDestroy, hexit⟩ :=
+    hinjury
+  refine
+    ⟨η, G,
+      (Nat.mul_le_mul_left (k - 1) hL).trans
+        hfloor,
+      hηpos, hGmem, hGD, hshiftDestroy, ?_⟩
+  rcases hexit with hempty | hlower | hcollision
+  · exact Or.inl hempty
+  · right
+    left
+    obtain ⟨ℓ, v, Q, hℓpos, hℓlt,
+        hLv, hQmem, hQG, hQD, hgap⟩ :=
+      hlower
+    exact
+      ⟨ℓ, v, Q, hℓpos, hℓlt,
+        hL.trans hLv, hQmem, hQG, hQD, hgap⟩
+  · right
+    right
+    obtain ⟨c, hLc, hcG, hcA, hcD,
+        hcShiftA, hcShiftD⟩ :=
+      hcollision
+    exact
+      ⟨c, hL.trans hLc, hcG, hcA, hcD,
+        hcShiftA, hcShiftD⟩
+
+/-- The same-block terminal branch now yields a literal fixed-core injury
+on one side of its represented translated endpoint.
+
+The selected source block, exact translation, fixed core, and translated
+lower-order support are all retained.  In the aligned branch the marked
+point is removed from the prescribed support `insert marked core`; hence
+the destroyed predecessor lies strictly between the two represented
+lower-order endpoints
+
+`t < m - marked < t + displacement`.
+
+In the intervening-gap branch the prescribed upper support
+`insert marked translatedSupport` instead puts the marked predecessor
+strictly above `t + displacement`.  Every selected stage also retains an
+arithmetic injury at its own growing floor.  Thus the current-order
+failure, lower-order injury, source block, exact translation, and
+localized threshold all remain synchronized. -/
+theorem
+    HasTerminalFixedCoreGeometricArithmeticFusion.sameBlock_currentMinimality_forces_fixedCoreInterior_or_interveningFans
+    {A B C D Y : Set ℕ} {k t ε : ℕ}
+    {landing target root repaired : ℕ → ℕ}
+    (hk : 1 < k)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (htargetStrict : StrictMono target)
+    (hlocal :
+      HasTerminalFixedCoreGeometricArithmeticFusion
+        A B C D Y k t ε landing target root repaired
+          (fun upper nextTarget => upper < nextTarget)) :
+    ∃ Z : Set ℕ,
+    ∃ lower upper displacement markedPoint
+        originIndex : ℕ → ℕ,
+    ∃ lowerSupport upperSupport
+        translatedSupport : ℕ → Finset ℕ,
+    ∃ core : Finset ℕ,
+      D ⊆ C ∧
+      Z ⊆ D ∧
+      Z ⊆ A ∧
+      Z.Infinite ∧
+      StrictMono originIndex ∧
+      StrictMono lower ∧
+      StrictMono upper ∧
+      (∀ n,
+        lower n < upper n ∧
+        upper n < lower (n + 1)) ∧
+      core ∈ additiveSupportFamily A (k - 1) t ∧
+      Disjoint (core : Set ℕ) Z ∧
+      (∀ n,
+        0 < displacement n ∧
+        lower n = target (originIndex n) ∧
+        lower n = markedPoint n + t ∧
+        upper n =
+          lower n + displacement n ∧
+        upper n <
+          target (originIndex n + 1) ∧
+        markedPoint n ∈ A ∧
+        lowerSupport n =
+          insert (markedPoint n) core ∧
+        lowerSupport n ∈
+          additiveSupportFamily A k (lower n) ∧
+        Disjoint (lowerSupport n : Set ℕ) Z ∧
+        translatedSupport n ∈
+          additiveSupportFamily A (k - 1)
+            (t + displacement n) ∧
+        Disjoint
+          (translatedSupport n : Set ℕ) Z ∧
+        HasFixedPredecessorArithmeticInjuryAtFloor
+          A Z k (t + displacement n) n ∧
+        upperSupport n =
+          insert (markedPoint n)
+            (translatedSupport n) ∧
+        upperSupport n ∈
+          additiveSupportFamily A k (upper n) ∧
+        Disjoint (upperSupport n : Set ℕ) Z) ∧
+      ((∀ L, ∃ n m,
+        L ≤ n ∧
+        lower n < m ∧
+        m < upper n ∧
+        DestroysAt
+          (additiveSupportFamily A k) Z m ∧
+        t < m - markedPoint n ∧
+        m - markedPoint n <
+          t + displacement n ∧
+        DestroysAt
+          (additiveSupportFamily A (k - 1))
+          Z (m - markedPoint n)) ∨
+      (∀ L, ∃ n m,
+        L ≤ n ∧
+        upper n < m ∧
+        m < lower (n + 1) ∧
+        DestroysAt
+          (additiveSupportFamily A k) Z m ∧
+        t + displacement n <
+          m - markedPoint n ∧
+        DestroysAt
+          (additiveSupportFamily A (k - 1))
+          Z (m - markedPoint n))) := by
+  classical
+  obtain ⟨Z, source, translation, upperRaw, marked,
+      support, origin, _landingIndex, _rootShift,
+      sourceSupport, I, core,
+      hDC, hZD, hZA, hZInfinite,
+      _hsourceStrict, _htranslationStrict,
+      _hupperStrict, _hIInfinite,
+      hcoreMem, hcoreC, hdata,
+      hselected, hinjury⟩ :=
+    hlocal
+  have hstageAtFloor :
+      ∀ originFloor L, ∃ s,
+        s ∈ I ∧
+        originFloor ≤ origin s ∧
+        HasFixedPredecessorArithmeticInjuryAtFloor
+          A Z k (source s) L := by
+    intro originFloor L
+    let request :=
+      max L (t + target originFloor + 1)
+    obtain ⟨s, hsI, hsInjury⟩ :=
+      hinjury request
+    have hrequestL : L ≤ request :=
+      le_max_left _ _
+    have hsOrigin :
+        originFloor ≤ origin s := by
+      by_contra hnot
+      have hsOriginLt :
+          origin s < originFloor :=
+        Nat.lt_of_not_ge hnot
+      obtain ⟨hsourceEq, _hsourceSupportZ,
+          _hsourceCore, hlocalS,
+          _htranslatedSupport⟩ :=
+        hselected s hsI
+      obtain ⟨_hsourceFloor, _htranslationPos,
+          _htranslationEq, _hsupportMem,
+          _hmarkedSupport, _hsupportZ,
+          _hpredecessor, _hmarkedRepaired,
+          _hrootLanding, _hrootRange,
+          _hrootShiftPos, _hmarkedRoot,
+          _hmarkedA, _hmarkedRange,
+          _htargetMarked, _hsourceSupportMem,
+          _hmarkedSourceSupport,
+          _hsourceSupportC, hupperAligned⟩ :=
+        hdata s
+      have hnextBound :
+          target (origin s + 1) ≤
+            target originFloor :=
+        htargetStrict.monotone (by omega)
+      have htranslationBound :
+          translation s < target originFloor := by
+        omega
+      have hsourceBound :
+          source s < t + target originFloor := by
+        omega
+      have hrequestLarge :
+          t + target originFloor < request := by
+        dsimp only [request]
+        omega
+      obtain ⟨_η, _G, hfloor, _hηpos,
+          _hGmem, _hGZ, _hshiftDestroy,
+          _hexit⟩ :=
+        hsInjury
+      have hkFactor : 1 ≤ k - 1 := by
+        omega
+      have hrequestProduct :
+          request ≤ (k - 1) * request := by
+        nlinarith
+      omega
+    exact
+      ⟨s, hsI, hsOrigin,
+        hsInjury.mono_floor hrequestL⟩
+  let stage : ℕ → ℕ :=
+    fun n =>
+      Nat.rec
+        (Classical.choose (hstageAtFloor 0 0))
+        (fun r s =>
+          Classical.choose
+            (hstageAtFloor (origin s + 1) (r + 1)))
+        n
+  have hstageI :
+      ∀ n, stage n ∈ I := by
+    intro n
+    cases n with
+    | zero =>
+        change
+          Classical.choose
+              (hstageAtFloor 0 0) ∈ I
+        exact
+          (Classical.choose_spec
+            (hstageAtFloor 0 0)).1
+    | succ n =>
+        change
+          Classical.choose
+              (hstageAtFloor
+                (origin (stage n) + 1)
+                (n + 1)) ∈ I
+        exact
+          (Classical.choose_spec
+            (hstageAtFloor
+              (origin (stage n) + 1)
+              (n + 1))).1
+  have hstageAdvance :
+      ∀ n,
+        origin (stage n) <
+          origin (stage (n + 1)) := by
+    intro n
+    change
+      origin (stage n) <
+        origin
+          (Classical.choose
+            (hstageAtFloor
+              (origin (stage n) + 1)
+              (n + 1)))
+    have hbound :=
+      (Classical.choose_spec
+        (hstageAtFloor
+          (origin (stage n) + 1)
+          (n + 1))).2.1
+    omega
+  have hstageInjury :
+      ∀ n,
+        HasFixedPredecessorArithmeticInjuryAtFloor
+          A Z k (source (stage n)) n := by
+    intro n
+    cases n with
+    | zero =>
+        change
+          HasFixedPredecessorArithmeticInjuryAtFloor
+            A Z k
+              (source
+                (Classical.choose
+                  (hstageAtFloor 0 0))) 0
+        exact
+          (Classical.choose_spec
+            (hstageAtFloor 0 0)).2.2
+    | succ n =>
+        change
+          HasFixedPredecessorArithmeticInjuryAtFloor
+            A Z k
+              (source
+                (Classical.choose
+                  (hstageAtFloor
+                    (origin (stage n) + 1)
+                    (n + 1)))) (n + 1)
+        exact
+          (Classical.choose_spec
+            (hstageAtFloor
+              (origin (stage n) + 1)
+              (n + 1))).2.2
+  let block : ℕ → ℕ :=
+    fun n => origin (stage n)
+  have hstageOrigin :
+      ∀ n, origin (stage n) = block n := by
+    intro n
+    rfl
+  have hblockStrict : StrictMono block :=
+    strictMono_nat_of_lt_succ hstageAdvance
+  let lowerTarget : ℕ → ℕ :=
+    fun n => target (block n)
+  let upperTarget : ℕ → ℕ :=
+    fun n => upperRaw (stage n)
+  let displacement : ℕ → ℕ :=
+    fun n => translation (stage n)
+  let markedPoint : ℕ → ℕ :=
+    fun n => marked (stage n)
+  let lowerSupport : ℕ → Finset ℕ :=
+    fun n => sourceSupport (stage n)
+  let upperSupport : ℕ → Finset ℕ :=
+    fun n => support (stage n)
+  have htranslatedExists :
+      ∀ n, ∃ G : Finset ℕ,
+        G ∈ additiveSupportFamily A (k - 1)
+            (t + displacement n) ∧
+        Disjoint (G : Set ℕ) Z ∧
+        upperSupport n =
+          insert (markedPoint n) G := by
+    intro n
+    obtain ⟨hsourceEq, _hsourceSupportZ,
+        _hsourceCore, _hlocalN,
+        G, hGmem, hGZ, hsupportEq⟩ :=
+      hselected (stage n) (hstageI n)
+    refine ⟨G, ?_, hGZ, ?_⟩
+    · dsimp only [displacement]
+      rw [← hsourceEq]
+      exact hGmem
+    · dsimp only [upperSupport, markedPoint]
+      exact hsupportEq
+  choose translatedSupport
+      htranslatedMem htranslatedZ
+      hupperSupportEq using
+    htranslatedExists
+  have hlowerStrict : StrictMono lowerTarget :=
+    htargetStrict.comp hblockStrict
+  have hinterlaced :
+      ∀ n,
+        lowerTarget n < upperTarget n ∧
+        upperTarget n < lowerTarget (n + 1) := by
+    intro n
+    obtain ⟨_hsourceFloor, htranslationPos,
+        _htranslationEq, _hsupportMem,
+        _hmarkedSupport, _hsupportZ,
+        _hpredecessor, _hmarkedRepaired,
+        _hrootLanding, _hrootRange,
+        _hrootShiftPos, _hmarkedRoot,
+        _hmarkedA, _hmarkedRange,
+        _htargetMarked, _hsourceSupportMem,
+        _hmarkedSourceSupport,
+        _hsourceSupportC, hupperAligned⟩ :=
+      hdata (stage n)
+    obtain ⟨_hsourceEq, _hsourceSupportZ,
+        _hsourceCore, hlocalN,
+        _htranslatedSupport⟩ :=
+      hselected (stage n) (hstageI n)
+    have hblockStep :
+        block n + 1 ≤ block (n + 1) :=
+      Nat.succ_le_iff.mpr
+        (hblockStrict (Nat.lt_succ_self n))
+    constructor
+    · dsimp only [lowerTarget, upperTarget]
+      rw [← hstageOrigin n, hupperAligned]
+      exact Nat.lt_add_of_pos_right
+        htranslationPos
+    · dsimp only [upperTarget, lowerTarget]
+      calc
+        upperRaw (stage n) <
+            target (origin (stage n) + 1) :=
+          hlocalN
+        _ = target (block n + 1) := by
+          rw [hstageOrigin n]
+        _ ≤ target (block (n + 1)) :=
+          htargetStrict.monotone hblockStep
+  have hupperStep :
+      ∀ n, upperTarget n < upperTarget (n + 1) := by
+    intro n
+    exact
+      (hinterlaced n).2.trans
+        (hinterlaced (n + 1)).1
+  have hupperStrict' : StrictMono upperTarget :=
+    strictMono_nat_of_lt_succ hupperStep
+  have hlowerSupport :
+      ∀ n,
+        lowerSupport n ∈
+            additiveSupportFamily A k
+              (lowerTarget n) ∧
+          Disjoint
+            (lowerSupport n : Set ℕ) Z := by
+    intro n
+    obtain ⟨_hsourceFloor, _htranslationPos,
+        _htranslationEq, _hsupportMem,
+        _hmarkedSupport, _hsupportZ,
+        _hpredecessor, _hmarkedRepaired,
+        _hrootLanding, _hrootRange,
+        _hrootShiftPos, _hmarkedRoot,
+        _hmarkedA, _hmarkedRange,
+        _htargetMarked, hsourceSupportMem,
+        _hmarkedSourceSupport,
+        _hsourceSupportC, _hupperAligned⟩ :=
+      hdata (stage n)
+    obtain ⟨_hsourceEq, hsourceSupportZ,
+        _hsourceCore, _hlocalN,
+        _htranslatedSupport⟩ :=
+      hselected (stage n) (hstageI n)
+    constructor
+    · dsimp only [lowerSupport, lowerTarget]
+      rw [← hstageOrigin n]
+      exact hsourceSupportMem
+    · exact hsourceSupportZ
+  have hupperSupport :
+      ∀ n,
+        upperSupport n ∈
+            additiveSupportFamily A k (upperTarget n) ∧
+          Disjoint (upperSupport n : Set ℕ) Z := by
+    intro n
+    obtain ⟨_hsourceFloor, _htranslationPos,
+        _htranslationEq, hsupportMem,
+        _hmarkedSupport, hsupportZ,
+        _hpredecessor, _hmarkedRepaired,
+        _hrootLanding, _hrootRange,
+        _hrootShiftPos, _hmarkedRoot,
+        _hmarkedA, _hmarkedRange,
+        _htargetMarked, _hsourceSupportMem,
+        _hmarkedSourceSupport,
+        _hsourceSupportC, _hupperAligned⟩ :=
+      hdata (stage n)
+    exact
+      ⟨by
+          simpa only [upperSupport, upperTarget] using
+            hsupportMem,
+        hsupportZ⟩
+  have hcurrentDestroy :
+      ∀ N, ∃ m, N ≤ m ∧
+        DestroysAt
+          (additiveSupportFamily A k) Z m :=
+    hminimal.2 Z hZA hZInfinite
+  have hrawFork :=
+    interlacedSurvival_currentDestroyers_force_prescribedEndpointFans
+      (A := A) (X := Z) (k := k)
+      (lower := lowerTarget) (upper := upperTarget)
+      (lowerSupport := lowerSupport)
+      (upperSupport := upperSupport)
+      (by omega) hinterlaced hlowerSupport
+        hupperSupport hcurrentDestroy
+  have hcoreZ :
+      Disjoint (core : Set ℕ) Z :=
+    hcoreC.mono_right
+      (hZD.trans hDC)
+  have hstageData :
+      ∀ n,
+        0 < displacement n ∧
+        lowerTarget n = target (block n) ∧
+        lowerTarget n = markedPoint n + t ∧
+        upperTarget n =
+          lowerTarget n + displacement n ∧
+        upperTarget n <
+          target (block n + 1) ∧
+        markedPoint n ∈ A ∧
+        lowerSupport n =
+          insert (markedPoint n) core ∧
+        lowerSupport n ∈
+          additiveSupportFamily A k
+            (lowerTarget n) ∧
+        Disjoint
+          (lowerSupport n : Set ℕ) Z ∧
+        translatedSupport n ∈
+          additiveSupportFamily A (k - 1)
+            (t + displacement n) ∧
+        Disjoint
+          (translatedSupport n : Set ℕ) Z ∧
+        HasFixedPredecessorArithmeticInjuryAtFloor
+          A Z k (t + displacement n) n ∧
+        upperSupport n =
+          insert (markedPoint n)
+            (translatedSupport n) ∧
+        upperSupport n ∈
+          additiveSupportFamily A k
+            (upperTarget n) ∧
+        Disjoint
+          (upperSupport n : Set ℕ) Z := by
+    intro n
+    obtain ⟨_hsourceFloor, htranslationPos,
+        _htranslationEq, hsupportMem,
+        _hmarkedSupport, hsupportZ,
+        _hpredecessor, _hmarkedRepaired,
+        _hrootLanding, _hrootRange,
+        _hrootShiftPos, _hmarkedRoot,
+        hmarkedA, _hmarkedRange,
+        htargetMarked, _hsourceSupportMem,
+        _hmarkedSourceSupport,
+        _hsourceSupportC, hupperAligned⟩ :=
+      hdata (stage n)
+    obtain ⟨hsourceEq, _hsourceSupportZ,
+        hsourceCore, hlocalN,
+        _htranslatedSupport⟩ :=
+      hselected (stage n) (hstageI n)
+    have hthresholdInjury :
+        HasFixedPredecessorArithmeticInjuryAtFloor
+          A Z k (t + displacement n) n := by
+      dsimp only [displacement]
+      rw [← hsourceEq]
+      exact hstageInjury n
+    refine
+      ⟨htranslationPos, rfl, ?_, ?_, ?_,
+        hmarkedA, ?_, (hlowerSupport n).1,
+        (hlowerSupport n).2,
+        htranslatedMem n, htranslatedZ n,
+        hthresholdInjury,
+        hupperSupportEq n, (hupperSupport n).1,
+        (hupperSupport n).2⟩
+    · dsimp only [lowerTarget, markedPoint]
+      rw [← hstageOrigin n]
+      exact htargetMarked
+    · dsimp only
+        [upperTarget, lowerTarget, displacement]
+      rw [← hstageOrigin n]
+      exact hupperAligned
+    · dsimp only [upperTarget]
+      rw [← hstageOrigin n]
+      exact hlocalN
+    · dsimp only [lowerSupport, markedPoint]
+      exact hsourceCore
+  have hfinalFork :
+      (∀ L, ∃ n m,
+        L ≤ n ∧
+        lowerTarget n < m ∧
+        m < upperTarget n ∧
+        DestroysAt
+          (additiveSupportFamily A k) Z m ∧
+        t < m - markedPoint n ∧
+        m - markedPoint n <
+          t + displacement n ∧
+        DestroysAt
+          (additiveSupportFamily A (k - 1))
+          Z (m - markedPoint n)) ∨
+      (∀ L, ∃ n m,
+        L ≤ n ∧
+        upperTarget n < m ∧
+        m < lowerTarget (n + 1) ∧
+        DestroysAt
+          (additiveSupportFamily A k) Z m ∧
+        t + displacement n <
+          m - markedPoint n ∧
+        DestroysAt
+          (additiveSupportFamily A (k - 1))
+          Z (m - markedPoint n)) := by
+    rcases hrawFork with haligned | hcross
+    · left
+      intro L
+      obtain ⟨n, m, hnL, hnm, hmu,
+          hmDestroy, _hSupportNonempty, hfan⟩ :=
+        haligned L
+      obtain ⟨_hdisplacementPos, _hlowerTarget,
+          hlowerMarked, _hupperEq, _hupperBlock,
+          _hmarkedA, hlowerSupportEq,
+          _hlowerSupportMem, _hlowerSupportZ,
+          _htranslatedMem, _htranslatedZ,
+          _hthresholdInjury,
+          _hupperSupportEq, _hupperSupportMem,
+          _hupperSupportZ⟩ :=
+        hstageData n
+      have hmarkedLower :
+          markedPoint n ∈ lowerSupport n := by
+        rw [hlowerSupportEq]
+        exact Finset.mem_insert_self _ _
+      obtain ⟨_hdiffPos, hdiffDestroy⟩ :=
+        hfan (markedPoint n) hmarkedLower
+      have hdiffLower :
+          t < m - markedPoint n := by
+        omega
+      have hdiffUpper :
+          m - markedPoint n <
+            t + displacement n := by
+        omega
+      exact
+        ⟨n, m, hnL, hnm, hmu, hmDestroy,
+          hdiffLower, hdiffUpper, hdiffDestroy⟩
+    · right
+      intro L
+      obtain ⟨n, m, hnL, hnm, hmu,
+          hmDestroy, _hSupportNonempty, hfan⟩ :=
+        hcross L
+      obtain ⟨_hdisplacementPos, _hlowerTarget,
+          _hlowerMarked, hupperEq, _hupperBlock,
+          _hmarkedA, _hlowerSupportEq,
+          _hlowerSupportMem, _hlowerSupportZ,
+          _htranslatedMem, _htranslatedZ,
+          _hthresholdInjury,
+          hupperSupportEq, _hupperSupportMem,
+          _hupperSupportZ⟩ :=
+        hstageData n
+      have hmarkedUpper :
+          markedPoint n ∈ upperSupport n := by
+        rw [hupperSupportEq]
+        exact Finset.mem_insert_self _ _
+      obtain ⟨_hdiffPos, hdiffDestroy⟩ :=
+        hfan (markedPoint n) hmarkedUpper
+      have hdiffLower :
+          t + displacement n <
+            m - markedPoint n := by
+        omega
+      exact
+        ⟨n, m, hnL, hnm, hmu, hmDestroy,
+          hdiffLower, hdiffDestroy⟩
+  exact
+    ⟨Z, lowerTarget, upperTarget, displacement,
+      markedPoint, block, lowerSupport,
+      upperSupport, translatedSupport, core,
+      hDC, hZD, hZA, hZInfinite,
+      hblockStrict, hlowerStrict, hupperStrict',
+      hinterlaced, hcoreMem, hcoreZ,
+      hstageData, hfinalFork⟩
 
 end Erdos881

@@ -1,3 +1,55 @@
+# GENERAL ORDER: FIXED-CORE INJURIES STRADDLE ONE TRANSLATED ENDPOINT (2026-07-29)
+
+The same-block branch now retains its literal source support through the
+current-order destruction argument and through the localized arithmetic
+threshold.
+
+`destroyedAdditiveTarget_descends_through_prescribedLowerSupport` removes
+an information leak in the older bracketing theorem: after locating a
+destroyed target, the predecessor descent can be forced through a
+specified support rather than an unrelated surviving representation of
+the same endpoint.
+
+Applied to the fixed-core terminal stream, the two prescribed supports are
+
+\[
+  \{x_n\}\cup K
+  \quad\text{and}\quad
+  \{x_n\}\cup G_{\Delta_n},
+\]
+
+where \(K\) represents \(t\) and \(G_{\Delta_n}\) represents
+\(t+\Delta_n\).  Current-order strong minimality therefore forces,
+cofinally, one of two synchronized lower-order injuries:
+
+\[
+  t<m-x_n<t+\Delta_n,
+\]
+
+or
+
+\[
+  t+\Delta_n<m-x_n
+\]
+
+before the next selected source target.  Both are destroyed at order
+\(k-1\) by the same infinite deletion.
+
+The selected stages are no longer an arbitrary subsequence.  The
+arithmetic-floor witness is used recursively to force strictly increasing
+source-block indices.  Stage \(n\) consequently carries
+`HasFixedPredecessorArithmeticInjuryAtFloor` at floor \(n\), on the same
+source \(t+\Delta_n\).  If source blocks stayed bounded, the local
+next-block inequality would bound \(\Delta_n\), contradicting the growing
+arithmetic threshold.
+
+This is still not the full solution of Erdős 881 for \(k\ge3\).  The next
+direct comparison is now genuinely synchronized: combine the destroyed
+target immediately below or above \(t+\Delta_n\) with the additional
+threshold injury beyond that same represented endpoint.  The
+boundary-crossing geometric branch already supplies the complementary
+gap-dominating translation.
+
 # GENERAL ORDER: CURRENT MINIMALITY INJURES THE SAME-BLOCK STREAM (2026-07-29)
 
 The same-block output of the terminal geometric fork has now been fed
