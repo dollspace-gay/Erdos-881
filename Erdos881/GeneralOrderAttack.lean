@@ -29877,6 +29877,221 @@ theorem minimalAdditiveDestroyer_noStrictRankDescent_forces_singletonDiagonal
     simpa using this
   exact hyx ▸ Finset.mem_coe.mp hyE
 
+/-- Nontrivial-rank terminal destroyers have exact private-core normal form.
+
+The rank-one descent of a nonempty destroyer is automatic, so excluding all
+positive lower ranks is too strong to describe a genuine terminal branch.
+Here only ranks `2,...,h-1` are excluded.
+
+For each `x ∈ D`, decompose a private support at its `D`-hits.  All hit
+occurrences equal `x`.  If every occurrence is hit, then `q = h*x`.
+Otherwise two or more hit occurrences would give a represented destroyed
+target at a forbidden nontrivial rank.  Hence there is exactly one hit
+occurrence, and the remaining private core has exact order `h-1`, is
+disjoint from all of `D`, and represents the coherent difference `q-x`. -/
+theorem minimalAdditiveDestroyer_noNontrivialRankDescent_forces_privateCoreNormalForm
+    {A : Set ℕ} {h q : ℕ} {D : Finset ℕ}
+    (hh : 1 < h)
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q)
+    (hnoNontrivialDescent : ∀ ℓ n,
+      1 < ℓ → ℓ < h →
+      (additiveSupportFamily A ℓ n).Nonempty →
+      ¬ DestroysAt
+        (additiveSupportFamily A ℓ)
+        (D : Set ℕ) n) :
+    ∀ x ∈ D,
+      q = h * x ∨
+      ∃ t, ∃ core : Finset ℕ,
+        core ∈ additiveSupportFamily A (h - 1) t ∧
+        Disjoint (core : Set ℕ) (D : Set ℕ) ∧
+        q = x + t ∧
+        insert x core ∈ additiveSupportFamily A h q ∧
+        insert x core ∩ D = {x} := by
+  classical
+  intro x hxD
+  obtain ⟨E, hEmem, hEprivate⟩ :=
+    hminimal.exists_uniqueHitSupport hxD
+  have hxE : x ∈ E := by
+    have hxInter : x ∈ E ∩ D := by
+      rw [hEprivate]
+      simp
+    exact (Finset.mem_inter.mp hxInter).1
+  have hEDestroyed : ¬ Disjoint (E : Set ℕ) (D : Set ℕ) := by
+    apply Set.not_disjoint_iff.mpr
+    exact ⟨x, Finset.mem_coe.mpr hxE,
+      Finset.mem_coe.mpr hxD⟩
+  obtain ⟨hits, j, t, core, hhitsNonempty,
+      hlength, _hjh, hhits, hcoreMem, hcoreD,
+      htarget, hEeq⟩ :=
+    destroyed_additiveSupport_has_strictSurvivingCoreDecomposition
+      hEmem hEDestroyed
+  have hhitsPos : 0 < hits.length :=
+    List.length_pos_iff.mpr hhitsNonempty
+  have hhitEq : ∀ y ∈ hits, y = x := by
+    intro y hyHits
+    have hyE : y ∈ E := by
+      rw [hEeq, foldr_insert_eq_toFinset_union]
+      exact Finset.mem_union_left core
+        (List.mem_toFinset.mpr hyHits)
+    have hyD : y ∈ D :=
+      Finset.mem_coe.mp (hhits y hyHits).2
+    have hyPrivate : y ∈ ({x} : Finset ℕ) := by
+      rw [← hEprivate]
+      exact Finset.mem_inter.mpr ⟨hyE, hyD⟩
+    simpa using hyPrivate
+  have hhitsRep :
+      hits = List.replicate hits.length x :=
+    List.eq_replicate_iff.mpr ⟨rfl, hhitEq⟩
+  have hhitsSum : hits.sum = hits.length * x := by
+    rw [hhitsRep, List.sum_replicate]
+    simp
+  by_cases hhitsFull : hits.length = h
+  · left
+    have hjzero : j = 0 := by omega
+    have htzero : t = 0 := by
+      rw [hjzero] at hcoreMem
+      exact
+        (additiveSupportFamily_zero_target_and_support
+          hcoreMem).1
+    calc
+      q = hits.sum + t := htarget
+      _ = hits.length * x := by
+        rw [htzero, Nat.add_zero, hhitsSum]
+      _ = h * x := by rw [hhitsFull]
+  · right
+    have hhitsStrict : hits.length < h := by omega
+    have hhitsOne : hits.length = 1 := by
+      by_contra hhitsNotOne
+      have hhitsTwo : 1 < hits.length := by omega
+      have hhitSupport :
+          (additiveSupportFamily A hits.length hits.sum).Nonempty := by
+        exact ⟨hits.foldr (fun y G => insert y G) ∅,
+          list_foldr_mem_additiveSupportFamily
+            (fun y hy => (hhits y hy).1)⟩
+      have hhitDestroy :
+          DestroysAt
+            (additiveSupportFamily A hits.length)
+            (D : Set ℕ) hits.sum :=
+        complementarySurvivingCore_forces_hitTargetDestroyer
+          hminimal hlength htarget hcoreMem hcoreD
+      exact
+        (hnoNontrivialDescent hits.length hits.sum
+          hhitsTwo hhitsStrict hhitSupport hhitDestroy).elim
+    have hj : j = h - 1 := by omega
+    have hhitsList : hits = [x] := by
+      rw [hhitsRep, hhitsOne]
+      simp
+    have hcoreMem' :
+        core ∈ additiveSupportFamily A (h - 1) t := by
+      simpa only [hj] using hcoreMem
+    have htarget' : q = x + t := by
+      rw [htarget, hhitsList]
+      simp
+    have hEeq' : E = insert x core := by
+      simpa only [hhitsList] using hEeq
+    exact ⟨t, core, hcoreMem', hcoreD, htarget',
+      hEeq' ▸ hEmem, hEeq' ▸ hEprivate⟩
+
+/-- Cardinal form of the private-core normal form: at most one destroyer
+coordinate can take the diagonal escape `q = h*x`; every other coordinate
+owns an exact order-`h-1` core at `q-x`, disjoint from the entire destroyer.
+-/
+theorem minimalAdditiveDestroyer_noNontrivialRankDescent_forces_privateCores_off_oneDiagonal
+    {A : Set ℕ} {h q : ℕ} {D : Finset ℕ}
+    (hh : 1 < h)
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q)
+    (hnoNontrivialDescent : ∀ ℓ n,
+      1 < ℓ → ℓ < h →
+      (additiveSupportFamily A ℓ n).Nonempty →
+      ¬ DestroysAt
+        (additiveSupportFamily A ℓ)
+        (D : Set ℕ) n) :
+    ∃ diagonal : Finset ℕ,
+      diagonal ⊆ D ∧
+      diagonal.card ≤ 1 ∧
+      ∀ x ∈ D, x ∉ diagonal →
+        ∃ core : Finset ℕ,
+          core ∈ additiveSupportFamily A (h - 1) (q - x) ∧
+          Disjoint (core : Set ℕ) (D : Set ℕ) ∧
+          insert x core ∈ additiveSupportFamily A h q ∧
+          insert x core ∩ D = {x} := by
+  classical
+  let diagonal := D.filter fun x => q = h * x
+  have hdiagSubset : diagonal ⊆ D :=
+    Finset.filter_subset _ _
+  have hdiagCard : diagonal.card ≤ 1 := by
+    rw [Finset.card_le_one]
+    intro x hx y hy
+    have hxEq : q = h * x :=
+      (Finset.mem_filter.mp hx).2
+    have hyEq : q = h * y :=
+      (Finset.mem_filter.mp hy).2
+    exact
+      Nat.eq_of_mul_eq_mul_left (by omega)
+        (hxEq.symm.trans hyEq)
+  refine ⟨diagonal, hdiagSubset, hdiagCard, ?_⟩
+  intro x hxD hxDiagonal
+  obtain hxDiag | ⟨t, core, hcoreMem, hcoreD,
+      htarget, hsupport, hprivate⟩ :=
+    minimalAdditiveDestroyer_noNontrivialRankDescent_forces_privateCoreNormalForm
+      hh hminimal hnoNontrivialDescent x hxD
+  · exact (hxDiagonal
+      (Finset.mem_filter.mpr ⟨hxD, hxDiag⟩)).elim
+  · have hxt : q - x = t := by omega
+    exact ⟨core, hxt ▸ hcoreMem, hcoreD,
+      hsupport, hprivate⟩
+
+/-- Exhaustive, nonvacuous rank fork for a minimal destroyer at order
+`h > 1`.
+
+Either the same destroyer genuinely descends to a represented rank at least
+two, or all but at most one of its coordinates carry coherent private
+order-`h-1` cores at the exact differences `q-x`.  Unlike the earlier
+positive-rank fork, the left horn cannot be discharged automatically at
+rank one. -/
+theorem minimalAdditiveDestroyer_nontrivialRankDescent_or_privateCores_off_oneDiagonal
+    {A : Set ℕ} {h q : ℕ} {D : Finset ℕ}
+    (hh : 1 < h)
+    (hminimal :
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q) :
+    (∃ ℓ n,
+        1 < ℓ ∧
+        ℓ < h ∧
+        (additiveSupportFamily A ℓ n).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A ℓ)
+          (D : Set ℕ) n) ∨
+    ∃ diagonal : Finset ℕ,
+      diagonal ⊆ D ∧
+      diagonal.card ≤ 1 ∧
+      ∀ x ∈ D, x ∉ diagonal →
+        ∃ core : Finset ℕ,
+          core ∈ additiveSupportFamily A (h - 1) (q - x) ∧
+          Disjoint (core : Set ℕ) (D : Set ℕ) ∧
+          insert x core ∈ additiveSupportFamily A h q ∧
+          insert x core ∩ D = {x} := by
+  classical
+  by_cases hdescent : ∃ ℓ n,
+      1 < ℓ ∧
+      ℓ < h ∧
+      (additiveSupportFamily A ℓ n).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A ℓ)
+        (D : Set ℕ) n
+  · exact Or.inl hdescent
+  · right
+    apply
+      minimalAdditiveDestroyer_noNontrivialRankDescent_forces_privateCores_off_oneDiagonal
+        hh hminimal
+    intro ℓ n hℓtwo hℓh hrepresented hdestroy
+    exact hdescent
+      ⟨ℓ, n, hℓtwo, hℓh, hrepresented, hdestroy⟩
+
 /-- In the bounded, no-rank-descent terminal fusion branch, the stream
 alignment forces a primitive gap at the exact descended target.
 
@@ -30125,18 +30340,14 @@ The resulting order-`h+1` support `{a, xₐ}` meets `Y` exactly at `xₐ`.
 Distinct clean anchors have distinct roots, and the corresponding supports
 are pairwise disjoint.  This is the affine matching amplification needed
 to turn one late successor failure into cardinality pressure. -/
-theorem terminalFusion_destroyedSuccessorTarget_forces_cleanAnchorDiagonalMatching
-    {A Y : Set ℕ} {h bound m : ℕ}
-    {cell : ℕ → Finset ℕ}
+theorem noRankDescent_destroyedSuccessorTarget_forces_cleanAnchorDiagonalMatching
+    {A Y : Set ℕ} {h m : ℕ}
     (hhpos : 0 < h)
-    (fusion : BlockSelector cell)
-    (hYfusion : Y ⊆ selectedSet fusion)
-    (hterminal : ∀ q, ∀ D : Finset ℕ,
+    (hnoRankDescent : ∀ q, ∀ D : Finset ℕ,
       D.Nonempty →
-      (D : Set ℕ) ⊆ selectedSet fusion →
+      (D : Set ℕ) ⊆ Y →
       IsInclusionMinimalDestroyer
         (additiveSupportFamily A h) D q →
-      D.card ≤ bound ∧
       ∀ ℓ n,
         0 < ℓ → ℓ < h →
         (additiveSupportFamily A ℓ n).Nonempty →
@@ -30211,9 +30422,9 @@ theorem terminalFusion_destroyedSuccessorTarget_forces_cleanAnchorDiagonalMatchi
         Finset.not_nonempty_iff_eq_empty.mp hDempty
       obtain ⟨G, hGmem⟩ := hrepresented a haC
       exact hDminimal.1 G hGmem (by simp [hDeq])
-    obtain ⟨_hDbound, hDnoDescent⟩ :=
-      hterminal (m - a) D hDnonempty
-        (hDY.trans hYfusion) hDminimal
+    have hDnoDescent :=
+      hnoRankDescent (m - a) D hDnonempty
+        hDY hDminimal
     obtain ⟨x, hDsingleton, _hxA, hdiagonal,
         hsingletonMem, _hallSupports⟩ :=
       minimalAdditiveDestroyer_noStrictRankDescent_forces_singletonDiagonal
@@ -30334,6 +30545,63 @@ theorem terminalFusion_destroyedSuccessorTarget_forces_cleanAnchorDiagonalMatchi
           (Finset.mem_coe.mpr haC)
           (Finset.mem_coe.mpr hcC)
         exact hzaRoot.symm.trans hrootEq
+
+/-- Terminal-fusion specialization of
+`noRankDescent_destroyedSuccessorTarget_forces_cleanAnchorDiagonalMatching`.
+The terminal bound itself is not needed for the affine conclusion; only its
+strict-rank no-descent clause is used. -/
+theorem terminalFusion_destroyedSuccessorTarget_forces_cleanAnchorDiagonalMatching
+    {A Y : Set ℕ} {h bound m : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hhpos : 0 < h)
+    (fusion : BlockSelector cell)
+    (hYfusion : Y ⊆ selectedSet fusion)
+    (hterminal : ∀ q, ∀ D : Finset ℕ,
+      D.Nonempty →
+      (D : Set ℕ) ⊆ selectedSet fusion →
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q →
+      D.card ≤ bound ∧
+      ∀ ℓ n,
+        0 < ℓ → ℓ < h →
+        (additiveSupportFamily A ℓ n).Nonempty →
+        ¬ DestroysAt
+          (additiveSupportFamily A ℓ)
+          (D : Set ℕ) n)
+    (hmDestroy : DestroysAt
+      (additiveSupportFamily A (h + 1)) Y m)
+    (C : Finset ℕ)
+    (hCA : (C : Set ℕ) ⊆ A)
+    (hCY : Disjoint (C : Set ℕ) Y)
+    (hCm : ∀ a ∈ C, a ≤ m)
+    (hrepresented : ∀ a ∈ C,
+      (additiveSupportFamily A h (m - a)).Nonempty) :
+    ∃ root : ℕ → ℕ,
+      (∀ a ∈ C,
+        root a ∈ Y ∧
+        m - a = h * root a ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A h) {root a} (m - a) ∧
+        ({a, root a} : Finset ℕ) ∈
+          additiveSupportFamily A (h + 1) m ∧
+        ∀ z ∈ ({a, root a} : Finset ℕ),
+          z ∈ Y ↔ z = root a) ∧
+      Set.InjOn root (C : Set ℕ) ∧
+      ∀ a ∈ C, ∀ c ∈ C, a ≠ c →
+        Disjoint ({a, root a} : Finset ℕ)
+          ({c, root c} : Finset ℕ) := by
+  apply
+    noRankDescent_destroyedSuccessorTarget_forces_cleanAnchorDiagonalMatching
+      hhpos
+  · intro q D hDnonempty hDY hDminimal
+    exact
+      (hterminal q D hDnonempty
+        (hDY.trans hYfusion) hDminimal).2
+  · exact hmDestroy
+  · exact hCA
+  · exact hCY
+  · exact hCm
+  · exact hrepresented
 
 /-- A strict stream of fixed-order represented targets whose supports all
 avoid `Y` forces infinitely many clean basis points outside `Y`.
@@ -30494,19 +30762,15 @@ amplification gives
 
 Thus both anchors are congruent to the common target modulo `h`, and hence
 to each other. -/
-theorem terminalFusion_cofinalSuccessorDestruction_forces_cleanResidueCollapse
-    {A Y : Set ℕ} {h bound : ℕ}
-    {cell : ℕ → Finset ℕ}
+theorem noRankDescent_cofinalSuccessorDestruction_forces_cleanResidueCollapse
+    {A Y : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
     (hbasis : IsExactTupleAsymptoticBasis A h)
-    (fusion : BlockSelector cell)
-    (hYfusion : Y ⊆ selectedSet fusion)
-    (hterminal : ∀ q, ∀ D : Finset ℕ,
+    (hnoRankDescent : ∀ q, ∀ D : Finset ℕ,
       D.Nonempty →
-      (D : Set ℕ) ⊆ selectedSet fusion →
+      (D : Set ℕ) ⊆ Y →
       IsInclusionMinimalDestroyer
         (additiveSupportFamily A h) D q →
-      D.card ≤ bound ∧
       ∀ ℓ n,
         0 < ℓ → ℓ < h →
         (additiveSupportFamily A ℓ n).Nonempty →
@@ -30563,8 +30827,8 @@ theorem terminalFusion_cofinalSuccessorDestruction_forces_cleanResidueCollapse
     intro z hzC hzY
     exact (hCclean hzC).2 hzY
   obtain ⟨root, hrootData, _hrootInj, _hmatching⟩ :=
-    terminalFusion_destroyedSuccessorTarget_forces_cleanAnchorDiagonalMatching
-      hhpos fusion hYfusion hterminal hmDestroy C
+    noRankDescent_destroyedSuccessorTarget_forces_cleanAnchorDiagonalMatching
+      hhpos hnoRankDescent hmDestroy C
         hCA hCY hCm hrepresented
   have haC : a ∈ C := by simp [C]
   have hcC : c ∈ C := by simp [C]
@@ -30586,19 +30850,11 @@ theorem terminalFusion_cofinalSuccessorDestruction_forces_cleanResidueCollapse
       _ = c % h := by simp
   exact hmModC.symm.trans hmModA
 
-/-- The terminal fusion branch is impossible at every order `h > 1`.
-
-Residue collapse puts all clean basis points in one class `a mod h`, so
-every order-`h+1` tuple avoiding `Y` also has target congruent to `a`.
-Choose the late target `n = a + h*N + 1`, where `N` is an eventual
-order-`h` representation threshold.  It is not congruent to `a`, hence it
-is destroyed by `Y`.  But descending through the clean anchor `a` and
-applying terminal singleton-diagonal collapse forces
-`n - a = h*x`, which says that `n` *is* congruent to `a`: contradiction. -/
-theorem terminalFusion_cofinalSuccessorDestruction_impossible
+/-- Terminal-fusion specialization of the clean-residue collapse. -/
+theorem terminalFusion_cofinalSuccessorDestruction_forces_cleanResidueCollapse
     {A Y : Set ℕ} {h bound : ℕ}
     {cell : ℕ → Finset ℕ}
-    (hh : 1 < h)
+    (hhpos : 0 < h)
     (hbasis : IsExactTupleAsymptoticBasis A h)
     (fusion : BlockSelector cell)
     (hYfusion : Y ⊆ selectedSet fusion)
@@ -30618,12 +30874,52 @@ theorem terminalFusion_cofinalSuccessorDestruction_impossible
     (hsuccessorDestroy : ∀ N, ∃ m, N ≤ m ∧
       DestroysAt
         (additiveSupportFamily A (h + 1)) Y m) :
+    ∃ a ∈ A \ Y, ∀ c ∈ A \ Y,
+      Nat.ModEq h c a := by
+  apply
+    noRankDescent_cofinalSuccessorDestruction_forces_cleanResidueCollapse
+      hhpos hbasis
+  · intro q D hDnonempty hDY hDminimal
+    exact
+      (hterminal q D hDnonempty
+        (hDY.trans hYfusion) hDminimal).2
+  · exact hcleanInfinite
+  · exact hsuccessorDestroy
+
+/-- The terminal fusion branch is impossible at every order `h > 1`.
+
+Residue collapse puts all clean basis points in one class `a mod h`, so
+every order-`h+1` tuple avoiding `Y` also has target congruent to `a`.
+Choose the late target `n = a + h*N + 1`, where `N` is an eventual
+order-`h` representation threshold.  It is not congruent to `a`, hence it
+is destroyed by `Y`.  But descending through the clean anchor `a` and
+applying terminal singleton-diagonal collapse forces
+`n - a = h*x`, which says that `n` *is* congruent to `a`: contradiction. -/
+theorem noRankDescent_cofinalSuccessorDestruction_impossible
+    {A Y : Set ℕ} {h : ℕ}
+    (hh : 1 < h)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hnoRankDescent : ∀ q, ∀ D : Finset ℕ,
+      D.Nonempty →
+      (D : Set ℕ) ⊆ Y →
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q →
+      ∀ ℓ n,
+        0 < ℓ → ℓ < h →
+        (additiveSupportFamily A ℓ n).Nonempty →
+        ¬ DestroysAt
+          (additiveSupportFamily A ℓ)
+          (D : Set ℕ) n)
+    (hcleanInfinite : (A \ Y).Infinite)
+    (hsuccessorDestroy : ∀ N, ∃ m, N ≤ m ∧
+      DestroysAt
+        (additiveSupportFamily A (h + 1)) Y m) :
     False := by
   classical
   have hhpos : 0 < h := by omega
   obtain ⟨a, haClean, hcleanResidue⟩ :=
-    terminalFusion_cofinalSuccessorDestruction_forces_cleanResidueCollapse
-      hhpos hbasis fusion hYfusion hterminal
+    noRankDescent_cofinalSuccessorDestruction_forces_cleanResidueCollapse
+      hhpos hbasis hnoRankDescent
         hcleanInfinite hsuccessorDestroy
   obtain ⟨N, hN⟩ :=
     hasEventuallySurvivingSupport_empty_additive_iff.mpr hbasis
@@ -30699,8 +30995,8 @@ theorem terminalFusion_cofinalSuccessorDestruction_impossible
       hN (n - a) hNdiff
     exact ⟨E, hEmem⟩
   obtain ⟨root, hrootData, _hrootInj, _hmatching⟩ :=
-    terminalFusion_destroyedSuccessorTarget_forces_cleanAnchorDiagonalMatching
-      hhpos fusion hYfusion hterminal hnDestroy C
+    noRankDescent_destroyedSuccessorTarget_forces_cleanAnchorDiagonalMatching
+      hhpos hnoRankDescent hnDestroy C
         hCA hCY hCm hrepresented
   apply hnNotMod
   unfold Nat.ModEq
@@ -30710,6 +31006,139 @@ theorem terminalFusion_cofinalSuccessorDestruction_impossible
     _ = (h * root a + a) % h := by
       rw [(hrootData a haC).2.1]
     _ = a % h := by simp
+
+/-- Formal contrapositive of the residue-collapse obstruction.
+
+If `Y` and its clean complement inside `A` are both large enough to support
+cofinal successor failure and infinitely many clean anchors, then some
+finite inclusion-minimal order-`h` destroyer inside `Y` must already destroy
+a represented target at a strict positive rank below `h`.
+
+Audit warning: this conclusion allows `ℓ = 1`, which is automatic once a
+destroyer contains a basis point.  This theorem records exactly what the
+all-positive-ranks formulation proves; it is not by itself a nontrivial
+advance on the counterexample.  The nonvacuous replacement below uses
+`1 < ℓ`. -/
+theorem cofinalSuccessorDestruction_with_infiniteCleanComplement_forces_strictRankDescent
+    {A Y : Set ℕ} {h : ℕ}
+    (hh : 1 < h)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcleanInfinite : (A \ Y).Infinite)
+    (hsuccessorDestroy : ∀ N, ∃ m, N ≤ m ∧
+      DestroysAt
+        (additiveSupportFamily A (h + 1)) Y m) :
+    ∃ q, ∃ D : Finset ℕ, ∃ ℓ n,
+      D.Nonempty ∧
+      (D : Set ℕ) ⊆ Y ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q ∧
+      0 < ℓ ∧
+      ℓ < h ∧
+      (additiveSupportFamily A ℓ n).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A ℓ)
+        (D : Set ℕ) n := by
+  classical
+  by_contra hnone
+  have hnoRankDescent : ∀ q, ∀ D : Finset ℕ,
+      D.Nonempty →
+      (D : Set ℕ) ⊆ Y →
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q →
+      ∀ ℓ n,
+        0 < ℓ → ℓ < h →
+        (additiveSupportFamily A ℓ n).Nonempty →
+        ¬ DestroysAt
+          (additiveSupportFamily A ℓ)
+          (D : Set ℕ) n := by
+    intro q D hDnonempty hDY hDminimal
+      ℓ n hℓpos hℓh hrepresented hdestroy
+    apply hnone
+    exact ⟨q, D, ℓ, n, hDnonempty, hDY, hDminimal,
+      hℓpos, hℓh, hrepresented, hdestroy⟩
+  exact
+    noRankDescent_cofinalSuccessorDestruction_impossible
+      hh hbasis hnoRankDescent hcleanInfinite
+        hsuccessorDestroy
+
+/-- Audit-level consequence of opposing successor streams.
+
+The survival stream automatically makes the clean complement infinite; the
+counterexample supplies cofinal destruction by the same deletion.  As in
+the preceding theorem, the returned descent may be the automatic rank-one
+case. -/
+theorem counterexample_with_strictSuccessorSurvivalStream_forces_strictRankDescent
+    {A Y : Set ℕ} {h : ℕ}
+    (hh : 1 < h)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1))
+    (hYA : Y ⊆ A)
+    (hYInfinite : Y.Infinite)
+    {oldTarget : ℕ → ℕ}
+    (holdTargetStrict : StrictMono oldTarget)
+    (holdSurvival : ∀ n,
+      ∃ E ∈ additiveSupportFamily A (h + 1) (oldTarget n),
+        Disjoint (E : Set ℕ) Y) :
+    ∃ q, ∃ D : Finset ℕ, ∃ ℓ n,
+      D.Nonempty ∧
+      (D : Set ℕ) ⊆ Y ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q ∧
+      0 < ℓ ∧
+      ℓ < h ∧
+      (additiveSupportFamily A ℓ n).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A ℓ)
+        (D : Set ℕ) n := by
+  have hcleanInfinite : (A \ Y).Infinite :=
+    strictSurvivingAdditiveTargetStream_forces_cleanComplementInfinite
+      holdTargetStrict holdSurvival
+  have hsuccessorDestroy :
+      ∀ N, ∃ m, N ≤ m ∧
+        DestroysAt
+          (additiveSupportFamily A (h + 1)) Y m :=
+    strongExactDeletion_of_counterexample hcounter
+      Y hYA hYInfinite
+  exact
+    cofinalSuccessorDestruction_with_infiniteCleanComplement_forces_strictRankDescent
+      hh hbasis hcleanInfinite hsuccessorDestroy
+
+/-- Terminal-fusion specialization of the rank-descent/residue
+contradiction. -/
+theorem terminalFusion_cofinalSuccessorDestruction_impossible
+    {A Y : Set ℕ} {h bound : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hh : 1 < h)
+    (hbasis : IsExactTupleAsymptoticBasis A h)
+    (fusion : BlockSelector cell)
+    (hYfusion : Y ⊆ selectedSet fusion)
+    (hterminal : ∀ q, ∀ D : Finset ℕ,
+      D.Nonempty →
+      (D : Set ℕ) ⊆ selectedSet fusion →
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q →
+      D.card ≤ bound ∧
+      ∀ ℓ n,
+        0 < ℓ → ℓ < h →
+        (additiveSupportFamily A ℓ n).Nonempty →
+        ¬ DestroysAt
+          (additiveSupportFamily A ℓ)
+          (D : Set ℕ) n)
+    (hcleanInfinite : (A \ Y).Infinite)
+    (hsuccessorDestroy : ∀ N, ∃ m, N ≤ m ∧
+      DestroysAt
+        (additiveSupportFamily A (h + 1)) Y m) :
+    False := by
+  apply
+    noRankDescent_cofinalSuccessorDestruction_impossible
+      hh hbasis
+  · intro q D hDnonempty hDY hDminimal
+    exact
+      (hterminal q D hDnonempty
+        (hDY.trans hYfusion) hDminimal).2
+  · exact hcleanInfinite
+  · exact hsuccessorDestroy
 
 /-- Bracketing a current-order destroyer below an old surviving successor
 target stream amplifies one primitive gap into a whole support of gap
@@ -31463,10 +31892,10 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_infiniteGapFusion
 At every order `h > 1`, the residue-collapse contradiction removes the
 infinite terminal-fusion horn from
 `primitiveCounterexample_forces_rootPetalDeletion_or_infiniteGapFusion`.
-Thus a primitive counterexample must already exhibit one of the genuinely
-growing alternatives: the root-petal deletion, strict positive
-occurrence-rank descent, or minimal destroyers of unbounded cardinality
-across selector blocks. -/
+Thus a primitive counterexample must already exhibit the root-petal
+deletion, a positive-rank descent, or minimal destroyers of unbounded
+cardinality across selector blocks.  The descent horn still permits the
+automatic rank-one case and is not claimed to be a contradiction. -/
 theorem primitiveCounterexample_forces_rootPetalDeletion_or_rankDescent_or_manyBlocks
     {A : Set ℕ} {h : ℕ}
     (hh : 1 < h)
@@ -31540,5 +31969,188 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_rankDescent_or_manyB
           hh hminimal.1 fusion hYfusion
             hterminalBoundAndNoDescent hcleanInfinite
             hsuccessorDestroy).elim
+
+/-- The root-petal horn also pays the formal positive-rank descent.
+
+Enumerate the infinite index set carried by the root-petal deletion.  Its
+repairs give a strict successor-target survival stream, hence infinitely
+many clean points outside the deletion.  The counterexample hypothesis
+simultaneously gives cofinal successor destruction by that same deletion.
+The fusion-free residue theorem therefore forces a positive current-order
+rank injury.  This still permits the automatic rank-one case.
+
+After this reduction the formal fork has only two remaining forms:
+positive-rank descent, or minimal selector destroyers of unbounded
+cardinality.  The nonvacuous fork is instead
+`minimalAdditiveDestroyer_nontrivialRankDescent_or_privateCores_off_oneDiagonal`.
+-/
+theorem primitiveCounterexample_forces_rankDescent_or_manyBlocks
+    {A : Set ℕ} {h : ℕ}
+    (hh : 1 < h)
+    (hminimal : IsStronglyMinimalExactBasis A h)
+    (hnotLower : ¬ IsExactTupleAsymptoticBasis A (h - 1))
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    (∃ q, ∃ D : Finset ℕ, ∃ ℓ n,
+        D.Nonempty ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A h) D q ∧
+        0 < ℓ ∧
+        ℓ < h ∧
+        (additiveSupportFamily A ℓ n).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A ℓ)
+          (D : Set ℕ) n) ∨
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ P : IsFiniteBlockPartition K cell,
+        K ⊆ A ∧
+        K.Infinite ∧
+        ∀ r, ∃ s : BlockSelector cell, ∃ q,
+          ∃ D : Finset ℕ,
+            D.Nonempty ∧
+            (D : Set ℕ) ⊆ selectedSet s ∧
+            IsInclusionMinimalDestroyer
+              (additiveSupportFamily A h) D q ∧
+            r < D.card := by
+  obtain hroot | hblocks :=
+    primitiveCounterexample_forces_rootPetalDeletion_or_rankDescent_or_manyBlocks
+      hh hminimal hnotLower hcounter
+  · obtain ⟨X, I, target, repair, hXA, hXInfinite,
+        hIInfinite, htargetStrict, _htargetCofinal,
+        hrepairData⟩ := hroot
+    let index : ℕ → ℕ := Nat.nth fun i => i ∈ I
+    have hindexI : ∀ n, index n ∈ I := by
+      intro n
+      exact Nat.nth_mem_of_infinite hIInfinite n
+    have hindexStrict : StrictMono index :=
+      Nat.nth_strictMono hIInfinite
+    let oldTarget : ℕ → ℕ := fun n => target (index n)
+    have holdTargetStrict : StrictMono oldTarget :=
+      htargetStrict.comp hindexStrict
+    have holdSurvival : ∀ n,
+        ∃ E ∈ additiveSupportFamily A (h + 1) (oldTarget n),
+          Disjoint (E : Set ℕ) X := by
+      intro n
+      exact ⟨repair (index n),
+        (hrepairData (index n) (hindexI n)).1,
+        (hrepairData (index n) (hindexI n)).2.1⟩
+    have hcleanInfinite : (A \ X).Infinite :=
+      strictSurvivingAdditiveTargetStream_forces_cleanComplementInfinite
+        holdTargetStrict holdSurvival
+    have hsuccessorDestroy :
+        ∀ N, ∃ m, N ≤ m ∧
+          DestroysAt
+            (additiveSupportFamily A (h + 1)) X m :=
+      strongExactDeletion_of_counterexample hcounter
+        X hXA hXInfinite
+    obtain ⟨q, D, ℓ, n, hDnonempty, _hDX,
+        hDminimal, hℓpos, hℓh, hrepresented,
+        hdestroy⟩ :=
+      cofinalSuccessorDestruction_with_infiniteCleanComplement_forces_strictRankDescent
+        hh hminimal.1 hcleanInfinite hsuccessorDestroy
+    exact Or.inl ⟨q, D, ℓ, n, hDnonempty,
+      hDminimal, hℓpos, hℓh, hrepresented, hdestroy⟩
+  · obtain ⟨K, cell, P, _oldTarget, hKA, hKInfinite,
+        _holdTargetStrict, hrank | hmany⟩ := hblocks
+    · left
+      obtain ⟨_s, q, D, ℓ, n, hDnonempty, _hDselected,
+          hDminimal, hℓpos, hℓh, hrepresented,
+          hdestroy⟩ := hrank
+      exact ⟨q, D, ℓ, n, hDnonempty, hDminimal,
+        hℓpos, hℓh, hrepresented, hdestroy⟩
+    · right
+      exact ⟨K, cell, P, hKA, hKInfinite, hmany⟩
+
+/-- Every primitive counterexample at order `h > 1` forces a formal
+positive occurrence-rank injury.
+
+This consumes both horns of
+`primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingletonAttack`
+before any later gap fusion is needed:
+
+* the root-petal horn already carries a strict successor survival stream;
+* the co-singleton horn carries such a stream for every block selector, so
+  choose one.
+
+In either case the selected infinite deletion has an infinite clean
+complement and cofinal successor failures.  Residue collapse then forces a
+finite minimal order-`h` destroyer which also destroys a represented target
+at some `0 < ℓ < h`.  Since `ℓ = 1` is allowed, this theorem is retained as
+an audit endpoint rather than advertised as progress on the open problem.
+-/
+theorem primitiveCounterexample_forces_strictRankDescent
+    {A : Set ℕ} {h : ℕ}
+    (hh : 1 < h)
+    (hminimal : IsStronglyMinimalExactBasis A h)
+    (hnotLower : ¬ IsExactTupleAsymptoticBasis A (h - 1))
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (h + 1)) :
+    ∃ Y : Set ℕ, ∃ q, ∃ D : Finset ℕ, ∃ ℓ n,
+      Y ⊆ A ∧
+      Y.Infinite ∧
+      D.Nonempty ∧
+      (D : Set ℕ) ⊆ Y ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A h) D q ∧
+      0 < ℓ ∧
+      ℓ < h ∧
+      (additiveSupportFamily A ℓ n).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A ℓ)
+        (D : Set ℕ) n := by
+  obtain hroot | hcosingleton :=
+    primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingletonAttack
+      (by omega) hminimal hnotLower hcounter
+  · obtain ⟨X, I, target, repair, hXA, hXInfinite,
+        hIInfinite, htargetStrict, _htargetCofinal,
+        hrepairData⟩ := hroot
+    let index : ℕ → ℕ := Nat.nth fun i => i ∈ I
+    have hindexI : ∀ n, index n ∈ I := by
+      intro n
+      exact Nat.nth_mem_of_infinite hIInfinite n
+    have hindexStrict : StrictMono index :=
+      Nat.nth_strictMono hIInfinite
+    let oldTarget : ℕ → ℕ := fun n => target (index n)
+    have holdTargetStrict : StrictMono oldTarget :=
+      htargetStrict.comp hindexStrict
+    have holdSurvival : ∀ n,
+        ∃ E ∈ additiveSupportFamily A (h + 1) (oldTarget n),
+          Disjoint (E : Set ℕ) X := by
+      intro n
+      exact ⟨repair (index n),
+        (hrepairData (index n) (hindexI n)).1,
+        (hrepairData (index n) (hindexI n)).2.1⟩
+    obtain ⟨q, D, ℓ, n, hDnonempty, hDX, hDminimal,
+        hℓpos, hℓh, hrepresented, hdestroy⟩ :=
+      counterexample_with_strictSuccessorSurvivalStream_forces_strictRankDescent
+        hh hminimal.1 hcounter hXA hXInfinite
+          holdTargetStrict holdSurvival
+    exact ⟨X, q, D, ℓ, n, hXA, hXInfinite,
+      hDnonempty, hDX, hDminimal, hℓpos, hℓh,
+      hrepresented, hdestroy⟩
+  · obtain ⟨K, cell, P, oldTarget, hKA, _hKInfinite,
+        _hcellLarge, holdTargetStrict, hsurvive,
+        _hcofinalGaps, _hcurrentAttack, _hswitch⟩ :=
+      hcosingleton
+    let s₀ : BlockSelector cell := fun i =>
+      ⟨(P.nonempty i).choose, (P.nonempty i).choose_spec⟩
+    have hselectedA : selectedSet s₀ ⊆ A :=
+      (P.selectedSet_subset s₀).trans hKA
+    have hselectedInfinite : (selectedSet s₀).Infinite :=
+      P.selectedSet_infinite s₀
+    have holdSurvival : ∀ n,
+        ∃ E ∈ additiveSupportFamily A (h + 1) (oldTarget n),
+          Disjoint (E : Set ℕ) (selectedSet s₀) :=
+      hsurvive s₀
+    obtain ⟨q, D, ℓ, n, hDnonempty, hDselected,
+        hDminimal, hℓpos, hℓh, hrepresented,
+        hdestroy⟩ :=
+      counterexample_with_strictSuccessorSurvivalStream_forces_strictRankDescent
+        hh hminimal.1 hcounter hselectedA hselectedInfinite
+          holdTargetStrict holdSurvival
+    exact ⟨selectedSet s₀, q, D, ℓ, n,
+      hselectedA, hselectedInfinite, hDnonempty,
+      hDselected, hDminimal, hℓpos, hℓh,
+      hrepresented, hdestroy⟩
 
 end Erdos881

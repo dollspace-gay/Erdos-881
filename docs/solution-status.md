@@ -1,3 +1,45 @@
+# GENERAL ORDER: RANK-ONE AUDIT AND PRIVATE-CORE NORMAL FORM (2026-07-28)
+
+The terminal-fusion attack produced a correct residue-collapse theorem, but
+an adversarial audit found that its original hypothesis was too strong to
+represent live mathematics.
+
+- `minimalAdditiveDestroyer_noStrictRankDescent_forces_singletonDiagonal`
+  shows that a minimal order-`h` destroyer with no represented destruction
+  at any positive lower rank is a singleton diagonal.
+- This yields affine matching and residue-collapse consequences, culminating
+  in `terminalFusion_cofinalSuccessorDestruction_impossible`.
+- However, the phrase "no positive lower-rank destruction" includes rank
+  one.  For every basis point `x` in a nonempty destroyer, the order-one
+  support of `x` is `{x}`, so that destroyer automatically destroys a
+  represented rank-one target.  Thus the all-positive-ranks terminal horn
+  is already degenerate.  Eliminating it does **not** settle the genuine
+  root-capture/co-singleton obstruction, and the audit-level theorems which
+  return some `0 < ℓ < h` may return only this automatic `ℓ = 1` case.
+
+The attack has therefore been tightened to exclude only genuinely
+nontrivial ranks `2,...,h-1`.
+
+- `minimalAdditiveDestroyer_noNontrivialRankDescent_forces_privateCoreNormalForm`
+  proves the resulting exact shape.  For each destroyer point `x`, either
+  `q = h*x`, or a private support contains exactly one occurrence of `x`;
+  deleting it leaves an order-`h-1` core at the coherent difference `q-x`
+  which is disjoint from the entire destroyer.
+- `minimalAdditiveDestroyer_noNontrivialRankDescent_forces_privateCores_off_oneDiagonal`
+  shows that the diagonal escape occurs for at most one point.  Every other
+  destroyer coordinate therefore owns one of these exact private
+  predecessor cores.
+- `minimalAdditiveDestroyer_nontrivialRankDescent_or_privateCores_off_oneDiagonal`
+  is the corrected exhaustive fork: either there is a represented destroyed
+  rank `ℓ` with `1 < ℓ < h`, or all but at most one coordinate have the
+  coherent private-core form.
+
+This is the live mathematical boundary.  The next attack must compose the
+many represented differences `q-x` without losing their common parent
+target `q`: either two private cores cross-repair one another, or repeated
+core collisions force a same-target rooted matching/root capture.  No full
+`k ≥ 3` solution is claimed.
+
 # FRESH RECURRENT GAP REPAIRS (2026-07-27)
 
 The remaining lower-gap branch can now be made genuinely fresh at every
