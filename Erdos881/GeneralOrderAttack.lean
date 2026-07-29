@@ -31828,6 +31828,822 @@ theorem targetLocalizedAdditiveFamily_fixedColumn_rootedMatching_or_repeatedComm
       hMnonempty, hMmatching⟩
   · exact Or.inr hrepeated
 
+/-- Repeated covers carrying one fixed support must spread to blocks missed
+by that support or concentrate many covers on one block.
+
+The common support `E` can meet at most `E.card` blocks of a disjoint finite
+block partition.  First pigeonhole the cover indices by their covered block.
+If there are many distinct blocks, discard the at most `E.card` blocks met
+by `E` and retain many blocks completely disjoint from `E`.  Otherwise one
+block is repeated by many cover indices.
+
+This is the geometric fork needed after repeated fixed-column survival:
+either the common row becomes irrelevant on many covers, or many different
+private rows collide on one literal block. -/
+theorem repeatedCovers_commonSupport_manyDisjointBlocks_or_repeatedBlock
+    {C : Set ℕ} {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {ι : Type*} [DecidableEq ι]
+    (I : Finset ι) (coveredBlock : ι → ℕ)
+    (E : Finset ℕ) (K L : ℕ)
+    (hlarge : K * (E.card + L) < I.card) :
+    (∃ J : Finset ℕ,
+        J ⊆ I.image coveredBlock ∧
+        L < J.card ∧
+        ∀ j ∈ J, Disjoint E (cell j)) ∨
+      ∃ j ∈ I.image coveredBlock,
+        K <
+          (I.filter fun i => coveredBlock i = j).card := by
+  classical
+  obtain hmanyBlocks | hrepeated :=
+    large_finset_image_or_large_fiber
+      I coveredBlock K (E.card + L) hlarge
+  · left
+    let hitBlocks : Finset ℕ :=
+      E.image (blockIndex P)
+    let J : Finset ℕ :=
+      I.image coveredBlock \ hitBlocks
+    have hhitCard : hitBlocks.card ≤ E.card := by
+      exact Finset.card_image_le
+    have hdistinctCover :
+        I.image coveredBlock ⊆ J ∪ hitBlocks := by
+      intro j hj
+      by_cases hjHit : j ∈ hitBlocks
+      · exact Finset.mem_union_right J hjHit
+      · exact Finset.mem_union_left hitBlocks
+          (Finset.mem_sdiff.mpr ⟨hj, hjHit⟩)
+    have hcardCover :
+        (I.image coveredBlock).card ≤
+          J.card + hitBlocks.card := by
+      calc
+        (I.image coveredBlock).card ≤
+            (J ∪ hitBlocks).card :=
+          Finset.card_le_card hdistinctCover
+        _ ≤ J.card + hitBlocks.card :=
+          Finset.card_union_le _ _
+    have hJlarge : L < J.card := by
+      omega
+    refine ⟨J, Finset.sdiff_subset, hJlarge, ?_⟩
+    intro j hjJ
+    have hjNotHit :
+        j ∉ hitBlocks :=
+      (Finset.mem_sdiff.mp hjJ).2
+    rw [Finset.disjoint_left]
+    intro x hxE hxCell
+    apply hjNotHit
+    apply Finset.mem_image.mpr
+    exact ⟨x, hxE,
+      P.blockIndex_eq_of_mem hxCell⟩
+  · exact Or.inr hrepeated
+
+/-- A support surviving many localized failures can be prescribed as the
+same labelled column in all of their full-block covers.
+
+Fix `r ∈ Q` and an order-`k+1` support `E` of `r`.  Suppose that, for every
+row `p` in `T`, a localizing selector destroys `p`, preserves every other
+target in `Q`, and misses `E`.  Choose all survivor rows for that selector,
+but force the row labelled `r` to be exactly `E`.  The prescribed-survivor
+cover theorem then supplies a private row at `p` and a whole covered block.
+
+Thus repeated common survival is converted into a family of cover matrices
+with one literal common column.  This is the input needed by
+`repeatedCovers_commonSupport_manyDisjointBlocks_or_repeatedBlock`. -/
+theorem repeatedCommonSurvival_forces_prescribedFullBlockCovers
+    {A C : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ}
+    (hrQ : r ∈ Q)
+    (hrepresented :
+      ∀ q ∈ Q,
+        (additiveSupportFamily A (k + 1) q).Nonempty)
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (E : Finset ℕ)
+    (hER :
+      E ∈ additiveSupportFamily A (k + 1) r)
+    (T : Finset {q // q ∈ Q.erase r})
+    (hrepeated :
+      ∀ p ∈ T, ∃ s : BlockSelector cell,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet s) p.1 ∧
+        (∀ q' ∈ Q, q' ≠ p.1 →
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q') ∧
+        Disjoint (E : Set ℕ) (selectedSet s)) :
+    ∀ p ∈ T,
+      ∃ s : BlockSelector cell,
+      ∃ support : {q // q ∈ Q.erase p.1} → Finset ℕ,
+      ∃ D F : Finset ℕ, ∃ x j,
+        support
+            ⟨r, Finset.mem_erase.mpr
+              ⟨(Finset.mem_erase.mp p.2).1.symm, hrQ⟩⟩ = E ∧
+        (∀ q,
+          support q ∈
+            additiveSupportFamily A (k + 1) q.1) ∧
+        (∀ q,
+          Disjoint (support q : Set ℕ)
+            (selectedSet s)) ∧
+        D.Nonempty ∧
+        (D : Set ℕ) ⊆ selectedSet s ∧
+        IsInclusionMinimalDestroyer
+          (additiveSupportFamily A (k + 1)) D p.1 ∧
+        x ∈ D ∧
+        F ∈ additiveSupportFamily A (k + 1) p.1 ∧
+        F ∩ D = {x} ∧
+        (s j).1 ∈ F ∧
+        cell j ⊆
+          (Q.erase p.1).attach.biUnion support ∪ F := by
+  classical
+  intro p hpT
+  have hpQ : p.1 ∈ Q :=
+    (Finset.mem_erase.mp p.2).2
+  have hpr : p.1 ≠ r :=
+    (Finset.mem_erase.mp p.2).1
+  obtain ⟨s, hpDestroy, hother, hEs⟩ :=
+    hrepeated p hpT
+  have hsupportExists :
+      ∀ q : {z // z ∈ Q.erase p.1},
+        ∃ G : Finset ℕ,
+          G ∈ additiveSupportFamily A (k + 1) q.1 ∧
+          Disjoint (G : Set ℕ) (selectedSet s) ∧
+          (q.1 = r → G = E) := by
+    intro q
+    by_cases hqr : q.1 = r
+    · refine ⟨E, ?_, hEs, fun _ => rfl⟩
+      simpa only [hqr] using hER
+    · have hqQ : q.1 ∈ Q :=
+        (Finset.mem_erase.mp q.2).2
+      have hqp : q.1 ≠ p.1 :=
+        (Finset.mem_erase.mp q.2).1
+      obtain ⟨G, hGmem, hGdisjoint⟩ :=
+        not_destroysAt_iff.mp
+          (hother q.1 hqQ hqp)
+      exact ⟨G, hGmem, hGdisjoint,
+        fun h => (hqr h).elim⟩
+  choose support hsupportMem hsupportDisjoint
+      hsupportForced using hsupportExists
+  obtain ⟨D, F, x, j, hDnonempty, hDselected,
+      hDminimal, hxD, hFmem, hprivate, hsjF,
+      hjCover⟩ :=
+    targetLocalizedAdditiveCertificate_prescribedSurvivors_force_labeledFullBlockCover
+      P (hrepresented p.1 hpQ) hcert s hpDestroy support
+        hsupportMem hsupportDisjoint
+  let rIndex : {q // q ∈ Q.erase p.1} :=
+    ⟨r, Finset.mem_erase.mpr ⟨hpr.symm, hrQ⟩⟩
+  have hrForced : support rIndex = E :=
+    hsupportForced rIndex rfl
+  exact ⟨s, support, D, F, x, j, hrForced,
+    hsupportMem, hsupportDisjoint, hDnonempty,
+    hDselected, hDminimal, hxD, hFmem,
+    hprivate, hsjF, hjCover⟩
+
+/-- The concrete row produced when a fixed support is prescribed as the
+`r`-column of a localized full-block cover.  This is only a package for the
+witnesses already supplied by
+`repeatedCommonSurvival_forces_prescribedFullBlockCovers`. -/
+def HasPrescribedCommonColumnCover
+    (A : Set ℕ) (k : ℕ) (cell : ℕ → Finset ℕ)
+    (Q : Finset ℕ) (r : ℕ) (hrQ : r ∈ Q)
+    (E : Finset ℕ) (p : {q // q ∈ Q.erase r})
+    (j : ℕ) : Prop :=
+  ∃ s : BlockSelector cell,
+  ∃ support : {q // q ∈ Q.erase p.1} → Finset ℕ,
+  ∃ D F : Finset ℕ, ∃ x,
+    support
+        ⟨r, Finset.mem_erase.mpr
+          ⟨(Finset.mem_erase.mp p.2).1.symm, hrQ⟩⟩ = E ∧
+    (∀ q,
+      support q ∈
+        additiveSupportFamily A (k + 1) q.1) ∧
+    (∀ q,
+      Disjoint (support q : Set ℕ)
+        (selectedSet s)) ∧
+    D.Nonempty ∧
+    (D : Set ℕ) ⊆ selectedSet s ∧
+    IsInclusionMinimalDestroyer
+      (additiveSupportFamily A (k + 1)) D p.1 ∧
+    x ∈ D ∧
+    F ∈ additiveSupportFamily A (k + 1) p.1 ∧
+    F ∩ D = {x} ∧
+    (s j).1 ∈ F ∧
+    cell j ⊆
+      (Q.erase p.1).attach.biUnion support ∪ F
+
+/-- Package the prescribed common-column covers by their covered block. -/
+theorem repeatedCommonSurvival_forces_prescribedCoverRows
+    {A C : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ}
+    (hrQ : r ∈ Q)
+    (hrepresented :
+      ∀ q ∈ Q,
+        (additiveSupportFamily A (k + 1) q).Nonempty)
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (E : Finset ℕ)
+    (hER :
+      E ∈ additiveSupportFamily A (k + 1) r)
+    (T : Finset {q // q ∈ Q.erase r})
+    (hrepeated :
+      ∀ p ∈ T, ∃ s : BlockSelector cell,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet s) p.1 ∧
+        (∀ q' ∈ Q, q' ≠ p.1 →
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q') ∧
+        Disjoint (E : Set ℕ) (selectedSet s)) :
+    ∀ p ∈ T, ∃ j,
+      HasPrescribedCommonColumnCover
+        A k cell Q r hrQ E p j := by
+  intro p hpT
+  obtain ⟨s, support, D, F, x, j, hdata⟩ :=
+    repeatedCommonSurvival_forces_prescribedFullBlockCovers
+      P hrQ hrepresented hcert E hER T hrepeated p hpT
+  exact ⟨j, s, support, D, F, x, hdata⟩
+
+/-- The geometric conclusion produced from a family of prescribed
+common-column cover rows. -/
+def HasCommonColumnReducedCoverFork
+    (A : Set ℕ) (k K L : ℕ)
+    (cell : ℕ → Finset ℕ)
+    (Q : Finset ℕ) (r : ℕ) (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (T : Finset {q // q ∈ Q.erase r}) : Prop :=
+  ∃ coveredBlock : {q // q ∈ Q.erase r} → ℕ,
+    (∀ p ∈ T,
+      HasPrescribedCommonColumnCover
+        A k cell Q r hrQ E p (coveredBlock p)) ∧
+    ((∃ J : Finset ℕ,
+        J ⊆ T.image coveredBlock ∧
+        L < J.card ∧
+        ∀ j ∈ J,
+          Disjoint E (cell j) ∧
+          ∃ p ∈ T,
+            coveredBlock p = j ∧
+            ∃ support :
+                {q // q ∈ Q.erase p.1} → Finset ℕ,
+            ∃ F : Finset ℕ,
+              support
+                  ⟨r, Finset.mem_erase.mpr
+                    ⟨(Finset.mem_erase.mp p.2).1.symm,
+                      hrQ⟩⟩ = E ∧
+              F ∈ additiveSupportFamily A (k + 1) p.1 ∧
+              cell j ⊆
+                ((Q.erase p.1).attach.biUnion support \ E) ∪ F) ∨
+      ∃ j ∈ T.image coveredBlock,
+        K <
+          (T.filter fun p =>
+            coveredBlock p = j).card)
+
+/-- The spread horn of `HasCommonColumnReducedCoverFork`, packaged for
+subsequent compositions. -/
+def HasCommonColumnReducedCoverStream
+    (A : Set ℕ) (k L : ℕ)
+    (cell : ℕ → Finset ℕ)
+    (Q : Finset ℕ) (r : ℕ) (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (T : Finset {q // q ∈ Q.erase r}) : Prop :=
+  ∃ coveredBlock : {q // q ∈ Q.erase r} → ℕ,
+    (∀ p ∈ T,
+      HasPrescribedCommonColumnCover
+        A k cell Q r hrQ E p (coveredBlock p)) ∧
+    ∃ J : Finset ℕ,
+      J ⊆ T.image coveredBlock ∧
+      L < J.card ∧
+      ∀ j ∈ J,
+        Disjoint E (cell j) ∧
+        ∃ p ∈ T,
+          coveredBlock p = j ∧
+          ∃ support :
+              {q // q ∈ Q.erase p.1} → Finset ℕ,
+          ∃ F : Finset ℕ,
+            support
+                ⟨r, Finset.mem_erase.mpr
+                  ⟨(Finset.mem_erase.mp p.2).1.symm,
+                    hrQ⟩⟩ = E ∧
+            F ∈ additiveSupportFamily A (k + 1) p.1 ∧
+            cell j ⊆
+              ((Q.erase p.1).attach.biUnion support \ E) ∪ F
+
+/-- Geometric payoff of a repeated common support.
+
+After prescribing the common support `E` in every row, choose the literal
+block covered by each row.  If the rows spread over many blocks, discard
+the at most `E.card` blocks met by `E`.  On every remaining block the common
+column can be deleted from the cover, leaving a genuine reduced cover by
+the other target rows and the private row.  Otherwise more than `K` rows
+cover the same literal block.
+
+This is a direct structural obstruction, rather than another certificate
+reformulation: a fixed repeated support now either disappears on many
+blocks or forces many distinct localized failures into one finite block. -/
+theorem repeatedCommonSurvival_forces_reducedCoverStream_or_repeatedBlock
+    {A C : Set ℕ} {k K L : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ}
+    (hrQ : r ∈ Q)
+    (hrepresented :
+      ∀ q ∈ Q,
+        (additiveSupportFamily A (k + 1) q).Nonempty)
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (E : Finset ℕ)
+    (hER :
+      E ∈ additiveSupportFamily A (k + 1) r)
+    (T : Finset {q // q ∈ Q.erase r})
+    (hrepeated :
+      ∀ p ∈ T, ∃ s : BlockSelector cell,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet s) p.1 ∧
+        (∀ q' ∈ Q, q' ≠ p.1 →
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q') ∧
+        Disjoint (E : Set ℕ) (selectedSet s))
+    (hlarge : K * (E.card + L) < T.card) :
+    HasCommonColumnReducedCoverFork
+      A k K L cell Q r hrQ E T := by
+  classical
+  unfold HasCommonColumnReducedCoverFork
+  have hrowExists :
+      ∀ p ∈ T, ∃ j,
+        HasPrescribedCommonColumnCover
+          A k cell Q r hrQ E p j :=
+    repeatedCommonSurvival_forces_prescribedCoverRows
+      P hrQ hrepresented hcert E hER T hrepeated
+  have hblockExists :
+      ∀ p : {q // q ∈ Q.erase r},
+        ∃ j, p ∈ T →
+          HasPrescribedCommonColumnCover
+            A k cell Q r hrQ E p j := by
+    intro p
+    by_cases hpT : p ∈ T
+    · obtain ⟨j, hj⟩ := hrowExists p hpT
+      exact ⟨j, fun _ => hj⟩
+    · exact ⟨0, fun hp => (hpT hp).elim⟩
+  choose coveredBlock hcoveredBlock using hblockExists
+  have hrows :
+      ∀ p ∈ T,
+        HasPrescribedCommonColumnCover
+          A k cell Q r hrQ E p (coveredBlock p) := by
+    intro p hpT
+    exact hcoveredBlock p hpT
+  refine ⟨coveredBlock, hrows, ?_⟩
+  obtain hspread | hconcentrated :=
+    repeatedCovers_commonSupport_manyDisjointBlocks_or_repeatedBlock
+      P T coveredBlock E K L hlarge
+  · left
+    obtain ⟨J, hJblocks, hJlarge, hJdisjoint⟩ :=
+      hspread
+    refine ⟨J, hJblocks, hJlarge, ?_⟩
+    intro j hjJ
+    have hjDisjoint : Disjoint E (cell j) :=
+      hJdisjoint j hjJ
+    have hjImage : j ∈ T.image coveredBlock :=
+      hJblocks hjJ
+    obtain ⟨p, hpT, hpBlock⟩ :=
+      Finset.mem_image.mp hjImage
+    obtain ⟨s, support, D, F, x, hrSupport,
+        _hsupportMem, _hsupportDisjoint, _hDnonempty,
+        _hDselected, _hDminimal, _hxD, hFmem,
+        _hprivate, _hsjF, hjCover⟩ :=
+      hrows p hpT
+    have hReducedCover :
+        cell j ⊆
+          ((Q.erase p.1).attach.biUnion support \ E) ∪ F := by
+      intro y hyCell
+      have hyNotE : y ∉ E := by
+        intro hyE
+        exact Finset.disjoint_left.mp hjDisjoint
+          hyE hyCell
+      have hyCover :
+          y ∈
+            (Q.erase p.1).attach.biUnion support ∪ F := by
+        apply hjCover
+        rw [hpBlock]
+        exact hyCell
+      obtain hyUnion | hyF :=
+        Finset.mem_union.mp hyCover
+      · exact Finset.mem_union_left F
+          (Finset.mem_sdiff.mpr ⟨hyUnion, hyNotE⟩)
+      · exact Finset.mem_union_right
+          ((Q.erase p.1).attach.biUnion support \ E) hyF
+    exact ⟨hjDisjoint, p, hpT, hpBlock,
+      support, F, hrSupport, hFmem, hReducedCover⟩
+  · exact Or.inr hconcentrated
+
+/-- A sufficiently large localized target family has only three possible
+geometries at any fixed target `r`.
+
+Either the exact support family at `r` already contains a large rooted
+matching, or a fixed support of `r` survives enough localizers to feed the
+common-column geometry above.  In the latter case it yields either more
+than `L` whole-block covers from which that support has been removed, or
+more than `K` localized failures covering one literal block.
+
+The threshold is uniform because every order-`k+1` support has cardinality
+at most `k+1`. -/
+theorem targetLocalizedAdditiveFamily_forces_rootedMatching_or_reducedCoverStream_or_repeatedBlock
+    {A C : Set ℕ} {k K L demand : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ}
+    (hrQ : r ∈ Q)
+    (hrepresented :
+      ∀ q ∈ Q,
+        (additiveSupportFamily A (k + 1) q).Nonempty)
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (hlocalized :
+      ∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q')
+    (hlarge :
+      (K * (k + 1 + L)) *
+          additiveRootedMatchingBound (k + 1) demand <
+        (Q.erase r).card) :
+    (∃ root : Finset ℕ, ∃ M : Finset (Finset ℕ),
+        root.card < k + 1 ∧
+        M ⊆ additiveSupportFamily A (k + 1) r ∧
+        demand < M.card ∧
+        (∀ E ∈ M, root ⊆ E) ∧
+        (∀ E ∈ M, (E \ root).Nonempty) ∧
+        ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+          Disjoint (E \ root) (G \ root)) ∨
+      ∃ E ∈ additiveSupportFamily A (k + 1) r,
+        ∃ T : Finset {q // q ∈ Q.erase r},
+          K * (E.card + L) < T.card ∧
+          HasCommonColumnReducedCoverFork
+            A k K L cell Q r hrQ E T := by
+  obtain hmatching | hrepeated :=
+    targetLocalizedAdditiveFamily_fixedColumn_rootedMatching_or_repeatedCommonSurvival
+      (A := A) (k := k)
+      (K := K * (k + 1 + L))
+      (demand := demand) hrQ hlocalized hlarge
+  · exact Or.inl hmatching
+  · right
+    obtain ⟨E, hER, T, _hTsub, hTlarge,
+        hsurvival⟩ := hrepeated
+    have hEcard : E.card ≤ k + 1 :=
+      additiveSupportFamily_cardAtMost
+        A (k + 1) r E hER
+    have hsum :
+        E.card + L ≤ k + 1 + L :=
+      Nat.add_le_add_right hEcard L
+    have hcapacity :
+        K * (E.card + L) ≤
+          K * (k + 1 + L) :=
+      Nat.mul_le_mul_left K hsum
+    have hgeometric :
+        K * (E.card + L) < T.card :=
+      hcapacity.trans_lt hTlarge
+    have hfork :
+        HasCommonColumnReducedCoverFork
+          A k K L cell Q r hrQ E T :=
+      repeatedCommonSurvival_forces_reducedCoverStream_or_repeatedBlock
+        P hrQ hrepresented hcert E hER T
+          hsurvival hgeometric
+    exact ⟨E, hER, T, hgeometric, hfork⟩
+
+/-- A repeated covered block yields a second, internal pigeonhole.
+
+Every prescribed cover row hitting the same block `j` carries a selected
+point of that block in its private support.  Pigeonhole these literal
+points.  Either the block itself has more than `S` points, or one point of
+the block belongs to the private supports of more than `M` distinct target
+rows.
+
+Consequently the repeated-block horn above is not terminal: it becomes
+either forced block growth or a common one-point root across many
+different target labels. -/
+theorem prescribedCommonColumn_repeatedBlock_forces_largeBlock_or_commonPrivateHit
+    {A : Set ℕ} {k M S : ℕ}
+    {cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {r : ℕ}
+    (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (T : Finset {q // q ∈ Q.erase r})
+    (coveredBlock : {q // q ∈ Q.erase r} → ℕ)
+    (hrows :
+      ∀ p ∈ T,
+        HasPrescribedCommonColumnCover
+          A k cell Q r hrQ E p (coveredBlock p))
+    (j : ℕ)
+    (hlarge :
+      M * S <
+        (T.filter fun p => coveredBlock p = j).card) :
+    ∃ hit : {q // q ∈ Q.erase r} → ℕ,
+      (∀ p ∈ T.filter fun p => coveredBlock p = j,
+        hit p ∈ cell j ∧
+        ∃ F ∈ additiveSupportFamily A (k + 1) p.1,
+          hit p ∈ F) ∧
+      (S < (cell j).card ∨
+        ∃ y ∈ cell j,
+          M <
+            ((T.filter fun p => coveredBlock p = j).filter
+              fun p => hit p = y).card ∧
+          ∀ p ∈
+              (T.filter fun p => coveredBlock p = j).filter
+                fun p => hit p = y,
+            ∃ F ∈ additiveSupportFamily A (k + 1) p.1,
+              y ∈ F) := by
+  classical
+  let R : Finset {q // q ∈ Q.erase r} :=
+    T.filter fun p => coveredBlock p = j
+  have hhitExists :
+      ∀ p : {q // q ∈ Q.erase r},
+        ∃ y, p ∈ R →
+          y ∈ cell j ∧
+          ∃ F ∈ additiveSupportFamily A (k + 1) p.1,
+            y ∈ F := by
+    intro p
+    by_cases hpR : p ∈ R
+    · have hpT : p ∈ T :=
+        (Finset.mem_filter.mp hpR).1
+      have hpBlock : coveredBlock p = j :=
+        (Finset.mem_filter.mp hpR).2
+      obtain ⟨s, support, D, F, x, _hrSupport,
+          _hsupportMem, _hsupportDisjoint, _hDnonempty,
+          _hDselected, _hDminimal, _hxD, hFmem,
+          _hprivate, hselectedF, _hjCover⟩ :=
+        hrows p hpT
+      refine ⟨(s (coveredBlock p)).1, fun _ => ?_⟩
+      have hselectedCell :
+          (s (coveredBlock p)).1 ∈
+            cell (coveredBlock p) :=
+        (s (coveredBlock p)).2
+      have hselectedF' :
+          (s (coveredBlock p)).1 ∈ F :=
+        hselectedF
+      exact ⟨by simpa only [hpBlock] using hselectedCell,
+        F, hFmem, hselectedF'⟩
+    · exact ⟨0, fun hp => (hpR hp).elim⟩
+  choose hit hhitData using hhitExists
+  have hhit :
+      ∀ p ∈ R,
+        hit p ∈ cell j ∧
+        ∃ F ∈ additiveSupportFamily A (k + 1) p.1,
+          hit p ∈ F := by
+    intro p hpR
+    exact hhitData p hpR
+  refine ⟨hit, by simpa only [R] using hhit, ?_⟩
+  have hlargeR : M * S < R.card := by
+    simpa only [R] using hlarge
+  obtain hmanyHits | hrepeatedHit :=
+    large_finset_image_or_large_fiber
+      R hit M S hlargeR
+  · left
+    have hhitImageSubset :
+        R.image hit ⊆ cell j := by
+      intro y hyImage
+      obtain ⟨p, hpR, rfl⟩ :=
+        Finset.mem_image.mp hyImage
+      exact (hhit p hpR).1
+    exact hmanyHits.trans_le
+      (Finset.card_le_card hhitImageSubset)
+  · right
+    obtain ⟨y, hyImage, hyFiber⟩ :=
+      hrepeatedHit
+    obtain ⟨p₀, hp₀R, hp₀Hit⟩ :=
+      Finset.mem_image.mp hyImage
+    have hyCell : y ∈ cell j := by
+      rw [← hp₀Hit]
+      exact (hhit p₀ hp₀R).1
+    refine ⟨y, hyCell, by simpa only [R] using hyFiber,
+      ?_⟩
+    intro p hpFiber
+    have hpR : p ∈ R :=
+      (Finset.mem_filter.mp hpFiber).1
+    have hpHit : hit p = y :=
+      (Finset.mem_filter.mp hpFiber).2
+    obtain ⟨F, hFmem, hhitF⟩ :=
+      (hhit p hpR).2
+    exact ⟨F, hFmem, by simpa only [hpHit] using hhitF⟩
+
+/-- A common summand across supports at distinct target labels descends to
+the same number of distinct predecessor targets.
+
+For every row `p`, remove the common hit `y` from its order-`k+1` support.
+This represents `p-y` at order `k`.  Since support membership gives
+`y ≤ p`, subtraction by the fixed `y` is injective on the distinct target
+labels.  Hence no cardinality is lost in this varying-target descent. -/
+theorem commonPrivateHit_forces_distinctPredecessorTargetGrowth
+    {A : Set ℕ} {k y : ℕ}
+    {Q : Finset ℕ} {r : ℕ}
+    (R : Finset {q // q ∈ Q.erase r})
+    (hsupport :
+      ∀ p ∈ R,
+        ∃ F ∈ additiveSupportFamily A (k + 1) p.1,
+          y ∈ F) :
+    ∃ V : Finset ℕ,
+      V.card = R.card ∧
+      ∀ t ∈ V,
+        ∃ p ∈ R,
+          t = p.1 - y ∧
+          (additiveSupportFamily A k t).Nonempty := by
+  classical
+  have hlowerExists :
+      ∀ p : {q // q ∈ R},
+        ∃ H ∈ additiveSupportFamily A k (p.1.1 - y),
+          ∃ F ∈ additiveSupportFamily A (k + 1) p.1.1,
+            y ∈ F ∧ F = insert y H := by
+    intro p
+    obtain ⟨F, hFmem, hyF⟩ :=
+      hsupport p.1 p.2
+    obtain ⟨H, hHmem, hFH⟩ :=
+      additiveSupport_remove_hit_succ hFmem hyF
+    exact ⟨H, hHmem, F, hFmem, hyF, hFH⟩
+  choose lower hlowerMem source hsourceMem
+      hySource hreconstruct using hlowerExists
+  let predecessor : {q // q ∈ R} → ℕ :=
+    fun p => p.1.1 - y
+  have hyle :
+      ∀ p : {q // q ∈ R}, y ≤ p.1.1 := by
+    intro p
+    exact additiveSupportFamily_supportsBounded
+      A (k + 1) p.1.1 (source p)
+        (hsourceMem p) y (hySource p)
+  have hpredInjective : Function.Injective predecessor := by
+    intro p q hpq
+    apply Subtype.ext
+    apply Subtype.ext
+    dsimp only [predecessor] at hpq
+    have hyp := hyle p
+    have hyq := hyle q
+    omega
+  let V : Finset ℕ :=
+    R.attach.image predecessor
+  refine ⟨V, ?_, ?_⟩
+  · dsimp only [V]
+    rw [Finset.card_image_iff.mpr
+      hpredInjective.injOn, Finset.card_attach]
+  · intro t htV
+    obtain ⟨p, _hpAttach, rfl⟩ :=
+      Finset.mem_image.mp htV
+    exact ⟨p.1, p.2, rfl, lower p, hlowerMem p⟩
+
+/-- Resolve the repeated-block horn of the common-column geometry.
+
+Use `M * S` as the requested repeated-block multiplicity.  A repeated
+block then has either more than `S` points, or a single selected point
+belongs to private supports at more than `M` distinct target labels.
+Removing that point yields more than `M` distinct represented predecessor
+targets at order `k`. -/
+theorem commonColumnReducedCoverFork_forces_reducedStream_or_largeBlock_or_predecessorGrowth
+    {A : Set ℕ} {k M S L : ℕ}
+    {cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {r : ℕ}
+    (hrQ : r ∈ Q)
+    (E : Finset ℕ)
+    (T : Finset {q // q ∈ Q.erase r})
+    (hfork :
+      HasCommonColumnReducedCoverFork
+        A k (M * S) L cell Q r hrQ E T) :
+    HasCommonColumnReducedCoverStream
+      A k L cell Q r hrQ E T ∨
+      (∃ j, S < (cell j).card) ∨
+      ∃ y : ℕ, ∃ V : Finset ℕ,
+        M < V.card ∧
+        ∀ t ∈ V,
+          ∃ q ∈ Q,
+            t = q - y ∧
+            (additiveSupportFamily A k t).Nonempty := by
+  classical
+  unfold HasCommonColumnReducedCoverFork at hfork
+  obtain ⟨coveredBlock, hrows, hspread | hrepeated⟩ :=
+    hfork
+  · left
+    unfold HasCommonColumnReducedCoverStream
+    exact ⟨coveredBlock, hrows, hspread⟩
+  · right
+    obtain ⟨j, _hjImage, hjLarge⟩ :=
+      hrepeated
+    obtain ⟨hit, hhitRows, hblockLarge | hcommonHit⟩ :=
+      prescribedCommonColumn_repeatedBlock_forces_largeBlock_or_commonPrivateHit
+        (A := A) (k := k) hrQ E T coveredBlock
+          hrows j hjLarge
+    · exact Or.inl ⟨j, hblockLarge⟩
+    · right
+      obtain ⟨y, _hyCell, hyLarge, hySupports⟩ :=
+        hcommonHit
+      let R : Finset {q // q ∈ Q.erase r} :=
+        (T.filter fun p => coveredBlock p = j).filter
+          fun p => hit p = y
+      have hRsupports :
+          ∀ p ∈ R,
+            ∃ F ∈ additiveSupportFamily A (k + 1) p.1,
+              y ∈ F := by
+        intro p hpR
+        exact hySupports p hpR
+      obtain ⟨V, hVcard, hVrepresented⟩ :=
+        commonPrivateHit_forces_distinctPredecessorTargetGrowth
+          R hRsupports
+      refine ⟨y, V, ?_, ?_⟩
+      · rw [hVcard]
+        simpa only [R] using hyLarge
+      · intro t htV
+        obtain ⟨p, _hpR, ht, htRepresented⟩ :=
+          hVrepresented t htV
+        have hpQ : p.1 ∈ Q :=
+          (Finset.mem_erase.mp p.2).2
+        exact ⟨p.1, hpQ, ht, htRepresented⟩
+
+/-- Four-way direct consequence of a sufficiently large localized target
+family at a fixed target `r`.
+
+The family forces:
+
+* a large exact-target rooted matching; or
+* many full-block covers after deleting one repeated support column; or
+* a genuinely large partition block; or
+* many distinct order-`k` predecessor targets.
+
+The last horn is the varying-target difference growth needed to reconnect
+the localized certificate attack to primitive order-`k` gaps. -/
+theorem targetLocalizedAdditiveFamily_forces_rootedMatching_or_reducedStream_or_blockGrowth_or_predecessorGrowth
+    {A C : Set ℕ} {k M S L demand : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {r : ℕ}
+    (hrQ : r ∈ Q)
+    (hrepresented :
+      ∀ q ∈ Q,
+        (additiveSupportFamily A (k + 1) q).Nonempty)
+    (hcert :
+      ∀ t : BlockSelector cell, ∃ q ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet t) q)
+    (hlocalized :
+      ∀ q ∈ Q, ∃ s : BlockSelector cell,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q')
+    (hlarge :
+      ((M * S) * (k + 1 + L)) *
+          additiveRootedMatchingBound (k + 1) demand <
+        (Q.erase r).card) :
+    (∃ root : Finset ℕ, ∃ N : Finset (Finset ℕ),
+        root.card < k + 1 ∧
+        N ⊆ additiveSupportFamily A (k + 1) r ∧
+        demand < N.card ∧
+        (∀ E ∈ N, root ⊆ E) ∧
+        (∀ E ∈ N, (E \ root).Nonempty) ∧
+        ∀ E ∈ N, ∀ G ∈ N, E ≠ G →
+          Disjoint (E \ root) (G \ root)) ∨
+      ∃ E ∈ additiveSupportFamily A (k + 1) r,
+        ∃ T : Finset {q // q ∈ Q.erase r},
+          HasCommonColumnReducedCoverStream
+              A k L cell Q r hrQ E T ∨
+            (∃ j, S < (cell j).card) ∨
+            ∃ y : ℕ, ∃ V : Finset ℕ,
+              M < V.card ∧
+              ∀ t ∈ V,
+                ∃ q ∈ Q,
+                  t = q - y ∧
+                  (additiveSupportFamily A k t).Nonempty := by
+  obtain hmatching | hgeometry :=
+    targetLocalizedAdditiveFamily_forces_rootedMatching_or_reducedCoverStream_or_repeatedBlock
+      (A := A) (k := k) (K := M * S)
+      (L := L) (demand := demand)
+      P hrQ hrepresented hcert hlocalized hlarge
+  · exact Or.inl hmatching
+  · right
+    obtain ⟨E, hER, T, _hTlarge, hfork⟩ :=
+      hgeometry
+    exact ⟨E, hER, T,
+      commonColumnReducedCoverFork_forces_reducedStream_or_largeBlock_or_predecessorGrowth
+        hrQ E T hfork⟩
+
 /-- A bounded finite family covering `V` is either genuinely
 oversaturated or contains an almost-spanning matching.
 
