@@ -1,3 +1,43 @@
+# GENERAL ORDER: TRANSLATED-HOLE CONCENTRATION TERMINATES (2026-07-29)
+
+The literal translated-hole branch has now been passed through the original
+order-`k` basis rather than left as a geometric obstruction.
+
+- `large_indexed_boundedHypergraph_matching_or_star` counts the hole
+  indices, not merely distinct support finsets.  Different translated
+  targets therefore cannot disappear when two chosen representations have
+  the same support.
+- `HasCofinalLiteralTranslatedHoleFans.
+  forces_representationMatching_or_commonAnchorDescent` discards only the
+  bounded translates below the eventual basis threshold, chooses exact
+  order-`k` representations of all remaining holes, and returns either a
+  large disjoint representation family or one common basis anchor in many
+  distinct representations.  Removing that anchor preserves injectivity of
+  the translated predecessor targets and lowers the order.
+- `indexedAdditiveRepresentations_force_residualMatching` iterates this
+  descent with an explicit finite threshold.  Every repeated common anchor
+  is accumulated into one common offset.  The iteration cannot reach rank
+  zero: all order-zero supports represent target zero, contradicting
+  injectivity of the indexed translated targets.
+- Consequently
+  `HasCofinalLiteralTranslatedHoleFans.
+  forces_residualRepresentationMatching` gives, for every demand, a
+  pairwise-disjoint residual representation family at some positive rank
+  `j ≤ k`.
+
+The fusion interfaces were strengthened at the same time.  The aligned
+stream now retains the literal source block containing each rooted
+matching's petals, these blocks remain pairwise disjoint after thinning,
+and the hole-fan and residual-matching conclusions retain that same block.
+Thus the normalized arithmetic still knows that every untranslated
+predecessor lies in one source block.
+
+This is not the full solution.  The former permanent-concentration horn is
+gone; the next direct weld is to retain the finite target-localized
+certificate labels through the aligned-pair fusion and feed the residual
+matching, its common offset, the source block, and the original
+`q=t+δ` identity into the already verified certificate-capacity threshold.
+
 # GENERAL ORDER: ALIGNED DESTROYER CARDINALITY FORK CONSUMED (2026-07-29)
 
 The finite size of the fused minimal destroyers is no longer an open

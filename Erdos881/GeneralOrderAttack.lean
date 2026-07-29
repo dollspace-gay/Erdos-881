@@ -913,11 +913,141 @@ theorem large_boundedHypergraph_matching_or_star
     exact Or.inr ⟨x, lt_of_lt_of_le hxfiber
       (Finset.card_le_card hsub)⟩
 
-/-- Removing one chosen occurrence of `x` from an order-`k+1` tuple lowers
-both the order and target by one summand.  At support level the original
-support is exactly `insert x H`; this exact reconstruction makes the descent
-injective on a star of distinct supports. -/
-theorem additiveSupport_remove_hit_succ
+/-- Indexed bounded-rank matching/star dichotomy.
+
+Unlike `large_boundedHypergraph_matching_or_star`, the cardinal hypothesis
+counts the indices rather than the distinct edge values.  This matters when
+different arithmetic targets happen to admit the same support finset.
+
+If the set of distinct edges has a large matching, return it.  Otherwise a
+small transversal hits every indexed edge.  Pigeonholing the indices over
+that transversal gives one vertex contained in many indexed edges, with no
+loss from repeated edge values. -/
+theorem large_indexed_boundedHypergraph_matching_or_star
+    {ι α : Type*} [Fintype ι]
+    [DecidableEq ι] [DecidableEq α]
+    (edge : ι → Finset α)
+    {d r s : ℕ}
+    (hedges : ∀ i, (edge i).Nonempty)
+    (hsize : ∀ i, (edge i).card ≤ d)
+    (hlarge : (d * r) * s < Fintype.card ι) :
+    (∃ M : Finset (Finset α),
+        M ⊆ Finset.univ.image edge ∧
+        IsMatching M ∧
+        r < M.card) ∨
+      ∃ x,
+        s <
+          (Finset.univ.filter fun i => x ∈ edge i).card := by
+  classical
+  let H : Finset (Finset α) :=
+    Finset.univ.image edge
+  have hHedges : ∀ E ∈ H, E.Nonempty := by
+    intro E hEH
+    obtain ⟨i, _hi, rfl⟩ :=
+      Finset.mem_image.mp hEH
+    exact hedges i
+  have hHsize : ∀ E ∈ H, E.card ≤ d := by
+    intro E hEH
+    obtain ⟨i, _hi, rfl⟩ :=
+      Finset.mem_image.mp hEH
+    exact hsize i
+  by_cases hmatch : r < matchingNumber H
+  · obtain ⟨M, hMH, hMmatching, hMcard, _hmaximal⟩ :=
+      exists_maximumMatching hHedges
+    exact Or.inl
+      ⟨M, by simpa only [H] using hMH,
+        hMmatching, by omega⟩
+  · have hmatchle : matchingNumber H ≤ r :=
+      Nat.le_of_not_gt hmatch
+    obtain ⟨T, htrans, hTcard⟩ :=
+      exists_small_transversal_of_matchingNumber_le
+        hHedges hHsize hmatchle
+    have hindexNonempty :
+        (Finset.univ : Finset ι).Nonempty := by
+      rw [← Finset.card_pos, Finset.card_univ]
+      exact lt_of_le_of_lt
+        (Nat.zero_le ((d * r) * s)) hlarge
+    let default : α :=
+      (hedges hindexNonempty.choose).choose
+    let hit : ι → α := fun i =>
+      if hE : edge i ∈ H then
+        (htrans (edge i) hE).choose
+      else default
+    have hedgeH : ∀ i, edge i ∈ H := by
+      intro i
+      exact Finset.mem_image.mpr
+        ⟨i, Finset.mem_univ i, rfl⟩
+    have hhitT : ∀ i, hit i ∈ T := by
+      intro i
+      simp only [hit, dif_pos (hedgeH i)]
+      exact
+        (Finset.mem_inter.mp
+          (htrans (edge i) (hedgeH i)).choose_spec).2
+    have hhitEdge : ∀ i, hit i ∈ edge i := by
+      intro i
+      simp only [hit, dif_pos (hedgeH i)]
+      exact
+        (Finset.mem_inter.mp
+          (htrans (edge i) (hedgeH i)).choose_spec).1
+    have hfiberLarge :
+        T.card * s < (Finset.univ : Finset ι).card := by
+      rw [Finset.card_univ]
+      exact lt_of_le_of_lt
+        (Nat.mul_le_mul_right s hTcard) hlarge
+    obtain ⟨x, _hxT, hxfiber⟩ :=
+      Finset.exists_lt_card_fiber_of_mul_lt_card_of_maps_to
+        (s := (Finset.univ : Finset ι))
+        (f := hit) (fun i _hi => hhitT i) hfiberLarge
+    have hsub :
+        Finset.univ.filter (fun i => hit i = x) ⊆
+          Finset.univ.filter (fun i => x ∈ edge i) := by
+      intro i hi
+      obtain ⟨_hiUniv, hhit⟩ :=
+        Finset.mem_filter.mp hi
+      exact Finset.mem_filter.mpr
+        ⟨Finset.mem_univ i, hhit ▸ hhitEdge i⟩
+    exact Or.inr
+      ⟨x, lt_of_lt_of_le hxfiber
+        (Finset.card_le_card hsub)⟩
+
+/-- Cardinal threshold for recursively peeling common anchors from an
+indexed family of varying-target additive representations. -/
+def indexedAdditiveResidualMatchingBound : ℕ → ℕ → ℕ
+  | 0, _r => 2
+  | h + 1, r =>
+      (((h + 1) * r) *
+        indexedAdditiveResidualMatchingBound h r) + 1
+
+/-- A matching obtained after peeling one common additive offset from an
+indexed family of varying targets.
+
+The selected indices are embedded explicitly, so repeated support finsets
+at different targets never collapse the cardinal count. -/
+structure EmbeddedAdditiveResidualMatching
+    (A : Set ℕ) (h r : ℕ)
+    {ι : Type*} (target : ι → ℕ) where
+  count : ℕ
+  index : Fin count → ι
+  index_injective : Function.Injective index
+  rank : ℕ
+  offset : ℕ
+  support : Fin count → Finset ℕ
+  rank_pos : 0 < rank
+  rank_le : rank ≤ h
+  large : r < count
+  offset_le : ∀ u, offset ≤ target (index u)
+  support_mem : ∀ u,
+    support u ∈
+      additiveSupportFamily A rank
+        (target (index u) - offset)
+  support_nonempty : ∀ u, (support u).Nonempty
+  support_matching : ∀ u v, u ≠ v →
+    Disjoint (support u) (support v)
+
+/-- Internal occurrence-removal lemma placed before the indexed recursion
+which consumes it.  The public alias
+`additiveSupport_remove_hit_succ` follows the recursion. -/
+private theorem additiveSupport_remove_hit_succ_indexedAux
     {A : Set ℕ} {k m x : ℕ} {E : Finset ℕ}
     (hER : E ∈ additiveSupportFamily A (k + 1) m)
     (hxE : x ∈ E) :
@@ -971,6 +1101,240 @@ theorem additiveSupport_remove_hit_succ
   · rintro (rfl | ⟨j, hj⟩)
     · exact ⟨i, hi⟩
     · exact ⟨i.succAbove j, by simpa [w, u] using hj⟩
+
+/-- Recursive varying-target root capture.
+
+For injectively labelled represented targets, enough indexed
+order-`h` supports force a large pairwise-disjoint residual family at some
+positive rank `j ≤ h`.  In every star step the common anchor is peeled from
+all indexed representations and added to one common offset.  The target
+labels remain injective after subtraction, so the recursion cannot terminate
+at rank zero: order-zero supports all represent target zero.
+
+This is the finite normalization needed by the translated-hole branch. -/
+theorem indexedAdditiveRepresentations_force_residualMatching
+    {A : Set ℕ} :
+    ∀ h r,
+    ∀ {ι : Type*} [Fintype ι] [DecidableEq ι],
+    ∀ (target : ι → ℕ) (representation : ι → Finset ℕ),
+      Function.Injective target →
+      (∀ i,
+        representation i ∈
+          additiveSupportFamily A h (target i)) →
+      indexedAdditiveResidualMatchingBound h r ≤
+        Fintype.card ι →
+      Nonempty
+        (EmbeddedAdditiveResidualMatching
+          A h r target) := by
+  classical
+  intro h
+  induction h with
+  | zero =>
+      intro r ι _fintype _decEq target representation
+          htargetInjective hrepresentation hlarge
+      have htargetZero : ∀ i, target i = 0 := by
+        intro i
+        obtain ⟨v, _hvA, hvsum, _hsupport⟩ :=
+          mem_additiveSupportFamily_iff.mp
+            (hrepresentation i)
+        simpa using hvsum.symm
+      have hsubsingleton : ∀ i j : ι, i = j := by
+        intro i j
+        apply htargetInjective
+        rw [htargetZero i, htargetZero j]
+      have hcard : Fintype.card ι ≤ 1 :=
+        Fintype.card_le_one_iff.mpr hsubsingleton
+      simp only [indexedAdditiveResidualMatchingBound] at hlarge
+      omega
+  | succ h ih =>
+      intro r ι _fintype _decEq target representation
+          htargetInjective hrepresentation hlarge
+      have hrepresentationNonempty :
+          ∀ i, (representation i).Nonempty := by
+        intro i
+        exact additiveSupportFamily_supportsNonempty
+          A (Nat.zero_lt_succ h) (target i)
+            (representation i) (hrepresentation i)
+      have hrepresentationCard :
+          ∀ i, (representation i).card ≤ h + 1 := by
+        intro i
+        exact additiveSupportFamily_cardAtMost
+          A (h + 1) (target i)
+            (representation i) (hrepresentation i)
+      have hstrict :
+          (((h + 1) * r) *
+              indexedAdditiveResidualMatchingBound h r) <
+            Fintype.card ι := by
+        simp only [indexedAdditiveResidualMatchingBound] at hlarge
+        omega
+      obtain hmatching | hstar :=
+        large_indexed_boundedHypergraph_matching_or_star
+          representation hrepresentationNonempty
+            hrepresentationCard hstrict
+      · obtain ⟨M, hMsub, hMmatching, hMlarge⟩ :=
+          hmatching
+        let Edge := {E // E ∈ M}
+        have hsourceExists :
+            ∀ E : Edge, ∃ i : ι,
+              representation i = E.1 := by
+          intro E
+          have hEimage := hMsub E.2
+          obtain ⟨i, _hi, hrepr⟩ :=
+            Finset.mem_image.mp hEimage
+          exact ⟨i, hrepr⟩
+        choose source hsource using hsourceExists
+        have hsourceInjective :
+            Function.Injective source := by
+          intro E F hEF
+          apply Subtype.ext
+          calc
+            E.1 = representation (source E) :=
+              (hsource E).symm
+            _ = representation (source F) := by rw [hEF]
+            _ = F.1 := hsource F
+        let enumerate :
+            Fin (Fintype.card Edge) → Edge :=
+          (Fintype.equivFin Edge).symm
+        have henumerateInjective :
+            Function.Injective enumerate :=
+          (Fintype.equivFin Edge).symm.injective
+        let selectedIndex :
+            Fin (Fintype.card Edge) → ι :=
+          fun u => source (enumerate u)
+        let selectedSupport :
+            Fin (Fintype.card Edge) → Finset ℕ :=
+          fun u => representation (selectedIndex u)
+        refine
+          ⟨⟨Fintype.card Edge, selectedIndex,
+            hsourceInjective.comp henumerateInjective,
+            h + 1, 0, selectedSupport,
+            Nat.zero_lt_succ h, le_rfl, ?_, ?_, ?_, ?_, ?_⟩⟩
+        · simpa only [Edge, Fintype.card_coe] using hMlarge
+        · intro u
+          simp
+        · intro u
+          simpa only [Nat.sub_zero] using
+            hrepresentation (selectedIndex u)
+        · intro u
+          exact hrepresentationNonempty (selectedIndex u)
+        · intro u v huv
+          have hEdgeNe : enumerate u ≠ enumerate v := by
+            intro huvEdge
+            exact huv (henumerateInjective huvEdge)
+          have hEdgeValNe :
+              (enumerate u).1 ≠ (enumerate v).1 := by
+            intro hval
+            exact hEdgeNe (Subtype.ext hval)
+          have hdisjoint :=
+            hMmatching (enumerate u).2 (enumerate v).2
+              hEdgeValNe
+          simpa only [selectedSupport, selectedIndex,
+            hsource (enumerate u), hsource (enumerate v)] using
+              hdisjoint
+      · obtain ⟨d, hdLarge⟩ := hstar
+        let W : Finset ι :=
+          Finset.univ.filter fun i =>
+            d ∈ representation i
+        have hWlarge :
+            indexedAdditiveResidualMatchingBound h r ≤
+              Fintype.card {i // i ∈ W} := by
+          simpa only [W, Fintype.card_coe] using
+            Nat.le_of_lt hdLarge
+        have hdRepresentation :
+            ∀ i : {i // i ∈ W},
+              d ∈ representation i.1 := by
+          intro i
+          exact (Finset.mem_filter.mp i.2).2
+        have hdTarget :
+            ∀ i : {i // i ∈ W},
+              d ≤ target i.1 := by
+          intro i
+          exact additiveSupportFamily_supportsBounded
+            A (h + 1) (target i.1) (representation i.1)
+              (hrepresentation i.1) d (hdRepresentation i)
+        have hlowerExists :
+            ∀ i : {i // i ∈ W},
+              ∃ G ∈
+                additiveSupportFamily A h (target i.1 - d),
+                representation i.1 = insert d G := by
+          intro i
+          exact additiveSupport_remove_hit_succ_indexedAux
+            (hrepresentation i.1) (hdRepresentation i)
+        let lowerRepresentation :
+            {i // i ∈ W} → Finset ℕ := fun i =>
+          (hlowerExists i).choose
+        have hlowerMem :
+            ∀ i,
+              lowerRepresentation i ∈
+                additiveSupportFamily A h
+                  (target i.1 - d) := by
+          intro i
+          exact (hlowerExists i).choose_spec.1
+        let lowerTarget :
+            {i // i ∈ W} → ℕ := fun i =>
+          target i.1 - d
+        have hlowerTargetInjective :
+            Function.Injective lowerTarget := by
+          intro i j hij
+          apply Subtype.ext
+          apply htargetInjective
+          have hdi := hdTarget i
+          have hdj := hdTarget j
+          change target i.1 - d = target j.1 - d at hij
+          omega
+        obtain ⟨inner⟩ :=
+          ih r lowerTarget lowerRepresentation
+            hlowerTargetInjective hlowerMem hWlarge
+        let liftedIndex : Fin inner.count → ι :=
+          fun u => (inner.index u).1
+        refine
+          ⟨⟨inner.count, liftedIndex, ?_,
+            inner.rank, d + inner.offset, inner.support,
+            inner.rank_pos, inner.rank_le.trans (Nat.le_succ h),
+            inner.large, ?_, ?_, inner.support_nonempty,
+            inner.support_matching⟩⟩
+        · intro u v huv
+          apply inner.index_injective
+          apply Subtype.ext
+          exact huv
+        · intro u
+          have hd :=
+            hdTarget (inner.index u)
+          have hoff :=
+            inner.offset_le u
+          change
+            d + inner.offset ≤
+              target (inner.index u).1
+          change
+            inner.offset ≤
+              target (inner.index u).1 - d at hoff
+          omega
+        · intro u
+          have hd :=
+            hdTarget (inner.index u)
+          have hoff :=
+            inner.offset_le u
+          have htargetEq :
+              target (inner.index u).1 -
+                    (d + inner.offset) =
+                lowerTarget (inner.index u) -
+                    inner.offset := by
+            dsimp only [lowerTarget]
+            omega
+          rw [htargetEq]
+          exact inner.support_mem u
+
+/-- Removing one chosen occurrence of `x` from an order-`k+1` tuple lowers
+both the order and target by one summand.  At support level the original
+support is exactly `insert x H`; this exact reconstruction makes the descent
+injective on a star of distinct supports. -/
+theorem additiveSupport_remove_hit_succ
+    {A : Set ℕ} {k m x : ℕ} {E : Finset ℕ}
+    (hER : E ∈ additiveSupportFamily A (k + 1) m)
+    (hxE : x ∈ E) :
+    ∃ H ∈ additiveSupportFamily A k (m - x),
+      E = insert x H := by
+  exact additiveSupport_remove_hit_succ_indexedAux hER hxE
 
 /-- Concatenate two exact additive representations.
 
@@ -47913,6 +48277,7 @@ def HasAlignedTranslatedSurvivalDestructionStream
   ∃ sourceTarget destroyedTarget displacement : ℕ → ℕ,
   ∃ support destroyer sourceRoot : ℕ → Finset ℕ,
   ∃ sourceMatching : ℕ → Finset (Finset ℕ),
+  ∃ sourceBlock : ℕ → Finset ℕ,
     deletion ⊆ A ∧
     deletion.Infinite ∧
     StrictMono sourceTarget ∧
@@ -47937,6 +48302,11 @@ def HasAlignedTranslatedSurvivalDestructionStream
     (∀ n, ∀ E ∈ sourceMatching n,
       ∀ G ∈ sourceMatching n, E ≠ G →
         Disjoint (E \ sourceRoot n) (G \ sourceRoot n)) ∧
+    (∀ n,
+      (sourceMatching n).biUnion
+        (fun E => E \ sourceRoot n) ⊆ sourceBlock n) ∧
+    (∀ i j, i ≠ j →
+      Disjoint (sourceBlock i) (sourceBlock j)) ∧
     (∀ n, ∀ E ∈ sourceMatching n,
       Disjoint E (destroyer n)) ∧
     (∀ n, (destroyer n).Nonempty) ∧
@@ -47969,12 +48339,13 @@ theorem HasAlignedTranslatedSurvivalDestructionStream.source_survives
         deletion (sourceTarget n) := by
   obtain ⟨Y, source, _destroyed, _displacement,
       support, _destroyer, _sourceRoot,
-      _sourceMatching, hYA, hYInfinite,
+      _sourceMatching, _sourceBlock, hYA, hYInfinite,
       hsourceStrict, _hdestroyedStrict,
       _hinterlaced, _hdisplacementPos, _hdestroyedEq,
       hsupportMem, hsupportY, _hrootCard,
       _hmatchingLarge, _hmatchingSub, _hrootSub,
       _hpetalNonempty, _hpetalMatching,
+      _hpetalsBlock, _hblocksPairwise,
       _hmatchingD, _hDnonempty, _hDY,
       _hDpairwise, _hDminimal, _hdestroyed⟩ :=
     hstream
@@ -47996,6 +48367,7 @@ def HasCofinalLiteralTranslatedHoleFans
   ∃ sourceTarget destroyedTarget displacement : ℕ → ℕ,
   ∃ sourceRoot : ℕ → Finset ℕ,
   ∃ sourceMatching : ℕ → Finset (Finset ℕ),
+  ∃ sourceBlock : ℕ → Finset ℕ,
   ∃ holes : ℕ → Finset ℕ,
     StrictMono sourceTarget ∧
     StrictMono destroyedTarget ∧
@@ -48017,10 +48389,13 @@ def HasCofinalLiteralTranslatedHoleFans
     (∀ n, ∀ E ∈ sourceMatching n,
       ∀ G ∈ sourceMatching n, E ≠ G →
         Disjoint (E \ sourceRoot n) (G \ sourceRoot n)) ∧
+    (∀ i j, i ≠ j →
+      Disjoint (sourceBlock i) (sourceBlock j)) ∧
     ∀ n,
       holes n ⊆
         (sourceMatching n).biUnion
           (fun E => E \ sourceRoot n) ∧
+      holes n ⊆ sourceBlock n ∧
       n < (holes n).card ∧
       ∀ a ∈ holes n, a + displacement n ∉ A
 
@@ -48062,10 +48437,11 @@ theorem finiteComplement_forbids_cofinalLiteralTranslatedHoleFans
   classical
   intro hfans
   obtain ⟨_source, _destroyed, displacement,
-      _root, _matching, holes, _hsourceStrict,
+      _root, _matching, _sourceBlock, holes, _hsourceStrict,
       _hdestroyedStrict, _hinterlaced, _hδpos,
       _hqδ, _hrootCard, _hmatchingSub, _hrootSub,
-      _hpetalNonempty, _hpetalMatching, hholes⟩ :=
+      _hpetalNonempty, _hpetalMatching,
+      _hblocksPairwise, hholes⟩ :=
     hfans
   let n := hcomplement.toFinset.card
   have hshiftSubset :
@@ -48075,7 +48451,7 @@ theorem finiteComplement_forbids_cofinalLiteralTranslatedHoleFans
     obtain ⟨a, haHole, rfl⟩ :=
       Finset.mem_image.mp hx
     exact hcomplement.mem_toFinset.mpr
-      ((hholes n).2.2 a haHole)
+      ((hholes n).2.2.2 a haHole)
   have hshiftInjective :
       Set.InjOn (fun a => a + displacement n)
         (holes n : Set ℕ) := by
@@ -48085,7 +48461,335 @@ theorem finiteComplement_forbids_cofinalLiteralTranslatedHoleFans
       (holes n).card ≤ hcomplement.toFinset.card := by
     rw [← Finset.card_image_iff.mpr hshiftInjective]
     exact Finset.card_le_card hshiftSubset
-  exact (Nat.not_lt_of_ge hcard) (hholes n).2.1
+  exact (Nat.not_lt_of_ge hcard) (hholes n).2.2.1
+
+/-- Exact order-`k` representations of a cofinal literal-hole fan have only
+two finite arithmetic behaviours.
+
+Discard the bounded collection of translates below the eventual basis
+threshold.  The remaining hole translates have chosen order-`k` supports,
+indexed by the source holes themselves.  Applying the indexed bounded-rank
+matching/star dichotomy gives either:
+
+* more than `matchingDemand` pairwise-disjoint representation supports; or
+* one common basis element in more than `anchorDemand` distinct
+  representations.
+
+In the common-anchor branch, remove that occurrence.  Translation by the
+fixed stage displacement followed by subtraction of the common anchor is
+injective on the source holes, so no cardinality is lost: one obtains the
+same number of distinct represented order-`k-1` predecessor targets.
+
+The conclusion retains the original source target, positive displacement,
+rooted source matching, literal holes, and all chosen representations. -/
+theorem HasCofinalLiteralTranslatedHoleFans.forces_representationMatching_or_commonAnchorDescent
+    {A : Set ℕ} {k : ℕ}
+    (hkpos : 0 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hfans :
+      HasCofinalLiteralTranslatedHoleFans A k)
+    (matchingDemand anchorDemand : ℕ) :
+    ∃ n t q δ,
+    ∃ sourceRoot : Finset ℕ,
+    ∃ sourceMatching : Finset (Finset ℕ),
+    ∃ sourceBlock : Finset ℕ,
+    ∃ holes representedHoles : Finset ℕ,
+    ∃ representation :
+        {a // a ∈ representedHoles} → Finset ℕ,
+      t < q ∧
+      0 < δ ∧
+      q = t + δ ∧
+      sourceRoot.card < k + 1 ∧
+      sourceMatching ⊆
+        additiveSupportFamily A (k + 1) t ∧
+      (∀ E ∈ sourceMatching, sourceRoot ⊆ E) ∧
+      (∀ E ∈ sourceMatching,
+        (E \ sourceRoot).Nonempty) ∧
+      (∀ E ∈ sourceMatching,
+        ∀ G ∈ sourceMatching, E ≠ G →
+          Disjoint (E \ sourceRoot) (G \ sourceRoot)) ∧
+      holes ⊆
+        sourceMatching.biUnion
+          (fun E => E \ sourceRoot) ∧
+      holes ⊆ sourceBlock ∧
+      n < holes.card ∧
+      representedHoles ⊆ holes ∧
+      (k * matchingDemand) * anchorDemand <
+        representedHoles.card ∧
+      (∀ a ∈ holes, a + δ ∉ A) ∧
+      (∀ a,
+        representation a ∈
+          additiveSupportFamily A k (a.1 + δ)) ∧
+      ((∃ M : Finset (Finset ℕ),
+          M ⊆ Finset.univ.image representation ∧
+          IsMatching M ∧
+          matchingDemand < M.card) ∨
+        ∃ d,
+        ∃ W : Finset {a // a ∈ representedHoles},
+          anchorDemand < W.card ∧
+          Set.InjOn
+            (fun a : {a // a ∈ representedHoles} =>
+              a.1 + δ - d)
+            (W : Set {a // a ∈ representedHoles}) ∧
+          ∀ a ∈ W,
+            d ∈ representation a ∧
+            ∃ G ∈
+              additiveSupportFamily A (k - 1)
+                (a.1 + δ - d),
+              representation a = insert d G) := by
+  classical
+  obtain ⟨sourceTarget, destroyedTarget, displacement,
+      sourceRoot, sourceMatching, sourceBlock, holes,
+      _hsourceStrict, _hdestroyedStrict, hinterlaced,
+      hdisplacementPos, hdestroyedEq, hrootCard,
+      hmatchingSub, hrootSub, hpetalNonempty,
+      hpetalMatching, _hblocksPairwise, hholes⟩ :=
+    hfans
+  obtain ⟨N, hN⟩ :=
+    hasEventuallySurvivingSupport_empty_additive_iff.mpr
+      hbasis
+  let threshold :=
+    (k * matchingDemand) * anchorDemand
+  let n := N + threshold
+  let δ := displacement n
+  let V : Finset ℕ :=
+    (holes n).filter fun a => N ≤ a + δ
+  let bad : Finset ℕ :=
+    (holes n).filter fun a => a + δ < N
+  have hbadSubset :
+      bad ⊆ Finset.range N := by
+    intro a haBad
+    have haShift :
+        a + δ < N :=
+      (Finset.mem_filter.mp haBad).2
+    exact Finset.mem_range.mpr (by omega)
+  have hbadCard : bad.card ≤ N :=
+    (Finset.card_le_card hbadSubset).trans_eq
+      (Finset.card_range N)
+  have hsplit :
+      V.card + bad.card = (holes n).card := by
+    simpa only [V, bad, not_le] using
+      (Finset.card_filter_add_card_filter_not
+        (s := holes n) (fun a => N ≤ a + δ))
+  have hVlarge : threshold < V.card := by
+    have hholesLarge :
+        N + threshold < (holes n).card := by
+      simpa only [n] using (hholes n).2.2.1
+    omega
+  have hVA : ∀ a : {a // a ∈ V},
+      N ≤ a.1 + δ := by
+    intro a
+    exact (Finset.mem_filter.mp a.2).2
+  let representation :
+      {a // a ∈ V} → Finset ℕ := fun a =>
+    (hN (a.1 + δ) (hVA a)).choose
+  have hrepresentation :
+      ∀ a,
+        representation a ∈
+          additiveSupportFamily A k (a.1 + δ) := by
+    intro a
+    exact (hN (a.1 + δ) (hVA a)).choose_spec.1
+  have hrepresentationNonempty :
+      ∀ a, (representation a).Nonempty := by
+    intro a
+    exact additiveSupportFamily_supportsNonempty
+      A hkpos (a.1 + δ) (representation a)
+        (hrepresentation a)
+  have hrepresentationCard :
+      ∀ a, (representation a).card ≤ k := by
+    intro a
+    exact additiveSupportFamily_cardAtMost
+      A k (a.1 + δ) (representation a)
+        (hrepresentation a)
+  have hindexLarge :
+      (k * matchingDemand) * anchorDemand <
+        Fintype.card {a // a ∈ V} := by
+    simpa only [Fintype.card_coe] using hVlarge
+  have harithmetic :=
+    large_indexed_boundedHypergraph_matching_or_star
+      representation hrepresentationNonempty
+        hrepresentationCard hindexLarge
+  have hfinal :
+      (∃ M : Finset (Finset ℕ),
+          M ⊆ Finset.univ.image representation ∧
+          IsMatching M ∧
+          matchingDemand < M.card) ∨
+        ∃ d,
+        ∃ W : Finset {a // a ∈ V},
+          anchorDemand < W.card ∧
+          Set.InjOn
+            (fun a : {a // a ∈ V} =>
+              a.1 + δ - d)
+            (W : Set {a // a ∈ V}) ∧
+          ∀ a ∈ W,
+            d ∈ representation a ∧
+            ∃ G ∈
+              additiveSupportFamily A (k - 1)
+                (a.1 + δ - d),
+              representation a = insert d G := by
+    rcases harithmetic with hmatching | hstar
+    · obtain ⟨M, hMsub, hMmatching, hMlarge⟩ :=
+        hmatching
+      exact Or.inl
+        ⟨M, hMsub, hMmatching, hMlarge⟩
+    · right
+      obtain ⟨d, hdLarge⟩ := hstar
+      let W : Finset {a // a ∈ V} :=
+        Finset.univ.filter fun a =>
+          d ∈ representation a
+      have hWlarge : anchorDemand < W.card := by
+        simpa only [W] using hdLarge
+      have hdRepresentation :
+          ∀ a ∈ W, d ∈ representation a := by
+        intro a haW
+        exact (Finset.mem_filter.mp haW).2
+      have hdTarget :
+          ∀ a ∈ W, d ≤ a.1 + δ := by
+        intro a haW
+        exact additiveSupportFamily_supportsBounded
+          A k (a.1 + δ) (representation a)
+            (hrepresentation a) d
+            (hdRepresentation a haW)
+      have hpredecessorInjective :
+          Set.InjOn
+            (fun a : {a // a ∈ V} => a.1 + δ - d)
+            (W : Set {a // a ∈ V}) := by
+        intro a haW b hbW hab
+        apply Subtype.ext
+        have had := hdTarget a
+          (Finset.mem_coe.mp haW)
+        have hbd := hdTarget b
+          (Finset.mem_coe.mp hbW)
+        change a.1 + δ - d = b.1 + δ - d at hab
+        omega
+      refine
+        ⟨d, W, hWlarge, hpredecessorInjective, ?_⟩
+      intro a haW
+      have hdRep := hdRepresentation a haW
+      have hkSucc : k - 1 + 1 = k := by omega
+      have hrepSucc :
+          representation a ∈
+            additiveSupportFamily A (k - 1 + 1)
+              (a.1 + δ) := by
+        simpa only [hkSucc] using hrepresentation a
+      obtain ⟨G, hGmem, hrepEq⟩ :=
+        additiveSupport_remove_hit_succ hrepSucc hdRep
+      exact ⟨hdRep, G, hGmem, hrepEq⟩
+  refine
+    ⟨n, sourceTarget n, destroyedTarget n, δ,
+      sourceRoot n, sourceMatching n, sourceBlock n,
+      holes n, V,
+      representation, (hinterlaced n).1,
+      hdisplacementPos n, hdestroyedEq n, hrootCard n,
+      hmatchingSub n, hrootSub n, hpetalNonempty n,
+      hpetalMatching n, (hholes n).1, (hholes n).2.1,
+      (hholes n).2.2.1,
+      Finset.filter_subset _ _, ?_, ?_,
+      hrepresentation, hfinal⟩
+  · simpa only [threshold] using hVlarge
+  · intro a haHole
+    exact (hholes n).2.2.2 a haHole
+
+/-- The translated-hole arithmetic recursion cannot descend forever.
+
+Request enough late represented holes for the full recursive threshold.
+The preceding one-step theorem supplies their exact order-`k`
+representations while retaining the source alignment.  Repeated common
+anchors are then peeled into one common offset by
+`indexedAdditiveRepresentations_force_residualMatching`.  Since the
+translated targets are injective, rank zero is impossible, and the output
+is an arbitrarily large pairwise-disjoint residual representation family at
+some positive rank `j ≤ k`.
+
+Thus the literal-hole branch has no permanent concentration horn: it forces
+matching growth after finitely many genuine order descents. -/
+theorem HasCofinalLiteralTranslatedHoleFans.forces_residualRepresentationMatching
+    {A : Set ℕ} {k : ℕ}
+    (hkpos : 0 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hfans :
+      HasCofinalLiteralTranslatedHoleFans A k)
+    (demand : ℕ) :
+    ∃ n t q δ,
+    ∃ sourceRoot : Finset ℕ,
+    ∃ sourceMatching : Finset (Finset ℕ),
+    ∃ sourceBlock : Finset ℕ,
+    ∃ holes representedHoles : Finset ℕ,
+    ∃ representation :
+        {a // a ∈ representedHoles} → Finset ℕ,
+      t < q ∧
+      0 < δ ∧
+      q = t + δ ∧
+      sourceRoot.card < k + 1 ∧
+      sourceMatching ⊆
+        additiveSupportFamily A (k + 1) t ∧
+      (∀ E ∈ sourceMatching, sourceRoot ⊆ E) ∧
+      (∀ E ∈ sourceMatching,
+        (E \ sourceRoot).Nonempty) ∧
+      (∀ E ∈ sourceMatching,
+        ∀ G ∈ sourceMatching, E ≠ G →
+          Disjoint (E \ sourceRoot) (G \ sourceRoot)) ∧
+      holes ⊆
+        sourceMatching.biUnion
+          (fun E => E \ sourceRoot) ∧
+      holes ⊆ sourceBlock ∧
+      n < holes.card ∧
+      representedHoles ⊆ holes ∧
+      (∀ a ∈ holes, a + δ ∉ A) ∧
+      (∀ a,
+        representation a ∈
+          additiveSupportFamily A k (a.1 + δ)) ∧
+      Nonempty
+        (EmbeddedAdditiveResidualMatching
+          A k demand
+            (fun a : {a // a ∈ representedHoles} =>
+              a.1 + δ)) := by
+  classical
+  let recursiveDemand :=
+    indexedAdditiveResidualMatchingBound k demand
+  obtain ⟨n, t, q, δ, sourceRoot, sourceMatching,
+      sourceBlock,
+      holes, representedHoles, representation,
+      htq, hδpos, hqδ, hrootCard, hmatchingSub,
+      hrootSub, hpetalNonempty, hpetalMatching,
+      hholesPetals, hholesBlock, hholesLarge,
+      hrepresentedHoles,
+      hrepresentedLarge, hholesMissing,
+      hrepresentation, _honeStepFork⟩ :=
+    hfans.forces_representationMatching_or_commonAnchorDescent
+      hkpos hbasis 1 recursiveDemand
+  have hcard :
+      indexedAdditiveResidualMatchingBound k demand ≤
+        Fintype.card {a // a ∈ representedHoles} := by
+    simpa only [Fintype.card_coe] using
+      (show
+        indexedAdditiveResidualMatchingBound k demand ≤
+          representedHoles.card by
+        dsimp only [recursiveDemand] at hrepresentedLarge
+        have hkOne : 1 ≤ k := by omega
+        nlinarith)
+  have htargetInjective :
+      Function.Injective
+        (fun a : {a // a ∈ representedHoles} =>
+          a.1 + δ) := by
+    intro a b hab
+    apply Subtype.ext
+    exact Nat.add_right_cancel hab
+  have hresidual :=
+    indexedAdditiveRepresentations_force_residualMatching
+      k demand
+      (fun a : {a // a ∈ representedHoles} =>
+        a.1 + δ)
+      representation htargetInjective hrepresentation hcard
+  exact
+    ⟨n, t, q, δ, sourceRoot, sourceMatching,
+      sourceBlock,
+      holes, representedHoles, representation,
+      htq, hδpos, hqδ, hrootCard, hmatchingSub,
+      hrootSub, hpetalNonempty, hpetalMatching,
+      hholesPetals, hholesBlock, hholesLarge,
+      hrepresentedHoles,
+      hholesMissing, hrepresentation, hresidual⟩
 
 /-- Merge the two interlaced surviving target streams into one strict
 stream on the same infinite deletion.
@@ -48392,11 +49096,13 @@ theorem HasAlignedTranslatedSurvivalDestructionStream.holeFans_or_doubleSurvival
   classical
   obtain ⟨Y, source, destroyedTarget, displacement,
       support, destroyer, sourceRoot, sourceMatching,
+      sourceBlock,
       hYA, hYInfinite, hsourceStrict,
       hdestroyedStrict, hinterlaced, hδpos, hqδ,
       hsupportMem, hsupportY, hrootCard,
       hmatchingLarge, hmatchingSub, hrootSub,
-      hpetalNonempty, hpetalMatching, hmatchingD,
+      hpetalNonempty, hpetalMatching,
+      hpetalsBlock, hblocksPairwise, hmatchingD,
       hDnonempty, hDY, hDpairwise, hDminimal,
       _hdestroyed⟩ :=
     hstream
@@ -48607,10 +49313,11 @@ theorem HasAlignedTranslatedSurvivalDestructionStream.holeFans_or_doubleSurvival
         fun n => displacement (index n),
         fun n => sourceRoot (index n),
         fun n => sourceMatching (index n),
+        fun n => sourceBlock (index n),
         holes,
         hsourceStrict.comp hindexStrict,
         hdestroyedStrict.comp hindexStrict,
-        ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+        ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · intro n
       refine ⟨?_, ?_⟩
       · change
@@ -48643,9 +49350,15 @@ theorem HasAlignedTranslatedSurvivalDestructionStream.holeFans_or_doubleSurvival
       exact
         hpetalMatching (index n)
           E hEM G hGM hEG
+    · intro i j hij
+      exact hblocksPairwise
+        (index i) (index j)
+          (hindexStrict.injective.ne hij)
     · intro n
       refine
         ⟨Finset.filter_subset _ _,
+          (Finset.filter_subset _ _).trans
+            (hpetalsBlock (index n)),
           hholesLarge n, ?_⟩
       intro a haHole
       exact (Finset.mem_filter.mp haHole).2
@@ -48895,11 +49608,12 @@ theorem cofinalAlignedTailPairs_fuse_translatedStream
       fun n => destroyer (index n),
       fun n => sourceRoot (index n),
       fun n => sourceMatching (index n),
+      fun n => cell (sourceIndex (index n)),
       hYA, hYInfinite,
       hsourceStrict.comp hindexStrict,
       hdestroyedStrict.comp hindexStrict,
       ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-      ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · intro n
     calc
       destroyedTarget (index n) <
@@ -48940,6 +49654,12 @@ theorem cofinalAlignedTailPairs_fuse_translatedStream
     exact
       (data (index n)).sourcePetal_matching
         E hEM G hGM hEG
+  · intro n
+    exact (data (index n)).sourcePetals_block
+  · intro i j hij
+    apply P.disjoint
+    exact hsourceIndexStrict.injective.ne
+      (hindexStrict.injective.ne hij)
   · intro n E hEM
     exact
       (data (index n)).sourceMatching_destroyer_disjoint
