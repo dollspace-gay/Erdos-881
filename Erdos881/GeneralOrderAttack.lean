@@ -33353,6 +33353,8 @@ theorem anchoredPrivateRow_markerSwap_forces_oneBlockFailureTransfer_or_oldColli
           (additiveSupportFamily A (k + 1))
           (selectedSet after) q.1 ∧
         b ∈ surviving q ∧
+        Disjoint (surviving q : Set ℕ)
+          (selectedSet before) ∧
         (∀ z ∈ F,
           z ∈ selectedSet before ↔ z = x) ∧
         (∀ z ∈ surviving q,
@@ -33613,9 +33615,356 @@ theorem anchoredPrivateRow_markerSwap_forces_oneBlockFailureTransfer_or_oldColli
       hbeforeI, hafterI, hbeforeOther,
       hpBefore, hotherBefore, hpAfter,
       by simpa only [q'] using hqAfter,
-      hbSupport, hFbeforeExact, hGafterExact,
+      hbSupport, hsurvivingBefore q',
+      hFbeforeExact, hGafterExact,
       hHpMem, hFHp, hHqMem, hGHq⟩
   · exact Or.inr holdCollision
+
+/-- An exact one-block failure pivot is an anchored certificate-escape
+edge in the existing finite-cycle framework.
+
+The `before` selector is private for the source target `p`; the `after`
+selector differs only in block `i` and destroys the destination `q`.
+The destination support survives `before` and contains the newly inserted
+point `b`.  Extensionality identifies `after` with the canonical
+one-block override, supplying all fields of
+`AnchoredCertificateEscapeTransitionData`. -/
+theorem oneBlockFailureTransfer_has_anchoredCertificateEscapeTransition
+    {A : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {p q i x b : ℕ}
+    {before after : BlockSelector cell}
+    {G : Finset ℕ}
+    (hpQ : p ∈ Q)
+    (hqQ : q ∈ Q)
+    (hqp : q ≠ p)
+    (hbeforeI : (before i).1 = x)
+    (hafterI : (after i).1 = b)
+    (hsame :
+      ∀ ℓ, ℓ ≠ i →
+        (before ℓ).1 = (after ℓ).1)
+    (hpDestroy :
+      DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (selectedSet before) p)
+    (hprivate :
+      ∀ r ∈ Q, r ≠ p →
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet before) r)
+    (hbCell : b ∈ cell i)
+    (hbx : b ≠ x)
+    (hqDestroy :
+      DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (selectedSet after) q)
+    (hGmem :
+      G ∈ additiveSupportFamily A (k + 1) q)
+    (hGbefore :
+      Disjoint (G : Set ℕ)
+        (selectedSet before))
+    (hbG : b ∈ G) :
+    HasAnchoredCertificateEscapeTransition
+      (additiveSupportFamily A (k + 1))
+      Q cell p q := by
+  classical
+  have hxCell : x ∈ cell i := by
+    rw [← hbeforeI]
+    exact (before i).2
+  let replacement : {z // z ∈ cell i} :=
+    ⟨b, hbCell⟩
+  have hoverride :
+      overrideBlockSelector before i replacement =
+        after := by
+    funext ℓ
+    apply Subtype.ext
+    by_cases hiℓ : i = ℓ
+    · subst ℓ
+      simpa only [replacement, overrideBlockSelector,
+        dif_pos rfl] using hafterI.symm
+    · have hℓi : ℓ ≠ i := by
+        exact fun h => hiℓ h.symm
+      simpa only [replacement, overrideBlockSelector,
+        dif_neg hiℓ] using hsame ℓ hℓi
+  have hqOverride :
+      DestroysAt
+        (additiveSupportFamily A (k + 1))
+        (selectedSet
+          (overrideBlockSelector before i replacement)) q := by
+    rw [hoverride]
+    exact hqDestroy
+  exact ⟨⟨i, x, hxCell, before, hpDestroy,
+    hprivate, hbeforeI, b, hbCell, hbx,
+    hqOverride, G, hGmem, hGbefore, hbG⟩⟩
+
+/-- Generic finite-cycle closure for anchored certificate transitions.
+
+This isolates the graph-theoretic step from the older two-repair
+construction: any nonempty finite certificate in which every target has a
+genuine anchored outgoing edge already contains a nontrivial directed
+escape cycle. -/
+theorem anchoredCertificate_outgoingTransitions_force_cycle
+    {R : SupportFamily}
+    {Q : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hQ : Q.Nonempty)
+    (hout :
+      ∀ p : {q // q ∈ Q},
+        ∃ q : {q // q ∈ Q},
+          q ≠ p ∧
+          HasAnchoredCertificateEscapeTransition
+            R Q cell p.1 q.1) :
+    HasAnchoredCertificateEscapeCycle R Q cell := by
+  classical
+  let next : {q // q ∈ Q} → {q // q ∈ Q} :=
+    fun p => Classical.choose (hout p)
+  have hnextNe : ∀ p, next p ≠ p := by
+    intro p
+    exact (Classical.choose_spec (hout p)).1
+  have hnextEdge :
+      ∀ p,
+        HasAnchoredCertificateEscapeTransition
+          R Q cell p.1 (next p).1 := by
+    intro p
+    exact (Classical.choose_spec (hout p)).2
+  obtain ⟨q₀, hq₀Q⟩ := hQ
+  letI : Nonempty {q // q ∈ Q} :=
+    ⟨⟨q₀, hq₀Q⟩⟩
+  obtain ⟨q, period, hperiodLower, hperiod⟩ :=
+    finite_selfMap_without_fixedPoint_has_nontrivialCycle
+      next hnextNe
+  exact ⟨next, hnextEdge, hnextNe,
+    q, period, hperiodLower, hperiod⟩
+
+/-- An anchored escape cycle supported on a subfamily `V` of a larger
+certificate `Q`.  Edge data still refer to the original certificate, while
+the periodic orbit is required to stay inside `V`. -/
+def HasAnchoredCertificateEscapeCycleOn
+    (R : SupportFamily) (Q : Finset ℕ)
+    (cell : ℕ → Finset ℕ) (V : Finset ℕ) : Prop :=
+  ∃ next : {q // q ∈ V} → {q // q ∈ V},
+    (∀ p,
+      HasAnchoredCertificateEscapeTransition
+        R Q cell p.1 (next p).1) ∧
+    (∀ p, next p ≠ p) ∧
+    ∃ p period, 2 ≤ period ∧
+      (next^[period]) p = p
+
+/-- Honest closure-versus-boundary fork for a partial pivot family.
+
+Suppose `V ⊆ Q` and every source in `V` has a genuine outgoing anchored
+transition somewhere in `Q`.  Either one such edge leaves `V`, naming the
+exact boundary loss, or every source has an internal edge and the finite
+self-map argument produces a nontrivial cycle entirely inside `V`. -/
+theorem anchoredCertificate_partialOutgoingTransitions_force_boundary_or_cycle
+    {R : SupportFamily}
+    {Q V : Finset ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hVnonempty : V.Nonempty)
+    (hVQ : V ⊆ Q)
+    (hout :
+      ∀ p : {q // q ∈ V},
+        ∃ q : {q // q ∈ Q},
+          q.1 ≠ p.1 ∧
+          HasAnchoredCertificateEscapeTransition
+            R Q cell p.1 q.1) :
+    (∃ p ∈ V, p ∈ Q ∧ ∃ q ∈ Q,
+        q ∉ V ∧ q ≠ p ∧
+        HasAnchoredCertificateEscapeTransition
+          R Q cell p q) ∨
+      HasAnchoredCertificateEscapeCycleOn
+        R Q cell V := by
+  classical
+  by_cases hboundary :
+      ∃ p ∈ V, p ∈ Q ∧ ∃ q ∈ Q,
+        q ∉ V ∧ q ≠ p ∧
+        HasAnchoredCertificateEscapeTransition
+          R Q cell p q
+  · exact Or.inl hboundary
+  · right
+    have hinternal :
+        ∀ p : {q // q ∈ V},
+          ∃ q : {q // q ∈ V},
+            q ≠ p ∧
+            HasAnchoredCertificateEscapeTransition
+              R Q cell p.1 q.1 := by
+      intro p
+      obtain ⟨q, hqp, hedge⟩ := hout p
+      have hqV : q.1 ∈ V := by
+        by_contra hqV
+        apply hboundary
+        exact ⟨p.1, p.2, hVQ p.2, q.1, q.2,
+          hqV, hqp, hedge⟩
+      let qV : {z // z ∈ V} := ⟨q.1, hqV⟩
+      have hqVp : qV ≠ p := by
+        intro heq
+        exact hqp (congrArg Subtype.val heq)
+      exact ⟨qV, hqVp, hedge⟩
+    let next : {q // q ∈ V} → {q // q ∈ V} :=
+      fun p => Classical.choose (hinternal p)
+    have hnextNe : ∀ p, next p ≠ p := by
+      intro p
+      exact (Classical.choose_spec (hinternal p)).1
+    have hnextEdge :
+        ∀ p,
+          HasAnchoredCertificateEscapeTransition
+            R Q cell p.1 (next p).1 := by
+      intro p
+      exact (Classical.choose_spec (hinternal p)).2
+    obtain ⟨p₀, hp₀V⟩ := hVnonempty
+    letI : Nonempty {q // q ∈ V} :=
+      ⟨⟨p₀, hp₀V⟩⟩
+    obtain ⟨p, period, hperiodLower, hperiod⟩ :=
+      finite_selfMap_without_fixedPoint_has_nontrivialCycle
+        next hnextNe
+    exact ⟨next, hnextEdge, hnextNe,
+      p, period, hperiodLower, hperiod⟩
+
+/-- Split a multiplicity-safe private marker into two clean summands.
+
+The retained core has order `h-1` at `q-x`.  If `x = a+b`, adjoining both
+`a` and `b` raises the order by exactly two, hence gives an order-`h+1`
+support at the original target `q`.  When the core, `a`, and `b` all avoid
+the deletion `Y`, this is an immediate successor-order repair.
+
+The core formulation is essential: unlike a bare finset support, it proves
+that the removed marker accounts for exactly one tuple occurrence, so the
+one-extra-summand calculation is multiplicity-safe. -/
+theorem markedPrivateCore_cleanSplit_repairs_successorTarget
+    {A Y : Set ℕ} {h q x a b : ℕ}
+    {core : Finset ℕ}
+    (hhpos : 0 < h)
+    (hxq : x ≤ q)
+    (hcore :
+      core ∈
+        additiveSupportFamily A (h - 1) (q - x))
+    (hcoreY :
+      Disjoint (core : Set ℕ) Y)
+    (haA : a ∈ A)
+    (hbA : b ∈ A)
+    (hsplit : x = a + b)
+    (haY : a ∉ Y)
+    (hbY : b ∉ Y) :
+    ¬ DestroysAt
+      (additiveSupportFamily A (h + 1))
+      Y q := by
+  have hbCore :
+      insert b core ∈
+        additiveSupportFamily A
+          (h - 1 + 1) ((q - x) + b) :=
+    by
+      have hraw :=
+        insert_mem_additiveSupportFamily_succ hbA hcore
+      simpa only [Nat.add_comm] using hraw
+  have haCore :
+      insert a (insert b core) ∈
+        additiveSupportFamily A
+          (h - 1 + 1 + 1)
+          (((q - x) + b) + a) :=
+    by
+      have hraw :=
+        insert_mem_additiveSupportFamily_succ haA hbCore
+      simpa only [Nat.add_comm] using hraw
+  have horder : h - 1 + 1 + 1 = h + 1 := by
+    omega
+  have htarget : (q - x) + b + a = q := by
+    omega
+  have hrepair :
+      insert a (insert b core) ∈
+        additiveSupportFamily A (h + 1) q := by
+    simpa only [horder, htarget] using haCore
+  apply not_destroysAt_iff.mpr
+  refine ⟨insert a (insert b core), hrepair, ?_⟩
+  rw [Set.disjoint_left]
+  intro z hzRepair hzY
+  have hzRepairFin :
+      z ∈ insert a (insert b core) :=
+    Finset.mem_coe.mp hzRepair
+  rcases Finset.mem_insert.mp hzRepairFin with
+      hza | hzRest
+  · exact haY (hza ▸ hzY)
+  · rcases Finset.mem_insert.mp hzRest with
+        hzb | hzCore
+    · exact hbY (hzb ▸ hzY)
+    · exact Set.disjoint_left.mp hcoreY
+        (Finset.mem_coe.mpr hzCore) hzY
+
+/-- Contrapositive rigidity of the split-marker repair.
+
+If `Y` really destroys the successor-order target, every two-summand
+decomposition of the private marker inside `A` has a dirty endpoint.  Thus
+the residual marker is pair-primitive relative to the clean set `A \ Y`;
+this is the structural alternative promised by the split-marker attack. -/
+theorem successorDestruction_with_markedPrivateCore_forces_pairPrimitiveMarker
+    {A Y : Set ℕ} {h q x : ℕ}
+    {core : Finset ℕ}
+    (hhpos : 0 < h)
+    (hxq : x ≤ q)
+    (hcore :
+      core ∈
+        additiveSupportFamily A (h - 1) (q - x))
+    (hcoreY :
+      Disjoint (core : Set ℕ) Y)
+    (hdestroy :
+      DestroysAt
+        (additiveSupportFamily A (h + 1))
+        Y q) :
+    ∀ a ∈ A, ∀ b ∈ A, x = a + b →
+      a ∈ Y ∨ b ∈ Y := by
+  intro a haA b hbA hsplit
+  by_contra hclean
+  simp only [not_or] at hclean
+  exact
+    (markedPrivateCore_cleanSplit_repairs_successorTarget
+      hhpos hxq hcore hcoreY haA hbA hsplit
+        hclean.1 hclean.2)
+      hdestroy
+
+/-- Two successful replacements in one marker block give two distinct
+destination labels unless they create a wide support immediately.
+
+Both transfers use the same stored-support function of the source row.  If
+their destination subtypes are equal, the corresponding stored support is
+literally the same finset and contains both distinct replacement points.
+Since both points lie in partition blocks, that support has two distinct
+reservoir vertices. -/
+theorem twoMarkerFailureTransfers_force_distinctTargets_or_wideSupport
+    {A C : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (P : IsFiniteBlockPartition C cell)
+    {Q : Finset ℕ} {p : ℕ}
+    {surviving :
+      {q // q ∈ Q.erase p} → Finset ℕ}
+    (hsurvivingMem :
+      ∀ q,
+        surviving q ∈
+          additiveSupportFamily A (k + 1) q.1)
+    {i b c : ℕ}
+    (hbCell : b ∈ cell i)
+    (hcCell : c ∈ cell i)
+    (hbc : b ≠ c)
+    (qb qc : {q // q ∈ Q.erase p})
+    (hbSupport : b ∈ surviving qb)
+    (hcSupport : c ∈ surviving qc) :
+    qb.1 ≠ qc.1 ∨
+      HasWideReservoirSupportAt
+        (additiveSupportFamily A (k + 1))
+        C qb.1 := by
+  classical
+  by_cases htargets : qb.1 = qc.1
+  · right
+    have hsubtype : qb = qc :=
+      Subtype.ext htargets
+    subst qc
+    have hbC : b ∈ C :=
+      (P.mem_iff b).2 ⟨i, hbCell⟩
+    have hcC : c ∈ C :=
+      (P.mem_iff c).2 ⟨i, hcCell⟩
+    exact ⟨surviving qb, hsurvivingMem qb,
+      b, ⟨Finset.mem_coe.mpr hbSupport, hbC⟩,
+      c, ⟨Finset.mem_coe.mpr hcSupport, hcC⟩,
+      hbc⟩
+  · exact Or.inl htargets
 
 /-- The nontrivial arithmetic content of the old-collision horn.
 
