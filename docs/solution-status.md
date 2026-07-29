@@ -1,3 +1,43 @@
+# GENERAL ORDER: ALL FUSION-READY TAIL BRANCHES CONSUMED (2026-07-29)
+
+The capacity-resolved quadratic-tail endpoint has been passed through one
+global recurrence fork.  Four more terminal geometries now feed a single
+infinite-deletion engine.
+
+- `le_localizedArithmeticDiagonalStart` proves that the prescribed
+  arithmetic tail begins beyond its own diagonal scale.  Consequently a
+  support avoiding a block of that tail supplies an ambient pointed
+  support/block pair which clears both required fusion floors.
+- `HasQuadraticTailAlignedResolvedArithmeticAt.fusionReady_or_arithmeticResidue`
+  is the formal seven-branch audit.  It converts:
+  exact-target matching to the existing aligned exact-matching interface;
+  current-order matching to its existing interface; and both reduced
+  common-column streams and later-block supports to
+  `ReducedStreamFusionStep`.
+- `cofinalReducedFusionSteps_force_fusedSuccessorPredecessorStreams`
+  upgrades a cofinal pointed-step supply to the full fused endpoint,
+  including counterexample destruction and represented predecessor
+  differences on the same infinite deletion.
+- `cofinalQuadraticTailAlignedResolvedArithmetic_resolveFusionReady`
+  takes global cofinal/eventual forks over aligned exact matching,
+  current-order matching, and pointed fusion.  Recurrence of any one is
+  consumed; otherwise three simultaneous cutoffs exclude all four
+  fusion-ready geometries at every later stage.
+- `onlyArithmeticResidues` checks the remaining disjunction rather than
+  relying on its intended reading.  It proves that every sufficiently late
+  nonfused stage has exactly one of the three genuine arithmetic forms:
+  coherent aligned difference growth, represented order-`k-1` two-rank
+  destruction, or the repeated-block cluster created by capacity feedback.
+- The counterexample capstone is
+  `exactBasis_counterexample_forces_fusedStreams_or_eventualQuadraticTailArithmeticWithoutFusionReady`.
+
+This is a strict branch reduction, not a full solution.  The old capacity
+horn and all immediately fusion-ready descendants are gone.  The next
+direct target is the repeated-block cluster: either extract a late pointed
+block step from its many private rows, or force its common anchors to
+produce the already-retained coherent difference-growth branch.  After
+that, only difference composition and the genuine two-rank descent remain.
+
 # GENERAL ORDER: ALIGNED QUADRATIC TAIL REMOVES CAPACITY (2026-07-29)
 
 The protected-gap alignment and the quadratic after-the-fact rerun now act

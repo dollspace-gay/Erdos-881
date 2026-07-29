@@ -42250,6 +42250,65 @@ def localizedArithmeticDiagonalStart (k n : ℕ) : ℕ :=
     (k + 1) * certificateBound + (k + 1)
   capacity + 1
 
+/-- The recursive additive rooted-matching threshold is always positive. -/
+theorem additiveRootedMatchingBound_pos (k r : ℕ) :
+    0 < additiveRootedMatchingBound k r := by
+  cases k <;> simp [additiveRootedMatchingBound]
+
+/-- The prescribed localized-arithmetic tail starts beyond its diagonal
+scale.
+
+This is the small but essential indexing fact which turns a block in the
+moving tail into a genuinely late block of the original partition. -/
+theorem le_localizedArithmeticDiagonalStart (k n : ℕ) :
+    n ≤ localizedArithmeticDiagonalStart k n := by
+  let first :=
+    (n + 1 + k) *
+      additiveRootedMatchingBound k (n + 1)
+  let second := first * (n + 1)
+  let third := second * (k + 1 + (n + 1))
+  let geometricThreshold :=
+    third * additiveRootedMatchingBound (k + 1) (n + 1)
+  have hfirst : n + 1 ≤ first := by
+    dsimp only [first]
+    calc
+      n + 1 ≤ n + 1 + k := by omega
+      _ ≤
+          (n + 1 + k) *
+            additiveRootedMatchingBound k (n + 1) :=
+        Nat.le_mul_of_pos_right
+          (n + 1 + k)
+          (additiveRootedMatchingBound_pos k (n + 1))
+  have hsecond : first ≤ second := by
+    dsimp only [second]
+    exact Nat.le_mul_of_pos_right first (by omega)
+  have hthird : second ≤ third := by
+    dsimp only [third]
+    exact Nat.le_mul_of_pos_right second (by omega)
+  have hgeometric : third ≤ geometricThreshold := by
+    dsimp only [geometricThreshold]
+    exact Nat.le_mul_of_pos_right third
+      (additiveRootedMatchingBound_pos (k + 1) (n + 1))
+  have hnGeometric : n ≤ geometricThreshold := by
+    exact
+      (Nat.le_succ n).trans
+        (hfirst.trans
+          (hsecond.trans
+            (hthird.trans hgeometric)))
+  calc
+    n ≤ geometricThreshold := hnGeometric
+    _ ≤ geometricThreshold + 1 := Nat.le_succ _
+    _ ≤ (k + 1) * (geometricThreshold + 1) :=
+      Nat.le_mul_of_pos_left
+        (geometricThreshold + 1) (by omega)
+    _ ≤
+        (k + 1) * (geometricThreshold + 1) +
+          (k + 1) := Nat.le_add_right _ _
+    _ ≤
+        (k + 1) * (geometricThreshold + 1) +
+          (k + 1) + 1 := Nat.le_succ _
+    _ = localizedArithmeticDiagonalStart k n := by rfl
+
 /-- At diagonal scale `n`, the actual localized certificate has a reduced
 common-column stream on its prescribed quadratic tail. -/
 def HasDiagonalLocalizedReducedStream
@@ -47586,5 +47645,396 @@ theorem exactBasis_counterexample_forces_cofinalQuadraticTailAlignedResolvedArit
         · exact Or.inr
             (Or.inr (Or.inr (Or.inr
               (Or.inr (Or.inr hrepeated)))))
+
+/-- A cofinal supply of ambient pointed fusion steps produces the complete
+fused successor/predecessor endpoint.
+
+The generic fusion recursion first constructs one infinite deletion and a
+strict successor-order survival stream.  Counterexample destruction and
+the existing predecessor bracketing theorem then add the destroyed
+successor stream and represented current-order differences on that same
+deletion. -/
+theorem cofinalReducedFusionSteps_force_fusedSuccessorPredecessorStreams
+    {A K : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hkpos : 0 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1))
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hsteps :
+      ∀ targetFloor blockFloor,
+        Nonempty
+          (ReducedStreamFusionStep
+            A k cell targetFloor blockFloor)) :
+    HasFusedSuccessorPredecessorStreams A k := by
+  obtain ⟨Y, oldTarget, hYA, hYInfinite,
+      holdStrict, holdSurvival⟩ :=
+    cofinalReducedFusionSteps_fuse_infiniteDeletion
+      hKA P hsteps
+  have hsuccessorDestroy :
+      ∀ N, ∃ m, N ≤ m ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) Y m :=
+    strongExactDeletion_of_counterexample hcounter
+      Y hYA hYInfinite
+  have hrepresented :=
+    bracketedDestroyedSuccessorTargets_force_cofinalRepresentedPredecessorDestroyers
+      hkpos hbasis holdStrict holdSurvival
+        hsuccessorDestroy
+  exact
+    ⟨Y, oldTarget, hYA, hYInfinite, holdStrict,
+      holdSurvival, hsuccessorDestroy, hrepresented⟩
+
+/-- Eventual quadratic-tail remainder after every fusion-ready recurrence
+has been removed.
+
+The complete protected-gap-aligned stage is retained.  Three explicit
+cutoffs exclude:
+
+* an aligned exact-target rooted matching of diagonal size;
+* a current-order rooted matching of diagonal size; and
+* an ambient pointed support/block fusion step clearing the diagonal.
+
+The reduced-stream and later-block alternatives of the capacity-resolved
+fork both imply the third predicate.  Hence, after the elementary
+conversion theorem below, only aligned difference growth, represented
+two-rank descent, and repeated-block concentration remain. -/
+def HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady
+    (A K : Set ℕ) (k : ℕ)
+    (cell : ℕ → Finset ℕ) (target : ℕ → ℕ) : Prop :=
+  ∃ N, ∀ n, N ≤ n →
+    HasQuadraticTailAlignedResolvedArithmeticAt
+        A K k cell target n ∧
+      ¬ HasAlignedExactTargetRootedMatchingAt
+          A k cell target n (n + 1) ∧
+      ¬ HasCurrentOrderRootedMatchingAt A k (n + 1) ∧
+      ¬ Nonempty
+          (ReducedStreamFusionStep A k cell n n)
+
+/-- The genuinely arithmetic residue of one quadratic-tail stage.
+
+Only the three branches which do not already supply a known infinite
+deletion engine are present: coherent anchored differences, represented
+two-rank destruction, and the repeated-block cluster produced by capacity
+feedback. -/
+def HasQuadraticTailArithmeticResidueAt
+    (A : Set ℕ) (k n : ℕ)
+    (cell : ℕ → Finset ℕ) : Prop :=
+  let start := localizedArithmeticDiagonalStart k n
+  let tailCell : ℕ → Finset ℕ :=
+    fun j => cell (start + j)
+  ∃ Q : Finset ℕ, ∃ q, ∃ hqQ : q ∈ Q,
+    (∃ E ∈ additiveSupportFamily A (k + 1) q,
+      ∃ T : Finset {r // r ∈ Q.erase q},
+        HasAlignedAnchoredDifferenceGrowth
+          A k (n + 1) tailCell Q q hqQ E T) ∨
+    (∃ r, ∃ D : Finset ℕ, ∃ d,
+      D.Nonempty ∧
+      IsInclusionMinimalDestroyer
+        (additiveSupportFamily A (k + 1)) D r ∧
+      (additiveSupportFamily A (k - 1) d).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A (k - 1))
+        (D : Set ℕ) d) ∨
+    ∃ E ∈ additiveSupportFamily A (k + 1) q,
+      ∃ T : Finset {r // r ∈ Q.erase q},
+      ∃ coveredBlock : {r // r ∈ Q.erase q} → ℕ,
+      ∃ j ∈ T.image coveredBlock,
+        (∀ p ∈ T,
+          HasPrescribedCommonColumnCover
+            A k tailCell Q q hqQ E p (coveredBlock p)) ∧
+        (((n + 1 + k) *
+            additiveRootedMatchingBound k (n + 1)) *
+          (n + 1)) <
+            (T.filter fun p =>
+              coveredBlock p = j).card
+
+/-- Every capacity-resolved aligned stage either exposes one of the three
+fusion-ready predicates, or belongs to the genuine arithmetic residue.
+
+Both common-column streams and later-block supports are converted to an
+ambient `ReducedStreamFusionStep`.  The diagonal tail begins beyond `n`,
+so the converted block clears the required ambient block floor. -/
+theorem HasQuadraticTailAlignedResolvedArithmeticAt.fusionReady_or_arithmeticResidue
+    {A K : Set ℕ} {k n : ℕ}
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (htargetStrict : StrictMono target)
+    (hstage :
+      HasQuadraticTailAlignedResolvedArithmeticAt
+        A K k cell target n) :
+    HasAlignedExactTargetRootedMatchingAt
+        A k cell target n (n + 1) ∨
+      HasCurrentOrderRootedMatchingAt A k (n + 1) ∨
+      Nonempty
+        (ReducedStreamFusionStep A k cell n n) ∨
+      HasQuadraticTailArithmeticResidueAt A k n cell := by
+  classical
+  let start := localizedArithmeticDiagonalStart k n
+  let tailCell : ℕ → Finset ℕ :=
+    fun j => cell (start + j)
+  unfold HasQuadraticTailAlignedResolvedArithmeticAt at hstage
+  obtain ⟨Q, s, i, q, δ, sourceRoot, sourceMatching,
+      hqQ, _hcert, _hlocalized, _hrepresented,
+      hiStart, hiScale, hiLower, hiUpper, hδpos, hqδ,
+      _hqDestroy, hsourceRootCard, _hsourceK,
+      hsourceLarge, hsourceSub, hsourceRoot,
+      hsourcePetal, hsourceMatching, _hsourceSelected,
+      hsourceCell, _hsourceTail, hfinal⟩ :=
+    hstage
+  have htargetFloor : n ≤ q := by
+    exact hiScale.trans
+      ((htargetStrict.id_le i).trans
+        (Nat.le_of_lt hiLower))
+  unfold HasCapacityResolvedTargetLocalizedArithmeticOutcome at hfinal
+  rcases hfinal with
+      hexact | hstream | hdifference | hcurrent |
+        hdescent | hlater | hrepeated
+  · left
+    obtain ⟨exactRoot, exactMatching,
+        hexactRootCard, hexactSub, hexactLarge,
+        hexactRoot, hexactPetal, hexactMatching⟩ :=
+      hexact
+    exact
+      ⟨i, q, δ, sourceRoot, sourceMatching,
+        sourceMatching.biUnion
+          (fun E => E \ sourceRoot),
+        exactRoot, exactMatching, hiScale, hiLower,
+        hiUpper, hδpos, hqδ, hsourceRootCard,
+        hsourceLarge, hsourceSub, hsourceRoot,
+        hsourcePetal, hsourceMatching, rfl,
+        hsourceCell, hexactRootCard, hexactSub,
+        hexactLarge, hexactRoot, hexactPetal,
+        hexactMatching⟩
+  · right
+    right
+    left
+    obtain ⟨E, hEmem, T, hstream⟩ := hstream
+    obtain ⟨j, _hjLarge, hEj⟩ :=
+      hstream.exists_disjointBlock_above
+    let point := (P.nonempty (start + j)).choose
+    have hpointMem : point ∈ cell (start + j) :=
+      (P.nonempty (start + j)).choose_spec
+    have hpointDisjoint : Disjoint E {point} := by
+      rw [Finset.disjoint_left]
+      intro x hxE hxPoint
+      have hx : x = point := by simpa using hxPoint
+      subst x
+      exact Finset.disjoint_left.mp
+        (by simpa only [tailCell] using hEj)
+        hxE hpointMem
+    exact
+      ⟨⟨q, E, start + j, point, htargetFloor,
+        (le_localizedArithmeticDiagonalStart k n).trans
+          (Nat.le_add_right start j),
+        hEmem, hpointMem, hpointDisjoint⟩⟩
+  · right
+    right
+    right
+    exact ⟨Q, q, hqQ, Or.inl hdifference⟩
+  · exact Or.inr (Or.inl hcurrent)
+  · right
+    right
+    right
+    exact ⟨Q, q, hqQ, Or.inr (Or.inl hdescent)⟩
+  · right
+    right
+    left
+    obtain ⟨E, hEmem, _j₀, j, _hj, hEj⟩ := hlater
+    let point := (P.nonempty (start + j)).choose
+    have hpointMem : point ∈ cell (start + j) :=
+      (P.nonempty (start + j)).choose_spec
+    have hpointDisjoint : Disjoint E {point} := by
+      rw [Finset.disjoint_left]
+      intro x hxE hxPoint
+      have hx : x = point := by simpa using hxPoint
+      subst x
+      exact Finset.disjoint_left.mp
+        (by simpa only [tailCell] using hEj)
+        hxE hpointMem
+    exact
+      ⟨⟨q, E, start + j, point, htargetFloor,
+        (le_localizedArithmeticDiagonalStart k n).trans
+          (Nat.le_add_right start j),
+        hEmem, hpointMem, hpointDisjoint⟩⟩
+  · right
+    right
+    right
+    exact ⟨Q, q, hqQ, Or.inr (Or.inr hrepeated)⟩
+
+/-- The eventual no-fusion-ready endpoint really contains only the three
+advertised arithmetic residues.
+
+This theorem is the formal branch audit: it invokes the conversion above
+at every late scale and contradicts each of the three stored negative
+predicates.  The original aligned stage is retained alongside the reduced
+arithmetic conclusion. -/
+theorem HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady.onlyArithmeticResidues
+    {A K : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (P : IsFiniteBlockPartition K cell)
+    (htargetStrict : StrictMono target)
+    (hremainder :
+      HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady
+        A K k cell target) :
+    ∃ N, ∀ n, N ≤ n →
+      HasQuadraticTailAlignedResolvedArithmeticAt
+          A K k cell target n ∧
+        HasQuadraticTailArithmeticResidueAt A k n cell := by
+  obtain ⟨N, hstage⟩ := hremainder
+  refine ⟨N, ?_⟩
+  intro n hn
+  obtain ⟨haligned, hnotExact, hnotCurrent,
+      hnotFusion⟩ :=
+    hstage n hn
+  refine ⟨haligned, ?_⟩
+  rcases
+      haligned.fusionReady_or_arithmeticResidue
+        P htargetStrict with
+      hexact | hcurrent | hfusion | harithmetic
+  · exact (hnotExact hexact).elim
+  · exact (hnotCurrent hcurrent).elim
+  · exact (hnotFusion hfusion).elim
+  · exact harithmetic
+
+/-- Consume every cofinally recurring fusion-ready member of the
+capacity-resolved diagonal endpoint.
+
+The three recurrence tests are global, not a stage-by-stage classification:
+aligned exact-target matching, current-order matching, and ambient pointed
+fusion.  A cofinal positive answer invokes an existing infinite-deletion
+engine.  Three negative answers supply genuine simultaneous cutoffs while
+leaving the full source alignment at every later scale. -/
+theorem cofinalQuadraticTailAlignedResolvedArithmetic_resolveFusionReady
+    {A K : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (hkpos : 0 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1))
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hstages :
+      ∀ n,
+        HasQuadraticTailAlignedResolvedArithmeticAt
+          A K k cell target n) :
+    HasFusedSuccessorPredecessorStreams A k ∨
+      HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady
+        A K k cell target := by
+  classical
+  by_cases hexact :
+      ∀ N, ∃ n, N ≤ n ∧
+        HasAlignedExactTargetRootedMatchingAt
+          A k cell target n (n + 1)
+  · left
+    have hgrowth :
+        HasCofinalAlignedExactTargetRootedMatchings
+          A k cell target := by
+      intro gapFloor demand
+      obtain ⟨n, hn, hstage⟩ :=
+        hexact (max gapFloor demand)
+      exact hstage.mono
+        ((le_max_left gapFloor demand).trans hn)
+        ((le_max_right gapFloor demand).trans
+          (hn.trans (Nat.le_succ n)))
+    exact
+      hgrowth.fusesInfiniteDeletion
+        hkpos hbasis hcounter
+  · push Not at hexact
+    obtain ⟨Nexact, hNexact⟩ := hexact
+    by_cases hcurrent :
+        ∀ N, ∃ n, N ≤ n ∧
+          HasCurrentOrderRootedMatchingAt A k (n + 1)
+    · left
+      have hgrowth :
+          HasCofinalCurrentOrderRootedMatchings A k := by
+        intro demand
+        obtain ⟨n, hn, hstage⟩ := hcurrent demand
+        exact hstage.mono
+          (hn.trans (Nat.le_succ n))
+      exact
+        hgrowth.fusesInfiniteDeletion
+          hkpos hbasis hcounter
+    · push Not at hcurrent
+      obtain ⟨Ncurrent, hNcurrent⟩ := hcurrent
+      by_cases hfusion :
+          ∀ N, ∃ n, N ≤ n ∧
+            Nonempty
+              (ReducedStreamFusionStep A k cell n n)
+      · left
+        have hsteps :
+            ∀ targetFloor blockFloor,
+              Nonempty
+                (ReducedStreamFusionStep
+                  A k cell targetFloor blockFloor) := by
+          intro targetFloor blockFloor
+          obtain ⟨n, hn, hstep⟩ :=
+            hfusion (max targetFloor blockFloor)
+          obtain ⟨step⟩ := hstep
+          exact
+            ⟨{ step with
+              target_lower :=
+                (le_max_left targetFloor blockFloor).trans
+                  (hn.trans step.target_lower)
+              block_lower :=
+                (le_max_right targetFloor blockFloor).trans
+                  (hn.trans step.block_lower) }⟩
+        exact
+          cofinalReducedFusionSteps_force_fusedSuccessorPredecessorStreams
+            hkpos hbasis hcounter hKA P hsteps
+      · right
+        push Not at hfusion
+        obtain ⟨Nfusion, hNfusion⟩ := hfusion
+        refine
+          ⟨max Nexact (max Ncurrent Nfusion), ?_⟩
+        intro n hn
+        have hnExact : Nexact ≤ n :=
+          (le_max_left Nexact (max Ncurrent Nfusion)).trans hn
+        have hnCurrent : Ncurrent ≤ n :=
+          (le_max_left Ncurrent Nfusion).trans
+            ((le_max_right Nexact
+              (max Ncurrent Nfusion)).trans hn)
+        have hnFusion : Nfusion ≤ n :=
+          (le_max_right Ncurrent Nfusion).trans
+            ((le_max_right Nexact
+              (max Ncurrent Nfusion)).trans hn)
+        exact
+          ⟨hstages n, hNexact n hnExact,
+            hNcurrent n hnCurrent,
+            (fun hstep => by
+              obtain ⟨step⟩ := hstep
+              exact (hNfusion n hnFusion).false step)⟩
+
+/-- Counterexample-level endpoint after all fusion-ready recurrences in the
+aligned quadratic-tail fork have been consumed. -/
+theorem exactBasis_counterexample_forces_fusedStreams_or_eventualQuadraticTailArithmeticWithoutFusionReady
+    {A : Set ℕ} {k : ℕ}
+    (hk : 2 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1)) :
+    HasFusedSuccessorPredecessorStreams A k ∨
+      ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ target : ℕ → ℕ,
+        K ⊆ A ∧
+        K.Infinite ∧
+        IsFiniteBlockPartition K cell ∧
+        StrictMono target ∧
+        (∀ i, (i + k + 3) ^ 2 < (cell i).card) ∧
+        HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady
+          A K k cell target := by
+  obtain ⟨K, cell, target, hKA, hKInfinite, P,
+      htargetStrict, hcellLarge, hstages⟩ :=
+    exactBasis_counterexample_forces_cofinalQuadraticTailAlignedResolvedArithmetic
+      hk hbasis hcounter
+  obtain hfused | hremainder :=
+    cofinalQuadraticTailAlignedResolvedArithmetic_resolveFusionReady
+      (by omega) hbasis hcounter hKA P hstages
+  · exact Or.inl hfused
+  · exact Or.inr
+      ⟨K, cell, target, hKA, hKInfinite, P,
+        htargetStrict, hcellLarge, hremainder⟩
 
 end Erdos881
