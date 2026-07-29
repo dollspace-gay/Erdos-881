@@ -1,3 +1,45 @@
+# GENERAL ORDER: QUADRATIC-TAIL ARITHMETIC RESIDUE ELIMINATED (2026-07-29)
+
+The entire non-fused quadratic-tail remainder has collapsed.  The key fact
+is row-local and occurs before difference normalization, fixed-core
+descent, or capacity feedback: every prescribed common-column cover row
+already chooses a point in its covered tail block outside the distinguished
+support.
+
+- `HasPrescribedCommonColumnCover.exists_point_outside_commonSupport`
+  uses the row's actual selector.  The distinguished support is one of the
+  row's surviving columns and is disjoint from the whole selector, while
+  the selector chooses a point of the covered block.  That point and the
+  support are exactly a `ReducedStreamFusionStep`.
+- `HasCommonColumnAnchoredArithmeticConcentration.
+  exists_point_outside_commonSupport` applies this observation to any row
+  in the repeated-block concentration.  The arithmetic fork therefore
+  never needs to be opened.
+- `HasCapacityResolvedTargetLocalizedArithmeticOutcome.
+  exact_or_current_or_pointed` audits all seven former terminal branches.
+  Every branch other than exact-target or current-order rooted matching is
+  pointed-fusion-ready, including aligned differences and repeated-block
+  concentration.
+- `HasQuadraticTailAlignedResolvedArithmeticAt.fusionReady` promotes the
+  audit while retaining the protected source block, bracket, and
+  translation `q = target i + δ`.
+- `cofinalQuadraticTailAlignedResolvedArithmetic_force_fusedStreams`
+  combines this exhaustive three-way stage theorem with the existing
+  recurrence resolver.  Its putative simultaneous-cutoff remainder is
+  contradictory at the first late stage.
+- The new counterexample-level theorem
+  `exactBasis_counterexample_forces_fusedSuccessorPredecessorStreams`
+  proves that every hypothetical hard-order counterexample with `k > 2`
+  produces the full fused successor/predecessor deletion.
+
+This is a direct branch elimination.  In particular, coherent-difference,
+fixed-core, capacity, and certificate-linked two-rank outcomes are no
+longer open leaves of the quadratic-tail attack.  It is not yet the full
+solution: the remaining task is to contradict the single fused-stream
+endpoint.  Existing machinery already reduces that endpoint to cofinal
+boundary-repair self-replication or fixed-rank contained translated gaps,
+so those are now the only live sides of the proof.
+
 # GENERAL ORDER: REPEATED-BLOCK RESIDUE CONSUMED (2026-07-29)
 
 The capacity-feedback repeated-block cluster is no longer a terminal
