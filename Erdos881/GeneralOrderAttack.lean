@@ -62000,4 +62000,168 @@ theorem
       hinterlaced, hcoreMem, hcoreZ,
       hstageData, hfinalFork⟩
 
+/-- The operational local endpoint attack, stripped of construction-only
+support names.
+
+At every selected source block, both order-`k` endpoints survive by the
+literal supports `insert marked core` and
+`insert marked translatedSupport`.  The translated lower-order endpoint
+simultaneously carries arithmetic injury at a growing floor.  Current
+strong minimality then supplies cofinal destroyed predecessor targets
+strictly below or strictly above that exact translated endpoint. -/
+def HasCofinalFixedCoreThresholdStraddlingInjuries
+    (A D : Set ℕ) (k t : ℕ)
+    (target : ℕ → ℕ) : Prop :=
+  ∃ Z : Set ℕ,
+  ∃ lower upper displacement markedPoint
+      originIndex : ℕ → ℕ,
+  ∃ translatedSupport : ℕ → Finset ℕ,
+  ∃ core : Finset ℕ,
+    Z ⊆ D ∧
+    Z ⊆ A ∧
+    Z.Infinite ∧
+    StrictMono originIndex ∧
+    StrictMono lower ∧
+    StrictMono upper ∧
+    (∀ n,
+      lower n < upper n ∧
+      upper n < lower (n + 1)) ∧
+    core ∈ additiveSupportFamily A (k - 1) t ∧
+    Disjoint (core : Set ℕ) Z ∧
+    (∀ n,
+      0 < displacement n ∧
+      lower n = target (originIndex n) ∧
+      lower n = markedPoint n + t ∧
+      upper n = lower n + displacement n ∧
+      upper n < target (originIndex n + 1) ∧
+      markedPoint n ∈ A ∧
+      insert (markedPoint n) core ∈
+        additiveSupportFamily A k (lower n) ∧
+      Disjoint
+        ((insert (markedPoint n) core :
+            Finset ℕ) : Set ℕ) Z ∧
+      translatedSupport n ∈
+        additiveSupportFamily A (k - 1)
+          (t + displacement n) ∧
+      Disjoint
+        (translatedSupport n : Set ℕ) Z ∧
+      insert (markedPoint n)
+          (translatedSupport n) ∈
+        additiveSupportFamily A k (upper n) ∧
+      Disjoint
+        ((insert (markedPoint n)
+            (translatedSupport n) :
+            Finset ℕ) : Set ℕ) Z ∧
+      HasFixedPredecessorArithmeticInjuryAtFloor
+        A Z k (t + displacement n) n) ∧
+    ((∀ L, ∃ n m,
+      L ≤ n ∧
+      lower n < m ∧
+      m < upper n ∧
+      DestroysAt
+        (additiveSupportFamily A k) Z m ∧
+      t < m - markedPoint n ∧
+      m - markedPoint n <
+        t + displacement n ∧
+      DestroysAt
+        (additiveSupportFamily A (k - 1))
+        Z (m - markedPoint n)) ∨
+    (∀ L, ∃ n m,
+      L ≤ n ∧
+      upper n < m ∧
+      m < lower (n + 1) ∧
+      DestroysAt
+        (additiveSupportFamily A k) Z m ∧
+      t + displacement n <
+        m - markedPoint n ∧
+      DestroysAt
+        (additiveSupportFamily A (k - 1))
+        Z (m - markedPoint n)))
+
+/-- Project the fully synchronized same-block theorem to its operational
+fixed-core threshold-straddling interface. -/
+theorem
+    HasTerminalFixedCoreGeometricArithmeticFusion.toCofinalFixedCoreThresholdStraddlingInjuries
+    {A B C D Y : Set ℕ} {k t ε : ℕ}
+    {landing target root repaired : ℕ → ℕ}
+    (hk : 1 < k)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (htargetStrict : StrictMono target)
+    (hlocal :
+      HasTerminalFixedCoreGeometricArithmeticFusion
+        A B C D Y k t ε landing target root repaired
+          (fun upper nextTarget => upper < nextTarget)) :
+    HasCofinalFixedCoreThresholdStraddlingInjuries
+      A D k t target := by
+  obtain ⟨Z, lower, upper, displacement,
+      markedPoint, originIndex, lowerSupport,
+      upperSupport, translatedSupport, core,
+      _hDC, hZD, hZA, hZInfinite,
+      horiginStrict, hlowerStrict, hupperStrict,
+      hinterlaced, hcoreMem, hcoreZ,
+      hdata, hfork⟩ :=
+    hlocal.sameBlock_currentMinimality_forces_fixedCoreInterior_or_interveningFans
+      hk hminimal htargetStrict
+  refine
+    ⟨Z, lower, upper, displacement,
+      markedPoint, originIndex, translatedSupport,
+      core, hZD, hZA, hZInfinite,
+      horiginStrict, hlowerStrict, hupperStrict,
+      hinterlaced, hcoreMem, hcoreZ, ?_, hfork⟩
+  intro n
+  obtain ⟨hdisplacementPos, hlowerTarget,
+      hlowerMarked, hupperEq, hupperBlock,
+      hmarkedA, hlowerSupportEq,
+      hlowerSupportMem, hlowerSupportZ,
+      htranslatedMem, htranslatedZ,
+      hthresholdInjury, hupperSupportEq,
+      hupperSupportMem, hupperSupportZ⟩ :=
+    hdata n
+  refine
+    ⟨hdisplacementPos, hlowerTarget,
+      hlowerMarked, hupperEq, hupperBlock,
+      hmarkedA, ?_, ?_, htranslatedMem,
+      htranslatedZ, ?_, ?_, hthresholdInjury⟩
+  · rw [← hlowerSupportEq]
+    exact hlowerSupportMem
+  · rw [← hlowerSupportEq]
+    exact hlowerSupportZ
+  · rw [← hupperSupportEq]
+    exact hupperSupportMem
+  · rw [← hupperSupportEq]
+    exact hupperSupportZ
+
+/-- The terminal fixed-core fusion has no residual geometric predicate.
+
+Its same-block side is already a synchronized threshold-straddling attack
+at one represented endpoint.  Its boundary-crossing side already has
+cofinally large exact translations dominating their source-block gaps,
+with simultaneous lower-order arithmetic injury. -/
+theorem
+    HasTerminalFixedSourceCoreAlignedFusion.forces_thresholdStraddling_or_gapDominatingCrossBlock
+    {A B C D Y : Set ℕ} {k t ε : ℕ}
+    {landing target root repaired : ℕ → ℕ}
+    (hk : 1 < k)
+    (hDC : D ⊆ C)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (htargetStrict : StrictMono target)
+    (hfused :
+      HasTerminalFixedSourceCoreAlignedFusion
+        A B C D Y k t ε landing target root repaired) :
+    HasCofinalFixedCoreThresholdStraddlingInjuries
+        A D k t target ∨
+      HasCofinalGapDominatingTerminalCrossBlockArithmetic
+        A D k t target := by
+  obtain hlocal | hcross :=
+    hfused.sameBlock_or_crossBlock_arithmeticFusion
+      hk hDC hminimal
+  · exact
+      Or.inl
+        (hlocal.toCofinalFixedCoreThresholdStraddlingInjuries
+          hk hminimal htargetStrict)
+  · exact
+      Or.inr
+        (hcross.toCofinalGapDominatingTerminalCrossBlockArithmetic
+          hk htargetStrict)
+
 end Erdos881

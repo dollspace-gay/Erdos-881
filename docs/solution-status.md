@@ -1,5 +1,15 @@
 # GENERAL ORDER: FIXED-CORE INJURIES STRADDLE ONE TRANSLATED ENDPOINT (2026-07-29)
 
+`HasTerminalFixedSourceCoreAlignedFusion.forces_thresholdStraddling_or_gapDominatingCrossBlock`
+now removes the last unprocessed geometric predicate from this terminal
+branch.  Its exhaustive conclusion is:
+
+- a synchronized fixed-core stream with cofinal lower-order injuries
+  strictly below or above \(t+\Delta_n\), while that same endpoint carries
+  arithmetic injury at floor \(n\); or
+- cofinally large exact translations which cross and dominate their
+  original source-block gaps, again with simultaneous arithmetic injury.
+
 The same-block branch now retains its literal source support through the
 current-order destruction argument and through the localized arithmetic
 threshold.
