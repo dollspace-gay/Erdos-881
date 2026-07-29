@@ -48007,6 +48007,639 @@ theorem cleanSupport_destroyedTranslate_forces_lowerGap_or_boundaryLanding
                   ⟨c, hfloorC, hHE hcH, hcA, hcY,
                     hshiftA, hshiftY⟩
 
+/-- Cofinal residual-target growth crosses the arithmetic descent
+threshold without losing the block which produced the translation.
+
+The aligned private-core stream supplies, at one and the same stage,
+
+* an old successor block `oldTarget n < m < oldTarget (n + 1)`;
+* its predecessor `q = m - a`;
+* a current block containing that predecessor;
+* a clean rank-`r` support `K` of `t`; and
+* the exact displacement `δ` for which both
+  `q = hits.length * landing j + (t + δ)` and the residual translate
+  `t + δ` are destroyed.
+
+If the residual targets grow cofinally, request `t ≥ r * L`.  The existing
+finite arithmetic descent can then be run at floor `L`.  It gives one of
+three genuine exits, still with the original `δ`: the translate `t + δ`
+is already a rank-`r` gap, a strict lower positive rank has a translated
+gap beyond `L`, or an actual clean basis point beyond `L` is translated
+into `B`.  Thus the growing-target horn is converted into arithmetic
+injury rather than merely being renamed. -/
+theorem
+    cofinal_alignedPrivateCoreStages_targetGrowth_forces_residualArithmeticExit
+    {A B Y : Set ℕ} {k r : ℕ}
+    {oldTarget currentTarget landing : ℕ → ℕ}
+    (hrpos : 0 < r)
+    (hgrowth :
+      ∀ targetFloor stageFloor,
+        ∃ t, targetFloor ≤ t ∧
+          HasAlignedPrivateCoreStageAtTarget
+            A B Y k r oldTarget currentTarget landing
+              t stageFloor) :
+    ∀ L,
+      ∃ t n m, ∃ E : Finset ℕ, ∃ a j q,
+      ∃ K : Finset ℕ, ∃ δ, ∃ hits : List ℕ,
+        L ≤ t ∧
+        r * L ≤ t ∧
+        L ≤ n ∧
+        L ≤ j ∧
+        L ≤ q ∧
+        oldTarget n < m ∧
+        m < oldTarget (n + 1) ∧
+        E ∈
+          additiveSupportFamily A (k + 1)
+            (oldTarget n) ∧
+        Disjoint (E : Set ℕ) B ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) B m ∧
+        a ∈ E ∧
+        q = m - a ∧
+        currentTarget j < q ∧
+        q < currentTarget (j + 1) ∧
+        δ = q - currentTarget j ∧
+        0 < δ ∧
+        0 < hits.length ∧
+        hits.length + r = k ∧
+        (∀ x ∈ hits, x = landing j) ∧
+        K ∈ additiveSupportFamily A r t ∧
+        Disjoint (K : Set ℕ) Y ∧
+        Disjoint (K : Set ℕ) B ∧
+        currentTarget j =
+          hits.length * landing j + t ∧
+        q =
+          hits.length * landing j + (t + δ) ∧
+        (additiveSupportFamily A k q).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A k) B q ∧
+        DestroysAt
+          (additiveSupportFamily A r) B (t + δ) ∧
+        (additiveSupportFamily A r (t + δ) = ∅ ∨
+          ((∃ ℓ u, ∃ G : Finset ℕ,
+              0 < ℓ ∧
+              ℓ < r ∧
+              L ≤ u ∧
+              G ∈ additiveSupportFamily A ℓ u ∧
+              G ⊆ K ∧
+              Disjoint (G : Set ℕ) B ∧
+              additiveSupportFamily A ℓ (u + δ) = ∅) ∨
+            ∃ c,
+              L ≤ c ∧
+              c ∈ K ∧
+              c ∈ A ∧
+              c ∉ B ∧
+              c + δ ∈ A ∧
+              c + δ ∈ B)) := by
+  classical
+  intro L
+  obtain ⟨t, htFloor, hstage⟩ :=
+    hgrowth (r * L) L
+  obtain ⟨n, m, E, a, j, q, H, K, δ, hits,
+      hnL, hjL, hqL, hnLower, hnUpper,
+      hEmem, hEB, hmDestroy, haE, _haAverage,
+      hqEq, hjLower, hjUpper, _hHmem, _hHB,
+      _hlandingH, _hHprivate, hδEq, hδpos,
+      hhitsPos, hlength, hhitsEq, hKmem,
+      _hKH, hKY, hKB, _hHeq,
+      hcurrentSplit, hqSplit, hqNonempty,
+      hqDestroy, hcoreDestroy⟩ :=
+    hstage
+  have hLt : L ≤ t :=
+    (Nat.le_mul_of_pos_left L hrpos).trans htFloor
+  refine
+    ⟨t, n, m, E, a, j, q, K, δ, hits,
+      hLt, htFloor, hnL, hjL, hqL,
+      hnLower, hnUpper, hEmem, hEB, hmDestroy,
+      haE, hqEq, hjLower, hjUpper, hδEq, hδpos,
+      hhitsPos, hlength, hhitsEq, hKmem, hKY,
+      hKB, hcurrentSplit, hqSplit, hqNonempty,
+      hqDestroy, hcoreDestroy, ?_⟩
+  by_cases hgap :
+      additiveSupportFamily A r (t + δ) = ∅
+  · exact Or.inl hgap
+  · have hshiftNonempty :
+        (additiveSupportFamily A r (t + δ)).Nonempty :=
+      Finset.nonempty_iff_ne_empty.mpr hgap
+    obtain hlower | hboundary :=
+      cleanSupport_destroyedTranslate_forces_lowerGap_or_boundaryLanding
+        hrpos htFloor hKmem hKB hshiftNonempty
+          hcoreDestroy
+    · obtain ⟨ℓ, u, G, hℓpos, hℓr, hLu,
+          hGmem, hGK, hGB, hGgap⟩ :=
+        hlower
+      exact
+        Or.inr
+          (Or.inl
+            ⟨ℓ, u, G, hℓpos, hℓr, hLu,
+              hGmem, hGK, hGB, hGgap⟩)
+    · obtain ⟨c, hLc, hcK, hcA, hcB,
+          hshiftA, hshiftB⟩ :=
+        hboundary
+      exact
+        Or.inr
+          (Or.inr
+            ⟨c, hLc, hcK, hcA, hcB,
+              hshiftA, hshiftB⟩)
+
+/-- A fixed residual target forces one fixed residual support and an exact
+moving-root normal form.
+
+For a literal target `t`, the family `additiveSupportFamily A r t` is
+finite.  Pigeonholing the residual support `K` through the cofinal aligned
+stages therefore fixes one clean `K` once and for all.  The peeled hit list
+is nonempty and every one of its entries is the current landing point, so
+the reconstructed support and both aligned targets simplify to
+
+`H = insert (landing j) K`,
+
+`currentTarget j = (k - r) * landing j + t`, and
+
+`q = (k - r) * landing j + (t + δ)`.
+
+All three targets still come from the same old successor block and use the
+same positive displacement `δ`.  This is the finite root capture needed
+for the moving-root attack; no residual support is allowed to migrate. -/
+theorem cofinal_alignedPrivateCoreStages_fixedTarget_fixSupport
+    {A B Y : Set ℕ} {k r t : ℕ}
+    {oldTarget currentTarget landing : ℕ → ℕ}
+    (hfixed :
+      ∀ L,
+        HasAlignedPrivateCoreStageAtTarget
+          A B Y k r oldTarget currentTarget landing t L) :
+    ∃ K : Finset ℕ,
+      K ∈ additiveSupportFamily A r t ∧
+      Disjoint (K : Set ℕ) Y ∧
+      Disjoint (K : Set ℕ) B ∧
+      ∀ L,
+        ∃ n m, ∃ E : Finset ℕ, ∃ a j q,
+        ∃ H : Finset ℕ, ∃ δ,
+          L ≤ n ∧
+          L ≤ j ∧
+          L ≤ q ∧
+          oldTarget n < m ∧
+          m < oldTarget (n + 1) ∧
+          E ∈
+            additiveSupportFamily A (k + 1)
+              (oldTarget n) ∧
+          Disjoint (E : Set ℕ) B ∧
+          DestroysAt
+            (additiveSupportFamily A (k + 1)) B m ∧
+          a ∈ E ∧
+          (k + 1) * a ≤ oldTarget n ∧
+          q = m - a ∧
+          currentTarget j < q ∧
+          q < currentTarget (j + 1) ∧
+          H = insert (landing j) K ∧
+          H ∈
+            additiveSupportFamily A k
+              (currentTarget j) ∧
+          Disjoint (H : Set ℕ) B ∧
+          landing j ∈ H ∧
+          Disjoint (H : Set ℕ)
+            (Y \ {landing j}) ∧
+          δ = q - currentTarget j ∧
+          0 < δ ∧
+          currentTarget j =
+            (k - r) * landing j + t ∧
+          q =
+            (k - r) * landing j + (t + δ) ∧
+          (additiveSupportFamily A k q).Nonempty ∧
+          DestroysAt
+            (additiveSupportFamily A k) B q ∧
+          DestroysAt
+            (additiveSupportFamily A r) B (t + δ) ∧
+          (landing j + δ ∉ A ∨
+            (landing j + δ ∈ A ∧
+              landing j + δ ∈ B ∧
+              ¬ DestroysAt
+                (additiveSupportFamily A k)
+                (B \ {landing j + δ}) q)) := by
+  classical
+  let supports : Finset (Finset ℕ) :=
+    additiveSupportFamily A r t
+  let P : Finset ℕ → ℕ → Prop := fun K L =>
+    Disjoint (K : Set ℕ) Y ∧
+    Disjoint (K : Set ℕ) B ∧
+    ∃ n m, ∃ E : Finset ℕ, ∃ a j q,
+    ∃ H : Finset ℕ, ∃ δ,
+      L ≤ n ∧
+      L ≤ j ∧
+      L ≤ q ∧
+      oldTarget n < m ∧
+      m < oldTarget (n + 1) ∧
+      E ∈
+        additiveSupportFamily A (k + 1)
+          (oldTarget n) ∧
+      Disjoint (E : Set ℕ) B ∧
+      DestroysAt
+        (additiveSupportFamily A (k + 1)) B m ∧
+      a ∈ E ∧
+      (k + 1) * a ≤ oldTarget n ∧
+      q = m - a ∧
+      currentTarget j < q ∧
+      q < currentTarget (j + 1) ∧
+      H = insert (landing j) K ∧
+      H ∈
+        additiveSupportFamily A k
+          (currentTarget j) ∧
+      Disjoint (H : Set ℕ) B ∧
+      landing j ∈ H ∧
+      Disjoint (H : Set ℕ)
+        (Y \ {landing j}) ∧
+      δ = q - currentTarget j ∧
+      0 < δ ∧
+      currentTarget j =
+        (k - r) * landing j + t ∧
+      q =
+        (k - r) * landing j + (t + δ) ∧
+      (additiveSupportFamily A k q).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A k) B q ∧
+      DestroysAt
+        (additiveSupportFamily A r) B (t + δ) ∧
+      (landing j + δ ∉ A ∨
+        (landing j + δ ∈ A ∧
+          landing j + δ ∈ B ∧
+          ¬ DestroysAt
+            (additiveSupportFamily A k)
+            (B \ {landing j + δ}) q))
+  have hstageP :
+      ∀ L, ∃ K ∈ supports, P K L := by
+    intro L
+    obtain ⟨n, m, E, a, j, q, H, K, δ, hits,
+        hnL, hjL, hqL, hnLower, hnUpper,
+        hEmem, hEB, hmDestroy, haE, haAverage,
+        hqEq, hjLower, hjUpper, hHmem, hHB,
+        hlandingH, hHprivate, hδEq, hδpos,
+        hhitsPos, hlength, hhitsEq, hKmem,
+        _hKH, hKY, hKB, hHeq,
+        hcurrentSplit, hqSplit, hqNonempty,
+        hqDestroy, hcoreDestroy⟩ :=
+      hfixed L
+    have hhitsFinset :
+        hits.toFinset = {landing j} := by
+      ext x
+      simp only [List.mem_toFinset,
+        Finset.mem_singleton]
+      constructor
+      · exact hhitsEq x
+      · intro hx
+        subst x
+        obtain ⟨y, hyHits⟩ :=
+          List.exists_mem_of_ne_nil hits
+            (List.length_pos_iff.mp hhitsPos)
+        have hyEq : y = landing j :=
+          hhitsEq y hyHits
+        simpa only [hyEq] using hyHits
+    have hHroot :
+        H = insert (landing j) K := by
+      calc
+        H = hits.toFinset ∪ K := by
+          rw [hHeq,
+            foldr_insert_eq_toFinset_union]
+        _ = {landing j} ∪ K := by
+          rw [hhitsFinset]
+        _ = insert (landing j) K := by
+          simp
+    have hhitsLength :
+        hits.length = k - r := by
+      omega
+    have hcurrentRoot :
+        currentTarget j =
+          (k - r) * landing j + t := by
+      simpa only [hhitsLength] using hcurrentSplit
+    have hqRoot :
+        q =
+          (k - r) * landing j + (t + δ) := by
+      simpa only [hhitsLength] using hqSplit
+    have hkpos : 0 < k := by
+      omega
+    have hqCurrent :
+        q = currentTarget j + δ := by
+      rw [hδEq]
+      omega
+    have hrootExit :
+        landing j + δ ∉ A ∨
+          (landing j + δ ∈ A ∧
+            landing j + δ ∈ B ∧
+            ¬ DestroysAt
+              (additiveSupportFamily A k)
+              (B \ {landing j + δ}) q) := by
+      by_cases hshiftA : landing j + δ ∈ A
+      · right
+        have hkPred : k - 1 + 1 = k := by
+          omega
+        have htranslationExit :
+            ∀ c ∈ H, c + δ ∈ A →
+              c + δ ∈ B := by
+          have hHmemPred :
+              H ∈ additiveSupportFamily A
+                ((k - 1) + 1) (currentTarget j) := by
+            rw [hkPred]
+            exact hHmem
+          have hqDestroyPred :
+              DestroysAt
+                (additiveSupportFamily A ((k - 1) + 1))
+                B q := by
+            rw [hkPred]
+            exact hqDestroy
+          exact
+            alignedSurvivalDestruction_forces_translationExit
+              hHmemPred hHB hqCurrent hqDestroyPred
+        have hshiftB :
+            landing j + δ ∈ B :=
+          htranslationExit
+            (landing j) hlandingH hshiftA
+        have hrepair :
+            ¬ DestroysAt
+              (additiveSupportFamily A k)
+              (B \ {landing j + δ})
+              (currentTarget j + δ) :=
+          cleanSupport_boundaryPoint_survives_after_restoring
+            hkpos hHmem hHB hlandingH hshiftA
+        rw [← hqCurrent] at hrepair
+        exact
+          ⟨hshiftA, hshiftB, hrepair⟩
+      · exact Or.inl hshiftA
+    exact
+      ⟨K, hKmem, hKY, hKB,
+        n, m, E, a, j, q, H, δ,
+        hnL, hjL, hqL, hnLower, hnUpper,
+        hEmem, hEB, hmDestroy, haE, haAverage,
+        hqEq, hjLower, hjUpper, hHroot,
+        hHmem, hHB, hlandingH, hHprivate,
+        hδEq, hδpos, hcurrentRoot, hqRoot,
+        hqNonempty, hqDestroy, hcoreDestroy,
+        hrootExit⟩
+  have hcofinal :
+      ∀ X, ∃ L, X < L ∧
+        ∃ K ∈ supports, P K L := by
+    intro X
+    obtain ⟨K, hKsupports, hKP⟩ :=
+      hstageP (X + 1)
+    exact
+      ⟨X + 1, by omega, K, hKsupports, hKP⟩
+  have hfixedSupport :
+      ∃ K ∈ supports, ∀ X, ∃ L, X < L ∧ P K L := by
+    by_contra hnone
+    push Not at hnone
+    let f : Finset ℕ → ℕ := fun K =>
+      if hK : K ∈ supports then
+        Classical.choose (hnone K hK)
+      else 0
+    have hf :
+        ∀ K ∈ supports, ∀ L,
+          f K < L → ¬ P K L := by
+      intro K hK L hfL
+      have hspec :=
+        Classical.choose_spec (hnone K hK)
+      have hfEq :
+          f K =
+            Classical.choose (hnone K hK) := by
+        simp only [f, hK, dite_true]
+      rw [hfEq] at hfL
+      exact hspec L hfL
+    obtain ⟨L, hsupL, K, hKsupports, hKP⟩ :=
+      hcofinal (supports.sup f)
+    have hKBound :
+        f K ≤ supports.sup f :=
+      Finset.le_sup (f := f) hKsupports
+    exact
+      hf K hKsupports L
+        (hKBound.trans_lt hsupL) hKP
+  obtain ⟨K, hKsupports, hKPcofinal⟩ :=
+    hfixedSupport
+  obtain ⟨M₀, _hM₀, hKY, hKB, _hstage₀⟩ :=
+    hKPcofinal 0
+  refine
+    ⟨K, hKsupports, hKY, hKB, ?_⟩
+  intro L
+  obtain ⟨M, hLM, _hKY', _hKB',
+      n, m, E, a, j, q, H, δ,
+      hnM, hjM, hqM, hrest⟩ :=
+    hKPcofinal L
+  exact
+    ⟨n, m, E, a, j, q, H, δ,
+      (Nat.le_of_lt hLM).trans hnM,
+      (Nat.le_of_lt hLM).trans hjM,
+      (Nat.le_of_lt hLM).trans hqM,
+      hrest⟩
+
+/-- The captured moving root produces either cofinal literal holes or a
+cofinal one-point repair stream.
+
+Once `K` and `t` are fixed, strict growth of `currentTarget` and
+
+`currentTarget j = (k-r) * landing j + t`
+
+force the moving root itself beyond any requested point floor.  The
+translation exit retained above can therefore be homogenized.  Either
+cofinally many translated roots are absent from `A`, with the full old
+source block and displacement still recorded, or every pair of floors
+admits a target repaired by restoring its translated root to `B`.
+
+This consumes the fixed-target horn arithmetically: it cannot remain a
+bare recurrent finite certificate. -/
+theorem
+    cofinal_alignedPrivateCoreStages_fixedTarget_forces_rootHoles_or_repairs
+    {A B Y : Set ℕ} {k r t : ℕ}
+    {oldTarget currentTarget landing : ℕ → ℕ}
+    (hrk : r < k)
+    (hcurrentStrict : StrictMono currentTarget)
+    (hfixed :
+      ∀ L,
+        HasAlignedPrivateCoreStageAtTarget
+          A B Y k r oldTarget currentTarget landing t L) :
+    ∃ K : Finset ℕ,
+      K ∈ additiveSupportFamily A r t ∧
+      Disjoint (K : Set ℕ) Y ∧
+      Disjoint (K : Set ℕ) B ∧
+      (((∀ pointFloor targetFloor,
+          ∃ n m, ∃ E : Finset ℕ, ∃ a j q,
+          ∃ H : Finset ℕ, ∃ δ,
+            pointFloor ≤ landing j ∧
+            targetFloor < q ∧
+            oldTarget n < m ∧
+            m < oldTarget (n + 1) ∧
+            E ∈
+              additiveSupportFamily A (k + 1)
+                (oldTarget n) ∧
+            Disjoint (E : Set ℕ) B ∧
+            DestroysAt
+              (additiveSupportFamily A (k + 1)) B m ∧
+            a ∈ E ∧
+            q = m - a ∧
+            currentTarget j < q ∧
+            q < currentTarget (j + 1) ∧
+            H = insert (landing j) K ∧
+            H ∈
+              additiveSupportFamily A k
+                (currentTarget j) ∧
+            Disjoint (H : Set ℕ) B ∧
+            δ = q - currentTarget j ∧
+            0 < δ ∧
+            currentTarget j =
+              (k - r) * landing j + t ∧
+            q =
+              (k - r) * landing j + (t + δ) ∧
+            DestroysAt
+              (additiveSupportFamily A k) B q ∧
+            landing j + δ ∉ A)) ∨
+        ∀ pointFloor targetFloor,
+          HasOnePointRepairAt
+            (additiveSupportFamily A k) B
+            pointFloor targetFloor) := by
+  classical
+  obtain ⟨K, hKmem, hKY, hKB, hlate⟩ :=
+    cofinal_alignedPrivateCoreStages_fixedTarget_fixSupport
+      hfixed
+  refine
+    ⟨K, hKmem, hKY, hKB, ?_⟩
+  let Hole : ℕ → ℕ → Prop :=
+    fun pointFloor targetFloor =>
+      ∃ n m, ∃ E : Finset ℕ, ∃ a j q,
+      ∃ H : Finset ℕ, ∃ δ,
+        pointFloor ≤ landing j ∧
+        targetFloor < q ∧
+        oldTarget n < m ∧
+        m < oldTarget (n + 1) ∧
+        E ∈
+          additiveSupportFamily A (k + 1)
+            (oldTarget n) ∧
+        Disjoint (E : Set ℕ) B ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) B m ∧
+        a ∈ E ∧
+        q = m - a ∧
+        currentTarget j < q ∧
+        q < currentTarget (j + 1) ∧
+        H = insert (landing j) K ∧
+        H ∈
+          additiveSupportFamily A k
+            (currentTarget j) ∧
+        Disjoint (H : Set ℕ) B ∧
+        δ = q - currentTarget j ∧
+        0 < δ ∧
+        currentTarget j =
+          (k - r) * landing j + t ∧
+        q =
+          (k - r) * landing j + (t + δ) ∧
+        DestroysAt
+          (additiveSupportFamily A k) B q ∧
+        landing j + δ ∉ A
+  have hcoefficient : 0 < k - r :=
+    Nat.sub_pos_of_lt hrk
+  have hmixed :
+      ∀ pointFloor targetFloor,
+        Hole pointFloor targetFloor ∨
+          HasOnePointRepairAt
+            (additiveSupportFamily A k) B
+            pointFloor targetFloor := by
+    intro pointFloor targetFloor
+    let scale :=
+      max ((k - r) * pointFloor + t)
+        (targetFloor + 1)
+    obtain ⟨n, m, E, a, j, q, H, δ,
+        _hnScale, hjScale, hqScale,
+        hnLower, hnUpper, hEmem, hEB,
+        hmDestroy, haE, _haAverage, hqEq,
+        hjLower, hjUpper, hHroot, hHmem,
+        hHB, _hlandingH, _hHprivate,
+        hδEq, hδpos, hcurrentRoot, hqRoot,
+        _hqNonempty, hqDestroy, _hcoreDestroy,
+        hrootExit⟩ :=
+      hlate scale
+    have hrootThreshold :
+        (k - r) * pointFloor + t ≤
+          currentTarget j := by
+      exact
+        (le_max_left
+          ((k - r) * pointFloor + t)
+          (targetFloor + 1)).trans
+          (hjScale.trans (hcurrentStrict.id_le j))
+    have hrootMul :
+        (k - r) * pointFloor ≤
+          (k - r) * landing j := by
+      rw [hcurrentRoot] at hrootThreshold
+      omega
+    have hrootFloor :
+        pointFloor ≤ landing j :=
+      Nat.le_of_mul_le_mul_left
+        hrootMul hcoefficient
+    have htargetFloor :
+        targetFloor < q := by
+      have :
+          targetFloor + 1 ≤ q :=
+        (le_max_right
+          ((k - r) * pointFloor + t)
+          (targetFloor + 1)).trans hqScale
+      omega
+    obtain hrootHole | hrootRepair :=
+      hrootExit
+    · left
+      exact
+        ⟨n, m, E, a, j, q, H, δ,
+          hrootFloor, htargetFloor,
+          hnLower, hnUpper, hEmem, hEB,
+          hmDestroy, haE, hqEq, hjLower,
+          hjUpper, hHroot, hHmem, hHB,
+          hδEq, hδpos, hcurrentRoot, hqRoot,
+          hqDestroy, hrootHole⟩
+    · right
+      obtain ⟨hshiftA, hshiftB, hrepair⟩ :=
+        hrootRepair
+      exact
+        ⟨q, landing j + δ, htargetFloor,
+          by omega, hshiftB, hqDestroy, hrepair⟩
+  have hHoleMono :
+      ∀ {pointFloor targetFloor
+          pointFloor' targetFloor'},
+        pointFloor ≤ pointFloor' →
+        targetFloor ≤ targetFloor' →
+        Hole pointFloor' targetFloor' →
+        Hole pointFloor targetFloor := by
+    intro pointFloor targetFloor
+      pointFloor' targetFloor' hp ht hhole
+    obtain ⟨n, m, E, a, j, q, H, δ,
+        hpoint, htarget, hrest⟩ :=
+      hhole
+    exact
+      ⟨n, m, E, a, j, q, H, δ,
+        hp.trans hpoint, ht.trans_lt htarget,
+        hrest⟩
+  by_cases hholes :
+      ∀ pointFloor targetFloor,
+        Hole pointFloor targetFloor
+  · left
+    simpa only [Hole] using hholes
+  · right
+    push Not at hholes
+    obtain ⟨pointFloor₀, targetFloor₀,
+        hnoHole⟩ :=
+      hholes
+    intro pointFloor targetFloor
+    obtain hhole | hrepair :=
+      hmixed
+        (max pointFloor pointFloor₀)
+        (max targetFloor targetFloor₀)
+    · exfalso
+      exact hnoHole
+        (hHoleMono
+          (le_max_right pointFloor pointFloor₀)
+          (le_max_right targetFloor targetFloor₀)
+          hhole)
+    · obtain ⟨q, z, hqFloor, hzFloor, hzB,
+          hqDestroy, hsurvive⟩ :=
+        hrepair
+      exact
+        ⟨q, z,
+          (le_max_left targetFloor targetFloor₀).trans_lt
+            hqFloor,
+          (le_max_left pointFloor pointFloor₀).trans_lt
+            hzFloor,
+          hzB, hqDestroy, hsurvive⟩
+
 /-- The fused successor/predecessor object has an explicit cofinal
 arithmetic shape.
 

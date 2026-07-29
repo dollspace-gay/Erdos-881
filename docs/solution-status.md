@@ -1,3 +1,51 @@
+# GENERAL ORDER: BOTH RESIDUAL-TARGET HORNS NOW CAUSE ARITHMETIC INJURY (2026-07-29)
+
+The residual-target fork is no longer only a description of how a
+counterexample might migrate.
+
+In the cofinally growing-target horn,
+`cofinal_alignedPrivateCoreStages_targetGrowth_forces_residualArithmeticExit`
+requests \(t\ge rL\) and applies the existing simultaneous arithmetic
+descent to the clean support at \(t\) and its destroyed translate
+\(t+\delta\).  At every scale it produces one of:
+
+- a genuine rank-\(r\) gap at \(t+\delta\);
+- a translated gap at a strict lower positive rank beyond \(L\); or
+- a clean basis point \(c\ge L\) with \(c+\delta\in B\).
+
+Crucially, this result retains the old block
+\(\operatorname{oldTarget}(n)<m<\operatorname{oldTarget}(n+1)\), the
+predecessor identity \(q=m-a\), the current block containing \(q\), and
+the same displacement \(\delta\).  The arithmetic injury is therefore
+still attached to the counterexample stage that created it.
+
+In the fixed-target horn,
+`cofinal_alignedPrivateCoreStages_fixedTarget_fixSupport` pigeonholes the
+finite family of supports at the one residual target \(t\).  It fixes one
+literal support \(K\) cofinally and proves the exact normal form
+
+\[
+  H=K\cup\{z_j\},\qquad
+  \operatorname{currentTarget}(j)=(k-r)z_j+t,\qquad
+  q=(k-r)z_j+(t+\delta).
+\]
+
+The translated moving root is immediately consumed.  It is either absent
+from \(A\), or it lies in \(B\) and restoring that single point repairs
+the destroyed target \(q\).
+`cofinal_alignedPrivateCoreStages_fixedTarget_forces_rootHoles_or_repairs`
+uses strict growth of the current targets to force \(z_j\) beyond every
+floor, then homogenizes these exits into either cofinal root holes (with
+their original source blocks retained) or a cofinal one-point-repair
+stream on \(B\).
+
+This is still not the full general-order solution.  What remains is no
+longer migrating rank, target, or finite root data.  The next capstone must
+weld these two concrete horns back to the strongly minimal counterexample:
+compose the growing-target gaps/landings with the existing lower-rank
+streams, and in the fixed-root repair horn fuse the translated roots while
+retaining their source roots and block identities.
+
 # GENERAL ORDER: RESIDUAL RANK AND TARGET MIGRATION ARE HOMOGENIZED (2026-07-29)
 
 The complete private-core stages can no longer evade composition by
