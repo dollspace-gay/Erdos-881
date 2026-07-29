@@ -25439,8 +25439,17 @@ theorem freshPredecessorRootedMatchingSteps_have_commonSurvivalPartition_avoidin
       Disjoint K (Set.range retained) ∧
       (∀ i, i + 2 < (cell i).card) ∧
       ∀ s : BlockSelector cell, ∀ i,
-        ∃ E ∈ additiveSupportFamily A k (target i),
-          Disjoint (E : Set ℕ) (selectedSet s) := by
+        ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+          R.card < k ∧
+          i + 1 < M.card ∧
+          M ⊆ additiveSupportFamily A k (target i) ∧
+          (∀ E ∈ M, R ⊆ E) ∧
+          (∀ E ∈ M, (E \ R).Nonempty) ∧
+          (∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+            Disjoint (E \ R) (G \ R)) ∧
+          (∀ E ∈ M,
+            Disjoint (E : Set ℕ) (selectedSet s)) ∧
+          M.biUnion (fun E => E \ R) ⊆ cell i := by
   classical
   let State := Finset ℕ × ℕ
   let initial : State := (reserved, 0)
@@ -25752,56 +25761,101 @@ theorem freshPredecessorRootedMatchingSteps_have_commonSurvivalPartition_avoidin
     obtain ⟨D, hDgood, hyPetal⟩ :=
       Finset.mem_biUnion.mp hyCell
     exact (Finset.mem_sdiff.mp hyPetal).2 hyR
-  have honeGood : 1 < (good i).card := by
-    have := hgoodLarge i
-    omega
-  have hhit :
+  have hselectedHitPetal :
       ∀ E ∈ good i,
-        ¬ Disjoint (E : Set ℕ) ({y} : Set ℕ) →
-          ∃ x ∈ ({y} : Finset ℕ), x ∈ E \ root i := by
-    intro E _hEgood hEy
-    obtain ⟨x, hxE, hxy⟩ :=
-      Set.not_disjoint_iff.mp hEy
-    have hxy' : x = y := by simpa using hxy
-    subst x
-    exact ⟨y, by simp,
-      Finset.mem_sdiff.mpr
-        ⟨Finset.mem_coe.mp hxE, hyRoot⟩⟩
-  obtain ⟨E, hEgood, hEy⟩ :=
-    exists_surviving_support
-      (fun G hG D hD hGD =>
-        (step i).petals_disjoint G (hgoodSub i hG)
-          D (hgoodSub i hD) hGD)
-      hhit (by simpa using honeGood)
-  refine ⟨E, (step i).matching_sub (hgoodSub i hEgood), ?_⟩
-  rw [Set.disjoint_left]
-  intro x hxE hxSelected
-  obtain ⟨j, hjx⟩ := hxSelected
-  change (s j).1 = x at hjx
-  by_cases hji : j = i
-  · subst j
-    apply Set.disjoint_left.mp hEy hxE
-    simpa [y] using hjx.symm
-  · rcases lt_or_gt_of_ne hji with hji | hij
-    · have hxUsed : x ∈ used i := by
+        ¬ Disjoint (E : Set ℕ) (selectedSet s) →
+          y ∈ E \ root i := by
+    intro E hEgood hEselected
+    obtain ⟨x, hxE, hxSelected⟩ :=
+      Set.not_disjoint_iff.mp hEselected
+    obtain ⟨j, hjx⟩ := hxSelected
+    change (s j).1 = x at hjx
+    by_cases hji : j = i
+    · subst j
+      have hxy : x = y := by
+        simpa only [y] using hjx.symm
+      subst x
+      exact Finset.mem_sdiff.mpr
+        ⟨Finset.mem_coe.mp hxE, hyRoot⟩
+    · rcases lt_or_gt_of_ne hji with hji | hij
+      · have hxCellJ : x ∈ cell j := by
+          rw [← hjx]
+          exact (s j).2
+        have hxUsed : x ∈ used i := by
+          obtain ⟨D, hDgood, hxPetal⟩ :=
+            Finset.mem_biUnion.mp hxCellJ
+          exact hused_mono (Nat.succ_le_of_lt hji)
+            (hmatching_into_next j D (hgoodSub j hDgood)
+              (Finset.mem_sdiff.mp hxPetal).1)
+        exact
+          (Finset.disjoint_left.mp
+            (hgoodPast i E hEgood)
+            (Finset.mem_coe.mp hxE) hxUsed).elim
+      · have hxUsed : x ∈ used j :=
+          hused_mono (Nat.succ_le_of_lt hij)
+            (hmatching_into_next i E (hgoodSub i hEgood)
+              (Finset.mem_coe.mp hxE))
         have hxCellJ : x ∈ cell j := by
           rw [← hjx]
           exact (s j).2
-        obtain ⟨D, hDgood, hxPetal⟩ :=
-          Finset.mem_biUnion.mp hxCellJ
-        exact hused_mono (Nat.succ_le_of_lt hji)
-          (hmatching_into_next j D (hgoodSub j hDgood)
-            (Finset.mem_sdiff.mp hxPetal).1)
-      exact Finset.disjoint_left.mp (hgoodPast i E hEgood)
-        hxE hxUsed
-    · have hxUsed : x ∈ used j :=
-        hused_mono (Nat.succ_le_of_lt hij)
-          (hmatching_into_next i E (hgoodSub i hEgood) hxE)
-      have hxCellJ : x ∈ cell j := by
-        rw [← hjx]
-        exact (s j).2
-      exact Finset.disjoint_left.mp (hcellPast j)
-        hxCellJ hxUsed
+        exact
+          (Finset.disjoint_left.mp (hcellPast j)
+            hxCellJ hxUsed).elim
+  let badSelected : Finset (Finset ℕ) :=
+    (good i).filter fun E =>
+      ¬ Disjoint (E : Set ℕ) (selectedSet s)
+  let surviving : Finset (Finset ℕ) :=
+    (good i).filter fun E =>
+      Disjoint (E : Set ℕ) (selectedSet s)
+  have hbadSelectedCard : badSelected.card ≤ 1 := by
+    apply Finset.card_le_one.mpr
+    intro E hE D hD
+    have hEgood : E ∈ good i :=
+      (Finset.mem_filter.mp hE).1
+    have hDgood : D ∈ good i :=
+      (Finset.mem_filter.mp hD).1
+    by_contra hED
+    exact Finset.disjoint_left.mp
+      ((step i).petals_disjoint E (hgoodSub i hEgood)
+        D (hgoodSub i hDgood) hED)
+      (hselectedHitPetal E hEgood
+        (Finset.mem_filter.mp hE).2)
+      (hselectedHitPetal D hDgood
+        (Finset.mem_filter.mp hD).2)
+  have hsplit :
+      surviving.card + badSelected.card = (good i).card := by
+    simpa only [surviving, badSelected] using
+      (Finset.card_filter_add_card_filter_not
+        (s := good i)
+        (fun E => Disjoint (E : Set ℕ) (selectedSet s)))
+  have hsurvivingLarge : i + 1 < surviving.card := by
+    have hlarge := hgoodLarge i
+    omega
+  have hsurvivingGood : surviving ⊆ good i := by
+    intro E hE
+    exact (Finset.mem_filter.mp hE).1
+  refine ⟨root i, surviving, (step i).root_card,
+    hsurvivingLarge, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · intro E hE
+    exact (step i).matching_sub
+      (hgoodSub i (hsurvivingGood hE))
+  · intro E hE
+    exact (step i).root_common E
+      (hgoodSub i (hsurvivingGood hE))
+  · intro E hE
+    exact (step i).petal_nonempty E
+      (hgoodSub i (hsurvivingGood hE))
+  · intro E hE D hD hED
+    exact (step i).petals_disjoint E
+      (hgoodSub i (hsurvivingGood hE))
+      D (hgoodSub i (hsurvivingGood hD)) hED
+  · intro E hE
+    exact (Finset.mem_filter.mp hE).2
+  · intro x hx
+    obtain ⟨E, hE, hxPetal⟩ :=
+      Finset.mem_biUnion.mp hx
+    exact Finset.mem_biUnion.mpr
+      ⟨E, hsurvivingGood hE, hxPetal⟩
 
 /-- Counterexample specialization of the generic rooted-matching fusion
 engine. -/
@@ -25823,11 +25877,23 @@ theorem successorCounterexample_forces_cofinalPredecessorCommonSurvivalPartition
       ∀ s : BlockSelector cell, ∀ i,
         ∃ E ∈ additiveSupportFamily A k (target i),
           Disjoint (E : Set ℕ) (selectedSet s) := by
-  exact
+  obtain ⟨K, cell, target, retained, hKA, hKInfinite,
+      hKReserved, P, htargetStrict, hretainedInjective,
+      hretainedA, hKRetained, hcellLarge, hlargeSurvival⟩ :=
     freshPredecessorRootedMatchingSteps_have_commonSurvivalPartition_avoiding
       hbasis.infinite
       (freshPredecessorRootedMatchingStep_nonempty hbasis hcounter)
       reserved
+  refine ⟨K, cell, target, retained, hKA, hKInfinite,
+    hKReserved, P, htargetStrict, hretainedInjective,
+    hretainedA, hKRetained, hcellLarge, ?_⟩
+  intro s i
+  obtain ⟨_R, M, _hRcard, hMlarge, hMsub, _hMroot,
+      _hMnonempty, _hMmatching, hMselected, _hMcell⟩ :=
+    hlargeSurvival s i
+  have hMpos : 0 < M.card := by omega
+  obtain ⟨E, hEM⟩ := Finset.card_pos.mp hMpos
+  exact ⟨E, hMsub hEM, hMselected E hEM⟩
 
 /-- The unreserved form of the coherent predecessor common-survival
 partition. -/
@@ -42354,20 +42420,39 @@ theorem IsExactTupleAsymptoticBasis.failsFiniteCoreMatching_has_coherentMovingRo
         IsFiniteBlockPartition K cell ∧
         StrictMono target ∧
         (∀ i, i + 2 < (cell i).card) ∧
-        ∀ s : BlockSelector cell, ∀ i,
+        (∀ s : BlockSelector cell, ∀ i,
           ∃ E ∈ additiveSupportFamily A (k + 1) (target i),
-            Disjoint (E : Set ℕ) (selectedSet s) := by
+            Disjoint (E : Set ℕ) (selectedSet s)) ∧
+        ∀ s : BlockSelector cell, ∀ i,
+          ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+            R.card < k + 1 ∧
+            i + 1 < M.card ∧
+            M ⊆ additiveSupportFamily A (k + 1) (target i) ∧
+            (∀ E ∈ M, R ⊆ E) ∧
+            (∀ E ∈ M, (E \ R).Nonempty) ∧
+            (∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+              Disjoint (E \ R) (G \ R)) ∧
+            (∀ E ∈ M,
+              Disjoint (E : Set ℕ) (selectedSet s)) ∧
+            M.biUnion (fun E => E \ R) ⊆ cell i := by
   obtain ⟨K, cell, target, _retained, hKA, hKInfinite,
       _hKempty, P, htarget, _hretainedInjective,
-      _hretainedA, _hKretained, hcellLarge, hsurvival⟩ :=
+      _hretainedA, _hKretained, hcellLarge, hlargeSurvival⟩ :=
     freshPredecessorRootedMatchingSteps_have_commonSurvivalPartition_avoiding
       hbasis.infinite
       (freshPredecessorRootedMatchingStep_nonempty_of_failsFiniteCoreMatching
         hbasis hfail)
       ∅
-  exact
+  refine
     ⟨K, cell, target, hKA, hKInfinite, P, htarget,
-      hcellLarge, hsurvival⟩
+      hcellLarge, ?_, hlargeSurvival⟩
+  intro s i
+  obtain ⟨_R, M, _hRcard, hMlarge, hMsub, _hMroot,
+      _hMnonempty, _hMmatching, hMselected, _hMcell⟩ :=
+    hlargeSurvival s i
+  have hMpos : 0 < M.card := by omega
+  obtain ⟨E, hEM⟩ := Finset.card_pos.mp hMpos
+  exact ⟨E, hMsub hEM, hMselected E hEM⟩
 
 /-! ## Direct protected-representation fusion
 
@@ -42621,9 +42706,21 @@ theorem exactBasis_counterexample_forces_coherentMovingRootFusion
         IsFiniteBlockPartition K cell ∧
         StrictMono target ∧
         (∀ i, i + 2 < (cell i).card) ∧
-        ∀ s : BlockSelector cell, ∀ i,
+        (∀ s : BlockSelector cell, ∀ i,
           ∃ E ∈ additiveSupportFamily A (k + 1) (target i),
-            Disjoint (E : Set ℕ) (selectedSet s) := by
+            Disjoint (E : Set ℕ) (selectedSet s)) ∧
+        ∀ s : BlockSelector cell, ∀ i,
+          ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+            R.card < k + 1 ∧
+            i + 1 < M.card ∧
+            M ⊆ additiveSupportFamily A (k + 1) (target i) ∧
+            (∀ E ∈ M, R ⊆ E) ∧
+            (∀ E ∈ M, (E \ R).Nonempty) ∧
+            (∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+              Disjoint (E \ R) (G \ R)) ∧
+            (∀ E ∈ M,
+              Disjoint (E : Set ℕ) (selectedSet s)) ∧
+            M.biUnion (fun E => E \ R) ⊆ cell i := by
   have hfail :
       FailsFiniteCoreMatching
         (additiveSupportFamily A (k + 1)) A := by
@@ -42786,6 +42883,18 @@ theorem exactBasis_counterexample_forces_coherentMovingRootFusion_with_migrating
         (∀ s : BlockSelector cell, ∀ i,
           ∃ E ∈ additiveSupportFamily A (k + 1) (target i),
             Disjoint (E : Set ℕ) (selectedSet s)) ∧
+        (∀ s : BlockSelector cell, ∀ i,
+          ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+            R.card < k + 1 ∧
+            i + 1 < M.card ∧
+            M ⊆ additiveSupportFamily A (k + 1) (target i) ∧
+            (∀ E ∈ M, R ⊆ E) ∧
+            (∀ E ∈ M, (E \ R).Nonempty) ∧
+            (∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+              Disjoint (E \ R) (G \ R)) ∧
+            (∀ E ∈ M,
+              Disjoint (E : Set ℕ) (selectedSet s)) ∧
+            M.biUnion (fun E => E \ R) ⊆ cell i) ∧
         ∀ r L, ∃ Q : Finset ℕ,
           Q.Nonempty ∧
           (∀ q ∈ Q, ∃ i,
@@ -42816,14 +42925,289 @@ theorem exactBasis_counterexample_forces_coherentMovingRootFusion_with_migrating
             ∃ q ∈ Q, ∃ b, b ∈ A ∧ b ≤ q ∧
               additiveSupportFamily A k (q - b) = ∅) := by
   obtain ⟨K, cell, target, hKA, hKInfinite, P,
-      htargetStrict, hcellLarge, hsurvive⟩ :=
+      htargetStrict, hcellLarge, hsurvive, hlargeSurvive⟩ :=
     exactBasis_counterexample_forces_coherentMovingRootFusion
       hbasis hcounter
   refine ⟨K, cell, target, hKA, hKInfinite, P,
-    htargetStrict, hcellLarge, hsurvive, ?_⟩
+    htargetStrict, hcellLarge, hsurvive, hlargeSurvive, ?_⟩
   exact
     commonSurvivalStream_forces_cofinallyBracketedTerminatedCertificates
       hbasis (strongExactDeletion_of_counterexample hcounter)
         hKA P target htargetStrict hsurvive
+
+/-! ## Arithmetic shape of a migrating certificate gap -/
+
+/-- Translation-repair law for one aligned surviving/destroyed pair.
+
+Let an order-`h+1` support `E` survive at `t`, while the same deletion
+destroys `q = t + δ`.  For every summand `a ∈ E`, the translate `a + δ`
+cannot be another clean basis point.  Indeed, remove one occurrence of `a`
+from the representation of `t` and insert `a + δ`; this is an
+order-`h+1` representation of `q`.  Its lower core still avoids the
+deletion, so destruction of `q` forces `a + δ` into the deletion whenever
+that translate belongs to `A`.
+
+This is the direct arithmetic content of bracketing: the gap does not merely
+label two targets, but translates every point of a surviving support out of
+the clean part of the basis. -/
+theorem alignedSurvivalDestruction_forces_translationExit
+    {A Y : Set ℕ} {h t q δ : ℕ} {E : Finset ℕ}
+    (hE : E ∈ additiveSupportFamily A (h + 1) t)
+    (hEY : Disjoint (E : Set ℕ) Y)
+    (hqt : q = t + δ)
+    (hqDestroy :
+      DestroysAt
+        (additiveSupportFamily A (h + 1)) Y q) :
+    ∀ a ∈ E, a + δ ∈ A → a + δ ∈ Y := by
+  intro a haE haShiftA
+  have hat : a ≤ t :=
+    additiveSupportFamily_supportsBounded
+      A (h + 1) t E hE a haE
+  obtain ⟨H, hH, hEinsert⟩ :=
+    additiveSupport_remove_hit_succ hE haE
+  have hHY : Disjoint (H : Set ℕ) Y := by
+    rw [Set.disjoint_left]
+    intro x hxH hxY
+    exact Set.disjoint_left.mp hEY
+      (Finset.mem_coe.mpr
+        (by rw [hEinsert]; exact Finset.mem_insert_of_mem hxH))
+      hxY
+  by_contra haShiftY
+  have hrepair :
+      insert (a + δ) H ∈
+        additiveSupportFamily A (h + 1) q := by
+    have hlift :=
+      insert_mem_additiveSupportFamily_succ haShiftA hH
+    have htarget :
+        a + δ + (t - a) = q := by
+      rw [hqt]
+      omega
+    simpa only [htarget] using hlift
+  apply hqDestroy (insert (a + δ) H) hrepair
+  rw [Set.disjoint_left]
+  intro x hxInsert hxY
+  rcases Finset.mem_insert.mp (Finset.mem_coe.mp hxInsert) with
+      hxShift | hxH
+  · subst x
+    exact haShiftY hxY
+  · exact Set.disjoint_left.mp hHY
+      (Finset.mem_coe.mpr hxH) hxY
+
+/-- Migrating certificates force cofinally large translation-exit fans.
+
+Use the entire rooted matching retained by the moving-root fusion, rather
+than selecting one surviving support.  At protected gap `i`, a block
+selector can meet at most one petal, so more than `i+1` pairwise-disjoint
+petals still avoid the deletion.  If `q` is the certificate target in that
+gap and `δ = q - target i`, the translation-repair law applies to every
+point in every surviving petal.
+
+The resulting set `V` is a large clean subset of the single block `cell i`.
+Its translate by the one common gap has only two destinations:
+
+* outside the original basis `A`; or
+* inside the selected deletion.
+
+Moreover the petal matching gives `M.card ≤ V.card`, so this is an
+arbitrarily large arithmetic obstruction, not a bounded support artifact.
+This is the concrete shape forced by the formerly anonymous migrating
+certificate gap. -/
+theorem exactBasis_counterexample_forces_cofinalTranslationExitFans
+    {A : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1)) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+      ∃ target : ℕ → ℕ,
+        K ⊆ A ∧
+        K.Infinite ∧
+        IsFiniteBlockPartition K cell ∧
+        StrictMono target ∧
+        (∀ i, i + 2 < (cell i).card) ∧
+        ∀ L, ∃ s : BlockSelector cell, ∃ i q δ,
+          ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
+          ∃ V Vin Vout : Finset ℕ,
+            L ≤ i ∧
+            target i < q ∧
+            q < target (i + 1) ∧
+            0 < δ ∧
+            q = target i + δ ∧
+            DestroysAt
+              (additiveSupportFamily A (k + 1))
+              (selectedSet s) q ∧
+            R.card < k + 1 ∧
+            i + 1 < M.card ∧
+            M ⊆ additiveSupportFamily A (k + 1) (target i) ∧
+            (∀ E ∈ M, R ⊆ E) ∧
+            (∀ E ∈ M, (E \ R).Nonempty) ∧
+            (∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+              Disjoint (E \ R) (G \ R)) ∧
+            (∀ E ∈ M,
+              Disjoint (E : Set ℕ) (selectedSet s)) ∧
+            V = M.biUnion (fun E => E \ R) ∧
+            M.card ≤ V.card ∧
+            V ⊆ cell i ∧
+            ((V : Set ℕ) ⊆ A \ selectedSet s) ∧
+            (∀ a ∈ V, a + δ ∈ A →
+              a + δ ∈ selectedSet s) ∧
+            Vin ⊆ V ∧
+            Vout ⊆ V ∧
+            Disjoint Vin Vout ∧
+            V = Vin ∪ Vout ∧
+            (∀ a ∈ Vin,
+              a + δ ∈ A ∧ a + δ ∈ selectedSet s) ∧
+            (Vin.image fun a => a + δ).card = Vin.card ∧
+            (((Vin.image fun a => a + δ) : Finset ℕ) : Set ℕ) ⊆
+              selectedSet s ∧
+            (∀ a ∈ Vout, a + δ ∉ A) ∧
+            (i + 1 < 2 * Vout.card ∨
+              i + 1 < 2 * Vin.card) := by
+  classical
+  obtain ⟨K, cell, target, hKA, hKInfinite, P,
+      htargetStrict, hcellLarge, hsurvive,
+      hlargeSurvive⟩ :=
+    exactBasis_counterexample_forces_coherentMovingRootFusion
+      hbasis hcounter
+  refine ⟨K, cell, target, hKA, hKInfinite, P,
+    htargetStrict, hcellLarge, ?_⟩
+  intro L
+  obtain ⟨Q, hQnonempty, hQbracket, hcert, _hQsafe,
+      _hnormalized⟩ :=
+    commonSurvivalStream_forces_cofinallyBracketedTerminatedCertificates
+      hbasis (strongExactDeletion_of_counterexample hcounter)
+        hKA P target htargetStrict hsurvive 0 L
+  let s : BlockSelector cell := fun j =>
+    ⟨(P.nonempty j).choose, (P.nonempty j).choose_spec⟩
+  obtain ⟨q, hqQ, hqDestroy⟩ := hcert s
+  obtain ⟨i, hiL, hiLower, hiUpper⟩ :=
+    hQbracket q hqQ
+  obtain ⟨R, M, hRcard, hMlarge, hMsub, hMroot,
+      hMnonempty, hMmatching, hMselected, hMcell⟩ :=
+    hlargeSurvive s i
+  let δ := q - target i
+  let V := M.biUnion fun E => E \ R
+  let Vin := V.filter fun a => a + δ ∈ A
+  let Vout := V.filter fun a => a + δ ∉ A
+  have hdeltaPos : 0 < δ := by
+    dsimp only [δ]
+    omega
+  have hqdelta : q = target i + δ := by
+    dsimp only [δ]
+    omega
+  let pick : {E // E ∈ M} → {x // x ∈ V} := fun E =>
+    ⟨(hMnonempty E.1 E.2).choose,
+      Finset.mem_biUnion.mpr
+        ⟨E.1, E.2, (hMnonempty E.1 E.2).choose_spec⟩⟩
+  have hpickPetal : ∀ E : {E // E ∈ M},
+      (pick E).1 ∈ E.1 \ R := by
+    intro E
+    exact (hMnonempty E.1 E.2).choose_spec
+  have hpickInjective : Function.Injective pick := by
+    intro E G hEG
+    apply Subtype.ext
+    by_contra hne
+    have hpointEq : (pick E).1 = (pick G).1 :=
+      congrArg Subtype.val hEG
+    exact
+      (Finset.not_disjoint_iff.mpr
+        ⟨(pick E).1, hpickPetal E,
+          hpointEq ▸ hpickPetal G⟩)
+      (hMmatching E.1 E.2 G.1 G.2 hne)
+  have hMcardV : M.card ≤ V.card := by
+    simpa only [Fintype.card_coe] using
+      Fintype.card_le_of_injective pick hpickInjective
+  have hVA : (V : Set ℕ) ⊆ A := by
+    intro a haV
+    obtain ⟨E, hEM, haPetal⟩ :=
+      Finset.mem_biUnion.mp (Finset.mem_coe.mp haV)
+    exact additiveSupportFamily_supportsIn
+      A (k + 1) (target i) E (hMsub hEM)
+        a (Finset.mem_sdiff.mp haPetal).1
+  have hVselected : Disjoint (V : Set ℕ) (selectedSet s) := by
+    rw [Set.disjoint_left]
+    intro a haV haSelected
+    obtain ⟨E, hEM, haPetal⟩ :=
+      Finset.mem_biUnion.mp (Finset.mem_coe.mp haV)
+    exact Set.disjoint_left.mp (hMselected E hEM)
+      (Finset.mem_coe.mpr
+        (Finset.mem_sdiff.mp haPetal).1)
+      haSelected
+  have hVclean : (V : Set ℕ) ⊆ A \ selectedSet s := by
+    intro a haV
+    exact ⟨hVA haV, fun haSelected =>
+      Set.disjoint_left.mp hVselected haV haSelected⟩
+  have htranslateExit :
+      ∀ a ∈ V, a + δ ∈ A →
+        a + δ ∈ selectedSet s := by
+    intro a haV haShiftA
+    obtain ⟨E, hEM, haPetal⟩ :=
+      Finset.mem_biUnion.mp haV
+    exact
+      alignedSurvivalDestruction_forces_translationExit
+        (hMsub hEM) (hMselected E hEM)
+          hqdelta hqDestroy a
+          (Finset.mem_sdiff.mp haPetal).1 haShiftA
+  have hVinV : Vin ⊆ V := by
+    intro a ha
+    exact (Finset.mem_filter.mp ha).1
+  have hVoutV : Vout ⊆ V := by
+    intro a ha
+    exact (Finset.mem_filter.mp ha).1
+  have hVinVout : Disjoint Vin Vout := by
+    rw [Finset.disjoint_left]
+    intro a haIn haOut
+    exact (Finset.mem_filter.mp haOut).2
+      (Finset.mem_filter.mp haIn).2
+  have hVsplit : V = Vin ∪ Vout := by
+    ext a
+    simp only [Vin, Vout, Finset.mem_filter, Finset.mem_union]
+    tauto
+  have hVinData :
+      ∀ a ∈ Vin,
+        a + δ ∈ A ∧ a + δ ∈ selectedSet s := by
+    intro a ha
+    have haA := (Finset.mem_filter.mp ha).2
+    exact ⟨haA, htranslateExit a (hVinV ha) haA⟩
+  have hVoutData :
+      ∀ a ∈ Vout, a + δ ∉ A := by
+    intro a ha
+    exact (Finset.mem_filter.mp ha).2
+  have hshiftInjective :
+      Set.InjOn (fun a => a + δ) (Vin : Set ℕ) := by
+    intro a _ha b _hb hab
+    exact Nat.add_right_cancel hab
+  have hshiftCard :
+      (Vin.image fun a => a + δ).card = Vin.card := by
+    exact Finset.card_image_iff.mpr hshiftInjective
+  have hshiftSelected :
+      (((Vin.image fun a => a + δ) : Finset ℕ) : Set ℕ) ⊆
+        selectedSet s := by
+    intro x hx
+    obtain ⟨a, haVin, rfl⟩ :=
+      Finset.mem_image.mp (Finset.mem_coe.mp hx)
+    exact (hVinData a haVin).2
+  have htranslationSplit :
+      Vin.card + Vout.card = V.card := by
+    simpa only [Vin, Vout, not_not] using
+      (Finset.card_filter_add_card_filter_not
+        (s := V) (fun a => a + δ ∈ A))
+  have hholeOrLanding :
+      i + 1 < 2 * Vout.card ∨
+        i + 1 < 2 * Vin.card := by
+    by_cases hholes :
+        i + 1 < 2 * Vout.card
+    · exact Or.inl hholes
+    · right
+      have hVlarge : i + 1 < V.card :=
+        hMlarge.trans_le hMcardV
+      omega
+  exact ⟨s, i, q, δ, R, M, V, Vin, Vout,
+    hiL, hiLower, hiUpper,
+    hdeltaPos, hqdelta, hqDestroy, hRcard, hMlarge,
+    hMsub, hMroot, hMnonempty, hMmatching, hMselected,
+    rfl, hMcardV, hMcell, hVclean, htranslateExit,
+    hVinV, hVoutV, hVinVout, hVsplit, hVinData,
+    hshiftCard, hshiftSelected, hVoutData,
+    hholeOrLanding⟩
 
 end Erdos881
