@@ -62131,6 +62131,210 @@ theorem
   · rw [← hupperSupportEq]
     exact hupperSupportZ
 
+/-- The synchronized endpoint attack descends one further rank without any
+normalization assumption.
+
+If the destroyed order-`k-1` predecessor lies below the represented
+translate, descend it through the fixed core at `t`.  If it lies above the
+translate, descend it through the translated support at
+`t + displacement`.  In either case every point of the prescribed
+surviving support gives a destroyed order-`k-2` difference. -/
+theorem
+    HasCofinalFixedCoreThresholdStraddlingInjuries.forces_cofinal_secondRankDescentFans
+    {A D : Set ℕ} {k t : ℕ}
+    {target : ℕ → ℕ}
+    (hk : 2 < k)
+    (hattack :
+      HasCofinalFixedCoreThresholdStraddlingInjuries
+        A D k t target) :
+    ∃ Z : Set ℕ,
+    ∃ displacement markedPoint originIndex : ℕ → ℕ,
+    ∃ translatedSupport : ℕ → Finset ℕ,
+    ∃ core : Finset ℕ,
+      Z ⊆ D ∧
+      Z ⊆ A ∧
+      Z.Infinite ∧
+      StrictMono originIndex ∧
+      core ∈ additiveSupportFamily A (k - 1) t ∧
+      Disjoint (core : Set ℕ) Z ∧
+      (∀ n,
+        0 < displacement n ∧
+        target (originIndex n) =
+          markedPoint n + t ∧
+        target (originIndex n) + displacement n <
+          target (originIndex n + 1) ∧
+        translatedSupport n ∈
+          additiveSupportFamily A (k - 1)
+            (t + displacement n) ∧
+        Disjoint
+          (translatedSupport n : Set ℕ) Z ∧
+        HasFixedPredecessorArithmeticInjuryAtFloor
+          A Z k (t + displacement n) n) ∧
+      ((∀ L, ∃ n m,
+        L ≤ n ∧
+        target (originIndex n) < m ∧
+        m <
+          target (originIndex n) +
+            displacement n ∧
+        DestroysAt
+          (additiveSupportFamily A k) Z m ∧
+        t < m - markedPoint n ∧
+        m - markedPoint n <
+          t + displacement n ∧
+        DestroysAt
+          (additiveSupportFamily A (k - 1))
+          Z (m - markedPoint n) ∧
+        core.Nonempty ∧
+        ∀ a ∈ core,
+          0 < (m - markedPoint n) - a ∧
+          DestroysAt
+            (additiveSupportFamily A (k - 2))
+            Z ((m - markedPoint n) - a)) ∨
+      (∀ L, ∃ n m,
+        L ≤ n ∧
+        target (originIndex n) +
+            displacement n < m ∧
+        m < target (originIndex (n + 1)) ∧
+        DestroysAt
+          (additiveSupportFamily A k) Z m ∧
+        t + displacement n <
+          m - markedPoint n ∧
+        DestroysAt
+          (additiveSupportFamily A (k - 1))
+          Z (m - markedPoint n) ∧
+        (translatedSupport n).Nonempty ∧
+        ∀ a ∈ translatedSupport n,
+          0 < (m - markedPoint n) - a ∧
+          DestroysAt
+            (additiveSupportFamily A (k - 2))
+            Z ((m - markedPoint n) - a))) := by
+  obtain ⟨Z, lower, upper, displacement,
+      markedPoint, originIndex, translatedSupport,
+      core, hZD, hZA, hZInfinite,
+      horiginStrict, _hlowerStrict, _hupperStrict,
+      _hinterlaced, hcoreMem, hcoreZ,
+      hdata, hbelow | habove⟩ :=
+    hattack
+  · refine
+      ⟨Z, displacement, markedPoint, originIndex,
+        translatedSupport, core, hZD, hZA,
+        hZInfinite, horiginStrict, hcoreMem,
+        hcoreZ, ?_, Or.inl ?_⟩
+    · intro n
+      obtain ⟨hdisplacementPos, hlowerTarget,
+          hlowerMarked, hupperEq, hupperBlock,
+          _hmarkedA, _hlowerSupportMem,
+          _hlowerSupportZ, htranslatedMem,
+          htranslatedZ, _hupperSupportMem,
+          _hupperSupportZ, hthresholdInjury⟩ :=
+        hdata n
+      exact
+        ⟨hdisplacementPos, by omega, by omega,
+          htranslatedMem, htranslatedZ,
+          hthresholdInjury⟩
+    · intro L
+      obtain ⟨n, m, hnL, hnm, hmu,
+          hmDestroy, hdiffLower, hdiffUpper,
+          hdiffDestroy⟩ :=
+        hbelow L
+      obtain ⟨hcoreNonempty, hfanRaw⟩ :=
+        destroyedAdditiveTarget_descends_through_prescribedLowerSupport
+          (A := A) (X := Z) (k := k - 1)
+          (lowerTarget := t)
+          (m := m - markedPoint n)
+          (by omega) hdiffLower hcoreMem
+            hcoreZ hdiffDestroy
+      have hfan :
+          ∀ a ∈ core,
+            0 < (m - markedPoint n) - a ∧
+            DestroysAt
+              (additiveSupportFamily A (k - 2))
+              Z ((m - markedPoint n) - a) := by
+        intro a ha
+        have haFan := hfanRaw a ha
+        have hrank :
+            k - 1 - 1 = k - 2 := by omega
+        simpa only [hrank] using haFan
+      obtain ⟨_hdisplacementPos, hlowerTarget,
+          _hlowerMarked, hupperEq, _hupperBlock,
+          _hmarkedA, _hlowerSupportMem,
+          _hlowerSupportZ, _htranslatedMem,
+          _htranslatedZ, _hupperSupportMem,
+          _hupperSupportZ, _hthresholdInjury⟩ :=
+        hdata n
+      exact
+        ⟨n, m, hnL, by simpa only [hlowerTarget] using hnm,
+          by omega, hmDestroy, hdiffLower,
+          hdiffUpper, hdiffDestroy,
+          hcoreNonempty, hfan⟩
+  · refine
+      ⟨Z, displacement, markedPoint, originIndex,
+        translatedSupport, core, hZD, hZA,
+        hZInfinite, horiginStrict, hcoreMem,
+        hcoreZ, ?_, Or.inr ?_⟩
+    · intro n
+      obtain ⟨hdisplacementPos, hlowerTarget,
+          hlowerMarked, hupperEq, hupperBlock,
+          _hmarkedA, _hlowerSupportMem,
+          _hlowerSupportZ, htranslatedMem,
+          htranslatedZ, _hupperSupportMem,
+          _hupperSupportZ, hthresholdInjury⟩ :=
+        hdata n
+      exact
+        ⟨hdisplacementPos, by omega, by omega,
+          htranslatedMem, htranslatedZ,
+          hthresholdInjury⟩
+    · intro L
+      obtain ⟨n, m, hnL, hnm, hmu,
+          hmDestroy, hdiffLower,
+          hdiffDestroy⟩ :=
+        habove L
+      obtain ⟨_hdisplacementPos, hlowerTarget,
+          _hlowerMarked, hupperEq, _hupperBlock,
+          _hmarkedA, _hlowerSupportMem,
+          _hlowerSupportZ, htranslatedMem,
+          htranslatedZ, _hupperSupportMem,
+          _hupperSupportZ, _hthresholdInjury⟩ :=
+        hdata n
+      have htranslatedLower :
+          t + displacement n <
+            m - markedPoint n :=
+        hdiffLower
+      obtain ⟨htranslatedNonempty, hfanRaw⟩ :=
+        destroyedAdditiveTarget_descends_through_prescribedLowerSupport
+          (A := A) (X := Z) (k := k - 1)
+          (lowerTarget := t + displacement n)
+          (m := m - markedPoint n)
+          (by omega) htranslatedLower
+            htranslatedMem
+            htranslatedZ
+            hdiffDestroy
+      have hfan :
+          ∀ a ∈ translatedSupport n,
+            0 < (m - markedPoint n) - a ∧
+            DestroysAt
+              (additiveSupportFamily A (k - 2))
+              Z ((m - markedPoint n) - a) := by
+        intro a ha
+        have haFan := hfanRaw a ha
+        have hrank :
+            k - 1 - 1 = k - 2 := by omega
+        simpa only [hrank] using haFan
+      obtain ⟨_hnextDisplacementPos,
+          hnextLowerTarget, _hnextLowerMarked,
+          _hnextUpperEq, _hnextUpperBlock,
+          _hnextMarkedA, _hnextLowerSupportMem,
+          _hnextLowerSupportZ, _hnextTranslatedMem,
+          _hnextTranslatedZ, _hnextUpperSupportMem,
+          _hnextUpperSupportZ,
+          _hnextThresholdInjury⟩ :=
+        hdata (n + 1)
+      exact
+        ⟨n, m, hnL, by omega,
+          by simpa only [hnextLowerTarget] using hmu,
+          hmDestroy, hdiffLower, hdiffDestroy,
+          htranslatedNonempty, hfan⟩
+
 /-- The terminal fixed-core fusion has no residual geometric predicate.
 
 Its same-block side is already a synchronized threshold-straddling attack

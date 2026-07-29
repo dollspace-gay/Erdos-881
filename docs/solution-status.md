@@ -1,5 +1,32 @@
 # GENERAL ORDER: FIXED-CORE INJURIES STRADDLE ONE TRANSLATED ENDPOINT (2026-07-29)
 
+`HasCofinalFixedCoreThresholdStraddlingInjuries.forces_cofinal_secondRankDescentFans`
+now pushes the synchronized injury down a second representation rank,
+without assuming that the lower-order support family is itself a basis.
+In the below-endpoint branch, the destroyed order-\((k-1)\) predecessor
+\(q\) is descended through the fixed clean core \(K\) at \(t\).  Thus
+every \(a\in K\) gives
+
+\[
+  q-a>0
+  \quad\text{and}\quad
+  q-a\text{ destroyed at order }k-2.
+\]
+
+In the above-endpoint branch the same argument uses the clean translated
+support \(G_{\Delta_n}\) at \(t+\Delta_n\), so every
+\(a\in G_{\Delta_n}\) gives the corresponding destroyed
+order-\((k-2)\) difference.  This is a direct descent through the literal
+endpoint supports; it does not reselect an unrelated representation.
+
+The two sides now expose the next direct cardinality fork.  The fixed-core
+side already has one finite set of anchors for every stage.  On the
+translated side, either one anchor recurs cofinally or the anchors escape
+through infinitely many source blocks.  The former gives a coherent
+fixed-anchor stream of order-\((k-2)\) injuries; the latter must be turned
+into matching growth and compared with the localized arithmetic
+threshold.
+
 `HasTerminalFixedSourceCoreAlignedFusion.forces_thresholdStraddling_or_gapDominatingCrossBlock`
 now removes the last unprocessed geometric predicate from this terminal
 branch.  Its exhaustive conclusion is:
