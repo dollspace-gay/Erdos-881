@@ -41690,4 +41690,134 @@ theorem quadraticBlockTail_counterexample_fusesReducedStreams_or_forces_eventual
             localizedArithmeticDiagonalStart] using
               hrepeated
 
+/-! ## Direct protected-representation fusion
+
+The preceding sections attack a hypothetical counterexample.  The
+following endpoint records the complementary positive architecture.
+
+Keep one finite set `F` permanently out of the deletion.  If every late
+successor target has arbitrarily large rooted matchings whose roots lie in
+`F`, then after any finite deletion prefix `D ⊆ A \ F` at most `|D|`
+petals can be hit.  Asking for `|D| + 2` members leaves two supports
+avoiding `D`; their traces on the deletion reservoir are disjoint because
+their only possible common points lie in the retained root.
+
+Thus the already verified sparse-deletion recursion applies directly.  No
+counterexample, finite certificate, or destruction fork occurs in this
+construction. -/
+
+/-- A finite retained set captures arbitrarily large rooted matchings at
+every sufficiently late successor-order target. -/
+def HasFiniteProtectedSuccessorRootedGrowth
+    (A : Set ℕ) (k : ℕ) : Prop :=
+  ∃ F : Finset ℕ, ∀ demand, ∃ N, ∀ n, N ≤ n →
+    ∃ root : Finset ℕ, ∃ M : Finset (Finset ℕ),
+      root.card < k + 1 ∧
+      root ⊆ F ∧
+      M ⊆ additiveSupportFamily A (k + 1) n ∧
+      demand < M.card ∧
+      (∀ E ∈ M, root ⊆ E) ∧
+      (∀ E ∈ M, (E \ root).Nonempty) ∧
+      ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+        Disjoint (E \ root) (G \ root)
+
+/-- Finite protected-root growth supplies the exact reservoir-relative
+two-repair invariant used by the direct sparse-deletion recursion. -/
+theorem HasFiniteProtectedSuccessorRootedGrowth.to_finiteRetainedCoreTwoRepairs
+    {A : Set ℕ} {k : ℕ}
+    (hgrowth : HasFiniteProtectedSuccessorRootedGrowth A k) :
+    HasFiniteRetainedCoreTwoRepairsAlong A k Set.univ := by
+  classical
+  obtain ⟨F, hF⟩ := hgrowth
+  refine ⟨F, ?_⟩
+  intro D hDreservoir
+  obtain ⟨N, hN⟩ := hF (D.card + 1)
+  refine ⟨N, ?_⟩
+  intro n hn _hnUniv
+  obtain ⟨root, M, _hrootCard, hrootF, hMsub,
+      hMlarge, _hMroot, _hMpetal, hMmatching⟩ :=
+    hN n hn
+  have hrootD : Disjoint root D := by
+    rw [Finset.disjoint_left]
+    intro x hxroot hxD
+    have hxReservoir :
+        x ∈ A \ (F : Set ℕ) :=
+      hDreservoir (Finset.mem_coe.mpr hxD)
+    exact hxReservoir.2 (hrootF hxroot)
+  have hhit :
+      ∀ E ∈ M,
+        ¬ Disjoint (E : Set ℕ) (D : Set ℕ) →
+          ∃ x ∈ D, x ∈ E \ root := by
+    intro E _hEM hED
+    obtain ⟨x, hxE, hxD⟩ :=
+      Set.not_disjoint_iff.mp hED
+    have hxroot : x ∉ root := by
+      intro hxroot
+      exact Finset.disjoint_left.mp hrootD
+        hxroot (Finset.mem_coe.mp hxD)
+    exact ⟨x, Finset.mem_coe.mp hxD,
+      Finset.mem_sdiff.mpr
+        ⟨Finset.mem_coe.mp hxE, hxroot⟩⟩
+  have hDltM : D.card < M.card := by omega
+  obtain ⟨E, hEM, hED⟩ :=
+    exists_surviving_support
+      hMmatching hhit hDltM
+  have hEraseCard :
+      (M.erase E).card + 1 = M.card :=
+    Finset.card_erase_add_one hEM
+  have hDltErase : D.card < (M.erase E).card := by
+    omega
+  have hEraseMatching :
+      ∀ G ∈ M.erase E, ∀ H ∈ M.erase E, G ≠ H →
+        Disjoint (G \ root) (H \ root) := by
+    intro G hG H hH hGH
+    exact hMmatching G (Finset.mem_of_mem_erase hG)
+      H (Finset.mem_of_mem_erase hH) hGH
+  have hEraseHit :
+      ∀ G ∈ M.erase E,
+        ¬ Disjoint (G : Set ℕ) (D : Set ℕ) →
+          ∃ x ∈ D, x ∈ G \ root := by
+    intro G hG
+    exact hhit G (Finset.mem_of_mem_erase hG)
+  obtain ⟨G, hGErase, hGD⟩ :=
+    exists_surviving_support
+      hEraseMatching hEraseHit hDltErase
+  have hGM : G ∈ M :=
+    Finset.mem_of_mem_erase hGErase
+  have hGE : G ≠ E :=
+    (Finset.mem_erase.mp hGErase).1
+  refine ⟨E, hMsub hEM, by simpa using hED,
+    G, hMsub hGM, by simpa using hGD, ?_⟩
+  rw [Set.disjoint_left]
+  rintro x ⟨hxE, hxReservoir⟩
+    ⟨hxG, _hxReservoir'⟩
+  have hxroot : x ∉ root := by
+    intro hxroot
+    exact hxReservoir.2 (hrootF hxroot)
+  exact Finset.disjoint_left.mp
+    (hMmatching E hEM G hGM hGE.symm)
+      (Finset.mem_sdiff.mpr
+        ⟨Finset.mem_coe.mp hxE, hxroot⟩)
+      (Finset.mem_sdiff.mpr
+        ⟨Finset.mem_coe.mp hxG, hxroot⟩)
+
+/-- Direct positive solution criterion.
+
+Starting from an arbitrary exact order-`k` basis, finite protected-root
+growth constructs an infinite `B ⊆ A` while permanently preserving two
+successor representations against every finite deletion prefix.  The
+sparse recursion fuses those finite choices into an exact order-`k+1`
+basis on `A \ B`. -/
+theorem IsExactTupleAsymptoticBasis.exists_infiniteDeletion_succBasis_of_finiteProtectedRootedGrowth
+    {A : Set ℕ} {k : ℕ}
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hgrowth : HasFiniteProtectedSuccessorRootedGrowth A k) :
+    ∃ B, B ⊆ A ∧ B.Infinite ∧
+      IsExactTupleAsymptoticBasis (A \ B) (k + 1) := by
+  exact
+    exists_infiniteDeletion_succBasis_of_finiteRetainedCoreTwoRepairs
+      hbasis
+        hgrowth.to_finiteRetainedCoreTwoRepairs
+        ⟨0, by simp⟩
+
 end Erdos881
