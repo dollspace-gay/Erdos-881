@@ -44329,4 +44329,218 @@ theorem exactBasis_counterexample_forces_exactMatchingFusion_or_eventualAlignedR
             hexactPetal, hexactMatching⟩
       · exact Or.inr hnonmatching
 
+/-- Lowering the requested number of fresh covered blocks preserves a
+reduced common-column stream. -/
+theorem HasCommonColumnReducedCoverStream.mono
+    {A : Set ℕ} {k L L' : ℕ}
+    {cell : ℕ → Finset ℕ}
+    {Q : Finset ℕ} {r : ℕ} {hrQ : r ∈ Q}
+    {E : Finset ℕ}
+    {T : Finset {q // q ∈ Q.erase r}}
+    (hstream :
+      HasCommonColumnReducedCoverStream
+        A k L cell Q r hrQ E T)
+    (hLL' : L' ≤ L) :
+    HasCommonColumnReducedCoverStream
+      A k L' cell Q r hrQ E T := by
+  unfold HasCommonColumnReducedCoverStream at hstream ⊢
+  obtain ⟨coveredBlock, hrows, J, hJimage,
+      hJlarge, hJdata⟩ :=
+    hstream
+  exact ⟨coveredBlock, hrows, J, hJimage,
+    lt_of_le_of_lt hLL' hJlarge, hJdata⟩
+
+/-- One diagonal-scale occurrence of the reduced-stream horn, retaining
+the source index and the exact translation which produced its target. -/
+def HasAlignedReducedStreamAt
+    (A : Set ℕ) (k : ℕ)
+    (cell : ℕ → Finset ℕ) (target : ℕ → ℕ)
+    (scale : ℕ) : Prop :=
+  ∃ Q : Finset ℕ, ∃ i q δ, ∃ hqQ : q ∈ Q,
+  ∃ E : Finset ℕ,
+  ∃ T : Finset {r // r ∈ Q.erase q},
+    scale ≤ i ∧
+    target i < q ∧
+    q < target (i + 1) ∧
+    0 < δ ∧
+    q = target i + δ ∧
+    E ∈ additiveSupportFamily A (k + 1) q ∧
+    HasCommonColumnReducedCoverStream
+      A k scale cell Q q hqQ E T
+
+/-- Eventual aligned remainder after both exact-target matching recurrence
+and reduced-stream recurrence have been removed. -/
+def HasEventuallyAlignedHolesOrAnchoredConcentration
+    (A : Set ℕ) (k : ℕ)
+    (cell : ℕ → Finset ℕ) (target : ℕ → ℕ) : Prop :=
+  ∃ N, ∀ n, N ≤ n →
+    ∃ Q : Finset ℕ, ∃ i q δ,
+    ∃ sourceRoot : Finset ℕ,
+    ∃ sourceMatching : Finset (Finset ℕ),
+    ∃ sourcePetals translatedHoles : Finset ℕ,
+    ∃ hqQ : q ∈ Q,
+      n ≤ i ∧
+      target i < q ∧
+      q < target (i + 1) ∧
+      0 < δ ∧
+      q = target i + δ ∧
+      sourceRoot.card < k + 1 ∧
+      i + 1 < sourceMatching.card ∧
+      sourceMatching ⊆
+        additiveSupportFamily A (k + 1) (target i) ∧
+      (∀ E ∈ sourceMatching, sourceRoot ⊆ E) ∧
+      (∀ E ∈ sourceMatching, (E \ sourceRoot).Nonempty) ∧
+      (∀ E ∈ sourceMatching, ∀ G ∈ sourceMatching, E ≠ G →
+        Disjoint (E \ sourceRoot) (G \ sourceRoot)) ∧
+      sourcePetals =
+        sourceMatching.biUnion (fun E => E \ sourceRoot) ∧
+      sourcePetals ⊆ cell i ∧
+      translatedHoles ⊆ sourcePetals ∧
+      (∀ a ∈ translatedHoles, a + δ ∉ A) ∧
+      (n < translatedHoles.card ∨
+        ∃ E ∈ additiveSupportFamily A (k + 1) q,
+          ∃ T : Finset {r // r ∈ Q.erase q},
+            HasCommonColumnAnchoredArithmeticConcentration
+              A k n n n cell Q q hqQ E T)
+
+/-- Consume the reduced-stream branch of the eventual aligned remainder.
+
+If reduced streams recur cofinally, their retained targets
+`q = target i + δ` and arbitrarily late literal blocks satisfy the existing
+reduced-stream fusion interface.  That theorem produces
+`HasFusedSuccessorPredecessorStreams`.
+
+Otherwise reduced streams have a genuine cutoff.  Past the maximum of the
+old and new cutoffs, every aligned stage is therefore either translated-hole
+growth or anchored arithmetic concentration. -/
+theorem HasEventuallyAlignedHolesOrNonmatchingArithmetic.resolveReducedStreams
+    {A K : Set ℕ} {k : ℕ}
+    (hkpos : 0 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1))
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (htargetStrict : StrictMono target)
+    (hremainder :
+      HasEventuallyAlignedHolesOrNonmatchingArithmetic
+        A k cell target) :
+    HasFusedSuccessorPredecessorStreams A k ∨
+      HasEventuallyAlignedHolesOrAnchoredConcentration
+        A k cell target := by
+  classical
+  obtain ⟨Nremainder, hstage⟩ := hremainder
+  by_cases hreducedCofinal :
+      ∀ N, ∃ n, N ≤ n ∧
+        HasAlignedReducedStreamAt A k cell target n
+  · left
+    have hreduced :
+        ∀ targetFloor blockFloor,
+          ∃ Q : Finset ℕ, ∃ r, ∃ hrQ : r ∈ Q,
+          ∃ E : Finset ℕ,
+          ∃ T : Finset {q // q ∈ Q.erase r},
+            targetFloor ≤ r ∧
+            E ∈ additiveSupportFamily A (k + 1) r ∧
+            HasCommonColumnReducedCoverStream
+              A k (blockFloor + 1) cell Q r hrQ E T := by
+      intro targetFloor blockFloor
+      obtain ⟨n, hnLarge, Q, i, q, δ, hqQ, E, T,
+          hiScale, hiLower, _hiUpper, _hδpos, _hqδ,
+          hEmem, hstream⟩ :=
+        hreducedCofinal
+          (max targetFloor (blockFloor + 1))
+      have htargetFloorN : targetFloor ≤ n :=
+        (le_max_left targetFloor (blockFloor + 1)).trans
+          hnLarge
+      have hblockFloorN : blockFloor + 1 ≤ n :=
+        (le_max_right targetFloor (blockFloor + 1)).trans
+          hnLarge
+      have htargetFloorQ : targetFloor ≤ q := by
+        exact htargetFloorN.trans
+          (hiScale.trans
+            ((htargetStrict.id_le i).trans
+              (Nat.le_of_lt hiLower)))
+      exact ⟨Q, q, hqQ, E, T, htargetFloorQ,
+        hEmem, hstream.mono hblockFloorN⟩
+    obtain ⟨Y, oldTarget, hYA, hYInfinite,
+        holdStrict, holdSurvival, hsuccessorDestroy,
+        _hfans, hrepresented⟩ :=
+      cofinalReducedCoverStreams_force_bracketedPredecessorDestroyers
+        hkpos hbasis hcounter hKA P hreduced
+    exact
+      ⟨Y, oldTarget, hYA, hYInfinite, holdStrict,
+        holdSurvival, hsuccessorDestroy, hrepresented⟩
+  · right
+    push Not at hreducedCofinal
+    obtain ⟨Nreduced, hNreduced⟩ := hreducedCofinal
+    refine ⟨max Nremainder Nreduced, ?_⟩
+    intro n hn
+    have hnRemainder : Nremainder ≤ n :=
+      (le_max_left Nremainder Nreduced).trans hn
+    have hnReduced : Nreduced ≤ n :=
+      (le_max_right Nremainder Nreduced).trans hn
+    obtain ⟨Q, i, q, δ, sourceRoot, sourceMatching,
+        sourcePetals, translatedHoles, hqQ,
+        hiScale, hiLower, hiUpper, hδpos, hqδ,
+        hsourceRootCard, hsourceLarge, hsourceSub,
+        hsourceRoot, hsourcePetal, hsourceMatching,
+        hsourcePetals, hsourceCell, hholesSource,
+        hholesData, hfinal⟩ :=
+      hstage n hnRemainder
+    refine
+      ⟨Q, i, q, δ, sourceRoot, sourceMatching,
+        sourcePetals, translatedHoles, hqQ,
+        hiScale, hiLower, hiUpper, hδpos, hqδ,
+        hsourceRootCard, hsourceLarge, hsourceSub,
+        hsourceRoot, hsourcePetal, hsourceMatching,
+        hsourcePetals, hsourceCell, hholesSource,
+        hholesData, ?_⟩
+    rcases hfinal with hholes | hnonmatching
+    · exact Or.inl hholes
+    · obtain ⟨E, hEmem, T, hstream | hconcentration⟩ :=
+        hnonmatching
+      · exfalso
+        apply hNreduced n hnReduced
+        exact
+          ⟨Q, i, q, δ, hqQ, E, T, hiScale,
+            hiLower, hiUpper, hδpos, hqδ, hEmem,
+            hstream⟩
+      · exact Or.inr ⟨E, hEmem, T, hconcentration⟩
+
+/-- Counterexample-level fork after consuming both recurrent matching and
+recurrent reduced-stream geometry.
+
+The first branch is one honest infinite deletion carrying the fused
+surviving/destroyed successor streams and represented destroyed predecessor
+differences.  In the second branch every sufficiently late aligned stage,
+still with `q = target i + δ`, is now only translated-hole growth or anchored
+arithmetic concentration. -/
+theorem exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedHolesOrConcentration
+    {A : Set ℕ} {k : ℕ}
+    (hkpos : 0 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1)) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+    ∃ target : ℕ → ℕ,
+      K ⊆ A ∧
+      K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      StrictMono target ∧
+      (∀ i, i + 2 < (cell i).card) ∧
+      (HasFusedSuccessorPredecessorStreams A k ∨
+        HasEventuallyAlignedHolesOrAnchoredConcentration
+          A k cell target) := by
+  obtain ⟨K, cell, target, hKA, hKInfinite, P,
+      htargetStrict, hcellLarge, hfused | hremainder⟩ :=
+    exactBasis_counterexample_forces_exactMatchingFusion_or_eventualAlignedRemainder
+      hkpos hbasis hcounter
+  · exact ⟨K, cell, target, hKA, hKInfinite, P,
+      htargetStrict, hcellLarge, Or.inl hfused⟩
+  · exact ⟨K, cell, target, hKA, hKInfinite, P,
+      htargetStrict, hcellLarge,
+      hremainder.resolveReducedStreams
+        hkpos hbasis hcounter hKA P htargetStrict⟩
+
 end Erdos881
