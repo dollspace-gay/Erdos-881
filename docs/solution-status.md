@@ -1,3 +1,62 @@
+# GENERAL ORDER: THE CODIMENSION-ONE TERMINAL LOOP NOW ADVANCES (2026-07-29)
+
+The remaining fixed-root repair case \(r=k-1\) has been normalized and its
+apparent stationary loop has been broken.
+
+`HasTerminalFixedSourceTranslateStageAt` records the exact terminal shape.
+`forces_terminalFixedSourceTranslateStream` proves that every late
+second-level failure has the same clean predecessor \(t\) and a destroyed
+translate
+
+\[
+  t+\varepsilon
+\]
+
+at order \(k-1\).  Finite cofinal pigeonhole then gives the honest
+displacement fork: \(\varepsilon\) is cofinally unbounded, or one positive
+\(\varepsilon\) recurs at every stage floor.
+
+The unbounded branch is already arithmetic injury.
+`terminalFixedSource_epsilonGrowth_forces_cofinalTranslatedArithmeticInjury`
+runs finite descent from the fixed support \(K\).  Although its lower
+source need not grow, the translated gap or landing is at least
+\(\varepsilon\), so it is cofinal.
+
+For fixed \(\varepsilon\),
+`terminalFixedSource_fixedEpsilon_forces_gap_or_commonUpperRepair` proves
+either a genuine same-rank/lower-rank gap or finds one point
+\(c+\varepsilon\in C\) whose restoration repairs \(t+\varepsilon\).
+That same restoration repairs every aligned upper target, producing
+cofinally many clean supports on
+
+\[
+  C'=C\setminus\{c+\varepsilon\}.
+\]
+
+`cofinalBracketedMarkedSurvivals_extract_strictStream` thins those supports
+to a strict stream without losing their common marked predecessor.
+`fixedPredecessorStrictSurvivalStream_forces_largerTranslatedLowerDestruction`
+then applies strong minimality again and forces
+
+\[
+  d+\eta,\qquad \eta>0,
+\]
+
+to be destroyed at order \(k-1\), where \(d=t+\varepsilon\).
+The composed theorem
+`terminalFixedSource_fixedEpsilon_forces_gap_or_strictSourceAdvance`
+therefore says the fixed-displacement horn cannot remain stationary:
+it gives a gap, or it removes one point from the deletion and strictly
+advances the lower source.
+
+This is still not the full solution.  The next direct construction is a
+finite iteration of this advance.  For any requested arithmetic threshold,
+strict source growth reaches it after finitely many restorations; finite
+removal preserves infinitude of the deletion.  At that point the existing
+simultaneous-descent theorem applies at the requested scale.  The remaining
+global issue is to homogenize/fuse the resulting finite runs without
+allowing their restored boundary points to exhaust the eventual deletion.
+
 # GENERAL ORDER: THE FIXED-ROOT REPAIR HORN IS FUSED AND DESCENDS AGAIN (2026-07-29)
 
 The residual-target alternatives are now welded back to one arbitrary
