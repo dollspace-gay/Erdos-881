@@ -45292,4 +45292,603 @@ theorem exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedArithmet
         hremainder.resolveTranslationHoles
           (by omega) hbasis hcounter hKA P htargetStrict⟩
 
+/-- A support of an order-`h` target at least `h * floor` contains an
+actual support point at least `floor`.
+
+The support finset forgets multiplicity, so take its maximum and compare
+every entry of a representing tuple with that maximum.  This is the
+large-anchor counterpart of
+`additiveSupportFamily_exists_averageBoundedAnchor`. -/
+theorem additiveSupportFamily_exists_floorBoundedAnchor
+    {A : Set ℕ} {h floor p : ℕ}
+    (hhpos : 0 < h)
+    (hfloor : h * floor ≤ p)
+    {E : Finset ℕ}
+    (hEmem : E ∈ additiveSupportFamily A h p) :
+    ∃ c ∈ E, floor ≤ c := by
+  classical
+  obtain ⟨v, _hvA, hvsum, hEv⟩ :=
+    mem_additiveSupportFamily_iff.mp hEmem
+  have hEnonempty : E.Nonempty :=
+    additiveSupportFamily_supportsNonempty
+      A hhpos p E hEmem
+  let c := E.max' hEnonempty
+  have hcE : c ∈ E :=
+    E.max'_mem hEnonempty
+  refine ⟨c, hcE, ?_⟩
+  have hvle : ∀ i : Fin h, (v i : ℕ) ≤ c := by
+    intro i
+    apply E.le_max'
+    rw [← hEv]
+    exact mem_tupleSupport_iff.mpr ⟨i, rfl⟩
+  have hsum :
+      (∑ i : Fin h, (v i : ℕ)) ≤
+        ∑ _i : Fin h, c := by
+    exact Finset.sum_le_sum fun i _hi => hvle i
+  have hpBound : p ≤ h * c := by
+    simpa only [Finset.sum_const, Finset.card_fin,
+      nsmul_eq_mul, hvsum] using hsum
+  exact Nat.le_of_mul_le_mul_left
+    (hfloor.trans hpBound) hhpos
+
+/-- Direct large-point form of the aligned translation exit.
+
+If a clean order-`h` support represents `p ≥ h * floor` and its translate
+`p + δ` is destroyed, choose a support point `c ≥ floor`.  The translated
+point `c + δ` has only two possible locations:
+
+* it is literally absent from `A`; or
+* it belongs to `A`, in which case the translated-repair law forces it
+  into the deletion `Y`.
+
+Unlike a descent ending in an arbitrary lower-rank gap, both outcomes carry
+literal membership information and the large point remains in the original
+clean support. -/
+theorem cleanSupport_destroyedTranslate_forces_largeHole_or_boundaryLanding
+    {A Y : Set ℕ} {h floor p δ : ℕ}
+    {E : Finset ℕ}
+    (hhpos : 0 < h)
+    (hfloor : h * floor ≤ p)
+    (hEmem : E ∈ additiveSupportFamily A h p)
+    (hEY : Disjoint (E : Set ℕ) Y)
+    (hshiftDestroy :
+      DestroysAt
+        (additiveSupportFamily A h) Y (p + δ)) :
+    (∃ c,
+        floor ≤ c ∧
+        c ∈ E ∧
+        c ∈ A ∧
+        c ∉ Y ∧
+        c + δ ∉ A) ∨
+      ∃ c,
+        floor ≤ c ∧
+        c ∈ E ∧
+        c ∈ A ∧
+        c ∉ Y ∧
+        c + δ ∈ A ∧
+        c + δ ∈ Y ∧
+        ¬ DestroysAt
+          (additiveSupportFamily A h)
+          (Y \ {c + δ}) (p + δ) := by
+  classical
+  obtain ⟨c, hcE, hfloorC⟩ :=
+    additiveSupportFamily_exists_floorBoundedAnchor
+      hhpos hfloor hEmem
+  have hcA : c ∈ A :=
+    additiveSupportFamily_supportsIn
+      A h p E hEmem c hcE
+  have hcY : c ∉ Y := by
+    intro hcY
+    exact Set.disjoint_left.mp hEY
+      (Finset.mem_coe.mpr hcE) hcY
+  by_cases hshiftA : c + δ ∈ A
+  · right
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero
+      (by omega : h ≠ 0)
+    have hshiftY : c + δ ∈ Y :=
+      alignedSurvivalDestruction_forces_translationExit
+        hEmem hEY rfl hshiftDestroy c hcE hshiftA
+    have hrestoredSurvival :
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (Y \ {c + δ}) (p + δ) := by
+      intro hstillDestroy
+      obtain ⟨H, hHmem, hEinsert⟩ :=
+        additiveSupport_remove_hit_succ hEmem hcE
+      have hrepair :
+          insert (c + δ) H ∈
+            additiveSupportFamily A (k + 1)
+              (p + δ) := by
+        have hlift :=
+          insert_mem_additiveSupportFamily_succ
+            hshiftA hHmem
+        have hcP :
+            c ≤ p :=
+          additiveSupportFamily_supportsBounded
+            A (k + 1) p E hEmem c hcE
+        have htarget :
+            c + δ + (p - c) = p + δ := by
+          omega
+        simpa only [htarget] using hlift
+      apply hstillDestroy (insert (c + δ) H) hrepair
+      rw [Set.disjoint_left]
+      intro x hxRepair hxRestored
+      rcases
+          Finset.mem_insert.mp
+            (Finset.mem_coe.mp hxRepair) with
+        hxShift | hxH
+      · subst x
+        exact hxRestored.2 (by simp)
+      · exact Set.disjoint_left.mp hEY
+          (Finset.mem_coe.mpr
+            (by
+              rw [hEinsert]
+              exact Finset.mem_insert_of_mem hxH))
+          hxRestored.1
+    exact
+      ⟨c, hfloorC, hcE, hcA, hcY,
+        hshiftA, hshiftY, hrestoredSurvival⟩
+  · left
+    exact
+      ⟨c, hfloorC, hcE, hcA, hcY, hshiftA⟩
+
+/-- Simultaneously descend a clean support and its destroyed translate.
+
+Suppose an order-`h` support at `p` avoids `Y`, while the represented target
+`p + δ` is destroyed by `Y`.  At each positive rank choose an
+average-bounded point `b` of the clean support, remove one occurrence of
+`b`, and descend the destroyer through the same clean anchor.
+
+There are only two possible terminal shapes:
+
+* at some strict lower positive rank, the clean predecessor at `u` remains
+  represented but its translate `u + δ` is a genuine gap; or
+* rank one is reached, where the clean support is a point `c ∉ Y` and the
+  represented destroyed translate forces `c + δ ∈ Y`.
+
+The invariant `rank * floor ≤ target` makes the resulting `u` or `c`
+at least `floor`.  Thus this finite descent preserves cofinality as well as
+the one common translation. -/
+theorem cleanSupport_destroyedTranslate_forces_lowerGap_or_boundaryLanding
+    {A Y : Set ℕ} {h floor p δ : ℕ}
+    {E : Finset ℕ}
+    (hhpos : 0 < h)
+    (hfloor : h * floor ≤ p)
+    (hEmem : E ∈ additiveSupportFamily A h p)
+    (hEY : Disjoint (E : Set ℕ) Y)
+    (hshiftNonempty :
+      (additiveSupportFamily A h (p + δ)).Nonempty)
+    (hshiftDestroy :
+      DestroysAt
+        (additiveSupportFamily A h) Y (p + δ)) :
+    (∃ ℓ u, ∃ H : Finset ℕ,
+        0 < ℓ ∧
+        ℓ < h ∧
+        floor ≤ u ∧
+        H ∈ additiveSupportFamily A ℓ u ∧
+        Disjoint (H : Set ℕ) Y ∧
+        additiveSupportFamily A ℓ (u + δ) = ∅) ∨
+      ∃ c,
+        floor ≤ c ∧
+        c ∈ A ∧
+        c ∉ Y ∧
+        c + δ ∈ A ∧
+        c + δ ∈ Y := by
+  classical
+  induction h using Nat.strong_induction_on generalizing p E with
+  | h h ih =>
+      cases h with
+      | zero => omega
+      | succ k =>
+          by_cases hkzero : k = 0
+          · subst k
+            right
+            obtain ⟨v, hvA, hvsum, hEv⟩ :=
+              mem_additiveSupportFamily_iff.mp hEmem
+            have hv0 : (v 0 : ℕ) = p := by
+              simpa using hvsum
+            have hpA : p ∈ A :=
+              hv0 ▸ hvA 0
+            have hpE : p ∈ E := by
+              rw [← hEv]
+              exact mem_tupleSupport_iff.mpr
+                ⟨0, hv0⟩
+            have hpY : p ∉ Y := by
+              intro hpY
+              exact Set.disjoint_left.mp hEY
+                (Finset.mem_coe.mpr hpE) hpY
+            obtain ⟨F, hFmem⟩ := hshiftNonempty
+            obtain ⟨w, hwA, hwsum, _hFw⟩ :=
+              mem_additiveSupportFamily_iff.mp hFmem
+            have hw0 : (w 0 : ℕ) = p + δ := by
+              simpa using hwsum
+            have hshiftA : p + δ ∈ A :=
+              hw0 ▸ hwA 0
+            have hshiftY : p + δ ∈ Y :=
+              alignedSurvivalDestruction_forces_translationExit
+                (h := 0) hEmem hEY rfl hshiftDestroy
+                  p hpE hshiftA
+            have hfloorP : floor ≤ p := by
+              simpa using hfloor
+            exact
+              ⟨p, hfloorP, hpA, hpY,
+                hshiftA, hshiftY⟩
+          · have hkpos : 0 < k := by omega
+            obtain ⟨b, hbE, hbAverage⟩ :=
+              additiveSupportFamily_exists_averageBoundedAnchor
+                (A := A) (k := k + 1) (q := p)
+                (by omega) hEmem
+            have hbA : b ∈ A :=
+              additiveSupportFamily_supportsIn
+                A (k + 1) p E hEmem b hbE
+            have hbP : b ≤ p :=
+              additiveSupportFamily_supportsBounded
+                A (k + 1) p E hEmem b hbE
+            have hbY : b ∉ Y := by
+              intro hbY
+              exact Set.disjoint_left.mp hEY
+                (Finset.mem_coe.mpr hbE) hbY
+            obtain ⟨H, hHmem, hEinsert⟩ :=
+              additiveSupport_remove_hit_succ hEmem hbE
+            have hHY : Disjoint (H : Set ℕ) Y := by
+              rw [Set.disjoint_left]
+              intro x hxH hxY
+              apply Set.disjoint_left.mp hEY
+                (Finset.mem_coe.mpr ?_) hxY
+              rw [hEinsert]
+              exact Finset.mem_insert_of_mem hxH
+            have htarget :
+                p + δ - b = (p - b) + δ := by
+              omega
+            have hlowerDestroy :
+                DestroysAt
+                  (additiveSupportFamily A k) Y
+                    ((p - b) + δ) := by
+              have hraw :=
+                additiveSuccessorDestroyer_descends_outsideSet
+                  (k := k) hshiftDestroy hbA hbY
+                    (hbP.trans (Nat.le_add_right p δ))
+              simpa only [htarget] using hraw
+            have hfloorStep :
+                k * floor + b ≤ p := by
+              nlinarith
+            have hlowerFloor :
+                k * floor ≤ p - b := by
+              omega
+            by_cases hgap :
+                additiveSupportFamily A k
+                  ((p - b) + δ) = ∅
+            · left
+              exact
+                ⟨k, p - b, H, hkpos, by omega,
+                  (Nat.le_mul_of_pos_left floor hkpos).trans
+                    hlowerFloor,
+                  hHmem, hHY, hgap⟩
+            · have hlowerNonempty :
+                  (additiveSupportFamily A k
+                    ((p - b) + δ)).Nonempty :=
+                Finset.nonempty_iff_ne_empty.mpr hgap
+              obtain hlowerGap | hboundary :=
+                ih k (by omega) hkpos hlowerFloor
+                  hHmem hHY hlowerNonempty hlowerDestroy
+              · left
+                obtain ⟨ℓ, u, G, hℓpos, hℓk,
+                    hfloorU, hGmem, hGY, hGgap⟩ :=
+                  hlowerGap
+                exact
+                  ⟨ℓ, u, G, hℓpos, hℓk.trans (by omega),
+                    hfloorU, hGmem, hGY, hGgap⟩
+              · exact Or.inr hboundary
+
+/-- The fused successor/predecessor object has an explicit cofinal
+arithmetic shape.
+
+For a requested floor `L`, take a bracket far enough out that the
+average-bounded first anchor leaves an order-`k` clean predecessor target
+at least `k * L`.  The fused theorem already says the corresponding
+translate is represented and destroyed at order `k`.  Applying the finite
+simultaneous descent above gives, with one positive displacement `δ`,
+either:
+
+* a cofinally large clean target whose `δ`-translate is a genuine gap at
+  some strict lower positive rank; or
+* a cofinally large clean basis point `c` whose translate `c + δ` is an
+  actual deleted basis point.
+
+This is strictly stronger than the bare surviving/destroyed stream: the
+missing gap is now localized either in rank or on the boundary of the
+deletion. -/
+theorem HasFusedSuccessorPredecessorStreams.forces_cofinalLowerGap_or_boundaryLanding
+    {A : Set ℕ} {k : ℕ}
+    (hkpos : 0 < k)
+    (hfused :
+      HasFusedSuccessorPredecessorStreams A k) :
+    ∃ Y : Set ℕ,
+      Y ⊆ A ∧
+      Y.Infinite ∧
+      ∀ L, ∃ δ,
+        0 < δ ∧
+        ((∃ ℓ u, ∃ H : Finset ℕ,
+            0 < ℓ ∧
+            ℓ < k ∧
+            L ≤ u ∧
+            H ∈ additiveSupportFamily A ℓ u ∧
+            Disjoint (H : Set ℕ) Y ∧
+            additiveSupportFamily A ℓ (u + δ) = ∅) ∨
+          ∃ c,
+            L ≤ c ∧
+            c ∈ A ∧
+            c ∉ Y ∧
+            c + δ ∈ A ∧
+            c + δ ∈ Y) := by
+  classical
+  obtain ⟨Y, oldTarget, hYA, hYInfinite,
+      holdStrict, _holdSurvival, _hsuccessorDestroy,
+      hrepresented⟩ :=
+    hfused
+  refine ⟨Y, hYA, hYInfinite, ?_⟩
+  intro L
+  obtain ⟨n, m, E, a, hnLarge, hnLower, _hnUpper,
+      hEmem, hEY, _hmDestroy, haE, haAverage,
+      _hdLarge, hdNonempty, hdDestroy⟩ :=
+    hrepresented ((k + 1) * L)
+  have hnTarget : n ≤ oldTarget n :=
+    holdStrict.id_le n
+  have haTarget : a ≤ oldTarget n :=
+    additiveSupportFamily_supportsBounded
+      A (k + 1) (oldTarget n) E hEmem a haE
+  let p := oldTarget n - a
+  let δ := m - oldTarget n
+  have hδpos : 0 < δ := by
+    dsimp only [δ]
+    omega
+  obtain ⟨H, hHmem, hEinsert⟩ :=
+    additiveSupport_remove_hit_succ hEmem haE
+  have hHY : Disjoint (H : Set ℕ) Y := by
+    rw [Set.disjoint_left]
+    intro x hxH hxY
+    apply Set.disjoint_left.mp hEY
+      (Finset.mem_coe.mpr ?_) hxY
+    rw [hEinsert]
+    exact Finset.mem_insert_of_mem hxH
+  have hpFloor : k * L ≤ p := by
+    dsimp only [p]
+    have htargetFloor :
+        (k + 1) * L ≤ oldTarget n :=
+      hnLarge.trans hnTarget
+    have hpAdd :
+        oldTarget n - a + a = oldTarget n := by
+      omega
+    nlinarith
+  have htranslatedTarget :
+      p + δ = m - a := by
+    dsimp only [p, δ]
+    omega
+  have hpShiftNonempty :
+      (additiveSupportFamily A k (p + δ)).Nonempty := by
+    rw [htranslatedTarget]
+    exact hdNonempty
+  have hpShiftDestroy :
+      DestroysAt
+        (additiveSupportFamily A k) Y (p + δ) := by
+    rw [htranslatedTarget]
+    exact hdDestroy
+  obtain hgap | hboundary :=
+    cleanSupport_destroyedTranslate_forces_lowerGap_or_boundaryLanding
+      hkpos hpFloor hHmem hHY
+        hpShiftNonempty hpShiftDestroy
+  · exact ⟨δ, hδpos, Or.inl hgap⟩
+  · exact ⟨δ, hδpos, Or.inr hboundary⟩
+
+/-- The fused stream has a cofinal literal translation boundary.
+
+For a requested floor `L`, choose a bracket whose index is at least
+`(k+1) * L`.  Strictness of the protected target stream puts the lower
+endpoint above the same threshold.  A support of that lower endpoint
+therefore contains an actual point `c ≥ L`.
+
+Writing the destroyed upper endpoint as `oldTarget n + δ`, direct
+translation exit says that `c + δ` is either absent from `A` or belongs to
+the fixed deletion `Y`.  The theorem retains the bracket, its clean
+support, its destroyed target, and the exact displacement.  In the landing
+case restoring the single point `c + δ` to `A \ Y` gives an explicit repair
+of that destroyed target. -/
+theorem HasFusedSuccessorPredecessorStreams.forces_cofinalLargeTranslationHole_or_boundaryLanding
+    {A : Set ℕ} {k : ℕ}
+    (hfused :
+      HasFusedSuccessorPredecessorStreams A k) :
+    ∃ Y : Set ℕ, ∃ oldTarget : ℕ → ℕ,
+      Y ⊆ A ∧
+      Y.Infinite ∧
+      StrictMono oldTarget ∧
+      ∀ L, ∃ n m δ, ∃ E : Finset ℕ, ∃ c,
+        L ≤ n ∧
+        oldTarget n < m ∧
+        m < oldTarget (n + 1) ∧
+        0 < δ ∧
+        m = oldTarget n + δ ∧
+        E ∈
+          additiveSupportFamily A (k + 1)
+            (oldTarget n) ∧
+        Disjoint (E : Set ℕ) Y ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) Y m ∧
+        L ≤ c ∧
+        c ∈ E ∧
+        c ∈ A ∧
+        c ∉ Y ∧
+        (c + δ ∉ A ∨
+          (c + δ ∈ A ∧
+            c + δ ∈ Y ∧
+            ¬ DestroysAt
+              (additiveSupportFamily A (k + 1))
+              (Y \ {c + δ}) m)) := by
+  classical
+  obtain ⟨Y, oldTarget, hYA, hYInfinite,
+      holdStrict, _holdSurvival, _hsuccessorDestroy,
+      hrepresented⟩ :=
+    hfused
+  refine
+    ⟨Y, oldTarget, hYA, hYInfinite, holdStrict, ?_⟩
+  intro L
+  obtain ⟨n, m, E, _a, hnLarge, hnLower, hnUpper,
+      hEmem, hEY, hmDestroy, _haE, _haAverage,
+      _hdLarge, _hdNonempty, _hdDestroy⟩ :=
+    hrepresented ((k + 1) * L)
+  let δ := m - oldTarget n
+  have hδpos : 0 < δ := by
+    dsimp only [δ]
+    omega
+  have hmδ : m = oldTarget n + δ := by
+    dsimp only [δ]
+    omega
+  have htargetFloor :
+      (k + 1) * L ≤ oldTarget n := by
+    exact hnLarge.trans (holdStrict.id_le n)
+  have htranslatedDestroy :
+      DestroysAt
+        (additiveSupportFamily A (k + 1)) Y
+          (oldTarget n + δ) := by
+    rw [← hmδ]
+    exact hmDestroy
+  obtain hhole | hlanding :=
+    cleanSupport_destroyedTranslate_forces_largeHole_or_boundaryLanding
+      (by omega) htargetFloor hEmem hEY
+        htranslatedDestroy
+  · obtain ⟨c, hLc, hcE, hcA, hcY, hhole⟩ :=
+      hhole
+    exact
+      ⟨n, m, δ, E, c,
+        (Nat.le_mul_of_pos_left L (by omega)).trans hnLarge,
+        hnLower, hnUpper, hδpos, hmδ, hEmem, hEY,
+        hmDestroy, hLc, hcE, hcA, hcY, Or.inl hhole⟩
+  · obtain ⟨c, hLc, hcE, hcA, hcY,
+      hshiftA, hshiftY, hrestoredSurvival⟩ :=
+      hlanding
+    have hrestoredSurvivalAtM :
+        ¬ DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (Y \ {c + δ}) m := by
+      rw [hmδ]
+      exact hrestoredSurvival
+    exact
+      ⟨n, m, δ, E, c,
+        (Nat.le_mul_of_pos_left L (by omega)).trans hnLarge,
+        hnLower, hnUpper, hδpos, hmδ, hEmem, hEY,
+        hmDestroy, hLc, hcE, hcA, hcY,
+        Or.inr
+          ⟨hshiftA, hshiftY,
+            hrestoredSurvivalAtM⟩⟩
+
+/-- One large literal-hole stage extracted from a fused bracket. -/
+def HasFusedLargeTranslationHoleAt
+    (A Y : Set ℕ) (k : ℕ)
+    (oldTarget : ℕ → ℕ) (L : ℕ) : Prop :=
+  ∃ n m δ, ∃ E : Finset ℕ, ∃ c,
+    L ≤ n ∧
+    oldTarget n < m ∧
+    m < oldTarget (n + 1) ∧
+    0 < δ ∧
+    m = oldTarget n + δ ∧
+    E ∈
+      additiveSupportFamily A (k + 1)
+        (oldTarget n) ∧
+    Disjoint (E : Set ℕ) Y ∧
+    DestroysAt
+      (additiveSupportFamily A (k + 1)) Y m ∧
+    L ≤ c ∧
+    c ∈ E ∧
+    c ∈ A ∧
+    c ∉ Y ∧
+    c + δ ∉ A
+
+/-- One large co-singleton repair stage extracted from a fused bracket. -/
+def HasFusedBoundaryRepairAt
+    (A Y : Set ℕ) (k : ℕ)
+    (oldTarget : ℕ → ℕ) (L : ℕ) : Prop :=
+  ∃ n m δ, ∃ E : Finset ℕ, ∃ c,
+    L ≤ n ∧
+    oldTarget n < m ∧
+    m < oldTarget (n + 1) ∧
+    0 < δ ∧
+    m = oldTarget n + δ ∧
+    E ∈
+      additiveSupportFamily A (k + 1)
+        (oldTarget n) ∧
+    Disjoint (E : Set ℕ) Y ∧
+    DestroysAt
+      (additiveSupportFamily A (k + 1)) Y m ∧
+    L ≤ c ∧
+    c ∈ E ∧
+    c ∈ A ∧
+    c ∉ Y ∧
+    c + δ ∈ A ∧
+    c + δ ∈ Y ∧
+    ¬ DestroysAt
+      (additiveSupportFamily A (k + 1))
+      (Y \ {c + δ}) m
+
+/-- The literal translation boundary can be homogenized cofinally.
+
+If literal-hole stages are not cofinal, one floor `L₀` admits no such
+stage.  Asking the preceding mixed theorem above `max L L₀` eliminates its
+hole outcome and therefore supplies a boundary-repair stage above every
+requested `L`.  Thus the fused branch has only two genuine infinite
+continuations: cofinally large missing translates, or cofinally many
+explicit one-point restorations. -/
+theorem HasFusedSuccessorPredecessorStreams.forces_cofinalLargeTranslationHoles_or_cofinalBoundaryRepairs
+    {A : Set ℕ} {k : ℕ}
+    (hfused :
+      HasFusedSuccessorPredecessorStreams A k) :
+    ∃ Y : Set ℕ, ∃ oldTarget : ℕ → ℕ,
+      Y ⊆ A ∧
+      Y.Infinite ∧
+      StrictMono oldTarget ∧
+      ((∀ L,
+          HasFusedLargeTranslationHoleAt
+            A Y k oldTarget L) ∨
+        ∀ L,
+          HasFusedBoundaryRepairAt
+            A Y k oldTarget L) := by
+  classical
+  obtain ⟨Y, oldTarget, hYA, hYInfinite,
+      holdStrict, hmixed⟩ :=
+    hfused.forces_cofinalLargeTranslationHole_or_boundaryLanding
+  refine
+    ⟨Y, oldTarget, hYA, hYInfinite, holdStrict, ?_⟩
+  by_cases hholes :
+      ∀ L,
+        HasFusedLargeTranslationHoleAt
+          A Y k oldTarget L
+  · exact Or.inl hholes
+  · right
+    push Not at hholes
+    obtain ⟨L₀, hL₀⟩ := hholes
+    intro L
+    obtain ⟨n, m, δ, E, c, hnLarge,
+        hnLower, hnUpper, hδpos, hmδ, hEmem,
+        hEY, hmDestroy, hcLarge, hcE, hcA,
+        hcY, hhole | hlanding⟩ :=
+      hmixed (max L L₀)
+    · exfalso
+      apply hL₀
+      exact
+        ⟨n, m, δ, E, c,
+          (le_max_right L L₀).trans hnLarge,
+          hnLower, hnUpper, hδpos, hmδ, hEmem,
+          hEY, hmDestroy,
+          (le_max_right L L₀).trans hcLarge,
+          hcE, hcA, hcY, hhole⟩
+    · obtain ⟨hshiftA, hshiftY,
+        hrestoredSurvival⟩ :=
+        hlanding
+      exact
+        ⟨n, m, δ, E, c,
+          (le_max_left L L₀).trans hnLarge,
+          hnLower, hnUpper, hδpos, hmδ, hEmem,
+          hEY, hmDestroy,
+          (le_max_left L L₀).trans hcLarge,
+          hcE, hcA, hcY, hshiftA, hshiftY,
+          hrestoredSurvival⟩
+
 end Erdos881

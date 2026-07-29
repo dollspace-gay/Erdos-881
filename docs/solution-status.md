@@ -1,3 +1,38 @@
+# GENERAL ORDER: FUSED STREAMS FORCE A LITERAL TRANSLATION BOUNDARY (2026-07-29)
+
+The fused surviving/destroyed stream has now been converted into literal
+membership information at cofinally large basis points.
+
+- `additiveSupportFamily_exists_floorBoundedAnchor` is the large-anchor
+  counterpart of the earlier average-bounded-anchor lemma: an order-`h`
+  support of a target at least `h * L` contains an actual support point
+  `c ≥ L`.
+- `cleanSupport_destroyedTranslate_forces_lowerGap_or_boundaryLanding`
+  verifies the proposed finite simultaneous rank descent.  It preserves
+  the common translation and cofinal floor until it reaches either a
+  strict lower-rank translated gap or a clean-to-deleted rank-one landing.
+  This theorem is correct, but its lower-gap horn can end at rank one and
+  is therefore not being treated as the endgame.
+- `cleanSupport_destroyedTranslate_forces_largeHole_or_boundaryLanding`
+  bypasses that weak escape.  Apply translation exit directly to the large
+  point `c` in the original clean support.  Then `c + δ` is either
+  literally absent from `A`, or is a point of the deletion `Y`.
+  In the latter case the theorem constructs the translated repair and
+  proves that restoring just `c + δ` makes the destroyed target survive.
+- `HasFusedSuccessorPredecessorStreams.forces_cofinalLargeTranslationHole_or_boundaryLanding`
+  retains the protected bracket, clean support, exact displacement,
+  destroyed upper target, and the explicit co-singleton repair.
+- `forces_cofinalLargeTranslationHoles_or_cofinalBoundaryRepairs`
+  homogenizes the mixed outcome: every fused stream has either cofinally
+  large missing translates or cofinally many one-point boundary repairs.
+
+Both horns are nonvacuous membership statements; no bare “represented
+target” conclusion is used.  This does **not** yet settle the general
+problem.  The next direct attack is to iterate the co-singleton repairs
+without exhausting `Y`; in the other horn, the missing translated points
+must be combined with the retained protected brackets to force a repair or
+an infinite deletion.
+
 # GENERAL ORDER: FOUR ALIGNED HORNS CONSUMED (2026-07-29)
 
 The exact-target, reduced-stream, arithmetic-concentration, and
