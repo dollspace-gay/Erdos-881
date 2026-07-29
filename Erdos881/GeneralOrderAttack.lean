@@ -38406,6 +38406,8 @@ theorem quadraticBlockTail_forces_targetLocalizedArithmeticOutcome
             ¬ DestroysAt
               (additiveSupportFamily A (k + 1))
               (selectedSet s) q') ∧
+        (∀ q ∈ Q,
+          (additiveSupportFamily A (k + 1) q).Nonempty) ∧
         ∃ r, ∃ hrQ : r ∈ Q,
           HasTargetLocalizedArithmeticOutcome
             A k coverDemand anchorDemand differenceDemand
@@ -38483,7 +38485,7 @@ theorem quadraticBlockTail_forces_targetLocalizedArithmeticOutcome
       (currentMatchingDemand := currentMatchingDemand)
       Ptail hrQ hrepresented hcert hlocalized hlargeErase
   refine ⟨Q, hQnonempty', hQlateFloor, hQlarge,
-    hcert, hlocalized, r, hrQ, ?_⟩
+    hcert, hlocalized, hrepresented, r, hrQ, ?_⟩
   simpa only [HasTargetLocalizedArithmeticOutcome] using
     houtcome
 
@@ -41167,6 +41169,257 @@ def HasDiagonalLocalizedReducedStream
       HasCommonColumnReducedCoverStream
         A k (n + 1) tailCell Q r hrQ E T
 
+/-- Elementary feedback inequality behind the after-the-fact rerun.
+
+If the base of a quadratic tail already dominates the coefficient `a`,
+then a block with quadratic lower size but certificate-capacity upper size
+forces the erased certificate to beat the linear threshold `a * x`. -/
+theorem quadraticSmallBlock_forces_linearThreshold_below_erase
+    {k a base x cardQ cardBlock : ℕ}
+    (hbaseCoeff : (k + 1) * a ≤ base)
+    (hbaseTwo : 2 * (k + 1) ≤ base ^ 2)
+    (hquadratic : (base + x) ^ 2 < cardBlock)
+    (hcapacity :
+      cardBlock ≤ (k + 1) * cardQ + (k + 1))
+    {Q : Finset ℕ} {r : ℕ}
+    (hQcard : Q.card = cardQ)
+    (hrQ : r ∈ Q) :
+    a * x < (Q.erase r).card := by
+  have hlinear :
+      (k + 1) * (a * x + 2) ≤
+        base * x + base ^ 2 := by
+    calc
+      (k + 1) * (a * x + 2) =
+          ((k + 1) * a) * x +
+            2 * (k + 1) := by ring
+      _ ≤ base * x + base ^ 2 :=
+        Nat.add_le_add
+          (Nat.mul_le_mul_right x hbaseCoeff)
+          hbaseTwo
+  have hinsideSquare :
+      base * x + base ^ 2 ≤ (base + x) ^ 2 := by
+    nlinarith
+  have hmul :
+      (k + 1) * (a * x + 2) <
+        (k + 1) * (cardQ + 1) := by
+    calc
+      (k + 1) * (a * x + 2) ≤
+          base * x + base ^ 2 := hlinear
+      _ ≤ (base + x) ^ 2 := hinsideSquare
+      _ < cardBlock := hquadratic
+      _ ≤ (k + 1) * cardQ + (k + 1) :=
+        hcapacity
+      _ = (k + 1) * (cardQ + 1) := by ring
+  have hraw : a * x + 2 < cardQ + 1 := by
+    exact (Nat.mul_lt_mul_left (by omega)).mp hmul
+  have herase :
+      (Q.erase r).card + 1 = cardQ := by
+    rw [← hQcard]
+    exact Finset.card_erase_add_one hrQ
+  omega
+
+/-- Feed an actual small-block witness back into the same localized
+certificate.
+
+At diagonal scale `n`, write the fixed-column threshold as
+
+`a * (k + 1 + coverDemand)`.
+
+The prescribed tail base dominates `(k+1) * a`.  If block `i` is small
+relative to `Q`, its quadratic lower bound therefore makes
+`Q.erase r` large enough to rerun the finite fixed-column fork with cover
+demand `i + 1`, chosen only after `i` is known.
+
+The rerun has three direct outcomes: a large same-target rooted matching;
+a common support avoiding a literal block `j > i`; or more than the full
+anchored threshold many rows concentrated on one literal block. -/
+theorem diagonalCapacityFailure_forces_laterReducedBlock_or_growth
+    {A K : Set ℕ} {k n : ℕ}
+    {cell : ℕ → Finset ℕ}
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (hquadratic : ∀ t,
+      (t + k + 2) ^ 2 < (cell t).card)
+    {Q : Finset ℕ} {r : ℕ} (hrQ : r ∈ Q)
+    (hrepresented :
+      ∀ q ∈ Q,
+        (additiveSupportFamily A (k + 1) q).Nonempty)
+    (hcert :
+      ∀ s : BlockSelector
+          (fun t =>
+            cell (localizedArithmeticDiagonalStart k n + t)),
+        ∃ q ∈ Q,
+          DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q)
+    (hlocalized :
+      ∀ q ∈ Q, ∃ s : BlockSelector
+          (fun t =>
+            cell (localizedArithmeticDiagonalStart k n + t)),
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet s) q ∧
+        ∀ q' ∈ Q, q' ≠ q →
+          ¬ DestroysAt
+            (additiveSupportFamily A (k + 1))
+            (selectedSet s) q')
+    (i : ℕ)
+    (hsmall :
+      (cell
+        (localizedArithmeticDiagonalStart k n + i)).card ≤
+          (k + 1) * Q.card + (k + 1)) :
+    (∃ root : Finset ℕ,
+        ∃ M : Finset (Finset ℕ),
+          root.card < k + 1 ∧
+          M ⊆ additiveSupportFamily A (k + 1) r ∧
+          n + 1 < M.card ∧
+          (∀ E ∈ M, root ⊆ E) ∧
+          (∀ E ∈ M, (E \ root).Nonempty) ∧
+          ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
+            Disjoint (E \ root) (G \ root)) ∨
+      (∃ E ∈ additiveSupportFamily A (k + 1) r,
+        ∃ j, i < j ∧
+          Disjoint E
+            (cell
+              (localizedArithmeticDiagonalStart k n + j))) ∨
+      ∃ E ∈ additiveSupportFamily A (k + 1) r,
+        ∃ T : Finset {q // q ∈ Q.erase r},
+        ∃ coveredBlock :
+            {q // q ∈ Q.erase r} → ℕ,
+        ∃ j ∈ T.image coveredBlock,
+          (∀ p ∈ T,
+            HasPrescribedCommonColumnCover
+              A k
+                (fun t =>
+                  cell
+                    (localizedArithmeticDiagonalStart k n + t))
+                Q r hrQ E p (coveredBlock p)) ∧
+          (((n + 1 + k) *
+              additiveRootedMatchingBound k (n + 1)) *
+            (n + 1)) <
+              (T.filter fun p =>
+                coveredBlock p = j).card := by
+  classical
+  let start := localizedArithmeticDiagonalStart k n
+  let tailCell : ℕ → Finset ℕ :=
+    fun t => cell (start + t)
+  let Ktail : Set ℕ :=
+    {x | ∃ t, x ∈ tailCell t}
+  have hKtailK : Ktail ⊆ K := by
+    rintro x ⟨t, hxt⟩
+    exact (P.mem_iff x).2 ⟨start + t, hxt⟩
+  have Ptail :
+      IsFiniteBlockPartition Ktail tailCell := by
+    refine ⟨?_, ?_, ?_⟩
+    · intro t
+      exact P.nonempty (start + t)
+    · intro s t hst
+      apply P.disjoint
+      omega
+    · intro x
+      simp only [Ktail, tailCell, Set.mem_setOf_eq]
+  let clusterDemand :=
+    ((n + 1 + k) *
+        additiveRootedMatchingBound k (n + 1)) *
+      (n + 1)
+  let currentBound :=
+    additiveRootedMatchingBound (k + 1) (n + 1)
+  let a := clusterDemand * currentBound
+  let x := k + 1 + (i + 1)
+  have hbaseCoeff : (k + 1) * a ≤ start := by
+    have hmiddle : 1 ≤ k + 1 + (n + 1) := by omega
+    have hcluster :
+        clusterDemand ≤
+          clusterDemand * (k + 1 + (n + 1)) :=
+      Nat.le_mul_of_pos_right clusterDemand hmiddle
+    have ha :
+        a ≤
+          (clusterDemand * (k + 1 + (n + 1))) *
+            currentBound := by
+      exact Nat.mul_le_mul_right currentBound hcluster
+    calc
+      (k + 1) * a ≤
+          (k + 1) *
+            ((clusterDemand * (k + 1 + (n + 1))) *
+              currentBound) :=
+        Nat.mul_le_mul_left (k + 1) ha
+      _ ≤ start := by
+        dsimp only [clusterDemand, currentBound, start,
+          localizedArithmeticDiagonalStart]
+        nlinarith
+  have hbaseTwo : 2 * (k + 1) ≤ start ^ 2 := by
+    have hstartTwo : 2 * (k + 1) ≤ start := by
+      let geometricThreshold :=
+        ((((n + 1 + k) *
+              additiveRootedMatchingBound k (n + 1)) *
+            (n + 1)) *
+          (k + 1 + (n + 1))) *
+            additiveRootedMatchingBound (k + 1) (n + 1)
+      have hnonneg :
+          k + 1 ≤ (k + 1) * (geometricThreshold + 1) := by
+        have hone : 1 ≤ geometricThreshold + 1 := by omega
+        simpa only [Nat.mul_one] using
+          Nat.mul_le_mul_left (k + 1) hone
+      dsimp only [start, localizedArithmeticDiagonalStart]
+      change
+        2 * (k + 1) ≤
+          (k + 1) * (geometricThreshold + 1) +
+            (k + 1) + 1
+      omega
+    have hstartPos : 0 < start := by omega
+    have hstartSquare : start ≤ start ^ 2 := by
+      rw [pow_two]
+      calc
+        start = start * 1 := by omega
+        _ ≤ start * start :=
+          Nat.mul_le_mul_left start hstartPos
+    exact hstartTwo.trans hstartSquare
+  have hquad :
+      (start + x) ^ 2 < (tailCell i).card := by
+    have hi := hquadratic (start + i)
+    simpa only [tailCell, x, Nat.add_assoc,
+      Nat.add_left_comm, Nat.add_comm] using hi
+  have hlinear :
+      a * x < (Q.erase r).card :=
+    quadraticSmallBlock_forces_linearThreshold_below_erase
+      hbaseCoeff hbaseTwo hquad
+        (by simpa only [tailCell, start] using hsmall)
+        rfl hrQ
+  have hlarge :
+      (clusterDemand * (k + 1 + (i + 1))) *
+          additiveRootedMatchingBound (k + 1) (n + 1) <
+        (Q.erase r).card := by
+    dsimp only [a, x, currentBound] at hlinear ⊢
+    nlinarith [hlinear]
+  obtain hroot | ⟨E, hEmem, T, _hTlarge, hfork⟩ :=
+    targetLocalizedAdditiveFamily_forces_rootedMatching_or_reducedCoverStream_or_repeatedBlock
+      (A := A) (k := k)
+      (K := clusterDemand) (L := i + 1)
+      (demand := n + 1)
+      Ptail hrQ hrepresented
+        (by simpa only [tailCell, start] using hcert)
+        (by simpa only [tailCell, start] using hlocalized)
+        hlarge
+  · exact Or.inl hroot
+  · unfold HasCommonColumnReducedCoverFork at hfork
+    obtain ⟨coveredBlock, hrows, hspread | hrepeated⟩ :=
+      hfork
+    · right
+      left
+      have hstream :
+          HasCommonColumnReducedCoverStream
+            A k (i + 1) tailCell Q r hrQ E T := by
+        exact ⟨coveredBlock, hrows, hspread⟩
+      obtain ⟨j, hij, hEj⟩ :=
+        hstream.exists_disjointBlock_above
+      exact ⟨E, hEmem, j, hij, by
+        simpa only [tailCell, start] using hEj⟩
+    · right
+      right
+      obtain ⟨j, hjImage, hjLarge⟩ := hrepeated
+      exact ⟨E, hEmem, T, coveredBlock, j, hjImage,
+        hrows, by simpa only [clusterDemand] using hjLarge⟩
+
 /-- Counterexample-level cardinality fork for the localized arithmetic
 attack.
 
@@ -41180,9 +41433,13 @@ represented predecessor destroyers.
 Otherwise there is a genuine cutoff: at every later scale no reduced
 stream exists.  Unfolding the actual localized outcome then forces
 unbounded successor rooted matchings, represented-difference growth,
-lower rooted matchings, a genuine two-rank injury, or an explicit block
-whose size fails to dominate the moving certificate.  In particular the
-fixed-core concentration is consumed rather than retained as an endpoint.
+lower rooted matchings, or a genuine two-rank injury.  If the first pass
+instead exposes a block too small for the moving certificate, its
+quadratic lower bound makes the already chosen target certificate beat
+the new linear cover threshold.  Rerunning the finite fork then forces a
+support avoiding a strictly later block or a repeated-block cluster above
+the complete anchored threshold.  Thus neither fixed-core concentration
+nor moving capacity remains as a terminal endpoint.
 -/
 theorem quadraticBlockTail_counterexample_fusesReducedStreams_or_forces_eventualResolvedArithmetic
     {A K : Set ℕ} {h : ℕ}
@@ -41257,9 +41514,23 @@ theorem quadraticBlockTail_counterexample_fusesReducedStreams_or_forces_eventual
               DestroysAt
                 (additiveSupportFamily A (h - 1))
                 (D : Set ℕ) d) ∨
-            ∃ i,
-              (tailCell i).card ≤
-                (h + 1) * Q.card + (h + 1)) := by
+            (∃ E ∈ additiveSupportFamily A (h + 1) r,
+              ∃ i j, i < j ∧
+                Disjoint E (tailCell j)) ∨
+            ∃ E ∈ additiveSupportFamily A (h + 1) r,
+              ∃ T : Finset {q // q ∈ Q.erase r},
+              ∃ coveredBlock :
+                  {q // q ∈ Q.erase r} → ℕ,
+              ∃ j ∈ T.image coveredBlock,
+                (∀ p ∈ T,
+                  HasPrescribedCommonColumnCover
+                    A h tailCell Q r hrQ E p
+                      (coveredBlock p)) ∧
+                (((n + 1 + h) *
+                    additiveRootedMatchingBound h (n + 1)) *
+                  (n + 1)) <
+                    (T.filter fun p =>
+                      coveredBlock p = j).card) := by
   classical
   let hstrong :
       StrongInfiniteDeletion
@@ -41329,7 +41600,8 @@ theorem quadraticBlockTail_counterexample_fusesReducedStreams_or_forces_eventual
     refine ⟨N, ?_⟩
     intro n hn
     obtain ⟨Q, _hQnonempty, hQlate, _hQlarge,
-        hcert, _hlocalized, r, hrQ, houtcome⟩ :=
+        hcert, hlocalized, hrepresented,
+          r, hrQ, houtcome⟩ :=
       quadraticBlockTail_forces_targetLocalizedArithmeticOutcome
         hbasis.succ hstrong hKA P hquadratic
           n (n + 1) (n + 1 + h) (n + 1)
@@ -41380,8 +41652,42 @@ theorem quadraticBlockTail_counterexample_fusesReducedStreams_or_forces_eventual
       · exact ⟨Q, r, hrQ, hQlate,
           Or.inr (Or.inr (Or.inr
             (Or.inl hdescent)))⟩
-      · exact ⟨Q, r, hrQ, hQlate,
-          Or.inr (Or.inr (Or.inr
-            (Or.inr hcapacity)))⟩
+      · obtain ⟨i, hsmall⟩ := hcapacity
+        have hfeedback :=
+          diagonalCapacityFailure_forces_laterReducedBlock_or_growth
+            (A := A) (K := K) (k := h) (n := n)
+            hKA P hquadratic hrQ hrepresented
+              (by
+                simpa only [localizedArithmeticDiagonalStart] using
+                  hcert)
+              (by
+                simpa only [localizedArithmeticDiagonalStart] using
+                  hlocalized)
+              i
+              (by
+                simpa only [tailCell, start] using hsmall)
+        rcases hfeedback with
+            hroot' | hlater | hrepeated
+        · exact ⟨Q, r, hrQ, hQlate,
+            Or.inl hroot'⟩
+        · obtain ⟨E', hE'mem, j, hij, hE'j⟩ :=
+            hlater
+          refine ⟨Q, r, hrQ, hQlate, ?_⟩
+          right
+          right
+          right
+          right
+          left
+          exact ⟨E', hE'mem, i, j, hij, by
+            simpa only [tailCell, start] using hE'j⟩
+        · refine ⟨Q, r, hrQ, hQlate, ?_⟩
+          right
+          right
+          right
+          right
+          right
+          simpa only [tailCell, start,
+            localizedArithmeticDiagonalStart] using
+              hrepeated
 
 end Erdos881
