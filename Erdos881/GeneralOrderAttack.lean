@@ -31185,6 +31185,307 @@ theorem bracketedDestroyedSuccessorTargets_force_predecessorDestroyerFans
     hsingleton hsingletonY
   simpa only [Nat.one_add, Nat.add_sub_of_le haM] using hmDestroy
 
+/-- Bracket cofinally represented current-order failures without losing
+their representation witness, then descend them through every point of the
+surviving lower-end support.
+
+This is the same arithmetic composition as the successor fan theorem, but
+the rank is now `k` on both the surviving stream and the failed target.
+The additional nonemptiness hypothesis on each selected failure is carried
+through the predecessor bracket.  Consequently every output stage contains
+one represented destroyed order-`k` target `q` and, for every
+`a ∈ E`, a coherent destroyed order-`k-1` difference `q-a`.
+
+This is the exact interface needed to align the represented predecessor
+stream coming from successor destruction with the new current-order
+survival stream on the residual deletion. -/
+theorem cofinalRepresentedDestroyedCurrentTargets_bracketed_by_strictSurvival_force_predecessorFans
+    {A Y : Set ℕ} {k : ℕ}
+    {survive : ℕ → ℕ}
+    (hkpos : 0 < k)
+    (hstrict : StrictMono survive)
+    (hsurvival : ∀ n,
+      ∃ E ∈ additiveSupportFamily A k (survive n),
+        Disjoint (E : Set ℕ) Y)
+    (hrepresentedDestroy :
+      ∀ N, ∃ q, N ≤ q ∧
+        (additiveSupportFamily A k q).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A k) Y q) :
+    ∀ L, ∃ n q, ∃ E : Finset ℕ,
+      L ≤ n ∧
+      survive n < q ∧
+      q < survive (n + 1) ∧
+      E ∈ additiveSupportFamily A k (survive n) ∧
+      Disjoint (E : Set ℕ) Y ∧
+      E.Nonempty ∧
+      (additiveSupportFamily A k q).Nonempty ∧
+      DestroysAt
+        (additiveSupportFamily A k) Y q ∧
+      ∀ a ∈ E,
+        0 < q - a ∧
+        DestroysAt
+          (additiveSupportFamily A (k - 1))
+          Y (q - a) := by
+  classical
+  have hnotDestroyed : ∀ n,
+      ¬ DestroysAt
+        (additiveSupportFamily A k) Y
+        (survive n) := by
+    intro n
+    obtain ⟨E, hEmem, hEY⟩ :=
+      hsurvival n
+    exact
+      not_destroysAt_iff.mpr
+        ⟨E, hEmem, hEY⟩
+  intro L
+  obtain ⟨q, hqLower, hqNonempty, hqDestroy⟩ :=
+    hrepresentedDestroy (survive (L + 1))
+  have hfirst : survive 0 < q := by
+    have hindex : 0 < L + 1 := by omega
+    exact (hstrict hindex).trans_le hqLower
+  obtain ⟨n, hnLower, hnUpper⟩ :=
+    strictMono_exists_predecessor_bracket
+      hstrict hfirst
+  have hnL : L ≤ n := by
+    by_contra hnot
+    have hnlt : n < L :=
+      Nat.lt_of_not_ge hnot
+    have hsuccLt : n + 1 < L + 1 := by omega
+    have hstreamLt :
+        survive (n + 1) < survive (L + 1) :=
+      hstrict hsuccLt
+    omega
+  have hqUpper : q < survive (n + 1) := by
+    refine lt_of_le_of_ne hnUpper ?_
+    intro heq
+    apply hnotDestroyed (n + 1)
+    simpa only [heq] using hqDestroy
+  obtain ⟨E, hEmem, hEY⟩ :=
+    hsurvival n
+  have hEnonempty : E.Nonempty :=
+    additiveSupportFamily_supportsNonempty
+      A hkpos (survive n) E hEmem
+  refine
+    ⟨n, q, E, hnL, hnLower, hqUpper,
+      hEmem, hEY, hEnonempty, hqNonempty,
+      hqDestroy, ?_⟩
+  intro a haE
+  have haA : a ∈ A :=
+    additiveSupportFamily_supportsIn
+      A k (survive n) E hEmem a haE
+  have haSurvive : a ≤ survive n :=
+    additiveSupportFamily_supportsBounded
+      A k (survive n) E hEmem a haE
+  have haQ : a ≤ q :=
+    haSurvive.trans (Nat.le_of_lt hnLower)
+  have haY : a ∉ Y := by
+    intro haY
+    exact
+      Set.disjoint_left.mp hEY
+        (Finset.mem_coe.mpr haE) haY
+  have hsingleton :
+      ({a} : Finset ℕ) ∈
+        additiveSupportFamily A 1 a := by
+    have hraw :=
+      list_foldr_mem_additiveSupportFamily
+        (xs := [a]) (by simpa using haA)
+    simpa using hraw
+  have hsingletonY :
+      Disjoint (({a} : Finset ℕ) : Set ℕ) Y := by
+    simpa [Set.disjoint_singleton_left] using haY
+  refine ⟨by omega, ?_⟩
+  apply additiveDestroyer_descends_through_survivingCore
+    hsingleton hsingletonY
+  have hkRank : 1 + (k - 1) = k := by omega
+  simpa only [hkRank, Nat.add_sub_of_le haQ]
+    using hqDestroy
+
+/-- Align the two residual-deletion streams at one literal target.
+
+The input predecessor stream remembers that its represented destroyed
+order-`k` target is exactly `q = m - a`, where `m` is a destroyed
+successor-order target bracketed above a protected successor endpoint and
+`a` belongs to that endpoint support.  Schedule such a `q` beyond the next
+requested term of a strict current-order survival stream, then bracket
+that same `q` between consecutive current targets.
+
+The output retains both origins simultaneously:
+
+* the full successor bracket producing `q = m - a`;
+* the current-order bracket containing that exact `q`; and
+* the coherent order-`k-1` destroyed family `q - b` for every point `b`
+  of the current lower-end support.
+
+Nothing is replaced by an unrelated cofinal witness.  This is the
+finite-prefix/difference composition needed after current repair fusion. -/
+theorem successorPredecessorFailures_bracketed_by_currentSurvival_force_alignedLowerFans
+    {A B : Set ℕ} {k : ℕ}
+    {oldTarget currentTarget : ℕ → ℕ}
+    (hkpos : 0 < k)
+    (hcurrentStrict : StrictMono currentTarget)
+    (hcurrentSurvival : ∀ j,
+      ∃ H ∈
+          additiveSupportFamily A k
+            (currentTarget j),
+        Disjoint (H : Set ℕ) B)
+    (hsuccessorPredecessor :
+      ∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a,
+        L ≤ n ∧
+        oldTarget n < m ∧
+        m < oldTarget (n + 1) ∧
+        E ∈
+          additiveSupportFamily A (k + 1)
+            (oldTarget n) ∧
+        Disjoint (E : Set ℕ) B ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) B m ∧
+        a ∈ E ∧
+        (k + 1) * a ≤ oldTarget n ∧
+        L ≤ m - a ∧
+        (additiveSupportFamily A k (m - a)).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A k) B (m - a)) :
+    ∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a j q,
+      ∃ H : Finset ℕ,
+        L ≤ n ∧
+        oldTarget n < m ∧
+        m < oldTarget (n + 1) ∧
+        E ∈
+          additiveSupportFamily A (k + 1)
+            (oldTarget n) ∧
+        Disjoint (E : Set ℕ) B ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) B m ∧
+        a ∈ E ∧
+        (k + 1) * a ≤ oldTarget n ∧
+        q = m - a ∧
+        L ≤ q ∧
+        L ≤ j ∧
+        currentTarget j < q ∧
+        q < currentTarget (j + 1) ∧
+        H ∈
+          additiveSupportFamily A k
+            (currentTarget j) ∧
+        Disjoint (H : Set ℕ) B ∧
+        H.Nonempty ∧
+        (additiveSupportFamily A k q).Nonempty ∧
+        DestroysAt
+          (additiveSupportFamily A k) B q ∧
+        ∀ b ∈ H,
+          0 < q - b ∧
+          DestroysAt
+            (additiveSupportFamily A (k - 1))
+            B (q - b) := by
+  classical
+  have hcurrentNotDestroyed : ∀ j,
+      ¬ DestroysAt
+        (additiveSupportFamily A k) B
+        (currentTarget j) := by
+    intro j
+    obtain ⟨H, hHmem, hHB⟩ :=
+      hcurrentSurvival j
+    exact
+      not_destroysAt_iff.mpr
+        ⟨H, hHmem, hHB⟩
+  intro L
+  let request := currentTarget (L + 1)
+  obtain ⟨n, m, E, a, hnRequest,
+      hnLower, hnUpper, hEmem, hEB,
+      hmDestroy, haE, haAverage,
+      hqRequest, hqNonemptyRaw, hqDestroyRaw⟩ :=
+    hsuccessorPredecessor request
+  let q := m - a
+  have hqRequest' : request ≤ q := by
+    simpa only [q] using hqRequest
+  have hfirst : currentTarget 0 < q := by
+    have hindex : 0 < L + 1 := by omega
+    exact
+      (hcurrentStrict hindex).trans_le
+        hqRequest'
+  obtain ⟨j, hjLower, hjUpper⟩ :=
+    strictMono_exists_predecessor_bracket
+      hcurrentStrict hfirst
+  have hjL : L ≤ j := by
+    by_contra hnot
+    have hjlt : j < L :=
+      Nat.lt_of_not_ge hnot
+    have hsuccLt : j + 1 < L + 1 := by omega
+    have hstreamLt :
+        currentTarget (j + 1) <
+          currentTarget (L + 1) :=
+      hcurrentStrict hsuccLt
+    dsimp only [request] at hqRequest'
+    omega
+  have hjUpperStrict :
+      q < currentTarget (j + 1) := by
+    refine lt_of_le_of_ne hjUpper ?_
+    intro heq
+    apply hcurrentNotDestroyed (j + 1)
+    have hqDestroy :
+        DestroysAt
+          (additiveSupportFamily A k) B q := by
+      simpa only [q] using hqDestroyRaw
+    simpa only [heq] using hqDestroy
+  obtain ⟨H, hHmem, hHB⟩ :=
+    hcurrentSurvival j
+  have hHnonempty : H.Nonempty :=
+    additiveSupportFamily_supportsNonempty
+      A hkpos (currentTarget j) H hHmem
+  have hLRequest : L ≤ request := by
+    dsimp only [request]
+    exact
+      (Nat.le_succ L).trans
+        (hcurrentStrict.id_le (L + 1))
+  have hnL : L ≤ n :=
+    hLRequest.trans hnRequest
+  have hqL : L ≤ q :=
+    hLRequest.trans hqRequest'
+  have hqNonempty :
+      (additiveSupportFamily A k q).Nonempty := by
+    simpa only [q] using hqNonemptyRaw
+  have hqDestroy :
+      DestroysAt
+        (additiveSupportFamily A k) B q := by
+    simpa only [q] using hqDestroyRaw
+  refine
+    ⟨n, m, E, a, j, q, H, hnL,
+      hnLower, hnUpper, hEmem, hEB,
+      hmDestroy, haE, haAverage, rfl,
+      hqL, hjL, hjLower, hjUpperStrict,
+      hHmem, hHB, hHnonempty,
+      hqNonempty, hqDestroy, ?_⟩
+  intro b hbH
+  have hbA : b ∈ A :=
+    additiveSupportFamily_supportsIn
+      A k (currentTarget j) H hHmem b hbH
+  have hbCurrent : b ≤ currentTarget j :=
+    additiveSupportFamily_supportsBounded
+      A k (currentTarget j) H hHmem b hbH
+  have hbQ : b ≤ q :=
+    hbCurrent.trans (Nat.le_of_lt hjLower)
+  have hbB : b ∉ B := by
+    intro hbB
+    exact
+      Set.disjoint_left.mp hHB
+        (Finset.mem_coe.mpr hbH) hbB
+  have hsingleton :
+      ({b} : Finset ℕ) ∈
+        additiveSupportFamily A 1 b := by
+    have hraw :=
+      list_foldr_mem_additiveSupportFamily
+        (xs := [b]) (by simpa using hbA)
+    simpa using hraw
+  have hsingletonB :
+      Disjoint (({b} : Finset ℕ) : Set ℕ) B := by
+    simpa [Set.disjoint_singleton_left] using hbB
+  refine ⟨by omega, ?_⟩
+  apply additiveDestroyer_descends_through_survivingCore
+    hsingleton hsingletonB
+  have hkRank : 1 + (k - 1) = k := by omega
+  simpa only [hkRank, Nat.add_sub_of_le hbQ]
+    using hqDestroy
+
 /-- Every positive-order additive support contains an anchor no larger
 than the average of the represented tuple: `k * a ≤ q`.
 
@@ -52583,7 +52884,7 @@ theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_strictSplit
           (∀ N, ∃ m, N ≤ m ∧
             DestroysAt
               (additiveSupportFamily A (k + 1)) B m) ∧
-          ∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a,
+          (∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a,
             L ≤ n ∧
             oldTarget n < m ∧
             m < oldTarget (n + 1) ∧
@@ -52599,7 +52900,38 @@ theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_strictSplit
             (additiveSupportFamily A k (m - a)).Nonempty ∧
             DestroysAt
               (additiveSupportFamily A k) B
-              (m - a)) := by
+              (m - a)) ∧
+          ∀ L, ∃ n m, ∃ E : Finset ℕ, ∃ a j q,
+            ∃ H : Finset ℕ,
+              L ≤ n ∧
+              oldTarget n < m ∧
+              m < oldTarget (n + 1) ∧
+              E ∈
+                additiveSupportFamily A (k + 1)
+                  (oldTarget n) ∧
+              Disjoint (E : Set ℕ) B ∧
+              DestroysAt
+                (additiveSupportFamily A (k + 1)) B m ∧
+              a ∈ E ∧
+              (k + 1) * a ≤ oldTarget n ∧
+              q = m - a ∧
+              L ≤ q ∧
+              L ≤ j ∧
+              currentTarget j < q ∧
+              q < currentTarget (j + 1) ∧
+              H ∈
+                additiveSupportFamily A k
+                  (currentTarget j) ∧
+              Disjoint (H : Set ℕ) B ∧
+              H.Nonempty ∧
+              (additiveSupportFamily A k q).Nonempty ∧
+              DestroysAt
+                (additiveSupportFamily A k) B q ∧
+              ∀ b ∈ H,
+                0 < q - b ∧
+                DestroysAt
+                  (additiveSupportFamily A (k - 1))
+                  B (q - b)) := by
   obtain ⟨Y, oldTarget, hYA, hYInfinite,
       holdStrict, holdSurvival, _hcurrentDestroyY,
       _hsuccessorDestroyY, _hrepresentedY, hmixed⟩ :=
@@ -52694,6 +53026,10 @@ theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_strictSplit
       bracketedDestroyedSuccessorTargets_force_cofinalRepresentedPredecessorDestroyers
         (by omega) hminimal.1 holdStrict
           holdSurvivalB hsuccessorDestroyB
+    have halignedB :=
+      successorPredecessorFailures_bracketed_by_currentSurvival_force_alignedLowerFans
+        (by omega) hcurrentStrict
+          hcurrentSurvivalSupports hrepresentedB
     exact
       ⟨B, currentTarget, landing, hBY, hBInfinite,
         hYdiffBInfinite, hcurrentStrict,
@@ -52701,6 +53037,7 @@ theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_strictSplit
         hcurrentDestroyedY, hcurrentSurvivalB,
         hcurrentSurvivalSupports, holdSurvivalB,
         hcurrentDestroyB, hcurrentLower,
-        hsuccessorDestroyB, hrepresentedB⟩
+        hsuccessorDestroyB, hrepresentedB,
+        halignedB⟩
 
 end Erdos881

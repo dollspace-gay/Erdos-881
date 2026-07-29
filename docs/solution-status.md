@@ -1,3 +1,51 @@
+# GENERAL ORDER: RESIDUAL STREAMS ALIGNED AT ONE REPRESENTED TARGET (2026-07-29)
+
+The two destruction streams on the strict residual deletion are now
+arithmetically aligned rather than merely cofinal on the same set.
+
+`cofinalRepresentedDestroyedCurrentTargets_bracketed_by_strictSurvival_force_predecessorFans`
+is the witnessed current-order bracketing theorem.  It retains the
+nonempty order-\(k\) representation family of the chosen destroyed target
+while placing that target between two consecutive current-order survivors.
+Every point \(b\) of the protected lower support then gives a destroyed
+order-\((k-1)\) difference.
+
+More importantly,
+`successorPredecessorFailures_bracketed_by_currentSurvival_force_alignedLowerFans`
+does not replace the chosen target by an unrelated cofinal witness.  It
+retains the literal identity
+
+\[
+  q=m-a,
+\]
+
+where \(m\) is a destroyed order-\(k+1\) target in an old protected gap and
+\(a\) belongs to its protected support, while simultaneously producing
+
+\[
+  \operatorname{currentTarget}(j)<q<
+  \operatorname{currentTarget}(j+1)
+\]
+
+and a clean order-\(k\) support \(H\) at the left endpoint such that every
+\(q-b\), \(b\in H\), is destroyed at order \(k-1\).
+The counterexample-level strict-split theorem now exposes this complete
+double-origin stage cofinally.
+
+Junk audit: the qualitative pattern “even survivors, odd failures, odd
+lower differences” can occur in a parity model on a fat set.  Therefore
+the bare current-gap fan is not treated as a contradiction.  The theorem
+retains the successor bracket, the exact \(q=m-a\) origin, both clean
+supports, and the common deletion precisely so the next composition does
+not collapse to that parity geometry.
+
+This is not yet the general-order solution.  The next direct datum to feed
+into the aligned stage is already latent in the repair fusion: each
+selected repair has a representation avoiding \(Y\setminus\{z_i\}\).
+Because \(Y\) destroyed its target, this makes \(z_i\) the representation's
+unique \(Y\)-point.  Retaining these moving private landing supports and
+comparing them with the aligned \(q=m-a\) stages is the next attack.
+
 # GENERAL ORDER: CURRENT REPAIRS FUSE TO A TWO-RANK RESIDUAL STREAM (2026-07-29)
 
 The mixed current-order translation alternative has been homogenized and
