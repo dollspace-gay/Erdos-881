@@ -41299,23 +41299,28 @@ theorem HasCommonColumnReducedCoverStream.exists_disjointBlock_above
     omega
   exact ⟨j, hLj, (hJdata j hjJ).1⟩
 
-/-- One recursively usable support/block pair from the reduced-stream horn.
+/-- One recursively usable pointed support/block pair.
 
 Both coordinates clear prescribed floors.  The represented target supplies
-the support to preserve, while the fresh literal block supplies the point
-to put into the eventual deletion. -/
+the support to preserve, while the fresh block supplies a specified point
+to put into the eventual deletion.  Only disjointness from that point is
+needed: the infinite cross-avoidance thinning below removes every
+off-diagonal collision.  The reduced-stream horn supplies the stronger
+special case in which the support avoids the whole block. -/
 structure ReducedStreamFusionStep
     (A : Set ℕ) (h : ℕ) (cell : ℕ → Finset ℕ)
     (targetFloor blockFloor : ℕ) where
   target : ℕ
   support : Finset ℕ
   blockIndex : ℕ
+  point : ℕ
   target_lower : targetFloor ≤ target
   block_lower : blockFloor ≤ blockIndex
   support_mem :
     support ∈ additiveSupportFamily A (h + 1) target
-  support_block_disjoint :
-    Disjoint support (cell blockIndex)
+  point_mem : point ∈ cell blockIndex
+  support_point_disjoint :
+    Disjoint support {point}
 
 /-- Any cofinal supply of support/fresh-block pairs fuses to one infinite
 deletion carrying a strict surviving target stream.
@@ -41384,11 +41389,10 @@ theorem cofinalReducedFusionSteps_fuse_infiniteDeletion
       _ ≤ block (n + 1) := hlower
   have hblockStrict : StrictMono block :=
     strictMono_nat_of_lt_succ hblockStep
-  let point : ℕ → ℕ := fun n =>
-    (P.nonempty (block n)).choose
+  let point : ℕ → ℕ := fun n => (data n).point
   have hpointCell : ∀ n, point n ∈ cell (block n) := by
     intro n
-    exact (P.nonempty (block n)).choose_spec
+    exact (data n).point_mem
   have hpointInj : Function.Injective point := by
     intro m n hmn
     apply hblockStrict.injective
@@ -41435,9 +41439,9 @@ theorem cofinalReducedFusionSteps_fuse_infiniteDeletion
     by_cases hnd : n = d
     · subst d
       exact Finset.disjoint_left.mp
-        (data n).support_block_disjoint
+        (data n).support_point_disjoint
           (Finset.mem_coe.mp hySupport)
-          (hpointCell n)
+          (by simp [point])
     · exact hcross n hnL d hdL hnd
         (Finset.mem_coe.mp hySupport)
   let index : ℕ → ℕ := Nat.nth fun n => n ∈ L
@@ -41503,8 +41507,18 @@ theorem cofinalReducedCoverStreams_fuse_infiniteDeletion
       hreduced targetFloor blockFloor
     obtain ⟨j, hjLower, hEj⟩ :=
       hstream.exists_disjointBlock_above
-    exact ⟨⟨r, E, j, hrLower,
-      Nat.le_of_lt hjLower, hEmem, hEj⟩⟩
+    let point := (P.nonempty j).choose
+    have hpointMem : point ∈ cell j :=
+      (P.nonempty j).choose_spec
+    have hpointDisjoint : Disjoint E {point} := by
+      rw [Finset.disjoint_left]
+      intro x hxE hxPoint
+      have hx : x = point := by simpa using hxPoint
+      subst x
+      exact Finset.disjoint_left.mp hEj hxE hpointMem
+    exact ⟨⟨r, E, j, point, hrLower,
+      Nat.le_of_lt hjLower, hEmem, hpointMem,
+      hpointDisjoint⟩⟩
   exact cofinalReducedFusionSteps_fuse_infiniteDeletion
     hKA P hstepExists
 
@@ -42140,9 +42154,20 @@ theorem quadraticBlockTail_counterexample_fusesReducedStreams_or_forces_eventual
             blockFloor ≤ n :=
           (le_max_right targetFloor blockFloor).trans hnFloor
         omega
-      refine ⟨⟨r, E, start + j, htargetLower,
-        hblockLower, hEmem, ?_⟩⟩
-      simpa only [start] using hEj
+      let point := (P.nonempty (start + j)).choose
+      have hpointMem : point ∈ cell (start + j) :=
+        (P.nonempty (start + j)).choose_spec
+      have hpointDisjoint : Disjoint E {point} := by
+        rw [Finset.disjoint_left]
+        intro x hxE hxPoint
+        have hx : x = point := by simpa using hxPoint
+        subst x
+        exact Finset.disjoint_left.mp
+          (by simpa only [start] using hEj)
+          hxE hpointMem
+      exact ⟨⟨r, E, start + j, point, htargetLower,
+        hblockLower, hEmem, hpointMem,
+        hpointDisjoint⟩⟩
     obtain ⟨Y, oldTarget, hYA, hYInfinite,
         holdStrict, holdSurvival⟩ :=
       cofinalReducedFusionSteps_fuse_infiniteDeletion
@@ -43813,6 +43838,10 @@ theorem exactBasis_counterexample_forces_cofinalTranslationHoles_or_alignedArith
           ∃ M : Finset (Finset ℕ),
           ∃ V Vin Vout : Finset ℕ,
           ∃ hqQ : q ∈ Q,
+            (∀ u : BlockSelector cell, ∃ r ∈ Q,
+              DestroysAt
+                (additiveSupportFamily A (k + 1))
+                (selectedSet u) r) ∧
             gapFloor ≤ i ∧
             target i < q ∧
             q < target (i + 1) ∧
@@ -43937,7 +43966,7 @@ theorem exactBasis_counterexample_forces_cofinalTranslationHoles_or_alignedArith
           Nat.mul_le_mul_left (k + 1) hQsmall
         omega
   refine ⟨Q, s, i, q, δ, R, M, V, Vin, Vout, hqQ,
-    hiGap, hiLower, hiUpper, hdeltaPos, hqdelta,
+    hcert, hiGap, hiLower, hiUpper, hdeltaPos, hqdelta,
     hqDestroy, hRcard, hRK, hMlarge, hMsub, hMroot,
     hMnonempty, hMmatching, hMselected, hVeq, hVcell,
     hVinV, hVoutV, hVinVout, hVsplit, hVinData,
@@ -44207,6 +44236,10 @@ def HasEventuallyAlignedHolesOrNonmatchingArithmetic
     ∃ sourceMatching : Finset (Finset ℕ),
     ∃ sourcePetals translatedHoles : Finset ℕ,
     ∃ hqQ : q ∈ Q,
+      (∀ s : BlockSelector cell, ∃ r ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet s) r) ∧
       n ≤ i ∧
       target i < q ∧
       q < target (i + 1) ∧
@@ -44292,7 +44325,7 @@ theorem exactBasis_counterexample_forces_exactMatchingFusion_or_eventualAlignedR
     intro n hn
     obtain ⟨Q, _s, i, q, δ, sourceRoot, sourceMatching,
         sourcePetals, _Vin, translatedHoles, hqQ,
-        hiFloor, hiLower, hiUpper, hδpos, hqδ,
+        hcert, hiFloor, hiLower, hiUpper, hδpos, hqδ,
         _hqDestroy, hsourceRootCard, _hsourceK,
         hsourceLarge, hsourceSub, hsourceRoot,
         hsourcePetal, hsourceMatching, _hsourceSelected,
@@ -44303,7 +44336,7 @@ theorem exactBasis_counterexample_forces_exactMatchingFusion_or_eventualAlignedR
     refine
       ⟨Q, i, q, δ, sourceRoot, sourceMatching,
         sourcePetals, translatedHoles, hqQ,
-        hiFloor, hiLower, hiUpper, hδpos, hqδ,
+        hcert, hiFloor, hiLower, hiUpper, hδpos, hqδ,
         hsourceRootCard, hsourceLarge, hsourceSub,
         hsourceRoot, hsourcePetal, hsourceMatching,
         hsourcePetals, hsourceCell, hholesSource,
@@ -44379,6 +44412,10 @@ def HasEventuallyAlignedHolesOrAnchoredConcentration
     ∃ sourceMatching : Finset (Finset ℕ),
     ∃ sourcePetals translatedHoles : Finset ℕ,
     ∃ hqQ : q ∈ Q,
+      (∀ s : BlockSelector cell, ∃ r ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet s) r) ∧
       n ≤ i ∧
       target i < q ∧
       q < target (i + 1) ∧
@@ -44482,7 +44519,7 @@ theorem HasEventuallyAlignedHolesOrNonmatchingArithmetic.resolveReducedStreams
       (le_max_right Nremainder Nreduced).trans hn
     obtain ⟨Q, i, q, δ, sourceRoot, sourceMatching,
         sourcePetals, translatedHoles, hqQ,
-        hiScale, hiLower, hiUpper, hδpos, hqδ,
+        hcert, hiScale, hiLower, hiUpper, hδpos, hqδ,
         hsourceRootCard, hsourceLarge, hsourceSub,
         hsourceRoot, hsourcePetal, hsourceMatching,
         hsourcePetals, hsourceCell, hholesSource,
@@ -44491,7 +44528,7 @@ theorem HasEventuallyAlignedHolesOrNonmatchingArithmetic.resolveReducedStreams
     refine
       ⟨Q, i, q, δ, sourceRoot, sourceMatching,
         sourcePetals, translatedHoles, hqQ,
-        hiScale, hiLower, hiUpper, hδpos, hqδ,
+        hcert, hiScale, hiLower, hiUpper, hδpos, hqδ,
         hsourceRootCard, hsourceLarge, hsourceSub,
         hsourceRoot, hsourcePetal, hsourceMatching,
         hsourcePetals, hsourceCell, hholesSource,
@@ -44542,5 +44579,577 @@ theorem exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedHolesOrC
       htargetStrict, hcellLarge,
       hremainder.resolveReducedStreams
         hkpos hbasis hcounter hKA P htargetStrict⟩
+
+/-- Fully resolved form of the eventual aligned concentration remainder.
+
+Every sufficiently late stage retains its source block and translation, but
+its terminal alternative is now one of five explicit outcomes:
+
+* translated-hole growth;
+* represented order-`k` difference growth;
+* a large order-`k` rooted matching;
+* a represented two-rank injury at order `k-1`; or
+* a literal block whose size fails the certificate-capacity bound.
+
+In particular, anchored arithmetic concentration itself no longer appears
+in the conclusion. -/
+def HasEventuallyAlignedHolesOrResolvedArithmetic
+    (A : Set ℕ) (k : ℕ)
+    (cell : ℕ → Finset ℕ) (target : ℕ → ℕ) : Prop :=
+  ∃ N, ∀ n, N ≤ n →
+    ∃ Q : Finset ℕ, ∃ i q δ,
+    ∃ sourceRoot : Finset ℕ,
+    ∃ sourceMatching : Finset (Finset ℕ),
+    ∃ sourcePetals translatedHoles : Finset ℕ,
+    ∃ hqQ : q ∈ Q,
+      (∀ s : BlockSelector cell, ∃ r ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet s) r) ∧
+      n ≤ i ∧
+      target i < q ∧
+      q < target (i + 1) ∧
+      0 < δ ∧
+      q = target i + δ ∧
+      sourceRoot.card < k + 1 ∧
+      i + 1 < sourceMatching.card ∧
+      sourceMatching ⊆
+        additiveSupportFamily A (k + 1) (target i) ∧
+      (∀ E ∈ sourceMatching, sourceRoot ⊆ E) ∧
+      (∀ E ∈ sourceMatching, (E \ sourceRoot).Nonempty) ∧
+      (∀ E ∈ sourceMatching, ∀ G ∈ sourceMatching, E ≠ G →
+        Disjoint (E \ sourceRoot) (G \ sourceRoot)) ∧
+      sourcePetals =
+        sourceMatching.biUnion (fun E => E \ sourceRoot) ∧
+      sourcePetals ⊆ cell i ∧
+      translatedHoles ⊆ sourcePetals ∧
+      (∀ a ∈ translatedHoles, a + δ ∉ A) ∧
+      (n < translatedHoles.card ∨
+        (∃ V : Finset ℕ,
+          n < V.card ∧
+          ∀ d ∈ V,
+            (additiveSupportFamily A k d).Nonempty) ∨
+        (∃ d, ∃ root : Finset ℕ,
+          ∃ M : Finset (Finset ℕ),
+            root.card < k ∧
+            M ⊆ additiveSupportFamily A k d ∧
+            n < M.card ∧
+            (∀ H ∈ M, root ⊆ H) ∧
+            (∀ H ∈ M, (H \ root).Nonempty) ∧
+            ∀ H ∈ M, ∀ G ∈ M, H ≠ G →
+              Disjoint (H \ root) (G \ root)) ∨
+        (∃ r, ∃ D : Finset ℕ, ∃ d,
+          D.Nonempty ∧
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A (k + 1)) D r ∧
+          (additiveSupportFamily A (k - 1) d).Nonempty ∧
+          DestroysAt
+            (additiveSupportFamily A (k - 1))
+            (D : Set ℕ) d) ∨
+        ∃ j,
+          (cell j).card ≤
+            (k + 1) * Q.card + (k + 1))
+
+/-- Feed every eventual aligned concentration through the existing
+anchored-arithmetic resolver.
+
+At scale `n ≥ k`, choose `clearDemand = n-k`, so the resolver's anchor
+demand `(clearDemand + k)` is exactly the retained diagonal demand `n`.
+Difference and matching demands remain `n`.  The localized certificate,
+now retained explicitly by the preceding wrappers, resolves the fixed-core
+leaf into a two-rank injury unless a literal block violates capacity. -/
+theorem HasEventuallyAlignedHolesOrAnchoredConcentration.resolveConcentrations
+    {A K : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (hk : 2 < k)
+    (P : IsFiniteBlockPartition K cell)
+    (hremainder :
+      HasEventuallyAlignedHolesOrAnchoredConcentration
+        A k cell target) :
+    HasEventuallyAlignedHolesOrResolvedArithmetic
+      A k cell target := by
+  classical
+  obtain ⟨N, hstage⟩ := hremainder
+  refine ⟨max N k, ?_⟩
+  intro n hn
+  have hnN : N ≤ n := (le_max_left N k).trans hn
+  have hkn : k ≤ n := (le_max_right N k).trans hn
+  obtain ⟨Q, i, q, δ, sourceRoot, sourceMatching,
+      sourcePetals, translatedHoles, hqQ, hcert,
+      hiScale, hiLower, hiUpper, hδpos, hqδ,
+      hsourceRootCard, hsourceLarge, hsourceSub,
+      hsourceRoot, hsourcePetal, hsourceMatching,
+      hsourcePetals, hsourceCell, hholesSource,
+      hholesData, hfinal⟩ :=
+    hstage n hnN
+  refine
+    ⟨Q, i, q, δ, sourceRoot, sourceMatching,
+      sourcePetals, translatedHoles, hqQ, hcert,
+      hiScale, hiLower, hiUpper, hδpos, hqδ,
+      hsourceRootCard, hsourceLarge, hsourceSub,
+      hsourceRoot, hsourcePetal, hsourceMatching,
+      hsourcePetals, hsourceCell, hholesSource,
+      hholesData, ?_⟩
+  rcases hfinal with hholes | hconcentration
+  · exact Or.inl hholes
+  · obtain ⟨E, hEmem, T, hconcentration⟩ :=
+      hconcentration
+    have hconcentration' :
+        HasCommonColumnAnchoredArithmeticConcentration
+          A k ((n - k) + k) n n cell Q q hqQ E T := by
+      simpa only [Nat.sub_add_cancel hkn] using hconcentration
+    have hresolved :=
+      anchoredArithmeticConcentration_forces_growth_or_twoRankDescent_or_capacityFailure
+        (clearDemand := n - k) P hk hconcentration' hcert
+    rcases hresolved with
+        hdifference | hmatching | hdescent | hcapacity
+    · exact Or.inr (Or.inl hdifference)
+    · exact Or.inr (Or.inr (Or.inl hmatching))
+    · exact Or.inr (Or.inr (Or.inr (Or.inl hdescent)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr hcapacity)))
+
+/-- Counterexample-level endpoint after resolving the anchored concentration
+horn as well as recurrent exact matchings and recurrent reduced streams. -/
+theorem exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedResolvedArithmetic
+    {A : Set ℕ} {k : ℕ}
+    (hk : 2 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1)) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+    ∃ target : ℕ → ℕ,
+      K ⊆ A ∧
+      K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      StrictMono target ∧
+      (∀ i, i + 2 < (cell i).card) ∧
+      (HasFusedSuccessorPredecessorStreams A k ∨
+        HasEventuallyAlignedHolesOrResolvedArithmetic
+          A k cell target) := by
+  obtain ⟨K, cell, target, hKA, hKInfinite, P,
+      htargetStrict, hcellLarge, hfused | hremainder⟩ :=
+    exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedHolesOrConcentration
+      (by omega) hbasis hcounter
+  · exact ⟨K, cell, target, hKA, hKInfinite, P,
+      htargetStrict, hcellLarge, Or.inl hfused⟩
+  · exact ⟨K, cell, target, hKA, hKInfinite, P,
+      htargetStrict, hcellLarge,
+      Or.inr (hremainder.resolveConcentrations hk P)⟩
+
+/-- One aligned translated-hole stage.
+
+The holes themselves lie in the moving petals of a large rooted matching
+at `target i`, while their translates by the single positive displacement
+`δ` leave `A`.  Both the source-block floor and the hole cardinality are
+measured by the same `scale`; this is the form needed for cofinal fusion. -/
+def HasAlignedTranslationHoleAt
+    (A : Set ℕ) (k : ℕ)
+    (cell : ℕ → Finset ℕ) (target : ℕ → ℕ)
+    (scale : ℕ) : Prop :=
+  ∃ i q δ, ∃ sourceRoot : Finset ℕ,
+  ∃ sourceMatching : Finset (Finset ℕ),
+  ∃ sourcePetals translatedHoles : Finset ℕ,
+    scale ≤ i ∧
+    target i < q ∧
+    q < target (i + 1) ∧
+    0 < δ ∧
+    q = target i + δ ∧
+    sourceRoot.card < k + 1 ∧
+    i + 1 < sourceMatching.card ∧
+    sourceMatching ⊆
+      additiveSupportFamily A (k + 1) (target i) ∧
+    (∀ E ∈ sourceMatching, sourceRoot ⊆ E) ∧
+    (∀ E ∈ sourceMatching, (E \ sourceRoot).Nonempty) ∧
+    (∀ E ∈ sourceMatching, ∀ G ∈ sourceMatching, E ≠ G →
+      Disjoint (E \ sourceRoot) (G \ sourceRoot)) ∧
+    sourcePetals =
+      sourceMatching.biUnion (fun E => E \ sourceRoot) ∧
+    sourcePetals ⊆ cell i ∧
+    translatedHoles ⊆ sourcePetals ∧
+    (∀ a ∈ translatedHoles, a + δ ∉ A) ∧
+    scale < translatedHoles.card
+
+/-- Lowering the diagonal scale preserves an aligned translated-hole
+stage. -/
+theorem HasAlignedTranslationHoleAt.mono
+    {A : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    {scale scale' : ℕ}
+    (hstage :
+      HasAlignedTranslationHoleAt
+        A k cell target scale)
+    (hscale : scale' ≤ scale) :
+    HasAlignedTranslationHoleAt
+      A k cell target scale' := by
+  obtain ⟨i, q, δ, sourceRoot, sourceMatching,
+      sourcePetals, translatedHoles, hiScale,
+      hiLower, hiUpper, hδpos, hqδ,
+      hsourceRootCard, hsourceLarge, hsourceSub,
+      hsourceRoot, hsourcePetal, hsourceMatching,
+      hsourcePetals, hsourceCell, hholesSource,
+      hholesData, hholesLarge⟩ :=
+    hstage
+  exact
+    ⟨i, q, δ, sourceRoot, sourceMatching,
+      sourcePetals, translatedHoles,
+      hscale.trans hiScale, hiLower, hiUpper,
+      hδpos, hqδ, hsourceRootCard, hsourceLarge,
+      hsourceSub, hsourceRoot, hsourcePetal,
+      hsourceMatching, hsourcePetals, hsourceCell,
+      hholesSource, hholesData,
+      lt_of_le_of_lt hscale hholesLarge⟩
+
+/-- Cofinal recurrence of the translated-hole horn. -/
+def HasCofinalAlignedTranslationHoles
+    (A : Set ℕ) (k : ℕ)
+    (cell : ℕ → Finset ℕ) (target : ℕ → ℕ) : Prop :=
+  ∀ scale,
+    HasAlignedTranslationHoleAt
+      A k cell target scale
+
+/-- Junk test for the translated-hole horn: a set with finite complement
+cannot satisfy it.
+
+At one stage all holes have the same translation `a ↦ a + δ`.  That map is
+injective and sends the entire hole set into the finite complement of `A`,
+so the hole cardinality is uniformly bounded by that complement.  Cofinal
+diagonal growth contradicts the bound.  In particular, intervals, tails,
+and other cofinite covering sets cannot satisfy the new hypothesis for a
+vacuous reason. -/
+theorem finiteComplement_forbids_cofinalAlignedTranslationHoles
+    {A : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (hcomplement : Aᶜ.Finite) :
+    ¬ HasCofinalAlignedTranslationHoles
+        A k cell target := by
+  classical
+  intro hholes
+  let F : Finset ℕ := hcomplement.toFinset
+  obtain ⟨_i, _q, δ, _sourceRoot, _sourceMatching,
+      _sourcePetals, translatedHoles, _hiScale,
+      _hiLower, _hiUpper, _hδpos, _hqδ,
+      _hsourceRootCard, _hsourceLarge, _hsourceSub,
+      _hsourceRoot, _hsourcePetal, _hsourceMatching,
+      _hsourcePetals, _hsourceCell, _hholesSource,
+      hholesData, hholesLarge⟩ :=
+    hholes F.card
+  have hshiftSubset :
+      translatedHoles.image (fun a => a + δ) ⊆ F := by
+    intro x hx
+    obtain ⟨a, haHole, rfl⟩ :=
+      Finset.mem_image.mp hx
+    exact hcomplement.mem_toFinset.mpr
+      (hholesData a haHole)
+  have hshiftInjective :
+      Set.InjOn (fun a => a + δ)
+        (translatedHoles : Set ℕ) := by
+    intro a _ha b _hb hab
+    exact Nat.add_right_cancel hab
+  have hshiftCard :
+      (translatedHoles.image fun a => a + δ).card =
+        translatedHoles.card :=
+    Finset.card_image_iff.mpr hshiftInjective
+  have hcardBound :
+      translatedHoles.card ≤ F.card := by
+    rw [← hshiftCard]
+    exact Finset.card_le_card hshiftSubset
+  omega
+
+/-- A cofinal translated-hole supply gives every pointed support/block
+fusion step.
+
+Choose one hole `a` in the requested late source block.  Since `a` belongs
+to a moving petal, it is outside the common root.  The source matching has
+more than one member, and its petals are pairwise disjoint, so the
+one-point destroyer `{a}` cannot hit every member.  A surviving source
+support and the hole itself are therefore a valid pointed fusion step.
+The exact identity `q = target i + δ` and the fact `a + δ ∉ A` are retained
+in the source theorem even though the fusion interface needs only the
+resulting point/support pair. -/
+theorem HasCofinalAlignedTranslationHoles.pointedStepSupply
+    {A : Set ℕ} {k : ℕ}
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (htargetStrict : StrictMono target)
+    (hholes :
+      HasCofinalAlignedTranslationHoles
+        A k cell target) :
+    ∀ targetFloor blockFloor,
+      Nonempty
+        (ReducedStreamFusionStep
+          A k cell targetFloor blockFloor) := by
+  classical
+  intro targetFloor blockFloor
+  let scale := max targetFloor blockFloor
+  obtain ⟨i, _q, _δ, sourceRoot, sourceMatching,
+      sourcePetals, translatedHoles, hiScale,
+      _hiLower, _hiUpper, _hδpos, _hqδ,
+      _hsourceRootCard, hsourceLarge, hsourceSub,
+      _hsourceRoot, _hsourcePetal, hsourceMatching,
+      hsourcePetals, hsourceCell, hholesSource,
+      _hholesData, hholesLarge⟩ :=
+    hholes scale
+  have hholesNonempty : translatedHoles.Nonempty := by
+    exact Finset.card_pos.mp (by omega)
+  let point := hholesNonempty.choose
+  have hpointHole : point ∈ translatedHoles :=
+    hholesNonempty.choose_spec
+  have hpointPetals : point ∈ sourcePetals :=
+    hholesSource hpointHole
+  have hpointCell : point ∈ cell i :=
+    hsourceCell hpointPetals
+  have hpointNotRoot : point ∉ sourceRoot := by
+    rw [hsourcePetals] at hpointPetals
+    obtain ⟨E, _hEM, hpointDiff⟩ :=
+      Finset.mem_biUnion.mp hpointPetals
+    exact (Finset.mem_sdiff.mp hpointDiff).2
+  have hhit :
+      ∀ E ∈ sourceMatching,
+        ¬ Disjoint (E : Set ℕ) ({point} : Set ℕ) →
+          ∃ x ∈ ({point} : Finset ℕ),
+            x ∈ E \ sourceRoot := by
+    intro E _hEM hEpoint
+    obtain ⟨x, hxE, hxPoint⟩ :=
+      Set.not_disjoint_iff.mp hEpoint
+    have hx : x = point := by simpa using hxPoint
+    subst x
+    exact
+      ⟨point, by simp,
+        Finset.mem_sdiff.mpr
+          ⟨Finset.mem_coe.mp hxE, hpointNotRoot⟩⟩
+  have honeMatching : ({point} : Finset ℕ).card <
+      sourceMatching.card := by
+    simp only [Finset.card_singleton]
+    omega
+  obtain ⟨E, hEM, hEpoint⟩ :=
+    exists_surviving_support
+      hsourceMatching hhit honeMatching
+  have htargetLower : targetFloor ≤ target i := by
+    exact (le_max_left targetFloor blockFloor).trans
+      (hiScale.trans (htargetStrict.id_le i))
+  have hblockLower : blockFloor ≤ i :=
+    (le_max_right targetFloor blockFloor).trans hiScale
+  exact
+    ⟨⟨target i, E, i, point, htargetLower,
+      hblockLower, hsourceSub hEM, hpointCell,
+      by simpa using hEpoint⟩⟩
+
+/-- The cofinally recurring translated-hole horn fuses into the same honest
+infinite deletion endpoint as the exact-matching and reduced-stream horns.
+
+The pointed fusion recursion makes source-block indices and protected
+targets grow simultaneously.  Its bounded cross-avoidance thinning removes
+all collisions between different stages, while the two-petal argument
+removes the collision at each stage's own chosen hole.  Counterexample
+destruction and the predecessor bracketing theorem then supply the destroyed
+successor and represented-difference streams on that very deletion. -/
+theorem HasCofinalAlignedTranslationHoles.fusesInfiniteDeletion
+    {A K : Set ℕ} {k : ℕ}
+    (hkpos : 0 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1))
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (htargetStrict : StrictMono target)
+    (hholes :
+      HasCofinalAlignedTranslationHoles
+        A k cell target) :
+    HasFusedSuccessorPredecessorStreams A k := by
+  obtain ⟨Y, oldTarget, hYA, hYInfinite,
+      holdStrict, holdSurvival⟩ :=
+    cofinalReducedFusionSteps_fuse_infiniteDeletion
+      hKA P (hholes.pointedStepSupply htargetStrict)
+  have hsuccessorDestroy :
+      ∀ N, ∃ m, N ≤ m ∧
+        DestroysAt
+          (additiveSupportFamily A (k + 1)) Y m :=
+    strongExactDeletion_of_counterexample hcounter
+      Y hYA hYInfinite
+  have hrepresented :=
+    bracketedDestroyedSuccessorTargets_force_cofinalRepresentedPredecessorDestroyers
+      hkpos hbasis holdStrict holdSurvival hsuccessorDestroy
+  exact
+    ⟨Y, oldTarget, hYA, hYInfinite, holdStrict,
+      holdSurvival, hsuccessorDestroy, hrepresented⟩
+
+/-- Eventual aligned remainder after the translated-hole horn has also been
+consumed.
+
+The same source block, translation, finite selector certificate, and
+source matching are retained.  Only four explicit arithmetic injuries
+remain: represented order-`k` difference growth, order-`k` rooted matching
+growth, a represented order-`k-1` two-rank injury, or literal failure of
+the block-capacity threshold. -/
+def HasEventuallyAlignedResolvedArithmeticInjuries
+    (A : Set ℕ) (k : ℕ)
+    (cell : ℕ → Finset ℕ) (target : ℕ → ℕ) : Prop :=
+  ∃ N, ∀ n, N ≤ n →
+    ∃ Q : Finset ℕ, ∃ i q δ,
+    ∃ sourceRoot : Finset ℕ,
+    ∃ sourceMatching : Finset (Finset ℕ),
+    ∃ sourcePetals translatedHoles : Finset ℕ,
+    ∃ hqQ : q ∈ Q,
+      (∀ s : BlockSelector cell, ∃ r ∈ Q,
+        DestroysAt
+          (additiveSupportFamily A (k + 1))
+          (selectedSet s) r) ∧
+      n ≤ i ∧
+      target i < q ∧
+      q < target (i + 1) ∧
+      0 < δ ∧
+      q = target i + δ ∧
+      sourceRoot.card < k + 1 ∧
+      i + 1 < sourceMatching.card ∧
+      sourceMatching ⊆
+        additiveSupportFamily A (k + 1) (target i) ∧
+      (∀ E ∈ sourceMatching, sourceRoot ⊆ E) ∧
+      (∀ E ∈ sourceMatching, (E \ sourceRoot).Nonempty) ∧
+      (∀ E ∈ sourceMatching, ∀ G ∈ sourceMatching, E ≠ G →
+        Disjoint (E \ sourceRoot) (G \ sourceRoot)) ∧
+      sourcePetals =
+        sourceMatching.biUnion (fun E => E \ sourceRoot) ∧
+      sourcePetals ⊆ cell i ∧
+      translatedHoles ⊆ sourcePetals ∧
+      (∀ a ∈ translatedHoles, a + δ ∉ A) ∧
+      ((∃ V : Finset ℕ,
+          n < V.card ∧
+          ∀ d ∈ V,
+            (additiveSupportFamily A k d).Nonempty) ∨
+        (∃ d, ∃ root : Finset ℕ,
+          ∃ M : Finset (Finset ℕ),
+            root.card < k ∧
+            M ⊆ additiveSupportFamily A k d ∧
+            n < M.card ∧
+            (∀ H ∈ M, root ⊆ H) ∧
+            (∀ H ∈ M, (H \ root).Nonempty) ∧
+            ∀ H ∈ M, ∀ G ∈ M, H ≠ G →
+              Disjoint (H \ root) (G \ root)) ∨
+        (∃ r, ∃ D : Finset ℕ, ∃ d,
+          D.Nonempty ∧
+          IsInclusionMinimalDestroyer
+            (additiveSupportFamily A (k + 1)) D r ∧
+          (additiveSupportFamily A (k - 1) d).Nonempty ∧
+          DestroysAt
+            (additiveSupportFamily A (k - 1))
+            (D : Set ℕ) d) ∨
+        ∃ j,
+          (cell j).card ≤
+            (k + 1) * Q.card + (k + 1))
+
+/-- Resolve the translated-hole horn.
+
+If aligned hole stages recur cofinally, the preceding pointed fusion builds
+one infinite deletion and feeds it through the successor/predecessor
+bracketing endpoint.  Otherwise there is a genuine scale cutoff.  Beyond
+that cutoff the hole alternative in every retained resolved-arithmetic
+stage is impossible, leaving only the four explicit arithmetic injuries. -/
+theorem HasEventuallyAlignedHolesOrResolvedArithmetic.resolveTranslationHoles
+    {A K : Set ℕ} {k : ℕ}
+    (hkpos : 0 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1))
+    {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
+    (hKA : K ⊆ A)
+    (P : IsFiniteBlockPartition K cell)
+    (htargetStrict : StrictMono target)
+    (hremainder :
+      HasEventuallyAlignedHolesOrResolvedArithmetic
+        A k cell target) :
+    HasFusedSuccessorPredecessorStreams A k ∨
+      HasEventuallyAlignedResolvedArithmeticInjuries
+        A k cell target := by
+  classical
+  obtain ⟨Nremainder, hstage⟩ := hremainder
+  by_cases hholesCofinal :
+      ∀ N, ∃ n, N ≤ n ∧
+        HasAlignedTranslationHoleAt
+          A k cell target n
+  · left
+    have hholes :
+        HasCofinalAlignedTranslationHoles
+          A k cell target := by
+      intro scale
+      obtain ⟨n, hnScale, hnStage⟩ :=
+        hholesCofinal scale
+      exact hnStage.mono hnScale
+    exact
+      hholes.fusesInfiniteDeletion
+        hkpos hbasis hcounter hKA P htargetStrict
+  · right
+    push Not at hholesCofinal
+    obtain ⟨Nholes, hNholes⟩ := hholesCofinal
+    refine ⟨max Nremainder Nholes, ?_⟩
+    intro n hn
+    have hnRemainder : Nremainder ≤ n :=
+      (le_max_left Nremainder Nholes).trans hn
+    have hnHoles : Nholes ≤ n :=
+      (le_max_right Nremainder Nholes).trans hn
+    obtain ⟨Q, i, q, δ, sourceRoot, sourceMatching,
+        sourcePetals, translatedHoles, hqQ, hcert,
+        hiScale, hiLower, hiUpper, hδpos, hqδ,
+        hsourceRootCard, hsourceLarge, hsourceSub,
+        hsourceRoot, hsourcePetal, hsourceMatching,
+        hsourcePetals, hsourceCell, hholesSource,
+        hholesData, hfinal⟩ :=
+      hstage n hnRemainder
+    refine
+      ⟨Q, i, q, δ, sourceRoot, sourceMatching,
+        sourcePetals, translatedHoles, hqQ, hcert,
+        hiScale, hiLower, hiUpper, hδpos, hqδ,
+        hsourceRootCard, hsourceLarge, hsourceSub,
+        hsourceRoot, hsourcePetal, hsourceMatching,
+        hsourcePetals, hsourceCell, hholesSource,
+        hholesData, ?_⟩
+    rcases hfinal with hholesLarge | hinjuries
+    · exfalso
+      apply hNholes n hnHoles
+      exact
+        ⟨i, q, δ, sourceRoot, sourceMatching,
+          sourcePetals, translatedHoles, hiScale,
+          hiLower, hiUpper, hδpos, hqδ,
+          hsourceRootCard, hsourceLarge, hsourceSub,
+          hsourceRoot, hsourcePetal, hsourceMatching,
+          hsourcePetals, hsourceCell, hholesSource,
+          hholesData, hholesLarge⟩
+    · exact hinjuries
+
+/-- Counterexample-level endpoint after all four horns in the aligned
+translation program have been consumed.
+
+Recurrent exact-target matchings, reduced streams, and translated holes all
+feed the same infinite-deletion/bracketing object.  Anchored concentration
+has been eliminated by the arithmetic threshold theorem.  Consequently a
+hypothetical counterexample now yields either that fused deletion or an
+eventual stream of the four explicit growth/descent/capacity injuries. -/
+theorem exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedArithmeticInjuries
+    {A : Set ℕ} {k : ℕ}
+    (hk : 2 < k)
+    (hbasis : IsExactTupleAsymptoticBasis A k)
+    (hcounter : ∀ B, B ⊆ A → B.Infinite →
+      ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1)) :
+    ∃ K : Set ℕ, ∃ cell : ℕ → Finset ℕ,
+    ∃ target : ℕ → ℕ,
+      K ⊆ A ∧
+      K.Infinite ∧
+      IsFiniteBlockPartition K cell ∧
+      StrictMono target ∧
+      (∀ i, i + 2 < (cell i).card) ∧
+      (HasFusedSuccessorPredecessorStreams A k ∨
+        HasEventuallyAlignedResolvedArithmeticInjuries
+          A k cell target) := by
+  obtain ⟨K, cell, target, hKA, hKInfinite, P,
+      htargetStrict, hcellLarge, hfused | hremainder⟩ :=
+    exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedResolvedArithmetic
+      hk hbasis hcounter
+  · exact
+      ⟨K, cell, target, hKA, hKInfinite, P,
+        htargetStrict, hcellLarge, Or.inl hfused⟩
+  · exact
+      ⟨K, cell, target, hKA, hKInfinite, P,
+        htargetStrict, hcellLarge,
+        hremainder.resolveTranslationHoles
+          (by omega) hbasis hcounter hKA P htargetStrict⟩
 
 end Erdos881

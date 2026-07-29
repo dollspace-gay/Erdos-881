@@ -1,3 +1,44 @@
+# GENERAL ORDER: FOUR ALIGNED HORNS CONSUMED (2026-07-29)
+
+The exact-target, reduced-stream, arithmetic-concentration, and
+translated-hole program has now been carried through to one verified
+counterexample-level endpoint.
+
+- `HasCofinalAlignedExactTargetRootedMatchings.fusesInfiniteDeletion`
+  prefix-clears recurrent exact-target matchings and fuses them into one
+  infinite deletion carrying strict surviving successor targets, cofinal
+  destroyed successor targets, and represented destroyed predecessor
+  differences.
+- `HasEventuallyAlignedHolesOrNonmatchingArithmetic.resolveReducedStreams`
+  sends recurrent reduced common-column streams through the same endpoint.
+- `HasEventuallyAlignedHolesOrAnchoredConcentration.resolveConcentrations`
+  feeds anchored concentration through the localized arithmetic threshold.
+  The concentration predicate disappears, leaving represented
+  order-`k` difference growth, order-`k` rooted matching growth, a
+  represented order-`k-1` two-rank injury, or a literal block-capacity
+  failure.
+- The fusion interface now records a chosen point rather than requiring
+  the preserved support to avoid its entire block.  This exact
+  strengthening lets
+  `HasCofinalAlignedTranslationHoles.fusesInfiniteDeletion` choose a hole
+  in each late source block, preserve a different source petal at the same
+  stage, and use the existing bounded cross-avoidance theorem to eliminate
+  all interactions between different stages.
+- `finiteComplement_forbids_cofinalAlignedTranslationHoles` is the formal
+  junk test: a common shift injects every hole set into `Aᶜ`, so cofinite
+  sets cannot satisfy the cofinal-hole hypothesis.
+- The capstone
+  `exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedArithmeticInjuries`
+  says that a hypothetical general-order counterexample (`k > 2`) now
+  forces either the fused infinite deletion above or an eventual aligned
+  stream of exactly the four explicit arithmetic injuries.
+
+This is genuine branch elimination, but it is **not** yet the full
+`k ≥ 3` solution.  The next mathematical obligation is to make the fused
+surviving/destroyed streams contradict current-order minimality, or to show
+that every one of the four retained injury streams feeds that same
+contradiction.
+
 # GENERAL ORDER: RANK-ONE AUDIT AND PRIVATE-CORE NORMAL FORM (2026-07-28)
 
 The terminal-fusion attack produced a correct residue-collapse theorem, but
