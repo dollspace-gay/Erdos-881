@@ -1,3 +1,41 @@
+# STRATEGY SHIFT: THE DIRECT CONSTRUCTION (2026-08-02, evening)
+
+The frontier attack is now DIRECT — build the deletion, no
+counterexample, no False.  Commit 7065a44.
+
+`Erdos881/DirectConstruction.lean`:
+- PREFIX LOCALITY: a summand of `n` is ≤ `n`, so an infinite
+  deletion hurts `n` only through its finite prefix below `n`.
+- `CleanlyRedundantAbove A h F b`: every target from `b` on keeps
+  an order-`h` rep avoiding the finite stack `F` and `b`.
+- `HasCleanSupply A h`: after every finite stack, some element
+  above every bound is cleanly redundant.
+- `exists_infiniteDeletion_of_cleanSupply`: THE CHAIN THEOREM —
+  a clean supply yields the infinite surviving deletion outright
+  (chain `b₀ < b₁ < …`; target `n` in `[bⱼ, bⱼ₊₁)` is covered by
+  stage `j`, later picks exceed `n`).  No minimality used.
+- `erdos881_of_cleanSupply`: supply at the hard cases ⇒ Erdős 881
+  AT EVERY ORDER.  The whole problem is now one positive
+  ∀∃-statement: HARD-CASE BASES HAVE CLEAN SUPPLY.
+
+`scripts/probe_clean_redundancy.py` EXECUTES the chain in real
+worlds: digit base-4 and three trimmed adversarial order-3 worlds
+all sustain chains of length 25–31 within the test window,
+rejection rate ≈ 1 candidate per accept (failures split
+near-b/global).  The supply is lab-TRUE in 4/4 worlds.
+
+THE REMAINING LEMMA decomposes: clean redundancy at `b` fails as
+a FINITE-F DESERT (some `n` has no rep avoiding the finite stack)
+or a FINITE-F WOUND (all reps of some `n` avoiding `F` use `b`).
+These are the engine's desert/wounded horns with the enemy
+DOWNGRADED from an infinite deletion to a finite set — the k = 2
+artillery (bounded hubs, fixed-difference fiber finiteness,
+sum-free tails, private-target census) targets exactly these
+shapes.  Desert side: if no rep of `n` avoids finite `F`, then
+for EVERY `a ∈ A∖F` below `n − N₀`, every k-rep of `n − a` meets
+`F` — a finite hub for an unbounded translated family; pigeonhole
+concentrates it on one element of `F`.
+
 # DICHOTOMY TRANSPLANT + CARRY PROBE + CENSUS THEOREM (2026-08-02)
 
 Three follow-ups to the uniform deletion theorem, all landed
