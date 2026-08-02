@@ -32,15 +32,24 @@ every `n ≥ N₀(k)` needs a `k+1`-part power-free split.  With layers
   ABSORBED (column count `k+δ`), and a stray-free 3-window below `a`
   exists by pigeonhole once `a ≥ 3k` (threshold `N₀(k) ≈ b^{3k}` —
   `∃N` in the official predicate permits `k`-dependent thresholds).
-  Multiplicity-`≥2` strays (the last open construction) RESOLVE by
-  CONVERT-AND-SPREAD: convert one stray copy downward
-  (`b^{a-1} = k·b^{a-2} + (k+1)·b^{a-3}`), making the bottom column
-  full and the spreadable mass `c + d - 1 + k ≥ k + 1`; column
-  multiplicities all stay `≤ k`, so a Hall spread covers every slot
-  with two bits.  The design is COMPLETE: rich = Hall spread; poor =
-  pair, telescope with mult-1 absorption, convert-and-spread for
-  mult-`≥2`; the remaining work is pure formalization (the layerK
-  machinery, the spread construction, and the case dispatch).
+  Multiplicity-`≥2` strays resolve by CONVERT-AND-SPREAD (convert
+  one stray copy downward; the bottom column fills and a Hall
+  spread covers every slot).  A cleaner route found later: TOP-BLOCK
+  INDUCTION — peel `n = c·b^P + m` at `P := log_b n`; deep case
+  (`m` large) attaches the `c` top bits to nonzero parts from the
+  induction hypothesis (between consecutive powers, hence
+  non-pure); shallow case (`m` small) merges `m`'s order-`k` digit
+  split part-wise into the menu parts (bracket quotients keep
+  non-purity; `isDigitK` scaled addition keeps digit-hood).
+  CORRECTION (2026-08-02, late): the induction bottom exposes ONE
+  genuinely remaining family — ADJACENT BLOCKS
+  `c·b^P + c'·b^{P'} + low` with `P - P' ≤ 3` and `c' ≥ 2`, the
+  uniform ancestors of the base-4 bespoke menus (14, 50, 194, …).
+  The earlier "design complete" note was too strong: this family
+  needs one more uniform carry design (a two-anchor telescope) that
+  is not yet found.  Everything else of the sieve is designed to
+  formalization-readiness, and the menu/demonstrator/critical-stream
+  layers of phase two are PROVED.
 
 # GENERAL ORDER: EVERY HARD CASE IS INHABITED, UNIFORMLY (2026-08-02)
 
