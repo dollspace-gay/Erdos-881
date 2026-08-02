@@ -1082,4 +1082,405 @@ theorem base4_repair_triple_mixedAbove (u a : ℕ)
       rw [h4u, h4a]
       ring
 
+/-- **Mixed repair `3·4^p + 4^u + 4^v`, two distinct strays below
+scale.** -/
+theorem base4_repair_triple_twoStrays (p u v : ℕ)
+    (hp : 8 ≤ p) (hup : u < p) (hvu : v < u) :
+    ∃ x y z t, IsBase4 x ∧ IsBase4 y ∧ IsBase4 z ∧
+      IsBase4 t ∧
+      (∀ j, x ≠ 4 ^ j) ∧ (∀ j, y ≠ 4 ^ j) ∧
+      (∀ j, z ≠ 4 ^ j) ∧ (∀ j, t ≠ 4 ^ j) ∧
+      x + y + z + t = 3 * 4 ^ p + 4 ^ u + 4 ^ v := by
+  have h256 : (4 : ℕ) ^ p = 256 * 4 ^ (p - 4) := by
+    have h := pow_shift_eq p 4 (by omega)
+    norm_num at h
+    exact h
+  have hpow :
+      ∀ t : ℕ, 1 ≤ t → t ≤ 4 →
+        (4 : ℕ) ^ (p - t) =
+          4 ^ (4 - t) * 4 ^ (p - 4) := by
+    intro t ht1 ht4
+    have h := pow_shift_eq (p - t) (4 - t) (by omega)
+    have he : p - t - (4 - t) = p - 4 := by omega
+    rw [he] at h
+    exact h
+  have hattach :
+      ∀ c x : ℕ, 64 < c → c ≤ 85 → x < 4 ^ (p - 4) →
+        (∀ j, c * 4 ^ (p - 4) + x ≠ 4 ^ j) := by
+    intro c x hc1 hc2 hxw
+    have h64w :
+        (4 : ℕ) ^ (p - 1) = 64 * 4 ^ (p - 4) := by
+      have h := hpow 1 (by norm_num) (by norm_num)
+      norm_num at h
+      exact h
+    have h256w :
+        (4 : ℕ) ^ (p - 1 + 1) = 256 * 4 ^ (p - 4) := by
+      have he : p - 1 + 1 = p := by omega
+      rw [he]
+      exact h256
+    have hl :
+        (4 : ℕ) ^ (p - 1) < c * 4 ^ (p - 4) + x :=
+      calc (4 : ℕ) ^ (p - 1) = 64 * 4 ^ (p - 4) :=
+          h64w
+        _ < c * 4 ^ (p - 4) :=
+          Nat.mul_lt_mul_of_pos_right hc1
+            (pow4_pos _)
+        _ ≤ c * 4 ^ (p - 4) + x :=
+          Nat.le_add_right _ _
+    have hr :
+        c * 4 ^ (p - 4) + x < 4 ^ (p - 1 + 1) :=
+      calc c * 4 ^ (p - 4) + x <
+          c * 4 ^ (p - 4) + 4 ^ (p - 4) :=
+            Nat.add_lt_add_left hxw _
+        _ = (c + 1) * 4 ^ (p - 4) := by ring
+        _ ≤ 256 * 4 ^ (p - 4) :=
+          Nat.mul_le_mul_right _ (by omega)
+        _ = (4 : ℕ) ^ (p - 1 + 1) := h256w.symm
+    exact fun j hj =>
+      not_pure_of_bounds (L := p - 1) hl hr ⟨j, hj⟩
+  rcases Nat.lt_or_ge u (p - 4) with hulow | huhigh
+  · -- generic: v < u ≤ p-5, both bits join the small part
+    have hvw : (4 : ℕ) ^ v < 4 ^ u :=
+      Nat.pow_lt_pow_right (by norm_num) hvu
+    have hxsum :
+        (4 : ℕ) ^ u + 4 ^ v < 4 ^ (p - 4) :=
+      calc (4 : ℕ) ^ u + 4 ^ v <
+          4 ^ u + 4 ^ u := Nat.add_lt_add_left hvw _
+        _ = 2 * 4 ^ u := by ring
+        _ ≤ 4 * 4 ^ u :=
+          Nat.mul_le_mul_right _ (by norm_num)
+        _ = 4 ^ (u + 1) := by rw [pow_succ]; ring
+        _ ≤ 4 ^ (p - 4) :=
+          Nat.pow_le_pow_right (by norm_num)
+            (by omega)
+    have hxbase : IsBase4 ((4 : ℕ) ^ u + 4 ^ v) := by
+      have h := isBase4_scaled_add (y := 1) (m := u)
+        (isBase4_of_digits (c := 1) (L := 1)
+          (by norm_num) (by decide))
+        (isBase4_pow v) hvw
+      rwa [one_mul] at h
+    have h4w : (4 : ℕ) ^ (p - 3) = 4 * 4 ^ (p - 4) := by
+      have h := hpow 3 (by norm_num) (by norm_num)
+      norm_num at h
+      exact h
+    have h16w :
+        (4 : ℕ) ^ (p - 3 + 1) = 16 * 4 ^ (p - 4) := by
+      have h := pow_shift_eq (p - 3 + 1) 2 (by omega)
+      have he : p - 3 + 1 - 2 = p - 4 := by omega
+      rw [he] at h
+      norm_num at h
+      exact h
+    refine
+      ⟨341 * 4 ^ (p - 4), 337 * 4 ^ (p - 4),
+        85 * 4 ^ (p - 4),
+        5 * 4 ^ (p - 4) + (4 ^ u + 4 ^ v),
+        ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · exact isBase4_scaledConst (c := 341) (L := 5)
+        (p - 4) (by norm_num) (by decide)
+    · exact isBase4_scaledConst (c := 337) (L := 5)
+        (p - 4) (by norm_num) (by decide)
+    · exact isBase4_scaledConst (c := 85) (L := 4)
+        (p - 4) (by norm_num) (by decide)
+    · exact isBase4_scaled_add
+        (isBase4_of_digits (c := 5) (L := 2)
+          (by norm_num) (by decide)) hxbase hxsum
+    · exact fun j => not_pure_of_scaled
+        (not_pure_of_bounds (c := 341) (L := 4)
+          (by norm_num) (by norm_num)) j
+    · exact fun j => not_pure_of_scaled
+        (not_pure_of_bounds (c := 337) (L := 4)
+          (by norm_num) (by norm_num)) j
+    · exact fun j => not_pure_of_scaled
+        (not_pure_of_bounds (c := 85) (L := 3)
+          (by norm_num) (by norm_num)) j
+    · have hl :
+          (4 : ℕ) ^ (p - 3) <
+            5 * 4 ^ (p - 4) + (4 ^ u + 4 ^ v) :=
+        calc (4 : ℕ) ^ (p - 3) = 4 * 4 ^ (p - 4) :=
+            h4w
+          _ < 5 * 4 ^ (p - 4) :=
+            Nat.mul_lt_mul_of_pos_right (by norm_num)
+              (pow4_pos _)
+          _ ≤ 5 * 4 ^ (p - 4) + (4 ^ u + 4 ^ v) :=
+            Nat.le_add_right _ _
+      have hr :
+          5 * 4 ^ (p - 4) + (4 ^ u + 4 ^ v) <
+            4 ^ (p - 3 + 1) :=
+        calc 5 * 4 ^ (p - 4) + (4 ^ u + 4 ^ v) <
+            5 * 4 ^ (p - 4) + 4 ^ (p - 4) :=
+              Nat.add_lt_add_left hxsum _
+          _ = 6 * 4 ^ (p - 4) := by ring
+          _ ≤ 16 * 4 ^ (p - 4) :=
+            Nat.mul_le_mul_right _ (by norm_num)
+          _ = (4 : ℕ) ^ (p - 3 + 1) := h16w.symm
+      exact fun j hj =>
+        not_pure_of_bounds (L := p - 3) hl hr ⟨j, hj⟩
+    · rw [h256]
+      ring
+  · -- u ∈ {p-4, p-3, p-2, p-1}
+    have hucase :
+        u = p - 4 ∨ u = p - 3 ∨ u = p - 2 ∨
+          u = p - 1 := by
+      omega
+    have hgeneric :
+        ∀ c₁ c₂ c₃ c₄ : ℕ,
+          64 < c₃ → c₃ ≤ 85 →
+          c₁ < 4 ^ 5 → c₂ < 4 ^ 5 → c₃ < 4 ^ 4 →
+          c₄ < 4 ^ 4 →
+          (∀ i < 5, c₁ / 4 ^ i % 4 ≤ 1) →
+          (∀ i < 5, c₂ / 4 ^ i % 4 ≤ 1) →
+          (∀ i < 4, c₃ / 4 ^ i % 4 ≤ 1) →
+          (∀ i < 4, c₄ / 4 ^ i % 4 ≤ 1) →
+          (¬∃ t, c₁ = 4 ^ t) → (¬∃ t, c₂ = 4 ^ t) →
+          (¬∃ t, c₄ = 4 ^ t) →
+          v < p - 4 →
+          c₁ * 4 ^ (p - 4) + c₂ * 4 ^ (p - 4) +
+              (c₃ * 4 ^ (p - 4) + 4 ^ v) +
+              c₄ * 4 ^ (p - 4) =
+            3 * 4 ^ p + 4 ^ u + 4 ^ v →
+          ∃ x y z t, IsBase4 x ∧ IsBase4 y ∧
+            IsBase4 z ∧ IsBase4 t ∧
+            (∀ j, x ≠ 4 ^ j) ∧ (∀ j, y ≠ 4 ^ j) ∧
+            (∀ j, z ≠ 4 ^ j) ∧ (∀ j, t ≠ 4 ^ j) ∧
+            x + y + z + t =
+              3 * 4 ^ p + 4 ^ u + 4 ^ v := by
+      intro c₁ c₂ c₃ c₄ hc₃l hc₃u hb₁ hb₂ hb₃ hb₄
+        hd₁ hd₂ hd₃ hd₄ hn₁ hn₂ hn₄ hvlow hsum
+      have hvw : (4 : ℕ) ^ v < 4 ^ (p - 4) :=
+        Nat.pow_lt_pow_right (by norm_num) hvlow
+      exact
+        ⟨c₁ * 4 ^ (p - 4), c₂ * 4 ^ (p - 4),
+          c₃ * 4 ^ (p - 4) + 4 ^ v,
+          c₄ * 4 ^ (p - 4),
+          isBase4_scaledConst (p - 4) hb₁ hd₁,
+          isBase4_scaledConst (p - 4) hb₂ hd₂,
+          isBase4_scaled_add
+            (isBase4_of_digits hb₃ hd₃)
+            (isBase4_pow v) hvw,
+          isBase4_scaledConst (p - 4) hb₄ hd₄,
+          fun j => not_pure_of_scaled hn₁ j,
+          fun j => not_pure_of_scaled hn₂ j,
+          hattach c₃ (4 ^ v) hc₃l hc₃u hvw,
+          fun j => not_pure_of_scaled hn₄ j,
+          hsum⟩
+    rcases hucase with hu | hu | hu | hu
+    · -- u = p-4: v < u = p-4 is always far; C'-menu, u-bit on 20w
+      subst hu
+      refine hgeneric 340 340 68 21
+        (by norm_num) (by norm_num) (by norm_num)
+        (by norm_num) (by norm_num) (by norm_num)
+        (by decide) (by decide) (by decide)
+        (by decide)
+        (not_pure_of_bounds (L := 4) (by norm_num)
+          (by norm_num))
+        (not_pure_of_bounds (L := 4) (by norm_num)
+          (by norm_num))
+        (not_pure_of_bounds (L := 2) (by norm_num)
+          (by norm_num))
+        (by omega) ?_
+      rw [h256]
+      ring
+    · subst hu
+      rcases Nat.lt_or_ge v (p - 4) with hvlow | hvhigh
+      · -- u = p-3, v far: u-bit on 337w
+        refine hgeneric 341 341 85 5
+          (by norm_num) (by norm_num) (by norm_num)
+          (by norm_num) (by norm_num) (by norm_num)
+          (by decide) (by decide) (by decide)
+          (by decide)
+          (not_pure_of_bounds (L := 4) (by norm_num)
+            (by norm_num))
+          (not_pure_of_bounds (L := 4) (by norm_num)
+            (by norm_num))
+          (not_pure_of_bounds (L := 1) (by norm_num)
+            (by norm_num))
+          hvlow ?_
+        have h4 := hpow 3 (by norm_num) (by norm_num)
+        norm_num at h4
+        rw [h256, h4]
+        ring
+      · -- u = p-3, v = p-4
+        have hv : v = p - 4 := by omega
+        subst hv
+        refine base4_menu_of_constants
+          (c₁ := 340) (L₁ := 5) (c₂ := 336)
+          (L₂ := 5) (c₃ := 80) (L₃ := 4)
+          (c₄ := 17) (L₄ := 3) (m := p - 4)
+          (by norm_num) (by decide) (by norm_num)
+          (by decide) (by norm_num) (by decide)
+          (by norm_num) (by decide)
+          (not_pure_of_bounds (L := 4) (by norm_num)
+            (by norm_num))
+          (not_pure_of_bounds (L := 4) (by norm_num)
+            (by norm_num))
+          (not_pure_of_bounds (L := 3) (by norm_num)
+            (by norm_num))
+          (not_pure_of_bounds (L := 2) (by norm_num)
+            (by norm_num)) ?_
+        have h4 := hpow 3 (by norm_num) (by norm_num)
+        norm_num at h4
+        rw [h256, h4]
+        ring
+    · subst hu
+      rcases Nat.lt_or_ge v (p - 4) with hvlow | hvhigh
+      · -- u = p-2, v far: u-bit on 5w
+        refine hgeneric 341 337 85 21
+          (by norm_num) (by norm_num) (by norm_num)
+          (by norm_num) (by norm_num) (by norm_num)
+          (by decide) (by decide) (by decide)
+          (by decide)
+          (not_pure_of_bounds (L := 4) (by norm_num)
+            (by norm_num))
+          (not_pure_of_bounds (L := 4) (by norm_num)
+            (by norm_num))
+          (not_pure_of_bounds (L := 2) (by norm_num)
+            (by norm_num))
+          hvlow ?_
+        have h4 := hpow 2 (by norm_num) (by norm_num)
+        norm_num at h4
+        rw [h256, h4]
+        ring
+      · have hvcase : v = p - 4 ∨ v = p - 3 := by
+          omega
+        rcases hvcase with hv | hv
+        · -- u = p-2, v = p-4
+          subst hv
+          refine base4_menu_of_constants
+            (c₁ := 340) (L₁ := 5) (c₂ := 340)
+            (L₂ := 5) (c₃ := 84) (L₃ := 4)
+            (c₄ := 21) (L₄ := 3) (m := p - 4)
+            (by norm_num) (by decide) (by norm_num)
+            (by decide) (by norm_num) (by decide)
+            (by norm_num) (by decide)
+            (not_pure_of_bounds (L := 4)
+              (by norm_num) (by norm_num))
+            (not_pure_of_bounds (L := 4)
+              (by norm_num) (by norm_num))
+            (not_pure_of_bounds (L := 3)
+              (by norm_num) (by norm_num))
+            (not_pure_of_bounds (L := 2)
+              (by norm_num) (by norm_num)) ?_
+          have h4 := hpow 2 (by norm_num)
+            (by norm_num)
+          norm_num at h4
+          rw [h256, h4]
+          ring
+        · -- u = p-2, v = p-3
+          subst hv
+          refine base4_menu_of_constants
+            (c₁ := 341) (L₁ := 5) (c₂ := 341)
+            (L₂ := 5) (c₃ := 85) (L₃ := 4)
+            (c₄ := 21) (L₄ := 3) (m := p - 4)
+            (by norm_num) (by decide) (by norm_num)
+            (by decide) (by norm_num) (by decide)
+            (by norm_num) (by decide)
+            (not_pure_of_bounds (L := 4)
+              (by norm_num) (by norm_num))
+            (not_pure_of_bounds (L := 4)
+              (by norm_num) (by norm_num))
+            (not_pure_of_bounds (L := 3)
+              (by norm_num) (by norm_num))
+            (not_pure_of_bounds (L := 2)
+              (by norm_num) (by norm_num)) ?_
+          have h2 := hpow 2 (by norm_num)
+            (by norm_num)
+          have h3 := hpow 3 (by norm_num)
+            (by norm_num)
+          norm_num at h2 h3
+          rw [h256, h2, h3]
+          ring
+    · subst hu
+      rcases Nat.lt_or_ge v (p - 4) with hvlow | hvhigh
+      · -- u = p-1, v far: u-bit on 5w
+        refine hgeneric 341 337 85 69
+          (by norm_num) (by norm_num) (by norm_num)
+          (by norm_num) (by norm_num) (by norm_num)
+          (by decide) (by decide) (by decide)
+          (by decide)
+          (not_pure_of_bounds (L := 4) (by norm_num)
+            (by norm_num))
+          (not_pure_of_bounds (L := 4) (by norm_num)
+            (by norm_num))
+          (not_pure_of_bounds (L := 3) (by norm_num)
+            (by norm_num))
+          hvlow ?_
+        have h4 := hpow 1 (by norm_num) (by norm_num)
+        norm_num at h4
+        rw [h256, h4]
+        ring
+      · have hvcase :
+            v = p - 4 ∨ v = p - 3 ∨ v = p - 2 := by
+          omega
+        rcases hvcase with hv | hv | hv
+        · -- u = p-1, v = p-4
+          subst hv
+          refine base4_menu_of_constants
+            (c₁ := 340) (L₁ := 5) (c₂ := 340)
+            (L₂ := 5) (c₃ := 84) (L₃ := 4)
+            (c₄ := 69) (L₄ := 4) (m := p - 4)
+            (by norm_num) (by decide) (by norm_num)
+            (by decide) (by norm_num) (by decide)
+            (by norm_num) (by decide)
+            (not_pure_of_bounds (L := 4)
+              (by norm_num) (by norm_num))
+            (not_pure_of_bounds (L := 4)
+              (by norm_num) (by norm_num))
+            (not_pure_of_bounds (L := 3)
+              (by norm_num) (by norm_num))
+            (not_pure_of_bounds (L := 3)
+              (by norm_num) (by norm_num)) ?_
+          have h4 := hpow 1 (by norm_num)
+            (by norm_num)
+          norm_num at h4
+          rw [h256, h4]
+          ring
+        · -- u = p-1, v = p-3
+          subst hv
+          refine base4_menu_of_constants
+            (c₁ := 341) (L₁ := 5) (c₂ := 341)
+            (L₂ := 5) (c₃ := 85) (L₃ := 4)
+            (c₄ := 69) (L₄ := 4) (m := p - 4)
+            (by norm_num) (by decide) (by norm_num)
+            (by decide) (by norm_num) (by decide)
+            (by norm_num) (by decide)
+            (not_pure_of_bounds (L := 4)
+              (by norm_num) (by norm_num))
+            (not_pure_of_bounds (L := 4)
+              (by norm_num) (by norm_num))
+            (not_pure_of_bounds (L := 3)
+              (by norm_num) (by norm_num))
+            (not_pure_of_bounds (L := 3)
+              (by norm_num) (by norm_num)) ?_
+          have h1 := hpow 1 (by norm_num)
+            (by norm_num)
+          have h3 := hpow 3 (by norm_num)
+            (by norm_num)
+          norm_num at h1 h3
+          rw [h256, h1, h3]
+          ring
+        · -- u = p-1, v = p-2
+          subst hv
+          refine base4_menu_of_constants
+            (c₁ := 341) (L₁ := 5) (c₂ := 337)
+            (L₂ := 5) (c₃ := 85) (L₃ := 4)
+            (c₄ := 85) (L₄ := 4) (m := p - 4)
+            (by norm_num) (by decide) (by norm_num)
+            (by decide) (by norm_num) (by decide)
+            (by norm_num) (by decide)
+            (not_pure_of_bounds (L := 4)
+              (by norm_num) (by norm_num))
+            (not_pure_of_bounds (L := 4)
+              (by norm_num) (by norm_num))
+            (not_pure_of_bounds (L := 3)
+              (by norm_num) (by norm_num))
+            (not_pure_of_bounds (L := 3)
+              (by norm_num) (by norm_num)) ?_
+          have h1 := hpow 1 (by norm_num)
+            (by norm_num)
+          have h2 := hpow 2 (by norm_num)
+            (by norm_num)
+          norm_num at h1 h2
+          rw [h256, h1, h2]
+          ring
+
 end Erdos881Base4
