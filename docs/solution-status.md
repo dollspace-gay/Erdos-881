@@ -1,3 +1,47 @@
+# DICHOTOMY TRANSPLANT + CARRY PROBE + CENSUS THEOREM (2026-08-02)
+
+Three follow-ups to the uniform deletion theorem, all landed
+(commit 11615aa, 8316 jobs, axioms clean).
+
+1. `Erdos881/WindowDichotomy.lean` — the sieve's split abstracted
+   and transplanted onto the order-two engine.
+   `window_dense_dichotomy`: every `S ⊆ ℕ` has cofinal clear
+   3-windows or is eventually 3-syndetic.  `dense_counting_bound`:
+   the syndetic horn counts — `≥ L` members in every `[N, N+3L)`.
+   `WoundedTargets A Z` = covered targets whose every pair
+   decomposition meets `Z`; `woundField_window_or_density` and
+   `HasCofinalWoundedPairStream.window_or_density`: every hub
+   deletion either faces cofinal HEALTHY 3-windows (three
+   consecutive targets with pairs entirely outside `Z`) or its
+   wound field carries wounds at density 1/3 — upgrading the
+   engine's cofinal wound supply to a density statement.  Junk-test
+   record in the file header: both horns inhabited, conclusions
+   are `∉ Z`-forced witnesses / counting bounds.
+
+2. `scripts/probe_carry_poverty.py` — VERDICT: carry events are
+   FORCED back (0 of 4 adversarial worlds keep zero internal merge
+   capacity after trim).  Sidon-biased builders achieve 200×
+   lower additive energy than the digit reference (0.010 vs
+   2.124 collisions/elt²) and starve PAIR merges to 6/95 — but
+   merge capacity at depths 3 and 4 (what order-4 repair spends)
+   stays ≈95% in every world; every world still yields surviving
+   deletions (3–4 of 6 families); private census 100% everywhere.
+   The enemy profile must square carry-poverty with coverage:
+   the lab says depth-3/4 merge slack cannot be starved.
+   (Note: the two sidon seeds converge to the same world —
+   deterministic tie-breaking; effectively 3 distinct worlds.)
+
+3. `Erdos881/PrivateTargetCensus.lean` — the lab census is now a
+   theorem in the official tuple vocabulary at EVERY order.
+   `essential_private_target_stream`: in an exact order-k tuple
+   basis, an essential element owns cofinally many targets whose
+   every k-representation uses it.  `essential_unique_pair_tuple`:
+   at order two the representation is PINNED — the unique pair
+   `{a, n−a}` (privateness buys uniqueness free at order 2).
+   `private_census_of_elementwise_minimal`: in a trimmed
+   (elementwise-minimal) world every element owns such targets —
+   the 100% census is a theorem, not a phenomenon.
+
 # UNIFORM DELETION THEOREM PROVED — PHASE TWO COMPLETE (2026-08-02)
 
 `digit_deletion_basis` (Erdos881/DigitSieve.lean): for EVERY
