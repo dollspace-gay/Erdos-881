@@ -1,3 +1,39 @@
+# GENERAL ORDER: THE BASE-4 SHOWCASE IS COMPLETE (2026-08-02)
+
+`erdos881_base4_full_instance` (Erdos881/Base4Master.lean) — the
+base-4 twin of `erdos881_cantor_full_instance`, machine-verified end
+to end:
+
+- `Base4Set` is a strongly minimal exact order-3 basis;
+- it is NOT an exact order-2 basis — it inhabits the open hard case;
+- `Pure4Powers` is an infinite subset whose deletion leaves an exact
+  asymptotic basis of ORDER 4 (`base4_deletion_basis_four`,
+  threshold `4^9`).
+
+The Erdős 881 conclusion pattern at k = 3, on a concrete strongly
+minimal member of the hard case.  The sieve behind it
+(`base4_deletion_order_four`): every `n ≥ 4^9` splits into four
+digit-{0,1} parts, none a pure power.  Architecture: the three digit
+layers classify every profile; rich profiles split carry-free by bit
+surgery (five rich lemmas); the degenerate profiles — identified by
+subtract-and-test-zero exactness checks, no counting — route to
+eleven verified carry-menu families (`Base4CarryRepair`,
+`Base4Sieve`, `Base4Layers`), whose ~30 magic constants all exploit
+the base-4 carry `1+1+1+1 = 10₄` that order-3 digit sums cannot
+produce.
+
+Modules: Base4Instance (hard case inhabited), Base4CarryRepair
+(pure/double/triple menus + demonstrator), Base4Sieve (mixed menus,
+below/above/two-stray), Base4Layers (digit surgery + straddling
+menus), Base4Master (rich constructions + master + showcase).
+
+What this settles and does not: the hard case now contains a fully
+verified POSITIVE instance at k = 3 — the strongest concrete evidence
+yet for the positive answer, and the complete carry toolkit for a
+general positive proof.  The general k ≥ 3 statement itself remains
+open; the negative-side machinery (the wounded transport and its
+desert economy) and this positive showcase are the two live fronts.
+
 # GENERAL ORDER: SIEVE PART ONE — MIXED MENUS BELOW SCALE (2026-08-02)
 
 `Erdos881/Base4Sieve.lean` (new module): the mixed degenerate digit

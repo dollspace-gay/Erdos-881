@@ -49,6 +49,8 @@ import Erdos881.CantorInstance
 import Erdos881.Base4Instance
 import Erdos881.Base4CarryRepair
 import Erdos881.Base4Sieve
+import Erdos881.Base4Layers
+import Erdos881.Base4Master
 import Erdos881.MarkerRepairs
 import Erdos881.DisjointRepEngine
 import Erdos881.CantorSieve

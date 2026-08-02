@@ -13,6 +13,8 @@ import Erdos881.Base4Layers
 
 namespace Erdos881Base4
 
+open Erdos881
+
 lemma not_pure_zero4 : ∀ j, (0 : ℕ) ≠ 4 ^ j := by
   intro j
   have := pow4_pos j
@@ -750,5 +752,56 @@ theorem base4_deletion_order_four (n : ℕ)
               (by omega)) hRR
     · push Not at hL3p
       exact rich_three_layers hL3z hL3p
+
+/-- The deleted scale markers. -/
+def Pure4Powers : Set ℕ := {n | ∃ k, n = 4 ^ k}
+
+lemma pure4Powers_subset : Pure4Powers ⊆ Base4Set := by
+  rintro x ⟨k, rfl⟩
+  exact isBase4_pow k
+
+lemma pure4Powers_infinite : Pure4Powers.Infinite := by
+  apply Set.infinite_of_injective_forall_mem
+    (f := fun k : ℕ => 4 ^ k)
+    (Nat.pow_right_injective (by norm_num))
+  intro k
+  exact ⟨k, rfl⟩
+
+/-- **The deletion theorem**: removing every pure power from the
+base-4 set leaves an exact asymptotic basis of order 4. -/
+theorem base4_deletion_basis_four :
+    IsExactTupleAsymptoticBasis
+      (Base4Set \ Pure4Powers) 4 := by
+  refine ⟨4 ^ 9, fun n hn => ?_⟩
+  obtain ⟨x, y, z, t, hx, hy, hz, ht, hnx, hny,
+      hnz, hnt, hs⟩ := base4_deletion_order_four n hn
+  refine ⟨![x, y, z, t], ?_, ?_⟩
+  · intro i
+    fin_cases i
+    · exact ⟨hx, fun ⟨k, hk⟩ => hnx k hk⟩
+    · exact ⟨hy, fun ⟨k, hk⟩ => hny k hk⟩
+    · exact ⟨hz, fun ⟨k, hk⟩ => hnz k hk⟩
+    · exact ⟨ht, fun ⟨k, hk⟩ => hnt k hk⟩
+  · simpa [Fin.sum_univ_four] using hs
+
+/-- **The full base-4 instance — the hard case's showcase.**
+
+`Base4Set` is a strongly minimal exact order-3 basis, is NOT an exact
+order-2 basis (so it inhabits the open hard case of the general-order
+campaign), and deleting the infinite set of pure powers leaves an
+exact asymptotic basis of order 4.  This is the conclusion pattern of
+Erdős 881 for k = 3, machine-verified end to end on a concrete
+strongly minimal basis — the base-4 twin of
+`erdos881_cantor_full_instance`. -/
+theorem erdos881_base4_full_instance :
+    IsStronglyMinimalExactBasis Base4Set 3 ∧
+      ¬ IsExactTupleAsymptoticBasis Base4Set 2 ∧
+      Pure4Powers ⊆ Base4Set ∧
+      Pure4Powers.Infinite ∧
+      IsExactTupleAsymptoticBasis
+        (Base4Set \ Pure4Powers) 4 :=
+  ⟨⟨base4_basis_three, base4_strong_deletion⟩,
+    base4_not_basis_two, pure4Powers_subset,
+    pure4Powers_infinite, base4_deletion_basis_four⟩
 
 end Erdos881Base4
