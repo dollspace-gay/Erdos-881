@@ -1,3 +1,43 @@
+# DESERT CONCENTRATION + THE WOUND BRIDGE (2026-08-02, night)
+
+Direct-construction stage two (commit a36a120, 8318 jobs, axioms
+clean).  `Erdos881/DesertConcentration.lean`:
+
+- `StrandedAt A h F n` (no rep avoids finite `F`) and
+  `PinnedAt A h F f n` (reps avoiding `F` exist, all use `f`).
+- `stranded_insert_split`: Stranded (insert f G) ⊆ Stranded G ∪
+  Pinned G f — strandedness peels one element at a time.
+- `StrandedAt.descend`: a stranded target strands its whole
+  translate family one order down (append the summand back).
+- `stranded_concentration` / **`desert_forces_pinned`** (THE
+  DESERT-CONCENTRATION LEMMA): over an order-`h` basis, a finite
+  obstruction stranding an unbounded family forces ONE of its
+  elements pinned on an unbounded family in a codeleted world.
+  Every desert is a wound in disguise — the desert horn is GONE
+  as an independent enemy.
+- `pinned_unbounded_iff_deletion_fails` (THE CENSUS BRIDGE, iff):
+  an unbounded pinned family at `f` ⟺ cofinal destruction by the
+  single deletion `{f}` — PinnedAt is the census's
+  essential-element certificate (sharpens
+  `essential_private_target_stream` to an equivalence).
+- `pinned_forces_gap` (THE WOUND PUNCHES HOLES): a target pinned
+  to `b` forces every k-fold subtraction of codeleted non-`b`
+  elements to land on `b`, outside `A`, or in `F` — one private
+  target rigidifies an entire translate cone of positions.
+- `cleanSupply_failure_classification`: supply failure over a
+  basis forces (a) one fixed element pinned on an unbounded
+  family after a finite codeletion, or (b) beyond some bound
+  EVERY element owns a pinned target above itself (the atomic
+  tail).  Contrapositive: kill (a) and (b) ⇒ HasCleanSupply ⇒
+  (chain theorem) ⇒ Erdős 881.
+
+THE FRONTIER NOW: two census configurations to kill over
+arbitrary order-k bases.  Horn (b) is `AtomicObstruction`'s
+self-destruction shape at order k+1 over A∖F — the next collision
+is gap-cones (pinned_forces_gap) against A's own order-k
+coverage: counting/fiber machinery from the k = 2 engine, aimed
+at finite obstructions.
+
 # STRATEGY SHIFT: THE DIRECT CONSTRUCTION (2026-08-02, evening)
 
 The frontier attack is now DIRECT — build the deletion, no
