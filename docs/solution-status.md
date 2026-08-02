@@ -1,3 +1,50 @@
+# GENERAL ORDER: THE ENGINE INTERFACE AND THE DEEP-ANCHOR SQUEEZE (2026-08-02)
+
+The rank-2 stream now speaks the order-two engine's own elementwise
+language, and the escape squeeze is quantified by a dominant anchor.
+
+- `HasCofinalPairDesertStream A D`: cofinally many targets \(q\) admit
+  NO exact pair decomposition from `A` at all (\(x + y \ne q\) for all
+  \(x, y \in A\)) while a strictly smaller \(v = s_1 + s_2\) splits
+  into two basis elements outside the deletion.  The desert horn's
+  counting object: forced exact-sumset gaps at pinned positions, each
+  with a surviving pair strictly below it.
+- `HasCofinalWoundedPairStream A D`: cofinally many pair-covered
+  targets \(q = e_1 + e_2\) have EVERY decomposition meeting the
+  infinite deletion `Z` (\(x + y = q \Rightarrow x \in Z \lor y \in
+  Z\)) — `Z` in the hub role — while \(v = s_1 + s_2 < q\) splits
+  entirely outside `Z`.  This is the order-two engine's exact object.
+- `HasRankDescentStream.orderTwo_engine_interface`: the rank-2 stream
+  converts to desert-or-wounded in elementwise form (supports become
+  explicit decompositions via `pairSupport_mem_additiveSupportFamily`
+  and the two-tuple extraction).
+- `forces_engineInterface_or_rankEscape` (summit): every
+  threshold-straddling attack lands in the engine's vocabulary or
+  leaves an escaping stream at some rank in \((2, k]\).
+- `additiveSupportFamily_exists_dominant_point`: every exact
+  representation has a support value carrying at least the average
+  share \(v \le h \cdot a\).
+- `HasCofinalEscapingAnchorSecondRankFans.forces_deepAnchorSqueeze`
+  (the quantified squeeze): across escaping stages, a dominant anchor
+  \(a\) with \(X < a \le d \le (k-1)a\) exists whose fan value
+  \(d + \eta - a\) is destroyed at order \(k-2\), at least \(\eta\)
+  and at most a constant fraction \(((k-2)/(k-1))d + \eta\) in size,
+  while the endpoint \(d\) races past every bound with the linear
+  floor \((k-1)n \le d\).  The fans stay a dominant-anchor short of
+  their translates while the endpoints race.
+
+This is still not the full solution of Erdős 881 for \(k\ge3\).  The
+open residue: (1) drive the wounded stream into the engine's
+contradiction machinery — the elementwise pair law over an infinite
+`Z` is the exact hypothesis shape of the k = 2 hub analysis, but the
+ambient world lacks global `PairCovers`, so the collision must run on
+the stream's own covered targets; (2) the desert stream's counting —
+each desert `q` with its surviving pair below is a boundary point of
+the exact 2-sumset; cofinally many such boundaries against an exact
+order-`k` covering is the quantitative target; (3) close the escaping
+horn by colliding the deep-anchor squeeze with the descent highway at
+rank `k-2`.
+
 # GENERAL ORDER: THE DESCENT HIGHWAY REACHES ORDER TWO (2026-08-02)
 
 The rank descent is now a generic recursion, and it runs from the

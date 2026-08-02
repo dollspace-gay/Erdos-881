@@ -63081,4 +63081,245 @@ theorem
   refine ⟨by omega, by omega, ?_⟩
   simpa only [hrank] using hdest
 
+/-- Every exact representation has a dominant point: some support value
+carries at least the average share of the target. -/
+theorem additiveSupportFamily_exists_dominant_point
+    {A : Set ℕ} {h v : ℕ} {E : Finset ℕ}
+    (hh : 0 < h)
+    (hE : E ∈ additiveSupportFamily A h v) :
+    ∃ a ∈ E, v ≤ h * a := by
+  classical
+  obtain ⟨w, _hwA, hwsum, hEw⟩ :=
+    mem_additiveSupportFamily_iff.mp hE
+  have : Nonempty (Fin h) := ⟨⟨0, hh⟩⟩
+  obtain ⟨i₀, hi₀⟩ :=
+    Finite.exists_max fun i => (w i).1
+  refine ⟨(w i₀).1, ?_, ?_⟩
+  · rw [← hEw]
+    exact mem_tupleSupport_iff.mpr ⟨i₀, rfl⟩
+  · calc v = ∑ i, (w i).1 := hwsum.symm
+      _ ≤ ∑ _i : Fin h, (w i₀).1 :=
+        Finset.sum_le_sum fun i _ => hi₀ i
+      _ = h * (w i₀).1 := by
+        simp [Finset.sum_const, Finset.card_univ,
+          smul_eq_mul]
+
+/-- A cofinal exact-pair desert stream, in the order-two engine's own
+elementwise vocabulary: cofinally many targets admit NO exact pair
+decomposition from `A` at all, while a strictly smaller value splits
+into two basis elements outside the deletion. -/
+def HasCofinalPairDesertStream (A D : Set ℕ) : Prop :=
+  ∃ Z : Set ℕ,
+    Z ⊆ D ∧
+    Z ⊆ A ∧
+    Z.Infinite ∧
+    ∀ L, ∃ q v s₁ s₂,
+      L ≤ q ∧
+      v < q ∧
+      s₁ ∈ A ∧
+      s₂ ∈ A ∧
+      s₁ ∉ Z ∧
+      s₂ ∉ Z ∧
+      s₁ + s₂ = v ∧
+      ∀ x ∈ A, ∀ y ∈ A, x + y ≠ q
+
+/-- A cofinal wounded pair stream, in the order-two engine's own
+elementwise vocabulary: cofinally many pair-covered targets have every
+decomposition meeting the infinite deletion `Z` — `Z` in the hub role
+— while a strictly smaller value splits entirely outside `Z`. -/
+def HasCofinalWoundedPairStream (A D : Set ℕ) : Prop :=
+  ∃ Z : Set ℕ,
+    Z ⊆ D ∧
+    Z ⊆ A ∧
+    Z.Infinite ∧
+    ∀ L, ∃ q v s₁ s₂ e₁ e₂,
+      L ≤ q ∧
+      v < q ∧
+      s₁ ∈ A ∧
+      s₂ ∈ A ∧
+      s₁ ∉ Z ∧
+      s₂ ∉ Z ∧
+      s₁ + s₂ = v ∧
+      e₁ ∈ A ∧
+      e₂ ∈ A ∧
+      e₁ + e₂ = q ∧
+      ∀ x ∈ A, ∀ y ∈ A, x + y = q →
+        x ∈ Z ∨ y ∈ Z
+
+/-- **The engine interface.**  A rank-2 descent stream converts to the
+order-two engine's elementwise vocabulary: a cofinal exact-pair desert
+stream, or a cofinal wounded pair stream with the infinite deletion in
+the hub role.  Supports become explicit pair decompositions in both
+horns. -/
+theorem HasRankDescentStream.orderTwo_engine_interface
+    {A D : Set ℕ}
+    (h : HasRankDescentStream A D 2) :
+    HasCofinalPairDesertStream A D ∨
+      HasCofinalWoundedPairStream A D := by
+  classical
+  rcases h.orderTwo_desert_or_wounded with
+    ⟨Z, hZD, hZA, hZInf, hstream⟩ |
+    ⟨Z, hZD, hZA, hZInf, hstream⟩
+  · left
+    refine ⟨Z, hZD, hZA, hZInf, ?_⟩
+    intro L
+    obtain ⟨q, v, S, hLq, hvq, hSmem, hSZ,
+        hempty⟩ := hstream L
+    obtain ⟨w, hwA, hwsum, hEw⟩ :=
+      mem_additiveSupportFamily_iff.mp hSmem
+    have hsum2 : (w 0).1 + (w 1).1 = v := by
+      simpa [Fin.sum_univ_two] using hwsum
+    have hs₁S : (w 0).1 ∈ S := by
+      rw [← hEw]
+      exact mem_tupleSupport_iff.mpr ⟨0, rfl⟩
+    have hs₂S : (w 1).1 ∈ S := by
+      rw [← hEw]
+      exact mem_tupleSupport_iff.mpr ⟨1, rfl⟩
+    refine
+      ⟨q, v, (w 0).1, (w 1).1, hLq, hvq,
+        hwA 0, hwA 1,
+        fun hin =>
+          Set.disjoint_left.mp hSZ
+            (Finset.mem_coe.mpr hs₁S) hin,
+        fun hin =>
+          Set.disjoint_left.mp hSZ
+            (Finset.mem_coe.mpr hs₂S) hin,
+        hsum2, ?_⟩
+    intro x hx y hy hxy
+    have hxq : x ≤ q := by omega
+    have hmem :=
+      pairSupport_mem_additiveSupportFamily
+        (A := A) (n := q) (a := x) hxq hx
+        (by
+          have hyx : q - x = y := by omega
+          rw [hyx]
+          exact hy)
+    rw [hempty] at hmem
+    exact absurd hmem (Finset.notMem_empty _)
+  · right
+    refine ⟨Z, hZD, hZA, hZInf, ?_⟩
+    intro L
+    obtain ⟨q, v, S, E, hLq, hvq, hSmem, hSZ,
+        hEmem, hdest⟩ := hstream L
+    obtain ⟨w, hwA, hwsum, hEw⟩ :=
+      mem_additiveSupportFamily_iff.mp hSmem
+    have hsum2 : (w 0).1 + (w 1).1 = v := by
+      simpa [Fin.sum_univ_two] using hwsum
+    have hs₁S : (w 0).1 ∈ S := by
+      rw [← hEw]
+      exact mem_tupleSupport_iff.mpr ⟨0, rfl⟩
+    have hs₂S : (w 1).1 ∈ S := by
+      rw [← hEw]
+      exact mem_tupleSupport_iff.mpr ⟨1, rfl⟩
+    obtain ⟨u, huA, husum, hEu⟩ :=
+      mem_additiveSupportFamily_iff.mp hEmem
+    have hesum2 : (u 0).1 + (u 1).1 = q := by
+      simpa [Fin.sum_univ_two] using husum
+    refine
+      ⟨q, v, (w 0).1, (w 1).1, (u 0).1, (u 1).1,
+        hLq, hvq, hwA 0, hwA 1,
+        fun hin =>
+          Set.disjoint_left.mp hSZ
+            (Finset.mem_coe.mpr hs₁S) hin,
+        fun hin =>
+          Set.disjoint_left.mp hSZ
+            (Finset.mem_coe.mpr hs₂S) hin,
+        hsum2, huA 0, huA 1, hesum2, ?_⟩
+    intro x hx y hy hxy
+    have hxq : x ≤ q := by omega
+    have hyx : q - x = y := by omega
+    have hmem :=
+      pairSupport_mem_additiveSupportFamily
+        (A := A) (n := q) (a := x) hxq hx
+        (by
+          rw [hyx]
+          exact hy)
+    have hnd := hdest _ hmem
+    rw [Set.not_disjoint_iff] at hnd
+    obtain ⟨z, hzP, hzZ⟩ := hnd
+    have hz : z = x ∨ z = q - x := by
+      have hzP' := Finset.mem_coe.mp hzP
+      simpa [pairSupport, Finset.mem_insert,
+        Finset.mem_singleton] using hzP'
+    rcases hz with rfl | rfl
+    · exact Or.inl hzZ
+    · right
+      rwa [hyx] at hzZ
+
+/-- **The engine interface at the summit.**  Every threshold-straddling
+attack lands in the order-two engine's elementwise vocabulary — a
+cofinal exact-pair desert stream or a cofinal wounded pair stream —
+or leaves an escaping stream at some rank in `(2, k]`. -/
+theorem
+    HasCofinalFixedCoreThresholdStraddlingInjuries.forces_engineInterface_or_rankEscape
+    {A D : Set ℕ} {k t : ℕ}
+    {target : ℕ → ℕ}
+    (hk : 2 ≤ k)
+    (hattack :
+      HasCofinalFixedCoreThresholdStraddlingInjuries
+        A D k t target) :
+    (HasCofinalPairDesertStream A D ∨
+      HasCofinalWoundedPairStream A D) ∨
+      ∃ j', 2 < j' ∧ j' ≤ k ∧
+        HasEscapingRankDescentStream A D j' := by
+  rcases
+    hattack.forces_orderTwoDescent_or_rankEscape hk
+    with h2 | hesc
+  · exact Or.inl h2.orderTwo_engine_interface
+  · exact Or.inr hesc
+
+/-- **The quantified squeeze.**  Across the escaping stages the fans
+carry a dominant anchor: some support point `a` holds at least the
+average share `d ≤ (k-1)·a` of its racing endpoint, sits above every
+requested bound, and its fan value `d + η - a` is destroyed at order
+`k-2` while hanging at most a dominant-anchor's distance below the
+destroyed translate.  The endpoints race — `X < d` with the linear
+floor `(k-1)·n ≤ d` — while every stage's deep fan value stays a
+constant fraction short of them. -/
+theorem
+    HasCofinalEscapingAnchorSecondRankFans.forces_deepAnchorSqueeze
+    {A D : Set ℕ} {k t : ℕ}
+    {target : ℕ → ℕ}
+    (hk : 2 < k)
+    (hesc :
+      HasCofinalEscapingAnchorSecondRankFans
+        A D k t target) :
+    ∃ Z : Set ℕ,
+      Z ⊆ D ∧
+      Z ⊆ A ∧
+      Z.Infinite ∧
+      ∀ X L, ∃ n d η a,
+        L ≤ n ∧
+        (k - 1) * n ≤ d ∧
+        X < d ∧
+        0 < η ∧
+        X < a ∧
+        a ≤ d ∧
+        d ≤ (k - 1) * a ∧
+        η ≤ d + η - a ∧
+        DestroysAt
+          (additiveSupportFamily A (k - 1))
+          Z (d + η) ∧
+        DestroysAt
+          (additiveSupportFamily A (k - 2))
+          Z (d + η - a) := by
+  obtain ⟨Z, hZD, hZA, hZInf, hsq⟩ :=
+    hesc.forces_windowSqueezedTranslateFans hk
+  refine ⟨Z, hZD, hZA, hZInf, ?_⟩
+  intro X L
+  obtain ⟨n, d, η, S, hnL, hfloor, hXd, hηpos,
+      hSmem, _hSZ, _hSne, hallX, hshiftDestroy,
+      hfan⟩ := hsq X L
+  obtain ⟨a, haS, hdom⟩ :=
+    additiveSupportFamily_exists_dominant_point
+      (by omega : 0 < k - 1) hSmem
+  obtain ⟨hηle, _hlt, hdest2⟩ := hfan a haS
+  have haLe : a ≤ d :=
+    additiveSupportFamily_supportsBounded A (k - 1)
+      d S hSmem a haS
+  exact
+    ⟨n, d, η, a, hnL, hfloor, hXd, hηpos,
+      hallX a haS, haLe, hdom, hηle,
+      hshiftDestroy, hdest2⟩
+
 end Erdos881
