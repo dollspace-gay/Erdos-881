@@ -1,3 +1,41 @@
+# GENERAL ORDER: THE BASE-4 INSTANCE PROBE (2026-08-02, lab)
+
+`scripts/probe_base4_instance.py` machine-checks the base-\((k+1)\)
+digit-\(\{0,1\}\) world for \(k=3\) on the window \([0,4^9]\), with a
+\(k=4\) (base-5) generalization pass.  All four instance claims hold:
+
+- exact order-3 basis with threshold 0 (order-3 representations are
+  pure digit assignments; digit sums \(\le 3 < 4\) never carry);
+- NOT an exact order-2 basis: the order-2 misses are exactly the
+  targets with a digit 3 (242,461 of 262,145);
+- \(\aleph_0\)-minimality mechanism: for \(b\in A\) the target \(3b\)
+  has digits \(\{0,3\}\), and digit 3 puts a 1 in all three terms, so
+  \((b,b,b)\) is the unique representation — every infinite deletion
+  destroys its own doubles \(\{3b\}\) cofinally (0/40 sampled
+  exceptions);
+- pure-power deletion \(\{4^j\}\) SURVIVES at order 4 with threshold
+  54; base 5 at order 5 survives with threshold 532.  This is the
+  exact Cantor pattern (`CantorInstance.lean`) one order up.
+
+Sweep over 15 infinite deletion families: every sparse or random
+family survives order 4 (powers, repunits, unions, random density
+1/2, 1/4, 1/8).  The only failures are POSITIVE-DENSITY digit-class
+deletions (odd elements, min-position parity classes, top-position
+parity, all compound elements).  Their failure geometry is
+scale-uniform: miss counts grow by exactly \(\times 4\) per block,
+uniformly across block thirds — residue-channel confinement, not
+block-boundary escape.
+
+Consequences for the terminal fork: the lab shows no gap-dominating
+cross-block behaviour anywhere; structured failures recur with
+identical per-block shape, i.e. the recurring-anchor horn.  Priority:
+(1) the anchor cardinality fork, bounded/recurring-support horn
+first (supports have card \(\le k-1\), so bounded anchors force one
+full support to recur cofinally); (2) formalize the base-4 instance
+as the \(k\ge 3\) analogue of `CantorInstance.lean` (order-3 side is
+carry-free digit assignment; order-4 side generalizes
+`CantorCarryRepair`).
+
 # GENERAL ORDER: FIXED-CORE INJURIES STRADDLE ONE TRANSLATED ENDPOINT (2026-07-29)
 
 `HasCofinalFixedCoreThresholdStraddlingInjuries.forces_cofinal_secondRankDescentFans`
