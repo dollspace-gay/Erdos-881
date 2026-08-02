@@ -1,3 +1,59 @@
+# UNIFORM DELETION THEOREM PROVED — PHASE TWO COMPLETE (2026-08-02)
+
+`digit_deletion_basis` (Erdos881/DigitSieve.lean): for EVERY
+`k ≥ 2`, deleting every pure power from the base-`(k+1)`
+digit-{0,1} set leaves an exact asymptotic basis of order `k+1` —
+one theorem, every order, threshold `N₀ = (k+1)^{6k+12}`.
+`erdos881_digit_full_instance` packages the full showcase:
+strongly minimal exact order-`k` basis, NOT order-2 for `k ≥ 3`
+(the open hard case is inhabited at every order), pure powers an
+infinite subset, deletion survives at order `k+1`.  Subsumes the
+Cantor (k=2) and base-4 (k=3) instances.  Axioms clean; 8314 jobs.
+
+The proof is a two-room dichotomy (`digit_deletion_order`), much
+simpler than the rich/poor Hall design sketched earlier:
+
+- WINDOW ROOM (`digit_window_split`): if some position `z` has
+  digits `z, z+1, z+2` all zero with occupied columns above, cut
+  `a := z+3`: `n = C·b^a + m`, `m < b^{a-3}`.  `digit_cut_merge`
+  (DigitGeneralMenu.lean) absorbs `m`: the general menu splits
+  `C·b^a` into `k+1` brackets `genBracket·b^{a-3}` and the residue
+  merges part-wise below the scaled brackets
+  (`isDigitK_scaled_add_pow`); non-purity survives because a
+  power's quotient is a power (`not_pure_of_quotient`).
+- DENSE ROOM (`digit_dense_split`): no such window means every
+  three consecutive columns hold a set digit, so `n` has
+  `≥ 2(k+1)` occupied columns.  TOKEN PLACEMENT: enumerate the
+  occupied columns; column `i` (digit `d`) donates its `d` copies
+  to the `d` part indices `colSet k σ d` — an INTERVAL of parts
+  seeded at `σ = min(i/2, k)` that never wraps
+  (`if σ+d ≤ k+1 then Ico σ (σ+d) else Ico (k+1-d) (k+1)`).
+  Columns `2j, 2j+1` both seed part `j`, so all `k+1` parts carry
+  `≥ 2` set columns: digit numbers with two set digits are never
+  powers (`bitSum_ne_pow`).  Column sums equal digits by
+  `colSet_card`, so the parts sum to `n` by base expansion
+  (`digit_expansion`).  No Hall argument, no modular rotation —
+  intervals suffice.
+
+The general menu (`digit_general_menu`, DigitGeneralMenu.lean) is
+the engine: EVERY multiplicity `C ≥ 1` splits, via threshold
+layers `layerK` of `C-1` — `C·b³ = Σ_l [layer_{l+1}(C-1)·b³ +
+ε₂(l)·b² + ε₁(l)·b + 1]` with `k·b² + k·b + (k+1) = b³` — no
+assumption on the digit shape of `C` (the adjacent-block wall is
+gone).
+
+LAB (probe_nondigit_minimal.py): greedy/adversarial NON-digit
+strongly minimal order-3 worlds; 0 of 3 complete worlds resist
+order-4 deletion survival; private-pair census 100% — the
+positive pattern is not a digit artifact.
+
+WHAT REMAINS OPEN (unchanged): `erdos881_general_of_hardCase`'s
+hypothesis — `k ≥ 3` with `A` an ARBITRARY counterexample that is
+not an exact order-two basis.  The uniform family now shows every
+such hard case is inhabited AND that the published conclusion
+pattern holds on it; the general quantifier over all `A` is the
+frontier.
+
 # GENERAL ORDER: THE UNIFORM CARRY MENU AND DEMONSTRATOR (2026-08-02)
 
 `digit_carry_menu` (Erdos881/DigitCarryRepair.lean): for every
