@@ -1,3 +1,46 @@
+# THE CONE-COVERAGE COLLISION (2026-08-02, late night)
+
+Direct-construction stage three (commit a4bbd94, 8319 jobs,
+axioms clean).  `Erdos881/ConeCollision.lean` drives the pinned
+cones against the basis's own order-`k` coverage:
+
+- `HubbedAt A k H m`: order-`k` reps of `m` exist and EVERY one
+  meets the finite hub `H` — the engine's hub vocabulary with
+  finite hubs at the base order, where coverage is total.
+- `pinned_cone_hubbed` (THE COLLISION): every basis translate
+  `n - x` of a target pinned at order `k+1` is covered-but-hubbed
+  at order `k`.  Coverage supplies a representation; the cone
+  forces it through `insert f G`.  Proof = pinnedness-as-
+  strandedness + one descent + coverage.
+- `pinned_reflects_basis`: hence the hubbed set is at least as
+  dense as `A` itself in every reflected window `[n-y, n]` of
+  every pinned target — a per-target counting bound.
+- `pinned_pair_fiber` + `hornA_giant_fibers`: TWO pinned targets
+  at the same element put the reflected basis inside a fixed-
+  difference fiber; an unbounded pinned family (classification
+  horn (a)) forces, for every `L`, a positive difference `d`
+  with `L` distinct members `m` satisfying `HubbedAt m` AND
+  `HubbedAt (m + d)` — giant fibers at ONE finite hub.
+- `cleanSupply_failure_forces_fibers` (THE CRYSTALLIZED
+  FRONTIER): over an exact order-`k` basis, supply failure at
+  order `k+1` forces
+    (i) giant fixed-difference hubbed fibers at base order `k`
+        over one finite hub, or
+    (ii) the atomic tail (every large element owns a pinned
+        target above itself).
+  Rule out (i) and (ii) ⇒ HasCleanSupply ⇒ chain theorem ⇒
+  Erdős 881 at every order.
+
+This is exactly the configuration pair the k = 2 engine's
+fiber-finiteness and atomic machinery fought at order two — but
+the obstruction is now a FINITE hub instead of an infinite
+deletion.  Next collisions available: (i) against hub-load
+counting (a finite hub serving fibers as dense as `A` must have
+one element `g` with `n - g` receiving reps through a positive
+fraction of all basis elements — super-receiver pressure), and
+(ii) against `AtomicObstruction`'s existing self-destruction
+interface.
+
 # DESERT CONCENTRATION + THE WOUND BRIDGE (2026-08-02, night)
 
 Direct-construction stage two (commit a36a120, 8318 jobs, axioms
