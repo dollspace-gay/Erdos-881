@@ -85,14 +85,23 @@ order `k+1`?").  Do not describe the repository as solving #881.
   hypothesis: `k ≥ 3` with `A` NOT an exact order-two basis.  That
   case is non-empty — the base-`(k+1)` digit-`{0,1}` set is an
   exact order-`k` basis and misses many targets at order two — so
-  it is a genuine open obligation, not a vacuous one.  The natural
-  next target is the base-`(k+1)` analogue of the Cantor instance.
+  it is a genuine open obligation, not a vacuous one.
+- THE UNIFORM SHOWCASE (2026-08-02): `Erdos881/DigitSieve.lean`
+  `erdos881_digit_full_instance` — for EVERY `k ≥ 2` at once, the
+  digit set is a strongly minimal exact order-`k` basis, not
+  order-2 for `k ≥ 3`, and deleting the infinite set of pure
+  powers leaves an exact order-`(k+1)` basis
+  (`digit_deletion_basis`, threshold `(k+1)^(6k+12)`).  So every
+  hard case is inhabited AND carries the published conclusion
+  pattern; the open frontier is the quantifier over arbitrary
+  hard-case `A`.  Engine: `DigitGeneralMenu.lean` (general carry
+  menu, cut-merge), rooms: window vs dense token placement.
 
 MINIMALITY IS NEVER USED in any settled case: each proof needs
 only the basis half, so what is proved is strictly stronger than
 the problem asks.
 
-Full build: 8303 jobs.  Axiom audit: only `propext`,
+Full build: 8314 jobs.  Axiom audit: only `propext`,
 `Classical.choice`, `Quot.sound` — repo-wide, including
 `crossGap_finiteException_can_genuinely_stall` (was `native_decide`,
 now `decide`).  Zero sorries.
