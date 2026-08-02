@@ -58,6 +58,7 @@ import Erdos881.DigitSieve
 import Erdos881.WindowDichotomy
 import Erdos881.PrivateTargetCensus
 import Erdos881.DirectConstruction
+import Erdos881.DesertConcentration
 import Erdos881.MarkerRepairs
 import Erdos881.DisjointRepEngine
 import Erdos881.CantorSieve
