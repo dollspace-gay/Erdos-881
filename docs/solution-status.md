@@ -1,3 +1,55 @@
+# GENERAL ORDER: THE TRANSPORT LEVERS AND THE SIDE DOORS (2026-08-02)
+
+The four-input transport plan (replay the order-two three-anchor
+closer one level up) now has all its remaining inputs formalized as
+honest forks, and both side doors are narrowed.
+
+- `IsStronglyMinimalExactBasis.universal_nonvacuous_destruction` (the
+  minimality mine): under strong minimality EVERY infinite deletion
+  `B ⊆ A` suffers cofinal nonvacuous destruction — destroyed targets
+  genuinely carry order-`k` supports and every support meets `B`.
+  The choice of `B` is free.  This is the wound-field generator.
+- `eventually_sumFreeTail_or_cofinal_sumRich` (lever (c)): the
+  positive tail of `A` is sum-free — the exact hypothesis shape of
+  `threeAnchor_forbids_terminalPrivateWounds` — or cofinally many
+  basis elements split as positive basis pair sums.  The verified
+  digit instances are sum-RICH, so the sum-free horn cannot be
+  forced; the fork is the honest lever, and the rich horn is a
+  standing order-lowering repair supply.
+- `differenceFibers_allFinite_or_cofinalTranslationEdges` (lever
+  (d)): every fixed positive-difference fiber
+  `{x ∈ A : x + g ∈ A}` is finite — the closer's second hypothesis
+  shape — or one fixed difference carries cofinal edges: the
+  near-translation (R1-room) structure, per Pattern 4.
+- `HasCofinalPairDesertStream.forces_nonMember_widePositive` (side
+  door one): with `0 ∈ A` every desert target is a forced NON-member
+  of `A` (its zero padding would be a pair), and every exact tuple
+  representation of it, at ANY length, uses at least three positive
+  parts.  Deserts push the order-`k` covering into genuinely wide
+  decompositions.
+- `HasCofinalEscapingAnchorSecondRankFans.toRankDescentStream` and
+  `HasCofinalFixedAnchorSecondRankInjuryStream.toRankDescentStream`
+  (side door two): BOTH translated horns of the anchor fork re-enter
+  the descent highway at rank `k-1` — their destroyed predecessors
+  dominate the (linearly growing / escaping) translated endpoints,
+  and the translated supports survive strictly below.  The escape is
+  not a terminal refuge; the only terminal escape residue is the
+  highway's own `HasEscapingRankDescentStream` record.
+- `additiveSupportFamily_nonempty_of_tuple`: raw tuple
+  representations witness nonempty support families (the bridge the
+  mine needed).
+
+Transport scoreboard: (a) wound field DONE, (b) anchor supply DONE,
+(c) sum-free fork DONE, (d) finite-fiber fork DONE, side doors
+NARROWED.  The remaining mathematics: run the three-anchor argument
+on the wounded pair stream under the good horns — the k = 2 proof
+used global `PairCovers` to cover anchor translates `n - rᵢ`, which
+the hard case lacks; the replay must route those covers through the
+stream's own pair-covered targets or through the order-`k` covering
+with the wide-positive law.  The bad horns feed richness and
+translation machinery, both of which point toward repair (the
+positive answer), consistent with the base-4 laboratory.
+
 # GENERAL ORDER: THE ENGINE INTERFACE AND THE DEEP-ANCHOR SQUEEZE (2026-08-02)
 
 The rank-2 stream now speaks the order-two engine's own elementwise

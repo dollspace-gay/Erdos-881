@@ -63322,4 +63322,281 @@ theorem
       hallX a haS, haLe, hdom, hηle,
       hshiftDestroy, hdest2⟩
 
+/-- Any raw exact tuple representation witnesses a nonempty support
+family at its target. -/
+theorem additiveSupportFamily_nonempty_of_tuple
+    {A : Set ℕ} {h n : ℕ} {v : Fin h → ℕ}
+    (hvA : ∀ i, v i ∈ A) (hvsum : ∑ i, v i = n) :
+    (additiveSupportFamily A h n).Nonempty := by
+  classical
+  have hle : ∀ i, v i ≤ n := by
+    intro i
+    rw [← hvsum]
+    exact Finset.single_le_sum
+      (fun _ _ => Nat.zero_le _) (Finset.mem_univ i)
+  refine
+    ⟨tupleSupport fun i =>
+      (⟨v i, Nat.lt_succ_of_le (hle i)⟩ : Fin (n + 1)),
+      ?_⟩
+  apply mem_additiveSupportFamily_iff.mpr
+  exact ⟨_, fun i => hvA i, by simpa using hvsum, rfl⟩
+
+/-- **The minimality mine.**  Under strong minimality every infinite
+deletion suffers cofinal NONVACUOUS destruction: the destroyed targets
+genuinely carry order-`k` supports — the basis half supplies the
+representation, the deletion half wounds every one of them.  The choice
+of the deletion is free; this is the wound-field generator behind the
+transport plan. -/
+theorem
+    IsStronglyMinimalExactBasis.universal_nonvacuous_destruction
+    {A : Set ℕ} {k : ℕ}
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    {B : Set ℕ} (hBA : B ⊆ A) (hBinf : B.Infinite) :
+    ∀ N, ∃ n, N ≤ n ∧
+      (additiveSupportFamily A k n).Nonempty ∧
+      DestroysAt (additiveSupportFamily A k) B n := by
+  obtain ⟨⟨N₀, hbasis⟩, hdeletion⟩ := hminimal
+  intro N
+  obtain ⟨n, hnN, hdest⟩ :=
+    hdeletion B hBA hBinf (max N N₀)
+  obtain ⟨v, hvA, hvsum⟩ :=
+    hbasis n (le_trans (le_max_right N N₀) hnN)
+  exact
+    ⟨n, le_trans (le_max_left N N₀) hnN,
+      additiveSupportFamily_nonempty_of_tuple hvA hvsum,
+      hdest⟩
+
+/-- **Lever (c) of the transport.**  Either the positive tail of `A` is
+sum-free — the exact hypothesis shape of the order-two closer — or
+cofinally many basis elements split as positive basis pair sums, a
+standing order-lowering repair supply.  The verified digit instances sit
+in the second horn, so the first horn cannot be forced; the fork itself
+is the honest lever. -/
+theorem eventually_sumFreeTail_or_cofinal_sumRich
+    (A : Set ℕ) :
+    (∃ T, ∀ a ∈ A, T ≤ a →
+      ∀ u ∈ A, ∀ v ∈ A, 0 < u → 0 < v → u + v ≠ a) ∨
+    ∀ T, ∃ a ∈ A, T ≤ a ∧
+      ∃ u ∈ A, ∃ v ∈ A, 0 < u ∧ 0 < v ∧ u + v = a := by
+  classical
+  by_cases hfree :
+    ∃ T, ∀ a ∈ A, T ≤ a →
+      ∀ u ∈ A, ∀ v ∈ A, 0 < u → 0 < v → u + v ≠ a
+  · exact Or.inl hfree
+  · right
+    intro T
+    by_contra hnone
+    exact
+      hfree
+        ⟨T, fun a haA hTa u huA v hvA hu hv huv =>
+          hnone
+            ⟨a, haA, hTa, u, huA, v, hvA, hu, hv,
+              huv⟩⟩
+
+/-- **Lever (d) of the transport.**  Either every fixed
+positive-difference fiber of `A` is finite — the exact hypothesis shape
+of the order-two closer — or one fixed positive difference carries
+cofinal edges: a standing near-translation structure, the R1-room shape
+of the order-two campaign. -/
+theorem differenceFibers_allFinite_or_cofinalTranslationEdges
+    (A : Set ℕ) :
+    (∀ g, 0 < g → {x | x ∈ A ∧ x + g ∈ A}.Finite) ∨
+    ∃ g, 0 < g ∧
+      ∀ L, ∃ x, L ≤ x ∧ x ∈ A ∧ x + g ∈ A := by
+  classical
+  by_cases hfin :
+    ∀ g, 0 < g → {x | x ∈ A ∧ x + g ∈ A}.Finite
+  · exact Or.inl hfin
+  · right
+    rw [not_forall] at hfin
+    obtain ⟨g, hg⟩ := hfin
+    rw [_root_.not_imp] at hg
+    obtain ⟨hgpos, hginf⟩ := hg
+    rw [← Set.not_infinite, not_not] at hginf
+    refine ⟨g, hgpos, ?_⟩
+    intro L
+    obtain ⟨x, hxs, hLx⟩ := hginf.exists_gt L
+    exact ⟨x, Nat.le_of_lt hLx, hxs.1, hxs.2⟩
+
+/-- **Side door one: deserts collide with the covering.**  With `0 ∈ A`
+a desert target is a forced NON-member of `A` — its own zero padding
+would be a pair — and every exact tuple representation of it, at any
+length, uses at least three positive parts.  Pair deserts push the
+ambient order-`k` covering into genuinely wide decompositions. -/
+theorem HasCofinalPairDesertStream.forces_nonMember_widePositive
+    {A D : Set ℕ}
+    (h0 : 0 ∈ A)
+    (hdesert : HasCofinalPairDesertStream A D) :
+    ∃ Z : Set ℕ,
+      Z ⊆ D ∧ Z ⊆ A ∧ Z.Infinite ∧
+      ∀ L, ∃ q v s₁ s₂,
+        L ≤ q ∧ v < q ∧
+        s₁ ∈ A ∧ s₂ ∈ A ∧ s₁ ∉ Z ∧ s₂ ∉ Z ∧
+        s₁ + s₂ = v ∧
+        q ∉ A ∧
+        ∀ (h : ℕ) (w : Fin h → ℕ),
+          (∀ i, w i ∈ A) → (∑ i, w i) = q →
+          3 ≤ (Finset.univ.filter
+            fun i => 0 < w i).card := by
+  classical
+  obtain ⟨Z, hZD, hZA, hZInf, hstream⟩ := hdesert
+  refine ⟨Z, hZD, hZA, hZInf, ?_⟩
+  intro L
+  obtain ⟨q, v, s₁, s₂, hLq, hvq, hs₁A, hs₂A,
+      hs₁Z, hs₂Z, hsum, hlaw⟩ := hstream (max L 1)
+  have hqpos : 0 < q := by omega
+  refine
+    ⟨q, v, s₁, s₂, by omega, hvq, hs₁A, hs₂A,
+      hs₁Z, hs₂Z, hsum, ?_, ?_⟩
+  · intro hqA
+    exact hlaw q hqA 0 h0 (by omega)
+  · intro h w hwA hwsum
+    by_contra hcard
+    set P : Finset (Fin h) :=
+      Finset.univ.filter fun i => 0 < w i with hP
+    have hqP : ∑ i ∈ P, w i = q := by
+      rw [← hwsum, hP]
+      exact Finset.sum_filter_of_ne
+        fun i _ hne => Nat.pos_of_ne_zero hne
+    rcases P.eq_empty_or_nonempty with
+      hempty | ⟨i, hiP⟩
+    · rw [hempty, Finset.sum_empty] at hqP
+      omega
+    rcases (P.erase i).eq_empty_or_nonempty with
+      herase | ⟨j, hjP'⟩
+    · have hPsub : P = {i} := by
+        apply Finset.eq_singleton_iff_unique_mem.mpr
+        refine ⟨hiP, ?_⟩
+        intro x hxP
+        by_contra hxi
+        have hxe : x ∈ P.erase i :=
+          Finset.mem_erase.mpr ⟨hxi, hxP⟩
+        rw [herase] at hxe
+        exact absurd hxe (Finset.notMem_empty x)
+      rw [hPsub, Finset.sum_singleton] at hqP
+      have hwiA : w i ∈ A := hwA i
+      rw [hqP] at hwiA
+      exact hlaw q hwiA 0 h0 (by omega)
+    rcases ((P.erase i).erase j).eq_empty_or_nonempty
+      with herase2 | ⟨l, hlP''⟩
+    · have hPej : P.erase i = {j} := by
+        apply Finset.eq_singleton_iff_unique_mem.mpr
+        refine ⟨hjP', ?_⟩
+        intro x hxP
+        by_contra hxj
+        have hxe : x ∈ (P.erase i).erase j :=
+          Finset.mem_erase.mpr ⟨hxj, hxP⟩
+        rw [herase2] at hxe
+        exact absurd hxe (Finset.notMem_empty x)
+      have hPeq : P = insert i {j} := by
+        rw [← hPej, Finset.insert_erase hiP]
+      have hij : i ∉ ({j} : Finset (Fin h)) := by
+        intro hmem
+        rw [Finset.mem_singleton] at hmem
+        rw [hmem] at hjP'
+        exact absurd hjP'
+          (Finset.notMem_erase j P)
+      rw [hPeq, Finset.sum_insert hij,
+        Finset.sum_singleton] at hqP
+      exact
+        hlaw (w i) (hwA i) (w j) (hwA j) hqP
+    · have hjne : j ≠ i := Finset.ne_of_mem_erase hjP'
+      have hlne : l ≠ j :=
+        Finset.ne_of_mem_erase hlP''
+      have hlne' : l ≠ i :=
+        Finset.ne_of_mem_erase
+          (Finset.mem_of_mem_erase hlP'')
+      have hlP : l ∈ P :=
+        Finset.mem_of_mem_erase
+          (Finset.mem_of_mem_erase hlP'')
+      have hjP : j ∈ P :=
+        Finset.mem_of_mem_erase hjP'
+      have hsub : ({i, j, l} : Finset (Fin h)) ⊆ P := by
+        intro x hx
+        rcases Finset.mem_insert.mp hx with rfl | hx'
+        · exact hiP
+        rcases Finset.mem_insert.mp hx' with rfl | hx''
+        · exact hjP
+        · rw [Finset.mem_singleton] at hx''
+          rw [hx'']
+          exact hlP
+      have hjl : j ∉ ({l} : Finset (Fin h)) := by
+        rw [Finset.mem_singleton]
+        intro hcon
+        exact hlne hcon.symm
+      have hijl :
+          i ∉ (insert j {l} : Finset (Fin h)) := by
+        intro hmem
+        rcases Finset.mem_insert.mp hmem with
+          hcon | hcon
+        · exact hjne hcon.symm
+        · rw [Finset.mem_singleton] at hcon
+          exact hlne' hcon.symm
+      have hcard3 :
+          ({i, j, l} : Finset (Fin h)).card = 3 := by
+        rw [Finset.card_insert_of_notMem hijl,
+          Finset.card_insert_of_notMem hjl,
+          Finset.card_singleton]
+      exact
+        hcard
+          (hcard3 ▸ Finset.card_le_card hsub)
+
+/-- **Side door two, translated horns feed back.**  The escaping-anchor
+horn re-enters the descent highway one rank down: its destroyed
+predecessors dominate the escaping endpoints, so they are cofinal, and
+the translated supports survive strictly below them.  The escape is not
+a terminal refuge. -/
+theorem
+    HasCofinalEscapingAnchorSecondRankFans.toRankDescentStream
+    {A D : Set ℕ} {k t : ℕ}
+    {target : ℕ → ℕ}
+    (hesc :
+      HasCofinalEscapingAnchorSecondRankFans
+        A D k t target) :
+    HasRankDescentStream A D (k - 1) := by
+  obtain ⟨Z, displacement, markedPoint, originIndex,
+      translatedSupport, hZD, hZA, hZInf,
+      _horiginStrict, hdata, hstream⟩ := hesc
+  refine ⟨Z, hZD, hZA, hZInf, ?_⟩
+  intro L
+  obtain ⟨n, m, _hnL, _hSne, _hesc', hXd,
+      _h5, _h6, _h7, hdl, hdd, _hfan⟩ :=
+    hstream L L
+  obtain ⟨_hd1, _hd2, _hd3, hSmem, hSZ, _hinj⟩ :=
+    hdata n
+  exact
+    ⟨m - markedPoint n, t + displacement n,
+      translatedSupport n, by omega, hdl, hSmem,
+      hSZ, hdd⟩
+
+/-- The fixed-anchor horn also feeds back one rank down: its destroyed
+predecessors dominate the linearly growing translated endpoints. -/
+theorem
+    HasCofinalFixedAnchorSecondRankInjuryStream.toRankDescentStream
+    {A D : Set ℕ} {k t : ℕ}
+    {target : ℕ → ℕ}
+    (hk : 2 ≤ k)
+    (hfixed :
+      HasCofinalFixedAnchorSecondRankInjuryStream
+        A D k t target) :
+    HasRankDescentStream A D (k - 1) := by
+  obtain ⟨Z, anchor, displacement, markedPoint,
+      originIndex, translatedSupport, hZD, hZA,
+      hZInf, _horiginStrict, _hanchorA, _hanchorZ,
+      hdata, hstream⟩ := hfixed
+  refine ⟨Z, hZD, hZA, hZInf, ?_⟩
+  intro L
+  obtain ⟨n, m, hnL, _hanchorS, _hanchorLe,
+      _h4, _h5, _h6, hdl, hdd, _h9, _h10, _hfan⟩ :=
+    hstream L
+  obtain ⟨_hd1, _hd2, _hd3, hSmem, hSZ, hinj⟩ :=
+    hdata n
+  obtain ⟨_η, _G, hfloor, _hrest⟩ := hinj
+  have hnfloor : n ≤ (k - 1) * n :=
+    Nat.le_mul_of_pos_left n (by omega)
+  exact
+    ⟨m - markedPoint n, t + displacement n,
+      translatedSupport n, by omega, hdl, hSmem,
+      hSZ, hdd⟩
+
 end Erdos881
