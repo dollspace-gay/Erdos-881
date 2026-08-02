@@ -1,3 +1,47 @@
+# GENERAL ORDER: THE UNIFORM CARRY MENU AND DEMONSTRATOR (2026-08-02)
+
+`digit_carry_menu` (Erdos881/DigitCarryRepair.lean): for every
+`k ≥ 2`, every multiplicity `1 ≤ c ≤ k`, every scale `a ≥ 3`, the
+target `c·(k+1)^a` is a sum of `k+1` digit-{0,1} parts, none a pure
+power — ONE closed form covering the pure/double/triple menus of
+both instance sieves and all their higher-order analogues:
+
+  `c·b^a = [(c-1)(b³+b²+b+1) + (k-c)(b²+b+1) + (b²+1) + (b+1)]·b^{a-3}`.
+
+Non-purity is uniform and free (`not_pure_of_mod`): every part is
+`≡ 1 (mod b)` and exceeds 1, and no positive power has that residue.
+`digit_demonstrator`: at every order, the powers deletion kills the
+diagonal `k·(k+1)^m` at order `k` completely while order `k+1`
+repairs it — the Erdős 881 conclusion pattern at the casualties, at
+every order in one stroke.  (Note: base 1, `k = 0`, genuinely
+breaks the digit lemmas; `1 ≤ k` is threaded.)
+
+THE REMAINING UNIFORM SIEVE (design complete, formalization open):
+every `n ≥ N₀(k)` needs a `k+1`-part power-free split.  With layers
+`L_1 ⊇ … ⊇ L_k` and `a` := the deepest-layer position, `s := d_a`,
+`S := Σ_{q≠a} d_q` (companion mass; all `d_q ≤ r < s` for `q ≠ a`):
+
+- RICH (`S ≥ s`): use exactly the `s ≤ k` slots holding bit `a`;
+  spread all companion bits over them (Hall's condition holds since
+  each `d_q ≤ r < s` and total `≥ s`) — every slot gets `≥ 2` bits,
+  carry-free, no menus.
+- POOR (`S < s`): pair `S` of the `a`-copies with the strays; expand
+  the rest by the menu.  Window collisions are handled by the
+  floating-telescope: `b^a = k·(b^{a-1}+…+b^{w+1}) + [menu at w]`
+  for ANY depth, multiplicity-1 strays inside telescope columns are
+  ABSORBED (column count `k+δ`), and a stray-free 3-window below `a`
+  exists by pigeonhole once `a ≥ 3k` (threshold `N₀(k) ≈ b^{3k}` —
+  `∃N` in the official predicate permits `k`-dependent thresholds).
+  Multiplicity-`≥2` strays (the last open construction) RESOLVE by
+  CONVERT-AND-SPREAD: convert one stray copy downward
+  (`b^{a-1} = k·b^{a-2} + (k+1)·b^{a-3}`), making the bottom column
+  full and the spreadable mass `c + d - 1 + k ≥ k + 1`; column
+  multiplicities all stay `≤ k`, so a Hall spread covers every slot
+  with two bits.  The design is COMPLETE: rich = Hall spread; poor =
+  pair, telescope with mult-1 absorption, convert-and-spread for
+  mult-`≥2`; the remaining work is pure formalization (the layerK
+  machinery, the spread construction, and the case dispatch).
+
 # GENERAL ORDER: EVERY HARD CASE IS INHABITED, UNIFORMLY (2026-08-02)
 
 `digit_uniform_hard_case` (Erdos881/DigitInstance.lean): for EVERY
