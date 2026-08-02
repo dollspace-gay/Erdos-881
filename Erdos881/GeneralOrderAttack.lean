@@ -63599,4 +63599,124 @@ theorem
       translatedSupport n, by omega, hdl, hSmem,
       hSZ, hdd⟩
 
+/-- **The three-anchor replay on the wounded stream.**
+
+The order-two closer routed three anchors through a moving guardian
+and a finite prefix.  The wounded pair stream has NO moving guardian —
+its hub is the infinite deletion `Z` itself — so the guardian route is
+gone and TWO anchors already force the fiber kill: if both anchor
+translates `q - r`, `q - r'` lie in `A`, the capture law drives both
+into `Z`, they differ by the fixed gap `r' - r`, and the finite-fiber
+lever bounds `q`.
+
+Under both good horns the replay therefore exports, at every anchor
+pair drawn from the survivors, a total placement law on the wounded
+stream: the target is evicted from the basis or absorbed into `Z`;
+at least one anchor translate is an `A`-desert; every surviving
+translate is captured into `Z`; and the covering pair itself loses a
+part to `Z`.  The k = 2 closer's contradiction needed global pair
+covering to FORCE the anchor translates into `A`; the hard case
+denies that covering, and this theorem converts the denial into
+cofinal forced deserts pinned at every survivor translate.  The
+degenerate alternative `0 ∈ Z` is split off globally. -/
+theorem
+    HasCofinalWoundedPairStream.threeAnchor_transport_export
+    {A D : Set ℕ} {T : ℕ}
+    (hsumfree : ∀ a ∈ A, T ≤ a →
+      ∀ u ∈ A, ∀ v ∈ A, 0 < u → 0 < v → u + v ≠ a)
+    (hfibers : ∀ g, 0 < g →
+      {x | x ∈ A ∧ x + g ∈ A}.Finite)
+    (hw : HasCofinalWoundedPairStream A D) :
+    ∃ Z : Set ℕ,
+      Z ⊆ D ∧
+      Z ⊆ A ∧
+      Z.Infinite ∧
+      (0 ∈ Z ∨
+        ∀ r r', r ∈ A → r' ∈ A → r ∉ Z → r' ∉ Z →
+          r < r' →
+          ∃ U, ∀ L, ∃ q v s₁ s₂ e₁ e₂,
+            L ≤ q ∧
+            U ≤ q ∧
+            v < q ∧
+            s₁ ∈ A ∧ s₂ ∈ A ∧
+            s₁ ∉ Z ∧ s₂ ∉ Z ∧
+            s₁ + s₂ = v ∧
+            e₁ ∈ A ∧ e₂ ∈ A ∧
+            e₁ + e₂ = q ∧
+            (e₁ ∈ Z ∨ e₂ ∈ Z) ∧
+            (q ∉ A ∨ q ∈ Z) ∧
+            (q - r ∉ A ∨ q - r' ∉ A) ∧
+            ∀ x, x ∈ A → x ∉ Z → x ≤ q →
+              q - x ∈ A → q - x ∈ Z) := by
+  classical
+  obtain ⟨Z, hZD, hZA, hZInf, hstream⟩ := hw
+  refine ⟨Z, hZD, hZA, hZInf, ?_⟩
+  by_cases h0Z : (0 : ℕ) ∈ Z
+  · exact Or.inl h0Z
+  right
+  intro r r' hrA hr'A hrZ hr'Z hrr'
+  have hg : 0 < r' - r := by omega
+  obtain ⟨U₀, hU₀⟩ :=
+    (hfibers (r' - r) hg).bddAbove
+  refine ⟨U₀ + r' + T + 1, ?_⟩
+  intro L
+  obtain ⟨q, v, s₁, s₂, e₁, e₂, hLq, hvq,
+      hs₁A, hs₂A, hs₁Z, hs₂Z, hsum,
+      he₁A, he₂A, hesum, hlaw⟩ :=
+    hstream (max L (U₀ + r' + T + 1))
+  have hqL : L ≤ q :=
+    le_trans (le_max_left _ _) hLq
+  have hqU : U₀ + r' + T + 1 ≤ q :=
+    le_trans (le_max_right _ _) hLq
+  have hez : e₁ ∈ Z ∨ e₂ ∈ Z :=
+    hlaw e₁ he₁A e₂ he₂A hesum
+  have hmember : q ∉ A ∨ q ∈ Z := by
+    by_cases hqA : q ∈ A
+    · right
+      have hdeg : ¬(0 < e₁ ∧ 0 < e₂) := by
+        rintro ⟨h1, h2⟩
+        exact
+          hsumfree q hqA (by omega) e₁ he₁A
+            e₂ he₂A h1 h2 hesum
+      rcases Nat.eq_zero_or_pos e₁ with h10 | h1p
+      · have he₂q : e₂ = q := by omega
+        rcases hez with h0z | hqz
+        · rw [h10] at h0z
+          exact absurd h0z h0Z
+        · rw [← he₂q]
+          exact hqz
+      · have h20 : e₂ = 0 := by
+          by_contra h2ne
+          exact hdeg ⟨h1p, by omega⟩
+        have he₁q : e₁ = q := by omega
+        rcases hez with hqz | h0z
+        · rw [← he₁q]
+          exact hqz
+        · rw [h20] at h0z
+          exact absurd h0z h0Z
+    · exact Or.inl hqA
+  have hdesert : q - r ∉ A ∨ q - r' ∉ A := by
+    by_contra hboth
+    rw [not_or, not_not, not_not] at hboth
+    obtain ⟨hqrA, hqr'A⟩ := hboth
+    have hshift : q - r' + (r' - r) = q - r := by
+      omega
+    have hfib :
+        q - r' ∈ {x | x ∈ A ∧ x + (r' - r) ∈ A} := by
+      refine ⟨hqr'A, ?_⟩
+      rw [hshift]
+      exact hqrA
+    have hle : q - r' ≤ U₀ := hU₀ hfib
+    omega
+  refine
+    ⟨q, v, s₁, s₂, e₁, e₂, hqL, hqU, hvq,
+      hs₁A, hs₂A, hs₁Z, hs₂Z, hsum,
+      he₁A, he₂A, hesum, hez, hmember,
+      hdesert, ?_⟩
+  intro x hxA hxZ hxq hqxA
+  rcases hlaw x hxA (q - x) hqxA (by omega) with
+    hxin | hcapture
+  · exact absurd hxin hxZ
+  · exact hcapture
+
 end Erdos881

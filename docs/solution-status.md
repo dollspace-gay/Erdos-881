@@ -1,3 +1,41 @@
+# GENERAL ORDER: THE THREE-ANCHOR REPLAY RUNS (2026-08-02)
+
+`HasCofinalWoundedPairStream.threeAnchor_transport_export` runs the
+order-two closer's anchor argument on the wounded pair stream under
+both good horns.  One structural discovery reshaped the transport:
+the wounded stream has NO moving guardian — its hub is the infinite
+deletion `Z` itself — so the k = 2 argument's guardian route
+vanishes and TWO anchors already force the fiber kill.  If both
+anchor translates `q - r`, `q - r'` lie in `A`, the capture law
+drives both into `Z`; they differ by the fixed gap `r' - r`; the
+finite-fiber lever bounds `q`.
+
+The replay's verified output, at every anchor pair drawn from the
+survivors of `Z` (with the degenerate `0 ∈ Z` split off globally):
+cofinally many wounded targets `q` satisfy simultaneously
+
+- eviction: `q ∉ A` or `q ∈ Z` (the sum-free lever degrades the
+  covering pair of any member target and absorbs it);
+- desert export: `q - r ∉ A` or `q - r' ∉ A` — at least one anchor
+  translate is a forced `A`-desert;
+- total capture: EVERY survivor `x ∉ Z` with `q - x ∈ A` has
+  `q - x ∈ Z`;
+- pair wound: the covering pair `e₁ + e₂ = q` loses a part to `Z`.
+
+Why this is not `False`, precisely: the k = 2 contradiction needed
+global `PairCovers` to FORCE the anchor translates into `A`, and the
+hard case denies exactly that.  The replay converts the denial into
+the desert-export law: the enemy escapes the fiber kill only by
+digging cofinal sumset deserts at its own survivor translates while
+its wounded targets flee the basis.  Every wounded world is now
+pinned between the fiber kill (translates in `A`) and the desert
+economy (translates out of `A`).  THE REMAINING QUESTION of the
+transport: can a strongly minimal exact order-`k` basis afford
+cofinal deserts at every survivor translate of a cofinal target
+stream?  This is a counting question about the `k`-fold covering
+against pinned order-2 deserts — the wide-positive law
+(`forces_nonMember_widePositive`) is its natural partner.
+
 # GENERAL ORDER: THE TRANSPORT LEVERS AND THE SIDE DOORS (2026-08-02)
 
 The four-input transport plan (replay the order-two three-anchor
