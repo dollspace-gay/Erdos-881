@@ -62368,4 +62368,350 @@ theorem
         (hcross.toCofinalGapDominatingTerminalCrossBlockArithmetic
           hk htargetStrict)
 
+/-- The fixed-core second-rank horn: every selected stage's descent fan
+runs through one finite anchor core representing the untranslated
+endpoint `t`, so the order-`k-2` injuries already have a fixed anchor
+set. -/
+def HasCofinalFixedCoreSecondRankFans
+    (A D : Set ℕ) (k t : ℕ)
+    (target : ℕ → ℕ) : Prop :=
+  ∃ Z : Set ℕ,
+  ∃ displacement markedPoint originIndex : ℕ → ℕ,
+  ∃ core : Finset ℕ,
+    Z ⊆ D ∧
+    Z ⊆ A ∧
+    Z.Infinite ∧
+    StrictMono originIndex ∧
+    core ∈ additiveSupportFamily A (k - 1) t ∧
+    core.Nonempty ∧
+    Disjoint (core : Set ℕ) Z ∧
+    (∀ n,
+      0 < displacement n ∧
+      target (originIndex n) = markedPoint n + t ∧
+      target (originIndex n) + displacement n <
+        target (originIndex n + 1) ∧
+      HasFixedPredecessorArithmeticInjuryAtFloor
+        A Z k (t + displacement n) n) ∧
+    ∀ L, ∃ n m,
+      L ≤ n ∧
+      target (originIndex n) < m ∧
+      m < target (originIndex n) + displacement n ∧
+      DestroysAt (additiveSupportFamily A k) Z m ∧
+      t < m - markedPoint n ∧
+      m - markedPoint n < t + displacement n ∧
+      DestroysAt
+        (additiveSupportFamily A (k - 1))
+        Z (m - markedPoint n) ∧
+      ∀ a ∈ core,
+        0 < (m - markedPoint n) - a ∧
+        DestroysAt
+          (additiveSupportFamily A (k - 2))
+          Z ((m - markedPoint n) - a)
+
+/-- The recurring-anchor second-rank horn: one fixed anchor point of the
+translated endpoint supports recurs cofinally along the stream, and at
+every recurring stage the descent fan destroys the order-`k-2`
+difference at that same fixed anchor. -/
+def HasCofinalFixedAnchorSecondRankInjuryStream
+    (A D : Set ℕ) (k t : ℕ)
+    (target : ℕ → ℕ) : Prop :=
+  ∃ Z : Set ℕ, ∃ anchor : ℕ,
+  ∃ displacement markedPoint originIndex : ℕ → ℕ,
+  ∃ translatedSupport : ℕ → Finset ℕ,
+    Z ⊆ D ∧
+    Z ⊆ A ∧
+    Z.Infinite ∧
+    StrictMono originIndex ∧
+    anchor ∈ A ∧
+    anchor ∉ Z ∧
+    (∀ n,
+      0 < displacement n ∧
+      target (originIndex n) = markedPoint n + t ∧
+      target (originIndex n) + displacement n <
+        target (originIndex n + 1) ∧
+      translatedSupport n ∈
+        additiveSupportFamily A (k - 1)
+          (t + displacement n) ∧
+      Disjoint (translatedSupport n : Set ℕ) Z ∧
+      HasFixedPredecessorArithmeticInjuryAtFloor
+        A Z k (t + displacement n) n) ∧
+    ∀ L, ∃ n m,
+      L ≤ n ∧
+      anchor ∈ translatedSupport n ∧
+      anchor ≤ t + displacement n ∧
+      target (originIndex n) + displacement n < m ∧
+      m < target (originIndex (n + 1)) ∧
+      DestroysAt (additiveSupportFamily A k) Z m ∧
+      t + displacement n < m - markedPoint n ∧
+      DestroysAt
+        (additiveSupportFamily A (k - 1))
+        Z (m - markedPoint n) ∧
+      0 < (m - markedPoint n) - anchor ∧
+      DestroysAt
+        (additiveSupportFamily A (k - 2))
+        Z ((m - markedPoint n) - anchor) ∧
+      ∀ a ∈ translatedSupport n,
+        0 < (m - markedPoint n) - a ∧
+        DestroysAt
+          (additiveSupportFamily A (k - 2))
+          Z ((m - markedPoint n) - a)
+
+/-- The escaping-anchor second-rank horn: beyond every bound the selected
+stages' translated supports consist entirely of anchors above that
+bound, so the translated endpoints outgrow every fixed window while the
+descent fans keep firing. -/
+def HasCofinalEscapingAnchorSecondRankFans
+    (A D : Set ℕ) (k t : ℕ)
+    (target : ℕ → ℕ) : Prop :=
+  ∃ Z : Set ℕ,
+  ∃ displacement markedPoint originIndex : ℕ → ℕ,
+  ∃ translatedSupport : ℕ → Finset ℕ,
+    Z ⊆ D ∧
+    Z ⊆ A ∧
+    Z.Infinite ∧
+    StrictMono originIndex ∧
+    (∀ n,
+      0 < displacement n ∧
+      target (originIndex n) = markedPoint n + t ∧
+      target (originIndex n) + displacement n <
+        target (originIndex n + 1) ∧
+      translatedSupport n ∈
+        additiveSupportFamily A (k - 1)
+          (t + displacement n) ∧
+      Disjoint (translatedSupport n : Set ℕ) Z ∧
+      HasFixedPredecessorArithmeticInjuryAtFloor
+        A Z k (t + displacement n) n) ∧
+    ∀ X L, ∃ n m,
+      L ≤ n ∧
+      (translatedSupport n).Nonempty ∧
+      (∀ a ∈ translatedSupport n, X < a) ∧
+      X < t + displacement n ∧
+      target (originIndex n) + displacement n < m ∧
+      m < target (originIndex (n + 1)) ∧
+      DestroysAt (additiveSupportFamily A k) Z m ∧
+      t + displacement n < m - markedPoint n ∧
+      DestroysAt
+        (additiveSupportFamily A (k - 1))
+        Z (m - markedPoint n) ∧
+      ∀ a ∈ translatedSupport n,
+        0 < (m - markedPoint n) - a ∧
+        DestroysAt
+          (additiveSupportFamily A (k - 2))
+          Z ((m - markedPoint n) - a)
+
+/-- **The anchor cardinality fork.**  The second-rank descent fans admit
+exactly three shapes.  On the fixed-core side the anchors are one finite
+set for every stage.  On the translated side the per-stage arithmetic
+injury already forces `(k-1) * n ≤ t + displacement n`, so the
+translated endpoints march to infinity and their supports cannot stay
+bounded as sets; the genuine dichotomy is pointwise.  Either some single
+anchor value recurs in the translated supports cofinally — the
+finite cofinal pigeonhole on one bounded window — or beyond every bound
+the selected supports consist entirely of large anchors and the
+endpoints outgrow every window. -/
+theorem
+    HasCofinalFixedCoreThresholdStraddlingInjuries.secondRank_anchor_cardinality_fork
+    {A D : Set ℕ} {k t : ℕ}
+    {target : ℕ → ℕ}
+    (hk : 2 < k)
+    (hattack :
+      HasCofinalFixedCoreThresholdStraddlingInjuries
+        A D k t target) :
+    HasCofinalFixedCoreSecondRankFans A D k t target ∨
+      HasCofinalFixedAnchorSecondRankInjuryStream
+        A D k t target ∨
+      HasCofinalEscapingAnchorSecondRankFans
+        A D k t target := by
+  classical
+  obtain ⟨Z, displacement, markedPoint, originIndex,
+      translatedSupport, core, hZD, hZA, hZInfinite,
+      horiginStrict, hcoreMem, hcoreZ, hdata,
+      hbelow | habove⟩ :=
+    hattack.forces_cofinal_secondRankDescentFans hk
+  · left
+    obtain ⟨_n₀, _m₀, _hn₀, _hml₀, _hmu₀, _hmd₀,
+        _hdl₀, _hdu₀, _hdd₀, hcoreNonempty, _hfan₀⟩ :=
+      hbelow 0
+    refine
+      ⟨Z, displacement, markedPoint, originIndex,
+        core, hZD, hZA, hZInfinite, horiginStrict,
+        hcoreMem, hcoreNonempty, hcoreZ, ?_, ?_⟩
+    · intro n
+      obtain ⟨hdisp, htargetEq, hblock, _hmem,
+          _hdisj, hinjury⟩ := hdata n
+      exact ⟨hdisp, htargetEq, hblock, hinjury⟩
+    · intro L
+      obtain ⟨n, m, hnL, hml, hmu, hmd, hdl, hdu,
+          hdd, _hne, hfan⟩ := hbelow L
+      exact
+        ⟨n, m, hnL, hml, hmu, hmd, hdl, hdu, hdd,
+          hfan⟩
+  · by_cases hbounded :
+      ∃ X, ∀ L, ∃ n m,
+        L ≤ n ∧
+        target (originIndex n) + displacement n < m ∧
+        m < target (originIndex (n + 1)) ∧
+        DestroysAt (additiveSupportFamily A k) Z m ∧
+        t + displacement n < m - markedPoint n ∧
+        DestroysAt
+          (additiveSupportFamily A (k - 1))
+          Z (m - markedPoint n) ∧
+        (∀ a ∈ translatedSupport n,
+          0 < (m - markedPoint n) - a ∧
+          DestroysAt
+            (additiveSupportFamily A (k - 2))
+            Z ((m - markedPoint n) - a)) ∧
+        ∃ a ∈ translatedSupport n, a ≤ X
+    · right
+      left
+      obtain ⟨X, hX⟩ := hbounded
+      have hcofinalLabel :
+          ∀ Y, ∃ n, Y < n ∧
+            ∃ w ∈ Finset.range (X + 1),
+              ∃ m,
+                (target (originIndex n) +
+                    displacement n < m ∧
+                  m < target (originIndex (n + 1)) ∧
+                  DestroysAt
+                    (additiveSupportFamily A k) Z m ∧
+                  t + displacement n <
+                    m - markedPoint n ∧
+                  DestroysAt
+                    (additiveSupportFamily A (k - 1))
+                    Z (m - markedPoint n) ∧
+                  ∀ a ∈ translatedSupport n,
+                    0 < (m - markedPoint n) - a ∧
+                    DestroysAt
+                      (additiveSupportFamily A (k - 2))
+                      Z ((m - markedPoint n) - a)) ∧
+                w ∈ translatedSupport n := by
+        intro Y
+        obtain ⟨n, m, hnL, hml, hmu, hmd, hdl, hdd,
+            hfan, a, haS, haX⟩ := hX (Y + 1)
+        exact
+          ⟨n, by omega, a,
+            Finset.mem_range.mpr (by omega), m,
+            ⟨hml, hmu, hmd, hdl, hdd, hfan⟩, haS⟩
+      obtain ⟨anchor, _hanchorRange, hanchorRec⟩ :=
+        finite_cofinal_pigeonhole hcofinalLabel
+      obtain ⟨n₁, _hn₁, m₁, _hpayload₁, hanchorMem₁⟩ :=
+        hanchorRec 0
+      obtain ⟨_h₁, _h₂, _h₃, hmem₁, hdisj₁, _h₆⟩ :=
+        hdata n₁
+      have hanchorA : anchor ∈ A :=
+        additiveSupportFamily_supportsIn A (k - 1)
+          (t + displacement n₁) (translatedSupport n₁)
+          hmem₁ anchor hanchorMem₁
+      have hanchorZ : anchor ∉ Z := by
+        intro hin
+        exact
+          Set.disjoint_left.mp hdisj₁
+            (Finset.mem_coe.mpr hanchorMem₁) hin
+      refine
+        ⟨Z, anchor, displacement, markedPoint,
+          originIndex, translatedSupport, hZD, hZA,
+          hZInfinite, horiginStrict, hanchorA,
+          hanchorZ, hdata, ?_⟩
+      intro L
+      obtain ⟨n, hnL, m,
+          ⟨hml, hmu, hmd, hdl, hdd, hfan⟩,
+          hanchorMem⟩ := hanchorRec L
+      obtain ⟨_g₁, _g₂, _g₃, hmemn, _g₅, _g₆⟩ :=
+        hdata n
+      have hanchorLe :
+          anchor ≤ t + displacement n :=
+        additiveSupportFamily_supportsBounded A (k - 1)
+          (t + displacement n) (translatedSupport n)
+          hmemn anchor hanchorMem
+      obtain ⟨hposA, hdestA⟩ := hfan anchor hanchorMem
+      exact
+        ⟨n, m, by omega, hanchorMem, hanchorLe, hml,
+          hmu, hmd, hdl, hdd, hposA, hdestA, hfan⟩
+    · right
+      right
+      refine
+        ⟨Z, displacement, markedPoint, originIndex,
+          translatedSupport, hZD, hZA, hZInfinite,
+          horiginStrict, hdata, ?_⟩
+      intro X L
+      have hnotX :
+          ¬ ∀ L', ∃ n m,
+            L' ≤ n ∧
+            target (originIndex n) +
+              displacement n < m ∧
+            m < target (originIndex (n + 1)) ∧
+            DestroysAt
+              (additiveSupportFamily A k) Z m ∧
+            t + displacement n < m - markedPoint n ∧
+            DestroysAt
+              (additiveSupportFamily A (k - 1))
+              Z (m - markedPoint n) ∧
+            (∀ a ∈ translatedSupport n,
+              0 < (m - markedPoint n) - a ∧
+              DestroysAt
+                (additiveSupportFamily A (k - 2))
+                Z ((m - markedPoint n) - a)) ∧
+            ∃ a ∈ translatedSupport n, a ≤ X :=
+        fun hall => hbounded ⟨X, hall⟩
+      rw [not_forall] at hnotX
+      obtain ⟨L₀, hL₀⟩ := hnotX
+      obtain ⟨n, m, hnL, hml, hmu, hmd, hdl, hdd,
+          hne, hfan⟩ := habove (max L L₀)
+      have hescape :
+          ∀ a ∈ translatedSupport n, X < a := by
+        intro a ha
+        by_contra hlt
+        have hle : a ≤ X := Nat.le_of_not_lt hlt
+        exact
+          hL₀
+            ⟨n, m,
+              le_trans (le_max_right L L₀) hnL,
+              hml, hmu, hmd, hdl, hdd, hfan,
+              a, ha, hle⟩
+      obtain ⟨a₀, ha₀⟩ := hne
+      obtain ⟨_g₁, _g₂, _g₃, hmemn, _g₅, _g₆⟩ :=
+        hdata n
+      have hgrow : X < t + displacement n :=
+        lt_of_lt_of_le (hescape a₀ ha₀)
+          (additiveSupportFamily_supportsBounded A
+            (k - 1) (t + displacement n)
+            (translatedSupport n) hmemn a₀ ha₀)
+      exact
+        ⟨n, m, le_trans (le_max_left L L₀) hnL,
+          ⟨a₀, ha₀⟩, hescape, hgrow, hml, hmu, hmd,
+          hdl, hdd, hfan⟩
+
+/-- The terminal interface with the anchor fork resolved: every terminal
+fixed-source aligned fusion yields a fixed-core fan stream, a
+fixed-anchor injury stream, an escaping-anchor fan stream, or the
+gap-dominating cross-block alternative. -/
+theorem
+    HasTerminalFixedSourceCoreAlignedFusion.forces_secondRankAnchorFork_or_gapDominatingCrossBlock
+    {A B C D Y : Set ℕ} {k t ε : ℕ}
+    {landing target root repaired : ℕ → ℕ}
+    (hk : 2 < k)
+    (hDC : D ⊆ C)
+    (hminimal : IsStronglyMinimalExactBasis A k)
+    (htargetStrict : StrictMono target)
+    (hfused :
+      HasTerminalFixedSourceCoreAlignedFusion
+        A B C D Y k t ε landing target root repaired) :
+    HasCofinalFixedCoreSecondRankFans A D k t target ∨
+      HasCofinalFixedAnchorSecondRankInjuryStream
+        A D k t target ∨
+      HasCofinalEscapingAnchorSecondRankFans
+        A D k t target ∨
+      HasCofinalGapDominatingTerminalCrossBlockArithmetic
+        A D k t target := by
+  obtain hstraddle | hcross :=
+    hfused.forces_thresholdStraddling_or_gapDominatingCrossBlock
+      (by omega) hDC hminimal htargetStrict
+  · rcases
+      hstraddle.secondRank_anchor_cardinality_fork hk
+      with h | h | h
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h)
+    · exact Or.inr (Or.inr (Or.inl h))
+  · exact Or.inr (Or.inr (Or.inr hcross))
+
 end Erdos881

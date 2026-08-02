@@ -1,3 +1,51 @@
+# GENERAL ORDER: THE ANCHOR CARDINALITY FORK (2026-08-02)
+
+`HasCofinalFixedCoreThresholdStraddlingInjuries.secondRank_anchor_cardinality_fork`
+resolves the recorded next step.  The second-rank descent fans admit
+exactly three shapes:
+
+- `HasCofinalFixedCoreSecondRankFans`: the below-endpoint side, where
+  the fan anchors are one finite core representing \(t\) at every
+  stage;
+- `HasCofinalFixedAnchorSecondRankInjuryStream`: on the translated
+  side, one single anchor value recurs cofinally inside the
+  translated supports, and the fan then destroys the
+  order-\((k-2)\) difference at that same fixed anchor at every
+  recurring stage (the anchor is a basis element outside the
+  deletion, bounded by its own endpoint);
+- `HasCofinalEscapingAnchorSecondRankFans`: beyond every bound the
+  selected translated supports consist entirely of large anchors,
+  and the translated endpoints outgrow every fixed window.
+
+The proof is the finite cofinal pigeonhole on one bounded window
+(`finite_cofinal_pigeonhole` with labels in `Finset.range (X+1)`),
+after a classical split on whether small anchors recur at all.
+
+An important correction surfaced during formalization: the per-stage
+arithmetic injury already contains \((k-1)\,n \le t + \Delta_n\), so
+the translated endpoints march at least linearly and the translated
+supports can NEVER stay bounded as full sets.  The genuine dichotomy
+is pointwise — one recurring anchor versus total escape — exactly as
+recorded; a bounded-full-support horn would have been vacuous.
+Junk-test note: all three horn conclusions assert `DestroysAt`
+placement laws, survivor supports disjoint from the deletion, and
+window positions; no sumset-membership conclusions appear.
+
+`HasTerminalFixedSourceCoreAlignedFusion.forces_secondRankAnchorFork_or_gapDominatingCrossBlock`
+projects the fork through the terminal interface: every terminal
+aligned fusion now yields fixed-core fans, a fixed-anchor stream,
+escaping anchors, or the gap-dominating cross-block alternative.
+
+This is still not the full solution of Erdős 881 for \(k\ge3\).  The
+next direct steps: (a) the fixed-anchor horn hands each recurring
+stage a three-rank destroyed chain \(m,\;m-x_n,\;m-x_n-a^\*\) with a
+fixed last offset — iterate the descent through \(a^\*\) toward the
+solved order-2 engine; (b) the escaping horn's growth must be played
+against the localized arithmetic floor, whose linear lower bound the
+same stages already carry; (c) the base-4 lab (below) found no
+escaping-anchor behaviour in the populated hard case, so horn (a) is
+the priority.
+
 # GENERAL ORDER: THE BASE-4 INSTANCE PROBE (2026-08-02, lab)
 
 `scripts/probe_base4_instance.py` machine-checks the base-\((k+1)\)
