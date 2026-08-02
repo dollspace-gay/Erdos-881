@@ -401,4 +401,39 @@ theorem digit_demonstrator (k m : ℕ) (hk : 2 ≤ k)
   · exact digit_carry_menu k k m hk (by omega)
       (le_refl k) hm
 
+/-- The deleted scale markers, uniformly. -/
+def DigitPowers (k : ℕ) : Set ℕ :=
+  {n | ∃ m, n = (k + 1) ^ m}
+
+lemma digitPowers_subset (k : ℕ) (hk : 1 ≤ k) :
+    DigitPowers k ⊆ DigitSet k := by
+  rintro x ⟨m, rfl⟩
+  exact isDigitK_pow k m hk
+
+lemma digitPowers_infinite (k : ℕ) (hk : 1 ≤ k) :
+    (DigitPowers k).Infinite := by
+  apply Set.infinite_of_injective_forall_mem
+    (f := fun m : ℕ => (k + 1) ^ m)
+    (Nat.pow_right_injective (by omega))
+  intro m
+  exact ⟨m, rfl⟩
+
+/-- **Deletion coverage on the critical stream**: after removing every
+pure power, order `k+1` still covers every multiple-of-a-power target
+`c·(k+1)^a` (`1 ≤ c ≤ k`, `a ≥ 3`) — in particular every casualty of
+the deletion — for every `k` at once. -/
+theorem digit_deletion_covers_diagonals
+    (k c a : ℕ) (hk : 2 ≤ k) (hc : 1 ≤ c)
+    (hck : c ≤ k) (ha : 3 ≤ a) :
+    ∃ v : Fin (k + 1) → ℕ,
+      (∀ l, v l ∈ DigitSet k \ DigitPowers k) ∧
+      (∑ l, v l) = c * (k + 1) ^ a := by
+  obtain ⟨v, hv, hnp, hsum⟩ :=
+    digit_carry_menu k c a hk hc hck ha
+  refine ⟨v, ?_, hsum⟩
+  intro l
+  exact ⟨hv l, fun hmem => by
+    obtain ⟨m, hm⟩ := hmem
+    exact hnp l m hm⟩
+
 end Erdos881Digit

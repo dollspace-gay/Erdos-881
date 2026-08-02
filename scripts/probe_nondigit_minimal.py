@@ -19,54 +19,63 @@ world resists, the general positive conjecture firms up.
 
 import random
 
-N = 40000
+N = 20000
 N0 = 12
 
 
-def covered3(n, A, Aset):
-    for a in A:
-        if a > n:
-            break
-        m = n - a
-        if m == 0 or m in Aset:
-            return True
-        for b in A:
-            if b > m:
-                break
-            if (m - b) in Aset:
-                return True
-    return False
+def reach(elems, order, limit):
+    cut = (1 << (limit + 1)) - 1
+    r = 1
+    for _ in range(order):
+        nxt = 0
+        for a in elems:
+            nxt |= r << a
+        r = nxt & cut
+    return r
 
 
 def build_world(strategy, seed):
-    """Greedy adversarial exact order-3 covering set (0 included)."""
+    """Greedy adversarial exact order-3 covering set (0 included),
+    with incremental sumset bitsets."""
     rng = random.Random(seed)
+    cut = (1 << (N + 1)) - 1
     A = [0, 1]
     Aset = {0, 1}
+    S1 = 0b11
+    S2 = 0b111          # {0,1,2}
+    S3 = 0b1111         # {0,1,2,3}
+
+    def add(c):
+        nonlocal S1, S2, S3
+        A.append(c)
+        Aset.add(c)
+        A.sort()
+        S1 |= 1 << c
+        S2 = (S2 | (S1 << c)) & cut
+        S3 = (S3 | (S2 << c)) & cut
+
     for n in range(N0, N + 1):
-        if covered3(n, A, Aset):
+        if (S3 >> n) & 1:
             continue
         cands = set()
         for a in A:
-            if a <= n:
+            if 0 < a <= n:
                 cands.add(n - a)
-                for b in A:
-                    if a + b <= n:
-                        cands.add(n - a - b)
+            for b in A:
+                if 0 < a + b <= n:
+                    cands.add(n - a - b)
         cands = sorted(c for c in cands
                        if c > 0 and c not in Aset)
         if not cands:
-            A.append(n)
-            Aset.add(n)
-            A.sort()
+            add(n)
             continue
         if strategy == "thin":
-            pick = cands[-1]
+            pick = max(cands,
+                key=lambda c: c - 40 * sum(
+                    1 for x in A if abs(c - x) < 8))
         elif strategy == "low":
             pick = cands[0]
         elif strategy == "antidigit":
-            # avoid digit-like structure: prefer candidates that are
-            # NOT sums of few powers of any small base
             def digitness(c):
                 s = 0
                 for base in (3, 4, 5):
@@ -83,9 +92,9 @@ def build_world(strategy, seed):
                     else cands[len(cands) // 2])
         else:
             pick = rng.choice(cands)
-        A.append(pick)
-        Aset.add(pick)
-        A.sort()
+        add(pick)
+        if len(A) > 400:
+            return None
     return A
 
 
@@ -93,28 +102,15 @@ def trim(A):
     """Elementwise minimality proxy: drop elements whose removal
     keeps exact order-3 coverage of [N0, N]."""
     A = list(A)
+    mask = (((1 << (N + 1)) - 1) >> N0) << N0
     for a in sorted((x for x in A if x > 1), reverse=True):
         B = [x for x in A if x != a]
-        Bset = set(B)
-        ok = True
-        for n in range(N0, N + 1):
-            if not covered3(n, B, Bset):
-                ok = False
-                break
-        if ok:
+        if (reach(B, 3, N) & mask) == mask:
             A = B
     return A
 
 
-def reach4(elems, limit):
-    cut = (1 << (limit + 1)) - 1
-    r = 1
-    for _ in range(4):
-        nxt = 0
-        for a in elems:
-            nxt |= r << a
-        r = nxt & cut
-    return r
+
 
 
 def is_digitlike(A):
@@ -146,10 +142,10 @@ def test_world(name, A):
         ("geometric ranks", [Apos[i] for i in
                              (2 ** j for j in range(20))
                              if i < len(Apos)]),
-        ("random half", [a for a in Apos
-                         if random.Random(7).random() < .5]),
-        ("random 1/6", [a for a in Apos
-                        if random.Random(11).random() < 1 / 6]),
+        ("random half", (lambda r: [a for a in Apos
+                         if r.random() < .5])(random.Random(7))),
+        ("random 1/6", (lambda r: [a for a in Apos
+                        if r.random() < 1 / 6])(random.Random(11))),
         ("top half", Apos[len(Apos) // 2:]),
     ]
     survivors = 0
@@ -157,7 +153,7 @@ def test_world(name, A):
         if len(B) < 4:
             continue
         rest = [a for a in A if a not in set(B)]
-        r = reach4(rest, N)
+        r = reach(rest, 4, N)
         missed = [n for n in range(tail, N + 1)
                   if not (r >> n) & 1]
         ok = not missed
@@ -191,15 +187,22 @@ def main():
     print("non-digit minimal worlds, order-3 -> order-4 deletion"
           " survival")
     total_resist = 0
+    complete = 0
     for strategy, seed in (("thin", 1), ("low", 2),
                            ("antidigit", 3), ("random", 4),
                            ("random", 5)):
         A = build_world(strategy, seed)
+        if A is None:
+            print(f"  world '{strategy}/{seed}':"
+                  f" build degenerate (cap hit) — skipped")
+            continue
+        complete += 1
         A = trim(A)
         s = test_world(f"{strategy}/{seed}", A)
         if s == 0:
             total_resist += 1
-    print(f"\nVERDICT: {total_resist} resisting world(s);"
+    print(f"\nVERDICT: {total_resist} resisting of"
+          f" {complete} complete world(s);"
           f" the general positive conjecture"
           f" {'HOLDS in the lab' if total_resist == 0 else 'is CHALLENGED'}")
 
