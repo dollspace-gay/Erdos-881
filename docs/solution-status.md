@@ -1,3 +1,41 @@
+# GENERAL ORDER: SIEVE PART ONE — MIXED MENUS BELOW SCALE (2026-08-02)
+
+`Erdos881/Base4Sieve.lean` (new module): the mixed degenerate digit
+shapes with the offending block on top are repaired for EVERY stray
+position `v < p` (with `8 ≤ p`):
+
+- `base4_repair_double_mixed`: `2·4^p + 4^v`;
+- `base4_repair_triple_mixed`: `3·4^p + 4^v`;
+- `base4_repair_triple_mixedTwo`: `3·4^p + 2·4^v`.
+
+Method: `v ≤ p-5` attaches the stray bits generically to menu parts
+via `isBase4_scaled_add`; the four near-collision positions
+`v ∈ {p-4, p-3, p-2, p-1}` get explicit constant menus (thirteen new
+verified carry constants, e.g. `65876 + 65620 + 65604 + 20 =
+3·4^8 + 2·4^4` scaled).  Every part is digit-{0,1} and strictly
+between consecutive powers or a scaled non-power, so none is pure.
+Toolkit: `pow_shift_eq`, `isBase4_scaled_add`,
+`isBase4_scaledConst`, `base4_menu_of_constants`.  Lean note: omega
+CANNOT see nonnegativity of `↑4 ^ (p-4)`-style cast power atoms —
+bound goals over symbolic powers need explicit `calc` chains with
+`Nat.mul_lt_mul_of_pos_right` / `Nat.mul_le_mul_right`.
+
+REMAINING for the full instance conclusion (the base-4 twin of
+`erdos881_cantor_full_instance`):
+
+1. the above-scale mixed shapes (stray bits ABOVE the multiple
+   block: `4^u + 2·4^a`, `4^u + 3·4^a (+ 4^v)`, etc.) — same method,
+   expansion at the top position, constants `6, 9, 18, 33, 7, 19,
+   67` and friends for the collisions;
+2. the two-stray shape with distinct positions
+   (`3·4^p + 4^u + 4^v`) — attach to two different menu parts, with
+   the A′-variant `(85, 81, 85, 5)` for the carry-column collision;
+3. the master classifier: every `n ≥ N₀` either splits carry-free
+   into ≤ 4 non-power digit parts (no-singleton transversal of its
+   digit profile) or lands in one of the menu shapes;
+4. the assembly `base4_deletion_basis_four` and the showcase
+   `erdos881_base4_full_instance` in the official predicates.
+
 # GENERAL ORDER: THE BASE-4 CARRY MENUS ARE VERIFIED (2026-08-02)
 
 `Erdos881/Base4CarryRepair.lean` (new module): the creative core of
