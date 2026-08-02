@@ -55,6 +55,8 @@ import Erdos881.DigitInstance
 import Erdos881.DigitCarryRepair
 import Erdos881.DigitGeneralMenu
 import Erdos881.DigitSieve
+import Erdos881.WindowDichotomy
+import Erdos881.PrivateTargetCensus
 import Erdos881.MarkerRepairs
 import Erdos881.DisjointRepEngine
 import Erdos881.CantorSieve
