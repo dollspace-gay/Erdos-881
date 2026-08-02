@@ -414,4 +414,209 @@ lemma eq_pow_of_single_digit {k m : ℕ} (hk : 1 ≤ k) :
     rw [pow_succ]
     omega
 
+/-- Equal digit profiles force equal numbers. -/
+lemma eq_of_digitsK {k : ℕ} (hk : 1 ≤ k) :
+    ∀ {a : ℕ} {c : ℕ},
+      (∀ i, a / (k + 1) ^ i % (k + 1) =
+        c / (k + 1) ^ i % (k + 1)) → a = c := by
+  intro a
+  induction a using Nat.strong_induction_on with
+  | _ a ih =>
+    intro c h
+    rcases Nat.eq_zero_or_pos a with rfl | hpos
+    · symm
+      apply eq_zero_of_digitsK hk
+      intro i
+      have := h i
+      simpa using this.symm
+    · have h0 : a % (k + 1) = c % (k + 1) := by
+        simpa using h 0
+      have htail : ∀ i,
+          a / (k + 1) / (k + 1) ^ i % (k + 1) =
+            c / (k + 1) / (k + 1) ^ i % (k + 1) := by
+        intro i
+        rw [← div_pow_succ, ← div_pow_succ]
+        exact h (i + 1)
+      have hlt : a / (k + 1) < a :=
+        Nat.div_lt_self (by omega) (by omega)
+      have hq := ih (a / (k + 1)) hlt htail
+      have hda := Nat.div_add_mod a (k + 1)
+      have hdc := Nat.div_add_mod c (k + 1)
+      rw [hq] at hda
+      omega
+
+/-- The scaled diagonal's digits. -/
+lemma diag_digit {k x : ℕ} (hx : IsDigitK k x)
+    (i : ℕ) :
+    k * x / (k + 1) ^ i % (k + 1) =
+      k * (x / (k + 1) ^ i % (k + 1)) := by
+  have h := tuple_digit (k := k) k (fun _ => x)
+    (le_refl k) (fun _ => hx) i
+  have hs : (∑ _l : Fin k, x) = k * x := by
+    simp [Finset.sum_const, Finset.card_univ,
+      smul_eq_mul]
+  have hs2 :
+      (∑ _l : Fin k,
+        x / (k + 1) ^ i % (k + 1)) =
+        k * (x / (k + 1) ^ i % (k + 1)) := by
+    simp [Finset.sum_const, Finset.card_univ,
+      smul_eq_mul]
+  rw [hs, hs2] at h
+  exact h
+
+/-- A saturated bounded sum forces every entry to one. -/
+lemma sum_saturated {k : ℕ} (f : Fin k → ℕ)
+    (hle : ∀ l, f l ≤ 1) (hsum : (∑ l, f l) = k) :
+    ∀ l, f l = 1 := by
+  by_contra hcon
+  push Not at hcon
+  obtain ⟨l₀, hl₀⟩ := hcon
+  have hz : f l₀ = 0 := by
+    have := hle l₀
+    omega
+  have hkpos : 0 < k := l₀.pos
+  have hsplit :
+      (∑ l, f l) =
+        f l₀ + ∑ l ∈ Finset.univ.erase l₀, f l :=
+    (Finset.add_sum_erase _ f
+      (Finset.mem_univ l₀)).symm
+  have hbound :
+      (∑ l ∈ Finset.univ.erase l₀, f l) ≤
+        (Finset.univ.erase l₀).card * 1 := by
+    have := Finset.sum_le_card_nsmul
+      (Finset.univ.erase l₀) f 1
+      (fun x _ => hle x)
+    simpa [smul_eq_mul] using this
+  have hcard :
+      (Finset.univ.erase l₀).card = k - 1 := by
+    rw [Finset.card_erase_of_mem
+      (Finset.mem_univ l₀), Finset.card_univ]
+    simp
+  omega
+
+/-- **Uniform diagonal rigidity**: the only order-`k` representation
+of `k·x` by digit numbers is `(x, …, x)`. -/
+theorem digit_diag_rigid {k x : ℕ} (hk : 1 ≤ k)
+    (hx : IsDigitK k x) (v : Fin k → ℕ)
+    (hv : ∀ l, IsDigitK k (v l))
+    (hsum : (∑ l, v l) = k * x) :
+    ∀ l, v l = x := by
+  intro l₀
+  apply eq_of_digitsK hk
+  intro i
+  have hdig := tuple_digit (k := k) k v (le_refl k)
+    hv i
+  rw [hsum, diag_digit hx] at hdig
+  have hd : x / (k + 1) ^ i % (k + 1) ≤ 1 := hx i
+  rcases Nat.eq_zero_or_pos
+    (x / (k + 1) ^ i % (k + 1)) with hz | hone
+  · rw [hz, Nat.mul_zero] at hdig
+    have hsingle :
+        v l₀ / (k + 1) ^ i % (k + 1) ≤
+          ∑ l, v l / (k + 1) ^ i % (k + 1) :=
+      Finset.single_le_sum
+        (f := fun l => v l / (k + 1) ^ i % (k + 1))
+        (fun _ _ => Nat.zero_le _)
+        (Finset.mem_univ l₀)
+    rw [hz]
+    omega
+  · have h1 : x / (k + 1) ^ i % (k + 1) = 1 := by
+      omega
+    rw [h1, Nat.mul_one] at hdig
+    have hall := sum_saturated
+      (fun l => v l / (k + 1) ^ i % (k + 1))
+      (fun l => hv l i) hdig.symm
+    have hvl :
+        v l₀ / (k + 1) ^ i % (k + 1) = 1 := hall l₀
+    rw [hvl, h1]
+
+/-- **Uniform low-order impossibility**: no `j < k` digit numbers sum
+to the digit-`k` target `k·(k+1)^m`. -/
+theorem digit_low_order_miss {k j : ℕ} (hjk : j < k)
+    (m : ℕ) (v : Fin j → ℕ)
+    (hv : ∀ l, IsDigitK k (v l)) :
+    (∑ l, v l) ≠ k * (k + 1) ^ m := by
+  intro hsum
+  have hdig := tuple_digit (k := k) j v
+    (by omega) hv m
+  rw [hsum] at hdig
+  have hkd :
+      k * (k + 1) ^ m / (k + 1) ^ m % (k + 1) =
+        k := by
+    rw [Nat.mul_div_cancel _ (basePow_pos k m)]
+    exact Nat.mod_eq_of_lt (by omega)
+  rw [hkd] at hdig
+  have hbound :
+      (∑ l, v l / (k + 1) ^ m % (k + 1)) ≤ j := by
+    calc (∑ l, v l / (k + 1) ^ m % (k + 1)) ≤
+        ∑ _l : Fin j, 1 := by
+          refine Finset.sum_le_sum ?_
+          intro l _
+          exact hv l m
+      _ = j := by simp
+  omega
+
+/-- The uniform basis in the official predicate. -/
+theorem digit_basis_official (k : ℕ) (hk : 1 ≤ k) :
+    IsExactTupleAsymptoticBasis (DigitSet k) k := by
+  refine ⟨0, fun n _ => ?_⟩
+  obtain ⟨v, hv, hsum⟩ := digit_basis k hk n
+  exact ⟨v, hv, hsum⟩
+
+/-- The uniform hard-case badge: for `k ≥ 3` the digit set misses
+order 2 cofinally. -/
+theorem digit_not_basis_two (k : ℕ) (hk : 3 ≤ k) :
+    ¬ IsExactTupleAsymptoticBasis (DigitSet k) 2 := by
+  rintro ⟨N, hN⟩
+  have hbig : N ≤ k * (k + 1) ^ N := by
+    have h1 : N < (k + 1) ^ N :=
+      Nat.lt_pow_self (by omega)
+    have h2 : (k + 1) ^ N ≤ k * (k + 1) ^ N :=
+      Nat.le_mul_of_pos_left _ (by omega)
+    omega
+  obtain ⟨v, hvmem, hvsum⟩ :=
+    hN (k * (k + 1) ^ N) hbig
+  exact digit_low_order_miss (by omega) N v
+    (fun l => hvmem l) hvsum
+
+/-- **Uniform strong minimality**: deleting any infinite subset
+destroys the diagonal targets `k·x`, `x ∈ B`, cofinally — the
+diagonal representation is unique, so its support `{x}` meets `B`. -/
+theorem digit_strong_deletion (k : ℕ) (hk : 1 ≤ k) :
+    StrongInfiniteDeletion
+      (additiveSupportFamily (DigitSet k) k)
+      (DigitSet k) := by
+  intro B hBsub hBinf N
+  obtain ⟨x, hxB, hNx⟩ := hBinf.exists_gt N
+  refine ⟨k * x, ?_, ?_⟩
+  · have hxk : x ≤ k * x :=
+      Nat.le_mul_of_pos_left _ (by omega)
+    omega
+  intro E hE
+  obtain ⟨w, hwA, hwsum, hEw⟩ :=
+    mem_additiveSupportFamily_iff.mp hE
+  have hxd : IsDigitK k x := hBsub hxB
+  have hall :=
+    digit_diag_rigid hk hxd (fun l => (w l).1)
+      (fun l => hwA l) hwsum
+  rw [Set.not_disjoint_iff]
+  refine ⟨x, ?_, hxB⟩
+  rw [← hEw]
+  exact Finset.mem_coe.mpr
+    (mem_tupleSupport_iff.mpr
+      ⟨⟨0, by omega⟩, hall ⟨0, by omega⟩⟩)
+
+/-- **The uniform hard-case theorem**: for every `k ≥ 2` the
+base-`(k+1)` digit set is a strongly minimal exact order-`k` basis,
+and for every `k ≥ 3` it is not an exact order-2 basis.  Every hard
+case of the general-order campaign is inhabited, in one stroke. -/
+theorem digit_uniform_hard_case (k : ℕ) (hk : 2 ≤ k) :
+    IsStronglyMinimalExactBasis (DigitSet k) k ∧
+      (3 ≤ k →
+        ¬ IsExactTupleAsymptoticBasis
+          (DigitSet k) 2) :=
+  ⟨⟨digit_basis_official k (by omega),
+    digit_strong_deletion k (by omega)⟩,
+    fun h3 => digit_not_basis_two k h3⟩
+
 end Erdos881Digit

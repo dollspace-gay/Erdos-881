@@ -44,6 +44,10 @@ basis.  Method: contradiction-mining a hypothetical counterexample
   `erdos881_base4_full_instance` (Base4Master) = strongly minimal
   exact order-3 basis, NOT order-2, powers-deletion survives at
   order 4.  The hard case is inhabited and behaves positively.
+- `Erdos881/DigitInstance.lean` — the uniform instance:
+  `digit_uniform_hard_case` = for EVERY k ≥ 2 the base-(k+1) digit
+  set is a strongly minimal exact order-k basis, not order-2 for
+  k ≥ 3.  Every hard case inhabited in one theorem.
 - `Erdos881/GeneralOrderAttack.lean` — the k ≥ 3 frontier (63k+
   lines): rank-descent injury streams, anchor forks, the descent
   highway to order 2, engine interface, transport levers, the

@@ -1,3 +1,41 @@
+# GENERAL ORDER: EVERY HARD CASE IS INHABITED, UNIFORMLY (2026-08-02)
+
+`digit_uniform_hard_case` (Erdos881/DigitInstance.lean): for EVERY
+`k ≥ 2` the base-`(k+1)` digit-{0,1} set `DigitSet k` is a strongly
+minimal exact order-`k` basis, and for every `k ≥ 3` it is not an
+exact order-2 basis — every hard case of the general-order campaign
+is inhabited, in one theorem, uniformly in `k`.
+
+The verified instances (Cantor, base 3; Base4, base 4) are the
+special cases; the mechanisms are proved uniformly:
+
+- `tuple_split` / `tuple_digit` (the uniform no-carry law): sums of
+  at most `k` digit numbers split at every scale — `k` ones fit
+  below the base `k+1`;
+- `digit_basis`: order-`k` covering with threshold 0 by digit
+  splitting;
+- `digit_low_order_miss`: no `j < k` digit numbers reach the
+  digit-`k` targets `k·(k+1)^m` — one theorem defeats every lower
+  order at once;
+- `digit_diag_rigid`: the diagonal `k·x` has the unique
+  representation `(x, …, x)` — the uniform engine of strong
+  minimality (`digit_strong_deletion`).
+
+Base convention that made it clean: everything is phrased over base
+`k + 1` literally, so `base − 1 = k` and no truncated subtraction
+appears; `ring` works throughout.  Lean notes: the `k = 0` base-1
+degeneracy genuinely breaks `eq_zero_of_digitsK` and `isDigitK_pow`
+(they carry `1 ≤ k`); Fin-sum rewrites need explicit function
+arguments or type-ascribed `have`s to force beta.
+
+REMAINING for the full uniform showcase (phase 2): the uniform
+deletion theorem — `DigitSet k` minus the powers `{(k+1)^m}` is an
+exact order-`(k+1)` basis for every `k` — via the uniform carry
+identity `b³ = k·b² + (k+1)·b` (parts: `k−1` copies of `b²+b+1`,
+one `b²+1`, one `b+1`), the uniform mixed menus, and a uniform
+master classifier over the `k` layers.  The two instance sieves
+(base 3, base 4) are its templates.
+
 # GENERAL ORDER: THE BASE-4 SHOWCASE IS COMPLETE (2026-08-02)
 
 `erdos881_base4_full_instance` (Erdos881/Base4Master.lean) — the
