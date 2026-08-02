@@ -1,3 +1,40 @@
+# GENERAL ORDER: THE BASE-4 CARRY MENUS ARE VERIFIED (2026-08-02)
+
+`Erdos881/Base4CarryRepair.lean` (new module): the creative core of
+the positive side, `CantorCarryRepair` one order up.  Verified:
+
+- `base4_carry_repair`: \(4^k = (84+84+68+20)\cdot 4^{k-4}\) — four
+  digit-\(\{0,1\}\) parts, none a pure power; the four 1-bits in one
+  column produce the base-4 carry \(1+1+1+1 = 10_4\) that no order-3
+  digit sum can imitate.
+- `base4_carry_repair_double`: \(2\cdot4^k = (272+80+80+80)\cdot
+  4^{k-4}\).
+- `base4_carry_repair_triple`: \(3\cdot4^k = (341+337+85+5)\cdot
+  4^{k-4}\).
+- `base4_demonstrator`: at every scale \(k \ge 4\), the powers
+  deletion kills the diagonal \(3\cdot4^k\) at order 3 COMPLETELY
+  (every order-3 representation uses a pure power — diagonal
+  rigidity), while order 4 repairs it with four non-power parts.
+  The deletion that destroys order 3 is invisible to order 4 — the
+  Erdős 881 conclusion pattern at k = 3, machine-checked on the
+  verified hard-case instance.
+
+Toolkit: `isBase4_pow`, `isBase4_shift`, `isBase4_of_digits`
+(bounded digit check + `decide`), `not_pure_of_bounds` (strictly
+between consecutive powers), `not_pure_of_scaled`.  Two generic
+lemmas replace the eighteen bespoke numeral proofs of the base-3
+template.
+
+REMAINING for the full instance conclusion (the analogue of
+`erdos881_cantor_full_instance`): the general-target sieve — every
+\(n \ge N_0\) has an order-4 representation avoiding all powers.
+The degenerate digit shapes needing carry menus are classified:
+\(4^a\), \(2\cdot4^a\), \(3\cdot4^a\) (done above) and the mixed
+shapes \(2\cdot4^a+4^v\), \(3\cdot4^a+4^v\), \(3\cdot4^a+4^u+4^v\),
+\(3\cdot4^a+2\cdot4^v\); every other digit profile splits without
+carries into at most four non-power digit parts (transversal
+assignment with no singleton slot).
+
 # GENERAL ORDER: THE HARD CASE IS INHABITED IN LEAN; THE PIVOT (2026-08-02)
 
 Two results close the day's arc.
