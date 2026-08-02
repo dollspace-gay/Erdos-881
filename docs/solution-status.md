@@ -1,3 +1,58 @@
+# GENERAL ORDER: THE DESCENT HIGHWAY REACHES ORDER TWO (2026-08-02)
+
+The rank descent is now a generic recursion, and it runs from the
+threshold-straddling attack all the way to the solved order-two
+vocabulary.
+
+`HasRankDescentStream A D j`: one infinite deletion `Z ⊆ D ∩ A`
+destroys cofinally many targets at order \(j\), while each selected
+target strictly dominates a value carrying a surviving order-\(j\)
+support disjoint from `Z`.  The surviving support is the descent fuel.
+`HasEscapingRankDescentStream A D j` is the same stream with every
+support point above every requested bound.
+
+- `HasCofinalFixedCoreThresholdStraddlingInjuries.toRankDescentStream`:
+  both fork horns of the straddling attack enter the highway at rank
+  \(k\) — the retained literal endpoint supports
+  \(\{x_n\}\cup K\) and \(\{x_n\}\cup G_{\Delta_n}\) survive strictly
+  below the destroyed current-order targets.
+- `HasRankDescentStream.anchorFork_descend` (one rung): a rank-`j+1`
+  stream either yields a rank-`j` stream — pigeonhole one recurring
+  anchor, descend the destroyed target through it, remove one
+  occurrence of it from the surviving representation — or escapes.
+- `HasRankDescentStream.descends_to_orderTwo_or_escape` +
+  `forces_orderTwoDescent_or_rankEscape` (capstone): every
+  threshold-straddling attack descends to a rank-2 stream or leaves
+  an escaping stream at some rank in \((2, k]\).
+- `HasRankDescentStream.orderTwo_desert_or_wounded` (the honest
+  summit interface): the rank-2 stream splits into cofinal order-two
+  DESERTS (no exact pair representation exists at all — a forced
+  sumset gap at pinned positions; in the hard case order-two
+  destruction can be vacuous, so this fork is mandatory before any
+  engine collision) or cofinal genuinely WOUNDED pair targets — pair
+  supports exist and every one meets the deletion.  The wounded horn
+  is the solved order-two engine's exact object.
+
+`HasCofinalEscapingAnchorSecondRankFans.forces_windowSqueezedTranslateFans`
+(the escape squeeze): in the escaping horn each stage carries two laws
+at one endpoint \(d = t + \Delta_n\): the escaping support represents
+`d` with every point above \(X\), and the arithmetic injury destroys
+\(d + \eta\).  Descending the destroyed translate through the escaping
+support confines an entire destroyed order-\((k-2)\) fan to the short
+window \([\eta,\, d + \eta - X)\), while \((k-1)n \le d\) and
+\(X < d\) force the endpoint to outgrow every window.  The escape pays
+for its liberty with short-range injuries.
+
+This is still not the full solution of Erdős 881 for \(k\ge3\).  The
+open residue after this block: (1) collide the WOUNDED rank-2 stream
+with the order-two engine (`DisjointRepEngine` laws expect
+pair-covered targets; the wounded horn hands them exactly that, with
+an infinite deletion `Z` in the hub role); (2) the DESERT horn — a
+cofinal exact-pair gap law with surviving pairs strictly below — needs
+its own counting treatment; (3) quantify the escape squeeze: the
+squeezed fans live at bounded distance from their translates while
+their endpoints race; compare fan positions across stages.
+
 # GENERAL ORDER: THE ANCHOR CARDINALITY FORK (2026-08-02)
 
 `HasCofinalFixedCoreThresholdStraddlingInjuries.secondRank_anchor_cardinality_fork`

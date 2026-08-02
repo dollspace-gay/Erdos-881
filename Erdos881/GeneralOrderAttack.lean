@@ -62714,4 +62714,371 @@ theorem
     · exact Or.inr (Or.inr (Or.inl h))
   · exact Or.inr (Or.inr (Or.inr hcross))
 
+/-- A rank-`j` descent stream: one infinite deletion `Z` inside `D`
+destroys cofinally many targets at order `j`, while every selected
+target strictly dominates a value carrying a surviving order-`j`
+support disjoint from `Z`.
+
+The surviving support is the descent fuel: each of its points is a
+basis element outside `Z`, so a surviving lower representation of the
+destroyed difference would splice with that point into a surviving
+representation of the target one order up. -/
+def HasRankDescentStream (A D : Set ℕ) (j : ℕ) : Prop :=
+  ∃ Z : Set ℕ,
+    Z ⊆ D ∧
+    Z ⊆ A ∧
+    Z.Infinite ∧
+    ∀ L, ∃ q v, ∃ S : Finset ℕ,
+      L ≤ q ∧
+      v < q ∧
+      S ∈ additiveSupportFamily A j v ∧
+      Disjoint (S : Set ℕ) Z ∧
+      DestroysAt (additiveSupportFamily A j) Z q
+
+/-- An escaping rank-`j` descent stream: beyond every bound the stream
+still fires, with every point of the selected surviving support above
+that bound, so the surviving values outgrow every fixed window. -/
+def HasEscapingRankDescentStream
+    (A D : Set ℕ) (j : ℕ) : Prop :=
+  ∃ Z : Set ℕ,
+    Z ⊆ D ∧
+    Z ⊆ A ∧
+    Z.Infinite ∧
+    ∀ X L, ∃ q v, ∃ S : Finset ℕ,
+      L ≤ q ∧
+      v < q ∧
+      X < v ∧
+      S.Nonempty ∧
+      (∀ a ∈ S, X < a) ∧
+      S ∈ additiveSupportFamily A j v ∧
+      Disjoint (S : Set ℕ) Z ∧
+      DestroysAt (additiveSupportFamily A j) Z q
+
+/-- The threshold-straddling attack is a rank-`k` descent stream: both
+fork horns destroy current-order targets cofinally, and the retained
+literal endpoint supports `insert marked core` and
+`insert marked translatedSupport` survive strictly below them. -/
+theorem
+    HasCofinalFixedCoreThresholdStraddlingInjuries.toRankDescentStream
+    {A D : Set ℕ} {k t : ℕ}
+    {target : ℕ → ℕ}
+    (hattack :
+      HasCofinalFixedCoreThresholdStraddlingInjuries
+        A D k t target) :
+    HasRankDescentStream A D k := by
+  obtain ⟨Z, lower, upper, displacement, markedPoint,
+      originIndex, translatedSupport, core,
+      hZD, hZA, hZInfinite,
+      _horiginStrict, hlowerStrict, hupperStrict,
+      _hinterlaced, _hcoreMem, _hcoreZ,
+      hdata, hfork⟩ := hattack
+  refine ⟨Z, hZD, hZA, hZInfinite, ?_⟩
+  intro L
+  rcases hfork with hbelow | habove
+  · obtain ⟨n, m, hnL, hlm, _hmu, hmDestroy,
+        _hd1, _hd2, _hd3⟩ := hbelow L
+    obtain ⟨_h1, _h2, _h3, _h4, _h5, _h6,
+        hlowerSupportMem, hlowerSupportZ,
+        _h9, _h10, _h11, _h12, _h13⟩ := hdata n
+    have hnlower : n ≤ lower n :=
+      hlowerStrict.le_apply
+    exact
+      ⟨m, lower n, insert (markedPoint n) core,
+        by omega, hlm, hlowerSupportMem,
+        hlowerSupportZ, hmDestroy⟩
+  · obtain ⟨n, m, hnL, hum, _hml, hmDestroy,
+        _hd1, _hd2⟩ := habove L
+    obtain ⟨_h1, _h2, _h3, _h4, _h5, _h6, _h7, _h8,
+        _h9, _h10, hupperSupportMem,
+        hupperSupportZ, _h13⟩ := hdata n
+    have hnupper : n ≤ upper n :=
+      hupperStrict.le_apply
+    exact
+      ⟨m, upper n,
+        insert (markedPoint n) (translatedSupport n),
+        by omega, hum, hupperSupportMem,
+        hupperSupportZ, hmDestroy⟩
+
+/-- **One rung of the descent recursion.**  A rank-`j+1` descent stream
+either descends to a rank-`j` descent stream — the finite cofinal
+pigeonhole fixes one recurring anchor inside the surviving supports,
+the destroyed target descends through that anchor, and one occurrence
+of the anchor is removed from the surviving representation — or the
+stream's surviving supports escape every bound. -/
+theorem HasRankDescentStream.anchorFork_descend
+    {A D : Set ℕ} {j : ℕ}
+    (h : HasRankDescentStream A D (j + 1)) :
+    HasRankDescentStream A D j ∨
+      HasEscapingRankDescentStream A D (j + 1) := by
+  classical
+  obtain ⟨Z, hZD, hZA, hZInf, hstream⟩ := h
+  by_cases hbounded :
+    ∃ X, ∀ L, ∃ q v, ∃ S : Finset ℕ,
+      L ≤ q ∧
+      v < q ∧
+      S ∈ additiveSupportFamily A (j + 1) v ∧
+      Disjoint (S : Set ℕ) Z ∧
+      DestroysAt
+        (additiveSupportFamily A (j + 1)) Z q ∧
+      ∃ a ∈ S, a ≤ X
+  · left
+    obtain ⟨X, hX⟩ := hbounded
+    have hcofinalLabel :
+        ∀ Y, ∃ q, Y < q ∧
+          ∃ w ∈ Finset.range (X + 1),
+            ∃ v, ∃ S : Finset ℕ,
+              v < q ∧
+              S ∈ additiveSupportFamily A (j + 1) v ∧
+              Disjoint (S : Set ℕ) Z ∧
+              DestroysAt
+                (additiveSupportFamily A (j + 1))
+                Z q ∧
+              w ∈ S := by
+      intro Y
+      obtain ⟨q, v, S, hLq, hvq, hSmem, hSZ,
+          hdest, a, haS, haX⟩ := hX (Y + 1)
+      exact
+        ⟨q, by omega, a,
+          Finset.mem_range.mpr (by omega),
+          v, S, hvq, hSmem, hSZ, hdest, haS⟩
+    obtain ⟨anchor, _hanchorRange, hanchorRec⟩ :=
+      finite_cofinal_pigeonhole hcofinalLabel
+    refine ⟨Z, hZD, hZA, hZInf, ?_⟩
+    intro L
+    obtain ⟨q, hq, v, S, hvq, hSmem, hSZ,
+        hdest, hanchorS⟩ := hanchorRec (L + anchor)
+    obtain ⟨_hSne, hfan⟩ :=
+      destroyedAdditiveTarget_descends_through_prescribedLowerSupport
+        (A := A) (X := Z) (k := j + 1)
+        (lowerTarget := v) (m := q)
+        (by omega) hvq hSmem hSZ hdest
+    obtain ⟨_hposA, hdestA⟩ := hfan anchor hanchorS
+    obtain ⟨S', hS'mem, hSins⟩ :=
+      additiveSupport_remove_hit_succ hSmem hanchorS
+    have hanchorLe : anchor ≤ v :=
+      additiveSupportFamily_supportsBounded A (j + 1)
+        v S hSmem anchor hanchorS
+    have hsub : S' ⊆ S := by
+      intro y hy
+      rw [hSins]
+      exact Finset.mem_insert_of_mem hy
+    have hS'Z : Disjoint (S' : Set ℕ) Z :=
+      hSZ.mono_left (Finset.coe_subset.mpr hsub)
+    refine
+      ⟨q - anchor, v - anchor, S', by omega,
+        by omega, hS'mem, hS'Z, ?_⟩
+    simpa only [Nat.add_sub_cancel] using hdestA
+  · right
+    refine ⟨Z, hZD, hZA, hZInf, ?_⟩
+    intro X L
+    have hnotX :
+        ¬ ∀ L', ∃ q v, ∃ S : Finset ℕ,
+          L' ≤ q ∧
+          v < q ∧
+          S ∈ additiveSupportFamily A (j + 1) v ∧
+          Disjoint (S : Set ℕ) Z ∧
+          DestroysAt
+            (additiveSupportFamily A (j + 1)) Z q ∧
+          ∃ a ∈ S, a ≤ X :=
+      fun hall => hbounded ⟨X, hall⟩
+    rw [not_forall] at hnotX
+    obtain ⟨L₀, hL₀⟩ := hnotX
+    obtain ⟨q, v, S, hLq, hvq, hSmem, hSZ, hdest⟩ :=
+      hstream (max L L₀)
+    have hescape : ∀ a ∈ S, X < a := by
+      intro a ha
+      by_contra hlt
+      have hle : a ≤ X := Nat.le_of_not_lt hlt
+      exact
+        hL₀
+          ⟨q, v, S,
+            le_trans (le_max_right L L₀) hLq,
+            hvq, hSmem, hSZ, hdest, a, ha, hle⟩
+    have hSne : S.Nonempty :=
+      additiveSupportFamily_supportsNonempty A
+        (by omega) v S hSmem
+    obtain ⟨a₀, ha₀⟩ := hSne
+    have hXv : X < v :=
+      lt_of_lt_of_le (hescape a₀ ha₀)
+        (additiveSupportFamily_supportsBounded A
+          (j + 1) v S hSmem a₀ ha₀)
+    exact
+      ⟨q, v, S, le_trans (le_max_left L L₀) hLq,
+        hvq, hXv, ⟨a₀, ha₀⟩, hescape, hSmem, hSZ,
+        hdest⟩
+
+/-- **The descent highway.**  Every rank-`j` descent stream with
+`j ≥ 2` either reaches rank 2 — the solved order-two engine's
+vocabulary — or records an escaping stream at some intermediate rank.
+Induction on the rung theorem. -/
+theorem HasRankDescentStream.descends_to_orderTwo_or_escape
+    {A D : Set ℕ} {j : ℕ}
+    (hj : 2 ≤ j)
+    (h : HasRankDescentStream A D j) :
+    HasRankDescentStream A D 2 ∨
+      ∃ j', 2 < j' ∧ j' ≤ j ∧
+        HasEscapingRankDescentStream A D j' := by
+  induction j with
+  | zero => omega
+  | succ i ih =>
+    rcases Nat.lt_or_ge 2 (i + 1) with h2 | h2
+    · rcases h.anchorFork_descend with hdown | hesc
+      · rcases ih (by omega) hdown with
+          htwo | ⟨j', hj'1, hj'2, hesc'⟩
+        · exact Or.inl htwo
+        · exact Or.inr ⟨j', hj'1, by omega, hesc'⟩
+      · exact Or.inr ⟨i + 1, h2, le_refl _, hesc⟩
+    · have h2eq : i + 1 = 2 := by omega
+      exact Or.inl (h2eq ▸ h)
+
+/-- **The capstone of the descent.**  Every threshold-straddling attack
+descends to a rank-2 stream or leaves an escaping stream at some rank
+in `(2, k]`. -/
+theorem
+    HasCofinalFixedCoreThresholdStraddlingInjuries.forces_orderTwoDescent_or_rankEscape
+    {A D : Set ℕ} {k t : ℕ}
+    {target : ℕ → ℕ}
+    (hk : 2 ≤ k)
+    (hattack :
+      HasCofinalFixedCoreThresholdStraddlingInjuries
+        A D k t target) :
+    HasRankDescentStream A D 2 ∨
+      ∃ j', 2 < j' ∧ j' ≤ k ∧
+        HasEscapingRankDescentStream A D j' :=
+  hattack.toRankDescentStream.descends_to_orderTwo_or_escape
+    hk
+
+/-- **The order-two fork.**  A rank-2 descent stream splits honestly:
+either cofinally many destroyed targets are order-two deserts — no
+exact pair representation exists at all, a forced sumset gap at pinned
+positions — or cofinally many destroyed targets genuinely carry pair
+supports, every one of which meets the deletion.  The second horn is
+the solved order-two engine's exact object. -/
+theorem HasRankDescentStream.orderTwo_desert_or_wounded
+    {A D : Set ℕ}
+    (h : HasRankDescentStream A D 2) :
+    (∃ Z : Set ℕ,
+      Z ⊆ D ∧ Z ⊆ A ∧ Z.Infinite ∧
+      ∀ L, ∃ q v, ∃ S : Finset ℕ,
+        L ≤ q ∧
+        v < q ∧
+        S ∈ additiveSupportFamily A 2 v ∧
+        Disjoint (S : Set ℕ) Z ∧
+        additiveSupportFamily A 2 q = ∅) ∨
+    (∃ Z : Set ℕ,
+      Z ⊆ D ∧ Z ⊆ A ∧ Z.Infinite ∧
+      ∀ L, ∃ q v, ∃ S E : Finset ℕ,
+        L ≤ q ∧
+        v < q ∧
+        S ∈ additiveSupportFamily A 2 v ∧
+        Disjoint (S : Set ℕ) Z ∧
+        E ∈ additiveSupportFamily A 2 q ∧
+        DestroysAt
+          (additiveSupportFamily A 2) Z q) := by
+  classical
+  obtain ⟨Z, hZD, hZA, hZInf, hstream⟩ := h
+  by_cases hdesert :
+    ∀ L, ∃ q v, ∃ S : Finset ℕ,
+      L ≤ q ∧
+      v < q ∧
+      S ∈ additiveSupportFamily A 2 v ∧
+      Disjoint (S : Set ℕ) Z ∧
+      additiveSupportFamily A 2 q = ∅
+  · exact Or.inl ⟨Z, hZD, hZA, hZInf, hdesert⟩
+  · right
+    rw [not_forall] at hdesert
+    obtain ⟨L₀, hL₀⟩ := hdesert
+    refine ⟨Z, hZD, hZA, hZInf, ?_⟩
+    intro L
+    obtain ⟨q, v, S, hLq, hvq, hSmem, hSZ, hdest⟩ :=
+      hstream (max L L₀)
+    rcases
+      Finset.eq_empty_or_nonempty
+        (additiveSupportFamily A 2 q) with
+      hempty | ⟨E, hE⟩
+    · exact
+        absurd
+          ⟨q, v, S,
+            le_trans (le_max_right L L₀) hLq,
+            hvq, hSmem, hSZ, hempty⟩
+          hL₀
+    · exact
+        ⟨q, v, S, E,
+          le_trans (le_max_left L L₀) hLq,
+          hvq, hSmem, hSZ, hE, hdest⟩
+
+/-- **The escape squeeze.**  In the escaping-anchor horn every selected
+stage carries two laws at one translated endpoint `d = t + Δₙ`: the
+escaping support represents `d` with every point above `X`, and the
+arithmetic injury destroys the translate `d + η`.  Descending the
+destroyed translate through the escaping support squeezes an entire
+destroyed order-`k-2` fan into the short window `[η, d + η - X)`
+hanging off the translate, while the linear floor `(k-1)·n ≤ d` and
+the escape bound `X < d` force the endpoint itself to outgrow every
+window.  The escape pays for its liberty with short-range injuries. -/
+theorem
+    HasCofinalEscapingAnchorSecondRankFans.forces_windowSqueezedTranslateFans
+    {A D : Set ℕ} {k t : ℕ}
+    {target : ℕ → ℕ}
+    (hk : 2 < k)
+    (hesc :
+      HasCofinalEscapingAnchorSecondRankFans
+        A D k t target) :
+    ∃ Z : Set ℕ,
+      Z ⊆ D ∧
+      Z ⊆ A ∧
+      Z.Infinite ∧
+      ∀ X L, ∃ n d η, ∃ S : Finset ℕ,
+        L ≤ n ∧
+        (k - 1) * n ≤ d ∧
+        X < d ∧
+        0 < η ∧
+        S ∈ additiveSupportFamily A (k - 1) d ∧
+        Disjoint (S : Set ℕ) Z ∧
+        S.Nonempty ∧
+        (∀ a ∈ S, X < a) ∧
+        DestroysAt
+          (additiveSupportFamily A (k - 1))
+          Z (d + η) ∧
+        ∀ a ∈ S,
+          η ≤ d + η - a ∧
+          d + η - a < d + η - X ∧
+          DestroysAt
+            (additiveSupportFamily A (k - 2))
+            Z (d + η - a) := by
+  classical
+  obtain ⟨Z, displacement, markedPoint, originIndex,
+      translatedSupport, hZD, hZA, hZInf,
+      _horiginStrict, hdata, hstream⟩ := hesc
+  refine ⟨Z, hZD, hZA, hZInf, ?_⟩
+  intro X L
+  obtain ⟨n, m, hnL, hSne, hescape, hXd,
+      _h5, _h6, _h7, _h8, _h9, _h10⟩ :=
+    hstream X L
+  obtain ⟨_hd1, _hd2, _hd3, hSmem, hSZ, hinjury⟩ :=
+    hdata n
+  obtain ⟨η, G, hfloor, hηpos, _hGmem, _hGZ,
+      hshiftDestroy, _hexit⟩ := hinjury
+  obtain ⟨_hSne', hfan⟩ :=
+    destroyedAdditiveTarget_descends_through_prescribedLowerSupport
+      (A := A) (X := Z) (k := k - 1)
+      (lowerTarget := t + displacement n)
+      (m := t + displacement n + η)
+      (by omega) (by omega) hSmem hSZ
+      hshiftDestroy
+  refine
+    ⟨n, t + displacement n, η, translatedSupport n,
+      hnL, hfloor, hXd, hηpos, hSmem, hSZ, hSne,
+      hescape, hshiftDestroy, ?_⟩
+  intro a ha
+  obtain ⟨_hpos, hdest⟩ := hfan a ha
+  have haLe : a ≤ t + displacement n :=
+    additiveSupportFamily_supportsBounded A (k - 1)
+      (t + displacement n) (translatedSupport n)
+      hSmem a ha
+  have haX : X < a := hescape a ha
+  have hrank : k - 1 - 1 = k - 2 := by omega
+  refine ⟨by omega, by omega, ?_⟩
+  simpa only [hrank] using hdest
+
 end Erdos881
