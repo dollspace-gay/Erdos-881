@@ -1,3 +1,39 @@
+# GENERAL ORDER: THE HARD CASE IS INHABITED IN LEAN; THE PIVOT (2026-08-02)
+
+Two results close the day's arc.
+
+LAB (`scripts/probe_desert_economy.py`): the desert economy is
+AFFORDABLE.  Greedy order-3 covering worlds honoring both good horns
+exist at scale (zero sum-free violations, difference fibers of size
+2–3), and adversarial deletions inside them sustain cofinal wounded
+streams at desert rates ≈ 0.99 with intact covering.  Confirmation of
+the export theorem in vivo: the maximal double-capture multiplicity
+in each world matches its fiber bound (1–2 vs fibers 2–3; the base-4
+control with infinite fibers shows multiplicity 128).  Consequence:
+the counting theorem alone cannot close the transport; per the
+decision rule, the campaign pivots to the POSITIVE side.
+
+LEAN (`Erdos881/Base4Instance.lean`, new module): the hard case of
+the general-order campaign is now formally non-empty.
+`base4_hard_case_instance`:
+
+- `Base4Set` (base-4 digit-{0,1}) is an exact order-3 basis with
+  threshold 0 (`base4_triple_basis`: order-3 addition of digit sets
+  never carries, so targets split digit by digit);
+- it is NOT an exact order-2 basis (`base4_pair_miss`: pair sums have
+  digits ≤ 2; the targets `3·4^m` are missed cofinally);
+- it is strongly minimal at order 3 (`base4_triple_of_three_mul`:
+  the diagonal `3b` has the UNIQUE representation `(b,b,b)`, so any
+  infinite deletion destroys its own diagonals — the order-3 analogue
+  of the Cantor doubles).
+
+This is the exact hypothesis class of `erdos881_general_of_hardCase`,
+now verified inhabited by a strongly minimal instance.  The remaining
+positive-side formal target: the carry-repair half — deleting the
+pure powers `{4^j}` leaves an exact order-4 basis (laboratory
+threshold 54; the `CantorCarryRepair` analogue one order up, where
+`1+1+1+1 = 10₄` unlocks the carries).
+
 # GENERAL ORDER: THE THREE-ANCHOR REPLAY RUNS (2026-08-02)
 
 `HasCofinalWoundedPairStream.threeAnchor_transport_export` runs the
