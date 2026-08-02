@@ -318,4 +318,203 @@ lemma isBase4_of_layer2_zero {n : ℕ}
     omega
   · omega
 
+/-- Adding a small tail below a pure power stays base-4. -/
+lemma isBase4_pow_add {q x : ℕ} (hx : IsBase4 x)
+    (hlt : x < 4 ^ q) : IsBase4 (4 ^ q + x) := by
+  have h := isBase4_scaled_add (y := 1) (m := q)
+    (isBase4_of_digits (c := 1) (L := 1)
+      (by norm_num) (by decide)) hx hlt
+  rwa [one_mul] at h
+
+/-- A pure power with a positive small tail is not pure. -/
+lemma not_pure_pow_add {q x : ℕ} (hx0 : 0 < x)
+    (hlt : x < 4 ^ q) :
+    ∀ j, 4 ^ q + x ≠ 4 ^ j := by
+  intro j hj
+  have hl : (4 : ℕ) ^ q < 4 ^ q + x := by omega
+  have hr : (4 : ℕ) ^ q + x < 4 ^ (q + 1) :=
+    calc (4 : ℕ) ^ q + x < 4 ^ q + 4 ^ q := by omega
+      _ = 2 * 4 ^ q := by ring
+      _ ≤ 4 * 4 ^ q :=
+        Nat.mul_le_mul_right _ (by norm_num)
+      _ = 4 ^ (q + 1) := by
+        rw [pow_succ]
+        ring
+  exact not_pure_of_bounds (L := q) hl hr ⟨j, hj⟩
+
+/-- **Mixed repair `3·4^a + 2·4^b`, doubled stray above the trey.** -/
+theorem base4_repair_tripleTwo_above (a b : ℕ)
+    (hb : 8 ≤ b) (hab : a < b) :
+    ∃ x y z t, IsBase4 x ∧ IsBase4 y ∧ IsBase4 z ∧
+      IsBase4 t ∧
+      (∀ j, x ≠ 4 ^ j) ∧ (∀ j, y ≠ 4 ^ j) ∧
+      (∀ j, z ≠ 4 ^ j) ∧ (∀ j, t ≠ 4 ^ j) ∧
+      x + y + z + t = 3 * 4 ^ a + 2 * 4 ^ b := by
+  rcases Nat.lt_or_ge a 4 with halow | hahigh
+  · -- small trey: expand the doubled block, attach the three
+    -- trey bits below its windows
+    have h256 : (4 : ℕ) ^ b = 256 * 4 ^ (b - 4) := by
+      have h := pow_shift_eq b 4 (by omega)
+      norm_num at h
+      exact h
+    have haw : (4 : ℕ) ^ a < 4 ^ (b - 4) :=
+      Nat.pow_lt_pow_right (by norm_num) (by omega)
+    have h64w :
+        (4 : ℕ) ^ (b - 1) = 64 * 4 ^ (b - 4) := by
+      have h := pow_shift_eq (b - 1) 3 (by omega)
+      have he : b - 1 - 3 = b - 4 := by omega
+      rw [he] at h
+      norm_num at h
+      exact h
+    have h256w :
+        (4 : ℕ) ^ (b - 1 + 1) = 256 * 4 ^ (b - 4) := by
+      have he : b - 1 + 1 = b := by omega
+      rw [he]
+      exact h256
+    have h1024w :
+        (4 : ℕ) ^ (b + 1) = 1024 * 4 ^ (b - 4) := by
+      have h := pow_shift_eq (b + 1) 5 (by omega)
+      have he : b + 1 - 5 = b - 4 := by omega
+      rw [he] at h
+      norm_num at h
+      exact h
+    refine
+      ⟨272 * 4 ^ (b - 4) + 4 ^ a,
+        80 * 4 ^ (b - 4) + 4 ^ a,
+        80 * 4 ^ (b - 4) + 4 ^ a, 80 * 4 ^ (b - 4),
+        ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · exact isBase4_scaled_add
+        (isBase4_of_digits (c := 272) (L := 5)
+          (by norm_num) (by decide))
+        (isBase4_pow a) haw
+    · exact isBase4_scaled_add
+        (isBase4_of_digits (c := 80) (L := 4)
+          (by norm_num) (by decide))
+        (isBase4_pow a) haw
+    · exact isBase4_scaled_add
+        (isBase4_of_digits (c := 80) (L := 4)
+          (by norm_num) (by decide))
+        (isBase4_pow a) haw
+    · exact isBase4_scaledConst (c := 80) (L := 4)
+        (b - 4) (by norm_num) (by decide)
+    · have hl :
+          (4 : ℕ) ^ b < 272 * 4 ^ (b - 4) + 4 ^ a :=
+        calc (4 : ℕ) ^ b = 256 * 4 ^ (b - 4) := h256
+          _ < 272 * 4 ^ (b - 4) :=
+            Nat.mul_lt_mul_of_pos_right (by norm_num)
+              (pow4_pos _)
+          _ ≤ 272 * 4 ^ (b - 4) + 4 ^ a :=
+            Nat.le_add_right _ _
+      have hr :
+          272 * 4 ^ (b - 4) + 4 ^ a < 4 ^ (b + 1) :=
+        calc 272 * 4 ^ (b - 4) + 4 ^ a <
+            272 * 4 ^ (b - 4) + 4 ^ (b - 4) :=
+              Nat.add_lt_add_left haw _
+          _ = 273 * 4 ^ (b - 4) := by ring
+          _ ≤ 1024 * 4 ^ (b - 4) :=
+            Nat.mul_le_mul_right _ (by norm_num)
+          _ = (4 : ℕ) ^ (b + 1) := h1024w.symm
+      exact fun j hj =>
+        not_pure_of_bounds (L := b) hl hr ⟨j, hj⟩
+    · have hl :
+          (4 : ℕ) ^ (b - 1) <
+            80 * 4 ^ (b - 4) + 4 ^ a :=
+        calc (4 : ℕ) ^ (b - 1) = 64 * 4 ^ (b - 4) :=
+            h64w
+          _ < 80 * 4 ^ (b - 4) :=
+            Nat.mul_lt_mul_of_pos_right (by norm_num)
+              (pow4_pos _)
+          _ ≤ 80 * 4 ^ (b - 4) + 4 ^ a :=
+            Nat.le_add_right _ _
+      have hr :
+          80 * 4 ^ (b - 4) + 4 ^ a <
+            4 ^ (b - 1 + 1) :=
+        calc 80 * 4 ^ (b - 4) + 4 ^ a <
+            80 * 4 ^ (b - 4) + 4 ^ (b - 4) :=
+              Nat.add_lt_add_left haw _
+          _ = 81 * 4 ^ (b - 4) := by ring
+          _ ≤ 256 * 4 ^ (b - 4) :=
+            Nat.mul_le_mul_right _ (by norm_num)
+          _ = (4 : ℕ) ^ (b - 1 + 1) := h256w.symm
+      exact fun j hj =>
+        not_pure_of_bounds (L := b - 1) hl hr ⟨j, hj⟩
+    · have hl :
+          (4 : ℕ) ^ (b - 1) <
+            80 * 4 ^ (b - 4) + 4 ^ a :=
+        calc (4 : ℕ) ^ (b - 1) = 64 * 4 ^ (b - 4) :=
+            h64w
+          _ < 80 * 4 ^ (b - 4) :=
+            Nat.mul_lt_mul_of_pos_right (by norm_num)
+              (pow4_pos _)
+          _ ≤ 80 * 4 ^ (b - 4) + 4 ^ a :=
+            Nat.le_add_right _ _
+      have hr :
+          80 * 4 ^ (b - 4) + 4 ^ a <
+            4 ^ (b - 1 + 1) :=
+        calc 80 * 4 ^ (b - 4) + 4 ^ a <
+            80 * 4 ^ (b - 4) + 4 ^ (b - 4) :=
+              Nat.add_lt_add_left haw _
+          _ = 81 * 4 ^ (b - 4) := by ring
+          _ ≤ 256 * 4 ^ (b - 4) :=
+            Nat.mul_le_mul_right _ (by norm_num)
+          _ = (4 : ℕ) ^ (b - 1 + 1) := h256w.symm
+      exact fun j hj =>
+        not_pure_of_bounds (L := b - 1) hl hr ⟨j, hj⟩
+    · exact fun j => not_pure_of_scaled
+        (not_pure_of_bounds (c := 80) (L := 3)
+          (by norm_num) (by norm_num)) j
+    · rw [h256]
+      ring
+  · -- large trey: expand the trey, both stray bits ride above the
+    -- windows without collision
+    have h256 : (4 : ℕ) ^ a = 256 * 4 ^ (a - 4) := by
+      have h := pow_shift_eq a 4 (by omega)
+      norm_num at h
+      exact h
+    have hwb : ∀ c : ℕ, c ≤ 1024 →
+        c * 4 ^ (a - 4) ≤ 4 ^ (b - 1 + 1) → True :=
+      fun _ _ _ => trivial
+    have hcw : ∀ c : ℕ, c < 1024 →
+        c * 4 ^ (a - 4) < 4 ^ b := by
+      intro c hc
+      calc c * 4 ^ (a - 4) < 1024 * 4 ^ (a - 4) :=
+          Nat.mul_lt_mul_of_pos_right hc (pow4_pos _)
+        _ = 4 ^ (a + 1) := by
+          have h := pow_shift_eq (a + 1) 5 (by omega)
+          have he : a + 1 - 5 = a - 4 := by omega
+          rw [he] at h
+          norm_num at h
+          omega
+        _ ≤ 4 ^ b :=
+          Nat.pow_le_pow_right (by norm_num) (by omega)
+    refine
+      ⟨4 ^ b + 341 * 4 ^ (a - 4),
+        4 ^ b + 337 * 4 ^ (a - 4),
+        85 * 4 ^ (a - 4), 5 * 4 ^ (a - 4),
+        ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · exact isBase4_pow_add
+        (isBase4_scaledConst (c := 341) (L := 5)
+          (a - 4) (by norm_num) (by decide))
+        (hcw 341 (by norm_num))
+    · exact isBase4_pow_add
+        (isBase4_scaledConst (c := 337) (L := 5)
+          (a - 4) (by norm_num) (by decide))
+        (hcw 337 (by norm_num))
+    · exact isBase4_scaledConst (c := 85) (L := 4)
+        (a - 4) (by norm_num) (by decide)
+    · exact isBase4_scaledConst (c := 5) (L := 2)
+        (a - 4) (by norm_num) (by decide)
+    · exact not_pure_pow_add
+        (by positivity) (hcw 341 (by norm_num))
+    · exact not_pure_pow_add
+        (by positivity) (hcw 337 (by norm_num))
+    · exact fun j => not_pure_of_scaled
+        (not_pure_of_bounds (c := 85) (L := 3)
+          (by norm_num) (by norm_num)) j
+    · exact fun j => not_pure_of_scaled
+        (not_pure_of_bounds (c := 5) (L := 1)
+          (by norm_num) (by norm_num)) j
+    · rw [h256]
+      ring
+
 end Erdos881Base4
