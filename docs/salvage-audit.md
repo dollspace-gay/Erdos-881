@@ -1,68 +1,69 @@
-# Salvage audit of the counterexample-mining tower
+# Reuse audit of the earlier counterexample program
 
-*2026-07-23. Method: exhaustive grep-based reference analysis over all
-`Erdos881/*.lean`. "Terminal" = the theorem's name appears nowhere outside
-its own declaration; "load-bearing (×N)" = referenced N times by later
-material.*
+Audit date: 2026-07-23. Terminology and status revised 2026-08-03.
 
-## Headline finding
+This audit identifies earlier modules that remain useful for the current
+direct-construction proof. A declaration described as unreferenced is not
+mathematically false; it is simply not used by the current dependency chain.
 
-The final positive bridge — `exists_infiniteDeletion_threeBasis_iff_not_strongOrderThreeDeletion`
-and `uniformCoveredTripleBlockChoices_gives_infiniteDeletion_threeBasis`
-(tail of `FreeSetTripleRepairs.lean`) — is proved directly from
-`StrongInfiniteDeletion`. **None of the 90 `counterexample_forces_*`
-theorems is consumed by it.** The entire forced-structure tower is a
-self-contained exploration; ~46 of its endpoints are terminal dead leaves.
-Load-bearing spine hubs: `repairedCrossingReservoir` (×9),
-`repairedOptionTower` (×8),
-`disjointTargetStreams_or_migratedTwoRepairTraces` (×7).
+## Main conclusion
 
-## Machinery clusters and reusability
+The positive infinite-deletion criterion near the end of
+`FreeSetTripleRepairs.lean` is derived through `StrongInfiniteDeletion`. Most
+theorems named `counterexample_forces_*` are not used in that derivation. They
+form a separate collection of necessary conditions for a hypothetical
+counterexample.
 
-| Cluster | Location | Verdict |
+Frequently reused intermediate objects include:
+
+- `repairedCrossingReservoir`;
+- `repairedOptionTower`;
+- `disjointTargetStreams_or_migratedTwoRepairTraces`.
+
+Exact reference counts and line numbers from the original audit are omitted
+because they become stale as the files change.
+
+## Reusable modules
+
+| Component | Principal files | Current use |
 |---|---|---|
-| Free-set / bounded pair-map thinning | `BoundedPairFreeSet.lean` | **Reuse** — general engine for thinning away finite guardian/pair obstructions (both routes) |
-| Star-vs-matching pair-survival dichotomy | `FreeSetTripleRepairs.lean` ~6291–6561, 41932–42180 | **Reuse for guardian teams** — literally classifies infinite pair survival as matching or star |
-| 2-SAT / binary literals / implication edges | `FreeSetTripleRepairs.lean` ~5052–10800 | **Reuse for guardian teams** (a binary clause *is* a two-option guardian constraint); prune the migrated/SCC over-specializations |
-| Covered-block certificate pivot | `FiniteBlocks.lean`, `CertificateAmplification.lean`, file tail | **Keep — canonical.** The actual contradiction interface; needed by every route |
-| Candidate deletion / omega tower | `FreeSetTripleRepairs.lean` 31016–41470, 42480–42620 | **Reuse for the endgame** — produces the infinite surviving-deletion limit object |
-| Two-point destroyer / pair Ramsey | `InfinitePairRamsey.lean`, scattered | **Highest value for guardian teams** — rigid/nonrigid pair-sum dichotomy is exactly the team analysis |
-| Reflection / mirror | `ReflectionDefects.lean` (721 lines) | **Highest value for the mirror endgame** — already proves reflection + local translation for one destroyer, and ≤ 3 late singleton destroyers |
+| Free-set thinning for bounded pair maps | `BoundedPairFreeSet.lean` | Removes finitely controlled guardian and pair obstructions. |
+| Matching-versus-star classification | `FreeSetTripleRepairs.lean` | Classifies infinite pair-survival structure. |
+| Binary constraint machinery | `FreeSetTripleRepairs.lean` | Encodes finite two-option guardian constraints. |
+| Block certificates | `FiniteBlocks.lean`, `CertificateAmplification.lean` | Supplies the selector-certificate interface used by the current proof. |
+| Candidate deletion limits | `FreeSetTripleRepairs.lean` | Constructs infinite deletion objects from compatible finite stages. |
+| Infinite pair Ramsey theory | `InfinitePairRamsey.lean` | Separates rigid and nonrigid pair configurations. |
+| Reflection and private targets | `ReflectionDefects.lean` | Provides local translation and singleton-destruction bounds. |
+| General selector attack | `GeneralOrderAttack.lean` | Supplies target localization, protected repair, and arithmetic classification. |
 
-`ReflectionDefects.lean` deserves emphasis: it already contains
-`privateOrderThree_implies_longReflection`,
-`two_privateOrderThreeTargets_imply_localTranslation`,
-`ncard_arbitrarilyLateSingletonDestruction_orderThree_le_three`, and
-`infinitelyMany_singletonDeletions_preserve_orderThree` — the same circle
-of ideas now completed by `GuardianRigidity.lean` (cross-guardian
-no-stacking) and `MirrorPeriodicity.lean` (levels → periodicity →
-surviving deletion). No periodicity predicate previously existed; the
-nearest analog is `IsEventuallySyndetic` (`AdditiveSupports.lean:208`)
-with its own surviving-deletion results at `AdditiveSupports.lean:4399+`.
+## Unreferenced or superseded groups
 
-## Prune candidates (dead branches)
+The following groups were identified as candidates for consolidation. They
+should not be deleted without a fresh dependency check.
 
-1. **Option-reservoir / external-core-certificate cluster**,
-   `FreeSetTripleRepairs.lean` ~43085–49159: ~14 declarations, mostly
-   terminal (sextuply/six-option systems, sharp/even/two-third certificate
-   tails). A parallel counting attempt that never reaches the pivot.
-2. **`disjointTargetStreams` migration variants**, ~40022–40314: six
-   terminal packagings hanging off the one live hub
-   (`migratedTwoRepairTraces`). Collapse to the hub.
-3. **`fullyCritical*` cofinal-trace leaves**, ~13849–14180: terminal
-   variants off `fullyCriticalCofinalTraceDichotomy` (×7).
-4. **`lateralSwitch`/`fixedTranslation` re-packaging ladder**,
-   ~35973–36760: chain of superseded endpoint restatements.
-5. **Certified sunflower bridge tail**, ~49434–49687: thematically
-   adjacent to the pivot but not wired into it — either wire in or prune.
+1. Option-reservoir and external-core certificate variants in
+   `FreeSetTripleRepairs.lean`.
+2. Multiple restatements of `disjointTargetStreams` migration results.
+3. Specialized `fullyCritical*` cofinal-trace endpoints.
+4. Successive `lateralSwitch` and `fixedTranslation` packaging theorems.
+5. Certified sunflower endpoints that are not connected to the current block
+   certificate interface.
 
-## Key definitions inventory
+## Core definitions
 
-- `IsExactTupleAsymptoticBasis` — `AdditiveSupports.lean:2611`
-- `additiveSupportFamily` — `AdditiveSupports.lean:20`
-- `DestroysAt` — `FiniteBlocks.lean:32`
-- `StrongInfiniteDeletion` — `FiniteBlocks.lean:51`
-- `IsFiniteBlockPartition` — `FiniteBlocks.lean:19`
-- `IsEventuallySyndetic` — `AdditiveSupports.lean:208`
-- (new) `PairCovers`, `IsPrivateTriple` — `GuardianRigidity.lean`
-- (new) `IsReflectionLevel` — `MirrorPeriodicity.lean`
+- `additiveSupportFamily`: finite supports representing a target at a fixed
+  order.
+- `IsExactTupleAsymptoticBasis`: exact-order asymptotic basis property.
+- `IsFiniteBlockPartition`: a countable partition into finite nonempty blocks.
+- `DestroysAt`: a deletion meets every support for a target.
+- `StrongInfiniteDeletion`: an infinite deletion preserving the required
+  support condition.
+- `PairCovers`: pair-based covering relation.
+- `IsPrivateTriple`: a representation private to a marked element.
+- `IsReflectionLevel`: a finite reflection symmetry condition.
+
+## Maintenance rule
+
+New proof routes should depend on stable definitions and a small number of
+general interfaces. Specialized endpoint restatements should be added only
+when they remove a real hypothesis or close a new implication.

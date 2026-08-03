@@ -1,114 +1,80 @@
-# Thin-basis campaign results (2026-07-24)
+# Finite experiments on thin digit bases
 
-*Companion script: `scripts/probe_thin_bases.py` (+ inline chain-dodge
-verification). Motivation: the disputed NO-claim for problem 881 uses
-thin bases, and all small-guardian structures found by exhaustive search
-are sparse — thin bases are the serious counterexample zone.*
+Experiment date: 2026-07-24.
 
-## Headline: cofinal team protection exists in the wild
+Status: computational observations. None of the statements in this document
+is used as a proof of a universal theorem.
 
-In Nathanson's canonical thin minimal basis (numbers with binary digits
-on even positions ∪ odd positions), the census found **team-guarded
-targets at every dyadic scale**: the all-ones targets
-`2^k − 1 = 15, 31, 63, 127, 255, …` are each guarded by the pair of
-alternating-bit numbers `{a_k, 2a_k}` (…, {21,42}, {42,85}, {85,170} …).
-The base-3 analog shows the same phenomenon (guards 6, 20, 60, 182,
-546, …). Zero singleton-guarded targets in either basis.
+## Models
 
-This kills the hope that guardian protection is inherently single-scale:
-**teams stack cofinally in natural thin bases.** Our earlier stacking
-sweeps missed this because their families had free-standing guardians;
-the wild mechanism is *chained sharing* — consecutive teams share a
-guard, forming an infinite path.
+The scripts examine finite truncations of digit-type order-two bases,
+including:
 
-## Why these bases are still not counterexamples (verified)
+- the binary even-position/odd-position construction;
+- a base-three analogue;
+- randomized sparse order-two covering sets;
+- finite modifications intended to create additional guardian relations.
 
-The chain is dodgeable. Machine-checked in the 12-bit model:
+A target is called team-guarded in these experiments when every tested
+representation contains at least one member of a specified pair.
 
-- delete every other chain guard (either parity): **survives — zero
-  destroyed targets**;
-- delete two consecutive guards {21, 42}: destroys exactly their joint
-  lock 63;
-- delete all chain guards: destroys the cofinal family
-  {15, 31, 47, 63, 95, 127, 191, 255, …};
-- delete a whole dyadic layer of one digit class, or a residue class:
-  hundreds destroyed (structured deletions fail, as always).
+## Observed guardian graphs
 
-So the surviving infinite deletion exists — an independent set in the
-team chain — and the even/odd bases sit on the positive side.
+In the binary digit model, targets of the form `2^m - 1` are guarded by
+successive alternating-digit elements. The resulting finite guardian graph is
+a path. In the base-three model, the observed graph is a tree with a principal
+path and several leaves.
 
-## The sharpened battle line
+Consequences within the tested finite models:
 
-A genuine counterexample to 881 (k=2) must be a thin basis whose
-cross-scale team hypergraph has **no infinite dodgeable set**: every
-infinite subset of A must contain a complete guarding team for
-infinitely many targets. A path (each guard in ≤ 2 teams) is maximally
-dodgeable; the census shows guard-degrees 2–3 in both digit bases. The
-question is whether guard-degree can be made to grow so fast that
-independent sets die — an infinite-Ramsey-flavored density question, and
-exactly what the repo's star-vs-matching and pair-Ramsey machinery
-(`InfinitePairRamsey.lean`, the matching/star dichotomy) was built to
-attack. Single-scale 3-cliques of mutual guardianship exist
-(`probe_team_guardians.py`); cross-scale cliques have never been
-observed.
+- the guardian graphs are bipartite;
+- choosing one color class gives a large set containing no complete guardian
+  edge;
+- deleting two adjacent guards destroys their shared target;
+- deleting all sampled guards destroys many targets.
 
-## Also settled this campaign
+These observations show that cofinal guardian pairs can occur in natural thin
+bases while still allowing large independent deletions.
 
-Mass stacking sweep over **all 13** small-guardian structures at M=16,
-closure plus one-symmetric-pair variants, 3,716 second-scale candidates:
-zero fresh guardians, zero stacks. Singleton/small-guardian protection
-remains strictly single-scale — consistent with Erdős–Graham and
-Cassaigne–Plagne (S(2)=3) on the literature side.
+## Interlocking cost
 
-## Interlock experiments (`scripts/probe_team_interlock.py`, same day)
+`probe_team_interlock.py` measured the number of existing representations that
+must be removed to create edges between nonadjacent guardian vertices. In the
+tested digit models this number generally increases with the scale separation.
+The data suggest that adding many cross-scale guardian edges conflicts with
+the covering property.
 
-**A — exact team graphs.** Even/odd binary: the team graph is exactly the
-path 1–5–10–21–42–85–170–341–682–1365–2730, every guard-degree ≤ 2, zero
-triangles. Base-3: a caterpillar tree — spine 6–20–60–182–546 with
-degrees 3–4 and pendant leaves — still zero triangles. Trees are
-2-colorable, so an infinite dodge always exists. Guard-degree can exceed
-2 in the wild, but no clique seed (triangle) has ever been observed.
+This is an empirical pattern, not a proved lower bound.
 
-**B — the cost of interlocking.** For non-adjacent chain guards
-(a_i, a_j), the number of representations of a_i + a_j that a builder
-would have to destroy to create the team edge grows geometrically with
-scale: distance-2 costs run 5, 6, 15, 18, 45, 52, 135, 150 up the chain
-(≈ ×3 per scale); distance-3 costs 2, 3, 4, 5, 8, 9, 16. Interlocking
-the chain cofinally means paying a geometrically growing restructuring
-bill at every scale — quantified evidence that dense team hypergraphs
-fight the covering constraint harder and harder.
+## Random sparse models
 
-**C — random thin bases have no protection at all.** Eight randomized
-greedy order-2 coverings of [0,1200] (√-density): max guard-degree 0 in
-every trial — not a single guarded target. Team structure never arises
-generically; it requires deliberate digit-style design.
+The sampled randomized sparse covering sets produced no guarded targets in the
+tested range. Thus guardian structure was not generic in those samples. The
+sample size and finite cutoff are too small to support a probabilistic or
+asymptotic conclusion.
 
-**D — caveat.** The naive cross-scale triple family (one small block +
-three separated guards) cannot even maintain covering, so the exhaustive
-clique search was vacuous in that family; cross-scale cliques remain
-unobserved but also under-explored. A scaffolded family (chained blocks,
-E-O style) is the right next vehicle.
+## Triangle experiment
 
-**Verdict.** Every measurement points the same way: wild protection is
-tree-structured and dodgeable, interlocking costs grow geometrically,
-and generic thin bases have no protection whatsoever. A NO-construction
-must beat geometric edge costs at infinitely many scales simultaneously
-— nothing observed comes within sight of that. The dodge (choose an
-independent set in the team forest) is now the concrete YES-side proof
-strategy: prove team graphs of order-2 coverings are (eventually)
-triangle-poor / degenerate, and the surviving deletion follows.
+`probe_triangle_construction.py` attempted to add a closing edge to three
+successive guardian vertices by deleting representations that avoided the
+desired edge. In the tested finite scales, every such modification destroyed
+the covering property. One smallest-scale search was exhaustive up to the
+recorded finite bound.
 
-## Triangle-purchase experiment (probe_triangle_construction.py + inline)
+The experiment motivates the formal question addressed by
+`SeparatedTriangle.lean`: under what hypotheses can a separated guardian
+triangle coexist with order-two covering?
 
-Can the chain be interlocked into triangles by deleting the enabling
-representations of a closing edge {a_i, a_{i+2}}?  **No.** Greedy
-hitting sets at scales 0–4 all destroy the order-2 covering instantly
-(the enabling reps force deletion of load-bearing elements: 2, 8, 16,
-32, 64…).  At scale 0 the check is exhaustive: of all 22 hitting sets of
-every composition up to size 5, **zero** create the edge while keeping
-covering — the closing edge {5, 21} for target 26 is unbuyable at any
-price.  Mechanism: every enabling representation contains either a
-protected chain guard or a covering-critical element, so interlocking
-and covering are in direct conflict.  Gate 2b (pivot to NO) does not
-trigger; `no_separated_triangle` gains an exhaustive base case and an
-identified proof mechanism.
+## Valid conclusions
+
+The experiments support the following uses:
+
+- digit bases are important countermodels for overly strong local lemmas;
+- guardian pairs may persist across many scales;
+- a path or tree of guardian pairs still has large independent subsets;
+- any proof that excludes dense guardian graphs must use the additive
+  covering constraints, not graph theory alone.
+
+They do not prove that every guardian graph is eventually a forest, that every
+thin basis admits the required infinite deletion, or that Erdős 881 has a
+positive answer.

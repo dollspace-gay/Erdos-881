@@ -67,4 +67,6 @@ import Erdos881.InfiniteRamsey
 import Erdos881.FreeRank
 import Erdos881.GeneralOrder
 import Erdos881.GeneralOrderAttack
+import Erdos881.AdaptiveDirect
+import Erdos881.PrivateCoreStream
 import Erdos881.Endgame

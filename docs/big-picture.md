@@ -1,96 +1,82 @@
-# The Big Picture — Erdős 881 (k = 2), after the encirclement
-_2026-07-25, night.  Companion to `the_encirclement` in
-Erdos881/Endgame.lean.  ~150 verified theorems, zero sorries._
+# Technical overview of the Erdős 881 formalization
 
-## What is proven
+Last updated: 2026-08-03.
 
-**The problem is one tree.**  A counterexample exists iff the
-rep-freeness tree of some 2-covering set is well-founded
-(`endgame_final_form`).  Erdős 881 asks: does every such set
-have an infinite branch?
+This repository studies Erdős problem 881 by formalizing both structural
+consequences of a hypothetical counterexample and a direct construction of the
+required infinite deletion. The problem remains open in this repository.
 
-**The counterexample is six simultaneous structures**
-(`the_encirclement`): shell stratification with the depth tax;
-one of four rooms; marriage-network teams; the ω-pinch; cofinal
-fragility; unbounded r₂.  Each verified separately, all forced
-at once.
+## Formal setting
 
-## What the picture says
+An exact asymptotic basis of order `k` is a set `A ⊆ ℕ` for which every
+sufficiently large natural number is a sum of exactly `k` elements of `A`, with
+repetition allowed. The strong minimality hypothesis used here states that
+removing any infinite subset of `A` destroys the order-`k` basis property.
 
-**1. The theory is closed.**  Every quantitative consequence of
-counterexample-hood we can derive is inter-derivable with a
-small core (floods + caps + fragility).  Local attacks provably
-terminate in enemy-consistent configurations — this is now an
-audited fact, not a suspicion.  No single counting lemma closes
-the problem, because the space of such lemmas is exhausted.
+The desired conclusion is an infinite set `B ⊆ A` such that `A \ B` is an
+exact asymptotic basis of order `k + 1`.
 
-**2. The enemy lives in no-man's-land.**  Three branch
-mechanisms are verified: COUNTING kills pair-bounded (Sidon-like)
-worlds, ROBUSTNESS kills supply-rich (Cantor-like) worlds,
-ALIGNMENT kills structured (tower-like) worlds.  Every world
-anyone has ever constructed falls to one of the three.  The
-enemy must be simultaneously not-slack, not-thin, and
-not-aligned: structureless yet not random, at density √n where
-the inverse theorems of additive combinatorics have no reach.
-Erdős 881's difficulty is precisely the missing inverse theorem
-at basis density.
+## Current proof architecture
 
-**3. Self-avoidance is the entire content.**  Density costs
-nothing (completeness is automatic for spread-out dense
-families); the whole problem is whether some dense family dodges
-its own shadow.  The enemy's only shadow-casting devices are
-alignments — residue towers, mirrors, ladders — and alignment is
-exactly what it cannot afford to have.  The counterexample must
-be MISALIGNED WITH ITSELF AT EVERY SCALE, USING ONLY ALIGNMENTS
-TO DO IT.  That sentence is the moral of the entire verified
-corpus; turning "alignment" into a formal invariant with a
-conservation law is the one remaining mathematical act.
+The direct-construction route has the following dependency chain:
 
-**4. The enemy manufactures its own refutation's raw material.**
-Under hfail, freeness supply is INFINITE: the shells are
-infinitely many disjoint nonempty free sets — the enemy's own
-stalling machinery hands the constructor unlimited free
-material.  What hfail blocks is only the CHAINING: shells are an
-antichain of freedoms; a branch is a chain.  Converting infinite
-antichains into infinite chains is exactly what
-well-quasi-ordering theory (Nash-Williams) does.  All roads of
-the campaign now converge there: the arity-general Ramsey is
-verified in-repo; the barrier machinery over it is the final
-weapon this program points at.
+1. Clean supply implies an infinite basis-preserving deletion. Together with
+   the existing easy-case reductions, it is enough to prove clean supply for
+   the hard cases `3 ≤ k` that are not already exact order-two bases
+   (`DirectConstruction.lean`).
+2. Failure of local clean supply yields an atomic pinned tail
+   (`AdaptiveDirect.lean`).
+3. The private-core case yields either a moving-petal survival deletion or a
+   fixed-core collision (`PrivateCoreStream.lean`).
+4. The fixed-core collision also yields a survival deletion after splitting
+   the marker set.
+5. Under the counterexample assumption, the survival deletion yields a
+   bracketed sequence of surviving and destroyed targets.
+6. Target-local selector arguments turn the bracketed sequence into finite
+   selector certificates of arbitrarily large cardinality.
+7. Existing arithmetic classification reduces these certificates to three
+   unresolved structural outcomes.
 
-## The verdict the evidence supports
+The last step is the current frontier. The missing theorem must convert each
+arithmetic outcome to either a genuine lower-rank obstruction or uniform clean
+supply.
 
-Every probe, every construction, every branch mechanism says the
-answer to Erdős 881 (k = 2) is YES — minimal bases always carry
-a surviving deletion — and that the eventual proof will be an
-adaptive construction that converts the enemy's own guardianship
-into the alignment it forbids, with the chaining step supplied
-by Nash-Williams-style combinatorics over the freeness
-antichain.  The enemy survives tonight only as a logical shadow
-living in the gaps between counting arguments — every wall of
-its fortress is now machine-checked, and every wall is made of
-the same stone it is forbidden to own.
+## Earlier order-two program
 
-## Postscript (same night, 21:50)
+The files `DisjointRepEngine.lean`, `FreeRank.lean`, and `Endgame.lean` contain
+an earlier analysis specialized to order two. It proves many necessary
+conditions for a counterexample, including:
 
-Two hours after this document was written, the door it pointed
-at was opened: `shell_higman_chain` applies Mathlib's
-Nash-Williams machinery to the shell antichain, and
-`spine_lineage` extracts the canonical strictly increasing
-sequence threading the enemy's own shells.  The chaining program
-now has its raw spine, machine-checked.  The final distance is
-the interplay between lineage extension and the spine's own
-stall hubs — the adaptive game, now on canonical material.
+- well-foundedness of finite free-set extension relations;
+- rank assignments to those relations;
+- bounded-hub and disjoint-representation alternatives;
+- shell, matching, reflection, and guardian constraints;
+- `endgame_final_form`, which reformulates the order-two counterexample
+  condition using a well-founded representation-avoidance tree.
 
-## Second postscript (23:58 block time, same night)
+These results are valid conditional reductions, not a proof that a
+counterexample exists or that the problem is solved. They remain useful as a
+source of local combinatorial lemmas for the direct-construction program.
 
-The cascade continued past the door: `spine_stalls_hereditarily`
-set the game board (every spine subsequence forces a stall hub
-of spine elements, all subject to the cap suite), and
-`spine_rank_or_lockstep` / `root_rank_omega_or_lockstep` split
-the endgame in two: the root rank is infinite — the finite-rank
-room closes for good — or the enemy's shells eventually march as
-s parallel strictly increasing columns.  A fixed-width highway
-carrying an unbounded burden, versus a rank door already half
-shut.  The adaptive endgame now has a canonical board, canonical
-material, and a two-branch fork where both branches are narrow.
+## Interpretation of experiments
+
+Finite searches and digit-basis examples have two purposes:
+
+- reject proposed universal lemmas by finding finite or exact structured
+  countermodels;
+- identify hypotheses that distinguish additive structure from arbitrary
+  finite hypergraphs.
+
+Experimental success is not reported as evidence of a theorem. In particular,
+large finite certificates, cofinal surviving target sets, and behavior in
+base-4 or Cantor-type examples do not imply the required uniform conclusion.
+
+## Current conclusion
+
+The formal development has isolated a precise issue: local protected repairs
+can defeat every bounded target-local certificate, but the resulting
+certificates vary with the bound. A complete proof needs additional coherence
+or arithmetic structure across this family of finite certificates.
+
+For the detailed theorem chain and verification status, see
+`docs/solution-status.md`.
