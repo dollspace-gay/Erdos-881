@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""R4-world consistency lab: can a covering set carry a street
-ladder (pure-Q streets at n + d for many d), rungs v_d = n+d-q*,
-and b-pairs, simultaneously in [0, Y]?  Greedy construction with
-anti-diagonal avoidance."""
+"""Finite diagnostic for sequence world."""
 
 import sys
 Y, N0 = int(sys.argv[1]), 9
@@ -18,7 +15,7 @@ streets = [n + d for d in D]
 streetset = set(streets)
 
 def violates_street(x, Aset):
-    # adding x must not create a non-Q pair of any street
+    # adding x must not create a non-Q pair of any target sequence
     for s in streets:
         y = s - x
         if 0 <= y and (y in Aset or y == x):

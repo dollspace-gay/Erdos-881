@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""SLACK PARADOX measurement: seal-capacity vs density slack.
-Bases: greedy covering + extra random density factor.
-For each: slack, robustness profile, and seal rate on sampled
-tail pairs (hole-punching <= 6 removals, coverage preserved)."""
+"""Finite diagnostic for slack."""
 import random, math
 random.seed(881)
 

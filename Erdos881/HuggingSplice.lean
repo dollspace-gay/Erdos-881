@@ -1,39 +1,8 @@
 import Erdos881.CliqueSplice
 
-/-!
-# The hugging splice: pair-redundant edges die at every altitude
-
-Sharp pinning (`pinned_mirror_sharp`) needs no room, so it bites in
-the hugging regime too.  For a jointly 2-redundant pair `{u, v}`
-destroying `m`:
-
-* `upper_desert_of_pairRedundant` — no element can sit strictly
-  between the channels away from the two diagonals: above the
-  `v`-channel every fork branch is dead;
-* `level_lower_of_pairRedundant` — if the level `m - v` lagged far
-  behind `v`, a covering window would land inside that desert with
-  all four permitted values out of range: covering starves.  So
-  **levels grow with partners automatically**;
-* `surviving_deletion_of_quadDefects` — the windowed extraction
-  engine tolerating four rotating defects per level;
-* `surviving_deletion_of_pairRedundant_edges` — a 2-redundant guard
-  with jointly-redundant partners above every bound forces a
-  surviving deletion, clearance or no clearance: hugging is no
-  refuge.
-
-Together with `surviving_deletion_of_clear_pinned_edges`, the genuine
-clique branch is reduced to pair-*essential* partners — for a
-2-redundant `u`, partners essential in `A \ {u}`, a finite set by
-Grekos-type counting (literature; Open Link B1).
--/
-
 namespace Erdos881
 
-/-- **Upper desert.**  Between the channels, away from the guards and
-the two diagonals, a jointly 2-redundant pair's destroyed target
-tolerates no element at all: the `v`-branch is out of range and the
-`u`-branch is sharply pinned. -/
-theorem IsPairDestroyer.upper_desert_of_pairRedundant
+theorem IsPairDestroyer.upper_exclusion_interval_of_pairRedundant
     {A : Set ℕ} {N₀ N₂ u v m x : ℕ}
     (hcov : PairCovers A N₀)
     (hpair : TwoRedundantPair A u v N₂)
@@ -61,11 +30,6 @@ theorem IsPairDestroyer.upper_desert_of_pairRedundant
   · omega
   · omega
 
-/-- **Levels cannot lag their partners.**  If `m - v` were much
-smaller than `v`, the covering window at
-`q = 2(m - v) + 2u + N₀ + N₂ + 4` would land inside the upper desert
-with `u` below it, `v` and `m - 2u` above it, and `m - u - v` under
-its floor: nothing could cover `q`. -/
 theorem IsPairDestroyer.level_lower_of_pairRedundant
     {A : Set ℕ} {N₀ N₂ u v m : ℕ}
     (hcov : PairCovers A N₀)
@@ -79,15 +43,13 @@ theorem IsPairDestroyer.level_lower_of_pairRedundant
   obtain ⟨y, hy, z, hz, hyz⟩ := hcov q (by omega)
   have hkill : ∀ x ∈ A, 2 * x ≥ q → x ≤ q → False := by
     intro x hxA hxl hxr
-    exact hdes.upper_desert_of_pairRedundant hcov hpair huv hN₂
+    exact hdes.upper_exclusion_interval_of_pairRedundant hcov hpair huv hN₂
       hxA (by omega) (by omega) (by omega) (by omega) (by omega)
       (by omega) (by omega)
   rcases le_total y z with h | h
   · exact hkill z hz (by omega) (by omega)
   · exact hkill y hy (by omega) (by omega)
 
-/-- **Spare keys from four rotating defects.**  The windowed
-extraction engine tolerating four defect values at each level. -/
 theorem surviving_deletion_of_quadDefects
     {A : Set ℕ} {N₀ c w w' : ℕ} (L W d₁ d₂ d₃ d₄ : ℕ → ℕ)
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -287,12 +249,6 @@ theorem surviving_deletion_of_quadDefects
       omega
     · exact ⟨x, hx, y, hy, 0, h0, hxB, hyB, h0B, by omega⟩
 
-/-- **Pair-redundant partners run the extraction at any altitude.**
-A 2-redundant guard `u` with jointly-redundant partners above every
-bound forces a surviving deletion: each edge's level `m - v` is pinned
-near `v` by `level_lower_of_pairRedundant`, so levels grow with
-partners, and the four defects `u, v, m - 2u, m - u - v` are dodged
-arithmetically.  No clearance hypothesis appears. -/
 theorem surviving_deletion_of_pairRedundant_edges
     {A : Set ℕ} {N₀ N₂ u c : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -465,28 +421,22 @@ theorem surviving_deletion_of_pairRedundant_edges
       L j ≠ pm (b (κ k)) - u - pv (b (κ k))
     exact ⟨by omega, by omega, by omega, by omega⟩
 
-/-- **The grand assembly, second form.**  With the hugging splice the
-clique escape shrinks again: beyond some bound, every destroyer of an
-eligible 2-redundant vertex's edges must hug (`m < 3v`) *and* certify
-joint essentiality of its pair.  For a 2-redundant `u` that means all
-high partners are essential in `A \ {u}` — a finite set by Grekos-type
-counting (Open Link B1, literature). -/
-theorem erdos881_grand_assembly' {A : Set ℕ} {N₀ : ℕ}
+theorem erdos881_combined_criterion' {A : Set ℕ} {N₀ : ℕ}
     (hA : A.Infinite) (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hfunnel : HasCofinalPairFunnels A)
+    (hfunnel : HasCofinalPairTransversalFamilies A)
     (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
       w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g) :
     (∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
       ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
         x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n) ∨
     (∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m) ∨
-    (∃ L, L ⊆ A ∧ L.Infinite ∧ L.Pairwise (TeamEdge A) ∧
+    (∃ L, L ⊆ A ∧ L.Infinite ∧ L.Pairwise (PairTransversalEdge A) ∧
       ∀ u ∈ L, 0 < u → N₀ ≤ u → ∀ N₁, N₁ ≤ u →
         TwoRedundant A u N₁ → ∀ N₂, N₂ ≤ u →
         ∃ K, ∀ v m, K < v → u < v → v ≤ m →
           IsPairDestroyer A u v m →
           m < 3 * v ∧ ¬ TwoRedundantPair A u v N₂) := by
-  rcases infinite_teamClique_or_cofinal_privatePairs hA hfunnel with
+  rcases infinite_pairTransversalClique_or_cofinal_privatePairs hA hfunnel with
     ⟨L, hLA, hLinf, hLcl⟩ | ⟨L, hLA, hLinf, hstream⟩
   · by_cases hhug : ∀ u ∈ L, 0 < u → N₀ ≤ u → ∀ N₁, N₁ ≤ u →
         TwoRedundant A u N₁ → ∀ N₂, N₂ ≤ u →

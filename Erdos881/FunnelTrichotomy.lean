@@ -1,31 +1,6 @@
 import Erdos881.PinnedMirror
 import Erdos881.GuardianBridge
 
-/-!
-# The funnel trichotomy
-
-Foundation stone of Open Link A.  A target destroyed by an infinite
-deletion set `B` has all its exact three-term representations meeting
-`B` — but the transversal structure of a `≤ 3`-uniform family is tiny:
-*any single representation's `B`-part is a transversal candidate*.
-With `0` available outside `B`, the zero-augmented representation
-`0 + y + z` of a covered target has a `B`-part of size at most two, so
-exactly three things can happen:
-
-* that `B`-part is a **singleton funnel** — a private guardian from
-  `B` (the machinery of `GuardianRigidity` applies), or
-* it is a **pair funnel** — a team edge inside `B` (the machinery of
-  `TeamGraphRamsey`/`PinnedMirror` applies), or
-* some representation avoids it entirely, producing **two
-  representations with disjoint `B`-parts** — the diffuse case.
-
-Consequently a counterexample to Erdős 881 that dodges the funnel
-interfaces must, for some infinite `B` and *every* late destroyed
-target, realize the diffuse branch — cofinal disjoint-support
-destruction (`cofinal_funnel_trichotomy_of_deletionFailure`).  Killing
-that hereditary diffuse regime is what remains of Link A.
--/
-
 namespace Erdos881
 
 /-- `B` destroys `m` at order three over `A`, in elementary form: a
@@ -66,12 +41,7 @@ theorem destroyedBySet_of_no_surviving_tuple {A B : Set ℕ} {m : ℕ}
     fin_cases i <;> simp_all [Set.mem_diff]
   · simpa [Fin.sum_univ_three] using hsum
 
-/-- **The funnel trichotomy.**  A destroyed target of a deletion set
-not containing zero carries a singleton funnel from `B`, or a pair
-funnel from `B`, or two representations with disjoint `B`-parts: a
-zero-augmented representation whose `B`-part (at most two elements) is
-avoided entirely by a second representation. -/
-theorem DestroyedBySet.funnel_trichotomy {A B : Set ℕ} {N₀ m : ℕ}
+theorem DestroyedBySet.transversal_family_trichotomy {A B : Set ℕ} {N₀ m : ℕ}
     (h0 : 0 ∈ A) (h0B : 0 ∉ B)
     (hcov : PairCovers A N₀)
     (hdes : DestroyedBySet A B m) (hm : N₀ ≤ m) :
@@ -112,13 +82,6 @@ theorem DestroyedBySet.funnel_trichotomy {A B : Set ℕ} {N₀ m : ℕ}
         y', hy', z', hz', hsum',
         fun hyB' => absurd hyB' hyB, fun _ => ⟨h1, h2, h3⟩⟩)
 
-/-- **Diffuse destruction pairs up deletion elements.**  In the third
-branch of the trichotomy the second representation still meets `B` —
-necessarily outside the first representation's `B`-part.  So a target
-without singleton or pair funnels from `B` yields two *distinct*
-`B`-elements serving it through representations with disjoint
-`B`-parts: the raw pairs for a Ramsey argument on the diffuse
-regime. -/
 theorem DestroyedBySet.diffuse_witness_pair {A B : Set ℕ} {N₀ m : ℕ}
     (h0 : 0 ∈ A) (h0B : 0 ∉ B)
     (hcov : PairCovers A N₀)
@@ -126,7 +89,7 @@ theorem DestroyedBySet.diffuse_witness_pair {A B : Set ℕ} {N₀ m : ℕ}
     (hsing : ¬ ∃ u ∈ B, u ∈ A ∧ IsPrivateTriple A u m)
     (hpair : ¬ ∃ u ∈ B, ∃ v ∈ B, IsPairDestroyer A u v m) :
     ∃ b₁ ∈ B, ∃ b₂ ∈ B, b₁ ≠ b₂ ∧ b₁ ∈ A ∧ b₂ ∈ A ∧ b₁ ≤ m ∧ b₂ ≤ m := by
-  rcases hdes.funnel_trichotomy h0 h0B hcov hm with h | h | h
+  rcases hdes.transversal_family_trichotomy h0 h0B hcov hm with h | h | h
   · exact absurd h hsing
   · exact absurd h hpair
   obtain ⟨y, hy, z, hz, hyz, hB, x', hx', y', hy', z', hz', hsum',
@@ -149,14 +112,6 @@ theorem DestroyedBySet.diffuse_witness_pair {A B : Set ℕ} {N₀ m : ℕ}
     exact ⟨z, hzB, b₂, hb₂B, hne.symm, hz, hb₂A, by omega,
       by rcases hb₂rep with rfl | rfl | rfl <;> omega⟩
 
-/-- **The counting vise.**  Every member of the translated family of a
-destroyed target is two-representation-poor: the two-support of
-`m - x` (for any representation part `x ∈ A \ B`) lives inside
-`B ∪ ((m - x) - B)`, so its size is at most twice the number of
-deletion elements below `m`.  A sparse deletion set therefore forces
-all its destroyed targets — and their entire `A \ B`-translate
-families — to be nearly uniquely representable.  (`x = 0` gives the
-bound for the destroyed target itself.) -/
 theorem DestroyedBySet.translate_two_support_card_le
     {A B : Set ℕ} [DecidablePred (· ∈ A)] [DecidablePred (· ∈ B)]
     {m x : ℕ}
@@ -221,14 +176,6 @@ theorem not_twoDestroyedBySet_of_mem_diff {A B : Set ℕ} {n : ℕ}
   · exact h0B h'
   · exact hnB h'
 
-/-- **The elementwise fork trichotomy.**  Every undeleted element `x`
-below a destroyed target routes through some `u ∈ B`, and the landing
-point `m - x - u` either falls back into `B` or is an element whose
-cross-sum `u + x` is itself two-destroyed by `B` — otherwise an
-avoiding representation of `u + x` would resurrect the target.  This
-is the sharp pinning mechanism at set level: every deleted element
-that serves a diffuse target plants two-destroyed values, the raw
-material for density arguments against the diffuse regime. -/
 theorem DestroyedBySet.fork_trichotomy_elt {A B : Set ℕ} {N₀ m x : ℕ}
     (hcov : PairCovers A N₀)
     (hdes : DestroyedBySet A B m)
@@ -270,14 +217,7 @@ theorem DestroyedBySet.fork_trichotomy_elt {A B : Set ℕ} {N₀ m x : ℕ}
       · exact hne.2 h
       · exact hyB h
 
-/-- **Cofinal trichotomy from deletion failure.**  If deleting `B`
-(not containing zero) breaks the exact order-three basis property,
-then arbitrarily late targets realize the funnel trichotomy.  A
-counterexample to Erdős 881 therefore feeds every infinite `B ⊆ A`
-into singleton funnels, pair funnels, or cofinal disjoint-support
-destruction — Link A is exactly the exclusion of the third regime
-along some thinning. -/
-theorem cofinal_funnel_trichotomy_of_deletionFailure
+theorem cofinal_transversal_family_trichotomy_of_deletionFailure
     {A B : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (h0B : 0 ∉ B)
     (hcov : PairCovers A N₀)
@@ -300,7 +240,7 @@ theorem cofinal_funnel_trichotomy_of_deletionFailure
       ⟨0, h0, y, hy, z, hz, by omega⟩
       (fun ⟨v, hv, hs⟩ => hno v hv hs)
   exact ⟨m, le_trans (le_max_left _ _) hmN,
-    hdes.funnel_trichotomy h0 h0B hcov hm₀⟩
+    hdes.transversal_family_trichotomy h0 h0B hcov hm₀⟩
 
 /-- Order-three destruction shadows to order two: with `0` undeleted,
 a destroyed target is also two-destroyed.  Consequently the
@@ -318,8 +258,6 @@ theorem DestroyedBySet.twoDestroyed {A B : Set ℕ} {m : ℕ}
   · exact Or.inl h
   · exact Or.inr h
 
-/-- **Anchor supply from two disjoint packages.**  Two anchor packages
-with disjoint supports dodge any single prescribed value. -/
 theorem anchor_abundance_of_two_packages {A : Set ℕ}
     {c₁ w₁ w₁' c₂ w₂ w₂' : ℕ}
     (h₁ : c₁ ∈ A ∧ 0 < c₁ ∧ w₁ ∈ A ∧ w₁' ∈ A ∧
@@ -340,13 +278,6 @@ theorem anchor_abundance_of_two_packages {A : Set ℕ}
     exact ⟨c₁, hc₁, hc₁0, by omega, w₁, hw₁, w₁', hw₁',
       hs₁, hn₁, by omega, by omega⟩
 
-/-- **Concentration.**  If the undeleted elements below a destroyed
-target outnumber `n` copies of the deleted prefix, some single
-deleted element `u` serves more than `n` of the fork routes: for each
-such `x`, the landing point `m - x - u` falls back into `B` or plants
-the two-destroyed cross-sum `u + x`.  This is the pigeonhole that
-converts the fork trichotomy into density statements against the
-diffuse regime. -/
 theorem DestroyedBySet.concentration {A B : Set ℕ}
     [DecidablePred (· ∈ A)] [DecidablePred (· ∈ B)] {N₀ m n : ℕ}
     (hcov : PairCovers A N₀)
@@ -398,12 +329,6 @@ theorem DestroyedBySet.concentration {A B : Set ℕ}
   rw [hgeq] at hland
   exact ⟨hx'.2.1, hx'.2.2.1, hx'.2.2.2, hland⟩
 
-/-- **Translate exit.**  Combining concentration with the
-two-destroyed avoidance of undeleted elements: some single `u ∈ B`
-translates more than `n` undeleted elements clean out of `A \ B` —
-either the landing point of the fork or the cross-sum itself falls
-into `B ∪ (ℕ \ A)`.  A hereditarily diffuse structure must absorb
-such translate-exits at every scale for every sparse deletion. -/
 theorem DestroyedBySet.translate_exit {A B : Set ℕ}
     [DecidablePred (· ∈ A)] [DecidablePred (· ∈ B)] {N₀ m n : ℕ}
     (h0 : 0 ∈ A) (h0B : 0 ∉ B)
@@ -430,11 +355,6 @@ theorem DestroyedBySet.translate_exit {A B : Set ℕ}
           (not_twoDestroyedBySet_of_mem_diff h0 h0B huxA huxB)
     · exact Or.inr (Or.inr huxA)
 
-/-- **Anchor supply from doubling elements.**  Infinitely many
-elements with their doubles present, plus one honest nonzero
-unbalanced package, supply anchors dodging every value: for `g ≠ 0`
-take a doubling element above `g` with the trivial package
-`(c, 0, 2c)`; for `g = 0` use the nonzero package. -/
 theorem anchor_abundance_of_doubling {A : Set ℕ}
     (h0 : 0 ∈ A)
     (hdb : {c | c ∈ A ∧ 2 * c ∈ A ∧ 0 < c}.Infinite)
@@ -452,13 +372,7 @@ theorem anchor_abundance_of_doubling {A : Set ℕ}
     exact ⟨c, hcA, hc0, by omega, 0, h0, 2 * c, h2cA,
       by omega, by omega, by omega, by omega⟩
 
-/-- **Zero-guarded targets repel element differences.**  If every
-representation of both `m₁ < m₂` passes through `0`, then `m₂ - m₁`
-cannot be an element: the mirror of any positive `x` below `m₁`
-would combine with the difference into a positive representation of
-`m₂`.  The zero-guardian residue therefore forces the whole cofinal
-target family to have an `A`-free difference set. -/
-theorem zero_guardian_no_element_gap {A : Set ℕ} {N₀ m₁ m₂ x : ℕ}
+theorem zero_required_element_no_element_gap {A : Set ℕ} {N₀ m₁ m₂ x : ℕ}
     (hcov : PairCovers A N₀)
     (h1 : IsPrivateTriple A 0 m₁) (h2 : IsPrivateTriple A 0 m₂)
     (hlt : m₁ < m₂)
@@ -476,12 +390,7 @@ theorem zero_guardian_no_element_gap {A : Set ℕ} {N₀ m₁ m₂ x : ℕ}
   rcases h2.2 x hx (m₁ - x) hw (m₂ - m₁) hd (by omega) with h | h | h <;>
     omega
 
-/-- **Zero-guarded targets are never elements** (once separated): an
-element target `m₁ ∈ A` would put the difference `m₂ - m₁` into `A`
-by the mirror of the higher target, contradicting
-`zero_guardian_no_element_gap`.  The zero residue is thus confined to
-cofinal *non-element* targets with an `A`-free difference set. -/
-theorem zero_guardian_target_not_elt {A : Set ℕ} {N₀ m₁ m₂ x : ℕ}
+theorem zero_required_element_target_not_elt {A : Set ℕ} {N₀ m₁ m₂ x : ℕ}
     (hcov : PairCovers A N₀)
     (h1 : IsPrivateTriple A 0 m₁) (h2 : IsPrivateTriple A 0 m₂)
     (hlt : m₁ < m₂) (hsep : m₁ + N₀ ≤ m₂)
@@ -496,14 +405,9 @@ theorem zero_guardian_target_not_elt {A : Set ℕ} {N₀ m₁ m₂ x : ℕ}
       exact this ▸ hz
     · have : y = m₂ - m₁ := by omega
       exact this ▸ hy
-  exact zero_guardian_no_element_gap hcov h1 h2 hlt hx hx0 hxm hxlt hd
+  exact zero_required_element_no_element_gap hcov h1 h2 hlt hx hx0 hxm hxlt hd
 
-/-- **Three zero-guarded targets carve holes.**  Mirrors of the two
-lower targets combine into positive parts, so the balance
-`m₃ - (m₁ - x) - (m₂ - y)` can never be a positive element: the zero
-residue forces `A⁺` to avoid `m₃ - m₁ - m₂` plus the whole sumset of
-the two mirror windows. -/
-theorem zero_guardian_hole {A : Set ℕ} {N₀ m₁ m₂ m₃ x y z : ℕ}
+theorem zero_required_element_hole {A : Set ℕ} {N₀ m₁ m₂ m₃ x y z : ℕ}
     (hcov : PairCovers A N₀)
     (h1 : IsPrivateTriple A 0 m₁) (h2 : IsPrivateTriple A 0 m₂)
     (h3 : IsPrivateTriple A 0 m₃)
@@ -531,20 +435,14 @@ theorem zero_guardian_hole {A : Set ℕ} {N₀ m₁ m₂ m₃ x y z : ℕ}
   rcases h3.2 (m₁ - x) hw₁ (m₂ - y) hw₂ z hz hsum with h | h | h <;>
     omega
 
-/-- A singleton private guardian is a pair destroyer with itself. -/
+/-- A singleton private required element is a pair destroyer with itself. -/
 theorem IsPrivateTriple.isPairDestroyer_self {A : Set ℕ} {u m : ℕ}
     (h : IsPrivateTriple A u m) : IsPairDestroyer A u u m := by
   refine ⟨h.1, ?_⟩
   intro x hx y hy z hz hsum
   rcases h.2 x hx y hy z hz hsum with h' | h' | h' <;> tauto
 
-/-- **Link A is exactly diffuse exclusion.**  If every infinite
-deletion breaks the order-three basis (the counterexample property)
-and no infinite zero-free deletion set realizes the diffuse branch
-cofinally, then the cofinal pair-funnel interface holds: the
-trichotomy's other two branches are funnels.  This converts the
-remaining content of Link A into the formal statement `hnodiffuse`. -/
-theorem hasCofinalPairFunnels_of_diffuse_free {A : Set ℕ} {N₀ : ℕ}
+theorem hasCofinalPairTransversalFamilies_of_diffuse_free {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬ IsExactTupleAsymptoticBasis (A \ B) 3)
@@ -553,7 +451,7 @@ theorem hasCofinalPairFunnels_of_diffuse_free {A : Set ℕ} {N₀ : ℕ}
         ∃ x' ∈ A, ∃ y' ∈ A, ∃ z' ∈ A, x' + y' + z' = m ∧
           (y ∈ B → x' ≠ y ∧ y' ≠ y ∧ z' ≠ y) ∧
           (z ∈ B → x' ≠ z ∧ y' ≠ z ∧ z' ≠ z))) :
-    HasCofinalPairFunnels A := by
+    HasCofinalPairTransversalFamilies A := by
   intro B hBA hBinf N
   set B' := B \ {0} with hB'
   have hB'A : B' ⊆ A := fun x hx => hBA hx.1
@@ -561,7 +459,7 @@ theorem hasCofinalPairFunnels_of_diffuse_free {A : Set ℕ} {N₀ : ℕ}
   have h0B' : 0 ∉ B' := fun h => h.2 rfl
   obtain ⟨N₁, hN₁⟩ := hnodiffuse B' hB'A h0B' hB'inf
   obtain ⟨m, hm, htri⟩ :=
-    cofinal_funnel_trichotomy_of_deletionFailure h0 h0B' hcov
+    cofinal_transversal_family_trichotomy_of_deletionFailure h0 h0B' hcov
       (hfail B' hB'A hB'inf) (max N N₁)
   rcases htri with ⟨u, huB, _, hpriv⟩ | ⟨u, huB, v, hvB, hdes⟩ | hdiff
   · exact ⟨m, le_trans (le_max_left _ _) hm, u, huB.1, u, huB.1,
@@ -569,13 +467,6 @@ theorem hasCofinalPairFunnels_of_diffuse_free {A : Set ℕ} {N₀ : ℕ}
   · exact ⟨m, le_trans (le_max_left _ _) hm, u, huB.1, v, hvB.1, hdes⟩
   · exact absurd hdiff (hN₁ m (le_trans (le_max_right _ _) hm))
 
-/-- **The zero residue, packaged.**  If zero guards cofinally, then
-for any pair of separated targets: the lower target is not an
-element, the gap between targets is not an element, and every
-mirror-window sum combination is barred from being a positive
-element.  The residue is an extremely rigid object: cofinal
-non-element targets with an `A`-free difference set carving
-positive-sumset holes. -/
 theorem zero_residue_structure {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀)
     (hres : ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m)
@@ -590,18 +481,12 @@ theorem zero_residue_structure {A : Set ℕ} {N₀ : ℕ}
   intro hxm hxlt
   constructor
   · intro hd
-    exact zero_guardian_no_element_gap hcov h1 h2 (by omega)
+    exact zero_required_element_no_element_gap hcov h1 h2 (by omega)
       hx hx0 hxm hxlt hd
   · intro hm₁0 hm₁A
-    exact zero_guardian_target_not_elt hcov h1 h2 (by omega)
+    exact zero_required_element_target_not_elt hcov h1 h2 (by omega)
       (by omega) hm₁A hm₁0 hx hx0 hxm hxlt
 
-
-/-- **Gaps between zero-targets carry translate pairs.**  The gap
-`d = m₂ - m₁` is covered, its parts are both positive (else the gap
-or the target would be an element), and the higher mirror lifts one
-part: some `z ∈ A` with `0 < z < d` has `m₁ + z ∈ A` as well.  The
-zero residue must populate `A ∩ (A - m₁)` inside every gap. -/
 theorem zero_gap_interior_element {A : Set ℕ} {N₀ m₁ m₂ x : ℕ}
     (hcov : PairCovers A N₀)
     (h1 : IsPrivateTriple A 0 m₁) (h2 : IsPrivateTriple A 0 m₂)
@@ -614,14 +499,14 @@ theorem zero_gap_interior_element {A : Set ℕ} {N₀ m₁ m₂ x : ℕ}
     rcases Nat.eq_zero_or_pos y with h | h
     · exfalso
       have hzd : z = m₂ - m₁ := by omega
-      exact zero_guardian_no_element_gap hcov h1 h2 hlt hx hx0 hxm
+      exact zero_required_element_no_element_gap hcov h1 h2 hlt hx hx0 hxm
         hxlt (hzd ▸ hz)
     · exact h
   have hz0 : 0 < z := by
     rcases Nat.eq_zero_or_pos z with h | h
     · exfalso
       have hyd : y = m₂ - m₁ := by omega
-      exact zero_guardian_no_element_gap hcov h1 h2 hlt hx hx0 hxm
+      exact zero_required_element_no_element_gap hcov h1 h2 hlt hx hx0 hxm
         hxlt (hyd ▸ hy)
     · exact h
   -- lift the y-part through the higher mirror
@@ -637,12 +522,6 @@ theorem zero_gap_interior_element {A : Set ℕ} {N₀ m₁ m₂ x : ℕ}
   have : m₁ + z = m₂ - y := by omega
   exact this ▸ hlift
 
-
-/-- **Zero mirrors preserve primitivity.**  The mirror `m - p` of a
-primitive through a zero-guarded target is an element with no
-positive two-term representation — else the parts would assemble a
-positive representation of `m`.  The primitive set is mirror-closed
-around every zero target. -/
 theorem zero_mirror_primitive {A : Set ℕ} {N₀ m p : ℕ}
     (hcov : PairCovers A N₀)
     (hm : IsPrivateTriple A 0 m)
@@ -662,12 +541,6 @@ theorem zero_mirror_primitive {A : Set ℕ} {N₀ m p : ℕ}
   rintro ⟨s, hs, t, ht, hst, hs0, ht0⟩
   rcases hm.2 p hp s hs t ht (by omega) with h | h | h <;> omega
 
-/-- **Two zero targets translate primitives.**  Composing the mirrors
-of two zero-guarded targets pushes every windowed primitive up by the
-gap: the primitive set is translation-closed under `m₂ - m₁` on the
-window.  Iterated over a cofinal zero residue, the primitives form
-arithmetic-progression-like ladders — full structure for a future
-periodicity kill. -/
 theorem zero_targets_translate_primitives {A : Set ℕ} {N₀ m₁ m₂ p : ℕ}
     (hcov : PairCovers A N₀)
     (h1 : IsPrivateTriple A 0 m₁) (h2 : IsPrivateTriple A 0 m₂)
@@ -686,13 +559,6 @@ theorem zero_targets_translate_primitives {A : Set ℕ} {N₀ m₁ m₂ p : ℕ}
   have he : m₂ - (m₁ - p) = p + (m₂ - m₁) := by omega
   exact ⟨he ▸ hr, he ▸ hrprim⟩
 
-
-/-- **One primitive amplifies to cofinally many.**  Under a cofinal
-zero residue, a single windowed primitive generates primitives above
-every bound: each pair of fresh zero targets pushes the current
-primitive up by their gap.  Combined with
-`zero_guarded_iff_primitive`, the zero residue plus one primitive
-makes zero fully 2-essential. -/
 theorem cofinal_primitives_of_zero_residue {A : Set ℕ} {N₀ p : ℕ}
     (hcov : PairCovers A N₀)
     (hres : ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m)
@@ -712,11 +578,6 @@ theorem cofinal_primitives_of_zero_residue {A : Set ℕ} {N₀ p : ℕ}
           hqA hq0 (by omega) (by omega) (by omega) hqprim
       exact ⟨q + (m₂ - m₁), by omega, hmem, by omega, hprim'⟩
 
-
-/-- **Window elements of zero targets are primitive.**  A positive
-two-term representation of a window element assembles, with the
-mirror, a positive three-term representation of the target —
-forbidden.  So every window element is primitive. -/
 theorem zero_target_window_primitive {A : Set ℕ} {N₀ m a : ℕ}
     (hcov : PairCovers A N₀)
     (hm : IsPrivateTriple A 0 m)
@@ -733,11 +594,6 @@ theorem zero_target_window_primitive {A : Set ℕ} {N₀ m a : ℕ}
       exact this ▸ hy
   rcases hm.2 s hs t ht (m - a) hmir (by omega) with h | h | h <;> omega
 
-/-- **The zero residue forces a sum-free base.**  Under cofinal zero
-guardianship, no positive element has a positive two-term
-representation: `A⁺ + A⁺` misses `A` entirely.  Combined with
-covering this pins the residue to sum-free modular skeletons
-(`Z_g = R ∪ (R + R)` partitions with `R` sum-free, e.g. `±1 mod 5`). -/
 theorem zero_residue_sum_free {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀)
     (hres : ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m) :
@@ -748,12 +604,6 @@ theorem zero_residue_sum_free {A : Set ℕ} {N₀ : ℕ}
   exact zero_target_window_primitive hcov hpriv ha ha0 (by omega)
     (by omega)
 
-
-/-- **The zero residue partitions the integers exactly.**  Sum-freeness
-plus covering: from `N₀` on, the elements of `A` are exactly the
-numbers with no positive pair representation — `A⁺ + A⁺` is precisely
-the complement of `A`.  The residue's base is an exact
-complement-partition structure (Beatty/modular skeletons). -/
 theorem zero_residue_exact_partition {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀)
     (hres : ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m) :
@@ -776,11 +626,6 @@ theorem zero_residue_exact_partition {A : Set ℕ} {N₀ : ℕ}
         exact this ▸ hy
       · exact absurd ⟨y, hy, z, hz, hyz, hy0, hz0⟩ hnorep
 
-
-/-- **Sum-free elements have trivial two-support**: the only pair
-representation of an element is `0 + n`.  Hence any infinite deletion
-two-destroys its own elements — sum-free partition bases are
-automatically ℵ₀-minimal at order two. -/
 theorem sumfree_element_support {A : Set ℕ} {N₀ n : ℕ}
     (hcov : PairCovers A N₀)
     (hres : ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m)
@@ -792,10 +637,6 @@ theorem sumfree_element_support {A : Set ℕ} {N₀ n : ℕ}
   exact zero_residue_sum_free hcov hres n hn hn0
     ⟨y, hy, z, hz, hyz, by omega, by omega⟩
 
-/-- **Elements always carry positive triples**: for any element `n`
-and any positive element `x` in its window, `n - x` is a non-element
-(sum-freeness), hence a positive pair sum (partition), assembling a
-positive three-term representation of `n` through `x`. -/
 theorem sumfree_element_triple {A : Set ℕ} {N₀ n x : ℕ}
     (hcov : PairCovers A N₀)
     (hres : ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m)
@@ -820,11 +661,6 @@ theorem sumfree_element_triple {A : Set ℕ} {N₀ n x : ℕ}
     exact ⟨s, hs, t, ht, hs0, ht0, by omega⟩
   · omega
 
-
-/-- **THE ZERO RESIDUE IS DOUBLING-STARVED.**  Sum-freeness forbids
-`c` and `2c` coexisting in `A⁺`: the pair `c + c` would be a positive
-representation of the element `2c`.  Doubling supply therefore
-refutes cofinal zero-guardianship outright. -/
 theorem zero_residue_no_doubling {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀)
     (hres : ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m) :
@@ -833,7 +669,7 @@ theorem zero_residue_no_doubling {A : Set ℕ} {N₀ : ℕ}
   exact zero_residue_sum_free hcov hres (2 * c) h2c (by omega)
     ⟨c, hc, c, hc, by omega, hc0, hc0⟩
 
-/-- Doubling supply kills the zero residue. -/
+/-- Doubling supply contradicts the zero residue. -/
 theorem not_zero_residue_of_doubling {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀)
     (hdb : {c | c ∈ A ∧ 2 * c ∈ A ∧ 0 < c}.Infinite) :

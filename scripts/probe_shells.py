@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""Shell stratification probe: greedily compute inclusion-maximal
-rep-free sets (shells) on truncated models, iterating on the leftover
-pool.  Reports shell sizes, depth profile, and the duty heights the
-depth tax predicts (>= N0 + k/3 for depth-k+1 members)."""
+"""Finite diagnostic for rank layers."""
 import sys
 sys.setrecursionlimit(100000)
 
@@ -21,7 +18,7 @@ def free(S, tc):
     return all(any(Ss.isdisjoint(t) for t in ts) for ts in tc.values())
 
 def max_free_shell(pool, tc):
-    """greedy inclusion-maximal free subset of pool (ascending scan)"""
+    """Finite diagnostic for max free rank layer."""
     S = []
     for b in sorted(pool):
         if free(S + [b], tc):
@@ -58,7 +55,7 @@ def run(name, A, Y, N0):
     sizes = [len(s) for s in shells]
     print(f"{name:>9} Y={Y:4d} |A+|={len(Apos):3d} shells={len(shells):3d} "
           f"sizes={sizes[:12]}{'...' if len(sizes)>12 else ''} leftover={len(pool)}")
-    # duty height check for a few deep elements: min duty target over shell j
+    # duty height check for a few deep elements: min duty target over rank layer j
     if len(shells) >= 3:
         b = shells[-1][0]  # a deepest element
         heights = []

@@ -1,30 +1,8 @@
 import Erdos881.RotatingGuardianEndgame
 import Erdos881.PinnedMirror
 
-/-!
-# The clique splice: clear pinned edges run the extraction
-
-`LevelHubs` reduced the B3 splice to level hitting; this file removes
-the need for level hitting altogether.  The extraction engine's proof
-only reflects the anchor `c`, the unbalanced parts `w, w'`, and lower
-levels — so a *windowed* mirror suffices as long as each level's
-window swallows all lower levels (`hLW`).  Pinned mirror levels from a
-2-redundant clique vertex have window `v - u`, and the clique supplies
-partners `v` of unbounded height: choosing each partner above the
-previous level makes the windows outgrow the levels.
-
-`surviving_deletion_of_clear_pinned_edges`: a 2-redundant guard whose
-clear edges (`3v ≤ m`) reach arbitrarily high partners forces a
-surviving deletion.  Combined with `hugging_of_pairRedundant`, the
-genuine-clique branch of Link B is reduced to the hugging regime.
--/
-
 namespace Erdos881
 
-/-- **Spare keys from windowed rotating mirrors.**  The extraction
-engine with a window `W k` at each level: reflection is only promised
-below the window, and each window swallows the anchor data and all
-lower levels. -/
 theorem surviving_deletion_of_geometric_windowedDefects
     {A : Set ℕ} {N₀ c w w' : ℕ} (L W d : ℕ → ℕ)
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -203,11 +181,6 @@ theorem surviving_deletion_of_geometric_windowedDefects
       omega
     · exact ⟨x, hx, y, hy, 0, h0, hxB, hyB, h0B, by omega⟩
 
-/-- **Clear pinned edges run the extraction.**  A 2-redundant guard
-`u` whose clear edges (`3 * v ≤ m`) reach partners above every bound
-forces a surviving infinite deletion: the pinned levels `m - v` are
-element levels with windowed mirrors and constant defect `u`, and
-partners are chosen so each window swallows all lower levels. -/
 theorem surviving_deletion_of_clear_pinned_edges
     {A : Set ℕ} {N₀ N₁ u c : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -297,29 +270,21 @@ theorem surviving_deletion_of_clear_pinned_edges
         show L j + N₀ < nextW (2 * L k)
         omega
 
-/-- **The grand assembly.**  A counterexample structure with cofinal
-pair funnels and anchor abundance has exactly three escape routes
-left: a surviving deletion exists outright (contradicting
-counterexamplehood); or zero privately guards arbitrarily late
-targets; or the team clique survives with **every** eligible
-2-redundant vertex confined to hugging edges beyond some bound.  The
-stream branch, the fixed- and rotating-guardian branches, and the
-clear-edge clique branch are all dead. -/
-theorem erdos881_grand_assembly {A : Set ℕ} {N₀ : ℕ}
+theorem erdos881_combined_criterion {A : Set ℕ} {N₀ : ℕ}
     (hA : A.Infinite) (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hfunnel : HasCofinalPairFunnels A)
+    (hfunnel : HasCofinalPairTransversalFamilies A)
     (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
       w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g) :
     (∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
       ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
         x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n) ∨
     (∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m) ∨
-    (∃ L, L ⊆ A ∧ L.Infinite ∧ L.Pairwise (TeamEdge A) ∧
+    (∃ L, L ⊆ A ∧ L.Infinite ∧ L.Pairwise (PairTransversalEdge A) ∧
       ∀ u ∈ L, 0 < u → N₀ ≤ u → ∀ N₁, N₁ ≤ u →
         TwoRedundant A u N₁ →
         ∃ K, ∀ v m, K < v → u < v → 3 * v ≤ m →
           ¬ IsPairDestroyer A u v m) := by
-  rcases infinite_teamClique_or_cofinal_privatePairs hA hfunnel with
+  rcases infinite_pairTransversalClique_or_cofinal_privatePairs hA hfunnel with
     ⟨L, hLA, hLinf, hLcl⟩ | ⟨L, hLA, hLinf, hstream⟩
   · by_cases hhug : ∀ u ∈ L, 0 < u → N₀ ≤ u → ∀ N₁, N₁ ≤ u →
         TwoRedundant A u N₁ →

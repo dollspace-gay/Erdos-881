@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""Search small order-three sum hypergraphs for failed repair augmentation.
-
-For a finite A and target n, supports are the sets underlying unordered
-triples a <= b <= c in A with a+b+c=n.  We search for an inclusion-minimal
-transversal D such that every d in D has a nonempty unique-hit repair support,
-but no repairs belonging to two different hits have disjoint portions outside
-D.  Such an example refutes the naive two-repair augmentation step even in an
-actual additive support hypergraph.
-"""
+"""Finite diagnostic for search additive repair obstructions."""
 
 from argparse import ArgumentParser
 from itertools import combinations, combinations_with_replacement

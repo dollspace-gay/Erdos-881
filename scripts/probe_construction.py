@@ -1,25 +1,5 @@
 #!/usr/bin/env python3
-"""Probe: THE CONSTRUCTION (2026-07-26 pivot).
-
-Instead of contradiction-mining a hypothetical enemy, BUILD the
-deletion.  Repair Lemma: if 0 in A, 0 not in B, and
-
-  (1) every b in B splits as b = u + v with u, v in A \\ B,
-  (2) every large n has a pair rep with a part outside B,
-
-then A \\ B is a basis of order 3  (n = x+y+0, or n = u+v+y).
-
-Greedy construction: walk A upward, delete b when
-  - lacunary:      b > 3 * (largest deleted so far),
-  - splittable:    some rep b = u+v with u,v not already deleted
-                   (parts are smaller than b, later deletions are
-                   larger, so parts protect themselves),
-  - independent:   r2(b + b') >= 2 for every already-deleted b'
-                   (never delete both ends of a unique pair).
-
-Then verify: conditions (1),(2) hold, and A\\B covers at order 3.
-Report which hypothesis fails if any world resists.
-"""
+"""Finite diagnostic for construction."""
 
 import sys
 
@@ -33,7 +13,7 @@ N0 = 20
 
 
 def cantor_world(_seed=0, _s=None):
-    """Base-3 digit set {0,1}: the campaign's verified instance."""
+    """Finite diagnostic for cantor world."""
     A = set()
     for n in range(N + 1):
         m, ok = n, True
@@ -48,7 +28,7 @@ def cantor_world(_seed=0, _s=None):
 
 
 def r2_table(A, hi):
-    """r2[n] = number of unordered pairs {x,y} in A with x+y = n."""
+    """Finite diagnostic for r2 table."""
     As = sorted(A)
     r2 = [0] * (hi + 1)
     for i, x in enumerate(As):
@@ -63,7 +43,7 @@ def r2_table(A, hi):
 
 
 def served(A, Bset, m):
-    """Is m in (A\\B) + (A\\B) + (A\\B)?"""
+    """Finite diagnostic for served."""
     S = [x for x in sorted(A) if x not in Bset and x <= m]
     Sset = set(S)
     pairs = set()
@@ -76,7 +56,7 @@ def served(A, Bset, m):
 
 
 def build_deletion(A, r2, hi, start):
-    """The greedy construction."""
+    """Finite diagnostic for build deletion."""
     As = sorted(A)
     Aset = set(A)
     B, Bset = [], set()
@@ -111,7 +91,7 @@ def build_deletion(A, r2, hi, start):
 
 
 def check_conditions(A, Bset, splits, hi, lo):
-    """Verify Repair Lemma hypotheses (1) and (2) empirically."""
+    """Finite diagnostic for check conditions."""
     fails = []
     # (1) every deleted element splits into undeleted parts
     for b in Bset:

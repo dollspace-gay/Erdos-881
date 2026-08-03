@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""Empirical rank probe: the finite-regime freeness-tree rank equals
-the maximum free-set cardinality (verified: free_set_card_le_rank +
-rank_ge_imp_free_set).  Compute it on truncated models and watch how
-pool operations move it.
-
-S (subset of A-positive) is REP-FREE on window [N0, Y] iff every
-m in [N0, Y] has a triple x+y+z=m from A avoiding S.
-Max-free-card = longest chain = truncated root rank (downward-closed).
-"""
+"""Finite diagnostic for free rank."""
 import random
 
 def triples(A, m):

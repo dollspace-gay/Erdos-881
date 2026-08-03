@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""CRYSTAL HUNT v2 — engineered.  Base: greedy B2[g]-style covering
-set.  Tail: sparse geometric-ish elements.  For each tail pair
-(t_i, t_j), TRY to make some target m a full hub by hole-punching:
-remove base elements that enable pair-avoiding reps of m, while
-keeping coverage.  Measure: how many pairs can be simultaneously
-sealed, and what breaks."""
+"""Finite diagnostic for crystal2."""
 
 def covers_all(Aset, N0, Y):
     bad = []

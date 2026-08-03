@@ -1,16 +1,5 @@
 import Erdos881.ConstructionAudit
 
-/-!
-# Reflection structure forced by private successor targets
-
-For an exact order-two basis, a singleton destroyer at order three forces a
-long reflected copy of the basis.  Two well-separated private targets for the
-same singleton then compose to a local translation of the basis.
-
-These statements isolate the arithmetic content of the reflection--defect
-route.  They do not assume syndeticity or any density estimate.
--/
-
 open scoped BigOperators
 
 namespace Erdos881
@@ -305,16 +294,6 @@ theorem not_four_arbitrarilyLateSingletonDestroyers
   · have heq : v = u := by simpa [pair] using hi
     exact huv heq.symm
 
-/-- Only finitely many elements of an exact order-two basis can have
-arbitrarily late private order-three targets.
-
-Indeed, suppose there were infinitely many.  Choose one private point `x`
-and three further private points.  Two sufficiently separated private
-targets for `x` translate at least two of the three further points by the
-same positive amount (only one point can be fixed by the first reflection).
-One of those translated points and the other original point then give a
-noncanonical representation of a pair sum involving a private point,
-contradicting `orderTwoBasis_privateOrderThree_forces_pair_use`. -/
 theorem finite_arbitrarilyLateSingletonDestruction_orderThree
     {A : Set ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2) :

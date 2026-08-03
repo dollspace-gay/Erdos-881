@@ -1,17 +1,5 @@
 #!/usr/bin/env python3
-"""Exclusion cost accounting (Erdős 881, partner-mode endgame).
-
-Each served marker b (partner q, unique fiber b+q) excludes
-b+q-a from A for every a in A besides b, q.  Where do these
-excluded positions land?
-  - in co-A "for free" (structure already avoids them), or
-  - they'd collide with A (real constraints the enemy must bend to).
-
-Measure: for Cantor windows, the fraction of exclusion positions
-already outside A (prediction: ~all, via digit-2 creation); for
-generic covering sets, the collision fraction (prediction: high --
-the demand is unpayable).
-"""
+"""Finite diagnostic for exclusion cost."""
 import itertools, random
 
 def analyze(name, A, T, W):

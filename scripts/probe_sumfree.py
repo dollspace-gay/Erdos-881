@@ -1,21 +1,5 @@
 #!/usr/bin/env python3
-"""Probe: THE SUM-FREE CONSTRUCTION.
-
-Internally sum-free worlds (every element's only pair rep is
-0 + b) resist the splitting construction — nothing splits in two.
-But sum-freeness supplies its own repair: for x in A+, a - x can
-never lie in A (else a would be an internal positive sum), so
-a - x is a positive pair sum and a = x + u + v.  Every element is
-a sum of THREE positive elements.
-
-So the criterion becomes (deletion_criterion_sumfree):
-  (1) every deleted b is reachable by a surviving positive triple,
-  (2) every large non-basis target keeps a fully surviving pair.
-Surviving basis elements serve themselves (a = a + 0 + 0).
-
-Greedy: delete b when both hold.  This is the {0} u ODDS
-mechanism in general form.
-"""
+"""Finite diagnostic for sumfree."""
 
 import sys
 
@@ -26,12 +10,12 @@ from probe_construction import cantor_world, N
 
 
 def odds_world(_seed=0):
-    """{0} u ODDS: the canonical internally sum-free basis."""
+    """Finite diagnostic for odds world."""
     return {0} | {n for n in range(1, N + 1) if n % 2 == 1}
 
 
 def pos_pair_counts(A, Bset, hi):
-    """cnt2[n] = # unordered pairs {x,y}, x,y in A+ \\ B, x+y = n."""
+    """Finite diagnostic for pos pair counts."""
     S = [x for x in sorted(A) if x > 0 and x not in Bset]
     cnt2 = [0] * (hi + 1)
     for i, x in enumerate(S):
@@ -52,7 +36,7 @@ def sumfree_greedy(A, hi, start):
     live = lambda z: z > 0 and z in Aset and z not in Bset
 
     def reps_after(n, b):
-        """surviving positive pair reps of n once b is also deleted"""
+        """Finite diagnostic for reps after."""
         if n > hi:
             return 99
         lost = 1 if (n - b > 0 and live(n - b)) else 0
@@ -104,7 +88,7 @@ def order3_bad(A, Bset, lo, hi):
 
 
 def sumfree_frac(A, lo, hi):
-    """fraction of elements with NO nontrivial split"""
+    """Finite diagnostic for sumfree frac."""
     As = sorted(A)
     Aset = set(A)
     tot = triv = 0

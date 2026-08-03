@@ -1,21 +1,5 @@
 import Erdos881.FreeSetTripleRepairs
 
-/-!
-# A cofinite atomic obstruction
-
-The zero-atomic reduction exposes a genuine counterexample-shaped mechanism.
-If, outside a finite exceptional set, every `a ∈ A` destroys its own target
-when `a` is deleted, then every infinite deletion has arbitrarily large
-destruction witnesses: simply choose a sufficiently large deleted atom.
-
-This file isolates that mechanism abstractly and then specializes it to
-canonical additive atoms at orders two and three.  Thus a construction of an
-order-two basis with cofinally many canonical atoms at both orders would give
-a negative answer to the order-two instance of Erdős 881.  Conversely, any
-positive proof must rule out this exact structure or find its deletion
-outside the atomic part.
--/
-
 namespace Erdos881
 
 /-- Outside a finite exception, every point destroys the support family at

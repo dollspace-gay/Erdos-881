@@ -1,34 +1,8 @@
 import Erdos881.FixedGuardianEndgame
 import Erdos881.TeamGraphRamsey
 
-/-!
-# The rotating-guardian endgame: the singleton stream dies
-
-`FixedGuardianEndgame` kills a guardian whose private targets recur
-cofinally.  Here the extraction is generalized to guardians that
-*rotate*: the defect of each corep level may differ, because the
-engine only ever reflects the anchor `c`, the unbalanced parts
-`w, w'`, and **lower** levels — all of which are known before the next
-level is chosen.  Each new level therefore only has to dodge a finite
-forbidden set, and if the stream refuses to dodge, some single
-guardian recurs cofinally and the fixed kill fires.
-
-* `IsPrivateTriple.corep_lower` — the desert plus two stacked dyadic
-  covering windows force the corep above `~m/4`: stream levels grow.
-* `surviving_deletion_of_geometric_rotatingDefects` — the extraction
-  engine with per-level defects.
-* `surviving_deletion_of_cofinal_privateStream` — **any cofinal stream
-  of positive singleton guardians forces a surviving deletion**, given
-  anchors dodging any prescribed value.  This closes the singleton
-  branch of `master_reduction` (big and small guardians alike) modulo
-  the anchor-abundance hypothesis.
--/
-
 namespace Erdos881
 
-/-- **Coreps are large.**  The desert of a private pair tolerates only
-the guardian, but two disjoint dyadic covering windows below `m - N₀`
-would both have to be the guardian: hence `m ≤ 4(m-a) + 4N₀ + 20`. -/
 theorem IsPrivateTriple.corep_lower {A : Set ℕ} {N₀ a m : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hpriv : IsPrivateTriple A a m) (ha : 0 < a)
@@ -39,9 +13,9 @@ theorem IsPrivateTriple.corep_lower {A : Set ℕ} {N₀ a m : ℕ}
     intro q hq hqm hMq
     obtain ⟨y, hy, z, hz, hyz⟩ := hcov q hq
     rcases le_total y z with h | h
-    · have := hpriv.desert h0 hcov ha hz (by omega) (by omega)
+    · have := hpriv.exclusion_interval h0 hcov ha hz (by omega) (by omega)
       exact ⟨z, this, by omega, by omega⟩
-    · have := hpriv.desert h0 hcov ha hy (by omega) (by omega)
+    · have := hpriv.exclusion_interval h0 hcov ha hy (by omega) (by omega)
       exact ⟨y, this, by omega, by omega⟩
   obtain ⟨z₁, hz₁, hz₁l, hz₁r⟩ :=
     hwin (m - N₀ - 1) (by omega) (by omega) (by omega)
@@ -49,10 +23,6 @@ theorem IsPrivateTriple.corep_lower {A : Set ℕ} {N₀ a m : ℕ}
     hwin ((m - N₀ - 1) / 2 - 1) (by omega) (by omega) (by omega)
   omega
 
-/-- **Spare keys from rotating defective mirrors.**  The geometric
-extraction with a different defect `d k` at each level: every
-reflection the proof performs dodges its level's defect by
-hypothesis. -/
 theorem surviving_deletion_of_geometric_rotatingDefects
     {A : Set ℕ} {N₀ c w w' : ℕ} (L d : ℕ → ℕ)
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -235,9 +205,9 @@ theorem surviving_deletion_of_geometric_rotatingDefects
       omega
     · exact ⟨x, hx, y, hy, 0, h0, hxB, hyB, h0B, by omega⟩
 
-/-- Fixed-guardian kill, slack form: no size relation between the
-guardian and the covering threshold is needed. -/
-theorem surviving_deletion_of_cofinal_fixedGuardian'
+/-- Fixed-required element contradiction, slack form: no size relation between the
+required element and the covering threshold is needed. -/
+theorem surviving_deletion_of_cofinal_fixedRequiredElement'
     {A : Set ℕ} {N₀ a c : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (ha0 : 0 < a)
@@ -302,13 +272,6 @@ theorem surviving_deletion_of_cofinal_fixedGuardian'
       show L j ≠ a
       omega)
 
-/-- **The singleton stream dies.**  Any cofinal stream of positive
-singleton guardians forces a surviving infinite deletion, provided
-anchors dodging any prescribed value exist.  Either every finite
-forbidden set is eventually dodged — and the rotating extraction runs,
-each new level's guardian avoiding the anchor package and all lower
-levels — or all late guardians live in one finite set, one of them
-recurs cofinally, and the fixed kill fires. -/
 theorem surviving_deletion_of_cofinal_privateStream
     {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -432,7 +395,7 @@ theorem surviving_deletion_of_cofinal_privateStream
       (fun k h => (hstep k).1 (h ▸ hwF k))
       (fun k h => (hstep k).1 (h ▸ hw'F k))
       (fun j k hjk h => (hstep k).1 (h ▸ hLmem j k hjk))
-  · -- recurring case: all late guardians in one finite set
+  · -- recurring case: all late required elements in one finite set
     push Not at hro
     obtain ⟨F, N₁, hF⟩ := hro
     by_cases hrec : ∃ g ∈ F, 0 < g ∧
@@ -440,7 +403,7 @@ theorem surviving_deletion_of_cofinal_privateStream
     · obtain ⟨g, hgF, hg0, hgstream⟩ := hrec
       obtain ⟨c, hc, hc0, hcg, w, hwA, w', hw'A, hww, hwc, hwg, hw'g⟩ :=
         hanchor g
-      exact surviving_deletion_of_cofinal_fixedGuardian' h0 hcov hg0
+      exact surviving_deletion_of_cofinal_fixedRequiredElement' h0 hcov hg0
         hgstream hc hc0 hcg ⟨w, hwA, w', hw'A, hww, hwc, hwg, hw'g⟩
     · push Not at hrec
       have hbnd : ∀ g, ∃ Ng, ∀ m, Ng ≤ m → g ∈ F → 0 < g →
@@ -462,24 +425,17 @@ theorem surviving_deletion_of_cofinal_privateStream
         le_trans (le_trans (Finset.le_sup haF) (le_max_right _ _)) hm
       exact absurd hpriv (hNg a m hbound haF ha0)
 
-/-- **The master assembly, upgraded.**  Under the two open links
-(cofinal pair funnels and team-clique-freeness) and anchor abundance,
-a counterexample structure collapses entirely: either a surviving
-infinite deletion exists outright — contradicting counterexamplehood —
-or the zero element privately guards arbitrarily late targets, the
-single degenerate residue left of the entire singleton-stream
-branch. -/
-theorem stream_killed_or_zero_guardian {A : Set ℕ} {N₀ : ℕ}
+theorem stream_impossible_or_zero_required_element {A : Set ℕ} {N₀ : ℕ}
     (hA : A.Infinite) (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hfunnel : HasCofinalPairFunnels A)
-    (hclique : TeamCliqueFree A)
+    (hfunnel : HasCofinalPairTransversalFamilies A)
+    (hclique : PairTransversalCliqueFree A)
     (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
       w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g) :
     (∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
       ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
         x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n) ∨
     (∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m) := by
-  obtain ⟨L, hLA, hLinf, hstream⟩ := master_reduction hA hfunnel hclique
+  obtain ⟨L, hLA, hLinf, hstream⟩ := combined_reduction hA hfunnel hclique
   by_cases hz : ∀ N, ∃ a m, N ≤ m ∧ 0 < a ∧ IsPrivateTriple A a m
   · exact Or.inl
       (surviving_deletion_of_cofinal_privateStream h0 hcov hz hanchor)

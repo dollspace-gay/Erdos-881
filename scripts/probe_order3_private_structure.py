@@ -1,34 +1,5 @@
 #!/usr/bin/env python3
-"""Probe finite prefixes for order-three private structure (Erdős 881 lab).
-
-A finite set A with 0 ∈ A models a prefix of an exact order-two asymptotic
-basis: pair sums must cover [SLACK, top].  A target m is *privately owned*
-by a ∈ A if every representation of m as a sum of exactly three elements of
-A (zeros allowed) uses a.  Private pairs (a, m) are the finite shadow of
-the singleton-destroyer branch of the counterexample analysis.
-
-Structure theory (derived by hand, verified here): a private pair (a, m)
-with M := m - a forces
-  * desert:  A ∩ (M, m - SLACK) = {a},  hence  a <= 2M (+1),
-  * mirror:  A+ ∩ (0, M) symmetric under z -> M - z,
-  * gap:     S+S must miss {a} ∪ (a + (S ∩ (0, 2M-a])),  which by the
-             mirror symmetry of S+S about M forces  2M - a < SLACK.
-So the only candidates are A = S ∪ {a} with S symmetric, a = 2M - D for
-some 0 < D < SLACK, and all remaining freedom in S ∩ [0, SLACK].  That is
-a small finite space: we enumerate it COMPLETELY (for full middle blocks).
-
-Experiments:
-  1. LEVEL-1 ENUMERATION over (D, S ∩ [0, SLACK]) for several M.
-  2. STACKING: given a level-k structure, sweep ALL (M', D') for the next
-     mirror level and ask whether every previous private pair survives.
-     This is the finite version of "can a diabolical keyring exist".
-  3. RIGIDITY CHECK on every private pair found (desert + mirror).
-  4. OWNER SCAN: which elements own private targets (bulk vs desert).
-  5. GIVEAWAY: delete one element per top-level mirror pair; count deaths.
-  6. EVEN/ODD-BITS CONTROL: classical minimal order-2 basis.
-
-Bitmask conventions: sets of naturals are Python ints, bit n = n ∈ set.
-"""
+"""Finite diagnostic for order3 private structure."""
 
 from __future__ import annotations
 
@@ -89,7 +60,7 @@ def has_rep3(A, m: int) -> bool:
 
 
 def is_private(A, a: int, m: int) -> bool:
-    """m has a 3-rep, and none avoiding a."""
+    """Finite diagnostic for is private."""
     rest = [x for x in A if x != a]
     return has_rep3(A, m) and not has_rep3(rest, m)
 
@@ -108,7 +79,7 @@ def one_rep3(A_sorted, Aset, m: int):
 
 
 def essential3(A_sorted, Aset, m: int) -> set[int]:
-    """Elements appearing in every exact-3 representation of m."""
+    """Finite diagnostic for essential3."""
     rep = one_rep3(A_sorted, Aset, m)
     if rep is None:
         return set()
@@ -134,7 +105,7 @@ def rigidity_report(A, a: int, m: int) -> list[str]:
 # ------------------------------------------------- construction / search
 
 def build_level1(M: int, D: int, small: frozenset[int]):
-    """A = S ∪ {a}: S = small ∪ full middle ∪ (M - small), a = 2M - D."""
+    """Finite diagnostic for build level1."""
     if M < 3 * SLACK:
         return None
     S = set(small) | set(range(SLACK + 1, M - SLACK)) | {M - s for s in small}
@@ -147,8 +118,7 @@ def build_level1(M: int, D: int, small: frozenset[int]):
 
 
 def enumerate_level1(M: int):
-    """Complete enumeration over D in (0, SLACK) and small ⊆ [0, SLACK]
-    with 0 ∈ small.  Returns list of (A, a, m)."""
+    """Finite diagnostic for enumerate level1."""
     hits = []
     for D in range(1, SLACK):
         for bits in range(1 << SLACK):
@@ -161,9 +131,7 @@ def enumerate_level1(M: int):
 
 
 def stack_level(A_prev, pairs_prev, M2: int, D2: int):
-    """Mirror A_prev up to level M2, add a2 = 2*M2 - D2.  Succeeds iff the
-    new set pair-covers [SLACK, m2] and ALL private pairs (old and new)
-    hold simultaneously."""
+    """Finite diagnostic for stack level."""
     a2 = 2 * M2 - D2
     m2 = a2 + M2
     A2 = sorted(set(A_prev) | {M2 - t for t in A_prev if t <= M2} | {a2})
@@ -178,7 +146,7 @@ def stack_level(A_prev, pairs_prev, M2: int, D2: int):
 
 
 def try_stack(A, pairs, verbose=True):
-    """Sweep all (M2, D2) for the next level; return first success."""
+    """Finite diagnostic for try stack."""
     m_top = pairs[-1][1]
     windows = []
     for M2 in range(m_top - 2 * SLACK, 3 * m_top):
@@ -197,7 +165,7 @@ def try_stack(A, pairs, verbose=True):
     return A2, pairs + [(a2, m2)]
 
 
-# ----------------------------------------------------- owners / giveaway
+# ----------------------------------------------------- marked elements / giveaway
 
 def scan_private_owners(A, lo: int, hi: int) -> dict[int, list[int]]:
     A_sorted = sorted(A)

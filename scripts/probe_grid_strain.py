@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Grid strain: can a finite world satisfy ladder structure AND
-residue-grid obligations simultaneously?  For deletions B_odd and
-B_{0 mod 3}: the enemy owes in-window failing targets (all
-triples touching the class).  Measure: how many targets in
-[N0,Y] have all-triples-touching-class, for each class, in
-(a) two-scale, (b) cantor, (c) ladder world."""
+"""Finite diagnostic for grid strain."""
 
 def cantor(Y):
     out = []

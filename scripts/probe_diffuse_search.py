@@ -1,19 +1,5 @@
 #!/usr/bin/env python3
-"""Diffuse-destruction hunt (Erdős 881 lab, Link A decisive probe).
-
-Link A's only remaining enemy is HEREDITARILY DIFFUSE destruction:
-targets m destroyed by B whose representation B-parts admit no
-transversal of size ≤ 2 (τ ≥ 3).  This probe hunts for ANY instance
-of τ ≥ 3 in covering models — randomly and adversarially.
-
-  D1  random sweep: structured/random covering sets A, random sparse
-      B, all destroyed targets, τ census.
-  D2  adversarial constructor: pick m with ≥ 3 disjoint-support reps,
-      seed B with one element from each, then try to kill all
-      remaining B-avoiding reps of m by deleting elements — while
-      keeping pair-covering intact and the three seed reps distinct.
-      Report any success (a genuine τ ≥ 3 instance).
-"""
+"""Finite diagnostic for diffuse search."""
 
 from __future__ import annotations
 
@@ -47,8 +33,7 @@ def three_reps(A, m):
 
 
 def tau(reps, B):
-    """Min size of a subset of B hitting every rep; None if some rep
-    misses B entirely (target not destroyed)."""
+    """Finite diagnostic for tau."""
     parts = []
     for r in reps:
         p = frozenset(r) & B
@@ -144,7 +129,7 @@ def d2(trials=400, seed=1975):
         seeds = [rng.choice(sorted(set(r) - {0})) for r in found]
         B = set(seeds)
         cur = set(A)
-        # kill every other B-avoiding rep by deleting a non-seed part
+        # exclusion every other B-avoiding rep by deleting a non-seed part
         ok = True
         for _ in range(200):
             bad = None

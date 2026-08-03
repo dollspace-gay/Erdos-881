@@ -1,24 +1,5 @@
 import Erdos881.FunnelTrichotomy
 
-/-!
-# Pinned levels are representation hubs
-
-The B3 splice, first movement.  A pinned mirror level `M` (from
-`PinnedMirror.lean`: `M - x ∈ A` for every window element `x`) carries
-one two-term representation `x + (M - x)` *per window element*, and a
-covering set has at least `√W` elements below `W`
-(`pairCovers_card_lower`), so levels are hubs with unboundedly many
-representations.  A sparse deletion `D` spoils at most `2|D| + 1` of
-them (`level_avoiding_pair`), after which any target that reaches the
-level through an undeleted element survives outright
-(`survives_through_level`).
-
-Consequence (`levelHitting_survival`): the remaining open content of
-the B3 splice is exactly **level hitting** — producing, for every
-large `n`, one hub level `M` with `n - M ∈ A \ D`.  Everything after
-that point is verified here.
--/
-
 namespace Erdos881
 
 /-- A covering set has at least `√(W + 1 - N₀)` elements up to `W`:
@@ -46,10 +27,6 @@ theorem pairCovers_card_lower {A : Set ℕ} [DecidablePred (· ∈ A)]
     _ = T.card * T.card := Finset.card_product T T
     _ = T.card ^ 2 := by ring
 
-/-- **Hub pairs survive sparse deletion.**  A window mirror at level
-`M` with window `(u, v)` has, for every deletion set `D` small against
-the window, an element `x` whose hub pair `x + (M - x)` avoids `D`
-entirely. -/
 theorem level_avoiding_pair {A D : Set ℕ}
     [DecidablePred (· ∈ A)] [DecidablePred (· ∈ D)]
     {N₀ u v M : ℕ}
@@ -125,9 +102,6 @@ theorem level_avoiding_pair {A D : Set ℕ}
   exact ⟨x, hxA, hxu, by omega, hxD, hxR,
     hmir x hxA hxu (by omega)⟩
 
-/-- **Survival through a hub.**  A target that reaches a hub level
-through an undeleted element has a three-term representation avoiding
-the deletion. -/
 theorem survives_through_level {A D : Set ℕ}
     [DecidablePred (· ∈ A)] [DecidablePred (· ∈ D)]
     {N₀ u v M n : ℕ}
@@ -144,11 +118,6 @@ theorem survives_through_level {A D : Set ℕ}
     level_avoiding_pair hcov hmir hvM hsparse
   exact ⟨n - M, hnA, x, hxA, M - x, hxM, hnD, hxD, hxR, by omega⟩
 
-/-- **The B3 splice interface: level hitting is all that remains.**
-Given a family of hub levels (window mirrors, sparse against `D`), if
-every large `n` reaches some hub through an undeleted element, then
-`A \ D` is an exact order-three basis — the surviving deletion.  The
-open content of the splice is exactly the hitting hypothesis. -/
 theorem levelHitting_survival {A D : Set ℕ}
     [DecidablePred (· ∈ A)] [DecidablePred (· ∈ D)]
     {N₀ N₁ : ℕ} (hcov : PairCovers A N₀)

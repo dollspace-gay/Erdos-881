@@ -1,28 +1,3 @@
-/-
-# Adaptive direct construction at a safe prefix
-
-The global clean-supply classification loses information by fixing a bad
-prefix before using the fact that the current prefix is still safe.  At an
-adaptive stage we know more: `A \ F` is already an exact basis at the target
-order.  That kills the fixed desert immediately.  Consequently failure of
-arbitrarily large clean extensions is *equivalent* to a moving atomic tail:
-every sufficiently large surviving candidate owns a pinned target.
-
-The second half of this file preserves that moving owner through the cone
-descent.  A nondiagonal pinned representation supplies a predecessor support
-meeting `insert b F` exactly at `b`; hence every minimal destroyer chosen
-inside that hub still contains `b`.  The existing nontrivial-rank/private-core
-fork can then be applied without losing the atomic marker.
-
-This does not close the general-order problem.  The lower-rank target returned
-by the existing fork can be small and caused by an old prefix point, while
-`b` can be the one diagonal exception in the private-core branch.  The exact
-repair proved below is to expose that old-prefix horn explicitly.  Any rank
-descent which survives prefix clearing must contain the moving marker and is
-therefore automatically as large as that marker.  What remains after this
-repair is to eliminate or exploit the old-prefix and private-core horns.
--/
-
 import Erdos881.ConeCollision
 import Erdos881.GeneralOrderAttack
 
@@ -59,10 +34,6 @@ theorem CleanlyRedundantAbove.exactBasis_diff_insert
   · exact (hv i).2.2 hib
   · exact (hv i).2.1 hiF
 
-/-- **The adaptive local theorem.**  At a safe prefix, failure of the local
-clean supply is exactly the moving atomic tail.  The basis threshold of the
-safe complement removes the old fixed-desert alternative before any
-concentration argument is needed. -/
 theorem not_hasLocalCleanSupply_iff_atomicPinnedTail
     {A : Set ℕ} {h : ℕ} {F : Finset ℕ}
     (hsafe : IsExactTupleAsymptoticBasis
@@ -121,10 +92,10 @@ theorem safePrefix_cleanSupply_or_atomicPinnedTail
   · exact Or.inr
       ((not_hasLocalCleanSupply_iff_atomicPinnedTail hsafe).mp hsupply)
 
-/-- Safety excludes the old fixed pin horn when the pin lies in the deleted
+/-- Safety excludes the old fixed pin case when the pin lies in the deleted
 prefix and its background obstruction is contained in that prefix.  It does
 not exclude fixed pins outside `F`. -/
-theorem safePrefix_excludes_fixedPinHorn
+theorem safePrefix_excludes_fixedPinCase
     {A : Set ℕ} {h : ℕ} {F : Finset ℕ}
     (hsafe : IsExactTupleAsymptoticBasis
       (A \ (F : Set ℕ)) h) :
@@ -142,22 +113,22 @@ theorem safePrefix_excludes_fixedPinHorn
 
 /-! ## Marker-preserving cone descent -/
 
-/-- A finite hub is a destroyer for the additive support hypergraph at its
+/-- A finite support transversal is a destroyer for the additive support hypergraph at its
 covered target. -/
-theorem HubbedAt.destroys_additiveSupportFamily
+theorem HasSupportTransversalAt.destroys_additiveSupportFamily
     {A : Set ℕ} {h : ℕ} {H : Finset ℕ} {q : ℕ}
-    (hhub : HubbedAt A h H q) :
+    (hhub : HasSupportTransversalAt A h H q) :
     DestroysAt (additiveSupportFamily A h) (H : Set ℕ) q := by
   rw [destroysAt_additiveSupportFamily_iff]
   rintro ⟨v, hv, hvsum⟩
   obtain ⟨i, hi⟩ := hhub.2 v (fun i => (hv i).1) hvsum
   exact (hv i).2 (by simpa using hi)
 
-/-- If one represented support meets the hub exactly at `b`, minimizing the
-hub destroyer cannot discard `b`. -/
-theorem HubbedAt.exists_minimalDestroyer_containing
+/-- If one represented support meets the support transversal exactly at `b`, minimizing the
+support transversal destroyer cannot discard `b`. -/
+theorem HasSupportTransversalAt.exists_minimalDestroyer_containing
     {A : Set ℕ} {h q b : ℕ} {H E : Finset ℕ}
-    (hhub : HubbedAt A h H q)
+    (hhub : HasSupportTransversalAt A h H q)
     (hER : E ∈ additiveSupportFamily A h q)
     (hprivate : E ∩ H = {b}) :
     ∃ D : Finset ℕ,
@@ -181,7 +152,7 @@ theorem HubbedAt.exists_minimalDestroyer_containing
 
 /-- A pinned successor target is either the pure diagonal `(k+1) * b`, or
 removing a nondiagonal summand leaves a base-order support whose unique hit
-on the cone hub is the moving owner `b`. -/
+on the cone support transversal is the moving marked element `b`. -/
 theorem PinnedAt.diagonal_or_privatePredecessorSupport
     {A : Set ℕ} {k : ℕ} {F : Finset ℕ} {b n : ℕ}
     (hpin : PinnedAt A (k + 1) F b n) :
@@ -252,7 +223,7 @@ theorem PinnedAt.diagonal_or_privatePredecessorSupport
       exact Set.disjoint_left.mp hRF
         (Finset.mem_coe.mpr hxR)
         (Finset.mem_coe.mpr hxFin)
-    have hxHub : x ∉ insert b F := by
+    have hxSupportTransversal : x ∉ insert b F := by
       rw [Finset.mem_insert]
       push Not
       exact ⟨hxb, hxF⟩
@@ -275,8 +246,8 @@ theorem PinnedAt.diagonal_or_privatePredecessorSupport
       ext y
       constructor
       · intro hy
-        obtain ⟨hyE, hyHub⟩ := Finset.mem_inter.mp hy
-        rcases Finset.mem_insert.mp hyHub with hyb | hyF
+        obtain ⟨hyE, hySupportTransversal⟩ := Finset.mem_inter.mp hy
+        rcases Finset.mem_insert.mp hySupportTransversal with hyb | hyF
         · simp [hyb]
         · exact (Set.disjoint_left.mp hEF
             (Finset.mem_coe.mpr hyE)
@@ -286,14 +257,8 @@ theorem PinnedAt.diagonal_or_privatePredecessorSupport
         subst y
         exact Finset.mem_inter.mpr
           ⟨hbE, Finset.mem_insert_self b F⟩
-    exact ⟨x, E, hxA, hxHub, hxle, hER, hprivate⟩
+    exact ⟨x, E, hxA, hxSupportTransversal, hxle, hER, hprivate⟩
 
-/-- **The marked rank fork.**  A nondiagonal atomic pin descends to a
-base-order inclusion-minimal destroyer which still contains its moving
-owner, and the existing nontrivial-rank/private-core theorem applies.
-
-The lower-rank target `q` is intentionally unrestricted in this legacy
-form.  The prefix-cleared marked-point refinement is proved below. -/
 theorem pinned_target_diagonal_or_markedMinimalDestroyer_rankFork
     {A : Set ℕ} {k : ℕ} {F : Finset ℕ}
     {b n N₀ : ℕ}
@@ -325,7 +290,7 @@ theorem pinned_target_diagonal_or_markedMinimalDestroyer_rankFork
                 insert d core ∈
                   additiveSupportFamily A k (n - x) ∧
                 insert d core ∩ D = {d}) := by
-  obtain hdiag | ⟨x, E, hxA, hxHub, hxle, hER, hprivate⟩ :=
+  obtain hdiag | ⟨x, E, hxA, hxSupportTransversal, hxle, hER, hprivate⟩ :=
     hpin.diagonal_or_privatePredecessorSupport
   · exact Or.inl hdiag
   · right
@@ -338,16 +303,16 @@ theorem pinned_target_diagonal_or_markedMinimalDestroyer_rankFork
       additiveSupportFamily_supportsBounded
         A k (n - x) E hER b hbE
     have hxn : x + N₀ ≤ n := by omega
-    have hhub : HubbedAt A k (insert b F) (n - x) :=
-      pinned_cone_hubbed hcov hpin hxA hxHub hxn
-    obtain ⟨D, hDHub, hbD, hDminimal⟩ :=
+    have hhub : HasSupportTransversalAt A k (insert b F) (n - x) :=
+      pinned_cone_has_support_transversal hcov hpin hxA hxSupportTransversal hxn
+    obtain ⟨D, hDSupportTransversal, hbD, hDminimal⟩ :=
       hhub.exists_minimalDestroyer_containing hER hprivate
     have hDnonempty : D.Nonempty := ⟨b, hbD⟩
     have hfork :=
       minimalAdditiveDestroyer_nontrivialRankDescent_or_privateCores_off_oneDiagonal
         hk hDminimal
-    exact ⟨x, D, hxA, hxHub, hDnonempty,
-      hDHub, hbD, hDminimal, hfork⟩
+    exact ⟨x, D, hxA, hxSupportTransversal, hDnonempty,
+      hDSupportTransversal, hbD, hDminimal, hfork⟩
 
 /-! ## Prefix-cleared, target-controlled marked cones -/
 
@@ -364,7 +329,7 @@ def HasOldPrefixNontrivialRankDescent
     DestroysAt
       (additiveSupportFamily A ℓ) (D : Set ℕ) t
 
-/-- A genuinely new lower-rank descent: the marked destroyer kills the
+/-- A genuinely new lower-rank descent: the marked destroyer contradicts the
 target, the old prefix does not, and the target lies above the requested
 bound. -/
 def HasPrefixClearedCofinalNontrivialRankDescent
@@ -377,7 +342,7 @@ def HasPrefixClearedCofinalNontrivialRankDescent
     DestroysAt
       (additiveSupportFamily A ℓ) (D : Set ℕ) t
 
-/-- The structured right horn of the nontrivial-rank fork. -/
+/-- The structured right case of the nontrivial-rank fork. -/
 def HasPrivateCoresOffOneDiagonal
     (A : Set ℕ) (k q : ℕ) (D : Finset ℕ) : Prop :=
   ∃ diagonal : Finset ℕ,
@@ -439,14 +404,6 @@ theorem PinnedAt.pin_mem_and_not_mem_prefix
   exact ⟨hi ▸ (hv i).1, fun hbF =>
     (hv i).2 (hi ▸ hbF)⟩
 
-/-- **Prefix-cleared rank control.**  If a marked destroyer has no point
-outside `F` except `b`, then every lower-rank descent supplied by the general
-fork is either old-prefix destruction or, after prefix clearing, has target
-at least `b` and hence at least `L`.
-
-The exact base-4 witness shows that the first horn is necessary: the marked
-destroyer `{1, 65}` still destroys the order-two target `1` for the old-prefix
-reason `1 ∈ F`. -/
 theorem markedMinimalDestroyer_prefixSplit_rankFork
     {A : Set ℕ} {k q : ℕ} {F D : Finset ℕ}
     {b L : ℕ}
@@ -493,16 +450,6 @@ theorem markedMinimalDestroyer_prefixSplit_rankFork
         hLb.trans hbt, hrepresented, hFdestroy, hDdestroy⟩
   · exact Or.inr (Or.inr hprivate)
 
-/-- **Fresh rank descent at the marked point.**  Inspect the private support
-owned by `b` in an inclusion-minimal destroyer.  If it uses `b` in all `k`
-tuple positions, the target is diagonal.  If it uses `b` at least twice but
-not everywhere, those copies form a represented strict lower-rank target
-destroyed by `D`; the singleton support `{b}` shows that `F` does not destroy
-it, and its target is at least `b ≥ L`.  The remaining case uses `b` exactly
-once and leaves a private order-`k-1` core.
-
-Unlike the unrestricted rank fork, this theorem cannot select the tiny
-base-4 artifact at target `1`: it follows the fresh marker `65` itself. -/
 theorem markedMinimalDestroyer_cofinalRankDescent_or_privateCore
     {A : Set ℕ} {k q : ℕ} {F D : Finset ℕ}
     {b L : ℕ}
@@ -624,20 +571,11 @@ theorem markedMinimalDestroyer_cofinalRankDescent_or_privateCore
         hhitsTwo, hhitsStrict, hLb.trans hbTarget,
         hHnonempty, hFsurvive, hHdestroy⟩
 
-/-- **The cone-by-cone split.**  Every hubbed cone is first tested against
-the old prefix.  If `F` does not already destroy it, minimizing inside
-`insert b F` produces a destroyer whose unique point outside `F` is `b`.
-The surviving support which avoids `F` must then contain `b`, so the cone
-target and every fresh marked rank descent lie above any bound `L ≤ b`.
-
-This is the formulation exercised row-by-row by the exact base-4 probe:
-the cones at `70` and `65` are marked, while the smaller cones in the same
-pinned target are classified as old-prefix cones. -/
-theorem HubbedAt.oldPrefix_or_cofinalMarkedMinimalDestroyerRankFork
+theorem HasSupportTransversalAt.oldPrefix_or_cofinalMarkedMinimalDestroyerRankFork
     {A : Set ℕ} {k q : ℕ} {F : Finset ℕ}
     {b L : ℕ}
     (hk : 1 < k)
-    (hhub : HubbedAt A k (insert b F) q)
+    (hhub : HasSupportTransversalAt A k (insert b F) q)
     (hbF : b ∉ F)
     (hLb : L ≤ b) :
     DestroysAt
@@ -654,7 +592,7 @@ theorem HubbedAt.oldPrefix_or_cofinalMarkedMinimalDestroyerRankFork
       (additiveSupportFamily A k) (F : Set ℕ) q
   · exact Or.inl hFold
   · right
-    obtain ⟨D, hDHub, hDminimal⟩ :=
+    obtain ⟨D, hDSupportTransversal, hDminimal⟩ :=
       exists_inclusionMinimalDestroyer_subset
         hhub.destroys_additiveSupportFamily
     have hbD : b ∈ D := by
@@ -663,8 +601,8 @@ theorem HubbedAt.oldPrefix_or_cofinalMarkedMinimalDestroyerRankFork
       intro S hSR
       obtain ⟨y, hyS, hyD⟩ :=
         Set.not_disjoint_iff.mp (hDminimal.1 S hSR)
-      have hyHub := hDHub (Finset.mem_coe.mp hyD)
-      rcases Finset.mem_insert.mp hyHub with hyb | hyF
+      have hySupportTransversal := hDSupportTransversal (Finset.mem_coe.mp hyD)
+      rcases Finset.mem_insert.mp hySupportTransversal with hyb | hyF
       · exact (hbD (hyb ▸ Finset.mem_coe.mp hyD)).elim
       · exact Set.not_disjoint_iff.mpr
           ⟨y, hyS, Finset.mem_coe.mpr hyF⟩
@@ -673,7 +611,7 @@ theorem HubbedAt.oldPrefix_or_cofinalMarkedMinimalDestroyerRankFork
       constructor
       · intro hyDiff
         obtain ⟨hyD, hyF⟩ := Finset.mem_sdiff.mp hyDiff
-        rcases Finset.mem_insert.mp (hDHub hyD) with hyb | hyF'
+        rcases Finset.mem_insert.mp (hDSupportTransversal hyD) with hyb | hyF'
         · simp [hyb]
         · exact (hyF hyF').elim
       · intro hyb
@@ -702,14 +640,8 @@ theorem HubbedAt.oldPrefix_or_cofinalMarkedMinimalDestroyerRankFork
       markedMinimalDestroyer_cofinalRankDescent_or_privateCore
         hk hLb hbF hbD hDminimal
     exact ⟨D, hLb.trans hbq, ⟨b, hbD⟩,
-      hDHub, hbD, hDdiff, hDminimal, hrank⟩
+      hDSupportTransversal, hbD, hDdiff, hDminimal, hrank⟩
 
-/-- **Local cofinal marked-cone lemma.**  For one sufficiently large pin,
-the diagonal case is separated first.  In the nondiagonal case its
-predecessor cone is split according to whether `F` already destroys the
-cone.  Otherwise minimization gives a destroyer with
-`D \ F = {b}`, and the prefix-cleared rank fork is target-controlled by any
-bound below `b`. -/
 theorem pinned_target_diagonal_or_oldPrefixCone_or_cofinalMarkedConeRankFork
     {A : Set ℕ} {k : ℕ} {F : Finset ℕ}
     {b n N₀ L : ℕ}
@@ -723,7 +655,7 @@ theorem pinned_target_diagonal_or_oldPrefixCone_or_cofinalMarkedConeRankFork
       HasOldPrefixCone A k F b n ∨
       HasCofinalMarkedConeRankFork A k F b n L := by
   classical
-  obtain hdiag | ⟨x, E, hxA, hxHub, hxle, hER, hprivate⟩ :=
+  obtain hdiag | ⟨x, E, hxA, hxSupportTransversal, hxle, hER, hprivate⟩ :=
     hpin.diagonal_or_privatePredecessorSupport
   · exact Or.inl hdiag
   · right
@@ -736,22 +668,17 @@ theorem pinned_target_diagonal_or_oldPrefixCone_or_cofinalMarkedConeRankFork
       additiveSupportFamily_supportsBounded
         A k (n - x) E hER b hbE
     have hxn : x + N₀ ≤ n := by omega
-    have hhub : HubbedAt A k (insert b F) (n - x) :=
-      pinned_cone_hubbed hcov hpin hxA hxHub hxn
+    have hhub : HasSupportTransversalAt A k (insert b F) (n - x) :=
+      pinned_cone_has_support_transversal hcov hpin hxA hxSupportTransversal hxn
     have hbF : b ∉ F := hpin.pin_mem_and_not_mem_prefix.2
     obtain hFold | ⟨D, hLtarget, hDnonempty,
-        hDHub, hbD, hDdiff, hDminimal, hrank⟩ :=
+        hDSupportTransversal, hbD, hDdiff, hDminimal, hrank⟩ :=
       hhub.oldPrefix_or_cofinalMarkedMinimalDestroyerRankFork
         hk hbF hLb
-    · exact Or.inl ⟨x, hxA, hxHub, hFold⟩
-    · exact Or.inr ⟨x, D, hxA, hxHub, hxle, hLtarget,
-        hDnonempty, hDHub, hbD, hDdiff, hDminimal, hrank⟩
+    · exact Or.inl ⟨x, hxA, hxSupportTransversal, hFold⟩
+    · exact Or.inr ⟨x, D, hxA, hxSupportTransversal, hxle, hLtarget,
+        hDnonempty, hDSupportTransversal, hbD, hDdiff, hDminimal, hrank⟩
 
-/-- **Cofinal moving-tail form.**  An atomic pinned tail over an exact
-order-`k` basis supplies the preceding local marked-cone fork above every
-requested bound.  Thus a prefix-cleared lower-rank horn really is cofinal;
-the only alternatives left visible are a diagonal pin, old-prefix
-destruction, or the private-core normal form. -/
 theorem HasAtomicPinnedTail.cofinal_markedConeRankFork
     {A : Set ℕ} {k : ℕ} {F : Finset ℕ}
     (hk : 1 < k)

@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""ANTI-ALIGNMENT HUNT: anneal covering sets A (near-minimal
-density corridor) to MINIMIZE the number of A-elements a greedy
-thin cover can leave unused.  An enemy skeleton would need
-unused ~ 0 (every element needed by every thin cover).  If
-annealing can't push unused below a floor, no finite enemy
-skeleton exists at these scales."""
+"""Finite diagnostic for antialign."""
 import random
 random.seed(881)
 Y, N0 = 1500, 9
@@ -24,8 +19,7 @@ def repair(A):
     return A
 
 def greedy_unused(A):
-    """Build U ⊆ A TRIPLE-covering [N0,Y] (0 ∈ U free), preferring
-    reuse; return #A-elements never entering U."""
+    """Finite diagnostic for greedy unused."""
     Aset = set(A)
     U = {0}
     As = sorted(a for a in A if a > 0)
@@ -98,7 +92,7 @@ for it in range(300):
             ok = False; break
     if not ok: continue
     un, uu = greedy_unused(cand)
-    # enemy objective: minimize unused, keep A lean-ish
+    # candidate counterexample objective: minimize unused, keep A lean-ish
     score = un + max(0, len(cand) - 3 * int(Y ** 0.5)) * 2
     curscore = best + max(0, len(cur) - 3 * int(Y ** 0.5)) * 2
     if score <= curscore:

@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""Measure r2 statistics on dyadic windows in the probe worlds:
-min / median / max r2 per window, and poor-target (r2 <= 4)
-density — the oscillation theorem's empirical portrait."""
+"""Finite diagnostic for r2 windows."""
 
 import sys
 sys.path.insert(0, 'scripts')

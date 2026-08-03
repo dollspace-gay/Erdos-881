@@ -1,18 +1,5 @@
 import Erdos881.InfiniteTripleRamsey
 
-/-!
-# Infinite free sets for bounded maps on pairs
-
-For a symmetric map assigning at most `r` naturals to every unordered pair,
-and assigning neither endpoint to its own pair, there is an infinite set
-which is free for the map.  The proof applies increasing-triple Ramsey three
-times, according as a possible conflict lies below, between, or above the
-two endpoints.
-
-The boundedness is essential: the map sending `{i,j}` to the whole finite
-interval between `i` and `j` has no infinite free set.
--/
-
 namespace Erdos881
 
 private def PairMapHitsEarly

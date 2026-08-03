@@ -1,19 +1,5 @@
 import Erdos881.AdditiveSupports
 
-/-!
-# The order-two external-anchor counting lemma
-
-This file isolates the additive information supplied by an internal-anchor
-successor destroyer.  If a finite set `T` destroys all three-term
-representations of `n`, then every external `b ∈ A \ T` turns an order-two
-support of `n - b` into a hit of `T`.  Swapping the hit and the external
-anchor produces an order-two support of the common target `n - x`.
-
-The resulting incidence count is the sharp quantitative fact available from
-the order-two matching property: more than `2 * |T| * r` external anchors
-force more than `r` pair supports at one target `n - x`, with `x ∈ T`.
--/
-
 open scoped BigOperators
 
 namespace Erdos881
@@ -390,7 +376,7 @@ theorem insert_mem_additiveSupportFamily_succ
 /-- If the order-two support family at `n - x` is larger than the deletion
 prefix with `x` erased, one pair support avoids that erased prefix.  Adjoining
 `x` lifts it to an order-three support whose unique hit on the full prefix is
-`x`.  This is the local engine for an old-core finite injury. -/
+`x`.  This is the local engine for an old-core finite obstruction. -/
 theorem exists_successorSupport_uniqueHit_of_manyPairSupports
     {A : Set ℕ} {D : Finset ℕ} {n x : ℕ}
     (hxA : x ∈ A) (hxD : x ∈ D) (hxn : x ≤ n)
@@ -544,9 +530,9 @@ theorem largePairSupportFamily_gives_successorMatchingOutsideSingleton
     rw [hdiff, hdiff']
     exact hdisj
 
-/-- Exact recurrent output of the order-two bad branch: after every finite
-protected prefix and at every requested level, there is a fresh singleton
-core outside which one late successor target has a large matching. -/
+/-- After every finite protected prefix and above every requested level,
+there is a fresh singleton core outside which a late successor target has a
+large matching. -/
 theorem recurrentFreshSingletonCoreSuccessorMatchings_of_boundedMoving
     {A : Set ℕ} {Q : Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -606,10 +592,8 @@ theorem recurrentFreshSingletonCoreMatchingAlong_of_boundedMoving
   refine ⟨n, by omega, ⟨q, hqQ, a, haA, hnqa⟩,
     x, hxA, hxD, M, hMsub, hMcard, hMnonempty, hMmatching⟩
 
-/-- Sharp order-two relative dichotomy after retaining the cardinal
-information in the bad branch.  Either one fixed finite core has genuine
-eventual outside matching growth on `Q + A`, or arbitrarily large matchings
-recur outside fresh singleton cores. -/
+/-- Either one fixed finite core has eventual outside matching growth on
+`Q + A`, or arbitrarily large matchings recur outside fresh singleton cores. -/
 theorem finiteCoreTranslateGrowth_or_recurrentFreshSingletonCoreMatching
     {A : Set ℕ} {Q : Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)

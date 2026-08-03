@@ -1,25 +1,3 @@
-/-
-# The uniform carry repair: every base, every order
-
-The creative core of the uniform deletion theorem.  For every
-`k ≥ 2`, every multiplicity `1 ≤ c ≤ k`, and every scale `a ≥ 3`,
-the target `c·(k+1)^a` splits into `k+1` digit-{0,1} parts, none a
-pure power (`digit_carry_menu`).  The construction is one closed
-form: with `b := k+1`,
-
-`c·b^a = [(c-1)·(b³+b²+b+1) + (k-c)·(b²+b+1) + (b²+1) + (b+1)]·b^(a-3)`,
-
-whose bottom column is full — the uniform carry `1+⋯+1 = b` over
-`k+1` slots that no `k` digit numbers can imitate.  Non-purity is
-uniform and free: every part is `≡ 1 (mod b)` and exceeds 1, and no
-power of `b` beyond `b^0 = 1` has that residue.
-
-`digit_demonstrator` assembles the uniform Erdős 881 conclusion
-pattern at the casualties: for every `k`, deleting the pure powers
-kills the diagonal `k·(k+1)^m` at order `k` completely (diagonal
-rigidity), while order `k+1` repairs it with `k+1` non-power parts.
--/
-
 import Erdos881.DigitInstance
 
 namespace Erdos881Digit
@@ -175,9 +153,6 @@ lemma menuBracket_big {k c : ℕ} (hk : 1 ≤ k)
     rw [if_pos hor]
     split_ifs <;> omega
 
-/-- **The uniform carry menu**: for every `k ≥ 2`, `1 ≤ c ≤ k`,
-`a ≥ 3`, the target `c·(k+1)^a` is a sum of `k+1` digit-{0,1}
-parts, none a pure power. -/
 theorem digit_carry_menu (k c a : ℕ) (hk : 2 ≤ k)
     (hc : 1 ≤ c) (hck : c ≤ k) (ha : 3 ≤ a) :
     ∃ v : Fin (k + 1) → ℕ,
@@ -379,12 +354,6 @@ theorem digit_carry_menu (k c a : ℕ) (hk : 2 ≤ k)
           congr 2
           omega
 
-/-- **The uniform demonstrator.**  For every `k ≥ 2` and every scale
-`m ≥ 3`, deleting the pure powers kills the diagonal `k·(k+1)^m` at
-order `k` COMPLETELY — every order-`k` digit representation is the
-all-power diagonal — while order `k+1` repairs it with `k+1` digit
-parts, none a power.  The Erdős 881 conclusion pattern at the
-casualties, at every order in one stroke. -/
 theorem digit_demonstrator (k m : ℕ) (hk : 2 ≤ k)
     (hm : 3 ≤ m) :
     (∀ v : Fin k → ℕ, (∀ l, IsDigitK k (v l)) →
@@ -418,10 +387,6 @@ lemma digitPowers_infinite (k : ℕ) (hk : 1 ≤ k) :
   intro m
   exact ⟨m, rfl⟩
 
-/-- **Deletion coverage on the critical stream**: after removing every
-pure power, order `k+1` still covers every multiple-of-a-power target
-`c·(k+1)^a` (`1 ≤ c ≤ k`, `a ≥ 3`) — in particular every casualty of
-the deletion — for every `k` at once. -/
 theorem digit_deletion_covers_diagonals
     (k c a : ℕ) (hk : 2 ≤ k) (hc : 1 ≤ c)
     (hck : c ≤ k) (ha : 3 ≤ a) :

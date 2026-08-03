@@ -1,23 +1,3 @@
-/-
-# The base-4 sieve, part one: mixed carry menus below scale
-
-Toward the full deletion theorem (every large `n` has an order-4
-representation from the base-4 set avoiding all pure powers), this
-file repairs the mixed degenerate digit shapes with the offending
-scale on top:
-
-* `2·4^p + 4^v`  (`v < p`)  — `base4_repair_double_mixed`,
-* `3·4^p + 4^v`  (`v < p`)  — `base4_repair_triple_mixed`,
-* `3·4^p + 2·4^v` (`v < p`) — `base4_repair_triple_mixedTwo`.
-
-Method: expand the top block by one of the verified carry menus and
-attach the stray bits to menu parts whose digit windows avoid them;
-the four near-collision positions `v ∈ {p-1, p-2, p-3, p-4}` get
-explicit constant menus, everything lower attaches generically via
-`isBase4_scaled_add`.  All parts are digit-{0,1} and strictly
-between consecutive powers or scaled non-powers, so none is pure.
--/
-
 import Erdos881.Base4CarryRepair
 
 namespace Erdos881Base4
@@ -75,7 +55,6 @@ lemma isBase4_scaledConst {c L : ℕ} (m : ℕ)
   rw [Nat.mul_comm]
   exact isBase4_shift m (isBase4_of_digits hc h)
 
-/-- **Mixed repair `2·4^p + 4^v`, stray bit below scale.** -/
 theorem base4_repair_double_mixed (p v : ℕ)
     (hp : 8 ≤ p) (hvp : v < p) :
     ∃ a b c d, IsBase4 a ∧ IsBase4 b ∧ IsBase4 c ∧
@@ -290,7 +269,6 @@ lemma base4_menu_of_constants
     fun j => not_pure_of_scaled hn₄ j,
     hsum⟩
 
-/-- **Mixed repair `3·4^p + 4^v`, stray bit below scale.** -/
 theorem base4_repair_triple_mixed (p v : ℕ)
     (hp : 8 ≤ p) (hvp : v < p) :
     ∃ a b c d, IsBase4 a ∧ IsBase4 b ∧ IsBase4 c ∧
@@ -459,7 +437,6 @@ theorem base4_repair_triple_mixed (p v : ℕ)
       rw [h256, h4]
       ring
 
-/-- **Mixed repair `3·4^p + 2·4^v`, doubled stray bit below scale.** -/
 theorem base4_repair_triple_mixedTwo (p v : ℕ)
     (hp : 8 ≤ p) (hvp : v < p) :
     ∃ a b c d, IsBase4 a ∧ IsBase4 b ∧ IsBase4 c ∧
@@ -694,7 +671,6 @@ theorem base4_repair_triple_mixedTwo (p v : ℕ)
       rw [h4p, h4v]
       ring
 
-/-- **Mixed repair `4^u + 2·4^a`, doubled block below the top bit.** -/
 theorem base4_repair_double_mixedAbove (u a : ℕ)
     (hu : 8 ≤ u) (hau : a < u) :
     ∃ x y z t, IsBase4 x ∧ IsBase4 y ∧ IsBase4 z ∧
@@ -888,7 +864,6 @@ theorem base4_repair_double_mixedAbove (u a : ℕ)
       rw [h4u, h4a]
       ring
 
-/-- **Mixed repair `4^u + 3·4^a`, tripled block below the top bit.** -/
 theorem base4_repair_triple_mixedAbove (u a : ℕ)
     (hu : 8 ≤ u) (hau : a < u) :
     ∃ x y z t, IsBase4 x ∧ IsBase4 y ∧ IsBase4 z ∧
@@ -1082,8 +1057,6 @@ theorem base4_repair_triple_mixedAbove (u a : ℕ)
       rw [h4u, h4a]
       ring
 
-/-- **Mixed repair `3·4^p + 4^u + 4^v`, two distinct strays below
-scale.** -/
 theorem base4_repair_triple_twoStrays (p u v : ℕ)
     (hp : 8 ≤ p) (hup : u < p) (hvu : v < u) :
     ∃ x y z t, IsBase4 x ∧ IsBase4 y ∧ IsBase4 z ∧

@@ -1,19 +1,5 @@
 import Erdos881.SuccessorEssentialCore
 
-/-!
-# A binary g-adic laboratory
-
-The order-two g-adic construction splits a number into its even-position and
-odd-position binary digits.  Adjoining `0` is harmless for the problem's
-infinite-deletion hypothesis, and makes the canonical two-term
-representation literal for every natural number.
-
-This file first proves the abstract replacement principle used by the
-laboratory: if a canonical pair contains at most one deleted summand and each
-deleted summand splits into two retained summands, then the complement is an
-exact order-three basis.
--/
-
 open scoped BigOperators
 
 namespace Erdos881
@@ -238,9 +224,6 @@ theorem completedBinaryGadicBasis_exactOrderTwo :
     · exact Or.inr ⟨n, rfl⟩
   · simpa [Fin.sum_univ_two] using evenBitPart_add_oddBitPart n
 
-/-- The explicit infinite deletion in the binary laboratory leaves an exact
-order-three basis (in fact it represents every natural number by exactly
-three retained terms). -/
 theorem completedBinaryGadicBasis_diff_positiveEvenPowers_exactOrderThree :
     IsExactTupleAsymptoticBasis
       (completedBinaryGadicBasis \ positiveEvenPowerDeletion) 3 := by
@@ -262,7 +245,6 @@ theorem completedBinaryGadicBasis_diff_positiveEvenPowers_exactOrderThree :
       exact oddBitPart_not_mem_positiveEvenPowerDeletion n hboth.2
   · exact positiveEvenPowerDeletion_splits_in_complement
 
-/-- Fully checked package supplied by the binary laboratory. -/
 theorem exists_binaryGadic_infiniteDeletion_exactTwo_to_exactThree :
     ∃ A B : Set ℕ,
       IsExactTupleAsymptoticBasis A 2 ∧

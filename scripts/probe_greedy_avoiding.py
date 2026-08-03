@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Can GREEDY (density-preserving) build self-avoiding families?
-T self-avoiding: every subset-sum of T (arities 1..3 tested, in
-window) has a triple rep avoiding T.  Greedy: scan A ascending,
-add a if property survives.  Measure density of T vs A, and
-completeness (which window targets are subset sums of T)."""
+"""Finite diagnostic for greedy avoiding."""
 from itertools import combinations
 
 def cantor(Y):

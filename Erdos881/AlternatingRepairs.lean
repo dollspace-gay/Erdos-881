@@ -1,15 +1,5 @@
 import Erdos881.ReflectionDefects
 
-/-!
-# Alternating repairs for finite destroyers
-
-This file isolates the valid local exchange step behind an alternating
-repair-tree approach.  It also records the basic hypergraph obstruction:
-one-step repairs can cycle without combining into a support which avoids the
-whole destroyer.  Any successful additive argument must use arithmetic
-structure beyond this local exchange axiom.
--/
-
 namespace Erdos881
 
 /-- A finite destroyer is inclusion-minimal when erasing any one of its

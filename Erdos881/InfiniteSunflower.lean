@@ -1,16 +1,5 @@
 import Erdos881.InfinitePairRamsey
 
-/-!
-# Infinite sunflowers for bounded finite sets
-
-An infinite family of uniformly bounded finite subsets of the naturals has
-an infinite delta-system thinning.  The proof inducts on the cardinal bound.
-If one vertex occurs infinitely often, erase it and recurse.  Otherwise pair
-Ramsey gives an infinite pairwise-disjoint subfamily: an intersecting clique
-would force one of the finitely many vertices of one member to occur
-infinitely often.
--/
-
 namespace Erdos881
 
 /-- A uniformly bounded point-indexed family of finite sets has an infinite

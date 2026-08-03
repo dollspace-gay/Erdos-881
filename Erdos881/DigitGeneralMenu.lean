@@ -1,20 +1,3 @@
-/-
-# The general carry menu: arbitrary multiplicity, every order
-
-The theorem that dissolves the adjacent-block wall.  For every
-`k ≥ 2`, EVERY `C ≥ 1`, and every scale `a ≥ 3`,
-
-  `C·(k+1)^a = Σ_l (layer (l+1) (C-1)·b³ + ε₂(l)·b² + ε₁(l)·b + 1)·b^(a-3)`
-
-over the `k+1` slots `l`, where `layer t d` is the digit-threshold
-layer of `d` and the ε-columns supply `k·b² + k·b + (k+1) = b³`.
-Every part is a digit number, every part is `≡ 1 (mod b)` and
-exceeds 1 — hence never a power — and the sum telescopes to
-`(C-1)·b³ + b³ = C·b³` at scale `a-3`, with no assumption on the
-digit shape of `C`.  `digit_cut_merge` then absorbs any residue
-below a clear three-column window into the same parts.
--/
-
 import Erdos881.DigitCarryRepair
 
 namespace Erdos881Digit
@@ -262,10 +245,6 @@ lemma genBracket_sum (k C : ℕ) (hk : 1 ≤ k)
     _ = ((C - 1) + 1) * (k + 1) ^ 3 := by ring
     _ = C * (k + 1) ^ 3 := by rw [hce]
 
-/-- **The general carry menu**: for every `k ≥ 2`, every `C ≥ 1`,
-every `a ≥ 3`, the block `C·(k+1)^a` is a sum of `k+1` digit-{0,1}
-parts, none a pure power — with no assumption on the digit shape of
-`C`. -/
 theorem digit_general_menu (k C a : ℕ) (hk : 2 ≤ k)
     (hC : 1 ≤ C) (ha : 3 ≤ a) :
     ∃ v : Fin (k + 1) → ℕ,
@@ -384,9 +363,6 @@ lemma not_pure_of_quotient {k y t x : ℕ}
   rw [hj, hdivpow] at hdiv
   exact not_pure_of_mod hy1 hy2 (j - t) hdiv.symm
 
-/-- **The cut-and-merge sieve step**: a block `C·(k+1)^a` above a
-clear three-column window absorbs any residue below the window —
-`k+1` digit parts, none a power, summing to `C·(k+1)^a + m`. -/
 theorem digit_cut_merge (k C a m : ℕ) (hk : 2 ≤ k)
     (hC : 1 ≤ C) (ha : 3 ≤ a)
     (hm : m < (k + 1) ^ (a - 3)) :
@@ -499,8 +475,6 @@ theorem digit_cut_merge (k C a m : ℕ) (hk : 2 ≤ k)
       _ = C * (k + 1) ^ a + m := by
           rw [hmenu, htail]
 
-/-- **Every multiple of `b³` splits after the deletion** — the
-sieve on the full lattice `b³·ℕ`, for every order in one stroke. -/
 theorem digit_deletion_covers_multiples
     (k C : ℕ) (hk : 2 ≤ k) (hC : 1 ≤ C) :
     ∃ v : Fin (k + 1) → ℕ,

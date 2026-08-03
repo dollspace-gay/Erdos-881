@@ -1,23 +1,11 @@
 #!/usr/bin/env python3
-"""Adversarial checks for `AdaptiveDirect.lean`.
-
-The first test exhausts small finite safe-prefix worlds and checks the exact
-local implication used in `not_hasLocalCleanSupply_iff_atomicPinnedTail`.
-The second records why the failure bound must be raised to the safe-prefix
-coverage threshold.  The third is an exact base-4 digit witness for the
-prefix-cleared cone split.  It checks that every cone is either already
-destroyed by the old prefix, or every minimal hub destroyer has exactly the
-new point outside that prefix.  It also rejects an over-strong cofinal rank
-claim: a marked destroyer can still destroy tiny lower-rank targets for old
-prefix reasons.  Once those stale targets are excluded, every remaining
-lower-rank target is at least the new point.
-"""
+"""Finite diagnostic for adaptive local."""
 
 from itertools import combinations, combinations_with_replacement, product
 
 
 def reach(elems, order, limit):
-    """Bitset of exact `order`-fold sums, with repeated summands allowed."""
+    """Finite diagnostic for reach."""
     cut = (1 << (limit + 1)) - 1
     result = 1
     for _ in range(order):
@@ -43,7 +31,7 @@ def support_family(elems, order, target):
 
 
 def minimal_destroyers(family, hub):
-    """Inclusion-minimal subsets of `hub` hitting every represented support."""
+    """Finite diagnostic for minimal destroyers."""
     out = []
     hub = sorted(hub)
     for size in range(len(hub) + 1):
@@ -58,7 +46,7 @@ def minimal_destroyers(family, hub):
 
 
 def destroys(family, destroyer):
-    """The finite version of `DestroysAt`, requiring a represented target."""
+    """Finite diagnostic for destroys."""
     return bool(family) and all(support & destroyer for support in family)
 
 
@@ -176,7 +164,7 @@ def base4_bridge_witness():
             if old_cone:
                 old_cones.append((x, q, destroyer))
             else:
-                # This is the exact marked-cone conclusion: the hub is
+                # In the marked-support conclusion, the support transversal is
                 # F union {b}, and F itself does not hit every support.
                 assert b in destroyer
                 assert destroyer - F == {b}

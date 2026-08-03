@@ -1,23 +1,3 @@
-/-
-# The Cantor carry-repair demonstrator (Erdős 881 mechanism)
-
-The base-3 digit-{0,1} set `C` (Cantor basis) is an order-2 basis of ℕ
-in the strongest sense: every `n : ℕ` is a sum of two members.  Deleting
-the infinite set of pure powers `{3^k}` destroys order 2 *cofinally and
-completely*: `3^k` loses every 2-representation.  Yet order 3 survives at
-every destroyed scale: `3^k = 13·3^(k-3) + 10·3^(k-3) + 4·3^(k-3)` with
-all three parts in `C` and none a pure power — the third summand unlocks
-base-3 carries (`1+1+1 = 3`) that no 2-sum of digit-{0,1} numbers can
-produce.
-
-This is the exact repair mechanism the Erdős 881 (k = 2) positive
-direction predicts: 2-rep poverty caused by digit rigidity is invisible
-to order 3.  It also documents why the "Behrend/AP3-free adversary" for
-the recurring-pair leaf fails to be a counterexample: the very digit
-structure that keeps fork images AP3-free hands order 3 its carry
-repairs.
--/
-
 import Mathlib
 
 namespace Erdos881Cantor
@@ -309,16 +289,11 @@ lemma isCantor_complement (n : ℕ) : IsCantor (n - layer n) := by
         rw [hstep]
         exact ih (n / 3) hq i
 
-/-- **The Cantor set is an order-2 basis of all of ℕ**: every natural
-number is the sum of two digit-{0,1} numbers. -/
 theorem cantor_pair_basis (n : ℕ) :
     ∃ a b, IsCantor a ∧ IsCantor b ∧ a + b = n :=
   ⟨layer n, n - layer n, isCantor_layer n, isCantor_complement n,
     by have := layer_le n; omega⟩
 
-/-- **Power deletion destroys order 2 cofinally**: after removing the
-pure powers, `3^k` has no 2-representation at all (`k ≥ 1`; even `0`
-as a summand forces the pure power as the other part). -/
 theorem cantor_powers_destroyed (k : ℕ) :
     ¬∃ a b, IsCantor a ∧ IsCantor b ∧ (∀ j, a ≠ 3 ^ j) ∧
       (∀ j, b ≠ 3 ^ j) ∧ a + b = 3 ^ k := by
@@ -440,9 +415,6 @@ lemma four_not_pure : ¬∃ t, (4 : ℕ) = 3 ^ t := by
         _ ≤ 3 ^ (s + 2) := Nat.pow_le_pow_right (by norm_num) (by omega)
     omega
 
-/-- **The carry repair**: every destroyed power `3^k` (`k ≥ 3`) has an
-order-3 representation by three Cantor numbers, none a pure power —
-the deletion that kills order 2 is invisible to order 3. -/
 theorem cantor_carry_repair (k : ℕ) (hk : 3 ≤ k) :
     ∃ x y z, IsCantor x ∧ IsCantor y ∧ IsCantor z ∧
       (∀ j, x ≠ 3 ^ j) ∧ (∀ j, y ≠ 3 ^ j) ∧ (∀ j, z ≠ 3 ^ j) ∧
@@ -539,8 +511,6 @@ lemma eq_of_digits {a x j : ℕ} (ha : a < 3 ^ j) (hx : x < 3 ^ j)
     have hdx := Nat.div_add_mod x 3
     omega
 
-/-- **Doubling rigidity**: the only Cantor 2-representation of `2x`
-(`x` Cantor) is `x + x`.  Every element's double is privately owned. -/
 theorem cantor_double_unique {x a b : ℕ} (hx : IsCantor x)
     (ha : IsCantor a) (hb : IsCantor b) (hab : a + b = 2 * x) :
     a = x ∧ b = x := by
@@ -568,11 +538,6 @@ theorem cantor_double_unique {x a b : ℕ} (hx : IsCantor x)
     omega
   refine ⟨haeq, by omega⟩
 
-/-- **ℵ₀-minimality of the Cantor basis**: deleting any infinite subset
-`B` destroys order 2 — for every `b ∈ B`, the target `2b` loses its
-unique representation `(b, b)`.  Together with `cantor_pair_basis`
-this makes `C` a minimal order-2 basis in the exact sense of
-Erdős 881's hypothesis. -/
 theorem cantor_minimal {B : Set ℕ} (hB : ∀ b ∈ B, IsCantor b) (b : ℕ)
     (hb : b ∈ B) :
     ¬∃ p q, IsCantor p ∧ IsCantor q ∧ p ∉ B ∧ q ∉ B ∧ p + q = 2 * b := by
@@ -608,8 +573,6 @@ lemma thirtyseven_not_pure : ¬∃ t, (37 : ℕ) = 3 ^ t := by
         _ ≤ 3 ^ (s + 4) := Nat.pow_le_pow_right (by norm_num) (by omega)
     omega
 
-/-- **Carry repair of the doubled casualties**: `2·3^k = (13+37+4)·3^(k-3)`
-with all parts Cantor and non-pure. -/
 theorem cantor_carry_repair_double (k : ℕ) (hk : 3 ≤ k) :
     ∃ x y z, IsCantor x ∧ IsCantor y ∧ IsCantor z ∧
       (∀ j, x ≠ 3 ^ j) ∧ (∀ j, y ≠ 3 ^ j) ∧ (∀ j, z ≠ 3 ^ j) ∧
@@ -631,7 +594,6 @@ theorem cantor_carry_repair_double (k : ℕ) (hk : 3 ≤ k) :
     have h3 : (3 : ℕ) ^ 3 = 27 := by norm_num
     rw [h1, h3]
     ring
-
 
 /-- Digits of a pure power: a single 1 at its exponent. -/
 lemma pow_digit (j i : ℕ) : 3 ^ j / 3 ^ i % 3 = if i = j then 1 else 0 := by
@@ -949,10 +911,6 @@ theorem cantor_demonstrator :
       x + y + z = 3 ^ k) :=
   ⟨cantor_pair_basis, cantor_powers_destroyed, cantor_carry_repair⟩
 
-
-
-/-- **The surviving deletion, in full**: after removing all pure powers
-from the Cantor basis, order 3 still covers every `n ≥ 3^7`. -/
 theorem cantor_deletion_order_three (n : ℕ) (hn : 3 ^ 7 ≤ n) :
     ∃ x y z, IsCantor x ∧ IsCantor y ∧ IsCantor z ∧
       (∀ j, x ≠ 3 ^ j) ∧ (∀ j, y ≠ 3 ^ j) ∧ (∀ j, z ≠ 3 ^ j) ∧
@@ -1335,12 +1293,6 @@ theorem cantor_deletion_order_three (n : ℕ) (hn : 3 ^ 7 ≤ n) :
       exact ⟨layer n, n - layer n, 0, hc1, hc2, isCantor_zero, hg1np,
         fun j h => hp2 ⟨j, h⟩, not_pure_zero, by omega⟩
 
-/-- **A complete verified Erdős 881 instance.**  The Cantor set is an
-order-2 basis of ℕ; it is ℵ₀-minimal — deleting ANY infinite subset
-destroys order 2 (each deleted element's double loses its unique
-representation); yet deleting the infinite set of pure powers leaves an
-asymptotic order-3 basis.  This realizes the conclusion pattern of
-Erdős 881 (k = 2) end to end on a concrete minimal basis. -/
 theorem erdos881_cantor_instance :
     (∀ n, ∃ a b, IsCantor a ∧ IsCantor b ∧ a + b = n) ∧
     (∀ B : Set ℕ, (∀ b ∈ B, IsCantor b) → ∀ b ∈ B,

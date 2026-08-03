@@ -76,10 +76,6 @@ def HasFiniteSelectorCertificate
     (∀ n ∈ S, N ≤ n) ∧
       ∀ s : BlockSelector F, ∃ n ∈ S, DestroysAt R (selectedSet s) n
 
-/- Every finite selector certificate contains a cardinal-minimal
-subcertificate.  Minimality localizes its targets: for each `q` in the
-subcertificate there is a selector which destroys `q` and no other target in
-the same subcertificate. -/
 theorem exists_minimal_targetLocalized_subcertificate
     {R : SupportFamily} {F : ℕ → Finset ℕ} {Q : Finset ℕ}
     (hcert : ∀ s : BlockSelector F,

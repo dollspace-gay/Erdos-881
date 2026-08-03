@@ -1,25 +1,3 @@
-/-
-# The uniform digit instance: every base, every order, one theorem
-
-For every `k ≥ 2` the base-`(k+1)` digit-{0,1} set is a strongly
-minimal exact order-`k` basis, and for `k ≥ 3` it is NOT an exact
-order-2 basis — so every hard case of the general-order campaign is
-inhabited, uniformly in `k`, by one theorem
-(`digit_uniform_hard_case`).
-
-The two verified instances (`Cantor*`, base 3, k = 2 and `Base4*`,
-base 4, k = 3) are the special cases; this file proves the pattern in
-a single stroke.  The mechanisms are uniform: sums of at most `k`
-digit numbers never carry (`k` ones fit below the base `k+1`), so
-order-`k` representations are digit assignments, targets with a digit
-`k` defeat every lower order, and the diagonal `k·x` has the unique
-representation `(x, …, x)`.
-
-Base convention: everything is phrased over base `k + 1` literally,
-so `base - 1 = k` holds definitionally and no truncated subtraction
-appears.
--/
-
 import Erdos881.AdditiveSupports
 
 namespace Erdos881Digit
@@ -182,8 +160,6 @@ lemma tuple_res_lt {k : ℕ} (j : ℕ) (v : Fin j → ℕ)
     omega
   exact Nat.lt_of_mul_lt_mul_left hklt
 
-/-- **Uniform no-carry law**: sums of at most `k` digit numbers split
-at every scale. -/
 lemma tuple_split {k : ℕ} :
     ∀ (j : ℕ) (v : Fin j → ℕ), j ≤ k →
       (∀ l, IsDigitK k (v l)) →
@@ -245,8 +221,6 @@ lemma tuple_split {k : ℕ} :
               (f := fun l : Fin (j + 1) =>
                 v l % (k + 1) ^ i)).symm
 
-/-- **Uniform digit additivity**: the digit of a sum of at most `k`
-digit numbers is the sum of the digits. -/
 lemma tuple_digit {k : ℕ} (j : ℕ) (v : Fin j → ℕ)
     (hj : j ≤ k) (hv : ∀ l, IsDigitK k (v l))
     (i : ℕ) :
@@ -304,8 +278,6 @@ lemma sum_bits (j r : ℕ) (h : r ≤ j) :
   rw [Finset.sum_ite]
   simp [hfilter]
 
-/-- **Uniform order-`k` covering, threshold 0**: every number splits
-digit by digit into `k` digit numbers. -/
 theorem digit_basis (k : ℕ) (hk : 1 ≤ k) (n : ℕ) :
     ∃ v : Fin k → ℕ, (∀ l, IsDigitK k (v l)) ∧
       (∑ l, v l) = n := by
@@ -494,8 +466,6 @@ lemma sum_saturated {k : ℕ} (f : Fin k → ℕ)
     simp
   omega
 
-/-- **Uniform diagonal rigidity**: the only order-`k` representation
-of `k·x` by digit numbers is `(x, …, x)`. -/
 theorem digit_diag_rigid {k x : ℕ} (hk : 1 ≤ k)
     (hx : IsDigitK k x) (v : Fin k → ℕ)
     (hv : ∀ l, IsDigitK k (v l))
@@ -530,8 +500,6 @@ theorem digit_diag_rigid {k x : ℕ} (hk : 1 ≤ k)
         v l₀ / (k + 1) ^ i % (k + 1) = 1 := hall l₀
     rw [hvl, h1]
 
-/-- **Uniform low-order impossibility**: no `j < k` digit numbers sum
-to the digit-`k` target `k·(k+1)^m`. -/
 theorem digit_low_order_miss {k j : ℕ} (hjk : j < k)
     (m : ℕ) (v : Fin j → ℕ)
     (hv : ∀ l, IsDigitK k (v l)) :
@@ -579,9 +547,6 @@ theorem digit_not_basis_two (k : ℕ) (hk : 3 ≤ k) :
   exact digit_low_order_miss (by omega) N v
     (fun l => hvmem l) hvsum
 
-/-- **Uniform strong minimality**: deleting any infinite subset
-destroys the diagonal targets `k·x`, `x ∈ B`, cofinally — the
-diagonal representation is unique, so its support `{x}` meets `B`. -/
 theorem digit_strong_deletion (k : ℕ) (hk : 1 ≤ k) :
     StrongInfiniteDeletion
       (additiveSupportFamily (DigitSet k) k)
@@ -606,10 +571,6 @@ theorem digit_strong_deletion (k : ℕ) (hk : 1 ≤ k) :
     (mem_tupleSupport_iff.mpr
       ⟨⟨0, by omega⟩, hall ⟨0, by omega⟩⟩)
 
-/-- **The uniform hard-case theorem**: for every `k ≥ 2` the
-base-`(k+1)` digit set is a strongly minimal exact order-`k` basis,
-and for every `k ≥ 3` it is not an exact order-2 basis.  Every hard
-case of the general-order campaign is inhabited, in one stroke. -/
 theorem digit_uniform_hard_case (k : ℕ) (hk : 2 ≤ k) :
     IsStronglyMinimalExactBasis (DigitSet k) k ∧
       (3 ≤ k →

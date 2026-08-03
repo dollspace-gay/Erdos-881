@@ -1,17 +1,5 @@
 import Erdos881.AdditiveSupports
 
-/-!
-# Translation to a zero-normalized additive basis
-
-An additive basis in `ℕ` need not contain zero.  If `a` is its least
-element, subtracting `a` from every basis element produces a set containing
-zero.  Exact `h`-term representations are transported by translating their
-targets by `h * a`; infinite deletions are transported by the same bijection.
-
-This file isolates that bookkeeping so the zero-normalized Erdős 881
-machinery can be used without adding `0 ∈ A` to the original problem.
--/
-
 open scoped BigOperators
 
 namespace Erdos881

@@ -1,34 +1,5 @@
 #!/usr/bin/env python3
-"""Probe: are adversarial minimal order-3 bases forced to be
-carry-poor, the way the verified enemy profile predicts?
-
-The k = 2 engine and the Cantor instance say a counterexample must
-be Cantor-like yet CARRY-POOR: no internal merge slack (few ways
-to trade several elements for one), low additive energy, rigid
-representations.  The verified positive digit worlds are the
-opposite: carry-RICH by construction (k+1 ones merge into the next
-scale), and that richness is exactly what the deletion theorem
-spends.
-
-This probe builds worlds that try their hardest to be carry-poor —
-Sidon-biased greedy (minimize new pair-sum collisions) and
-octave-spread greedy — trims them toward elementwise minimality,
-and measures:
-
-  - additive-energy excess (pair-sum collisions beyond the Sidon
-    floor), before and after trim;
-  - internal merge capacity: elements expressible as sums of m
-    positive elements (m = 2, 3, 4) — the carry analogue;
-  - order-3 representation multiplicity on the tail;
-  - deletion survival at order 4 and the private-pair census.
-
-The base-4 digit world runs as the carry-rich reference.
-
-Reading: if even deliberately carry-poor minimal worlds either
-(a) regrow carry events under the basis constraint, or (b) still
-yield surviving deletions, the enemy's room shrinks from both
-sides.
-"""
+"""Finite diagnostic for carry poverty."""
 
 import random
 
@@ -135,7 +106,7 @@ def digit_world():
 
 
 def energy_excess(A):
-    """Pair-sum collisions beyond the Sidon floor, per |A|^2."""
+    """Finite diagnostic for energy excess."""
     sums = {}
     Apos = [a for a in A if a >= 0]
     n = len(Apos)
@@ -149,7 +120,7 @@ def energy_excess(A):
 
 
 def merge_capacity(A):
-    """Elements of A expressible as sums of m positive elements."""
+    """Finite diagnostic for merge capacity."""
     Apos = [a for a in A if a > 0]
     out = []
     for m in (2, 3, 4):
@@ -160,7 +131,7 @@ def merge_capacity(A):
 
 
 def rep_multiplicity(A):
-    """Order-3 multiset representation counts on the tail."""
+    """Finite diagnostic for rep multiplicity."""
     Apos = sorted(a for a in A if a >= 0)
     lo, hi = N // 2, N
     counts = {}

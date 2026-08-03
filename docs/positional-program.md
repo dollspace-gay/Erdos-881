@@ -3,13 +3,13 @@
 Status: superseded historical program. The cited Lean theorems remain valid.
 
 This program attempted to combine the positions of representation-rich
-targets, failed targets, and finite hubs. It was motivated by the observation
+targets, failed targets, and finite support transversals. It was motivated by the observation
 that counting bounds alone do not control where the corresponding targets
 occur.
 
 ## Formal reduction
 
-`endgame_service_breakdown` states a necessary condition for an order-two
+`counterexample_structure_coverage_breakdown` states a necessary condition for an order-two
 counterexample: for every infinite deletion there are cofinally many targets
 at which all available representation resources fail in a prescribed way.
 `served_targets_never_fail` gives the elementary converse at a single target.
@@ -21,15 +21,15 @@ many targets remain served.
 
 The program used the following proved results:
 
-- `drain_wealth_addresses` and `two_adic_width_law` constrain certain
+- `nested_representation_wealth_addresses` and `two_adic_width_law` constrain certain
   representation-rich positions;
-- `endgame_forced_mixing` records a mixing alternative;
-- `endgame_canonical_core`, `small_lowpart_rigidity`, and
-  `endgame_rigidity_teams` constrain finite hubs;
+- `counterexample_structure_forced_mixing` records a mixing alternative;
+- `counterexample_structure_canonical_core`, `small_lowpart_rigidity`, and
+  `counterexample_structure_rigidity_pair_transversals` constrain finite support transversals;
 - `cylinder_failure_residue_law`, `failing_target_in_sumset`, and
-  `endgame_fan_poverty` constrain failed targets;
+  `counterexample_structure_fan_poverty` constrain failed targets;
 - `breakdown_pigeonhole` gives a finite counting reduction;
-- `disjoint_matching_dodge` constructs a deletion when the relevant finite
+- `disjoint_matching_avoidance` constructs a deletion when the relevant finite
   matchings are sufficiently separated.
 
 ## Unresolved issue

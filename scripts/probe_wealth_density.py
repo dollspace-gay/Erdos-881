@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""Measure the density of wealthy targets (r2 > threshold) in
-candidate worlds, per dyadic window — composition (1) of the
-fan-poverty kill asks whether wealthy targets are dense enough
-that their sumsets with A blanket all large n."""
+"""Finite diagnostic for wealth density."""
 
 import sys
 sys.path.insert(0, 'scripts')

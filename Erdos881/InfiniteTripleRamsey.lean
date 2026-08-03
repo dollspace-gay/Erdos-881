@@ -1,15 +1,5 @@
 import Erdos881.InfinitePairRamsey
 
-/-!
-# Infinite Ramsey reduction for ordered triples
-
-This file derives the countable two-colour Ramsey theorem for increasing
-triples from the pair theorem already used in the rigid/nonrigid reduction.
-At one stage, pair Ramsey makes the colour of every pair in the remaining
-reservoir uniform relative to the newly chosen first point.  A final infinite
-pigeonhole argument makes those stage colours constant.
--/
-
 namespace Erdos881
 
 /-- One thinning step for the increasing-triple Ramsey construction. -/

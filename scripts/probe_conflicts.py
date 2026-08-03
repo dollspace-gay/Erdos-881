@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""Conflict-target placement probe: for each pair of shells (j,k),
-find ALL targets m in window whose every rep meets Q_j ∪ Q_k.
-Question: does the MINIMUM conflict target show placement
-regularity (e.g. ~ min Q_k, ~ max(Q_j∪Q_k), ~ sum of mins)?"""
+"""Finite diagnostic for conflicts."""
 
 def triples(A, m):
     As, Aset, out = sorted(A), set(A), []

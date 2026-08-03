@@ -62,7 +62,7 @@ problem 881.
 
 ## Relation to the formal development
 
-The repository’s order-two guardian and private-target results overlap in
+The repository’s order-two required element and private-target results overlap in
 subject with the singleton-deletion literature. No novelty claim should be
 made for a local conclusion until it has been compared with the essential
 element and `S(h)` literature.

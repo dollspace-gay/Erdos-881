@@ -1,21 +1,5 @@
 #!/usr/bin/env python3
-"""Greedy triangle construction in the even/odd basis (Erdős 881, part 8).
-
-Phase-2a decisive experiment.  In the even/odd binary basis the team
-graph is the chain …a_i–a_{i+1}…  A triangle {a_i, a_{i+1}, a_{i+2}}
-needs only the closing edge {a_i, a_{i+2}}: make target m = a_i + a_{i+2}
-guarded by that pair by DELETING a hitting set of its pair-free
-representations.  Questions:
-
-  1. Can one closing edge be bought while covering survives?
-  2. Do purchases at consecutive scales compose, or do the deletions
-     destroy covering / earlier edges as they accumulate?
-  3. How does the hitting-set price scale?
-
-If greedy interlocking succeeds scale after scale with covering intact,
-the NO-side construction is live (goal gate 2b).  If covering or old
-edges collapse, the YES-side (triangle-poorness is forced) strengthens.
-"""
+"""Finite diagnostic for triangle construction."""
 
 from __future__ import annotations
 
@@ -46,7 +30,7 @@ def free_reps(A, m: int, banned: set[int]) -> list[tuple[int, int, int]]:
 
 
 def min_hitting_set(reps, protect: set[int], cap: int = 6):
-    """Smallest deletion set hitting every rep, avoiding `protect`."""
+    """Finite diagnostic for min hitting set."""
     pool = sorted({t for r in reps for t in r if t not in protect and t > 0})
     for size in range(1, cap + 1):
         for cand in combinations(pool, size):

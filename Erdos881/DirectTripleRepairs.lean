@@ -1,15 +1,5 @@
 import Erdos881.RigidDestroyerRepairs
 
-/-!
-# Direct order-three repairs for red-red pair sums
-
-The splittable-independent bridge only fails when a late order-two
-representation has both entries in the deletion.  This file permits that
-case provided the corresponding target already has a surviving order-three
-support.  It then gives a finite-injury recursion which arranges such a
-support for every sum of two selected deletion points.
--/
-
 open scoped BigOperators
 
 namespace Erdos881
@@ -539,8 +529,6 @@ theorem not_hasFreshDirectTripleRepairExtension_iff
   push Not
   rfl
 
-/-- Name for the finite moving-destroyer obstruction exposed by a failed
-direct-repair stage. -/
 def HasFiniteDirectTripleRepairObstruction
     (A K : Set ℕ) (D : Finset ℕ) (T : ℕ) : Prop :=
   ∀ b, b ∈ K → b ∉ D → T ≤ b →
@@ -554,9 +542,6 @@ theorem not_hasFreshDirectTripleRepairExtension_iff_obstruction
       HasFiniteDirectTripleRepairObstruction A K D T :=
   not_hasFreshDirectTripleRepairExtension_iff
 
-/-- Pigeonholing the old finite prefix reduces any failed stage to one of
-two moving target families: diagonal targets `b+b`, or translates `b+d`
-for one fixed old deletion point `d`. -/
 theorem HasFiniteDirectTripleRepairObstruction.infinite_diagonal_or_fixed
     {A K : Set ℕ} {D : Finset ℕ} {T : ℕ}
     (h : HasFiniteDirectTripleRepairObstruction A K D T)
@@ -643,7 +628,7 @@ theorem finiteOrderThreeDestroyer_minimal_trichotomy
 /-- On a pairwise-rigid reservoir, every large-minimal destroyer arising
 from a failed extension has an almost-global unique-hit support.  Thus the
 remaining obstruction is already in the exact form needed for a finite
-anchor injury. -/
+anchor obstruction. -/
 theorem HasFiniteDirectTripleRepairObstruction.rigid_minimal_trichotomy
     {A K : Set ℕ} {D : Finset ℕ} {T : ℕ}
     (h : HasFiniteDirectTripleRepairObstruction A K D T)
@@ -690,7 +675,6 @@ theorem HasFiniteDirectTripleRepairObstruction.rigid_minimal_trichotomy
         c hz hfour hD₀K hKA hrigid
     exact ⟨z, x, E, hER, hxE, hEK, hunique⟩
 
-/-- Data chosen at one stage of the direct-repair recursion. -/
 structure DirectTripleRepairRecursionStep
     (A K : Set ℕ) (D : Finset ℕ) (last : ℕ) where
   point : ℕ
@@ -892,8 +876,6 @@ theorem exists_directTripleRepairDeletion_of_freshExtensions
         have hlate := hfuture hik
         omega
 
-/-- The constructive target now has a single finite-stage arithmetic
-obligation: fresh direct triple repairs. -/
 theorem exists_infiniteDeletion_threeBasis_of_freshDirectTripleExtensions
     {A B₀ K : Set ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -915,10 +897,6 @@ theorem exists_infiniteDeletion_threeBasis_of_freshDirectTripleExtensions
       hbasis hBA hB hself' hrepair
   exact ⟨B', fun x hx => hBK (hB'B hx), hB', hthree⟩
 
-/-- Under the contradictory strong-deletion hypothesis, the fresh-extension
-property must fail at some finite stage.  This closes the logical loop
-between the constructive recursion and strong deletion: only the finite
-moving-destroyer obstruction can remain. -/
 theorem strongDeletion_forces_failedDirectTripleRepairStage
     {A B₀ K : Set ℕ}
     (hstrong : StrongInfiniteDeletion

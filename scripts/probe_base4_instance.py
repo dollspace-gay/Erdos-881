@@ -1,32 +1,5 @@
 #!/usr/bin/env python3
-"""Probe: the base-(k+1) digit-{0,1} instance of the k >= 3 hard case.
-
-CLAUDE.md records the remaining gap as: k >= 3 with A NOT an exact
-order-2 basis, and names the base-(k+1) digit-{0,1} set as the
-natural next target (the Cantor analogue: base 3 / order 2 -> 3 is
-verified in Erdos881/CantorInstance.lean with PurePowers deleted).
-
-For k = 3, base 4, A = {n : all base-4 digits of n are 0 or 1}:
-
-  1. A is an exact order-3 basis (threshold 0): at order 3 digit
-     sums are <= 3 < 4, so representations are exactly digit
-     assignments and never carry.
-  2. A is NOT an exact order-2 basis: any n with a digit 3 is
-     missed (two digit-{0,1} terms sum to digits <= 2, no carries).
-  3. A is aleph_0-minimal at order 3: for b in A the target 3b has
-     digits {0,3}; digit 3 forces a 1 in ALL three terms, so (b,b,b)
-     is the UNIQUE representation -- deleting any infinite B
-     destroys the cofinal targets {3b : b in B}.
-  4. Candidate survival: order 4 allows digit sum 4 = one carry, so
-     the carry-repair mechanism opens exactly as in the Cantor
-     world.  Delete PurePowers = {4^j} and test order-4 coverage.
-
-The probe machine-checks 1-4 on a finite window, then sweeps
-adversarial infinite deletion families for order-4 survival, and for
-every failing family classifies the failing targets' positions
-inside their source blocks [4^j, 4^(j+1)) (interior straddle vs
-block boundary -- the two branches of the terminal geometric fork).
-"""
+"""Finite diagnostic for base4 instance."""
 
 import random
 
@@ -35,7 +8,7 @@ K = 9             # window exponent: targets in [0, BASE^K]
 
 
 def digit_set(base, top):
-    """All n <= base^top whose base-`base` digits are all 0 or 1."""
+    """Finite diagnostic for digit set."""
     elems = [0]
     for pos in range(top + 1):
         elems += [e + base ** pos for e in elems]
@@ -53,9 +26,7 @@ def support(n, base):
 
 
 def reach(elems, order, limit):
-    """Bitset of sums of exactly `order` terms from elems (0 included
-    in elems makes this <= order nonzero terms), truncated to
-    [0, limit]."""
+    """Finite diagnostic for reach."""
     cut = (1 << (limit + 1)) - 1
     r = 1
     for _ in range(order):
@@ -71,7 +42,7 @@ def missed(bits, lo, hi):
 
 
 def blocks_profile(miss, base, kmax):
-    """Per-block miss counts and within-block thirds, over ALL misses."""
+    """Finite diagnostic for blocks profile."""
     per_block = {}
     lower = middle = upper = 0
     for n in miss:
@@ -97,12 +68,12 @@ def main():
     A = digit_set(BASE, K)
     print(f"base {BASE}, window [0, {X}], |A| = {len(A)}")
 
-    # -- claim 1: exact order-3 basis, threshold 0 --------------------
+    # -- 1: exact order-3 basis, threshold 0 --------------------
     m3 = missed(reach(A, 3, X), 0, X)
     print(f"claim 1  order-3 basis: missed targets = {len(m3)}"
           f"  ({'PASS' if not m3 else 'FAIL'})")
 
-    # -- claim 2: not an exact order-2 basis --------------------------
+    # -- 2: not an exact order-2 basis --------------------------
     m2 = missed(reach(A, 2, X), 0, X)
     with_digit3 = sum(1 for n in range(X + 1)
                       if any(d == 3 for d in _digits(n)))
@@ -110,7 +81,7 @@ def main():
           f"  (targets with a digit 3: {with_digit3})"
           f"  ({'PASS' if len(m2) == with_digit3 and m2 else 'FAIL'})")
 
-    # -- claim 3: unique support at 3b (minimality mechanism) ---------
+    # -- 3: unique support at 3b (minimality mechanism) ---------
     sample = [a for a in A if 0 < a <= X // 3]
     bad = []
     for b in random.Random(0).sample(sample, min(40, len(sample))):
@@ -120,7 +91,7 @@ def main():
     print(f"claim 3  minimality: 3b representable without b for"
           f" {len(bad)}/40 sampled b  ({'PASS' if not bad else 'FAIL'})")
 
-    # -- claim 4 + sweep: order-4 survival of infinite deletions ------
+    # -- 4 + sweep: order-4 survival of infinite deletions ------
     rng = random.Random(881)
     apos = [a for a in A if a > 0]
     powers = [BASE ** j for j in range(1, K + 1)]

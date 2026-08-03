@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
-"""AP3-free vs interval-covering sumset (Erdős 881, recurring-pair leaf).
-
-Q: does there exist B ⊆ [0,m], AP3-free (no x+y=2w, x≠w), with
-B+B ⊇ [m, 2m]?  If impossible (for large m), the e=0 matching
-residue KILLS: fork-images must cover yet stay AP3-free.
-
-  P1  exact search small m (branch&bound / SAT-ish greedy+repair)
-  P2  random restarts + local repair, larger m
-  P3  known AP3-free sets (Behrend-ish, greedy 3-AP-free = Stanley
-      sequence) — check their sumset gaps
-"""
+"""Finite diagnostic for ap3 covering."""
 import random, sys
 
 def ap3_free(B):
@@ -33,7 +23,7 @@ def sumset_covers(B, lo, hi):
     return all(n in P for n in range(lo, hi+1)), P
 
 def exact_search(m):
-    """DFS: build AP3-free B ⊆ [0,m] maximizing sumset coverage of [m,2m]."""
+    """Finite diagnostic for exact search."""
     best = [None]
     target = set(range(m, 2*m+1))
     def dfs(i, B, S):
@@ -64,7 +54,7 @@ def exact_search(m):
     return best[0]
 
 def greedy_repair(m, rng, iters=4000):
-    """local search: maintain AP3-free B, try to cover [m,2m]."""
+    """Finite diagnostic for greedy repair."""
     B = set()
     def viol(c):  # does adding c break AP3-freeness?
         for x in B:

@@ -1,25 +1,5 @@
 #!/usr/bin/env python3
-"""Stacking test for order-3 private pairs (Erdős 881 lab, part 2).
-
-Hand-derived claims to verify:
-
-CLAIM 1 (level-1 exists, uniquely shaped): A = [0, M] ∪ {2M+1} is an
-order-2-covering set in which m = 3M+1 is private to a = 2M+1, and within
-the family "symmetric S plus one guardian above max(S)" this boundary
-structure is essentially the only shape (interior guardians a <= 2M all
-fail: covering 2a - M forces the element M - (2M - a), which yields the
-guardian-free representation {M, M, M - (2M - a)}).
-
-CLAIM 2 (big guardians cannot stack): there is NO second pair (a2, m2)
-with a2 > M2 on top of the level-1 structure.  Rigidity forces A below M2
-to be the mirror closure of the level-1 set, so we sweep ALL (M2, a2) with
-mirror closure and test both privates plus covering.  Expected: zero hits.
-
-CLAIM 3 (probe, not proof): small guardians (a2 < M2) would need
-"unsplittable" elements; a crude local search looks for ANY covering set
-with a private pair whose guardian sits below m - guardian, i.e. any
-counterexample to the big-guardian shape.
-"""
+"""Finite diagnostic for stacking."""
 
 from __future__ import annotations
 
@@ -48,7 +28,7 @@ def check_claim1(Ms) -> bool:
               f"{'PRIVATE+COVERING' if good else 'FAIL'}"
               f"{' rigidity OK' if good and not bad else ''}")
         ok = ok and good and not bad
-        # interior guardians must all fail
+        # interior required elements must all fail
         interior_hits = [aa for aa in range(M + 1, 2 * M + 1)
                          if is_private(sorted(set(range(M + 1)) | {aa}),
                                        aa, aa + M)
@@ -61,8 +41,7 @@ def check_claim1(Ms) -> bool:
 
 
 def check_claim2(M: int, factor: int = 4) -> list[tuple[int, int]]:
-    """Sweep all (M2, a2) with a2 > M2; A2 = mirror closure of level-1
-    below M2 plus a2.  Return list of successes (expected empty)."""
+    """Finite diagnostic for check claim2."""
     A1, a1, m1 = level1(M)
     hits = []
     tried = 0
@@ -85,8 +64,7 @@ def check_claim2(M: int, factor: int = 4) -> list[tuple[int, int]]:
 
 
 def check_claim2_fresh(M: int, factor: int = 4) -> list[tuple[int, int]]:
-    """Same sweep but WITHOUT requiring pair 1 to survive: does ANY big
-    guardian exist above the level-1 structure at all?"""
+    """Finite diagnostic for check claim2 fresh."""
     A1, a1, m1 = level1(M)
     hits = []
     for M2 in range(m1 + 1, factor * m1 + 1):
@@ -110,8 +88,7 @@ def check_claim2_fresh(M: int, factor: int = 4) -> list[tuple[int, int]]:
 
 def check_claim3(rng: random.Random, span: int = 120, tries: int = 40,
                  iters: int = 4000):
-    """Local search for ANY covering set on [0, span] with a private pair
-    (a, m) where a < m - a (small guardian).  Score-guided bit flips."""
+    """Finite diagnostic for check claim3."""
     best_report = None
     for t in range(tries):
         memb = bytearray(span + 1)

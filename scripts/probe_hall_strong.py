@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
-"""Probe: adversarial hall worlds vs deletion patterns.
-
-Build A subseteq [0, N] with:
-  - pair coverage of [N0, N]
-  - a fixed 2-element hall H = {h0, h1} pair-hubbing a sparse cofinal
-    target family T (all pairs of t in T meet H), targets are ghosts
-  - adversary tries to break candidate deletions' order-3 survival
-
-Then test deletion families B for order-3 coverage of A \\ B on a
-safe window. Report survivors."""
+"""Finite diagnostic for hall strong."""
 
 import random
 import sys
@@ -20,11 +11,10 @@ H = {h0, h1}
 
 
 def build_world(seed, partner_choice="h0", spite=None):
-    """spite: an optional callable(A, n) -> preferred pair to
-    adversarially avoid certain survivals."""
+    """Finite diagnostic for build world."""
     rng = random.Random(seed)
     A = {0, h0, h1}
-    # sparse hubbed ghost targets
+    # sparse hubbed outside-basis targets
     T = []
     t = 64
     while t < N - 10:

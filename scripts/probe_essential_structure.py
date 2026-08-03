@@ -1,17 +1,5 @@
 #!/usr/bin/env python3
-"""Essential-element structure probe (Erdős 881 lab, Link B1).
-
-Grekos/E–G: an order-2 basis has finitely many 2-essential elements.
-For the formalization we need the h = 2 mechanism.  Classical route:
-if a is essential, T := co(S+S) (S := A∖{a}) is infinite with
-T - a ⊆ S and S ∩ (a + T - T) forced small — congruence structure.
-
-  G1  census: in windowed covering models, how many elements are
-      2-essential (removal breaks covering in-window)?  What do the
-      broken targets T look like (congruence classes)?
-  G2  interaction: for two essentials a < a', is there a shared
-      modulus?  (E–G predicts congruence obstructions.)
-"""
+"""Finite diagnostic for essential structure."""
 
 from __future__ import annotations
 

@@ -1,29 +1,8 @@
 import Erdos881.TeamGraphRamsey
 
-/-!
-# A separated team triangle inside a full covering set
-
-The pigeonhole theorem `infinite_teamClique_has_separated_triple`
-extracts, from any infinite team clique, triples of guards at
-arbitrarily prescribed separations.  The hoped-for closing move was
-`no_separated_triangle`: that one such triple is already contradictory
-against covering.  **This file refutes that hope**: the set
-
-  `A = [0, 9] ∪ [18, 26] ∪ {53, 62} ∪ [89, ∞)`
-
-pair-covers every integer from `12` on, contains `0`, and its three
-guards `9, 53, 62` — with `53 > 5 · 9` — pairwise destroy the targets
-`79`, `88`, `81`.  Guard separation alone therefore kills nothing: a
-proof of Open Link B must use the *infinitude* of the clique (the
-pinned-mirror route of `PinnedMirror.lean`) or a much stronger
-separation regime (the lab finds no triangle whose filler blocks are
-wider than its base block: `scripts/probe_pinned_forks.py` P3,
-`scripts/probe_pinned_mirror.py` V1).
--/
-
 namespace Erdos881
 
-/-- The witness set: two interval blocks, two high guards, and a full
+/-- The witness set: two interval blocks, two high required elements, and a full
 interval tail restoring covering above the destroyed window. -/
 def sepTriangleSet : Set ℕ :=
   {n | n ≤ 9 ∨ (18 ≤ n ∧ n ≤ 26) ∨ n = 53 ∨ n = 62 ∨ 89 ≤ n}
@@ -113,14 +92,10 @@ theorem sepTriangleSet_destroyer_81 :
     have hz' := sepTriangleSet_cases hz
     omega
 
-/-- **Guard separation alone cannot kill a team triangle.**  A full
-covering set with `0` carries three pairwise team edges whose guards
-are separated by a factor of five.  Any proof of Open Link B must use
-more than one triple. -/
 theorem separated_triangle_realizable :
     ∃ A : Set ℕ, 0 ∈ A ∧ PairCovers A 12 ∧
       ∃ u v w : ℕ, 5 * u < v ∧ v < w ∧
-        TeamEdge A u v ∧ TeamEdge A u w ∧ TeamEdge A v w := by
+        PairTransversalEdge A u v ∧ PairTransversalEdge A u w ∧ PairTransversalEdge A v w := by
   refine ⟨sepTriangleSet, sepTriangleSet_zero_mem,
     sepTriangleSet_pairCovers, 9, 53, 62, by omega, by omega,
     ⟨by omega, 79, by omega, by omega, sepTriangleSet_destroyer_79⟩,

@@ -1,36 +1,5 @@
 import Erdos881.GuardianRigidity
 
-/-!
-# Mirrors compose to repetition, and repetition yields spare keys
-
-The master argument for the positive direction of Erdős 881, in skeleton:
-
-1. a big-guardian private pair forces a *reflection level* at its
-   co-representative (`IsPrivateTriple.reflectionLevel`, the two-sided
-   form of `IsPrivateTriple.mirror`);
-2. two reflection levels compose to a translation
-   (`IsReflectionLevel.translation`);
-3. a strictly monotone stream of reflection levels with bounded gaps has
-   one gap value recurring cofinally (`exists_recurring_gap`), and a
-   cofinally recurring gap upgrades the local translations to full
-   periodicity (`periodic_of_recurring_reflectionLevels`);
-4. **spare keys**: a periodic order-two covering set admits an infinite
-   deletion after which every large target still has an exact three-term
-   representation avoiding it
-   (`periodic_covering_admits_surviving_deletion`).
-
-The chain is assembled in
-`surviving_deletion_of_boundedGap_reflectionLevels`.  Together with
-`no_big_guardian_stacking` this closes the singleton-guardian route: its
-rigidity either self-destructs at two scales or, made cofinal, produces
-exactly the mirror stream whose limit is the desired surviving deletion.
-
-Compare `ReflectionDefects.lean`, which proves reflection and local
-translation for repeated private targets of a *single* destroyer; here
-the levels may come from different guardians, and the endgame is carried
-all the way to the surviving infinite deletion.
--/
-
 namespace Erdos881
 
 /-- `M` is a reflection level of `A`: strictly below `M`, positive
@@ -38,7 +7,7 @@ membership is symmetric under `z ↦ M - z`. -/
 def IsReflectionLevel (A : Set ℕ) (M : ℕ) : Prop :=
   ∀ z, 0 < z → z < M → (z ∈ A ↔ M - z ∈ A)
 
-/-- A big-guardian private pair forces a reflection level at its
+/-- A big-required element private pair forces a reflection level at its
 co-representative `M = m - a`. -/
 theorem IsPrivateTriple.reflectionLevel {A : Set ℕ} {N₀ a m : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -120,11 +89,6 @@ theorem exists_recurring_gap {A : Set ℕ} {C : ℕ} (L : ℕ → ℕ)
   exact ⟨L k, L (k + 1), by have := hle k; omega,
     hmono (Nat.lt_succ_self k), hgk, hlev k, hlev (k + 1)⟩
 
-/-- **Spare keys.**  A fully periodic order-two covering set admits an
-infinite deletion after which every target from `N₀` on still has an
-exact three-term representation avoiding the deleted set: delete every
-fourth step of one periodic orbit; the surviving neighbours of the orbit
-repair every damaged representation. -/
 theorem periodic_covering_admits_surviving_deletion
     {A : Set ℕ} {N₀ d : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (hd : 0 < d)
@@ -276,10 +240,6 @@ theorem surviving_deletion_of_recurring_reflectionLevels
   periodic_covering_admits_surviving_deletion h0 hcov hd
     (periodic_of_recurring_reflectionLevels hlev)
 
-/-- **Master chain.**  A strictly monotone stream of reflection levels
-with bounded gaps forces an infinite deletion that survives at order
-three.  This is the wallpaper endgame: any counterexample route that
-produces cofinally many mirror levels with bounded spacing is dead. -/
 theorem surviving_deletion_of_boundedGap_reflectionLevels
     {A : Set ℕ} {N₀ C : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)

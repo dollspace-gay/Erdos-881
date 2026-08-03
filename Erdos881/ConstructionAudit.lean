@@ -1,14 +1,5 @@
 import Erdos881.AdditiveSupports
 
-/-!
-# Arithmetic audit of a proposed finite-booster construction
-
-This file records a machine-checked incompatibility in the stage windows of
-the unverified May 2026 construction proposed for Erdős problem 881.  It is
-an audit of those particular constants, not a theorem ruling out the general
-finite-booster strategy.
--/
-
 open scoped BigOperators
 
 namespace Erdos881
@@ -41,8 +32,6 @@ theorem claimedBoosterWindow_order21_impossible
     omega
   omega
 
-/-- At order two, the proposed geometric scale and private-target window put
-`p - 1` inside the interval covered at the preceding stage. -/
 theorem claimedPrivateWindow_orderTwo_predecessor_mem_priorInterval
     (Tprev T p : ℕ)
     (hscale : 8000 * Tprev ≤ T)
@@ -71,9 +60,6 @@ theorem predecessorRepresentation_with_booster_one
     rw [hvsum]
     omega
 
-/-- Consequently, the order-two stage constraints and the preceding coverage
-property explicitly manufacture a three-term representation of the alleged
-private target using only the booster and the preceding coverage block. -/
 theorem claimedOrderTwoPrivateStage_has_boosterRepresentation
     (D : Set ℕ) (Tprev T p : ℕ)
     (hscale : 8000 * Tprev ≤ T)
@@ -210,10 +196,6 @@ theorem orderTwoBasis_privateOrderThree_forces_pair_use
     rw [hvsum]
     omega
 
-/- Therefore, outside the finite exceptional booster set, sums of two
-distinct elements have only their trivial two-term representations in `A`:
-every such representation must use both summands.  In particular the
-nonexceptional part is Sidon. -/
 theorem cofinitePrivateOrderThree_pairSumsRigid
     {A : Set ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)

@@ -1,23 +1,5 @@
 #!/usr/bin/env python3
-"""Team rigidity verification + unbounded-mirror-gap probe (Erdős 881 lab, part 4).
-
-PART A — verify the hand-derived rigidity of team-guarded targets.  For a
-target m genuinely team-guarded by {p, q} with p < q (channels
-D_p = m - p > D_q = m - q):
-  (T-desert)  A ∩ (D_p, m - SLACK) ⊆ {p, q}
-  (T-bimirror) z ∈ A⁺ \\ {p,q}, z + q < m  ⇒  D_p - z ∈ A  or  D_q - z ∈ A
-  (T-upper)   z ∈ A \\ {p,q}, D_q < z, z + p + SLACK ≤ m  ⇒  D_p - z ∈ A
-These are the statements formalized in Erdos881/TeamGuardianRigidity.lean.
-
-PART B — unbounded mirror gaps.  The Cantor-style mirror fractal
-T_{k+1} = T_k ∪ (3·M_k − T_k) keeps order-two covering while its
-reflection-level gaps M_{k+1} − M_k = 2·M_k grow without bound — outside
-the bounded-gap hypothesis of the formalized master chain.  Question: do
-such sets still admit surviving deletions?  If yes (expected: mirror
-partners repair), the bounded-gap hypothesis is an artifact and the true
-conjecture is "any cofinal reflection-level stream admits a surviving
-deletion."
-"""
+"""Finite diagnostic for pair transversal rigidity and gaps."""
 
 from __future__ import annotations
 
@@ -35,7 +17,7 @@ from probe_team_guardians import (
 # ------------------------------------------------------------- PART A
 
 def check_team_rigidity(A, p: int, q: int, m: int) -> list[str]:
-    """p < q assumed.  Returns list of violated predictions."""
+    """Finite diagnostic for check pair transversal rigidity."""
     Aset = set(A)
     Dp, Dq = m - p, m - q
     bad = []
@@ -81,7 +63,7 @@ def part_a(Ms) -> None:
 # ------------------------------------------------------------- PART B
 
 def mirror_fractal(b: int, K: int):
-    """T_0=[0,b]; T_(k+1) = T_k ∪ (3*M_k - T_k).  Returns (T, levels)."""
+    """Finite diagnostic for mirror fractal."""
     T = set(range(b + 1))
     M = b
     levels = [M]

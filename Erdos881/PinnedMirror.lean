@@ -1,52 +1,12 @@
 import Erdos881.TeamGraphRamsey
 
-/-!
-# The pinning lemma and pinned mirrors
-
-The Cassaigne–Plagne two-destroyer engine, transplanted to team edges.
-For a target `m` destroyed by the pair `{u, v}` (every exact three-term
-representation meets the pair), the bimirror of an element `x` forks
-between the two channels `m - u - x` and `m - v - x`.  The *pinning
-lemma* kills a channel: if `u + x` has a two-term representation
-avoiding both guards, the `u`-channel cannot be realized — substituting
-the representation for `u + x` inside `m = u + x + (m - u - x)` would
-produce a guard-free representation of the destroyed target.
-
-Consequences, all verified numerically first
-(`scripts/probe_pinned_forks.py`: 25 824 channel instances, zero
-violations; `scripts/probe_pinned_mirror.py`):
-
-* `IsPairDestroyer.pinned_mirror` — with the `u`-channel pinned shut,
-  the fork *must* realize the `v`-channel: a perfect one-channel mirror
-  `x ↦ (m - v) - x` into `A`;
-* `IsPairDestroyer.double_pin_desert` — an element whose two cross-sums
-  both admit avoiding representations cannot exist below a destroyed
-  target: both channels die and the bimirror has nowhere to go;
-* `TwoRedundant` — the pin supplier: `u` is 2-redundant when every
-  large integer has a two-term representation avoiding `u`.  By
-  Erdős–Graham/Grekos finiteness of essential elements (literature,
-  not yet formalized) all but finitely many elements of any order-two
-  basis are 2-redundant.  For `x` below `v - u`, an avoiding
-  representation of `u + x` automatically avoids `v` as well, so a
-  2-redundant `u` pins *every* fork of its high edges;
-* `IsPairDestroyer.pinned_level` / `cofinal_pinned_levels` — a
-  2-redundant clique vertex with clear targets manufactures element
-  mirror levels `m - v ∈ A` cofinally, the raw material of the
-  verified mirror endgame (`MirrorPeriodicity`, `UnboundedMirrorGaps`).
-
-The lab shows the triangle route this replaces is dead as stated:
-separated team triangles exist inside full covering sets
-(`SeparatedTriangle.lean`), so no proof can kill one triple by guard
-separation alone.  The pinned-mirror route needs no triangle at all.
--/
-
 namespace Erdos881
 
-/-- Desert under destruction alone: an element strictly above the
+/-- Exclusion interval under destruction alone: an element strictly above the
 larger channel `m - u` and at least `N₀` below `m` is one of the two
-guards.  (`IsTeamPrivateTriple.desert` restated for a bare
+required elements.  (`IsPairTransversalPrivateTriple.exclusion_interval` restated for a bare
 `IsPairDestroyer`, whose hypotheses are all the proof ever used.) -/
-theorem IsPairDestroyer.desert {A : Set ℕ} {N₀ u v m : ℕ}
+theorem IsPairDestroyer.exclusion_interval {A : Set ℕ} {N₀ u v m : ℕ}
     (hcov : PairCovers A N₀)
     (hdes : IsPairDestroyer A u v m)
     (hu : 0 < u) (huv : u < v)
@@ -58,10 +18,6 @@ theorem IsPairDestroyer.desert {A : Set ℕ} {N₀ u v m : ℕ}
   rcases hdes.2 z hz y hy w hw (by omega) with h | h | h | h | h | h <;>
     omega
 
-/-- **The pinning lemma.**  If `u + x` has a two-term representation
-`s + t` avoiding both guards of a destroyed target `m`, then the
-`u`-channel of `x`'s bimirror is dead: `m - u - x ∈ A` would give
-`m = s + t + (m - u - x)`, a representation avoiding the pair. -/
 theorem IsPairDestroyer.pinned {A : Set ℕ} {u v m x s t : ℕ}
     (hdes : IsPairDestroyer A u v m)
     (huv : u < v)
@@ -73,8 +29,6 @@ theorem IsPairDestroyer.pinned {A : Set ℕ} {u v m x s t : ℕ}
   have h := hdes.2 s hs t ht (m - u - x) hw (by omega)
   omega
 
-/-- **The pinned mirror.**  With the `u`-channel pinned shut, the fork
-must realize the `v`-channel: `m - v - x ∈ A`. -/
 theorem IsPairDestroyer.pinned_mirror {A : Set ℕ} {N₀ u v m x : ℕ}
     (hcov : PairCovers A N₀)
     (hdes : IsPairDestroyer A u v m)
@@ -102,10 +56,7 @@ theorem IsPairDestroyer.pinned_mirror {A : Set ℕ} {N₀ u v m x : ℕ}
   · have hy' : y = m - v - x := by omega
     exact hy' ▸ hy
 
-/-- **Double-pin desert.**  An element whose cross-sums with *both*
-guards admit avoiding two-term representations cannot sit below a
-destroyed target: both channels of its bimirror are dead. -/
-theorem IsPairDestroyer.double_pin_desert {A : Set ℕ} {N₀ u v m x : ℕ}
+theorem IsPairDestroyer.double_pin_exclusion_interval {A : Set ℕ} {N₀ u v m x : ℕ}
     (hcov : PairCovers A N₀)
     (hdes : IsPairDestroyer A u v m)
     (huv : u < v)
@@ -121,10 +72,6 @@ theorem IsPairDestroyer.double_pin_desert {A : Set ℕ} {N₀ u v m x : ℕ}
   have h := hdes.2 s hs t ht (m - v - x) hmv (by omega)
   omega
 
-/-- **Sharp pinning.**  The room hypothesis of `pinned` was a blunt
-sufficient condition: the third part `m - u - x` only has to differ
-from the two guards, which excludes exactly the two diagonal values of
-`x`.  The `u`-channel dies for every other `x`. -/
 theorem IsPairDestroyer.pinned_sharp {A : Set ℕ} {u v m x s t : ℕ}
     (hdes : IsPairDestroyer A u v m)
     (hs : s ∈ A) (ht : t ∈ A) (hsum : s + t = u + x)
@@ -136,10 +83,6 @@ theorem IsPairDestroyer.pinned_sharp {A : Set ℕ} {u v m x s t : ℕ}
   have h := hdes.2 s hs t ht (m - u - x) hw (by omega)
   omega
 
-/-- **Sharp pinned mirror.**  Away from the guards and the two
-diagonals, an avoiding representation of `u + x` forces the
-`v`-channel outright — no room hypothesis, so this covers hugging
-targets (`m < 3v`) as well. -/
 theorem IsPairDestroyer.pinned_mirror_sharp {A : Set ℕ} {N₀ u v m x : ℕ}
     (hcov : PairCovers A N₀)
     (hdes : IsPairDestroyer A u v m)
@@ -205,10 +148,6 @@ theorem TwoRedundant.corep_mem {A : Set ℕ} {N₀ N₁ u v m : ℕ}
     (by omega) (by omega) (by omega)
   simpa using h
 
-/-- **The pinned level.**  A clear destroyed target of an edge whose
-low guard is 2-redundant yields an element mirror level: the corep
-`m - v` is an element, and every element of the window below `v - u`
-reflects through it into `A`. -/
 theorem IsPairDestroyer.pinned_level {A : Set ℕ} {N₀ N₁ u v m : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hred : TwoRedundant A u N₁)
@@ -231,11 +170,6 @@ def TwoRedundantPair (A : Set ℕ) (u v N₂ : ℕ) : Prop :=
   ∀ n, N₂ ≤ n → ∃ s ∈ A, ∃ t ∈ A,
     s + t = n ∧ s ≠ u ∧ s ≠ v ∧ t ≠ u ∧ t ≠ v
 
-/-- **The hugging bound.**  A jointly 2-redundant pair can only destroy
-targets below `4 * v + N₀ + 4`: any higher target leaves the larger
-covering part of `2 * v + 2` stranded in the double-pin desert.
-Contrapositive: an edge with a *clear* target is pair-2-essential —
-deleting its two guards must break asymptotic pair-covering. -/
 theorem IsPairDestroyer.hugging_of_pairRedundant
     {A : Set ℕ} {N₀ N₂ u v m : ℕ}
     (hcov : PairCovers A N₀)
@@ -249,18 +183,12 @@ theorem IsPairDestroyer.hugging_of_pairRedundant
     intro w hw hvw hwv
     have hrepu := hpair (u + w) (by omega)
     have hrepv := hpair (v + w) (by omega)
-    exact hdes.double_pin_desert hcov huv hw (by omega) (by omega)
+    exact hdes.double_pin_exclusion_interval hcov huv hw (by omega) (by omega)
       (by omega) hrepu hrepv (by omega)
   rcases Nat.le_total y z with h | h
   · exact hkill z hz (by omega) (by omega)
   · exact hkill y hy (by omega) (by omega)
 
-/-- **The sharp hugging bound.**  Stacking three dyadic covering
-windows inside the double-pin desert: each window `[q/2, q]` for
-`q = Q, Q/3, Q/9` below `m - 2v` must deposit its larger covering part
-on a guard, but the windows are pairwise disjoint and there are only
-two guards.  A jointly 2-redundant pair therefore only destroys
-targets within `O(N₀ + N₂)` of `2v` — the trivial minimum band. -/
 theorem IsPairDestroyer.sharp_hugging_of_pairRedundant
     {A : Set ℕ} {N₀ N₂ u v m : ℕ}
     (hcov : PairCovers A N₀)
@@ -274,7 +202,7 @@ theorem IsPairDestroyer.sharp_hugging_of_pairRedundant
     intro w hw hN hroom
     by_contra hne
     push Not at hne
-    exact hdes.double_pin_desert hcov huv hw hne.1 hne.2 (by omega)
+    exact hdes.double_pin_exclusion_interval hcov huv hw hne.1 hne.2 (by omega)
       (hpair (u + w) (by omega)) (hpair (v + w) (by omega)) hroom
   have hwin : ∀ q, N₀ ≤ q → N₂ ≤ q / 2 → q + 2 * v < m →
       ∃ w, (w = u ∨ w = v) ∧ 2 * w ≥ q ∧ w ≤ q := by
@@ -291,11 +219,6 @@ theorem IsPairDestroyer.sharp_hugging_of_pairRedundant
     hwin ((m - 2 * v - 1) / 9) (by omega) (by omega) (by omega)
   omega
 
-/-- **The hugging level.**  A jointly 2-redundant pair's destroyed
-target — however tightly it hugs — carries a mirror at the level
-`m - v` defined on the *full* range up to `m - u`, with only the
-guards and the two diagonals as defects.  With `x = 0` the level
-itself is an element. -/
 theorem TwoRedundantPair.hugging_level {A : Set ℕ} {N₀ N₂ u v m : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hpair : TwoRedundantPair A u v N₂)
@@ -319,11 +242,6 @@ theorem TwoRedundantPair.hugging_level {A : Set ℕ} {N₀ N₂ u v m : ℕ}
     exact hdes.pinned_mirror_sharp hcov hx hxu hxv (by omega) hxum
       ⟨s, hs, t, ht, hst, hsu, hsv, htu, htv⟩ hd1 hd2
 
-/-- **Pinned levels compose to a forward translation.**  Two clear
-pinned edges of the same 2-redundant guard, the second window wide
-enough to catch the first level, translate every good element of the
-first window upward by the level gap — the windowed analog of
-`IsReflectionLevel.translation`, from destruction alone. -/
 theorem pinned_translation {A : Set ℕ} {N₀ N₁ u v₁ m₁ v₂ m₂ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hred : TwoRedundant A u N₁)
@@ -347,12 +265,6 @@ theorem pinned_translation {A : Set ℕ} {N₀ N₁ u v₁ m₁ v₂ m₂ : ℕ}
     omega
   exact he ▸ hz
 
-/-- **Cofinal pinned levels.**  A 2-redundant vertex of an infinite
-team clique whose edges admit clear targets (`3 * v ≤ m`) manufactures
-element mirror levels cofinally — the raw material of the verified
-mirror endgame.  The clearance hypothesis is the new open residue: the
-alternative is targets hugging their guards cofinally, a regime with
-its own desert structure. -/
 theorem cofinal_pinned_levels {A L : Set ℕ} {N₀ N₁ u : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hL : L.Infinite)

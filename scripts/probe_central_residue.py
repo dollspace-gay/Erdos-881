@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""Central-branch order-3 residue census: for carry-free worlds,
-classify nonzero triples of doubles 2c: 0-pad / semi-diagonal
-(x = y) / parity-escape (x+y odd) / midpoint-gap (even sum,
-midpoint not in A).  Which channel carries survival?"""
+"""Finite diagnostic for central residue."""
 
 def cantor(Y):
     out = []

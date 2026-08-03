@@ -1,24 +1,6 @@
 import Erdos881.BoundedPairFreeSet
 import Erdos881.SplittableIndependentDeletion
 
-/-!
-# Splitting an infinite bounded-representation stratum
-
-The recurrent bounded-representation residual supplies an infinite set of
-targets which themselves belong to the order-two basis.  This file records a
-first structural dichotomy on any such infinite reservoir.
-
-An element is `PairSplittableAwayFromSelf` when it has an order-two support
-which does not use the element itself.  On an infinite set of such elements,
-the bounded point-map free-set theorem chooses an infinite deletion `B` for
-which the selected support of every `b ∈ B` avoids all of `B`.  Thus every
-deleted point splits into two points of `A \ B`.
-
-If no infinite splittable subreservoir exists, there is instead an infinite
-tail of zero-atoms: every order-two support of `a` is exactly `{a, 0}`.  This
-is the rigid branch which remains for a fixed-translate/certificate attack.
--/
-
 namespace Erdos881
 
 /-- The target `a` has a two-term representation whose support does not use

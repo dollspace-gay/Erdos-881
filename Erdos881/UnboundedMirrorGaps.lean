@@ -1,33 +1,5 @@
 import Erdos881.GuardianBridge
 
-/-!
-# Spare keys for reflection levels with unbounded gaps
-
-`MirrorPeriodicity.lean` handled reflection-level streams with *bounded*
-gaps.  This file removes the bound in the geometric regime: if the levels
-are elements and each level more than doubles the previous one — so the
-gaps `L (k+1) - L k > L k` are **unbounded** — a surviving infinite
-deletion still exists.
-
-The deletion is the mirror `L (2k+2) - c` of a fixed anchor `c < L 0` at
-every second level.  Growth kills every collision:
-
-* a cross-level mirror `L a - L b` can never be a deleted element, since
-  `c + L a = L (2r+2) + L b` forces two level values within `c < L 0` of
-  each other, impossible when consecutive levels more than double
-  (`geometric_level_separation`);
-* near-anchor mirrors `L k - v` with `v ≤ 2c`, `v ≠ c` escape for the
-  same reason, the diagonal case being excluded exactly by `v ≠ c`;
-* the both-deleted case `n = (L a - c) + (L b - c)` is repaired by
-  `(L a - L (b-1)) + (L (b-1) - w) + (L b - w')` where `w + w' = 2c` is
-  an *unbalanced* representation of `2c` (hypothesis `hw`) — this is the
-  one place the anchor's own additive structure is needed.
-
-The general conjecture — cofinal reflection levels of arbitrary spacing —
-remains open (`docs/unbounded-gaps.md`); the obstruction is precisely the
-collision bookkeeping that growth trivializes here.
--/
-
 namespace Erdos881
 
 /-- Under doubling growth, two distinct level values can never lie within
@@ -43,10 +15,6 @@ theorem geometric_level_separation {L : ℕ → ℕ}
   have h0 : L 0 ≤ L i := hmono.monotone (Nat.zero_le i)
   omega
 
-/-- **Unbounded-gap spare keys (geometric regime).**  Reflection levels
-that are elements and more than double at every step — hence with
-unbounded gaps — admit a surviving infinite deletion: remove the mirror
-of a fixed anchor at every second level. -/
 theorem surviving_deletion_of_geometric_reflectionLevels
     {A : Set ℕ} {N₀ c : ℕ} (L : ℕ → ℕ)
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -230,11 +198,6 @@ theorem surviving_deletion_of_geometric_reflectionLevels
       omega
     · exact ⟨x, hx, y, hy, 0, h0, hxB, hyB, h0B, by omega⟩
 
-/-- **The mirror endgame, closed for element-levels.**  Cofinal
-reflection levels that are elements — with *no spacing assumption
-whatsoever* — admit a surviving infinite deletion: greedily extract a
-doubling subsequence and hand it to the geometric theorem.  The geometric
-hypotheses never mention consecutiveness, so the extraction is free. -/
 theorem surviving_deletion_of_cofinal_reflectionLevels
     {A : Set ℕ} {N₀ c : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -279,7 +242,7 @@ theorem surviving_deletion_of_cofinal_reflectionLevels
   exact surviving_deletion_of_geometric_reflectionLevels L h0 hcov hmono
     hlevL hmemL hgrow hc hc0 hcL hw
 
-/-- Repo-vocabulary form of the closed mirror endgame: an exact order-two
+/-- Repo-vocabulary form of the closed mirror counterexample structure: an exact order-two
 tuple basis containing zero, with cofinal element-reflection-levels of
 arbitrary spacing and an anchor whose double has an unbalanced
 representation, admits an infinite deletion leaving an exact order-three

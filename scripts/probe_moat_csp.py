@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
-"""Moat-CSP enumeration (chain-coherence kernel search).
-
-Small-scale exhaustive: sets A on [0, T] with 0,1 in A, covering
-[N0, T], and UNIVERSAL ownership for all a in A with [W1 <= a <= W2]
-(each owns some n in (a, 2a): n-a in A, unique big fiber).
-
-Enumerate ALL satisfying A (or sample the space), measure:
-  - solution count
-  - digit-3 signature / structure of solutions
-  - completion-map coherence: do owners share completions?
-"""
+"""Finite diagnostic for moat csp."""
 import itertools
 
 def covers(A, N0, T):

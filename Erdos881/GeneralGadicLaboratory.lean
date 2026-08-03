@@ -1,32 +1,5 @@
 import Erdos881.GeneralOrder
 
-/-!
-# The base-`(h + 1)` digit laboratory
-
-For `h ≥ 1`, let `A_h` consist of the natural numbers having a finite
-base-`(h + 1)` expansion with digits in `{0, 1}`.  Distributing each base
-digit of a target among `h` binary layers proves directly that `A_h` is an
-exact order-`h` basis.
-
-The pure powers form an infinite subset of `A_h`.  At order `h`, the base is
-too large for `h` binary summands to create a carry.  At the successor order,
-there is a uniform three-column repair:
-
-* one summand has mask `101`;
-* one summand has mask `011`;
-* the remaining `h - 1` summands have mask `111`.
-
-In base `g = h + 1`, their column totals are `g, g - 1, g - 1`, so the
-successive carries give `g^3`.  Prefixing zeros shifts this repair to every
-power `g^(m + 3)`.  Every repair summand has at least two nonzero digits, and
-therefore survives deletion of the pure powers.
-
-This is deliberately a laboratory for the local carry mechanism.  It does
-not assert that independently repairing every deleted summand composes into
-one global successor-order representation; that is the unrestricted
-normalization/composition issue isolated by the general-order attack.
--/
-
 open scoped BigOperators
 
 namespace Erdos881
@@ -40,7 +13,6 @@ def binaryDigitBasis (g : ℕ) : Set ℕ :=
 def baseSuccDigitBasis (h : ℕ) : Set ℕ :=
   binaryDigitBasis (h + 1)
 
-/-- The pure powers deleted in the base-`(h + 1)` laboratory. -/
 def baseSuccPowerDeletion (h : ℕ) : Set ℕ :=
   {n | ∃ j : ℕ, n = (h + 1) ^ j}
 

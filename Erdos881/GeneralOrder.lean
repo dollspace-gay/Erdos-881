@@ -1,25 +1,3 @@
-/-
-# Erdős 881 at general order
-
-`Erdos881/FreeRank.lean` settles the problem at order two.  The published
-problem (erdosproblems.com/881) quantifies over *every* order `k`:
-
-> Let `A ⊆ ℕ` be an additive basis of order `k` which is minimal, in the
-> sense that if `B ⊆ A` is any infinite set then `A ∖ B` is not a basis of
-> order `k`.  Must there exist an infinite `B ⊆ A` such that `A ∖ B` is a
-> basis of order `k + 1`?
-
-This module supplies the layer that is uniform in `k`:
-
-* order monotonicity of exact asymptotic bases
-  (`IsExactTupleAsymptoticBasis.of_le`), iterating the existing padding
-  lemma `IsExactTupleAsymptoticBasis.succ`;
-* the degenerate order `k = 0` (vacuous) and the order `k = 1` case;
-* the full conclusion at **every** `k ≥ 2` for those `A` which happen to be
-  exact order-two bases, by transporting the order-two engine upward;
-* the resulting reduction (`erdos881_general_of_hardCase`): the only case of
-  Erdős 881 still open is `k ≥ 3` with `A` *not* an exact order-two basis.
--/
 import Erdos881.FreeRank
 
 namespace Erdos881
@@ -59,8 +37,6 @@ theorem exists_infiniteDeletion_threeBasis_of_basisTwo
     at hthree
   exact exactTupleBasis_of_normalizeNatSet hthree
 
-/-- **Erdős 881 at every order `k ≥ 2`, for exact order-two bases.**  The
-order-two deletion survives at order three, hence at every order `≥ 3`. -/
 theorem exists_infiniteDeletion_succBasis_of_basisTwo
     {A : Set ℕ} {k : ℕ} (hk : 2 ≤ k)
     (hbasis : IsExactTupleAsymptoticBasis A 2) :
@@ -88,13 +64,6 @@ theorem erdos881_at_zero : Erdos881At 0 := by
   rw [Finset.univ_eq_empty, Finset.sum_empty] at hsum
   omega
 
-/-- **Order one, unconditionally.**  An exact order-one asymptotic basis
-contains every sufficiently large integer.  Deleting the progression
-`N + 4 + 2ℕ` leaves an exact order-two basis: that progression contains no
-two consecutive integers, so of the two splittings `n = N + (n-N)` and
-`n = (N+1) + (n-N-1)` at least one has both parts surviving.
-
-As at order two, the minimality hypothesis is not needed. -/
 theorem exists_infiniteDeletion_twoBasis_of_basisOne
     {A : Set ℕ} (hbasis : IsExactTupleAsymptoticBasis A 1) :
     ∃ B, B ⊆ A ∧ B.Infinite ∧
@@ -168,12 +137,6 @@ theorem erdos881_at_of_hardCase {k : ℕ} (hk : 2 ≤ k)
   · exact exists_infiniteDeletion_succBasis_of_basisTwo hk h2
   · exact hhard A hmin h2
 
-/-- **The precise remaining gap in Erdős 881.**
-
-Orders `0`, `1`, `2` are settled outright, and at every order the exact
-order-two bases are settled.  Consequently the whole problem follows from
-the single remaining family of cases: order `k ≥ 3` with `A` not an exact
-order-two basis. -/
 theorem erdos881_general_of_hardCase
     (hhard : ∀ k, 3 ≤ k → ∀ A : Set ℕ, IsStronglyMinimalExactBasis A k →
       ¬ IsExactTupleAsymptoticBasis A 2 →
@@ -188,12 +151,6 @@ theorem erdos881_general_of_hardCase
   | (n + 3) =>
       exact erdos881_at_of_hardCase (by omega) (hhard (n + 3) (by omega))
 
-/-- **State of Erdős 881 after this development.**
-
-Orders `0`, `1` and `2` are settled outright; and at *every* order `k ≥ 2`
-the problem is settled for all `A` which are exact order-two bases.  In each
-settled case the minimality hypothesis is never used: the conclusion holds
-for every exact basis of the relevant order. -/
 theorem erdos881_settled_cases :
     Erdos881At 0 ∧ Erdos881At 1 ∧ Erdos881At 2 ∧
       ∀ k, 2 ≤ k → ∀ A : Set ℕ, IsExactTupleAsymptoticBasis A 2 →

@@ -24,8 +24,8 @@ in `FreeRank.lean`:
 
 No general operation is known that maps each admissible pool to a smaller
 pool with strictly smaller rank. Existing operations provide only weak
-monotonicity or produce disjoint finite hubs without decreasing a known
-ordinal measure.
+monotonicity or produce disjoint finite support transversals without
+decreasing a known ordinal measure.
 
 Therefore `no_pool_rank_descent` is a conditional closing criterion, not a
 completed proof.
@@ -34,19 +34,20 @@ completed proof.
 
 The rank program developed several additional tools:
 
-- `rep_flood_pool` and `pair_flood_cascade` construct finite obstruction
-  families inside successive pools;
+- `rep_cofinal_supply_pool` and `pair_cofinal_supply_iteration` construct
+  finite obstruction families inside successive pools;
 - `robustness_gives_hereditarily_free` shows that uniformly increasing
   disjoint-representation supply yields an infinite free structure;
-- bounded-hub theorems give the complementary fragile case;
-- `absolute_shell_stratification` and `depth_tax_of_hfail` constrain the
+- bounded-transversal theorems give the complementary fragile case;
+- `absolute_rank_layer_stratification` and `depth_tax_of_hfail` constrain the
   location of finite rank layers;
-- `disjoint_reps_le_hub_card` relates matching size to hub size.
+- `disjoint_reps_le_support_transversal_card` relates matching size to
+  support-transversal size.
 
 These results show that a counterexample would have to alternate between
 targets with large representation supply and targets controlled by small
-hubs. Because the targets are selected independently by cofinal quantifiers,
-the two behaviors need not occur at the same positions.
+support transversals. Because the targets are selected independently by
+cofinal quantifiers, the two behaviors need not occur at the same positions.
 
 ## Why the route was not completed
 
@@ -67,7 +68,7 @@ The following parts remain relevant:
 
 - well-founded recursion on finite obstruction families;
 - monotonicity under restriction to an infinite pool;
-- matching-versus-hub alternatives;
+- matching-versus-support transversal alternatives;
 - finite rank layers and their location bounds;
 - rank descent once a target-local operation has been constructed.
 

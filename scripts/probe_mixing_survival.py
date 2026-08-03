@@ -1,17 +1,5 @@
 #!/usr/bin/env python3
-"""Probe: the self-similar mixing sub-instance (tenth summit).
-
-The endgame reduced the cascade track to: a located mixing world
-W = {x : c + 2^m x in A} with covering + wealth + both parities
-cofinal + lifted interface.  Question: can the enemy actually run
-such a world, i.e. can EVERY infinite deletion drawn from W break
-order-3 coverage of the root?
-
-Build adversarial mixing covering sets A (0 in A, pair-covers
-[N0,N], both parities cofinal), then test cylinder-drawn
-deletions D = {c + 2^m x : x in B'} for order-3 survival of
-A \ D.  Report survivors per (world strategy, deletion family).
-"""
+"""Finite diagnostic for mixing survival."""
 
 import random
 
@@ -80,7 +68,7 @@ def order3_covers(S, lo, hi):
             if a > n:
                 break
             if (n - a) in pair or (n - a) == 0 or (n - a) in Sset:
-                # a + (pair) = n  (triple), a + 0 + (n-a): needs n-a in S
+                # a + (pair) = n (triple), a + 0 + (n-a): needs n-a in S
                 if (n - a) in pair:
                     ok = True
                     break
@@ -96,7 +84,7 @@ def order3_covers(S, lo, hi):
 
 
 def cylinder_deletions(A, m, c):
-    """infinite-ish sparse deletions drawn from W = {x : c+2^m x in A}"""
+    """Finite diagnostic for cylinder deletions."""
     W = sorted(x for x in range(N) if (c + (1 << m) * x) in A)
     lift = lambda xs: set(c + (1 << m) * x for x in xs)
     big = [x for x in W if c + (1 << m) * x > 100]

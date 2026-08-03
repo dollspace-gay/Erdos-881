@@ -1,21 +1,5 @@
 #!/usr/bin/env python3
-"""Probe: does the positive pattern leave the digit family?
-
-The verified positive instances (base-3, base-4, and the uniform
-digit theorem) are all digit sets.  Erdős 881 asks about ALL
-strongly minimal bases.  This probe builds greedy, adversarial,
-NON-digit order-3 covering sets, trims them toward elementwise
-minimality, and tests whether SOME infinite deletion always
-survives at order 4.
-
-It also measures the conjectured general mechanism: do private
-(unique-representation) targets emerge in minimal worlds, marking
-elements the way the digit diagonals `3b` mark digit worlds?
-
-Verdict rule: a world RESISTS if every tested deletion family fails
-at order 4 — such a world is a counterexample candidate.  If no
-world resists, the general positive conjecture firms up.
-"""
+"""Finite diagnostic for nondigit minimal."""
 
 import random
 
@@ -35,8 +19,7 @@ def reach(elems, order, limit):
 
 
 def build_world(strategy, seed):
-    """Greedy adversarial exact order-3 covering set (0 included),
-    with incremental sumset bitsets."""
+    """Finite diagnostic for build world."""
     rng = random.Random(seed)
     cut = (1 << (N + 1)) - 1
     A = [0, 1]
@@ -99,8 +82,7 @@ def build_world(strategy, seed):
 
 
 def trim(A):
-    """Elementwise minimality proxy: drop elements whose removal
-    keeps exact order-3 coverage of [N0, N]."""
+    """Finite diagnostic for trim."""
     A = list(A)
     mask = (((1 << (N + 1)) - 1) >> N0) << N0
     for a in sorted((x for x in A if x > 1), reverse=True):
@@ -114,7 +96,7 @@ def trim(A):
 
 
 def is_digitlike(A):
-    """Does A agree with a digit-{0,1} set of some base ≥ 3?"""
+    """Finite diagnostic for is digitlike."""
     for base in range(3, 12):
         digit = []
         e = [0]

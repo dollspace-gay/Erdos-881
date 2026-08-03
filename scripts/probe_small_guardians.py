@@ -1,20 +1,5 @@
 #!/usr/bin/env python3
-"""Small-guardian search + team-stack kill classification (Erdős 881 lab, part 5).
-
-PART 1 — small guardians.  A private pair (a, m) with 2a < m forces
-(GuardianRigidity.lean): co-representative M = m - a = max element below
-m - SLACK, a TOTALLY EMPTY desert (M, m - SLACK), and mirror symmetry
-below M with a single defect at a.  So every candidate has the shape
-A = S ∪ (high patch), S symmetric ⊆ [0, M], a ∈ S⁺, m = a + M.  We
-enumerate ALL symmetric S exhaustively at several M and test every a.
-
-PART 2 — why team stacking dies.  For mirror-closure + new-team configs
-(the t3 family), record per configuration whether the blocker is
-(i) coverage (first hole location) or (ii) a guardian-free representation
-of the candidate target, and classify the killing rep's summands as
-old-structure (≤ m₁), mirror-copy (≥ M₂ − m₁), or middle.  δ = q₂ − p₂
-is logged to expose the middle-δ mechanism the formal proof still lacks.
-"""
+"""Finite diagnostic for small required elements."""
 
 from __future__ import annotations
 
@@ -130,10 +115,7 @@ def part2(M: int = 8, factor: int = 2) -> None:
 # ------------------------------------------------------------- PART 3
 
 def part3() -> None:
-    """Small-above-small stacking: mirror-close a small-guardian level and
-    sweep every candidate guardian above (pure closure, and with one extra
-    symmetric pair).  Result on record: zero fresh guardians, zero stacks —
-    matching every other guardian-mechanism combination."""
+    """Finite diagnostic for part3."""
     A1, a1, m1 = [0, 1, 2, 5, 11, 14, 15, 16], 5, 21
     fresh = hits = tried = 0
     for M2 in range(m1 + 1, 5 * m1 + 1):

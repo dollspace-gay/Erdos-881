@@ -1,14 +1,5 @@
 import Erdos881.AdditiveSupports
 
-/-!
-# Counterchecks for stronger certificate localization
-
-A cardinal-minimal selector certificate supplies one target-private selector
-for each target.  It does not, even when every block has two vertices, imply
-that those private selectors can be chosen pairwise disjoint.  The explicit
-two-target support family below records the obstruction.
--/
-
 namespace Erdos881
 
 private def overlapPairBlocks (i : ℕ) : Finset ℕ :=

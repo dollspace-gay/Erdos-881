@@ -1,20 +1,3 @@
-/-
-# The Cantor instance in the campaign's vocabulary
-
-`erdos881_cantor_full_instance` restates the verified Cantor world in
-the repository's own basis language (`IsExactTupleAsymptoticBasis`):
-
-* the Cantor set is an exact asymptotic basis of order 2;
-* it is ℵ₀-minimal — every infinite deletion destroys order 2;
-* the pure powers are an infinite subset whose deletion leaves an
-  exact asymptotic basis of order 3.
-
-This is the conclusion pattern of Erdős 881 (k = 2), machine-verified
-end to end on a concrete minimal basis, in the exact predicate the
-main contradiction-mining development uses for its counterexample
-interfaces.
--/
-
 import Erdos881.CantorCarryRepair
 import Erdos881.AdditiveSupports
 
@@ -85,9 +68,6 @@ theorem cantorSet_deletion_basis_three :
     · exact ⟨hz, fun ⟨j, hj⟩ => hpz j hj⟩
   · simpa [Fin.sum_univ_three] using hs
 
-/-- **The full Erdős 881 pattern on the Cantor basis**, in the
-repository's basis vocabulary: an ℵ₀-minimal exact order-2 basis
-with an infinite deletion that survives at order 3. -/
 theorem erdos881_cantor_full_instance :
     IsExactTupleAsymptoticBasis CantorSet 2 ∧
     (∀ B ⊆ CantorSet, B.Infinite →
@@ -100,17 +80,11 @@ theorem erdos881_cantor_full_instance :
 /-- The Cantor set is AP3-free: no nondegenerate three-term arithmetic
 progression relation `x + y = 2w` exists among its members.  This is
 precisely the property a recurring-pair counterexample needs its fork
-images to have (the e = 0 matching dodge). -/
+images to have (the e = 0 matching avoidance). -/
 theorem cantorSet_ap3_free {x y w : ℕ} (hx : IsCantor x) (hy : IsCantor y)
     (hw : IsCantor w) (hxyw : x + y = 2 * w) : x = w ∧ y = w :=
   cantor_double_unique hw hx hy hxyw
 
-/-- **The rigidity conflict**: one and the same structure is AP3-free
-(so it dodges the e = 0 matching engine at every scale forever) and
-carry-repairable at order 3 (so it can never satisfy the
-counterexample's order-3 failure `hfail`).  The recurring-pair
-adversary needs the first property while avoiding the second — the
-Cantor world proves the two pull in opposite directions. -/
 theorem cantor_rigidity_conflict :
     (∀ x y w : ℕ, IsCantor x → IsCantor y → IsCantor w →
       x + y = 2 * w → x = w ∧ y = w) ∧

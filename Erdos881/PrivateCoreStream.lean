@@ -1,32 +1,3 @@
-/-
-# Infinite moving private-core streams
-
-The cofinal marked-cone theorem leaves a pointwise private-core horn.  This
-file consumes the case in which that horn recurs cofinally.  The cores have
-uniformly bounded cardinality, so an infinite delta-system thinning gives a
-fixed root and pairwise-disjoint petals.
-
-There are then two honest outcomes.
-
-* Infinitely many petals are nonempty.  Bounded cross-block thinning and an
-  even/odd split turn half of those petals into one infinite deletion.  The
-  reconstructed successor supports on the other half avoid the whole
-  deletion, at cofinally large original pinned-target labels.  The deletion
-  is retained as a bounded finite-block partition by the disjoint petals.
-* Only finitely many petals are nonempty.  On an infinite subfamily the
-  entire core is the fixed root.  A fixed finite support at fixed rank can
-  represent only finitely many targets, so one residual target recurs on an
-  infinite subfamily.  A second finite pigeonhole fixes the old-prefix part
-  `P` of the moving minimal destroyer, leaving destroyers `insert marker P`.
-  This is the literal fixed collision pattern.
-
-The first outcome is deliberately not called an exact surviving basis: a
-cofinal sparse stream of represented labels need not cover every sufficiently
-large integer.  `scripts/probe_private_core_stream.py` junk-tests that
-distinction and the exact base-4 fixed-core witness before this theorem is
-used.
--/
-
 import Erdos881.AdaptiveDirect
 import Erdos881.InfiniteSunflower
 
@@ -34,9 +5,8 @@ namespace Erdos881
 
 open Classical
 
-/-- The data retained from one occurrence of the private horn of
-`HasMarkedPointCofinalRankFork`.  The floor is attached to the moving marker,
-so a cofinal supply can be sampled at floor `i` without losing cofinality. -/
+/-- Data for the private alternative of `HasMarkedPointCofinalRankFork`, with
+an explicit lower bound on the marked element. -/
 structure MarkedPrivateCoreStage
     (A : Set ℕ) (k : ℕ) (F : Finset ℕ) (L : ℕ) where
   marker : ℕ
@@ -70,17 +40,13 @@ structure MarkedPrivateCoreStage
     insert apex (insert marker core) ∈
       additiveSupportFamily A (k + 1) upperTarget
 
-/-- The private marked-core horn occurs beyond every requested marker
-floor.  This is the branch interface extracted after the diagonal,
-old-prefix, and fresh-rank outcomes of the cofinal marked-cone theorem have
-been handled. -/
+/-- A private marked-core stage exists above every lower bound. -/
 def HasCofinalMarkedPrivateCoreSupply
     (A : Set ℕ) (k : ℕ) (F : Finset ℕ) : Prop :=
   ∀ L, Nonempty (MarkedPrivateCoreStage A k F L)
 
-/-- The two non-private outcomes internal to a marked cone: the cone target
-is diagonal in its marker, or the fresh marker already produces a cofinal
-strict lower-rank descent. -/
+/-- The non-private alternative is either a diagonal equality or a strict
+lower-rank descent. -/
 def HasNonPrivateMarkedConeRankExit
     (A : Set ℕ) (k : ℕ) (F : Finset ℕ)
     (b n L : ℕ) : Prop :=
@@ -107,9 +73,6 @@ def HasMarkedConeOuterExitAt
       HasOldPrefixCone A k F b n ∨
       HasNonPrivateMarkedConeRankExit A k F b n L)
 
-/-- Unpack one marked cone without losing its provenance.  Its internal
-fork is either a named non-private exit or one stage of the private-core
-stream used below. -/
 theorem HasCofinalMarkedConeRankFork.nonPrivateExit_or_privateCoreStage
     {A : Set ℕ} {k : ℕ} {F : Finset ℕ}
     {b n L : ℕ}
@@ -119,16 +82,16 @@ theorem HasCofinalMarkedConeRankFork.nonPrivateExit_or_privateCoreStage
     HasNonPrivateMarkedConeRankExit A k F b n L ∨
       Nonempty (MarkedPrivateCoreStage A k F L) := by
   classical
-  obtain ⟨x, D, hxA, hxHub, hxle, hLtarget,
-      hDnonempty, hDHub, hbD, hDdiff,
+  obtain ⟨x, D, hxA, hxSupportTransversal, hxle, hLtarget,
+      hDnonempty, hDSupportTransversal, hbD, hDdiff,
       hDminimal, hfork⟩ := hcone
   rcases hfork with hdiag | hrest
-  · exact Or.inl ⟨x, D, hxA, hxHub, hxle, hLtarget,
-      hDnonempty, hDHub, hbD, hDdiff,
+  · exact Or.inl ⟨x, D, hxA, hxSupportTransversal, hxle, hLtarget,
+      hDnonempty, hDSupportTransversal, hbD, hDdiff,
       hDminimal, Or.inl hdiag⟩
   rcases hrest with hrank | hprivate
-  · exact Or.inl ⟨x, D, hxA, hxHub, hxle, hLtarget,
-      hDnonempty, hDHub, hbD, hDdiff,
+  · exact Or.inl ⟨x, D, hxA, hxSupportTransversal, hxle, hLtarget,
+      hDnonempty, hDSupportTransversal, hbD, hDdiff,
       hDminimal, Or.inr hrank⟩
   · right
     obtain ⟨core, hcoreMem, hcoreD,
@@ -164,7 +127,7 @@ theorem HasCofinalMarkedConeRankFork.nonPrivateExit_or_privateCoreStage
       marker_not_core := hbCore
       destroyer_nonempty := hDnonempty
       marker_mem_destroyer := hbD
-      destroyer_subset := hDHub
+      destroyer_subset := hDSupportTransversal
       destroyer_diff := hDdiff
       destroyer_minimal := hDminimal
       core_destroyer_disjoint := hcoreD
@@ -237,11 +200,8 @@ theorem HasCofinalMarkedSupportSurvivalDeletion.exists_strictSurvivalStream
   exact ⟨support i, hiTarget ▸ (hstage i hiJ).2.2.2.1,
     (hstage i hiJ).2.2.2.2⟩
 
-/-- Under the standing strong-counterexample hypothesis, the moving-petal
-deletion is not inert: its strict clean successor stream feeds directly into
-the existing finite-destroyer descent theorem.  The returned rank can still
-be `1`; this is the audit-level bridge, not a claim that the global induction
-has closed. -/
+/-- Under the counterexample hypothesis, a cofinal marked-support survival
+deletion forces strict rank descent. The resulting rank may equal `1`. -/
 theorem HasCofinalMarkedSupportSurvivalDeletion.forces_strictRankDescent
     {A : Set ℕ} {k : ℕ}
     (hk : 1 < k)
@@ -271,14 +231,7 @@ theorem HasCofinalMarkedSupportSurvivalDeletion.forces_strictRankDescent
       hk hbasis hcounter hXA hXInfinite htargetStrict hsurvival
   exact ⟨X, hXA, hXInfinite, hdescent⟩
 
-/-- A fixed infinite petal deletion facing two arithmetically aligned
-streams: clean successor supports below and counterexample-forced destroyed
-successor targets between them.  Every bracket supplies a represented
-order-`k` predecessor target destroyed by the same block-partitioned set.
-
-This is stronger than merely retaining sparse labels and is the usable
-collision pattern exposed by the moving-petal horn under a counterexample. -/
-def HasBracketedPrivatePetalCounterexampleCollision
+def HasBracketedPrivatePetalCounterexampleConflict
     (A : Set ℕ) (k : ℕ) : Prop :=
   ∃ X : Set ℕ, ∃ cell : ℕ → Finset ℕ,
   ∃ oldTarget : ℕ → ℕ,
@@ -309,17 +262,17 @@ def HasBracketedPrivatePetalCounterexampleCollision
         (additiveSupportFamily A k) X (m - a)
 
 /-- A hypothetical strong successor counterexample turns the moving-petal
-deletion into the preceding opposing-stream collision.  Exactness at order
+deletion into the preceding opposing-stream conflict.  Exactness at order
 `k` makes the bracketed predecessor failures represented, so they are
-genuine wounds rather than empty-family artifacts. -/
-theorem HasCofinalMarkedSupportSurvivalDeletion.forces_bracketedCollision
+genuine destructions rather than empty-family artifacts. -/
+theorem HasCofinalMarkedSupportSurvivalDeletion.forces_bracketedConflict
     {A : Set ℕ} {k : ℕ}
     (hkpos : 0 < k)
     (hbasis : IsExactTupleAsymptoticBasis A k)
     (hcounter : ∀ B, B ⊆ A → B.Infinite →
       ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1))
     (hdel : HasCofinalMarkedSupportSurvivalDeletion A k) :
-    HasBracketedPrivatePetalCounterexampleCollision A k := by
+    HasBracketedPrivatePetalCounterexampleConflict A k := by
   obtain ⟨X, cell, hXA, hXInfinite,
       hpartition, hcellCard, oldTarget,
       holdStrict, holdSurvival⟩ :=
@@ -336,31 +289,14 @@ theorem HasCofinalMarkedSupportSurvivalDeletion.forces_bracketedCollision
     hpartition, hcellCard, holdStrict, holdSurvival,
     hsuccessorDestroy, hbracket⟩
 
-/-- Feed the block-partitioned collision into the existing selector/fusion
-machine.
-
-The original petal blocks are small, whereas the fusion theorem needs room
-inside every block.  Coarsening fixes that mismatch without weakening the
-stored survival stream: every old support avoids all of `X`, hence it avoids
-every selector of every coarsening of `X`.
-
-The terminal fusion produced by the machine is impossible under the same
-strong-counterexample hypothesis.  Its fused deletion is infinite and still
-carries the old strict survival stream, while the counterexample supplies
-cofinal successor destruction; residue collapse gives the contradiction.
-
-Audit warning: the first surviving horn only has `0 < ℓ`.  Thus this theorem
-honestly reaches positive-rank descent or unbounded minimal destroyers across
-selector blocks, but does not relabel the automatic rank-one injury as a
-nontrivial descent. -/
-theorem HasBracketedPrivatePetalCounterexampleCollision.selectorFusion_forces_rankDescent_or_manyBlocks
+theorem HasBracketedPrivatePetalCounterexampleConflict.selectorFusion_forces_rankDescent_or_manyBlocks
     {A : Set ℕ} {k : ℕ}
     (hk : 1 < k)
     (hminimal : IsStronglyMinimalExactBasis A k)
     (hcounter : ∀ B, B ⊆ A → B.Infinite →
       ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1))
     (hcollision :
-      HasBracketedPrivatePetalCounterexampleCollision A k) :
+      HasBracketedPrivatePetalCounterexampleConflict A k) :
     ∃ X : Set ℕ, ∃ cell : ℕ → Finset ℕ,
     ∃ oldTarget : ℕ → ℕ,
       X ⊆ A ∧
@@ -435,25 +371,12 @@ theorem HasBracketedPrivatePetalCounterexampleCollision.selectorFusion_forces_ra
         hk hminimal.1 fusion hYfusion hterminal
           hcleanInfinite hsuccessorDestroy).elim
 
-/-- The rank-one-safe selector endpoint, at an arbitrary finite protection
-budget.
-
-For a requested budget `C`, coarsen the petal partition until every block has
-more than `C + k` points.  The corrected selector fork then consumes every
-automatic rank-one injury as an actual repair: either a represented rank
-`1 < ℓ < k` is destroyed, or a new full selector avoids the protected set
-`U` and preserves the attacked order-`k` target.
-
-This is a local protected-repair supply, not `HasCleanSupply A (k + 1)`.
-The attacked target is chosen after the selector and may change at every
-repair, whereas clean redundancy requires one basis element whose deletion
-preserves every sufficiently late successor-order target. -/
-theorem HasBracketedPrivatePetalCounterexampleCollision.selectorNontrivialRankDescent_or_boundedProtectedRepair
+theorem HasBracketedPrivatePetalCounterexampleConflict.selectorNontrivialRankDescent_or_boundedProtectedRepair
     {A : Set ℕ} {k : ℕ}
     (hk : 1 < k)
     (hminimal : IsStronglyMinimalExactBasis A k)
     (hcollision :
-      HasBracketedPrivatePetalCounterexampleCollision A k) :
+      HasBracketedPrivatePetalCounterexampleConflict A k) :
     ∀ C, ∃ X : Set ℕ, ∃ cell : ℕ → Finset ℕ,
     ∃ oldTarget : ℕ → ℕ,
       X ⊆ A ∧
@@ -515,35 +438,13 @@ theorem HasBracketedPrivatePetalCounterexampleCollision.selectorNontrivialRankDe
     hminimal.cofinal_selectorNontrivialRankDescent_or_protectedRepair
       hk hXA P s U hUselected hblocks L
 
-/-- Synchronize protected repairs with a migrating finite selector
-certificate.
-
-The cofinal repair theorem above is not target-local enough for this job: its
-attacked target is chosen after the selector and need not belong to a fixed
-certificate.  Cardinal-minimal target localization is stronger than merely
-repairing the current maximum.  At the selector localizing one certificate
-target `q`, store a surviving support for *every* other certificate target.
-A private-support repair of `q` which avoids that finite union would then
-preserve the whole certificate at once.
-
-Fix one quadratic coarsening before the certificate bound `C` and target
-floor `L` are known.  A late tail has enough capacity for exactly that
-all-other-target repair.  The existing bracketed quadratic-tail theorem
-therefore forces the cardinal-minimal certificate past `C`; every label is
-represented, target-localized, and lies strictly between consecutive targets
-of the old survival stream.
-
-Thus maximal-target descent does synchronize, but localization improves the
-iteration to a one-step contradiction.  The remaining endpoint is genuine
-unbounded migrating-certificate cardinality, not yet clean supply: the tail
-and the certificate still depend on `C`. -/
-theorem HasBracketedPrivatePetalCounterexampleCollision.forces_unboundedLocalizedMigratingCertificates
+theorem HasBracketedPrivatePetalCounterexampleConflict.forces_unboundedLocalizedMigratingCertificates
     {A : Set ℕ} {k : ℕ}
     (hminimal : IsStronglyMinimalExactBasis A k)
     (hcounter : ∀ B, B ⊆ A → B.Infinite →
       ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1))
     (hcollision :
-      HasBracketedPrivatePetalCounterexampleCollision A k) :
+      HasBracketedPrivatePetalCounterexampleConflict A k) :
     ∃ X : Set ℕ, ∃ cell : ℕ → Finset ℕ,
     ∃ oldTarget : ℕ → ℕ,
       X ⊆ A ∧
@@ -609,12 +510,12 @@ theorem HasBracketedPrivatePetalCounterexampleCollision.forces_unboundedLocalize
       (strongExactDeletion_of_counterexample hcounter)
       hXA P hquadratic holdStrict hselectorSurvival
 
-/-- The terminal aligned horn: one nonempty lower support `R` at one fixed
+/-- The terminal aligned case: one nonempty lower support `R` at one fixed
 residual target `t` is reinserted beside infinitely many injective moving
 markers.  The corresponding inclusion-minimal destroyer is always the
 moving marker adjoined to one fixed old-prefix part `P ⊆ F`, and the
 translated support meets that destroyer exactly at its marker. -/
-def HasFixedMarkedPrivateCoreCollision
+def HasFixedMarkedPrivateCoreConflict
     (A : Set ℕ) (k : ℕ) (F : Finset ℕ) : Prop :=
   ∃ J : Set ℕ,
   ∃ marker target : ℕ → ℕ,
@@ -643,19 +544,10 @@ def HasFixedMarkedPrivateCoreCollision
       insert (marker i) R ∩ destroyer i = {marker i}) ∧
     ∀ L, ∃ i ∈ J, L ≤ target i
 
-/-- The aligned fixed-core horn is not terminal.  Split its injective marker
-set into two infinite halves and delete the first half.  On the second half,
-`insert marker R` avoids every deleted marker.  Choosing one fixed
-`a ∈ R ⊆ A` lifts each order-`k` support to an order-`k+1` support at
-`a + target`; its support finset is still disjoint from the deletion.
-
-The deleted markers form a singleton block partition, hence have block size
-at most `k-1`.  Thus the fixed collision converts to exactly the same local
-successor-survival deletion produced by moving delta-system petals. -/
-theorem HasFixedMarkedPrivateCoreCollision.to_survivalDeletion
+theorem HasFixedMarkedPrivateCoreConflict.to_survivalDeletion
     {A : Set ℕ} {k : ℕ} {F : Finset ℕ}
     (hk : 1 < k)
-    (hfixed : HasFixedMarkedPrivateCoreCollision A k F) :
+    (hfixed : HasFixedMarkedPrivateCoreConflict A k F) :
     HasCofinalMarkedSupportSurvivalDeletion A k := by
   classical
   obtain ⟨J, marker, target, destroyer, P, R, t,
@@ -778,22 +670,12 @@ theorem HasFixedMarkedPrivateCoreCollision.to_survivalDeletion
   · exact insert_mem_additiveSupportFamily_succ
       haA hiBasic.2.2.2.2
 
-/-- **Private-core stream dichotomy.**  A cofinal supply of marked private
-cores either fuses moving delta-system petals into one infinite deletion
-with a cofinal surviving marked-support stream, or stabilizes to one fixed
-nonempty core, one fixed residual target, and one fixed old-prefix destroyer
-part.
-
-The proof uses only bounded support size, delta-system thinning, and the
-stored exact additive equations.  Consequently the deletion horn is an
-honest but local endpoint; a later coverage argument is still required to
-upgrade it to an exact surviving basis. -/
-theorem cofinalMarkedPrivateCoreSupply_deletion_or_fixedCollision
+theorem cofinalMarkedPrivateCoreSupply_deletion_or_fixedConflict
     {A : Set ℕ} {k : ℕ} {F : Finset ℕ}
     (hk : 1 < k)
     (hsupply : HasCofinalMarkedPrivateCoreSupply A k F) :
     HasCofinalMarkedSupportSurvivalDeletion A k ∨
-      HasFixedMarkedPrivateCoreCollision A k F := by
+      HasFixedMarkedPrivateCoreConflict A k F := by
   classical
   let stage : (i : ℕ) → MarkedPrivateCoreStage A k F i :=
     fun i => Classical.choice (hsupply i)
@@ -1159,10 +1041,6 @@ theorem cofinalMarkedPrivateCoreSupply_deletion_or_fixedCollision
       hdestroyerMinimal i, hcoreDestroyerFixed,
       hsupportFixed, hprivateFixed⟩
 
-/-- The cofinal marked-cone theorem, with its private horn exposed at one
-arbitrary floor.  This is the direct bridge from `AdaptiveDirect.lean` to
-the stream interface: either one of the previously named outer exits occurs,
-or a private-core stage is available at that floor. -/
 theorem HasAtomicPinnedTail.outerExit_or_privateCoreStage
     {A : Set ℕ} {k : ℕ} {F : Finset ℕ}
     (hk : 1 < k)
@@ -1185,15 +1063,7 @@ theorem HasAtomicPinnedTail.outerExit_or_privateCoreStage
         hpin, Or.inr (Or.inr hnonprivate)⟩
     · exact Or.inr hprivate
 
-/-- **Persistent private-horn endpoint.**  If the diagonal, old-prefix, and
-fresh-rank exits of the cofinal marked-cone theorem have all been handled,
-the remaining private-core branch yields either the infinite stream-survival
-deletion or the fixed-core collision pattern.
-
-This theorem closes the requested private-core analysis, while keeping the
-remaining global gap explicit: the deletion horn preserves a cofinal stream
-of marked targets, not automatically every sufficiently large target. -/
-theorem HasAtomicPinnedTail.privateCoreHorn_deletion_or_fixedCollision
+theorem HasAtomicPinnedTail.privateCoreCase_deletion_or_fixedConflict
     {A : Set ℕ} {k : ℕ} {F : Finset ℕ}
     (hk : 1 < k)
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -1201,8 +1071,8 @@ theorem HasAtomicPinnedTail.privateCoreHorn_deletion_or_fixedCollision
     (hnoOuter : ∀ L,
       ¬ HasMarkedConeOuterExitAt A k F L) :
     HasCofinalMarkedSupportSurvivalDeletion A k ∨
-      HasFixedMarkedPrivateCoreCollision A k F := by
-  apply cofinalMarkedPrivateCoreSupply_deletion_or_fixedCollision
+      HasFixedMarkedPrivateCoreConflict A k F := by
+  apply cofinalMarkedPrivateCoreSupply_deletion_or_fixedConflict
     hk
   intro L
   obtain houter | hprivate :=
@@ -1210,12 +1080,7 @@ theorem HasAtomicPinnedTail.privateCoreHorn_deletion_or_fixedCollision
   · exact (hnoOuter L houter).elim
   · exact hprivate
 
-/-- **The fixed horn folds back into the deletion horn.**  Once all outer
-marked-cone exits are excluded, the private branch always yields one infinite
-bounded-block deletion carrying a cofinal successor-order survival stream.
-Moving petals give it directly; a fixed core gives it by splitting and
-lifting the moving markers. -/
-theorem HasAtomicPinnedTail.privateCoreHorn_forces_survivalDeletion
+theorem HasAtomicPinnedTail.privateCoreCase_forces_survivalDeletion
     {A : Set ℕ} {k : ℕ} {F : Finset ℕ}
     (hk : 1 < k)
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -1224,15 +1089,15 @@ theorem HasAtomicPinnedTail.privateCoreHorn_forces_survivalDeletion
       ¬ HasMarkedConeOuterExitAt A k F L) :
     HasCofinalMarkedSupportSurvivalDeletion A k := by
   obtain hdel | hfixed :=
-    htail.privateCoreHorn_deletion_or_fixedCollision
+    htail.privateCoreCase_deletion_or_fixedConflict
       hk hbasis hnoOuter
   · exact hdel
   · exact hfixed.to_survivalDeletion hk
 
 /-- Under a strong successor counterexample, the whole persistent private
-horn—not merely its moving-petal side—therefore enters the same bracketed
-predecessor-wound configuration. -/
-theorem HasAtomicPinnedTail.privateCoreHorn_forces_bracketedCollision
+case—not merely its moving-petal side—therefore enters the same bracketed
+predecessor-destruction configuration. -/
+theorem HasAtomicPinnedTail.privateCoreCase_forces_bracketedConflict
     {A : Set ℕ} {k : ℕ} {F : Finset ℕ}
     (hk : 1 < k)
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -1241,18 +1106,13 @@ theorem HasAtomicPinnedTail.privateCoreHorn_forces_bracketedCollision
       ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1))
     (hnoOuter : ∀ L,
       ¬ HasMarkedConeOuterExitAt A k F L) :
-    HasBracketedPrivatePetalCounterexampleCollision A k := by
+    HasBracketedPrivatePetalCounterexampleConflict A k := by
   exact
-    (htail.privateCoreHorn_forces_survivalDeletion
-      hk hbasis hnoOuter).forces_bracketedCollision
+    (htail.privateCoreCase_forces_survivalDeletion
+      hk hbasis hnoOuter).forces_bracketedConflict
         (by omega) hbasis hcounter
 
-/-- **Counterexample-level private-horn endpoint.**  In the moving-petal
-case the infinite deletion is promoted to one bounded block partition facing
-opposing strict survival and cofinal destruction streams, with cofinally
-represented predecessor wounds.  In the aligned case the whole private core
-and its residual target are fixed on infinitely many moving markers. -/
-theorem HasAtomicPinnedTail.privateCoreHorn_bracketed_or_fixedCollision
+theorem HasAtomicPinnedTail.privateCoreCase_bracketed_or_fixedConflict
     {A : Set ℕ} {k : ℕ} {F : Finset ℕ}
     (hk : 1 < k)
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -1261,13 +1121,13 @@ theorem HasAtomicPinnedTail.privateCoreHorn_bracketed_or_fixedCollision
       ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1))
     (hnoOuter : ∀ L,
       ¬ HasMarkedConeOuterExitAt A k F L) :
-    HasBracketedPrivatePetalCounterexampleCollision A k ∨
-      HasFixedMarkedPrivateCoreCollision A k F := by
+    HasBracketedPrivatePetalCounterexampleConflict A k ∨
+      HasFixedMarkedPrivateCoreConflict A k F := by
   obtain hdel | hfixed :=
-    htail.privateCoreHorn_deletion_or_fixedCollision
+    htail.privateCoreCase_deletion_or_fixedConflict
       hk hbasis hnoOuter
   · exact Or.inl <|
-      hdel.forces_bracketedCollision (by omega) hbasis hcounter
+      hdel.forces_bracketedConflict (by omega) hbasis hcounter
   · exact Or.inr hfixed
 
 end Erdos881

@@ -1,30 +1,3 @@
-/-
-# The base-4 instance: the hard case is inhabited (Erdős 881, k = 3)
-
-The base-4 digit-{0,1} set `Base4Set` is the order-3 analogue of the
-verified Cantor instance (`CantorInstance.lean`, base 3 / order 2):
-
-* it is an exact asymptotic basis of order 3 with threshold 0 — three
-  digit-{0,1} numbers add without carries (digit sums ≤ 3 < 4), so
-  every `n` splits digit by digit;
-* it is NOT an exact basis of order 2 — two digit-{0,1} numbers also
-  never carry, so their sums have digits ≤ 2 and the targets `3·4^m`
-  are missed cofinally;
-* it is strongly minimal at order 3: the target `3b` has digits
-  `{0,3}`, digit 3 puts a 1 in all three summands, so `(b, b, b)` is
-  the UNIQUE representation and deleting any infinite `B` destroys
-  the cofinal targets `{3b : b ∈ B}`.
-
-Together: `base4_hard_case_instance` shows the hard case of the
-general-order campaign — `k ≥ 3`, strongly minimal exact order-`k`
-basis, not an exact order-2 basis — is formally non-empty.  The
-2026-08-02 laboratory (`scripts/probe_base4_instance.py`) verified all
-of this numerically and further measured that deleting the pure powers
-`{4^j}` leaves an exact order-4 basis with threshold 54; that
-carry-repair half (the `CantorCarryRepair` analogue one order up) is
-the remaining formal target of the positive side.
--/
-
 import Erdos881.AdditiveSupports
 
 namespace Erdos881Base4
@@ -73,8 +46,6 @@ lemma isBase4_scale_add {a r : ℕ} (ha : IsBase4 a)
     rw [hsplit, h4]
     exact ha i
 
-/-- **Order 3 covers everything, threshold 0.**  Split each base-4
-digit `d ≤ 3` into three bits. -/
 theorem base4_triple_basis (n : ℕ) :
     ∃ a b c, IsBase4 a ∧ IsBase4 b ∧ IsBase4 c ∧
       a + b + c = n := by
@@ -97,8 +68,6 @@ theorem base4_triple_basis (n : ℕ) :
     have hdm := Nat.div_add_mod n 4
     omega
 
-/-- **Order 2 misses `3·4^m`.**  Two digit-{0,1} numbers never carry,
-so their sums have base-4 digits at most 2. -/
 theorem base4_pair_miss (m : ℕ) :
     ¬∃ a b, IsBase4 a ∧ IsBase4 b ∧
       a + b = 3 * 4 ^ m := by
@@ -122,10 +91,6 @@ theorem base4_pair_miss (m : ℕ) :
       isBase4_div4 hb, ?_⟩
     omega
 
-/-- **The diagonal is rigid.**  Three digit-{0,1} numbers summing to
-`3b` (digits `{0,3}`) are all equal to `b`: digit 3 needs a 1 from
-every summand, digit 0 needs a 0 from every summand, and order-3
-addition never carries. -/
 theorem base4_triple_of_three_mul :
     ∀ b, IsBase4 b → ∀ x y z,
       IsBase4 x → IsBase4 y → IsBase4 z →
@@ -158,8 +123,6 @@ theorem base4_triple_of_three_mul :
         (isBase4_div4 hz) hdiv
     omega
 
-/-- The base-4 set is an exact asymptotic basis of order 3 (threshold
-0), in the campaign's official predicate. -/
 theorem base4_basis_three :
     IsExactTupleAsymptoticBasis Base4Set 3 := by
   refine ⟨0, fun n _ => ?_⟩
@@ -217,9 +180,6 @@ theorem base4_strong_deletion :
     Finset.mem_coe.mpr
       (mem_tupleSupport_iff.mpr ⟨0, hxb⟩)
 
-/-- **The hard case is inhabited.**  `Base4Set` is a strongly minimal
-exact order-3 basis that is not an exact order-2 basis — a verified
-member of the exact hypothesis class of the open `k ≥ 3` obligation. -/
 theorem base4_hard_case_instance :
     IsStronglyMinimalExactBasis Base4Set 3 ∧
       ¬ IsExactTupleAsymptoticBasis Base4Set 2 :=

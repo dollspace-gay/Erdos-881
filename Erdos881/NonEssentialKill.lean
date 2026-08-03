@@ -1,29 +1,11 @@
 import Erdos881.RedundantVertexKill
 import Erdos881.FunnelTrichotomy
 
-/-!
-# The non-essential kill: pointwise thresholds
-
-`RedundantVertexKill` needed the redundancy threshold below the guard
-(`N₁ ≤ u`) — a crude wrapper.  Pointwise, each ingredient needs only:
-
-* window and desert elements `x` with `N₂ ≤ u + x` — arranged by
-  flooring the windows at `N₂`, whatever its size;
-* the corep pin at `x = 0` needs only `u ∉ W_u`: **`u` has a proper
-  two-term representation** (`u` is not primitive);
-* the reflection of `w = 0` is free (`L - 0 = L ∈ A`).
-
-Consequence: a guard that is 2-redundant at *any* threshold, not
-primitive, with destroyer supply, forces a surviving deletion.  The
-clique escape shrinks to vertices that are **primitive or fully
-2-essential** — the Grekos class plus primitives.
--/
-
 namespace Erdos881
 
-/-- Upper desert, arbitrary threshold: the per-point condition
+/-- Upper exclusion interval, arbitrary threshold: the per-point condition
 `N₁ ≤ u + x` replaces `N₁ ≤ u`. -/
-theorem IsPairDestroyer.upper_desert_of_redundant'
+theorem IsPairDestroyer.upper_exclusion_interval_of_redundant'
     {A : Set ℕ} {N₀ N₁ u v m x : ℕ}
     (hcov : PairCovers A N₀)
     (hred : TwoRedundant A u N₁)
@@ -65,7 +47,7 @@ theorem IsPairDestroyer.level_lower_of_redundant'
   have hkill : ∀ x ∈ A, m - v < x → u + x < v → x + N₀ ≤ m →
       N₁ ≤ x → x ≠ u → x ≠ m - 2 * u → x ≠ m - u - v → False := by
     intro x hxA hxl hxw hxm hxN hxu hxd1 hxd2
-    exact hdes.upper_desert_of_redundant' hcov hred huv hxA hxu
+    exact hdes.upper_exclusion_interval_of_redundant' hcov hred huv hxA hxu
       (by omega) hxm (by omega) hxw (by omega) (by omega) (by omega)
   have hwin : ∀ q, W ≤ q → q + u + N₀ < v →
       ∃ x ∈ A, 2 * x ≥ q ∧ x ≤ q := by
@@ -328,7 +310,6 @@ theorem surviving_deletion_of_flooredQuadDefects
       omega
     · exact ⟨x, hx, y, hy, 0, h0, hxB, hyB, h0B, by omega⟩
 
-
 theorem surviving_deletion_of_nonessential_edges
     {A : Set ℕ} {N₀ N₁ u c : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -516,15 +497,9 @@ theorem surviving_deletion_of_nonessential_edges
       L j ≠ pm (b (κ k)) - u - pv (b (κ k))
     exact ⟨by omega, by omega, by omega, by omega⟩
 
-
-/-- **The grand assembly, fourth form.**  With doubling supply and one
-nonzero package, the clique escape shrinks to its sharpest shape:
-every positive vertex is **primitive** (no proper two-term
-representation) or **fully 2-essential** (redundant at no threshold
-whatsoever) — the Grekos class plus primitives. -/
-theorem erdos881_grand_assembly₄ {A : Set ℕ} {N₀ : ℕ}
+theorem erdos881_combined_criterion₄ {A : Set ℕ} {N₀ : ℕ}
     (hA : A.Infinite) (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hfunnel : HasCofinalPairFunnels A)
+    (hfunnel : HasCofinalPairTransversalFamilies A)
     (hdb : {c | c ∈ A ∧ 2 * c ∈ A ∧ 0 < c}.Infinite)
     (hnz : ∃ c ∈ A, 0 < c ∧ ∃ w ∈ A, ∃ w' ∈ A,
       w + w' = 2 * c ∧ w ≠ c ∧ 0 < w ∧ 0 < w') :
@@ -532,12 +507,12 @@ theorem erdos881_grand_assembly₄ {A : Set ℕ} {N₀ : ℕ}
       ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
         x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n) ∨
     (∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m) ∨
-    (∃ L, L ⊆ A ∧ L.Infinite ∧ L.Pairwise (TeamEdge A) ∧
+    (∃ L, L ⊆ A ∧ L.Infinite ∧ L.Pairwise (PairTransversalEdge A) ∧
       ∀ u ∈ L, 0 < u →
         (¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u ∧ s ≠ u ∧ t ≠ u) ∨
         (∀ N₁, ¬ TwoRedundant A u N₁)) := by
   have hanchor := anchor_abundance_of_doubling h0 hdb hnz
-  rcases infinite_teamClique_or_cofinal_privatePairs hA hfunnel with
+  rcases infinite_pairTransversalClique_or_cofinal_privatePairs hA hfunnel with
     ⟨L, hLA, hLinf, hLcl⟩ | ⟨L, hLA, hLinf, hstream⟩
   · by_cases hesc : ∀ u ∈ L, 0 < u →
         (¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u ∧ s ≠ u ∧ t ≠ u) ∨
@@ -569,9 +544,9 @@ theorem erdos881_grand_assembly₄ {A : Set ℕ} {N₀ : ℕ}
       · exact absurd hpriv
           (hN₂ v m (le_trans (le_max_right _ _) hm) hv0)
 
-/-- A primitive element is two-guarded by zero: its only two-term
+/-- A primitive element is two-required by zero: its only two-term
 representation is `0 + u`. -/
-theorem primitive_zero_guarded {A : Set ℕ} {u : ℕ}
+theorem primitive_zero_required {A : Set ℕ} {u : ℕ}
     (hu0 : 0 < u)
     (hprim : ¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u ∧ s ≠ u ∧ t ≠ u) :
     ∀ y ∈ A, ∀ z ∈ A, y + z = u → y = 0 ∨ z = 0 := by
@@ -580,9 +555,6 @@ theorem primitive_zero_guarded {A : Set ℕ} {u : ℕ}
   push Not at hne
   exact hprim ⟨y, hy, z, hz, hyz, by omega, by omega⟩
 
-/-- **The primitive escape is zero-loaded**: an infinite set of
-positive primitives makes zero fully 2-essential — every threshold
-has a witness whose every representation passes through zero. -/
 theorem zero_essential_of_infinite_primitives {A L : Set ℕ}
     (hL : L.Infinite) (hLA : L ⊆ A)
     (hprims : ∀ u ∈ L, 0 < u ∧
@@ -592,17 +564,10 @@ theorem zero_essential_of_infinite_primitives {A L : Set ℕ}
   obtain ⟨u, huL, huN⟩ := hL.exists_gt N
   obtain ⟨hu0, hprim⟩ := hprims u huL
   obtain ⟨s, hs, t, ht, hst, hs0, ht0⟩ := hred u (by omega)
-  rcases primitive_zero_guarded hu0 hprim s hs t ht hst with h | h
+  rcases primitive_zero_required hu0 hprim s hs t ht hst with h | h
   · exact hs0 h
   · exact ht0 h
 
-/-- **Essential vertices repel element translates**: if every
-two-term representation of some `n ≥ u + c` must pass through `u`,
-and `u + c ∈ A`, then the representation `0 + (u + c)` of `u + c`
-would dodge `u` — so a vertex whose necessity witnesses include
-`u + c` forces `u + c ∉ A` whenever `c ∈ A` is positive... stated
-directly: a witness at `u + c` with `u + c ∈ A` and `0 ∈ A` is
-contradictory. -/
 theorem essential_witness_repels_translate {A : Set ℕ} {u c : ℕ}
     (h0 : 0 ∈ A) (hu0 : 0 < u) (hc0 : 0 < c)
     (hwit : ∀ y ∈ A, ∀ z ∈ A, y + z = u + c → y = u ∨ z = u)
@@ -773,17 +738,6 @@ theorem surviving_deletion_of_reflectionFamilies
       omega
     · exact ⟨x, hx, y, hy, 0, h0, hxB, hyB, h0B, by omega⟩
 
-
-
-
-/-- **The avoidable-levels kill.**  Even a fully 2-essential guard
-dies if its edges supply *grown levels with avoidable cross-sums*:
-non-primitivity gives the coreps, the anchor points `u + c, u + 2c`
-and the per-level cross-sums `u + (m - v)` carry avoiding
-representations, and the reflection-family engine runs.  The final
-escape is thus a **W-alignment** property: beyond every bound, every
-edge of every vertex has a bounded level or an unavoidable
-cross-sum. -/
 theorem surviving_deletion_of_avoidable_levels
     {A : Set ℕ} {N₀ u c : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -931,15 +885,9 @@ theorem surviving_deletion_of_avoidable_levels
     exact hmirror k (L j) hsj.2.1 (by omega) (by omega)
       ⟨s, hs, t, ht, by omega, hsu, htu⟩ (by omega) (by omega)
 
-
-/-- **The grand assembly, fifth form.**  The clique escape at its
-sharpest: every positive vertex is primitive, or has no doubling
-anchor with avoidable cross-sums, or is **W-aligned** — beyond some
-bound every destroyer of its edges has a bounded level or an
-unavoidable cross-sum.  Redundancy plays no role anywhere. -/
-theorem erdos881_grand_assembly₅ {A : Set ℕ} {N₀ : ℕ}
+theorem erdos881_combined_criterion₅ {A : Set ℕ} {N₀ : ℕ}
     (hA : A.Infinite) (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hfunnel : HasCofinalPairFunnels A)
+    (hfunnel : HasCofinalPairTransversalFamilies A)
     (hdb : {c | c ∈ A ∧ 2 * c ∈ A ∧ 0 < c}.Infinite)
     (hnz : ∃ c ∈ A, 0 < c ∧ ∃ w ∈ A, ∃ w' ∈ A,
       w + w' = 2 * c ∧ w ≠ c ∧ 0 < w ∧ 0 < w') :
@@ -947,7 +895,7 @@ theorem erdos881_grand_assembly₅ {A : Set ℕ} {N₀ : ℕ}
       ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
         x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n) ∨
     (∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m) ∨
-    (∃ L, L ⊆ A ∧ L.Infinite ∧ L.Pairwise (TeamEdge A) ∧
+    (∃ L, L ⊆ A ∧ L.Infinite ∧ L.Pairwise (PairTransversalEdge A) ∧
       ∀ u ∈ L, 0 < u →
         (¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u ∧ s ≠ u ∧ t ≠ u) ∨
         (∀ c, c ∈ A → 2 * c ∈ A → u < c →
@@ -957,7 +905,7 @@ theorem erdos881_grand_assembly₅ {A : Set ℕ} {N₀ : ℕ}
           IsPairDestroyer A u v m →
           m - v ≤ K ∨
           ¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u + (m - v) ∧ s ≠ u ∧ t ≠ u)) := by
-  rcases infinite_teamClique_or_cofinal_privatePairs hA hfunnel with
+  rcases infinite_pairTransversalClique_or_cofinal_privatePairs hA hfunnel with
     ⟨L, hLA, hLinf, hLcl⟩ | ⟨L, hLA, hLinf, hstream⟩
   · by_cases hesc : ∀ u ∈ L, 0 < u →
         (¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u ∧ s ≠ u ∧ t ≠ u) ∨
@@ -990,11 +938,6 @@ theorem erdos881_grand_assembly₅ {A : Set ℕ} {N₀ : ℕ}
       · exact absurd hpriv
           (hN₂ v m (le_trans (le_max_right _ _) hm) hv0)
 
-
-/-- **Witness levels repel translates.**  If every representation of
-`u + L` passes through `u`, then no anchor `c` with `u + c ∈ A` can
-have `L - c ∈ A` (unless `L = u + c`): the witness's unique
-decomposition forbids the cross pairing. -/
 theorem witness_level_translate_exit {A : Set ℕ} {u L c : ℕ}
     (hwit : ∀ y ∈ A, ∀ z ∈ A, y + z = u + L → y = u ∨ z = u)
     (hcL : c ≤ L) (hLuc : L ≠ u + c) (hc0 : 0 < c)
@@ -1002,9 +945,6 @@ theorem witness_level_translate_exit {A : Set ℕ} {u L c : ℕ}
     False := by
   rcases hwit (L - c) hLc (u + c) huc (by omega) with h | h <;> omega
 
-/-- **Witness levels repel each other's differences.**  Two witness
-levels of the same guard cannot have their `u`-shifted difference in
-`A`: the witness ladder is Sidon-like. -/
 theorem witness_levels_difference_exit {A : Set ℕ} {u L₁ L₂ : ℕ}
     (hwit₂ : ∀ y ∈ A, ∀ z ∈ A, y + z = u + L₂ → y = u ∨ z = u)
     (hL₁A : L₁ ∈ A) (hlt : L₁ < L₂) (hL₁u : L₁ ≠ u)
@@ -1014,13 +954,6 @@ theorem witness_levels_difference_exit {A : Set ℕ} {u L₁ L₂ : ℕ}
   · omega
   · exact hL₁u h
 
-
-/-- **The witness branch still yields element levels.**  Even when the
-cross-sum `u + (m - v)` is a necessity witness of `u` (the W-aligned
-case), non-primitivity of `u` alone pins the corep: the level
-`m - v` is an element, while the witness itself never is.  The
-W-aligned enemy therefore builds a ladder of element levels whose
-`u`-translates all exit `A`. -/
 theorem witness_branch_level_mem {A : Set ℕ} {N₀ u v m : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hprim : ∃ s ∈ A, ∃ t ∈ A, s + t = u ∧ s ≠ u ∧ t ≠ u)
@@ -1045,12 +978,6 @@ theorem witness_branch_level_mem {A : Set ℕ} {N₀ u v m : ℕ}
     rcases hwit 0 h0 (u + (m - v)) hmem (by omega) with h | h <;>
       omega
 
-
-/-- **Anchor forks are forced to the `u`-side.**  For a W-aligned
-edge (witness at `u + (m - v)`), any anchor `c` with `u + c ∈ A` has
-its `v`-channel excluded by the translate exit, so the `u`-channel is
-forced: `m - u - c ∈ A`.  The W-aligned enemy must deposit a full
-translate of `{c ∈ A : u + c ∈ A}` below each edge top. -/
 theorem anchor_fork_forced {A : Set ℕ} {N₀ u v m c : ℕ}
     (hcov : PairCovers A N₀)
     (hdes : IsPairDestroyer A u v m)
@@ -1079,12 +1006,6 @@ theorem anchor_fork_forced {A : Set ℕ} {N₀ u v m c : ℕ}
       (fun hmem => witness_level_translate_exit hwit hcL hLuc hc0
         hucA hmem)
 
-
-/-- **The cross-edge catch.**  A `u`-forced point (from
-`anchor_fork_forced`) landing in the desert of a partners' edge
-`(v₁, v₂)` is contradictory: the forced translate collides with the
-partner desert.  The W-aligned clique's targets must dodge windows
-around every forced point of every lower vertex. -/
 theorem cross_edge_catch {A : Set ℕ} {N₀ u v₁ v₂ m₂ m' c : ℕ}
     (hcov : PairCovers A N₀)
     (hdes₂ : IsPairDestroyer A u v₂ m₂)
@@ -1101,18 +1022,12 @@ theorem cross_edge_catch {A : Set ℕ} {N₀ u v₁ v₂ m₂ m' c : ℕ}
     False := by
   have hp := anchor_fork_forced hcov hdes₂ hwit hcA hucA hc0 hcu hcv
     hcm hcL hLuc hv₂m
-  have h := hdes'.desert hcov hv₁0 hv₁₂ hp hlow hhigh
+  have h := hdes'.exclusion_interval hcov hv₁0 hv₁₂ hp hlow hhigh
   omega
 
-
-/-- **The grand assembly, sixth form** — the combined sharpest escape:
-every positive clique vertex is **primitive**, or **fully 2-essential
-and additionally anchor-starved or W-aligned**.  Non-essential
-vertices die by the pointwise kill regardless of their edges;
-essential ones die unless starved or aligned. -/
-theorem erdos881_grand_assembly₆ {A : Set ℕ} {N₀ : ℕ}
+theorem erdos881_combined_criterion₆ {A : Set ℕ} {N₀ : ℕ}
     (hA : A.Infinite) (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hfunnel : HasCofinalPairFunnels A)
+    (hfunnel : HasCofinalPairTransversalFamilies A)
     (hdb : {c | c ∈ A ∧ 2 * c ∈ A ∧ 0 < c}.Infinite)
     (hnz : ∃ c ∈ A, 0 < c ∧ ∃ w ∈ A, ∃ w' ∈ A,
       w + w' = 2 * c ∧ w ≠ c ∧ 0 < w ∧ 0 < w') :
@@ -1120,7 +1035,7 @@ theorem erdos881_grand_assembly₆ {A : Set ℕ} {N₀ : ℕ}
       ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
         x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n) ∨
     (∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m) ∨
-    (∃ L, L ⊆ A ∧ L.Infinite ∧ L.Pairwise (TeamEdge A) ∧
+    (∃ L, L ⊆ A ∧ L.Infinite ∧ L.Pairwise (PairTransversalEdge A) ∧
       ∀ u ∈ L, 0 < u →
         (¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u ∧ s ≠ u ∧ t ≠ u) ∨
         ((∀ N₁, ¬ TwoRedundant A u N₁) ∧
@@ -1133,7 +1048,7 @@ theorem erdos881_grand_assembly₆ {A : Set ℕ} {N₀ : ℕ}
             m - v ≤ K ∨
             ¬ ∃ s ∈ A, ∃ t ∈ A,
               s + t = u + (m - v) ∧ s ≠ u ∧ t ≠ u)))) := by
-  rcases infinite_teamClique_or_cofinal_privatePairs hA hfunnel with
+  rcases infinite_pairTransversalClique_or_cofinal_privatePairs hA hfunnel with
     ⟨L, hLA, hLinf, hLcl⟩ | ⟨L, hLA, hLinf, hstream⟩
   · by_cases hesc : ∀ u ∈ L, 0 < u →
         (¬ ∃ s ∈ A, ∃ t ∈ A, s + t = u ∧ s ≠ u ∧ t ≠ u) ∨
@@ -1151,7 +1066,7 @@ theorem erdos881_grand_assembly₆ {A : Set ℕ} {N₀ : ℕ}
     · push Not at hesc
       obtain ⟨u, huL, hu0, hprim, hrest⟩ := hesc
       by_cases hred : ∃ N₁, TwoRedundant A u N₁
-      · -- non-essential: the pointwise kill
+      · -- non-essential: the pointwise contradiction
         obtain ⟨N₁, hredN⟩ := hred
         obtain ⟨c, hcmem, hcg⟩ := hdb.exists_gt (max N₁ u)
         obtain ⟨hcA, h2cA, hc0⟩ := hcmem
@@ -1165,7 +1080,7 @@ theorem erdos881_grand_assembly₆ {A : Set ℕ} {N₀ : ℕ}
         have huv : u < v := lt_of_le_of_lt (le_max_right _ _) hv
         obtain ⟨-, m, hum, hvm, hdes⟩ := hLcl huL hvL (by omega)
         exact ⟨v, m, hKv, huv, hvm, hdes⟩
-      · -- essential: the avoidable-levels kill
+      · -- essential: the avoidable-levels contradiction
         push Not at hred
         have hess : ∀ N₁, ¬ TwoRedundant A u N₁ := hred
         have hWneg := hrest hess
@@ -1189,12 +1104,7 @@ theorem erdos881_grand_assembly₆ {A : Set ℕ} {N₀ : ℕ}
       · exact absurd hpriv
           (hN₂ v m (le_trans (le_max_right _ _) hm) hv0)
 
-
-/-- **Zero-guarded targets are exactly the primitives.**  A covered
-target whose every two-term representation passes through zero must
-itself be a primitive element, and conversely.  The primitive clique
-class and full 2-essentiality of zero are one phenomenon. -/
-theorem zero_guarded_iff_primitive {A : Set ℕ} {N₀ n : ℕ}
+theorem zero_required_iff_primitive {A : Set ℕ} {N₀ n : ℕ}
     (hcov : PairCovers A N₀) (hn : N₀ ≤ n) (hn0 : 0 < n) :
     (∀ y ∈ A, ∀ z ∈ A, y + z = n → y = 0 ∨ z = 0) ↔
     (n ∈ A ∧ ¬ ∃ s ∈ A, ∃ t ∈ A, s + t = n ∧ 0 < s ∧ 0 < t) := by
@@ -1214,13 +1124,6 @@ theorem zero_guarded_iff_primitive {A : Set ℕ} {N₀ n : ℕ}
     push Not at hne
     exact hprim ⟨y, hy, z, hz, hyz, by omega, by omega⟩
 
-
-/-- **The trichotomy collapses to a dichotomy.**  For any zero-free
-infinite deletion set of positive elements, the singleton-funnel
-branch cannot recur cofinally: a cofinal singleton stream feeds the
-rotating-guardian kill and contradicts counterexamplehood.  Beyond
-some bound, every destroyed target of every such deletion realizes a
-pair funnel or the diffuse branch. -/
 theorem deletion_dichotomy_of_anchors {A B : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ C ⊆ A, C.Infinite →
@@ -1237,7 +1140,7 @@ theorem deletion_dichotomy_of_anchors {A B : Set ℕ} {N₀ : ℕ}
           (z ∈ B → x' ≠ z ∧ y' ≠ z ∧ z' ≠ z))) := by
   by_cases hsing : ∀ N, ∃ m, N ≤ m ∧
       ∃ u ∈ B, u ∈ A ∧ IsPrivateTriple A u m
-  · -- cofinal singleton funnels: the stream kill fires
+  · -- cofinal singleton transversal_families: the stream contradiction fires
     exfalso
     have hstream : ∀ N, ∃ a m, N ≤ m ∧ 0 < a ∧
         IsPrivateTriple A a m := by
@@ -1252,7 +1155,7 @@ theorem deletion_dichotomy_of_anchors {A B : Set ℕ} {N₀ : ℕ}
     obtain ⟨N₁, hN₁⟩ := hsing
     intro N
     obtain ⟨m, hm, htri⟩ :=
-      cofinal_funnel_trichotomy_of_deletionFailure h0 h0B hcov
+      cofinal_transversal_family_trichotomy_of_deletionFailure h0 h0B hcov
         (hfail B hBA hBinf) (max N N₁)
     rcases htri with h | h | h
     · obtain ⟨u, huB, huA, hpriv⟩ := h
@@ -1261,10 +1164,6 @@ theorem deletion_dichotomy_of_anchors {A B : Set ℕ} {N₀ : ℕ}
     · exact ⟨m, le_trans (le_max_left _ _) hm, Or.inl h⟩
     · exact ⟨m, le_trans (le_max_left _ _) hm, Or.inr h⟩
 
-
-/-- **Fixed-pair corep dichotomy.**  A pair with cofinal destroyed
-targets has one of its two corep channels realized cofinally: the
-first step of the recurring-pair kill. -/
 theorem fixed_pair_corep_dichotomy {A : Set ℕ} {N₀ u v : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hu0 : 0 < u) (huv : u < v)
@@ -1301,13 +1200,6 @@ theorem fixed_pair_corep_dichotomy {A : Set ℕ} {N₀ u v : ℕ}
     · exact absurd h (hN₁ m (by omega) hdes)
     · exact ⟨m, by omega, hdes, h⟩
 
-
-/-- **Generic fork pigeonhole.**  For any cofinal family of destroyed
-targets of a fixed pair and any fixed reflected point, one fork
-channel recurs cofinally.  Parameterized over the family predicate so
-that successive reflected points can be pigeonholed in sequence,
-refining the family each time — the channel-constancy engine of the
-recurring-pair kill. -/
 theorem fixed_pair_fork_pigeonhole {A : Set ℕ} {N₀ u v z₀ : ℕ}
     (D : ℕ → Prop)
     (hcov : PairCovers A N₀)
@@ -1348,11 +1240,6 @@ theorem fixed_pair_fork_pigeonhole {A : Set ℕ} {N₀ u v z₀ : ℕ}
     · exact absurd h (hN₁ m (le_trans (le_max_right _ _) hm) hDm)
     · exact ⟨m, le_trans (le_max_left _ _) hm, hDm, h⟩
 
-
-/-- **Pair recurrence or escape.**  Cofinal pair funnels either
-concentrate on one recurring pair (the fixed-pair configuration, under
-demolition) or escape every finite set of pairs — the spread case
-feeding second-level Ramsey structure. -/
 theorem pair_escape_dichotomy {A B : Set ℕ}
     (hpf : ∀ N, ∃ m, N ≤ m ∧ ∃ u ∈ B, ∃ v ∈ B,
       IsPairDestroyer A u v m) :
@@ -1380,11 +1267,6 @@ theorem pair_escape_dichotomy {A B : Set ℕ}
     refine ⟨F.sup Np, fun m hm p hp h1 h2 => ?_⟩
     exact hNp p m (le_trans (Finset.le_sup hp) hm) h1 h2
 
-
-/-- **Spread pairs supply fresh pairs forever.**  In the escape case,
-every finite set of pairs is eventually avoided, so the funnel supply
-must keep producing brand-new pairs with late targets — the input for
-second-level Ramsey extraction. -/
 theorem spread_pairs_extraction {A B : Set ℕ}
     (hpf : ∀ N, ∃ m, N ≤ m ∧ ∃ u ∈ B, ∃ v ∈ B,
       IsPairDestroyer A u v m)
@@ -1401,12 +1283,7 @@ theorem spread_pairs_extraction {A B : Set ℕ}
   exact hN₁ m (le_trans (le_max_right _ _) hm) (u, v) hmem huB hvB
     hdes
 
-
-/-- **Spread pairs have unbounded guards.**  Taking the finite set to
-be all pairs with small components, the escape case produces
-destroying pairs with a guard above every bound — late targets are
-always served by fresh, high guards. -/
-theorem spread_pairs_unbounded_guards {A B : Set ℕ}
+theorem spread_pairs_unbounded_required_elements {A B : Set ℕ}
     (hpf : ∀ N, ∃ m, N ≤ m ∧ ∃ u ∈ B, ∃ v ∈ B,
       IsPairDestroyer A u v m)
     (hesc : ∀ F : Finset (ℕ × ℕ), ∃ N, ∀ m, N ≤ m →
@@ -1424,12 +1301,7 @@ theorem spread_pairs_unbounded_guards {A B : Set ℕ}
   exact hfresh (Finset.mem_product.mpr
     ⟨Finset.mem_range.mpr (by omega), Finset.mem_range.mpr (by omega)⟩)
 
-
-/-- **Low guards recur or escape.**  Normalizing pairs by `symm`, the
-spread supply either concentrates on one recurring low guard with
-unbounded partners — exactly the per-vertex supply the assembly kills
-consume — or both guards escape every bound. -/
-theorem spread_min_guard_dichotomy {A B : Set ℕ}
+theorem spread_min_required_element_dichotomy {A B : Set ℕ}
     (hsup : ∀ N, ∃ m, N ≤ m ∧ ∃ u ∈ B, ∃ v ∈ B, u ≤ v ∧
       IsPairDestroyer A u v m) :
     (∃ u ∈ B, ∀ N, ∃ m, N ≤ m ∧ ∃ v ∈ B, u ≤ v ∧
@@ -1463,12 +1335,7 @@ theorem spread_min_guard_dichotomy {A B : Set ℕ}
         (Finset.mem_range.mpr (by omega))) (le_max_right _ _)) hm
     exact hNu u m hbound huB ⟨v, hvB, huv, hdes⟩
 
-
-/-- **Recurring equal guards die.**  The diagonal case of the
-recurring-low-guard branch (`u = v`) collapses to a fixed singleton
-guardian with cofinal targets — killed by the rotating-guardian
-engine. -/
-theorem recurring_equal_guard_kill {A : Set ℕ} {N₀ u c : ℕ}
+theorem recurring_equal_required_element_contradiction {A : Set ℕ} {N₀ u c : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hu0 : 0 < u)
     (hrec : ∀ N, ∃ m, N ≤ m ∧ IsPairDestroyer A u u m)
@@ -1478,16 +1345,11 @@ theorem recurring_equal_guard_kill {A : Set ℕ} {N₀ u c : ℕ}
     ∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
       ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
         x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n := by
-  refine surviving_deletion_of_cofinal_fixedGuardian' h0 hcov hu0
+  refine surviving_deletion_of_cofinal_fixedRequiredElement' h0 hcov hu0
     (fun N => ?_) hc hc0 hca hw
   obtain ⟨m, hm, hdes⟩ := hrec N
   exact ⟨m, hm, hdes.privateTriple_of_eq⟩
 
-
-/-- **Level-sequence extraction for a fixed pair.**  From cofinal
-`v`-corep targets, a strictly growing sequence of destroyed targets
-with element levels and doubling growth — the substrate for the
-channel-Ramsey step. -/
 theorem fixed_pair_level_sequence {A : Set ℕ} {u v : ℕ}
     (hrec : ∀ N, ∃ m, N ≤ m ∧ IsPairDestroyer A u v m ∧ m - v ∈ A) :
     ∃ M : ℕ → ℕ, (∀ k, IsPairDestroyer A u v (M k) ∧ M k - v ∈ A) ∧
@@ -1505,11 +1367,6 @@ theorem fixed_pair_level_sequence {A : Set ℕ} {u v : ℕ}
     have hs : M (k + 1) = f (2 * M k + v + 1) := hMs k
     omega
 
-
-/-- **The channel Ramsey.**  Coloring index pairs by the realized
-fork channel of lower levels through higher targets, the repo's
-infinite pair Ramsey yields an infinite index set with a constant
-channel: the mono-channel substrate for the offset engine. -/
 theorem fixed_pair_channel_ramsey {A : Set ℕ} {N₀ u v : ℕ}
     (hcov : PairCovers A N₀)
     (M : ℕ → ℕ)
@@ -1574,7 +1431,6 @@ theorem fixed_pair_channel_ramsey {A : Set ℕ} {N₀ u v : ℕ}
     · exact absurd h hnotv
     · exact h
 
-
 /-- Monotone enumeration of an infinite set of naturals. -/
 theorem infinite_subset_mono_enum {S : Set ℕ} (hS : S.Infinite) :
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ k, φ k ∈ S := by
@@ -1594,10 +1450,6 @@ theorem infinite_subset_mono_enum {S : Set ℕ} (hS : S.Infinite) :
     | zero => exact hfS 0
     | succ k => exact hfS (φ k)
 
-/-- **The mono-channel subsequence (v-channel case).**  Composing the
-level sequence with the Ramsey set's enumeration yields levels with
-doubling growth whose pairwise differences all lie in `A` — engine
-V6's L−L reflection family, delivered. -/
 theorem fixed_pair_v_channel_family {A : Set ℕ} {u v : ℕ}
     (M : ℕ → ℕ) (S : Set ℕ)
     (hM : ∀ k, IsPairDestroyer A u v (M k) ∧ M k - v ∈ A)
@@ -1633,7 +1485,6 @@ theorem fixed_pair_v_channel_family {A : Set ℕ} {u v : ℕ}
   · intro i j hij
     exact hchan (φ i) (hφS i) (φ j) (hφS j) (hφmono hij)
 
-
 /-- Two-color pigeonhole for infinite sets. -/
 theorem infinite_two_color {S P : Set ℕ} (hS : S.Infinite) :
     (S ∩ P).Infinite ∨ (S \ P).Infinite := by
@@ -1648,9 +1499,6 @@ theorem infinite_two_color {S P : Set ℕ} (hS : S.Infinite) :
       · exact Or.inr ⟨hx, hxP⟩
     exact Set.Finite.subset (h1.union h2) this)
 
-/-- **Point-channel splitting.**  Along any infinite index set of the
-level sequence, a fixed reflected point's fork channel is constant on
-an infinite subset.  Composable over finitely many points. -/
 theorem fixed_pair_point_channel {A : Set ℕ} {N₀ u v z₀ : ℕ}
     (hcov : PairCovers A N₀)
     (M : ℕ → ℕ) (S : Set ℕ)
@@ -1689,11 +1537,6 @@ theorem fixed_pair_point_channel {A : Set ℕ} {N₀ u v z₀ : ℕ}
     · exact absurd h' hk.2
     · exact h'
 
-
-/-- **The all-v engine feed.**  A level sequence from a fixed pair
-whose four reflection families all realize the v-channel feeds engine
-V6 directly: the fixed-pair configuration with all-v channels forces
-a surviving deletion. -/
 theorem fixed_pair_v_engine_feed {A : Set ℕ} {N₀ c w w' : ℕ}
     (L : ℕ → ℕ)
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -1712,9 +1555,6 @@ theorem fixed_pair_v_engine_feed {A : Set ℕ} {N₀ c w w' : ℕ}
   surviving_deletion_of_reflectionFamilies L h0 hcov hmono hgrow
     hc hc0 hcL hwA hw'A hww hwc hLc hLw hLw'
     (fun i j hij => hLL i j hij)
-
-
-
 
 /-- Generic doubling-growth sequence extraction: any cofinal predicate
 family yields a sequence with prescribed growth, carrying the
@@ -1736,10 +1576,6 @@ theorem generic_growth_sequence {v s : ℕ} (D : ℕ → Prop)
     have hs : M (k + 1) = f (2 * M k + v + 1) := hMs k
     omega
 
-/-- **The fixed-pair composition.**  From cofinal v-corep targets:
-either all four channels realize v on a common infinite index set and
-the engine kills, or some family is pinned to the u-channel — the
-structured offset data for the remaining routes. -/
 theorem fixed_pair_composition {A : Set ℕ} {N₀ u v c w w' : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hu0 : 0 < u) (huv : u < v)
@@ -1854,11 +1690,6 @@ theorem fixed_pair_composition {A : Set ℕ} {N₀ u v c w w' : ℕ}
     · exact Or.inr ⟨M, hM, T₁, hT₁inf, Or.inr (Or.inl hcu₁)⟩
   · exact Or.inr ⟨M, hM, S, hSinf, Or.inl hLLu⟩
 
-
-/-- **Engine V9: generalized constants.**  The reflection-family
-engine with a shifted L-L family (`+ e`) and free point-family values
-tied only by the two repair identities — kills every channel pattern
-of the fixed-pair configuration. -/
 theorem surviving_deletion_of_shiftedFamilies
     {A : Set ℕ} {N₀ a₁ a₂ a₄ a₅ e V : ℕ} (L : ℕ → ℕ)
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -1899,7 +1730,7 @@ theorem surviving_deletion_of_shiftedFamilies
     simp only [hfdef] at hr
     have := hVk (2 * r + 2)
     omega
-  -- shifted level-differences dodge B
+  -- shifted level-differences avoidance B
   have hgapB : ∀ i j, j < i → L i - L j + e ∉ Set.range f := by
     rintro i j hji ⟨r, hr⟩
     simp only [hfdef] at hr
@@ -1920,7 +1751,7 @@ theorem surviving_deletion_of_shiftedFamilies
       rw [h5] at h4
       have h0' := hVk 0
       omega
-  -- odd-level point values dodge B by parity/separation
+  -- odd-level point values avoidance B by parity/separation
   have hoddB : ∀ k t, t ≤ 2 * V → Odd k → L k - t ∉ Set.range f := by
     rintro k t htV ⟨ko, hko⟩ ⟨r, hr⟩
     simp only [hfdef] at hr
@@ -1934,7 +1765,7 @@ theorem surviving_deletion_of_shiftedFamilies
     · have := hdiff (2 * r + 2) k h
       have h0' := hVk 0
       omega
-  -- even-level values dodge B unless the value is a₁
+  -- even-level values avoidance B unless the value is a₁
   have hevenB : ∀ k t, t ≤ 2 * V → t ≠ a₁ → L k - t ∉ Set.range f := by
     rintro k t htV hta ⟨r, hr⟩
     simp only [hfdef] at hr

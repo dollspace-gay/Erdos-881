@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
-"""Probe: the three terminal rooms (twentieth summit).
-
-Build adversarial covering worlds for each terminal geometry:
-  R1  - delta-coherent worlds (rich fixed-difference pairs)
-  DD  - doored-desert worlds (one small server u, balanced tails)
-  TD  - total-desert worlds (Sidon-ish, all pairs balanced)
-Test sparse deletions at order 3 AND record the survival
-mechanism per target: pair+0 (order-2 material) vs genuine
-triple (three positive parts).  The dominant mechanism per room
-tells which formal survival engine to aim there.
-"""
+"""Finite diagnostic for three cases."""
 
 import random
 
@@ -42,7 +32,7 @@ def build_world(seed, room):
         for n in range(N0, N + 1):
             if covered(A, n):
                 continue
-            # door service: prefer n-u; else balanced mid pair
+            # fixed transversal coverage: prefer n-u; else balanced mid pair
             if n - u > N0:
                 A.add(n - u)
             else:

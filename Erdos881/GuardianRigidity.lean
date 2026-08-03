@@ -1,32 +1,5 @@
 import Mathlib
 
-/-!
-# Rigidity of order-three private guardians
-
-A target `m` is *order-three private* to a guardian `a ∈ A` when `m` has an
-exact three-term representation over `A` and every such representation uses
-`a`.  Against an order-two covering hypothesis (`PairCovers`), a private
-pair `(a, m)` with a *big* guardian (`m < 2 * a`, i.e. the guardian above
-the co-representative `M = m - a`) forces an extremely rigid landscape:
-
-* `corep_mem`      : the co-representative `M = m - a` is an element;
-* `desert`         : no element other than `a` lives in `(M, m - N₀]`;
-* `mirror`         : `A⁺ ∩ (0, M)` is symmetric under `z ↦ M - z`;
-* `guardian_le`    : the guardian is pinned to `a ≤ 2*M + 1`;
-* `forced_translate` : every covered number in `(2*M, m - N₀]` is `a`
-  plus an element, so `A` contains the whole translate window.
-
-The centerpiece is `no_big_guardian_stacking`: two big-guardian private
-pairs cannot coexist at separated scales.  The singleton-destroyer branch
-of a counterexample to Erdős 881 is therefore self-limiting — it fires at
-most once per scale window, never cofinally.
-
-These statements were located by exhaustive finite search
-(`scripts/probe_order3_private_structure.py`, `scripts/probe_stacking.py`):
-the unique finite realization is `[0, M] ∪ {2*M+1}` guarding `3*M+1`, and
-sweeps over ~200k stacked configurations found no two-level structure.
--/
-
 namespace Erdos881
 
 /-- `A` pair-covers every integer from `N₀` on: order-two covering with
@@ -34,7 +7,7 @@ zero allowed as a summand. -/
 def PairCovers (A : Set ℕ) (N₀ : ℕ) : Prop :=
   ∀ n, N₀ ≤ n → ∃ x ∈ A, ∃ y ∈ A, x + y = n
 
-/-- `m` is order-three private to the guardian `a`: it has an exact
+/-- `m` is order-three private to the required element `a`: it has an exact
 three-term representation over `A`, and every such representation uses
 `a`. -/
 def IsPrivateTriple (A : Set ℕ) (a m : ℕ) : Prop :=
@@ -62,9 +35,9 @@ theorem IsPrivateTriple.corep_mem {A : Set ℕ} {N₀ a m : ℕ}
   · exact ⟨x, hx, by omega⟩
   · omega
 
-/-- Desert: no element except the guardian itself lives strictly between
+/-- Exclusion interval: no element except the required element itself lives strictly between
 the co-representative `M = m - a` and `m - N₀`. -/
-theorem IsPrivateTriple.desert {A : Set ℕ} {N₀ a m : ℕ}
+theorem IsPrivateTriple.exclusion_interval {A : Set ℕ} {N₀ a m : ℕ}
     (_h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hpriv : IsPrivateTriple A a m) (ha : 0 < a)
     {z : ℕ} (hz : z ∈ A) (hlow : m < a + z) (hhigh : z + N₀ ≤ m) :
@@ -90,9 +63,9 @@ theorem IsPrivateTriple.mirror {A : Set ℕ} {N₀ a m : ℕ}
   · exact ⟨v, hv, by omega⟩
   · exact ⟨u, hu, by omega⟩
 
-/-- Boundary: a big guardian is pinned just above twice the
+/-- Boundary: a big required element is pinned just above twice the
 co-representative, `a ≤ 2*(m - a) + 1`. -/
-theorem IsPrivateTriple.guardian_le {A : Set ℕ} {N₀ a m : ℕ}
+theorem IsPrivateTriple.required_element_le {A : Set ℕ} {N₀ a m : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hpriv : IsPrivateTriple A a m)
     (hbig : m < 2 * a) (haN : N₀ + a ≤ m) :
@@ -104,17 +77,17 @@ theorem IsPrivateTriple.guardian_le {A : Set ℕ} {N₀ a m : ℕ}
   have hu' : u ≤ m - a := by
     by_contra h
     push Not at h
-    have := hpriv.desert h0 hcov ha hu (by omega) (by omega)
+    have := hpriv.exclusion_interval h0 hcov ha hu (by omega) (by omega)
     omega
   have hv' : v ≤ m - a := by
     by_contra h
     push Not at h
-    have := hpriv.desert h0 hcov ha hv (by omega) (by omega)
+    have := hpriv.exclusion_interval h0 hcov ha hv (by omega) (by omega)
     omega
   omega
 
 /-- Forced translate: any covered number strictly above `2*(m - a)` and at
-least `N₀` below `m` is the guardian plus an element.  Consequently the
+least `N₀` below `m` is the required element plus an element.  Consequently the
 whole window `(2*(m-a) - a, (m-a) - N₀)` of integers lies in `A`. -/
 theorem IsPrivateTriple.forced_translate {A : Set ℕ} {N₀ a m : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -124,28 +97,28 @@ theorem IsPrivateTriple.forced_translate {A : Set ℕ} {N₀ a m : ℕ}
     ∃ t ∈ A, a + t = n := by
   obtain ⟨u, hu, v, hv, huv⟩ := hcov n hn
   rcases Nat.lt_or_ge (m - a) u with hu1 | hu1
-  · have := hpriv.desert h0 hcov ha hu (by omega) (by omega)
+  · have := hpriv.exclusion_interval h0 hcov ha hu (by omega) (by omega)
     exact ⟨v, hv, by omega⟩
   · rcases Nat.lt_or_ge (m - a) v with hv1 | hv1
-    · have := hpriv.desert h0 hcov ha hv (by omega) (by omega)
+    · have := hpriv.exclusion_interval h0 hcov ha hv (by omega) (by omega)
       exact ⟨u, hu, by omega⟩
     · omega
 
-/-- Small guardians leave a *totally empty* desert: when `2*a < m` (the
-guardian below its co-representative), no element at all lives in
-`(m - a, m - N₀)` — the desert exception `z = a` is out of range. -/
-theorem IsPrivateTriple.small_desert {A : Set ℕ} {N₀ a m : ℕ}
+/-- Small required elements leave a *totally empty* exclusion interval: when `2*a < m` (the
+required element below its co-representative), no element at all lives in
+`(m - a, m - N₀)` — the exclusion interval exception `z = a` is out of range. -/
+theorem IsPrivateTriple.small_exclusion_interval {A : Set ℕ} {N₀ a m : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hpriv : IsPrivateTriple A a m) (ha : 0 < a)
     (hsmall : 2 * a < m)
     {z : ℕ} (hz : z ∈ A) (hlow : m < a + z) (hhigh : z + N₀ ≤ m) :
     False := by
-  have := hpriv.desert h0 hcov ha hz hlow hhigh
+  have := hpriv.exclusion_interval h0 hcov ha hz hlow hhigh
   omega
 
-/-- Guardian-free mirror, valid for guardians of every size: a positive
-element below the co-representative other than the guardian itself
-reflects to an element.  For small guardians this gives a reflection
+/-- required element-free mirror, valid for required elements of every size: a positive
+element below the co-representative other than the required element itself
+reflects to an element.  For small required elements this gives a reflection
 level with a single interior defect at `a`. -/
 theorem IsPrivateTriple.mirror_of_ne {A : Set ℕ} {N₀ a m : ℕ}
     (_h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -159,17 +132,7 @@ theorem IsPrivateTriple.mirror_of_ne {A : Set ℕ} {N₀ a m : ℕ}
   · exact ⟨v, hv, by omega⟩
   · exact ⟨u, hu, by omega⟩
 
-/-- **No stacking.**  Two big-guardian private pairs cannot coexist at
-separated scales: if `(a₁, m₁)` and `(a₂, m₂)` are both private with big
-guardians, the first has any room at all (`N₀ + 3 ≤ a₁`), and the second
-lives strictly above the first (`m₁ + a₂ ≤ m₂`, i.e. `m₁ ≤ M₂`), then the
-configuration is contradictory.
-
-Either the second guardian sits near its boundary, in which case the
-second forced-translate window plants two distinct elements inside the
-first desert; or it sits lower, in which case the mirror below `M₂`
-manufactures a representation of `m₂` avoiding `a₂` outright. -/
-theorem no_big_guardian_stacking {A : Set ℕ} {N₀ a₁ m₁ a₂ m₂ : ℕ}
+theorem no_big_required_element_stacking {A : Set ℕ} {N₀ a₁ m₁ a₂ m₂ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (h1 : IsPrivateTriple A a₁ m₁) (h2 : IsPrivateTriple A a₂ m₂)
     (hbig1 : m₁ < 2 * a₁) (hN1 : N₀ + a₁ ≤ m₁)
@@ -181,7 +144,7 @@ theorem no_big_guardian_stacking {A : Set ℕ} {N₀ a₁ m₁ a₂ m₂ : ℕ}
   have ha₂ : 0 < a₂ := by omega
   obtain ⟨M₂, hM₂A, hM₂⟩ := h2.corep_mem h0 hcov ha₂ (by omega)
   by_cases hcase : a₂ + (m₁ - a₁) < 2 * M₂
-  · -- low guardian: build a representation of m₂ avoiding a₂
+  · -- low required element: build a representation of m₂ avoiding a₂
     by_cases hjA : (a₂ - M₂) ∈ A
     · rcases h2.2 M₂ hM₂A M₂ hM₂A _ hjA (by omega) with h | h | h <;> omega
     · have hn'' : N₀ ≤ 2 * M₂ - a₂ := by omega
@@ -203,7 +166,7 @@ theorem no_big_guardian_stacking {A : Set ℕ} {N₀ a₁ m₁ a₂ m₂ : ℕ}
       obtain ⟨wv, hwv, hwvs⟩ :=
         h2.mirror h0 hcov hbig2 hN2 hv hv0 (by omega)
       rcases h2.2 wu hwu wv hwv M₂ hM₂A (by omega) with h | h | h <;> omega
-  · -- boundary guardian: the second translate window floods the first desert
+  · -- The second translate window contains the first exclusion interval.
     have key : ∀ j, m₁ - a₁ < j → j + N₀ + 1 ≤ m₁ → j ∈ A := by
       intro j hj1 hj2
       obtain ⟨t, ht, hts⟩ :=
@@ -214,9 +177,9 @@ theorem no_big_guardian_stacking {A : Set ℕ} {N₀ a₁ m₁ a₂ m₂ : ℕ}
     have hj1 : (m₁ - a₁ + 1) ∈ A := key _ (by omega) (by omega)
     have hj2 : (m₁ - a₁ + 2) ∈ A := key _ (by omega) (by omega)
     have e1 : m₁ - a₁ + 1 = a₁ :=
-      h1.desert h0 hcov ha₁ hj1 (by omega) (by omega)
+      h1.exclusion_interval h0 hcov ha₁ hj1 (by omega) (by omega)
     have e2 : m₁ - a₁ + 2 = a₁ :=
-      h1.desert h0 hcov ha₁ hj2 (by omega) (by omega)
+      h1.exclusion_interval h0 hcov ha₁ hj2 (by omega) (by omega)
     omega
 
 end Erdos881

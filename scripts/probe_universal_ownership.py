@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""Universal ownership census (the classification statement, direct).
-
-OwnsTarget(a, n): a < n < 2a, n-a in A, and a is the ONLY big fiber
-element of n (for y in A, n/2 < y <= n, y != a: n-y not in A).
-
-Classification claim: covering + (every late element owns a target)
-forces digit structure.  Search: local search for covering sets
-maximizing ownership coverage; compare Cantor; inspect survivors.
-"""
+"""Finite diagnostic for universal ownership."""
 import itertools, random
 
 def owns(A, Aset, a, T):

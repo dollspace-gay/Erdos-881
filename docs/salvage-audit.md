@@ -27,14 +27,14 @@ because they become stale as the files change.
 
 | Component | Principal files | Current use |
 |---|---|---|
-| Free-set thinning for bounded pair maps | `BoundedPairFreeSet.lean` | Removes finitely controlled guardian and pair obstructions. |
+| Free-set thinning for bounded pair maps | `BoundedPairFreeSet.lean` | Removes finitely controlled required-element and pair obstructions. |
 | Matching-versus-star classification | `FreeSetTripleRepairs.lean` | Classifies infinite pair-survival structure. |
-| Binary constraint machinery | `FreeSetTripleRepairs.lean` | Encodes finite two-option guardian constraints. |
+| Binary constraint machinery | `FreeSetTripleRepairs.lean` | Encodes finite two-option required-element constraints. |
 | Block certificates | `FiniteBlocks.lean`, `CertificateAmplification.lean` | Supplies the selector-certificate interface used by the current proof. |
 | Candidate deletion limits | `FreeSetTripleRepairs.lean` | Constructs infinite deletion objects from compatible finite stages. |
 | Infinite pair Ramsey theory | `InfinitePairRamsey.lean` | Separates rigid and nonrigid pair configurations. |
 | Reflection and private targets | `ReflectionDefects.lean` | Provides local translation and singleton-destruction bounds. |
-| General selector attack | `GeneralOrderAttack.lean` | Supplies target localization, protected repair, and arithmetic classification. |
+| General selector analysis | `GeneralOrderAttack.lean` | Supplies target localization, protected repair, and arithmetic classification. |
 
 ## Unreferenced or superseded groups
 

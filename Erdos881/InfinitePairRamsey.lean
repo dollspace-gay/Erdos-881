@@ -1,14 +1,5 @@
 import Erdos881.RigidDestroyerRepairs
 
-/-!
-# Infinite pair Ramsey reduction
-
-This file proves the elementary countable infinite Ramsey theorem for a
-symmetric binary relation on a subset of `ℕ`.  It then applies that theorem to
-rigid order-two pair sums, closing the nonrigid branch of the
-splittable-independent construction.
--/
-
 namespace Erdos881
 
 /-- One homogeneous thinning step inside an infinite set. -/

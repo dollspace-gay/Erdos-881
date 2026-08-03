@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""Cross-audit: shell profile of the R4 ladder world.  Enemy-like
-sets need infinitely deep thin shells; honest sets stall
-shallow-and-fat.  Where does the ladder world sit?"""
+"""Finite diagnostic for sequence rank layers."""
 Y, N0 = 4000, 9
 Q = [3, 7]; qstar = 3; n = 20
 D = [50 * (k + 1) + 7 * k * k for k in range(20)]
@@ -44,7 +42,7 @@ for m in range(N0, Y + 1):
                 if not violates_street(y, A2):
                     A.add(x); A.add(y); break
 
-# shell profile (window-truncated, targets to Y)
+# rank layer profile (window-truncated, targets to Y)
 def triples(m):
     out = []
     As = sorted(a for a in A if a <= m)

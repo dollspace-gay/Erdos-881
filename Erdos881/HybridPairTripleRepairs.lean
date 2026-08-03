@@ -1,15 +1,6 @@
 import Erdos881.DirectTripleRepairs
 import Erdos881.InternalAnchorOrderTwo
 
-/-!
-# Hybrid order-two and direct order-three repairs
-
-A direct blue triple is only needed when an all-red order-two support is
-rigid.  Nonrigid sums, especially the nonrigid doubles on the rigid Ramsey
-branch, can instead be repaired by an alternative order-two support with a
-blue vertex.  This file combines the two repair modes.
--/
-
 namespace Erdos881
 
 /-- Every red-red pair sum has either an order-two support not wholly red,
@@ -171,7 +162,6 @@ def HasFreshHybridRepairExtension
     ∀ d ∈ insert b D,
       Nonempty (FiniteHybridRepair A (insert b D) (b + d))
 
-/-- Exact normal form of a failed hybrid stage. -/
 theorem not_hasFreshHybridRepairExtension_iff
     {A K : Set ℕ} {D P : Finset ℕ} {T : ℕ} :
     ¬ HasFreshHybridRepairExtension A K D P T ↔
@@ -199,7 +189,6 @@ theorem not_hasFreshHybridRepairExtension_iff
       not_finiteHybridRepair_nonempty_iff.mpr ⟨htrap, hdestroy⟩
     exact ⟨d, hd, ⟨fun r => hnot ⟨r⟩⟩⟩
 
-/-- Name for the obstruction exposed by a failed hybrid stage. -/
 def HasFiniteHybridRepairObstruction
     (A K : Set ℕ) (D P : Finset ℕ) (T : ℕ) : Prop :=
   ∀ b, b ∈ K → b ∉ D → b ∉ P → T ≤ b →
@@ -215,9 +204,6 @@ theorem not_hasFreshHybridRepairExtension_iff_obstruction
       HasFiniteHybridRepairObstruction A K D P T :=
   not_hasFreshHybridRepairExtension_iff
 
-/-- Once the candidate is large relative to the old prefix, a nonrigid
-double cannot be the reason a hybrid stage fails.  Thus every failure is at
-`b+d` for an old point `d ∈ D`. -/
 theorem HasFiniteHybridRepairObstruction.eventually_fixed
     {A K : Set ℕ} {D P : Finset ℕ} {T : ℕ}
     (h : HasFiniteHybridRepairObstruction A K D P T)
@@ -424,9 +410,8 @@ theorem infinite_normalizedMinimalDestroyers_of_fixedTranslate
   exact Set.mem_iUnion₂.mpr
     ⟨S, hScandidates, hbK, hbD, hminimal⟩
 
-/-! ## The hybrid finite-injury recursion -/
+/-! ## The hybrid finite-obstruction recursion -/
 
-/-- Data chosen at one hybrid repair stage. -/
 structure HybridRepairRecursionStep
     (A K : Set ℕ) (D P : Finset ℕ) (last : ℕ) where
   point : ℕ
@@ -707,7 +692,6 @@ theorem exists_infiniteDeletion_threeBasis_of_freshHybridExtensions
       hbasis hBA hB hself' hrepair
   exact ⟨B', fun x hx => hBK (hB'B hx), hB', hthree⟩
 
-/-- Strong deletion must therefore expose a failed hybrid stage. -/
 theorem strongDeletion_forces_failedHybridRepairStage
     {A B₀ K : Set ℕ}
     (hstrong : StrongInfiniteDeletion
@@ -825,18 +809,8 @@ theorem strongDeletion_forces_infinite_normalizedFixedTranslateDestroyers
   exact ⟨K', S, d, hK'K, hK', hrigid', hdouble',
     hSK', hdS, hminimalFamily'⟩
 
-/-! ## Full-prefix old-core injuries -/
+/-! ## Full-prefix old-core obstructions -/
 
-/-- An infinite normalized destroyer family supplies infinitely many repairs
-which are unique-hit not merely on the normalized core `insert b S`, but on
-the entire ambient finite prefix `insert b D`.  The proof uses a large fixed
-set of external anchors.  It asks for more pair supports than the ambient
-prefix can hit, rules out the moving center `b` using the fixed predecessor
-target `d`, and lifts an escaping pair support through an old point `x ∈ S`.
-
-This is the robust local form needed by a finite-injury construction: after
-recoloring `x` blue, the displayed triple survives every other point already
-chosen for deletion. -/
 theorem infinite_fullPrefixUniqueHitRepairs_of_normalizedDestroyers
     {A X : Set ℕ} {D S : Finset ℕ} {d : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -925,11 +899,11 @@ theorem infinite_fullPrefixUniqueHitRepairs_of_normalizedDestroyers
       hxA hxPrefix hxn (lt_of_le_of_lt heraseCard hxlarge)
   exact ⟨hbX, hbD, x, hxS, G, hGR, hGhit⟩
 
-/-- Because the normalized old core is finite, the full-prefix injury point
+/-- Because the normalized old core is finite, the full-prefix obstruction point
 can be made independent of the moving candidate on an infinite subfamily.
 One recoloring of this fixed `x` therefore repairs the distinguished target
 `b + d` for infinitely many candidates `b`. -/
-theorem exists_fixedFullPrefixInjury_of_normalizedDestroyers
+theorem exists_fixedFullPrefixObstruction_of_normalizedDestroyers
     {A X : Set ℕ} {D S : Finset ℕ} {d : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
     (hDA : (D : Set ℕ) ⊆ A)
@@ -964,13 +938,13 @@ theorem exists_fixedFullPrefixInjury_of_normalizedDestroyers
   exact Set.mem_iUnion₂.mpr ⟨x, hxS, hbX, hbD, G, hGR, hGhit⟩
 
 /-- Strong deletion on the rigid self-basis branch forces an amortizable
-finite injury.  The original failed-extension prefix `D` is retained, and
+finite obstruction.  The original failed-extension prefix `D` is retained, and
 there is one fixed old point `x ∈ S ⊆ D` such that infinitely many moving
 candidates have a triple repair meeting `insert b D` exactly at `x`.
 
 Keeping `x` instead of deleting it therefore repairs all of those
 distinguished failed-extension targets simultaneously. -/
-theorem strongDeletion_forces_fixedFullPrefixInjuryFamily
+theorem strongDeletion_forces_fixedFullPrefixObstructionFamily
     {A B₀ K : Set ℕ}
     (hstrong : StrongInfiniteDeletion
       (additiveSupportFamily A 3) A)
@@ -1037,7 +1011,7 @@ theorem strongDeletion_forces_fixedFullPrefixInjuryFamily
     exact hb.2.2.1
   have hDA : (D : Set ℕ) ⊆ A := fun y hy => hK'A (hDK' hy)
   obtain ⟨x, hxS, hfixed⟩ :=
-    exists_fixedFullPrefixInjury_of_normalizedDestroyers
+    exists_fixedFullPrefixObstruction_of_normalizedDestroyers
       hbasis hDA hSD hX hXS hdestroyX
   have hfixed' : {b | b ∈ K' ∧ b ∉ D ∧
       IsInclusionMinimalDestroyer
@@ -1374,7 +1348,7 @@ theorem strongDeletion_rigidSelfBasis_normalizedRepairTrichotomy
     exact ⟨K', S, d, hK'K, hK', hrigid', hdouble',
       hSK', hdS, Or.inr (Or.inr halmost)⟩
 
-/-- Strengthened finite-injury form.  Once the fixed old core has at least
+/-- Strengthened finite-obstruction form.  Once the fixed old core has at least
 four vertices, a common-anchor repair can be forced to hit that old core,
 not the moving point.  Thus the only bounded exceptional cores have size at
 most three. -/

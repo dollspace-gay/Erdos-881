@@ -1,18 +1,5 @@
 #!/usr/bin/env python3
-"""END-TO-END Cantor adversary test (Erdős 881 recurring-pair leaf).
-
-Candidate counterexample-seed: A = subset-sums of {1,3,9,...,3^K}
-(base-3 digits {0,1}) + small patches.  Fixed pair (u,v) ⊆ A.
-Checks against ALL verified kill-constraints:
-  C1 covering: A+A ⊇ [N₀, top]
-  C2 cofinal fixed-pair destroyed targets m: every 2-rep of m uses
-     u or v; both channels genuinely needed (u-rep AND v-rep exist)
-  C3 not-all-v escape (V6): some cofinal u-channel realizations
-     must exist -- check which forks are FORCED (single-channel)
-  C4 THE MATCHING: realized fork image at each destroyed m --
-     does EVERY admissible realization avoid (x,y,w realized with
-     x+y=2w+e, y≠w) AND (pair with difference e)?  e ∈ {0,d}.
-"""
+"""Finite diagnostic for cantor adversary."""
 import itertools, sys
 
 K = 9

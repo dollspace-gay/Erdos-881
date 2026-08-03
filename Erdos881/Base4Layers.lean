@@ -1,14 +1,3 @@
-/-
-# Base-4 digit layers and bit surgery
-
-Infrastructure for the master classifier of the base-4 sieve: the
-three digit layers `layer t n` (a 1-bit at every position whose digit
-is at least `t`, so `layer 1 n + layer 2 n + layer 3 n = n`), the
-digit-clearing subtraction `x - 4^p`, digit extraction for nonzero
-numbers, and the two-digit purity tests.  Ported from the base-3
-machinery of `CantorCarryRepair` one order up.
--/
-
 import Erdos881.Base4Sieve
 
 namespace Erdos881Base4
@@ -342,7 +331,6 @@ lemma not_pure_pow_add {q x : ℕ} (hx0 : 0 < x)
         ring
   exact not_pure_of_bounds (L := q) hl hr ⟨j, hj⟩
 
-/-- **Mixed repair `3·4^a + 2·4^b`, doubled stray above the trey.** -/
 theorem base4_repair_tripleTwo_above (a b : ℕ)
     (hb : 8 ≤ b) (hab : a < b) :
     ∃ x y z t, IsBase4 x ∧ IsBase4 y ∧ IsBase4 z ∧
@@ -466,7 +454,7 @@ theorem base4_repair_tripleTwo_above (a b : ℕ)
     · rw [h256]
       ring
   · -- large trey: expand the trey, both stray bits ride above the
-    -- windows without collision
+    -- windows without conflict
     have h256 : (4 : ℕ) ^ a = 256 * 4 ^ (a - 4) := by
       have h := pow_shift_eq a 4 (by omega)
       norm_num at h
@@ -517,8 +505,6 @@ theorem base4_repair_tripleTwo_above (a b : ℕ)
     · rw [h256]
       ring
 
-/-- **Mixed repair `4^u + 3·4^a + 4^v`: a trey with one stray above
-and one anywhere else.** -/
 theorem base4_repair_triple_strayMixed (u a v : ℕ)
     (hu : 8 ≤ u) (hau : a < u) (hvu : v < u)
     (hva : v ≠ a) :
@@ -724,7 +710,7 @@ theorem base4_repair_triple_strayMixed (u a v : ℕ)
         rw [h256U, h64W]
         ring
   · -- large trey: expand the trey; the top bit and any stray above
-    -- ride over the windows without collision
+    -- ride over the windows without conflict
     have h256a :
         (4 : ℕ) ^ a = 256 * 4 ^ (a - 4) := by
       have h := pow_shift_eq a 4 (by omega)

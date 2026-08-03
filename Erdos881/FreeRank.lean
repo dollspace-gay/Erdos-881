@@ -1,18 +1,3 @@
-/-
-# The ordinal rank of the freeness tree
-
-The rep-free finite subsets of a counterexample's basis form a tree
-under extension-by-a-larger-element.  `free_prefixes_die_of_hfail`
-says every branch dies; here that becomes a well-founded relation
-(`freeStep_wf`) carrying an ordinal rank that every extension
-strictly decreases (`exists_strict_rank`).
-
-This is the formal centerpiece of the rank program
-(docs/rank-program.md): the floods are the stalled nodes of this
-tree, and a proof that some verified operation drives the rank down
-past every ordinal would refute the counterexample outright.
--/
-
 import Erdos881.DisjointRepEngine
 import Erdos881.Normalization
 import Erdos881.BoundedPairFreeSet
@@ -40,11 +25,6 @@ theorem RepFree.mono {A : Set ℕ} {N₀ : ℕ} {P P' : Finset ℕ}
   exact ⟨x, hx, y, hy, z, hz, hs, fun h => hxP (hsub h),
     fun h => hyP (hsub h), fun h => hzP (hsub h)⟩
 
-/-- **The freeness tree is well-founded.**  An infinite ascending
-chain of free extensions would glue (initial node, then the picks)
-into one strictly monotone positive sequence all of whose finite
-prefixes are free — exactly what `free_prefixes_die_of_hfail`
-forbids in a counterexample. -/
 theorem freeStep_wf {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -148,11 +128,6 @@ theorem freeStep_wf {A : Set ℕ} {N₀ : ℕ}
   exact free_prefixes_die_of_hfail h0 hcov hfail e hemono heA hepos
     hallfree
 
-/-- **THE RANK EXISTS.**  In a counterexample there is an
-ordinal-valued rank on finite sets that every free extension
-strictly decreases: the formal centerpiece of the rank program.
-Any verified operation shown to drive this rank below every bound
-refutes the counterexample. -/
 theorem exists_strict_rank {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -163,15 +138,10 @@ theorem exists_strict_rank {A : Set ℕ} {N₀ : ℕ}
   exact ⟨fun P => (hwf.apply P).rank,
     fun P Q h => Acc.rank_lt_of_rel (hwf.apply P) h⟩
 
-/-- **The leaf law.**  For a free node `P` and an admissible new
-element `b`, the extension `P ∪ {b}` leaves the tree EXACTLY when
-`b` completes a rep hub over `P` at some late target: the boundary
-of the freeness tree consists precisely of the flood's hubs.  Rank
-measures distance to the hub boundary. -/
 theorem freeNode_extension_iff {A : Set ℕ} {N₀ : ℕ} {P : Finset ℕ}
     {b : ℕ} (hP : FreeNode A N₀ P) (hbA : b ∈ A) (hbpos : 0 < b) :
     ¬FreeNode A N₀ (insert b P) ↔
-      ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b P) := by
+      ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m (insert b P) := by
   have hposins : ∀ h ∈ insert b P, h ∈ A ∧ 0 < h := by
     intro h hh
     rcases Finset.mem_insert.1 hh with h' | h'
@@ -200,15 +170,12 @@ theorem freeNode_extension_iff {A : Set ℕ} {N₀ : ℕ} {P : Finset ℕ}
     · exact hzP h
 
 /-- A stalled node: free, but no extension by a large positive
-basis element stays free.  The rep flood asserts such nodes exist;
-the leaf law identifies their boundary with hubs. -/
+basis element stays free.  The rep cofinal supply asserts such nodes exist;
+the leaf law identifies their boundary with support transversals. -/
 def Stalled (A : Set ℕ) (N₀ X : ℕ) (P : Finset ℕ) : Prop :=
   FreeNode A N₀ P ∧
   ∀ b, b ∈ A → 0 < b → X ≤ b → ¬RepFree A N₀ (insert b P)
 
-/-- **Stalledness is hereditary.**  Not-free is upward closed, so
-every tree child of a stalled node is stalled at the same
-threshold: once the dodge is trapped, it stays trapped. -/
 theorem Stalled.of_step {A : Set ℕ} {N₀ X : ℕ} {P Q : Finset ℕ}
     (hst : Stalled A N₀ X P) (hstep : FreeStep A N₀ Q P) :
     Stalled A N₀ X Q := by
@@ -222,11 +189,6 @@ theorem Stalled.of_step {A : Set ℕ} {N₀ X : ℕ} {P Q : Finset ℕ}
     exact Finset.mem_insert_self _ _
   · exact Finset.mem_insert_of_mem (Finset.mem_insert_of_mem h)
 
-/-- **The stalled zone is shallow.**  Every ascending free chain
-from a stalled node has length at most `|A ∩ [0, X)|`: all its
-picks are distinct positive basis elements below the stall
-threshold.  Stalled nodes sit at finite depth above the tree's hub
-boundary — the flood's envelopes are the finite-rank zone. -/
 theorem stalled_chain_bound {A : Set ℕ} {N₀ X : ℕ}
     [DecidablePred (· ∈ A)]
     {P : Finset ℕ} (hst : Stalled A N₀ X P)
@@ -314,13 +276,6 @@ theorem stalled_chain_bound {A : Set ℕ} {N₀ X : ℕ}
       exact hinj i j hi' hj' heq')
   simpa using hcard
 
-/-- **The flood is a stalled node.**  The positive-pool rep flood
-hands the freeness tree an explicit stalled node: its envelope is
-free with positive basis elements, and every large positive element
-completes a hub over it, killing the extension.  Together with
-`stalled_chain_bound` and `exists_strict_rank`: a counterexample's
-freeness tree contains a hereditarily-trapped, finite-depth zone,
-and the flood's guardians patrol its boundary. -/
 theorem stalled_exists_of_hfail {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -334,7 +289,7 @@ theorem stalled_exists_of_hfail {A : Set ℕ} {N₀ : ℕ}
     have := le_trans (le_max_right _ _) hXa
     omega
   obtain ⟨P, hPpos, hPfree, X, hstall⟩ :=
-    rep_flood_pool (P₀ := {a | a ∈ A ∧ 0 < a}) h0 hcov
+    rep_cofinal_supply_pool (P₀ := {a | a ∈ A ∧ 0 < a}) h0 hcov
       (fun a ha => ha.1) (fun h => by have := h.2; omega) hunb hfail
   refine ⟨X, P, ⟨fun h hh => ⟨(hPpos h hh).1, (hPpos h hh).2⟩,
     hPfree⟩, ?_⟩
@@ -346,24 +301,16 @@ theorem stalled_exists_of_hfail {A : Set ℕ} {N₀ : ℕ}
   · exact hyP h
   · exact hzP h
 
-/-- **The root-rank dichotomy.**  Either free sets have unbounded
-cardinality — every free set is reachable by a chain from the empty
-node (freeness is downward closed), so the tree has arbitrarily
-long chains and the root's ordinal rank is at least `ω` — or there
-is a uniform bound `D` and EVERY set of `D + 1` positive basis
-elements is a rep hub of some late target: universal hubbing at one
-fixed size.  (The second branch collides with the Ramsey ladder's
-hub-free subsequences arity by arity.) -/
 theorem root_rank_dichotomy (A : Set ℕ) (N₀ : ℕ) :
     (∀ n, ∃ P : Finset ℕ, FreeNode A N₀ P ∧ n ≤ P.card) ∨
     (∃ D, ∀ S : Finset ℕ, (∀ h ∈ S, h ∈ A ∧ 0 < h) →
-      S.card = D + 1 → ∃ m, N₀ ≤ m ∧ IsRepHub A m S) := by
+      S.card = D + 1 → ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m S) := by
   classical
-  by_cases hub : ∀ n, ∃ P : Finset ℕ, FreeNode A N₀ P ∧ n ≤ P.card
-  · exact Or.inl hub
+  by_cases support_transversal : ∀ n, ∃ P : Finset ℕ, FreeNode A N₀ P ∧ n ≤ P.card
+  · exact Or.inl support_transversal
   · right
-    push Not at hub
-    obtain ⟨D, hD⟩ := hub
+    push Not at support_transversal
+    obtain ⟨D, hD⟩ := support_transversal
     refine ⟨D, fun S hSpos hScard => ?_⟩
     have hnotfree : ¬RepFree A N₀ S := by
       intro hfree
@@ -398,9 +345,6 @@ theorem PairFree.mono {A : Set ℕ} {N₀ : ℕ} {P P' : Finset ℕ}
   exact ⟨x, hx, y, hy, hs, fun h => hxP (hsub h),
     fun h => hyP (hsub h)⟩
 
-/-- **Every ℵ₀-minimal basis carries a well-founded pair-freeness
-tree** — no counterexample hypothesis anywhere.  Its ordinal rank
-is a new invariant of minimal bases. -/
 theorem pairFreeStep_wf {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀)
     (hmin : ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
@@ -502,11 +446,6 @@ theorem pairFreeStep_wf {A : Set ℕ} {N₀ : ℕ}
   exact pair_free_prefixes_die_of_minimality hcov hmin e hemono heA
     hepos hallfree
 
-/-- **The order-2 rank of a minimal basis.**  Every ℵ₀-minimal
-order-2 covering set carries an ordinal-valued invariant: the rank
-of its pair-freeness tree, strictly decreasing along free
-extensions.  A structural invariant of ALL minimal bases, born from
-the Erdős 881 campaign. -/
 theorem exists_strict_pair_rank {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀)
     (hmin : ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
@@ -531,14 +470,6 @@ theorem poolFreeStep_wf {A : Set ℕ} {N₀ : ℕ}
     (P₀ : Set ℕ) : WellFounded (PoolFreeStep A N₀ P₀) :=
   Subrelation.wf (fun h => h.1) (freeStep_wf h0 hcov hfail)
 
-/-- **THE REDUCTION.**  No sequence of pools can have strictly
-descending root ranks: ordinal descent terminates.  Consequently,
-if any verified pool operation (removing an envelope, passing to
-guardians, passing to coreps, …) is ever shown to STRICTLY drop the
-pool tree's root rank along its own iterates, the counterexample is
-refuted outright and Erdős 881 (k = 2) is solved positively.  The
-entire remaining problem is compressed into finding one
-rank-dropping operation. -/
 theorem no_pool_rank_descent {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -575,10 +506,6 @@ theorem rank_le_of_subrel {α : Type*} {r r' : α → α → Prop}
           (fun c : {c // r c a} => Order.succ ((ha c.1 c.2).rank))
           (⟨b, hb⟩ : {c // r c a})
 
-/-- **Pool ranks are monotone.**  A sub-pool's tree is a subtree,
-so its root rank never exceeds the larger pool's.  The reduction's
-open question is exactly: which verified pool operation makes this
-inequality STRICT along its own iterates? -/
 theorem pool_rank_mono {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -589,12 +516,6 @@ theorem pool_rank_mono {A : Set ℕ} {N₀ : ℕ}
   rank_le_of_subrel
     (fun _ _ h => ⟨h.1, fun a ha => hsub (h.2 a ha)⟩) _ _
 
-/-- **Pool ranks are strictly positive.**  Root rank zero would
-mean no pool element extends the empty node — every large pool
-element a positive singleton hub — which the private-stream kill
-forbids.  With anchors, every unbounded 0-free pool's tree has
-rank at least one: the rank interval `(0, root]` is where the
-descent must happen. -/
 theorem pool_rank_pos {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
@@ -613,7 +534,7 @@ theorem pool_rank_pos {A : Set ℕ} {N₀ : ℕ}
   have hchild : ∃ b, b ∈ P₀ ∧ 0 < b ∧ RepFree A N₀ {b} := by
     by_contra hno
     push Not at hno
-    refine singleton_hubs_refuted h0 hcov hanchor hfail ?_
+    refine singleton_support_transversals_refuted h0 hcov hanchor hfail ?_
     intro N
     obtain ⟨b, hbP, hNb⟩ := hunb (max N 1)
     have hbpos : 0 < b := by
@@ -624,13 +545,13 @@ theorem pool_rank_pos {A : Set ℕ} {N₀ : ℕ}
     rw [RepFree] at hnotfree
     push Not at hnotfree
     obtain ⟨m, hm, hall⟩ := hnotfree
-    have hhub : IsRepHub A m {b} := by
+    have hhub : IsRepSupportTransversal A m {b} := by
       intro x hx y hy z hz hsum
       by_contra hmiss
       push Not at hmiss
       obtain ⟨hxm, hym, hzm⟩ := hmiss
       exact hzm (hall x hx y hy z hz hsum hxm hym)
-    -- the target dominates the guardian, so targets are cofinal
+    -- the target dominates the required element, so targets are cofinal
     obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
     have hbm : b ≤ m := by
       rcases hhub x hx y hy 0 h0 (by omega) with h | h | h
@@ -658,11 +579,6 @@ theorem pool_rank_pos {A : Set ℕ} {N₀ : ℕ}
     ((poolFreeStep_wf h0 hcov hfail P₀).apply ∅) hstep
   exact lt_of_le_of_lt (zero_le _) hlt
 
-/-- **Size-to-rank.**  A free pool set of cardinality `n` puts `n`
-below the pool tree's root rank: its sorted prefixes form a free
-chain of length `n` from the empty node.  Hub-free sets from the
-Ramsey ladder are rank certificates, and unbounded free
-cardinalities force root rank `≥ ω`. -/
 theorem free_set_card_le_rank {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -744,10 +660,6 @@ theorem free_set_card_le_rank {A : Set ℕ} {N₀ : ℕ}
   rw [h0pre] at this
   exact this
 
-/-- **Rank-to-size.**  Conversely, rank at least `n` above a node
-yields a free pool superset with `n` more elements: below `ω`, the
-pool tree's root rank IS the supremum of free-set cardinalities.
-The ordinal invariant is arithmetic in its finite regime. -/
 theorem rank_ge_imp_free_set {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -791,10 +703,10 @@ theorem rank_ge_imp_free_set {A : Set ℕ} {N₀ : ℕ}
       rw [Finset.card_insert_of_notMem hbP]
     exact ⟨Q, hQnode, hQpool, by omega⟩
 
-/-- Hub-freeness of a set is exactly rep-freeness: `S` is rep-free
-iff no late target has `S` as a full hub. -/
-theorem repFree_iff_no_hub {A : Set ℕ} {N₀ : ℕ} {S : Finset ℕ} :
-    RepFree A N₀ S ↔ ¬∃ m, N₀ ≤ m ∧ IsRepHub A m S := by
+/-- SupportTransversal-freeness of a set is exactly rep-freeness: `S` is rep-free
+iff no late target has `S` as a full support transversal. -/
+theorem repFree_iff_no_support_transversal {A : Set ℕ} {N₀ : ℕ} {S : Finset ℕ} :
+    RepFree A N₀ S ↔ ¬∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m S := by
   constructor
   · rintro hfree ⟨m, hm, hhub⟩
     obtain ⟨x, hx, y, hy, z, hz, hs, hxS, hyS, hzS⟩ := hfree m hm
@@ -812,12 +724,6 @@ theorem repFree_iff_no_hub {A : Set ℕ} {N₀ : ℕ} {S : Finset ℕ} :
     obtain ⟨h1, h2, h3⟩ := hmiss
     exact h3 (hall x hx y hy z hz hs h1 h2)
 
-/-- **The ladder certifies rank.**  Along any ground stream inside
-a pool, the escalation either produces a clique (arity two or
-three) or hands the pool tree a rank certificate: a hub-free triple
-is a free 3-set, so the root rank is at least 3.  Every further
-Ramsey rung raises the certificate by one; low-rank pools force
-cliques at low arity. -/
 theorem escalation_rank_certificate {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
@@ -829,13 +735,13 @@ theorem escalation_rank_certificate {A : Set ℕ} {N₀ : ℕ}
     (hbpool : ∀ j, b j ∈ P₀) :
     ∃ f : ℕ → ℕ, StrictMono f ∧
       ((∀ i j, i < j → ∃ n, N₀ ≤ n ∧
-        IsRepHub A n {b (f i), b (f j)}) ∨
+        IsRepSupportTransversal A n {b (f i), b (f j)}) ∨
       (∀ i j k, i < j → j < k → ∃ n, N₀ ≤ n ∧
-        IsRepHub A n {b (f i), b (f j), b (f k)}) ∨
+        IsRepSupportTransversal A n {b (f i), b (f j), b (f k)}) ∨
       (3 : Ordinal.{0}) ≤
         ((poolFreeStep_wf h0 hcov hfail P₀).apply ∅).rank) := by
   classical
-  obtain ⟨f, hf, hout⟩ := team_card_escalation_two' h0 hcov hanchor
+  obtain ⟨f, hf, hout⟩ := pair_transversal_card_escalation_two' h0 hcov hanchor
     hfail b hmono hbA hbpos
   rcases hout with hcl | ⟨-, hcl⟩ | ⟨-, htf, -⟩
   · exact ⟨f, hf, Or.inl hcl⟩
@@ -845,7 +751,7 @@ theorem escalation_rank_certificate {A : Set ℕ} {N₀ : ℕ}
     have h01 : b (f 0) < b (f 1) := hmono (hf (by omega))
     have h12 : b (f 1) < b (f 2) := hmono (hf (by omega))
     have hSfree : RepFree A N₀ S :=
-      repFree_iff_no_hub.2 (htf 0 1 2 (by omega) (by omega))
+      repFree_iff_no_support_transversal.2 (htf 0 1 2 (by omega) (by omega))
     have hSnode : FreeNode A N₀ S := by
       refine ⟨?_, hSfree⟩
       intro h hh
@@ -882,12 +788,6 @@ theorem escalation_rank_certificate {A : Set ℕ} {N₀ : ℕ}
     rw [hScard] at this
     exact_mod_cast this
 
-/-- **The clique descent.**  Along any stream whose `(d+1)`-subsets
-are all non-free, Ramsey at arity `d` either yields a subsequence
-with ALL `d`-subsets free — a perfect clique world at level `d` —
-or pushes the freeness level down and recurses; the level-1 floor
-is barred by the private-stream kill.  Some perfect level
-`1 ≤ d' ≤ d` always exists. -/
 theorem clique_descent {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
@@ -955,11 +855,11 @@ theorem clique_descent {A : Set ℕ} {N₀ : ℕ}
         rw [h1] at h2
         exact Bool.false_ne_true h2
       rcases Nat.lt_or_ge r 1 with hr0 | hr1
-      · -- r = 0: every refined singleton is non-free: stream kill
+      · -- r = 0: every refined singleton is non-free: stream contradiction
         exfalso
         have hr0' : r = 0 := by omega
         subst hr0'
-        refine singleton_hubs_refuted h0 hcov hanchor hfail ?_
+        refine singleton_support_transversals_refuted h0 hcov hanchor hfail ?_
         intro N
         set v := e (f₁ N) with hv
         have hvpos : 0 < v := hepos _
@@ -967,7 +867,7 @@ theorem clique_descent {A : Set ℕ} {N₀ : ℕ}
           refine hallnonfree {v} ?_ (Finset.card_singleton v)
           intro h hh
           exact ⟨N, by rw [Finset.mem_singleton.1 hh]⟩
-        rw [repFree_iff_no_hub, not_not] at hnf
+        rw [repFree_iff_no_support_transversal, not_not] at hnf
         obtain ⟨m, hm, hhub⟩ := hnf
         obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
         have hvm : v ≤ m := by
@@ -997,14 +897,6 @@ theorem clique_descent {A : Set ℕ} {N₀ : ℕ}
         · intro S hSmem hScard
           exact hnonfree' S hSmem hScard
 
-/-- **LOW RANK FORCES A PERFECT CLIQUE WORLD.**  If a stream's pool
-tree has finite root rank, some subsequence and level `d ≥ 1`
-realize the perfect configuration: every `d`-subset is free and
-every `(d+1)`-subset is a full hub of some late target.  With the
-reduction (`no_pool_rank_descent`) this completes the block's
-trichotomy: a counterexample's pools are either infinite-rank or
-perfect clique worlds — and the descent to the perfect world is
-itself the rank analysis the program called for. -/
 theorem rank_lt_omega_perfect_clique {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
@@ -1018,7 +910,7 @@ theorem rank_lt_omega_perfect_clique {A : Set ℕ} {N₀ : ℕ}
       (∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, b (f i) = h) → S.card = d →
         RepFree A N₀ S) ∧
       (∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, b (f i) = h) →
-        S.card = d + 1 → ∃ m, N₀ ≤ m ∧ IsRepHub A m S) := by
+        S.card = d + 1 → ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m S) := by
   classical
   obtain ⟨D, hD⟩ := Ordinal.lt_omega0.1 hrank
   have hDpos : 1 ≤ D := by
@@ -1055,15 +947,10 @@ theorem rank_lt_omega_perfect_clique {A : Set ℕ} {N₀ : ℕ}
   refine ⟨d, f, hd1, hf, hfree, ?_⟩
   intro S hSmem hScard
   have h1 := hnf S hSmem hScard
-  rw [repFree_iff_no_hub, not_not] at h1
+  rw [repFree_iff_no_support_transversal, not_not] at h1
   exact h1
 
-/-- In a perfect clique world every stream-subset of size at most
-`d` is free (extend it with high stream values to size exactly
-`d`), so minimal hubs inside the world have FULL cardinality
-`d + 1`: the hub hypergraph is exactly `(d+1)`-uniform — complete
-at `d + 1`, empty below. -/
-theorem perfect_world_small_sets_free {A : Set ℕ} {N₀ : ℕ}
+theorem perfect_model_small_sets_free {A : Set ℕ} {N₀ : ℕ}
     {e : ℕ → ℕ} {d : ℕ} (hemono : StrictMono e)
     (hfree : ∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e i = h) →
       S.card = d → RepFree A N₀ S)
@@ -1105,14 +992,7 @@ theorem perfect_world_small_sets_free {A : Set ℕ} {N₀ : ℕ}
   exact RepFree.mono Finset.subset_union_left
     (hfree (H ∪ T) hUmem hUcard)
 
-/-- **Perfect worlds have root rank exactly `d`.**  The free
-`d`-subsets certify rank `≥ d`; a free `(d+1)`-set would contradict
-completeness of the hub hypergraph, capping the rank at `d`.  The
-first exact rank computation in the framework — and since every
-infinite subsequence of a perfect world is a perfect world at the
-same level, perfect worlds are rank-stable: no intra-world pool
-operation can drop the rank.  The descent must engage the outside. -/
-theorem perfect_world_rank {A : Set ℕ} {N₀ : ℕ}
+theorem perfect_model_rank {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
@@ -1180,24 +1060,20 @@ theorem perfect_world_rank {A : Set ℕ} {N₀ : ℕ}
       rw [hScard] at this
       exact this
 
-/-- **Every member of a perfect-world hub is below its target.**
-Removing any one member leaves a free `d`-set, whose avoiding
-representation must hit the removed member alone: each member
-personally participates, so the target dominates them all. -/
-theorem perfect_world_target_dominates_all {A : Set ℕ} {N₀ : ℕ}
+theorem perfect_model_target_dominates_all {A : Set ℕ} {N₀ : ℕ}
     {e : ℕ → ℕ} {d : ℕ} (hemono : StrictMono e)
     (hfree : ∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e i = h) → S.card = d →
       RepFree A N₀ S)
     {S : Finset ℕ} (hSmem : ∀ h ∈ S, ∃ i, e i = h)
     (hScard : S.card = d + 1)
-    {m : ℕ} (hm : N₀ ≤ m) (hhub : IsRepHub A m S) :
+    {m : ℕ} (hm : N₀ ≤ m) (hhub : IsRepSupportTransversal A m S) :
     ∀ s ∈ S, s ≤ m := by
   intro s hs
   have herase : (S.erase s).card ≤ d := by
     have := Finset.card_erase_of_mem hs
     omega
   have heraseF : RepFree A N₀ (S.erase s) :=
-    perfect_world_small_sets_free hemono hfree
+    perfect_model_small_sets_free hemono hfree
       (fun h hh => hSmem h (Finset.mem_of_mem_erase hh)) herase
   obtain ⟨x, hx, y, hy, z, hz, hsum, hxE, hyE, hzE⟩ := heraseF m hm
   rcases hhub x hx y hy z hz hsum with h | h | h
@@ -1214,15 +1090,12 @@ theorem perfect_world_target_dominates_all {A : Set ℕ} {N₀ : ℕ}
       exact hzE (Finset.mem_erase.2 ⟨hne, h⟩)
     omega
 
-/-- **Perfect-world targets are uniformly Sidon.**  Hubs are 0-free
-(their members are positive stream values), so the pair shadow
-bounds every hub target's order-2 count by `2(d + 2)`. -/
-theorem perfect_world_sidon_targets {A : Set ℕ} {N₀ : ℕ}
+theorem perfect_model_sidon_targets {A : Set ℕ} {N₀ : ℕ}
     [DecidablePred (· ∈ A)]
     (h0 : 0 ∈ A) {e : ℕ → ℕ} {d : ℕ} (hepos : ∀ j, 0 < e j)
     {S : Finset ℕ} (hSmem : ∀ h ∈ S, ∃ i, e i = h)
     (hScard : S.card = d + 1)
-    {m : ℕ} (hhub : IsRepHub A m S) :
+    {m : ℕ} (hhub : IsRepSupportTransversal A m S) :
     ((Finset.range (m + 1)).filter
       (fun x => x ∈ A ∧ (m - x) ∈ A)).card ≤ 2 * (d + 1) := by
   have h0S : 0 ∉ S := by
@@ -1230,16 +1103,10 @@ theorem perfect_world_sidon_targets {A : Set ℕ} {N₀ : ℕ}
     obtain ⟨i, hi⟩ := hSmem 0 h
     have := hepos i
     omega
-  have := pair_count_of_hub h0 hhub h0S
+  have := pair_count_of_support_transversal h0 hhub h0S
   omega
 
-/-- **Deletions inside a perfect world are answered at full
-uniformity.**  Any infinite deletion drawn from a level-`d` perfect
-world has cofinal failing targets whose minimal hubs — made of
-deleted elements — have cardinality at least `d + 1`: subsets of
-size `≤ d` are free and cannot hub.  The crystal's team supply
-runs exactly at its uniformity level. -/
-theorem perfect_world_deletion_hubs_card {A B : Set ℕ} {N₀ : ℕ}
+theorem perfect_model_deletion_support_transversals_card {A B : Set ℕ} {N₀ : ℕ}
     [DecidablePred (· ∈ B)]
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
@@ -1251,7 +1118,7 @@ theorem perfect_world_deletion_hubs_card {A B : Set ℕ} {N₀ : ℕ}
       RepFree A N₀ S)
     (hBsub : B ⊆ Set.range e) (hBinf : B.Infinite) :
     ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
-      IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      IsRepSupportTransversal A n H ∧ (∀ h ∈ H, ¬IsRepSupportTransversal A n (H \ {h})) ∧
       d + 1 ≤ H.card ∧ ∀ h ∈ H, h ∈ B := by
   classical
   have hBA : B ⊆ A := fun x hx => by
@@ -1263,7 +1130,7 @@ theorem perfect_world_deletion_hubs_card {A B : Set ℕ} {N₀ : ℕ}
     have h1 : e j = 0 := hj
     have := hepos j
     omega
-  have hteams := guardian_team_hubs_of_deletion h0 hcov hanchor
+  have hteams := minimalSupportTransversals_from_infiniteDeletion h0 hcov hanchor
     hfail hBA hBinf h0B
   intro N
   obtain ⟨n, hn, H, hhub, hmin, hcard2, hHB⟩ := hteams (max N N₀)
@@ -1275,7 +1142,7 @@ theorem perfect_world_deletion_hubs_card {A B : Set ℕ} {N₀ : ℕ}
     obtain ⟨j, hj⟩ := hBsub (hHB h hh)
     exact ⟨j, hj⟩
   have hHfree : RepFree A N₀ H :=
-    perfect_world_small_sets_free hemono hfree hHmem (by omega)
+    perfect_model_small_sets_free hemono hfree hHmem (by omega)
   obtain ⟨x, hx, y, hy, z, hz, hsum, hxH, hyH, hzH⟩ :=
     hHfree n (le_trans (le_max_right _ _) hn)
   rcases hhub x hx y hy z hz hsum with h | h | h
@@ -1310,10 +1177,6 @@ theorem freeStep_of_pairFreeStep {A : Set ℕ} {N₀ : ℕ}
     ⟨hQpos, repFree_of_pairFree h0 h0Q hQfree⟩,
     b, hbA, hbpos, hbmax, hQeq⟩
 
-/-- **Cross-order rank comparison.**  In a counterexample the
-order-2 rank (an invariant of the minimal basis alone) never
-exceeds the order-3 rank: the pair tree is a subtree of the rep
-tree.  Two ordinal invariants, one inequality. -/
 theorem pair_rank_le_rep_rank {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hmin : ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
@@ -1325,10 +1188,10 @@ theorem pair_rank_le_rep_rank {A : Set ℕ} {N₀ : ℕ}
     ((freeStep_wf h0 hcov hfail).apply P).rank :=
   rank_le_of_subrel (fun _ _ h => freeStep_of_pairFreeStep h0 h) _ _
 
-/-- Pair-hub-freeness of a set is exactly pair-freeness. -/
-theorem pairFree_iff_no_pairHub {A : Set ℕ} {N₀ : ℕ}
+/-- Pair-support transversal-freeness of a set is exactly pair-freeness. -/
+theorem pairFree_iff_no_pairSupportTransversal {A : Set ℕ} {N₀ : ℕ}
     {S : Finset ℕ} :
-    PairFree A N₀ S ↔ ¬∃ m, N₀ ≤ m ∧ IsPairHub A m S := by
+    PairFree A N₀ S ↔ ¬∃ m, N₀ ≤ m ∧ IsPairSupportTransversal A m S := by
   constructor
   · rintro hfree ⟨m, hm, hhub⟩
     obtain ⟨x, hx, y, hy, hs, hxS, hyS⟩ := hfree m hm
@@ -1345,13 +1208,6 @@ theorem pairFree_iff_no_pairHub {A : Set ℕ} {N₀ : ℕ}
     obtain ⟨h1, h2⟩ := hmiss
     exact h2 (hall x hx y hy hs h1)
 
-/-- **The pair clique descent, for every minimal basis.**  Along
-any stream whose `(d+1)`-subsets are all non-pair-free, Ramsey at
-each arity yields one of: a subsequence every element of which
-2-guards a target of its own (the order-2 floor is a legal world,
-not a contradiction), or a PERFECT PAIR-CRYSTAL — all `d'`-subsets
-pair-free, all `(d'+1)`-subsets pair-hubs — at some level
-`1 ≤ d' ≤ d`. -/
 theorem pair_clique_descent {A : Set ℕ} {N₀ : ℕ} :
     ∀ (d : ℕ) (e : ℕ → ℕ), 1 ≤ d → StrictMono e →
     (∀ S : Finset ℕ, (∀ h ∈ S, ∃ i, e i = h) → S.card = d + 1 →
@@ -1381,7 +1237,7 @@ theorem pair_clique_descent {A : Set ℕ} {N₀ : ℕ} :
       · simp [hc, h]
     obtain ⟨f₁, hf₁, bt, hhom⟩ := infinite_ramsey_tuples r c
     rcases Bool.eq_false_or_eq_true bt with hbt | hbt
-    · -- perfect pair-crystal at level r + 1
+    · -- perfect pair-uniform_structure at level r + 1
       subst hbt
       refine ⟨f₁, hf₁, Or.inr ⟨r + 1, by omega, le_refl _, ?_, ?_⟩⟩
       · intro S hSmem hScard
@@ -1415,7 +1271,7 @@ theorem pair_clique_descent {A : Set ℕ} {N₀ : ℕ} :
         rw [h1] at h2
         exact Bool.false_ne_true h2
       rcases Nat.lt_or_ge r 1 with hr0 | hr1
-      · -- r = 0: every refined singleton 2-guards — the legal floor
+      · -- r = 0: every refined singleton 2-required elements — the legal floor
         have hr0' : r = 0 := by omega
         subst hr0'
         refine ⟨f₁, hf₁, Or.inl ?_⟩
@@ -1434,15 +1290,6 @@ theorem pair_clique_descent {A : Set ℕ} {N₀ : ℕ} :
         · exact ⟨f₁ ∘ f₂, hf₁.comp hf₂, Or.inr
             ⟨d', hd'1, by omega, hfree', hnf'⟩⟩
 
-/-- **The stream classification, hypothesis-free.**  Any strictly
-monotone stream, over any set whatsoever, refines into one of three
-order-2 worlds: WIDE FREEDOM (pair-free subsets of every size),
-TOTAL GUARDIANSHIP (an infinite subsequence each of whose elements
-pair-guards a target of its own), or a PERFECT PAIR-CRYSTAL (a
-level `d ≥ 1` with all `d`-subsets pair-free and all
-`(d+1)`-subsets pair-hubs).  Pure combinatorics of the pair-freeness
-lattice; every minimal basis and every counterexample stream falls
-under it. -/
 theorem stream_pair_classification (A : Set ℕ) (N₀ : ℕ)
     (e : ℕ → ℕ) (hemono : StrictMono e) :
     (∀ n, ∃ S : Finset ℕ, (∀ h ∈ S, ∃ i, e i = h) ∧ S.card = n ∧
@@ -1490,12 +1337,6 @@ theorem stream_pair_classification (A : Set ℕ) (N₀ : ℕ)
       · exact ⟨f, hf, Or.inl hguard⟩
       · exact ⟨f, hf, Or.inr ⟨d, hd1, hfree', hnf'⟩⟩
 
-/-- **The order-3 stream classification, hypothesis-free.**  Any
-monotone stream over any set refines into wide rep-freedom, total
-private guardianship (each element a singleton rep-hub owner), or a
-perfect rep-crystal.  Under the counterexample interfaces the
-middle branch dies by the stream kill, recovering the conditional
-descent. -/
 theorem stream_rep_classification (A : Set ℕ) (N₀ : ℕ)
     (e : ℕ → ℕ) (hemono : StrictMono e) :
     (∀ n, ∃ S : Finset ℕ, (∀ h ∈ S, ∃ i, e i = h) ∧ S.card = n ∧
@@ -1619,8 +1460,6 @@ theorem stream_rep_classification (A : Set ℕ) (N₀ : ℕ)
             · exact ⟨f₁ ∘ f₂, hf₁.comp hf₂, Or.inr
                 ⟨d', hd'1, hfree', hnf'⟩⟩
 
-/-- Rank-to-size with the superset recorded: rank `n` above a node
-yields a free pool SUPERSET with `n` more elements. -/
 theorem rank_ge_imp_free_superset {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -1669,12 +1508,6 @@ theorem rank_ge_imp_free_superset {A : Set ℕ} {N₀ : ℕ}
     exact ⟨Q, hQnode, hQpool, Finset.Subset.trans hPC hCQ,
       by omega⟩
 
-/-- **Stalled nodes have finite rank, quantitatively.**  Any free
-superset of a stalled node lives inside the stall window: a fresh
-element `≥ X` would make `P ∪ {q}` free by downward closure,
-contradicting the stall.  Hence the node's rank in ANY pool tree is
-at most `|A ∩ [0, X)|`.  The flood's envelopes are finitely ranked
-in every pool at once. -/
 theorem stalled_pool_rank_bound {A : Set ℕ} {N₀ X : ℕ}
     [DecidablePred (· ∈ A)]
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -1723,13 +1556,6 @@ theorem stalled_pool_rank_bound {A : Set ℕ} {N₀ X : ℕ}
     rw [Finset.card_sdiff, Finset.inter_eq_left.mpr hPQ]
   omega
 
-/-- **The crossing edge: narrowing elements exist.**  In a pool
-whose tree has infinite root rank but which contains a stalled node
-(every pool does, by the flood), the path from the root to the
-stalled node crosses from infinite to finite rank at one step:
-some free node `R` of infinite rank has an extension `insert b R`
-of finite rank.  One element annihilates wideness.  The
-infinite-rank room's interior structure, first theorem. -/
 theorem crossing_edge_exists {A : Set ℕ} {N₀ X : ℕ}
     [DecidablePred (· ∈ A)]
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -1861,12 +1687,6 @@ theorem crossing_edge_exists {A : Set ℕ} {N₀ X : ℕ}
   · rw [hkey]
     exact hfin'
 
-/-- **Cofinitely many singletons are free.**  Beyond one threshold,
-no positive basis element is a private guardian: an infinite supply
-of non-free singletons would give cofinal positive singleton hubs
-(hub targets dominate their guardians), which the private-stream
-kill forbids.  Every element of the enemy's tail opens the freeness
-tree. -/
 theorem cofinite_free_singletons {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
@@ -1876,10 +1696,10 @@ theorem cofinite_free_singletons {A : Set ℕ} {N₀ : ℕ}
   classical
   by_contra hno
   push Not at hno
-  refine singleton_hubs_refuted h0 hcov hanchor hfail ?_
+  refine singleton_support_transversals_refuted h0 hcov hanchor hfail ?_
   intro N
   obtain ⟨b, hbA, hNb, hbpos, hnotfree⟩ := hno N
-  rw [repFree_iff_no_hub, not_not] at hnotfree
+  rw [repFree_iff_no_support_transversal, not_not] at hnotfree
   obtain ⟨m, hm, hhub⟩ := hnotfree
   obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
   have hbm : b ≤ m := by
@@ -1892,13 +1712,6 @@ theorem cofinite_free_singletons {A : Set ℕ} {N₀ : ℕ}
       omega
   exact ⟨m, by omega, b, hbpos, hhub⟩
 
-/-- **The ω-room dichotomy.**  An infinite-rank pool either has an
-infinite-rank CHILD (a wide element: one singleton already carries
-infinite freedom above it) or its root rank is exactly `ω` — the
-singleton ranks are finite but unbounded, and the elements are
-graded by a finite rank function.  Infinite rank never hides: it
-is witnessed one element down, or the pool sits exactly at the
-first limit. -/
 theorem root_omega_dichotomy {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -1924,7 +1737,7 @@ theorem root_omega_dichotomy {A : Set ℕ} {N₀ : ℕ}
     rintro ⟨C, hC⟩
     have h1 : (hwf.apply C).rank < Ordinal.omega0 := hwide C hC
     exact Order.succ_le_of_lt h1
-  
+
 /-- The node-level ω-dichotomy: same as at the root. -/
 theorem node_omega_dichotomy {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -1951,13 +1764,6 @@ theorem node_omega_dichotomy {A : Set ℕ} {N₀ : ℕ}
     rintro ⟨C, hC⟩
     exact Order.succ_le_of_lt (hwide C hC)
 
-/-- **THE ω-NODE EXISTS.**  Every infinite-rank pool tree contains
-a node of rank EXACTLY `ω`: descend along wide children (each step
-strictly decreases the rank, so the descent halts), and where it
-halts the node dichotomy pins the rank at the first limit.  The
-ω-node is the boundary where the infinite-rank room meets the
-finite-rank (crystal) regime: all its extensions have finite,
-unbounded freedom. -/
 theorem omega_node_exists {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -1990,12 +1796,6 @@ theorem omega_node_exists {A : Set ℕ} {N₀ : ℕ}
     exact Ordinal.lt_wf.not_lt_min S hmemC hlt
   · exact ⟨R₀, heq⟩
 
-/-- **The ω-node's grade filtration.**  At a node of rank exactly
-`ω`, extensions of every finite rank exist beyond every bound: if
-large extensions were capped at rank `k`, the finitely many small
-ones would cap the supremum below `ω`.  The grades
-`ρ(b) = rank(R ∪ {b})` are finite, unbounded, with infinite nested
-fibers of empty intersection — the boundary node is graded. -/
 theorem omega_node_children_unbounded {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -2066,11 +1866,6 @@ theorem omega_node_children_unbounded {A : Set ℕ} {N₀ : ℕ}
     push Not
     exact Ordinal.natCast_lt_omega0 K)
 
-/-- **The diagonal through the grades.**  From a rank-`ω` node,
-extract a strictly monotone sequence of admissible extensions whose
-grades climb without bound: `rank(R ∪ {b j}) ≥ j`.  The first
-deletion candidate whose members carry unbounded relative freedom —
-the staged object for the boundary attack. -/
 theorem omega_node_diagonal {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -2117,16 +1912,11 @@ theorem omega_node_diagonal {A : Set ℕ} {N₀ : ℕ}
 
 /-- An infinite set is hereditarily free when all its finite
 subsets are rep-free: exactly a surviving deletion, since its
-prefixes never trap any target. -/
+prefixes never obstruction any target. -/
 def HereditarilyFree (A : Set ℕ) (N₀ : ℕ) (B : Set ℕ) : Prop :=
   B.Infinite ∧ (∀ b ∈ B, b ∈ A ∧ 0 < b) ∧
   ∀ P : Finset ℕ, (∀ h ∈ P, h ∈ B) → RepFree A N₀ P
 
-/-- **THE CHARACTERIZATION.**  For a covering set with `0`, the
-counterexample condition is EQUIVALENT to the absence of an
-infinite hereditarily rep-free subset.  Erdős 881 (k = 2) is
-exactly: does every ℵ₀-minimal exact order-2 basis contain an
-infinite hereditarily rep-free set? -/
 theorem hfail_iff_no_hereditarily_free {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀) :
     (∀ B ⊆ A, B.Infinite →
@@ -2180,13 +1970,13 @@ theorem hfail_iff_no_hereditarily_free {A : Set ℕ} {N₀ : ℕ}
     rw [RepFree] at hQnotfree
     push Not at hQnotfree
     obtain ⟨n, hn, halln⟩ := hQnotfree
-    have hhub : IsRepHub A n Q := by
+    have hhub : IsRepSupportTransversal A n Q := by
       intro x hx y hy z hz hsum
       by_contra hmiss
       push Not at hmiss
       obtain ⟨h1, h2, h3⟩ := hmiss
       exact h3 (halln x hx y hy z hz hsum h1 h2)
-    -- the hub is high, so the dead target is late
+
     obtain ⟨x, hx, y, hy, hxy⟩ := hcov n hn
     have hn₁ : N₁ ≤ n := by
       rcases hhub x hx y hy 0 h0 (by omega) with h | h | h
@@ -2207,18 +1997,12 @@ theorem hfail_iff_no_hereditarily_free {A : Set ℕ} {N₀ : ℕ}
     · exact (hv 1).2 ((hQB' _ h).1)
     · exact (hv 2).2 ((hQB' _ h).1)
 
-/-- **The tree and the witness are one.**  Purely combinatorially
-(no covering, no failure hypothesis): the freeness tree is
-well-founded exactly when no infinite hereditarily free set
-exists.  A descending chain's union is hereditarily free
-(downward closure); a hereditarily free set's sorted prefixes are
-a descending chain. -/
 theorem freeStep_wf_iff_no_hereditarilyFree {A : Set ℕ} {N₀ : ℕ} :
     WellFounded (FreeStep A N₀) ↔
     ¬∃ B : Set ℕ, HereditarilyFree A N₀ B := by
   classical
   constructor
-  · -- WF kills hereditarily free sets: their prefixes descend
+  · -- WF contradicts hereditarily free sets: their prefixes descend
     rintro hwf ⟨B, hBinf, hBpos, hBfree⟩
     rw [wellFounded_iff_isEmpty_descending_chain] at hwf
     -- enumerate B increasingly
@@ -2310,7 +2094,7 @@ theorem freeStep_wf_iff_no_hereditarilyFree {A : Set ℕ} {N₀ : ℕ} :
     · rintro x ⟨n, hxn⟩
       exact (hf n).1.1 x hxn
     · intro P hP
-      -- P is finite, so it sits inside one stage
+
       have hstage : ∀ h ∈ P, ∃ n, h ∈ f n := hP
       choose st hst using hstage
       set N := P.sup (fun h => if hh : h ∈ P then st h hh else 0)
@@ -2324,10 +2108,6 @@ theorem freeStep_wf_iff_no_hereditarilyFree {A : Set ℕ} {N₀ : ℕ} :
         exact hchain' (st h hh) N h1 (hst h hh)
       exact RepFree.mono hPN (hf N).1.2
 
-/-- **The triangle.**  Counterexample-hood IS tree
-well-foundedness: with covering and `0 ∈ A`, order-3 failure under
-every infinite deletion, absence of hereditarily free sets, and
-well-foundedness of the freeness tree are one property. -/
 theorem hfail_iff_freeStep_wf {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀) :
     (∀ B ⊆ A, B.Infinite →
@@ -2342,9 +2122,6 @@ def HereditarilyPairFree (A : Set ℕ) (N₀ : ℕ) (B : Set ℕ) : Prop :=
   B.Infinite ∧ (∀ b ∈ B, b ∈ A ∧ 0 < b) ∧
   ∀ P : Finset ℕ, (∀ h ∈ P, h ∈ B) → PairFree A N₀ P
 
-/-- **The pair characterization.**  Elementwise ℵ₀-minimality is
-equivalent to the absence of an infinite hereditarily pair-free
-subset. -/
 theorem hmin_iff_no_hereditarilyPairFree {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀) :
     (∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
@@ -2391,7 +2168,7 @@ theorem hmin_iff_no_hereditarilyPairFree {A : Set ℕ} {N₀ : ℕ}
     rw [PairFree] at hQnotfree
     push Not at hQnotfree
     obtain ⟨n, hn, halln⟩ := hQnotfree
-    have hhub : IsPairHub A n Q := by
+    have hhub : IsPairSupportTransversal A n Q := by
       intro x hx y hy hsum
       by_contra hmiss
       push Not at hmiss
@@ -2409,7 +2186,6 @@ theorem hmin_iff_no_hereditarilyPairFree {A : Set ℕ} {N₀ : ℕ}
     · exact hx'B ((hQB' _ h).1)
     · exact hy'B ((hQB' _ h).1)
 
-/-- **The pair tree and its witness are one** (combinatorial). -/
 theorem pairFreeStep_wf_iff_no_hereditarilyPairFree
     {A : Set ℕ} {N₀ : ℕ} :
     WellFounded (PairFreeStep A N₀) ↔
@@ -2512,10 +2288,6 @@ theorem pairFreeStep_wf_iff_no_hereditarilyPairFree
         exact hchain' (st h hh) N h1 (hst h hh)
       exact PairFree.mono hPN (hf N).1.2
 
-/-- **THE TWO-TREE FORMULATION.**  A counterexample to Erdős 881
-(k = 2) is exactly a covering set with `0` whose pair tree AND rep
-tree are BOTH well-founded.  The problem: can two nested freeness
-trees over one basis both be well-founded? -/
 theorem counterexample_iff_both_trees_wf {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀) :
     ((∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
@@ -2541,13 +2313,6 @@ theorem pairFreeStep_wf_of_freeStep_wf {A : Set ℕ} {N₀ : ℕ}
     WellFounded (PairFreeStep A N₀) :=
   Subrelation.wf (fun {_ _} h => freeStep_of_pairFreeStep h0 h) hwf
 
-/-- **THE COLLAPSE: one tree decides everything.**  For a covering
-set with `0`, the full counterexample condition — minimality AND
-universal order-3 failure — is equivalent to well-foundedness of
-the rep tree ALONE: the pair tree is a subtree, so minimality
-comes free.  Erdős 881 (k = 2), final form: IS THERE a covering
-set with `0` whose rep-freeness tree is well-founded?  (If no such
-set exists, the answer to the problem is yes.) -/
 theorem counterexample_iff_rep_tree_wf {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀) :
     ((∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
@@ -2562,13 +2327,6 @@ theorem counterexample_iff_rep_tree_wf {A : Set ℕ} {N₀ : ℕ}
   · intro hwf₃
     exact ⟨pairFreeStep_wf_of_freeStep_wf h0 hwf₃, hwf₃⟩
 
-/-- **THE BRANCH TEMPLATE: Sidon covering sets carry explicit
-infinite branches.**  Under a global pair-count bound `C`, a
-geometrically spaced subset is hereditarily rep-free: at every
-target the candidate third parts outnumber the window fibers (each
-of size `≤ C + N₀`), so a stream-avoiding triple survives.  The
-constructive companion of `r2_unbounded_of_hfail`, and the counting
-shape every general branch construction must beat. -/
 theorem sidon_has_branch {A : Set ℕ} {N₀ C : ℕ}
     [DecidablePred (· ∈ A)]
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -2622,7 +2380,7 @@ theorem sidon_has_branch {A : Set ℕ} {N₀ C : ℕ}
       show 2 * N₀ ≤ _ * _ + 2 * N₀
       omega
     omega
-  -- THE CORE: at every target, a triple avoiding the whole window
+
   have hcore : ∀ m, N₀ ≤ m → ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
       x + y + z = m ∧
       ∀ j, b j ≤ m → x ≠ b j ∧ y ≠ b j ∧ z ≠ b j := by
@@ -2797,7 +2555,7 @@ theorem sidon_has_branch {A : Set ℕ} {N₀ C : ℕ}
       refine ⟨x, hx, y, hy, 0, h0, by omega, ?_⟩
       intro j hj
       exact absurd ⟨j, hj⟩ hwin
-  -- WRAPPER: hereditary freeness from window avoidance
+
   refine ⟨Set.range b, Set.infinite_range_of_injective
     hbmono.injective, ?_, ?_⟩
   · rintro w ⟨j, rfl⟩
@@ -2830,10 +2588,6 @@ theorem minimality_tuple_of_elementwise {A : Set ℕ}
     simpa [Fin.sum_univ_two] using this
   exact ⟨v 0, (hv 0).1, v 1, (hv 1).1, (hv 0).2, (hv 1).2, hsum2⟩
 
-/-- **Order-2 survival implies order-3 survival**: translate every
-late target through one fixed remaining element.  Hence universal
-order-3 failure implies minimality outright — in the original
-tuple vocabulary, with no zero hypothesis. -/
 theorem basis3_of_basis2 {S : Set ℕ}
     (hS : IsExactTupleAsymptoticBasis S 2) (hne : S.Nonempty) :
     IsExactTupleAsymptoticBasis S 3 := by
@@ -2853,9 +2607,6 @@ theorem basis3_of_basis2 {S : Set ℕ}
   · simp [Fin.sum_univ_three]
     omega
 
-/-- **The collapse in the original vocabulary**: universal order-3
-failure implies ℵ₀-minimality (tuple form), because an order-2
-surviving deletion would survive at order 3 by translation. -/
 theorem hmin_tuple_of_hfail {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -2892,12 +2643,6 @@ theorem HereditarilyFree.tail {A B : Set ℕ} {N₀ : ℕ}
     HereditarilyFree A N₀ (B \ {b | b ≤ X}) :=
   hB.diff_finite (Set.finite_le_nat X)
 
-/-- **Branches are uniform.**  Hereditary freeness (all finite
-subsets rep-free) is equivalent to uniform avoidance: every late
-target has a representation avoiding the WHOLE set (parts below
-the target only ever meet the finite shadow).  Both verified
-branch mechanisms — Sidon counting and Cantor carry repair —
-produce exactly this object. -/
 theorem hereditarilyFree_iff_uniform {A : Set ℕ} {N₀ : ℕ}
     {B : Set ℕ} (hBinf : B.Infinite)
     (hBpos : ∀ b ∈ B, b ∈ A ∧ 0 < b) :
@@ -2924,11 +2669,6 @@ theorem hereditarilyFree_iff_uniform {A : Set ℕ} {N₀ : ℕ}
     exact ⟨x, hx, y, hy, z, hz, hsum, fun h => hxB (hP x h),
       fun h => hyB (hP y h), fun h => hzB (hP z h)⟩
 
-/-- **The Sidon door, full circle.**  A globally pair-bounded
-covering set is never a counterexample: the branch template
-supplies a hereditarily free set, and the characterization
-converts it into a surviving deletion.  The constructive
-counterpart of `r2_unbounded_of_hfail`, composed end to end. -/
 theorem sidon_not_counterexample {A : Set ℕ} {N₀ C : ℕ}
     [DecidablePred (· ∈ A)]
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -2968,12 +2708,6 @@ theorem hereditarilyPairFree_iff_uniform {A : Set ℕ} {N₀ : ℕ}
     exact ⟨x, hx, y, hy, hsum, fun h => hxB (hP x h),
       fun h => hyB (hP y h)⟩
 
-/-- **Maximal free nodes exist above every node.**  Well-founded
-induction: extend until no step remains.  Every leaf is totally
-stalled — every larger positive basis element completes a hub over
-it at once (threshold `max P + 1`, sharper than the flood's
-abstract threshold).  Under `hfail` the tree is a forest of stalls
-all the way up. -/
 theorem exists_maximal_free_node {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -2998,16 +2732,10 @@ theorem exists_maximal_free_node {A : Set ℕ} {N₀ : ℕ}
         _ = R := hReq.symm
         _ ⊆ Q := hRQ
 
-
-/-! ## Night block 2026-07-25: the absolute floods -/
-
 /-- The strict-superset relation on free nodes. -/
 def FreeSup (A : Set ℕ) (N₀ : ℕ) (Q P : Finset ℕ) : Prop :=
   FreeNode A N₀ P ∧ FreeNode A N₀ Q ∧ P ⊂ Q
 
-/-- **No infinite ascending inclusion-chains of free sets**: their
-union would be an infinite hereditarily free set.  Stronger than
-tree well-foundedness — insertions anywhere, not just at the top. -/
 theorem freeSup_wf {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -3067,11 +2795,6 @@ theorem freeSup_wf {A : Set ℕ} {N₀ : ℕ}
       exact hchain' (st h hh) N h1 (hst h hh)
     exact RepFree.mono hPN (hf N).1.2
 
-/-- **THE ABSOLUTE FLOOD.**  Every free node extends to an
-inclusion-maximal free set — a fixed finite free envelope over
-which EVERY positive basis element outside it, small or large, is
-a guardian: adding any one of them creates a hub.  The strongest
-stall form: one canonical envelope, total guardianship. -/
 theorem exists_absolute_leaf {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -3079,7 +2802,7 @@ theorem exists_absolute_leaf {A : Set ℕ} {N₀ : ℕ}
     (P : Finset ℕ) (hP : FreeNode A N₀ P) :
     ∃ Q : Finset ℕ, FreeNode A N₀ Q ∧ P ⊆ Q ∧
       ∀ b ∈ A, 0 < b → b ∉ Q →
-        ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b Q) := by
+        ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m (insert b Q) := by
   classical
   have hwf := freeSup_wf h0 hcov hfail
   revert hP
@@ -3180,11 +2903,6 @@ theorem pairSup_wf {A : Set ℕ} {N₀ : ℕ}
       exact hchain' (st h hh) N h1 (hst h hh)
     exact PairFree.mono hPN (hf N).1.2
 
-/-- **The order-2 absolute flood** — a structure theorem for EVERY
-elementwise-minimal order-2 covering set, no counterexample
-hypothesis: each pair-free node extends to an inclusion-maximal
-pair-free envelope over which every outside positive basis element
-is a pair-guardian. -/
 theorem exists_absolute_pair_leaf {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀)
     (hmin : ∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
@@ -3192,7 +2910,7 @@ theorem exists_absolute_pair_leaf {A : Set ℕ} {N₀ : ℕ}
     (P : Finset ℕ) (hP : PairFreeNode A N₀ P) :
     ∃ Q : Finset ℕ, PairFreeNode A N₀ Q ∧ P ⊆ Q ∧
       ∀ b ∈ A, 0 < b → b ∉ Q →
-        ∃ m, N₀ ≤ m ∧ IsPairHub A m (insert b Q) := by
+        ∃ m, N₀ ≤ m ∧ IsPairSupportTransversal A m (insert b Q) := by
   classical
   have hwf := pairSup_wf hcov hmin
   revert hP
@@ -3229,13 +2947,13 @@ theorem exists_absolute_pair_leaf {A : Set ℕ} {N₀ : ℕ}
         (Finset.subset_insert _ _) hQsub, hQmax⟩
 
 /-- Personal-target geometry at an absolute leaf: the envelope is
-free, so any envelope-avoiding representation of the hub target
+free, so any envelope-avoiding representation of the support transversal target
 must use the new element itself — hence the target sits at or
-above its guardian, which appears as a part. -/
+above its required element, which appears as a part. -/
 theorem absolute_leaf_personal_target {A : Set ℕ} {N₀ : ℕ}
     {Q : Finset ℕ} {b m : ℕ}
     (hQ : FreeNode A N₀ Q) (hm : N₀ ≤ m)
-    (hhub : IsRepHub A m (insert b Q)) :
+    (hhub : IsRepSupportTransversal A m (insert b Q)) :
     b ≤ m ∧ ∃ y ∈ A, ∃ z ∈ A, y ∉ Q ∧ z ∉ Q ∧ b + y + z = m := by
   classical
   obtain ⟨x, hx, y, hy, z, hz, hsum, hxQ, hyQ, hzQ⟩ := hQ.2 m hm
@@ -3256,21 +2974,14 @@ theorem absolute_leaf_personal_target {A : Set ℕ} {N₀ : ℕ}
   · exact ⟨by omega, x, hx, z, hz, hxQ, hzQ, by omega⟩
   · exact ⟨by omega, x, hx, y, hy, hxQ, hyQ, by omega⟩
 
-
 /-! ## The cap suite (hypothesis-free pigeonholes) -/
 
-/-- **Three-never-four for rotating envelope-hubs.**  A rep has
-three parts, so a b-avoiding rep meets at most three pairwise
-disjoint envelopes.  If one target carries hubs `insert b Qᵢ`
-through FOUR pairwise disjoint b-free envelopes, no rep can avoid
-b: the shared guardian owns the target outright ({b} is a full
-singleton hub).  Pure combinatorics — no freeness, no hfail. -/
-theorem four_disjoint_hubs_singleton {A : Set ℕ} {m b : ℕ}
+theorem four_disjoint_support_transversals_singleton {A : Set ℕ} {m b : ℕ}
     {Q : Fin 4 → Finset ℕ}
     (hdisj : ∀ i j, i ≠ j → Disjoint (Q i) (Q j))
     (hb : ∀ i, b ∉ Q i)
-    (hhub : ∀ i, IsRepHub A m (insert b (Q i))) :
-    IsRepHub A m {b} := by
+    (hhub : ∀ i, IsRepSupportTransversal A m (insert b (Q i))) :
+    IsRepSupportTransversal A m {b} := by
   classical
   intro x hx y hy z hz hsum
   by_contra hmiss
@@ -3315,13 +3026,12 @@ theorem four_disjoint_hubs_singleton {A : Set ℕ} {m b : ℕ}
   rw [hpij] at h1
   exact (Finset.disjoint_left.1 (hdisj i j hij)) h1 h2
 
+/-! ## RankLayers: pool leaves and the stratification -/
 
-/-! ## Shells: pool leaves and the stratification -/
-
-/-- Pool form of the absolute flood: within any pool of positive
+/-- Pool form of the absolute cofinal supply: within any pool of positive
 basis elements, every free set of pool elements extends to a
 pool-inclusion-maximal one, over which every remaining pool
-element is a guardian. -/
+element is a required element. -/
 theorem exists_absolute_leaf_pool {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -3330,7 +3040,7 @@ theorem exists_absolute_leaf_pool {A : Set ℕ} {N₀ : ℕ}
     (P : Finset ℕ) (hPC : ∀ h ∈ P, h ∈ C)
     (hPfree : RepFree A N₀ P) :
     ∃ Q : Finset ℕ, (∀ h ∈ Q, h ∈ C) ∧ RepFree A N₀ Q ∧ P ⊆ Q ∧
-      ∀ b ∈ C, b ∉ Q → ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b Q) := by
+      ∀ b ∈ C, b ∉ Q → ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m (insert b Q) := by
   classical
   have hwf := freeSup_wf h0 hcov hfail
   revert hPC hPfree
@@ -3374,14 +3084,7 @@ theorem exists_absolute_leaf_pool {A : Set ℕ} {N₀ : ℕ}
       exact ⟨Q, hQC, hQfree, Finset.Subset.trans
         (Finset.subset_insert _ _) hQsub, hQmax⟩
 
-/-- **THE SHELL STRATIFICATION.**  Under hfail the positive basis
-elements organize into infinitely many pairwise disjoint NONEMPTY
-free shells Q₀, Q₁, Q₂, …: each shell is inclusion-maximal free
-inside the pool left over by its predecessors, so every positive
-element outside the first k+1 shells is a guardian of shell k.
-An element joining shell k+1 guards shells 0..k; an element
-avoiding all shells guards every level. -/
-theorem absolute_shell_stratification {A : Set ℕ} {N₀ : ℕ}
+theorem absolute_rank_layer_stratification {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -3392,13 +3095,13 @@ theorem absolute_shell_stratification {A : Set ℕ} {N₀ : ℕ}
       (∀ k, RepFree A N₀ (Q k)) ∧
       (∀ j k, j < k → Disjoint (Q j) (Q k)) ∧
       (∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
-        ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) := by
+        ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m (insert b (Q k))) := by
   classical
-  -- one shell over the pool avoiding a given finite past
+  -- one rank layer over the pool avoiding a given finite past
   have hstep : ∀ U : Finset ℕ, ∃ Q : Finset ℕ, Q.Nonempty ∧
       (∀ h ∈ Q, h ∈ A ∧ 0 < h ∧ h ∉ U) ∧ RepFree A N₀ Q ∧
       ∀ b ∈ A, 0 < b → b ∉ U → b ∉ Q →
-        ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b Q) := by
+        ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m (insert b Q) := by
     intro U
     obtain ⟨X, hX⟩ := cofinite_free_singletons h0 hcov hanchor hfail
     obtain ⟨a, haA, hage⟩ :=
@@ -3436,7 +3139,7 @@ theorem absolute_shell_stratification {A : Set ℕ} {N₀ : ℕ}
     fun k => by rw [hgs k]
   have hUs : ∀ k, (g (k + 1)).2 = (g k).2 ∪ F ((g k).2) :=
     fun k => by rw [hgs k]
-  -- the cumulative union is exactly the union of shells so far
+  -- the cumulative union is exactly the union of rank layers so far
   have hUmem : ∀ k x, x ∈ (g k).2 ↔ ∃ j, j ≤ k ∧ x ∈ (g j).1 := by
     intro k
     induction k with
@@ -3510,7 +3213,7 @@ theorem absolute_shell_stratification {A : Set ℕ} {N₀ : ℕ}
     cases k with
     | zero =>
       have hb0 : b ∉ (g 0).1 := hbQ 0 (le_refl 0)
-      show ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (g 0).1)
+      show ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m (insert b (g 0).1)
       rw [hQ0] at hb0 ⊢
       exact hFmax ∅ b hbA hbpos (Finset.notMem_empty b) hb0
     | succ k =>
@@ -3519,24 +3222,18 @@ theorem absolute_shell_stratification {A : Set ℕ} {N₀ : ℕ}
         obtain ⟨j, hj, hx⟩ := (hUmem k b).1 hmem
         exact hbQ j (by omega) hx
       have hb1 : b ∉ (g (k + 1)).1 := hbQ (k + 1) (le_refl _)
-      show ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (g (k + 1)).1)
+      show ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m (insert b (g (k + 1)).1)
       rw [hQs] at hb1 ⊢
       exact hFmax _ b hbA hbpos hbU hb1
 
-/-- **The eternal-survivor dichotomy.**  An element guarding every
-level of a disjoint shell family either sees its personal targets
-grow without bound, or — if they stay bounded — pigeonholes four
-disjoint shells onto ONE target and owns it outright
-(`four_disjoint_hubs_singleton`): every representation of that
-target uses the survivor. -/
 theorem eternal_survivor_dichotomy {A : Set ℕ} {N₀ : ℕ}
     {Q : ℕ → Finset ℕ} {b : ℕ}
     (hdisj : ∀ j k, j < k → Disjoint (Q j) (Q k))
     (hb : ∀ j, b ∉ Q j)
-    (hguard : ∀ k, ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) :
+    (hguard : ∀ k, ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m (insert b (Q k))) :
     (∀ Y, ∃ k, ∃ m, Y ≤ m ∧ N₀ ≤ m ∧
-      IsRepHub A m (insert b (Q k))) ∨
-    ∃ m, N₀ ≤ m ∧ IsRepHub A m {b} := by
+      IsRepSupportTransversal A m (insert b (Q k))) ∨
+    ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m {b} := by
   classical
   choose m hm₁ hm₂ using hguard
   by_cases hunb : ∀ Y, ∃ k, Y ≤ m k
@@ -3578,7 +3275,7 @@ theorem eternal_survivor_dichotomy {A : Set ℕ} {N₀ : ℕ}
       rw [hval 0] at h1
       exact h1
     refine ⟨v, hNv, ?_⟩
-    refine four_disjoint_hubs_singleton
+    refine four_disjoint_support_transversals_singleton
       (Q := fun i => Q (e i : ℕ)) ?_ ?_ ?_
     · intro i j hij
       rcases Nat.lt_or_ge (e i : ℕ) (e j : ℕ) with h | h
@@ -3593,16 +3290,7 @@ theorem eternal_survivor_dichotomy {A : Set ℕ} {N₀ : ℕ}
       rw [hval i] at h1
       exact h1
 
-/-- **The singleton-owner corner dies.**  Survivors of a disjoint
-shell family cannot take the bounded-target branch of
-`eternal_survivor_dichotomy` at unbounded sizes: an owner sits
-inside every representation of its target, so its target is at or
-above its own scale, and infinitely many owners would form a
-cofinal private-triple stream — which the rotating-guardian kill
-converts into a surviving deletion, refuting hfail.  Hence beyond
-one threshold EVERY eternal survivor has unbounded personal
-targets across the shells. -/
-theorem shell_survivors_unbounded_targets {A : Set ℕ} {N₀ : ℕ}
+theorem rank_layer_survivors_unbounded_targets {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -3610,10 +3298,10 @@ theorem shell_survivors_unbounded_targets {A : Set ℕ} {N₀ : ℕ}
     {Q : ℕ → Finset ℕ}
     (hdisj : ∀ j k, j < k → Disjoint (Q j) (Q k))
     (hguard : ∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
-      ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) :
+      ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m (insert b (Q k))) :
     ∃ X, ∀ b ∈ A, X ≤ b → 0 < b → (∀ j, b ∉ Q j) →
       ∀ Y, ∃ k, ∃ m, Y ≤ m ∧ N₀ ≤ m ∧
-        IsRepHub A m (insert b (Q k)) := by
+        IsRepSupportTransversal A m (insert b (Q k)) := by
   classical
   by_contra hno
   push Not at hno
@@ -3622,11 +3310,11 @@ theorem shell_survivors_unbounded_targets {A : Set ℕ} {N₀ : ℕ}
     intro N
     obtain ⟨b, hbA, hbX, hbpos, hbQ, Y, hY⟩ := hno N
     have hg : ∀ k, ∃ m, N₀ ≤ m ∧
-        IsRepHub A m (insert b (Q k)) := by
+        IsRepSupportTransversal A m (insert b (Q k)) := by
       intro k
       exact hguard k b hbA hbpos (fun j _ => hbQ j)
     have hnotleft : ¬(∀ Y', ∃ k, ∃ m, Y' ≤ m ∧ N₀ ≤ m ∧
-        IsRepHub A m (insert b (Q k))) := by
+        IsRepSupportTransversal A m (insert b (Q k))) := by
       intro hall
       obtain ⟨k, m, h1, h2, h3⟩ := hall Y
       exact hY k m h1 h2 h3
@@ -3662,15 +3350,7 @@ theorem shell_survivors_unbounded_targets {A : Set ℕ} {N₀ : ℕ}
   | 1 => exact ⟨hy, hyB⟩
   | 2 => exact ⟨hz, hzB⟩
 
-/-- **THE SHELL ENDGAME.**  Composition of the stratification and
-the singleton-owner kill: a counterexample's positive elements
-split into infinitely many disjoint nonempty free shells with
-hierarchical total guardianship, and every sufficiently large
-element avoiding all shells guards at UNBOUNDED scales.  So the
-enemy is either a perfect stratification (finitely many eternal
-survivors) or carries an infinite crowd of infinitely-employed
-survivors — no third shape exists. -/
-theorem shell_endgame {A : Set ℕ} {N₀ : ℕ}
+theorem rank_layer_counterexample_structure {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -3681,38 +3361,31 @@ theorem shell_endgame {A : Set ℕ} {N₀ : ℕ}
       (∀ k, RepFree A N₀ (Q k)) ∧
       (∀ j k, j < k → Disjoint (Q j) (Q k)) ∧
       (∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
-        ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) ∧
+        ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m (insert b (Q k))) ∧
       (∀ b ∈ A, X ≤ b → 0 < b → (∀ j, b ∉ Q j) →
         ∀ Y, ∃ k, ∃ m, Y ≤ m ∧ N₀ ≤ m ∧
-          IsRepHub A m (insert b (Q k))) := by
+          IsRepSupportTransversal A m (insert b (Q k))) := by
   obtain ⟨Q, hne, hmem, hfree, hdisj, hguard⟩ :=
-    absolute_shell_stratification h0 hcov hanchor hfail
+    absolute_rank_layer_stratification h0 hcov hanchor hfail
   obtain ⟨X, hX⟩ :=
-    shell_survivors_unbounded_targets h0 hcov hanchor hfail
+    rank_layer_survivors_unbounded_targets h0 hcov hanchor hfail
       hdisj hguard
   exact ⟨Q, X, hne, hmem, hfree, hdisj, hguard, hX⟩
 
-
 /-! ## The depth tax -/
 
-/-- **Depth forces scale** (hypothesis-free pigeonhole).  An
-element with guardian duties at k+1 pairwise disjoint shells
-either owns some target outright, or one of its duty targets
-already sits at height N₀ + k/3: at most three duties can share a
-target value without triggering `four_disjoint_hubs_singleton`,
-so k+1 duties cannot all hide below the tax line. -/
-theorem shell_depth_forces_scale {A : Set ℕ} {N₀ : ℕ}
+theorem rank_layer_depth_forces_scale {A : Set ℕ} {N₀ : ℕ}
     {Q : ℕ → Finset ℕ} {k b : ℕ}
     (hdisj : ∀ j k', j < k' → Disjoint (Q j) (Q k'))
     (hguard : ∀ j, j ≤ k → ∃ m, N₀ ≤ m ∧
-      IsRepHub A m (insert b (Q j)))
+      IsRepSupportTransversal A m (insert b (Q j)))
     (hb : ∀ j, j ≤ k → b ∉ Q j) :
-    (∃ m, N₀ ≤ m ∧ IsRepHub A m {b}) ∨
+    (∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m {b}) ∨
     (∃ j, j ≤ k ∧ ∃ m, N₀ + k / 3 ≤ m ∧ N₀ ≤ m ∧
-      IsRepHub A m (insert b (Q j))) := by
+      IsRepSupportTransversal A m (insert b (Q j))) := by
   classical
   have hg : ∀ j, ∃ m, N₀ ≤ m ∧
-      (j ≤ k → IsRepHub A m (insert b (Q j))) := by
+      (j ≤ k → IsRepSupportTransversal A m (insert b (Q j))) := by
     intro j
     by_cases hj : j ≤ k
     · obtain ⟨m, h1, h2⟩ := hguard j hj
@@ -3762,7 +3435,7 @@ theorem shell_depth_forces_scale {A : Set ℕ} {N₀ : ℕ}
       rw [hval 0] at h1
       exact h1
     refine ⟨v, hNv, ?_⟩
-    refine four_disjoint_hubs_singleton
+    refine four_disjoint_support_transversals_singleton
       (Q := fun i => Q (e i : ℕ)) ?_ ?_ ?_
     · intro i j hij
       rcases Nat.lt_or_ge (e i : ℕ) (e j : ℕ) with h | h
@@ -3777,14 +3450,6 @@ theorem shell_depth_forces_scale {A : Set ℕ} {N₀ : ℕ}
       rw [hval i] at h1
       exact h1
 
-/-- **THE DEPTH TAX.**  Under hfail and anchors, beyond one
-threshold every element clear of shells 0..k — a depth-(k+1)
-shell member or an eternal survivor — carries a guardian duty at
-height at least N₀ + k/3.  Ownership cannot pay the tax at
-unbounded sizes (owners at their own scale form a cofinal private
-stream, and the rotating-guardian kill fires).  Depth in the
-stratification forces employment at linear scale; this
-quantitatively strengthens `shell_survivors_unbounded_targets`. -/
 theorem depth_tax_of_hfail {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
@@ -3793,11 +3458,11 @@ theorem depth_tax_of_hfail {A : Set ℕ} {N₀ : ℕ}
     {Q : ℕ → Finset ℕ}
     (hdisj : ∀ j k, j < k → Disjoint (Q j) (Q k))
     (hguard : ∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
-      ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) :
+      ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m (insert b (Q k))) :
     ∃ X, ∀ k, ∀ b ∈ A, X ≤ b → 0 < b →
       (∀ j, j ≤ k → b ∉ Q j) →
       ∃ j, j ≤ k ∧ ∃ m, N₀ + k / 3 ≤ m ∧ N₀ ≤ m ∧
-        IsRepHub A m (insert b (Q j)) := by
+        IsRepSupportTransversal A m (insert b (Q j)) := by
   classical
   by_contra hno
   push Not at hno
@@ -3806,10 +3471,10 @@ theorem depth_tax_of_hfail {A : Set ℕ} {N₀ : ℕ}
     intro N
     obtain ⟨k, b, hbA, hbX, hbpos, hbQ, hbdd⟩ := hno N
     have hg : ∀ j, j ≤ k → ∃ m, N₀ ≤ m ∧
-        IsRepHub A m (insert b (Q j)) := by
+        IsRepSupportTransversal A m (insert b (Q j)) := by
       intro j hj
       exact hguard j b hbA hbpos (fun j' hj' => hbQ j' (by omega))
-    rcases shell_depth_forces_scale hdisj hg
+    rcases rank_layer_depth_forces_scale hdisj hg
       (fun j hj => hbQ j hj) with hown | hbig
     · obtain ⟨m, hm, hhub⟩ := hown
       obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
@@ -3844,14 +3509,14 @@ theorem depth_tax_of_hfail {A : Set ℕ} {N₀ : ℕ}
   | 2 => exact ⟨hz, hzB⟩
 
 /-- Order-2 rotation cap: a pair has TWO parts, so three pairwise
-disjoint b-free envelope-hubs at one target already force
+disjoint b-free envelope-support transversals at one target already force
 singleton ownership at order 2.  Hypothesis-free. -/
-theorem three_disjoint_pair_hubs_singleton {A : Set ℕ} {m b : ℕ}
+theorem three_disjoint_pair_support_transversals_singleton {A : Set ℕ} {m b : ℕ}
     {Q : Fin 3 → Finset ℕ}
     (hdisj : ∀ i j, i ≠ j → Disjoint (Q i) (Q j))
     (hb : ∀ i, b ∉ Q i)
-    (hhub : ∀ i, IsPairHub A m (insert b (Q i))) :
-    IsPairHub A m {b} := by
+    (hhub : ∀ i, IsPairSupportTransversal A m (insert b (Q i))) :
+    IsPairSupportTransversal A m {b} := by
   classical
   intro x hx y hy hsum
   by_contra hmiss
@@ -3886,16 +3551,7 @@ theorem three_disjoint_pair_hubs_singleton {A : Set ℕ} {m b : ℕ}
   rw [hpij] at h1
   exact (Finset.disjoint_left.1 (hdisj i j hij)) h1 h2
 
-/-- **THE STRATIFIED TAX PORTRAIT.**  Everything the shell arc
-proves, in one object: disjoint nonempty free shells with
-hierarchical total guardianship, and a single threshold beyond
-which every element clear of shells 0..k — shell-(k+1) members
-and eternal survivors alike — pays a guardian duty at height at
-least N₀ + k/3 over one of those shells.  Since each shell is
-free, `absolute_leaf_personal_target` applies to every such duty:
-the payer appears in every shell-avoiding representation of its
-duty target, which therefore also sits at or above the payer. -/
-theorem stratified_tax_portrait {A : Set ℕ} {N₀ : ℕ}
+theorem stratified_tax_summary {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -3906,33 +3562,24 @@ theorem stratified_tax_portrait {A : Set ℕ} {N₀ : ℕ}
       (∀ k, RepFree A N₀ (Q k)) ∧
       (∀ j k, j < k → Disjoint (Q j) (Q k)) ∧
       (∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
-        ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) ∧
+        ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m (insert b (Q k))) ∧
       (∀ k, ∀ b ∈ A, X ≤ b → 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
         ∃ j, j ≤ k ∧ ∃ m, N₀ + k / 3 ≤ m ∧ N₀ ≤ m ∧
-          IsRepHub A m (insert b (Q j))) := by
+          IsRepSupportTransversal A m (insert b (Q j))) := by
   obtain ⟨Q, hne, hmem, hfree, hdisj, hguard⟩ :=
-    absolute_shell_stratification h0 hcov hanchor hfail
+    absolute_rank_layer_stratification h0 hcov hanchor hfail
   obtain ⟨X, hX⟩ :=
     depth_tax_of_hfail h0 hcov hanchor hfail hdisj hguard
   exact ⟨Q, X, hne, hmem, hfree, hdisj, hguard, hX⟩
 
-
 /-! ## Higher caps and the conflict law -/
 
-/-- **THE SIX-LEVEL CAP.**  Seven pairwise disjoint envelopes with
-seven DISTINCT guardians can never hub one common target: a
-representation has three parts, each lying in at most one envelope
-(disjointness) and equal to at most one guardian (injectivity), so
-a rep covers at most six of the seven demands.  Unlike the
-rotation cap there is no ownership escape — distinct guardians
-kill it.  One target therefore serves at most six shell-levels of
-distinct-guardian duty.  Hypothesis-free pigeonhole. -/
-theorem seven_level_hub_impossible {A : Set ℕ} {m : ℕ}
+theorem seven_level_support_transversal_impossible {A : Set ℕ} {m : ℕ}
     {Q : Fin 7 → Finset ℕ} {b : Fin 7 → ℕ}
     (hdisj : ∀ i j, i ≠ j → Disjoint (Q i) (Q j))
     (hbinj : Function.Injective b)
     (hrep : ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = m)
-    (hhub : ∀ i, IsRepHub A m (insert (b i) (Q i))) :
+    (hhub : ∀ i, IsRepSupportTransversal A m (insert (b i) (Q i))) :
     False := by
   classical
   obtain ⟨x, hx, y, hy, z, hz, hsum⟩ := hrep
@@ -3973,21 +3620,13 @@ theorem seven_level_hub_impossible {A : Set ℕ} {m : ℕ}
     exact absurd hm2 (by decide)
   · exact hij (hbinj (heq1 ▸ heq2 ▸ rfl))
 
-/-- **THE 18-LEVEL ABSOLUTE CAP.**  Nineteen shell-duties at one
-target force singleton ownership: if any guardian value serves
-four of the levels, the rotation cap hands it the target; if all
-fibers have size at most three, at least seven distinct guardian
-values appear and `seven_level_hub_impossible` rules the
-configuration out entirely.  So one target carries at most 18
-envelope-hubs over pairwise disjoint envelopes, unless some
-guardian owns it outright.  Hypothesis-free. -/
 theorem eighteen_level_cap {A : Set ℕ} {m : ℕ}
     {Q : Fin 19 → Finset ℕ} {b : Fin 19 → ℕ}
     (hdisj : ∀ i j, i ≠ j → Disjoint (Q i) (Q j))
     (hb : ∀ i j, b i ∉ Q j)
     (hrep : ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = m)
-    (hhub : ∀ i, IsRepHub A m (insert (b i) (Q i))) :
-    ∃ i, IsRepHub A m {b i} := by
+    (hhub : ∀ i, IsRepSupportTransversal A m (insert (b i) (Q i))) :
+    ∃ i, IsRepSupportTransversal A m {b i} := by
   classical
   by_cases hfib : ∃ v ∈ Finset.univ.image b,
       4 ≤ (Finset.univ.filter (fun i => b i = v)).card
@@ -3999,8 +3638,8 @@ theorem eighteen_level_cap {A : Set ℕ} {m : ℕ}
       have h1 := hts (e i).2
       rw [Finset.mem_filter] at h1
       exact h1.2
-    have hown : IsRepHub A m {v} := by
-      refine four_disjoint_hubs_singleton
+    have hown : IsRepSupportTransversal A m {v} := by
+      refine four_disjoint_support_transversals_singleton
         (Q := fun i => Q (e i : Fin 19)) ?_ ?_ ?_
       · intro i j hij
         exact hdisj _ _
@@ -4040,7 +3679,7 @@ theorem eighteen_level_cap {A : Set ℕ} {m : ℕ}
       obtain ⟨i', _, hi'⟩ := h1
       exact ⟨i', hi'⟩
     choose c hc using hpre
-    refine seven_level_hub_impossible (A := A) (m := m)
+    refine seven_level_support_transversal_impossible (A := A) (m := m)
       (Q := fun i => Q (c i)) (b := fun i => b (c i))
       ?_ ?_ hrep ?_
     · intro i j hij
@@ -4055,19 +3694,12 @@ theorem eighteen_level_cap {A : Set ℕ} {m : ℕ}
     · intro i
       exact hhub (c i)
 
-/-- **The shell-conflict degree cap.**  Shells pairwise conflict:
-by inclusion-maximality any two shells union to a non-free set,
-so each pair owns a conflict target whose representations all
-meet the union.  But conflicts are 3-bounded per (shell, target):
-a free shell admits a rep of the target avoiding it, and that rep
-must then meet every conflict partner — three parts, so at most
-three pairwise disjoint partners.  A fifth is impossible. -/
-theorem five_shell_conflict_impossible {A : Set ℕ} {N₀ m : ℕ}
+theorem five_rank_layer_conflict_impossible {A : Set ℕ} {N₀ m : ℕ}
     {Q : Fin 5 → Finset ℕ}
     (hdisj : ∀ i j, i ≠ j → Disjoint (Q i) (Q j))
     (hfree : RepFree A N₀ (Q 0))
     (hm : N₀ ≤ m)
-    (hhub : ∀ i : Fin 4, IsRepHub A m (Q 0 ∪ Q i.succ)) :
+    (hhub : ∀ i : Fin 4, IsRepSupportTransversal A m (Q 0 ∪ Q i.succ)) :
     False := by
   classical
   obtain ⟨x, hx, y, hy, z, hz, hsum, hxQ, hyQ, hzQ⟩ := hfree m hm
@@ -4106,30 +3738,24 @@ theorem five_shell_conflict_impossible {A : Set ℕ} {N₀ m : ℕ}
     hij (Fin.succ_injective 4 h)
   exact (Finset.disjoint_left.1 (hdisj i.succ j.succ hne)) h1 h2
 
-/-- Hub-ness is up-monotone in the envelope. -/
-theorem IsRepHub.mono {A : Set ℕ} {m : ℕ} {H H' : Finset ℕ}
-    (hsub : H ⊆ H') (h : IsRepHub A m H) : IsRepHub A m H' := by
+/-- SupportTransversal-ness is up-monotone in the envelope. -/
+theorem IsRepSupportTransversal.mono {A : Set ℕ} {m : ℕ} {H H' : Finset ℕ}
+    (hsub : H ⊆ H') (h : IsRepSupportTransversal A m H) : IsRepSupportTransversal A m H' := by
   intro x hx y hy z hz hsum
   rcases h x hx y hy z hz hsum with h' | h' | h'
   · exact Or.inl (hsub h')
   · exact Or.inr (Or.inl (hsub h'))
   · exact Or.inr (Or.inr (hsub h'))
 
-/-- **Shells pairwise conflict.**  Any member of a later shell is
-a guardian of any earlier one, so every pair of shells owns a
-conflict target whose representations all meet the union of the
-two.  With `five_shell_conflict_impossible` this pins the conflict
-graph at every target: max degree ≤ 3 (hence ≤ 9 shell-pairs per
-target, cover number ≤ 3). -/
-theorem shell_pairs_conflict {A : Set ℕ} {N₀ : ℕ}
+theorem rank_layer_pairs_conflict {A : Set ℕ} {N₀ : ℕ}
     {Q : ℕ → Finset ℕ}
     (hne : ∀ k, (Q k).Nonempty)
     (hmem : ∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h)
     (hdisj : ∀ j k, j < k → Disjoint (Q j) (Q k))
     (hguard : ∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
-      ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) :
+      ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m (insert b (Q k))) :
     ∀ j k, j < k → ∃ m, N₀ ≤ m ∧
-      IsRepHub A m (Q j ∪ Q k) := by
+      IsRepSupportTransversal A m (Q j ∪ Q k) := by
   intro j k hjk
   obtain ⟨b, hb⟩ := hne k
   have hbA := (hmem k b hb).1
@@ -4139,23 +3765,23 @@ theorem shell_pairs_conflict {A : Set ℕ} {N₀ : ℕ}
     exact (Finset.disjoint_left.1 (hdisj j' k (by omega)))
       hmem' hb
   obtain ⟨m, hm, hhub⟩ := hguard j b hbA hbpos hbavoid
-  refine ⟨m, hm, IsRepHub.mono ?_ hhub⟩
+  refine ⟨m, hm, IsRepSupportTransversal.mono ?_ hhub⟩
   intro w hw
   rcases Finset.mem_insert.1 hw with h' | h'
   · rw [h']
     exact Finset.mem_union_right _ hb
   · exact Finset.mem_union_left _ h'
 
-/-- Order-2 conflict cap: a pair-free shell's escape pair must
+/-- Order-2 conflict bound: the escape pair from a pair-free rank layer must
 meet every conflict partner, and a pair has two parts — so at
 order 2 the per-target conflict degree is at most 2; a fourth
 disjoint partner is impossible. -/
-theorem four_shell_pair_conflict_impossible {A : Set ℕ}
+theorem four_rank_layer_pair_conflict_impossible {A : Set ℕ}
     {N₀ m : ℕ} {Q : Fin 4 → Finset ℕ}
     (hdisj : ∀ i j, i ≠ j → Disjoint (Q i) (Q j))
     (hfree : PairFree A N₀ (Q 0))
     (hm : N₀ ≤ m)
-    (hhub : ∀ i : Fin 3, IsPairHub A m (Q 0 ∪ Q i.succ)) :
+    (hhub : ∀ i : Fin 3, IsPairSupportTransversal A m (Q 0 ∪ Q i.succ)) :
     False := by
   classical
   obtain ⟨x, hx, y, hy, hsum, hxQ, hyQ⟩ := hfree m hm
@@ -4194,38 +3820,27 @@ windows whose targets are all (|Q k| + 2)-robust repel every
 level-k duty — the first placement constraint on the ledger. -/
 theorem duty_targets_fragile {A : Set ℕ} {N₀ : ℕ}
     {Q : ℕ → Finset ℕ} {k b m K : ℕ}
-    (hhub : IsRepHub A m (insert b (Q k)))
+    (hhub : IsRepSupportTransversal A m (insert b (Q k)))
     (hrob : HasDisjointTripleReps A m K) :
     K ≤ (Q k).card + 1 := by
-  have h1 := disjoint_reps_le_hub_card hhub hrob
+  have h1 := disjoint_reps_le_support_transversal_card hhub hrob
   have h2 := Finset.card_insert_le b (Q k)
   omega
 
-/-- Conflict targets are fragile: a conflict target of the shell
+/-- Conflict targets are fragile: a conflict target of the rank layer
 pair (j,k) admits at most |Q j| + |Q k| pairwise disjoint
-representations.  Robust windows repel shell conflicts too. -/
+representations.  Robust windows repel rank layer conflicts too. -/
 theorem conflict_targets_fragile {A : Set ℕ} {N₀ : ℕ}
     {Q : ℕ → Finset ℕ} {j k m K : ℕ}
-    (hhub : IsRepHub A m (Q j ∪ Q k))
+    (hhub : IsRepSupportTransversal A m (Q j ∪ Q k))
     (hrob : HasDisjointTripleReps A m K) :
     K ≤ (Q j).card + (Q k).card := by
-  have h1 := disjoint_reps_le_hub_card hhub hrob
+  have h1 := disjoint_reps_le_support_transversal_card hhub hrob
   have h2 := Finset.card_union_le (Q j) (Q k)
   omega
 
-
 /-! ## The robustness branch mechanism -/
 
-/-- **THE ROBUSTNESS BRANCH.**  If disjoint-representation counts
-grow uniformly (for every C, all large targets carry C pairwise
-disjoint representations), then a hereditarily free infinite set
-exists: pick the sequence diagonally above the monotone
-robustness thresholds.  Any finite subset P then loses to every
-target — targets below the relevant threshold see nothing of P,
-and a target above it has more disjoint representations than P
-has members at or below the target, so some representation
-escapes whole.  A third branch mechanism, alongside counting
-(Sidon) and structure (Cantor). -/
 theorem robustness_gives_hereditarily_free {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hrob : ∀ C, ∃ H, ∀ m, H ≤ m →
@@ -4391,12 +4006,6 @@ theorem robustness_gives_hereditarily_free {A : Set ℕ} {N₀ : ℕ}
         exact h4
       omega
 
-/-- **THE FRAGILE SUPPLY** (contrapositive).  Under hfail some
-fixed fragility level C recurs cofinally: infinitely many targets
-carry fewer than C pairwise disjoint representations.  Otherwise
-the robustness branch would survive, refuting hfail.  A
-self-contained rederivation of the card-bounded supply from pure
-robustness logic. -/
 theorem fragile_supply_of_hfail {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -4407,23 +4016,15 @@ theorem fragile_supply_of_hfail {A : Set ℕ} {N₀ : ℕ}
   exact (hfail_iff_no_hereditarily_free h0 hcov).1 hfail
     (robustness_gives_hereditarily_free h0 hcov hno)
 
-
 /-! ## The reflection ledger -/
 
-/-- **The seal-cost inequality** (ledger line (i) of the
-mass-accounting program).  To seal an envelope S at a target m by
-deleting D — making every surviving representation meet S — costs
-at least one deleted element per pairwise disjoint S-avoiding
-representation: each such rep must lose a part to D, and
-disjointness makes those parts distinct.  Deletion-form of
-`disjoint_reps_le_hub_card`. -/
 theorem seal_cost_of_disjoint_avoiding {A : Set ℕ} {m K : ℕ}
     {S D : Finset ℕ} (P : Fin K → Fin 3 → ℕ)
     (hPA : ∀ i k, P i k ∈ A)
     (hPsum : ∀ i, P i 0 + P i 1 + P i 2 = m)
     (hPdis : ∀ i j k l, i ≠ j → P i k ≠ P j l)
     (hPavoid : ∀ i k, P i k ∉ S)
-    (hseal : IsRepHub (A \ ↑D) m S) :
+    (hseal : IsRepSupportTransversal (A \ ↑D) m S) :
     K ≤ D.card := by
   classical
   have hpick : ∀ i : Fin K, ∃ k : Fin 3, P i k ∈ D := by
@@ -4450,18 +4051,10 @@ theorem seal_cost_of_disjoint_avoiding {A : Set ℕ} {m K : ℕ}
   rw [Finset.card_univ, Fintype.card_fin] at h1
   exact h1
 
-/-- **The common-reflection supply.**  Two hub targets route every
-window element through their envelopes (fan routing), and
-pigeonholing the envelope pair hands one (h, h') a proportional
-sub-window V reflecting through BOTH points m − h and m' − h':
-for a ∈ V, both (m − h) − a and (m' − h') − a lie in A.  The
-caller splits on m − h = m' − h' (sum multiplicity at one point)
-versus ≠ (difference multiplicity at the fixed offset) — the
-engine of the difference-blowup program. -/
-theorem two_hubs_common_reflection {A : Set ℕ} {N₀ m m' : ℕ}
+theorem two_support_transversals_common_reflection {A : Set ℕ} {N₀ m m' : ℕ}
     {H H' : Finset ℕ} (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hm : N₀ ≤ m) (hm' : N₀ ≤ m')
-    (hhub : IsRepHub A m H) (hhub' : IsRepHub A m' H')
+    (hhub : IsRepSupportTransversal A m H) (hhub' : IsRepSupportTransversal A m' H')
     (W : Finset ℕ)
     (hW : ∀ a ∈ W, a ∈ A ∧ a ∉ H ∧ a ∉ H' ∧
       a + N₀ ≤ m ∧ a + N₀ ≤ m') :
@@ -4483,7 +4076,7 @@ theorem two_hubs_common_reflection {A : Set ℕ} {N₀ m m' : ℕ}
     · exact ⟨x, h⟩
     · exact ⟨y, h⟩
     · exact ⟨0, h⟩
-  -- fan routing at each street
+  -- fan routing at each target sequence
   have hroute : ∀ a, ∃ hh xx, a ∈ W →
       hh ∈ H ∧ xx ∈ A ∧ xx + hh + a = m := by
     intro a
@@ -4546,15 +4139,6 @@ theorem two_hubs_common_reflection {A : Set ℕ} {N₀ m m' : ℕ}
   · obtain ⟨_, hpA, hpsum⟩ := hf'p' a haW
     exact ⟨p' a, hpA, by rw [← heq2]; exact hpsum⟩
 
-/-- **THE DOUBLE-REFLECTION SUPPLY.**  A counterexample carries,
-at every size K, two reflection points u, u' and K window
-elements reflecting through BOTH: a ∈ A with u − a ∈ A and
-u' − a ∈ A.  (Flood streets supply the hubs, the covering √-bound
-supplies the window, `two_hubs_common_reflection` pigeonholes.)
-If u ≠ u' this is K-fold difference multiplicity at the fixed
-offset u' − u; if u = u' it is K-fold sum concentration — but
-unlike bare r₂-blowup the SAME window works for both points,
-which is strictly more than two separate blowups. -/
 theorem double_reflection_supply_of_hfail {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -4563,18 +4147,18 @@ theorem double_reflection_supply_of_hfail {A : Set ℕ} {N₀ : ℕ}
       ∀ a ∈ V, a ∈ A ∧ (∃ x ∈ A, x + a = u) ∧
         (∃ x' ∈ A, x' + a = u') := by
   classical
-  obtain ⟨P, hPfree, X, hflood⟩ := rep_flood_of_hfail h0 hcov hfail
+  obtain ⟨P, hPfree, X, hflood⟩ := rep_cofinal_supply_of_hfail h0 hcov hfail
   intro K
   set C := P.card + 1 with hC
   set T := K * C * C + 2 * C + 1 with hT
-  -- street 1: a large guardian with its personal hub
+  -- target sequence 1: a large required element with its personal support transversal
   obtain ⟨b, hbA, hbge⟩ :=
     pairCovers_unbounded hcov (X + T * T + 2 * N₀ + 1)
   obtain ⟨m, hm, hbm, hhub⟩ := hflood b hbA (by omega)
-  -- street 2: strictly beyond street 1
+  -- target sequence 2: strictly beyond target sequence 1
   obtain ⟨b', hb'A, hb'ge⟩ := pairCovers_unbounded hcov (X + m + 1)
   obtain ⟨m', hm', hb'm', hhub'⟩ := hflood b' hb'A (by omega)
-  -- the window: A-elements below street 1's horizon
+  -- the window: A-elements below target sequence 1's horizon
   haveI : DecidablePred (· ∈ A) := Classical.decPred _
   set F := ((Finset.range (b - N₀ + 1)).filter (· ∈ A)) with hF
   have hFcard : T ≤ F.card := by
@@ -4614,7 +4198,7 @@ theorem double_reflection_supply_of_hfail {A : Set ℕ} {N₀ : ℕ}
     · omega
     · omega
   obtain ⟨h₀, hh₀, h₀', hh₀', V, hVW, hcount, hVrefl⟩ :=
-    two_hubs_common_reflection h0 hcov hm hm' hhub hhub' W hWmem
+    two_support_transversals_common_reflection h0 hcov hm hm' hhub hhub' W hWmem
   refine ⟨m - h₀, m' - h₀', V, ?_, ?_⟩
   · -- K ≤ V.card from the pigeonhole count
     have h1 : H.card * H'.card ≤ C * C :=
@@ -4637,18 +4221,9 @@ theorem double_reflection_supply_of_hfail {A : Set ℕ} {N₀ : ℕ}
     have haA := (hWmem a haW).1
     exact ⟨haA, ⟨x, hxA, by omega⟩, ⟨x', hx'A, by omega⟩⟩
 
+/-! ## The target sequence dichotomy and the four cases -/
 
-/-! ## The street dichotomy and the four rooms -/
-
-/-- **THE STREET DICHOTOMY.**  Three flood streets, one shared
-window, the reflection engine applied twice: either two of the
-four reflection points differ — K-fold DIFFERENCE multiplicity at
-a fixed positive offset — or all coincide at one point n, and
-size-forcing turns the flood affine (m₂ = n + b₂, m₃ = n + b₃):
-n is a K-fold blown point AND the difference translate
-n + b₃ − b₂ is a pair street through the third rotator.  The
-enemy must blow up differences or go affine. -/
-theorem street_dichotomy_of_hfail {A : Set ℕ} {N₀ : ℕ}
+theorem target_sequence_dichotomy_of_hfail {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
@@ -4659,9 +4234,9 @@ theorem street_dichotomy_of_hfail {A : Set ℕ} {N₀ : ℕ}
         ∀ a ∈ V, a ∈ A ∧ ∃ x ∈ A, x + a = n) ∧
       ∃ Q : Finset ℕ, RepFree A N₀ Q ∧ ∃ b₂ ∈ A, ∃ b₃ ∈ A,
         S ≤ b₂ ∧ b₂ < b₃ ∧ ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
-          IsPairHub A s (insert b₃ Q)) := by
+          IsPairSupportTransversal A s (insert b₃ Q)) := by
   classical
-  obtain ⟨P, hPfree, X, hflood⟩ := rep_flood_of_hfail h0 hcov hfail
+  obtain ⟨P, hPfree, X, hflood⟩ := rep_cofinal_supply_of_hfail h0 hcov hfail
   intro K S
   rcases Nat.eq_zero_or_pos K with hK0 | hK0
   · left
@@ -4721,12 +4296,12 @@ theorem street_dichotomy_of_hfail {A : Set ℕ} {N₀ : ℕ}
     exact ⟨haF.2, haH.1.1, haH.1.2, haH.2, by omega, by omega,
       by omega⟩
   obtain ⟨g₁, hg₁, g₂, hg₂, V₁, hV₁W, hcount₁, hrefl₁⟩ :=
-    two_hubs_common_reflection h0 hcov hm₁ hm₂ hhub₁ hhub₂ W
+    two_support_transversals_common_reflection h0 hcov hm₁ hm₂ hhub₁ hhub₂ W
       (fun a ha => ⟨(hWmem a ha).1, (hWmem a ha).2.1,
         (hWmem a ha).2.2.1, (hWmem a ha).2.2.2.2.1,
         (hWmem a ha).2.2.2.2.2.1⟩)
   obtain ⟨g₁', hg₁', g₃, hg₃, V₂, hV₂V₁, hcount₂, hrefl₂⟩ :=
-    two_hubs_common_reflection h0 hcov hm₁ hm₃ hhub₁ hhub₃ V₁
+    two_support_transversals_common_reflection h0 hcov hm₁ hm₃ hhub₁ hhub₃ V₁
       (fun a ha => ⟨(hWmem a (hV₁W ha)).1,
         (hWmem a (hV₁W ha)).2.1,
         (hWmem a (hV₁W ha)).2.2.2.1,
@@ -4855,15 +4430,7 @@ theorem street_dichotomy_of_hfail {A : Set ℕ} {N₀ : ℕ}
     · exact mkdiff u₁ u₂ h proj₁ proj₂
     · exact mkdiff u₂ u₁ (by omega) proj₂ proj₁
 
-/-- **Difference blowup or infinite affine corners.**  Splitting
-the street dichotomy over all K: a counterexample either has
-UNBOUNDED difference multiplicity (for every K some positive
-offset δ carries K pairs x, x + δ ∈ A), or beyond every size
-threshold it produces affine corners — a K₀-fold blown point n
-with a pair street at the difference translate n + b₃ − b₂
-through arbitrarily large rotators.  Erdős–Turán closed the sum
-door; this closes the difference door except into affinity. -/
-theorem difference_blowup_or_affine_corners {A : Set ℕ}
+theorem difference_amplification_or_affine_corners {A : Set ℕ}
     {N₀ : ℕ} (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
@@ -4873,14 +4440,14 @@ theorem difference_blowup_or_affine_corners {A : Set ℕ}
         ∀ a ∈ V, a ∈ A ∧ ∃ x ∈ A, x + a = n) ∧
       ∃ Q : Finset ℕ, RepFree A N₀ Q ∧ ∃ b₂ ∈ A, ∃ b₃ ∈ A,
         S ≤ b₂ ∧ b₂ < b₃ ∧ ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
-          IsPairHub A s (insert b₃ Q)) := by
+          IsPairSupportTransversal A s (insert b₃ Q)) := by
   by_cases hdiff : ∀ K, ∃ δ, 1 ≤ δ ∧ ∃ V : Finset ℕ,
       K ≤ V.card ∧ ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A
   · exact Or.inl hdiff
   · push Not at hdiff
     obtain ⟨K₀, hK₀⟩ := hdiff
     refine Or.inr ⟨K₀, fun S => ?_⟩
-    rcases street_dichotomy_of_hfail h0 hcov hfail K₀ S with
+    rcases target_sequence_dichotomy_of_hfail h0 hcov hfail K₀ S with
       h | h
     · exfalso
       obtain ⟨δ, hδ, V, hV, hVmem⟩ := h
@@ -4931,13 +4498,13 @@ theorem fixed_offset_or_growing {A : Set ℕ}
 
 /-- An affine corner at blown point n and size S: a K₀-fold
 reflected point coupled to two basis elements beyond S and a pair
-street at the difference translate (s + b₂ = n + b₃). -/
+target sequence at the difference translate (s + b₂ = n + b₃). -/
 def AffineCorner (A : Set ℕ) (N₀ K₀ n S : ℕ) : Prop :=
   (∃ V : Finset ℕ, K₀ ≤ V.card ∧
     ∀ a ∈ V, a ∈ A ∧ ∃ x ∈ A, x + a = n) ∧
   ∃ Q : Finset ℕ, RepFree A N₀ Q ∧ ∃ b₂ ∈ A, ∃ b₃ ∈ A,
     S ≤ b₂ ∧ b₂ < b₃ ∧ ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
-      IsPairHub A s (insert b₃ Q)
+      IsPairSupportTransversal A s (insert b₃ Q)
 
 /-- Corners are antitone in the size threshold. -/
 theorem AffineCorner.anti {A : Set ℕ} {N₀ K₀ n S S' : ℕ}
@@ -4973,11 +4540,6 @@ theorem nat_param_stabilize {C : ℕ → ℕ → Prop}
     · push Not at hle
       exact ⟨n₀, hle, hanti n₀ S Ssup (le_max_left _ _) hn₀⟩
 
-/-- **The mirror hall splits.**  In the affine-corner branch the
-blown reflection point either STABILIZES — one fixed n serves
-corners beyond every size: an infinite affine family clustered at
-a single mirror point — or SCATTERS: arbitrarily large blown
-points, each with its own affine corner, at every size. -/
 theorem affine_corner_fixed_or_scattered {A : Set ℕ}
     {N₀ K₀ : ℕ}
     (hcorner : ∀ S, ∃ n, AffineCorner A N₀ K₀ n S) :
@@ -4986,11 +4548,11 @@ theorem affine_corner_fixed_or_scattered {A : Set ℕ}
   nat_param_stabilize
     (fun _ _ _ hSS h => AffineCorner.anti hSS h) hcorner
 
-/-- Uniform-envelope form of the street dichotomy: ONE free
-envelope Q (the flood envelope) serves every K and S.  This is
+/-- Uniform-envelope form of the target sequence dichotomy: ONE free
+envelope Q (the cofinal supply envelope) serves every K and S.  This is
 what the proof always produced; recording it makes the affine
 corners comparable across sizes. -/
-theorem street_dichotomy_uniform {A : Set ℕ} {N₀ : ℕ}
+theorem target_sequence_dichotomy_uniform {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
@@ -5001,9 +4563,9 @@ theorem street_dichotomy_uniform {A : Set ℕ} {N₀ : ℕ}
         ∀ a ∈ V, a ∈ A ∧ ∃ x ∈ A, x + a = n) ∧
       ∃ b₂ ∈ A, ∃ b₃ ∈ A,
         S ≤ b₂ ∧ b₂ < b₃ ∧ ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
-          IsPairHub A s (insert b₃ Q)) := by
+          IsPairSupportTransversal A s (insert b₃ Q)) := by
   classical
-  obtain ⟨P, hPfree, X, hflood⟩ := rep_flood_of_hfail h0 hcov hfail
+  obtain ⟨P, hPfree, X, hflood⟩ := rep_cofinal_supply_of_hfail h0 hcov hfail
   refine ⟨P, hPfree, ?_⟩
   intro K S
   rcases Nat.eq_zero_or_pos K with hK0 | hK0
@@ -5064,12 +4626,12 @@ theorem street_dichotomy_uniform {A : Set ℕ} {N₀ : ℕ}
     exact ⟨haF.2, haH.1.1, haH.1.2, haH.2, by omega, by omega,
       by omega⟩
   obtain ⟨g₁, hg₁, g₂, hg₂, V₁, hV₁W, hcount₁, hrefl₁⟩ :=
-    two_hubs_common_reflection h0 hcov hm₁ hm₂ hhub₁ hhub₂ W
+    two_support_transversals_common_reflection h0 hcov hm₁ hm₂ hhub₁ hhub₂ W
       (fun a ha => ⟨(hWmem a ha).1, (hWmem a ha).2.1,
         (hWmem a ha).2.2.1, (hWmem a ha).2.2.2.2.1,
         (hWmem a ha).2.2.2.2.2.1⟩)
   obtain ⟨g₁', hg₁', g₃, hg₃, V₂, hV₂V₁, hcount₂, hrefl₂⟩ :=
-    two_hubs_common_reflection h0 hcov hm₁ hm₃ hhub₁ hhub₃ V₁
+    two_support_transversals_common_reflection h0 hcov hm₁ hm₃ hhub₁ hhub₃ V₁
       (fun a ha => ⟨(hWmem a (hV₁W ha)).1,
         (hWmem a (hV₁W ha)).2.1,
         (hWmem a (hV₁W ha)).2.2.2.1,
@@ -5197,30 +4759,21 @@ theorem street_dichotomy_uniform {A : Set ℕ} {N₀ : ℕ}
     · exact mkdiff u₁ u₂ h proj₁ proj₂
     · exact mkdiff u₂ u₁ (by omega) proj₂ proj₁
 
-/-- **The fixed hall extracts a difference.**  If one mirror
-point n serves affine corners beyond every size (with a uniform
-envelope Q), then stabilizing the basis-pair difference d = b₃ −
-b₂ gives: either ONE offset δ carries unbounded difference
-multiplicity — corners at all sizes with the same d hand over
-infinitely many pairs b, b + δ ∈ A — or the realized differences
-grow without bound, producing infinitely many DISTINCT streets
-n + d with basis pairs at difference d.  The mirror hall cannot
-avoid difference structure. -/
 theorem fixed_hall_extracts_difference {A : Set ℕ} {N₀ : ℕ}
     {Q : Finset ℕ} {n : ℕ}
     (hcorner : ∀ S, ∃ b₂ ∈ A, ∃ b₃ ∈ A, S ≤ b₂ ∧ b₂ < b₃ ∧
       ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
-        IsPairHub A s (insert b₃ Q)) :
+        IsPairSupportTransversal A s (insert b₃ Q)) :
     (∃ δ, 1 ≤ δ ∧ ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
       ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A) ∨
     (∀ Δ S, ∃ b₂ ∈ A, ∃ b₃ ∈ A, S ≤ b₂ ∧ b₂ < b₃ ∧
       Δ < b₃ - b₂ ∧ ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
-        IsPairHub A s (insert b₃ Q)) := by
+        IsPairSupportTransversal A s (insert b₃ Q)) := by
   classical
   set C : ℕ → ℕ → Prop := fun d S => 1 ≤ d ∧
     ∃ b₂, b₂ ∈ A ∧ S ≤ b₂ ∧ b₂ + d ∈ A ∧
     ∃ s, s + b₂ = n + (b₂ + d) ∧ N₀ ≤ s ∧
-      IsPairHub A s (insert (b₂ + d) Q) with hCdef
+      IsPairSupportTransversal A s (insert (b₂ + d) Q) with hCdef
   have hanti : ∀ d S S', S ≤ S' → C d S' → C d S := by
     intro d S S' hSS h
     obtain ⟨hd, b₂, hb₂A, hb₂S, hb₃A, rest⟩ := h
@@ -5269,23 +4822,7 @@ theorem fixed_hall_extracts_difference {A : Set ℕ} {N₀ : ℕ}
     refine ⟨b₂, hb₂A, b₂ + d, hb₃A, hb₂S, by omega, by omega,
       sc, by omega, hsN, hhub⟩
 
-/-- **THE FOUR ROOMS.**  Composing the street dichotomy, the
-corner stabilizations, and the hall extraction, every
-counterexample lives in one of four terminal rooms:
-
-  R1  one fixed offset δ with UNBOUNDED difference multiplicity
-      (A ∩ (A − δ) infinite: near-translation-invariance);
-  R2  difference pairs at arbitrarily large offsets, at every
-      multiplicity;
-  R3  scattered mirror halls: arbitrarily large blown points n,
-      each an affine corner beyond every size;
-  R4  a street ladder: ONE mirror point n whose difference
-      translates n + d are pair streets for unboundedly large
-      realized d — street POSITIONS pinned to a one-parameter
-      family, the first crack in target liberty.
-
-Rooms 3 and 4 share one flood envelope Q. -/
-theorem counterexample_four_rooms {A : Set ℕ} {N₀ : ℕ}
+theorem counterexample_four_cases {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
@@ -5299,10 +4836,10 @@ theorem counterexample_four_rooms {A : Set ℕ} {N₀ : ℕ}
           ∀ a ∈ V, a ∈ A ∧ ∃ x ∈ A, x + a = n) ∧
         ∃ b₂ ∈ A, ∃ b₃ ∈ A, S ≤ b₂ ∧ b₂ < b₃ ∧
           ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
-            IsPairHub A s (insert b₃ Q)) ∨
+            IsPairSupportTransversal A s (insert b₃ Q)) ∨
      (∃ n, ∀ Δ S, ∃ b₂ ∈ A, ∃ b₃ ∈ A, S ≤ b₂ ∧ b₂ < b₃ ∧
         Δ < b₃ - b₂ ∧ ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
-          IsPairHub A s (insert b₃ Q))) := by
+          IsPairSupportTransversal A s (insert b₃ Q))) := by
   classical
   have hfree0 : RepFree A N₀ ∅ := by
     intro m hm
@@ -5310,7 +4847,7 @@ theorem counterexample_four_rooms {A : Set ℕ} {N₀ : ℕ}
     exact ⟨x, hx, y, hy, 0, h0, by omega, Finset.notMem_empty x,
       Finset.notMem_empty y, Finset.notMem_empty 0⟩
   obtain ⟨Q, hQfree, hdich⟩ :=
-    street_dichotomy_uniform h0 hcov hfail
+    target_sequence_dichotomy_uniform h0 hcov hfail
   by_cases hdiff : ∀ K, ∃ δ, 1 ≤ δ ∧ ∃ V : Finset ℕ,
       K ≤ V.card ∧ ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A
   · rcases fixed_offset_or_growing hdiff with h | h
@@ -5323,7 +4860,7 @@ theorem counterexample_four_rooms {A : Set ℕ} {N₀ : ℕ}
           ∀ a ∈ V, a ∈ A ∧ ∃ x ∈ A, x + a = n) ∧
         ∃ b₂, b₂ ∈ A ∧ ∃ b₃, b₃ ∈ A ∧ S ≤ b₂ ∧ b₂ < b₃ ∧
           ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
-            IsPairHub A s (insert b₃ Q) := by
+            IsPairSupportTransversal A s (insert b₃ Q) := by
       intro S
       rcases hdich K₀ S with h | h
       · exfalso
@@ -5338,20 +4875,20 @@ theorem counterexample_four_rooms {A : Set ℕ} {N₀ : ℕ}
           ∀ a ∈ V, a ∈ A ∧ ∃ x ∈ A, x + a = n) ∧
         ∃ b₂, b₂ ∈ A ∧ ∃ b₃, b₃ ∈ A ∧ S' ≤ b₂ ∧ b₂ < b₃ ∧
           ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
-            IsPairHub A s (insert b₃ Q)) →
+            IsPairSupportTransversal A s (insert b₃ Q)) →
         ((∃ V : Finset ℕ, K₀ ≤ V.card ∧
           ∀ a ∈ V, a ∈ A ∧ ∃ x ∈ A, x + a = n) ∧
         ∃ b₂, b₂ ∈ A ∧ ∃ b₃, b₃ ∈ A ∧ S ≤ b₂ ∧ b₂ < b₃ ∧
           ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
-            IsPairHub A s (insert b₃ Q)) := by
+            IsPairSupportTransversal A s (insert b₃ Q)) := by
       intro n S S' hSS h
       obtain ⟨hb, b₂, hb₂A, b₃, hb₃A, hS, rest⟩ := h
       exact ⟨hb, b₂, hb₂A, b₃, hb₃A, by omega, rest⟩
     rcases nat_param_stabilize hanti hcorner with ⟨n, hn⟩ | hesc
-    · -- fixed hall: extract the difference ladder
+    · -- fixed hall: extract the difference sequence
       have hhall : ∀ S, ∃ b₂ ∈ A, ∃ b₃ ∈ A, S ≤ b₂ ∧ b₂ < b₃ ∧
           ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
-            IsPairHub A s (insert b₃ Q) := by
+            IsPairSupportTransversal A s (insert b₃ Q) := by
         intro S
         obtain ⟨-, b₂, hb₂A, b₃, hb₃A, hS, rest⟩ := hn S
         exact ⟨b₂, hb₂A, b₃, hb₃A, hS, rest⟩
@@ -5364,25 +4901,16 @@ theorem counterexample_four_rooms {A : Set ℕ} {N₀ : ℕ}
         hesc N S
       exact ⟨n, hNn, hblown, b₂, hb₂A, b₃, hb₃A, rest⟩
 
+/-! ## Mining the target sequence sequence -/
 
-/-! ## Mining the street ladder -/
-
-/-- **The rotator drops out of the ladder.**  In the street
-ladder (room R4), taking the basis pair beyond the mirror point
-puts the street strictly below the rotator: s = n + b₃ − b₂ < b₃
-whenever b₂ > n.  No pair of s can use b₃, so the street is a
-PURE-Q street: a fixed finite set pair-hubs infinitely many
-explicitly-located targets n + d, each in the shadow Q + A, with
-a basis pair at difference d alongside.  Target liberty is broken
-on the ladder: positions, envelope, and shadow are all pinned. -/
-theorem street_ladder_pure {A : Set ℕ} {N₀ : ℕ}
+theorem target_sequence_pure {A : Set ℕ} {N₀ : ℕ}
     {Q : Finset ℕ} {n : ℕ}
     (hcov : PairCovers A N₀)
     (hladder : ∀ Δ S, ∃ b₂ ∈ A, ∃ b₃ ∈ A, S ≤ b₂ ∧ b₂ < b₃ ∧
       Δ < b₃ - b₂ ∧ ∃ s, s + b₂ = n + b₃ ∧ N₀ ≤ s ∧
-        IsPairHub A s (insert b₃ Q)) :
+        IsPairSupportTransversal A s (insert b₃ Q)) :
     ∀ Δ, ∃ d, Δ < d ∧ N₀ ≤ n + d ∧
-      IsPairHub A (n + d) Q ∧
+      IsPairSupportTransversal A (n + d) Q ∧
       (∃ b ∈ A, b + d ∈ A) ∧
       (∃ q ∈ Q, ∃ a ∈ A, q + a = n + d) := by
   intro Δ
@@ -5391,7 +4919,7 @@ theorem street_ladder_pure {A : Set ℕ} {N₀ : ℕ}
   set d := b₃ - b₂ with hd
   have hsd : s = n + d := by omega
   have hsb₃ : s < b₃ := by omega
-  have hpure : IsPairHub A (n + d) Q := by
+  have hpure : IsPairSupportTransversal A (n + d) Q := by
     rw [← hsd]
     intro x hx y hy hxy
     rcases hhub x hx y hy hxy with h | h
@@ -5411,25 +4939,19 @@ theorem street_ladder_pure {A : Set ℕ} {N₀ : ℕ}
     rw [h1]
     exact hb₃A⟩, hshadow⟩
 
-/-- **The ladder shadow concentrates.**  The pure ladder's shadow
-elements q ∈ Q are finitely many, so ONE q* serves unboundedly
-many rungs: the set {n + d − q*} is an infinite subset of A that
-is a translate of the realized-difference family — an arithmetic
-copy of the ladder inside the basis itself, alongside a basis
-pair at each difference d. -/
-theorem ladder_shadow_concentrates {A : Set ℕ} {N₀ : ℕ}
+theorem sequence_shadow_concentrates {A : Set ℕ} {N₀ : ℕ}
     {Q : Finset ℕ} {n : ℕ}
     (hladder : ∀ Δ, ∃ d, Δ < d ∧ N₀ ≤ n + d ∧
-      IsPairHub A (n + d) Q ∧ (∃ b ∈ A, b + d ∈ A) ∧
+      IsPairSupportTransversal A (n + d) Q ∧ (∃ b ∈ A, b + d ∈ A) ∧
       (∃ q ∈ Q, ∃ a ∈ A, q + a = n + d)) :
     ∃ q ∈ Q, ∀ Δ, ∃ d, Δ < d ∧ N₀ ≤ n + d ∧
-      IsPairHub A (n + d) Q ∧ (∃ b ∈ A, b + d ∈ A) ∧
+      IsPairSupportTransversal A (n + d) Q ∧ (∃ b ∈ A, b + d ∈ A) ∧
       (∃ a ∈ A, q + a = n + d) := by
   classical
   by_contra hno
   push Not at hno
   have hDf : ∀ q, ∃ Δq, q ∈ Q → ∀ d, Δq < d → N₀ ≤ n + d →
-      IsPairHub A (n + d) Q → (∃ b ∈ A, b + d ∈ A) →
+      IsPairSupportTransversal A (n + d) Q → (∃ b ∈ A, b + d ∈ A) →
       ∀ a ∈ A, q + a ≠ n + d := by
     intro q
     by_cases hq : q ∈ Q
@@ -5442,17 +4964,10 @@ theorem ladder_shadow_concentrates {A : Set ℕ} {N₀ : ℕ}
   have hsup : Δf q₀ ≤ Q.sup Δf := Finset.le_sup hq₀Q
   exact hΔf q₀ hq₀Q d (by omega) hN hhub hbp a₀ ha₀A ha₀
 
-/-- **The ladder difference desert.**  A rung reflection
-a = n + d − q* (large, hence outside Q) crossed with a higher
-rung's pure street forces the translated difference out of the
-basis: if q* + (d' − d) ∈ A it must lie in the finite Q.  So for
-every large rung, the translated rung-differences avoid A with at
-most |Q| exceptions — the ladder digs deserts at its own
-difference set. -/
-theorem ladder_difference_desert {A : Set ℕ} {Q : Finset ℕ}
+theorem sequence_difference_exclusion_interval {A : Set ℕ} {Q : Finset ℕ}
     {q n d d' a : ℕ}
     (ha : q + a = n + d) (haA : a ∈ A) (haQ : a ∉ Q)
-    (hhub' : IsPairHub A (n + d') Q) (hdd : d ≤ d')
+    (hhub' : IsPairSupportTransversal A (n + d') Q) (hdd : d ≤ d')
     (hy : q + (d' - d) ∈ A) :
     q + (d' - d) ∈ Q := by
   have hpair : a + (q + (d' - d)) = n + d' := by omega
@@ -5460,13 +4975,7 @@ theorem ladder_difference_desert {A : Set ℕ} {Q : Finset ℕ}
   · exact absurd h haQ
   · exact h
 
-/-- **Room R1 gets teams.**  In the translation room the δ-paired
-family {x : x, x + δ ∈ A} is infinite, so the team supply applies
-to it: beyond every bound some failing target carries a minimal
-hub of size ≥ 2 whose EVERY member has a δ-partner in the basis.
-The enemy's teams there are translation-coherent — each team
-shifts by δ into a family of fresh representations. -/
-theorem translation_room_teams {A : Set ℕ} {N₀ δ : ℕ}
+theorem translation_case_pair_transversals {A : Set ℕ} {N₀ δ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -5474,7 +4983,7 @@ theorem translation_room_teams {A : Set ℕ} {N₀ δ : ℕ}
     (hR1 : ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
       ∀ x ∈ V, x ∈ A ∧ x + δ ∈ A) :
     ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
-      IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      IsRepSupportTransversal A n H ∧ (∀ h ∈ H, ¬IsRepSupportTransversal A n (H \ {h})) ∧
       2 ≤ H.card ∧ ∀ h ∈ H, h ∈ A ∧ h + δ ∈ A ∧ 0 < h := by
   classical
   set B : Set ℕ := {x | x ∈ A ∧ x + δ ∈ A ∧ 0 < x} with hB
@@ -5499,24 +5008,15 @@ theorem translation_room_teams {A : Set ℕ} {N₀ δ : ℕ}
     omega
   intro N
   obtain ⟨n, hn, H, hhub, hmin, hcard, hmem⟩ :=
-    guardian_team_hubs_of_deletion h0 hcov hanchor hfail
+    minimalSupportTransversals_from_infiniteDeletion h0 hcov hanchor hfail
       hBA hBinf h0B N
   refine ⟨n, hn, H, hhub, hmin, hcard, ?_⟩
   intro h hh
   have := hmem h hh
   exact ⟨this.1, this.2.1, this.2.2⟩
 
-
 /-! ## The classical-minimality interface -/
 
-/-- **The essential element's private stream.**  Erdős 881's own
-hypothesis — A is a MINIMAL basis, every element essential — has
-been under-used: essentiality of b at order 2 means deleting b
-breaks coverage cofinally, i.e. b owns a cofinal stream of
-targets whose EVERY pair decomposition uses b.  At each such
-target the decomposition is unique: m = b + c with c ∈ A, and no
-other pair exists.  Every element of the true 881 configuration
-owns infinitely many unique-representation targets. -/
 theorem essential_private_pair_stream {A : Set ℕ} {N₀ : ℕ}
     {b : ℕ} (hcov : PairCovers A N₀)
     (hess : ¬∃ N₁, ∀ n, N₁ ≤ n → ∃ x ∈ A, ∃ y ∈ A,
@@ -5559,12 +5059,6 @@ theorem shared_private_target_is_sum {A : Set ℕ} {b b' m c c' : ℕ}
   · exact absurd h1 (Ne.symm hne)
   · omega
 
-/-- **The disjoint unique-pair supply.**  In a classically minimal
-basis (every positive element essential at order 2), every K
-admits K pairwise disjoint pairs (bᵢ, cᵢ) of basis elements whose
-sums are unique-decomposition targets.  Fresh choice by height:
-each new private target is taken above everything used, so its
-companion is automatically fresh. -/
 theorem disjoint_unique_pairs_of_essential {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀)
     (hess : ∀ a ∈ A, 0 < a → ¬∃ N₁, ∀ n, N₁ ≤ n →
@@ -5626,14 +5120,6 @@ theorem disjoint_unique_pairs_of_essential {A : Set ℕ} {N₀ : ℕ}
         have hij' : (i : ℕ) < (j : ℕ) := hij
         omega
 
-/-- **Infinite degree in the unique-sum graph.**  Every essential
-element has unboundedly many companions: distinct private targets
-give distinct companions c = m − b, so the graph whose edges are
-unique-decomposition sums has all degrees infinite.  With
-`shared_private_target_is_sum` (edges meet only at forced sums)
-and `disjoint_unique_pairs_of_essential` (infinite matchings),
-the classical-minimality hypothesis carries a complete graph
-theory. -/
 theorem unique_pair_graph_infinite_degree {A : Set ℕ} {N₀ : ℕ}
     {b : ℕ} (hcov : PairCovers A N₀)
     (hess : ¬∃ N₁, ∀ n, N₁ ≤ n → ∃ x ∈ A, ∃ y ∈ A,
@@ -5667,16 +5153,7 @@ theorem unique_pair_graph_infinite_degree {A : Set ℕ} {N₀ : ℕ}
           huniq x hx y hy (by omega)⟩
       · exact hVm c' h
 
-/-- **Matched deletions field matched teams.**  Classical
-minimality supplies an INFINITE matching of unique-sum pairs
-(components strictly ascending); deleting all its vertices forces
-— by the team supply — cofinal failing targets carrying minimal
-hubs of size ≥ 2 made entirely of matched vertices.  Every team
-member is half of a unique-decomposition pair: the enemy must
-defend with elements that each carry a private target of their
-own.  First contact between the classical-minimality graph and
-the order-3 machinery. -/
-theorem matched_deletion_teams {A : Set ℕ} {N₀ : ℕ}
+theorem matched_deletion_pair_transversals {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -5692,7 +5169,7 @@ theorem matched_deletion_teams {A : Set ℕ} {N₀ : ℕ}
       (∀ i, max (P i).1 (P i).2 < min (P (i + 1)).1
         (P (i + 1)).2) ∧
       ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
-        IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        IsRepSupportTransversal A n H ∧ (∀ h ∈ H, ¬IsRepSupportTransversal A n (H \ {h})) ∧
         2 ≤ H.card ∧ ∀ h ∈ H, ∃ i,
           h = (P i).1 ∨ h = (P i).2 := by
   classical
@@ -5792,18 +5269,12 @@ theorem matched_deletion_teams {A : Set ℕ} {N₀ : ℕ}
   refine ⟨g, hgood, hinc, ?_⟩
   intro N
   obtain ⟨n, hn, H, hhub, hminH, hcard, hmem⟩ :=
-    guardian_team_hubs_of_deletion h0 hcov hanchor hfail
+    minimalSupportTransversals_from_infiniteDeletion h0 hcov hanchor hfail
       hBA hBinf h0B N
   refine ⟨n, hn, H, hhub, hminH, hcard, ?_⟩
   intro h hh
   exact hmem h hh
 
-/-- **Classical minimality implies elementwise ℵ₀-minimality.**
-Deleting more can only break coverage harder: an infinite
-deletion contains a positive element, and the survivors are a
-subset of that element's own deletion, whose coverage already
-fails cofinally.  Every hmin-theorem in the repository is
-therefore available under Erdős 881's true hypothesis. -/
 theorem hmin_of_essential {A : Set ℕ}
     (hess : ∀ a ∈ A, 0 < a → ¬∃ N₁, ∀ n, N₁ ≤ n →
       ∃ x ∈ A, ∃ y ∈ A, x ≠ a ∧ y ≠ a ∧ x + y = n) :
@@ -5822,16 +5293,8 @@ theorem hmin_of_essential {A : Set ℕ}
   exact ⟨x, hx, y, hy, fun h => hxB (h ▸ hbB),
     fun h => hyB (h ▸ hbB), hxy⟩
 
+/-! ## The Ramsey iteration -/
 
-/-! ## The Ramsey cascade -/
-
-/-- **The unique-sum Ramsey dichotomy.**  Any covering set
-contains an infinite ascending subsequence whose pairwise sums
-are ALL unique-decomposition targets, or NONE are: colour index
-pairs by unique-sum-ness and apply infinite Ramsey.  The
-all-unique side is an infinite strong-Sidon configuration inside
-A; the none-unique side has every pairwise sum robust.  Both
-sides are deletion fodder for the classical-minimality program. -/
 theorem unique_sum_ramsey {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀) :
     ∃ g : ℕ → ℕ, StrictMono g ∧ (∀ i, g i ∈ A) ∧
@@ -5890,15 +5353,15 @@ theorem unique_sum_ramsey {A : Set ℕ} {N₀ : ℕ}
     have h2 := of_decide_eq_false h1
     simpa using h2
 
-/-- All-unique branch, hub form: each pairwise sum is a
-two-element pair hub — a 2-parameter family of maximally fragile
-targets, far denser than the one-parameter street ladder. -/
-theorem all_unique_pair_hubs {A : Set ℕ} {g : ℕ → ℕ}
+/-- All-unique branch, support transversal form: each pairwise sum is a
+two-element pair support transversal — a 2-parameter family of maximally fragile
+targets, far denser than the one-parameter target sequence sequence. -/
+theorem all_unique_pair_support_transversals {A : Set ℕ} {g : ℕ → ℕ}
     (huniq : ∀ i j, i < j → ∀ x ∈ A, ∀ y ∈ A,
       x + y = g i + g j →
       (x = g i ∧ y = g j) ∨ (x = g j ∧ y = g i)) :
     ∀ i j, i < j →
-      IsPairHub A (g i + g j) ({g i, g j} : Finset ℕ) := by
+      IsPairSupportTransversal A (g i + g j) ({g i, g j} : Finset ℕ) := by
   intro i j hij x hx y hy hxy
   rcases huniq i j hij x hx y hy hxy with ⟨h1, _⟩ | ⟨h1, _⟩
   · exact Or.inl (by simp [h1])
@@ -5922,15 +5385,7 @@ theorem all_unique_is_sidon {A : Set ℕ} {g : ℕ → ℕ}
     have hjl : l = i := hmono.injective h3
     omega
 
-/-- **Clique teams or an independent set.**  Composing the
-unique-sum Ramsey dichotomy with the team supply: a
-counterexample either contains an infinite ascending sequence
-with NO unique pairwise sums (the independent set), or an
-infinite Sidon clique whose deletion forces cofinal minimal teams
-drawn from the clique — teams whose members' own pairwise sums
-are unique-decomposition targets.  The enemy defends the clique's
-2-parameter fragile family with defenders married inside it. -/
-theorem clique_or_independent_teams {A : Set ℕ} {N₀ : ℕ}
+theorem clique_or_independent_pair_transversals {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -5940,9 +5395,9 @@ theorem clique_or_independent_teams {A : Set ℕ} {N₀ : ℕ}
           ¬(∀ x ∈ A, ∀ y ∈ A, x + y = g i + g j →
             (x = g i ∧ y = g j) ∨ (x = g j ∧ y = g i))) ∨
        ((∀ i j, i < j →
-          IsPairHub A (g i + g j) ({g i, g j} : Finset ℕ)) ∧
+          IsPairSupportTransversal A (g i + g j) ({g i, g j} : Finset ℕ)) ∧
         ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
-          IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+          IsRepSupportTransversal A n H ∧ (∀ h ∈ H, ¬IsRepSupportTransversal A n (H \ {h})) ∧
           2 ≤ H.card ∧ ∀ h ∈ H, ∃ i, h = g i)) := by
   classical
   obtain ⟨g, hgmono, hgA, hgpos, hbranch⟩ :=
@@ -5950,7 +5405,7 @@ theorem clique_or_independent_teams {A : Set ℕ} {N₀ : ℕ}
   refine ⟨g, hgmono, hgA, ?_⟩
   rcases hbranch with huniq | hindep
   · right
-    refine ⟨all_unique_pair_hubs huniq, ?_⟩
+    refine ⟨all_unique_pair_support_transversals huniq, ?_⟩
     set B : Set ℕ := Set.range g with hB
     haveI : DecidablePred (· ∈ B) := Classical.decPred _
     have hBA : B ⊆ A := by
@@ -5964,7 +5419,7 @@ theorem clique_or_independent_teams {A : Set ℕ} {N₀ : ℕ}
       Set.infinite_range_of_injective hgmono.injective
     intro N
     obtain ⟨n, hn, H, hhub, hminH, hcard, hmem⟩ :=
-      guardian_team_hubs_of_deletion h0 hcov hanchor hfail
+      minimalSupportTransversals_from_infiniteDeletion h0 hcov hanchor hfail
         hBA hBinf h0B N
     refine ⟨n, hn, H, hhub, hminH, hcard, ?_⟩
     intro h hh
@@ -5972,14 +5427,6 @@ theorem clique_or_independent_teams {A : Set ℕ} {N₀ : ℕ}
     exact ⟨i, hi.symm⟩
   · exact Or.inl hindep
 
-/-- **Second-order Ramsey on the independent branch.**  Given an
-ascending sequence in A, colour index pairs by whether the sum
-g i + g j has a decomposition avoiding the whole range of g.
-Homogenizing yields a subsequence g' = g ∘ f with: every pairwise
-sum has a range-avoiding alternative (so the sum square SURVIVES
-deleting the subsequence — its targets cannot be failing targets
-of that deletion), or no pairwise sum has one (every
-decomposition of the sum square routes through the range). -/
 theorem independent_alternatives_ramsey {A : Set ℕ}
     (g : ℕ → ℕ) (hgmono : StrictMono g) (hgA : ∀ i, g i ∈ A)
     (hgpos : ∀ i, 0 < g i) :
@@ -6014,12 +5461,6 @@ theorem independent_alternatives_ramsey {A : Set ℕ}
     exact h2 (by
       exact ⟨x, hx, y, hy, hno.1, hno.2, hxy⟩)
 
-/-- **The surviving sum square.**  In the avoiding-alternatives
-branch, the pairwise sums of the subsequence retain 0-padded
-representations avoiding the subsequence itself: no sum-square
-target can be a failing target of the subsequence's deletion.
-The first verified NEGATIVE placement law for failures — an
-infinite 2-parameter region failures must avoid. -/
 theorem surviving_sum_square {A : Set ℕ} {g : ℕ → ℕ}
     (h0 : 0 ∈ A) (hgpos : ∀ i, 0 < g i) {f : ℕ → ℕ}
     (halt : ∀ i j, i < j → ∃ x ∈ A, ∃ y ∈ A,
@@ -6043,25 +5484,12 @@ theorem surviving_sum_square {A : Set ℕ} {g : ℕ → ℕ}
   exact ⟨x, hx, y, hy, 0, h0, hsub x hxr, hsub y hyr, h0r,
     by omega⟩
 
-/-- **THE RAMSEY TRICHOTOMY.**  Every covering set contains an
-infinite ascending positive sequence T of one of three kinds:
-
-  (C1) a Sidon CLIQUE — every pairwise sum is a two-element pair
-       hub {T i, T j} (unique decomposition);
-  (C2) a SELF-AVOIDING sequence — every pairwise sum retains a
-       representation avoiding all of T, so no sum-square target
-       can fail under the T-deletion (negative placement law);
-  (C3) an R-ROUTED sequence — some positive basis family R ⊇ T
-       carries every decomposition of every pairwise sum.
-
-Pure combinatorics over covering + 0 ∈ A; two nested infinite
-Ramsey passes. -/
 theorem ramsey_trichotomy_of_covering {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀) :
     ∃ T : ℕ → ℕ, StrictMono T ∧ (∀ i, T i ∈ A) ∧
       (∀ i, 0 < T i) ∧
       ((∀ i j, i < j →
-          IsPairHub A (T i + T j) ({T i, T j} : Finset ℕ)) ∨
+          IsPairSupportTransversal A (T i + T j) ({T i, T j} : Finset ℕ)) ∨
        (∀ i j, i < j → ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
           x ∉ Set.range T ∧ y ∉ Set.range T ∧
           z ∉ Set.range T ∧ x + y + z = T i + T j) ∨
@@ -6074,7 +5502,7 @@ theorem ramsey_trichotomy_of_covering {A : Set ℕ} {N₀ : ℕ}
     unique_sum_ramsey hcov
   rcases hbranch with huniq | hindep
   · exact ⟨g, hgmono, hgA, hgpos,
-      Or.inl (all_unique_pair_hubs huniq)⟩
+      Or.inl (all_unique_pair_support_transversals huniq)⟩
   · obtain ⟨f, hfmono, halt⟩ :=
       independent_alternatives_ramsey g hgmono hgA hgpos
     rcases halt with hyes | hno
@@ -6091,17 +5519,6 @@ theorem ramsey_trichotomy_of_covering {A : Set ℕ} {N₀ : ℕ}
       · intro i j hij x hx y hy hxy
         exact hno i j hij x hx y hy hxy
 
-/-- **THE CUBE DICHOTOMY** (order-3 Ramsey, the problem in
-miniature).  Every covering set contains an infinite ascending
-positive sequence T inside a positive family R with: every
-triple sum T i + T j + T k has a representation avoiding R
-entirely — so the T-deletion leaves its own sum CUBE alive at
-order 3, and failing targets of that deletion must dodge an
-infinite 3-parameter region — or every representation of every
-triple sum routes through R, the enemy's dream configuration
-realized on one sequence.  The gap between the surviving-cube
-branch and full survival (all late targets, not just the cube)
-is exactly Erdős 881. -/
 theorem cube_avoidance_ramsey {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀) :
     ∃ T : ℕ → ℕ, StrictMono T ∧ (∀ i, T i ∈ A) ∧
@@ -6170,16 +5587,6 @@ theorem cube_avoidance_ramsey {A : Set ℕ} {N₀ : ℕ}
     exact h2 ⟨x, hx, y, hy, z, hz, hno.1, hno.2.1, hno.2.2,
       hxyz⟩
 
-/-- **THE COMPLETENESS REDUCTION.**  If some infinite family
-T ⊆ A is COMPLETE (every late target is a finite subset-sum of
-it) and SELF-AVOIDING at all subset arities (every such subset
-sum has an order-3 representation avoiding T), then A∖T is an
-order-3 basis: T is a surviving deletion and the counterexample
-dies.  The Ramsey cascade produces self-avoidance branch-wise
-(`cube_avoidance_ramsey`, tuples version pending); completeness
-is what Ramsey thinning destroys.  Erdős 881 (k = 2), sufficient
-form: every minimal basis contains a complete self-avoiding
-family. -/
 theorem survival_of_complete_avoiding {A : Set ℕ} {N₂ : ℕ}
     (T : Set ℕ)
     (hcomp : ∀ n, N₂ ≤ n → ∃ S : Finset ℕ,
@@ -6195,19 +5602,8 @@ theorem survival_of_complete_avoiding {A : Set ℕ} {N₂ : ℕ}
     havoid S hST
   exact ⟨x, hx, y, hy, z, hz, hxT, hyT, hzT, by omega⟩
 
+/-! ## The omega restriction -/
 
-/-! ## The omega pinch -/
-
-/-- **THE ω-AVOIDANCE DICHOTOMY.**  Homogenizing the
-self-avoidance colouring at EVERY arity (nested subsequences,
-one fixed base range R, diagonal extraction): every covering set
-contains an ascending positive sequence T inside a positive
-family R such that either every tail subset-sum of T (any arity)
-has a representation avoiding R — the deletion of T leaves its
-ENTIRE tail subset-sum semigroup alive, so failing targets dodge
-it at every arity — or some fixed arity r is fully routed
-through R.  Combined with `survival_of_complete_avoiding`, the
-only gap to a full solution is the density the diagonal loses. -/
 theorem omega_avoidance_dichotomy {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀) :
     ∃ T : ℕ → ℕ, StrictMono T ∧ (∀ i, T i ∈ A) ∧
@@ -6369,13 +5765,6 @@ theorem omega_avoidance_dichotomy {A : Set ℕ} {N₀ : ℕ}
     simp only [hcol, id_eq] at h1
     simpa using of_decide_eq_true h1
 
-/-- **Complete families are blocked** (enemy-side interface,
-contrapositive of the completeness reduction).  Under hfail,
-every infinite complete family T ⊆ A has, beyond every bound, a
-finite subset whose sum admits no representation avoiding T: the
-enemy must post a blocked subset-sum against every complete
-family, cofinally.  Its defence budget is measured in blocked
-subset-sums per family per window. -/
 theorem complete_families_blocked_of_hfail {A : Set ℕ}
     {N₀ : ℕ}
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -6409,13 +5798,6 @@ theorem complete_families_blocked_of_hfail {A : Set ℕ}
     omega
   exact hnofail ![x, y, z] hmemb hsum3
 
-/-- **The completeness criterion.**  A sequence starting at 1
-whose each term is at most one more than the sum of its
-predecessors has subset sums covering every value up to the
-total: greedy from the top.  This is the bridge between the
-greedy probe's high density and `survival_of_complete_avoiding`:
-a self-avoiding family with small gaps is complete, hence a
-surviving deletion. -/
 theorem subset_sum_complete_of_small_gaps (t : ℕ → ℕ)
     (h1 : t 0 = 1)
     (hgap : ∀ k, t (k + 1) ≤
@@ -6467,12 +5849,6 @@ theorem subset_sum_complete_of_small_gaps (t : ℕ → ℕ)
       · rw [Finset.sum_insert hnotmem, hsum]
         omega
 
-/-- **Bootstrap completeness.**  The offset form of the
-completeness criterion for real bases (which need not contain 1):
-if the first K₀+1 terms' subset sums cover an initial window
-[B, C₀], and each later term is at most one more than the
-interval already reachable, then subset sums cover [B, C₀ + tail
-sum] at every stage.  Interval-extension induction. -/
 theorem subset_sum_complete_of_bootstrap (t : ℕ → ℕ)
     {B C₀ K₀ : ℕ} (hBC : B ≤ C₀)
     (hinit : ∀ n, B ≤ n → n ≤ C₀ → ∃ S : Finset ℕ,
@@ -6548,29 +5924,18 @@ theorem subset_sum_complete_of_bootstrap (t : ℕ → ℕ)
       have := hS hx
       rw [Finset.mem_range] at this ⊢
       omega
-/-- Corep confinement at a pair street: any basis element outside
-the hub pairs with the street only through hub elements — its
-corep lands INSIDE the finite hub. -/
-theorem pair_hub_corep_confined {A : Set ℕ} {s : ℕ}
-    {H : Finset ℕ} (hhub : IsPairHub A s H) {a a' : ℕ}
+
+theorem pair_support_transversal_corep_confined {A : Set ℕ} {s : ℕ}
+    {H : Finset ℕ} (hhub : IsPairSupportTransversal A s H) {a a' : ℕ}
     (ha : a ∈ A) (haH : a ∉ H) (ha' : a' ∈ A)
     (hsum : a + a' = s) : a' ∈ H := by
   rcases hhub a ha a' ha' hsum with h | h
   · exact absurd h haH
   · exact h
 
-/-! ## Nash-Williams: chaining the shell antichain -/
+/-! ## Nash-Williams: chaining the rank layer antichain -/
 
-/-- **The shell Higman chain.**  The first Nash-Williams step of
-the chaining program: the enemy's shells, read as sorted lists,
-form a sequence in the Higman well-quasi-order (lists over ℕ
-under pointwise-≤ sublist embedding), so an infinite subsequence
-of shells is a CHAIN — each shell embeds, dominated pointwise,
-into every later one.  The enemy's antichain of freedoms carries
-a canonical infinite ascending spine; converting this
-embedding-chain into a freeness chain is the remaining distance
-to a branch. -/
-theorem shell_higman_chain {A : Set ℕ} {N₀ : ℕ}
+theorem rank_layer_higman_chain {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -6581,13 +5946,13 @@ theorem shell_higman_chain {A : Set ℕ} {N₀ : ℕ}
       (∀ k, RepFree A N₀ (Q k)) ∧
       (∀ j k, j < k → Disjoint (Q j) (Q k)) ∧
       (∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
-        ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) ∧
+        ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m (insert b (Q k))) ∧
       ∃ σ : ℕ ↪o ℕ, ∀ m n, m ≤ n →
         List.SublistForall₂ (· ≤ ·)
           ((Q (σ m)).sort (· ≤ ·)) ((Q (σ n)).sort (· ≤ ·)) := by
   classical
   obtain ⟨Q, hne, hmem, hfree, hdisj, hguard⟩ :=
-    absolute_shell_stratification h0 hcov hanchor hfail
+    absolute_rank_layer_stratification h0 hcov hanchor hfail
   haveI hwqo : WellQuasiOrderedLE ℕ :=
     wellQuasiOrderedLE_iff_wellFoundedLT.mpr inferInstance
   have hpwo : (Set.univ : Set ℕ).PartiallyWellOrderedOn
@@ -6621,15 +5986,7 @@ theorem forall₂_mem_partner {r : ℕ → ℕ → Prop}
     · obtain ⟨y, hy, hxy⟩ := ih x h'
       exact ⟨y, List.mem_cons_of_mem _ hy, hxy⟩
 
-/-- **THE SPINE LINEAGE.**  Walking through the Nash-Williams
-door: consecutive Higman embeddings along the shell chain
-compose into element lineages, and shell disjointness makes
-every step STRICT.  The enemy's stratification threads a
-canonical strictly increasing sequence meeting one spine shell
-after another — an infinite ascending skeleton assembled from
-the enemy's own free material.  The branch program's raw
-spine. -/
-theorem spine_lineage {A : Set ℕ} {N₀ : ℕ}
+theorem subsequence_lineage {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -6640,13 +5997,13 @@ theorem spine_lineage {A : Set ℕ} {N₀ : ℕ}
       (∀ k, RepFree A N₀ (Q k)) ∧
       (∀ j k, j < k → Disjoint (Q j) (Q k)) ∧
       (∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
-        ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) ∧
+        ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m (insert b (Q k))) ∧
       StrictMono x ∧ (∀ t, x t ∈ Q (σ t)) := by
   classical
   obtain ⟨Q, hne, hmem, hfree, hdisj, hguard, σ, hσ⟩ :=
-    shell_higman_chain h0 hcov hanchor hfail
-  -- step: an element of a spine shell has a strictly larger
-  -- partner in the next spine shell
+    rank_layer_higman_chain h0 hcov hanchor hfail
+  -- step: an element of a subsequence rank layer has a strictly larger
+  -- partner in the next subsequence rank layer
   have hstep : ∀ t v, v ∈ Q (σ t) → ∃ w ∈ Q (σ (t + 1)),
       v < w := by
     intro t v hv
@@ -6696,16 +6053,7 @@ theorem spine_lineage {A : Set ℕ} {N₀ : ℕ}
   exact ⟨Q, σ, x, hne, hmem, hfree, hdisj, hguard, hxmono,
     hxmem⟩
 
-/-- **The board is set.**  Against EVERY subsequence of the
-canonical spine, the enemy must post a stall: some finite prefix
-of lineage elements becomes a full hub at some target.  The
-adaptive endgame is now a game on canonical material — the
-constructor plays subsequences of the spine, the enemy must
-answer each with a hub made of spine elements, and every hub it
-posts is subject to the cap suite, the depth tax, and the sharer
-laws.  This theorem is the game board; the winning strategy is
-the remaining work. -/
-theorem spine_stalls_hereditarily {A : Set ℕ} {N₀ : ℕ}
+theorem subsequence_stalls_hereditarily {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -6716,11 +6064,11 @@ theorem spine_stalls_hereditarily {A : Set ℕ} {N₀ : ℕ}
       (∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h) ∧
       ∀ τ : ℕ → ℕ, StrictMono τ →
         ∃ J m, N₀ ≤ m ∧
-          IsRepHub A m ((Finset.range J).image (fun t =>
+          IsRepSupportTransversal A m ((Finset.range J).image (fun t =>
             x (τ t))) := by
   classical
   obtain ⟨Q, σ, x, hne, hmem, hfree, hdisj, hguard, hxmono,
-    hxmem⟩ := spine_lineage h0 hcov hanchor hfail
+    hxmem⟩ := subsequence_lineage h0 hcov hanchor hfail
   refine ⟨Q, σ, x, hxmono, hxmem, hfree,
     hmem, ?_⟩
   intro τ hτ
@@ -6740,17 +6088,7 @@ theorem spine_stalls_hereditarily {A : Set ℕ} {N₀ : ℕ}
   obtain ⟨h1, h2, h3⟩ := hmiss
   exact h3 (hall a ha b hb c hc hsum h1 h2)
 
-/-- **RANK OR LOCKSTEP.**  Spine shell sizes are non-decreasing
-(sublist embeddings), so they are unbounded — the counterexample
-contains FREE SETS OF EVERY SIZE, forcing infinite root rank and
-closing the finite-rank room at the root — or eventually
-constant, and then equal-length sublist embeddings are FULL
-pointwise dominations: beyond some point the spine shells march
-in lockstep, the t-th shell's sorted list dominated coordinate
-by coordinate inside the (t+1)-st.  Either the rank door closes
-or the enemy's shells are s parallel strictly increasing
-columns. -/
-theorem spine_rank_or_lockstep {A : Set ℕ} {N₀ : ℕ}
+theorem subsequence_rank_or_aligned {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -6768,7 +6106,7 @@ theorem spine_rank_or_lockstep {A : Set ℕ} {N₀ : ℕ}
         ((Q (σ (t + 1))).sort (· ≤ ·)))) := by
   classical
   obtain ⟨Q, hne, hmem, hfree, hdisj, hguard, σ, hσ⟩ :=
-    shell_higman_chain h0 hcov hanchor hfail
+    rank_layer_higman_chain h0 hcov hanchor hfail
   have hmono : ∀ t t', t ≤ t' →
       (Q (σ t)).card ≤ (Q (σ t')).card := by
     intro t t' htt
@@ -6840,12 +6178,7 @@ theorem spine_rank_or_lockstep {A : Set ℕ} {N₀ : ℕ}
       rw [← hleq]
       exact hf₂
 
-/-- **The fork, in rank form.**  Either the root rank of the full
-freeness tree is at least ω — free sets of every size exist, and
-the finite-rank room is closed at the root — or the spine goes
-lockstep.  Mechanical combination of `spine_rank_or_lockstep`
-with `free_set_card_le_rank`. -/
-theorem root_rank_omega_or_lockstep {A : Set ℕ} {N₀ : ℕ}
+theorem root_rank_omega_or_aligned {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -6861,7 +6194,7 @@ theorem root_rank_omega_or_lockstep {A : Set ℕ} {N₀ : ℕ}
       (∀ t, T ≤ t → List.Forall₂ (· ≤ ·)
         ((Q (σ t)).sort (· ≤ ·))
         ((Q (σ (t + 1))).sort (· ≤ ·)))) := by
-  rcases spine_rank_or_lockstep h0 hcov hanchor hfail with
+  rcases subsequence_rank_or_aligned h0 hcov hanchor hfail with
     hbig | hlock
   · left
     rw [Ordinal.omega0_le]
@@ -6875,13 +6208,7 @@ theorem root_rank_omega_or_lockstep {A : Set ℕ} {N₀ : ℕ}
       _ ≤ _ := h1
   · exact Or.inr hlock
 
-/-- **The lockstep columns.**  In the lockstep branch the spine
-shells are literally s parallel strictly increasing columns: the
-k-th smallest elements across the spine form a strictly monotone
-sequence, and every shell is exactly the set of current column
-values.  The enemy's entire late freedom supply is an s-lane
-highway. -/
-theorem lockstep_columns {A : Set ℕ} {N₀ : ℕ}
+theorem aligned_columns {A : Set ℕ} {N₀ : ℕ}
     {Q : ℕ → Finset ℕ} {σ : ℕ ↪o ℕ} {T s : ℕ}
     (hdisj : ∀ j k, j < k → Disjoint (Q j) (Q k))
     (hcard : ∀ t, T ≤ t → (Q (σ t)).card = s)
@@ -6960,9 +6287,9 @@ theorem lockstep_columns {A : Set ℕ} {N₀ : ℕ}
     ((Q (σ (T + t))).sort (· ≤ ·)).getD (k : ℕ) 0,
     hymono, hymem, honto⟩
 
-/-- Fork with guardianship carried through (primed form of
-`spine_rank_or_lockstep`). -/
-theorem spine_rank_or_lockstep' {A : Set ℕ} {N₀ : ℕ}
+/-- Fork with required-element condition carried through (primed form of
+`subsequence_rank_or_aligned`). -/
+theorem subsequence_rank_or_aligned' {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -6974,7 +6301,7 @@ theorem spine_rank_or_lockstep' {A : Set ℕ} {N₀ : ℕ}
       (∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h) ∧
       (∀ j k, j < k → Disjoint (Q j) (Q k)) ∧
       (∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
-        ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k))) ∧
+        ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m (insert b (Q k))) ∧
       1 ≤ s ∧
       (∀ t, T ≤ t → (Q (σ t)).card = s) ∧
       (∀ t, T ≤ t → List.Forall₂ (· ≤ ·)
@@ -6982,7 +6309,7 @@ theorem spine_rank_or_lockstep' {A : Set ℕ} {N₀ : ℕ}
         ((Q (σ (t + 1))).sort (· ≤ ·)))) := by
   classical
   obtain ⟨Q, hne, hmem, hfree, hdisj, hguard, σ, hσ⟩ :=
-    shell_higman_chain h0 hcov hanchor hfail
+    rank_layer_higman_chain h0 hcov hanchor hfail
   have hmono : ∀ t t', t ≤ t' →
       (Q (σ t)).card ≤ (Q (σ t')).card := by
     intro t t' htt
@@ -7052,21 +6379,15 @@ theorem spine_rank_or_lockstep' {A : Set ℕ} {N₀ : ℕ}
       rw [← hleq]
       exact hf₂
 
-/-- **The one-lane clique.**  If the lockstep width is s = 1 the
-spine shells are singletons {x t}, and hierarchical guardianship
-makes every LATER spine value a guardian of every EARLIER
-singleton shell: each pair of one-lane spine values is a full
-two-element hub somewhere.  A single-lane enemy carries an
-infinite d = 1 crystal clique on canonical material. -/
-theorem lockstep_one_lane_clique {A : Set ℕ} {N₀ : ℕ}
+theorem aligned_one_column_clique {A : Set ℕ} {N₀ : ℕ}
     {Q : ℕ → Finset ℕ} {σ : ℕ ↪o ℕ} {T : ℕ} {x : ℕ → ℕ}
     (hmem : ∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h)
     (hdisj : ∀ j k, j < k → Disjoint (Q j) (Q k))
     (hguard : ∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
-      ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k)))
+      ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m (insert b (Q k)))
     (hsingle : ∀ t, T ≤ t → Q (σ t) = {x t}) :
     ∀ t t', T ≤ t → t < t' →
-      ∃ m, N₀ ≤ m ∧ IsRepHub A m ({x t', x t} : Finset ℕ) := by
+      ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m ({x t', x t} : Finset ℕ) := by
   intro t t' hTt htt
   have hx'mem : x t' ∈ Q (σ t') := by
     rw [hsingle t' (by omega)]
@@ -7087,22 +6408,17 @@ theorem lockstep_one_lane_clique {A : Set ℕ} {N₀ : ℕ}
   rw [← h1]
   exact hhub
 
-/-- **Lane guardianship.**  On the lockstep highway every later
-column value guards every earlier spine shell: the duty ledger
-of the s-lane enemy is indexed by (lane, later time, earlier
-time), every entry a hub of uniform size s + 1.  General-s form
-of the one-lane clique. -/
-theorem lockstep_lane_guardianship {A : Set ℕ} {N₀ : ℕ}
+theorem aligned_column_required_element_condition {A : Set ℕ} {N₀ : ℕ}
     {Q : ℕ → Finset ℕ} {σ : ℕ ↪o ℕ} {T s : ℕ}
     {y : Fin s → ℕ → ℕ}
     (hmem : ∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h)
     (hdisj : ∀ j k, j < k → Disjoint (Q j) (Q k))
     (hguard : ∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
-      ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k)))
+      ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m (insert b (Q k)))
     (hy : ∀ k t, y k t ∈ Q (σ (T + t))) :
     ∀ (k : Fin s) (t t' : ℕ), t < t' →
       ∃ m, N₀ ≤ m ∧
-        IsRepHub A m (insert (y k t') (Q (σ (T + t)))) := by
+        IsRepSupportTransversal A m (insert (y k t') (Q (σ (T + t)))) := by
   intro k t t' htt
   have hymem := hy k t'
   have hyA := (hmem _ _ hymem).1
@@ -7116,13 +6432,7 @@ theorem lockstep_lane_guardianship {A : Set ℕ} {N₀ : ℕ}
       hmem' hymem
   exact hguard (σ (T + t)) (y k t') hyA hypos havoid
 
-/-- **The highway tax.**  Composing the depth tax with lockstep
-membership: every sufficiently large column value at spine time
-t pays a guardian duty at height at least N₀ + (T + t − 1)/3.
-The s-lane highway carries linearly growing duty heights on a
-fixed-width structure — the quantitative burden of the lockstep
-branch. -/
-theorem highway_tax {A : Set ℕ} {N₀ : ℕ}
+theorem iteration_tax {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -7132,11 +6442,11 @@ theorem highway_tax {A : Set ℕ} {N₀ : ℕ}
     (hmem : ∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h)
     (hdisj : ∀ j k, j < k → Disjoint (Q j) (Q k))
     (hguard : ∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
-      ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k)))
+      ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m (insert b (Q k)))
     (hy : ∀ k t, y k t ∈ Q (σ (T + t))) :
     ∃ X, ∀ (k : Fin s) (t : ℕ), X ≤ y k t → 1 ≤ T + t →
       ∃ j, j < σ (T + t) ∧ ∃ m, N₀ + (T + t - 1) / 3 ≤ m ∧
-        N₀ ≤ m ∧ IsRepHub A m (insert (y k t) (Q j)) := by
+        N₀ ≤ m ∧ IsRepSupportTransversal A m (insert (y k t) (Q j)) := by
   obtain ⟨X, hX⟩ := depth_tax_of_hfail h0 hcov hanchor hfail
     hdisj hguard
   refine ⟨X, ?_⟩
@@ -7157,31 +6467,25 @@ theorem highway_tax {A : Set ℕ} {N₀ : ℕ}
     Nat.div_le_div_right (by omega)
   omega
 
-/-- **Uniform streets over every shell.**  One lane supplies
-infinitely many guardians for each spine shell, and the sharer
-law caps three guardians per target: every shell owns
-unboundedly many DISTINCT duty targets, all hubbed by
-(s+1)-sized envelopes.  On the lockstep highway every shell
-carries an infinite street of uniformly fragile targets. -/
-theorem lockstep_uniform_streets {A : Set ℕ} {N₀ : ℕ}
+theorem aligned_uniform_target_sequences {A : Set ℕ} {N₀ : ℕ}
     {Q : ℕ → Finset ℕ} {σ : ℕ ↪o ℕ} {T s : ℕ}
     {y : Fin s → ℕ → ℕ}
     (hmem : ∀ k, ∀ h ∈ Q k, h ∈ A ∧ 0 < h)
     (hdisj : ∀ j k, j < k → Disjoint (Q j) (Q k))
     (hguard : ∀ k, ∀ b ∈ A, 0 < b → (∀ j, j ≤ k → b ∉ Q j) →
-      ∃ m, N₀ ≤ m ∧ IsRepHub A m (insert b (Q k)))
+      ∃ m, N₀ ≤ m ∧ IsRepSupportTransversal A m (insert b (Q k)))
     (hfree : ∀ k, RepFree A N₀ (Q k))
     (hy : ∀ k t, y k t ∈ Q (σ (T + t)))
     (hymono : ∀ k, StrictMono (y k)) (hs : 1 ≤ s) :
     ∀ t K, ∃ V : Finset ℕ, K ≤ V.card ∧
       ∀ m ∈ V, N₀ ≤ m ∧ ∃ b ∈ A, b ∉ Q (σ (T + t)) ∧
-        IsRepHub A m (insert b (Q (σ (T + t)))) := by
+        IsRepSupportTransversal A m (insert b (Q (σ (T + t)))) := by
   classical
   intro t K
   set k₀ : Fin s := ⟨0, by omega⟩ with hk₀
-  have hlane := lockstep_lane_guardianship hmem hdisj hguard hy
+  have hlane := aligned_column_required_element_condition hmem hdisj hguard hy
   have hduty : ∀ i : ℕ, ∃ m, N₀ ≤ m ∧
-      IsRepHub A m (insert (y k₀ (t + 1 + i))
+      IsRepSupportTransversal A m (insert (y k₀ (t + 1 + i))
         (Q (σ (T + t)))) :=
     fun i => hlane k₀ t (t + 1 + i) (by omega)
   choose mf hmf₁ hmf₂ using hduty
@@ -7209,7 +6513,7 @@ theorem lockstep_uniform_streets {A : Set ℕ} {N₀ : ℕ}
     obtain ⟨i₀, hi₀r, hi₀⟩ := hmV
     have hmN : N₀ ≤ m := hi₀ ▸ hmf₁ i₀
     obtain ⟨x₀, y₀, z₀, hshare⟩ :=
-      three_guardians_per_rep_target (hfree (σ (T + t))) hmN
+      three_required_elements_per_rep_target (hfree (σ (T + t))) hmN
     have hsub : ∀ i ∈ (Finset.range (3 * K + 1)).filter
         (fun i => mf i = m),
         y k₀ (t + 1 + i) ∈ ({x₀, y₀, z₀} : Finset ℕ) := by
@@ -7249,20 +6553,11 @@ theorem lockstep_uniform_streets {A : Set ℕ} {N₀ : ℕ}
   rw [← hi]
   exact hmf₂ i
 
-/-- **The anchor dichotomy** (integrity rescue for the
-anchor-conditioned arcs).  Lab audit shows carry-free worlds
-(Cantor) have NO anchors: every double 2c decomposes centrally
-only.  This theorem makes the failure mode itself a weapon:
-either anchors exist — and the entire shell/spine/encirclement
-machinery applies — or some single element g₀ routes every
-noncentral decomposition of every double: EVERY double 2c is a
-two-element pair hub {c, g₀}, a universal crystal-like family at
-the explicit positions 2·A.  No counterexample escapes both. -/
 theorem anchor_dichotomy {A : Set ℕ} :
     (∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
       w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g) ∨
     (∃ g₀, ∀ c ∈ A, 0 < c → c ≠ g₀ →
-      IsPairHub A (2 * c) ({c, g₀} : Finset ℕ)) := by
+      IsPairSupportTransversal A (2 * c) ({c, g₀} : Finset ℕ)) := by
   classical
   by_cases h : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
       w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g
@@ -7280,14 +6575,9 @@ theorem anchor_dichotomy {A : Set ℕ} :
       · exact Or.inr (by simp [h2 hwg])
 
 open Classical in
-/-- **Anchor-free doubles are thin.**  In the no-anchor branch
-every double 2c has its entire pair life inside three explicit
-values {c, g₀, 2c − g₀}: r₂(2c) ≤ 3 uniformly, at the explicit
-one-parameter family of positions 2·A.  Combined with unbounded
-r₂ (anchor-free theorem), blown targets avoid the doubled basis
-entirely — the anchor-free enemy's blowups live off 2·A. -/
+
 theorem no_anchor_doubles_thin {A : Set ℕ} {g₀ c : ℕ}
-    (hhub : IsPairHub A (2 * c) ({c, g₀} : Finset ℕ)) :
+    (hhub : IsPairSupportTransversal A (2 * c) ({c, g₀} : Finset ℕ)) :
     ((Finset.range (2 * c + 1)).filter
       (fun x => x ∈ A ∧ (2 * c - x) ∈ A)).card ≤ 3 := by
   classical
@@ -7318,15 +6608,9 @@ theorem no_anchor_doubles_thin {A : Set ℕ} {g₀ c : ℕ}
     omega
   omega
 
-/-- Sharpening the no-anchor branch: the router g₀ is a basis
-element, or every double is PURELY CENTRAL — 2c decomposes only
-as c + c, and the whole basis is self-married: each element owns
-the unique-decomposition target 2c at the explicit position
-family 2·A.  Carry-free worlds (Cantor) realize the central
-branch exactly. -/
 theorem no_anchor_central_or_member {A : Set ℕ} {g₀ : ℕ}
     (hroute : ∀ c ∈ A, 0 < c → c ≠ g₀ →
-      IsPairHub A (2 * c) ({c, g₀} : Finset ℕ)) :
+      IsPairSupportTransversal A (2 * c) ({c, g₀} : Finset ℕ)) :
     (g₀ ∈ A) ∨
     (∀ c ∈ A, 0 < c → c ≠ g₀ → ∀ w ∈ A, ∀ w' ∈ A,
       w + w' = 2 * c → w = c ∧ w' = c) := by
@@ -7346,28 +6630,15 @@ theorem no_anchor_central_or_member {A : Set ℕ} {g₀ : ℕ}
       · rw [Finset.mem_singleton] at h'
         exact absurd (h' ▸ hw') hg
 
-/-- **Total pinning in the central branch.**  Purely central
-doubles mean every element pair-OWNS its double: {c} is a full
-singleton pair hub at 2c.  Consequently any deletion B fails at
-order 2 exactly on the explicit set 2·B — the first TOTAL
-placement law of the campaign: in the central branch there is no
-order-2 target liberty at all.  (Order 3 keeps its freedom
-through nonzero triples; that residue is where the carry-free
-enemy would have to live.) -/
-theorem central_branch_singleton_hubs {A : Set ℕ} {g₀ : ℕ}
+theorem central_branch_singleton_support_transversals {A : Set ℕ} {g₀ : ℕ}
     (hcentral : ∀ c ∈ A, 0 < c → c ≠ g₀ → ∀ w ∈ A, ∀ w' ∈ A,
       w + w' = 2 * c → w = c ∧ w' = c) :
     ∀ c ∈ A, 0 < c → c ≠ g₀ →
-      IsPairHub A (2 * c) ({c} : Finset ℕ) := by
+      IsPairSupportTransversal A (2 * c) ({c} : Finset ℕ) := by
   intro c hcA hcpos hcg w hw w' hw' hsum
   obtain ⟨h1, _⟩ := hcentral c hcA hcpos hcg w hw w' hw' hsum
   exact Or.inl (by simp [h1])
 
-/-- **Central minimality for free.**  In the purely central
-branch every infinite deletion automatically breaks order-2
-coverage at its own doubles: ℵ₀-minimality is not a hypothesis
-there but a consequence — consistent with the verified Cantor
-instance, which is carry-free, central, and ℵ₀-minimal. -/
 theorem central_branch_hmin {A : Set ℕ} {g₀ : ℕ}
     (hcentral : ∀ c ∈ A, 0 < c → c ≠ g₀ → ∀ w ∈ A, ∀ w' ∈ A,
       w + w' = 2 * c → w = c ∧ w' = c) :
@@ -7382,14 +6653,6 @@ theorem central_branch_hmin {A : Set ℕ} {g₀ : ℕ}
   obtain ⟨hxb, hyb⟩ := hcentral b hbA hbpos hbg x hx y hy hxy
   exact hxB (hxb ▸ hbB)
 
-/-- **The central branch is progression-free.**  Centrality of
-doubles is exactly midpoint-freeness: no two distinct basis
-elements average to a positive basis element other than the
-router.  Hence the central enemy carries no nontrivial 3-term
-arithmetic progression whose middle is a positive non-router
-element — it is a Salem–Spencer-type object, living where
-Behrend density (≫ √n) still permits covering.  Cantor is
-midpoint-free, confirming the classification. -/
 theorem central_branch_no_three_AP {A : Set ℕ} {g₀ : ℕ}
     (hcentral : ∀ c ∈ A, 0 < c → c ≠ g₀ → ∀ w ∈ A, ∀ w' ∈ A,
       w + w' = 2 * c → w = c ∧ w' = c) :
@@ -7405,11 +6668,6 @@ theorem central_branch_no_three_AP {A : Set ℕ} {g₀ : ℕ}
     a haA (a + 2 * d) ha2dA hsum
   omega
 
-/-- **The first canonical obligation.**  The odd elements form
-an enemy-independent deletion: if they are infinite, hfail owes
-cofinal targets whose EVERY representation uses an odd basis
-element — the all-even sector must die cofinally.  Opening move
-of the canonical (residue-grid) deletion program. -/
 theorem odd_deletion_obligation {A : Set ℕ} {N₀ : ℕ}
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
@@ -7443,12 +6701,6 @@ theorem odd_deletion_obligation {A : Set ℕ} {N₀ : ℕ}
       Matrix.head_cons, Matrix.cons_val_two, Matrix.tail_cons]
     omega
 
-/-- **The canonical obligation, fully general.**  For ANY
-property P cutting an infinite slice of the basis, hfail owes
-cofinal targets whose every representation uses a P-element.
-The residue grid, the odd deletion, digit classes, column
-families — every enemy-independent slice generates its own
-obligation schedule.  The adaptive game's full opening book. -/
 theorem canonical_deletion_obligation {A : Set ℕ} {N₀ : ℕ}
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
@@ -7482,13 +6734,6 @@ theorem canonical_deletion_obligation {A : Set ℕ} {N₀ : ℕ}
       Matrix.head_cons, Matrix.cons_val_two, Matrix.tail_cons]
     omega
 
-/-- **The grid cap.**  A representation has three parts and each
-part has one residue: at most three residue-class obligations
-per modulus can fire at a single target.  Four distinct classes
-mod m whose obligations all fire at n are impossible — the
-enemy's obligation schedule against the residue grid must spread
-across at least ⌈(width of A's residue support)/3⌉ distinct
-targets per modulus, cofinally.  Hypothesis-free pigeonhole. -/
 theorem grid_cap_three_classes {A : Set ℕ} {n m : ℕ}
     {r : Fin 4 → ℕ}
     (hrne : ∀ i j : Fin 4, i ≠ j → r i % m ≠ r j % m)
@@ -7519,12 +6764,6 @@ theorem grid_cap_three_classes {A : Set ℕ} {n m : ℕ}
   rw [hpij] at h1
   exact hrne i j hij (h1 ▸ h2 ▸ rfl)
 
-/-- **The per-modulus width dichotomy** (the corrected grid
-law).  At every modulus m ≥ 1 a set either has four infinite
-residue classes — feeding four canonical obligations that the
-grid cap forces apart — or its tail concentrates in at most
-three classes: a two-scale-style alignment at that modulus.
-Pure classical combinatorics. -/
 theorem residue_width_dichotomy {A : Set ℕ} (m : ℕ)
     (hm : 1 ≤ m) :
     (∃ r : Fin 4 → ℕ, (∀ i j : Fin 4, i ≠ j →
@@ -7593,13 +6832,6 @@ theorem residue_width_dichotomy {A : Set ℕ} (m : ℕ)
       have h2 : Bf (a % m) ≤ F.sup Bf := Finset.le_sup hinF
       omega
 
-/-- **Grid pressure or alignment** (the grid capstone).  Under
-hfail, at every modulus: four infinite classes yield four
-cofinal obligation streams that no represented target can serve
-simultaneously — the enemy's schedule must permanently split —
-or the tail concentrates in at most three classes, a two-scale
-alignment at that modulus.  Every modulus interrogates the
-enemy: spread or align. -/
 theorem grid_pressure_or_alignment {A : Set ℕ} {N₀ : ℕ}
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
@@ -7627,18 +6859,11 @@ theorem grid_pressure_or_alignment {A : Set ℕ} {N₀ : ℕ}
       exact grid_cap_three_classes hrne hrep hall
   · exact Or.inr hnarrow
 
-/-- **The pure four-hub cap.**  Four pairwise disjoint envelopes
-cannot all be full hubs at one represented target: a
-representation has three parts and each part lies in at most one
-envelope.  The simplest cap of the suite — no guardians, no
-freeness, no escape.  Feeds the spine stall stream: pairwise
-disjoint stall windows share targets at most three-fold, so
-cofinal stall streams carry cofinally many DISTINCT targets. -/
-theorem four_disjoint_full_hubs_impossible {A : Set ℕ} {m : ℕ}
+theorem four_disjoint_full_support_transversals_impossible {A : Set ℕ} {m : ℕ}
     {H : Fin 4 → Finset ℕ}
     (hdisj : ∀ i j, i ≠ j → Disjoint (H i) (H j))
     (hrep : ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = m)
-    (hhub : ∀ i, IsRepHub A m (H i)) : False := by
+    (hhub : ∀ i, IsRepSupportTransversal A m (H i)) : False := by
   classical
   obtain ⟨x, hx, y, hy, z, hz, hsum⟩ := hrep
   have hpick : ∀ i : Fin 4, ∃ p : Fin 3,
@@ -7660,42 +6885,25 @@ theorem four_disjoint_full_hubs_impossible {A : Set ℕ} {m : ℕ}
   rw [hpij] at h1
   exact (Finset.disjoint_left.1 (hdisj i j hij)) h1 h2
 
-/-- A free set is a full hub of no target: freeness hands the
-target a representation avoiding the set, hub-ness forbids it.
+/-- A free set is a full support transversal of no target: freeness hands the
+target a representation avoiding the set, support transversal-ness forbids it.
 The fundamental exclusion between the two sides of the game. -/
-theorem free_set_never_hub {A : Set ℕ} {N₀ m : ℕ}
+theorem free_set_never_support_transversal {A : Set ℕ} {N₀ m : ℕ}
     {P : Finset ℕ} (hfree : RepFree A N₀ P) (hm : N₀ ≤ m)
-    (hhub : IsRepHub A m P) : False := by
+    (hhub : IsRepSupportTransversal A m P) : False := by
   obtain ⟨x, hx, y, hy, z, hz, hsum, hxP, hyP, hzP⟩ := hfree m hm
   rcases hhub x hx y hy z hz hsum with h | h | h
   · exact hxP h
   · exact hyP h
   · exact hzP h
 
-/-- **Stall windows are wide, and stall defence is cross-shell.**
-Any stall window contained in a single (free) shell would be a
-free full hub — impossible.  Since consecutive spine values lie
-in distinct shells, every stall window of the spine stream has
-length at least two, and more generally every sub-hub of every
-stall window must straddle at least two shells: the enemy's
-defence against its own spine is intrinsically a cross-shell
-phenomenon, exactly where the conflict law and the caps live. -/
-theorem stall_window_not_in_shell {A : Set ℕ} {N₀ m : ℕ}
+theorem stall_window_not_in_rank_layer {A : Set ℕ} {N₀ m : ℕ}
     {Q : Finset ℕ} {W : Finset ℕ}
     (hQfree : RepFree A N₀ Q) (hWQ : W ⊆ Q) (hm : N₀ ≤ m)
-    (hhub : IsRepHub A m W) : False :=
-  free_set_never_hub (RepFree.mono hWQ hQfree) hm hhub
+    (hhub : IsRepSupportTransversal A m W) : False :=
+  free_set_never_support_transversal (RepFree.mono hWQ hQfree) hm hhub
 
-/-- **The spine stall stream.**  Playing consecutive shifts of
-the spine yields pairwise disjoint stall WINDOWS — finite blocks
-of consecutive lineage values, each a full hub at its own
-target.  By the pure four-hub cap a target serves at most three
-disjoint windows, so the stream carries unboundedly many
-DISTINCT stall targets: the enemy's defence against its own
-spine is an infinite ledger of window-hubs with an infinite
-target street.  The racing-proof battlefield, fully
-formalized. -/
-theorem spine_stall_stream {A : Set ℕ} {N₀ : ℕ}
+theorem subsequence_stall_stream {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -7704,18 +6912,18 @@ theorem spine_stall_stream {A : Set ℕ} {N₀ : ℕ}
     ∃ st len : ℕ → ℕ, ∃ tgt : ℕ → ℕ,
       (∀ i, 2 ≤ len i) ∧
       (∀ i, st (i + 1) = st i + len i) ∧
-      (∀ i, N₀ ≤ tgt i ∧ IsRepHub A (tgt i)
+      (∀ i, N₀ ≤ tgt i ∧ IsRepSupportTransversal A (tgt i)
         ((Finset.range (len i)).image (fun j => x (st i + j)))) ∧
       (∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧ ∀ v ∈ V, ∃ i, tgt i = v) := by
   classical
   obtain ⟨Q, σ, x, hxmono, hxmem, hQfree, hQmem, hstall⟩ :=
-    spine_stalls_hereditarily h0 hcov hanchor hfail
+    subsequence_stalls_hereditarily h0 hcov hanchor hfail
   have hxA : ∀ t, x t ∈ A ∧ 0 < x t :=
     fun t => hQmem _ _ (hxmem t)
-  -- one stall window starting at any position; the free-shell
+  -- one stall window starting at any position; the free-rank layer
   -- exclusion forces width ≥ 2
   have hwin : ∀ s : ℕ, ∃ J m, 2 ≤ J ∧ N₀ ≤ m ∧
-      IsRepHub A m ((Finset.range J).image
+      IsRepSupportTransversal A m ((Finset.range J).image
         (fun j => x (s + j))) := by
     intro s
     obtain ⟨J, m, hm, hhub⟩ := hstall (fun j => s + j)
@@ -7736,7 +6944,7 @@ theorem spine_stall_stream {A : Set ℕ} {N₀ : ℕ}
         rw [Finset.range_one, Finset.image_singleton]
         simp
       rw [hW1] at hhub
-      exact stall_window_not_in_shell (hQfree (σ s))
+      exact stall_window_not_in_rank_layer (hQfree (σ s))
         (Finset.singleton_subset_iff.2 (by
           simpa using hxmem s)) hm hhub
     | (J' + 2) =>
@@ -7838,7 +7046,7 @@ theorem spine_stall_stream {A : Set ℕ} {N₀ : ℕ}
       rw [hval 0] at h1
       exact h1
     obtain ⟨u, hu, w, hw, huw⟩ := hcov v hvm
-    refine four_disjoint_full_hubs_impossible
+    refine four_disjoint_full_support_transversals_impossible
       (H := fun i => W (e i : ℕ)) ?_
       ⟨u, hu, w, hw, 0, h0, by omega⟩ ?_
     · intro i j hij
@@ -7862,39 +7070,19 @@ theorem spine_stall_stream {A : Set ℕ} {N₀ : ℕ}
   obtain ⟨i, _, hi⟩ := hv
   exact ⟨i, hi⟩
 
-/-- **The exact duality.**  Freeness is precisely never being a
-full hub: the two sides of the whole campaign — free sets (the
-constructor's material) and hubs (the enemy's defence) — are
-logical complements at every target.  With this, minimal stall
-windows have FREE proper prefixes: window length measures
-exactly how much freeness the shifted spine accumulates before
-the enemy strikes, so bounded window lengths mean bounded free
-prefixes and unbounded lengths hand the constructor unbounded
-cross-shell free sets (root rank ≥ ω — the fork again, on the
-game board). -/
-theorem repFree_iff_forall_not_hub {A : Set ℕ} {N₀ : ℕ}
+theorem repFree_iff_forall_not_support_transversal {A : Set ℕ} {N₀ : ℕ}
     {P : Finset ℕ} :
-    RepFree A N₀ P ↔ ∀ m, N₀ ≤ m → ¬IsRepHub A m P := by
+    RepFree A N₀ P ↔ ∀ m, N₀ ≤ m → ¬IsRepSupportTransversal A m P := by
   constructor
   · intro hfree m hm hhub
-    exact free_set_never_hub hfree hm hhub
+    exact free_set_never_support_transversal hfree hm hhub
   · intro hnot m hm
     have h1 := hnot m hm
-    rw [IsRepHub] at h1
+    rw [IsRepSupportTransversal] at h1
     push Not at h1
     obtain ⟨x, hx, y, hy, z, hz, hsum, hxP, hyP, hzP⟩ := h1
     exact ⟨x, hx, y, hy, z, hz, hsum, hxP, hyP, hzP⟩
 
-/-- **WIDTH OR RANK** (the fork on the game board).  Take the
-MINIMAL stall window at every shift of the spine; by the exact
-duality its proper prefixes are free.  Either the minimal
-widths are unbounded — handing the constructor cross-shell free
-sets of every size, hence root rank ≥ ω — or one width bound L
-serves every shift: at every position of the spine a window of
-between 2 and L consecutive lineage values is a full hub.  The
-enemy must fund infinite rank or defend with uniformly narrow,
-uniformly fragile, cofinally distinct window-hubs against its
-own canonical material.  The night's closing theorem. -/
 theorem stall_width_or_rank {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
@@ -7904,15 +7092,15 @@ theorem stall_width_or_rank {A : Set ℕ} {N₀ : ℕ}
       RepFree A N₀ P ∧ c ≤ P.card) ∨
     (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
       ∃ L, ∀ s : ℕ, ∃ J m, 2 ≤ J ∧ J ≤ L ∧ N₀ ≤ m ∧
-        IsRepHub A m ((Finset.range J).image
+        IsRepSupportTransversal A m ((Finset.range J).image
           (fun j => x (s + j)))) := by
   classical
   obtain ⟨Q, σ, x, hxmono, hxmem, hQfree, hQmem, hstall⟩ :=
-    spine_stalls_hereditarily h0 hcov hanchor hfail
+    subsequence_stalls_hereditarily h0 hcov hanchor hfail
   have hxA : ∀ t, x t ∈ A ∧ 0 < x t :=
     fun t => hQmem _ _ (hxmem t)
   set Pred : ℕ → ℕ → Prop := fun s J => ∃ m, N₀ ≤ m ∧
-    IsRepHub A m ((Finset.range J).image (fun j => x (s + j)))
+    IsRepSupportTransversal A m ((Finset.range J).image (fun j => x (s + j)))
     with hPred
   have hne : ∀ s, ∃ J, Pred s J := by
     intro s
@@ -7944,7 +7132,7 @@ theorem stall_width_or_rank {A : Set ℕ} {N₀ : ℕ}
         rw [Finset.range_one, Finset.image_singleton]
         simp
       rw [hW1] at hhub
-      exact stall_window_not_in_shell (hQfree (σ s))
+      exact stall_window_not_in_rank_layer (hQfree (σ s))
         (Finset.singleton_subset_iff.2 (by
           simpa using hxmem s)) hm hhub
   by_cases hbnd : ∃ L, ∀ s, Nat.find (hne s) ≤ L
@@ -7960,7 +7148,7 @@ theorem stall_width_or_rank {A : Set ℕ} {N₀ : ℕ}
     -- the prefix of length c + 1 is a proper prefix: free
     have hfree' : RepFree A N₀ ((Finset.range (c + 1)).image
         (fun j => x (s + j))) := by
-      rw [repFree_iff_forall_not_hub]
+      rw [repFree_iff_forall_not_support_transversal]
       intro m hm hhub
       exact hJmin s (c + 1) (by omega) ⟨m, hm, hhub⟩
     refine ⟨(Finset.range (c + 1)).image (fun j => x (s + j)),
@@ -7982,14 +7170,6 @@ theorem stall_width_or_rank {A : Set ℕ} {N₀ : ℕ}
               (ne_of_lt (hxmono (by omega)))
       omega
 
-/-- **Width or rank, along every subsequence.**  The fork holds
-on every strictly monotone reindexing of the spine: unbounded
-free sets (root rank ≥ ω), or a uniform width bound for the
-minimal stall windows of THAT subsequence.  Since hub-windows
-are up-monotone, the narrow branch makes every L-block of the
-subsequence a full hub — and the constructor may then recurse on
-sparser subsequences: the narrow branch is self-similar, and the
-recursion is now formally available at every level. -/
 theorem stall_width_or_rank_along {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
@@ -8000,17 +7180,17 @@ theorem stall_width_or_rank_along {A : Set ℕ} {N₀ : ℕ}
       ((∀ c : ℕ, ∃ P : Finset ℕ, (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧
         RepFree A N₀ P ∧ c ≤ P.card) ∨
       (∃ L, ∀ s : ℕ, ∃ J m, 2 ≤ J ∧ J ≤ L ∧ N₀ ≤ m ∧
-        IsRepHub A m ((Finset.range J).image
+        IsRepSupportTransversal A m ((Finset.range J).image
           (fun j => x (τ (s + j)))))) := by
   classical
   obtain ⟨Q, σ, x, hxmono, hxmem, hQfree, hQmem, hstall⟩ :=
-    spine_stalls_hereditarily h0 hcov hanchor hfail
+    subsequence_stalls_hereditarily h0 hcov hanchor hfail
   have hxA : ∀ t, x t ∈ A ∧ 0 < x t :=
     fun t => hQmem _ _ (hxmem t)
   refine ⟨x, hxmono, hxA, ?_⟩
   intro τ hτ
   set Pred : ℕ → ℕ → Prop := fun s J => ∃ m, N₀ ≤ m ∧
-    IsRepHub A m ((Finset.range J).image
+    IsRepSupportTransversal A m ((Finset.range J).image
       (fun j => x (τ (s + j)))) with hPred
   have hne : ∀ s, ∃ J, Pred s J := by
     intro s
@@ -8039,7 +7219,7 @@ theorem stall_width_or_rank_along {A : Set ℕ} {N₀ : ℕ}
         rw [Finset.range_one, Finset.image_singleton]
         simp
       rw [hW1] at hhub
-      exact stall_window_not_in_shell (hQfree (σ (τ s)))
+      exact stall_window_not_in_rank_layer (hQfree (σ (τ s)))
         (Finset.singleton_subset_iff.2 (by
           simpa using hxmem (τ s))) hm hhub
   by_cases hbnd : ∃ L, ∀ s, Nat.find (hne s) ≤ L
@@ -8054,7 +7234,7 @@ theorem stall_width_or_rank_along {A : Set ℕ} {N₀ : ℕ}
     obtain ⟨s, hs⟩ := hbnd (c + 1)
     have hfree' : RepFree A N₀ ((Finset.range (c + 1)).image
         (fun j => x (τ (s + j)))) := by
-      rw [repFree_iff_forall_not_hub]
+      rw [repFree_iff_forall_not_support_transversal]
       intro m hm hhub
       exact hJmin s (c + 1) (by omega) ⟨m, hm, hhub⟩
     refine ⟨(Finset.range (c + 1)).image
@@ -8077,23 +7257,15 @@ theorem stall_width_or_rank_along {A : Set ℕ} {N₀ : ℕ}
               (ne_of_lt (hxmono (hτ (by omega))))
       omega
 
-/-- **The narrow branch's located street.**  Uniform width L
-gives disjoint windows at L-spaced shifts; the pure cap bounds
-target-sharing at three, so the narrow branch carries
-unboundedly many DISTINCT targets, each hubbed by a located
-window of 2..L consecutive spine values.  Unlike the V10
-supply, the hubs here are made of KNOWN material at KNOWN
-positions: the fork's narrow side is a fully located
-uniform-width street. -/
-theorem narrow_located_street {A : Set ℕ} {N₀ : ℕ}
+theorem narrow_located_target_sequence {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     {x : ℕ → ℕ} {L : ℕ} (hxmono : StrictMono x)
     (hnarrow : ∀ s : ℕ, ∃ J m, 2 ≤ J ∧ J ≤ L ∧ N₀ ≤ m ∧
-      IsRepHub A m ((Finset.range J).image
+      IsRepSupportTransversal A m ((Finset.range J).image
         (fun j => x (s + j)))) :
     ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧ ∀ v ∈ V, N₀ ≤ v ∧
       ∃ s J, 2 ≤ J ∧ J ≤ L ∧
-        IsRepHub A v ((Finset.range J).image
+        IsRepSupportTransversal A v ((Finset.range J).image
           (fun j => x (s + j))) := by
   classical
   intro K
@@ -8151,7 +7323,7 @@ theorem narrow_located_street {A : Set ℕ} {N₀ : ℕ}
       rw [hval 0] at h1
       exact h1
     obtain ⟨u, hu, w, hw, huw⟩ := hcov v hvm
-    refine four_disjoint_full_hubs_impossible
+    refine four_disjoint_full_support_transversals_impossible
       (H := fun i => W (e i : ℕ)) ?_
       ⟨u, hu, w, hw, 0, h0, by omega⟩ ?_
     · intro i j hij
@@ -8177,16 +7349,7 @@ theorem narrow_located_street {A : Set ℕ} {N₀ : ℕ}
   rw [← hi]
   exact hhub (i * L)
 
-/-- **THE FINAL FORK.**  Every counterexample funds free sets of
-every size — root rank ≥ ω, the finite-rank room closed at the
-root — or runs a LOCATED uniform-width hub street on its own
-canonical spine: unboundedly many distinct targets, each fully
-hubbed by a window of 2..L consecutive lineage values at a known
-position.  The night's whole machinery — shells, spine, duality,
-caps — compressed into one two-branch sentence about known
-material.  Erdős 881's remaining content is the defeat of these
-two explicit configurations. -/
-theorem the_final_fork {A : Set ℕ} {N₀ : ℕ}
+theorem final_fork {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -8196,23 +7359,19 @@ theorem the_final_fork {A : Set ℕ} {N₀ : ℕ}
     (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
       ∃ L, ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
         ∀ v ∈ V, N₀ ≤ v ∧ ∃ s J, 2 ≤ J ∧ J ≤ L ∧
-          IsRepHub A v ((Finset.range J).image
+          IsRepSupportTransversal A v ((Finset.range J).image
             (fun j => x (s + j)))) := by
   rcases stall_width_or_rank h0 hcov hanchor hfail with
     hrank | ⟨x, hxmono, hxA, L, hnarrow⟩
   · exact Or.inl hrank
   · exact Or.inr ⟨x, hxmono, hxA, L,
-      narrow_located_street h0 hcov hxmono hnarrow⟩
+      narrow_located_target_sequence h0 hcov hxmono hnarrow⟩
 
-/-! ## The welded fork: the street is an order-2 object -/
+/-! ## The welded fork: the target sequence is an order-2 object -/
 
-/-- **The 0-weld.**  Over a basis containing 0, any order-3 hub
-avoiding 0 is already an order-2 hub: pad each pair with the zero
-part.  Every hub made of positive material answers to the entire
-order-2 reflection engine. -/
-theorem pairHub_of_repHub {A : Set ℕ} {n : ℕ} {H : Finset ℕ}
-    (h0 : 0 ∈ A) (h0H : 0 ∉ H) (hhub : IsRepHub A n H) :
-    IsPairHub A n H := by
+theorem pairSupportTransversal_of_repSupportTransversal {A : Set ℕ} {n : ℕ} {H : Finset ℕ}
+    (h0 : 0 ∈ A) (h0H : 0 ∉ H) (hhub : IsRepSupportTransversal A n H) :
+    IsPairSupportTransversal A n H := by
   intro a ha b hb hab
   rcases hhub a ha b hb 0 h0 (by omega) with h | h | h
   · exact Or.inl h
@@ -8220,12 +7379,9 @@ theorem pairHub_of_repHub {A : Set ℕ} {n : ℕ} {H : Finset ℕ}
   · exact absurd h h0H
 
 open Classical in
-/-- **Pair-hub counting.**  An order-2 hub for v bounds the
-UNORDERED pair count of v by |H|: every pair donates a member to
-H, and distinct pairs donate distinct members (two low parts
-sharing a donated value forces both pairs to be the central one). -/
-theorem pair_hub_pair_count {A : Set ℕ} {v : ℕ} {H : Finset ℕ}
-    (hhub : IsPairHub A v H) :
+
+theorem pair_support_transversal_pair_count {A : Set ℕ} {v : ℕ} {H : Finset ℕ}
+    (hhub : IsPairSupportTransversal A v H) :
     ((Finset.range (v + 1)).filter
       (fun a => a ∈ A ∧ (v - a) ∈ A ∧ 2 * a ≤ v)).card ≤ H.card := by
   classical
@@ -8257,13 +7413,9 @@ theorem pair_hub_pair_count {A : Set ℕ} {v : ℕ} {H : Finset ℕ}
       · rw [if_neg haH, if_pos haH'] at heq'; omega
       · rw [if_neg haH, if_neg haH'] at heq'; omega
 
-/-- **The street desert.**  A located pair-hub window confines
-every pair of its target: one part lies inside the window's
-closed spine interval.  Outside [x s, x (s+J−1)] and its mirror
-[v − x (s+J−1), v − x s] the target's pair life is empty. -/
-theorem street_target_desert {A : Set ℕ} {v s J : ℕ} {x : ℕ → ℕ}
+theorem target_sequence_target_exclusion_interval {A : Set ℕ} {v s J : ℕ} {x : ℕ → ℕ}
     (hxmono : StrictMono x) (hJ : 1 ≤ J)
-    (hhub : IsPairHub A v ((Finset.range J).image
+    (hhub : IsPairSupportTransversal A v ((Finset.range J).image
       (fun j => x (s + j)))) :
     ∀ a ∈ A, ∀ b ∈ A, a + b = v →
       (x s ≤ a ∧ a ≤ x (s + J - 1)) ∨
@@ -8285,16 +7437,8 @@ theorem street_target_desert {A : Set ℕ} {v s J : ℕ} {x : ℕ → ℕ}
   · exact Or.inr (hwin b h)
 
 open Classical in
-/-- **THE WELDED FORK.**  The final fork's street branch is an
-ORDER-2 object: the spine is positive material, so the 0-weld
-turns every street window into a pair hub, and each street
-target's ENTIRE pair life is caught by 2..L consecutive spine
-values — at most L unordered pair representations.  A
-counterexample funds root rank ≥ ω or runs a located
-uniform-width ORDER-2 street: unboundedly many targets with
-r₂ ≤ L and pair supply pinned to known spine windows.  The
-order-3 problem's remaining enemy lives at order 2. -/
-theorem the_final_fork_welded {A : Set ℕ} {N₀ : ℕ}
+
+theorem final_fork_welded {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -8304,12 +7448,12 @@ theorem the_final_fork_welded {A : Set ℕ} {N₀ : ℕ}
     (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
       ∃ L, ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
         ∀ v ∈ V, N₀ ≤ v ∧ ∃ s J, 2 ≤ J ∧ J ≤ L ∧
-          IsPairHub A v ((Finset.range J).image
+          IsPairSupportTransversal A v ((Finset.range J).image
             (fun j => x (s + j))) ∧
           ((Finset.range (v + 1)).filter
             (fun a => a ∈ A ∧ (v - a) ∈ A ∧ 2 * a ≤ v)).card
             ≤ L) := by
-  rcases the_final_fork h0 hcov hanchor hfail with
+  rcases final_fork h0 hcov hanchor hfail with
     hrank | ⟨x, hxmono, hxA, L, hstreet⟩
   · exact Or.inl hrank
   · refine Or.inr ⟨x, hxmono, hxA, L, ?_⟩
@@ -8324,8 +7468,8 @@ theorem the_final_fork_welded {A : Set ℕ} {N₀ : ℕ}
       rw [Finset.mem_image] at hmem
       obtain ⟨j, _, hj⟩ := hmem
       exact (hxA (s + j)).2.ne' hj
-    have hpair := pairHub_of_repHub h0 h0win hhub
-    have hcount := pair_hub_pair_count (A := A) (v := v) hpair
+    have hpair := pairSupportTransversal_of_repSupportTransversal h0 h0win hhub
+    have hcount := pair_support_transversal_pair_count (A := A) (v := v) hpair
     have hcard : ((Finset.range J).image
         (fun j => x (s + j))).card ≤ J := by
       have h1 := Finset.card_image_le (s := Finset.range J)
@@ -8334,15 +7478,9 @@ theorem the_final_fork_welded {A : Set ℕ} {N₀ : ℕ}
       exact h1
     exact ⟨hvN, s, J, hJ2, hJL, hpair, by omega⟩
 
-/-! ## The street trichotomy: fixed hall or marching windows -/
+/-! ## The target sequence trichotomy: fixed hall or marching windows -/
 
-/-- **Street position dichotomy.**  A street whose targets each
-carry a positioned certificate either re-forms with all positions
-under one fixed bound (the bounded hall) or re-forms beyond every
-position bound (the marching street).  Generic in the certificate:
-the splitting argument only counts near- and far-certified
-targets. -/
-theorem street_position_dichotomy {W : ℕ → ℕ → Prop}
+theorem target_sequence_position_dichotomy {W : ℕ → ℕ → Prop}
     (hstreet : ∀ K : ℕ, ∃ V : Finset ℕ, K ≤ V.card ∧
       ∀ v ∈ V, ∃ s, W v s) :
     (∃ S₀, ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
@@ -8384,14 +7522,10 @@ theorem street_position_dichotomy {W : ℕ → ℕ → Prop}
           rw [hVfar, Finset.mem_filter]
           exact ⟨hvV, s, by omega, hWs⟩)
 
-/-- **The window sits below its target.**  A covered target's
-pair-hub window cannot start above the target: the guaranteed
-pair donates a part inside the window, and parts are at most the
-sum.  Marching windows drag their targets up with them. -/
-theorem street_window_below_target {A : Set ℕ} {N₀ : ℕ}
+theorem target_sequence_window_below_target {A : Set ℕ} {N₀ : ℕ}
     {x : ℕ → ℕ} {v s J : ℕ} (hcov : PairCovers A N₀)
     (hxmono : StrictMono x) (hvN : N₀ ≤ v)
-    (hhub : IsPairHub A v ((Finset.range J).image
+    (hhub : IsPairSupportTransversal A v ((Finset.range J).image
       (fun j => x (s + j)))) :
     x s ≤ v := by
   obtain ⟨a, haA, b, hbA, hab⟩ := hcov v hvN
@@ -8406,31 +7540,25 @@ theorem street_window_below_target {A : Set ℕ} {N₀ : ℕ}
   · exact le_trans (hwin a h) (by omega)
   · exact le_trans (hwin b h) (by omega)
 
-/-- **The bounded street has a fixed hall.**  Windows drawn from a
-bounded position range with widths at most L form a finite pool;
-double pigeonhole (fibers per size, then stabilization over the
-pool) hands one SINGLE window that pair-hubs unboundedly many
-targets: a fixed finite hall through which infinitely many
-targets route their entire pair life. -/
-theorem bounded_street_fixed_hall {A : Set ℕ} {N₀ : ℕ}
+theorem bounded_target_sequence_fixed_hall {A : Set ℕ} {N₀ : ℕ}
     {x : ℕ → ℕ} {L S₀ : ℕ}
     (hnear : ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
       ∀ v ∈ V, ∃ s, s ≤ S₀ ∧ N₀ ≤ v ∧ ∃ J, 2 ≤ J ∧ J ≤ L ∧
-        IsPairHub A v ((Finset.range J).image
+        IsPairSupportTransversal A v ((Finset.range J).image
           (fun j => x (s + j)))) :
     ∃ H : Finset ℕ, H.card ≤ L ∧ ∀ K, ∃ V : Finset ℕ,
-      K ≤ V.card ∧ ∀ v ∈ V, N₀ ≤ v ∧ IsPairHub A v H := by
+      K ≤ V.card ∧ ∀ v ∈ V, N₀ ≤ v ∧ IsPairSupportTransversal A v H := by
   classical
   set box : Finset (ℕ × ℕ) :=
     (Finset.range (S₀ + 1)) ×ˢ (Finset.range (L + 1)) with hbox
   have hstep1 : ∀ K, ∃ p ∈ box, ∃ V' : Finset ℕ, K ≤ V'.card ∧
-      ∀ v ∈ V', N₀ ≤ v ∧ IsPairHub A v
+      ∀ v ∈ V', N₀ ≤ v ∧ IsPairSupportTransversal A v
         ((Finset.range p.2).image (fun j => x (p.1 + j))) := by
     intro K
     obtain ⟨V, hVcard, hV⟩ := hnear (box.card * K + 1)
     have hVtot : ∀ v, ∃ p : ℕ × ℕ, v ∈ V →
         p.1 ≤ S₀ ∧ 2 ≤ p.2 ∧ p.2 ≤ L ∧ N₀ ≤ v ∧
-        IsPairHub A v ((Finset.range p.2).image
+        IsPairSupportTransversal A v ((Finset.range p.2).image
           (fun j => x (p.1 + j))) := by
       intro v
       by_cases hvV : v ∈ V
@@ -8457,17 +7585,17 @@ theorem bounded_street_fixed_hall {A : Set ℕ} {N₀ : ℕ}
     rw [hfv] at hhub
     exact ⟨hvN, hhub⟩
   have hstab : ∃ p ∈ box, ∀ K, ∃ V' : Finset ℕ,
-      K ≤ V'.card ∧ ∀ v ∈ V', N₀ ≤ v ∧ IsPairHub A v
+      K ≤ V'.card ∧ ∀ v ∈ V', N₀ ≤ v ∧ IsPairSupportTransversal A v
         ((Finset.range p.2).image (fun j => x (p.1 + j))) := by
     by_contra hno
     have hKp : ∀ p : ℕ × ℕ, ∃ Kp, p ∈ box →
         ¬(∃ V' : Finset ℕ, Kp ≤ V'.card ∧ ∀ v ∈ V', N₀ ≤ v ∧
-          IsPairHub A v ((Finset.range p.2).image
+          IsPairSupportTransversal A v ((Finset.range p.2).image
             (fun j => x (p.1 + j)))) := by
       intro p
       by_cases hpbox : p ∈ box
       · have h1 : ¬∀ K, ∃ V' : Finset ℕ, K ≤ V'.card ∧
-            ∀ v ∈ V', N₀ ≤ v ∧ IsPairHub A v
+            ∀ v ∈ V', N₀ ≤ v ∧ IsPairSupportTransversal A v
               ((Finset.range p.2).image (fun j => x (p.1 + j))) :=
           fun hall => hno ⟨p, hpbox, hall⟩
         obtain ⟨Kp, hKp'⟩ := not_forall.mp h1
@@ -8487,21 +7615,16 @@ theorem bounded_street_fixed_hall {A : Set ℕ} {N₀ : ℕ}
   have h2 := Finset.mem_range.1 hpbox.2
   omega
 
-/-- **The fixed hall's popular shift.**  A single finite hall
-pair-hubbing unboundedly many covered targets concentrates them
-further: pigeonhole over the hall's members hands ONE element h
-such that unboundedly many targets v sit on the translate h + A —
-the hall's traffic runs through one door. -/
 theorem fixed_hall_popular_shift {A : Set ℕ} {N₀ : ℕ}
     {H : Finset ℕ} (hcov : PairCovers A N₀)
     (hhall : ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
-      ∀ v ∈ V, N₀ ≤ v ∧ IsPairHub A v H) :
+      ∀ v ∈ V, N₀ ≤ v ∧ IsPairSupportTransversal A v H) :
     ∃ h ∈ H, ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
-      ∀ v ∈ V, N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧ IsPairHub A v H := by
+      ∀ v ∈ V, N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧ IsPairSupportTransversal A v H := by
   classical
   have hstep1 : ∀ K, ∃ h ∈ H, ∃ V' : Finset ℕ, K ≤ V'.card ∧
       ∀ v ∈ V', N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧
-        IsPairHub A v H := by
+        IsPairSupportTransversal A v H := by
     intro K
     obtain ⟨V, hVcard, hV⟩ := hhall (H.card * K + 1)
     have hVtot : ∀ v, ∃ h, v ∈ V →
@@ -8535,12 +7658,12 @@ theorem fixed_hall_popular_shift {A : Set ℕ} {N₀ : ℕ}
   by_contra hno
   have hKh : ∀ h : ℕ, ∃ Kh, h ∈ H → ¬(∃ V : Finset ℕ,
       Kh ≤ V.card ∧ ∀ v ∈ V, N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧
-        IsPairHub A v H) := by
+        IsPairSupportTransversal A v H) := by
     intro h
     by_cases hhH : h ∈ H
     · have h1 : ¬∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
           ∀ v ∈ V, N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧
-            IsPairHub A v H :=
+            IsPairSupportTransversal A v H :=
         fun hall => hno ⟨h, hhH, hall⟩
       obtain ⟨Kh, hKh'⟩ := not_forall.mp h1
       exact ⟨Kh, fun _ => hKh'⟩
@@ -8550,15 +7673,7 @@ theorem fixed_hall_popular_shift {A : Set ℕ} {N₀ : ℕ}
   exact hKf h hhH ⟨V',
     le_trans (Finset.le_sup (f := Kf) hhH) hV'card, hV'⟩
 
-/-- **THE STREET TRICHOTOMY.**  The welded fork's street branch
-splits by window position: every anchored counterexample funds
-root rank ≥ ω, or routes unboundedly many targets' ENTIRE pair
-life through one FIXED finite hall — with one hall element h
-serving as the door: unboundedly many targets on the translate
-h + A — or runs a MARCHING street: pair-hub windows of width
-2..L beyond every spine position, each window below its own
-target.  Three explicit configurations; nothing else survives. -/
-theorem the_street_trichotomy {A : Set ℕ} {N₀ : ℕ}
+theorem target_sequence_trichotomy {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -8567,18 +7682,18 @@ theorem the_street_trichotomy {A : Set ℕ} {N₀ : ℕ}
       RepFree A N₀ P ∧ c ≤ P.card) ∨
     (∃ H : Finset ℕ, ∃ h ∈ H, ∀ K, ∃ V : Finset ℕ,
       K ≤ V.card ∧ ∀ v ∈ V, N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧
-        IsPairHub A v H) ∨
+        IsPairSupportTransversal A v H) ∨
     (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
       ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
         ∀ v ∈ V, N₀ ≤ v ∧ ∃ s, S₀ ≤ s ∧ x s ≤ v ∧
-          ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairHub A v
+          ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairSupportTransversal A v
             ((Finset.range J).image (fun j => x (s + j)))) := by
-  rcases the_final_fork_welded h0 hcov hanchor hfail with
+  rcases final_fork_welded h0 hcov hanchor hfail with
     hrank | ⟨x, hxmono, hxA, L, hstreet⟩
   · exact Or.inl hrank
   · have hstreet' : ∀ K : ℕ, ∃ V : Finset ℕ, K ≤ V.card ∧
         ∀ v ∈ V, ∃ s, N₀ ≤ v ∧ ∃ J, 2 ≤ J ∧ J ≤ L ∧
-          IsPairHub A v ((Finset.range J).image
+          IsPairSupportTransversal A v ((Finset.range J).image
             (fun j => x (s + j))) := by
       intro K
       obtain ⟨V, hVcard, hV⟩ := hstreet K
@@ -8586,14 +7701,14 @@ theorem the_street_trichotomy {A : Set ℕ} {N₀ : ℕ}
       intro v hv
       obtain ⟨hvN, s, J, hJ2, hJL, hhub, _⟩ := hV v hv
       exact ⟨s, hvN, J, hJ2, hJL, hhub⟩
-    rcases street_position_dichotomy
+    rcases target_sequence_position_dichotomy
       (W := fun v s => N₀ ≤ v ∧ ∃ J, 2 ≤ J ∧ J ≤ L ∧
-        IsPairHub A v ((Finset.range J).image
+        IsPairSupportTransversal A v ((Finset.range J).image
           (fun j => x (s + j)))) hstreet' with
       ⟨S₀, hnear⟩ | hfar
     · have hnear' : ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
           ∀ v ∈ V, ∃ s, s ≤ S₀ ∧ N₀ ≤ v ∧ ∃ J, 2 ≤ J ∧ J ≤ L ∧
-            IsPairHub A v ((Finset.range J).image
+            IsPairSupportTransversal A v ((Finset.range J).image
               (fun j => x (s + j))) := by
         intro K
         obtain ⟨V, hVcard, hV⟩ := hnear K
@@ -8601,7 +7716,7 @@ theorem the_street_trichotomy {A : Set ℕ} {N₀ : ℕ}
         intro v hv
         obtain ⟨s, hs, hvN, J, hJ2, hJL, hhub⟩ := hV v hv
         exact ⟨s, hs, hvN, J, hJ2, hJL, hhub⟩
-      obtain ⟨H, hHcard, hhall⟩ := bounded_street_fixed_hall hnear'
+      obtain ⟨H, hHcard, hhall⟩ := bounded_target_sequence_fixed_hall hnear'
       obtain ⟨h, hhH, hpop⟩ := fixed_hall_popular_shift hcov hhall
       exact Or.inr (Or.inl ⟨H, h, hhH, hpop⟩)
     · refine Or.inr (Or.inr ⟨x, hxmono, hxA, L, ?_⟩)
@@ -8611,33 +7726,23 @@ theorem the_street_trichotomy {A : Set ℕ} {N₀ : ℕ}
       intro v hv
       obtain ⟨s, hSs, hvN, J, hJ2, hJL, hhub⟩ := hV v hv
       exact ⟨hvN, s, hSs,
-        street_window_below_target hcov hxmono hvN hhub,
+        target_sequence_window_below_target hcov hxmono hvN hhub,
         J, hJ2, hJL, hhub⟩
 
-/-! ## The four lanes: ghosts and members on the marching street -/
+/-! ## The four columns: ghosts and members on the marching target sequence -/
 
-/-- **The 0-pair forces membership placement.**  A pair-hubbed
-target over a basis containing 0 either lies outside A entirely
-or lies INSIDE its own hub: the pair (0, v) must meet the hub,
-and 0 is not hub material.  Forced non-membership — the shape
-that carries information. -/
-theorem street_target_notMem_or_window {A : Set ℕ} {v : ℕ}
+theorem target_sequence_target_notMem_or_window {A : Set ℕ} {v : ℕ}
     {W : Finset ℕ} (h0 : 0 ∈ A) (h0W : 0 ∉ W)
-    (hhub : IsPairHub A v W) : v ∉ A ∨ v ∈ W := by
+    (hhub : IsPairSupportTransversal A v W) : v ∉ A ∨ v ∈ W := by
   by_cases hvA : v ∈ A
   · rcases hhub 0 h0 v hvA (by omega) with h | h
     · exact absurd h h0W
     · exact Or.inr h
   · exact Or.inl hvA
 
-/-- **Member targets have only small-part pairs.**  A street
-target sitting inside its own window has every pair split
-unevenly: one part inside the window, hence the other at most
-the window's span.  Middle pairs are banned — the member street
-is difference-desert material. -/
-theorem street_member_small_part {A : Set ℕ} {v s J : ℕ}
+theorem target_sequence_member_small_part {A : Set ℕ} {v s J : ℕ}
     {x : ℕ → ℕ} (hxmono : StrictMono x) (hJ : 1 ≤ J)
-    (hhub : IsPairHub A v ((Finset.range J).image
+    (hhub : IsPairSupportTransversal A v ((Finset.range J).image
       (fun j => x (s + j))))
     (hvW : v ∈ (Finset.range J).image (fun j => x (s + j))) :
     ∀ a ∈ A, ∀ b ∈ A, a + b = v →
@@ -8658,31 +7763,26 @@ theorem street_member_small_part {A : Set ℕ} {v s J : ℕ}
   · obtain ⟨hblo, _⟩ := hbounds b h
     left; omega
 
-/-- **Ghost-or-member dichotomy on the marching street.**  The
-marching street's targets split: either unboundedly many are
-GHOSTS — forced OUT of A, at every window horizon — or, from
-some horizon on, unboundedly many are MEMBERS, each sitting
-inside its own hub window. -/
 theorem marching_member_dichotomy {A : Set ℕ} {N₀ L : ℕ}
     {x : ℕ → ℕ} (h0 : 0 ∈ A) (hxpos : ∀ t, 0 < x t)
     (hmarch : ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
       ∀ v ∈ V, N₀ ≤ v ∧ ∃ s, S₀ ≤ s ∧ x s ≤ v ∧
-        ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairHub A v
+        ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairSupportTransversal A v
           ((Finset.range J).image (fun j => x (s + j)))) :
     (∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
       ∀ v ∈ V, N₀ ≤ v ∧ v ∉ A ∧ ∃ s, S₀ ≤ s ∧ x s ≤ v ∧
-        ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairHub A v
+        ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairSupportTransversal A v
           ((Finset.range J).image (fun j => x (s + j)))) ∨
     (∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
       ∀ v ∈ V, N₀ ≤ v ∧ v ∈ A ∧ ∃ s, S₀ ≤ s ∧
         ∃ J, 2 ≤ J ∧ J ≤ L ∧
           v ∈ (Finset.range J).image (fun j => x (s + j)) ∧
-          IsPairHub A v ((Finset.range J).image
+          IsPairSupportTransversal A v ((Finset.range J).image
             (fun j => x (s + j)))) := by
   classical
   by_cases hghost : ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
       ∀ v ∈ V, N₀ ≤ v ∧ v ∉ A ∧ ∃ s, S₀ ≤ s ∧ x s ≤ v ∧
-        ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairHub A v
+        ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairSupportTransversal A v
           ((Finset.range J).image (fun j => x (s + j)))
   · exact Or.inl hghost
   · right
@@ -8721,23 +7821,12 @@ theorem marching_member_dichotomy {A : Set ℕ} {N₀ L : ℕ}
           rw [Finset.mem_image] at hmem
           obtain ⟨j, _, hj⟩ := hmem
           exact (hxpos (s + j)).ne' hj
-        rcases street_target_notMem_or_window h0 h0W hhub with
+        rcases target_sequence_target_notMem_or_window h0 h0W hhub with
           hno | hyes
         · exact absurd hvA hno
         · exact ⟨hvN, hvA, s, by omega, J, hJ2, hJL, hyes, hhub⟩
 
-/-- **THE FOUR LANES.**  Every anchored counterexample drives in
-one of four explicit lanes.  LANE 1 (rank): free sets of every
-size — root rank ≥ ω.  LANE 2 (the door): one FIXED finite hall
-pair-hubs unboundedly many targets, one hall element h carrying
-unboundedly many of them onto the translate h + A.  LANE 3 (the
-ghost street): unboundedly many targets FORCED OUT of A, each
-with its whole pair life caught by a marching spine window.
-LANE 4 (the member street): unboundedly many targets INSIDE
-their own marching windows — spine material whose every pair
-has a part at most the window span: middle pairs banned.  The
-night's taxonomies compress into rank, door, ghosts, members. -/
-theorem the_four_lanes {A : Set ℕ} {N₀ : ℕ}
+theorem four_columns {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -8746,23 +7835,23 @@ theorem the_four_lanes {A : Set ℕ} {N₀ : ℕ}
       RepFree A N₀ P ∧ c ≤ P.card) ∨
     (∃ H : Finset ℕ, ∃ h ∈ H, ∀ K, ∃ V : Finset ℕ,
       K ≤ V.card ∧ ∀ v ∈ V, N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧
-        IsPairHub A v H) ∨
+        IsPairSupportTransversal A v H) ∨
     (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
       ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
         ∀ v ∈ V, N₀ ≤ v ∧ v ∉ A ∧ ∃ s, S₀ ≤ s ∧ x s ≤ v ∧
-          ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairHub A v
+          ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairSupportTransversal A v
             ((Finset.range J).image (fun j => x (s + j)))) ∨
     (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
       ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
         ∀ v ∈ V, N₀ ≤ v ∧ v ∈ A ∧ ∃ s, S₀ ≤ s ∧
           ∃ J, 2 ≤ J ∧ J ≤ L ∧
             v ∈ (Finset.range J).image (fun j => x (s + j)) ∧
-            IsPairHub A v ((Finset.range J).image
+            IsPairSupportTransversal A v ((Finset.range J).image
               (fun j => x (s + j))) ∧
             (∀ a ∈ A, ∀ b ∈ A, a + b = v →
               a ≤ x (s + J - 1) - x s ∨
               b ≤ x (s + J - 1) - x s)) := by
-  rcases the_street_trichotomy h0 hcov hanchor hfail with
+  rcases target_sequence_trichotomy h0 hcov hanchor hfail with
     h1 | h2 | ⟨x, hxmono, hxA, L, hmarch⟩
   · exact Or.inl h1
   · exact Or.inr (Or.inl h2)
@@ -8778,15 +7867,10 @@ theorem the_four_lanes {A : Set ℕ} {N₀ : ℕ}
       obtain ⟨hvN, hvA, s, hs, J, hJ2, hJL, hvW, hhub⟩ :=
         hV v hv
       exact ⟨hvN, hvA, s, hs, J, hJ2, hJL, hvW, hhub,
-        street_member_small_part hxmono (by omega) hhub hvW⟩
+        target_sequence_member_small_part hxmono (by omega) hhub hvW⟩
 
-/-! ## The member street verdict: difference-blind stream or gap blowup -/
+/-! ## The member target sequence conclusion: difference-blind stream or gap amplification -/
 
-/-- **Members expel differences.**  If every pair of v' has a
-part at most D, then any basis element v strictly between D and
-v' − D forces v' − v OUT of A: otherwise (v, v' − v) would be a
-banned middle pair.  Forced non-membership from pure counting
-geometry. -/
 theorem member_difference_out {A : Set ℕ} {v' D : ℕ}
     (hsmall : ∀ a ∈ A, ∀ b ∈ A, a + b = v' → a ≤ D ∨ b ≤ D)
     {v : ℕ} (hvA : v ∈ A) (hDv : D < v) (hvv' : v + D < v') :
@@ -8794,11 +7878,6 @@ theorem member_difference_out {A : Set ℕ} {v' D : ℕ}
   intro hdA
   rcases hsmall v hvA (v' - v) hdA (by omega) with h | h <;> omega
 
-/-- **The difference-blind stream.**  A uniformly-bounded-span
-member street condenses into a strictly increasing stream inside
-A, every element above the span bound, with EVERY pairwise
-difference forced out of A: an infinite subset of the basis
-whose difference set the basis refuses. -/
 theorem difference_blind_stream {A : Set ℕ} {N₀ D₀ : ℕ}
     (hmem : ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
       ∀ v ∈ V, N₀ ≤ v ∧ v ∈ A ∧
@@ -8874,14 +7953,7 @@ theorem difference_blind_stream {A : Set ℕ} {N₀ D₀ : ℕ}
   exact member_difference_out (hcert t').2.2 (hcert t).2.1
     (hDlt t) h1
 
-/-- **THE MEMBER STREET VERDICT.**  The member street's window
-spans either stay bounded — and the street condenses into a
-difference-blind stream: an infinite ascending subset of A all
-of whose pairwise differences are forced OUT of A — or the spans
-blow up, and with width capped at L the CANONICAL SPINE develops
-unbounded consecutive gaps.  Lane 4 ends in a Sidon-flavoured
-stream or a torn spine; there is no third exit. -/
-theorem member_street_verdict {A : Set ℕ} {N₀ L : ℕ}
+theorem member_target_sequence_conclusion {A : Set ℕ} {N₀ L : ℕ}
     {x : ℕ → ℕ} (hxmono : StrictMono x)
     (hmem : ∀ K : ℕ, ∃ V : Finset ℕ, K ≤ V.card ∧
       ∀ v ∈ V, N₀ ≤ v ∧ v ∈ A ∧ ∃ s J, 2 ≤ J ∧ J ≤ L ∧
@@ -8905,7 +7977,7 @@ theorem member_street_verdict {A : Set ℕ} {N₀ L : ℕ}
     obtain ⟨hvN, hvA, s, J, hJ2, hJL, hlaw⟩ := hV v hv
     exact ⟨x (s + J - 1) - x s, hvN, hvA, s, J, hJ2, hJL,
       rfl, hlaw⟩
-  rcases street_position_dichotomy
+  rcases target_sequence_position_dichotomy
     (W := fun v d => N₀ ≤ v ∧ v ∈ A ∧ ∃ s J, 2 ≤ J ∧ J ≤ L ∧
       d = x (s + J - 1) - x s ∧
       ∀ a ∈ A, ∀ b ∈ A, a + b = v →
@@ -8970,29 +8042,7 @@ theorem member_street_verdict {A : Set ℕ} {N₀ L : ℕ}
 
 /-! ## The global trichotomy: one exported statement -/
 
-/-- **THE GLOBAL TRICHOTOMY.**  One statement, hypotheses only
-(0 ∈ A, covering, order-3 failure of every infinite deletion) —
-no anchor condition anywhere.  Every counterexample world is:
-
-I. ANCHORED — full anchor supply holds, and the four-lane
-   endgame runs: rank ≥ ω, or the fixed hall with its door, or
-   the ghost street, or the member street.
-
-II. ROUTED — some basis MEMBER g₀ routes every noncentral
-   decomposition of every double: each 2c is pair-hubbed by the
-   two explicit values {c, g₀}.
-
-III. CENTRAL — doubles decompose ONLY centrally: every element
-   pair-owns its double ({c} is a full pair hub at 2c), every
-   infinite deletion breaks order-2 coverage at its own doubles
-   (minimality is automatic), and the basis is midpoint-free off
-   the router: Salem–Spencer geometry.
-
-The anchored fork, the g₀-routed branch, and the central branch,
-formally fused.  Erdős 881's negative answer would have to live
-in one of these three rooms; each carries explicit, located,
-verified structure. -/
-theorem the_global_trichotomy {A : Set ℕ} {N₀ : ℕ}
+theorem global_trichotomy {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
@@ -9002,58 +8052,48 @@ theorem the_global_trichotomy {A : Set ℕ} {N₀ : ℕ}
         RepFree A N₀ P ∧ c ≤ P.card) ∨
       (∃ H : Finset ℕ, ∃ h ∈ H, ∀ K, ∃ V : Finset ℕ,
         K ≤ V.card ∧ ∀ v ∈ V, N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧
-          IsPairHub A v H) ∨
+          IsPairSupportTransversal A v H) ∨
       (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
         ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
           ∀ v ∈ V, N₀ ≤ v ∧ v ∉ A ∧ ∃ s, S₀ ≤ s ∧ x s ≤ v ∧
-            ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairHub A v
+            ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairSupportTransversal A v
               ((Finset.range J).image (fun j => x (s + j)))) ∨
       (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
         ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
           ∀ v ∈ V, N₀ ≤ v ∧ v ∈ A ∧ ∃ s, S₀ ≤ s ∧
             ∃ J, 2 ≤ J ∧ J ≤ L ∧
               v ∈ (Finset.range J).image (fun j => x (s + j)) ∧
-              IsPairHub A v ((Finset.range J).image
+              IsPairSupportTransversal A v ((Finset.range J).image
                 (fun j => x (s + j))) ∧
               (∀ a ∈ A, ∀ b ∈ A, a + b = v →
                 a ≤ x (s + J - 1) - x s ∨
                 b ≤ x (s + J - 1) - x s)))) ∨
     (∃ g₀, g₀ ∈ A ∧ ∀ c ∈ A, 0 < c → c ≠ g₀ →
-      IsPairHub A (2 * c) ({c, g₀} : Finset ℕ)) ∨
+      IsPairSupportTransversal A (2 * c) ({c, g₀} : Finset ℕ)) ∨
     (∃ g₀, (∀ c ∈ A, 0 < c → c ≠ g₀ → ∀ w ∈ A, ∀ w' ∈ A,
         w + w' = 2 * c → w = c ∧ w' = c) ∧
       (∀ c ∈ A, 0 < c → c ≠ g₀ →
-        IsPairHub A (2 * c) ({c} : Finset ℕ)) ∧
+        IsPairSupportTransversal A (2 * c) ({c} : Finset ℕ)) ∧
       (∀ B ⊆ A, B.Infinite → ¬∃ N₁, ∀ n, N₁ ≤ n →
         ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) ∧
       (∀ a d, 0 < d → a ∈ A → a + d ∈ A → a + 2 * d ∈ A →
         a + d = g₀ ∨ a + d = 0)) := by
   rcases anchor_dichotomy (A := A) with hanchor | ⟨g₀, hroute⟩
   · exact Or.inl ⟨hanchor,
-      the_four_lanes h0 hcov
+      four_columns h0 hcov
         (streamSurvives_of_anchor h0 hcov hanchor) hfail⟩
   · rcases no_anchor_central_or_member hroute with hg | hcentral
     · exact Or.inr (Or.inl ⟨g₀, hg, hroute⟩)
     · exact Or.inr (Or.inr ⟨g₀, hcentral,
-        central_branch_singleton_hubs hcentral,
+        central_branch_singleton_support_transversals hcentral,
         central_branch_hmin hcentral,
         central_branch_no_three_AP hcentral⟩)
 
 /-! ## The routed collapse: branch II has no interior -/
 
-/-- **THE ROUTED COLLAPSE.**  The g₀-routed branch is not an
-independent room.  If the genuine g₀-routes persist cofinally,
-the world is ALMOST-ANCHORED: the explicit ladder 2c − g₀ ∈ A
-runs forever and full anchor supply holds at every value except
-g₀ itself.  If the routes die out, every sufficiently large
-double is purely central and the ENTIRE central suite applies
-beyond a threshold: total pinning, automatic minimality,
-midpoint-freeness.  Routed worlds are absorbed into the anchored
-frontier or the central branch; the trichotomy's middle room is
-defeated as a separate case. -/
-theorem the_routed_collapse {A : Set ℕ} {g₀ : ℕ} (hg : g₀ ∈ A)
+theorem routed_collapse {A : Set ℕ} {g₀ : ℕ} (hg : g₀ ∈ A)
     (hroute : ∀ c ∈ A, 0 < c → c ≠ g₀ →
-      IsPairHub A (2 * c) ({c, g₀} : Finset ℕ)) :
+      IsPairSupportTransversal A (2 * c) ({c, g₀} : Finset ℕ)) :
     ((∀ N, ∃ c ∈ A, N ≤ c ∧ c ≠ g₀ ∧ g₀ ≤ 2 * c ∧
         (2 * c - g₀) ∈ A ∧ 2 * c - g₀ ≠ c) ∧
       (∀ g, g ≠ g₀ → ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
@@ -9062,7 +8102,7 @@ theorem the_routed_collapse {A : Set ℕ} {g₀ : ℕ} (hg : g₀ ∈ A)
     (∃ C₀, (∀ c ∈ A, C₀ ≤ c → c ≠ g₀ → ∀ w ∈ A, ∀ w' ∈ A,
         w + w' = 2 * c → w = c ∧ w' = c) ∧
       (∀ c ∈ A, C₀ ≤ c → c ≠ g₀ →
-        IsPairHub A (2 * c) ({c} : Finset ℕ)) ∧
+        IsPairSupportTransversal A (2 * c) ({c} : Finset ℕ)) ∧
       (∀ B ⊆ A, B.Infinite → ¬∃ N₂, ∀ n, N₂ ≤ n →
         ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) ∧
       (∀ a d, 0 < d → a ∈ A → a + d ∈ A → a + 2 * d ∈ A →
@@ -9137,25 +8177,7 @@ theorem the_routed_collapse {A : Set ℕ} {g₀ : ℕ} (hg : g₀ ∈ A)
       exact absurd ⟨a + d, hadA, by omega, by omega, hgne,
         a, haA, a + 2 * d, ha2dA, hsum, hac⟩ hN₁
 
-/-- **THE COLLAPSED TRICHOTOMY.**  The global trichotomy after
-the routed collapse: the middle room is gone.  Every
-counterexample world (0 ∈ A, covering, hfail — nothing else) is
-
-I. ANCHORED: full anchor supply and the four lanes;
-
-II. ALMOST-ANCHORED: a basis member g₀ with the explicit
-   infinite ladder 2c − g₀ ∈ A and full anchor supply at every
-   value EXCEPT g₀ — one single hole in the anchor wall, at a
-   known member, with known ladder structure through it;
-
-III. CENTRAL-TAIL: beyond an explicit threshold every double is
-   purely central — total pinning, automatic minimality,
-   midpoint-freeness — subsuming the pure central branch at
-   threshold 1.
-
-Two live geometries remain: the anchored/almost-anchored fork
-frontier and the Salem–Spencer central tail. -/
-theorem the_collapsed_trichotomy {A : Set ℕ} {N₀ : ℕ}
+theorem collapsed_trichotomy {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
@@ -9165,18 +8187,18 @@ theorem the_collapsed_trichotomy {A : Set ℕ} {N₀ : ℕ}
         RepFree A N₀ P ∧ c ≤ P.card) ∨
       (∃ H : Finset ℕ, ∃ h ∈ H, ∀ K, ∃ V : Finset ℕ,
         K ≤ V.card ∧ ∀ v ∈ V, N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧
-          IsPairHub A v H) ∨
+          IsPairSupportTransversal A v H) ∨
       (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
         ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
           ∀ v ∈ V, N₀ ≤ v ∧ v ∉ A ∧ ∃ s, S₀ ≤ s ∧ x s ≤ v ∧
-            ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairHub A v
+            ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairSupportTransversal A v
               ((Finset.range J).image (fun j => x (s + j)))) ∨
       (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
         ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
           ∀ v ∈ V, N₀ ≤ v ∧ v ∈ A ∧ ∃ s, S₀ ≤ s ∧
             ∃ J, 2 ≤ J ∧ J ≤ L ∧
               v ∈ (Finset.range J).image (fun j => x (s + j)) ∧
-              IsPairHub A v ((Finset.range J).image
+              IsPairSupportTransversal A v ((Finset.range J).image
                 (fun j => x (s + j))) ∧
               (∀ a ∈ A, ∀ b ∈ A, a + b = v →
                 a ≤ x (s + J - 1) - x s ∨
@@ -9190,16 +8212,16 @@ theorem the_collapsed_trichotomy {A : Set ℕ} {N₀ : ℕ}
     (∃ g₀ C₀, (∀ c ∈ A, C₀ ≤ c → c ≠ g₀ → ∀ w ∈ A, ∀ w' ∈ A,
         w + w' = 2 * c → w = c ∧ w' = c) ∧
       (∀ c ∈ A, C₀ ≤ c → c ≠ g₀ →
-        IsPairHub A (2 * c) ({c} : Finset ℕ)) ∧
+        IsPairSupportTransversal A (2 * c) ({c} : Finset ℕ)) ∧
       (∀ B ⊆ A, B.Infinite → ¬∃ N₂, ∀ n, N₂ ≤ n →
         ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) ∧
       (∀ a d, 0 < d → a ∈ A → a + d ∈ A → a + 2 * d ∈ A →
         a + d = g₀ ∨ a + d < C₀)) := by
-  rcases the_global_trichotomy h0 hcov hfail with
+  rcases global_trichotomy h0 hcov hfail with
     ⟨hanch, hlanes⟩ | ⟨g₀, hg, hroute⟩ |
     ⟨g₀, hcen, hhub, hmin, hap⟩
   · exact Or.inl ⟨hanch, hlanes⟩
-  · rcases the_routed_collapse hg hroute with
+  · rcases routed_collapse hg hroute with
       ⟨hl, ha⟩ | ⟨C₀, h1, h2, h3, h4⟩
     · exact Or.inr (Or.inl ⟨g₀, hg, hl, ha⟩)
     · exact Or.inr (Or.inr ⟨g₀, C₀, h1, h2, h3, h4⟩)
@@ -9215,14 +8237,6 @@ theorem the_collapsed_trichotomy {A : Set ℕ} {N₀ : ℕ}
 
 /-! ## The g₀-tower: what lives in the hole -/
 
-/-- **The almost-anchored stream dichotomy.**  With anchor
-supply at every value EXCEPT g₀ — the almost-anchored branch of
-the collapsed trichotomy — the private-stream kill still runs:
-the rotating extraction needs only one anchor package, and every
-recurring guardian other than g₀ dies by the fixed kill.  What
-survives is ONE explicit configuration: the guardian g₀ itself
-recurring cofinally.  The g₀-hole in the anchor wall admits
-exactly the g₀-tower. -/
 theorem almost_anchored_privateStream
     {A : Set ℕ} {N₀ g₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -9349,7 +8363,7 @@ theorem almost_anchored_privateStream
       (fun k h => (hstep k).1 (h ▸ hwF k))
       (fun k h => (hstep k).1 (h ▸ hw'F k))
       (fun j k hjk h => (hstep k).1 (h ▸ hLmem j k hjk))
-  · -- recurring case: all late guardians in one finite set
+  · -- recurring case: all late required elements in one finite set
     push Not at hro
     obtain ⟨F, N₁, hF⟩ := hro
     by_cases hrec : ∃ g ∈ F, 0 < g ∧
@@ -9360,7 +8374,7 @@ theorem almost_anchored_privateStream
         exact Or.inr ⟨hg0, hgstream⟩
       · obtain ⟨c, hc, hc0, hcg, w, hwA, w', hw'A, hww, hwc, hwg,
           hw'g⟩ := hanchor' g hgg₀
-        exact Or.inl (surviving_deletion_of_cofinal_fixedGuardian'
+        exact Or.inl (surviving_deletion_of_cofinal_fixedRequiredElement'
           h0 hcov hg0 hgstream hc hc0 hcg
           ⟨w, hwA, w', hw'A, hww, hwc, hwg, hw'g⟩)
     · push Not at hrec
@@ -9383,18 +8397,11 @@ theorem almost_anchored_privateStream
         le_trans (le_trans (Finset.le_sup haF) (le_max_right _ _)) hm
       exact absurd hpriv (hNg a m hbound haF ha0)
 
-/-- **The g₀-tower structure.**  A cofinal g₀-private stream
-condenses into explicit material: cofinal levels L ∈ A with the
-target g₀ + L pair-hubbed by the SINGLETON {g₀} (one door for
-every pair) and the full mirror law at L — every non-g₀ element
-below the level reflects back into A.  The hole in the anchor
-wall contains a fully symmetric tower, all of it centred on the
-single member g₀. -/
 theorem g0_tower {A : Set ℕ} {N₀ g₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (hg0 : 0 < g₀)
     (hstream : ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A g₀ m) :
     ∀ K, ∃ L, K < L ∧ L ∈ A ∧ N₀ ≤ g₀ + L ∧
-      IsPairHub A (g₀ + L) ({g₀} : Finset ℕ) ∧
+      IsPairSupportTransversal A (g₀ + L) ({g₀} : Finset ℕ) ∧
       ∀ z ∈ A, z ≠ g₀ → z + N₀ < L → L - z ∈ A := by
   intro K
   obtain ⟨m, hm, hpriv⟩ := hstream (4 * K + 5 * N₀ + 21)
@@ -9413,28 +8420,21 @@ theorem g0_tower {A : Set ℕ} {N₀ g₀ : ℕ}
     have hwe : w = M - z := by omega
     exact hwe ▸ hwA
 
-/-- **Almost-anchored singleton hubs feed the tower.**  Under
-hfail, an almost-anchored world with cofinal positive singleton
-rep-hubs is forced into the g₀-tower: the stream dichotomy's
-surviving branch contradicts hfail, so the guardian g₀ recurs
-cofinally and the tower stands.  The last unkilled singleton
-configuration of the almost-anchored branch is completely
-explicit. -/
-theorem almost_anchored_singleton_hubs {A : Set ℕ} {N₀ g₀ : ℕ}
+theorem almost_anchored_singleton_support_transversals {A : Set ℕ} {N₀ g₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor' : ∀ g, g ≠ g₀ → ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
       ∃ w ∈ A, ∃ w' ∈ A,
         w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
-    (hsing : ∀ N, ∃ n, N ≤ n ∧ ∃ a, 0 < a ∧ IsRepHub A n {a}) :
+    (hsing : ∀ N, ∃ n, N ≤ n ∧ ∃ a, 0 < a ∧ IsRepSupportTransversal A n {a}) :
     0 < g₀ ∧ ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A g₀ m := by
   have hstream : ∀ N, ∃ a m, N ≤ m ∧ 0 < a ∧
       IsPrivateTriple A a m := by
     intro N
     obtain ⟨n, hn, a, ha, hhub⟩ := hsing (max N N₀)
     exact ⟨a, n, le_trans (le_max_left _ _) hn, ha,
-      privateTriple_of_singleton_hub h0 hcov
+      privateTriple_of_singleton_support_transversal h0 hcov
         (le_trans (le_max_right _ _) hn) hhub⟩
   rcases almost_anchored_privateStream h0 hcov hstream hanchor'
     with ⟨B, hBsub, hBinf, hsurv⟩ | htower
@@ -9451,17 +8451,10 @@ theorem almost_anchored_singleton_hubs {A : Set ℕ} {N₀ g₀ : ℕ}
     · simpa [Fin.sum_univ_three] using hsum
   · exact htower
 
-/-- **The g₀-translate law.**  The tower alone — no routing
-needed — forces A off its own g₀-translate: for any positive
-z ∈ A other than g₀, the value g₀ + z is OUT of A.  Otherwise
-some high tower level L would pair g₀ + z with the mirror L − z
-and hand its private target a second pair, breaking the
-singleton hub.  A ∩ (A + g₀) ⊆ {g₀, 2g₀}: the door element's
-translate is a desert. -/
 theorem g0_translate_law {A : Set ℕ} {N₀ g₀ : ℕ}
     (hg0 : 0 < g₀)
     (htower : ∀ K, ∃ L, K < L ∧ L ∈ A ∧ N₀ ≤ g₀ + L ∧
-      IsPairHub A (g₀ + L) ({g₀} : Finset ℕ) ∧
+      IsPairSupportTransversal A (g₀ + L) ({g₀} : Finset ℕ) ∧
       ∀ z ∈ A, z ≠ g₀ → z + N₀ < L → L - z ∈ A) :
     ∀ z ∈ A, 0 < z → z ≠ g₀ → g₀ + z ∉ A := by
   intro z hzA hz0 hzg hmem
@@ -9474,17 +8467,9 @@ theorem g0_translate_law {A : Set ℕ} {N₀ g₀ : ℕ}
   · rw [Finset.mem_singleton] at h
     omega
 
-/-- **The g₀-mirror lock.**  In a ROUTED world the tower's one
-missing reflection is forced missing: at every sufficiently
-high tower level L the slot L − g₀ is OUT of A.  Otherwise the
-mirrors of a fixed ladder anchor c and its route partner
-q = 2c − g₀ would give the double 2(L − c) the noncentral
-g₀-free decomposition (L − q) + (L − g₀), which routing forbids.
-The tower is near-symmetric with exactly one empty slot — at
-the router's own mirror. -/
 theorem routed_tower_mirror_lock {A : Set ℕ} {N₀ g₀ c : ℕ}
     (hroute : ∀ c' ∈ A, 0 < c' → c' ≠ g₀ →
-      IsPairHub A (2 * c') ({c', g₀} : Finset ℕ))
+      IsPairSupportTransversal A (2 * c') ({c', g₀} : Finset ℕ))
     (hcA : c ∈ A) (hcg : c ≠ g₀) (hg2c : g₀ ≤ 2 * c)
     (hqA : (2 * c - g₀) ∈ A) (hqc : 2 * c - g₀ ≠ c)
     {L : ℕ} (hLA : L ∈ A) (hLbig : 2 * c + g₀ + N₀ + 1 < L)
@@ -9509,21 +8494,10 @@ theorem routed_tower_mirror_lock {A : Set ℕ} {N₀ g₀ c : ℕ}
     · rw [Finset.mem_singleton] at h'
       omega
 
-/-- **THE g₀-TOWER WORLD.**  The complete portrait of the
-anchor-hole.  In a routed world (member g₀, routing law, ladder)
-under hfail, cofinal positive singleton hubs force: g₀ is
-positive; cofinal tower levels L ∈ A each carrying the singleton
-pair hub {g₀} at g₀ + L, the full mirror law, AND the forced
-empty slot L − g₀ ∉ A (the mirror lock); and the global
-translate desert g₀ + z ∉ A for every positive z ∈ A ∖ {g₀}.
-The last singleton refuge of the almost-anchored branch is a
-near-symmetric tower, centred on one member, disjoint from its
-own translate, with exactly one reflection missing — at the
-router's own image. -/
-theorem the_g0_tower_world {A : Set ℕ} {N₀ g₀ : ℕ}
+theorem g0_tower_model {A : Set ℕ} {N₀ g₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hroute : ∀ c ∈ A, 0 < c → c ≠ g₀ →
-      IsPairHub A (2 * c) ({c, g₀} : Finset ℕ))
+      IsPairSupportTransversal A (2 * c) ({c, g₀} : Finset ℕ))
     (hladder : ∀ N, ∃ c ∈ A, N ≤ c ∧ c ≠ g₀ ∧ g₀ ≤ 2 * c ∧
       (2 * c - g₀) ∈ A ∧ 2 * c - g₀ ≠ c)
     (hanchor' : ∀ g, g ≠ g₀ → ∃ c ∈ A, 0 < c ∧ c ≠ g ∧
@@ -9531,14 +8505,14 @@ theorem the_g0_tower_world {A : Set ℕ} {N₀ g₀ : ℕ}
         w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
-    (hsing : ∀ N, ∃ n, N ≤ n ∧ ∃ a, 0 < a ∧ IsRepHub A n {a}) :
+    (hsing : ∀ N, ∃ n, N ≤ n ∧ ∃ a, 0 < a ∧ IsRepSupportTransversal A n {a}) :
     0 < g₀ ∧
     (∀ K, ∃ L, K < L ∧ L ∈ A ∧ N₀ ≤ g₀ + L ∧
-      IsPairHub A (g₀ + L) ({g₀} : Finset ℕ) ∧
+      IsPairSupportTransversal A (g₀ + L) ({g₀} : Finset ℕ) ∧
       (∀ z ∈ A, z ≠ g₀ → z + N₀ < L → L - z ∈ A) ∧
       L - g₀ ∉ A) ∧
     (∀ z ∈ A, 0 < z → z ≠ g₀ → g₀ + z ∉ A) := by
-  obtain ⟨hg0, hstream⟩ := almost_anchored_singleton_hubs
+  obtain ⟨hg0, hstream⟩ := almost_anchored_singleton_support_transversals
     h0 hcov hanchor' hfail hsing
   have htower := g0_tower h0 hcov hg0 hstream
   obtain ⟨c, hcA, hcN, hcg, hg2c, hqA, hqc⟩ := hladder 1
@@ -9550,12 +8524,6 @@ theorem the_g0_tower_world {A : Set ℕ} {N₀ g₀ : ℕ}
     routed_tower_mirror_lock hroute hcA hcg hg2c hqA hqc hLA
       (by omega) hmir⟩
 
-/-- **The tower engine.**  Geometric levels carrying the
-g₀-defective mirror, a small anchor c with c-free g₀-free repair
-pair (u, u') of 2c + g₀, and the door g₀ itself as a member:
-the deletion {L(2k+2) − c} survives.  Double hits are repaired
-by (L − u) + (L' − u') + g₀, single hits by the c-mirror at the
-odd level, clean pairs by 0-padding. -/
 theorem g0_tower_engine {A : Set ℕ} {N₀ g₀ c u u' : ℕ}
     (L : ℕ → ℕ)
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -9706,19 +8674,11 @@ theorem g0_tower_engine {A : Set ℕ} {N₀ g₀ c u u' : ℕ}
       omega
     · exact ⟨x, hx, y, hy, 0, h0, hxB, hyB, h0B, by omega⟩
 
-/-- **THE TOWER KILLS ITSELF.**  The g₀-tower plus one ladder
-anchor forces a surviving deletion — no anchor dodging g₀
-needed.  The translate law (a consequence of the tower alone)
-forbids 2c ∈ A and c + g₀ ∈ A at a ladder anchor c, so EVERY
-pair of the covered target 2c + g₀ is automatically g₀-free and
-c-free — exactly the repair material the geometric extraction
-was missing.  The last refuge of the almost-anchored branch is
-self-contradictory. -/
-theorem g0_tower_killed {A : Set ℕ} {N₀ g₀ : ℕ}
+theorem g0_tower_impossible {A : Set ℕ} {N₀ g₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (hg0 : 0 < g₀)
     (hgA : g₀ ∈ A)
     (htower : ∀ K, ∃ L, K < L ∧ L ∈ A ∧ N₀ ≤ g₀ + L ∧
-      IsPairHub A (g₀ + L) ({g₀} : Finset ℕ) ∧
+      IsPairSupportTransversal A (g₀ + L) ({g₀} : Finset ℕ) ∧
       ∀ z ∈ A, z ≠ g₀ → z + N₀ < L → L - z ∈ A)
     {c : ℕ} (hcA : c ∈ A) (hcN : N₀ + g₀ + 1 ≤ c)
     (hcg : c ≠ g₀) (hqA : (2 * c - g₀) ∈ A) :
@@ -9801,13 +8761,7 @@ theorem g0_tower_killed {A : Set ℕ} {N₀ g₀ : ℕ}
   exact g0_tower_engine L h0 hcov hmono hgrow hTLk hmemL hmirL
     hgA hcA hcg huA hu'A huu hug hu'g huc hu'c
 
-/-- **The almost-anchored stream is killed outright.**  With the
-ladder supplying the anchor c and the tower supplying its own
-repair pair, the private-stream dichotomy's residual branch
-(the g₀-tower) is self-contradictory: EVERY cofinal positive
-private stream in an almost-anchored world yields a surviving
-deletion.  The g₀-hole is plugged at the stream level. -/
-theorem almost_anchored_stream_killed {A : Set ℕ} {N₀ g₀ : ℕ}
+theorem almost_anchored_stream_impossible {A : Set ℕ} {N₀ g₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (hgA : g₀ ∈ A)
     (hladder : ∀ N, ∃ c ∈ A, N ≤ c ∧ c ≠ g₀ ∧ g₀ ≤ 2 * c ∧
       (2 * c - g₀) ∈ A ∧ 2 * c - g₀ ≠ c)
@@ -9825,13 +8779,8 @@ theorem almost_anchored_stream_killed {A : Set ℕ} {N₀ g₀ : ℕ}
   · have htower := g0_tower h0 hcov hg0 hg₀stream
     obtain ⟨c, hcA, hcN, hcg, hg2c, hqA, hqc⟩ :=
       hladder (N₀ + g₀ + 1)
-    exact g0_tower_killed h0 hcov hg0 hgA htower hcA hcN hcg hqA
+    exact g0_tower_impossible h0 hcov hg0 hgA htower hcA hcN hcg hqA
 
-/-- **Almost-anchored singleton hubs are refuted.**  The routed
-branch with cofinal routes now matches the anchored branch
-exactly: no counterexample world of either kind carries cofinal
-positive singleton rep-hubs.  The anchor wall's one hole admits
-nothing. -/
 theorem almost_anchored_singletons_refuted {A : Set ℕ}
     {N₀ g₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (hgA : g₀ ∈ A)
@@ -9842,17 +8791,17 @@ theorem almost_anchored_singletons_refuted {A : Set ℕ}
         w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
-    ¬(∀ N, ∃ n, N ≤ n ∧ ∃ a, 0 < a ∧ IsRepHub A n {a}) := by
+    ¬(∀ N, ∃ n, N ≤ n ∧ ∃ a, 0 < a ∧ IsRepSupportTransversal A n {a}) := by
   intro hsing
   have hstream : ∀ N, ∃ a m, N ≤ m ∧ 0 < a ∧
       IsPrivateTriple A a m := by
     intro N
     obtain ⟨n, hn, a, ha, hhub⟩ := hsing (max N N₀)
     exact ⟨a, n, le_trans (le_max_left _ _) hn, ha,
-      privateTriple_of_singleton_hub h0 hcov
+      privateTriple_of_singleton_support_transversal h0 hcov
         (le_trans (le_max_right _ _) hn) hhub⟩
   obtain ⟨B, hBsub, hBinf, hsurv⟩ :=
-    almost_anchored_stream_killed h0 hcov hgA hladder hanchor'
+    almost_anchored_stream_impossible h0 hcov hgA hladder hanchor'
       hstream
   refine hfail B hBsub hBinf ⟨N₀, fun n hn => ?_⟩
   obtain ⟨x, hx, y, hy, z, hz, hxB, hyB, hzB, hsum⟩ :=
@@ -9865,12 +8814,6 @@ theorem almost_anchored_singletons_refuted {A : Set ℕ}
     | 2 => exact ⟨hz, hzB⟩
   · simpa [Fin.sum_univ_three] using hsum
 
-/-- **Almost-anchored worlds implement the stream-kill oracle.**
-The g₀-tower self-kill in interface form: with a member router,
-the ladder, and anchors at every value except g₀, every cofinal
-positive private stream yields a surviving deletion.  The
-almost-anchored world can be fed to EVERY theorem of the engine
-that formerly demanded full anchor supply. -/
 theorem streamSurvives_of_almost_anchored {A : Set ℕ}
     {N₀ g₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (hgA : g₀ ∈ A)
@@ -9881,22 +8824,10 @@ theorem streamSurvives_of_almost_anchored {A : Set ℕ}
         w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g) :
     StreamSurvives A N₀ :=
   fun hstream =>
-    almost_anchored_stream_killed h0 hcov hgA hladder hanchor'
+    almost_anchored_stream_impossible h0 hcov hgA hladder hanchor'
       hstream
 
-/-- **THE FINAL DICHOTOMY.**  Two rooms.  Every counterexample
-world (0 ∈ A, covering, hfail — nothing else) either drives in
-one of the FOUR LANES — root rank ≥ ω, the fixed hall with its
-door, the ghost street, or the member street — or lives in the
-CENTRAL TAIL: beyond an explicit threshold every double is
-purely central, minimality is automatic, and the basis is
-midpoint-free off one value.  The anchored and almost-anchored
-branches are MERGED: the stream-kill oracle is implemented on
-both sides, so the four-lane endgame runs regardless of the
-anchor wall's hole.  Erdős 881's negative answer would have to
-live in one of five explicit configurations: rank, door,
-ghosts, members, or Salem–Spencer tail. -/
-theorem the_final_dichotomy {A : Set ℕ} {N₀ : ℕ}
+theorem final_dichotomy {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
@@ -9904,18 +8835,18 @@ theorem the_final_dichotomy {A : Set ℕ} {N₀ : ℕ}
       RepFree A N₀ P ∧ c ≤ P.card) ∨
     (∃ H : Finset ℕ, ∃ h ∈ H, ∀ K, ∃ V : Finset ℕ,
       K ≤ V.card ∧ ∀ v ∈ V, N₀ ≤ v ∧ h ≤ v ∧ v - h ∈ A ∧
-        IsPairHub A v H) ∨
+        IsPairSupportTransversal A v H) ∨
     (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
       ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
         ∀ v ∈ V, N₀ ≤ v ∧ v ∉ A ∧ ∃ s, S₀ ≤ s ∧ x s ≤ v ∧
-          ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairHub A v
+          ∃ J, 2 ≤ J ∧ J ≤ L ∧ IsPairSupportTransversal A v
             ((Finset.range J).image (fun j => x (s + j)))) ∨
     (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
       ∃ L, ∀ S₀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
         ∀ v ∈ V, N₀ ≤ v ∧ v ∈ A ∧ ∃ s, S₀ ≤ s ∧
           ∃ J, 2 ≤ J ∧ J ≤ L ∧
             v ∈ (Finset.range J).image (fun j => x (s + j)) ∧
-            IsPairHub A v ((Finset.range J).image
+            IsPairSupportTransversal A v ((Finset.range J).image
               (fun j => x (s + j))) ∧
             (∀ a ∈ A, ∀ b ∈ A, a + b = v →
               a ≤ x (s + J - 1) - x s ∨
@@ -9923,28 +8854,23 @@ theorem the_final_dichotomy {A : Set ℕ} {N₀ : ℕ}
     (∃ g₀ C₀, (∀ c ∈ A, C₀ ≤ c → c ≠ g₀ → ∀ w ∈ A, ∀ w' ∈ A,
         w + w' = 2 * c → w = c ∧ w' = c) ∧
       (∀ c ∈ A, C₀ ≤ c → c ≠ g₀ →
-        IsPairHub A (2 * c) ({c} : Finset ℕ)) ∧
+        IsPairSupportTransversal A (2 * c) ({c} : Finset ℕ)) ∧
       (∀ B ⊆ A, B.Infinite → ¬∃ N₂, ∀ n, N₂ ≤ n →
         ∃ x ∈ A, ∃ y ∈ A, x ∉ B ∧ y ∉ B ∧ x + y = n) ∧
       (∀ a d, 0 < d → a ∈ A → a + d ∈ A → a + 2 * d ∈ A →
         a + d = g₀ ∨ a + d < C₀)) := by
-  rcases the_collapsed_trichotomy h0 hcov hfail with
+  rcases collapsed_trichotomy h0 hcov hfail with
     ⟨_, hlanes⟩ | ⟨g₀, hgA, hladder, hanchor'⟩ | htail
   · exact Or.inl hlanes
-  · exact Or.inl (the_four_lanes h0 hcov
+  · exact Or.inl (four_columns h0 hcov
       (streamSurvives_of_almost_anchored h0 hcov hgA hladder
         hanchor') hfail)
   · exact Or.inr htail
 
-/-! ## The door world: hall mirrors and the weak translate law -/
+/-! ## The fixed transversal model: hall mirrors and the weak translate law -/
 
-/-- **The hall mirror.**  An order-3 hall target reflects every
-non-hall element into one of |H| translated copies: covering
-v − z and routing the triple through the hall produces
-v − z − h ∈ A for SOME hall member h.  The defective mirror of
-the door world — multivalued where the tower's was exact. -/
 theorem hall_mirror {A : Set ℕ} {N₀ v : ℕ} {H : Finset ℕ}
-    (hcov : PairCovers A N₀) (hhub : IsRepHub A v H)
+    (hcov : PairCovers A N₀) (hhub : IsRepSupportTransversal A v H)
     {z : ℕ} (hz : z ∈ A) (hzH : z ∉ H) (hzv : z + N₀ ≤ v) :
     ∃ h ∈ H, h + z ≤ v ∧ v - z - h ∈ A := by
   obtain ⟨a, haA, b, hbA, hab⟩ := hcov (v - z) (by omega)
@@ -9959,19 +8885,12 @@ theorem hall_mirror {A : Set ℕ} {N₀ v : ℕ} {H : Finset ℕ}
     rw [ha]
     exact haA
 
-/-- **The weak hall translate law.**  In a door world — one
-fixed hall H both rep- and pair-hubbing unboundedly many
-targets — every basis element beyond the hall's range escapes
-at least one hall translate: SOME h ∈ H has z + h ∉ A.
-Otherwise a huge door target's defective mirror would recombine
-with the translate into a hall-free pair.  For a singleton hall
-this is exactly the g₀-translate law. -/
 theorem hall_weak_translate {A : Set ℕ} {N₀ M : ℕ}
     {H : Finset ℕ}
     (hcov : PairCovers A N₀)
     (hM : ∀ h ∈ H, h ≤ M)
-    (hdoor : ∀ N, ∃ v, N ≤ v ∧ N₀ ≤ v ∧ IsRepHub A v H ∧
-      IsPairHub A v H) :
+    (hdoor : ∀ N, ∃ v, N ≤ v ∧ N₀ ≤ v ∧ IsRepSupportTransversal A v H ∧
+      IsPairSupportTransversal A v H) :
     ∀ z ∈ A, M < z → z ∉ H → ∃ h ∈ H, z + h ∉ A := by
   intro z hzA hzM hzH
   by_contra hall
@@ -9989,30 +8908,26 @@ theorem hall_weak_translate {A : Set ℕ} {N₀ M : ℕ}
     have h3 := hM h hhH
     omega
 
-/-- **The bounded street's fixed hall, order-3 form.**  The
-double pigeonhole re-run WITHOUT the weld: one single window
-REP-hubs unboundedly many targets, and the hall material is
-known positive basis elements. -/
-theorem bounded_street_fixed_hall_rep {A : Set ℕ} {N₀ : ℕ}
+theorem bounded_target_sequence_fixed_hall_rep {A : Set ℕ} {N₀ : ℕ}
     {x : ℕ → ℕ} {L S₀ : ℕ} (hxA : ∀ t, x t ∈ A ∧ 0 < x t)
     (hnear : ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
       ∀ v ∈ V, ∃ s, s ≤ S₀ ∧ N₀ ≤ v ∧ ∃ J, 2 ≤ J ∧ J ≤ L ∧
-        IsRepHub A v ((Finset.range J).image
+        IsRepSupportTransversal A v ((Finset.range J).image
           (fun j => x (s + j)))) :
     ∃ H : Finset ℕ, H.card ≤ L ∧ (∀ h ∈ H, h ∈ A ∧ 0 < h) ∧
       ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
-        ∀ v ∈ V, N₀ ≤ v ∧ IsRepHub A v H := by
+        ∀ v ∈ V, N₀ ≤ v ∧ IsRepSupportTransversal A v H := by
   classical
   set box : Finset (ℕ × ℕ) :=
     (Finset.range (S₀ + 1)) ×ˢ (Finset.range (L + 1)) with hbox
   have hstep1 : ∀ K, ∃ p ∈ box, ∃ V' : Finset ℕ, K ≤ V'.card ∧
-      ∀ v ∈ V', N₀ ≤ v ∧ IsRepHub A v
+      ∀ v ∈ V', N₀ ≤ v ∧ IsRepSupportTransversal A v
         ((Finset.range p.2).image (fun j => x (p.1 + j))) := by
     intro K
     obtain ⟨V, hVcard, hV⟩ := hnear (box.card * K + 1)
     have hVtot : ∀ v, ∃ p : ℕ × ℕ, v ∈ V →
         p.1 ≤ S₀ ∧ 2 ≤ p.2 ∧ p.2 ≤ L ∧ N₀ ≤ v ∧
-        IsRepHub A v ((Finset.range p.2).image
+        IsRepSupportTransversal A v ((Finset.range p.2).image
           (fun j => x (p.1 + j))) := by
       intro v
       by_cases hvV : v ∈ V
@@ -10039,17 +8954,17 @@ theorem bounded_street_fixed_hall_rep {A : Set ℕ} {N₀ : ℕ}
     rw [hfv] at hhub
     exact ⟨hvN, hhub⟩
   have hstab : ∃ p ∈ box, ∀ K, ∃ V' : Finset ℕ,
-      K ≤ V'.card ∧ ∀ v ∈ V', N₀ ≤ v ∧ IsRepHub A v
+      K ≤ V'.card ∧ ∀ v ∈ V', N₀ ≤ v ∧ IsRepSupportTransversal A v
         ((Finset.range p.2).image (fun j => x (p.1 + j))) := by
     by_contra hno
     have hKp : ∀ p : ℕ × ℕ, ∃ Kp, p ∈ box →
         ¬(∃ V' : Finset ℕ, Kp ≤ V'.card ∧ ∀ v ∈ V', N₀ ≤ v ∧
-          IsRepHub A v ((Finset.range p.2).image
+          IsRepSupportTransversal A v ((Finset.range p.2).image
             (fun j => x (p.1 + j)))) := by
       intro p
       by_cases hpbox : p ∈ box
       · have h1 : ¬∀ K, ∃ V' : Finset ℕ, K ≤ V'.card ∧
-            ∀ v ∈ V', N₀ ≤ v ∧ IsRepHub A v
+            ∀ v ∈ V', N₀ ≤ v ∧ IsRepSupportTransversal A v
               ((Finset.range p.2).image (fun j => x (p.1 + j))) :=
           fun hall => hno ⟨p, hpbox, hall⟩
         obtain ⟨Kp, hKp'⟩ := not_forall.mp h1
@@ -10074,14 +8989,7 @@ theorem bounded_street_fixed_hall_rep {A : Set ℕ} {N₀ : ℕ}
     rw [← hj]
     exact hxA _
 
-/-- **THE DOOR WORLD.**  The final fork's street branch, in the
-bounded-window case, upgraded to full strength: a fixed hall H
-of 2..L known positive basis elements REP-hubbing and
-PAIR-hubbing unboundedly many targets, with a door h₀ ∈ H
-carrying unboundedly many of them onto h₀ + A.  Teamness
-(2 ≤ |H|) comes from the stream-kill oracle: a singleton hall
-would be a refuted cofinal singleton stream. -/
-theorem the_door_world {A : Set ℕ} {N₀ : ℕ}
+theorem fixed_transversal_model {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (horacle : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -10089,31 +8997,31 @@ theorem the_door_world {A : Set ℕ} {N₀ : ℕ}
     {x : ℕ → ℕ} {L S₀ : ℕ} (hxA : ∀ t, x t ∈ A ∧ 0 < x t)
     (hnear : ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
       ∀ v ∈ V, ∃ s, s ≤ S₀ ∧ N₀ ≤ v ∧ ∃ J, 2 ≤ J ∧ J ≤ L ∧
-        IsRepHub A v ((Finset.range J).image
+        IsRepSupportTransversal A v ((Finset.range J).image
           (fun j => x (s + j)))) :
     ∃ H : Finset ℕ, 2 ≤ H.card ∧ H.card ≤ L ∧
       (∀ h ∈ H, h ∈ A ∧ 0 < h) ∧
       ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
-        ∀ v ∈ V, N₀ ≤ v ∧ IsRepHub A v H ∧ IsPairHub A v H := by
+        ∀ v ∈ V, N₀ ≤ v ∧ IsRepSupportTransversal A v H ∧ IsPairSupportTransversal A v H := by
   classical
   obtain ⟨H, hHL, hHmat, hall⟩ :=
-    bounded_street_fixed_hall_rep hxA hnear
+    bounded_target_sequence_fixed_hall_rep hxA hnear
   have h0H : (0 : ℕ) ∉ H := by
     intro h
     exact absurd (hHmat 0 h).2 (by omega)
-  have hpair : ∀ v, IsRepHub A v H → IsPairHub A v H :=
-    fun v hrep => pairHub_of_repHub h0 h0H hrep
+  have hpair : ∀ v, IsRepSupportTransversal A v H → IsPairSupportTransversal A v H :=
+    fun v hrep => pairSupportTransversal_of_repSupportTransversal h0 h0H hrep
   have hH2 : 2 ≤ H.card := by
     by_contra hlt
     rcases Nat.lt_or_ge H.card 1 with h1 | h1
-    · -- empty hall: covered targets have triples, hub empty impossible
+    · -- empty hall: covered targets have triples, support transversal empty impossible
       have hcard0 : H.card = 0 := by omega
       rw [Finset.card_eq_zero] at hcard0
       obtain ⟨V, hVcard, hV⟩ := hall 1
       have hVne : V.Nonempty := Finset.card_pos.1 (by omega)
       obtain ⟨v, hvV⟩ := hVne
       obtain ⟨hvN, hrep⟩ := hV v hvV
-      obtain ⟨h, hh⟩ := hub_nonempty_of_covering h0 hcov hvN hrep
+      obtain ⟨h, hh⟩ := support_transversal_nonempty_of_covering h0 hcov hvN hrep
       rw [hcard0] at hh
       exact absurd hh (Finset.notMem_empty h)
     · -- singleton hall: refuted cofinal singleton stream
@@ -10123,7 +9031,7 @@ theorem the_door_world {A : Set ℕ} {N₀ : ℕ}
         have := (hHmat a (by rw [ha]; exact
           Finset.mem_singleton_self a)).2
         omega
-      refine singleton_hubs_refuted h0 hcov horacle hfail ?_
+      refine singleton_support_transversals_refuted h0 hcov horacle hfail ?_
       intro N
       obtain ⟨V, hVcard, hV⟩ := hall (N + 1)
       have hbig : ∃ v ∈ V, N ≤ v := by
@@ -10148,17 +9056,10 @@ theorem the_door_world {A : Set ℕ} {N₀ : ℕ}
   obtain ⟨hvN, hrep⟩ := hV v hv
   exact ⟨hvN, hrep, hpair v hrep⟩
 
-/-- **The mirror-color law.**  At a door target the defective
-mirror's choice is never a good translate: it produces
-v − z − h ∈ A only for h with z + h ∉ A.  (A good translate
-z + h ∈ A would recombine with the mirror image into a
-hall-free pair of v, breaking the pair hub.)  The door world's
-mirrors and translates are locked together: the mirror colour
-set of z is exactly the complement of its translate set. -/
 theorem hall_mirror_color_law {A : Set ℕ} {N₀ M v : ℕ}
     {H : Finset ℕ}
     (hcov : PairCovers A N₀) (hM : ∀ h ∈ H, h ≤ M)
-    (hrep : IsRepHub A v H) (hpair : IsPairHub A v H)
+    (hrep : IsRepSupportTransversal A v H) (hpair : IsPairSupportTransversal A v H)
     {z : ℕ} (hz : z ∈ A) (hzH : z ∉ H) (hzM : M < z)
     (hzv : z + 2 * M + N₀ + 1 ≤ v) :
     ∃ h ∈ H, h + z ≤ v ∧ v - z - h ∈ A ∧ z + h ∉ A := by
@@ -10174,26 +9075,17 @@ theorem hall_mirror_color_law {A : Set ℕ} {N₀ M v : ℕ}
     have h3 := hM h hhH
     omega
 
-/-- **Door targets are ghosts.**  Every door target beyond the
-hall's range is forced OUT of A: a member target would be hall
-material by the 0-pair law, but the hall is bounded.  Lane 2's
-targets share lane 3's defining mark. -/
-theorem door_targets_ghost {A : Set ℕ} {M v : ℕ}
+theorem fixed_transversal_targets_outside_basis {A : Set ℕ} {M v : ℕ}
     {H : Finset ℕ} (h0 : 0 ∈ A) (h0H : (0 : ℕ) ∉ H)
-    (hM : ∀ h ∈ H, h ≤ M) (hpair : IsPairHub A v H)
+    (hM : ∀ h ∈ H, h ≤ M) (hpair : IsPairSupportTransversal A v H)
     (hvM : M < v) : v ∉ A := by
-  rcases street_target_notMem_or_window h0 h0H hpair with
+  rcases target_sequence_target_notMem_or_window h0 h0H hpair with
     h | h
   · exact h
   · have h1 := hM v h
     omega
 
-/-- **The translate dichotomy.**  Either arbitrarily large basis
-elements have ALL their hall translates out of A (cofinal strong
-translate — the tower law verbatim), or beyond some point every
-basis element keeps at least one good translate.  The door
-world's first fork. -/
-theorem door_translate_dichotomy {A : Set ℕ} (H : Finset ℕ) :
+theorem fixed_transversal_translate_dichotomy {A : Set ℕ} (H : Finset ℕ) :
     (∀ N, ∃ z, N ≤ z ∧ z ∈ A ∧ z ∉ H ∧
       ∀ h ∈ H, z + h ∉ A) ∨
     (∃ Z₀, ∀ z, Z₀ ≤ z → z ∈ A → z ∉ H →
@@ -10210,18 +9102,11 @@ theorem door_translate_dichotomy {A : Set ℕ} (H : Finset ℕ) :
     push Not at hno
     exact hZ₀ ⟨z, hZz, hzA, hzH, hno⟩
 
-/-- **The two-member difference law.**  In a door world with
-|H| = 2, in the good horn, door-target differences are FORCED
-INTO A: the partner L = v − h₀ has h₀ bad (v is a ghost), so
-goodness pins its bad set to exactly {h₀}; the mirror colour at
-any higher door target v' must be h₀, and the mirror image is
-the pure difference v' − v.  The door world's targets carry
-their own difference ladder. -/
-theorem door_two_difference_law {A : Set ℕ} {N₀ M v v' : ℕ}
+theorem fixed_transversal_two_difference_law {A : Set ℕ} {N₀ M v v' : ℕ}
     {H : Finset ℕ}
     (hcov : PairCovers A N₀) (hM : ∀ h ∈ H, h ≤ M)
     (hcard : H.card = 2)
-    (hrep' : IsRepHub A v' H) (hpair' : IsPairHub A v' H)
+    (hrep' : IsRepSupportTransversal A v' H) (hpair' : IsPairSupportTransversal A v' H)
     (hvA : v ∉ A) {h₀ : ℕ} (hh₀ : h₀ ∈ H)
     (hpart : v - h₀ ∈ A) (hMv : 2 * M < v)
     (hgood : ∃ h ∈ H, (v - h₀) + h ∈ A)
@@ -10263,16 +9148,7 @@ theorem door_two_difference_law {A : Set ℕ} {N₀ M v v' : ℕ}
   rw [h1] at hmir
   exact hmir
 
-/-- **The good-deep door engine.**  In the two-member good horn
-with cofinal deep partners, deleting the even levels
-{v(2k+2) − h₀} survives.  Single hits are repaired by a
-difference plus an odd level; double hits by the
-good-translated level M = v − h₀ + h₁, a consecutive
-difference, and a deep partner v − h₀ − h₁ — the h₁'s cancel
-and the sum closes with NO constraint between the two hit
-indices.  All parts are separated from the deletion by parity
-and scale. -/
-theorem door_good_deep_engine {A : Set ℕ} {N₀ h₀ h₁ : ℕ}
+theorem fixed_transversal_good_deep_engine {A : Set ℕ} {N₀ h₀ h₁ : ℕ}
     (v : ℕ → ℕ)
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hmono : StrictMono v)
@@ -10407,14 +9283,7 @@ theorem door_good_deep_engine {A : Set ℕ} {N₀ h₀ h₁ : ℕ}
         hdiffB (2 * j + 1), hoddB j, hxB, by omega⟩
     · exact ⟨x, hx, y, hy, 0, h0, hxB, hyB, h0B, by omega⟩
 
-/-- **THE TWO-MEMBER GOOD-DEEP DOOR IS DEAD.**  Assembly: in a
-door world with |H| = 2, the eventually-good horn, and cofinal
-deep partners, a surviving deletion exists.  The stream
-extraction threads four laws — ghostliness, the pinned good
-translate of every level (bad(L) = {h₀} since L + h₀ is the
-ghost target, so L + h₁ ∈ A), deep partners, and the pairwise
-difference law — into the good-deep engine. -/
-theorem door_two_good_deep_killed {A : Set ℕ}
+theorem fixed_transversal_two_good_deep_impossible {A : Set ℕ}
     {N₀ M₀ h₀ h₁ Z₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     {H : Finset ℕ} (hcard : H.card = 2)
@@ -10423,8 +9292,8 @@ theorem door_two_good_deep_killed {A : Set ℕ}
     (hh₀pos : 0 < h₀) (hh₁pos : 0 < h₁)
     (hgood : ∀ z, Z₀ ≤ z → z ∈ A → z ∉ H →
       ∃ h ∈ H, z + h ∈ A)
-    (hsupply : ∀ N, ∃ v, N ≤ v ∧ N₀ ≤ v ∧ IsRepHub A v H ∧
-      IsPairHub A v H ∧ v - h₀ ∈ A ∧ v - h₀ - h₁ ∈ A) :
+    (hsupply : ∀ N, ∃ v, N ≤ v ∧ N₀ ≤ v ∧ IsRepSupportTransversal A v H ∧
+      IsPairSupportTransversal A v H ∧ v - h₀ ∈ A ∧ v - h₀ - h₁ ∈ A) :
     ∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
       ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
         x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n := by
@@ -10447,8 +9316,8 @@ theorem door_two_good_deep_killed {A : Set ℕ}
     · rw [Finset.mem_singleton] at h
       omega
   -- extraction
-  have hsup' : ∀ c, ∃ w, c < w ∧ N₀ ≤ w ∧ IsRepHub A w H ∧
-      IsPairHub A w H ∧ w - h₀ ∈ A ∧ w - h₀ - h₁ ∈ A := by
+  have hsup' : ∀ c, ∃ w, c < w ∧ N₀ ≤ w ∧ IsRepSupportTransversal A w H ∧
+      IsPairSupportTransversal A w H ∧ w - h₀ ∈ A ∧ w - h₀ - h₁ ∈ A := by
     intro c
     obtain ⟨w, hw1, hw2, hw3, hw4, hw5, hw6⟩ := hsupply (c + 1)
     exact ⟨w, by omega, hw2, hw3, hw4, hw5, hw6⟩
@@ -10478,8 +9347,8 @@ theorem door_two_good_deep_killed {A : Set ℕ}
     intro k
     have := hmono.monotone (Nat.zero_le k)
     omega
-  have hprops : ∀ k, N₀ ≤ v k ∧ IsRepHub A (v k) H ∧
-      IsPairHub A (v k) H ∧ v k - h₀ ∈ A ∧
+  have hprops : ∀ k, N₀ ≤ v k ∧ IsRepSupportTransversal A (v k) H ∧
+      IsPairSupportTransversal A (v k) H ∧ v k - h₀ ∈ A ∧
       v k - h₀ - h₁ ∈ A := by
     intro k
     cases k with
@@ -10491,7 +9360,7 @@ theorem door_two_good_deep_killed {A : Set ℕ}
       exact ⟨hnf2 _, hnf3 _, hnf4 _, hnf5 _, hnf6 _⟩
   have hghost : ∀ k, v k ∉ A := by
     intro k
-    exact door_targets_ghost h0 h0H hM₀ (hprops k).2.2.1
+    exact fixed_transversal_targets_outside_basis h0 h0H hM₀ (hprops k).2.2.1
       (by have := hbvk k; omega)
   have hMlaw : ∀ k, v k - h₀ + h₁ ∈ A := by
     intro k
@@ -10530,27 +9399,18 @@ theorem door_two_good_deep_killed {A : Set ℕ}
       have h2 := hgrow i
       have h3 := hbvk i
       omega
-    exact door_two_difference_law hcov hM₀ hcard
+    exact fixed_transversal_two_difference_law hcov hM₀ hcard
       (hprops j).2.1 (hprops j).2.2.1 (hghost i) hh₀
       (hprops i).2.2.2.1
       (by have := hbvk i; omega)
       ⟨h₁, hh₁, hMlaw i⟩ hji
-  exact door_good_deep_engine v h0 hcov hmono hgrow hh₁pos
+  exact fixed_transversal_good_deep_engine v h0 hcov hmono hgrow hh₁pos
     (by have := hbvk 0; omega)
     (fun k => (hprops k).2.2.2.1) hMlaw
     (fun k => (hprops k).2.2.2.2) hdlaw
 
-/-! ## The walk kills: AP3 midpoint deletion -/
+/-! ## The walk contradicts: AP3 midpoint deletion -/
 
-/-- **The AP3 midpoint engine.**  Cofinally many three-term
-arithmetic progressions with one fixed common difference c ∈ A
-force a surviving deletion: delete the midpoints along a
-geometric subsequence; a deleted part in a pair is replaced by
-stepping down (m − c) + c, a doubly-deleted pair by stepping
-one midpoint down and the other up, (m − c) + (m' + c).  No
-counterexample carries a cofinal fixed-difference AP3 family
-through its own basis — the first unconditional AP kill,
-consistent with the central branch's forced AP3-freeness. -/
 theorem ap3_deletion_engine {A : Set ℕ} {N₀ c : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hcA : c ∈ A) (hcpos : 0 < c)
@@ -10671,18 +9531,7 @@ theorem ap3_deletion_engine {A : Set ℕ} {N₀ c : ℕ}
         hdownB j, hcB, hxB, by omega⟩
     · exact ⟨x, hx, y, hy, 0, h0, hxB, hyB, h0B, by omega⟩
 
-/-- **THE GOOD HORN DIES BY WALKING.**  If every large basis
-element keeps at least one good translate among two fixed
-positive basis elements h₀ ≠ h₁, a surviving deletion exists —
-full stop.  The good-translate walk climbs forever in
-{h₀, h₁}-steps; either some colour repeats consecutively at
-cofinally many heights — giving cofinal fixed-difference AP3s
-and the midpoint engine — or the walk eventually alternates
-perfectly, every two steps sum to h₀ + h₁, and deleting every
-fifth walk element survives by two-step shifting.  The door
-world's entire good horn (|H| = 2) is contradictory with hfail,
-with no reference to mirrors, ghosts, or partners. -/
-theorem good_two_walk_killed {A : Set ℕ} {N₀ h₀ h₁ Z₀ : ℕ}
+theorem good_two_walk_impossible {A : Set ℕ} {N₀ h₀ h₁ Z₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hh₀A : h₀ ∈ A) (hh₁A : h₁ ∈ A)
     (hh₀ : 0 < h₀) (hh₁ : 0 < h₁)
@@ -10888,12 +9737,6 @@ theorem good_two_walk_killed {A : Set ℕ} {N₀ h₀ h₁ Z₀ : ℕ}
             hsmallB h₁ (by omega), hxB, by omega⟩
       · exact ⟨x, hx, y, hy, 0, h0, hxB, hyB, h0B, by omega⟩
 
-/-- **THE SINGLE TRANSLATE LAW.**  Unconditional counterexample
-law: for every positive basis element c, arbitrarily large
-basis elements z have z + c OUT of A.  Otherwise the c-chain
-z, z + c, z + 2c, … supplies cofinal fixed-difference AP3s and
-the midpoint engine hands hfail a surviving deletion.  No
-element's upward translate eventually captures the basis. -/
 theorem single_translate_law {A : Set ℕ} {N₀ c : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -10934,13 +9777,6 @@ theorem single_translate_law {A : Set ℕ} {N₀ c : ℕ}
     | 2 => exact ⟨hz, hzB⟩
   · simpa [Fin.sum_univ_three] using hsum
 
-/-- **THE PAIR TRANSLATE LAW.**  Unconditional counterexample
-law: for every two positive basis elements h₀, h₁, arbitrarily
-large basis elements z have BOTH z + h₀ and z + h₁ out of A.
-Otherwise the good-translate walk runs and dies by the walk
-kill.  Every counterexample is cofinally two-sided
-translate-free at every pair — the door world's strong horn is
-not a case, it is the LAW, and the good horn is empty. -/
 theorem pair_translate_law {A : Set ℕ} {N₀ h₀ h₁ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -10958,7 +9794,7 @@ theorem pair_translate_law {A : Set ℕ} {N₀ h₀ h₁ : ℕ}
     · exact Or.inl ha
     · exact Or.inr (hZ₀ z h1 h2 ha)
   obtain ⟨B, hBsub, hBinf, hsurv⟩ :=
-    good_two_walk_killed h0 hcov hh₀A hh₁A hh₀ hh₁ hgood
+    good_two_walk_impossible h0 hcov hh₀A hh₁A hh₀ hh₁ hgood
   refine hfail B hBsub hBinf ⟨N₀, fun n hn => ?_⟩
   obtain ⟨x, hx, y, hy, z, hz, hxB, hyB, hzB, hsum⟩ :=
     hsurv n hn
@@ -10970,13 +9806,6 @@ theorem pair_translate_law {A : Set ℕ} {N₀ h₀ h₁ : ℕ}
     | 2 => exact ⟨hz, hzB⟩
   · simpa [Fin.sum_univ_three] using hsum
 
-/-- **The slice law.**  A deletion's failure, in hub
-vocabulary: cofinally many targets n have EVERY slice n − z
-(z a survivor) pair-hubbed by the deleted set — every two-part
-completion of every survivor is caught by B.  The lab shows
-this demand is unmeetable in hall worlds; formally it is the
-door to counting pressure: one deleted set must simultaneously
-hub every slice family of every failure target. -/
 theorem deletion_failure_slices {A B : Set ℕ}
     (hfail : ∀ B' ⊆ A, B'.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B') 3)
@@ -11007,12 +9836,6 @@ theorem deletion_failure_slices {A B : Set ℕ}
     omega
   exact hnofail ![a, b, z] hmemb hsum3
 
-/-- **The double-slice law.**  The cascade's second axiom: at a
-failure target, the survivor set S = A ∖ B is SUM-FREE against
-every slice — no survivor pair completes any survivor to n.
-Every element of A landing in n − s − S is deleted; the
-survivors' three-fold sumset misses every failure target by
-exactly this mechanism, slice by slice. -/
 theorem deletion_failure_double_slice {A B : Set ℕ}
     (hfail : ∀ B' ⊆ A, B'.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B') 3)
@@ -11029,14 +9852,7 @@ theorem deletion_failure_double_slice {A B : Set ℕ}
   · exact h
 
 open Classical in
-/-- **The quantitative cascade law.**  At any deletion's failure
-targets, the ENTIRE survivor-slice spectrum is pair-poor: for
-every survivor s, the slice n − s has at most |W| unordered
-pairs, where W is any finite window catching the deleted
-elements below n.  A sparse deletion forces every slice of
-every failure target into uniform pair-poverty — the formal
-counterpart of the lab's finding, and the counting blade
-against the canonical core's unbounded r₂. -/
+
 theorem failure_slices_low_r2 {A B : Set ℕ}
     (hfail : ∀ B' ⊆ A, B'.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B') 3)
@@ -11051,18 +9867,15 @@ theorem failure_slices_low_r2 {A B : Set ℕ}
     deletion_failure_slices hfail hBA hBinf N
   refine ⟨n, hn, ?_⟩
   intro s hs hsB hsn W hW
-  have hhub : IsPairHub A (n - s) W := by
+  have hhub : IsPairSupportTransversal A (n - s) W := by
     intro a ha b hb hab
     rcases hslice s hs hsB a ha b hb (by omega) with h | h
     · exact Or.inl (hW a h (by omega))
     · exact Or.inr (hW b h (by omega))
-  exact pair_hub_pair_count hhub
+  exact pair_support_transversal_pair_count hhub
 
 open Classical in
-/-- **Covering density.**  An order-2 covering set has at least
-√X elements below X: the chosen pair of each covered target is
-an injection of [N₀, X] into the window's pair square.  The
-mass side of every cascade count. -/
+
 theorem covering_density {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀) :
     ∀ X, N₀ ≤ X → X - N₀ + 1 ≤
@@ -11100,20 +9913,15 @@ theorem covering_density {A : Set ℕ} {N₀ : ℕ}
   omega
 
 open Classical in
-/-- **The pair flood.**  Welding the rep flood: when the flood
-envelope avoids 0, every large positive basis element b
-personally guards a target m ≥ b whose ENTIRE pair life routes
-through the constant-size set P ∪ {b} — so r₂(m) ≤ |P| + 1.
-A personal pair-poor guarded target for every basis element:
-the density-free supply the cascade counting was missing. -/
-theorem flood_pair_guard {A : Set ℕ} {N₀ X : ℕ}
+
+theorem cofinal_supply_pair_required_element {A : Set ℕ} {N₀ X : ℕ}
     {P : Finset ℕ}
     (h0 : 0 ∈ A) (h0P : (0 : ℕ) ∉ P)
     (hflood : ∀ b ∈ A, X ≤ b → ∃ m, N₀ ≤ m ∧ b ≤ m ∧
-      IsRepHub A m (insert b P)) :
+      IsRepSupportTransversal A m (insert b P)) :
     ∀ b ∈ A, X ≤ b → 0 < b → ∃ m, N₀ ≤ m ∧ b ≤ m ∧
-      IsRepHub A m (insert b P) ∧
-      IsPairHub A m (insert b P) ∧
+      IsRepSupportTransversal A m (insert b P) ∧
+      IsPairSupportTransversal A m (insert b P) ∧
       ((Finset.range (m + 1)).filter
         (fun a => a ∈ A ∧ (m - a) ∈ A ∧ 2 * a ≤ m)).card ≤
         P.card + 1 := by
@@ -11124,35 +9932,20 @@ theorem flood_pair_guard {A : Set ℕ} {N₀ X : ℕ}
     rcases Finset.mem_insert.1 h with h | h
     · omega
     · exact h0P h
-  have hpair := pairHub_of_repHub h0 h0i hhub
+  have hpair := pairSupportTransversal_of_repSupportTransversal h0 h0i hhub
   refine ⟨m, hmN, hbm, hhub, hpair, ?_⟩
-  have h1 := pair_hub_pair_count hpair
+  have h1 := pair_support_transversal_pair_count hpair
   have h2 : (insert b P).card ≤ P.card + 1 :=
     Finset.card_insert_le _ _
   omega
 
-/-- **THE REP FLOOD, POSITIVE ENVELOPE.**  The rep flood with
-the envelope guaranteed to avoid 0: the dodge chain only ever
-inserts picks at thresholds ≥ 1, so the classical envelope can
-be taken 0-free.  This is what the 0-weld needs.  The theorem the campaign''s
-assumed configurations were reaching for, with no interface beyond
-covering and `0 ∈ A`: a counterexample yields ONE finite rep-free
-envelope `P` and a threshold beyond which EVERY basis element `b`
-personally guards a target `m ≥ b` at ORDER 3 — every
-3-representation of `m` routes through `P ∪ {b}`.  Constant
-cardinality; the freeness of `P` is the recorded non-vacuity (junk
-envelopes are never free).  Proof: the rep dodge; if it never
-stalls, all parts of a late target''s surviving representation lie
-below the target and hence inside the stalled prefix''s shadow, so
-the built deletion leaves every late target represented, refuting
-`hfail` directly. -/
-theorem rep_flood_pos_of_hfail {A : Set ℕ} {N₀ : ℕ}
+theorem rep_cofinal_supply_pos_of_hfail {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ P : Finset ℕ, RepFree A N₀ P ∧ (0 : ℕ) ∉ P ∧
       ∃ X, ∀ b ∈ A, X ≤ b →
-      ∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsRepHub A m (insert b P) := by
+      ∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsRepSupportTransversal A m (insert b P) := by
   classical
   by_contra hno
   push Not at hno
@@ -11171,7 +9964,7 @@ theorem rep_flood_pos_of_hfail {A : Set ℕ} {N₀ : ℕ}
       · obtain ⟨b, hbA, hXb, hbgood⟩ := hno P hfree h0P X
         refine ⟨b, hbA, hXb, fun _ _ m hm hbm => ?_⟩
         have hnh := hbgood m hm hbm
-        rw [IsRepHub] at hnh
+        rw [IsRepSupportTransversal] at hnh
         push Not at hnh
         obtain ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩ := hnh
         exact ⟨x, hx, y, hy, z, hz, hxyz, hxP, hyP, hzP⟩
@@ -11285,52 +10078,39 @@ theorem rep_flood_pos_of_hfail {A : Set ℕ} {N₀ : ℕ}
   | 2 => exact ⟨hz, havoid z (by omega) hzP⟩
 
 open Classical in
-/-- **THE PAIR FLOOD, UNCONDITIONAL.**  Every counterexample
-world carries a constant C and a free 0-less envelope P such
-that EVERY sufficiently large basis element b personally guards
-a target m ≥ b whose ENTIRE pair life routes through P ∪ {b}
-and whose unordered pair count is at most C.  Pair-poverty is
-not scattered — it is pinned to every basis element personally,
-with one constant, density-free.  The canonical core's
-unbounded r₂ and this law now share one world: the enemy's
-r₂-blowups live only on targets guarded by NO large element. -/
-theorem personal_pair_guard_of_hfail {A : Set ℕ} {N₀ : ℕ}
+
+theorem personal_pair_required_element_of_hfail {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ P : Finset ℕ, RepFree A N₀ P ∧ (0 : ℕ) ∉ P ∧
       ∃ X, ∀ b ∈ A, X ≤ b → 0 < b →
-      ∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsRepHub A m (insert b P) ∧
-      IsPairHub A m (insert b P) ∧
+      ∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsRepSupportTransversal A m (insert b P) ∧
+      IsPairSupportTransversal A m (insert b P) ∧
       ((Finset.range (m + 1)).filter
         (fun a => a ∈ A ∧ (m - a) ∈ A ∧ 2 * a ≤ m)).card ≤
         P.card + 1 := by
   obtain ⟨P, hPfree, h0P, X, hflood⟩ :=
-    rep_flood_pos_of_hfail h0 hcov hfail
+    rep_cofinal_supply_pos_of_hfail h0 hcov hfail
   exact ⟨P, hPfree, h0P, X,
-    flood_pair_guard h0 h0P hflood⟩
+    cofinal_supply_pair_required_element h0 h0P hflood⟩
 
 open Classical in
-/-- **Ghost or centre.**  The pair flood's placement law: each
-large basis element's personal target either IS the element
-itself — its every nontrivial pair routed through the fixed
-envelope — or is a GHOST, forced out of A with its whole pair
-life through P ∪ {b}.  Unconditional: every counterexample is
-saturated with personal door-configurations. -/
-theorem pair_flood_ghost_or_center {A : Set ℕ} {N₀ : ℕ}
+
+theorem pair_cofinal_supply_outside_basis_or_center {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ P : Finset ℕ, RepFree A N₀ P ∧ (0 : ℕ) ∉ P ∧
       ∃ X, ∀ b ∈ A, X ≤ b →
-      ∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsRepHub A m (insert b P) ∧
-      IsPairHub A m (insert b P) ∧
+      ∃ m, N₀ ≤ m ∧ b ≤ m ∧ IsRepSupportTransversal A m (insert b P) ∧
+      IsPairSupportTransversal A m (insert b P) ∧
       ((Finset.range (m + 1)).filter
         (fun a => a ∈ A ∧ (m - a) ∈ A ∧ 2 * a ≤ m)).card ≤
         P.card + 1 ∧
       (m = b ∨ m ∉ A) := by
   obtain ⟨P, hPfree, h0P, X, hguard⟩ :=
-    personal_pair_guard_of_hfail h0 hcov hfail
+    personal_pair_required_element_of_hfail h0 hcov hfail
   refine ⟨P, hPfree, h0P, max X (P.sup id + 1), ?_⟩
   intro b hbA hXb
   have hbX : X ≤ b := le_trans (le_max_left _ _) hXb
@@ -11343,7 +10123,7 @@ theorem pair_flood_ghost_or_center {A : Set ℕ} {N₀ : ℕ}
     rcases Finset.mem_insert.1 h with h | h
     · omega
     · exact h0P h
-  rcases street_target_notMem_or_window h0 h0i hpair with
+  rcases target_sequence_target_notMem_or_window h0 h0i hpair with
     h | h
   · exact Or.inr h
   · rcases Finset.mem_insert.1 h with h1 | h1
@@ -11353,23 +10133,8 @@ theorem pair_flood_ghost_or_center {A : Set ℕ} {N₀ : ℕ}
       omega
 
 open Classical in
-/-- **THE PAIR-FLOOD FUNNEL.**  The block's closing summit:
-every counterexample world funnels, through its own pair flood,
-into one of three cofinal configurations over ONE fixed free
-0-less envelope P:
 
-I. P-CENTRED MEMBERS — cofinally many basis elements whose
-   every positive pair routes through P;
-II. ROTATOR GHOSTS — cofinally many b ∈ A with a partner
-   w ∈ A whose sum b + w is OUT of A and pair-hubbed by
-   P ∪ {b} — the canonical core-and-rotator configuration;
-III. THE PURE HALL — cofinally many ghosts pair-hubbed by the
-   FIXED P alone: the door configuration, unconditional.
-
-The door is not a lane; it is one of three faces of the flood.
-The remaining core of Erdős 881 is the defeat of these three
-faces and the rank-ω room. -/
-theorem the_pair_flood_funnel {A : Set ℕ} {N₀ : ℕ}
+theorem pair_cofinal_supply_transversal_family {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
@@ -11377,20 +10142,20 @@ theorem the_pair_flood_funnel {A : Set ℕ} {N₀ : ℕ}
     ((∀ N, ∃ b, N ≤ b ∧ b ∈ A ∧ ∀ x ∈ A, ∀ y ∈ A,
         0 < x → 0 < y → x + y = b → x ∈ P ∨ y ∈ P) ∨
      (∀ N, ∃ b w, N ≤ b ∧ b ∈ A ∧ w ∈ A ∧ b + w ∉ A ∧
-        IsRepHub A (b + w) (insert b P) ∧
-        IsPairHub A (b + w) (insert b P)) ∨
+        IsRepSupportTransversal A (b + w) (insert b P) ∧
+        IsPairSupportTransversal A (b + w) (insert b P)) ∨
      (∀ N, ∃ m b, N ≤ b ∧ b ≤ m ∧ b ∈ A ∧ m ∉ A ∧
-        IsRepHub A m (insert b P) ∧ IsPairHub A m P)) := by
+        IsRepSupportTransversal A m (insert b P) ∧ IsPairSupportTransversal A m P)) := by
   obtain ⟨P, hPfree, h0P, X, hguard⟩ :=
-    pair_flood_ghost_or_center h0 hcov hfail
+    pair_cofinal_supply_outside_basis_or_center h0 hcov hfail
   refine ⟨P, hPfree, h0P, ?_⟩
   by_cases hI : ∀ N, ∃ b, N ≤ b ∧ b ∈ A ∧ ∀ x ∈ A, ∀ y ∈ A,
       0 < x → 0 < y → x + y = b → x ∈ P ∨ y ∈ P
   · exact Or.inl hI
   · obtain ⟨NA, hNA⟩ := not_forall.mp hI
     by_cases hII : ∀ N, ∃ b w, N ≤ b ∧ b ∈ A ∧ w ∈ A ∧
-        b + w ∉ A ∧ IsRepHub A (b + w) (insert b P) ∧
-        IsPairHub A (b + w) (insert b P)
+        b + w ∉ A ∧ IsRepSupportTransversal A (b + w) (insert b P) ∧
+        IsPairSupportTransversal A (b + w) (insert b P)
     · exact Or.inr (Or.inl hII)
     · obtain ⟨NB, hNB⟩ := not_forall.mp hII
       refine Or.inr (Or.inr ?_)
@@ -11449,16 +10214,10 @@ theorem the_pair_flood_funnel {A : Set ℕ} {N₀ : ℕ}
             · exact absurd h' hym
             · exact Or.inr h'
 
-/-- **The singleton hall is a marriage stream.**  Face III of
-the funnel with a one-element envelope is exactly the
-unique-pair configuration: cofinal ghosts m whose ONLY pair is
-(p, m − p) — the fixed element p order-2-owns cofinally many
-targets at explicit positions p + A.  The funnel's third face,
-handed to the marriage network in its native vocabulary. -/
 theorem pure_hall_singleton_form {A : Set ℕ} {N₀ p : ℕ}
     (hcov : PairCovers A N₀)
     (hface : ∀ N, ∃ m, N ≤ m ∧ m ∉ A ∧
-      IsPairHub A m ({p} : Finset ℕ)) :
+      IsPairSupportTransversal A m ({p} : Finset ℕ)) :
     ∀ N, ∃ m, N ≤ m ∧ m ∉ A ∧ p ≤ m ∧ m - p ∈ A ∧
       ∀ x ∈ A, ∀ y ∈ A, x + y = m →
         (x = p ∧ y = m - p) ∨ (x = m - p ∧ y = p) := by
@@ -11485,18 +10244,11 @@ theorem pure_hall_singleton_form {A : Set ℕ} {N₀ p : ℕ}
   · rw [Finset.mem_singleton] at h
     exact Or.inr ⟨by omega, h⟩
 
-/-- **The two-level colour law.**  At a face-III target — rep
-hub P ∪ {b}, pair hub P alone — the defective mirror's colour
-ALWAYS has a dead translate, including when the colour is the
-rotator b itself: a live translate would recombine with the
-mirror image into a pair of m forced through the small envelope,
-which the size window forbids.  The rotator obeys the same
-translate discipline as the hall. -/
 theorem face_three_color_law {A : Set ℕ} {N₀ M₀ m b : ℕ}
     {P : Finset ℕ}
     (hcov : PairCovers A N₀) (hM : ∀ p ∈ P, p ≤ M₀)
-    (hrep : IsRepHub A m (insert b P))
-    (hpair : IsPairHub A m P)
+    (hrep : IsRepSupportTransversal A m (insert b P))
+    (hpair : IsPairSupportTransversal A m P)
     {z : ℕ} (hz : z ∈ A) (hzM : M₀ < z) (hzb : z ≠ b)
     (hsize : z + b + 2 * M₀ + N₀ + 1 ≤ m) :
     ∃ h ∈ insert b P, h + z ≤ m ∧ m - z - h ∈ A ∧
@@ -11521,29 +10273,20 @@ theorem face_three_color_law {A : Set ℕ} {N₀ M₀ m b : ℕ}
     · have h4 := hM _ h3
       omega
 
-/-- **The rotator-gap dichotomy.**  Face III splits on the gap
-between targets and their rotators.  Either the gaps stay
-bounded — cofinal instances with m ≤ b + G, the near-diagonal
-regime — or the two-level colour law's window opens for every
-basis element and the DEAD SPECTRUM pigeonhole fires: every
-large basis element has a dead translate into the fixed
-envelope, or its translates die along the rotator stream
-itself.  Every element of the basis is translate-poor against
-face III's own material. -/
 theorem face_three_gap_dichotomy {A : Set ℕ} {N₀ M₀ : ℕ}
     {P : Finset ℕ}
     (hcov : PairCovers A N₀) (hM : ∀ p ∈ P, p ≤ M₀)
     (hface : ∀ N, ∃ m b, N ≤ b ∧ b ≤ m ∧ b ∈ A ∧ m ∉ A ∧
-      IsRepHub A m (insert b P) ∧ IsPairHub A m P) :
+      IsRepSupportTransversal A m (insert b P) ∧ IsPairSupportTransversal A m P) :
     (∃ G, ∀ N, ∃ m b, N ≤ b ∧ b ≤ m ∧ m ≤ b + G ∧ b ∈ A ∧
-      m ∉ A ∧ IsRepHub A m (insert b P) ∧ IsPairHub A m P) ∨
+      m ∉ A ∧ IsRepSupportTransversal A m (insert b P) ∧ IsPairSupportTransversal A m P) ∨
     (∀ z ∈ A, M₀ < z →
       (∃ p ∈ P, z + p ∉ A) ∨
       (∀ N, ∃ b, N ≤ b ∧ b ∈ A ∧ z + b ∉ A)) := by
   classical
   by_cases hbdd : ∃ G, ∀ N, ∃ m b, N ≤ b ∧ b ≤ m ∧
       m ≤ b + G ∧ b ∈ A ∧ m ∉ A ∧
-      IsRepHub A m (insert b P) ∧ IsPairHub A m P
+      IsRepSupportTransversal A m (insert b P) ∧ IsPairSupportTransversal A m P
   · exact Or.inl hbdd
   · right
     intro z hzA hzM
@@ -11554,8 +10297,8 @@ theorem face_three_gap_dichotomy {A : Set ℕ} {N₀ M₀ : ℕ}
       intro N
       set G := z + 2 * M₀ + N₀ + 1 with hG
       have hnb : ¬∀ N', ∃ m b, N' ≤ b ∧ b ≤ m ∧ m ≤ b + G ∧
-          b ∈ A ∧ m ∉ A ∧ IsRepHub A m (insert b P) ∧
-          IsPairHub A m P := fun hall => hbdd ⟨G, hall⟩
+          b ∈ A ∧ m ∉ A ∧ IsRepSupportTransversal A m (insert b P) ∧
+          IsPairSupportTransversal A m P := fun hall => hbdd ⟨G, hall⟩
       obtain ⟨NG, hNG⟩ := not_forall.mp hnb
       obtain ⟨m, b, hNb, hbm, hbA, hmA, hrep, hpair⟩ :=
         hface (N + NG + z + 1)
@@ -11570,26 +10313,19 @@ theorem face_three_gap_dichotomy {A : Set ℕ} {N₀ M₀ : ℕ}
       · exact ⟨b, by omega, hbA, h1 ▸ hdead⟩
       · exact absurd (hzP h h1) hdead
 
-/-- **Near-diagonal stabilization.**  In the bounded-gap regime
-one single offset g ≤ G serves cofinally: infinitely many basis
-elements b whose g-translate b + g is a GHOST pair-hubbed by
-the fixed envelope, with the rotator b guarding it at order 3.
-Face III's near-diagonal horn is a fixed-offset ghost family —
-the single translate law's witnesses, upgraded with full hub
-structure at one explicit offset. -/
 theorem near_diagonal_stabilized {A : Set ℕ} {G : ℕ}
     {P : Finset ℕ}
     (hbdd : ∀ N, ∃ m b, N ≤ b ∧ b ≤ m ∧ m ≤ b + G ∧ b ∈ A ∧
-      m ∉ A ∧ IsRepHub A m (insert b P) ∧ IsPairHub A m P) :
+      m ∉ A ∧ IsRepSupportTransversal A m (insert b P) ∧ IsPairSupportTransversal A m P) :
     ∃ g, g ≤ G ∧ ∀ N, ∃ b, N ≤ b ∧ b ∈ A ∧ b + g ∉ A ∧
-      IsRepHub A (b + g) (insert b P) ∧
-      IsPairHub A (b + g) P := by
+      IsRepSupportTransversal A (b + g) (insert b P) ∧
+      IsPairSupportTransversal A (b + g) P := by
   classical
   by_contra hno
   push Not at hno
   have hKg : ∀ g : ℕ, ∃ Kg, g ≤ G → ∀ b, Kg ≤ b → b ∈ A →
-      b + g ∉ A → IsRepHub A (b + g) (insert b P) →
-      ¬IsPairHub A (b + g) P := by
+      b + g ∉ A → IsRepSupportTransversal A (b + g) (insert b P) →
+      ¬IsPairSupportTransversal A (b + g) P := by
     intro g
     by_cases hgG : g ≤ G
     · obtain ⟨Kg, hKg'⟩ := hno g hgG
@@ -11606,14 +10342,6 @@ theorem near_diagonal_stabilized {A : Set ℕ} {G : ℕ}
   rw [hmbg] at hmA hrep hpair
   exact hKf g hgG b (by omega) hbA hmA hrep hpair
 
-/-- **Face I, honestly split** (junk-test repair).  P-centred
-membership is vacuous for basis elements with NO positive pair
-at all, so face I splits: either cofinally many members carry a
-genuine positive pair with ALL positive pairs through the
-envelope, or the basis has cofinally many PRIMITIVE elements —
-members that are not sums of two positive members.  Both horns
-carry real information; neither is allowed to hide behind the
-other. -/
 theorem face_one_split {A : Set ℕ} {P : Finset ℕ}
     (hface : ∀ N, ∃ b, N ≤ b ∧ b ∈ A ∧ ∀ x ∈ A, ∀ y ∈ A,
       0 < x → 0 < y → x + y = b → x ∈ P ∨ y ∈ P) :
@@ -11641,19 +10369,11 @@ theorem face_one_split {A : Set ℕ} {P : Finset ℕ}
       intro x hx y hy hx0 hy0 hxy
       exact hpos x hx y hy hx0 hy0 hxy
 
-/-- **The free-tower mirror.**  At a near-diagonal face-III
-target b + g, every basis element in the huge window
-(g, b − 2M₀ − N₀ − 1] mirrors PURELY through the envelope — the
-rotator colour is size-excluded — and the mirror colour's
-translate is dead: b + g − z − p ∈ A and z + p ∉ A for some
-p ∈ P.  The g₀-tower's mirror-and-translate structure,
-recovered for a general envelope without any routing
-hypothesis. -/
 theorem free_tower_mirror {A : Set ℕ} {N₀ M₀ g b : ℕ}
     {P : Finset ℕ}
     (hcov : PairCovers A N₀) (hM : ∀ p ∈ P, p ≤ M₀)
-    (hrep : IsRepHub A (b + g) (insert b P))
-    (hpair : IsPairHub A (b + g) P)
+    (hrep : IsRepSupportTransversal A (b + g) (insert b P))
+    (hpair : IsPairSupportTransversal A (b + g) P)
     {z : ℕ} (hz : z ∈ A) (hzM : M₀ < z) (hzg : g < z)
     (hsize : z + 2 * M₀ + N₀ + 1 ≤ b) :
     ∃ p ∈ P, p + z ≤ b + g ∧ b + g - z - p ∈ A ∧
@@ -11680,20 +10400,11 @@ theorem free_tower_mirror {A : Set ℕ} {N₀ M₀ g b : ℕ}
       have h4 := hM h h1
       omega
 
-/-- **The free tower's level structure.**  Singleton envelope:
-at a near-diagonal face-III target b + g with envelope {p}, the
-whole window reflects through the constant level L' = b + g − p
-— every window element z has L' − z ∈ A — and the STRONG
-translate law holds across the window: z + p ∉ A for every
-window z.  The g₀-tower's exact structure (levels, mirror,
-translate desert), recovered with no routing and no anchor
-hypothesis.  The tower kill lacks only its ladder: one c ∈ A
-with 2c − p ∈ A in range would close this room. -/
 theorem free_tower_singleton_levels {A : Set ℕ}
     {N₀ M₀ g b p : ℕ}
     (hcov : PairCovers A N₀) (hM : p ≤ M₀)
-    (hrep : IsRepHub A (b + g) (insert b {p}))
-    (hpair : IsPairHub A (b + g) ({p} : Finset ℕ)) :
+    (hrep : IsRepSupportTransversal A (b + g) (insert b {p}))
+    (hpair : IsPairSupportTransversal A (b + g) ({p} : Finset ℕ)) :
     ∀ z ∈ A, M₀ < z → g < z → z + 2 * M₀ + N₀ + 1 ≤ b →
       p + z ≤ b + g ∧ (b + g - p) - z ∈ A ∧ z + p ∉ A := by
   intro z hz hzM hzg hsize
@@ -11709,13 +10420,9 @@ theorem free_tower_singleton_levels {A : Set ℕ}
   rw [h1] at hmir
   exact ⟨by omega, hmir, hdead⟩
 
-/-- **Pair-hub corep.**  A singleton pair hub's target donates
-its level: the covering pair of m must route through p, so
-L' = m − p is a basis member.  The free tower's levels are
-genuine material, exactly as the g₀-tower's coreps were. -/
-theorem pair_hub_corep {A : Set ℕ} {N₀ m p : ℕ}
+theorem pair_support_transversal_corep {A : Set ℕ} {N₀ m p : ℕ}
     (hcov : PairCovers A N₀) (hm : N₀ ≤ m)
-    (hpair : IsPairHub A m ({p} : Finset ℕ)) :
+    (hpair : IsPairSupportTransversal A m ({p} : Finset ℕ)) :
     p ≤ m ∧ m - p ∈ A := by
   obtain ⟨x, hx, y, hy, hxy⟩ := hcov m hm
   rcases hpair x hx y hy hxy with h | h
@@ -11730,18 +10437,11 @@ theorem pair_hub_corep {A : Set ℕ} {N₀ m p : ℕ}
     rw [h1]
     exact ⟨by omega, hx⟩
 
-/-- **The no-ladder affine desert.**  If the enemy defends the
-free tower by total AP3-freeness at p (no ladder), the defence
-costs a new desert: every window element's mirror image is a
-large basis element c whose double-shift 2c − p must die, so
-the affine family 2L' − p − 2z is FORCED OUT of A across the
-window.  Midpoint-freeness at one point propagates, through the
-tower's own mirror, into a two-parameter exclusion zone. -/
-theorem no_ladder_affine_desert {A : Set ℕ}
+theorem no_sequence_affine_exclusion_interval {A : Set ℕ}
     {N₀ M₀ g b p T : ℕ}
     (hcov : PairCovers A N₀) (hM : p ≤ M₀)
-    (hrep : IsRepHub A (b + g) (insert b {p}))
-    (hpair : IsPairHub A (b + g) ({p} : Finset ℕ))
+    (hrep : IsRepSupportTransversal A (b + g) (insert b {p}))
+    (hpair : IsPairSupportTransversal A (b + g) ({p} : Finset ℕ))
     (hnl : ∀ c ∈ A, T ≤ c → p ≤ 2 * c → 2 * c - p ∉ A) :
     ∀ z ∈ A, M₀ < z → g < z → z + 2 * M₀ + N₀ + 1 ≤ b →
       z + T + p ≤ b + g →
@@ -11758,11 +10458,7 @@ theorem no_ladder_affine_desert {A : Set ℕ}
   exact hout
 
 open Classical in
-/-- **Windows are populated.**  Coverage forces mass into every
-window: the count of basis elements in (Y, X] plus the trivial
-bound below Y squares to at least the covered range.  Keeps the
-free tower's mirror, translate, and desert laws non-vacuous on
-windows of width ≫ √X. -/
+
 theorem window_populated {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀) :
     ∀ Y X, N₀ ≤ X → X - N₀ + 1 ≤
@@ -11790,11 +10486,6 @@ theorem window_populated {A : Set ℕ} {N₀ : ℕ}
   rw [he] at hpow
   omega
 
-/-- **Personal fragility.**  The located form of the fragile
-supply: every large basis element personally guards a target
-with at most |P| + 1 disjoint triple representations.  The
-mixed regime's fragile half is not merely cofinal — it is
-pinned above every basis element, with one constant. -/
 theorem personal_fragility {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -11804,24 +10495,18 @@ theorem personal_fragility {A : Set ℕ} {N₀ : ℕ}
       ∃ m, N₀ ≤ m ∧ b ≤ m ∧
         ¬HasDisjointTripleReps A m (P.card + 2) := by
   obtain ⟨P, hPfree, h0P, X, hguard⟩ :=
-    personal_pair_guard_of_hfail h0 hcov hfail
+    personal_pair_required_element_of_hfail h0 hcov hfail
   refine ⟨P, hPfree, h0P, X, ?_⟩
   intro b hbA hXb hbpos
   obtain ⟨m, hmN, hbm, hrep, hpair, hcount⟩ :=
     hguard b hbA hXb hbpos
   refine ⟨m, hmN, hbm, ?_⟩
   intro hK
-  have h1 := disjoint_reps_le_hub_card hrep hK
+  have h1 := disjoint_reps_le_support_transversal_card hrep hK
   have h2 : (insert b P).card ≤ P.card + 1 :=
     Finset.card_insert_le _ _
   omega
 
-/-- **The parity fringe law.**  A single-parity window cannot
-pair-cover odd-parity targets internally: window-window sums
-are even.  Every pair of an odd target in range has its minor
-part in the low fringe [0, Y].  The parity defence buys the
-enemy the affine desert but chains its odd targets to a finite
-fringe. -/
 theorem parity_window_fringe {A : Set ℕ} {Y X ε : ℕ}
     (hpar : ∀ a ∈ A, Y < a → a ≤ X → a % 2 = ε) :
     ∀ n, n ≤ X → n % 2 = 1 →
@@ -11833,12 +10518,6 @@ theorem parity_window_fringe {A : Set ℕ} {Y X ε : ℕ}
   have h2 := hpar y hy (by omega) (by omega)
   omega
 
-/-- **The fringe partner law.**  With covering, every odd
-target in a single-parity window's range has a pair through the
-fringe: some x ≤ Y in A with n − x ∈ A.  The basis is trapped
-within Y + 1 of every odd target — near-syndetic structure, the
-opening of the completeness road (`subset_sum_complete_of_
-small_gaps` → the completeness pinch). -/
 theorem parity_window_partner {A : Set ℕ} {N₀ Y X ε : ℕ}
     (hcov : PairCovers A N₀)
     (hpar : ∀ a ∈ A, Y < a → a ≤ X → a % 2 = ε) :
@@ -11857,12 +10536,6 @@ theorem parity_window_partner {A : Set ℕ} {N₀ Y X ε : ℕ}
     rw [h1]
     exact hx
 
-/-- **Parity windows force syndeticity.**  Under a single-parity
-window, the basis meets EVERY interval of length 2Y + 2 in the
-range: an odd target inside the interval donates its fringe
-partner.  The enemy's parity defence converts √-sparseness into
-bounded gaps — the exact input of the small-gaps completeness
-criterion. -/
 theorem parity_window_syndetic {A : Set ℕ} {N₀ Y X ε : ℕ}
     (hcov : PairCovers A N₀)
     (hpar : ∀ a ∈ A, Y < a → a ≤ X → a % 2 = ε) :
@@ -11880,12 +10553,7 @@ theorem parity_window_syndetic {A : Set ℕ} {N₀ Y X ε : ℕ}
     exact ⟨u + Y + 1 - x, hpart, by omega, by omega⟩
 
 open Classical in
-/-- **The parity defence costs linear density.**  A
-single-parity window contains at least one basis element per
-2Y + 3 integers: k disjoint blocks donate k distinct elements.
-Sidon-sparseness and the parity defence are incompatible on the
-same window — the enemy pays for every parity escape in
-density, and density is what all the counting engines eat. -/
+
 theorem parity_window_linear_density {A : Set ℕ}
     {N₀ Y X ε : ℕ}
     (hcov : PairCovers A N₀)
@@ -11939,11 +10607,7 @@ theorem parity_window_linear_density {A : Set ℕ}
   exact hcard
 
 open Classical in
-/-- **Dense windows concentrate pairs.**  If a window carries
-enough basis elements, some target in the doubled range
-collects more than K window-pairs: the pair square outnumbers
-the available sums.  Dense regions manufacture pair-rich
-targets. -/
+
 theorem dense_window_high_pairs {A : Set ℕ} {u v K : ℕ}
     (hlt : 2 * (v - u) * K <
       (((Finset.Ioc u v).filter (· ∈ A)).card) ^ 2) :
@@ -11974,14 +10638,9 @@ theorem dense_window_high_pairs {A : Set ℕ} {u v K : ℕ}
   exact ⟨m, hm.1, hm.2, hfib⟩
 
 open Classical in
-/-- **Pair-rich targets are hub-immune.**  A target with more
-than 2|H| ordered window-pairs cannot be pair-hubbed by H:
-every ordered pair donates its hub part, and each hub element
-serves at most two ordered pairs.  Dense windows therefore
-defeat every small hall on their doubled range — the halls'
-targets are forced OUT of the sums of every dense window. -/
-theorem pair_fiber_hub_bound {A : Set ℕ} {u v m : ℕ}
-    {H : Finset ℕ} (hhub : IsPairHub A m H) :
+
+theorem pair_fiber_support_transversal_bound {A : Set ℕ} {u v m : ℕ}
+    {H : Finset ℕ} (hhub : IsPairSupportTransversal A m H) :
     ((((Finset.Ioc u v).filter (· ∈ A)) ×ˢ
       ((Finset.Ioc u v).filter (· ∈ A))).filter
         (fun q => q.1 + q.2 = m)).card ≤ 2 * H.card := by
@@ -12032,11 +10691,6 @@ theorem pair_fiber_hub_bound {A : Set ℕ} {u v m : ℕ}
       exact hfib h hh)
   omega
 
-/-- **The odd channel's parity law.**  If the basis is single-
-parity beyond Y, every pair of every odd target beyond 2Y has
-its minor part in the OPPOSITE-parity fringe: two large parts
-sum evenly, and the large partner fixes the fringe part's
-parity.  Not a cofinal family — every odd target at once. -/
 theorem global_parity_odd_fringe {A : Set ℕ} {Y ε : ℕ}
     (hpar : ∀ a ∈ A, Y < a → a % 2 = ε) :
     ∀ n, 2 * Y < n → n % 2 = 1 →
@@ -12061,18 +10715,11 @@ theorem global_parity_odd_fringe {A : Set ℕ} {Y ε : ℕ}
     · omega
 
 open Classical in
-/-- **THE ODD CHANNEL IS A HALL.**  Globally single-parity
-worlds hand their ENTIRE odd channel to one finite hall: the
-opposite-parity fringe F* pair-hubs every odd target beyond 2Y.
-This is the door configuration at total saturation — no
-placement liberty, no dodging, every odd target at once — and
-it caps r₂ on the whole odd channel at |F*| ≤ Y + 1, forcing
-all of the canonical core's r₂-blowups onto the even channel,
-one 2-adic level down. -/
+
 theorem global_parity_odd_hall {A : Set ℕ} {Y ε : ℕ}
     (hpar : ∀ a ∈ A, Y < a → a % 2 = ε) :
     ∀ n, 2 * Y < n → n % 2 = 1 →
-      IsPairHub A n ((Finset.range (Y + 1)).filter
+      IsPairSupportTransversal A n ((Finset.range (Y + 1)).filter
         (fun x => x ∈ A ∧ x % 2 ≠ ε)) := by
   intro n hnY hodd x hx y hy hxy
   rcases global_parity_odd_fringe hpar n hnY hodd x hx y hy
@@ -12084,9 +10731,6 @@ theorem global_parity_odd_hall {A : Set ℕ} {Y ε : ℕ}
     rw [Finset.mem_filter, Finset.mem_range]
     exact ⟨by omega, hy, h2⟩
 
-/-- **The global parity dichotomy** — the last splitter.
-Either the basis is eventually single-parity (the saturated
-odd-hall world) or both parity classes persist cofinally. -/
 theorem global_parity_dichotomy {A : Set ℕ} :
     (∃ Y ε, ε < 2 ∧ ∀ a ∈ A, Y < a → a % 2 = ε) ∨
     ((∀ N, ∃ a, N ≤ a ∧ a ∈ A ∧ a % 2 = 0) ∧
@@ -12109,10 +10753,7 @@ theorem global_parity_dichotomy {A : Set ℕ} :
     exact hY ⟨a, by omega, ha, by omega⟩
 
 open Classical in
-/-- **The odd channel's ordered pair cap.**  In single-parity
-worlds every odd target beyond 2Y has at most 2Y + 2 ordered
-pair representations: every pair part is in the fringe or
-mirrors into it. -/
+
 theorem global_parity_odd_ordered_cap {A : Set ℕ} {Y ε : ℕ}
     (hpar : ∀ a ∈ A, Y < a → a % 2 = ε) :
     ∀ n, 2 * Y < n → n % 2 = 1 →
@@ -12139,11 +10780,7 @@ theorem global_parity_odd_ordered_cap {A : Set ℕ} {Y ε : ℕ}
   omega
 
 open Classical in
-/-- **The blowups are forced even.**  In single-parity worlds
-under hfail, the canonical core's unbounded-r₂ witnesses are
-eventually all EVEN: the saturated odd hall caps the odd
-channel, so the enemy's pair riches must live one 2-adic level
-down.  The descent has teeth. -/
+
 theorem r2_witnesses_even {A : Set ℕ} {N₀ Y ε : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -12162,14 +10799,7 @@ theorem r2_witnesses_even {A : Set ℕ} {N₀ Y ε : ℕ}
     (by omega) h1
   omega
 
-/-- **The half-world covers.**  In a single-parity world the
-even channel descends: every pair of an even target has both
-parts ≡ ε (the large partner forces the fringe part's parity
-too), so the half-world A' = {x : ε + 2x ∈ A} inherits order-2
-covering at half scale.  The 2-adic descent's first rung,
-formal: each defended level hands the game to its half-world
-intact. -/
-theorem half_world_covers {A : Set ℕ} {N₀ Y ε : ℕ}
+theorem half_model_covers {A : Set ℕ} {N₀ Y ε : ℕ}
     (hε : ε < 2)
     (hcov : PairCovers A N₀)
     (hpar : ∀ a ∈ A, Y < a → a % 2 = ε) :
@@ -12195,13 +10825,7 @@ theorem half_world_covers {A : Set ℕ} {N₀ Y ε : ℕ}
     exact hy
   · omega
 
-/-- **The ε-channel lift.**  Order-3 survival in the half-world
-lifts to the ε-channel upstairs: a surviving half-triple
-x' + y' + z' = n' lifts part-by-part to
-(ε + 2x') + (ε + 2y') + (ε + 2z') = 3ε + 2n', avoiding the
-lifted deletion.  The other channel needs fringe assistance —
-the descent's (2,3)-mixed structure, honestly split. -/
-theorem half_world_lift_channel {A : Set ℕ} {ε N' : ℕ}
+theorem half_model_lift_channel {A : Set ℕ} {ε N' : ℕ}
     (hε : ε < 2) {B' : Set ℕ}
     (hsurv' : ∀ n', N' ≤ n' →
       ∃ x' ∈ {x : ℕ | ε + 2 * x ∈ A},
@@ -12225,12 +10849,7 @@ theorem half_world_lift_channel {A : Set ℕ} {ε N' : ℕ}
   refine ⟨ε + 2 * x', hx', ε + 2 * y', hy', ε + 2 * z', hz',
     hlift x' hxB, hlift y' hyB, hlift z' hzB, by omega⟩
 
-/-- **The off-channel lift.**  Opposite-parity targets ascend
-by fringe assistance: one off-parity fringe element plus a
-surviving half-world PAIR covers the other channel.  The
-descent's survival transfer is (2,3)-mixed: order-3 on the
-ε-channel, order-2 plus a fringe key on the rest. -/
-theorem half_world_lift_offchannel {A : Set ℕ} {ε N' : ℕ}
+theorem half_model_lift_offchannel {A : Set ℕ} {ε N' : ℕ}
     (hε : ε < 2) {B' : Set ℕ}
     (hsurv2 : ∀ n', N' ≤ n' →
       ∃ x' ∈ {x : ℕ | ε + 2 * x ∈ A},
@@ -12257,11 +10876,6 @@ theorem half_world_lift_offchannel {A : Set ℕ} {ε N' : ℕ}
   refine ⟨f, hf, ε + 2 * x', hx', ε + 2 * y', hy',
     hfB, hlift x' hxB, hlift y' hyB, by omega⟩
 
-/-- **THE DESCENT INVARIANT.**  In a single-parity world with
-one off-parity fringe key, hfail DESCENDS: every infinite
-half-world deletion fails at order 2 or at order 3.  The
-half-world inherits the (2,3)-mixed counterexample interface —
-the 2-adic recursion is formally armed. -/
 theorem descent_invariant {A : Set ℕ} {ε : ℕ}
     (hε : ε < 2)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -12297,7 +10911,7 @@ theorem descent_invariant {A : Set ℕ} {ε : ℕ}
   intro n hn
   by_cases hch : n % 2 = 3 * ε % 2
   · obtain ⟨x, hx, y, hy, z, hz, hxB, hyB, hzB, hsum⟩ :=
-      half_world_lift_channel hε hs3 n (by omega) hch
+      half_model_lift_channel hε hs3 n (by omega) hch
     refine ⟨![x, y, z], ?_, ?_⟩
     · intro i
       match i with
@@ -12306,7 +10920,7 @@ theorem descent_invariant {A : Set ℕ} {ε : ℕ}
       | 2 => exact ⟨hz, hzB⟩
     · simpa [Fin.sum_univ_three] using hsum
   · obtain ⟨x, hx, y, hy, z, hz, hxB, hyB, hzB, hsum⟩ :=
-      half_world_lift_offchannel hε hs2 hf hfpar n
+      half_model_lift_offchannel hε hs2 hf hfpar n
         (by omega) (by omega)
     refine ⟨![x, y, z], ?_, ?_⟩
     · intro i
@@ -12317,9 +10931,7 @@ theorem descent_invariant {A : Set ℕ} {ε : ℕ}
     · simpa [Fin.sum_univ_three] using hsum
 
 open Classical in
-/-- **The saturated fringe is nonempty.**  Single-parity worlds
-must keep at least one opposite-parity key in the fringe — odd
-targets have no other door. -/
+
 theorem saturated_fringe_nonempty {A : Set ℕ} {N₀ Y ε : ℕ}
     (hcov : PairCovers A N₀)
     (hpar : ∀ a ∈ A, Y < a → a % 2 = ε) :
@@ -12338,10 +10950,7 @@ theorem saturated_fringe_nonempty {A : Set ℕ} {N₀ Y ε : ℕ}
       exact ⟨by omega, hy, h2⟩⟩
 
 open Classical in
-/-- **The popular fringe key.**  One opposite-parity fringe
-element partners cofinally many odd targets: the saturated
-hall has a door, and the door's partner stream is the whole
-odd channel's backbone. -/
+
 theorem saturated_popular_fringe {A : Set ℕ} {N₀ Y ε : ℕ}
     (hcov : PairCovers A N₀)
     (hpar : ∀ a ∈ A, Y < a → a % 2 = ε) :
@@ -12380,13 +10989,6 @@ theorem saturated_popular_fringe {A : Set ℕ} {N₀ Y ε : ℕ}
     rw [h4] at h3
     exact h3 hx
 
-/-- **Two-level descent: the mod-4 cylinder.**  If the world is
-single-parity and its half-world is single-parity again, the
-large basis elements live in ONE residue class mod 4.  Each
-descent level halves the enemy's residue freedom; k levels pin
-a 2^k-cylinder, forcing gaps ≥ 2^k beyond growing thresholds —
-the quantitative Cantor calibration of infinitely descending
-worlds. -/
 theorem two_level_descent {A : Set ℕ} {Y₀ Y₁ ε₀ ε₁ : ℕ}
     (hε₀ : ε₀ < 2) (hε₁ : ε₁ < 2)
     (hpar₀ : ∀ a ∈ A, Y₀ < a → a % 2 = ε₀)
@@ -12404,12 +11006,6 @@ theorem two_level_descent {A : Set ℕ} {Y₀ Y₁ ε₀ ε₁ : ℕ}
   have h1 := hpar₁ _ hmem (by omega)
   omega
 
-/-- **The ω-descent cylinder law.**  An iterated single-parity
-tower of half-worlds pins the basis, beyond level thresholds,
-into ONE 2-adic cylinder per depth: every large element
-decomposes as (address) + 2^k · (level-k survivor).  Infinitely
-descending worlds are asymptotically 2-adic — Cantor-caliber —
-with residue freedom zero at every depth. -/
 theorem omega_descent_cylinder {A : Set ℕ} (ε Y : ℕ → ℕ)
     (hε : ∀ k, ε k < 2)
     (W : ℕ → Set ℕ) (hW0 : W 0 = A)
@@ -12460,9 +11056,7 @@ theorem omega_descent_cylinder {A : Set ℕ} (ε Y : ℕ → ℕ)
       ring
 
 open Classical in
-/-- **Cylinder sparsity.**  A single 2-adic lane holds at most
-one element per 2^k integers: the level-k decomposition injects
-the tail into its survivor indices. -/
+
 theorem cylinder_sparsity {A : Set ℕ} {k c T : ℕ}
     (hcyl : ∀ a ∈ A, T < a → ∃ a', a = c + 2 ^ k * a') :
     ∀ X, ((Finset.Ioc T X).filter (· ∈ A)).card ≤
@@ -12514,11 +11108,7 @@ theorem cylinder_sparsity {A : Set ℕ} {k c T : ℕ}
     omega
 
 open Classical in
-/-- **The threshold race.**  Cylinder containment against
-covering: the level threshold plus the lane's own capacity must
-square to the covered range.  Deep lanes force √-scale
-thresholds — the racing cost of every descent level, made
-quantitative. -/
+
 theorem descent_threshold_race {A : Set ℕ} {N₀ k c T : ℕ}
     (hcov : PairCovers A N₀)
     (hcyl : ∀ a ∈ A, T < a → ∃ a', a = c + 2 ^ k * a') :
@@ -12551,11 +11141,6 @@ theorem descent_threshold_race {A : Set ℕ} {N₀ k c T : ℕ}
     Nat.pow_le_pow_left hle 2
   omega
 
-/-- **The depth cost.**  Descent thresholds grow geometrically:
-a level-k cylinder needs its threshold within N₀ + 2 of
-2^(k−2).  Instantiating the race at X = 4^(k−1): the enemy pays
-an exponential threshold for every level of parity defence —
-the racing lane's speed limit, in closed form. -/
 theorem descent_depth_cost {A : Set ℕ} {N₀ k c T : ℕ}
     (hcov : PairCovers A N₀)
     (hcyl : ∀ a ∈ A, T < a → ∃ a', a = c + 2 ^ k * a')
@@ -12602,12 +11187,7 @@ theorem descent_depth_cost {A : Set ℕ} {N₀ k c T : ℕ}
   rw [← hb] at h2
   omega
 
-/-- **Free sets dodge.**  The rank-ω room's supply is agile:
-free sets of every size exist AVOIDING any prescribed finite
-obstruction — take a larger one and discard the collisions.
-Whatever diagonal the rank kill runs, the enemy cannot block it
-with finitely much material. -/
-theorem free_sets_dodge {A : Set ℕ} {N₀ : ℕ}
+theorem free_sets_avoidance {A : Set ℕ} {N₀ : ℕ}
     (hfree : ∀ c, ∃ P : Finset ℕ, RepFree A N₀ P ∧
       c ≤ P.card) :
     ∀ (F : Finset ℕ) (c : ℕ), ∃ P : Finset ℕ,
@@ -12626,11 +11206,6 @@ theorem free_sets_dodge {A : Set ℕ} {N₀ : ℕ}
   have h3 := Finset.card_union_le (P \ F) F
   omega
 
-/-- **The free disjoint stream.**  From the rank branch's bare
-supply — free sets of every size — dodging builds an infinite
-PAIRWISE DISJOINT stream of growing free sets: the rank room
-carries its own shell stratification with no oracle and no
-covering hypothesis. -/
 theorem free_disjoint_stream {A : Set ℕ} {N₀ : ℕ}
     (hfree : ∀ c, ∃ P : Finset ℕ, RepFree A N₀ P ∧
       c ≤ P.card) :
@@ -12638,7 +11213,7 @@ theorem free_disjoint_stream {A : Set ℕ} {N₀ : ℕ}
       (∀ k, RepFree A N₀ (Q k) ∧ k ≤ (Q k).card) ∧
       ∀ j k, j < k → Disjoint (Q j) (Q k) := by
   classical
-  have hdodge := free_sets_dodge hfree
+  have hdodge := free_sets_avoidance hfree
   have hex : ∀ (F : Finset ℕ) (c : ℕ), ∃ P : Finset ℕ,
       RepFree A N₀ P ∧ c ≤ P.card ∧ Disjoint P F :=
     fun F c => hdodge F c
@@ -12697,11 +11272,6 @@ theorem free_disjoint_stream {A : Set ℕ} {N₀ : ℕ}
     rw [h1]
     exact (Finset.disjoint_of_subset_right h3 h2).symm
 
-/-- **Generic Higman chaining.**  ANY sequence of finsets has an
-infinite subsequence forming a sorted-list Higman chain — no
-hypotheses at all.  The Nash-Williams door, detached from the
-stratification: the rank room's own disjoint stream can now
-walk through it. -/
 theorem finset_stream_higman (Q : ℕ → Finset ℕ) :
     ∃ σ : ℕ ↪o ℕ, ∀ m n, m ≤ n →
       List.SublistForall₂ (· ≤ ·)
@@ -12725,15 +11295,7 @@ theorem finset_stream_higman (Q : ℕ → Finset ℕ) :
     (fun k x _ => Set.mem_univ x)
   exact ⟨σ, hσ⟩
 
-/-- **THE RANK ROOM'S OWN CHAIN.**  From the four lanes' rank
-branch alone — free positive envelopes of every size — the rank
-room builds its own nonempty disjoint growing shell stream and
-walks it through the detached Nash-Williams door: a sorted-list
-Higman chain of the room's own free material, no oracle, no
-stratification.  The spine program's entry interface,
-reproduced inside the rank refuge: the third core is a corridor
-toward the street machinery, not a separate room. -/
-theorem rank_room_chain {A : Set ℕ} {N₀ : ℕ}
+theorem rank_case_chain {A : Set ℕ} {N₀ : ℕ}
     (hfree : ∀ c, ∃ P : Finset ℕ,
       (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧ RepFree A N₀ P ∧
       c ≤ P.card) :
@@ -12841,13 +11403,7 @@ theorem rank_room_chain {A : Set ℕ} {N₀ : ℕ}
   obtain ⟨σ, hσ⟩ := finset_stream_higman Q
   exact ⟨Q, σ, hne, hmat, hfreeQ, hdisj, hcard, hσ⟩
 
-/-- **THE RANK ROOM'S SPINE.**  The corridor walked: the rank
-branch's own chain threads a strictly increasing canonical
-lineage through its own disjoint free shells — the spine,
-reproduced from bare rank supply with no oracle.  The rank
-refuge now contains the street program's starting object built
-from its own material. -/
-theorem rank_room_spine {A : Set ℕ} {N₀ : ℕ}
+theorem rank_case_subsequence {A : Set ℕ} {N₀ : ℕ}
     (hfree : ∀ c, ∃ P : Finset ℕ,
       (∀ h ∈ P, h ∈ A ∧ 0 < h) ∧ RepFree A N₀ P ∧
       c ≤ P.card) :
@@ -12859,7 +11415,7 @@ theorem rank_room_spine {A : Set ℕ} {N₀ : ℕ}
       StrictMono x ∧ (∀ t, x t ∈ Q (σ t)) := by
   classical
   obtain ⟨Q, σ, hne, hmat, hfreeQ, hdisj, hcard, hσ⟩ :=
-    rank_room_chain hfree
+    rank_case_chain hfree
   have hstep : ∀ t v, v ∈ Q (σ t) → ∃ w ∈ Q (σ (t + 1)),
       v < w := by
     intro t v hv
@@ -12907,13 +11463,6 @@ theorem rank_room_spine {A : Set ℕ} {N₀ : ℕ}
     exact (hW t (x t) (hxmem t)).2
   exact ⟨Q, σ, x, hfreeQ, hmat, hdisj, hcard, hxmono, hxmem⟩
 
-/-- **Chain or width.**  The final fork's rank branch,
-strengthened at its source: the stall windows' minimality kills
-every shorter width at the same base, so the rank supply is
-CHAIN-REACHABLE — ascending windows all of whose initial
-segments are free.  The rank room's supply is not loose free
-sets but genuine FreeStep chains of every length: the prefix-
-freeness gap of the corridor closes at the fork itself. -/
 theorem stall_chain_or_rank {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
@@ -12925,15 +11474,15 @@ theorem stall_chain_or_rank {A : Set ℕ} {N₀ : ℕ}
         ((Finset.range j).image y)) ∨
     (∃ x : ℕ → ℕ, StrictMono x ∧ (∀ t, x t ∈ A ∧ 0 < x t) ∧
       ∃ L, ∀ s : ℕ, ∃ J m, 2 ≤ J ∧ J ≤ L ∧ N₀ ≤ m ∧
-        IsRepHub A m ((Finset.range J).image
+        IsRepSupportTransversal A m ((Finset.range J).image
           (fun j => x (s + j)))) := by
   classical
   obtain ⟨Q, σ, x, hxmono, hxmem, hQfree, hQmem, hstall⟩ :=
-    spine_stalls_hereditarily h0 hcov hanchor hfail
+    subsequence_stalls_hereditarily h0 hcov hanchor hfail
   have hxA : ∀ t, x t ∈ A ∧ 0 < x t :=
     fun t => hQmem _ _ (hxmem t)
   set Pred : ℕ → ℕ → Prop := fun s J => ∃ m, N₀ ≤ m ∧
-    IsRepHub A m ((Finset.range J).image (fun j => x (s + j)))
+    IsRepSupportTransversal A m ((Finset.range J).image (fun j => x (s + j)))
     with hPred
   have hne : ∀ s, ∃ J, Pred s J := by
     intro s
@@ -12967,7 +11516,7 @@ theorem stall_chain_or_rank {A : Set ℕ} {N₀ : ℕ}
           rw [Finset.range_one, Finset.image_singleton]
           simp
         rw [hW1] at hhub
-        exact stall_window_not_in_shell (hQfree (σ s))
+        exact stall_window_not_in_rank_layer (hQfree (σ s))
           (Finset.singleton_subset_iff.2 (by
             simpa using hxmem s)) hm hhub
     refine ⟨x, hxmono, hxA, L, fun s => ?_⟩
@@ -12987,18 +11536,13 @@ theorem stall_chain_or_rank {A : Set ℕ} {N₀ : ℕ}
         obtain ⟨u, hu, v, hv, huv⟩ := hcov m hm
         exact ⟨u, hu, v, hv, 0, h0, by omega,
           by simp, by simp, by simp⟩
-      · rw [repFree_iff_forall_not_hub]
+      · rw [repFree_iff_forall_not_support_transversal]
         intro m hm hhub
         exact hJmin s j (by omega) ⟨m, hm, hhub⟩
 
 open Classical in
-/-- **The channel blowup.**  The canonical core's unbounded
-pair counts concentrate in one parity channel: even-even,
-odd-odd, or mixed.  Each channel is a door one level down the
-2-adic tree — ee and oo descend to half-world pair blowups,
-mixed to cross-pairs of the two half-sets.  The tree descent's
-opening pigeonhole. -/
-theorem r2_channel_blowup {A : Set ℕ} {N₀ : ℕ}
+
+theorem r2_channel_amplification {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
@@ -13071,10 +11615,7 @@ theorem r2_channel_blowup {A : Set ℕ} {N₀ : ℕ}
   omega
 
 open Classical in
-/-- **The ee-channel descends.**  Even-even pairs of an even
-target halve into genuine pairs of the half-world
-H₀ = {y : 2y ∈ A} at the half target: the channel count injects
-downstairs.  The tree descent's counting edge, concrete. -/
+
 theorem ee_channel_descends {A : Set ℕ} {v : ℕ}
     (hv : v % 2 = 0) :
     ((Finset.range (v + 1)).filter
@@ -13105,11 +11646,8 @@ theorem ee_channel_descends {A : Set ℕ} {v : ℕ}
     omega
 
 open Classical in
-/-- **The ee-blowup descends.**  If the even-even channel
-carries the unbounded pair counts, the HALF-WORLD inherits
-unbounded pair counts cofinally: the enemy's riches provably
-move one level down the 2-adic tree. -/
-theorem ee_blowup_descends {A : Set ℕ}
+
+theorem ee_amplification_descends {A : Set ℕ}
     (hee : ∀ C N, ∃ v, N ≤ v ∧ C ≤
       ((Finset.range (v + 1)).filter
         (fun x => x ∈ A ∧ (v - x) ∈ A ∧ x % 2 = 0 ∧
@@ -13133,10 +11671,7 @@ theorem ee_blowup_descends {A : Set ℕ}
   exact ⟨v / 2, by omega, by omega⟩
 
 open Classical in
-/-- **The oo-channel descends.**  Odd-odd pairs of an even
-target halve into pairs of the shifted half-world
-H₁ = {y : 2y + 1 ∈ A} at the target v/2 − 1: the second
-counting edge of the tree. -/
+
 theorem oo_channel_descends {A : Set ℕ} {v : ℕ}
     (hv : v % 2 = 0) :
     ((Finset.range (v + 1)).filter
@@ -13169,10 +11704,8 @@ theorem oo_channel_descends {A : Set ℕ} {v : ℕ}
     omega
 
 open Classical in
-/-- **The oo-blowup descends.**  If the odd-odd channel carries
-the unbounded pair counts, the SHIFTED half-world inherits
-them: the tree's second drain, formal. -/
-theorem oo_blowup_descends {A : Set ℕ}
+
+theorem oo_amplification_descends {A : Set ℕ}
     (hoo : ∀ C N, ∃ v, N ≤ v ∧ C ≤
       ((Finset.range (v + 1)).filter
         (fun x => x ∈ A ∧ (v - x) ∈ A ∧ x % 2 = 1 ∧
@@ -13209,11 +11742,7 @@ theorem oo_blowup_descends {A : Set ℕ}
   omega
 
 open Classical in
-/-- **The mixed channel descends.**  Mixed-parity pairs of an
-odd target drain into CROSS-pairs between the two half-worlds
-at the half target (v−1)/2: each mixed pair, from either side,
-lands on a cross-pair, at most two-to-one.  The tree's third
-and last counting edge. -/
+
 theorem mixed_channel_descends {A : Set ℕ} {v : ℕ}
     (hv : v % 2 = 1) :
     ((Finset.range (v + 1)).filter
@@ -13290,13 +11819,8 @@ theorem mixed_channel_descends {A : Set ℕ} {v : ℕ}
   omega
 
 open Classical in
-/-- **THE TOTAL DRAIN.**  Every counterexample's pair riches
-provably reappear one 2-adic level down: in the half-world H₀,
-the shifted half-world H₁, or the cross-structure between them.
-The channel pigeonhole picks the direction; the three counting
-edges carry the wealth.  No 2-adic level can hold the canonical
-core's blowups — the tree drains forever. -/
-theorem the_total_drain {A : Set ℕ} {N₀ : ℕ}
+
+theorem total_nested_representation {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
@@ -13311,9 +11835,9 @@ theorem the_total_drain {A : Set ℕ} {N₀ : ℕ}
       ((Finset.range (w + 1)).filter
         (fun y => 2 * y ∈ A ∧
           2 * (w - y) + 1 ∈ A)).card) := by
-  rcases r2_channel_blowup h0 hcov hfail with hee | hoo | hmx
-  · exact Or.inl (ee_blowup_descends hee)
-  · exact Or.inr (Or.inl (oo_blowup_descends hoo))
+  rcases r2_channel_amplification h0 hcov hfail with hee | hoo | hmx
+  · exact Or.inl (ee_amplification_descends hee)
+  · exact Or.inr (Or.inl (oo_amplification_descends hoo))
   · refine Or.inr (Or.inr ?_)
     intro C N
     obtain ⟨v, hvN, hvC⟩ := hmx (2 * C + 1) (2 * N + 1)
@@ -13330,10 +11854,6 @@ theorem the_total_drain {A : Set ℕ} {N₀ : ℕ}
     have hdesc := mixed_channel_descends (A := A) hvodd
     exact ⟨(v - 1) / 2, by omega, by omega⟩
 
-/-- **The covering channel split.**  Every even target's pair
-has equal parities, so it descends whole: the half target is
-H₀-pair-covered or the shifted half target is H₁-pair-covered.
-Coverage, like wealth, cannot stay at one 2-adic level. -/
 theorem even_target_channel_split {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀) :
     ∀ n, N₀ ≤ n → n % 2 = 0 →
@@ -13362,10 +11882,6 @@ theorem even_target_channel_split {A : Set ℕ} {N₀ : ℕ}
       rw [h1]
       exact hy
 
-/-- **The odd channel crosses.**  Every odd target's pair is
-mixed, descending to a CROSS pair of the two half-worlds:
-2y + (2y' + 1) = n.  The tree's covering laws are total:
-every target's coverage lives one level down, in a channel. -/
 theorem odd_target_cross_split {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀) :
     ∀ n, N₀ ≤ n → n % 2 = 1 →
@@ -13391,13 +11907,6 @@ theorem odd_target_cross_split {A : Set ℕ} {N₀ : ℕ}
       rw [h1]
       exact hx
 
-/-- **The mixing cross-slice law.**  hfail speaks downstairs in
-mixing worlds too: deleting any infinite H₀-part forces cofinal
-failure targets whose every odd-survivor slice has ALL its
-cross-pairs captured on the H₀ side — the even part of every
-mixed triple routes through the lifted deletion, because odd
-material can never be deleted by an even lift.  The slice law's
-image in the tree's cross-channel. -/
 theorem mixing_cross_slice_law {A : Set ℕ}
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
@@ -13439,12 +11948,7 @@ theorem mixing_cross_slice_law {A : Set ℕ}
   · exact absurd h hy'LB
 
 open Classical in
-/-- **Cross-slice poverty.**  The quantitative form: at the
-mixing failure targets, every odd-survivor slice's cross-pair
-count is bounded by any window catching the deleted H₀-part —
-sparse deletions force uniform cross-pair poverty across the
-whole slice family, one level down.  The cascade's counting
-blade, now cutting in the tree's cross-channel. -/
+
 theorem mixing_cross_slice_poverty {A : Set ℕ}
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
@@ -13474,10 +11978,6 @@ theorem mixing_cross_slice_poverty {A : Set ℕ}
     exact hypA
   exact hW y hyB₀ (by omega)
 
-/-- **Joint half-covering.**  The two half-worlds jointly cover
-at half scale: every half target is an H₀-pair sum or, shifted
-by one, an H₁-pair sum.  The tree node's children form a
-covering system — the interface the ω-iteration consumes. -/
 theorem half_worlds_joint_cover {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀) :
     ∀ n', N₀ ≤ 2 * n' →
@@ -13491,11 +11991,6 @@ theorem half_worlds_joint_cover {A : Set ℕ} {N₀ : ℕ}
   rw [he] at h
   exact h
 
-/-- **The half-cover dichotomy.**  One child channel serves
-cofinally: the even half-world pair-covers arbitrarily large
-half targets, or the odd one does.  Every tree node passes
-covering duty to at least one child — the descent always has a
-live branch. -/
 theorem half_cover_dichotomy {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀) :
     (∀ N, ∃ n', N ≤ n' ∧ ∃ y y', 2 * y ∈ A ∧ 2 * y' ∈ A ∧
@@ -13517,11 +12012,7 @@ theorem half_cover_dichotomy {A : Set ℕ} {N₀ : ℕ}
     · exact ⟨N + N₁ + N₀, by omega, y, y', h1, h2, h3⟩
 
 open Classical in
-/-- **The generic cross-channel split.**  Any pair of sets
-whose cross-pair counts blow up cofinally has the blowup in one
-of the four parity channels.  Cross-systems are closed under
-this split, so the drain ITERATES: this is the induction step's
-pigeonhole, hypothesis-free beyond the supply itself. -/
+
 theorem cross_channel_split {S T : Set ℕ}
     (hST : ∀ C N, ∃ v, N ≤ v ∧ C ≤
       ((Finset.range (v + 1)).filter
@@ -13606,11 +12097,7 @@ theorem cross_channel_split {S T : Set ℕ}
         (v - x) % 2 = 1))
   omega
 open Classical in
-/-- **The generic cross-descent.**  All four edges at once: the
-(p, q)-parity channel of a cross-system (S, T) injects into the
-cross-system of the (p, q)-children at the reduced target.
-With the split, the drain machinery is closed under iteration:
-cross-systems all the way down. -/
+
 theorem cross_channel_descends {S T : Set ℕ} {p q : ℕ}
     (hp : p < 2) (hq : q < 2) {v : ℕ}
     (hv : v % 2 = (p + q) % 2) :
@@ -13644,11 +12131,8 @@ theorem cross_channel_descends {S T : Set ℕ} {p q : ℕ}
     omega
 
 open Classical in
-/-- **The generic cross-blowup descends.**  If the
-(p, q)-channel of a cross-system carries unbounded counts, the
-(p, q)-child cross-system inherits them: the drain's induction
-step, complete for all four edges. -/
-theorem cross_blowup_descends {S T : Set ℕ} {p q : ℕ}
+
+theorem cross_amplification_descends {S T : Set ℕ} {p q : ℕ}
     (hp : p < 2) (hq : q < 2)
     (hch : ∀ C N, ∃ v, N ≤ v ∧ C ≤
       ((Finset.range (v + 1)).filter
@@ -13675,14 +12159,8 @@ theorem cross_blowup_descends {S T : Set ℕ} {p q : ℕ}
   exact ⟨(v - p - q) / 2, by omega, by omega⟩
 
 open Classical in
-/-- **THE ω-DRAIN.**  Every counterexample owns an infinite
-path through the 2-adic tree of cross-systems along which pair
-wealth persists at EVERY level: starting from (A, A), each
-level's split picks a parity square and the generic descent
-carries the blowup down, forever.  The enemy's riches trace an
-infinite 2-adic address — the formal shadow of the Cantor
-cascade, extracted from hfail alone. -/
-theorem the_omega_drain {A : Set ℕ} {N₀ : ℕ}
+
+theorem omega_nested_representation {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
@@ -13726,13 +12204,13 @@ theorem the_omega_drain {A : Set ℕ} {N₀ : ℕ}
       exact hc
     rcases cross_channel_split h with h1 | h1 | h1 | h1
     · exact ⟨0, 0, by omega, by omega, hconv 0 0
-        (cross_blowup_descends (by omega) (by omega) h1)⟩
+        (cross_amplification_descends (by omega) (by omega) h1)⟩
     · exact ⟨0, 1, by omega, by omega, hconv 0 1
-        (cross_blowup_descends (by omega) (by omega) h1)⟩
+        (cross_amplification_descends (by omega) (by omega) h1)⟩
     · exact ⟨1, 0, by omega, by omega, hconv 1 0
-        (cross_blowup_descends (by omega) (by omega) h1)⟩
+        (cross_amplification_descends (by omega) (by omega) h1)⟩
     · exact ⟨1, 1, by omega, by omega, hconv 1 1
-        (cross_blowup_descends (by omega) (by omega) h1)⟩
+        (cross_amplification_descends (by omega) (by omega) h1)⟩
   have hroot : ∀ C N, ∃ v, N ≤ v ∧ C ≤
       ((Finset.range (v + 1)).filter
         (fun x => x ∈ A ∧ (v - x) ∈ A)).card :=
@@ -13785,11 +12263,8 @@ theorem the_omega_drain {A : Set ℕ} {N₀ : ℕ}
     exact hB k
 
 open Classical in
-/-- **Blowup worlds are infinite.**  Cross-pair wealth forces
-both carriers infinite: the filter's members live in S and
-their reflections in T.  Every world on the ω-drain's path is
-infinite on both sides. -/
-theorem cross_blowup_infinite {S T : Set ℕ}
+
+theorem cross_amplification_infinite {S T : Set ℕ}
     (h : ∀ C N, ∃ v, N ≤ v ∧ C ≤
       ((Finset.range (v + 1)).filter
         (fun x => x ∈ S ∧ (v - x) ∈ T)).card) :
@@ -13826,14 +12301,8 @@ theorem cross_blowup_infinite {S T : Set ℕ}
     omega
 
 open Classical in
-/-- **THE 2-ADIC CLUSTER.**  The drain's path lifts to the root:
-every counterexample contains an infinite nested address tower —
-one residue class mod 2^k at every depth, consistently nested,
-each carrying infinitely many basis elements.  A profinite
-accumulation point of the basis, extracted from hfail alone:
-the Cantor cascade is no longer a shadow but literal nested
-material inside A. -/
-theorem drain_address_cluster {A : Set ℕ} {N₀ : ℕ}
+
+theorem nested_representation_address_cluster {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
@@ -13842,7 +12311,7 @@ theorem drain_address_cluster {A : Set ℕ} {N₀ : ℕ}
       ∀ k N, ∃ a, N ≤ a ∧ a ∈ A ∧
         ∃ y, a = c k + 2 ^ k * y := by
   obtain ⟨S, T, hS0, hT0, hstep, hblow⟩ :=
-    the_omega_drain h0 hcov hfail
+    omega_nested_representation h0 hcov hfail
   choose pf qf hpf hqf hSe hTe using hstep
   set c : ℕ → ℕ := fun k =>
     Nat.rec 0 (fun k' acc => acc + 2 ^ k' * pf k') k with hc
@@ -13867,7 +12336,7 @@ theorem drain_address_cluster {A : Set ℕ} {N₀ : ℕ}
         ring
       rw [he]
   have hinf : ∀ k, (S k).Infinite :=
-    fun k => (cross_blowup_infinite (hblow k)).1
+    fun k => (cross_amplification_infinite (hblow k)).1
   refine ⟨c, hc0, fun k => ⟨pf k, hpf k, hcS k⟩, ?_⟩
   intro k N
   obtain ⟨y, hyS, hyN⟩ := (hinf k).exists_gt N
@@ -13877,23 +12346,15 @@ theorem drain_address_cluster {A : Set ℕ} {N₀ : ℕ}
     y, rfl⟩
 
 open Classical in
-/-- **THE REPAIR MINE.**  Root-coordinate export of the drain's
-wealth at count two: every counterexample contains, at every
-2-adic depth k and beyond every bound, a repair quadruple —
-a, a+δ, b, b−δ all in A with the SAME difference δ, 2^k ∣ δ,
-and matched sums a + b = (a+δ) + (b−δ).  A Sidon set has no
-repeated difference at all: this is counting content, not
-covering junk.  The raw material the translate-law and
-carry-repair engines consume, guaranteed at every depth of the
-2-adic tree. -/
-theorem drain_repair_mine {A : Set ℕ} {N₀ : ℕ}
+
+theorem nested_representation_repair_family {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∀ k C, ∃ a b δ : ℕ, 0 < δ ∧ 2 ^ k ∣ δ ∧ C ≤ a ∧ δ ≤ b ∧
       a ∈ A ∧ a + δ ∈ A ∧ b ∈ A ∧ b - δ ∈ A := by
   obtain ⟨S, T, hS0, hT0, hstep, hblow⟩ :=
-    the_omega_drain h0 hcov hfail
+    omega_nested_representation h0 hcov hfail
   choose pf qf hpf hqf hSe hTe using hstep
   set c : ℕ → ℕ := fun k =>
     Nat.rec 0 (fun k' acc => acc + 2 ^ k' * pf k') k with hc
@@ -14002,16 +12463,8 @@ theorem drain_repair_mine {A : Set ℕ} {N₀ : ℕ}
   · exact key x₂ x₁ hx₂ hx₁ hlt
 
 open Classical in
-/-- **DRAIN TARGETS ARE 2-ADICALLY PINNED.**  The wealthy
-targets manufactured by the ω-drain carry addresses: there is a
-nested residue tower e (steps of size ≤ 2·2^k) such that at
-every depth k, beyond every bound, some target congruent to
-e k mod 2^k carries arbitrarily large root-coordinate pair
-wealth.  Sharpens `r2_unbounded_of_hfail`: the Sidon door is
-closed CYLINDER BY CYLINDER along one 2-adic point — the
-collision battleground with the street branch's width-capped
-hub targets. -/
-theorem drain_wealth_addresses {A : Set ℕ} {N₀ : ℕ}
+
+theorem nested_representation_wealth_addresses {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
@@ -14021,7 +12474,7 @@ theorem drain_wealth_addresses {A : Set ℕ} {N₀ : ℕ}
         C ≤ ((Finset.range (w + 1)).filter
           (fun x => x ∈ A ∧ (w - x) ∈ A)).card := by
   obtain ⟨S, T, hS0, hT0, hstep, hblow⟩ :=
-    the_omega_drain h0 hcov hfail
+    omega_nested_representation h0 hcov hfail
   choose pf qf hpf hqf hSe hTe using hstep
   set c : ℕ → ℕ := fun k =>
     Nat.rec 0 (fun k' acc => acc + 2 ^ k' * pf k') k with hc
@@ -14107,20 +12560,14 @@ theorem drain_wealth_addresses {A : Set ℕ} {N₀ : ℕ}
       exact Nat.eq_of_mul_eq_mul_left hpow h10
 
 open Classical in
-/-- **THE WEALTH CAP.**  A 0-free order-3 hub caps its target's
-ENTIRE pair wealth: through the 0-weld the hub is an order-2 hub,
-the low-half pair count injects into it, and the high half
-reflects onto the low half.  r₂(w) ≤ 2·|H| for any rep hub H of
-positive material at w.  Contrapositive: a target with pair
-wealth above 2·|H| refutes every candidate hub of that width —
-wealth and hubs cannot share an address. -/
-theorem repHub_caps_pair_wealth {A : Set ℕ} {w : ℕ}
+
+theorem repSupportTransversal_caps_pair_wealth {A : Set ℕ} {w : ℕ}
     {H : Finset ℕ}
-    (h0 : 0 ∈ A) (h0H : 0 ∉ H) (hhub : IsRepHub A w H) :
+    (h0 : 0 ∈ A) (h0H : 0 ∉ H) (hhub : IsRepSupportTransversal A w H) :
     ((Finset.range (w + 1)).filter
       (fun x => x ∈ A ∧ (w - x) ∈ A)).card ≤ 2 * H.card := by
-  have hpair := pairHub_of_repHub h0 h0H hhub
-  have hlow := pair_hub_pair_count hpair
+  have hpair := pairSupportTransversal_of_repSupportTransversal h0 h0H hhub
+  have hlow := pair_support_transversal_pair_count hpair
   set Low := (Finset.range (w + 1)).filter
     (fun a => a ∈ A ∧ (w - a) ∈ A ∧ 2 * a ≤ w) with hLow
   set High := (Finset.range (w + 1)).filter
@@ -14156,16 +12603,11 @@ theorem repHub_caps_pair_wealth {A : Set ℕ} {w : ℕ}
   omega
 
 open Classical in
-/-- **STREETS ARE SIDON-POOR.**  Every street target — hubbed by
-a window of ≤ L positive spine elements — has pair wealth at
-most 2L.  The street branch of the final fork is a uniformly
-poor lane: while `r2_unbounded_of_hfail` blows wealth up
-cofinally and `drain_wealth_addresses` pins it 2-adically, the
-enemy's street must dodge every wealthy address forever. -/
-theorem street_is_sidon_poor {A : Set ℕ} {L m s J : ℕ}
+
+theorem target_sequence_is_sidon_poor {A : Set ℕ} {L m s J : ℕ}
     {x : ℕ → ℕ}
     (h0 : 0 ∈ A) (hx : ∀ t, 0 < x t) (hJL : J ≤ L)
-    (hhub : IsRepHub A m
+    (hhub : IsRepSupportTransversal A m
       ((Finset.range J).image (fun j => x (s + j)))) :
     ((Finset.range (m + 1)).filter
       (fun z => z ∈ A ∧ (m - z) ∈ A)).card ≤ 2 * L := by
@@ -14175,7 +12617,7 @@ theorem street_is_sidon_poor {A : Set ℕ} {L m s J : ℕ}
     rintro ⟨j, hj, hxj⟩
     have := hx (s + j)
     omega
-  have hcap := repHub_caps_pair_wealth h0 h0H hhub
+  have hcap := repSupportTransversal_caps_pair_wealth h0 h0H hhub
   have hcard : ((Finset.range J).image
       (fun j => x (s + j))).card ≤ L := by
     refine le_trans Finset.card_image_le ?_
@@ -14184,14 +12626,8 @@ theorem street_is_sidon_poor {A : Set ℕ} {L m s J : ℕ}
   omega
 
 open Classical in
-/-- **SATURATION KILLS THE ANTIDIAGONAL.**  In a single-parity
-world, a cross-system one level down with blowing-up cross-pair
-wealth cannot mix its parities: antidiagonal channels (p ≠ q)
-manufacture ODD wealthy targets w = 2v + 1 in root coordinates,
-and the saturated odd hall caps every odd target at 2Y + 2
-ordered pair representations.  A pure counting law — no hfail
-hypothesis at all. -/
-theorem saturated_kills_antidiagonal {A : Set ℕ} {Y ε : ℕ}
+
+theorem saturated_contradicts_antidiagonal {A : Set ℕ} {Y ε : ℕ}
     (hpar : ∀ a ∈ A, Y < a → a % 2 = ε)
     {S1 T1 : Set ℕ} {p q : ℕ} (hp : p < 2) (hq : q < 2)
     (hS1 : S1 = {y | 2 * y + p ∈ A})
@@ -14229,14 +12665,8 @@ theorem saturated_kills_antidiagonal {A : Set ℕ} {Y ε : ℕ}
   omega
 
 open Classical in
-/-- **THE DRAIN'S FIRST MOVE IS FORCED.**  In a saturated
-(single-parity) counterexample, the ω-drain cannot open with an
-antidiagonal step: every valid parity pair for its first
-cross-system is DIAGONAL (p = q).  The enemy's wealth must
-descend along the doubled channel — the first confirmed forced
-move of the descent dynamics, and the entry step of the
-saturated cascade toward Cantor-like worlds. -/
-theorem saturated_drain_diagonal {A : Set ℕ} {N₀ Y ε : ℕ}
+
+theorem saturated_nested_representation_diagonal {A : Set ℕ} {N₀ Y ε : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
@@ -14252,24 +12682,17 @@ theorem saturated_drain_diagonal {A : Set ℕ} {N₀ Y ε : ℕ}
         S 1 = {y | 2 * y + p ∈ S 0} →
         T 1 = {y | 2 * y + q ∈ T 0} → p = q := by
   obtain ⟨S, T, hS0, hT0, hstep, hblow⟩ :=
-    the_omega_drain h0 hcov hfail
+    omega_nested_representation h0 hcov hfail
   refine ⟨S, T, hS0, hT0, hstep, hblow, ?_⟩
   intro p q hp hq hS1 hT1
   rw [hS0] at hS1
   rw [hT0] at hT1
-  exact saturated_kills_antidiagonal hpar hp hq hS1 hT1
+  exact saturated_contradicts_antidiagonal hpar hp hq hS1 hT1
     (hblow 1)
 
 open Classical in
-/-- **THE DRAIN LANDS ON THE CANONICAL HALF-WORLD.**  In a
-saturated counterexample the drain's first step is not merely
-diagonal: both channels are PINNED to the saturation parity ε,
-so the level-1 cross-system is the single set
-{x | ε + 2x ∈ A} — exactly the half-world onto which the parity
-fork descends covering and mixed failure.  Wealth, covering,
-and the descended interface now live on ONE set: the cascade's
-three descent tracks converge at level one. -/
-theorem saturated_drain_pinned {A : Set ℕ} {N₀ Y ε : ℕ}
+
+theorem saturated_nested_representation_pinned {A : Set ℕ} {N₀ Y ε : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
@@ -14287,15 +12710,15 @@ theorem saturated_drain_pinned {A : Set ℕ} {N₀ Y ε : ℕ}
         p = ε ∧ q = ε ∧ S 1 = {x : ℕ | ε + 2 * x ∈ A} ∧
           T 1 = {x : ℕ | ε + 2 * x ∈ A} := by
   obtain ⟨S, T, hS0, hT0, hstep, hblow⟩ :=
-    the_omega_drain h0 hcov hfail
+    omega_nested_representation h0 hcov hfail
   refine ⟨S, T, hS0, hT0, hstep, hblow, ?_⟩
   intro p q hp hq hS1 hT1
   rw [hS0] at hS1
   rw [hT0] at hT1
-  have hpq := saturated_kills_antidiagonal hpar hp hq hS1 hT1
+  have hpq := saturated_contradicts_antidiagonal hpar hp hq hS1 hT1
     (hblow 1)
   have hSinf : (S 1).Infinite :=
-    (cross_blowup_infinite (hblow 1)).1
+    (cross_amplification_infinite (hblow 1)).1
   obtain ⟨y, hyS, hyY⟩ := hSinf.exists_gt Y
   have hyA : 2 * y + p ∈ A := by
     rw [hS1] at hyS
@@ -14317,16 +12740,8 @@ theorem saturated_drain_pinned {A : Set ℕ} {N₀ Y ε : ℕ}
     rw [he]
 
 open Classical in
-/-- **THE SATURATED CASCADE STEP** (generic, hfail-free).  At
-ANY level of a cross-system descent: if the current world W is
-single-parity beyond Y with parity ε and the child system's
-cross-pair wealth blows up, then the child's parities are both
-PINNED to ε and both channels collapse onto the canonical
-half-world {x | ε + 2x ∈ W}.  Saturation determines the descent
-completely, level by level — the enemy's only escape from total
-determination is mixing (both parities cofinal) at some level.
-Subsumes `saturated_drain_pinned`'s level-1 case. -/
-theorem saturated_cascade_step {W : Set ℕ} {Y ε : ℕ}
+
+theorem saturated_iteration_step {W : Set ℕ} {Y ε : ℕ}
     (hpar : ∀ a ∈ W, Y < a → a % 2 = ε)
     {S1 T1 : Set ℕ} {p q : ℕ} (hp : p < 2) (hq : q < 2)
     (hS1 : S1 = {y | 2 * y + p ∈ W})
@@ -14336,9 +12751,9 @@ theorem saturated_cascade_step {W : Set ℕ} {Y ε : ℕ}
         (fun x => x ∈ S1 ∧ (v - x) ∈ T1)).card) :
     p = ε ∧ q = ε ∧ S1 = {x : ℕ | ε + 2 * x ∈ W} ∧
       T1 = {x : ℕ | ε + 2 * x ∈ W} := by
-  have hpq := saturated_kills_antidiagonal hpar hp hq hS1 hT1
+  have hpq := saturated_contradicts_antidiagonal hpar hp hq hS1 hT1
     hblow
-  have hSinf : S1.Infinite := (cross_blowup_infinite hblow).1
+  have hSinf : S1.Infinite := (cross_amplification_infinite hblow).1
   obtain ⟨y, hyS, hyY⟩ := hSinf.exists_gt Y
   have hyW : 2 * y + p ∈ W := by
     rw [hS1] at hyS
@@ -14360,16 +12775,8 @@ theorem saturated_cascade_step {W : Set ℕ} {Y ε : ℕ}
     rw [he]
 
 open Classical in
-/-- **THE DETERMINED CASCADE.**  If saturation persists at every
-level of the drain, the counterexample's wealth stream is
-COMPLETELY DETERMINED: there are explicit binary digits ε' and
-addresses α (partial sums of ε'ₖ2^k) such that both channels
-coincide at every level and every level's world is literally the
-α-cylinder slice of the root basis — S k = {x | α k + 2^k x ∈ A}.
-The enemy under permanent saturation IS a 2-adic point: the
-Cantor-like endpoint of the descent, formalized.  Its only
-alternative is mixing at some finite level. -/
-theorem saturated_cascade_determined {A : Set ℕ} {N₀ : ℕ}
+
+theorem saturated_iteration_determined {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
@@ -14386,7 +12793,7 @@ theorem saturated_cascade_determined {A : Set ℕ} {N₀ : ℕ}
           (∀ k, S k = T k) ∧
           (∀ k, S k = {x : ℕ | α k + 2 ^ k * x ∈ A})) := by
   obtain ⟨S, T, hS0, hT0, hstep, hblow⟩ :=
-    the_omega_drain h0 hcov hfail
+    omega_nested_representation h0 hcov hfail
   refine ⟨S, T, hS0, hT0, hstep, hblow, ?_⟩
   intro hsat
   choose Yf εf hparf using hsat
@@ -14399,7 +12806,7 @@ theorem saturated_cascade_determined {A : Set ℕ} {N₀ : ℕ}
       have heq : S 0 = T 0 := by rw [hS0, hT0]
       obtain ⟨p, q, hp, hq, hS1, hT1⟩ := hstep 0
       rw [← heq] at hT1
-      have hres := saturated_cascade_step (hparf 0) hp hq
+      have hres := saturated_iteration_step (hparf 0) hp hq
         hS1 hT1 (hblow 1)
       exact ⟨heq, by omega, hres.2.2.1, hres.2.2.2⟩
     | succ k ih =>
@@ -14407,7 +12814,7 @@ theorem saturated_cascade_determined {A : Set ℕ} {N₀ : ℕ}
       have heq1 : S (k + 1) = T (k + 1) := by rw [ihS, ihT]
       obtain ⟨p, q, hp, hq, hS2, hT2⟩ := hstep (k + 1)
       rw [← heq1] at hT2
-      have hres := saturated_cascade_step (hparf (k + 1)) hp hq
+      have hres := saturated_iteration_step (hparf (k + 1)) hp hq
         hS2 hT2 (hblow (k + 2))
       exact ⟨heq1, by omega, hres.2.2.1, hres.2.2.2⟩
   set α : ℕ → ℕ := fun k =>
@@ -14441,16 +12848,8 @@ theorem saturated_cascade_determined {A : Set ℕ} {N₀ : ℕ}
   exact hlift k x
 
 open Classical in
-/-- **THE CASCADE FORK.**  Every counterexample's drain either
-stays saturated forever — and is then a fully DETERMINED 2-adic
-point (explicit digits, every level a cylinder slice of A) — or
-hits a FIRST MIXING LEVEL m: a world S m that is itself an
-explicit cylinder slice {x | c + 2^m x ∈ A}, equal to its twin
-channel, carrying blowup wealth (ambient conjunct), with BOTH
-parities cofinal.  The mixed-regime entry point now has exact
-coordinates: depth m, address c, and a wealth stream flowing
-through it. -/
-theorem cascade_mixing_fork {A : Set ℕ} {N₀ : ℕ}
+
+theorem iteration_mixing_fork {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
@@ -14470,7 +12869,7 @@ theorem cascade_mixing_fork {A : Set ℕ} {N₀ : ℕ}
           (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 0) ∧
           (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 1))) := by
   obtain ⟨S, T, hS0, hT0, hstep, hblow, hdet⟩ :=
-    saturated_cascade_determined h0 hcov hfail
+    saturated_iteration_determined h0 hcov hfail
   refine ⟨S, T, hS0, hT0, hstep, hblow, ?_⟩
   by_cases hsat : ∀ k, ∃ Y ε, ∀ a ∈ S k, Y < a → a % 2 = ε
   · exact Or.inl (hdet hsat)
@@ -14512,7 +12911,7 @@ theorem cascade_mixing_fork {A : Set ℕ} {N₀ : ℕ}
         obtain ⟨heqj, hcylj⟩ := ih (by omega)
         obtain ⟨p, q, hp, hq, hS1, hT1⟩ := hstep j
         rw [← heqj] at hT1
-        have hres := saturated_cascade_step
+        have hres := saturated_iteration_step
           (hf j (by omega)) hp hq hS1 hT1 (hblow (j + 1))
         refine ⟨by rw [hres.2.2.1, hres.2.2.2], ?_⟩
         rw [hres.2.2.1]
@@ -14541,15 +12940,8 @@ theorem cascade_mixing_fork {A : Set ℕ} {N₀ : ℕ}
       exact hcon ⟨a, by omega, ha, by omega⟩
 
 open Classical in
-/-- **2-ADIC CONVERGENCE KILLS COVERING.**  A set whose tail
-concentrates into a single residue class mod 2^k FOR EVERY k
-cannot pair-cover: pick K with 2^(K−1) beyond the mod-2 head
-size; large-large sums have pinned parity, small-large sums
-land in at most |head| residue classes mod 2^K, so some
-wrong-parity class mod 2^K contains cofinally many uncovered
-targets.  Pure counting — no hfail, no basis theory.  This is
-the blade that empties the determined cascade horn. -/
-theorem two_adic_convergence_kills_covering {A : Set ℕ}
+
+theorem two_adic_convergence_contradicts_covering {A : Set ℕ}
     {N₀ : ℕ} (hcov : PairCovers A N₀)
     (hconv : ∀ k, ∃ Y ρ, ρ < 2 ^ k ∧ ∀ a ∈ A, Y < a →
       ∃ z, a = ρ + 2 ^ k * z) : False := by
@@ -14643,17 +13035,8 @@ theorem two_adic_convergence_kills_covering {A : Set ℕ}
   · exact key v u hvA huA (by omega) h
 
 open Classical in
-/-- **THE CASCADE FORCES MIXING** (the determined horn is
-EMPTY).  Permanent saturation would make the drain a fully
-determined 2-adic point; then the root basis's tail would
-concentrate into one residue class mod 2^k for every k, and
-`two_adic_convergence_kills_covering` contradicts pair covering.
-So EVERY counterexample's drain hits a first mixing level: a
-twin-channel world at explicit cylinder coordinates
-{x | c + 2^m x ∈ A} with BOTH parities cofinal and blowup
-wealth flowing through it.  The Cantor-like endpoint is dead;
-mixing is not one branch but THE regime. -/
-theorem cascade_forces_mixing {A : Set ℕ} {N₀ : ℕ}
+
+theorem iteration_forces_mixing {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
@@ -14669,7 +13052,7 @@ theorem cascade_forces_mixing {A : Set ℕ} {N₀ : ℕ}
         (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 0) ∧
         (∀ N, ∃ a, N ≤ a ∧ a ∈ S m ∧ a % 2 = 1) := by
   obtain ⟨S, T, hS0, hT0, hstep, hblow, hdet⟩ :=
-    saturated_cascade_determined h0 hcov hfail
+    saturated_iteration_determined h0 hcov hfail
   refine ⟨S, T, hS0, hT0, hstep, hblow, ?_⟩
   by_cases hsat : ∀ k, ∃ Y ε, ∀ a ∈ S k, Y < a → a % 2 = ε
   · exfalso
@@ -14693,7 +13076,7 @@ theorem cascade_forces_mixing {A : Set ℕ} {N₀ : ℕ}
     have hdigpar : ∀ k, ε' k = εs k := by
       intro k
       have hinf : (S (k + 1)).Infinite :=
-        (cross_blowup_infinite (hblow (k + 1))).1
+        (cross_amplification_infinite (hblow (k + 1))).1
       obtain ⟨x, hxS, hxgt⟩ := hinf.exists_gt (Ys k)
       have hxA : α (k + 1) + 2 ^ (k + 1) * x ∈ A := by
         rw [hcyl (k + 1)] at hxS
@@ -14752,7 +13135,7 @@ theorem cascade_forces_mixing {A : Set ℕ} {N₀ : ℕ}
         show α (k + 1) + 2 ^ (k + 1) * w ∈ A
         rw [h5]
         exact haA
-    apply two_adic_convergence_kills_covering hcov
+    apply two_adic_convergence_contradicts_covering hcov
     intro k
     obtain ⟨Y, hY⟩ := hconc k
     refine ⟨Y, α k, hαlt k, fun a ha hYa => ?_⟩
@@ -14795,7 +13178,7 @@ theorem cascade_forces_mixing {A : Set ℕ} {N₀ : ℕ}
         obtain ⟨heqj, hcylj⟩ := ih (by omega)
         obtain ⟨p, q, hp, hq, hS1, hT1⟩ := hstep j
         rw [← heqj] at hT1
-        have hres := saturated_cascade_step
+        have hres := saturated_iteration_step
           (hf j (by omega)) hp hq hS1 hT1 (hblow (j + 1))
         refine ⟨by rw [hres.2.2.1, hres.2.2.2], ?_⟩
         rw [hres.2.2.1]
@@ -14824,16 +13207,8 @@ theorem cascade_forces_mixing {A : Set ℕ} {N₀ : ℕ}
       exact hcon ⟨a, by omega, ha, by omega⟩
 
 open Classical in
-/-- **THE MIXING WORLD IS A COMPLETE SUB-INSTANCE.**  Sharpens
-`cascade_forces_mixing`: the first mixing level's world not only
-mixes with wealth — it PAIR-COVERS beyond a threshold (covering
-descends the saturated prefix through `half_world_covers`, one
-half-world at a time) and is infinite.  So every counterexample
-owns a located cylinder world {x | c + 2^m x ∈ A} that is
-simultaneously covering, wealthy, parity-mixing, and infinite:
-a self-similar sub-instance of the whole problem, in explicit
-coordinates. -/
-theorem mixing_world_complete {A : Set ℕ} {N₀ : ℕ}
+
+theorem mixing_model_complete {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
@@ -14851,7 +13226,7 @@ theorem mixing_world_complete {A : Set ℕ} {N₀ : ℕ}
         (∃ N', PairCovers (S m) N') ∧
         (S m).Infinite := by
   obtain ⟨S, T, hS0, hT0, hstep, hblow, hdet⟩ :=
-    saturated_cascade_determined h0 hcov hfail
+    saturated_iteration_determined h0 hcov hfail
   refine ⟨S, T, hS0, hT0, hstep, hblow, ?_⟩
   by_cases hsat : ∀ k, ∃ Y ε, ∀ a ∈ S k, Y < a → a % 2 = ε
   · exfalso
@@ -14875,7 +13250,7 @@ theorem mixing_world_complete {A : Set ℕ} {N₀ : ℕ}
     have hdigpar : ∀ k, ε' k = εs k := by
       intro k
       have hinf : (S (k + 1)).Infinite :=
-        (cross_blowup_infinite (hblow (k + 1))).1
+        (cross_amplification_infinite (hblow (k + 1))).1
       obtain ⟨x, hxS, hxgt⟩ := hinf.exists_gt (Ys k)
       have hxA : α (k + 1) + 2 ^ (k + 1) * x ∈ A := by
         rw [hcyl (k + 1)] at hxS
@@ -14934,7 +13309,7 @@ theorem mixing_world_complete {A : Set ℕ} {N₀ : ℕ}
         show α (k + 1) + 2 ^ (k + 1) * w ∈ A
         rw [h5]
         exact haA
-    apply two_adic_convergence_kills_covering hcov
+    apply two_adic_convergence_contradicts_covering hcov
     intro k
     obtain ⟨Y, hY⟩ := hconc k
     refine ⟨Y, α k, hαlt k, fun a ha hYa => ?_⟩
@@ -14977,7 +13352,7 @@ theorem mixing_world_complete {A : Set ℕ} {N₀ : ℕ}
         obtain ⟨heqj, hcylj⟩ := ih (by omega)
         obtain ⟨p, q, hp, hq, hS1, hT1⟩ := hstep j
         rw [← heqj] at hT1
-        have hres := saturated_cascade_step
+        have hres := saturated_iteration_step
           (hf j (by omega)) hp hq hS1 hT1 (hblow (j + 1))
         refine ⟨by rw [hres.2.2.1, hres.2.2.2], ?_⟩
         rw [hres.2.2.1]
@@ -15005,19 +13380,19 @@ theorem mixing_world_complete {A : Set ℕ} {N₀ : ℕ}
         obtain ⟨heqj, _⟩ := hchain j (by omega)
         obtain ⟨p, q, hp, hq, hS1, hT1⟩ := hstep j
         rw [← heqj] at hT1
-        have hres := saturated_cascade_step
+        have hres := saturated_iteration_step
           (hf j (by omega)) hp hq hS1 hT1 (hblow (j + 1))
         have hεlt : εf j < 2 := by
           have h1 := hres.1
           omega
-        have hcovj1 := half_world_covers hεlt hNj
+        have hcovj1 := half_model_covers hεlt hNj
           (hf j (by omega))
         rw [hres.2.2.1]
         exact ⟨Nj + 2 * Yf j + 2, hcovj1⟩
     obtain ⟨heqm, hcylm⟩ := hchain m le_rfl
     refine ⟨m, α m, heqm, hcylm, ?_, ?_,
       hcovchain m le_rfl,
-      (cross_blowup_infinite (hblow m)).1⟩
+      (cross_amplification_infinite (hblow m)).1⟩
     · intro N
       by_contra hcon
       apply hPm
@@ -15031,14 +13406,7 @@ theorem mixing_world_complete {A : Set ℕ} {N₀ : ℕ}
       by_contra hne
       exact hcon ⟨a, by omega, ha, by omega⟩
 
-/-- **Cylinder deletions wound the root.**  Any infinite
-deletion drawn from a cylinder world W = {x | c + 2^m x ∈ A}
-lifts to an infinite subset of A, so the root failure interface
-strikes it: the root basis minus the lifted copy fails at order
-3.  The failure interface touches every mixing world through
-its own address map — the entry point of the mixed-interface
-descent. -/
-theorem mixing_deletion_wounds_root {A : Set ℕ}
+theorem mixing_deletion_destructions_root {A : Set ℕ}
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
     {W : Set ℕ} {m c : ℕ}
@@ -15060,15 +13428,8 @@ theorem mixing_deletion_wounds_root {A : Set ℕ}
     exact Nat.eq_of_mul_eq_mul_left hp (by omega)
 
 open Classical in
-/-- **THE MIXING WORLD CARRIES THE INTERFACE.**  The complete
-located mixing sub-instance, now with the failure interface
-attached: every infinite deletion drawn from the mixing world
-S m wounds the root basis at order 3 through the address map
-x ↦ c + 2^m x.  Covering, wealth, mixing, infinitude, AND the
-lifted failure law — the full hypothesis package of the
-original problem, reproduced inside explicit cylinder
-coordinates. -/
-theorem mixing_world_interface {A : Set ℕ} {N₀ : ℕ}
+
+theorem mixing_model_interface {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
@@ -15090,23 +13451,13 @@ theorem mixing_world_interface {A : Set ℕ} {N₀ : ℕ}
             (A \ ((fun x => c + 2 ^ m * x) '' B')) 3) := by
   obtain ⟨S, T, hS0, hT0, hstep, hblow, m, c, heqm, hcylm,
     hmix0, hmix1, hcovm, hinfm⟩ :=
-    mixing_world_complete h0 hcov hfail
+    mixing_model_complete h0 hcov hfail
   exact ⟨S, T, hS0, hT0, hstep, hblow, m, c, heqm, hcylm,
     hmix0, hmix1, hcovm, hinfm,
-    mixing_deletion_wounds_root hfail hcylm⟩
+    mixing_deletion_destructions_root hfail hcylm⟩
 
 open Classical in
-/-- **WEALTHY TARGETS SURVIVE SPARSE DELETIONS.**  If a
-target's pair wealth exceeds twice the deletion's mass below it
-(plus two), some pair avoids the deletion entirely and the
-0-weld finishes the triple: v = x + (v−x) + 0 with all three
-parts outside D.  Contrapositive — every failing target of a
-deletion is PAIR-POOR relative to the deletion's local mass.
-Combined with `drain_wealth_addresses`, the enemy's failure
-must live strictly off its own wealth stream: the 2-adically
-pinned wealthy targets can never be failing targets of any
-locally-sparse deletion.  This is the lab's 268/268 survival
-mechanism (probe_mixing_survival.py), formalized locally. -/
+
 theorem wealthy_target_survives {A D : Set ℕ} {v : ℕ}
     (h0A : 0 ∈ A) (h0D : 0 ∉ D)
     (hwealth : 2 * ((Finset.range (v + 1)).filter
@@ -15180,11 +13531,7 @@ theorem wealthy_target_survives {A D : Set ℕ} {v : ℕ}
     exact hxnotor (Or.inr h)
 
 open Classical in
-/-- **THE FAILURE RESIDUE LAW.**  Against a deletion confined to
-one residue class mod 2^m, a failing target's EVERY pair
-representation must touch that class: the 0-pad turns any
-class-avoiding pair into a surviving triple.  Failure is
-residue-chained to the deletion's own address. -/
+
 theorem cylinder_failure_residue_law {A D : Set ℕ}
     {m c n : ℕ}
     (h0A : 0 ∈ A) (h0D : 0 ∉ D)
@@ -15212,10 +13559,7 @@ theorem cylinder_failure_residue_law {A D : Set ℕ}
     (by simpa [Fin.sum_univ_three] using hsum0)
 
 open Classical in
-/-- **Failing targets are poor** (tuple-form composition of
-`wealthy_target_survives`).  A target failing against a
-deletion avoiding 0 has pair wealth at most twice the
-deletion's local mass plus two. -/
+
 theorem failing_target_poor {A D : Set ℕ} {n : ℕ}
     (h0A : 0 ∈ A) (h0D : 0 ∉ D)
     (hfailn : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D) →
@@ -15238,18 +13582,7 @@ theorem failing_target_poor {A D : Set ℕ} {n : ℕ}
     (by simpa [Fin.sum_univ_three] using hsum)
 
 open Classical in
-/-- **THE FAILURE STREAM HAS ADDRESSES.**  In the located
-mixing world of any counterexample: every infinite deletion
-B' ⊆ S m ∖ {0}, lifted through the address map, generates
-cofinally many failing targets n, and EACH obeys two laws —
-(i) the residue law: every pair representation of n touches
-the class c mod 2^m, and (ii) the poverty law: n's pair wealth
-is at most twice the lifted deletion's mass below n plus two.
-Failure is now formally address-chained and wealth-capped,
-while `drain_wealth_addresses` pins the wealth stream to its
-own nested tower: the enemy must run two disjoint cofinal
-streams — poor c-chained failures and rich pinned wealth —
-inside one covering world, forever. -/
+
 theorem mixing_failure_addresses {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -15278,7 +13611,7 @@ theorem mixing_failure_addresses {A : Set ℕ} {N₀ : ℕ}
               B'))).card + 2 := by
   obtain ⟨S, T, hS0, hT0, hstep, hblow, m, c, heqm, hcylm,
     hmix0, hmix1, hcovm, hinfm, hwound⟩ :=
-    mixing_world_interface h0 hcov hfail
+    mixing_model_interface h0 hcov hfail
   refine ⟨S, T, hS0, hT0, hstep, hblow, m, c, heqm, hcylm,
     hmix0, hmix1, hcovm, hinfm, ?_⟩
   intro B' hB'sub h0B' hB'inf N
@@ -15313,12 +13646,7 @@ theorem mixing_failure_addresses {A : Set ℕ} {N₀ : ℕ}
     failing_target_poor h0 h0D hfailn⟩
 
 open Classical in
-/-- **Failing targets live in the deletion's sumset.**  A
-covered target failing against a deletion avoiding 0 must have
-its guaranteed pair touch the deletion itself: n ∈ D + A.  With
-D chosen arbitrarily sparse, the entire failure stream is
-confined to an arbitrarily thin sumset — the quantitative
-companion of the residue law. -/
+
 theorem failing_target_in_sumset {A D : Set ℕ} {N₀ n : ℕ}
     (h0A : 0 ∈ A) (h0D : 0 ∉ D)
     (hcov : PairCovers A N₀) (hn : N₀ ≤ n)
@@ -15342,16 +13670,7 @@ theorem failing_target_in_sumset {A D : Set ℕ} {N₀ n : ℕ}
         (by simpa [Fin.sum_univ_three] using hsum0)
 
 open Classical in
-/-- **THE THREE-DELETION EXCLUSION.**  A covered target cannot
-fail against three pairwise disjoint 0-free deletions at once:
-its guaranteed pair (x, y, 0-pad) offers only TWO slots, and
-three disjoint sets cannot all be hit by two elements.  So the
-enemy's failure streams for disjoint deletions are 3-wise
-disjoint beyond the covering threshold — every new disjoint
-sparse deletion demands its own fresh cofinal failure stream,
-pairwise-overlap at most.  The simultaneous bounded-hub demand
-is load-balanced across infinitely many essentially disjoint
-streams: the quantitative form of the enemy's last liberty. -/
+
 theorem three_deletion_exclusion {A D₁ D₂ D₃ : Set ℕ}
     {N₀ n : ℕ}
     (h0A : 0 ∈ A) (h01 : 0 ∉ D₁) (h02 : 0 ∉ D₂) (h03 : 0 ∉ D₃)
@@ -15399,13 +13718,7 @@ theorem three_deletion_exclusion {A D₁ D₂ D₃ : Set ℕ}
   · exact hd12 y h1 h2
 
 open Classical in
-/-- **THE OVERLAP BILINEAR LAW.**  A covered target failing
-against TWO disjoint 0-free deletions has every pair
-representation split across them — one part in each — and in
-particular lies in the doubly-thin sumset D₁ + D₂.  With both
-deletions log-sparse, stream overlaps are confined to a set of
-(log log)²-type growth: pairwise stream overlap is nearly as
-expensive as the forbidden triple overlap. -/
+
 theorem overlap_bilinear_law {A D₁ D₂ : Set ℕ} {N₀ n : ℕ}
     (h0A : 0 ∈ A) (h01 : 0 ∉ D₁) (h02 : 0 ∉ D₂)
     (hd12 : ∀ x, x ∈ D₁ → x ∉ D₂)
@@ -15453,17 +13766,7 @@ theorem overlap_bilinear_law {A D₁ D₂ : Set ℕ} {N₀ n : ℕ}
   · exact ⟨y, h2, x, h1, by omega⟩
 
 open Classical in
-/-- **THE 2-ADIC WIDTH LAW.**  A pair-covering set's support
-tree must branch: at every depth j, if all elements beyond Y
-lie in infinitely-populated residue classes mod 2^j, then the
-head classes HC (residues of A ∩ [0,Y]) and the wide classes
-WC (infinitely-populated residues) must satisfy
-2^j ≤ |HC|·|WC| + |WC|², because every residue needs cofinal
-targets and every such target splits as head+wide or
-wide+wide.  Generalizes `two_adic_convergence_kills_covering`
-(the case |WC| = 1): a counterexample's 2-adic support width
-must grow like 2^(j/2) forever, up to head mass.  No finite
-union of 2-adic branches can pair-cover. -/
+
 theorem two_adic_width_law {A : Set ℕ} {N₀ j Y : ℕ}
     (hcov : PairCovers A N₀)
     (hY : ∀ a ∈ A, Y < a →
@@ -15536,13 +13839,7 @@ theorem two_adic_width_law {A : Set ℕ} {N₀ j Y : ℕ}
   omega
 
 open Classical in
-/-- **Same-class overlaps are address-pinned.**  Two disjoint
-deletions drawn from ONE residue class c mod 2^j: any covered
-target failing both has its address pinned to 2c mod 2^j and
-lies in the doubly-sparse sumset D₁ + D₂.  Splitting one deep
-class hence splits its failure duty into 3-wise-disjoint
-streams whose overlaps are pinned to a single known residue —
-the load ledger's first entry. -/
+
 theorem same_class_overlap_pinned {A D₁ D₂ : Set ℕ}
     {N₀ j c n : ℕ}
     (h0A : 0 ∈ A) (h01 : 0 ∉ D₁) (h02 : 0 ∉ D₂)
@@ -15569,15 +13866,12 @@ theorem same_class_overlap_pinned {A D₁ D₂ : Set ℕ}
     _ = (2 * c) % 2 ^ j := by ring_nf
 
 open Classical in
-/-- **Pair hubs cap full wealth** (pair-hub form of
-`repHub_caps_pair_wealth`).  An order-2 hub caps the target's
-ENTIRE ordered pair count at twice its size: low half injects,
-high half reflects. -/
-theorem pairHub_caps_wealth {A : Set ℕ} {w : ℕ}
-    {H : Finset ℕ} (hhub : IsPairHub A w H) :
+
+theorem pairSupportTransversal_caps_wealth {A : Set ℕ} {w : ℕ}
+    {H : Finset ℕ} (hhub : IsPairSupportTransversal A w H) :
     ((Finset.range (w + 1)).filter
       (fun x => x ∈ A ∧ (w - x) ∈ A)).card ≤ 2 * H.card := by
-  have hlow := pair_hub_pair_count hhub
+  have hlow := pair_support_transversal_pair_count hhub
   set Low := (Finset.range (w + 1)).filter
     (fun a => a ∈ A ∧ (w - a) ∈ A ∧ 2 * a ≤ w) with hLow
   set High := (Finset.range (w + 1)).filter
@@ -15613,21 +13907,13 @@ theorem pairHub_caps_wealth {A : Set ℕ} {w : ℕ}
   omega
 
 open Classical in
-/-- **THE UNIVERSAL PREFIX-HUB LAW.**  In a counterexample,
-EVERY infinite positive subset B of the basis manufactures its
-own cofinal stream of targets at which B's prefix B ∩ [0,n] is
-an order-2 hub: the 0-pad turns any B-avoiding pair into a
-B-avoiding triple.  Corollary at each such target:
-r₂(n) ≤ 2·|B ∩ [0,n]|.  This is the root of the exclusion
-suite and the entry lemma of the load ledger — the enemy owes
-every infinite positive subset of itself a cofinal
-prefix-hubbed poverty stream. -/
-theorem universal_prefix_hub_law {A : Set ℕ} {N₀ : ℕ}
+
+theorem universal_prefix_support_transversal_law {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∀ B ⊆ A, 0 ∉ B → B.Infinite → ∀ N, ∃ n, N ≤ n ∧
-      IsPairHub A n ((Finset.range (n + 1)).filter
+      IsPairSupportTransversal A n ((Finset.range (n + 1)).filter
         (fun x => x ∈ B)) ∧
       ((Finset.range (n + 1)).filter
         (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤
@@ -15642,7 +13928,7 @@ theorem universal_prefix_hub_law {A : Set ℕ} {N₀ : ℕ}
       ∑ i, v i ≠ n := by
     intro v hv hs
     exact hnrep v ⟨hv, hs⟩
-  have hhub : IsPairHub A n ((Finset.range (n + 1)).filter
+  have hhub : IsPairSupportTransversal A n ((Finset.range (n + 1)).filter
       (fun x => x ∈ B)) := by
     intro x hx y hy hxy
     by_cases hxB : x ∈ B
@@ -15662,26 +13948,17 @@ theorem universal_prefix_hub_law {A : Set ℕ} {N₀ : ℕ}
         have hsum0 : x + y + 0 = n := by omega
         exact hfailn ![x, y, 0] hmem
           (by simpa [Fin.sum_univ_three] using hsum0)
-  exact ⟨n, hn, hhub, pairHub_caps_wealth hhub⟩
+  exact ⟨n, hn, hhub, pairSupportTransversal_caps_wealth hhub⟩
 
 open Classical in
-/-- **THE UNIVERSAL COMMITTEE LAW.**  Strengthens the universal
-prefix-hub law to full guardian structure, from the failure
-interface ALONE (no 0-weld, no covering): every infinite subset
-B of the basis owns a cofinal stream of targets each carrying a
-MINIMAL order-3 guardian committee drawn from B itself — and by
-minimality, every committee member holds a private witness
-representation meeting the committee only at that member.  The
-entire guardian/team machinery, originally mined on A, now
-fires inside every infinite subset of A: the enemy's defense
-obligations are hereditary. -/
-theorem universal_committee_law {A : Set ℕ}
+
+theorem universal_deletion_transversal_law {A : Set ℕ}
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∀ B ⊆ A, B.Infinite → ∀ N, ∃ n, N ≤ n ∧
       ∃ H ⊆ (Finset.range (n + 1)).filter (fun x => x ∈ B),
-        IsRepHub A n H ∧
-        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        IsRepSupportTransversal A n H ∧
+        (∀ h ∈ H, ¬IsRepSupportTransversal A n (H \ {h})) ∧
         ∀ h ∈ H, ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = n ∧
           (x = h ∨ y = h ∨ z = h) ∧
           ∀ g ∈ H, g ≠ h → x ≠ g ∧ y ≠ g ∧ z ≠ g := by
@@ -15690,7 +13967,7 @@ theorem universal_committee_law {A : Set ℕ}
   simp only [IsExactTupleAsymptoticBasis, not_exists,
     not_forall] at hnot
   obtain ⟨n, hn, hnrep⟩ := hnot N
-  have hprefix : IsRepHub A n ((Finset.range (n + 1)).filter
+  have hprefix : IsRepSupportTransversal A n ((Finset.range (n + 1)).filter
       (fun x => x ∈ B)) := by
     intro x hx y hy z hz hsum
     by_cases hxB : x ∈ B
@@ -15712,22 +13989,13 @@ theorem universal_committee_law {A : Set ℕ}
             | 2 => exact ⟨hz, hzB⟩
           exact hnrep ![x, y, z] ⟨hmem,
             by simpa [Fin.sum_univ_three] using hsum⟩
-  obtain ⟨H, hHsub, hHhub, hHmin⟩ := exists_minimal_hub hprefix
+  obtain ⟨H, hHsub, hHhub, hHmin⟩ := exists_minimal_support_transversal hprefix
   exact ⟨n, hn, H, hHsub, hHhub, hHmin,
-    minimal_hub_necessity hHhub hHmin⟩
+    minimal_support_transversal_necessity hHhub hHmin⟩
 
 open Classical in
-/-- **THE COMMITTEE SIZE FLOOR.**  In anchored counterexample
-worlds, the hereditary committees are never lone guardians:
-for every infinite positive subset B, cofinally many targets
-carry minimal committees from B of size AT LEAST TWO — empty
-committees die on covering, singleton committees feed the
-private-triple stream and the rotating-guardian engine kills
-through the oracle.  Every subset the deleter proposes is
-defended by genuine TEAMS, with every member holding a private
-witness: the team machinery is hereditary with its floor
-intact. -/
-theorem committee_size_floor {A : Set ℕ} {N₀ : ℕ}
+
+theorem deletion_transversal_size_floor {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -15735,17 +14003,17 @@ theorem committee_size_floor {A : Set ℕ} {N₀ : ℕ}
     ∀ B ⊆ A, (∀ b ∈ B, 0 < b) → B.Infinite →
       ∀ N, ∃ n, N ≤ n ∧
       ∃ H ⊆ (Finset.range (n + 1)).filter (fun x => x ∈ B),
-        2 ≤ H.card ∧ IsRepHub A n H ∧
-        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        2 ≤ H.card ∧ IsRepSupportTransversal A n H ∧
+        (∀ h ∈ H, ¬IsRepSupportTransversal A n (H \ {h})) ∧
         ∀ h ∈ H, ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = n ∧
           (x = h ∨ y = h ∨ z = h) ∧
           ∀ g ∈ H, g ≠ h → x ≠ g ∧ y ≠ g ∧ z ≠ g := by
   intro B hBA hBpos hBinf N
-  have hnosing := singleton_hubs_refuted h0 hcov hanchor hfail
+  have hnosing := singleton_support_transversals_refuted h0 hcov hanchor hfail
   push Not at hnosing
   obtain ⟨N₁, hN₁⟩ := hnosing
   obtain ⟨n, hn, H, hHsub, hHhub, hHmin, hHwit⟩ :=
-    universal_committee_law hfail B hBA hBinf
+    universal_deletion_transversal_law hfail B hBA hBinf
       (max N (max N₁ N₀))
   refine ⟨n, by omega, H, hHsub, ?_, hHhub, hHmin, hHwit⟩
   rcases Nat.lt_or_ge H.card 2 with hc | hc
@@ -15765,44 +14033,29 @@ theorem committee_size_floor {A : Set ℕ} {N₀ : ℕ}
   · exact hc
 
 open Classical in
-/-- **THE ROUTER ROOM'S DOUBLES ARE UNIFORMLY POOR.**  In the
-g₀-routed geometry every noncentral double 2c is pair-hubbed by
-the two-element set {c, g₀}, so its ENTIRE pair count is capped
-at four.  Meanwhile `r2_unbounded_of_hfail` blows pair wealth
-up cofinally: in room II the wealthy targets must dodge every
-noncentral double of the basis forever — wealth lives only on
-odd targets, central doubles 2g₀, and non-doubles.  The router
-buys total routing at the price of total double-poverty. -/
-theorem router_room_doubles_poor {A : Set ℕ} {g₀ : ℕ}
+
+theorem routing_case_doubles_poor {A : Set ℕ} {g₀ : ℕ}
     (hroute : ∀ c ∈ A, 0 < c → c ≠ g₀ →
-      IsPairHub A (2 * c) ({c, g₀} : Finset ℕ)) :
+      IsPairSupportTransversal A (2 * c) ({c, g₀} : Finset ℕ)) :
     ∀ c ∈ A, 0 < c → c ≠ g₀ →
       ((Finset.range (2 * c + 1)).filter
         (fun x => x ∈ A ∧ (2 * c - x) ∈ A)).card ≤ 4 := by
   intro c hc hpos hne
-  have hcap := pairHub_caps_wealth (hroute c hc hpos hne)
+  have hcap := pairSupportTransversal_caps_wealth (hroute c hc hpos hne)
   have hcard : ({c, g₀} : Finset ℕ).card ≤ 2 := by
     refine le_trans (Finset.card_insert_le c {g₀}) ?_
     rw [Finset.card_singleton]
   omega
 
 open Classical in
-/-- **ROOM II'S WEALTH DODGES ITS OWN DOUBLES.**  In the
-g₀-routed geometry, unbounded pair wealth
-(`r2_unbounded_of_hfail`) collides with uniform double-poverty
-(`router_room_doubles_poor`): beyond every bound there are
-targets of pair count ≥ 5, and none of them can be a
-noncentral double of the basis.  The router room's riches are
-permanently confined to odd targets, the central double, and
-non-doubles — while every noncentral double sits at pair count
-≤ 4 forever. -/
-theorem router_room_wealth_dodges_doubles {A : Set ℕ}
+
+theorem routing_case_wealth_avoids_doubles {A : Set ℕ}
     {N₀ g₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3)
     (hroute : ∀ c ∈ A, 0 < c → c ≠ g₀ →
-      IsPairHub A (2 * c) ({c, g₀} : Finset ℕ)) :
+      IsPairSupportTransversal A (2 * c) ({c, g₀} : Finset ℕ)) :
     ∀ N, ∃ w, N ≤ w ∧ 5 ≤
       ((Finset.range (w + 1)).filter
         (fun x => x ∈ A ∧ (w - x) ∈ A)).card ∧
@@ -15812,25 +14065,16 @@ theorem router_room_wealth_dodges_doubles {A : Set ℕ}
     r2_unbounded_of_hfail h0 hcov hfail 5 N
   refine ⟨w, hwN, hwC, ?_⟩
   intro c hc hpos hne heq
-  have hpoor := router_room_doubles_poor hroute c hc hpos hne
+  have hpoor := routing_case_doubles_poor hroute c hc hpos hne
   rw [heq] at hwC
   omega
 
 open Classical in
-/-- **THE BAND TAX.**  If some subset B (positive material)
-supplies bounded-width committees cofinally — width ≤ C — then
-those committee targets form a cofinal family of UNIFORMLY POOR
-targets: r₂ ≤ 2C on the whole stream, by the 0-weld and the
-pair-hub wealth cap.  Holding the committee width in a bounded
-band anywhere in the subset lattice forces a poor street there;
-the band and the wealth stream can never share targets.  The
-width-band question's bounded horn pays this tax against
-`r2_unbounded_of_hfail` and `drain_wealth_addresses` at every
-single subset. -/
-theorem committee_band_tax {A B : Set ℕ} {C : ℕ}
+
+theorem deletion_transversal_band_tax {A B : Set ℕ} {C : ℕ}
     (h0 : 0 ∈ A) (hBpos : ∀ b ∈ B, 0 < b)
     (hfam : ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ C ∧
-      (∀ x ∈ H, x ∈ B) ∧ IsRepHub A n H) :
+      (∀ x ∈ H, x ∈ B) ∧ IsRepSupportTransversal A n H) :
     ∀ N, ∃ n, N ≤ n ∧
       ((Finset.range (n + 1)).filter
         (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * C := by
@@ -15840,27 +14084,19 @@ theorem committee_band_tax {A B : Set ℕ} {C : ℕ}
     intro h
     have := hBpos 0 (hHB 0 h)
     omega
-  have hcap := repHub_caps_pair_wealth h0 h0H hhub
+  have hcap := repSupportTransversal_caps_pair_wealth h0 h0H hhub
   exact ⟨n, hn, by omega⟩
 
 open Classical in
-/-- **COMMITTEE TRANSLATE FREENESS.**  A minimal committee's
-sub-committees are powerless on the translate fan: for every
-member h, the committee minus h does NOT pair-hub the translate
-n − h — h's private witness donates a pair of n − h avoiding
-all other members.  Minimal committees thus carry
-pair-freeness certificates for every one of their
-cardinality-(K−1) sub-committees: the escalating horn of the
-width band manufactures FREENESS material at scale, feeding
-the rank room rather than escaping it. -/
-theorem committee_translate_freeness {A : Set ℕ} {n : ℕ}
+
+theorem deletion_transversal_translate_freeness {A : Set ℕ} {n : ℕ}
     {H : Finset ℕ}
-    (hhub : IsRepHub A n H)
-    (hmin : ∀ h ∈ H, ¬IsRepHub A n (H \ {h})) :
-    ∀ h ∈ H, ¬IsPairHub A (n - h) (H \ {h}) := by
+    (hhub : IsRepSupportTransversal A n H)
+    (hmin : ∀ h ∈ H, ¬IsRepSupportTransversal A n (H \ {h})) :
+    ∀ h ∈ H, ¬IsPairSupportTransversal A (n - h) (H \ {h}) := by
   intro h hhH hpair
   obtain ⟨x, hx, y, hy, z, hz, hsum, hmem, havoid⟩ :=
-    minimal_hub_necessity hhub hmin h hhH
+    minimal_support_transversal_necessity hhub hmin h hhH
   have key : ∀ u v : ℕ, u ∈ A → v ∈ A → h + u + v = n →
       u ∉ H \ {h} → v ∉ H \ {h} → False := by
     intro u v hu hv hsum' hunot hvnot
@@ -15921,23 +14157,8 @@ theorem committee_translate_freeness {A : Set ℕ} {n : ℕ}
           (hyh' ▸ hhnot)
 
 open Classical in
-/-- **THE WIDTH BAND** (capstone of the committee program).
-In anchored counterexample worlds, every infinite positive
-subset B runs one of exactly two regimes:
 
-BOUNDED BAND — some width C works cofinally, and then every
-such committee target is simultaneously POOR (r₂ ≤ 2C,
-pointwise, by the 0-weld cap): a hereditary poor street,
-segregated forever from the unbounded pinned wealth stream; or
-
-ESCALATION — beyond every width C, cofinal targets carry
-minimal committees from B WIDER than C, every member privately
-witnessed, and every sub-committee formally unable to pair-hub
-its member's translate: freeness-certificate towers of
-unbounded width.
-
-Erdős 881's residue, stated as one verified fork. -/
-theorem endgame_width_band_local {A B : Set ℕ} {N₀ : ℕ}
+theorem counterexample_structure_width_band_local {A B : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B' ⊆ A, B'.Infinite →
@@ -15946,22 +14167,22 @@ theorem endgame_width_band_local {A B : Set ℕ} {N₀ : ℕ}
     (hBinf : B.Infinite) :
     (∃ C, ∀ N, ∃ n, N ≤ n ∧
       (∃ H ⊆ (Finset.range (n + 1)).filter (fun x => x ∈ B),
-        H.card ≤ C ∧ 2 ≤ H.card ∧ IsRepHub A n H ∧
-        (∀ h ∈ H, ¬IsRepHub A n (H \ {h}))) ∧
+        H.card ≤ C ∧ 2 ≤ H.card ∧ IsRepSupportTransversal A n H ∧
+        (∀ h ∈ H, ¬IsRepSupportTransversal A n (H \ {h}))) ∧
       ((Finset.range (n + 1)).filter
         (fun x => x ∈ A ∧ (n - x) ∈ A)).card ≤ 2 * C) ∨
     (∀ C N, ∃ n, N ≤ n ∧
       ∃ H ⊆ (Finset.range (n + 1)).filter (fun x => x ∈ B),
-        C < H.card ∧ IsRepHub A n H ∧
-        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
-        (∀ h ∈ H, ¬IsPairHub A (n - h) (H \ {h})) ∧
+        C < H.card ∧ IsRepSupportTransversal A n H ∧
+        (∀ h ∈ H, ¬IsRepSupportTransversal A n (H \ {h})) ∧
+        (∀ h ∈ H, ¬IsPairSupportTransversal A (n - h) (H \ {h})) ∧
         ∀ h ∈ H, ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = n ∧
           (x = h ∨ y = h ∨ z = h) ∧
           ∀ g ∈ H, g ≠ h → x ≠ g ∧ y ≠ g ∧ z ≠ g) := by
   by_cases hb : ∃ C, ∀ N, ∃ n, N ≤ n ∧
       ∃ H ⊆ (Finset.range (n + 1)).filter (fun x => x ∈ B),
-        H.card ≤ C ∧ 2 ≤ H.card ∧ IsRepHub A n H ∧
-        (∀ h ∈ H, ¬IsRepHub A n (H \ {h}))
+        H.card ≤ C ∧ 2 ≤ H.card ∧ IsRepSupportTransversal A n H ∧
+        (∀ h ∈ H, ¬IsRepSupportTransversal A n (H \ {h}))
   · left
     obtain ⟨C, hC⟩ := hb
     refine ⟨C, fun N => ?_⟩
@@ -15972,7 +14193,7 @@ theorem endgame_width_band_local {A B : Set ℕ} {N₀ : ℕ}
       rw [Finset.mem_filter] at this
       have := hBpos 0 this.2
       omega
-    have hcap := repHub_caps_pair_wealth h0 h0H hHhub
+    have hcap := repSupportTransversal_caps_pair_wealth h0 h0H hHhub
     exact ⟨n, hn, ⟨H, hHsub, hHc, hH2, hHhub, hHmin⟩,
       by omega⟩
   · right
@@ -15980,7 +14201,7 @@ theorem endgame_width_band_local {A B : Set ℕ} {N₀ : ℕ}
     intro C N
     obtain ⟨N₁, hN₁⟩ := hb C
     obtain ⟨n, hn, H, hHsub, hH2, hHhub, hHmin, hHwit⟩ :=
-      committee_size_floor h0 hcov hanchor hfail B hBA hBpos
+      deletion_transversal_size_floor h0 hcov hanchor hfail B hBA hBpos
         hBinf (max N N₁)
     have hwide : C < H.card := by
       rcases Nat.lt_or_ge C H.card with h | h
@@ -15990,22 +14211,15 @@ theorem endgame_width_band_local {A B : Set ℕ} {N₀ : ℕ}
           hN₁ n (by omega) H hHsub h hH2 hHhub
         exact hHmin h' hh'H hh'hub
     exact ⟨n, by omega, H, hHsub, hwide, hHhub, hHmin,
-      committee_translate_freeness hHhub hHmin, hHwit⟩
+      deletion_transversal_translate_freeness hHhub hHmin, hHwit⟩
 
 open Classical in
-/-- **Cylinder committees chain and cap.**  A committee of
-positive material from one residue class mod 2^m does both
-things to its target at once: every pair representation of n
-must touch the class (0-weld + hub), and n's entire pair
-wealth is capped at twice the committee size.  The workhorse
-for the same-set collision: when the width band's bounded horn
-runs inside the drain's own cylinder material, its poor street
-is simultaneously residue-chained to the tower's address. -/
-theorem cylinder_committee_chains {A : Set ℕ}
+
+theorem cylinder_deletion_transversal_chains {A : Set ℕ}
     {m c n : ℕ} {H : Finset ℕ}
     (h0 : 0 ∈ A)
     (hHcyl : ∀ x ∈ H, x % 2 ^ m = c % 2 ^ m ∧ 0 < x)
-    (hhub : IsRepHub A n H) :
+    (hhub : IsRepSupportTransversal A n H) :
     (∀ x ∈ A, ∀ y ∈ A, x + y = n →
       x % 2 ^ m = c % 2 ^ m ∨ y % 2 ^ m = c % 2 ^ m) ∧
     ((Finset.range (n + 1)).filter
@@ -16014,24 +14228,16 @@ theorem cylinder_committee_chains {A : Set ℕ}
     intro h
     have := (hHcyl 0 h).2
     omega
-  have hpair := pairHub_of_repHub h0 h0H hhub
+  have hpair := pairSupportTransversal_of_repSupportTransversal h0 h0H hhub
   constructor
   · intro x hx y hy hxy
     rcases hpair x hx y hy hxy with h | h
     · exact Or.inl (hHcyl x h).1
     · exact Or.inr (hHcyl y h).1
-  · exact repHub_caps_pair_wealth h0 h0H hhub
+  · exact repSupportTransversal_caps_pair_wealth h0 h0H hhub
 
 open Classical in
-/-- **THE POOR STREAM IS UNCONDITIONAL.**  Every counterexample
-keeps a cofinal stream of targets with BOUNDED pair wealth:
-liminf r₂ < ∞.  Proof by diagonal against the growth rate — if
-r₂ → ∞, build a deletion D sparser than the growth (spacing its
-i-th element beyond the threshold where r₂ exceeds 2i + 4);
-its failing targets would need r₂ ≤ 2·|D∩[0,n]| + 2, which the
-running minimum forbids, so D would survive.  Fat sets fail
-this conclusion (their r₂ → ∞): genuine counting content, from
-h0 + covering + hfail alone. -/
+
 theorem poor_stream_of_hfail {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -16171,20 +14377,13 @@ theorem poor_stream_of_hfail {A : Set ℕ} {N₀ : ℕ}
   omega
 
 open Classical in
-/-- **The poor stream's canonical hubs.**  Each bounded-wealth
-target carries its COMPLETE low-part set as a canonical pair
-hub: card ≤ L, every member a genuine low part, and — unlike
-the flood's envelope hubs — COMPLETE: every low part of n
-belongs to it.  Cofinal complete bounded pair hubs, from the
-oscillation theorem alone.  Completeness is the extra the
-envelope supply never had: rigidity and uniqueness arguments
-downstream consume exactly this. -/
-theorem poor_stream_canonical_hubs {A : Set ℕ} {N₀ : ℕ}
+
+theorem poor_stream_canonical_support_transversals {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ L, ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
-      H.card ≤ L ∧ IsPairHub A n H ∧
+      H.card ≤ L ∧ IsPairSupportTransversal A n H ∧
       (∀ h ∈ H, h ∈ A ∧ (n - h) ∈ A ∧ 2 * h ≤ n) ∧
       (∀ x, 2 * x ≤ n → x ∈ A → (n - x) ∈ A → x ∈ H) := by
   obtain ⟨L, hL⟩ := poor_stream_of_hfail h0 hcov hfail
@@ -16220,27 +14419,22 @@ theorem poor_stream_canonical_hubs {A : Set ℕ} {N₀ : ℕ}
     exact ⟨by omega, hxA, hxpA, hxle⟩
 
 open Classical in
-/-- **Pair-hub window split** (free via the vacuous-world
-trick: `hub_window_split_aux'` never unfolds rep-hubness, so
-instantiating its world at ∅ makes that slot trivial and the
-side-predicate slot carries pair-hubness).  Any cofinal
-bounded-card pair-hub family splits at every window into a
-persistent core plus tails beyond the window. -/
-theorem pair_hub_window_split {A : Set ℕ} {C : ℕ} (W : ℕ)
+
+theorem pair_support_transversal_window_split {A : Set ℕ} {C : ℕ} (W : ℕ)
     (R : ℕ → Finset ℕ → Prop)
     (hfam : ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ C ∧
-      IsPairHub A n H ∧ R n H) :
+      IsPairSupportTransversal A n H ∧ R n H) :
     ∃ S : Finset ℕ, S ⊆ Finset.range (W + 1) ∧
       ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ C ∧
-        IsPairHub A n H ∧ R n H ∧ S ⊆ H ∧
+        IsPairSupportTransversal A n H ∧ R n H ∧ S ⊆ H ∧
         ∀ h ∈ H, h ∉ S → W < h := by
   have hvac : ∀ (n : ℕ) (H : Finset ℕ),
-      IsRepHub (∅ : Set ℕ) n H := by
+      IsRepSupportTransversal (∅ : Set ℕ) n H := by
     intro n H x hx
     exact absurd hx (Set.notMem_empty x)
-  obtain ⟨S, hSW, hS⟩ := hub_window_split_aux'
+  obtain ⟨S, hSW, hS⟩ := support_transversal_window_split_aux'
     (A := (∅ : Set ℕ)) (C := C)
-    (R := fun n H => IsPairHub A n H ∧ R n H) W C ∅
+    (R := fun n H => IsPairSupportTransversal A n H ∧ R n H) W C ∅
     (by simp)
     (fun N => by
       obtain ⟨n, hn, H, hcard, hpair, hR⟩ := hfam N
@@ -16251,27 +14445,20 @@ theorem pair_hub_window_split {A : Set ℕ} {C : ℕ} (W : ℕ)
   exact ⟨n, hn, H, hcard, hpair, hR, hSH, htail⟩
 
 open Classical in
-/-- **THE CANONICAL CORE.**  Composing the oscillation
-theorem's canonical hubs with the pair-hub window split: every
-counterexample has a bound L such that at EVERY window W there
-is a persistent core S of low-part material — recurring inside
-the COMPLETE canonical hubs of cofinally many poor targets,
-with every non-core member beyond the window.  The poor
-stream's low material organizes into stable cores plus
-marching tails, unconditionally. -/
+
 theorem canonical_core_of_hfail {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ L, ∀ W, ∃ S : Finset ℕ, S ⊆ Finset.range (W + 1) ∧
       ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ L ∧
-        IsPairHub A n H ∧
+        IsPairSupportTransversal A n H ∧
         (∀ h ∈ H, h ∈ A ∧ (n - h) ∈ A ∧ 2 * h ≤ n) ∧
         (∀ x, 2 * x ≤ n → x ∈ A → (n - x) ∈ A → x ∈ H) ∧
         S ⊆ H ∧ ∀ h ∈ H, h ∉ S → W < h := by
-  obtain ⟨L, hL⟩ := poor_stream_canonical_hubs h0 hcov hfail
+  obtain ⟨L, hL⟩ := poor_stream_canonical_support_transversals h0 hcov hfail
   refine ⟨L, fun W => ?_⟩
-  obtain ⟨S, hSW, hS⟩ := pair_hub_window_split W
+  obtain ⟨S, hSW, hS⟩ := pair_support_transversal_window_split W
     (R := fun n H =>
       (∀ h ∈ H, h ∈ A ∧ (n - h) ∈ A ∧ 2 * h ≤ n) ∧
       (∀ x, 2 * x ≤ n → x ∈ A → (n - x) ∈ A → x ∈ H))
@@ -16284,33 +14471,26 @@ theorem canonical_core_of_hfail {A : Set ℕ} {N₀ : ℕ}
   exact ⟨n, hn, H, hcard, hpair, hmem, hcomp, hSH, htail⟩
 
 open Classical in
-/-- **THE DRIFT FORK.**  The canonical core organizes into a
-clean dichotomy: either some FIXED u is a universal low part —
-belonging to the complete canonical hubs of cofinally many
-poor targets (the door configuration at a known member) — or
-the poor stream's ENTIRE low material drifts: beyond every
-window, cofinally many poor targets have every single low part
-larger than the window.  Unconditional, from the oscillation
-layer alone. -/
+
 theorem poor_drift_fork {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     ∃ L,
     (∃ u, ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ L ∧
-      IsPairHub A n H ∧
+      IsPairSupportTransversal A n H ∧
       (∀ h ∈ H, h ∈ A ∧ (n - h) ∈ A ∧ 2 * h ≤ n) ∧
       (∀ x, 2 * x ≤ n → x ∈ A → (n - x) ∈ A → x ∈ H) ∧
       u ∈ H) ∨
     (∀ W N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ, H.card ≤ L ∧
-      IsPairHub A n H ∧
+      IsPairSupportTransversal A n H ∧
       (∀ h ∈ H, h ∈ A ∧ (n - h) ∈ A ∧ 2 * h ≤ n) ∧
       (∀ x, 2 * x ≤ n → x ∈ A → (n - x) ∈ A → x ∈ H) ∧
       ∀ h ∈ H, W < h) := by
   obtain ⟨L, hL⟩ := canonical_core_of_hfail h0 hcov hfail
   refine ⟨L, ?_⟩
   by_cases hu : ∃ u, ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
-      H.card ≤ L ∧ IsPairHub A n H ∧
+      H.card ≤ L ∧ IsPairSupportTransversal A n H ∧
       (∀ h ∈ H, h ∈ A ∧ (n - h) ∈ A ∧ 2 * h ≤ n) ∧
       (∀ x, 2 * x ≤ n → x ∈ A → (n - x) ∈ A → x ∈ H) ∧
       u ∈ H
@@ -16334,18 +14514,10 @@ theorem poor_drift_fork {A : Set ℕ} {N₀ : ℕ}
       exact ⟨n, hn, H, hcard, hpair, hmem, hcomp, hSH huS⟩
 
 open Classical in
-/-- **THE DRIFT HORN DIGS DESERTS.**  On the total-drift horn
-of the drift fork, the poor stream's targets sit in translate
-deserts: for every window W, cofinally many poor targets n
-have n − x ∉ A for EVERY basis element x ∈ [1, W] (with
-2x ≤ n) — because the complete canonical hub contains all low
-parts and all its members exceed W.  The R4 street ladder's
-difference-desert geometry, now derived UNCONDITIONALLY on the
-drift horn: the enemy's small elements are simultaneously
-useless for an entire cofinal target family. -/
-theorem drift_horn_deserts {A : Set ℕ} {L : ℕ}
+
+theorem drift_case_exclusion_intervals {A : Set ℕ} {L : ℕ}
     (hdrift : ∀ W N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
-      H.card ≤ L ∧ IsPairHub A n H ∧
+      H.card ≤ L ∧ IsPairSupportTransversal A n H ∧
       (∀ h ∈ H, h ∈ A ∧ (n - h) ∈ A ∧ 2 * h ≤ n) ∧
       (∀ x, 2 * x ≤ n → x ∈ A → (n - x) ∈ A → x ∈ H) ∧
       ∀ h ∈ H, W < h) :
@@ -16358,7 +14530,7 @@ theorem drift_horn_deserts {A : Set ℕ} {L : ℕ}
   obtain ⟨n, hn, H, hcard, hpair, hmem, hcomp, htail⟩ :=
     hdrift W N
   refine ⟨n, hn, ?_, ?_⟩
-  · have hcap := pairHub_caps_wealth hpair
+  · have hcap := pairSupportTransversal_caps_wealth hpair
     omega
   · intro x hxA hx1 hxW hxle hnxA
     have hxH : x ∈ H := hcomp x hxle hxA hnxA
@@ -16366,13 +14538,7 @@ theorem drift_horn_deserts {A : Set ℕ} {L : ℕ}
     omega
 
 open Classical in
-/-- **SMALL-LOW-PART RIGIDITY.**  At every scale W there is ONE
-fixed set S ⊆ [0, W] such that cofinally many poor targets have
-EXACTLY S as their small low parts: x ≤ W is a low part of n if
-and only if x ∈ S.  The enemy's small pair-service pattern is
-frozen on a cofinal stream at every window — completeness turns
-the canonical core's containment into an equality.  Forced
-membership in both directions, unconditionally. -/
+
 theorem small_lowpart_rigidity {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -16389,7 +14555,7 @@ theorem small_lowpart_rigidity {A : Set ℕ} {N₀ : ℕ}
   refine ⟨S, hSW, fun N => ?_⟩
   obtain ⟨n, hn, H, hcard, hpair, hmem, hcomp, hSH, htail⟩ :=
     hS N
-  have hcap := pairHub_caps_wealth hpair
+  have hcap := pairSupportTransversal_caps_wealth hpair
   refine ⟨n, hn, by omega, fun x hxW => ?_⟩
   constructor
   · rintro ⟨hxA, hnxA, hxle⟩
@@ -16404,18 +14570,7 @@ theorem small_lowpart_rigidity {A : Set ℕ} {N₀ : ℕ}
     exact hmem x hxH
 
 open Classical in
-/-- **THE RIGIDITY TRICHOTOMY.**  The frozen small-low-part
-pattern admits exactly three shapes, so every counterexample
-unconditionally runs one of three explicit geometries:
-(1) FIXED DIFFERENCE — some d ≥ 1 with a, a + d ∈ A beyond
-every bound (the translation room's team supply, unlocked);
-(2) DOORED DESERT — one u serving a cofinal poor stream as its
-ONLY small low part up to some window: a pure door with a
-desert moat;
-(3) TOTAL DESERT — beyond every window, cofinal poor targets
-with no small low parts at all.
-R1, the door, and R4: the campaign's oldest room names, now
-forced from the bare interface by the oscillation layer. -/
+
 theorem rigidity_trichotomy {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -16497,9 +14652,7 @@ theorem rigidity_trichotomy {A : Set ℕ} {N₀ : ℕ}
       · exact h1 ⟨W, h⟩
       · exact h2 ⟨W, h⟩
 
-/-- Cofinal δ-paired supply yields δ-paired finite families of
-every size — the bridge from the rigidity trichotomy's fixed-
-difference horn to the translation room's team machinery. -/
+/-- Cofinal δ-paired supply yields finite δ-paired families of every size. -/
 theorem fixed_difference_families {d : ℕ} {A : Set ℕ}
     (hsup : ∀ N, ∃ a, N ≤ a ∧ a ∈ A ∧ a + d ∈ A) :
     ∀ K, ∃ V : Finset ℕ, K ≤ V.card ∧
@@ -16525,19 +14678,14 @@ theorem fixed_difference_families {d : ℕ} {A : Set ℕ}
       · exact hVm x hxV
 
 open Classical in
-/-- **THE RIGIDITY TRICHOTOMY WITH TEAMS.**  In anchored
-worlds the fixed-difference horn upgrades from bare supply to
-TRANSLATION-COHERENT TEAMS: cofinally many targets carry
-minimal committees of size ≥ 2 whose EVERY member is δ-paired
-in the basis (h, h + d ∈ A).  Every counterexample runs
-δ-coherent teams, a doored desert, or a total desert. -/
-theorem rigidity_trichotomy_teams {A : Set ℕ} {N₀ : ℕ}
+
+theorem rigidity_trichotomy_pair_transversals {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hanchor : StreamSurvives A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
     (∃ d, 1 ≤ d ∧ ∀ N, ∃ n, N ≤ n ∧ ∃ H : Finset ℕ,
-      IsRepHub A n H ∧ (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+      IsRepSupportTransversal A n H ∧ (∀ h ∈ H, ¬IsRepSupportTransversal A n (H \ {h})) ∧
       2 ≤ H.card ∧ ∀ h ∈ H, h ∈ A ∧ h + d ∈ A ∧ 0 < h) ∨
     (∃ L u W, u ≤ W ∧ ∀ N, ∃ n, N ≤ n ∧
       ((Finset.range (n + 1)).filter
@@ -16553,7 +14701,7 @@ theorem rigidity_trichotomy_teams {A : Set ℕ} {N₀ : ℕ}
     ⟨d, hd, hsup⟩ | h | h
   · left
     refine ⟨d, hd, ?_⟩
-    have hteams := translation_room_teams h0 hcov hanchor
+    have hteams := translation_case_pair_transversals h0 hcov hanchor
       hfail (fixed_difference_families hsup)
     intro N
     obtain ⟨n, hn, H, hhub, hmin, hcard, hmem⟩ := hteams N
@@ -16562,19 +14710,8 @@ theorem rigidity_trichotomy_teams {A : Set ℕ} {N₀ : ℕ}
   · exact Or.inr (Or.inr h)
 
 open Classical in
-/-- **THE DISJOINT-MATCHING DODGE** (step two of the steering
-kill plan).  A target stream carrying two pair representations
-each, with pairwise-disjoint vertex sets across the stream, can
-always be dodged: choose one vertex from every second target's
-matching as the deletion — it is infinite basis material, yet
-every stream target keeps a representation pair completely
-outside it.  Pairwise-disjoint matchings are non-steering:
-no such stream can serve as a failing family.  The enemy's
-failing streams are FORCED to share matching vertices — and a
-fixed shared vertex is eventually a LOW part of later targets,
-returning all distant sharing to the rigidity trichotomy's
-jurisdiction. -/
-theorem disjoint_matching_dodge {A : Set ℕ} {nseq x₁ x₂ : ℕ → ℕ}
+
+theorem disjoint_matching_avoidance {A : Set ℕ} {nseq x₁ x₂ : ℕ → ℕ}
     (hx₁A : ∀ k, x₁ k ∈ A) (hx₁pA : ∀ k, nseq k - x₁ k ∈ A)
     (hx₂A : ∀ k, x₂ k ∈ A) (hx₂pA : ∀ k, nseq k - x₂ k ∈ A)
     (hx₁le : ∀ k, x₁ k ≤ nseq k) (hx₂le : ∀ k, x₂ k ≤ nseq k)
@@ -16636,10 +14773,7 @@ theorem disjoint_matching_dodge {A : Set ℕ} {nseq x₁ x₂ : ℕ → ℕ}
     exact (hne k).2 this
 
 open Classical in
-/-- **Wealthy targets keep a clean pair** (pair-form of
-`wealthy_target_survives`; no zero hypotheses needed).  If a
-target's pair wealth exceeds twice the deletion's local mass
-plus two, some pair avoids the deletion entirely. -/
+
 theorem wealthy_pair_survives {A D : Set ℕ} {v : ℕ}
     (hwealth : 2 * ((Finset.range (v + 1)).filter
         (fun x => x ∈ D)).card + 2 <
@@ -16709,15 +14843,7 @@ theorem wealthy_pair_survives {A D : Set ℕ} {v : ℕ}
     fun h => hxnotor (Or.inr h)⟩
 
 open Classical in
-/-- **THE FAN POVERTY LAW.**  A target failing at order 3
-against a deletion has its ENTIRE non-deleted translate fan
-uniformly poor: for every x ∈ A ∖ D below n, the translate
-n − x has pair wealth at most twice the deletion's mass below
-n plus two — else a clean pair of n − x completes a surviving
-triple through x.  One failing target taxes the wealth of
-|A ∖ D| ∩ [0,n] many translates at once: failure is no longer
-a local event but a blanket poverty requirement across the
-fan, and the fan must avoid the entire wealth stream. -/
+
 theorem fan_poverty_of_failing {A D : Set ℕ} {n : ℕ}
     (hfailn : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D) →
       ∑ i, v i ≠ n) :
@@ -16757,16 +14883,7 @@ theorem fan_poverty_of_failing {A D : Set ℕ} {n : ℕ}
     (by simpa [Fin.sum_univ_three] using hsum0)
 
 open Classical in
-/-- **THE REFLECTED EMBEDDING COUNT.**  A failing target's fan
-injects into the poor set: below any target failing at order 3
-against D, the number of (2·|D∩[0,n]|+2)-poor targets is at
-least the number of non-deleted basis elements — the map
-x ↦ n − x embeds A ∖ D into the poor population.  A
-counterexample's poor targets must be AS NUMEROUS AS ITS OWN
-ELEMENTS below every failing target: in fat worlds (positive-
-density bases) failure forces positive-density near-Sidon
-target populations; in thin worlds this is the √n-scale
-bookkeeping.  The fat-regime program's counting core. -/
+
 theorem poor_count_of_failing {A D : Set ℕ} {n : ℕ}
     (hfailn : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D) →
       ∑ i, v i ≠ n) :
@@ -16793,21 +14910,7 @@ theorem poor_count_of_failing {A D : Set ℕ} {n : ℕ}
     omega
 
 open Classical in
-/-- **THE DENSITY LAW.**  At every order-3 failing target the
-counting closes into one global inequality: with α = |A∩[0,n]|,
-α₂ = |A∩[0,n/2]|, DF = |D∩[0,n]|, C = 2·DF+2, and P the number
-of C-poor targets below n,
 
-    α − DF ≤ P   and   α₂² + P·(α − C) ≤ (n+1)·α.
-
-Lower bound: the reflected embedding.  Upper: the energy
-Σ r₂ ≥ α₂² (pairs of low halves) against the poor/rich
-partition (poor contribute ≤ C, the rest ≤ α each).  First
-consequence: a set containing [0,n] can never have a failing
-target (α₂² + α² ≈ 1.25·n² > n² ≈ (n+1)·α) — dense bases fail
-nothing, quantitatively.  The campaign's first global
-inequality binding density profiles at every failing
-target of every deletion. -/
 theorem density_law_of_failing {A D : Set ℕ} {n : ℕ}
     (hfailn : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D) →
       ∑ i, v i ≠ n) :
@@ -16974,17 +15077,8 @@ theorem density_law_of_failing {A D : Set ℕ} {n : ℕ}
             Nat.mul_le_mul_left _ hA2sub
 
 open Classical in
-/-- **THE MASTER LAW.**  One statement carrying the
-unconditional layer: every counterexample simultaneously
-(I) OSCILLATES — bounded-wealth targets cofinally, unbounded
-wealth cofinally; (II) runs one of the three RIGIDITY
-geometries — fixed difference, doored desert, or total
-desert; and (III) pays the DENSITY LAW at cofinally many
-failing targets of EVERY infinite positive deletion: the poor
-population exceeds the surviving basis count, and the energy
-inequality α₂² + P·(α−C) ≤ (n+1)·α binds.  From 0 ∈ A,
-covering, and the failure interface alone. -/
-theorem the_master_law {A : Set ℕ} {N₀ : ℕ}
+
+theorem combined_law {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
@@ -17043,13 +15137,7 @@ theorem the_master_law {A : Set ℕ} {N₀ : ℕ}
   exact ⟨n, hn, density_law_of_failing hfailn⟩
 
 open Classical in
-/-- **Failing targets avoid wealthy translates.**  If w is
-wealthy beyond the deletion cap and w ≤ n, then a failing
-target n cannot reach w through surviving basis material:
-n − w is outside A or inside D.  The failing stream must
-thread the complement of w + (A ∖ D) for EVERY sufficiently
-wealthy w simultaneously — each wealthy target erects one more
-corridor wall. -/
+
 theorem failing_avoids_wealthy_translates {A D : Set ℕ}
     {n w : ℕ}
     (hfailn : ∀ v : Fin 3 → ℕ, (∀ i, v i ∈ A \ D) →
@@ -17070,12 +15158,7 @@ theorem failing_avoids_wealthy_translates {A D : Set ℕ}
   omega
 
 open Classical in
-/-- **Served targets never fail.**  One wealthy server —
-w ≤ n wealthy beyond the deletion cap with n − w surviving in
-the basis — is enough to save n: the server's own clean pair
-plus the surviving translate part make a surviving triple.
-Contrapositive of the wealthy-translate wall, stated as the
-survival criterion of the completeness reduction. -/
+
 theorem served_targets_never_fail {A D : Set ℕ} {n : ℕ}
     (hserve : ∃ w, w ≤ n ∧ (n - w) ∈ A ∧ (n - w) ∉ D ∧
       2 * ((Finset.range (n + 1)).filter
@@ -17092,16 +15175,8 @@ theorem served_targets_never_fail {A D : Set ℕ} {n : ℕ}
   · exact hxD h
 
 open Classical in
-/-- **THE SERVICE BREAKDOWN LAW.**  Every counterexample must
-break sumset completeness against every deletion: for each
-infinite B ⊆ A there are cofinally many targets n at which
-EVERY wealthy target w ≤ n (wealth above the deletion cap) has
-a dead translate — n − w outside the basis or deleted.  The
-completeness reduction in theorem form: Erdős 881 (k = 2) is
-exactly the impossibility of running this total breakdown
-forever against all deletions at once, and every lab world
-ever built fails to run it against a single one. -/
-theorem service_breakdown_of_hfail {A : Set ℕ} {N₀ : ℕ}
+
+theorem coverage_breakdown_of_hfail {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ B) 3) :
@@ -17123,14 +15198,7 @@ theorem service_breakdown_of_hfail {A : Set ℕ} {N₀ : ℕ}
     failing_avoids_wealthy_translates hfailn hwn hwealthy⟩
 
 open Classical in
-/-- **The pair-energy lower bound** (pure counting, no failure
-hypothesis).  For any set: α₂⁴ ≤ (n+1)·Σ r₂(m)², by the
-low-half pair injection and Cauchy–Schwarz.  In corridor
-worlds this forces wealthy square-mass: with the poor
-partition, a world whose α₂ beats √n must carry polynomially
-many wealthy targets — each of which erects a translate wall
-against every failing stream.  The corridor program's counting
-engine. -/
+
 theorem pair_energy_lower_bound {A : Set ℕ} (n : ℕ) :
     (((Finset.range (n / 2 + 1)).filter
       (fun x => x ∈ A)).card) ^ 4 ≤
@@ -17189,13 +15257,7 @@ theorem pair_energy_lower_bound {A : Set ℕ} (n : ℕ) :
         (fun m => r2f m ^ 2) := hCS
 
 open Classical in
-/-- **The wealthy count bound** (pure counting).  Splitting the
-energy between C-poor targets (≤ C² each) and wealthy ones
-(≤ α² each): α₂⁴ ≤ (n+1)·((n+1)·C² + W·α²), where W counts the
-wealthy targets below n.  In any world whose low half beats
-√n·C-scale, wealth is forced in QUANTITY, not merely
-cofinally — and every wealthy target is a wall against every
-failing stream.  The corridor profile inequality, formal. -/
+
 theorem wealthy_count_bound {A : Set ℕ} (n C : ℕ) :
     (((Finset.range (n / 2 + 1)).filter
       (fun x => x ∈ A)).card) ^ 4 ≤
@@ -17267,11 +15329,7 @@ theorem wealthy_count_bound {A : Set ℕ} (n C : ℕ) :
       Nat.mul_le_mul_left _ htotal
 
 open Classical in
-/-- **Covering √-growth** (standalone).  A pair-covering set
-has |A ∩ [0,X]|² ≥ X − N₀ at every scale: each covered target
-donates a pair of elements below it, and the sum recovers the
-target, so the map is injective.  The floor that every profile
-analysis of the corridor stands on. -/
+
 theorem covering_sqrt_growth {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀) :
     ∀ X, X ≤ ((Finset.range (X + 1)).filter
@@ -17311,14 +15369,7 @@ theorem covering_sqrt_growth {A : Set ℕ} {N₀ : ℕ}
   have hsq : Af.card * Af.card = Af.card ^ 2 := by ring
   omega
 open Classical Pointwise in
-/-- **THE ENERGY BRIDGE.**  The campaign's windowed second
-moment embeds into Mathlib's additive energy: the window sum
-Σ_{m ≤ n} r₂(m)² is at most E[Af, Af] for Af = A ∩ [0,n] —
-each window fiber is exactly a sumset fiber, and the sumset
-carries more.  This connects the entire bespoke counting suite
-to `Mathlib.Combinatorics.Additive` (energy, Plünnecke–Ruzsa,
-Ruzsa covering, doubling): the classical arsenal now points at
-the corridor. -/
+
 theorem window_energy_le_addEnergy {A : Set ℕ} (n : ℕ) :
     (Finset.range (n + 1)).sum (fun m =>
       ((Finset.range (m + 1)).filter
@@ -17390,12 +15441,7 @@ theorem window_energy_le_addEnergy {A : Set ℕ} (n : ℕ) :
   exact Finset.add_mem_add h1 h2
 
 open Classical Pointwise in
-/-- **The Mathlib energy floor.**  α⁴ ≤ (2n+1)·E[Af, Af] —
-directly from `le_card_add_mul_addEnergy` and the sumset
-living inside [0, 2n].  Sharper than the hand-built engine
-(α, not α₂), and stated in the classical library's own
-vocabulary: covering worlds have near-maximal additive energy
-demands at every scale. -/
+
 theorem mathlib_energy_floor {A : Set ℕ} (n : ℕ) :
     (((Finset.range (n + 1)).filter
       (fun x => x ∈ A)).card) ^ 2 *
@@ -17425,14 +15471,7 @@ theorem mathlib_energy_floor {A : Set ℕ} (n : ℕ) :
       Nat.mul_le_mul_right _ hcard
 
 open Classical Pointwise in
-/-- **The upper-half energy floor** (cascade entry).  The
-Mathlib energy floor with the energy split at the window
-boundary: α⁴ ≤ (2n+1)·(windowΣ + upperΣ), where windowΣ is the
-campaign's windowed second moment on [0,n] and upperΣ is the
-sumset energy above n.  Whenever the window's second moment is
-capped (poor-dense regimes), the demand transfers to the upper
-half — which is the next scale's window: the energy cascade's
-first rung, formal. -/
+
 theorem energy_upper_half_floor {A : Set ℕ} (n : ℕ) :
     (((Finset.range (n + 1)).filter
       (fun x => x ∈ A)).card) ^ 2 *
@@ -17545,21 +15584,8 @@ theorem energy_upper_half_floor {A : Set ℕ} (n : ℕ) :
     _ ≤ (2 * n + 1) * _ := Nat.mul_le_mul_left _ hEle
 
 open Classical Pointwise in
-/-- **THE CASCADE LAW** (the three-source funding equation).
-At every scale n and every poverty threshold C:
 
-  α⁴ ≤ (2n+1)·((n+1)·C² + W_C·α² + upperΣ)
-
-— the covering demand α⁴ must be funded by exactly three
-sources: poor noise (≤ C² per target), in-window spikes (W_C
-wealthy targets, each also a service wall), or upper-half
-energy (the NEXT window's funding problem).  Pure counting.
-Every counterexample must route this budget at every scale
-forever, with its spikes doubling as walls against its own
-failing streams and its upper-half transfers compounding into
-the next scale's demand: the energy cascade, as one
-inequality. -/
-theorem cascade_law {A : Set ℕ} (n C : ℕ) :
+theorem iteration_law {A : Set ℕ} (n C : ℕ) :
     (((Finset.range (n + 1)).filter
       (fun x => x ∈ A)).card) ^ 2 *
     (((Finset.range (n + 1)).filter
@@ -17643,11 +15669,7 @@ theorem cascade_law {A : Set ℕ} (n C : ℕ) :
   omega
 
 open Classical Pointwise in
-/-- **Upper half feeds the next window.**  The sumset energy
-above n at scale n is dominated by the windowed second moment
-at scale 2n: scale-n fibers are sub-fibers of scale-2n window
-counts.  The cascade's chaining identity — upper-half transfers
-land in the next dyadic window's budget. -/
+
 theorem upper_le_next_window {A : Set ℕ} (n : ℕ) :
     ((((Finset.range (n + 1)).filter (fun x => x ∈ A)) +
       ((Finset.range (n + 1)).filter (fun x => x ∈ A))).filter
@@ -17713,15 +15735,7 @@ theorem upper_le_next_window {A : Set ℕ} (n : ℕ) :
         omega
 
 open Classical Pointwise in
-/-- **THE TWO-SCALE LAW.**  Composing the cascade law with the
-chaining identity: consecutive dyadic scales are bound
-together —
 
-  α(n)⁴ ≤ (2n+1)·((n+1)C² + W_C(n)·α(n)² + windowΣ(2n)).
-
-The upper-half transfer is now the NEXT window's second moment:
-iterating binds every dyadic tower of scales into one budget
-chain.  The telescope's first two links, verified. -/
 theorem two_scale_law {A : Set ℕ} (n C : ℕ) :
     (((Finset.range (n + 1)).filter
       (fun x => x ∈ A)).card) ^ 2 *
@@ -17736,16 +15750,14 @@ theorem two_scale_law {A : Set ℕ} (n C : ℕ) :
       (Finset.range (2 * n + 1)).sum (fun m =>
         ((Finset.range (m + 1)).filter
           (fun y => y ∈ A ∧ (m - y) ∈ A)).card ^ 2)) := by
-  have hc := cascade_law (A := A) n C
+  have hc := iteration_law (A := A) n C
   have hu := upper_le_next_window (A := A) n
   refine le_trans hc ?_
   apply Nat.mul_le_mul_left
   omega
 
 open Classical in
-/-- **The window partition** (standalone).  Any window's second
-moment splits into poor noise and spike mass:
-windowΣ(n) ≤ (n+1)·C² + W_C(n)·α(n)². -/
+
 theorem window_partition {A : Set ℕ} (n C : ℕ) :
     (Finset.range (n + 1)).sum (fun m =>
       ((Finset.range (m + 1)).filter
@@ -17812,17 +15824,7 @@ theorem window_partition {A : Set ℕ} (n C : ℕ) :
   omega
 
 open Classical in
-/-- **THE CLOSED TWO-SCALE LAW.**  The first fully closed
-multi-scale spike inequality: for every scale n and thresholds
-C, C′,
 
-  α(n)⁴ ≤ (2n+1)·((n+1)C² + W_C(n)·α(n)²
-                  + (2n+1)C′² + W_{C′}(2n)·α(2n)²).
-
-Every counterexample's covering demand at scale n is funded by
-poor noise and spike counts at scales n AND 2n alone — and
-every spike is a service wall.  Iterable to any dyadic tower.
-The energy cascade, closed at two scales. -/
 theorem two_scale_closed {A : Set ℕ} (n C C' : ℕ) :
     (((Finset.range (n + 1)).filter
       (fun x => x ∈ A)).card) ^ 2 *
@@ -17848,18 +15850,7 @@ theorem two_scale_closed {A : Set ℕ} (n C C' : ℕ) :
   omega
 
 open Classical in
-/-- **THE BREAKDOWN PIGEONHOLE** (the spike census law).  At a
-service-breakdown target, the surviving basis elements and the
-reflected wealthy spikes are DISJOINT subsets of [0, n] — each
-would serve the other — so their cardinalities pack:
 
-    α(n) + W(n) ≤ n + 1 + DF(n).
-
-Basis mass plus spike count cannot exceed the scale (plus
-deletion slack) at any breakdown target.  The first law
-COUPLING the two funding sources of the cascade: the enemy
-cannot be rich in basis and rich in spikes at the same
-failing scale. -/
 theorem breakdown_pigeonhole {A D : Set ℕ} {n : ℕ}
     (hbd : ∀ w, w ≤ n →
       2 * ((Finset.range (n + 1)).filter
@@ -17939,16 +15930,7 @@ theorem breakdown_pigeonhole {A D : Set ℕ} {n : ℕ}
   omega
 
 open Classical in
-/-- **THE SPIKE CENSUS LAW.**  In every counterexample, for
-every infinite deletion B, cofinally many scales n satisfy
 
-    α(n) + W(n) ≤ n + 1 + 2·|B ∩ [0,n]|
-
-— basis mass plus wealthy-spike count packs into the scale.
-Composed with the closed two-scale law (which needs W·α² LARGE
-to fund α⁴) the enemy is caught between two books: the cascade
-demands spikes, the census taxes them against its own basis
-mass, at cofinally many scales of every deletion, forever. -/
 theorem spike_census_of_hfail {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -17965,24 +15947,11 @@ theorem spike_census_of_hfail {A : Set ℕ} {N₀ : ℕ}
         (fun d => d ∈ B)).card := by
   intro B hBA hBinf N
   obtain ⟨n, hn, hbd⟩ :=
-    service_breakdown_of_hfail h0 hcov hfail B hBA hBinf N
+    coverage_breakdown_of_hfail h0 hcov hfail B hBA hBinf N
   exact ⟨n, hn, breakdown_pigeonhole hbd⟩
 
 open Classical in
-/-- **THE REPAIR LEMMA** (the constructive engine).  A deletion
-survives at order 3 as soon as two LOCAL conditions hold:
 
-  (1) every deleted element splits into two survivors
-      (b = u + v with u, v ∈ A ∖ B), and
-  (2) every sum of two deleted elements is served by a
-      surviving triple.
-
-No global hypothesis about failing targets, no anchor, no
-minimality: a covered target's guaranteed pair is repaired
-in place — pad with 0, or split whichever part was deleted.
-This is the campaign's first CONSTRUCTIVE criterion: it does
-not constrain a hypothetical counterexample, it builds the
-deletion the problem asks for. -/
 theorem deletion_criterion {A B : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (h0B : 0 ∉ B) (hcov : PairCovers A N₀)
     (hsplit : ∀ b ∈ B, ∃ u ∈ A, ∃ v ∈ A,
@@ -18038,12 +16007,7 @@ theorem deletion_criterion {A B : Set ℕ} {N₀ : ℕ}
         simpa [Fin.sum_univ_three] using he
 
 open Classical in
-/-- **THE CONSTRUCTION THEOREM.**  A strictly increasing
-sequence of positive basis elements, each splitting into two
-elements off the sequence, whose pairwise sums are each served
-by a triple off the sequence, IS the deletion Erdős 881 asks
-for: its range is an infinite subset of A whose removal leaves
-an exact asymptotic basis of order 3. -/
+
 theorem deletion_exists_of_construction {A : Set ℕ} {N₀ : ℕ}
     {b : ℕ → ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -18085,14 +16049,7 @@ theorem deletion_exists_of_construction {A : Set ℕ} {N₀ : ℕ}
         exact hr k hk.symm
 
 open Classical in
-/-- **Sum-free bases split into three.**  In an internally
-sum-free basis every large element is a sum of THREE positive
-elements — one such triple for every positive basis element
-below it.  Reason: if x ∈ A⁺ and a ∈ A, then a − x cannot lie
-in A (else a = x + (a−x) would be an internal positive sum),
-so a − x is a positive pair sum, and a = x + u + v.  The
-sum-free regime supplies its own repair material, exactly as
-base-3 carries do in the verified Cantor instance. -/
+
 theorem sumfree_triple {A : Set ℕ} {N₀ X : ℕ}
     (hcov : PairCovers A N₀)
     (hsf : ∀ a ∈ A, X < a → ∀ u ∈ A, ∀ v ∈ A,
@@ -18123,16 +16080,7 @@ theorem sumfree_triple {A : Set ℕ} {N₀ X : ℕ}
   exact ⟨u, huA, v, hvA, hu0, hv0, by omega⟩
 
 open Classical in
-/-- **THE SUM-FREE REPAIR CRITERION.**  The companion of
-`deletion_criterion` for the regime where nothing splits in
-two.  A deletion survives at order 3 as soon as
-  (1) every deleted element is reachable by a surviving triple,
-  (2) every large NON-BASIS target keeps a fully surviving pair.
-Surviving basis elements serve themselves (a = a + 0 + 0), the
-deleted ones are served by (1), and everything else by (2).
-This is the {0} ∪ ODDS mechanism in general form: delete odd
-numbers, recover them as sums of three surviving odds, and let
-the evens keep their many representations. -/
+
 theorem deletion_criterion_sumfree {A B : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (h0B : 0 ∉ B)
     (hserved : ∀ b ∈ B, ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
@@ -18171,21 +16119,7 @@ theorem deletion_criterion_sumfree {A B : Set ℕ} {N₀ : ℕ}
       simpa [Fin.sum_univ_three] using he
 
 open Classical in
-/-- **THE MASTER DELETION CRITERION.**  The sharpest form of
-the constructive turn: a deletion survives at order 3 iff it
-serves only the targets it actually threatens.  Every target
-outside B + A keeps its covering pair intact and is padded with
-0; so the ENTIRE burden is the sparse set B + A —
 
-  every n ≥ N₀ lying in B + A has a surviving triple.
-
-Nothing else is required: no minimality, no splitting, no
-sum-freeness.  `deletion_criterion` (split the deleted part)
-and `deletion_criterion_sumfree` (positive triples for basis
-elements) are the two local ways of discharging this one
-hypothesis.  Since B is ours to choose sparse, B + A is a thin
-union of translates: the problem is exactly to keep a thin
-union of translates served. -/
 theorem deletion_criterion_local {A B : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (h0B : 0 ∉ B) (hcov : PairCovers A N₀)
     (hrisk : ∀ n, N₀ ≤ n → (∃ b ∈ B, ∃ a ∈ A, b + a = n) →
@@ -18224,10 +16158,7 @@ theorem deletion_criterion_local {A B : Set ℕ} {N₀ : ℕ}
         simpa [Fin.sum_univ_three] using he
 
 open Classical in
-/-- A finite deletion prefix serves all targets it currently threatens.
-This is the exact finite-stage invariant suggested by
-`deletion_criterion_local`: every late target in `B + A` has a
-three-term representation avoiding `B`. -/
+
 def FinitePrefixServesRisks
     (A : Set ℕ) (N₀ : ℕ) (B : Finset ℕ) : Prop :=
   ∀ n, N₀ ≤ n → (∃ b ∈ B, ∃ a ∈ A, b + a = n) →
@@ -18235,15 +16166,13 @@ def FinitePrefixServesRisks
       x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n
 
 open Classical in
-/-- **A moving stall is a relative singleton hub.**
-Saying that no triple from `A` avoids `insert b B` is exactly saying that
-every triple over the old survivor set `A \ B` uses `b`. -/
-theorem moving_stall_iff_relative_singleton_hub
+
+theorem moving_stall_iff_relative_singleton_support_transversal
     {A : Set ℕ} {B : Finset ℕ} {b n : ℕ} :
     (∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
       x ∉ insert b B → y ∉ insert b B → z ∉ insert b B →
         x + y + z ≠ n) ↔
-    IsRepHub (A \ (B : Set ℕ)) n {b} := by
+    IsRepSupportTransversal (A \ (B : Set ℕ)) n {b} := by
   constructor
   · intro hstall x hx y hy z hz hsum
     by_contra hnone
@@ -18287,17 +16216,7 @@ theorem moving_stall_iff_relative_singleton_hub
       exact hzInsert (Finset.mem_insert_self b B)
 
 open Classical in
-/-- **The exact one-step greedy failure fork.**
-Suppose the old finite prefix `B` serves all its threatened targets, but
-`insert b B` does not.  A failed target is then either
 
-* a genuinely new risk `b + a`, with a moving-prefix stall; or
-* an old risk `d + a` for some `d ∈ B`, in which case the target is
-  private to the newly deleted element `b` over the old survivor set
-  `A \ B`.
-
-The second collateral-damage horn is why a failed extension cannot in
-general be assumed to satisfy `n = b + a`. -/
 theorem unsafe_extension_self_risk_or_collateral_private
     {A : Set ℕ} {N₀ b : ℕ} {B : Finset ℕ}
     (hserved : FinitePrefixServesRisks A N₀ B)
@@ -18326,7 +16245,7 @@ theorem unsafe_extension_self_risk_or_collateral_private
           z, ⟨hzA, hzB⟩, hsum⟩
       · intro x' hx' y' hy' z' hz' hsum'
         have hhub :=
-          moving_stall_iff_relative_singleton_hub.mp hstall
+          moving_stall_iff_relative_singleton_support_transversal.mp hstall
         rcases hhub x' hx' y' hy' z' hz' hsum' with h | h | h
         · exact Or.inl (Finset.mem_singleton.1 h)
         · exact Or.inr (Or.inl (Finset.mem_singleton.1 h))
@@ -18334,11 +16253,8 @@ theorem unsafe_extension_self_risk_or_collateral_private
     exact ⟨n, hn, holdRisk, hprivate⟩
 
 open Classical in
-/-- **A private guardian leaves a two-term co-sum.**
-If `n` is private to `b` over a set `S`, then `b ∈ S`, `b ≤ n`, and
-removing the forced occurrence of `b` from one private triple leaves two
-members of `S` summing to `n - b`. -/
-theorem IsPrivateTriple.guardian_mem_le_and_complement_split
+
+theorem IsPrivateTriple.required_element_mem_le_and_complement_split
     {S : Set ℕ} {b n : ℕ} (hprivate : IsPrivateTriple S b n) :
     b ∈ S ∧ b ≤ n ∧
       ∃ u ∈ S, ∃ v ∈ S, u + v = n - b := by
@@ -18352,15 +16268,7 @@ theorem IsPrivateTriple.guardian_mem_le_and_complement_split
     exact ⟨hzS, by omega, x, hxS, y, hyS, by omega⟩
 
 open Classical in
-/-- **Finite-batch greedy fork.**
-Let an old prefix `B` serve all of its risks and let `C` contain more
-than `2*K` possible next deletions.  Then either one candidate safely
-extends the invariant, more than `K` candidates fail at genuinely new
-risks `b + a`, or more than `K` candidates cause collateral private
-targets over `A \ B`.
 
-This is the exact combinatorial gateway from the constructive greedy to
-the moving-prefix stall analysis. -/
 theorem candidate_batch_safe_or_self_stalls_or_collateral_private
     {A : Set ℕ} {N₀ K : ℕ} {B C : Finset ℕ}
     (hserved : FinitePrefixServesRisks A N₀ B)
@@ -18430,26 +16338,7 @@ theorem candidate_batch_safe_or_self_stalls_or_collateral_private
         exact hb.2
 
 open Classical in
-/-- **THE STALL FORCES WEALTH** (the join: construction meets
-contradiction-mining).  If a target n resists every triple
-drawn from A ∖ B — the exact way the constructive greedy can
-stall — then some deleted element w ∈ B sits at square-root
-distance from a HUGELY wealthy target:
 
-    |A ∖ B ∩ [0, n−N₀]|  ≤  |B| · r₂(n − w).
-
-Since covering forces |A ∩ [0,X]| ≳ √X, a stall at scale n with
-a finite deletion of size k manufactures a target of pair
-wealth ≳ √n / k — wealth within a constant factor of the
-maximum possible, i.e. a target served by a positive fraction
-of the whole basis below it.  Every stall of the construction
-is therefore an event in the wealth stream the campaign has
-pinned 2-adically (`drain_wealth_addresses`), capped on streets
-(`endgame_poor_street`) and taxed by the census
-(`endgame_spike_census`).  The two halves of the campaign meet
-here: contradiction-mining constrains the stall, and the
-construction consumes every world where the stall does not
-occur. -/
 theorem stall_forces_wealth {A : Set ℕ} {N₀ n : ℕ} {B : Finset ℕ}
     (hcov : PairCovers A N₀) (hB : B.Nonempty) (hn : N₀ ≤ n)
     (hunserved : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
@@ -18520,12 +16409,7 @@ theorem stall_forces_wealth {A : Set ℕ} {N₀ n : ℕ} {B : Finset ℕ}
   omega
 
 open Classical in
-/-- **Large finite families have many values or one large exact fiber.**
-If `|S| > K * R`, then a map on `S` either assumes more than `R`
-distinct values, or some one value has more than `K` preimages in `S`.
 
-This elementary quantitative form is useful for stall offsets: it keeps
-the exact recurrent value instead of discarding repeated candidates. -/
 theorem large_finset_image_or_large_fiber
     {α β : Type*} [DecidableEq α] [DecidableEq β]
     (S : Finset α) (f : α → β) (K R : ℕ)
@@ -18550,21 +16434,7 @@ theorem large_finset_image_or_large_fiber
     exact (Nat.not_lt_of_ge (hcount.trans hmul)) hlarge
 
 open Classical in
-/-- **THE MOVING-PREFIX STALL LEMMA.**  Let `B` be the fixed old
-deletion prefix and let every candidate `b ∈ C` stall at a target `n b`
-against the moving prefix `insert b B`.  Suppose each stall has enough
-surviving low mass to force pair wealth at least `L`.
 
-If there are more than `(|B| + 1) * K` candidates, then one of two
-uniform charge patterns occurs:
-
-* more than `K` candidates charge themselves, so `n b - b` is wealthy;
-* more than `K` candidates charge one fixed old `w ∈ B`, so `n b - w`
-  is wealthy.
-
-This is the exact finite pigeonhole bridge from actual greedy failures,
-whose prefixes move with `b`, to the fixed-offset target families consumed
-by the symmetry-mass amplifier. -/
 theorem moving_prefix_stalls_core_or_mobile
     {A : Set ℕ} {N₀ K L : ℕ} {B C : Finset ℕ} {n : ℕ → ℕ}
     (hcov : PairCovers A N₀)
@@ -18647,22 +16517,7 @@ theorem moving_prefix_stalls_core_or_mobile
       exact hwealth
 
 open Classical in
-/-- **Moving stalls give distinct wealth or an exact recurrent offset.**
-Apply the moving-prefix charge lemma at the product threshold `K * R`,
-then retain the fibers of the resulting offset map.  If
 
-    `(|B| + 1) * (K * R) < |C|`,
-
-one of three concrete outcomes occurs:
-
-* more than `R` distinct wealthy offsets;
-* more than `K` self-charged candidates share one exact value
-  `n b - b = M`;
-* more than `K` candidates charged to one fixed old `w ∈ B` share one
-  exact value `n b - w = M`.
-
-Thus repetition is no longer an unclassified loss in the stall-to-wealth
-bridge: it becomes one of two explicit affine recurrence patterns. -/
 theorem moving_prefix_stalls_distinct_or_recurrent
     {A : Set ℕ} {N₀ K R L : ℕ} {B C : Finset ℕ} {n : ℕ → ℕ}
     (hcov : PairCovers A N₀)
@@ -18739,14 +16594,7 @@ theorem moving_prefix_stalls_distinct_or_recurrent
         exact hwealth b₀ hb₀M
 
 open Classical in
-/-- **Four moving deletions at one target collapse to a fixed stall.**
-If the same target stalls after adjoining each member of a finite family
-`F` to an old prefix `B`, and `F` has at least four elements, then the
-target already stalls against `B`.
 
-Indeed, any triple avoiding `B` has only three entries, so some `b ∈ F`
-is absent from all of them.  That triple would also avoid `insert b B`,
-contradicting the corresponding moving stall. -/
 theorem four_moving_stalls_same_target_force_fixed_stall
     {A : Set ℕ} {B F : Finset ℕ} {m : ℕ}
     (hF : 3 < F.card)
@@ -18790,44 +16638,21 @@ theorem four_moving_stalls_same_target_force_fixed_stall
     hxInsert hyInsert hzInsert hsum
 
 open Classical in
-/-- **An affine triple stall forces pair primitiveness.**
-If `a` survives the moving prefix `insert b B` and `b + a` has no
-triple representation avoiding that prefix, then every pair
-representation of `b` meets the prefix.  Otherwise `b = x + y` would
-give the forbidden surviving triple `x + y + a = b + a`. -/
-theorem affine_stall_forces_pair_hub
+
+theorem affine_stall_forces_pair_support_transversal
     {A : Set ℕ} {B : Finset ℕ} {a b : ℕ}
     (haA : a ∈ A) (haFresh : a ∉ insert b B)
     (hstall : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
       x ∉ insert b B → y ∉ insert b B → z ∉ insert b B →
         x + y + z ≠ b + a) :
-    IsPairHub A b (insert b B) := by
+    IsPairSupportTransversal A b (insert b B) := by
   intro x hxA y hyA hxy
   by_contra havoid
   push Not at havoid
   exact hstall x hxA y hyA a haA havoid.1 havoid.2 haFresh (by omega)
 
 open Classical in
-/-- **Risk-aware moving stalls: distinct wealth, an affine wall, or a
-fixed-prefix stall.**
 
-Assume each candidate really threatens its stalled target,
-`n b = b + a` for some `a ∈ A`, and every old prefix element lies below
-the new candidate.  At the threshold
-
-    `(|B| + 1) * (3 * R) < |C|`,
-
-the exact recurrent-offset lemma sharpens to three structural outcomes:
-
-1. more than `R` distinct wealthy offsets;
-2. four self-charged candidates lie on one affine wall `n b = b + a`,
-   where the fixed translate `a ∈ A` is itself wealthy;
-3. one target stalls against the fixed old prefix `B`, with the required
-   low-mass estimate transferred from a moving prefix.
-
-The third outcome uses `four_moving_stalls_same_target_force_fixed_stall`;
-the second is the first exact point where the argument genuinely remains
-mobile. -/
 theorem moving_prefix_risks_distinct_or_affine_or_fixed_stall
     {A : Set ℕ} {N₀ R L : ℕ} {B C : Finset ℕ} {n : ℕ → ℕ}
     (hcov : PairCovers A N₀)
@@ -18853,7 +16678,7 @@ theorem moving_prefix_risks_distinct_or_affine_or_fixed_stall
       L ≤ ((Finset.range (a + 1)).filter
         (fun x => x ∈ A ∧ (a - x) ∈ A)).card ∧
       (a ∈ B ∨ ∃ G : Finset ℕ, G ⊆ F ∧ 2 < G.card ∧
-        ∀ b ∈ G, IsPairHub A b (insert b B))) ∨
+        ∀ b ∈ G, IsPairSupportTransversal A b (insert b B))) ∨
     (∃ m, N₀ ≤ m ∧ (∀ w ∈ B, w ≤ m) ∧
       (∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
         x ∉ B → y ∉ B → z ∉ B → x + y + z ≠ m) ∧
@@ -18884,7 +16709,7 @@ theorem moving_prefix_risks_distinct_or_affine_or_fixed_stall
       fun b hbF => ⟨hcandidate b (hFC hbF), hwall b hbF⟩
     have hstructure :
         a ∈ B ∨ ∃ G : Finset ℕ, G ⊆ F ∧ 2 < G.card ∧
-          ∀ b ∈ G, IsPairHub A b (insert b B) := by
+          ∀ b ∈ G, IsPairSupportTransversal A b (insert b B) := by
       by_cases haB : a ∈ B
       · exact Or.inl haB
       · right
@@ -18901,7 +16726,7 @@ theorem moving_prefix_risks_distinct_or_affine_or_fixed_stall
             rcases Finset.mem_insert.1 ha with hab | haB'
             · exact hb.1 hab.symm
             · exact haB haB'
-          apply affine_stall_forces_pair_hub haA haFresh
+          apply affine_stall_forces_pair_support_transversal haA haFresh
           intro x hxA y hyA z hzA hxI hyI hzI
           rw [← hwall b hb.2]
           exact hstall b (hFC hb.2) x hxA y hyA z hzA hxI hyI hzI
@@ -18961,20 +16786,7 @@ theorem moving_prefix_risks_distinct_or_affine_or_fixed_stall
     exact ⟨q + w, hmScale, hBbelow, hfixedStall, hlowFixed⟩
 
 open Classical in
-/-- **Collateral private stalls: distinct wealth, a survivor co-sum
-wall, or a fixed-prefix stall.**
 
-The risk-aware theorem handles targets of the form `n b = b + a`.
-Collateral failures instead make `n b` private to `b` over `A \ B`.
-Privacy supplies the missing affine information: `b ≤ n b`, and
-`n b - b` is a sum of two old survivors.  Therefore the same
-charge/fiber argument yields:
-
-1. more than `R` distinct wealthy offsets;
-2. four candidates on one wall `n b = b + q`, where `q` splits into
-   two elements of `A \ B`;
-3. one genuine fixed-prefix stall.
--/
 theorem moving_prefix_private_distinct_or_cosum_or_fixed_stall
     {A : Set ℕ} {N₀ R L : ℕ} {B C : Finset ℕ} {n : ℕ → ℕ}
     (hcov : PairCovers A N₀)
@@ -18996,7 +16808,7 @@ theorem moving_prefix_private_distinct_or_cosum_or_fixed_stall
         u + v = q) ∧
       ∃ F : Finset ℕ, F ⊆ C ∧ 3 < F.card ∧
         (∀ b ∈ F, b ∈ A \ (B : Set ℕ) ∧ n b = b + q ∧
-          IsRepHub A (b + q) (insert b B)) ∧
+          IsRepSupportTransversal A (b + q) (insert b B)) ∧
         L ≤ ((Finset.range (q + 1)).filter
           (fun x => x ∈ A ∧ (q - x) ∈ A)).card) ∨
     (∃ m, N₀ ≤ m ∧ (∀ w ∈ B, w ≤ m) ∧
@@ -19009,7 +16821,7 @@ theorem moving_prefix_private_distinct_or_cosum_or_fixed_stall
       x ∉ insert b B → y ∉ insert b B → z ∉ insert b B →
         x + y + z ≠ n b := by
     intro b hbC
-    apply moving_stall_iff_relative_singleton_hub.mpr
+    apply moving_stall_iff_relative_singleton_support_transversal.mpr
     intro x hx y hy z hz hsum
     rcases (hprivate b hbC).2 x hx y hy z hz hsum with h | h | h
     · exact Or.inl (Finset.mem_singleton.2 h)
@@ -19024,7 +16836,7 @@ theorem moving_prefix_private_distinct_or_cosum_or_fixed_stall
     obtain ⟨q, F, hFC, hFlarge, hoffset, hwealth⟩ := hAffine
     obtain ⟨b₀, hb₀F⟩ := Finset.card_pos.mp (by omega : 0 < F.card)
     obtain ⟨hb₀S, hb₀Le, u, huS, v, hvS, huv⟩ :=
-      (hprivate b₀ (hFC hb₀F)).guardian_mem_le_and_complement_split
+      (hprivate b₀ (hFC hb₀F)).required_element_mem_le_and_complement_split
     have hqsplit :
         ∃ u ∈ A \ (B : Set ℕ), ∃ v ∈ A \ (B : Set ℕ),
           u + v = q := by
@@ -19033,13 +16845,13 @@ theorem moving_prefix_private_distinct_or_cosum_or_fixed_stall
     have hwall : ∀ b ∈ F, n b = b + q := by
       intro b hbF
       have hbLe :=
-        (hprivate b (hFC hbF)).guardian_mem_le_and_complement_split.2.1
+        (hprivate b (hFC hbF)).required_element_mem_le_and_complement_split.2.1
       have hoff := hoffset b hbF
       omega
     refine ⟨q, hqsplit, F, hFC, hFlarge, ?_, hwealth⟩
     intro b hbF
     have hbS :=
-      (hprivate b (hFC hbF)).guardian_mem_le_and_complement_split.1
+      (hprivate b (hFC hbF)).required_element_mem_le_and_complement_split.1
     refine ⟨hbS, hwall b hbF, ?_⟩
     intro x hxA y hyA z hzA hsum
     by_contra havoid
@@ -19054,7 +16866,7 @@ theorem moving_prefix_private_distinct_or_cosum_or_fixed_stall
     have htarget : ∀ b ∈ F, n b = q + w := by
       intro b hbF
       have hbLe :=
-        (hprivate b (hFC hbF)).guardian_mem_le_and_complement_split.2.1
+        (hprivate b (hFC hbF)).required_element_mem_le_and_complement_split.2.1
       have hwLe : w ≤ n b :=
         le_trans (hordered b (hFC hbF) w hwB) hbLe
       have hoff := hoffset b hbF
@@ -19074,7 +16886,7 @@ theorem moving_prefix_private_distinct_or_cosum_or_fixed_stall
     have hBbelow : ∀ u ∈ B, u ≤ q + w := by
       intro u huB
       have hb₀Le :=
-        (hprivate b₀ hb₀C).guardian_mem_le_and_complement_split.2.1
+        (hprivate b₀ hb₀C).required_element_mem_le_and_complement_split.2.1
       rw [← htarget b₀ hb₀F]
       exact le_trans (hordered b₀ hb₀C u huB) hb₀Le
     have hcardPrefix : B.card ≤ (insert b₀ B).card :=
@@ -19103,21 +16915,7 @@ theorem moving_prefix_private_distinct_or_cosum_or_fixed_stall
     exact ⟨q + w, hmScale, hBbelow, hfixedStall, hlowFixed⟩
 
 open Classical in
-/-- **The honest finite greedy-step structure theorem.**
-Assume the old prefix `B` serves all its risks.  Take a large ordered
-batch `C` of basis candidates, each with enough survivor mass already
-visible below `b - N₀`.  Then one of five outcomes occurs:
 
-1. some `b ∈ C` safely extends the prefix;
-2. more than `R` distinct wealthy offsets are produced;
-3. a wealthy affine wall appears (old translate or moving pair hubs);
-4. a genuine fixed-prefix stall appears;
-5. a large collateral family is private to its candidates over `A \ B`.
-
-The size threshold has one factor `2` for the self/collateral split and
-the exact factor `(|B|+1)*3*R` from charge and offset fibers.  The low
-mass hypothesis is checked at `b`; self-risk gives `b ≤ n b`, so it
-transfers monotonically to the selected stalled target. -/
 theorem greedy_batch_safe_or_wealth_or_affine_or_fixed_or_collateral
     {A : Set ℕ} {N₀ R L : ℕ} {B C : Finset ℕ}
     (hcov : PairCovers A N₀)
@@ -19136,11 +16934,11 @@ theorem greedy_batch_safe_or_wealth_or_affine_or_fixed_or_collateral
           (fun x => x ∈ A ∧ (M - x) ∈ A)).card) ∨
     (∃ a ∈ A, ∃ F : Finset ℕ, F ⊆ C ∧ 3 < F.card ∧
       (∀ b ∈ F, b ∈ A ∧
-        IsRepHub A (b + a) (insert b B)) ∧
+        IsRepSupportTransversal A (b + a) (insert b B)) ∧
       L ≤ ((Finset.range (a + 1)).filter
         (fun x => x ∈ A ∧ (a - x) ∈ A)).card ∧
       (a ∈ B ∨ ∃ G : Finset ℕ, G ⊆ F ∧ 2 < G.card ∧
-        ∀ b ∈ G, IsPairHub A b (insert b B))) ∨
+        ∀ b ∈ G, IsPairSupportTransversal A b (insert b B))) ∨
     (∃ m, N₀ ≤ m ∧ (∀ w ∈ B, w ≤ m) ∧
       (∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
         x ∉ B → y ∉ B → z ∉ B → x + y + z ≠ m) ∧
@@ -19219,20 +17017,7 @@ theorem greedy_batch_safe_or_wealth_or_affine_or_fixed_or_collateral
   · exact Or.inr (Or.inr (Or.inr (Or.inr hcollateral)))
 
 open Classical in
-/-- **Complete finite greedy fork: no unclassified collateral branch.**
-The collateral family in
-`greedy_batch_safe_or_wealth_or_affine_or_fixed_or_collateral`
-also passes through the charge/fiber theorem because privacy forces
-`b ≤ n`.  Its recurrent self-offset is a sum of two old survivors.
-Hence a sufficiently large ordered candidate batch has only:
 
-1. a safe extension;
-2. many distinct wealthy offsets;
-3. a wealthy affine wall at an actual basis translate;
-4. a wealthy affine wall at a translate splitting into two old survivors;
-5. a fixed-prefix stall.
-
-Every branch is now a direct structural or constructive object. -/
 theorem greedy_batch_complete_structural_fork
     {A : Set ℕ} {N₀ R L : ℕ} {B C : Finset ℕ}
     (hcov : PairCovers A N₀)
@@ -19250,16 +17035,16 @@ theorem greedy_batch_complete_structural_fork
         L ≤ ((Finset.range (M + 1)).filter
           (fun x => x ∈ A ∧ (M - x) ∈ A)).card) ∨
     (∃ a ∈ A, ∃ F : Finset ℕ, F ⊆ C ∧ 3 < F.card ∧
-      (∀ b ∈ F, b ∈ A ∧ IsRepHub A (b + a) (insert b B)) ∧
+      (∀ b ∈ F, b ∈ A ∧ IsRepSupportTransversal A (b + a) (insert b B)) ∧
       L ≤ ((Finset.range (a + 1)).filter
         (fun x => x ∈ A ∧ (a - x) ∈ A)).card ∧
       (a ∈ B ∨ ∃ G : Finset ℕ, G ⊆ F ∧ 2 < G.card ∧
-        ∀ b ∈ G, IsPairHub A b (insert b B))) ∨
+        ∀ b ∈ G, IsPairSupportTransversal A b (insert b B))) ∨
     (∃ q, (∃ u ∈ A \ (B : Set ℕ), ∃ v ∈ A \ (B : Set ℕ),
         u + v = q) ∧
       ∃ F : Finset ℕ, F ⊆ C ∧ 3 < F.card ∧
         (∀ b ∈ F, b ∈ A \ (B : Set ℕ) ∧
-          IsRepHub A (b + q) (insert b B)) ∧
+          IsRepSupportTransversal A (b + q) (insert b B)) ∧
         L ≤ ((Finset.range (q + 1)).filter
           (fun x => x ∈ A ∧ (q - x) ∈ A)).card) ∨
     (∃ m, N₀ ≤ m ∧ (∀ w ∈ B, w ≤ m) ∧
@@ -19297,7 +17082,7 @@ theorem greedy_batch_complete_structural_fork
             (fun z => z ∈ A ∧ z ∉ insert b B)).card := by
       intro b hbP
       have hbLe :=
-        (hprivateP b hbP).guardian_mem_le_and_complement_split.2.1
+        (hprivateP b hbP).required_element_mem_le_and_complement_split.2.1
       apply (hlow b (hPC hbP)).trans
       apply Finset.card_le_card
       intro z hz
@@ -19324,18 +17109,7 @@ theorem greedy_batch_complete_structural_fork
     · exact Or.inr (Or.inr (Or.inr (Or.inr hFixed)))
 
 open Classical in
-/-- **Large ordered candidate batches with uniform low supply always
-exist.**
-For any finite prefix `B` and requested parameters `R,L`, covering
-provides:
 
-* a reserved block of `(B.card+1)*L` basis elements above `B`;
-* more than `2*(B.card+1)*3*R` later basis candidates;
-* a gap of more than `N₀` between the reserved block and every candidate.
-
-The reserved block avoids every moving prefix `insert b B` and lies below
-`b-N₀`, proving exactly the low-mass hypothesis consumed by
-`greedy_batch_complete_structural_fork`. -/
 theorem exists_large_ordered_candidate_batch_with_low_supply
     {A : Set ℕ} {N₀ R L : ℕ} (hcov : PairCovers A N₀)
     (B : Finset ℕ) :
@@ -19460,20 +17234,7 @@ theorem exists_large_ordered_candidate_batch_with_low_supply
     exact hpay.trans hreserved
 
 open Classical in
-/-- **Unconditional finite-prefix extension fork.**
-At every finite prefix that currently serves its risks, and for every
-requested wealth multiplicity `L` and distinctness threshold `R`, covering
-itself supplies enough fresh candidates to invoke the complete structural
-fork.  Therefore either the prefix has a fresh safe extension, or one of
-the four explicit obstruction objects already exists:
 
-* `R+1` distinct `L`-wealthy offsets;
-* a basis-translate affine wall;
-* a survivor-co-sum affine wall;
-* a fixed-prefix stall.
-
-There is no remaining candidate-supply or moving-prefix hypothesis in this
-interface. -/
 theorem finite_prefix_extension_or_complete_structure
     {A : Set ℕ} {N₀ R L : ℕ} {B : Finset ℕ}
     (hcov : PairCovers A N₀)
@@ -19485,16 +17246,16 @@ theorem finite_prefix_extension_or_complete_structure
         L ≤ ((Finset.range (M + 1)).filter
           (fun x => x ∈ A ∧ (M - x) ∈ A)).card) ∨
     (∃ a ∈ A, ∃ F : Finset ℕ, 3 < F.card ∧
-      (∀ b ∈ F, b ∈ A ∧ IsRepHub A (b + a) (insert b B)) ∧
+      (∀ b ∈ F, b ∈ A ∧ IsRepSupportTransversal A (b + a) (insert b B)) ∧
       L ≤ ((Finset.range (a + 1)).filter
         (fun x => x ∈ A ∧ (a - x) ∈ A)).card ∧
       (a ∈ B ∨ ∃ G : Finset ℕ, G ⊆ F ∧ 2 < G.card ∧
-        ∀ b ∈ G, IsPairHub A b (insert b B))) ∨
+        ∀ b ∈ G, IsPairSupportTransversal A b (insert b B))) ∨
     (∃ q, (∃ u ∈ A \ (B : Set ℕ), ∃ v ∈ A \ (B : Set ℕ),
         u + v = q) ∧
       ∃ F : Finset ℕ, 3 < F.card ∧
         (∀ b ∈ F, b ∈ A \ (B : Set ℕ) ∧
-          IsRepHub A (b + q) (insert b B)) ∧
+          IsRepSupportTransversal A (b + q) (insert b B)) ∧
         L ≤ ((Finset.range (q + 1)).filter
           (fun x => x ∈ A ∧ (q - x) ∈ A)).card) ∨
     (∃ m, N₀ ≤ m ∧ (∀ w ∈ B, w ≤ m) ∧
@@ -19532,17 +17293,7 @@ theorem finite_prefix_extension_or_complete_structure
   · exact Or.inr (Or.inr (Or.inr (Or.inr hFixed)))
 
 open Classical in
-/-- **Safe finite prefixes glue to an infinite deletion.**
-Suppose every finite deletion prefix which serves all risks it currently
-threatens has a positive safe extension above the whole prefix.  Iterating
-these extensions gives a strictly increasing sequence `b`.
 
-The only point requiring care is passage from finite prefixes to the full
-range of `b`: a triple serving a fixed target `n` has every entry at most
-`n`, whereas sufficiently late values of the increasing sequence exceed
-`n`.  Thus after a finite stage no future deletion can damage that triple.
-The master local deletion criterion then gives the exact order-three
-asymptotic basis. -/
 theorem infinite_deletion_of_safe_prefix_extensions
     {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -19669,16 +17420,16 @@ def FinitePrefixStructuralObstruction
         L ≤ ((Finset.range (M + 1)).filter
           (fun x => x ∈ A ∧ (M - x) ∈ A)).card) ∨
   (∃ a ∈ A, ∃ F : Finset ℕ, 3 < F.card ∧
-      (∀ b ∈ F, b ∈ A ∧ IsRepHub A (b + a) (insert b B)) ∧
+      (∀ b ∈ F, b ∈ A ∧ IsRepSupportTransversal A (b + a) (insert b B)) ∧
       L ≤ ((Finset.range (a + 1)).filter
         (fun x => x ∈ A ∧ (a - x) ∈ A)).card ∧
       (a ∈ B ∨ ∃ G : Finset ℕ, G ⊆ F ∧ 2 < G.card ∧
-        ∀ b ∈ G, IsPairHub A b (insert b B))) ∨
+        ∀ b ∈ G, IsPairSupportTransversal A b (insert b B))) ∨
   (∃ q, (∃ u ∈ A \ (B : Set ℕ), ∃ v ∈ A \ (B : Set ℕ),
         u + v = q) ∧
       ∃ F : Finset ℕ, 3 < F.card ∧
         (∀ b ∈ F, b ∈ A \ (B : Set ℕ) ∧
-          IsRepHub A (b + q) (insert b B)) ∧
+          IsRepSupportTransversal A (b + q) (insert b B)) ∧
         L ≤ ((Finset.range (q + 1)).filter
           (fun x => x ∈ A ∧ (q - x) ∈ A)).card) ∨
   (∃ m, N₀ ≤ m ∧ (∀ w ∈ B, w ≤ m) ∧
@@ -19702,10 +17453,7 @@ theorem finite_prefix_extension_or_structural_obstruction
       (R := R) (L := L) hcov hserved)
 
 open Classical in
-/-- **A counterexample has a terminal safe prefix.**
-If every safe finite prefix had a larger positive safe extension, the
-preceding gluing theorem would produce the forbidden infinite deletion.
-Thus some safe prefix has no such extension. -/
+
 theorem counterexample_has_terminal_safe_prefix
     {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -19731,12 +17479,7 @@ theorem counterexample_has_terminal_safe_prefix
   exact (hfail B hBA hBinf) hbasis
 
 open Classical in
-/-- **Complete terminal-prefix obstruction profile.**
-In any counterexample there is one fixed finite prefix `B` which already
-serves all of its risks, cannot be safely extended upward, and at which the
-structural obstruction occurs for every pair of requested scales `R,L`.
-The moving-prefix problem has therefore been reduced to eliminating these
-four concrete, arbitrarily strong geometries at one terminal node. -/
+
 theorem counterexample_terminal_prefix_has_complete_structure
     {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -19796,11 +17539,11 @@ open Classical in
 def BasisAffineWall
     (A : Set ℕ) (B : Finset ℕ) (L : ℕ) : Prop :=
   ∃ a ∈ A, ∃ F : Finset ℕ, 3 < F.card ∧
-    (∀ b ∈ F, b ∈ A ∧ IsRepHub A (b + a) (insert b B)) ∧
+    (∀ b ∈ F, b ∈ A ∧ IsRepSupportTransversal A (b + a) (insert b B)) ∧
     L ≤ ((Finset.range (a + 1)).filter
       (fun x => x ∈ A ∧ (a - x) ∈ A)).card ∧
     (a ∈ B ∨ ∃ G : Finset ℕ, G ⊆ F ∧ 2 < G.card ∧
-      ∀ b ∈ G, IsPairHub A b (insert b B))
+      ∀ b ∈ G, IsPairSupportTransversal A b (insert b B))
 
 open Classical in
 /-- The wealthy survivor-co-sum affine wall at a finite prefix. -/
@@ -19810,11 +17553,11 @@ def SurvivorCosumAffineWall
       u + v = q) ∧
     ∃ F : Finset ℕ, 3 < F.card ∧
       (∀ b ∈ F, b ∈ A \ (B : Set ℕ) ∧
-        IsRepHub A (b + q) (insert b B)) ∧
+        IsRepSupportTransversal A (b + q) (insert b B)) ∧
       L ≤ ((Finset.range (q + 1)).filter
         (fun x => x ∈ A ∧ (q - x) ∈ A)).card
 
-/-- The three genuinely mobile outputs left after the fixed-stall horn is
+/-- The three genuinely mobile outputs left after the fixed-stall case is
 eliminated at a safe prefix which preserves zero. -/
 def FinitePrefixMobileObstruction
     (A : Set ℕ) (B : Finset ℕ) (R L : ℕ) : Prop :=
@@ -19824,7 +17567,7 @@ def FinitePrefixMobileObstruction
 
 open Classical in
 /-- At a safe prefix preserving zero, the complete four-way structural
-obstruction automatically reduces to the three mobile horns. -/
+obstruction automatically reduces to the three mobile cases. -/
 theorem finitePrefixStructuralObstruction_is_mobile
     {A : Set ℕ} {N₀ R L : ℕ} {B : Finset ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -19841,11 +17584,7 @@ theorem finitePrefixStructuralObstruction_is_mobile
         h0 hcov hserved h0B hm)
 
 open Classical in
-/-- **Three-horn terminal theorem.**
-Every counterexample has one fixed safe, zero-preserving, upward-terminal
-prefix at which, for every `R,L`, either there are more than `R` distinct
-`L`-wealthy offsets, a wealthy basis-translate affine wall, or a wealthy
-survivor-co-sum affine wall.  Fixed stalls are not a remaining escape. -/
+
 theorem counterexample_terminal_prefix_has_mobile_structure
     {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -19895,17 +17634,7 @@ theorem survivorCosumAffineWall_mono
   exact ⟨q, hqsplit, F, hF, hwall, hL.trans hwealth⟩
 
 open Classical in
-/-- **The mobile scale-switching collapses.**
-If the three-way mobile obstruction is available for every `R,L`, then
-one regime holds cofinally in its full natural strength:
 
-* distinct wealthy offsets at every pair of scales; or
-* basis-affine walls at every wealth scale; or
-* survivor-co-sum affine walls at every wealth scale.
-
-Indeed, failure of an affine regime at one threshold excludes it at every
-larger threshold by monotonicity; requesting a wealth scale above both
-failure thresholds then forces the distinct horn. -/
 theorem mobile_obstruction_cofinal_trichotomy
     {A : Set ℕ} {B : Finset ℕ}
     (hmobile : ∀ R L, FinitePrefixMobileObstruction A B R L) :
@@ -19937,10 +17666,7 @@ theorem mobile_obstruction_cofinal_trichotomy
             (le_max_right L (max L₁ L₂))) hCosum'
 
 open Classical in
-/-- **Cofinal terminal trichotomy for a counterexample.**
-The terminal moving-prefix geometry cannot alternate indefinitely merely by
-changing numerical thresholds: one of the three explicit regimes persists
-at every requested scale at the same finite terminal prefix. -/
+
 theorem counterexample_terminal_prefix_cofinal_trichotomy
     {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -19981,12 +17707,8 @@ theorem safe_zero_surviving_prefix_serves_every_late_target
     · exact ⟨x, hxA, y, hyA, 0, h0, hxB, hyB, h0B, by omega⟩
 
 open Classical in
-/-- **Every unsafe extension has a relative private wound.**
-At a safe zero-preserving prefix, the target witnessing failure after
-adjoining `b` already has a triple over the old survivor set.  The moving
-stall says every such triple uses `b`, exactly making `b` a private
-guardian over `A \ B`. -/
-theorem unsafe_extension_has_relative_private_wound
+
+theorem unsafe_extension_has_relative_private_destruction
     {A : Set ℕ} {N₀ b : ℕ} {B : Finset ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hserved : FinitePrefixServesRisks A N₀ B)
@@ -20006,14 +17728,14 @@ theorem unsafe_extension_has_relative_private_wound
   · exact ⟨x, ⟨hxA, hxB⟩, y, ⟨hyA, hyB⟩,
       z, ⟨hzA, hzB⟩, hxyz⟩
   · intro p hp q hq r hr hpqr
-    have hhub := moving_stall_iff_relative_singleton_hub.mp hstall
+    have hhub := moving_stall_iff_relative_singleton_support_transversal.mp hstall
     rcases hhub p hp q hq r hr hpqr with h | h | h
     · exact Or.inl (Finset.mem_singleton.1 h)
     · exact Or.inr (Or.inl (Finset.mem_singleton.1 h))
     · exact Or.inr (Or.inr (Finset.mem_singleton.1 h))
 
 open Classical in
-/-- A repair of the private wound at `(b,n)` which avoids `b` but
+/-- A repair of the private destruction at `(b,n)` which avoids `b` but
 necessarily uses at least one element of the retained finite prefix. -/
 def HasPrefixRepairTriple
     (A : Set ℕ) (B : Finset ℕ) (b n : ℕ) : Prop :=
@@ -20022,11 +17744,7 @@ def HasPrefixRepairTriple
       (x ∈ B ∨ y ∈ B ∨ z ∈ B)
 
 open Classical in
-/-- **Relative private wound = absolute guardian or prefix repair.**
-If every triple over `A \ B` summing to `n` uses `b`, then either every
-triple over all of `A` uses `b`, or there is a triple avoiding `b`; such a
-triple must hit the finite prefix `B`.  This is an exact dichotomy, with no
-counting or asymptotic loss. -/
+
 theorem relative_private_absolute_or_prefix_repair
     {A : Set ℕ} {B : Finset ℕ} {b n : ℕ}
     (hprivate : IsPrivateTriple (A \ (B : Set ℕ)) b n) :
@@ -20054,16 +17772,8 @@ theorem relative_private_absolute_or_prefix_repair
       hxb, hyb, hzb, hhit⟩
 
 open Classical in
-/-- **Terminal private-wound composition fork.**
-Every counterexample has one fixed safe terminal prefix `B` such that each
-larger positive basis candidate `b` owns a target `n ≥ b` which is private
-to `b` over `A \ B`.  At each candidate, either this is already an
-absolute private guardian in `A`, or an avoiding repair triple exists and
-must route through `B`.
 
-This is the exact interface between the moving-prefix stall problem and
-the remaining fixed/cofinal-difference composition problem. -/
-theorem counterexample_terminal_prefix_private_wound_fork
+theorem counterexample_terminal_prefix_private_destruction_fork
     {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -20081,10 +17791,10 @@ theorem counterexample_terminal_prefix_private_wound_fork
   refine ⟨B, hserved, h0B, ?_⟩
   intro b hbA hbpos hbAbove
   obtain ⟨n, hn, hrisk, hprivate⟩ :=
-    unsafe_extension_has_relative_private_wound
+    unsafe_extension_has_relative_private_destruction
       h0 hcov hserved h0B (hterminal b hbA hbpos hbAbove)
   have hbn :=
-    (IsPrivateTriple.guardian_mem_le_and_complement_split hprivate).2.1
+    (IsPrivateTriple.required_element_mem_le_and_complement_split hprivate).2.1
   exact ⟨n, hn, hbn, hrisk, hprivate,
     relative_private_absolute_or_prefix_repair hprivate⟩
 
@@ -20100,7 +17810,7 @@ def HasRepairThrough
 open Classical in
 /-- A repair through `w` is exactly a shifted surviving pair:
 `w + u + v = n`, with both pair entries different from the current
-guardian `b`. -/
+required element `b`. -/
 theorem repairThrough_gives_shifted_pair
     {A : Set ℕ} {w b n : ℕ}
     (hrepair : HasRepairThrough A w b n) :
@@ -20164,8 +17874,8 @@ theorem finite_cofinal_pigeonhole
   exact hf w hwB b (hfw.trans_lt hb) hP
 
 open Classical in
-/-- An absolute terminal wound carried by the candidate `b`. -/
-def HasAbsoluteTerminalWound
+/-- An absolute terminal destruction carried by the candidate `b`. -/
+def HasAbsoluteTerminalDestruction
     (A : Set ℕ) (N₀ : ℕ) (B : Finset ℕ) (b : ℕ) : Prop :=
   ∃ n, N₀ ≤ n ∧ b ≤ n ∧
     (∃ d ∈ insert b B, ∃ a ∈ A, d + a = n) ∧
@@ -20173,9 +17883,9 @@ def HasAbsoluteTerminalWound
     IsPrivateTriple A b n
 
 open Classical in
-/-- A relative terminal wound at `b` with a repair routed through the
+/-- A relative terminal destruction at `b` with a repair routed through the
 specified old prefix element `w`. -/
-def HasTerminalRepairWoundThrough
+def HasTerminalRepairDestructionThrough
     (A : Set ℕ) (N₀ : ℕ) (B : Finset ℕ) (w b : ℕ) : Prop :=
   ∃ n, N₀ ≤ n ∧ b ≤ n ∧
     (∃ d ∈ insert b B, ∃ a ∈ A, d + a = n) ∧
@@ -20183,19 +17893,11 @@ def HasTerminalRepairWoundThrough
     HasRepairThrough A w b n
 
 open Classical in
-/-- **Collision-free thinning of a fixed repair channel.**
-Suppose arbitrarily large guardians have terminal wounds repaired through
-one fixed element `w`.  Choose for each guardian one shifted repair pair
-`u_b,v_b`.  The map `b ↦ {u_b,v_b}` has size at most two and never contains
-`b`, so the bounded point-map free-set theorem yields an infinite thinning
-`C` disjoint from every selected repair pair.
 
-Consequently every selected wound has a full surviving repair
-`w+u_b+v_b`, with `w,u_b,v_b ∈ A \ C`. -/
-theorem cofinal_fixedRepairChannel_has_collisionFree_thinning
+theorem cofinal_fixedRepairChannel_has_conflictFree_thinning
     {A : Set ℕ} {N₀ w : ℕ} {B : Finset ℕ}
     (hcofinal : ∀ X, ∃ b ∈ A, X < b ∧
-      HasTerminalRepairWoundThrough A N₀ B w b) :
+      HasTerminalRepairDestructionThrough A N₀ B w b) :
     ∃ C : Set ℕ, C ⊆ A ∧ C.Infinite ∧
       (∀ b ∈ C, w < b) ∧ w ∉ C ∧ w ∈ A ∧
       ∀ b ∈ C, ∃ n, N₀ ≤ n ∧ b ≤ n ∧
@@ -20204,7 +17906,7 @@ theorem cofinal_fixedRepairChannel_has_collisionFree_thinning
         ∃ u ∈ A \ C, ∃ v ∈ A \ C, w + u + v = n := by
   let K : Set ℕ :=
     {b | b ∈ A ∧ w < b ∧
-      HasTerminalRepairWoundThrough A N₀ B w b}
+      HasTerminalRepairDestructionThrough A N₀ B w b}
   have hK : K.Infinite := by
     apply Set.infinite_of_forall_exists_gt
     intro X
@@ -20219,10 +17921,10 @@ theorem cofinal_fixedRepairChannel_has_collisionFree_thinning
     intro b
     by_cases hbK : b ∈ K
     · obtain ⟨n, hn, hbn, hrisk, hprivate, hrepair⟩ := hbK.2.2
-      obtain ⟨u, huA, v, hvA, hub, hvb, huv⟩ :=
+      obtain ⟨u, huA, v, hvA, support_transversal, hvb, huv⟩ :=
         repairThrough_gives_shifted_pair hrepair
       exact ⟨n, u, v, fun _ =>
-        ⟨hn, hbn, hrisk, hprivate, huA, hvA, hub, hvb, huv⟩⟩
+        ⟨hn, hbn, hrisk, hprivate, huA, hvA, support_transversal, hvb, huv⟩⟩
     · exact ⟨0, 0, 0, fun h => absurd h hbK⟩
   choose n u v hdata using hchoice
   let f : ℕ → Finset ℕ := fun b => {u b, v b}
@@ -20266,12 +17968,12 @@ theorem cofinal_fixedRepairChannel_has_collisionFree_thinning
     hd.2.2.2.2.2.2.2.2⟩
 
 open Classical in
-/-- Selector form of collision-free thinning.  One function `τ` records the
-single repaired wound chosen for each member of the infinite thinning. -/
-theorem cofinal_fixedRepairChannel_has_collisionFree_selector
+/-- Selector form of conflict-free thinning.  One function `τ` records the
+single repaired destruction chosen for each member of the infinite thinning. -/
+theorem cofinal_fixedRepairChannel_has_conflictFree_selector
     {A : Set ℕ} {N₀ w : ℕ} {B : Finset ℕ}
     (hcofinal : ∀ X, ∃ b ∈ A, X < b ∧
-      HasTerminalRepairWoundThrough A N₀ B w b) :
+      HasTerminalRepairDestructionThrough A N₀ B w b) :
     ∃ C : Set ℕ, ∃ τ : ℕ → ℕ,
       C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧ w ∉ C ∧ w ∈ A ∧
       ∀ b ∈ C, N₀ ≤ τ b ∧ b ≤ τ b ∧
@@ -20279,7 +17981,7 @@ theorem cofinal_fixedRepairChannel_has_collisionFree_selector
         IsPrivateTriple (A \ (B : Set ℕ)) b (τ b) ∧
         ∃ u ∈ A \ C, ∃ v ∈ A \ C, w + u + v = τ b := by
   obtain ⟨C, hCA, hCinf, hwBelow, hwC, hwA, hdata⟩ :=
-    cofinal_fixedRepairChannel_has_collisionFree_thinning hcofinal
+    cofinal_fixedRepairChannel_has_conflictFree_thinning hcofinal
   have hpick : ∀ b, ∃ n, b ∈ C →
       N₀ ≤ n ∧ b ≤ n ∧
       (∃ d ∈ insert b B, ∃ a ∈ A, d + a = n) ∧
@@ -20301,14 +18003,7 @@ theorem cofinal_fixedRepairChannel_has_collisionFree_selector
   exact hτ b hbC
 
 open Classical in
-/-- **Exact off-selector composition criterion.**
-Assume one selected target `τ b` for each deleted point already has a
-surviving triple.  Then the local deletion criterion reduces precisely to
-the remaining threatened targets which are not any selected `τ b`.
 
-This is the strongest valid form at the original threshold `N₀` of “one
-repaired wound per guardian composes”: it composes once every
-off-selector risk is also served. -/
 theorem deletion_of_selectedRepairs_and_offSelectorRisks
     {A C : Set ℕ} {N₀ : ℕ} (τ : ℕ → ℕ)
     (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
@@ -20334,12 +18029,7 @@ theorem deletion_of_selectedRepairs_and_offSelectorRisks
     exact hhit ⟨b, hbC, hbn⟩
 
 open Classical in
-/-- **Exact eventual off-selector equivalence.**
-Once all selected targets `τ b` survive, deletion by `C` is an exact
-order-three asymptotic basis if and only if every sufficiently late
-off-selector risk has a surviving triple.  The eventual threshold is
-essential: requiring this already from the original pair-cover threshold
-would be sufficient but not necessary. -/
+
 theorem selectedRepairs_basis_iff_eventual_offSelectorRisks
     {A C : Set ℕ} {N₀ : ℕ} (τ : ℕ → ℕ)
     (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
@@ -20377,18 +18067,7 @@ theorem selectedRepairs_basis_iff_eventual_offSelectorRisks
       exact hhit ⟨b, hbC, hbn⟩
 
 open Classical in
-/-- **A counterexample forces cofinally late off-selector stalls.**
-Suppose every selected target `τ b` already has a triple surviving the
-deletion `C`.  If `A \ C` nevertheless fails to be an exact order-three
-asymptotic basis, then arbitrarily late targets remain which
 
-* are genuinely threatened by `C`;
-* are not any selected target `τ b`; and
-* have no triple from `A` avoiding `C`.
-
-Thus collision-free thinning does not lose the problem: it isolates the
-precise cofinal residual stream that any further composition argument
-must serve. -/
 theorem failure_with_selectedRepairs_forces_cofinal_offSelectorStalls
     {A C : Set ℕ} {N₀ : ℕ} (τ : ℕ → ℕ)
     (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
@@ -20446,14 +18125,8 @@ theorem failure_with_selectedRepairs_forces_cofinal_offSelectorStalls
   · simpa [Fin.sum_univ_three] using hpqr
 
 open Classical in
-/-- **Off-selector stalls carry finite minimal committees.**
-Every residual stall from the preceding theorem has a nonempty minimal
-representation hub drawn from the deleted set `C` below the target.
-Every committee member therefore owns a representation meeting that
-committee only at itself.  This converts the analytic-looking residual
-failure into finite guardian data without losing the fact that the target
-is off the selected repair stream. -/
-theorem failure_with_selectedRepairs_forces_offSelector_minimalCommittees
+
+theorem failure_with_selectedRepairs_forces_offSelector_minimalDeletionTransversals
     {A C : Set ℕ} {N₀ : ℕ} (τ : ℕ → ℕ)
     (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
     (hselected : ∀ b ∈ C,
@@ -20465,8 +18138,8 @@ theorem failure_with_selectedRepairs_forces_offSelector_minimalCommittees
       ∃ H : Finset ℕ,
         H.Nonempty ∧
         H ⊆ (Finset.range (n + 1)).filter (· ∈ C) ∧
-        IsRepHub A n H ∧
-        (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+        IsRepSupportTransversal A n H ∧
+        (∀ h ∈ H, ¬IsRepSupportTransversal A n (H \ {h})) ∧
         ∀ h ∈ H,
           ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
             x + y + z = n ∧
@@ -20489,39 +18162,39 @@ theorem failure_with_selectedRepairs_forces_offSelector_minimalCommittees
         · exact (hno
             ⟨x, hxA, y, hyA, z, hzA, hxC, hyC, hzC, hxyz⟩).elim
   have hhub :=
-    failing_hub_subset_deletion (A := A) (B := C) hdead
-  obtain ⟨H, hHsub, hHhub, hHmin⟩ := exists_minimal_hub hhub
+    failing_support_transversal_subset_deletion (A := A) (B := C) hdead
+  obtain ⟨H, hHsub, hHhub, hHmin⟩ := exists_minimal_support_transversal hhub
   have hHne : H.Nonempty :=
-    hub_nonempty_of_covering h0 hcov hn₀ hHhub
+    support_transversal_nonempty_of_covering h0 hcov hn₀ hHhub
   exact ⟨n, hnT, hn₀, hoff, H, hHne, hHsub, hHhub, hHmin,
-    minimal_hub_necessity hHhub hHmin⟩
+    minimal_support_transversal_necessity hHhub hHmin⟩
 
 open Classical in
-/-- A nonempty minimal representation committee for an off-selector
+/-- A nonempty minimal representation deletion transversal for an off-selector
 target, contained in the deleted set below that target. -/
-def IsOffSelectorMinimalCommittee
+def IsOffSelectorMinimalDeletionTransversal
     (A C : Set ℕ) (N₀ : ℕ) (τ : ℕ → ℕ)
     (n : ℕ) (H : Finset ℕ) : Prop :=
   N₀ ≤ n ∧
   (∀ b ∈ C, τ b ≠ n) ∧
   H.Nonempty ∧
-  IsRepHub A n H ∧
-  (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+  IsRepSupportTransversal A n H ∧
+  (∀ h ∈ H, ¬IsRepSupportTransversal A n (H \ {h})) ∧
   H ⊆ (Finset.range (n + 1)).filter (· ∈ C)
 
 open Classical in
-/-- A member of a minimal representation hub owns a pair co-witness:
+/-- A member of a minimal representation support transversal owns a pair co-witness:
 the target is `h+u+v`, and the two co-witness entries avoid every other
-member of the hub.  They need not avoid deleted points outside the hub. -/
-theorem minimalRepHub_member_has_pairCowitness
+member of the support transversal.  They need not avoid deleted points outside the support transversal. -/
+theorem minimalRepSupportTransversal_member_has_pairCowitness
     {A : Set ℕ} {n h : ℕ} {H : Finset ℕ}
-    (hhub : IsRepHub A n H)
-    (hmin : ∀ g ∈ H, ¬IsRepHub A n (H \ {g}))
+    (hhub : IsRepSupportTransversal A n H)
+    (hmin : ∀ g ∈ H, ¬IsRepSupportTransversal A n (H \ {g}))
     (hhH : h ∈ H) :
     ∃ u ∈ A, ∃ v ∈ A, h + u + v = n ∧
       ∀ g ∈ H, g ≠ h → u ≠ g ∧ v ≠ g := by
   obtain ⟨x, hxA, y, hyA, z, hzA, hxyz, howner, havoid⟩ :=
-    minimal_hub_necessity hhub hmin h hhH
+    minimal_support_transversal_necessity hhub hmin h hhH
   rcases howner with hxh | hyh | hzh
   · subst x
     exact ⟨y, hyA, z, hzA, hxyz, fun g hgH hgh =>
@@ -20534,19 +18207,12 @@ theorem minimalRepHub_member_has_pairCowitness
       ⟨(havoid g hgH hgh).1, (havoid g hgH hgh).2.1⟩⟩
 
 open Classical in
-/-- **Finite counterexample to globalizing committee privacy.**
-Let `A={0,1,2,3}`, target `4`, minimal hub `H={1,2}`, and deletion
-`C={1,2,3}`.  The hub is inclusion-minimal.  Nevertheless every
-representation of `4` which is owned by guardian `1` and avoids the other
-hub member `2` must use `3 ∈ C \ H`.
 
-Thus minimal-hub necessity cannot be strengthened from avoiding `H\{h}`
-to avoiding `C\{h}` without additional hypotheses. -/
-theorem finite_minimalHub_has_external_deleted_interference :
+theorem finite_minimalSupportTransversal_has_external_deleted_interference :
     let A : Set ℕ := {0, 1, 2, 3}
     let H : Finset ℕ := {1, 2}
-    IsRepHub A 4 H ∧
-    (∀ h ∈ H, ¬IsRepHub A 4 (H \ {h})) ∧
+    IsRepSupportTransversal A 4 H ∧
+    (∀ h ∈ H, ¬IsRepSupportTransversal A 4 (H \ {h})) ∧
     ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A, x + y + z = 4 →
       (x = 1 ∨ y = 1 ∨ z = 1) →
       x ≠ 2 → y ≠ 2 → z ≠ 2 →
@@ -20572,12 +18238,7 @@ theorem finite_minimalHub_has_external_deleted_interference :
     omega
 
 open Classical in
-/-- **Finite-window stabilization of the off-selector committees.**
-For every window `[0,W]`, one fixed subset `S` of the deleted points in
-that window recurs as the low part of minimal hubs at arbitrarily late
-off-selector targets.  Every other committee member is therefore above
-`W`.  This is the precise fixed-core/mobile-guardian split available from
-the residual stream. -/
+
 theorem selectedRepairs_offSelector_window_core
     {A C : Set ℕ} {N₀ : ℕ} (τ : ℕ → ℕ)
     (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
@@ -20590,8 +18251,8 @@ theorem selectedRepairs_offSelector_window_core
       ∀ T, ∃ n, T ≤ n ∧
         (∀ b ∈ C, τ b ≠ n) ∧
         ∃ H : Finset ℕ,
-          H.Nonempty ∧ IsRepHub A n H ∧
-          (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+          H.Nonempty ∧ IsRepSupportTransversal A n H ∧
+          (∀ h ∈ H, ¬IsRepSupportTransversal A n (H \ {h})) ∧
           H ⊆ (Finset.range (n + 1)).filter (· ∈ C) ∧
           H ∩ Finset.range (W + 1) =
             S ∩ Finset.range (W + 1) := by
@@ -20599,15 +18260,15 @@ theorem selectedRepairs_offSelector_window_core
       S ⊆ (Finset.range (W + 1)).filter (· ∈ C) ∧
       ((∀ b ∈ C, τ b ≠ n) ∧
         ∃ H : Finset ℕ,
-          H.Nonempty ∧ IsRepHub A n H ∧
-          (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+          H.Nonempty ∧ IsRepSupportTransversal A n H ∧
+          (∀ h ∈ H, ¬IsRepSupportTransversal A n (H \ {h})) ∧
           H ⊆ (Finset.range (n + 1)).filter (· ∈ C) ∧
           H ∩ Finset.range (W + 1) =
             S ∩ Finset.range (W + 1)) := by
     intro T
     obtain ⟨n, hnT, hn₀, hoff, H, hHne, hHsub, hHhub, hHmin,
       hnecessity⟩ :=
-      failure_with_selectedRepairs_forces_offSelector_minimalCommittees
+      failure_with_selectedRepairs_forces_offSelector_minimalDeletionTransversals
         τ h0 h0C hcov hselected hfail T
     refine ⟨n, hnT, H ∩ Finset.range (W + 1), ?_, hoff,
       H, hHne, hHhub, hHmin, hHsub, ?_⟩
@@ -20622,8 +18283,8 @@ theorem selectedRepairs_offSelector_window_core
       (Q := fun n S =>
         (∀ b ∈ C, τ b ≠ n) ∧
         ∃ H : Finset ℕ,
-          H.Nonempty ∧ IsRepHub A n H ∧
-          (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+          H.Nonempty ∧ IsRepSupportTransversal A n H ∧
+          (∀ h ∈ H, ¬IsRepSupportTransversal A n (H \ {h})) ∧
           H ⊆ (Finset.range (n + 1)).filter (· ∈ C) ∧
           H ∩ Finset.range (W + 1) =
             S ∩ Finset.range (W + 1))
@@ -20631,18 +18292,8 @@ theorem selectedRepairs_offSelector_window_core
   exact ⟨S, hSsub, hrec⟩
 
 open Classical in
-/-- **Recurrent-core versus escaping-committee dichotomy.**
-For the cofinal off-selector minimal committees forced by a failed
-deletion, exactly the useful infinitary alternative holds:
 
-* some fixed deleted guardian belongs to such committees cofinally; or
-* for every finite window, such committees can be found arbitrarily late
-  with every guardian above that window.
-
-The second branch follows by taking, for each low deleted point, a
-threshold beyond which it never occurs and maximizing those finitely many
-thresholds. -/
-theorem selectedRepairs_recurrentGuardian_or_escapingCommittees
+theorem selectedRepairs_recurrentRequiredElement_or_escapingDeletionTransversals
     {A C : Set ℕ} {N₀ : ℕ} (τ : ℕ → ℕ)
     (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
     (hselected : ∀ b ∈ C,
@@ -20651,26 +18302,26 @@ theorem selectedRepairs_recurrentGuardian_or_escapingCommittees
     (hfail : ¬IsExactTupleAsymptoticBasis (A \ C) 3) :
     (∃ h ∈ C, ∀ T, ∃ n, T ≤ n ∧
       ∃ H : Finset ℕ,
-        IsOffSelectorMinimalCommittee A C N₀ τ n H ∧ h ∈ H) ∨
+        IsOffSelectorMinimalDeletionTransversal A C N₀ τ n H ∧ h ∈ H) ∨
     (∀ W T, ∃ n, T ≤ n ∧
       ∃ H : Finset ℕ,
-        IsOffSelectorMinimalCommittee A C N₀ τ n H ∧
+        IsOffSelectorMinimalDeletionTransversal A C N₀ τ n H ∧
         ∀ h ∈ H, W < h) := by
   by_cases hrec : ∃ h ∈ C, ∀ T, ∃ n, T ≤ n ∧
       ∃ H : Finset ℕ,
-        IsOffSelectorMinimalCommittee A C N₀ τ n H ∧ h ∈ H
+        IsOffSelectorMinimalDeletionTransversal A C N₀ τ n H ∧ h ∈ H
   · exact Or.inl hrec
   · right
     have hboundedC : ∀ h ∈ C, ∃ T, ∀ n, T ≤ n →
         ∀ H : Finset ℕ,
-          IsOffSelectorMinimalCommittee A C N₀ τ n H → h ∉ H := by
+          IsOffSelectorMinimalDeletionTransversal A C N₀ τ n H → h ∉ H := by
       intro h hhC
       by_contra hnoT
       push Not at hnoT
       exact hrec ⟨h, hhC, hnoT⟩
     have hthreshold : ∀ h, ∃ T, h ∈ C → ∀ n, T ≤ n →
         ∀ H : Finset ℕ,
-          IsOffSelectorMinimalCommittee A C N₀ τ n H → h ∉ H := by
+          IsOffSelectorMinimalDeletionTransversal A C N₀ τ n H → h ∉ H := by
       intro h
       by_cases hhC : h ∈ C
       · obtain ⟨T, hT⟩ := hboundedC h hhC
@@ -20683,9 +18334,9 @@ theorem selectedRepairs_recurrentGuardian_or_escapingCommittees
     let T' := max T (F.sup g)
     obtain ⟨n, hnT', hn₀, hoff, H, hHne, hHsub, hHhub, hHmin,
       hnecessity⟩ :=
-      failure_with_selectedRepairs_forces_offSelector_minimalCommittees
+      failure_with_selectedRepairs_forces_offSelector_minimalDeletionTransversals
         τ h0 h0C hcov hselected hfail T'
-    have hcomm : IsOffSelectorMinimalCommittee A C N₀ τ n H :=
+    have hcomm : IsOffSelectorMinimalDeletionTransversal A C N₀ τ n H :=
       ⟨hn₀, hoff, hHne, hHhub, hHmin, hHsub⟩
     refine ⟨n, ?_, H, hcomm, ?_⟩
     · dsimp [T'] at hnT'
@@ -20707,18 +18358,18 @@ theorem selectedRepairs_recurrentGuardian_or_escapingCommittees
       exact (hg h hhC n hgn H hcomm) hhH
 
 open Classical in
-/-- In the recurrent-core branch, the fixed guardian owns cofinally many
+/-- In the recurrent-core branch, the fixed required element owns cofinally many
 pair co-witnesses at off-selector targets.  The pair avoids every other
-member of the current minimal committee.  No conclusion about points of
+member of the current minimal deletion transversal.  No conclusion about points of
 `C \ H` is asserted. -/
-theorem recurrentOffSelectorGuardian_has_pairCowitnessStream
+theorem recurrentOffSelectorRequiredElement_has_pairCowitnessStream
     {A C : Set ℕ} {N₀ : ℕ} {τ : ℕ → ℕ}
     (hrec : ∃ h ∈ C, ∀ T, ∃ n, T ≤ n ∧
       ∃ H : Finset ℕ,
-        IsOffSelectorMinimalCommittee A C N₀ τ n H ∧ h ∈ H) :
+        IsOffSelectorMinimalDeletionTransversal A C N₀ τ n H ∧ h ∈ H) :
     ∃ h ∈ C, ∀ T, ∃ n, T ≤ n ∧
       ∃ H : Finset ℕ,
-        IsOffSelectorMinimalCommittee A C N₀ τ n H ∧ h ∈ H ∧
+        IsOffSelectorMinimalDeletionTransversal A C N₀ τ n H ∧ h ∈ H ∧
         ∃ u ∈ A, ∃ v ∈ A, h + u + v = n ∧
           ∀ g ∈ H, g ≠ h → u ≠ g ∧ v ≠ g := by
   obtain ⟨h, hhC, hcofinal⟩ := hrec
@@ -20726,37 +18377,33 @@ theorem recurrentOffSelectorGuardian_has_pairCowitnessStream
   intro T
   obtain ⟨n, hnT, H, hcomm, hhH⟩ := hcofinal T
   obtain ⟨u, huA, v, hvA, huv, havoid⟩ :=
-    minimalRepHub_member_has_pairCowitness
+    minimalRepSupportTransversal_member_has_pairCowitness
       hcomm.2.2.2.1 hcomm.2.2.2.2.1 hhH
   exact ⟨n, hnT, H, hcomm, hhH,
     u, huA, v, hvA, huv, havoid⟩
 
 open Classical in
-/-- **Escaping committees are singleton-private or uniformly multiple.**
-Either arbitrarily late escaping committees can be chosen singleton, in
-which case their unique guardians form an unbounded stream of absolute
-private triples, or beyond one window and one target threshold every
-escaping off-selector committee has at least two members. -/
-theorem escapingCommittees_singletonPrivate_or_uniformlyMultiple
+
+theorem escapingDeletionTransversals_singletonPrivate_or_uniformlyMultiple
     {A C : Set ℕ} {N₀ : ℕ} {τ : ℕ → ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hesc : ∀ W T, ∃ n, T ≤ n ∧
       ∃ H : Finset ℕ,
-        IsOffSelectorMinimalCommittee A C N₀ τ n H ∧
+        IsOffSelectorMinimalDeletionTransversal A C N₀ τ n H ∧
         ∀ h ∈ H, W < h) :
     (∀ W T, ∃ n, T ≤ n ∧ ∃ h ∈ C,
       W < h ∧ h ≤ n ∧ N₀ ≤ n ∧
       τ h ≠ n ∧ IsPrivateTriple A h n) ∨
     (∃ W₀ T₀,
       (∀ n, T₀ ≤ n → ∀ H : Finset ℕ,
-        IsOffSelectorMinimalCommittee A C N₀ τ n H →
+        IsOffSelectorMinimalDeletionTransversal A C N₀ τ n H →
         (∀ h ∈ H, W₀ < h) → 2 ≤ H.card) ∧
       ∀ W T, ∃ n, T ≤ n ∧ ∃ H : Finset ℕ,
-        IsOffSelectorMinimalCommittee A C N₀ τ n H ∧
+        IsOffSelectorMinimalDeletionTransversal A C N₀ τ n H ∧
         (∀ h ∈ H, W < h) ∧ 2 ≤ H.card) := by
   by_cases hsingle : ∀ W T, ∃ n, T ≤ n ∧
       ∃ H : Finset ℕ,
-        IsOffSelectorMinimalCommittee A C N₀ τ n H ∧
+        IsOffSelectorMinimalDeletionTransversal A C N₀ τ n H ∧
         (∀ h ∈ H, W < h) ∧ H.card = 1
   · left
     intro W T
@@ -20773,7 +18420,7 @@ theorem escapingCommittees_singletonPrivate_or_uniformlyMultiple
       have := Finset.mem_range.1 (Finset.mem_filter.1 hhFilter).1
       omega
     have hprivate : IsPrivateTriple A h n :=
-      privateTriple_of_singleton_hub h0 hcov hcomm.1
+      privateTriple_of_singleton_support_transversal h0 hcov hcomm.1
         hcomm.2.2.2.1
     exact ⟨n, hnT, h, hhC,
       habove h (Finset.mem_singleton_self h), hhle,
@@ -20782,7 +18429,7 @@ theorem escapingCommittees_singletonPrivate_or_uniformlyMultiple
     push Not at hsingle
     obtain ⟨W₀, T₀, hnotSingle⟩ := hsingle
     have hmultiple : ∀ n, T₀ ≤ n → ∀ H : Finset ℕ,
-        IsOffSelectorMinimalCommittee A C N₀ τ n H →
+        IsOffSelectorMinimalDeletionTransversal A C N₀ τ n H →
         (∀ h ∈ H, W₀ < h) → 2 ≤ H.card := by
       intro n hn H hcomm habove
       have hpos : 0 < H.card :=
@@ -20808,24 +18455,24 @@ theorem escapingCommittees_singletonPrivate_or_uniformlyMultiple
     omega
 
 open Classical in
-/-- Escaping committees can be diagonalized into a block-separated
-sequence: targets increase strictly, and every guardian in the next
-committee lies above the preceding target.  Since each committee lies
-below its own target, distinct committees in the sequence are disjoint. -/
-theorem escapingOffSelectorCommittees_has_blockSequence
+/-- Escaping deletion transversals can be diagonalized into a block-separated
+sequence: targets increase strictly, and every required element in the next
+deletion transversal lies above the preceding target.  Since each deletion transversal lies
+below its own target, distinct deletion transversals in the sequence are disjoint. -/
+theorem escapingOffSelectorDeletionTransversals_has_blockSequence
     {A C : Set ℕ} {N₀ : ℕ} {τ : ℕ → ℕ}
     (hesc : ∀ W T, ∃ n, T ≤ n ∧
       ∃ H : Finset ℕ,
-        IsOffSelectorMinimalCommittee A C N₀ τ n H ∧
+        IsOffSelectorMinimalDeletionTransversal A C N₀ τ n H ∧
         ∀ h ∈ H, W < h) :
     ∃ n : ℕ → ℕ, ∃ H : ℕ → Finset ℕ,
       StrictMono n ∧
-      (∀ i, IsOffSelectorMinimalCommittee A C N₀ τ (n i) (H i)) ∧
+      (∀ i, IsOffSelectorMinimalDeletionTransversal A C N₀ τ (n i) (H i)) ∧
       (∀ i, ∀ h ∈ H (i + 1), n i < h) ∧
       ∀ i j, i < j → Disjoint (H i) (H j) := by
   have hpick : ∀ W, ∃ p : ℕ × Finset ℕ,
       W < p.1 ∧
-      IsOffSelectorMinimalCommittee A C N₀ τ p.1 p.2 ∧
+      IsOffSelectorMinimalDeletionTransversal A C N₀ τ p.1 p.2 ∧
       ∀ h ∈ p.2, W < h := by
     intro W
     obtain ⟨n, hn, H, hcomm, habove⟩ := hesc W (W + 1)
@@ -20848,7 +18495,7 @@ theorem escapingOffSelectorCommittees_has_blockSequence
   have hn_mono : StrictMono n :=
     strictMono_nat_of_lt_succ hn_step
   have hcomm : ∀ i,
-      IsOffSelectorMinimalCommittee A C N₀ τ (n i) (H i) := by
+      IsOffSelectorMinimalDeletionTransversal A C N₀ τ (n i) (H i) := by
     intro i
     cases i with
     | zero =>
@@ -20882,26 +18529,26 @@ theorem escapingOffSelectorCommittees_has_blockSequence
   omega
 
 open Classical in
-/-- Once escaping committees are uniformly non-singleton, the
-block-separated diagonal may be taken entirely in the multi-guardian
+/-- Once escaping deletion transversals are uniformly non-singleton, the
+block-separated diagonal may be taken entirely in the multi-required element
 regime. -/
-theorem escapingUniformlyMultipleCommittees_has_blockSequence
+theorem escapingUniformlyMultipleDeletionTransversals_has_blockSequence
     {A C : Set ℕ} {N₀ : ℕ} {τ : ℕ → ℕ} {W₀ T₀ : ℕ}
     (hmultiple : ∀ n, T₀ ≤ n → ∀ H : Finset ℕ,
-      IsOffSelectorMinimalCommittee A C N₀ τ n H →
+      IsOffSelectorMinimalDeletionTransversal A C N₀ τ n H →
       (∀ h ∈ H, W₀ < h) → 2 ≤ H.card)
     (hesc : ∀ W T, ∃ n, T ≤ n ∧
       ∃ H : Finset ℕ,
-        IsOffSelectorMinimalCommittee A C N₀ τ n H ∧
+        IsOffSelectorMinimalDeletionTransversal A C N₀ τ n H ∧
         ∀ h ∈ H, W < h) :
     ∃ n : ℕ → ℕ, ∃ H : ℕ → Finset ℕ,
       StrictMono n ∧
-      (∀ i, IsOffSelectorMinimalCommittee A C N₀ τ (n i) (H i)) ∧
+      (∀ i, IsOffSelectorMinimalDeletionTransversal A C N₀ τ (n i) (H i)) ∧
       (∀ i, 2 ≤ (H i).card) ∧
       (∀ i, ∀ h ∈ H (i + 1), n i < h) ∧
       ∀ i j, i < j → Disjoint (H i) (H j) := by
   obtain ⟨n, H, hnmono, hcomm, habove, hdisjoint⟩ :=
-    escapingOffSelectorCommittees_has_blockSequence hesc
+    escapingOffSelectorDeletionTransversals_has_blockSequence hesc
   let I := max W₀ T₀ + 1
   let n' : ℕ → ℕ := fun i => n (I + i)
   let H' : ℕ → Finset ℕ := fun i => H (I + i)
@@ -20909,7 +18556,7 @@ theorem escapingUniformlyMultipleCommittees_has_blockSequence
     intro i j hij
     exact hnmono (by omega)
   have hcomm' : ∀ i,
-      IsOffSelectorMinimalCommittee A C N₀ τ (n' i) (H' i) := by
+      IsOffSelectorMinimalDeletionTransversal A C N₀ τ (n' i) (H' i) := by
     intro i
     exact hcomm (I + i)
   have hcard' : ∀ i, 2 ≤ (H' i).card := by
@@ -20945,19 +18592,14 @@ theorem escapingUniformlyMultipleCommittees_has_blockSequence
     habove', hdisjoint'⟩
 
 open Classical in
-/-- **Fixed-channel residual theorem.**
-In a global counterexample, collision-free thinning of any cofinal fixed
-repair channel produces an infinite deletion `C` whose chosen wounds all
-survive, together with a cofinal stream of different threatened targets
-which do not survive.  This is the exact remaining moving-prefix
-composition obstruction. -/
+
 theorem counterexample_fixedRepairChannel_has_offSelectorStalls
     {A : Set ℕ} {N₀ w : ℕ} {B : Finset ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ C ⊆ A, C.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ C) 3)
     (hcofinal : ∀ X, ∃ b ∈ A, X < b ∧
-      HasTerminalRepairWoundThrough A N₀ B w b) :
+      HasTerminalRepairDestructionThrough A N₀ B w b) :
     ∃ C : Set ℕ, ∃ τ : ℕ → ℕ,
       C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧ w ∉ C ∧ w ∈ A ∧
       (∀ b ∈ C, N₀ ≤ τ b ∧ b ≤ τ b ∧
@@ -20970,7 +18612,7 @@ theorem counterexample_fixedRepairChannel_has_offSelectorStalls
         ¬∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
           x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = n := by
   obtain ⟨C, τ, hCA, hCinf, h0C, hwC, hwA, hdata⟩ :=
-    cofinal_fixedRepairChannel_has_collisionFree_selector hcofinal
+    cofinal_fixedRepairChannel_has_conflictFree_selector hcofinal
   have hselected : ∀ b ∈ C,
       ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
         x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = τ b := by
@@ -20983,9 +18625,9 @@ theorem counterexample_fixedRepairChannel_has_offSelectorStalls
   exact ⟨C, τ, hCA, hCinf, h0C, hwC, hwA, hdata, hstalls⟩
 
 open Classical in
-/-- A fixed-channel wound whose failed target is a genuine new risk
+/-- A fixed-channel destruction whose failed target is a genuine new risk
 `b+a`. -/
-def HasSelfRepairWoundThrough
+def HasSelfRepairDestructionThrough
     (A : Set ℕ) (N₀ : ℕ) (B : Finset ℕ) (w b : ℕ) : Prop :=
   ∃ n, N₀ ≤ n ∧ b ≤ n ∧
     (∃ a ∈ A, b + a = n) ∧
@@ -20993,9 +18635,9 @@ def HasSelfRepairWoundThrough
     HasRepairThrough A w b n
 
 open Classical in
-/-- A fixed-channel wound whose failed target comes from one specified old
+/-- A fixed-channel destruction whose failed target comes from one specified old
 prefix element `d`. -/
-def HasCollateralRepairWoundThrough
+def HasCollateralRepairDestructionThrough
     (A : Set ℕ) (N₀ : ℕ) (B : Finset ℕ)
     (w d b : ℕ) : Prop :=
   ∃ n, N₀ ≤ n ∧ b ≤ n ∧
@@ -21005,12 +18647,12 @@ def HasCollateralRepairWoundThrough
 
 open Classical in
 /-- Retaining the source of the risk gives an exact pointwise split:
-the new guardian `b` caused the wound, or one old `d∈B` did. -/
-theorem terminalRepairWound_self_or_collateral
+the new required element `b` caused the destruction, or one old `d∈B` did. -/
+theorem terminalRepairDestruction_self_or_collateral
     {A : Set ℕ} {N₀ w b : ℕ} {B : Finset ℕ}
-    (h : HasTerminalRepairWoundThrough A N₀ B w b) :
-    HasSelfRepairWoundThrough A N₀ B w b ∨
-      ∃ d ∈ B, HasCollateralRepairWoundThrough A N₀ B w d b := by
+    (h : HasTerminalRepairDestructionThrough A N₀ B w b) :
+    HasSelfRepairDestructionThrough A N₀ B w b ∨
+      ∃ d ∈ B, HasCollateralRepairDestructionThrough A N₀ B w d b := by
   obtain ⟨n, hn, hbn, hrisk, hprivate, hrepair⟩ := h
   obtain ⟨d, hdInsert, a, haA, hda⟩ := hrisk
   rcases Finset.mem_insert.1 hdInsert with hdb | hdB
@@ -21022,31 +18664,28 @@ theorem terminalRepairWound_self_or_collateral
         hprivate, hrepair⟩
 
 open Classical in
-/-- **Cofinal source stabilization for a fixed repair channel.**
-If repaired wounds through `w` occur arbitrarily far out, then either
-self-risk wounds occur arbitrarily far out, or one fixed old prefix
-element `d` is the collateral source arbitrarily far out. -/
+
 theorem cofinal_fixedRepairChannel_self_or_fixedCollateral
     {A : Set ℕ} {N₀ w : ℕ} {B : Finset ℕ}
     (hcofinal : ∀ X, ∃ b ∈ A, X < b ∧
-      HasTerminalRepairWoundThrough A N₀ B w b) :
+      HasTerminalRepairDestructionThrough A N₀ B w b) :
     (∀ X, ∃ b ∈ A, X < b ∧
-      HasSelfRepairWoundThrough A N₀ B w b) ∨
+      HasSelfRepairDestructionThrough A N₀ B w b) ∨
     (∃ d ∈ B, ∀ X, ∃ b ∈ A, X < b ∧
-      HasCollateralRepairWoundThrough A N₀ B w d b) := by
+      HasCollateralRepairDestructionThrough A N₀ B w d b) := by
   by_cases hself : ∀ X, ∃ b ∈ A, X < b ∧
-      HasSelfRepairWoundThrough A N₀ B w b
+      HasSelfRepairDestructionThrough A N₀ B w b
   · exact Or.inl hself
   · right
     push Not at hself
     obtain ⟨X₀, hX₀⟩ := hself
     have hcollateral : ∀ X, ∃ b, X < b ∧
         ∃ d ∈ B, b ∈ A ∧
-          HasCollateralRepairWoundThrough A N₀ B w d b := by
+          HasCollateralRepairDestructionThrough A N₀ B w d b := by
       intro X
       obtain ⟨b, hbA, hbLarge, hrepair⟩ :=
         hcofinal (max X X₀)
-      rcases terminalRepairWound_self_or_collateral hrepair with
+      rcases terminalRepairDestruction_self_or_collateral hrepair with
         hnew | hold
       · exact absurd hnew (hX₀ b hbA (by omega))
       · obtain ⟨d, hdB, hold⟩ := hold
@@ -21062,28 +18701,24 @@ open Classical in
 /-- A collateral repair through fixed `w,d` is an exact fixed-shift
 identity.  If `w≤d`, it gives a surviving pair for `a+(d-w)`; if `d≤w`,
 it expresses `a` as the fixed shift `w-d` plus that pair. -/
-theorem collateralRepairWound_fixedShift_identity
+theorem collateralRepairDestruction_fixedShift_identity
     {A : Set ℕ} {N₀ w d b : ℕ} {B : Finset ℕ}
-    (h : HasCollateralRepairWoundThrough A N₀ B w d b) :
+    (h : HasCollateralRepairDestructionThrough A N₀ B w d b) :
     ∃ a ∈ A, ∃ u ∈ A, ∃ v ∈ A,
       u ≠ b ∧ v ≠ b ∧ d + a = w + u + v ∧
       ((w ≤ d ∧ (d - w) + a = u + v) ∨
        (d ≤ w ∧ a = (w - d) + u + v)) := by
   obtain ⟨n, hn, hbn, hrisk, hprivate, hrepair⟩ := h
   obtain ⟨a, haA, hda⟩ := hrisk
-  obtain ⟨u, huA, v, hvA, hub, hvb, huv⟩ :=
+  obtain ⟨u, huA, v, hvA, support_transversal, hvb, huv⟩ :=
     repairThrough_gives_shifted_pair hrepair
-  refine ⟨a, haA, u, huA, v, hvA, hub, hvb, by omega, ?_⟩
+  refine ⟨a, haA, u, huA, v, hvA, support_transversal, hvb, by omega, ?_⟩
   rcases le_total w d with hwd | hdw
   · exact Or.inl ⟨hwd, by omega⟩
   · exact Or.inr ⟨hdw, by omega⟩
 
 open Classical in
-/-- **Cofinal private guardians or one fixed repair channel.**
-At the terminal prefix of any counterexample, either absolute private
-wounds occur on arbitrarily large basis candidates, or there is one fixed
-`w ∈ B` through which repair triples for arbitrarily large candidates must
-pass.  Finiteness of `B` removes all label-switching loss. -/
+
 theorem counterexample_cofinal_absolute_or_fixed_prefix_repairs
     {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -21092,14 +18727,14 @@ theorem counterexample_cofinal_absolute_or_fixed_prefix_repairs
     ∃ B : Finset ℕ,
       FinitePrefixServesRisks A N₀ B ∧ 0 ∉ B ∧
       ((∀ X, ∃ b ∈ A, X < b ∧
-          HasAbsoluteTerminalWound A N₀ B b) ∨
+          HasAbsoluteTerminalDestruction A N₀ B b) ∨
        ∃ w ∈ B, ∀ X, ∃ b ∈ A, X < b ∧
-          HasTerminalRepairWoundThrough A N₀ B w b) := by
+          HasTerminalRepairDestructionThrough A N₀ B w b) := by
   obtain ⟨B, hserved, h0B, hwound⟩ :=
-    counterexample_terminal_prefix_private_wound_fork h0 hcov hfail
+    counterexample_terminal_prefix_private_destruction_fork h0 hcov hfail
   have hcandidate : ∀ X, ∃ b ∈ A, X < b ∧
-      (HasAbsoluteTerminalWound A N₀ B b ∨
-       ∃ w ∈ B, HasTerminalRepairWoundThrough A N₀ B w b) := by
+      (HasAbsoluteTerminalDestruction A N₀ B b ∨
+       ∃ w ∈ B, HasTerminalRepairDestructionThrough A N₀ B w b) := by
     intro X
     obtain ⟨b, hbA, hbLarge⟩ :=
       pairCovers_unbounded hcov (max (X + 1) (B.sup id + 1))
@@ -21119,13 +18754,13 @@ theorem counterexample_cofinal_absolute_or_fixed_prefix_repairs
         ⟨w, hwB, n, hn, hbn, hrisk, hprivate, hthrough⟩⟩
   by_cases habsolute :
       ∀ X, ∃ b ∈ A, X < b ∧
-        HasAbsoluteTerminalWound A N₀ B b
+        HasAbsoluteTerminalDestruction A N₀ B b
   · exact ⟨B, hserved, h0B, Or.inl habsolute⟩
   · push Not at habsolute
     obtain ⟨X₀, hX₀⟩ := habsolute
     have hrepairs : ∀ X, ∃ b, X < b ∧
         ∃ w ∈ B,
-          b ∈ A ∧ HasTerminalRepairWoundThrough A N₀ B w b := by
+          b ∈ A ∧ HasTerminalRepairDestructionThrough A N₀ B w b := by
       intro X
       obtain ⟨b, hbA, hbLarge, habs | hrepair⟩ :=
         hcandidate (max X X₀)
@@ -21140,33 +18775,24 @@ theorem counterexample_cofinal_absolute_or_fixed_prefix_repairs
     exact ⟨b, hbA, hbX, hrepair⟩
 
 open Classical in
-/-- The data of an absolute private wound whose guardian is larger than its
+/-- The data of an absolute private destruction whose required element is larger than its
 co-offset. -/
-def IsBigAbsolutePrivateWound
+def IsBigAbsolutePrivateDestruction
     (A : Set ℕ) (N₀ b n : ℕ) : Prop :=
   N₀ ≤ n ∧ b ≤ n ∧ n < 2 * b ∧ IsPrivateTriple A b n
 
 open Classical in
-/-- **Big absolute private guardians cannot be cofinal.**
-Assume arbitrarily large `b` have private targets `n < 2b`.  If co-offsets
-`q=n-b` with `q≥N₀` occur cofinally, one first wound and
-`no_big_guardian_stacking` bound every later co-offset.  Otherwise the
-co-offsets are eventually bounded by `N₀` already.  Finite cofinal
-pigeonhole therefore fixes one `q`.
 
-For two sufficiently separated guardians `b₁<b₂` at this same co-offset,
-`b₁` lies strictly inside the private desert of `(b₂,b₂+q)`, so the desert
-law forces `b₁=b₂`, a contradiction. -/
-theorem no_cofinal_big_absolute_private_guardians
+theorem no_cofinal_big_absolute_private_required_elements
     {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀) :
     ¬(∀ X, ∃ b ∈ A, X < b ∧
-      ∃ n, IsBigAbsolutePrivateWound A N₀ b n) := by
+      ∃ n, IsBigAbsolutePrivateDestruction A N₀ b n) := by
   intro hcofinal
   have hbound : ∃ Q X₀, ∀ b ∈ A, X₀ < b → ∀ n,
-      IsBigAbsolutePrivateWound A N₀ b n → n - b < Q := by
+      IsBigAbsolutePrivateDestruction A N₀ b n → n - b < Q := by
     by_cases hlargeOffset : ∀ X, ∃ b ∈ A, X < b ∧
-        ∃ n, IsBigAbsolutePrivateWound A N₀ b n ∧ N₀ ≤ n - b
+        ∃ n, IsBigAbsolutePrivateDestruction A N₀ b n ∧ N₀ ≤ n - b
     · obtain ⟨b₁, hb₁A, hb₁large, n₁, hbig₁, hq₁N⟩ :=
         hlargeOffset (N₀ + 3)
       refine ⟨max N₀ n₁, 0, ?_⟩
@@ -21183,7 +18809,7 @@ theorem no_cofinal_big_absolute_private_guardians
           have := hbig.2.1
           omega
         have hsep : n₁ + b ≤ n := by omega
-        exact no_big_guardian_stacking h0 hcov
+        exact no_big_required_element_stacking h0 hcov
           hbig₁.2.2.2 hbig.2.2.2
           hbig₁.2.2.1 hN₁ hbig.2.2.1 hN
           (by omega) hsep
@@ -21199,7 +18825,7 @@ theorem no_cofinal_big_absolute_private_guardians
   obtain ⟨Q, X₀, hbound⟩ := hbound
   have hfixedInput : ∀ X, ∃ b, X < b ∧
       ∃ q ∈ Finset.range Q,
-        b ∈ A ∧ ∃ n, IsBigAbsolutePrivateWound A N₀ b n ∧
+        b ∈ A ∧ ∃ n, IsBigAbsolutePrivateDestruction A N₀ b n ∧
           n - b = q := by
     intro X
     obtain ⟨b, hbA, hbLarge, n, hbig⟩ :=
@@ -21210,7 +18836,7 @@ theorem no_cofinal_big_absolute_private_guardians
       hbA, n, hbig, rfl⟩
   have hfixedInput' : ∀ X, ∃ b, X < b ∧
       ∃ q ∈ Finset.range Q,
-        (b ∈ A ∧ ∃ n, IsBigAbsolutePrivateWound A N₀ b n ∧
+        (b ∈ A ∧ ∃ n, IsBigAbsolutePrivateDestruction A N₀ b n ∧
           n - b = q) := hfixedInput
   obtain ⟨q, hqQ, hqCofinal⟩ :=
     finite_cofinal_pigeonhole hfixedInput'
@@ -21234,15 +18860,15 @@ theorem no_cofinal_big_absolute_private_guardians
     omega
   have hhigh : b₁ + N₀ ≤ n₂ := by omega
   have hdesert :=
-    hbig₂.2.2.2.desert h0 hcov hb₂pos hb₁A
+    hbig₂.2.2.2.exclusion_interval h0 hcov hb₂pos hb₁A
       hlow hhigh
   omega
 
 open Classical in
-/-- An unbounded singleton-committee stream cannot remain in the big
-guardian regime.  After thinning, its absolute private off-selector
-wounds all satisfy `2h≤n`. -/
-theorem cofinal_offSelector_absolutePrivate_wounds_are_nonbig
+/-- An unbounded singleton-deletion transversal stream cannot remain in the big
+required element regime.  After thinning, its absolute private off-selector
+destructions all satisfy `2h≤n`. -/
+theorem cofinal_offSelector_absolutePrivate_destructions_are_nonbig
     {A C : Set ℕ} {N₀ : ℕ} {τ : ℕ → ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (hCA : C ⊆ A)
     (hstream : ∀ W T, ∃ n, T ≤ n ∧ ∃ h ∈ C,
@@ -21255,7 +18881,7 @@ theorem cofinal_offSelector_absolutePrivate_wounds_are_nonbig
   push Not at hnonbig
   obtain ⟨W₀, T₀, hbad⟩ := hnonbig
   have hbigCofinal : ∀ X, ∃ h ∈ A, X < h ∧
-      ∃ n, IsBigAbsolutePrivateWound A N₀ h n := by
+      ∃ n, IsBigAbsolutePrivateDestruction A N₀ h n := by
     intro X
     obtain ⟨n, hnT₀, h, hhC, hhLarge, hhn, hn₀, hoff, hprivate⟩ :=
       hstream (max X W₀) T₀
@@ -21265,20 +18891,20 @@ theorem cofinal_offSelector_absolutePrivate_wounds_are_nonbig
         hnonbig hoff hprivate
     exact ⟨h, hCA hhC, by omega, n,
       hn₀, hhn, Nat.lt_of_not_ge hnotNonbig, hprivate⟩
-  exact no_cofinal_big_absolute_private_guardians h0 hcov hbigCofinal
+  exact no_cofinal_big_absolute_private_required_elements h0 hcov hbigCofinal
 
 open Classical in
-/-- A fixed deleted point occurs in off-selector minimal committees
+/-- A fixed deleted point occurs in off-selector minimal deletion transversals
 cofinally. -/
-def HasRecurrentOffSelectorGuardian
+def HasRecurrentOffSelectorRequiredElement
     (A C : Set ℕ) (N₀ : ℕ) (τ : ℕ → ℕ) : Prop :=
   ∃ h ∈ C, ∀ T, ∃ n, T ≤ n ∧
     ∃ H : Finset ℕ,
-      IsOffSelectorMinimalCommittee A C N₀ τ n H ∧ h ∈ H
+      IsOffSelectorMinimalDeletionTransversal A C N₀ τ n H ∧ h ∈ H
 
 open Classical in
-/-- Cofinal non-big absolute private wounds arising from singleton
-off-selector committees. -/
+/-- Cofinal non-big absolute private destructions arising from singleton
+off-selector deletion transversals. -/
 def HasCofinalNonbigOffSelectorPrivateStream
     (A C : Set ℕ) (N₀ : ℕ) (τ : ℕ → ℕ) : Prop :=
   ∀ W T, ∃ n, T ≤ n ∧ ∃ h ∈ C,
@@ -21287,12 +18913,12 @@ def HasCofinalNonbigOffSelectorPrivateStream
 
 open Classical in
 /-- A block-separated sequence of non-singleton off-selector minimal
-committees. -/
-def HasBlockSeparatedMultipleOffSelectorCommittees
+deletion transversals. -/
+def HasBlockSeparatedMultipleOffSelectorDeletionTransversals
     (A C : Set ℕ) (N₀ : ℕ) (τ : ℕ → ℕ) : Prop :=
   ∃ n : ℕ → ℕ, ∃ H : ℕ → Finset ℕ,
     StrictMono n ∧
-    (∀ i, IsOffSelectorMinimalCommittee A C N₀ τ (n i) (H i)) ∧
+    (∀ i, IsOffSelectorMinimalDeletionTransversal A C N₀ τ (n i) (H i)) ∧
     (∀ i, 2 ≤ (H i).card) ∧
     (∀ i, ∀ h ∈ H (i + 1), n i < h) ∧
     ∀ i j, i < j → Disjoint (H i) (H j)
@@ -21300,23 +18926,23 @@ def HasBlockSeparatedMultipleOffSelectorCommittees
 open Classical in
 /-- Every target in the finite schedule attached to a deleted point has
 a representation surviving the whole deletion. -/
-def HasSurvivingFiniteServiceSchedule
+def HasSurvivingFiniteCoverageSchedule
     (A C : Set ℕ) (σ : ℕ → Finset ℕ) : Prop :=
   ∀ b ∈ C, ∀ m ∈ σ b,
     ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
       x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = m
 
 open Classical in
-/-- A surviving finite service schedule with exactly `k` distinct targets
+/-- A surviving finite coverage schedule with exactly `k` distinct targets
 attached to every deleted point. -/
-def HasUniformSurvivingServiceSchedule
+def HasUniformSurvivingCoverageSchedule
     (A C : Set ℕ) (k : ℕ) : Prop :=
   ∃ σ : ℕ → Finset ℕ,
-    HasSurvivingFiniteServiceSchedule A C σ ∧
+    HasSurvivingFiniteCoverageSchedule A C σ ∧
     ∀ b ∈ C, (σ b).card = k
 
 open Classical in
-/-- A finite service schedule whose labels are genuine: every target
+/-- A finite coverage schedule whose labels are genuine: every target
 attached to `b` is actually threatened by deleting `b`. -/
 def HasSurvivingFiniteRiskSchedule
     (A C : Set ℕ) (σ : ℕ → Finset ℕ) : Prop :=
@@ -21327,23 +18953,20 @@ def HasSurvivingFiniteRiskSchedule
 
 open Classical in
 /-- Forgetting the genuine-risk labels leaves an ordinary surviving
-finite service schedule. -/
-theorem HasSurvivingFiniteRiskSchedule.toService
+finite coverage schedule. -/
+theorem HasSurvivingFiniteRiskSchedule.toCoverage
     {A C : Set ℕ} {σ : ℕ → Finset ℕ}
     (h : HasSurvivingFiniteRiskSchedule A C σ) :
-    HasSurvivingFiniteServiceSchedule A C σ := by
+    HasSurvivingFiniteCoverageSchedule A C σ := by
   intro b hbC m hm
   exact (h b hbC m hm).2
 
 open Classical in
-/-- **Exact eventual criterion for arbitrary finite service schedules.**
-Once all scheduled targets survive, `A\C` is an exact order-three
-asymptotic basis exactly when every sufficiently late threatened target
-outside every schedule is served. -/
-theorem finiteServiceSchedule_basis_iff_eventual_offScheduleRisks
+
+theorem finiteCoverageSchedule_basis_iff_eventual_offScheduleRisks
     {A C : Set ℕ} {N₀ : ℕ} (σ : ℕ → Finset ℕ)
     (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
-    (hschedule : HasSurvivingFiniteServiceSchedule A C σ) :
+    (hschedule : HasSurvivingFiniteCoverageSchedule A C σ) :
     IsExactTupleAsymptoticBasis (A \ C) 3 ↔
       ∃ M, ∀ n, M ≤ n →
         (∃ b ∈ C, ∃ a ∈ A, b + a = n) →
@@ -21372,20 +18995,11 @@ theorem finiteServiceSchedule_basis_iff_eventual_offScheduleRisks
       exact hhit ⟨b, hbC, hnσ⟩
 
 open Classical in
-/-- **Moving finite-schedule stall lemma.**
-Let each deleted point carry an arbitrary finite list of targets which
-already have representations surviving the whole deletion.  If the
-deletion still fails to be an exact order-three asymptotic basis, then
-arbitrarily far out there is a threatened target which is outside every
-current list and has no surviving triple.
 
-This is the iteration form of the off-selector stall lemma: enlarging the
-finite service prefix may move the next stall, but it cannot eliminate all
-late stalls unless the deletion has already succeeded. -/
-theorem failure_with_finiteServiceSchedule_forces_cofinal_offScheduleStalls
+theorem failure_with_finiteCoverageSchedule_forces_cofinal_offScheduleStalls
     {A C : Set ℕ} {N₀ : ℕ} (σ : ℕ → Finset ℕ)
     (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
-    (hschedule : HasSurvivingFiniteServiceSchedule A C σ)
+    (hschedule : HasSurvivingFiniteCoverageSchedule A C σ)
     (hfail : ¬IsExactTupleAsymptoticBasis (A \ C) 3) :
     ∀ T, ∃ n, T ≤ n ∧ N₀ ≤ n ∧
       (∃ b ∈ C, ∃ a ∈ A, b + a = n) ∧
@@ -21437,32 +19051,32 @@ theorem failure_with_finiteServiceSchedule_forces_cofinal_offScheduleStalls
   · simpa [Fin.sum_univ_three] using hpqr
 
 open Classical in
-/-- A nonempty minimal representation committee for a target lying outside
-every currently scheduled finite service list. -/
-def IsOffScheduleMinimalCommittee
+/-- A nonempty minimal representation deletion transversal for a target lying outside
+every currently scheduled finite coverage list. -/
+def IsOffScheduleMinimalDeletionTransversal
     (A C : Set ℕ) (N₀ : ℕ) (σ : ℕ → Finset ℕ)
     (n : ℕ) (H : Finset ℕ) : Prop :=
   N₀ ≤ n ∧
   (∀ b ∈ C, n ∉ σ b) ∧
   H.Nonempty ∧
-  IsRepHub A n H ∧
-  (∀ h ∈ H, ¬IsRepHub A n (H \ {h})) ∧
+  IsRepSupportTransversal A n H ∧
+  (∀ h ∈ H, ¬IsRepSupportTransversal A n (H \ {h})) ∧
   H ⊆ (Finset.range (n + 1)).filter (· ∈ C)
 
 open Classical in
-/-- Every stall outside a finite service schedule has a finite nonempty
-minimal committee contained in the deleted points below the target. -/
-theorem failure_with_finiteServiceSchedule_forces_offSchedule_minimalCommittees
+/-- Every stall outside a finite coverage schedule has a finite nonempty
+minimal deletion transversal contained in the deleted points below the target. -/
+theorem failure_with_finiteCoverageSchedule_forces_offSchedule_minimalDeletionTransversals
     {A C : Set ℕ} {N₀ : ℕ} (σ : ℕ → Finset ℕ)
     (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
-    (hschedule : HasSurvivingFiniteServiceSchedule A C σ)
+    (hschedule : HasSurvivingFiniteCoverageSchedule A C σ)
     (hfail : ¬IsExactTupleAsymptoticBasis (A \ C) 3) :
     ∀ T, ∃ n, T ≤ n ∧
       ∃ H : Finset ℕ,
-        IsOffScheduleMinimalCommittee A C N₀ σ n H := by
+        IsOffScheduleMinimalDeletionTransversal A C N₀ σ n H := by
   intro T
   obtain ⟨n, hnT, hn₀, hrisk, hoff, hno⟩ :=
-    failure_with_finiteServiceSchedule_forces_cofinal_offScheduleStalls
+    failure_with_finiteCoverageSchedule_forces_cofinal_offScheduleStalls
       σ h0 h0C hcov hschedule hfail T
   have hdead : ∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
       x + y + z = n → x ∈ C ∨ y ∈ C ∨ z ∈ C := by
@@ -21476,57 +19090,54 @@ theorem failure_with_finiteServiceSchedule_forces_offSchedule_minimalCommittees
         · exact (hno
             ⟨x, hxA, y, hyA, z, hzA, hxC, hyC, hzC, hxyz⟩).elim
   have hhub :=
-    failing_hub_subset_deletion (A := A) (B := C) hdead
-  obtain ⟨H, hHsub, hHhub, hHmin⟩ := exists_minimal_hub hhub
+    failing_support_transversal_subset_deletion (A := A) (B := C) hdead
+  obtain ⟨H, hHsub, hHhub, hHmin⟩ := exists_minimal_support_transversal hhub
   have hHne : H.Nonempty :=
-    hub_nonempty_of_covering h0 hcov hn₀ hHhub
+    support_transversal_nonempty_of_covering h0 hcov hn₀ hHhub
   exact ⟨n, hnT, H,
     hn₀, hoff, hHne, hHhub, hHmin, hHsub⟩
 
 open Classical in
-/-- A block-separated sequence of non-singleton minimal committees outside
-an arbitrary finite service schedule. -/
-def HasBlockSeparatedMultipleOffScheduleCommittees
+/-- A block-separated sequence of non-singleton minimal deletion transversals outside
+an arbitrary finite coverage schedule. -/
+def HasBlockSeparatedMultipleOffScheduleDeletionTransversals
     (A C : Set ℕ) (N₀ : ℕ) (σ : ℕ → Finset ℕ) : Prop :=
   ∃ n : ℕ → ℕ, ∃ H : ℕ → Finset ℕ,
     StrictMono n ∧
-    (∀ i, IsOffScheduleMinimalCommittee A C N₀ σ (n i) (H i)) ∧
+    (∀ i, IsOffScheduleMinimalDeletionTransversal A C N₀ σ (n i) (H i)) ∧
     (∀ i, 2 ≤ (H i).card) ∧
     (∀ i, ∀ h ∈ H (i + 1), n i < h) ∧
     ∀ i j, i < j → Disjoint (H i) (H j)
 
 open Classical in
-/-- **Recurrent guardian versus escaping committees for a finite
-schedule.**  Either one fixed deleted point occurs in arbitrarily late
-minimal off-schedule committees, or committees can be chosen arbitrarily
-late with every member above any prescribed finite window. -/
-theorem finiteServiceSchedule_recurrentGuardian_or_escapingCommittees
+
+theorem finiteCoverageSchedule_recurrentRequiredElement_or_escapingDeletionTransversals
     {A C : Set ℕ} {N₀ : ℕ} (σ : ℕ → Finset ℕ)
     (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
-    (hschedule : HasSurvivingFiniteServiceSchedule A C σ)
+    (hschedule : HasSurvivingFiniteCoverageSchedule A C σ)
     (hfail : ¬IsExactTupleAsymptoticBasis (A \ C) 3) :
     (∃ h ∈ C, ∀ T, ∃ n, T ≤ n ∧
       ∃ H : Finset ℕ,
-        IsOffScheduleMinimalCommittee A C N₀ σ n H ∧ h ∈ H) ∨
+        IsOffScheduleMinimalDeletionTransversal A C N₀ σ n H ∧ h ∈ H) ∨
     (∀ W T, ∃ n, T ≤ n ∧
       ∃ H : Finset ℕ,
-        IsOffScheduleMinimalCommittee A C N₀ σ n H ∧
+        IsOffScheduleMinimalDeletionTransversal A C N₀ σ n H ∧
         ∀ h ∈ H, W < h) := by
   by_cases hrec : ∃ h ∈ C, ∀ T, ∃ n, T ≤ n ∧
       ∃ H : Finset ℕ,
-        IsOffScheduleMinimalCommittee A C N₀ σ n H ∧ h ∈ H
+        IsOffScheduleMinimalDeletionTransversal A C N₀ σ n H ∧ h ∈ H
   · exact Or.inl hrec
   · right
     have hboundedC : ∀ h ∈ C, ∃ T, ∀ n, T ≤ n →
         ∀ H : Finset ℕ,
-          IsOffScheduleMinimalCommittee A C N₀ σ n H → h ∉ H := by
+          IsOffScheduleMinimalDeletionTransversal A C N₀ σ n H → h ∉ H := by
       intro h hhC
       by_contra hnoT
       push Not at hnoT
       exact hrec ⟨h, hhC, hnoT⟩
     have hthreshold : ∀ h, ∃ T, h ∈ C → ∀ n, T ≤ n →
         ∀ H : Finset ℕ,
-          IsOffScheduleMinimalCommittee A C N₀ σ n H → h ∉ H := by
+          IsOffScheduleMinimalDeletionTransversal A C N₀ σ n H → h ∉ H := by
       intro h
       by_cases hhC : h ∈ C
       · obtain ⟨T, hT⟩ := hboundedC h hhC
@@ -21538,7 +19149,7 @@ theorem finiteServiceSchedule_recurrentGuardian_or_escapingCommittees
       (Finset.range (W + 1)).filter (· ∈ C)
     let T' := max T (F.sup g)
     obtain ⟨n, hnT', H, hcomm⟩ :=
-      failure_with_finiteServiceSchedule_forces_offSchedule_minimalCommittees
+      failure_with_finiteCoverageSchedule_forces_offSchedule_minimalDeletionTransversals
         σ h0 h0C hcov hschedule hfail T'
     refine ⟨n, ?_, H, hcomm, ?_⟩
     · dsimp [T'] at hnT'
@@ -21560,24 +19171,23 @@ theorem finiteServiceSchedule_recurrentGuardian_or_escapingCommittees
       exact (hg h hhC n hgn H hcomm) hhH
 
 open Classical in
-/-- **Escaping finite-schedule committees are singleton-private or
-uniformly multiple.** -/
-theorem escapingOffScheduleCommittees_singletonPrivate_or_multiple
+
+theorem escapingOffScheduleDeletionTransversals_singletonPrivate_or_multiple
     {A C : Set ℕ} {N₀ : ℕ} {σ : ℕ → Finset ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hesc : ∀ W T, ∃ n, T ≤ n ∧
       ∃ H : Finset ℕ,
-        IsOffScheduleMinimalCommittee A C N₀ σ n H ∧
+        IsOffScheduleMinimalDeletionTransversal A C N₀ σ n H ∧
         ∀ h ∈ H, W < h) :
     (∀ W T, ∃ n, T ≤ n ∧ ∃ h ∈ C,
       W < h ∧ h ≤ n ∧ N₀ ≤ n ∧
       (∀ b ∈ C, n ∉ σ b) ∧ IsPrivateTriple A h n) ∨
     (∀ W T, ∃ n, T ≤ n ∧ ∃ H : Finset ℕ,
-      IsOffScheduleMinimalCommittee A C N₀ σ n H ∧
+      IsOffScheduleMinimalDeletionTransversal A C N₀ σ n H ∧
       (∀ h ∈ H, W < h) ∧ 2 ≤ H.card) := by
   by_cases hsingle : ∀ W T, ∃ n, T ≤ n ∧
       ∃ H : Finset ℕ,
-        IsOffScheduleMinimalCommittee A C N₀ σ n H ∧
+        IsOffScheduleMinimalDeletionTransversal A C N₀ σ n H ∧
         (∀ h ∈ H, W < h) ∧ H.card = 1
   · left
     intro W T
@@ -21594,7 +19204,7 @@ theorem escapingOffScheduleCommittees_singletonPrivate_or_multiple
       have := Finset.mem_range.1 (Finset.mem_filter.1 hhFilter).1
       omega
     have hprivate : IsPrivateTriple A h n :=
-      privateTriple_of_singleton_hub h0 hcov hcomm.1
+      privateTriple_of_singleton_support_transversal h0 hcov hcomm.1
         hcomm.2.2.2.1
     exact ⟨n, hnT, h, hhC,
       habove h (Finset.mem_singleton_self h), hhle,
@@ -21603,7 +19213,7 @@ theorem escapingOffScheduleCommittees_singletonPrivate_or_multiple
     push Not at hsingle
     obtain ⟨W₀, T₀, hnotSingle⟩ := hsingle
     have hmultiple : ∀ n, T₀ ≤ n → ∀ H : Finset ℕ,
-        IsOffScheduleMinimalCommittee A C N₀ σ n H →
+        IsOffScheduleMinimalDeletionTransversal A C N₀ σ n H →
         (∀ h ∈ H, W₀ < h) → 2 ≤ H.card := by
       intro n hn H hcomm habove
       have hpos : 0 < H.card :=
@@ -21628,18 +19238,18 @@ theorem escapingOffScheduleCommittees_singletonPrivate_or_multiple
     omega
 
 open Classical in
-/-- Escaping multi-guardian off-schedule committees admit a
+/-- Escaping multi-required element off-schedule deletion transversals admit a
 block-separated diagonal. -/
-theorem escapingMultipleOffScheduleCommittees_has_blockSequence
+theorem escapingMultipleOffScheduleDeletionTransversals_has_blockSequence
     {A C : Set ℕ} {N₀ : ℕ} {σ : ℕ → Finset ℕ}
     (hmulti : ∀ W T, ∃ n, T ≤ n ∧
       ∃ H : Finset ℕ,
-        IsOffScheduleMinimalCommittee A C N₀ σ n H ∧
+        IsOffScheduleMinimalDeletionTransversal A C N₀ σ n H ∧
         (∀ h ∈ H, W < h) ∧ 2 ≤ H.card) :
-    HasBlockSeparatedMultipleOffScheduleCommittees A C N₀ σ := by
+    HasBlockSeparatedMultipleOffScheduleDeletionTransversals A C N₀ σ := by
   have hpick : ∀ W, ∃ p : ℕ × Finset ℕ,
       W < p.1 ∧
-      IsOffScheduleMinimalCommittee A C N₀ σ p.1 p.2 ∧
+      IsOffScheduleMinimalDeletionTransversal A C N₀ σ p.1 p.2 ∧
       (∀ h ∈ p.2, W < h) ∧ 2 ≤ p.2.card := by
     intro W
     obtain ⟨n, hn, H, hcomm, habove, hcard⟩ :=
@@ -21663,7 +19273,7 @@ theorem escapingMultipleOffScheduleCommittees_has_blockSequence
   have hnmono : StrictMono n :=
     strictMono_nat_of_lt_succ hn_step
   have hcomm : ∀ i,
-      IsOffScheduleMinimalCommittee A C N₀ σ (n i) (H i) := by
+      IsOffScheduleMinimalDeletionTransversal A C N₀ σ (n i) (H i) := by
     intro i
     cases i with
     | zero =>
@@ -21707,27 +19317,16 @@ theorem escapingMultipleOffScheduleCommittees_has_blockSequence
   omega
 
 open Classical in
-/-- **Finite-schedule increment by mobile committee doors.**
-Suppose every deleted point currently has exactly `k` scheduled targets,
-all already represented outside the deletion.  If the residual
-off-schedule stalls contain block-separated committees of size at least
-two, then one can thin the deletion to an infinite subset and add one new
-served target at every retained point.
 
-For committee `Hᵢ`, choose a door `dᵢ` and a different owner `eᵢ`.
-Minimality gives `nᵢ=eᵢ+uᵢ+vᵢ` avoiding `dᵢ`.  The bounded point-map
-free-set theorem thins the doors so that all three witnesses survive.
-Since `nᵢ` lies outside every old schedule, inserting it raises the
-schedule cardinality from `k` to exactly `k+1`. -/
-theorem blockSeparatedMultipleOffScheduleCommittees_scheduleIncrement
+theorem blockSeparatedMultipleOffScheduleDeletionTransversals_scheduleIncrement
     {A C : Set ℕ} {N₀ k : ℕ} {σ : ℕ → Finset ℕ}
     (hCA : C ⊆ A)
-    (hschedule : HasSurvivingFiniteServiceSchedule A C σ)
+    (hschedule : HasSurvivingFiniteCoverageSchedule A C σ)
     (hcard : ∀ b ∈ C, (σ b).card = k)
     (hblocks :
-      HasBlockSeparatedMultipleOffScheduleCommittees A C N₀ σ) :
+      HasBlockSeparatedMultipleOffScheduleDeletionTransversals A C N₀ σ) :
     ∃ D ⊆ C, D.Infinite ∧
-      HasUniformSurvivingServiceSchedule A D (k + 1) := by
+      HasUniformSurvivingCoverageSchedule A D (k + 1) := by
   obtain ⟨n, H, hnmono, hcomm, hcommitteeCard, habove, hdisjoint⟩ :=
     hblocks
   have htwo : ∀ i, ∃ d ∈ H i, ∃ e ∈ H i, d ≠ e := by
@@ -21740,7 +19339,7 @@ theorem blockSeparatedMultipleOffScheduleCommittees_scheduleIncrement
       e i + u + v = n i ∧
       ∀ g ∈ H i, g ≠ e i → u ≠ g ∧ v ≠ g := by
     intro i
-    exact minimalRepHub_member_has_pairCowitness
+    exact minimalRepSupportTransversal_member_has_pairCowitness
       (hcomm i).2.2.2.1 (hcomm i).2.2.2.2.1 (heH i)
   choose u huA v hvA huv havoid using hcowitness
   have hdInjective : Function.Injective d := by
@@ -21803,7 +19402,7 @@ theorem blockSeparatedMultipleOffScheduleCommittees_scheduleIncrement
     rw [hidx x hxK] at hdC
     exact hdC
   let σ' : ℕ → Finset ℕ := fun x => insert (n (idx x)) (σ x)
-  have hschedule' : HasSurvivingFiniteServiceSchedule A D σ' := by
+  have hschedule' : HasSurvivingFiniteCoverageSchedule A D σ' := by
     intro x hxD m hm
     have hxK := hDK hxD
     have hcoordAvoid :
@@ -21840,28 +19439,23 @@ theorem blockSeparatedMultipleOffScheduleCommittees_scheduleIncrement
   exact ⟨D, hDC, hDinf, σ', hschedule', hcard'⟩
 
 open Classical in
-/-- **Mobile co-guardians also increment a finite schedule.**
-A block matching is not actually necessary.  If one fixed committee
-member `h` is accompanied, across the recurrent stalls, by infinitely
-many distinct other committee members, use those other members as doors
-and use the minimality witness owned by `h`.  The same bounded point-map
-thinning adds one off-schedule target per retained door. -/
-theorem infiniteCoguardianDoors_scheduleIncrement
+
+theorem infiniteCoRequiredElementFixedTransversals_scheduleIncrement
     {A C U : Set ℕ} {N₀ k h : ℕ} {σ : ℕ → Finset ℕ}
     (hCA : C ⊆ A)
     (hhC : h ∈ C)
     (hUC : U ⊆ C)
     (hUinf : U.Infinite)
-    (hschedule : HasSurvivingFiniteServiceSchedule A C σ)
+    (hschedule : HasSurvivingFiniteCoverageSchedule A C σ)
     (hcard : ∀ b ∈ C, (σ b).card = k)
     (hdoors : ∀ d ∈ U, d ≠ h ∧
       ∃ n, ∃ H : Finset ℕ,
-        IsOffScheduleMinimalCommittee A C N₀ σ n H ∧
+        IsOffScheduleMinimalDeletionTransversal A C N₀ σ n H ∧
         h ∈ H ∧ d ∈ H) :
     ∃ D ⊆ C, D.Infinite ∧
-      HasUniformSurvivingServiceSchedule A D (k + 1) := by
+      HasUniformSurvivingCoverageSchedule A D (k + 1) := by
   have hpick : ∀ d, ∃ n, ∃ H : Finset ℕ, d ∈ U →
-      IsOffScheduleMinimalCommittee A C N₀ σ n H ∧
+      IsOffScheduleMinimalDeletionTransversal A C N₀ σ n H ∧
       h ∈ H ∧ d ∈ H := by
     intro d
     by_cases hdU : d ∈ U
@@ -21876,7 +19470,7 @@ theorem infiniteCoguardianDoors_scheduleIncrement
     by_cases hdU : d ∈ U
     · have hd := hdata d hdU
       obtain ⟨u, huA, v, hvA, huv, havoid⟩ :=
-        minimalRepHub_member_has_pairCowitness
+        minimalRepSupportTransversal_member_has_pairCowitness
           hd.1.2.2.2.1 hd.1.2.2.2.2.1 hd.2.1
       have havd := havoid d hd.2.2 (hdoors d hdU).1
       exact ⟨u, v, fun _ =>
@@ -21905,7 +19499,7 @@ theorem infiniteCoguardianDoors_scheduleIncrement
       hUinf f 3 hfcard hfavoid
   have hDC : D ⊆ C := hDU.trans hUC
   let σ' : ℕ → Finset ℕ := fun d => insert (n d) (σ d)
-  have hschedule' : HasSurvivingFiniteServiceSchedule A D σ' := by
+  have hschedule' : HasSurvivingFiniteCoverageSchedule A D σ' := by
     intro d hdD m hm
     have hdU := hDU hdD
     have hco := hcow d hdU
@@ -21940,31 +19534,24 @@ theorem infiniteCoguardianDoors_scheduleIncrement
   exact ⟨D, hDC, hDinf, σ', hschedule', hcard'⟩
 
 open Classical in
-/-- **A recurrent guardian has a fixed finite committee or yields a
-schedule increment.**
 
-Collect every co-guardian which ever appears with the recurrent point
-`h`.  If this collection is infinite, the preceding mobile-door theorem
-increments the schedule.  If it is finite, every recurrent committee is
-a subset of one finite alphabet, so finite cofinal pigeonhole fixes one
-exact committee recurring arbitrarily late. -/
-theorem recurrentOffScheduleGuardian_fixedCommittee_or_increment
+theorem recurrentOffScheduleRequiredElement_fixedDeletionTransversal_or_increment
     {A C : Set ℕ} {N₀ k : ℕ} {σ : ℕ → Finset ℕ}
     (hCA : C ⊆ A)
-    (hschedule : HasSurvivingFiniteServiceSchedule A C σ)
+    (hschedule : HasSurvivingFiniteCoverageSchedule A C σ)
     (hcard : ∀ b ∈ C, (σ b).card = k)
     (hrec : ∃ h ∈ C, ∀ T, ∃ n, T ≤ n ∧
       ∃ H : Finset ℕ,
-        IsOffScheduleMinimalCommittee A C N₀ σ n H ∧ h ∈ H) :
+        IsOffScheduleMinimalDeletionTransversal A C N₀ σ n H ∧ h ∈ H) :
     (∃ h ∈ C, ∃ R : Finset ℕ, h ∈ R ∧
       ∀ T, ∃ n, T ≤ n ∧
-        IsOffScheduleMinimalCommittee A C N₀ σ n R) ∨
+        IsOffScheduleMinimalDeletionTransversal A C N₀ σ n R) ∨
     (∃ D ⊆ C, D.Infinite ∧
-      HasUniformSurvivingServiceSchedule A D (k + 1)) := by
+      HasUniformSurvivingCoverageSchedule A D (k + 1)) := by
   obtain ⟨h, hhC, hcofinal⟩ := hrec
   let U : Set ℕ := {d | d ≠ h ∧
     ∃ n, ∃ H : Finset ℕ,
-      IsOffScheduleMinimalCommittee A C N₀ σ n H ∧
+      IsOffScheduleMinimalDeletionTransversal A C N₀ σ n H ∧
       h ∈ H ∧ d ∈ H}
   have hUC : U ⊆ C := by
     intro d hdU
@@ -21973,7 +19560,7 @@ theorem recurrentOffScheduleGuardian_fixedCommittee_or_increment
     exact (Finset.mem_filter.1 hdFilter).2
   by_cases hUinf : U.Infinite
   · right
-    apply infiniteCoguardianDoors_scheduleIncrement
+    apply infiniteCoRequiredElementFixedTransversals_scheduleIncrement
       hCA hhC hUC hUinf hschedule hcard
     intro d hdU
     exact hdU
@@ -21982,7 +19569,7 @@ theorem recurrentOffScheduleGuardian_fixedCommittee_or_increment
     let F : Finset ℕ := insert h hUfin.toFinset
     have hQ : ∀ T, ∃ n, T ≤ n ∧ ∃ H : Finset ℕ,
         H ⊆ F ∧
-        (IsOffScheduleMinimalCommittee A C N₀ σ n H ∧ h ∈ H) := by
+        (IsOffScheduleMinimalDeletionTransversal A C N₀ σ n H ∧ h ∈ H) := by
       intro T
       obtain ⟨n, hnT, H, hcomm, hhH⟩ := hcofinal T
       refine ⟨n, hnT, H, ?_, hcomm, hhH⟩
@@ -21996,7 +19583,7 @@ theorem recurrentOffScheduleGuardian_fixedCommittee_or_increment
     obtain ⟨R, hRF, hRcofinal⟩ :=
       cofinal_subset_pigeonhole
         (Q := fun n H =>
-          IsOffScheduleMinimalCommittee A C N₀ σ n H ∧ h ∈ H)
+          IsOffScheduleMinimalDeletionTransversal A C N₀ σ n H ∧ h ∈ H)
         hQ
     refine ⟨h, hhC, R, ?_, ?_⟩
     · obtain ⟨n, hn, hcomm, hhR⟩ := hRcofinal 0
@@ -22006,8 +19593,8 @@ theorem recurrentOffScheduleGuardian_fixedCommittee_or_increment
       exact ⟨n, hnT, hcomm⟩
 
 open Classical in
-/-- An escaping singleton-committee stream outside a finite schedule may
-be thinned so that every guardian is non-big (`2h ≤ n`). -/
+/-- An escaping singleton-deletion transversal stream outside a finite schedule may
+be thinned so that every required element is non-big (`2h ≤ n`). -/
 theorem cofinal_offSchedule_singletonPrivate_are_nonbig
     {A C : Set ℕ} {N₀ : ℕ} {σ : ℕ → Finset ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (hCA : C ⊆ A)
@@ -22021,7 +19608,7 @@ theorem cofinal_offSchedule_singletonPrivate_are_nonbig
   push Not at hnonbig
   obtain ⟨W₀, T₀, hbad⟩ := hnonbig
   have hbigCofinal : ∀ X, ∃ h ∈ A, X < h ∧
-      ∃ n, IsBigAbsolutePrivateWound A N₀ h n := by
+      ∃ n, IsBigAbsolutePrivateDestruction A N₀ h n := by
     intro X
     obtain ⟨n, hnT₀, h, hhC, hhLarge, hhn, hn₀, hoff, hprivate⟩ :=
       hstream (max X W₀) T₀
@@ -22031,75 +19618,59 @@ theorem cofinal_offSchedule_singletonPrivate_are_nonbig
         hnonbig hoff hprivate
     exact ⟨h, hCA hhC, by omega, n,
       hn₀, hhn, Nat.lt_of_not_ge hnotNonbig, hprivate⟩
-  exact no_cofinal_big_absolute_private_guardians h0 hcov hbigCofinal
+  exact no_cofinal_big_absolute_private_required_elements h0 hcov hbigCofinal
 
 open Classical in
-/-- **One-step finite-schedule frontier.**
-In a failed deletion carrying a uniform surviving schedule of size `k`,
-one of three things happens:
 
-1. a fixed guardian recurs in off-schedule committees;
-2. escaping singleton committees give cofinal non-big absolute private
-   wounds; or
-3. the deletion can be thinned and its uniform schedule enlarged from
-   `k` to `k+1`.
-
-This is the rigorous iteration interface.  The third horn is genuine
-progress; the first two are the exact obstructions to repeating it. -/
-theorem finiteServiceSchedule_recurrent_or_nonbigPrivate_or_increment
+theorem finiteCoverageSchedule_recurrent_or_nonbigPrivate_or_increment
     {A C : Set ℕ} {N₀ k : ℕ} {σ : ℕ → Finset ℕ}
     (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
     (hCA : C ⊆ A)
-    (hschedule : HasSurvivingFiniteServiceSchedule A C σ)
+    (hschedule : HasSurvivingFiniteCoverageSchedule A C σ)
     (hcard : ∀ b ∈ C, (σ b).card = k)
     (hfail : ¬IsExactTupleAsymptoticBasis (A \ C) 3) :
     (∃ h ∈ C, ∀ T, ∃ n, T ≤ n ∧
       ∃ H : Finset ℕ,
-        IsOffScheduleMinimalCommittee A C N₀ σ n H ∧ h ∈ H) ∨
+        IsOffScheduleMinimalDeletionTransversal A C N₀ σ n H ∧ h ∈ H) ∨
     (∀ W T, ∃ n, T ≤ n ∧ ∃ h ∈ C,
       W < h ∧ h ≤ n ∧ N₀ ≤ n ∧ 2 * h ≤ n ∧
       (∀ b ∈ C, n ∉ σ b) ∧ IsPrivateTriple A h n) ∨
     (∃ D ⊆ C, D.Infinite ∧
-      HasUniformSurvivingServiceSchedule A D (k + 1)) := by
-  rcases finiteServiceSchedule_recurrentGuardian_or_escapingCommittees
+      HasUniformSurvivingCoverageSchedule A D (k + 1)) := by
+  rcases finiteCoverageSchedule_recurrentRequiredElement_or_escapingDeletionTransversals
       σ h0 h0C hcov hschedule hfail with hrec | hesc
   · exact Or.inl hrec
-  rcases escapingOffScheduleCommittees_singletonPrivate_or_multiple
+  rcases escapingOffScheduleDeletionTransversals_singletonPrivate_or_multiple
       h0 hcov hesc with hsingle | hmulti
   · exact Or.inr (Or.inl
       (cofinal_offSchedule_singletonPrivate_are_nonbig
         h0 hcov hCA hsingle))
   · exact Or.inr (Or.inr
-      (blockSeparatedMultipleOffScheduleCommittees_scheduleIncrement
+      (blockSeparatedMultipleOffScheduleDeletionTransversals_scheduleIncrement
         hCA hschedule hcard
-        (escapingMultipleOffScheduleCommittees_has_blockSequence hmulti)))
+        (escapingMultipleOffScheduleDeletionTransversals_has_blockSequence hmulti)))
 
 open Classical in
-/-- **Sharp one-step schedule frontier.**
-The recurrent horn can itself be resolved unless one exact finite
-committee recurs cofinally.  Thus a failed uniform `k`-schedule has only
-three outcomes: a fixed finite recurrent committee, a cofinal non-big
-absolute-private stream, or a uniform `(k+1)`-schedule after infinite
-thinning. -/
-theorem finiteServiceSchedule_fixedCommittee_or_nonbigPrivate_or_increment
+
+theorem finiteCoverageSchedule_fixedDeletionTransversal_or_nonbigPrivate_or_increment
     {A C : Set ℕ} {N₀ k : ℕ} {σ : ℕ → Finset ℕ}
     (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
     (hCA : C ⊆ A)
-    (hschedule : HasSurvivingFiniteServiceSchedule A C σ)
+    (hschedule : HasSurvivingFiniteCoverageSchedule A C σ)
     (hcard : ∀ b ∈ C, (σ b).card = k)
     (hfail : ¬IsExactTupleAsymptoticBasis (A \ C) 3) :
     (∃ h ∈ C, ∃ R : Finset ℕ, h ∈ R ∧
       ∀ T, ∃ n, T ≤ n ∧
-        IsOffScheduleMinimalCommittee A C N₀ σ n R) ∨
+        IsOffScheduleMinimalDeletionTransversal A C N₀ σ n R) ∨
     (∀ W T, ∃ n, T ≤ n ∧ ∃ h ∈ C,
       W < h ∧ h ≤ n ∧ N₀ ≤ n ∧ 2 * h ≤ n ∧
       (∀ b ∈ C, n ∉ σ b) ∧ IsPrivateTriple A h n) ∨
     (∃ D ⊆ C, D.Infinite ∧
-      HasUniformSurvivingServiceSchedule A D (k + 1)) := by
-  rcases finiteServiceSchedule_recurrent_or_nonbigPrivate_or_increment
+      HasUniformSurvivingCoverageSchedule A D (k + 1)) := by
+  rcases finiteCoverageSchedule_recurrent_or_nonbigPrivate_or_increment
       h0 h0C hcov hCA hschedule hcard hfail with
     hrec | hprivate | hincrement
-  · rcases recurrentOffScheduleGuardian_fixedCommittee_or_increment
+  · rcases recurrentOffScheduleRequiredElement_fixedDeletionTransversal_or_increment
       hCA hschedule hcard hrec with hfixed | hincrement
     · exact Or.inl hfixed
     · exact Or.inr (Or.inr hincrement)
@@ -22107,38 +19678,18 @@ theorem finiteServiceSchedule_fixedCommittee_or_nonbigPrivate_or_increment
   · exact Or.inr (Or.inr hincrement)
 
 open Classical in
-/-- **Unconditional moving-schedule increment.**
-Let `C` be an infinite failed deletion and suppose every deleted point
-currently carries exactly `k` scheduled targets whose representations
-survive `C`.  Then an infinite thinning carries a uniform surviving
-schedule of size `k+1`.
 
-Choose alternating unscheduled stalls and later doors
-
-`m₀ < d₀ < m₁ < d₁ < ⋯`,  with `dᵢ ∈ C`.
-
-The covering pair for `mᵢ`, padded by zero, is a three-term
-representation whose entries all lie below `dᵢ`.  Attach `mᵢ` to door
-`dᵢ`.  The associated three-point support map avoids its door, so the
-bounded point-map free-set theorem gives infinitely many doors disjoint
-from all retained supports.  Old scheduled representations survive by
-monotonicity under thinning, while `mᵢ` is outside every old schedule.
-Thus every retained door gains exactly one genuinely new service target.
-
-In particular, neither recurrent committees nor singleton committees
-obstruct finite schedule growth; they matter only for a future fusion of
-the finite stages. -/
-theorem failed_uniformFiniteServiceSchedule_has_increment
+theorem failed_uniformFiniteCoverageSchedule_has_increment
     {A C : Set ℕ} {N₀ k : ℕ} {σ : ℕ → Finset ℕ}
     (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
     (hCinf : C.Infinite)
-    (hschedule : HasSurvivingFiniteServiceSchedule A C σ)
+    (hschedule : HasSurvivingFiniteCoverageSchedule A C σ)
     (hcard : ∀ b ∈ C, (σ b).card = k)
     (hfail : ¬IsExactTupleAsymptoticBasis (A \ C) 3) :
     ∃ D ⊆ C, D.Infinite ∧
-      HasUniformSurvivingServiceSchedule A D (k + 1) := by
+      HasUniformSurvivingCoverageSchedule A D (k + 1) := by
   have hstalls :=
-    failure_with_finiteServiceSchedule_forces_cofinal_offScheduleStalls
+    failure_with_finiteCoverageSchedule_forces_cofinal_offScheduleStalls
       σ h0 h0C hcov hschedule hfail
   have hpick : ∀ W, ∃ p : ℕ × ℕ,
       W < p.1 ∧ p.1 < p.2 ∧ p.2 ∈ C ∧
@@ -22238,7 +19789,7 @@ theorem failed_uniformFiniteServiceSchedule_has_increment
     exact (hdata (idx q)).2.1
   let σ' : ℕ → Finset ℕ := fun q =>
     insert (m (idx q)) (σ q)
-  have hschedule' : HasSurvivingFiniteServiceSchedule A D σ' := by
+  have hschedule' : HasSurvivingFiniteCoverageSchedule A D σ' := by
     intro q hqD t ht
     have hqK := hDK hqD
     have hcoordAvoid :
@@ -22272,24 +19823,15 @@ theorem failed_uniformFiniteServiceSchedule_has_increment
   exact ⟨D, hDC, hDinf, σ', hschedule', hcard'⟩
 
 open Classical in
-/-- **Counterexamples force uniform finite schedules of every size.**
-Starting with the empty schedule on the infinite positive part of `A`,
-iterate `failed_uniformFiniteServiceSchedule_has_increment`.  A global
-counterexample therefore supplies, for every finite `k`, an infinite
-deletion on which every deleted point has exactly `k` distinct certified
-service targets.
 
-This is a finite-level theorem only: the deletion may change with `k`.
-Passing to one deletion with a complete countable service schedule is the
-remaining fusion problem. -/
-theorem counterexample_has_uniformServiceSchedules_of_every_finite_size
+theorem counterexample_has_uniformCoverageSchedules_of_every_finite_size
     {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ C ⊆ A, C.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ C) 3) :
     ∀ k, ∃ C : Set ℕ,
       C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧
-      HasUniformSurvivingServiceSchedule A C k := by
+      HasUniformSurvivingCoverageSchedule A C k := by
   intro k
   induction k with
   | zero =>
@@ -22308,7 +19850,7 @@ theorem counterexample_has_uniformServiceSchedules_of_every_finite_size
         exact (Nat.lt_irrefl 0) hz.2
       let σ : ℕ → Finset ℕ := fun _ => ∅
       have hschedule :
-          HasSurvivingFiniteServiceSchedule A C σ := by
+          HasSurvivingFiniteCoverageSchedule A C σ := by
         intro b hbC m hm
         simp [σ] at hm
       have hcard : ∀ b ∈ C, (σ b).card = 0 := by
@@ -22318,27 +19860,18 @@ theorem counterexample_has_uniformServiceSchedules_of_every_finite_size
   | succ k ih =>
       obtain ⟨C, hCA, hCinf, h0C, σ, hschedule, hcard⟩ := ih
       obtain ⟨D, hDC, hDinf, hDuniform⟩ :=
-        failed_uniformFiniteServiceSchedule_has_increment
+        failed_uniformFiniteCoverageSchedule_has_increment
           h0 h0C hcov hCinf hschedule hcard
             (hfail C hCA hCinf)
       exact ⟨D, hDC.trans hCA, hDinf,
         fun h0D => h0C (hDC h0D), hDuniform⟩
 
 open Classical in
-/-- **Finite schedule growth alone does not imply a basis.**
-Let `A=ℕ` and delete all odd numbers.  The survivor set is the evens, so
-it is not an order-three asymptotic basis.  Nevertheless, for every `k`
-attach the same `k` even targets `{0,2,...,2(k-1)}` to every deleted
-point; each is represented by `0+0+2i` outside the deletion.
 
-Thus even uniform schedules of every finite size on one fixed failed
-deletion do not solve the fusion problem.  What is missing is a fairness
-condition forcing the union of scheduled targets eventually to contain
-every threatened target. -/
-theorem uniformFiniteServiceSchedules_all_sizes_not_force_basis :
+theorem uniformFiniteCoverageSchedules_all_sizes_not_force_basis :
     let A : Set ℕ := Set.univ
     let C : Set ℕ := {n | n % 2 = 1}
-    (∀ k, HasUniformSurvivingServiceSchedule A C k) ∧
+    (∀ k, HasUniformSurvivingCoverageSchedule A C k) ∧
       ¬IsExactTupleAsymptoticBasis (A \ C) 3 := by
   dsimp
   constructor
@@ -22346,7 +19879,7 @@ theorem uniformFiniteServiceSchedules_all_sizes_not_force_basis :
     let σ : ℕ → Finset ℕ := fun _ =>
       (Finset.range k).image (fun i => 2 * i)
     have hschedule :
-        HasSurvivingFiniteServiceSchedule Set.univ
+        HasSurvivingFiniteCoverageSchedule Set.univ
           {n | n % 2 = 1} σ := by
       intro b hbC m hm
       simp only [σ, Finset.mem_image] at hm
@@ -22380,20 +19913,12 @@ theorem uniformFiniteServiceSchedules_all_sizes_not_force_basis :
     omega
 
 open Classical in
-/-- **Fair finite-schedule fusion.**
-A family of finite schedules on one fixed deletion fuses to a basis as
-soon as its union eventually contains every threatened target.  No
-uniform cardinality or monotonicity in the stage is needed: membership at
-one stage supplies the surviving representation.
 
-Together with `uniformFiniteServiceSchedules_all_sizes_not_force_basis`,
-this identifies the exact missing property in schedule iteration:
-fairness over the risk set, not unbounded schedule cardinality. -/
-theorem fair_finiteServiceSchedule_fusion
+theorem fair_finiteCoverageSchedule_fusion
     {A C : Set ℕ} {N₀ : ℕ} (sched : ℕ → ℕ → Finset ℕ)
     (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
     (hschedule : ∀ k,
-      HasSurvivingFiniteServiceSchedule A C (sched k))
+      HasSurvivingFiniteCoverageSchedule A C (sched k))
     (hfair : ∃ M, ∀ n, M ≤ n →
       (∃ b ∈ C, ∃ a ∈ A, b + a = n) →
       ∃ k, ∃ b ∈ C, n ∈ sched k b) :
@@ -22409,18 +19934,7 @@ theorem fair_finiteServiceSchedule_fusion
   exact hschedule k b hbC n hnSched
 
 open Classical in
-/-- **Risk-respecting schedule increment.**
-Suppose infinitely many distinct deleted sources `b` have a genuinely
-threatened target `n_b=b+a_b` outside their own old schedule and an
-`A`-representation avoiding `b`.  The three-point support map therefore
-avoids its source.  A bounded free-set thinning retains infinitely many
-sources while avoiding all retained supports, so every retained source
-gains one new *genuine risk* target.
 
-Unlike the unconditional moving-schedule increment, this preserves the
-semantic relation between a schedule label and the deletion point which
-threatens it.  Failure of its hypothesis is exactly where absolute
-private guardians or finitely recurrent risk sources must appear. -/
 theorem infiniteAlternativeRiskSources_scheduleIncrement
     {A C K : Set ℕ} {k : ℕ} {σ : ℕ → Finset ℕ}
     (hKC : K ⊆ C) (hKinf : K.Infinite)
@@ -22532,7 +20046,7 @@ def IsOffScheduleFailedRiskSource
 
 open Classical in
 /-- Above the pair-cover threshold, failure of an alternative triple
-means exactly that `b` is an absolute private guardian. -/
+means exactly that `b` is an absolute private required element. -/
 theorem alternativeTriple_or_private
     {A : Set ℕ} {N₀ b n : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀) (hn : N₀ ≤ n) :
@@ -22550,20 +20064,8 @@ theorem alternativeTriple_or_private
         hnone.1, hnone.2.1, hnone.2.2⟩
 
 open Classical in
-/-- **Risk-source frontier for a failed genuine schedule.**
-Choose one deleted source for each cofinal off-schedule stall and classify
-that source by `alternativeTriple_or_private`.
 
-* infinitely many alternative sources give a risk-respecting schedule
-  increment;
-* infinitely many private sources give an unbounded absolute-private
-  stream; and
-* if both source sets are finite, finite cofinal pigeonhole fixes one
-  source which carries cofinally many alternative or private stalls.
-
-This is the moving-prefix stall lemma with the source label retained; it
-pinpoints the exact obstructions to iterating genuine-risk repairs. -/
-theorem failed_riskSchedule_source_frontier
+theorem failed_riskSchedule_source_boundary
     {A C : Set ℕ} {N₀ k : ℕ} {σ : ℕ → Finset ℕ}
     (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hcov : PairCovers A N₀)
     (hschedule : HasSurvivingFiniteRiskSchedule A C σ)
@@ -22584,8 +20086,8 @@ theorem failed_riskSchedule_source_frontier
         IsOffScheduleFailedRiskSource A C N₀ σ b n ∧
         IsPrivateTriple A b n)) := by
   have hstalls :=
-    failure_with_finiteServiceSchedule_forces_cofinal_offScheduleStalls
-      σ h0 h0C hcov hschedule.toService hfail
+    failure_with_finiteCoverageSchedule_forces_cofinal_offScheduleStalls
+      σ h0 h0C hcov hschedule.toCoverage hfail
   have hQ : ∀ T, ∃ n, T < n ∧ ∃ b,
       IsOffScheduleFailedRiskSource A C N₀ σ b n := by
     intro T
@@ -22672,16 +20174,7 @@ theorem failed_riskSchedule_source_frontier
     exact ⟨n, by omega, hq, hprivate⟩
 
 open Classical in
-/-- **Anchored risk-source frontier.**
-In the anchor-abundant branch of a global counterexample, both private
-outputs of `failed_riskSchedule_source_frontier` are impossible: their
-unbounded private targets feed the established rotating/fixed guardian
-extraction and produce a surviving infinite deletion.
 
-Hence an anchored failed genuine `k`-schedule either increments to
-`k+1`, or one fixed deleted source carries cofinally many failed genuine
-risks which nevertheless have representations avoiding that source.
-All failure is then collateral through the rest of the deletion. -/
 theorem anchored_counterexample_riskSchedule_increment_or_fixedCollateral
     {A C : Set ℕ} {N₀ k : ℕ} {σ : ℕ → Finset ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -22700,7 +20193,7 @@ theorem anchored_counterexample_riskSchedule_increment_or_fixedCollateral
     (∃ b ∈ C, ∀ T, ∃ n, T < n ∧
       IsOffScheduleFailedRiskSource A C N₀ σ b n ∧
       HasAlternativeTriple A b n) := by
-  rcases failed_riskSchedule_source_frontier
+  rcases failed_riskSchedule_source_boundary
       h0 h0C hcov hschedule hcard (hglobal C hCA hCinf) with
     hincrement | hunboundedPrivate |
       ⟨b, hbC, hfixedAlt | hfixedPrivate⟩
@@ -22740,21 +20233,7 @@ theorem anchored_counterexample_riskSchedule_increment_or_fixedCollateral
       (exactTupleBasis_diff_of_survival hsurvive)
 
 open Classical in
-/-- **Sunflower structure of the fixed-source collateral horn.**
-Suppose one fixed deleted source `b` has cofinally many failed genuine
-risks, each with an alternative triple avoiding `b`.  Choose a strictly
-increasing target stream and one alternative support `Pᵢ` of size at
-most three.  Every `Pᵢ` meets `C`, since its target still fails under
-`C`.
 
-The infinite delta-system theorem leaves exactly two collateral
-geometries:
-
-* one fixed `c∈C`, `c≠b`, belongs to every retained support; or
-* the retained supports admit pairwise distinct collateral hits in `C`.
-
-This converts “fixed source, unspecified other damage” into a fixed
-two-channel obstruction or a mobile collateral matching. -/
 theorem fixedAlternativeRiskSource_has_collateralSunflower
     {A C : Set ℕ} {N₀ : ℕ} {σ : ℕ → Finset ℕ}
     (hfixed : ∃ b ∈ C, ∀ T, ∃ n, T < n ∧
@@ -22908,12 +20387,7 @@ theorem tripleSupport_member_has_pairDecomposition
     exact ⟨x, hxA, y, hyA, by omega⟩
 
 open Classical in
-/-- **Exact fixed/mobile collateral equations.**
-The collateral sunflower can be stated without support notation.  Along
-a strictly increasing cofinal target stream, one fixed source equation
-`b+aᵢ=nᵢ` is paired either with one fixed collateral equation
-`c+uᵢ+vᵢ=nᵢ`, or with such equations whose collateral points `dᵢ` are
-pairwise distinct. -/
+
 theorem fixedAlternativeRiskSource_fixed_or_mobileCollateralEquations
     {A C : Set ℕ} {N₀ : ℕ} {σ : ℕ → Finset ℕ}
     (hfixed : ∃ b ∈ C, ∀ T, ∃ n, T < n ∧
@@ -22965,9 +20439,9 @@ theorem fixedAlternativeRiskSource_fixed_or_mobileCollateralEquations
 open Classical in
 /-- A cofinal mobile-collateral stream in which the collateral point is
 the original pair partner.  The two equations then cancel to
-`b = uᵢ+vᵢ`; thus every row is the same two-guardian collision
+`b = uᵢ+vᵢ`; thus every row is the same two-required element conflict
 `b+dᵢ = dᵢ+uᵢ+vᵢ`, with pairwise distinct `dᵢ`. -/
-def HasCofinalSourceCollisionRows
+def HasCofinalSourceConflictRows
     (A C : Set ℕ) (N₀ : ℕ) (σ : ℕ → Finset ℕ) (b : ℕ) : Prop :=
   ∃ n : ℕ → ℕ, ∃ L : Set ℕ,
     ∃ d a u v : ℕ → ℕ,
@@ -22998,26 +20472,8 @@ def HasCofinalNonNormalizableCollateralRows
         b + a i = n i ∧ d i + u i + v i = n i
 
 open Classical in
-/-- **Mobile collateral either increments or reaches an exact
-obstruction.**
 
-For a mobile equation
-`b+aᵢ = dᵢ+uᵢ+vᵢ = nᵢ`, split according to whether the co-sum
-`uᵢ+vᵢ` lies in `A`.
-
-* If it does and `dᵢ ≠ aᵢ`, then `nᵢ=dᵢ+(uᵢ+vᵢ)` is a genuine risk of
-  the distinct source `dᵢ`, while `b+aᵢ+0` avoids `dᵢ`.  The
-  risk-schedule free-set theorem therefore increments `k` to `k+1`.
-* If it does and `dᵢ=aᵢ`, cancellation gives the source-collision
-  equation `b=uᵢ+vᵢ`.
-* If it does not, the row is an explicit failure of unrestricted
-  normalization.
-
-Infinite two-colour thinning makes one of these alternatives uniform.
-This isolates the two genuine mathematical obstructions in the mobile
-branch instead of silently assuming that a triple representation is a
-pair-risk representation. -/
-theorem mobileCollateralEquations_increment_or_collision_or_nonNormalizable
+theorem mobileCollateralEquations_increment_or_conflict_or_nonNormalizable
     {A C : Set ℕ} {N₀ k b : ℕ} {σ : ℕ → Finset ℕ}
     {n d : ℕ → ℕ} {L : Set ℕ}
     (h0 : 0 ∈ A) (h0C : 0 ∉ C) (hCA : C ⊆ A)
@@ -23035,7 +20491,7 @@ theorem mobileCollateralEquations_increment_or_collision_or_nonNormalizable
       ∃ σ' : ℕ → Finset ℕ,
         HasSurvivingFiniteRiskSchedule A D σ' ∧
         ∀ c ∈ D, (σ' c).card = k + 1) ∨
-    HasCofinalSourceCollisionRows A C N₀ σ b ∨
+    HasCofinalSourceConflictRows A C N₀ σ b ∨
     HasCofinalNonNormalizableCollateralRows A C N₀ σ b := by
   have hpick : ∀ i, ∃ a, ∃ u, ∃ v, i ∈ L →
       a ∈ A ∧ u ∈ A ∧ v ∈ A ∧
@@ -23150,22 +20606,7 @@ def HasCofinalFixedCollateralRows
           b + a = n i ∧ c + u + v = n i
 
 open Classical in
-/-- **Anchored genuine-schedule frontier with explicit terminal
-equations.**
 
-Starting from an anchor-abundant global counterexample and a uniform
-genuine `k`-schedule, the moving-prefix stall lemma, private-stream
-elimination, collateral sunflower, and mobile normalization split
-compose to give exactly four outcomes:
-
-1. the genuine schedule increments to `k+1`;
-2. a fixed second channel occurs cofinally;
-3. mobile channels collide with their original pair partners; or
-4. mobile channels have co-sums outside `A`.
-
-Thus every inference before these two algebraic terminal obstructions is
-now formal: neither fixed/cofinal-difference composition nor
-unrestricted normalization is smuggled into the schedule induction. -/
 theorem anchored_counterexample_riskSchedule_increment_or_terminalRows
     {A C : Set ℕ} {N₀ k : ℕ} {σ : ℕ → Finset ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -23182,7 +20623,7 @@ theorem anchored_counterexample_riskSchedule_increment_or_terminalRows
         HasSurvivingFiniteRiskSchedule A D σ' ∧
         ∀ b ∈ D, (σ' b).card = k + 1) ∨
     (∃ b ∈ C, HasCofinalFixedCollateralRows A C N₀ σ b) ∨
-    (∃ b ∈ C, HasCofinalSourceCollisionRows A C N₀ σ b) ∨
+    (∃ b ∈ C, HasCofinalSourceConflictRows A C N₀ σ b) ∨
     ∃ b ∈ C,
       HasCofinalNonNormalizableCollateralRows A C N₀ σ b := by
   rcases anchored_counterexample_riskSchedule_increment_or_fixedCollateral
@@ -23200,7 +20641,7 @@ theorem anchored_counterexample_riskSchedule_increment_or_terminalRows
       fun i hiL => ⟨hfailed i hiL, hrows i hiL⟩⟩
   · obtain ⟨d, hdInj, hrows⟩ := hmobile
     rcases
-        mobileCollateralEquations_increment_or_collision_or_nonNormalizable
+        mobileCollateralEquations_increment_or_conflict_or_nonNormalizable
           h0 h0C hCA hbC hschedule hcard hnmono hLinf
             hfailed hdInj hrows with
       hincrement | hcollision | hnonNormal
@@ -23209,16 +20650,8 @@ theorem anchored_counterexample_riskSchedule_increment_or_terminalRows
     · exact Or.inr (Or.inr (Or.inr ⟨b, hbC, hnonNormal⟩))
 
 open Classical in
-/-- **Source-collision rows are not terminal in an anchored
-counterexample.**
 
-For a collision row, `dᵢ=aᵢ` turns `b+aᵢ=nᵢ` into the genuine risk
-`dᵢ+b=nᵢ`.  Classify that risk at its mobile source `dᵢ`.
-Infinitely many alternative triples give the genuine schedule
-increment.  Infinitely many private triples give an unbounded private
-stream, which the anchor theorem converts to a surviving infinite
-deletion, contradicting the global-counterexample hypothesis. -/
-theorem anchored_sourceCollisionRows_force_increment
+theorem anchored_sourceConflictRows_force_increment
     {A C : Set ℕ} {N₀ k b : ℕ} {σ : ℕ → Finset ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hCA : C ⊆ A) (h0C : 0 ∉ C) (hbC : b ∈ C)
@@ -23230,7 +20663,7 @@ theorem anchored_sourceCollisionRows_force_increment
     (hschedule : HasSurvivingFiniteRiskSchedule A C σ)
     (hcard : ∀ c ∈ C, (σ c).card = k)
     (hcollision :
-      HasCofinalSourceCollisionRows A C N₀ σ b) :
+      HasCofinalSourceConflictRows A C N₀ σ b) :
     ∃ D ⊆ C, D.Infinite ∧
       ∃ σ' : ℕ → Finset ℕ,
         HasSurvivingFiniteRiskSchedule A D σ' ∧
@@ -23301,7 +20734,7 @@ theorem anchored_sourceCollisionRows_force_increment
       (exactTupleBasis_diff_of_survival hsurvive)
 
 open Classical in
-/-- After eliminating the collision horn, an anchored counterexample
+/-- After eliminating the conflict case, an anchored counterexample
 with a genuine finite schedule has only two non-increment outputs:
 fixed collateral composition, or an explicit cofinal failure of
 co-sum normalization. -/
@@ -23330,22 +20763,13 @@ theorem anchored_counterexample_riskSchedule_increment_or_fixed_or_nonNormalizab
   · exact Or.inr (Or.inl hfixed)
   · obtain ⟨b, hbC, hcollision⟩ := hcollision
     exact Or.inl
-      (anchored_sourceCollisionRows_force_increment
+      (anchored_sourceConflictRows_force_increment
         h0 hcov hCA h0C hbC hglobal hanchor
           hschedule hcard hcollision)
   · exact Or.inr (Or.inr hnonNormal)
 
 open Classical in
-/-- **Fresh-source restart lemma.**
-Assume no genuine `k+1` schedule can be obtained below `C`.  Remove any
-finite set `F` of previously used sources and apply the anchored
-risk-source frontier to `C\F`.  Its increment horn contradicts the
-assumption, so a new fixed alternative source remains.  Choosing its
-cofinal stall above the sum of all old finite schedules makes the target
-off-schedule not merely on `C\F`, but on all of `C`.
 
-This is the finite-avoidance step needed to turn recurrent fixed sources
-into infinitely many distinct sources. -/
 theorem anchored_counterexample_freshAlternativeRiskSource
     {A C : Set ℕ} {N₀ k : ℕ} {σ : ℕ → Finset ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -23417,19 +20841,7 @@ theorem anchored_counterexample_freshAlternativeRiskSource
     · exact hfailed.2.2.2.1 c ⟨hcC, hcF⟩ hnσ
 
 open Classical in
-/-- **Fixed recurrent sources can be restarted away.**
 
-If no `k+1` schedule existed, the fresh-source restart lemma could be
-iterated.  At stage `i`, remove the finite set of earlier sources and
-choose a new source `bᵢ` with an alternative failed risk `nᵢ` outside
-every old schedule on all of `C`.  The sources are injective.  Applying
-the bounded free-set schedule increment theorem to their range then
-produces the forbidden `k+1` schedule.
-
-Consequently, in the anchor-abundant global-counterexample setting,
-*every* uniform finite genuine-risk schedule admits a genuine uniform
-increment.  The previously recurrent fixed-source horn is therefore a
-finite-stage artefact, not a terminal obstruction. -/
 theorem anchored_counterexample_riskSchedule_increment
     {A C : Set ℕ} {N₀ k : ℕ} {σ : ℕ → Finset ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -23510,21 +20922,7 @@ theorem anchored_counterexample_riskSchedule_increment
   exact hnoIncrement hincrement
 
 open Classical in
-/-- **Finite translation-slice fairness.**
 
-Let `Q` be any finite set of offsets.  For a source `b`, each target
-`b+q` is either represented by a triple avoiding `b`, or `b` is its
-absolute private guardian.  For fixed `q`, infinitely many private
-sources would form an unbounded private stream and contradict the
-anchor/global-counterexample hypotheses.  Removing the finite union of
-all private-source fibers leaves infinitely many sources with avoiding
-triples for every `q∈Q`.  The union of those finitely many three-point
-supports is still uniformly bounded, so one free-set thinning makes all
-of them survive simultaneously.
-
-Thus the genuine fairness problem is not finite: every finite collection
-of translate slices can be served on one infinite deletion.  The exact
-remaining issue is countable fusion while retaining infinitude. -/
 theorem anchored_counterexample_serves_finite_translationSlices
     {A C : Set ℕ} {N₀ : ℕ} (Q : Finset ℕ)
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -23753,17 +21151,7 @@ theorem anchored_counterexample_has_every_finite_fairWindow
     ⟨Finset.mem_range.mpr (by omega), hqA⟩
 
 open Classical in
-/-- **Exact fixed-deletion fairness bridge.**
-If the same infinite deletion supports a fair finite schedule for every
-offset window, then it is the desired order-three deletion.  Coherence
-between the schedules is unnecessary: for a particular risk `b+a`, use
-the schedule at window `M=a`.
 
-Together with
-`anchored_counterexample_has_every_finite_fairWindow`, this exposes the
-remaining quantifier swap exactly:
-
-`∀ M, ∃ D_M` is proved; `∃ D, ∀ M` would finish the anchored branch. -/
 theorem fixedDeletion_allFiniteFairWindows_implies_basis
     {A D : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (h0D : 0 ∉ D) (hcov : PairCovers A N₀)
@@ -23784,19 +21172,7 @@ theorem fixedDeletion_allFiniteFairWindows_implies_basis
     hxD, hyD, hzD, by omega⟩
 
 open Classical in
-/-- **Finite free-set solvability does not abstractly fuse over
-countably many slices.**
 
-Let `f q b = {q}` when `q<b`, and `∅` otherwise.  Inside every infinite
-reservoir, every finite set of indices `Q` has an infinite common free
-subreservoir: take a relative tail above all of `Q`.  But no infinite set
-is free for every `q`: if `q` belongs to the set, any later `b` points
-back to `q`.
-
-This one-point-map example is the exact compactness warning for
-`anchored_counterexample_serves_finite_translationSlices`.  A successful
-limit argument must use additive structure beyond bounded support size
-and finite-slice solvability. -/
 theorem finite_free_pointMaps_not_countably_fusible :
     let f : ℕ → ℕ → Finset ℕ :=
       fun q b => if q < b then {q} else ∅
@@ -23837,7 +21213,7 @@ theorem finite_free_pointMaps_not_countably_fusible :
 open Classical in
 /-- An infinite deletion for which every deleted point has both its
 selected target and one distinct off-selector target already served. -/
-def HasTwoTargetDoorThinning
+def HasTwoTargetFixedTransversalThinning
     (A C : Set ℕ) (N₀ : ℕ) (τ : ℕ → ℕ) : Prop :=
   ∃ D : Set ℕ, D ⊆ C ∧ D.Infinite ∧
     ∀ x ∈ D,
@@ -23849,28 +21225,17 @@ def HasTwoTargetDoorThinning
           p ∉ D ∧ q ∉ D ∧ r ∉ D ∧ p + q + r = m
 
 open Classical in
-/-- **Door thinning services two targets per deleted point.**
-From block-separated minimal committees of size at least two, choose in
-each block a door `dᵢ` and a different witness owner `eᵢ`.  Minimality
-gives `nᵢ=eᵢ+uᵢ+vᵢ` avoiding the door.  The three-point map
-`dᵢ ↦ {eᵢ,uᵢ,vᵢ}` is bounded and avoids its input, so a point-map free
-set yields an infinite set `D` of doors disjoint from every retained
-witness.
 
-Consequently each `x∈D` has both its selected target `τ x` and a distinct
-off-selector target represented in `A\D`.  This doubles the certified
-service per deleted point, though it does not yet serve every target in
-`D+A`. -/
-theorem blockSeparatedMultipleCommittees_has_twoTargetDoorThinning
+theorem blockSeparatedMultipleDeletionTransversals_has_twoTargetFixedTransversalThinning
     {A C : Set ℕ} {N₀ : ℕ} {τ : ℕ → ℕ}
     (hCA : C ⊆ A)
     (hselected : ∀ b ∈ C,
       ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
         x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = τ b)
     (hblocks :
-      HasBlockSeparatedMultipleOffSelectorCommittees A C N₀ τ) :
-    HasTwoTargetDoorThinning A C N₀ τ := by
-  unfold HasTwoTargetDoorThinning
+      HasBlockSeparatedMultipleOffSelectorDeletionTransversals A C N₀ τ) :
+    HasTwoTargetFixedTransversalThinning A C N₀ τ := by
+  unfold HasTwoTargetFixedTransversalThinning
   obtain ⟨n, H, hnmono, hcomm, hcard, habove, hdisjoint⟩ :=
     hblocks
   have htwo : ∀ i, ∃ d ∈ H i, ∃ e ∈ H i, d ≠ e := by
@@ -23883,7 +21248,7 @@ theorem blockSeparatedMultipleCommittees_has_twoTargetDoorThinning
       e i + u + v = n i ∧
       ∀ g ∈ H i, g ≠ e i → u ≠ g ∧ v ≠ g := by
     intro i
-    exact minimalRepHub_member_has_pairCowitness
+    exact minimalRepSupportTransversal_member_has_pairCowitness
       (hcomm i).2.2.2.1 (hcomm i).2.2.2.2.1 (heH i)
   choose u huA v hvA huv havoid using hcowitness
   have hdInjective : Function.Injective d := by
@@ -23979,13 +21344,13 @@ theorem blockSeparatedMultipleCommittees_has_twoTargetDoorThinning
   exact hCA (Finset.mem_filter.1 heFilter).2
 
 open Classical in
-/-- A two-target door thinning is equivalently an infinite subdeletion
-carrying a surviving service schedule of uniform cardinality two. -/
-theorem twoTargetDoorThinning_has_uniform_twoServiceSchedule
+/-- A two-target fixed transversal thinning is equivalently an infinite subdeletion
+carrying a surviving coverage schedule of uniform cardinality two. -/
+theorem twoTargetFixedTransversalThinning_has_uniform_twoCoverageSchedule
     {A C : Set ℕ} {N₀ : ℕ} {τ : ℕ → ℕ}
-    (hdoors : HasTwoTargetDoorThinning A C N₀ τ) :
+    (hdoors : HasTwoTargetFixedTransversalThinning A C N₀ τ) :
     ∃ D ⊆ C, D.Infinite ∧
-      HasUniformSurvivingServiceSchedule A D 2 := by
+      HasUniformSurvivingCoverageSchedule A D 2 := by
   obtain ⟨D, hDC, hDinf, hserve⟩ := hdoors
   have hchoice : ∀ x, ∃ m, x ∈ D →
       τ x ≠ m ∧
@@ -23999,7 +21364,7 @@ theorem twoTargetDoorThinning_has_uniform_twoServiceSchedule
     · exact ⟨0, fun hx => absurd hx hxD⟩
   choose μ hμ using hchoice
   let σ : ℕ → Finset ℕ := fun x => {τ x, μ x}
-  have hschedule : HasSurvivingFiniteServiceSchedule A D σ := by
+  have hschedule : HasSurvivingFiniteCoverageSchedule A D σ := by
     intro x hxD m hm
     simp only [σ, Finset.mem_insert, Finset.mem_singleton] at hm
     rcases hm with hmt | hmt
@@ -24014,37 +21379,25 @@ theorem twoTargetDoorThinning_has_uniform_twoServiceSchedule
   exact ⟨D, hDC, hDinf, σ, hschedule, hcard⟩
 
 open Classical in
-/-- **Refined fixed-repair-channel frontier.**
-Collision-free thinning of a cofinal fixed repair channel in a global
-counterexample produces one infinite deletion `C` and selector `τ`, and
-then exactly one of the three remaining committee geometries:
 
-1. one fixed deleted guardian recurs cofinally;
-2. singleton escaping committees yield cofinal non-big absolute private
-   wounds; or
-3. non-singleton committees form a block-separated pairwise-disjoint
-   sequence.
-
-The former unstructured off-selector stall stream has therefore been
-replaced by finite guardian geometry. -/
-theorem counterexample_fixedRepairChannel_committee_frontier
+theorem counterexample_fixedRepairChannel_deletion_transversal_boundary
     {A : Set ℕ} {N₀ w : ℕ} {B : Finset ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ C ⊆ A, C.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ C) 3)
     (hcofinal : ∀ X, ∃ b ∈ A, X < b ∧
-      HasTerminalRepairWoundThrough A N₀ B w b) :
+      HasTerminalRepairDestructionThrough A N₀ B w b) :
     ∃ C : Set ℕ, ∃ τ : ℕ → ℕ,
       C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧ w ∉ C ∧ w ∈ A ∧
       (∀ b ∈ C, N₀ ≤ τ b ∧ b ≤ τ b ∧
         (∃ d ∈ insert b B, ∃ a ∈ A, d + a = τ b) ∧
         IsPrivateTriple (A \ (B : Set ℕ)) b (τ b) ∧
         ∃ u ∈ A \ C, ∃ v ∈ A \ C, w + u + v = τ b) ∧
-      (HasRecurrentOffSelectorGuardian A C N₀ τ ∨
+      (HasRecurrentOffSelectorRequiredElement A C N₀ τ ∨
        HasCofinalNonbigOffSelectorPrivateStream A C N₀ τ ∨
-       HasBlockSeparatedMultipleOffSelectorCommittees A C N₀ τ) := by
+       HasBlockSeparatedMultipleOffSelectorDeletionTransversals A C N₀ τ) := by
   obtain ⟨C, τ, hCA, hCinf, h0C, hwC, hwA, hdata⟩ :=
-    cofinal_fixedRepairChannel_has_collisionFree_selector hcofinal
+    cofinal_fixedRepairChannel_has_conflictFree_selector hcofinal
   have hselected : ∀ b ∈ C,
       ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
         x ∉ C ∧ y ∉ C ∧ z ∉ C ∧ x + y + z = τ b := by
@@ -24053,50 +21406,45 @@ theorem counterexample_fixedRepairChannel_committee_frontier
     exact ⟨w, hwA, u, hu.1, v, hv.1,
       hwC, hu.2, hv.2, huv⟩
   have hfailC := hfail C hCA hCinf
-  rcases selectedRepairs_recurrentGuardian_or_escapingCommittees
+  rcases selectedRepairs_recurrentRequiredElement_or_escapingDeletionTransversals
       τ h0 h0C hcov hselected hfailC with hrec | hesc
   · exact ⟨C, τ, hCA, hCinf, h0C, hwC, hwA, hdata,
       Or.inl hrec⟩
-  · rcases escapingCommittees_singletonPrivate_or_uniformlyMultiple
+  · rcases escapingDeletionTransversals_singletonPrivate_or_uniformlyMultiple
       h0 hcov hesc with hsingle | hmultiple
     · have hnonbig :=
-        cofinal_offSelector_absolutePrivate_wounds_are_nonbig
+        cofinal_offSelector_absolutePrivate_destructions_are_nonbig
           h0 hcov hCA hsingle
       exact ⟨C, τ, hCA, hCinf, h0C, hwC, hwA, hdata,
         Or.inr (Or.inl hnonbig)⟩
     · obtain ⟨W₀, T₀, hlarge, hsupply⟩ := hmultiple
       have hblocks :=
-        escapingUniformlyMultipleCommittees_has_blockSequence
+        escapingUniformlyMultipleDeletionTransversals_has_blockSequence
           hlarge hesc
       exact ⟨C, τ, hCA, hCinf, h0C, hwC, hwA, hdata,
         Or.inr (Or.inr hblocks)⟩
 
 open Classical in
-/-- **Two-target fixed-channel frontier.**
-The block-separated multiple-committee horn of the preceding theorem
-already yields a second infinite collision-free thinning.  Hence the
-fixed-channel branch reduces further to: a recurrent guardian, a
-central/atomic singleton-private stream, or an infinite deletion with two
-certified surviving targets per deleted point. -/
-theorem counterexample_fixedRepairChannel_twoTarget_frontier
+
+theorem counterexample_fixedRepairChannel_twoTarget_boundary
     {A : Set ℕ} {N₀ w : ℕ} {B : Finset ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ C ⊆ A, C.Infinite →
       ¬IsExactTupleAsymptoticBasis (A \ C) 3)
     (hcofinal : ∀ X, ∃ b ∈ A, X < b ∧
-      HasTerminalRepairWoundThrough A N₀ B w b) :
+      HasTerminalRepairDestructionThrough A N₀ B w b) :
     ∃ C : Set ℕ, ∃ τ : ℕ → ℕ,
       C ⊆ A ∧ C.Infinite ∧ 0 ∉ C ∧ w ∉ C ∧ w ∈ A ∧
       (∀ b ∈ C, N₀ ≤ τ b ∧ b ≤ τ b ∧
         (∃ d ∈ insert b B, ∃ a ∈ A, d + a = τ b) ∧
         IsPrivateTriple (A \ (B : Set ℕ)) b (τ b) ∧
         ∃ u ∈ A \ C, ∃ v ∈ A \ C, w + u + v = τ b) ∧
-      (HasRecurrentOffSelectorGuardian A C N₀ τ ∨
+      (HasRecurrentOffSelectorRequiredElement A C N₀ τ ∨
        HasCofinalNonbigOffSelectorPrivateStream A C N₀ τ ∨
-       HasTwoTargetDoorThinning A C N₀ τ) := by
+       HasTwoTargetFixedTransversalThinning A C N₀ τ) := by
   obtain ⟨C, τ, hCA, hCinf, h0C, hwC, hwA, hdata,
     hrec | hprivate | hblocks⟩ :=
-    counterexample_fixedRepairChannel_committee_frontier
+    counterexample_fixedRepairChannel_deletion_transversal_boundary
       h0 hcov hfail hcofinal
   · exact ⟨C, τ, hCA, hCinf, h0C, hwC, hwA, hdata,
       Or.inl hrec⟩
@@ -24110,15 +21458,15 @@ theorem counterexample_fixedRepairChannel_twoTarget_frontier
       exact ⟨w, hwA, u, hu.1, v, hv.1,
         hwC, hu.2, hv.2, huv⟩
     have hdoors :=
-      blockSeparatedMultipleCommittees_has_twoTargetDoorThinning
+      blockSeparatedMultipleDeletionTransversals_has_twoTargetFixedTransversalThinning
         hCA hselected hblocks
     exact ⟨C, τ, hCA, hCinf, h0C, hwC, hwA, hdata,
       Or.inr (Or.inr hdoors)⟩
 
 open Classical in
-/-- An absolute terminal wound in the non-big regime: the co-offset is at
-least the guardian. -/
-def HasNonBigAbsoluteTerminalWound
+/-- An absolute terminal destruction in the non-big regime: the co-offset is at
+least the required element. -/
+def HasNonBigAbsoluteTerminalDestruction
     (A : Set ℕ) (N₀ : ℕ) (B : Finset ℕ) (b : ℕ) : Prop :=
   ∃ n, N₀ ≤ n ∧ b ≤ n ∧ 2 * b ≤ n ∧
     (∃ d ∈ insert b B, ∃ a ∈ A, d + a = n) ∧
@@ -24126,21 +21474,21 @@ def HasNonBigAbsoluteTerminalWound
     IsPrivateTriple A b n
 
 open Classical in
-/-- A cofinal stream of absolute terminal wounds can be thinned to the
+/-- A cofinal stream of absolute terminal destructions can be thinned to the
 non-big regime `2b≤n`; otherwise its cofinal big substream contradicts
-`no_cofinal_big_absolute_private_guardians`. -/
-theorem cofinal_absolute_terminal_wounds_are_nonbig
+`no_cofinal_big_absolute_private_required_elements`. -/
+theorem cofinal_absolute_terminal_destructions_are_nonbig
     {A : Set ℕ} {N₀ : ℕ} {B : Finset ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hcofinal : ∀ X, ∃ b ∈ A, X < b ∧
-      HasAbsoluteTerminalWound A N₀ B b) :
+      HasAbsoluteTerminalDestruction A N₀ B b) :
     ∀ X, ∃ b ∈ A, X < b ∧
-      HasNonBigAbsoluteTerminalWound A N₀ B b := by
+      HasNonBigAbsoluteTerminalDestruction A N₀ B b := by
   by_contra hnonbig
   push Not at hnonbig
   obtain ⟨X₀, hX₀⟩ := hnonbig
   have hbigCofinal : ∀ X, ∃ b ∈ A, X < b ∧
-      ∃ n, IsBigAbsolutePrivateWound A N₀ b n := by
+      ∃ n, IsBigAbsolutePrivateDestruction A N₀ b n := by
     intro X
     obtain ⟨b, hbA, hbLarge, n, hn, hbn, hrisk,
       hrelative, habsolute⟩ := hcofinal (max X X₀)
@@ -24152,20 +21500,10 @@ theorem cofinal_absolute_terminal_wounds_are_nonbig
         ⟨n, hn, hbn, hnonBig, hrisk, hrelative, habsolute⟩
     exact ⟨b, hbA, by omega, n,
       hn, hbn, hbig, habsolute⟩
-  exact no_cofinal_big_absolute_private_guardians h0 hcov hbigCofinal
+  exact no_cofinal_big_absolute_private_required_elements h0 hcov hbigCofinal
 
 open Classical in
-/-- **Final moving-prefix frontier.**
-Every counterexample has one safe zero-preserving finite prefix `B` and
-falls into exactly the two surviving cofinal geometries:
 
-1. arbitrarily large absolute private guardians `b` with targets
-   `n≥2b`; or
-2. repairs for arbitrarily large relative private guardians all pass
-   through one fixed old element `w∈B`.
-
-The big-guardian absolute branch and all moving/fiber/fixed-stall losses
-have been eliminated. -/
 theorem counterexample_nonbig_absolute_or_fixed_prefix_repairs
     {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -24174,19 +21512,19 @@ theorem counterexample_nonbig_absolute_or_fixed_prefix_repairs
     ∃ B : Finset ℕ,
       FinitePrefixServesRisks A N₀ B ∧ 0 ∉ B ∧
       ((∀ X, ∃ b ∈ A, X < b ∧
-          HasNonBigAbsoluteTerminalWound A N₀ B b) ∨
+          HasNonBigAbsoluteTerminalDestruction A N₀ B b) ∨
        ∃ w ∈ B, ∀ X, ∃ b ∈ A, X < b ∧
-          HasTerminalRepairWoundThrough A N₀ B w b) := by
+          HasTerminalRepairDestructionThrough A N₀ B w b) := by
   obtain ⟨B, hserved, h0B, habsolute | hrepair⟩ :=
     counterexample_cofinal_absolute_or_fixed_prefix_repairs h0 hcov hfail
   · exact ⟨B, hserved, h0B, Or.inl
-      (cofinal_absolute_terminal_wounds_are_nonbig
+      (cofinal_absolute_terminal_destructions_are_nonbig
         h0 hcov habsolute)⟩
   · exact ⟨B, hserved, h0B, Or.inr hrepair⟩
 
 open Classical in
-/-- A terminal absolute wound exactly at the guardian's double. -/
-def HasDoubleAbsoluteTerminalWound
+/-- A terminal absolute destruction at twice the required element. -/
+def HasDoubleAbsoluteTerminalDestruction
     (A : Set ℕ) (N₀ : ℕ) (B : Finset ℕ) (b : ℕ) : Prop :=
   N₀ ≤ 2 * b ∧
     (∃ d ∈ insert b B, ∃ a ∈ A, d + a = 2 * b) ∧
@@ -24209,41 +21547,35 @@ theorem absolute_private_double_forces_unique_pair
   · exact absurd h0b (Nat.ne_of_lt hbpos)
 
 open Classical in
-/-- **Strict small absolute guardians are zero-atomic and create a
-desert.**
-For an absolute private target `n` with `2b<n`, the co-representative
-`q=n-b` lies in `A` and satisfies `b<q`.  Any pair `x+y=b` would make
-`q+x+y=n`; privacy forces `x=b` or `y=b`.  Thus `{b}` is a singleton
-pair hub at `b`.  The standard small-guardian law also makes
-`(q,n-N₀]` empty in `A`. -/
+
 theorem strict_small_absolute_private_structure
     {A : Set ℕ} {N₀ b n : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hbpos : 0 < b) (hn : N₀ ≤ n)
     (hprivate : IsPrivateTriple A b n) (hstrict : 2 * b < n) :
     ∃ q ∈ A, b < q ∧ b + q = n ∧
-      IsPairHub A b {b} ∧
+      IsPairSupportTransversal A b {b} ∧
       ∀ z ∈ A, q < z → z + N₀ ≤ n → False := by
   obtain ⟨q, hqA, hbq⟩ :=
     hprivate.corep_mem h0 hcov hbpos hn
   have hbq' : b < q := by omega
-  have hpairHub : IsPairHub A b {b} := by
+  have hpairSupportTransversal : IsPairSupportTransversal A b {b} := by
     intro x hxA y hyA hxy
     rcases hprivate.2 q hqA x hxA y hyA (by omega) with
       hqb | hxb | hyb
     · exact absurd hqb (Nat.ne_of_lt hbq').symm
     · exact Or.inl (by simp [hxb])
     · exact Or.inr (by simp [hyb])
-  refine ⟨q, hqA, hbq', hbq, hpairHub, ?_⟩
+  refine ⟨q, hqA, hbq', hbq, hpairSupportTransversal, ?_⟩
   intro z hzA hqz hzHigh
-  exact hprivate.small_desert h0 hcov hbpos hstrict hzA
+  exact hprivate.small_exclusion_interval h0 hcov hbpos hstrict hzA
     (by omega) hzHigh
 
 open Classical in
-/-- The singleton-committee branch has the same exact central/atomic
+/-- The singleton-deletion transversal branch has the same exact central/atomic
 split as the original absolute-private branch: cofinally private doubles
 with a unique covering pair, or cofinally strict-small singleton pair
-hubs with a post-corepresentative desert. -/
+support transversals with a post-corepresentative exclusion interval. -/
 theorem cofinal_nonbig_offSelector_privateStream_split
     {A C : Set ℕ} {N₀ : ℕ} {τ : ℕ → ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -24256,7 +21588,7 @@ theorem cofinal_nonbig_offSelector_privateStream_split
       W < h ∧ N₀ ≤ n ∧ 2 * h < n ∧ τ h ≠ n ∧
       IsPrivateTriple A h n ∧
       ∃ q ∈ A, h < q ∧ h + q = n ∧
-        IsPairHub A h {h} ∧
+        IsPairSupportTransversal A h {h} ∧
         ∀ z ∈ A, q < z → z + N₀ ≤ n → False) := by
   by_cases hdouble : ∀ W T, ∃ h ∈ C,
       W < h ∧ T ≤ 2 * h ∧ N₀ ≤ 2 * h ∧
@@ -24284,39 +21616,39 @@ theorem cofinal_nonbig_offSelector_privateStream_split
             (by simpa [heq] using hprivate)
         have hxyUnique := hunique x hxA y hyA hxy
         exact hbadPair hxyUnique.1 hxyUnique.2
-    obtain ⟨q, hqA, hhq, hhqsum, hpairHub, hdesert⟩ :=
+    obtain ⟨q, hqA, hhq, hhqsum, hpairSupportTransversal, hdesert⟩ :=
       strict_small_absolute_private_structure
         h0 hcov hhpos hn₀ hprivate hstrict
     exact ⟨n, by omega, h, hhC, by omega, hn₀, hstrict,
-      hoff, hprivate, q, hqA, hhq, hhqsum, hpairHub, hdesert⟩
+      hoff, hprivate, q, hqA, hhq, hhqsum, hpairSupportTransversal, hdesert⟩
 
 open Classical in
-/-- A strict-small terminal wound, including its forced co-representative,
-singleton pair hub, and desert. -/
-def HasStrictSmallAbsoluteTerminalWound
+/-- A strict-small terminal destruction, including its forced co-representative,
+singleton pair support transversal, and exclusion interval. -/
+def HasStrictSmallAbsoluteTerminalDestruction
     (A : Set ℕ) (N₀ : ℕ) (B : Finset ℕ) (b : ℕ) : Prop :=
   ∃ n, N₀ ≤ n ∧ b ≤ n ∧ 2 * b < n ∧
     (∃ d ∈ insert b B, ∃ a ∈ A, d + a = n) ∧
     IsPrivateTriple (A \ (B : Set ℕ)) b n ∧
     IsPrivateTriple A b n ∧
     ∃ q ∈ A, b < q ∧ b + q = n ∧
-      IsPairHub A b {b} ∧
+      IsPairSupportTransversal A b {b} ∧
       ∀ z ∈ A, q < z → z + N₀ ≤ n → False
 
 open Classical in
-/-- Cofinal non-big absolute wounds stabilize to one of their two exact
-size regimes: private doubles, or strict-small zero-atomic deserts. -/
-theorem cofinal_nonbig_absolute_terminal_wounds_split
+/-- Cofinal non-big absolute destructions stabilize to one of their two exact
+size regimes: private doubles, or strict-small zero-atomic exclusion intervals. -/
+theorem cofinal_nonbig_absolute_terminal_destructions_split
     {A : Set ℕ} {N₀ : ℕ} {B : Finset ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hcofinal : ∀ X, ∃ b ∈ A, X < b ∧
-      HasNonBigAbsoluteTerminalWound A N₀ B b) :
+      HasNonBigAbsoluteTerminalDestruction A N₀ B b) :
     (∀ X, ∃ b ∈ A, X < b ∧
-      HasDoubleAbsoluteTerminalWound A N₀ B b) ∨
+      HasDoubleAbsoluteTerminalDestruction A N₀ B b) ∨
     (∀ X, ∃ b ∈ A, X < b ∧
-      HasStrictSmallAbsoluteTerminalWound A N₀ B b) := by
+      HasStrictSmallAbsoluteTerminalDestruction A N₀ B b) := by
   by_cases hdouble : ∀ X, ∃ b ∈ A, X < b ∧
-      HasDoubleAbsoluteTerminalWound A N₀ B b
+      HasDoubleAbsoluteTerminalDestruction A N₀ B b
   · exact Or.inl hdouble
   · right
     push Not at hdouble
@@ -24335,25 +21667,15 @@ theorem cofinal_nonbig_absolute_terminal_wounds_split
           by simpa [heq] using hrisk,
           by simpa [heq] using hrelative,
           by simpa [heq] using habsolute⟩
-    obtain ⟨q, hqA, hbq, hbqsum, hpairHub, hdesert⟩ :=
+    obtain ⟨q, hqA, hbq, hbqsum, hpairSupportTransversal, hdesert⟩ :=
       strict_small_absolute_private_structure
         h0 hcov (by omega) hn habsolute hstrict
     exact ⟨b, hbA, by omega, n, hn, hbn, hstrict,
       hrisk, hrelative, habsolute,
-      q, hqA, hbq, hbqsum, hpairHub, hdesert⟩
+      q, hqA, hbq, hbqsum, hpairSupportTransversal, hdesert⟩
 
 open Classical in
-/-- **Central/atomic/fixed-repair terminal trichotomy.**
-The moving-prefix line now ends in three rigid cofinal models at one finite
-safe prefix:
 
-1. absolute private targets exactly `2b`;
-2. strict-small absolute targets, where `b` is singleton pair-atomic and a
-   long desert follows `q=n-b`;
-3. repair triples routed through one fixed old `w∈B`.
-
-No candidate-supply, moving-fiber, collateral, scale-switching, fixed-stall,
-or big-guardian alternative remains. -/
 theorem counterexample_double_or_strictSmall_or_fixedPrefixRepairs
     {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -24362,14 +21684,14 @@ theorem counterexample_double_or_strictSmall_or_fixedPrefixRepairs
     ∃ B : Finset ℕ,
       FinitePrefixServesRisks A N₀ B ∧ 0 ∉ B ∧
       ((∀ X, ∃ b ∈ A, X < b ∧
-          HasDoubleAbsoluteTerminalWound A N₀ B b) ∨
+          HasDoubleAbsoluteTerminalDestruction A N₀ B b) ∨
        (∀ X, ∃ b ∈ A, X < b ∧
-          HasStrictSmallAbsoluteTerminalWound A N₀ B b) ∨
+          HasStrictSmallAbsoluteTerminalDestruction A N₀ B b) ∨
        ∃ w ∈ B, ∀ X, ∃ b ∈ A, X < b ∧
-          HasTerminalRepairWoundThrough A N₀ B w b) := by
+          HasTerminalRepairDestructionThrough A N₀ B w b) := by
   obtain ⟨B, hserved, h0B, hnonbig | hrepair⟩ :=
     counterexample_nonbig_absolute_or_fixed_prefix_repairs h0 hcov hfail
-  · rcases cofinal_nonbig_absolute_terminal_wounds_split
+  · rcases cofinal_nonbig_absolute_terminal_destructions_split
       h0 hcov hnonbig with hdouble | hstrict
     · exact ⟨B, hserved, h0B, Or.inl hdouble⟩
     · exact ⟨B, hserved, h0B, Or.inr (Or.inl hstrict)⟩
@@ -24397,17 +21719,6 @@ def FixedPrefixStallMassCertificate
             t * t * D) <
         (t * L) ^ 2
 
-/-- **One explicit inequality pays for every possible stall fiber.**
-Write `s = |S|`, `k = |B|`, and
-
-`q = (s + k - 1) / k = ⌈s/k⌉`.
-
-Every fiber size produced by the fixed-prefix pigeonhole satisfies
-`q ≤ t ≤ s`.  Hence its popular-difference left side is at most the
-left side evaluated at `s`, while its squared mass lower bound is at least
-the one evaluated at `q`.  A single strict endpoint inequality therefore
-implies the universal numerical hypothesis in
-`FixedPrefixStallMassCertificate`. -/
 theorem stall_mass_quantitative_of_single_inequality
     {s k α L D : ℕ} (hk : 0 < k)
     (hsingle :
@@ -24468,19 +21779,7 @@ theorem fixedPrefixStallMassCertificate_of_single_inequality
     (Finset.card_pos.mpr hB) hsingle
 
 open Classical in
-/-- **A fixed prefix amplifies a family of stalls into symmetry mass.**
-Suppose every target in `S` stalls against the same nonempty finite deletion
-prefix `B`.  If at least `|B| * L` surviving low elements are available at
-each stall, then one fixed `w ∈ B` is charged by a large fiber of the stalls.
-After translating that fiber by `w`, we obtain a family `T` of distinct
-wealthy targets:
 
-* `|S| ≤ |B| * |T|`;
-* every target in `T` has at least `L` pair representations;
-* their total symmetry mass is at most `|T| * |A ∩ [0,X]|`.
-
-The last two estimates are the exact quantitative inputs consumed by the
-popular-difference law. -/
 theorem stall_family_mass_amplifier
     {A : Set ℕ} {N₀ X L : ℕ} {B S : Finset ℕ}
     (hcov : PairCovers A N₀) (hB : B.Nonempty)
@@ -24607,9 +21906,7 @@ theorem stall_family_mass_amplifier
   exact hScard
 
 open Classical in
-/-- **Wealthy targets are symmetric.**  The representation set
-of M is invariant under the reflection x ↦ M − x: a wealthy
-target is a large reflection-invariant subset of the basis. -/
+
 theorem wealthy_set_symm {A : Set ℕ} {M x : ℕ}
     (hx : x ∈ (Finset.range (M + 1)).filter
       (fun z => z ∈ A ∧ (M - z) ∈ A)) :
@@ -24624,18 +21921,7 @@ theorem wealthy_set_symm {A : Set ℕ} {M x : ℕ}
   exact hxA
 
 open Classical in
-/-- **TWO REFLECTIONS MAKE A TRANSLATION.**  The heart of the
-chain.  If a basis element x is symmetric for two different
-wealthy targets M₁ ≤ M₂ — that is, M₁ − x and M₂ − x both lie
-in A — then the single element M₁ − x witnesses the fixed
-difference d = M₂ − M₁:
 
-    (M₁ − x)  and  (M₁ − x) + d   both lie in A.
-
-Reflecting about M₁/2 and then about M₂/2 is translation by d.
-So the common part of two wealthy targets' symmetry sets
-injects into the set of d-PAIRS of the basis: shared symmetry
-is fixed-difference structure, one pair per shared element. -/
 theorem two_symmetries_translate {A : Set ℕ} {M₁ M₂ : ℕ}
     (h12 : M₁ ≤ M₂) :
     (((Finset.range (M₁ + 1)).filter
@@ -24661,15 +21947,7 @@ theorem two_symmetries_translate {A : Set ℕ} {M₁ M₂ : ℕ}
     omega
 
 open Classical in
-/-- **Overlap forcing** (Cauchy–Schwarz double count).  For any
-family of subsets of one universe, total pairwise-intersection
-mass dominates the square of the total size:
 
-  (Σ_{M ∈ T} |S M|)² ≤ |U| · Σ_{M₁ ∈ T} Σ_{M₂ ∈ T} |S M₁ ∩ S M₂|.
-
-Many large sets in a small universe must overlap heavily —
-the combinatorial engine that turns a family of wealthy
-targets into a single popular difference. -/
 theorem sum_pairwise_inter_lower {U T : Finset ℕ}
     {S : ℕ → Finset ℕ} (hsub : ∀ M ∈ T, S M ⊆ U) :
     (∑ M ∈ T, (S M).card) ^ 2 ≤
@@ -24728,22 +22006,7 @@ theorem sum_pairwise_inter_lower {U T : Finset ℕ}
   exact sq_sum_le_card_mul_sum_sq
 
 open Classical in
-/-- **THE POPULAR DIFFERENCE LAW.**  Wealth forces repeated
-differences.  Let T be any family of targets below X, each
-carrying its symmetry set S M = {z ≤ M : z, M − z ∈ A}.  If
-every difference d ≤ X is realised at most D times in the basis
-(|{y ≤ X : y, y+d ∈ A}| ≤ D), then
 
-  (Σ_{M ∈ T} |S M|)² ≤ α · (Σ_{M ∈ T} |S M| + |T|²·D),
-                       α = |A ∩ [0,X]|.
-
-Contrapositive — the usable form: a family of wealthy targets
-whose symmetry mass beats α·(mass + |T|²·D) forces SOME positive
-difference `d ≤ X` to be realised more than D times.  Two reflections
-compose to a translation (`two_symmetries_translate`), and
-overlap is forced by counting (`sum_pairwise_inter_lower`):
-so wealth at many places is fixed-difference structure — the
-R1 room's supply, manufactured from wealth alone. -/
 theorem popular_difference_bound {A : Set ℕ} {X D : ℕ}
     {T : Finset ℕ} (hTX : ∀ M ∈ T, M ≤ X)
     (hD : ∀ d, 0 < d → d ≤ X →
@@ -24820,11 +22083,7 @@ theorem popular_difference_bound {A : Set ℕ} {X D : ℕ}
   exact le_trans hcs hmul
 
 open Classical in
-/-- **Positive popular difference, explicit contrapositive.**  If the
-symmetry mass exceeds the bound from `popular_difference_bound`, then some
-genuine difference `d ∈ [1, X]` is represented more than `D` times.  The
-positivity restriction excludes the diagonal `d = 0`, whose representation
-count is simply `|A ∩ [0, X]|` and carries no translation information. -/
+
 theorem exists_popular_positive_difference {A : Set ℕ} {X D : ℕ}
     {T : Finset ℕ} (hTX : ∀ M ∈ T, M ≤ X)
     (hmass :
@@ -24847,20 +22106,7 @@ theorem exists_popular_positive_difference {A : Set ℕ} {X D : ℕ}
   exact (not_le_of_gt hmass) (popular_difference_bound hTX hD)
 
 open Classical in
-/-- **Endpoint budget for a distinct wealthy family.**
-Suppose `T` contains more than `R` distinct targets below `X`, has at most
-`S` targets, and every target has pair wealth at least `L`.  It is enough
-to check the single worst-case inequality
 
-    `α * (S*α + S²*D) < ((R+1)*L)²`,
-
-where `α = |A ∩ [0,X]|`, to force a positive difference represented
-more than `D` times below `X`.
-
-The left endpoint uses the largest possible family size `S`; the right
-endpoint uses the smallest possible size `R+1`.  This is the direct
-numerical consumer for the distinct horn of
-`moving_prefix_risks_distinct_or_affine_or_fixed_stall`. -/
 theorem wealthy_targets_force_popular_difference_of_endpoint
     {A : Set ℕ} {X D L R S : ℕ} {T : Finset ℕ}
     (hTX : ∀ M ∈ T, M ≤ X)
@@ -24924,21 +22170,7 @@ theorem wealthy_targets_force_popular_difference_of_endpoint
   exact exists_popular_positive_difference hTX hmass
 
 open Classical in
-/-- **The quantitative moving-prefix fork.**
-Under a single endpoint inequality, the distinct horn of the risk-aware
-moving-prefix theorem immediately yields a positive popular difference.
-Consequently a large batch of genuine greedy risks has only three possible
-outcomes:
 
-1. a difference represented more than `D` times below `X`;
-2. a wealthy affine wall, which is either based at an old deleted element
-   or contains at least three moving pair hubs;
-3. a genuine stall against the fixed old prefix, with its low-mass bound.
-
-This is the complete finite composition of
-
-`moving stall → charge → exact fibers → symmetry mass`.
--/
 theorem moving_prefix_risks_popular_or_affine_or_fixed_stall
     {A : Set ℕ} {N₀ X D R L : ℕ}
     {B C : Finset ℕ} {n : ℕ → ℕ}
@@ -24970,7 +22202,7 @@ theorem moving_prefix_risks_popular_or_affine_or_fixed_stall
       L ≤ ((Finset.range (a + 1)).filter
         (fun x => x ∈ A ∧ (a - x) ∈ A)).card ∧
       (a ∈ B ∨ ∃ G : Finset ℕ, G ⊆ F ∧ 2 < G.card ∧
-        ∀ b ∈ G, IsPairHub A b (insert b B))) ∨
+        ∀ b ∈ G, IsPairSupportTransversal A b (insert b B))) ∨
     (∃ m, N₀ ≤ m ∧ (∀ w ∈ B, w ≤ m) ∧
       (∀ x ∈ A, ∀ y ∈ A, ∀ z ∈ A,
         x ∉ B → y ∉ B → z ∉ B → x + y + z ≠ m) ∧
@@ -24992,12 +22224,7 @@ theorem moving_prefix_risks_popular_or_affine_or_fixed_stall
   · exact Or.inr (Or.inr hFixed)
 
 open Classical in
-/-- **A sufficiently large fixed-prefix stall family forces a popular
-positive difference.**  `stall_family_mass_amplifier` produces a target
-family whose size is between the prefix-pigeonhole lower bound and the
-original number of stalls.  The numerical hypothesis is deliberately stated
-for every size in that certified interval; it is independent of the chosen
-fiber.  Once it holds, the popular-difference inequality is violated. -/
+
 theorem stall_family_forces_popular_difference
     {A : Set ℕ} {N₀ X L D : ℕ} {B S : Finset ℕ}
     (hcov : PairCovers A N₀) (hB : B.Nonempty)
@@ -25060,11 +22287,7 @@ theorem FixedPrefixStallMassCertificate.exists_popular_difference
   exact ⟨X, d, hd, hdX, hmany⟩
 
 open Classical in
-/-- **STALL MASS FEEDS THE EXISTING DIFFERENCE FORK.**  If a
-fixed-prefix stall-mass certificate can be manufactured at every desired
-multiplicity, then the already-verified `fixed_offset_or_growing` theorem
-applies: either one positive offset has arbitrarily many pairs, or
-arbitrarily large offsets have arbitrarily many pairs. -/
+
 theorem stall_mass_certificates_fixed_offset_or_growing
     {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀)
@@ -25086,7 +22309,7 @@ theorem stall_mass_certificates_fixed_offset_or_growing
 open Classical in
 /-- More than `K + 2|F|` starts from one equal-difference family leave more
 than `K` starts whose two endpoints avoid `F`.  This is the quantitative
-finite-injury form of `many_difference_pairs_avoid_finset`, stated for an
+finite-obstruction form of `many_difference_pairs_avoid_finset`, stated for an
 arbitrary supplied family rather than an initial interval. -/
 theorem difference_pair_family_many_fresh
     {A : Set ℕ} {d K : ℕ} {V : Finset ℕ} (F : Finset ℕ)
@@ -25139,14 +22362,7 @@ theorem difference_pair_family_many_fresh
       hx'.2.1, hx'.2.2⟩
 
 open Classical in
-/-- **Many equal-difference pairs avoid every finite forbidden set.**
-A forbidden vertex can spoil at most two starts of a `d`-pair: the pair
-starting at that vertex and the pair ending there.  Consequently, more than
-`2 * |F|` pairs at one difference contain a pair whose two endpoints both
-avoid `F`.
 
-This is the finite-injury interface needed to turn an abundant (possibly
-scale-dependent) popular difference into fresh construction material. -/
 theorem many_difference_pairs_avoid_finset
     {A : Set ℕ} {X d : ℕ} (F : Finset ℕ)
     (hmany : 2 * F.card <
@@ -25190,10 +22406,7 @@ theorem many_difference_pairs_avoid_finset
   omega
 
 open Classical in
-/-- **Every large number is a basis element or splits.**  From
-covering alone: for d ≥ N₀ either d ∈ A, or d = u + v with
-u, v ∈ A both positive (a zero part would force d ∈ A).  The
-dichotomy behind the popular-difference payoff. -/
+
 theorem large_mem_or_splits {A : Set ℕ} {N₀ d : ℕ}
     (hcov : PairCovers A N₀) (hd : N₀ ≤ d) :
     d ∈ A ∨ ∃ u ∈ A, ∃ v ∈ A, 0 < u ∧ 0 < v ∧ u + v = d := by
@@ -25211,25 +22424,7 @@ theorem large_mem_or_splits {A : Set ℕ} {N₀ d : ℕ}
     · exact Or.inr ⟨u, huA, v, hvA, hu0, hv0, huv⟩
 
 open Classical in
-/-- **POPULAR DIFFERENCES REACH THEIR TARGETS.**  The chain's
-payoff, corrected by measurement.  A difference d realised by a
-basis pair (y, y+d) makes the LARGER element reachable from
-STRICTLY SMALLER basis elements in at most three parts:
 
-  d ∈ A   ⟹  y + d = y + d + 0     (two parts);
-  d ∉ A   ⟹  d = u + v positive, so y + d = y + u + v.
-
-Covering guarantees one of the two.  Strictly smaller parts are
-exactly what the greedy construction needs, since every later
-deletion is larger — so the parts protect themselves and only
-finitely many constraints are ever active.
-
-(The lab measured which horn fires: popular differences are
-USUALLY NOT basis elements — 0% in the odds world, where every
-difference of two odds is even, a parity obstruction that no
-argument can remove — but they split into two basis elements
-95–100% of the time.  The three-part horn is the real route;
-the two-part horn is the exception.) -/
 theorem difference_reaches_element {A : Set ℕ} {N₀ d y : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hd : N₀ ≤ d) (hd0 : 0 < d) (hy0 : 0 < y)
@@ -25244,18 +22439,7 @@ theorem difference_reaches_element {A : Set ℕ} {N₀ d y : ℕ}
       by omega⟩
 
 open Classical in
-/-- **THE GROWING-DIFFERENCE COMPOSITION FORK.**  Arbitrarily large
-high-multiplicity differences can be made fresh relative to any finite
-forbidden set.  Covering then gives exactly two algebraic regimes:
 
-1. the difference itself lies in `A` (the atomic-difference branch); or
-2. `d = u + v` with positive `u,v ∈ A`.
-
-In the split branch, either some fresh edge has an intermediate basis point
-`x+u` or `x+v` and is therefore composable, or an arbitrarily large fresh
-family consists of filled endpoints with both intermediate vertices missing.
-The latter is the missing-rectangle geometry to be confronted with the
-desert/reflection laws. -/
 theorem growing_differences_composable_or_missing_rectangles
     {A : Set ℕ} {N₀ : ℕ}
     (hcov : PairCovers A N₀)
@@ -25312,15 +22496,6 @@ def ShiftedPairSurvives
   ∀ a ∈ A, ∃ p ∈ A, ∃ q ∈ A,
     p ∉ B ∧ q ∉ B ∧ p + q = a + δ
 
-/-- **THE FIXED-DIFFERENCE COMPOSITION BRIDGE.**  Suppose every deleted
-element `b` has a surviving predecessor `x` with `x + δ = b`, and the
-translated slice `A + δ` retains surviving order-two representations.
-Then every threatened target
-
-`b + a = x + (a + δ)`
-
-has a surviving triple.  The master deletion criterion therefore gives the
-desired exact order-three basis. -/
 theorem fixed_difference_deletion_of_shiftedPairSurvival
     {A B : Set ℕ} {N₀ δ : ℕ}
     (h0 : 0 ∈ A) (h0B : 0 ∉ B) (hcov : PairCovers A N₀)
@@ -25409,13 +22584,6 @@ theorem fixed_difference_predecessor_deletion
   · rintro _ ⟨k, rfl⟩
     exact ⟨x k, hxA k, hlower_notMem k, rfl⟩
 
-/-- **Fixed-difference shifted-slice obstruction.**  In a counterexample,
-cofinal `δ`-pairs can be thinned to an infinite predecessor deletion `B`.
-Since shifted-slice survival would compose to an order-three basis, some
-translated target `a + δ` must have every order-two representation hit `B`.
-
-This is the concrete obstruction that the fixed-translate destroyer and
-repair machinery can now analyze. -/
 theorem fixed_difference_forces_shifted_slice_obstruction
     {A : Set ℕ} {N₀ δ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -25441,14 +22609,7 @@ theorem fixed_difference_forces_shifted_slice_obstruction
       h0 h0B hcov hpred hshift)
 
 open Classical in
-/-- **A counterexample has no infinite reservoir of pair-splittable
-positive basis elements.**
 
-Point-map free-set thinning first chooses an infinite subreservoir whose
-selected pair support for every deleted point avoids the entire deletion.
-Retaining zero turns these pointwise splittings into an order-two
-self-basis along `A`; the completed splitting-reservoir theorem then gives
-the forbidden order-three deletion. -/
 theorem counterexample_pairSplittable_reservoir_finite
     {A K : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -25480,8 +22641,7 @@ theorem counterexample_pairSplittable_reservoir_finite
   exact hfail B (hBB₀.trans hB₀A) hBinf hbasisThree
 
 open Classical in
-/-- **Only finitely many positive basis points are nontrivially
-pair-splittable in a counterexample.** -/
+
 theorem counterexample_positive_pairSplittable_points_finite
     {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -25502,12 +22662,7 @@ theorem counterexample_positive_pairSplittable_points_finite
     exact ha.2.2
 
 open Classical in
-/-- **Global zero-atomic tail normalization.**
 
-In a counterexample there is one threshold beyond which every basis point
-has only its tautological order-two support `{a,0}`.  This is stronger than
-extracting a single infinite zero-atomic subreservoir: it applies to the
-entire tail of `A`. -/
 theorem counterexample_eventually_all_basisPoints_zeroAtomic
     {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -25532,12 +22687,7 @@ theorem counterexample_eventually_all_basisPoints_zeroAtomic
     hatomic hER
 
 open Classical in
-/-- **The positive part of a counterexample is eventually internally
-sum-free.**
 
-This is the equation-level form of global zero-atomic normalization.  If a
-late basis point were `a=u+v` with positive `u,v∈A`, its pair support would
-avoid `a`, contradicting the preceding theorem. -/
 theorem counterexample_eventually_positive_sumFree
     {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -25558,16 +22708,7 @@ theorem counterexample_eventually_positive_sumFree
       (hsub.symm ▸ hvA)
 
 open Classical in
-/-- **Complete sum-free tail partition.**
 
-Beyond one threshold, membership in a counterexample is exactly the
-negation of representability as a sum of two positive basis elements:
-
-`n∈A ↔ n∉A⁺+A⁺`.
-
-The forward implication is tail sum-freeness.  Conversely pair covering
-represents every late `n`; if `n∉A`, neither summand can be zero, since a
-zero summand would put the other summand—and hence `n`—back in `A`. -/
 theorem counterexample_eventually_completeSumFreePartition
     {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -25602,19 +22743,7 @@ theorem counterexample_eventually_completeSumFreePartition
     exact hnoPositive ⟨u, huA, v, hvA, huPos, hvPos, huv⟩
 
 open Classical in
-/-- **A positive basis difference cannot be popular in a counterexample.**
 
-Assume `δ∈A`, `δ>0`, and infinitely many starts satisfy
-`x,x+δ∈A`.  Discard the single start `x=0`.  Every remaining upper endpoint
-`b=x+δ` has the nontrivial pair support `{x,δ}`, which avoids `b`.
-The bounded point-map free-set theorem therefore thins the upper endpoints
-to an infinite deletion whose every point splits into two survivors.
-Because zero is retained, the completed splitting-reservoir theorem then
-produces an order-three basis after an infinite deletion.
-
-Consequently a global counterexample has only finitely many `δ`-edges for
-every fixed positive `δ∈A`.  This eliminates the fixed atomic-difference
-branch outright. -/
 theorem counterexample_basisDifference_edges_finite
     {A : Set ℕ} {N₀ δ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -25681,17 +22810,7 @@ theorem counterexample_basisDifference_edges_finite
   exact hfail B (hBB₀.trans hB₀A) hBinf hbasisThree
 
 open Classical in
-/-- **One-scale fixed-difference composition.**
 
-Fix a nontrivial split `δ=s+t` with `t∈A` and `s≠δ`.  In a global
-counterexample only finitely many starts can simultaneously satisfy
-
-`x, x+δ, x+s ∈ A`.
-
-Indeed, after discarding the possible upper endpoint `t`, every upper
-endpoint `b=x+δ` has the pair support `{x+s,t}`, which avoids `b`.
-An infinite family would therefore contradict
-`counterexample_pairSplittable_reservoir_finite`. -/
 theorem counterexample_fixedDifference_split_filled_finite
     {A : Set ℕ} {N₀ δ s t : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -25749,26 +22868,7 @@ theorem counterexample_fixedDifference_split_filled_finite
       h0 hcov hfail hKA h0K hsplittable)
 
 open Classical in
-/-- **TWO-SCALE FIXED-DIFFERENCE COMPOSITION.**
 
-Suppose `δ=s+t` and `2δ=u+v` in `A`, with `s≠δ` and `u≠δ`.
-If infinitely many starts `x` carry all four points
-
-`x, x+δ, x+s, x+u ∈ A`,
-
-then the upper endpoints `b=x+δ` contain an infinite deletion leaving an
-order-three basis.
-
-The proof is a bounded free-set construction.  Thin the upper endpoints so
-that, for every retained `b=x+δ`, the five points
-`x+s,t,x+u,x,v` all remain outside the deletion.  A risk `b+a` is then
-repaired as follows:
-
-* if `a` survives, use `(x+s)+t+a=b+a`;
-* if `a=y+δ` is also deleted, use `(x+u)+y+v=b+a`.
-
-Thus the first split repairs mixed deleted/surviving pairs and the doubled
-split repairs deleted/deleted pairs. -/
 theorem twoScale_fixedDifference_composition
     {A : Set ℕ} {N₀ δ s t u v : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -25878,16 +22978,7 @@ theorem twoScale_fixedDifference_composition
     · omega
 
 open Classical in
-/-- **Two-scale missing-rectangle law for counterexamples.**
 
-The preceding construction has a sharp contrapositive.  In a global
-counterexample, once `δ=s+t` and `2δ=u+v` with both chosen intermediate
-steps nontrivial (`s≠δ`, `u≠δ`), only finitely many `δ`-edges can have both
-intermediate vertices `x+s` and `x+u` present.
-
-This is a genuinely additive restriction absent from the abstract
-countable-fusion counterexample: a popular difference cannot be
-simultaneously composable at its one-copy and two-copy scales. -/
 theorem counterexample_twoScale_missingRectangles
     {A : Set ℕ} {N₀ δ s t u v : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -25907,16 +22998,7 @@ theorem counterexample_twoScale_missingRectangles
   exact hfail B hBA hBinf hbasis
 
 open Classical in
-/-- **Popular anchored differences have missing parallelograms.**
 
-Take the first-scale split to be the canonical `δ=0+δ`.  If `δ∈A` and
-`2δ=u+v` is off-center, then a counterexample permits only finitely many
-filled parallelograms
-
-`x, x+δ, x+u ∈ A`.
-
-Indeed such an infinite family is the special case `s=0,t=δ` of
-`twoScale_fixedDifference_composition`. -/
 theorem counterexample_anchorCenter_missingParallelograms
     {A : Set ℕ} {N₀ δ u v : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -25934,17 +23016,7 @@ theorem counterexample_anchorCenter_missingParallelograms
   exact ⟨hx.1, hx.2.1, by simpa using hx.1, hx.2.2⟩
 
 open Classical in
-/-- **A popular off-center anchor forces empty parallelograms.**
 
-If `δ∈A` is a popular difference and `u+v=2δ` is an off-center pair from
-`A`, then, on infinitely many `δ`-edges, *both* intermediate vertices are
-missing:
-
-`x,x+δ∈A`, but `x+u,x+v∉A`.
-
-Each filled-intermediate set is finite by the preceding theorem (applied
-once to `u,v` and once to `v,u`), so deleting their finite union from the
-popular edge set leaves the asserted infinite empty-rectangle family. -/
 theorem counterexample_popularAnchorCenter_has_emptyParallelograms
     {A : Set ℕ} {N₀ δ u v : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -25984,16 +23056,7 @@ theorem counterexample_popularAnchorCenter_has_emptyParallelograms
   exact ⟨hxEdge.1, hxEdge.2, hxNotU, hxNotV⟩
 
 open Classical in
-/-- **Popular-difference two-scale fork.**
 
-If `δ` itself occurs on infinitely many edges, then the preceding finite
-composition law forces an infinite missing-intermediate family at one of
-the two scales.  Either `x+s` is absent on infinitely many `δ`-edges, or
-`x+u` is absent on infinitely many of them.
-
-This is the strongest unconditional conclusion supplied by the two-scale
-composition: the first unsupported next inference would be to rule out both
-missing-rectangle alternatives using only pair covering. -/
 theorem counterexample_popularDifference_missingIntermediate_fork
     {A : Set ℕ} {N₀ δ s t u v : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -26033,20 +23096,7 @@ theorem counterexample_popularDifference_missingIntermediate_fork
     exact hedges hfinite
 
 open Classical in
-/-- **Popular-difference central-or-missing trichotomy.**
 
-Let `δ≥N₀` occur on infinitely many edges of `A`.  Pair covering supplies
-a nontrivial oriented split `δ=s+t`.  At the doubled target there are only
-two possibilities:
-
-* every pair representation of `2δ` is the central pair `δ+δ`; or
-* an off-center split `2δ=u+v` exists, and the two-scale composition theorem
-  forces infinitely many `δ`-edges to miss `x+s` or infinitely many to miss
-  `x+u`.
-
-Thus a popular difference in a counterexample is either centrally rigid at
-its double or supports an infinite, explicitly oriented missing-rectangle
-family. -/
 theorem counterexample_popularDifference_central_or_twoScaleMissing
     {A : Set ℕ} {N₀ δ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -26093,12 +23143,7 @@ theorem counterexample_popularDifference_central_or_twoScaleMissing
     exact ⟨hxδ, by omega⟩
 
 open Classical in
-/-- **A popular positive difference lies outside the basis.**
 
-This is the direct infinite-edge form of
-`counterexample_basisDifference_edges_finite`: in a global counterexample,
-no positive `δ ∈ A` can occur as a difference on infinitely many pairs of
-basis elements. -/
 theorem counterexample_popularDifference_not_mem
     {A : Set ℕ} {N₀ δ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -26113,14 +23158,7 @@ theorem counterexample_popularDifference_not_mem
       h0 hcov hfail hδpos hδA)
 
 open Classical in
-/-- **A popular difference has an infinite empty split-diamond family.**
 
-For `δ ≥ N₀`, choose any basis split `δ=s+t`.  Popularity first forces
-`δ∉A`, hence neither summand can equal `δ`.  The one-scale composition
-law, applied in both orientations, says that only finitely many `δ`-edges
-contain `x+s`, and only finitely many contain `x+t`.  Removing those two
-finite exceptional families leaves infinitely many edges on which both
-intermediate translates are absent. -/
 theorem counterexample_popularDifference_has_emptySplitDiamonds
     {A : Set ℕ} {N₀ δ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -26167,14 +23205,7 @@ theorem counterexample_popularDifference_has_emptySplitDiamonds
   exact ⟨hxEdge.1, hxEdge.2, hxs, hxt⟩
 
 open Classical in
-/-- **Every sufficiently large popular difference has a two-scale hole.**
 
-The central branch in
-`counterexample_popularDifference_central_or_twoScaleMissing` would put
-`δ` in `A`, but a popular positive difference cannot belong to `A`.
-Consequently only the explicit off-center branch survives: there are
-splittings `δ=s+t` and `2δ=u+v` for which infinitely many `δ`-edges miss
-one of the two translated intermediate points. -/
 theorem counterexample_popularDifference_has_twoScaleMissing
     {A : Set ℕ} {N₀ δ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -26193,21 +23224,7 @@ theorem counterexample_popularDifference_has_twoScaleMissing
   · exact hmissing
 
 open Classical in
-/-- **Growing popular differences are forced into arbitrarily large empty
-split rectangles.**
 
-Global tail sum-freeness removes both disposable horns from
-`growing_differences_composable_or_missing_rectangles`.  Choose a
-difference `d` beyond the sum-free threshold with at least two supplied
-edges.  If `d∈A`, one of their positive starts would make the late basis
-point `x+d` an internal positive sum.  Hence `d∉A`, and covering splits it
-as `d=u+v` with positive `u,v∈A`.  For every supplied edge, either
-intermediate membership would give
-
-`x+d=(x+u)+v=(x+v)+u`,
-
-again contradicting tail sum-freeness.  The conclusion retains arbitrary
-difference and multiplicity thresholds. -/
 theorem counterexample_growingDifferences_have_large_emptySplitRectangles
     {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -26269,20 +23286,7 @@ theorem counterexample_growingDifferences_have_large_emptySplitRectangles
   exact ⟨hzdata.1, hzdata.2, hzu, hzv⟩
 
 open Classical in
-/-- **External matching growth already proves the desired deletion.**
 
-Run the finite-core matching dichotomy only over targets outside `A`.  In
-the matching-growth branch, sparse deletion leaves a pair representation of
-every sufficiently large external target.  Thin that deletion once more so
-that every retained deleted point has a triple representation avoiding the
-whole deletion.  The two kinds of representations then fit exactly into
-`deletion_criterion_sumfree`: undeleted points of `A` serve themselves using
-zero, deleted points use their chosen triple repairs, and external targets
-use their surviving pairs.
-
-Consequently the only obstruction to an infinite order-three deletion is a
-bounded moving transversal for the pair supports, recurrent along the
-external target set. -/
 theorem infiniteDeletionThreeBasis_or_boundedMovingPairTransversalsAlongExternal
     {A : Set ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -26463,20 +23467,7 @@ theorem completeSumFree_external_source_pair_or_positiveTriple
     exact ⟨u, huA, v, hvA, huPos, hvPos, by omega⟩
 
 open Classical in
-/-- **Bounded external pair bottlenecks have arbitrarily many positive
-triple sources.**
 
-The external moving-transversal obstruction bounds the complete pair
-family at arbitrarily late external targets.  Choose more than `2m + K`
-positive elements of the infinite basis below such a target.  At most
-`2m` of them occur in the union of its pair supports.  Every remaining
-source therefore falls into the triple branch of
-`completeSumFree_external_source_pair_or_positiveTriple`.
-
-Thus low pair multiplicity does not mean low order-three multiplicity: at
-each requested scale there is one bottleneck target with more than `K`
-distinct positive basis elements, each extending to a positive triple
-representation of that same target. -/
 theorem counterexample_externalPairBottlenecks_have_manyPositiveTripleSources
     {A : Set ℕ} {N₀ : ℕ}
     (hzero : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -26767,18 +23758,7 @@ theorem exists_infinite_freeSet_for_shiftedPairSupports
     hfree b hbL c hcL hbc⟩
 
 open Classical in
-/-- **Fixed popular differences are constructively deletable.**
 
-Assume the late positive part of `A` is sum-free and one positive
-difference `δ` occurs cofinally inside `A`.  Then the upper endpoints of a
-cofinal separated `δ`-matching contain an infinite deletion whose
-complement is an exact order-three asymptotic basis.
-
-The proof treats the only difficult risks explicitly.  Two selected
-predecessors use a shifted pair repair, a selected predecessor paired with
-itself uses the diagonal instance of the same repair, and the finitely many
-small summands use bounded point-map thinning.  Every remaining translated
-pair cover automatically avoids the deletion by late sum-freeness. -/
 theorem exists_infiniteDeletion_threeBasis_of_fixedPopularDifference
     {A : Set ℕ} {N₀ T δ : ℕ}
     (h0 : 0 ∈ A)
@@ -27008,22 +23988,8 @@ theorem counterexample_all_positiveDifference_edges_finite
   exact hfail B hBA hB hthree
 
 open Classical in
-/-- **Cross-gap collisions are finite.**
 
-Fix two distinct shifts `δ` and `c`.  The offsets `a ∈ A` for which a
-translated pair cover
-
-`a + δ = c + q`,  with `q ∈ A`,
-
-can be identified with one fixed positive-difference edge family.  If
-`δ<c`, then `a=q+(c-δ)`; if `c<δ`, then
-`q=a+(δ-c)`.  Thus finiteness of every positive-difference fiber makes the
-whole cross-gap collision set finite.
-
-This is the basic coherence fact for passing from one equal-gap block to a
-different block: a fixed old endpoint can contaminate only finitely many of
-the otherwise uniform translated-pair repairs of the new block. -/
-theorem crossGap_collisionOffsets_finite
+theorem crossGap_conflictingOffsets_finite
     {A : Set ℕ} {δ c : ℕ}
     (hδc : δ ≠ c)
     (hedges : ∀ r, 0 < r →
@@ -27063,7 +24029,7 @@ open Classical in
 offsets for a new gap `δ`, provided no old endpoint is literally equal to
 `δ`.  This is the finite-union form needed in a block-by-block
 construction. -/
-theorem crossGap_collisionOffsets_finite_prefix
+theorem crossGap_conflictingOffsets_finite_prefix
     {A : Set ℕ} {δ : ℕ} {D : Finset ℕ}
     (hδD : ∀ c ∈ D, δ ≠ c)
     (hedges : ∀ r, 0 < r →
@@ -27079,7 +24045,7 @@ theorem crossGap_collisionOffsets_finite_prefix
         exact hδD d (Finset.mem_insert_of_mem hd)
       have hcfinite :
           {a | a ∈ A ∧ ∃ q ∈ A, a + δ = c + q}.Finite :=
-        crossGap_collisionOffsets_finite hcne hedges
+        crossGap_conflictingOffsets_finite hcne hedges
       have hDfinite :
           {a | a ∈ A ∧ ∃ d ∈ D, ∃ q ∈ A,
             a + δ = d + q}.Finite :=
@@ -27093,18 +24059,7 @@ theorem crossGap_collisionOffsets_finite_prefix
       · exact Or.inr ⟨haA, d, hdD, q, hqA, haq⟩
 
 open Classical in
-/-- **Uniform repair away from the finite cross-gap list.**
 
-Let `b=x+δ` be an upper endpoint of a `δ`-edge.  To repair the risk
-`b+a`, cover `a+δ` by `p+q` and use
-
-`x+p+q = (x+δ)+a`.
-
-If `p` or `q` were an old deleted endpoint in `D`, then `a` would belong to
-the explicit cross-gap collision set.  If one were the new endpoint `b`,
-late positive sum-freeness would force `a=x`; that is the single diagonal
-exception.  Consequently every other offset has a triple avoiding the
-whole moving prefix `insert b D`. -/
 theorem equalGap_genericRisk_has_prefixAvoidingTriple
     {A : Set ℕ} {N₀ T δ x a : ℕ} {D : Finset ℕ}
     (hcov : PairCovers A N₀)
@@ -27150,19 +24105,7 @@ theorem equalGap_genericRisk_has_prefixAvoidingTriple
   · simp [hqb, hqD]
 
 open Classical in
-/-- **The exact generic criterion is pair survival, not absence of a
-collision.**
 
-For the translated target `a + δ`, suppose there is even one order-two
-support avoiding the old prefix `D`.  Prefix avoidance is inherited by its
-two entries.  Late sum-freeness also prevents either entry from being the
-new upper endpoint `x + δ`, except in the excluded diagonal case `a = x`.
-Adding the surviving lower endpoint `x` therefore gives a triple for the
-new risk `(x + δ) + a` which avoids the whole enlarged prefix.
-
-This strictly strengthens `equalGap_genericRisk_has_prefixAvoidingTriple`:
-individual pair representations may collide with `D`; only destruction of
-*all* pair representations is a genuine exception. -/
 theorem equalGap_pairSurvival_has_prefixAvoidingTriple
     {A : Set ℕ} {T δ x a : ℕ} {D : Finset ℕ}
     (hsumfree : ∀ n ∈ A, T ≤ n →
@@ -27212,17 +24155,7 @@ theorem equalGap_pairSurvival_has_prefixAvoidingTriple
   · simp [hqb, hqD]
 
 open Classical in
-/-- **Only finitely many shifted targets are genuinely pair-destroyed.**
 
-Assume every fixed positive difference fiber of `A` is finite and the new
-gap `δ` differs from every old deleted value.  If `D` destroys every pair
-support of `a + δ`, specialize that destruction to a pair supplied by
-`PairCovers`.  One of its entries is an old deleted value `c`, so
-
-`a + δ = c + q`
-
-for another `q ∈ A`.  Hence the genuinely bad offsets form a subset of the
-finite cross-gap collision set. -/
 theorem pairDestroyed_shiftOffsets_finite
     {A : Set ℕ} {N₀ δ : ℕ} {D : Finset ℕ}
     (hcov : PairCovers A N₀) (hδN : N₀ ≤ δ)
@@ -27235,7 +24168,7 @@ theorem pairDestroyed_shiftOffsets_finite
   have hcollision :
       {a | a ∈ A ∧ ∃ c ∈ D, ∃ q ∈ A,
         a + δ = c + q}.Finite :=
-    crossGap_collisionOffsets_finite_prefix hδD hedges
+    crossGap_conflictingOffsets_finite_prefix hδD hedges
   apply hcollision.subset
   intro a ha
   obtain ⟨p, hpA, q, hqA, hpq⟩ :=
@@ -27261,7 +24194,7 @@ open Classical in
 /-- In a global counterexample the preceding finite cross-gap conclusion is
 automatic, because every fixed positive difference has already been proved
 to occur only finitely often. -/
-theorem counterexample_crossGap_collisionOffsets_finite_prefix
+theorem counterexample_crossGap_conflictingOffsets_finite_prefix
     {A : Set ℕ} {N₀ δ : ℕ} {D : Finset ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (hfail : ∀ B ⊆ A, B.Infinite →
@@ -27269,27 +24202,13 @@ theorem counterexample_crossGap_collisionOffsets_finite_prefix
     (hδD : ∀ c ∈ D, δ ≠ c) :
     {a | a ∈ A ∧ ∃ c ∈ D, ∃ q ∈ A,
       a + δ = c + q}.Finite := by
-  apply crossGap_collisionOffsets_finite_prefix hδD
+  apply crossGap_conflictingOffsets_finite_prefix hδD
   intro r hr
   exact counterexample_all_positiveDifference_edges_finite
     h0 hcov hfail hr
 
 open Classical in
-/-- **The finite exceptional list is a genuine obstruction.**
 
-The six-point sum-free configuration
-
-`A₀={0,1,5,8,11,15}`
-
-contains the new edge `11,15` of gap `4` and the old deleted point `1`.
-The offset `a=5` is exceptional because `5+4=1+8`.  The threatened target
-`15+5=20` has the two evident representations `15+5+0` and `11+1+8`,
-but no triple over `A₀` avoiding both `1` and `15`.
-
-Thus after proving that cross-block contamination is finite, one still
-must actually repair those finitely many targets; finiteness alone cannot
-silently discard them.  This finite computation marks the exact first
-failure of the naive blockwise fusion. -/
 theorem crossGap_finiteException_can_genuinely_stall :
     let S : Finset ℕ := {0, 1, 5, 8, 11, 15}
     (∀ n ∈ S, 0 < n →
@@ -27303,7 +24222,7 @@ theorem crossGap_finiteException_can_genuinely_stall :
   decide
 
 open Classical in
-/-- The fixed-offset horn of `fixed_offset_or_growing` is impossible in a
+/-- The fixed-offset case of `fixed_offset_or_growing` is impossible in a
 counterexample.  Thus any unbounded multiplicity of difference edges must
 escape through arbitrarily large differences. -/
 theorem counterexample_differenceMultiplicity_mustGrow
@@ -27330,17 +24249,17 @@ theorem counterexample_differenceMultiplicity_mustGrow
     omega
   · exact hgrowing
 
-/-- Cancelling two routes through the same moving guardian turns the gap
+/-- Cancelling two routes through the same moving required element turns the gap
 between their anchors into a fixed difference between their co-parts. -/
-theorem equalGuardianRoutes_force_coPartDifference
+theorem equalRequiredElementRoutes_force_coPartDifference
     {r s b u v n : ℕ}
     (hrs : r ≤ s) (hr : r + b + u = n) (hs : s + b + v = n) :
     v + (s - r) = u := by
   omega
 
 /-- If the later anchor was chosen beyond every possible co-part of the
-earlier route, the two routes cannot hit the same moving guardian. -/
-theorem separatedGuardianRoutes_impossible
+earlier route, the two routes cannot hit the same moving required element. -/
+theorem separatedRequiredElementRoutes_impossible
     {r s b u v n U : ℕ}
     (hsep : r + U + 1 ≤ s) (hu : u ≤ U)
     (hr : r + b + u = n) (hs : s + b + v = n) :
@@ -27348,35 +24267,8 @@ theorem separatedGuardianRoutes_impossible
   omega
 
 open Classical in
-/-- **Three fixed anchors rule out a terminal private-wound field.**
 
-Let `D` be a finite deletion prefix.  Suppose the positive tail of `A` is
-sum-free and every fixed positive-difference fiber of `A` is finite.  Then
-it is impossible that every sufficiently large basis element `b` owns a
-private target over `A \ D` which is also a risk generated by
-`insert b D`.
-
-Choose three surviving anchors `r₀ < r₁ < r₂`, separated far enough that
-their translates by `D` are disjoint.  Cover `n-rᵢ` at a private target
-`n`.  Since `rᵢ` survives the old prefix, privacy forces each covering pair
-to use either the moving guardian `b` or an old point of `D`.
-
-* At a self-risk `n=b+a`, a route through `b` writes the late basis point
-  `a` as `rᵢ+u`; tail sum-freeness forces `u=0`, hence `a=rᵢ`.  At most one
-  anchor can do this, so two routes pass through old points.  Their other
-  endpoints form an arbitrarily late edge of one fixed positive
-  difference.
-* At a collateral risk `n=d+a`, an old route directly makes `a` and its
-  other endpoint a fixed-difference edge.  Hence all three routes must pass
-  through `b`.  The first two then bound the complement `n-b` using the
-  finite `(r₁-r₀)`-difference fiber, while the third anchor was chosen
-  beyond that bound.
-
-Both alternatives contradict the finite-difference hypothesis.  This is
-the positional composition missing from the moving-prefix construction:
-no equal-gap block supply and no unrestricted co-sum normalization are
-needed. -/
-theorem threeAnchor_forbids_terminalPrivateWounds
+theorem threeAnchor_forbids_terminalPrivateDestructions
     {A : Set ℕ} {N₀ T : ℕ}
     (hcov : PairCovers A N₀)
     (hsumfree : ∀ a ∈ A, T ≤ a →
@@ -27607,34 +24499,19 @@ theorem threeAnchor_forbids_terminalPrivateWounds
     obtain ⟨u₁, hu₁A, hr₁bu⟩ := hr₁Self
     obtain ⟨u₂, hu₂A, hr₂bu⟩ := hr₂Self
     have hu₁edge : u₁ + (r₁ - r₀) = u₀ :=
-      equalGuardianRoutes_force_coPartDifference
+      equalRequiredElementRoutes_force_coPartDifference
         (by omega) hr₀bu hr₁bu
     have hu₁Bound : u₁ ≤ U₀₁ :=
       hU₀₁ ⟨hu₁A, by
         rw [hu₁edge]
         exact hu₀A⟩
-    exact separatedGuardianRoutes_impossible
+    exact separatedRequiredElementRoutes_impossible
       (le_max_right (r₁ + Dmax + 1) (r₁ + U₀₁ + 1) |>.trans
         hr₂large)
       hu₁Bound hr₁bu hr₂bu
 
 open Classical in
-/-- **Three anchors complete the infinite deletion.**
 
-Every zero-containing set which pair-covers all sufficiently large
-integers admits an infinite deletion whose complement is an exact
-order-three asymptotic basis.
-
-Indeed, if no such deletion existed, the counterexample machinery would
-simultaneously supply:
-
-* one terminal finite prefix and a relative private wound above every
-  later basis point;
-* eventual positive sum-freeness; and
-* finiteness of every fixed positive-difference edge family.
-
-These are exactly the hypotheses contradicted by
-`threeAnchor_forbids_terminalPrivateWounds`. -/
 theorem exists_infiniteDeletion_threeBasis_of_pairCovers
     {A : Set ℕ} {N₀ : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀) :
@@ -27647,7 +24524,7 @@ theorem exists_infiniteDeletion_threeBasis_of_pairCovers
     intro B hBA hBinf
     exact hno B hBA hBinf
   obtain ⟨D, _hserved, _h0D, hwounds⟩ :=
-    counterexample_terminal_prefix_private_wound_fork h0 hcov hfail
+    counterexample_terminal_prefix_private_destruction_fork h0 hcov hfail
   obtain ⟨T, hsumfree⟩ :=
     counterexample_eventually_positive_sumFree h0 hcov hfail
   have hedges : ∀ g, 0 < g →
@@ -27655,7 +24532,7 @@ theorem exists_infiniteDeletion_threeBasis_of_pairCovers
     intro g hg
     exact counterexample_all_positiveDifference_edges_finite
       h0 hcov hfail hg
-  exact threeAnchor_forbids_terminalPrivateWounds
+  exact threeAnchor_forbids_terminalPrivateDestructions
     hcov hsumfree hedges D (by
       intro b hbA hbpos hbAbove
       obtain ⟨n, hnN, hbn, hrisk, hprivate, _hfork⟩ :=
@@ -27673,10 +24550,6 @@ theorem erdos881_zero_normalized :
     pairCovers_of_exactTupleBasis hminimal.1
   exact exists_infiniteDeletion_threeBasis_of_pairCovers h0 hcov
 
-/-- **Erdős Problem 881, order two.**
-
-Every strongly minimal exact asymptotic basis of order two has an infinite
-subset whose deletion leaves an exact asymptotic basis of order three. -/
 theorem erdos881 :
     ∀ A : Set ℕ, IsStronglyMinimalExactBasis A 2 →
       ∃ B, B ⊆ A ∧ B.Infinite ∧

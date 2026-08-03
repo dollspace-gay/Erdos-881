@@ -32,7 +32,7 @@ reflection levels are unbounded.
   two-term representation.
 
 The proof deletes alternating reflected copies of the anchor. The geometric
-growth separates the possible collisions, and the anchor representation
+growth separates the possible conflicts, and the anchor representation
 repairs the case in which both original summands are deleted.
 
 This theorem covers one unbounded-gap regime but not arbitrary spacing.

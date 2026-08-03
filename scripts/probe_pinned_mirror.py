@@ -1,24 +1,5 @@
 #!/usr/bin/env python3
-"""Validation probe for the pinned-mirror attack (Erdős 881 lab).
-
-V1  no_separated_triangle as stated is FALSE: a P3 toy triangle plus an
-    interval tail [H+1, T] is a (windowed-to-T) covering set with 0, in
-    which three guards of ratio ~6 pairwise destroy targets.  The tail
-    adds no 3-rep of any target (all its elements exceed the targets),
-    so the counterexample scales to a full covering set.
-V2  THE PINNED PERFECT MIRROR: for an edge {u, v} destroying m with
-    u << v, if u + x has a u-free 2-rep (s + t = u + x, s,t ∈ A, both
-    ≠ u, both ≠ v — the latter automatic when v > u + x), then the
-    u-channel of x's bimirror is dead, so  m - v - x ∈ A.  Numerically:
-    the reflection x ↦ (m - v) - x is a PERFECT mirror on
-    X = {x ∈ A : x + N0 <= m, x ∉ {u,v}, u + x has u-free 2-rep}.
-V3  level-2 density double count (Cassaigne–Plagne Lemma 4 transplant):
-    with D2(a) = {n : every 2-rep of n uses a}, the counting bound
-    sum_a |D2(a) ∩ [N, T]| <= 2 * (T - N + 1)  (each n needs <= 2
-    elements... in fact each n in D2(a) has all 2-reps through a, and a
-    n can lie in D2(a) for at most 2 values of a unless it has NO
-    2-rep: its unique-support elements).  Measure the actual sums.
-"""
+"""Finite diagnostic for pinned mirror."""
 
 from __future__ import annotations
 

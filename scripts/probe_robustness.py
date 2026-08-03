@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""R(m) = max pairwise-disjoint 3-reps (greedy lower bound).
-Question: is Cantor uniformly robust (R -> infinity), which would
-unify its branch under the robustness mechanism?  Report min R(m)
-over windows for cantor and greedy-B2."""
+"""Finite diagnostic for robustness."""
 
 def cantor(Y):
     out = []

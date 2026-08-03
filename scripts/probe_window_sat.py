@@ -1,19 +1,5 @@
 #!/usr/bin/env python3
-"""Single-window satisfiability of the tight-pair enemy (Erdős 881).
-
-Demands on A ∩ [0, T] (team S = {u, v}, d = v - u):
-  D1 covering: every n in [N0, T] has a 2-rep
-  D2 for EVERY b in A ∩ [W, 2W] (marker window): exists q with
-     b+q, b+q-d <= T and r2(b+q) = 1 via (b, q) and
-     r2(b+q-d) = 1 via (b, q-d)   [the aligned private pair]
-  D3 cofinal pair-destroyed targets for (u, v) inside the window
-     (all 2-reps through u or v, both used)
-
-Search: randomized local search over A-membership on [0, T]; count
-best simultaneous satisfaction. If D2 coverage stalls far below
-100%, the window demand is unsatisfiable in practice; if it
-saturates, examine the structure found.
-"""
+"""Finite diagnostic for window sat."""
 import random
 
 def r2_fiber(A, Aset, n, T):

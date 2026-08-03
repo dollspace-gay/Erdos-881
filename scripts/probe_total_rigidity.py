@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""Total rigidity + covering search (Erdős 881, V11 classification).
-
-Demand: A covers [N0, T] at order 2 AND every b in A with
-2b <= T has r2(2b) = 1 (only rep (b, b)).  Cantor satisfies both.
-Question: does anything else?  Greedy + local search + structure
-signature of survivors (base-3 digit histogram).
-"""
+"""Finite diagnostic for total rigidity."""
 import itertools, random
 
 def check(A, N0, T):
@@ -24,8 +18,7 @@ def check(A, N0, T):
     return holes, viol
 
 def greedy_rigid_cover(T, N0, rng, order):
-    """add elements to fix coverage holes, skipping additions that
-    break rigidity of existing doubles."""
+    """Finite diagnostic for greedy rigid cover."""
     A = {0, 1}
     for n in order:
         Aset = A

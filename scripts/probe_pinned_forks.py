@@ -1,37 +1,5 @@
 #!/usr/bin/env python3
-"""Pinned-fork probe (Erdős 881 lab, attack on no_separated_triangle).
-
-THE PINNING LEMMA (to be formalized): let m be destroyed by the team
-{p, q} (every exact-3 rep meets the team), let z be an element with
-z + max(p,q) < m, and suppose the p-channel of z's bimirror is realized:
-w := m - p - z ∈ A.  If additionally p + z has a 2-representation
-s + t = p + z with s, t ∈ A ∖ {p, q}, and w ∉ {p, q}, then
-m = s + t + w is an exact-3 rep avoiding the team — CONTRADICTION.
-Hence an avoiding 2-rep of p + z ("the pin") kills the p-channel: the
-bimirror is pinned to the q-channel.
-
-A separated triangle {u < v < w} generates three third-guard forks
-(z = the guard not on the edge); each channel of each fork is killed by
-an avoiding 2-rep of the corresponding cross-sum g_i + g_j.  The proof
-of no_separated_triangle should close by showing every branch
-assignment dies.  This probe:
-
-  P1  clique census + fork audit: re-collect the single-scale 3-cliques,
-      run every (edge, target, z) fork instance, numerically ASSERT the
-      pinning lemma (no realized channel may carry an active pin), and
-      tabulate which forks fire and which channels are realized.
-  P2  pin census: which cross-sums have avoiding 2-reps (pins active)?
-      Prediction: in the toy ground set [0,M] ∪ {g1,g2,g3} no pin can
-      ever activate (parts below M sum below the cross-sums; guard
-      parts are banned) — the cliques survive by poverty, not strength.
-  P3  separated-guard hunt: enrich the ground set with a filler block
-      [L, L+K] and search for triangles with g1 far below g2, g3.
-      Measure the maximum separation ratio any triangle attains and
-      what kills the rest.
-  P4  near-miss autopsy: for pairs that fail to form the third edge,
-      classify the killer representations — are they of pinned-fork
-      type (s + t + w with s + t an avoiding 2-rep of guard + z)?
-"""
+"""Finite diagnostic for pinned forks."""
 
 from __future__ import annotations
 
@@ -47,7 +15,7 @@ from probe_team_guardians import (
 # ------------------------------------------------------------- helpers
 
 def avoiding_2reps(A, n: int, banned: set[int]) -> list[tuple[int, int]]:
-    """All 2-reps s + t = n with s <= t, both in A ∖ banned."""
+    """Finite diagnostic for avoiding 2reps."""
     Aset = set(A) - banned
     out = []
     for s in A:
@@ -60,11 +28,7 @@ def avoiding_2reps(A, n: int, banned: set[int]) -> list[tuple[int, int]]:
 
 
 def fork_instances(A, p: int, q: int, m: int, zs) -> list[dict]:
-    """Audit the bimirror fork of each z through edge {p,q} at target m.
-
-    Returns one record per firing fork; asserts the bimirror and the
-    pinning lemma on every instance (raises on any violation).
-    """
+    """Finite diagnostic for fork instances."""
     Aset = set(A)
     lo, hi = min(p, q), max(p, q)
     recs = []
@@ -97,7 +61,7 @@ def fork_instances(A, p: int, q: int, m: int, zs) -> list[dict]:
 # ------------------------------------------------------------------ P1
 
 def collect_cliques(Ms) -> list[tuple]:
-    """(M, guards, {pair: targets}) for every 3-clique in the toy scan."""
+    """Finite diagnostic for collect cliques."""
     cliques = []
     for M in Ms:
         for g1 in range(M + 1, 2 * M + 2):
@@ -152,12 +116,7 @@ def p1_p2(Ms) -> list[tuple]:
 # ------------------------------------------------------------------ P3
 
 def p3(M: int, ratio_cap: int = 8) -> None:
-    """Separated-guard triangles over [0,M] ∪ {g1} ∪ [L,L+K] ∪ {g2,g3}.
-
-    g1 sits in the low zone; the filler block keeps coverage alive so
-    g2, g3 can climb.  Record every triangle found and its separation
-    ratio g2/g1; report the maximum, plus what fails beyond it.
-    """
+    """Finite diagnostic for p3."""
     best = []
     tried = 0
     for g1 in range(M + 1, 2 * M + 2):
@@ -198,12 +157,7 @@ def p3(M: int, ratio_cap: int = 8) -> None:
 # ------------------------------------------------------------------ P4
 
 def p4(M: int, samples: int = 40) -> None:
-    """Near-miss autopsy: base = toy clique family, but ask why the pair
-    (g1, g3) fails when (g1,g2) and (g2,g3) succeed.  For each failed
-    target m in range: find a witnessing avoiding rep and classify it:
-    PINNED-FORK type if it has the shape s + t + w where s + t = g + z
-    for some channel guard g ∈ {g1,g3} and element z (i.e. the rep
-    routes through a killed channel), else OTHER."""
+    """Finite diagnostic for p4."""
     shown = 0
     stats = {"pinned-fork": 0, "other": 0}
     for g1 in range(M + 1, 2 * M + 2):

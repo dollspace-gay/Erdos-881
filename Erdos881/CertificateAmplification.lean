@@ -1,20 +1,5 @@
 import Erdos881.MovingTransversals
 
-/-!
-# Amplifying finite selector certificates
-
-Strong infinite deletion is usually converted into a finite certificate which
-forces one block of a finite-block partition to lie in the union of any
-chosen certified supports.  Reapplying strong deletion on a sufficiently far
-tail of the same partition amplifies this: a single finite certificate can
-force arbitrarily many distinct covered blocks.
-
-The proof is a finite-injury induction.  At one stage, the union of *all*
-supports available at the current finite target set can cover only finitely
-many blocks.  Start the next stage beyond all of them.  The block forced at
-the next stage is therefore new, uniformly for every support choice.
--/
-
 namespace Erdos881
 
 /-- The union of every support available at one of the finitely many targets
@@ -138,13 +123,6 @@ theorem exists_point_avoiding_or_localSupportChoiceSubcover
       by_contra hxU
       exact hchoice ⟨x, hxV, hxE, hxU⟩
 
-/-- Quantitative local obstruction to a simultaneous second choice.
-
-The finite family `M` is the immediate collision family and `c` stores one
-protected support per certificate target.  Either a point of `V` avoids
-both, or at most `V.card` protected targets already cover `V` together with
-`M`.  If the two kinds of supports have ranks at most `h` and `r`, the
-returned local dependency set satisfies the displayed sharp union bound. -/
 theorem exists_point_avoiding_families_or_localSupportChoiceSubcover
     {R : SupportFamily} {Q V : Finset ℕ}
     (c : FiniteSupportChoice R Q)
@@ -196,13 +174,6 @@ theorem exists_point_avoiding_families_or_localSupportChoiceSubcover
     refine ⟨P, hPQ, hPcard, hcover, ?_⟩
     omega
 
-/-- Strong deletion amplifies the usual one-block dual certificate to an
-arbitrarily large family of distinct covered blocks.  The returned indices
-can all be forced beyond any prescribed starting block.
-
-This is the certificate form useful for the bounded-representation route:
-to contradict strong deletion it is enough to find a uniform upper bound on
-the number of blocks covered by some support choice for every finite `Q`. -/
 theorem exists_manyCoveredBlocks_of_strongInfiniteDeletion
     {A : Set ℕ} {R : SupportFamily} {F : ℕ → Finset ℕ}
     (P : IsFiniteBlockPartition A F)

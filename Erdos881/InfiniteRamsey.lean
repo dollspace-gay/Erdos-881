@@ -1,18 +1,3 @@
-/-
-# Infinite Ramsey theorem for pairs (two colours)
-
-Every two-colouring of the pairs of naturals admits an infinite
-homogeneous subsequence.  Proved by the classical pre-homogeneous
-construction: a choice recursion picks anchors whose colour towards
-the surviving infinite pool is constant per stage, and a pigeonhole
-on the stage tags extracts the homogeneous subsequence.
-
-Infrastructure for the Nash-Williams / barrier-rank program on the
-Erdős 881 hub hypergraph: the team supply lives inside every
-infinite deletion, and Ramsey extraction is the tool that will
-canonicalize team shapes inside a fixed ground stream.
--/
-
 import Mathlib
 
 namespace Erdos881
@@ -57,9 +42,6 @@ theorem prehomogeneous_step (c : ℕ → ℕ → Bool) (a : ℕ) (S : Set ℕ)
     have hyx' : ¬y ≤ (hF.exists_gt a).choose := hyx
     exact ⟨hyS, hyc, by omega⟩
 
-/-- **Infinite Ramsey, pairs, two colours.**  For any pair colouring
-`c` there is a strictly monotone `f` and a colour `b` with
-`c (f i) (f j) = b` for all `i < j`. -/
 theorem infinite_ramsey_pairs (c : ℕ → ℕ → Bool) :
     ∃ f : ℕ → ℕ, StrictMono f ∧ ∃ b : Bool,
       ∀ i j, i < j → c (f i) (f j) = b := by
@@ -153,12 +135,6 @@ theorem infinite_ramsey_pairs (c : ℕ → ℕ → Bool) :
   rw [hpool (g i) (g j) (hgmono hij)]
   exact hgt i
 
-/-- One pre-homogeneous step at arity three: given an anchor and a
-strictly monotone pool above it, the pairs theorem inside the pool
-yields a new anchor FROM the homogeneous subsequence, a colour tag,
-and the subsequence tail as the next pool — with the tag colour
-against the anchor on all pool pairs AND on all (new anchor, pool)
-pairs. -/
 theorem prehomogeneous_step₃ (c : ℕ → ℕ → ℕ → Bool) (a : ℕ)
     (e : ℕ → ℕ) (he : StrictMono e) (hea : ∀ i, a < e i) :
     ∃ (x : ℕ) (e' : ℕ → ℕ) (bt : Bool), StrictMono e' ∧ a < x ∧
@@ -177,9 +153,6 @@ theorem prehomogeneous_step₃ (c : ℕ → ℕ → ℕ → Bool) (a : ℕ)
   · intro i
     exact hhom 0 (i + 1) (by omega)
 
-/-- **Infinite Ramsey, triples, two colours.**  By anchor recursion
-over the pairs theorem: each stage recolours its pool against the
-new anchor and keeps the homogeneous tail. -/
 theorem infinite_ramsey_triples (c : ℕ → ℕ → ℕ → Bool) :
     ∃ f : ℕ → ℕ, StrictMono f ∧ ∃ b : Bool,
       ∀ i j k, i < j → j < k → c (f i) (f j) (f k) = b := by
@@ -234,7 +207,7 @@ theorem infinite_ramsey_triples (c : ℕ → ℕ → ℕ → Bool) :
       · have h1 : k = j + 1 := by omega
         subst h1
         exact fun i => ⟨i, rfl⟩
-  -- every later anchor is a pool value at every intermediate stage
+
   have hanchormem : ∀ l j, l < j → ∃ γ,
       (st j).1.1 = (st l).1.2 γ := by
     intro l j hlj
@@ -263,7 +236,7 @@ theorem infinite_ramsey_triples (c : ℕ → ℕ → ℕ → Bool) :
         rw [← heq]
       rw [hxk, hγ, hepool]
       exact hhoma _ _ _ _ γ
-    · -- both later anchors are stage-(k+1) pool values
+    ·
       obtain ⟨α, hα⟩ := hanchormem (k + 1) i hlt
       obtain ⟨β, hβ⟩ := hanchormem (k + 1) j (by omega)
       have haij : (st i).1.1 < (st j).1.1 := hamono hij
@@ -334,7 +307,6 @@ theorem prehomogeneous_step₄ (c : ℕ → ℕ → ℕ → ℕ → Bool) (a : �
   · intro i j hij
     exact hhom 0 (i + 1) (j + 1) (by omega) (by omega)
 
-/-- **Infinite Ramsey, quadruples, two colours.** -/
 theorem infinite_ramsey_quadruples (c : ℕ → ℕ → ℕ → ℕ → Bool) :
     ∃ f : ℕ → ℕ, StrictMono f ∧ ∃ b : Bool,
       ∀ i j k l, i < j → j < k → k < l →
@@ -549,12 +521,6 @@ theorem tuple_step {r : ℕ}
   intro t ht
   exact hhom t ht
 
-/-- **INFINITE RAMSEY, EVERY ARITY, TWO COLOURS.**  For every `r`
-and every colouring of the strictly monotone `(r+1)`-tuples of
-naturals there is an infinite subsequence on which the colour is
-constant.  By induction on arity: the anchor recursion over the
-arity-`r` oracle, with the anchor drawn from the homogeneous
-subsequence itself. -/
 theorem infinite_ramsey_tuples :
     ∀ (r : ℕ) (c : (Fin (r + 1) → ℕ) → Bool),
     ∃ f : ℕ → ℕ, StrictMono f ∧ ∃ bt : Bool,
@@ -631,7 +597,7 @@ theorem infinite_ramsey_tuples :
         · have h1 : k = j + 1 := by omega
           subst h1
           exact fun i => ⟨i, rfl⟩
-    -- later anchors are Efull-values of every earlier stage
+
     have hanchorE : ∀ k l, k < l → ∃ γ,
         (st l).1.1 = Efull k γ := by
       intro k l hkl

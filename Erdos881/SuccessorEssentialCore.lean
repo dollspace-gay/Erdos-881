@@ -1,14 +1,5 @@
 import Erdos881.AlternatingRepairs
 
-/-!
-# The successor-essential core of an order-two basis
-
-An element is placed in the successor-essential core when deleting that one
-element destroys the exact order-three basis property.  Private-target
-rigidity forces this core to be Sidon off the diagonal, and hence
-quantitatively sparse.
--/
-
 open scoped BigOperators
 
 namespace Erdos881

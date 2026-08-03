@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Probe: THE MASTER CRITERION (deletion_criterion_local).
-
-Only targets in B + A are ever at risk; everything else keeps
-its covering pair.  Greedy: delete b iff every target in
-b + A stays served (surviving triple) once b is gone.
-"""
+"""Finite diagnostic for combined."""
 import sys
 sys.path.insert(0, 'scripts')
 from probe_mixing_survival import build_world as build_mixing

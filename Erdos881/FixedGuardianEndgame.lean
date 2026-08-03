@@ -1,30 +1,8 @@
 import Erdos881.UnboundedMirrorGaps
 import Erdos881.GuardianBridge
 
-/-!
-# The fixed-guardian endgame: defective mirrors suffice
-
-The surviving-deletion extraction of `UnboundedMirrorGaps` consumes
-perfect reflection levels, but its proof only ever reflects *forward*
-(`z ∈ A → L k - z ∈ A`) and only at finitely many named points: the
-anchor `c`, the unbalanced parts `w, w'`, and lower levels.  The
-guardian-free mirror `IsPrivateTriple.mirror_of_ne` provides exactly
-this forward reflection at every point other than the guardian itself.
-
-Consequence (`surviving_deletion_of_cofinal_fixedGuardian`): **a fixed
-guardian with arbitrarily late private targets forces a surviving
-infinite deletion** — the levels `m - a` are cofinal element levels
-with a single uniform defect at `a`, and an anchor dodging `a` runs
-the whole extraction.  In particular a counterexample to Erdős 881
-(k = 2) has no order-three-essential element
-(`no_orderThree_essential_of_counterexample`): guardians must rotate.
--/
-
 namespace Erdos881
 
-/-- **Spare keys from defective mirrors (geometric regime).**  The
-geometric extraction, re-proved from the forward defective mirror: all
-reflections dodge the single defect `a`. -/
 theorem surviving_deletion_of_geometric_defectiveLevels
     {A : Set ℕ} {N₀ a c : ℕ} (L : ℕ → ℕ)
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -206,11 +184,7 @@ theorem surviving_deletion_of_geometric_defectiveLevels
       omega
     · exact ⟨x, hx, y, hy, 0, h0, hxB, hyB, h0B, by omega⟩
 
-/-- **A fixed guardian with cofinal private targets forces a surviving
-deletion.**  The corep levels `m - a` are cofinal element levels
-carrying the forward defective mirror; a doubling subsequence and an
-anchor dodging `a` run the geometric extraction. -/
-theorem surviving_deletion_of_cofinal_fixedGuardian
+theorem surviving_deletion_of_cofinal_fixedRequiredElement
     {A : Set ℕ} {N₀ a c : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
     (ha0 : 0 < a) (haN : N₀ ≤ a)
@@ -266,10 +240,6 @@ theorem surviving_deletion_of_cofinal_fixedGuardian
   exact surviving_deletion_of_geometric_defectiveLevels L h0 hcov hmono
     hlevL hmemL hgrow ha0 (by omega) hc hc0 (by omega) hca hw
 
-/-- **Counterexamples have no order-three-essential element.**  If
-deleting the single element `a` breaks the exact order-three basis
-property, the resulting cofinal private stream of `a` already yields a
-surviving *infinite* deletion in repo vocabulary. -/
 theorem surviving_deletion_of_singleton_orderThree_failure
     {A : Set ℕ} {N₀ a c : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -287,7 +257,7 @@ theorem surviving_deletion_of_singleton_orderThree_failure
     obtain ⟨m, hm, hp⟩ := hstream N
     exact ⟨m, hm, hp⟩
   obtain ⟨B, hBA, hBinf, hsurv⟩ :=
-    surviving_deletion_of_cofinal_fixedGuardian h0 hcov ha0 haN
+    surviving_deletion_of_cofinal_fixedRequiredElement h0 hcov ha0 haN
       hstream' hc hc0 hca hw
   exact ⟨B, hBA, hBinf, exactTupleBasis_diff_of_survival hsurv⟩
 

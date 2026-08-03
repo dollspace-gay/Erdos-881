@@ -1,18 +1,5 @@
 #!/usr/bin/env python3
-"""Probe: the bypass question (eleventh summit follow-up).
-
-For a deletion confined to class c* mod 2^j, failing targets are
-residue-chained: EVERY pair rep touches c*.  The kill would be:
-in mixing covering worlds, for every deep class c*, only
-finitely many targets are chained to c*.
-
-Count chained targets per (world, modulus 2^j, class c*):
-n in [lo, hi] is CHAINED to c* iff n has >= 1 pair rep and every
-pair rep (x, n-x) has x = c* or n-x = c* (mod 2^j).
-
-Also count chained-with-poverty (r2 <= cap) since failing
-targets must be poor too.
-"""
+"""Finite diagnostic for bypass."""
 
 import random
 import sys

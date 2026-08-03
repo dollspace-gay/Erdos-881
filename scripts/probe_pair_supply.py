@@ -1,16 +1,5 @@
 #!/usr/bin/env python3
-"""Pair-destruction supply census (Erdős 881, spread-B endgame).
-
-The enemy needs: for EVERY spread choice (one marker per geometric
-window), cofinally many targets whose 3-reps all pass through chosen
-markers.  Singleton-owned targets (IsPrivateTriple) are dead (stream
-kill), so targets must be owned by PAIRS of markers across scales.
-Demand: essentially all cross-scale pairs loaded at cofinal scales.
-
-Census: in covering structures, for cross-scale element pairs (x, y),
-count pairs owning >=1 target n <= T with every 3-rep of n hitting
-{x, y} (and both actually used, and n has some 3-rep).
-"""
+"""Finite diagnostic for pair supply."""
 import itertools, random
 
 def three_reps(n, A, Aset):

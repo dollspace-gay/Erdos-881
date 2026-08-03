@@ -1,19 +1,5 @@
 #!/usr/bin/env python3
-"""General carry lemma probe (Erdős 881, recurring-pair leaf closure).
-
-Question: does there EXIST a 2-covering structure with fixed-pair
-destruction whose thin deletions ALL destroy order 3?  The 881-enemy
-needs this (hfail for every infinite B).  If every tested structure
-has SOME thin deletion surviving at order 3, the general carry lemma
-is supported: rigidity that starves order 2 feeds order 3.
-
-For each structure A on [0, T]:
-  R1  verify 2-covering of [S, T] and find fixed pairs (u,v) with
-      >=3 destroyed targets (all reps through u or v, both used)
-  R2  for many thin B (random sparse, corep markers, top-elements,
-      arithmetic families): does A\\B 3-cover [S3, T]?
-  A structure RESISTS if every tested B destroys 3-covering.
-"""
+"""Finite diagnostic for carry lemma."""
 import itertools, random
 
 def two_cover_holes(A, S, T):

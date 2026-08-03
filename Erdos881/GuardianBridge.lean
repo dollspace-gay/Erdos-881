@@ -2,26 +2,6 @@ import Erdos881.AdditiveSupports
 import Erdos881.MirrorPeriodicity
 import Erdos881.TeamGuardianRigidity
 
-/-!
-# Bridging guardian rigidity to the support-family vocabulary
-
-`GuardianRigidity`, `TeamGuardianRigidity`, and `MirrorPeriodicity` speak
-`PairCovers` / `IsPrivateTriple`; the main development speaks
-`IsExactTupleAsymptoticBasis` / `DestroysAt` / `additiveSupportFamily`.
-This file makes the two vocabularies interchangeable:
-
-* an exact order-two tuple basis gives `PairCovers`;
-* a singleton destroyer at order three gives `IsPrivateTriple`, so a
-  failed singleton deletion yields arbitrarily late private pairs — the
-  raw material for `no_big_guardian_stacking` and the reflection stream;
-* a surviving deletion in the guardian vocabulary is an exact order-three
-  tuple basis of `A \ B`;
-* consequently the master chain lands in repo vocabulary:
-  `exactTupleBasis_orderThree_deletion_of_boundedGap_reflectionLevels`
-  is the positive answer to the order-two instance of Erdős 881 under
-  the bounded-gap mirror hypothesis.
--/
-
 namespace Erdos881
 
 /-- An exact order-two tuple basis pair-covers from its threshold on. -/
@@ -34,7 +14,7 @@ theorem pairCovers_of_exactTupleBasis {A : Set ℕ}
   obtain ⟨v, hvA, hvsum⟩ := hN n hn
   exact ⟨v 0, hvA 0, v 1, hvA 1, by simpa [Fin.sum_univ_two] using hvsum⟩
 
-/-- A singleton destroyer at order three is a private guardian. -/
+/-- A singleton destroyer at order three is a private required element. -/
 theorem isPrivateTriple_of_destroysAt {A : Set ℕ} {a m : ℕ}
     (hrep : ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A, x + y + z = m)
     (hdes : DestroysAt (additiveSupportFamily A 3) ({a} : Set ℕ) m) :
@@ -51,7 +31,7 @@ theorem isPrivateTriple_of_destroysAt {A : Set ℕ} {a m : ℕ}
       simp_all [Set.mem_diff, Set.mem_singleton_iff]
   · simpa [Fin.sum_univ_three] using hsum
 
-/-- If deleting the single guardian `a` destroys the exact order-three
+/-- If deleting the single required element `a` destroys the exact order-three
 basis property of a covering set with zero, then `a` owns arbitrarily
 late order-three private targets. -/
 theorem exists_late_privateTriple_of_singletonDeletion
@@ -71,7 +51,7 @@ theorem exists_late_privateTriple_of_singletonDeletion
   exact isPrivateTriple_of_destroysAt
     ⟨x, hx, y, hy, 0, h0, by omega⟩ hdes'
 
-/-- A surviving deletion in guardian vocabulary is an exact order-three
+/-- A surviving deletion in required element vocabulary is an exact order-three
 tuple basis of the difference set. -/
 theorem exactTupleBasis_diff_of_survival {A B : Set ℕ} {N₁ : ℕ}
     (h : ∀ n, N₁ ≤ n → ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
@@ -85,11 +65,6 @@ theorem exactTupleBasis_diff_of_survival {A B : Set ℕ} {N₁ : ℕ}
     fin_cases i <;> simp_all [Set.mem_diff]
   · simpa [Fin.sum_univ_three] using hsum
 
-/-- **Repo-vocabulary master chain.**  An exact order-two tuple basis
-containing zero whose reflection levels recur with bounded gaps admits an
-infinite deletion leaving an exact order-three tuple basis: the positive
-answer to the order-two instance of Erdős 881 under the bounded-gap
-mirror hypothesis. -/
 theorem exactTupleBasis_orderThree_deletion_of_boundedGap_reflectionLevels
     {A : Set ℕ} {C : ℕ}
     (h0 : 0 ∈ A) (h2 : IsExactTupleAsymptoticBasis A 2)

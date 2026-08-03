@@ -1,17 +1,3 @@
-/-
-# The Cantor fixed point, membership half
-
-Sieve-stack completeness of the Cantor world: every non-element is
-some owner's moat value.  The owner family is the shifted doubles —
-`3^m + h` owns `3^m + 2h`, uniqueness by doubling rigidity — and the
-victim equation `v = 2h - c''` is solved by the layer decomposition
-`h = layer v`, `c'' = 2·layer v - v`.
-
-This establishes `co-C ⊆ Sieve(C)`: the Cantor set is contained in
-and (with the laws' consistency) equals the complement of its own
-forest's sieve — the model half of the classification's fixed point.
--/
-
 import Erdos881.CantorCarryRepair
 import Erdos881.DisjointRepEngine
 
@@ -92,9 +78,6 @@ lemma isCantor_layer_defect (v : ℕ) : IsCantor (2 * layer v - v) := by
         rw [hstep]
         exact ih (v / 3) hq i
 
-/-- **The shifted-doubles ownership family.**  `3^m + h` owns
-`3^m + 2h`: big-window inhabitants are `3^m + c''` with `c''` Cantor,
-and `2h - c'' ∈ C` forces `c'' = h` by doubling rigidity. -/
 theorem shifted_double_owns {h m : ℕ} (hh : IsCantor h)
     (hpos : 0 < h) (hroom : 4 * h + 1 < 3 ^ m) :
     OwnsTarget CSet (3 ^ m + h) (3 ^ m + 2 * h) := by
@@ -131,11 +114,6 @@ theorem shifted_double_owns {h m : ℕ} (hh : IsCantor h)
     obtain ⟨hch, _⟩ := cantor_double_unique hh hcC hmemC hsum
     exact hya (by omega)
 
-/-- **The Cantor sieve is complete on non-elements.**  Every positive
-non-element `v` is a moat value: with `h := layer v` and
-`c'' := 2h - v`, the owner `3^m + h` of `3^m + 2h` excludes exactly
-`v` at the window element `3^m + c''`.  The membership half of the
-fixed point `co-C = Sieve(C)`. -/
 theorem cantor_sieve_complete {v : ℕ} (hv : ¬IsCantor v) (hv1 : 1 ≤ v) :
     ∃ a t z, OwnsTarget CSet a t ∧ z ∈ CSet ∧
       2 * z > t ∧ z < t ∧ z ≠ a ∧ t - z = v := by
@@ -154,7 +132,7 @@ theorem cantor_sieve_complete {v : ℕ} (hv : ¬IsCantor v) (hv1 : 1 ≤ v) :
     have hvh : v = h := by omega
     rw [hvh]
     exact hhC
-  -- choose the power with room
+  -- choose the power with case
   set m := 4 * h + 2 with hm
   have hroom : 4 * h + 1 < 3 ^ m := by
     have h1 : m < 3 ^ m := Nat.lt_two_pow_self.trans_le
@@ -183,12 +161,6 @@ theorem cantor_sieve_complete {v : ℕ} (hv : ¬IsCantor v) (hv1 : 1 ≤ v) :
     exact hch this
   · omega
 
-/-- **THE CANTOR FIXED POINT.**  A positive number is OUTSIDE the
-Cantor set exactly when it is some owner''s moat value: the set is
-precisely the complement of its own forest''s sieve.
-`co-C = Sieve(C)`, as one theorem — the model of the classification:
-a universally-owned covering world IS the fixed point of its own
-exclusion laws, and the ternary world realizes it. -/
 theorem cantor_fixed_point {v : ℕ} (hv1 : 1 ≤ v) :
     (¬IsCantor v) ↔
     ∃ a t z, OwnsTarget CSet a t ∧ z ∈ CSet ∧

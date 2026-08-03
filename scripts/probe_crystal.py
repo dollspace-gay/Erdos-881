@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
-"""CRYSTAL HUNT (d=1): search for A ⊆ [0,Y] with 0 ∈ A, covering
-[N0,Y] by pairs, such that every pair {b,b'} of tail elements is a
-FULL HUB at some target m (every 3-rep of m meets {b,b'}).
-Verified theory: every finite-rank counterexample pool contains such
-a world.  If even tiny crystals refuse to exist, the mixed-regime
-enemy loses its finite-rank room; if they exist, study them.
-Method: greedy + annealing over the tail structure; score = fraction
-of tail-pairs that are full hubs somewhere in window."""
+"""Finite diagnostic for structured configuration."""
 import random
 random.seed(881)
 

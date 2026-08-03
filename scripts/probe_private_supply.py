@@ -1,26 +1,10 @@
 #!/usr/bin/env python3
-"""Private 2-target supply census (Erdős 881, simultaneity analysis).
-
-For the tight-team/escort endgame: a failing target under geometric
-spread B needs ALL its hub translates 2-destroyed by ~1 marker per
-window; the marker b must own each translate as a 'private 2-target'
-(essentially unique rep through b).  Enemy needs, for EVERY b-choice,
-aligned targets: hub-differences inside b's private-list difference
-sets, at every scale.
-
-Census per covering model:
-  S1  per-element private-2-target counts (t with every rep of t
-      through b)
-  S2  how many elements have >= 2 private targets (needed for any
-      alignment at all)
-  S3  recurring differences across elements' private lists (the
-      alignment supply)
-"""
+"""Finite diagnostic for private supply."""
 import itertools, random
 from collections import Counter
 
 def private_targets(A, Aset, T):
-    """for each b: targets t in (0,T] whose every 2-rep uses b."""
+    """Finite diagnostic for private targets."""
     priv = {b: [] for b in A}
     for t in range(2, T + 1):
         reps = [(x, t - x) for x in A if x <= t - x and (t - x) in Aset]

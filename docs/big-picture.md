@@ -27,8 +27,8 @@ The direct-construction route has the following dependency chain:
 2. Failure of local clean supply yields an atomic pinned tail
    (`AdaptiveDirect.lean`).
 3. The private-core case yields either a moving-petal survival deletion or a
-   fixed-core collision (`PrivateCoreStream.lean`).
-4. The fixed-core collision also yields a survival deletion after splitting
+   fixed-core conflict (`PrivateCoreStream.lean`).
+4. The fixed-core conflict also yields a survival deletion after splitting
    the marker set.
 5. Under the counterexample assumption, the survival deletion yields a
    bracketed sequence of surviving and destroyed targets.
@@ -37,9 +37,8 @@ The direct-construction route has the following dependency chain:
 7. Existing arithmetic classification reduces these certificates to three
    unresolved structural outcomes.
 
-The last step is the current frontier. The missing theorem must convert each
-arithmetic outcome to either a genuine lower-rank obstruction or uniform clean
-supply.
+The remaining theorem must convert each arithmetic outcome to either a
+genuine lower-rank obstruction or uniform clean supply.
 
 ## Earlier order-two program
 
@@ -49,9 +48,9 @@ conditions for a counterexample, including:
 
 - well-foundedness of finite free-set extension relations;
 - rank assignments to those relations;
-- bounded-hub and disjoint-representation alternatives;
-- shell, matching, reflection, and guardian constraints;
-- `endgame_final_form`, which reformulates the order-two counterexample
+- bounded-transversal and disjoint-representation alternatives;
+- rank layer, matching, reflection, and required-element constraints;
+- `counterexample_structure_final_form`, which reformulates the order-two counterexample
   condition using a well-founded representation-avoidance tree.
 
 These results are valid conditional reductions, not a proof that a

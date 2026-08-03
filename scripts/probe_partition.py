@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""The 90/10 battle line, measured: how thin can U ⊆ A be while
-still 3-covering all late targets (U-only triples)?  Take every
-k-th element of A-positive (plus 0 stays out; triples are exact
-x+y+z with x,y,z in U).  Report coverage holes vs thinning k."""
+"""Finite diagnostic for partition."""
 
 def greedy_b2(Y):
     A = [0, 1]

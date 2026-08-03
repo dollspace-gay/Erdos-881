@@ -1,24 +1,3 @@
-/-
-# Marker deletions spare their own targets
-
-The B-side reframing of the recurring-pair endgame.  For a
-geometrically extracted family of pair-destroyed targets `M k` with
-coreps in `A`, the u-side marker family `B := {M k - u}` is an
-infinite subset of `A` that never touches the targets' v-side
-repairs: every `M k` retains the 3-representation `(v, M k - v, 0)`
-avoiding `B` entirely.
-
-Consequences for the campaign: a counterexample's `hfail` applied to
-this `B` must produce *fresh* failing targets, never the pair-destroyed
-family itself — the enemy's order-3 failure and its order-2
-destruction cannot share targets along the u-channel.  Combined with
-the verified funnel trichotomy and the private-stream kill, the fresh
-targets must be pair-cooperative for every such marker family.
-
-Geometric separation does all the work: cross-scale marker/repair
-collisions are impossible because consecutive scales more than double.
--/
-
 import Erdos881.TeamGraphRamsey
 
 namespace Erdos881
@@ -54,10 +33,7 @@ lemma geometric_separation {M : ℕ → ℕ} {c : ℕ}
   have h3 : M 0 ≤ M j := hmono.monotone (Nat.zero_le j)
   omega
 
-/-- **Marker–repair non-collision.**  Geometric u-side markers never
-equal any same- or cross-scale depth-2 repair value: not the doubled
-u-drop, not the mixed drop, not the v-corep. -/
-theorem marker_repair_noncollision {u v : ℕ}
+theorem marker_repair_distinct {u v : ℕ}
     (hu0 : 0 < u) (huv : u < v)
     (M : ℕ → ℕ) (hgrow : ∀ k, 2 * M k < M (k + 1))
     (hbig : 4 * v < M 0) :
@@ -79,8 +55,6 @@ theorem marker_repair_noncollision {u v : ℕ}
       geometric_separation hgrow (by omega) k j h
     refine ⟨?_, ?_, ?_⟩ <;> omega
 
-/-- **The v-side survival.**  Deleting the whole u-side marker family
-leaves every target its 3-representation `(v, M k - v, 0)`. -/
 theorem marker_deletion_v_survival {A : Set ℕ} {u v : ℕ}
     (hu0 : 0 < u) (huv : u < v)
     (h0 : 0 ∈ A) (hvA : v ∈ A)
@@ -104,7 +78,7 @@ theorem marker_deletion_v_survival {A : Set ℕ} {u v : ℕ}
     omega
   · rintro ⟨j, hj⟩
     have hj' : M j - u = M k - v := hj
-    exact (marker_repair_noncollision hu0 huv M hgrow hbig j k).2.2 hj'
+    exact (marker_repair_distinct hu0 huv M hgrow hbig j k).2.2 hj'
   · rintro ⟨j, hj⟩
     have hj' : M j - u = 0 := hj
     have := hM0 j
@@ -112,11 +86,6 @@ theorem marker_deletion_v_survival {A : Set ℕ} {u v : ℕ}
   · have := hM0 k
     omega
 
-/-- **Marker deletions spare their own targets.**  The u-side marker
-family of a geometric coreped target family is an infinite subset of
-`A` whose deletion leaves every target 3-represented.  A
-counterexample's order-3 failure against this deletion must therefore
-occur on fresh targets, disjoint from the pair-destroyed family. -/
 theorem marker_deletion_targets_survive {A : Set ℕ} {u v : ℕ}
     (hu0 : 0 < u) (huv : u < v)
     (h0 : 0 ∈ A) (hvA : v ∈ A)

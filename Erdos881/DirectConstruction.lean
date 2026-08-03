@@ -1,70 +1,38 @@
-/-
-# The direct construction: clean redundancy chains
-
-Strategy shift.  The contradiction campaign describes a
-hypothetical enemy; this file instead BUILDS the deletion.  The
-load-bearing observation is prefix locality: a summand of `n` is
-at most `n`, so an infinite deletion `B` hurts the target `n` only
-through the finite prefix `B ∩ [0, n]`.  Consequently an infinite
-surviving deletion exists as soon as one step can always be taken:
-
-  after deleting any finite stack, some arbitrarily large element
-  `b` is CLEANLY REDUNDANT — every target from `b` on keeps a
-  representation avoiding both the stack and `b`.
-
-Chaining such elements `b₀ < b₁ < …` gives `B` outright: a target
-`n` in the window `[bⱼ, bⱼ₊₁)` is covered by stage `j`'s
-redundancy, and every later `bₗ` exceeds `n`, so it cannot occur
-as a summand.  No minimality, no contradiction, every lemma keeps
-its value.
-
-`erdos881_of_cleanSupply` records the payoff: the clean-redundancy
-supply at the hard cases decides ALL of Erdős 881.  The frontier
-is now one positive ∀∃-statement about bases — a target to build
-toward, not an enemy to portrait.
--/
-
 import Erdos881.GeneralOrder
 
 namespace Erdos881
 
-/-- `b` is cleanly redundant at order `h` over the finite stack
-`F`: every target from `b` on keeps an order-`h` representation
-avoiding `F` and `b`. -/
+/-- `b` is redundant relative to `F` above `b`: every `n ≥ b` has an
+order-`h` representation in `A \ (F ∪ {b})`. -/
 def CleanlyRedundantAbove (A : Set ℕ) (h : ℕ)
     (F : Finset ℕ) (b : ℕ) : Prop :=
   ∀ n, b ≤ n → ∃ v : Fin h → ℕ,
     (∀ i, v i ∈ A ∧ v i ∉ F ∧ v i ≠ b) ∧
     ∑ i, v i = n
 
-/-- The clean-redundancy supply: after every finite stack, some
-element above every bound is cleanly redundant. -/
+/-- Every finite excluded set has arbitrarily large redundant extensions. -/
 def HasCleanSupply (A : Set ℕ) (h : ℕ) : Prop :=
   ∀ F : Finset ℕ, ∀ M, ∃ b, b ∈ A ∧ M ≤ b ∧
     CleanlyRedundantAbove A h F b
 
-/-- The stack iterator: at each step, record the picked element
-and raise the floor above it. -/
-private noncomputable def cleanStack
+/-- Recursively accumulate selected elements and the next lower bound. -/
+private noncomputable def cleanSelection
     (pick : Finset ℕ → ℕ → ℕ) : ℕ → Finset ℕ × ℕ
   | 0 => (∅, 0)
   | j + 1 =>
-    (insert (pick (cleanStack pick j).1
-        (cleanStack pick j).2)
-      (cleanStack pick j).1,
-     pick (cleanStack pick j).1
-        (cleanStack pick j).2 + 1)
+    (insert (pick (cleanSelection pick j).1
+        (cleanSelection pick j).2)
+      (cleanSelection pick j).1,
+     pick (cleanSelection pick j).1
+        (cleanSelection pick j).2 + 1)
 
-/-- **The chain theorem.**  A clean-redundancy supply yields an
-infinite surviving deletion — the direct construction, at every
-order, with no minimality hypothesis. -/
 theorem exists_infiniteDeletion_of_cleanSupply
     {A : Set ℕ} {h : ℕ} (hsupply : HasCleanSupply A h) :
     ∃ B, B ⊆ A ∧ B.Infinite ∧
       IsExactTupleAsymptoticBasis (A \ B) h := by
   classical
   choose pick hpickA hpickge hpickred using hsupply
-  set S : ℕ → Finset ℕ × ℕ := cleanStack pick with hS
+  set S : ℕ → Finset ℕ × ℕ := cleanSelection pick with hS
   set b : ℕ → ℕ := fun j => pick (S j).1 (S j).2
     with hbdef
   have hSsucc : ∀ j, S (j + 1) =
@@ -138,10 +106,6 @@ theorem exists_infiniteDeletion_of_cleanSupply
     · have := hlater l h'
       omega
 
-/-- **The reduction of Erdős 881.**  If every hard case carries a
-clean-redundancy supply at the next order, the whole problem —
-every order `k` — follows.  The open frontier is exactly this
-positive supply statement. -/
 theorem erdos881_of_cleanSupply
     (hsup : ∀ k, 3 ≤ k → ∀ A : Set ℕ,
       IsStronglyMinimalExactBasis A k →

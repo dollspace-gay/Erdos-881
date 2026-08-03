@@ -1,15 +1,5 @@
 import Erdos881.AdditiveSupports
 
-/-!
-# Finite fixed-order obstructions need not be essential
-
-This file records a small periodic sanity check for finite-core absorption.
-Removing a finite set can destroy one prescribed additive order while the
-remaining set is still an asymptotic basis of a larger order.  Thus a
-fixed-order obstruction cannot be fed directly into the finiteness theorem
-for essential subsets (which concerns failure at every order).
--/
-
 namespace Erdos881
 
 private def residueZeroOrOneModFive : Set ℕ :=

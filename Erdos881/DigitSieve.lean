@@ -1,16 +1,3 @@
-/-
-# The uniform deletion sieve: window/dense dichotomy
-
-The two rooms of the uniform deletion theorem.  A number with a
-clear three-column window below occupied columns is split by the
-general carry menu (`digit_window_split`); a number with no such
-window is 3-dense, owns at least `2(k+1)` occupied columns, and is
-split by fat token placement (`digit_dense_split`): each of the
-`k+1` parts receives two private columns, so every part carries at
-least two set digits and can never be a power.  Together the rooms
-cover every `n ≥ (k+1)^(6k+12)` (`digit_deletion_order`).
--/
-
 import Erdos881.DigitGeneralMenu
 
 namespace Erdos881Digit
@@ -26,10 +13,8 @@ lemma digitAt_le (k i n : ℕ) : digitAt k i n ≤ k := by
   unfold digitAt
   omega
 
-/-! ## The window room -/
+/-! ## The window case -/
 
-/-- **The window case**: a clear three-column window below occupied
-columns lets the cut-and-merge sieve absorb everything. -/
 theorem digit_window_split (k n z : ℕ) (hk : 2 ≤ k)
     (htop : (k + 1) ^ (z + 3) ≤ n)
     (h0 : digitAt k z n = 0)
@@ -287,7 +272,7 @@ lemma seed_mem_colSet (k σ d : ℕ) (hσ : σ ≤ k)
   unfold colSet
   split_ifs with h <;> rw [Finset.mem_Ico] <;> omega
 
-/-! ## The dense room -/
+/-! ## The dense case -/
 
 /-- Occupied columns below height `L`. -/
 def nzSet (k n L : ℕ) : Finset ℕ :=
@@ -338,9 +323,6 @@ lemma mem_partSet_of_tok (k n L j : ℕ)
     ⟨i, Finset.mem_filter.mpr
       ⟨Finset.mem_univ i, h⟩, rfl⟩
 
-/-- **The dense case**: at least `2(k+1)` occupied columns split
-the number into `k+1` parts, each carrying at least two set
-columns — digit numbers that can never be powers. -/
 theorem digit_dense_split (k n L : ℕ) (hk : 2 ≤ k)
     (hL : n < (k + 1) ^ L)
     (hr : 2 * (k + 1) ≤ (nzSet k n L).card) :
@@ -478,10 +460,6 @@ theorem digit_dense_split (k n L : ℕ) (hk : 2 ≤ k)
 
 /-! ## The dichotomy and the uniform deletion theorem -/
 
-/-- **The uniform master sieve**: every `n ≥ (k+1)^(6k+12)` is a
-sum of `k+1` digit non-powers — either a clear three-column window
-exists and the carry menu absorbs everything, or the digits are
-3-dense and fat token placement splits the number. -/
 theorem digit_deletion_order (k n : ℕ) (hk : 2 ≤ k)
     (hn : (k + 1) ^ (6 * k + 12) ≤ n) :
     ∃ v : Fin (k + 1) → ℕ,
@@ -552,9 +530,6 @@ theorem digit_deletion_order (k n : ℕ) (hk : 2 ≤ k)
         (Nat.pow_lt_pow_right (by omega) (by omega)))
       hcard
 
-/-- **The uniform deletion theorem**: for every `k ≥ 2`, deleting
-every pure power from the base-`(k+1)` digit set leaves an exact
-asymptotic basis of order `k+1` — one theorem, every order. -/
 theorem digit_deletion_basis (k : ℕ) (hk : 2 ≤ k) :
     IsExactTupleAsymptoticBasis
       (DigitSet k \ DigitPowers k) (k + 1) := by
@@ -565,16 +540,6 @@ theorem digit_deletion_basis (k : ℕ) (hk : 2 ≤ k) :
   rintro ⟨m, hm⟩
   exact hnp l m hm
 
-/-- **The uniform full instance — every order in one stroke.**
-
-For every `k ≥ 2` the base-`(k+1)` digit set is a strongly minimal
-exact order-`k` basis, for `k ≥ 3` it is NOT an exact order-2 basis
-(so it inhabits the open hard case), the pure powers are an
-infinite subset, and deleting them leaves an exact asymptotic
-basis of order `k+1`.  This is the conclusion pattern of Erdős 881
-at every order simultaneously, machine-verified on one uniform
-family — subsuming the Cantor (k = 2) and base-4 (k = 3)
-showcases. -/
 theorem erdos881_digit_full_instance (k : ℕ)
     (hk : 2 ≤ k) :
     IsStronglyMinimalExactBasis (DigitSet k) k ∧

@@ -1,23 +1,5 @@
 #!/usr/bin/env python3
-"""Counting-vise probe (Erdős 881 lab, Link A / diffuse regime).
-
-For a target m destroyed at order 3 by a deletion set B (0 ∉ B), the
-order-2 shadow forces the 2-support S_m = {y ∈ A : m - y ∈ A} inside
-B ∪ (m - B), so r₂(m) = |S_m| ≤ 2|B ∩ [0, m]|: destroyed targets of a
-sparse B are 2-representation-poor.  The funnel trichotomy
-(FunnelTrichotomy.lean) further sorts each destroyed target into
-singleton funnel / pair funnel / diffuse.
-
-Questions this probe answers on real basis models:
-  C1  in the canonical thin minimal basis (Nathanson even/odd), what is
-      the funnel profile of sparse-deletion destroyed targets?  Does
-      the diffuse case occur AT ALL in the wild?
-  C2  sanity: r₂(m) ≤ 2|B ∩ [0,m]| on every destroyed target (theorem),
-      and how tight?
-  C3  concentration: max_b r₂(m - b) over b ∈ B — the pigeonhole lever.
-  C4  same for a dense basis and the 3-adic basis, and for B of several
-      sparsities (every k-th element, geometric).
-"""
+"""Finite diagnostic for counting vise."""
 
 from __future__ import annotations
 
@@ -43,7 +25,7 @@ def two_reps(Aset, m):
 
 
 def three_reps(A, m):
-    """All 3-reps (x ≤ y ≤ z) of m over sorted A."""
+    """Finite diagnostic for three reps."""
     out = []
     Aset = set(A)
     for i, x in enumerate(A):
@@ -58,7 +40,7 @@ def three_reps(A, m):
     return out
 
 def destroyed_targets(A, B, lo, hi):
-    """Targets in [lo,hi] with a 3-rep in A but none avoiding B."""
+    """Finite diagnostic for destroyed targets."""
     keep = [a for a in A if a not in B]
     P = pair_sums_mask(keep)
     PA = pair_sums_mask(A)
@@ -76,10 +58,10 @@ def destroyed_targets(A, B, lo, hi):
 
 
 def funnel_profile(A, B, m):
-    """Classify m: 'singleton'/'pair'/'diffuse' + witness stats."""
+    """Finite diagnostic for transversal family profile."""
     reps = three_reps(A, m)
     Bs = sorted(B)
-    # singleton funnel from B?
+    # singleton transversal family from B?
     for u in Bs:
         if all(u in r for r in reps):
             return 'singleton', u

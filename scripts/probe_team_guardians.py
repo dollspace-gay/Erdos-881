@@ -1,27 +1,5 @@
 #!/usr/bin/env python3
-"""Team-guardian probe (Erdős 881 lab, part 3).
-
-A target m is TEAM-GUARDED by {x, y} if every exact-3 representation of m
-meets {x, y}, and genuinely so: some rep avoids x and some rep avoids y
-(else it degenerates to a singleton guardian).
-
-Why this matters: by infinite Ramsey, a counterexample to Erdős 881 whose
-destroyed targets have 2-point destroyer funnels needs an infinite CLIQUE
-of mutual guardianship — every pair from an infinite set guarding its own
-target.  The finite shadow: how large can a guardian clique be, and can
-team-guarded targets stack across scales?
-
-Experiments:
-  T1  verify the canonical 2-team [0,M] ∪ {2M+1, 3M+2} guarding 4M+2.
-  T2  exhaustive clique scan over A = [0,M] ∪ {g1,g2,g3}: does any config
-      give all three pairs their own team target (a 3-clique)?  Also count
-      configs realizing 1 or 2 pair-targets, and star patterns (two teams
-      sharing one anchor).
-  T3  stacking sweep: mirror-close a level-1 team below M2, add a new
-      guardian pair; does any (M2, p2, q2, m2) keep BOTH team targets?
-  T4  mixed stacks: singleton guardian above a team level, team above a
-      singleton level.
-"""
+"""Finite diagnostic for pair transversal required elements."""
 
 from __future__ import annotations
 
@@ -41,7 +19,7 @@ def has_rep3_avoiding(A, m: int, banned: set[int]) -> bool:
 
 
 def covered_until(A, lo: int) -> int:
-    """Largest H such that [lo, H] ⊆ A+A (H = lo-1 if lo uncovered)."""
+    """Finite diagnostic for covered until."""
     P = pair_sums_mask(A)
     H = lo - 1
     limit = 2 * max(A) + 1
@@ -54,7 +32,7 @@ def covered_until(A, lo: int) -> int:
 
 
 def team_targets(A, pair: tuple[int, int], lo: int, hi: int) -> list[int]:
-    """Targets in [lo, hi] genuinely team-guarded by `pair`."""
+    """Finite diagnostic for pair transversal targets."""
     x, y = pair
     out = []
     for m in range(lo, hi + 1):
@@ -163,7 +141,7 @@ def t3(M: int, factor: int = 3) -> None:
 # ------------------------------------------------------------------- T4
 
 def t4(M: int, factor: int = 3) -> None:
-    # (a) singleton guardian above a team level
+    # (a) singleton required element above a pair transversal level
     A1, (p1, q1), m1 = level1_team(M)
     single_hits = []
     for M2 in range(m1 + 1, factor * m1 + 1):
@@ -186,7 +164,7 @@ def t4(M: int, factor: int = 3) -> None:
           f"{len(single_hits)}, with team alive: "
           f"{alive[:5] if alive else 'NONE'}")
 
-    # (b) team above the singleton level [0,M'] ∪ {2M'+1}
+    # (b) pair transversal above the singleton level [0,M'] ∪ {2M'+1}
     Mp = M
     A1s = sorted(set(range(Mp + 1)) | {2 * Mp + 1})
     a1, m1s = 2 * Mp + 1, 3 * Mp + 1

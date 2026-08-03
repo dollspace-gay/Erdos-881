@@ -7,16 +7,6 @@ import Mathlib.Combinatorics.Hall.Finite
 import Mathlib.Combinatorics.Pigeonhole
 import Mathlib.Order.Extension.Linear
 
-/-!
-# Free-set thinning of local direct triple repairs
-
-If every distinct pair in an infinite reservoir has a triple repair avoiding
-its two endpoints, choose one such repair for every unordered pair.  Its
-support has cardinality at most three, so the bounded pair-map free-set
-theorem thins the reservoir until every chosen repair avoids the entire
-thinned set.  Nonrigid doubles then supply the diagonal hybrid repairs.
--/
-
 namespace Erdos881
 
 /-- Every distinct pair has some direct order-three repair avoiding just its
@@ -777,7 +767,7 @@ theorem zeroAtomReservoirs_have_eventual_crossLocalDirectRepairs
       (hnormalC y hyC) haA haPos hay) hyBack
 
 /-- The common normalized reservoir package used in the two-reservoir
-endgame. -/
+counterexample structure. -/
 def IsRepairedZeroAtomReservoir
     (A B : Set ℕ) : Prop :=
   B ⊆ A ∧ B.Infinite ∧ 0 ∉ B ∧
@@ -1798,17 +1788,6 @@ theorem counterexample_forces_recurrentlyBoundedPairSupportsOnSelf
     exact (hcounter B hBA hB hthree).elim
   · exact hbounded
 
-/-- The recurrent bounded-representation residual can be sharpened using
-the point free-set theorem.  Any counterexample has one of two forms:
-
-* there is already an infinite deletion whose every deleted element splits
-  into two retained elements; or
-* an infinite bounded-representation tail consists entirely of zero-atoms,
-  with the unique order-two support `{a, 0}` at every target in the tail.
-
-Thus the remaining work on the splittable-independent route is either to
-add pair-independence/complement splitting to the first branch, or to
-eliminate the explicit zero-atomic branch by fixed-translate repairs. -/
 theorem counterexample_forces_splittingDeletion_or_boundedZeroAtoms
     {A : Set ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -1877,12 +1856,6 @@ theorem counterexample_forces_boundedZeroAtoms_of_zero_mem
     exact (hcounter B (hBB₁.trans hB₁A) hB hthree).elim
   · exact ⟨m, L, hLA, hL, hzero, hbounded, hnormal⟩
 
-/-- The order-three-atomic alternative is impossible in an order-two basis,
-so the sharpened zero-normalized residual consists solely of repaired mixed
-crossing targets.  Thus a counterexample supplies an infinite zero-atomic
-deletion reservoir whose own points and all red-red pair sums already have
-surviving triple repairs; arbitrarily late failures lie outside both classes,
-and every one of their pair supports crosses the deletion boundary. -/
 theorem counterexample_forces_repairedCrossingReservoir
     {A : Set ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -2601,35 +2574,35 @@ theorem exists_infinite_selfRepaired_repairPetals
         (p b) (g b) (hgR b hb) b hbG
     have hpblt : p b < b := hpLt b (hKB₀ hb)
     omega
-  let HasOwner : ℕ → Prop := fun x => ∃ d ∈ K, p d = x
-  let owner : ℕ → ℕ := fun x =>
-    if hx : HasOwner x then Classical.choose hx else 0
-  have hownerSpec : ∀ x, HasOwner x →
-      owner x ∈ K ∧ p (owner x) = x := by
+  let HasMarkedElement : ℕ → Prop := fun x => ∃ d ∈ K, p d = x
+  let marked_element : ℕ → ℕ := fun x =>
+    if hx : HasMarkedElement x then Classical.choose hx else 0
+  have hownerSpec : ∀ x, HasMarkedElement x →
+      marked_element x ∈ K ∧ p (marked_element x) = x := by
     intro x hx
-    simp only [owner, dif_pos hx]
+    simp only [marked_element, dif_pos hx]
     exact Classical.choose_spec hx
-  let collision : ℕ → Finset ℕ := fun b =>
-    ((g b).filter HasOwner).image owner
-  have hcollisionCard : ∀ b ∈ K, (collision b).card ≤ 3 := by
+  let conflict : ℕ → Finset ℕ := fun b =>
+    ((g b).filter HasMarkedElement).image marked_element
+  have hcollisionCard : ∀ b ∈ K, (conflict b).card ≤ 3 := by
     intro b hb
     calc
-      (collision b).card ≤ ((g b).filter HasOwner).card :=
+      (conflict b).card ≤ ((g b).filter HasMarkedElement).card :=
         Finset.card_image_le
       _ ≤ (g b).card := Finset.card_filter_le _ _
       _ ≤ 3 := hgCard b hb
   have hcollisionMem : ∀ b, ∀ d ∈ K, p d ∈ g b →
-      d ∈ collision b := by
+      d ∈ conflict b := by
     intro b d hd hpdG
-    have howned : HasOwner (p d) := ⟨d, hd, rfl⟩
+    have howned : HasMarkedElement (p d) := ⟨d, hd, rfl⟩
     apply Finset.mem_image.mpr
     refine ⟨p d, Finset.mem_filter.mpr ⟨hpdG, howned⟩, ?_⟩
     have hspec := hownerSpec (p d) howned
     exact hpInj (hKB₀ hspec.1) (hKB₀ hd) hspec.2
-  have hbNotCollision : ∀ b ∈ K, b ∉ collision b := by
-    intro b hb hbCollision
+  have hbNotConflict : ∀ b ∈ K, b ∉ conflict b := by
+    intro b hb hbConflict
     obtain ⟨x, hxFilter, hownerb⟩ :=
-      Finset.mem_image.mp hbCollision
+      Finset.mem_image.mp hbConflict
     have hxG := (Finset.mem_filter.mp hxFilter).1
     have hxOwned := (Finset.mem_filter.mp hxFilter).2
     have hspec := hownerSpec x hxOwned
@@ -2637,21 +2610,21 @@ theorem exists_infinite_selfRepaired_repairPetals
       rw [← hownerb]
       exact hspec.2
     exact hgSelf b hb (hpbx ▸ hxG)
-  let avoidMap : ℕ → Finset ℕ := fun b => g b ∪ collision b
+  let avoidMap : ℕ → Finset ℕ := fun b => g b ∪ conflict b
   have hAvoidCard : ∀ b ∈ K, (avoidMap b).card ≤ 6 := by
     intro b hb
     calc
-      (avoidMap b).card ≤ (g b).card + (collision b).card :=
+      (avoidMap b).card ≤ (g b).card + (conflict b).card :=
         by simpa [avoidMap] using
-          (Finset.card_union_le (g b) (collision b))
+          (Finset.card_union_le (g b) (conflict b))
       _ ≤ 3 + 3 := Nat.add_le_add (hgCard b hb)
         (hcollisionCard b hb)
       _ = 6 := by omega
   have hbNotAvoid : ∀ b ∈ K, b ∉ avoidMap b := by
     intro b hb hbAvoid
-    rcases Finset.mem_union.mp hbAvoid with hbG | hbCollision
+    rcases Finset.mem_union.mp hbAvoid with hbG | hbConflict
     · exact hbNotG b hb hbG
-    · exact hbNotCollision b hb hbCollision
+    · exact hbNotConflict b hb hbConflict
   obtain ⟨L, hLK, hL, hAvoidFree⟩ :=
     exists_infinite_freeSet_of_bounded_pointMap
       hK avoidMap 6 hAvoidCard hbNotAvoid
@@ -2922,7 +2895,7 @@ theorem counterexample_forces_selfRepairedPetalReservoir
   · intro b hb d hd hbd
     exact hpetalDisjoint₀ b (hBB₀ hb) d (hBB₀ hd) hbd
 
-/-- The direct collision between strong order-two deletion and the final
+/-- The direct conflict between strong order-two deletion and the final
 counterexample geometry.  For one sunflower reservoir and one finite-block
 partition containing its atom-plus-petal cells, amplified pair certificates
 force every finite pair-support choice to cover arbitrarily many whole
@@ -2979,15 +2952,7 @@ theorem stronglyMinimal_counterexample_forces_manyCoveredSunflowerCells
     (hcore i).trans (hIcover i hi)⟩
 
 set_option maxHeartbeats 5000000 in
-/-- The exact finite-certificate bridge on a sunflower reservoir.  One and
-the same late target set `Q` is an order-three selector certificate, contains
-an external target destroyed by the atom selector `B` with a crossing
-order-two support, and forces every order-two support choice to cover
-arbitrarily many atom-plus-petal cells.
 
-The last conclusion is obtained by padding every chosen pair support with
-zero.  No sunflower cell contains zero, so coverage by the padded triple
-supports descends back to coverage by the original pair supports. -/
 theorem exists_certifiedCoveredSunflowerTargets
     {A B : Set ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -4478,7 +4443,7 @@ theorem counterexample_forces_criticalGoodPrefix
       (k := 2) hD₀C hD₀good hextend
   exact (hcounter X (hXC.trans hCA) hX hthree).elim
 
-/-- A nonempty minimal recurrent trap therefore yields the sharp critical
+/-- A nonempty minimal recurrent obstruction therefore yields the sharp critical
 extension obstruction under the counterexample hypothesis: after one core
 point is retained, some eventually good prefix has every sufficiently late
 fresh extension recurrently bad. -/
@@ -4538,7 +4503,7 @@ theorem criticalGoodPrefix_has_late_markedUniqueHitSystems
       hpair
 
 /-- Combined critical-family normal form.  Starting from any nonempty
-minimal recurrent trap in a counterexample, one reaches a fixed eventually
+minimal recurrent obstruction in a counterexample, one reaches a fixed eventually
 good prefix `D` such that every sufficiently late fresh reservoir point `b`
 has arbitrarily late bad targets with a repair unique-hit at `b` and a
 reservoir-disjoint companion avoiding `insert b D`. -/
@@ -7659,7 +7624,7 @@ theorem separatedTrace_targetLocalizedCertificate_has_anchoredEscapeCycle
   exact ⟨next, hnextEdge, hnextNe, q, p, hp, hcycle⟩
 
 /-- The two localized exits from a separated target either go to two
-different certificate targets, or their collision forces one old-surviving
+different certificate targets, or their conflict forces one old-surviving
 support of the common target to contain both newly selected endpoints.  In
 the latter case a wide reservoir support has been created inside `Q`. -/
 theorem separatedTrace_targetLocalizedCertificate_distinctEscapes_or_wideSupport
@@ -7770,7 +7735,7 @@ theorem wideTwoRepairTraceAlong_has_wideReservoirSupport
 
 /-- A target-localized binary certificate of size at most two cannot consist
 only of narrow separated targets.  A separated target has two exits; with
-fewer than three targets those exits collide, and the collision creates a
+fewer than three targets those exits collide, and the conflict creates a
 wide reservoir support. -/
 theorem small_targetLocalized_twoRepairCertificate_has_wideReservoirSupport
     {R : SupportFamily} {K : Set ℕ} {D Q : Finset ℕ}
@@ -11895,12 +11860,6 @@ theorem strongDeletion_eventuallyGoodPrefix_forces_lateTraceObstructionAlong_ext
       P hlocalized hQrepairs
   exact ⟨Q, hQ, hQlateN, hcert, hlocalized, hQsafe, htrace⟩
 
-/-- Spatial-tail form of the migrated mixed-clause obstruction.  After any
-finite initial segment of the binary partition is discarded, strong
-deletion produces a fresh localized certificate on the remaining blocks.
-Its two external repairs then yield exactly the wide/separated/opposed-unit
-trichotomy on that tail.  Thus not only the certificate targets but also all
-of the clause endpoints can be forced into arbitrarily late blocks. -/
 theorem strongDeletion_eventuallyGoodPrefix_forces_spatialTailWide_or_separatedAdditiveEdge_or_opposedExternalUnits
     {A C K : Set ℕ} {D : Finset ℕ}
     {cell : ℕ → Finset ℕ}
@@ -13615,14 +13574,6 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_criticalCofinalT
   exact ⟨D, T, K, cell, hDC, hgood, hKC, hK, hKD,
     P, hcellCard, hcriticalK, hdichotomy⟩
 
-/-- Tail-strengthened critical trace normal form.  Instead of retaining a
-lower-bound side condition on the binary reservoir, adjoin the fixed prefix
-to the late tail of `C` before running the private-clique/certificate
-construction.  The resulting clique is disjoint from the prefix and hence
-lies wholly in the late tail.  Consequently *every* endpoint in every
-binary cell is a recurrently bad one-point extension of the same good
-prefix.  This is the pointwise arithmetic label needed for a later
-implication-cycle argument on the binary certificate. -/
 theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_fullyCriticalCofinalTraceDichotomy
     {A C : Set ℕ} {D₀ : Finset ℕ}
     (hCA : C ⊆ A)
@@ -13702,17 +13653,6 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_fullyCriticalCof
   exact ⟨D, K, cell, hDC, hgood, hKC, hK, hKD,
     P, hcellCard, hcriticalK, hdichotomy⟩
 
-/-- Fully synchronized finite-certificate normal form.  In a counterexample
-there is one eventually good prefix and one infinite binary reservoir such
-that every cell endpoint is a recurrently bad extension of that prefix.
-At every requested target height, strong deletion then supplies a late
-target-localized certificate which either already contains a wide support
-or contains a nontrivial cycle of anchored selector-flip transitions whose
-destination supports have singleton reservoir traces.
-
-This is the exact meeting point of the arithmetic critical-extension input
-and the finite certificate `Q`: no threshold guard, moving target set, or
-unlabelled separated branch remains. -/
 theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_fullyCriticalLateWideSupportOrAnchoredEscapeCycle
     {A C : Set ℕ} {D₀ : Finset ℕ}
     (hCA : C ⊆ A)
@@ -14408,12 +14348,6 @@ theorem criticalGoodPrefix_exists_markedMinimalDestroyerData
   exact ⟨(le_max_right N b).trans hqN, hno, hTC, hTP,
     hTnonempty, hTcard, hdestroy, hSsub, hbS, hSminimal, htri⟩
 
-/-- Sunflower normal form of an infinite critical marked subfamily.  After
-discarding the fixed prefix and a finite initial segment, choose one late
-marked minimal destroyer for every remaining critical point.  Uniform boundedness by
-`D.card + 4` gives an infinite delta-system thinning.  Removing the finite
-root from the index set ensures that every marked point lies in its own
-nonempty petal, and the petals are pairwise disjoint. -/
 theorem criticalGoodPrefix_has_infiniteMarkedMinimalDestroyerSunflower
     {A C I : Set ℕ} {D : Finset ℕ} {T₀ : ℕ}
     (hI : I.Infinite) (hIC : I ⊆ C)
@@ -14655,13 +14589,6 @@ theorem markedDeltaSystem_core_inter_indexSet_eq_singleton
     exact ⟨Finset.mem_coe.mpr
       (Finset.mem_sdiff.mp (hmarked b hb)).1, hb⟩
 
-/-- Uniformize a marked minimal-destroyer sunflower without losing any of
-its geometry.  Target injectivity makes the target image of every infinite
-thinning infinite, while the marked-petal and delta-system properties are
-hereditary.  In the small-core branch the common root has at most two
-vertices.  This is the geometry-preserving form of
-`exists_infinite_uniformCriticalMarkedDestroyerType` needed to attack the
-three residual branches separately. -/
 theorem exists_infinite_uniformCriticalMarkedDestroyerSunflowerType
     {A C L : Set ℕ} {D R : Finset ℕ}
     {target : ℕ → ℕ} {moving core : ℕ → Finset ℕ}
@@ -15195,7 +15122,7 @@ theorem exists_injective_markedCorePetalHit
     (hpetalHit n hn).2.1 (hnm ▸ (hpetalHit m hm).2.1)
 
 /-- Refine a synchronized certificate/marked-target family into the exact
-three geometric branches needed for the finite-certificate endgame.  Either
+three geometric branches needed for the finite-certificate counterexample structure.  Either
 the two target ranges migrate apart, or they agree pointwise and the forced
 certificate/core incidences have one fixed nonempty trace in the sunflower
 root or move through the individual core petals. -/
@@ -15411,7 +15338,7 @@ theorem crossingAtomEndpoints_eq_of_crossing_superreservoir
       · exact (hcB (hCB (hxc ▸ hxC))).elim
     exact ⟨hbq, hbC, hcA, fun hcC => hcB (hCB hcC)⟩
 
-/-- Exact recurrent normal form of a failed sparse-deletion endgame on a
+/-- Exact recurrent normal form of a failed sparse-deletion counterexample structure on a
 repaired zero-free reservoir.  One finite prefix captures all but at most
 one crossing endpoint at arbitrarily late targets, and every order-two
 support at those targets genuinely crosses the reservoir boundary. -/
@@ -15518,13 +15445,6 @@ theorem repairedZeroAtomReservoir_counterexample_forces_freshAlmostCoveredEndpoi
   have hE := hstrict E hER
   exact ⟨fun hEB => hE.1 (hEB.mono_right hCB), hE.2⟩
 
-/-- After retaining the finite exceptional set of possible recurrent
-singleton order-three destroyers, the hereditary obstruction above has a
-nonempty fresh core.  If the core were empty, every late bad target would
-have one crossing endpoint and that endpoint alone would destroy the target.
-An infinite endpoint range is the private-singleton branch already ruled out
-by the cross-center theorem; a finite range gives one recurrent singleton
-destroyer outside the retained exceptional set. -/
 theorem repairedZeroAtomReservoir_counterexample_forces_nonemptyFreshCore_of_privateEndpointClosure
     {A B : Set ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -15691,14 +15611,6 @@ def HasEventuallyOmittedCrossingEndpoint
       ¬ Disjoint (E : Set ℕ) B₀ ∧ ¬ (E : Set ℕ) ⊆ B₀) →
     ¬ (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆ B
 
-/-- Exact completion theorem for the crossing-endpoint formulation.  Pair
-supports which are blue relative to `B₀` remain blue after thinning;
-supports wholly inside `B₀` use the already installed direct triple
-repair; and at an all-crossing target the omitted endpoint supplied by
-`HasEventuallyOmittedCrossingEndpoint` gives a blue pair for the thinning.
-
-Thus constructing an infinite `B ⊆ B₀` with the omitted-endpoint
-property is sufficient for the desired infinite deletion. -/
 theorem exactThreeBasis_of_omittedCrossingEndpoint_thinning
     {A B₀ B : Set ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -16465,12 +16377,7 @@ theorem exists_coveredCell_of_crossingEndpointCertificate
   exact hselectedH i (hselectedEq ▸ hpH)
 
 set_option maxHeartbeats 2000000 in
-/- Sharp classification of the new lower bound.  If a `k`-point core is
-covered by exactly `k` targets, choosing one endpoint from each target
-fills one whole core bijectively.  Forcing the chosen endpoint of `q` in
-that block and varying every other coordinate shows that `q` can have no
-second endpoint.  Hence every sharp target has a singleton crossing set,
-and the singleton endpoints partition one core. -/
+
 theorem sharpCrossingEndpointCertificate_forces_singletons
     {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ}
     {Q : Finset ℕ} {k : ℕ}
@@ -16596,12 +16503,7 @@ theorem sharpCrossingEndpointCertificate_forces_singletons
       exact hxEq ▸ hpoint q
 
 set_option maxHeartbeats 3000000 in
-/- Sharp classification for the strengthened certificate.  In addition to
-the singleton endpoint conclusion, every order-three support of the matched
-target contains that singleton.  Otherwise force its endpoint in the common
-core while avoiding the proposed support everywhere; the endpoint
-classification makes every other target ineligible, so the certificate must
-destroy the same target with a disjoint selector. -/
+
 theorem sharpCrossingEndpointTripleCertificate_forces_singletonDestroyers
     {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ}
     {Q : Finset ℕ} {k : ℕ}
@@ -17383,18 +17285,7 @@ theorem selectedBlockRemainderUnion_subset
   exact hcover x hxX hyPiece
 
 set_option maxHeartbeats 5000000 in
-/-- Quantitative occupancy forced by a target-private selector.  Suppose a
-minimal selector certificate has a private selector for `q`, and `X` is a
-finite family of singleton supports of `q` all selected by that selector.
-For every other target choose a surviving support disjoint from the private
-selector.  Varying the singleton chosen at `q` forces those other supports
-to cover the rest of the singleton's block.  Distinct selected singletons
-lie in distinct blocks, so
 
-`(k - 1) * X.card ≤ (finiteSupportChoiceUnion cOther).card`.
-
-This is the cardinal information supplied by target localization which is
-lost if the certificate is enlarged without re-minimizing. -/
 theorem targetLocalized_singletonSupports_force_blockOccupancy_of_choice
     {A : Set ℕ} {R : SupportFamily} {F : ℕ → Finset ℕ}
     {Q X : Finset ℕ} {q k : ℕ}
@@ -18201,15 +18092,7 @@ theorem minimalCrossingEndpointTripleCertificate_forces_refinedEndpointCover
     hdisjoint, hcard, hkind, hunion, hcover⟩
 
 set_option maxHeartbeats 5000000 in
-/-- Refined private-selector occupancy.  An unaligned other target has a
-missing singleton endpoint, so it contributes only one point to the support
-union.  Only an aligned target can require a surviving triple support and
-contribute three points.  Thus, if `a_q` counts the aligned other targets,
 
-`(k - 1) * |X_q| ≤ (|Q| - 1) + 2 * a_q`.
-
-For near-sharp certificates this forces any two- or three-endpoint target to
-share its private selector with many other endpoint families. -/
 theorem minimalCrossingEndpointTripleCertificate_forces_refinedEndpointBound
     {A B₀ : Set ℕ} {F : ℕ → Finset ℕ}
     {Q : Finset ℕ} {k : ℕ}
@@ -18680,7 +18563,7 @@ theorem additiveSupportFamily_three_sum_eq_of_card_eq_three
 
 /-- Two distinct vertices occurring in one additive support contribute at
 most the whole represented target.  This records the elementary two-term
-lower bound on the tuple sum in a form useful for pruning bounded collision
+lower bound on the tuple sum in a form useful for pruning bounded conflict
 patterns. -/
 theorem additiveSupportFamily_two_mem_add_le_target
     {A : Set ℕ} {h q : ℕ} {G : Finset ℕ} {x y : ℕ}
@@ -18957,7 +18840,7 @@ theorem fixedTwoPointRepairTrace_has_injectiveThirdPoint
 
 /-- An injective infinite order-three target family whose repairs contain one
 fixed point has an infinite constant-cardinality subfamily of size two or
-three.  Size one would trap the repair in the fixed singleton and therefore
+three.  Size one would obstruction the repair in the fixed singleton and therefore
 can occur only at finitely many injective targets. -/
 theorem fixedSingletonRepairTrace_thins_to_cardTwo_orThree
     {A I : Set ℕ} (hI : I.Infinite)
@@ -23802,10 +23685,9 @@ theorem HasInfinitePrivateSingletonCrossingEndpoints.with_rigidPairs
     rigidPairSum_of_crossingEndpoint_eq_singleton
       hB₀A hcross hendpoint⟩
 
-/-- Compact current endpoint reduction.  Under the counterexample
-hypothesis, either minimal certificates of almost twice the core size recur
-cofinally, an infinite private-singleton endpoint set already exists, or the
-near-sharp three-endpoint migration set exists. -/
+/-- Under the counterexample hypothesis, either large minimal certificates
+recur cofinally, an infinite private-singleton set exists, or a
+three-endpoint migration set exists. -/
 theorem minimalCrossingEndpointCertificates_huge_or_infiniteEndpointObstructions
     {A B₀ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -23962,10 +23844,6 @@ theorem minimalCrossingEndpointCertificates_huge_or_ambientObstructions_on_subre
     rw [hendpointEq]
     exact hxEndpoint₁
 
-/-- A stage-local small obstruction, measured in one fixed ambient repaired
-reservoir.  Infinitely many points of the current residual occur in ambient
-crossing-endpoint sets of size at most three, and each associated target is
-genuinely destroyed by a set lying in the current residual. -/
 def HasInfiniteAmbientSmallEndpointDestroyerLayer
     (A B₀ B₁ : Set ℕ) : Prop :=
   ∃ L, L ⊆ B₁ ∧ L.Infinite ∧
@@ -23979,10 +23857,6 @@ def HasInfiniteAmbientSmallEndpointDestroyerLayer
       (crossingAtomEndpoints A B₀ q : Set ℕ) ⊆ D ∧
       x ∈ crossingAtomEndpoints A B₀ q
 
-/-- Two-branch hereditary form: every exact-core partition of an infinite
-repaired residual has either cofinally huge minimal certificates or an
-infinite stage-local layer of ambient endpoint destroyers of size at most
-three. -/
 theorem minimalCrossingEndpointCertificates_huge_or_ambientSmallLayer_on_subreservoir
     {A B₀ B₁ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -24556,13 +24430,6 @@ theorem infiniteComplementReservoir_gives_deletion_or_repairedZeroAtoms
       fun z hz E hER => hnormal z (hLZ hz) E hER,
       hrepairs, hself⟩
 
-/-- A fixed-center family cannot remain confined to the original repaired
-reservoir.  For every moving endpoint `x`, enlarge its selector destroyer to
-`B₀` and use the surviving self-repair of the zero-atom `x`.  The resulting
-external four-clique has three repair vertices in `A \ B₀`, each of whose
-sum with the common center `c` lies outside `A`.  At least one of the three
-coordinate ranges is infinite, since their sum is the injective parameter
-`x`. -/
 theorem fixedCenterTripleDestroyers_give_infiniteAntiTranslateComplement
     {A B₀ B₁ : Set ℕ} {c : ℕ}
     (hB₁B₀ : B₁ ⊆ B₀)
@@ -24806,13 +24673,6 @@ theorem cofinalMinimalStrictCrossingEndpointCertificates_give_infiniteComplement
         hB₁B₀ hnormal hself hc ⟨L, hLB₁, hL, hdata⟩
     exact ⟨K, hKComplement, hK⟩
 
-/-- On the zero-atomic self-repaired reservoir supplied by the global
-counterexample reduction, the exact-three layer has no additional
-fixed-center branch.  Infinite centers enter the strengthened complement
-bridge directly; a fixed center first produces the infinite anti-translate
-reservoir above and then enters the same bridge.  Under the counterexample
-hypothesis, only a repaired zero-atomic reservoir disjoint from `B₀`
-survives. -/
 theorem HasInfiniteAmbientThreeEndpointSelectorLayer.counterexample_forces_repairedZeroAtoms_in_complement
     {A B₀ B₁ : Set ℕ} {F : ℕ → Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -24986,13 +24846,6 @@ def HasNoCofinalHugeAmbientCertificatesOnInfiniteResiduals
   ∀ B, B ⊆ B₀ → B.Infinite →
     ¬ HasCofinalHugeAmbientCertificatesOnResidual A B₀ B k
 
-/-- Exact one-scale descent.  Relative to an exact `k`-block partition of
-an infinite residual, the counterexample either has cofinally huge ambient
-minimal certificates on those blocks, or an infinite small-endpoint layer
-can be thinned to one point per block and erased.  In the latter case the
-surviving residual is repaired and partitioned into exact `(k - 1)`-blocks;
-the final equivalence records that every new block is literally its parent
-old block with the corresponding layer point removed. -/
 theorem exactBlockPartition_hugeCertificates_or_ambientSmallDepletion
     {A B₀ B₁ : Set ℕ} {F : ℕ → Finset ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -25581,11 +25434,6 @@ theorem exists_hugeResidual_or_privateEndpoints_or_arbitrarilyLongThreeEndpointD
           hbasis hzeroA hzeroB₀ hB₀A hrepairs hcounter
             hnoHuge hprivate Set.Subset.rfl hB₀ P hFcard (by omega)
 
-/-- Consume one ambient small-endpoint layer by removing an infinite block
-transversal from its carrier.  The residual remains infinite and repaired,
-admits a fresh exact-core partition, and immediately satisfies the same
-ambient huge-or-small classification.  The removed transversal retains the
-full stage-local obstruction data and is disjoint from the next residual. -/
 theorem ambientSmallEndpointLayer_restarts_disjointly
     {A B₀ B₁ : Set ℕ} {F : ℕ → Finset ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -25643,9 +25491,6 @@ theorem ambientSmallEndpointLayer_restarts_disjointly
     hresidual, hdisjoint, hrepairResidual,
     PG, hcore, hcellCard, hnext⟩
 
-/-- Partition-free hereditary dichotomy on every infinite residual of the
-original repaired reservoir.  A fresh exact-core partition either witnesses
-the huge branch or produces a stage-local small endpoint layer. -/
 theorem infiniteSubreservoir_hugeAmbientCertificates_or_smallLayer
     {A B₀ B₁ : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -25748,7 +25593,6 @@ theorem infiniteSubreservoir_hugeAmbientCertificates_or_prunableSmallLayer
   · exact Or.inl hhuge
   · exact Or.inr (hsmall.exists_prunableSublayer hB₁)
 
-/-- One stage of the small-layer pruning process. -/
 structure IsAmbientSmallEndpointPruningStep
     (A B₀ current layer next : Set ℕ) : Prop where
   layer_subset : layer ⊆ current
@@ -25795,10 +25639,6 @@ theorem exists_ambientSmallEndpointPruningStep_of_noHuge
   · exact ⟨layer, current \ layer,
       hlayerCurrent, hlayer, hlayerData, rfl, hnext, hdisjoint⟩
 
-/-- Countable iteration of the restart bridge.  Unless some infinite
-residual realizes the huge-certificate branch, there are residuals and
-small endpoint layers at every natural stage; each next residual is obtained
-by deleting the current infinite layer and remains infinite. -/
 theorem exists_infiniteAmbientSmallEndpointPruningSequence_of_noHuge
     {A B₀ : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -26220,14 +26060,6 @@ theorem HasInfinitePrivateSingletonCrossingEndpoints.exists_infiniteComplementCe
     exact (mem_crossingAtomEndpoints_iff.mp hbEndpoint).2.2
   exact ⟨K, hKComplement, hcenterInfinite⟩
 
-/-- Private singleton crossing endpoints already force the desired infinite
-deletion.  Parametrize the private targets as `target b = b + center b`.
-If an infinite subset of the centers is splittable, it is a self-basis
-reservoir and the completed splittable bridge applies.  Otherwise an
-infinite subset of the centers consists of zero-atoms.  Infinitely many of
-those atoms have aligned endpoint preimages `b`; sufficiently late aligned
-pairs have a cross-local triple repair avoiding `b`, contradicting the fact
-that the singleton `{b}` destroys its private target. -/
 theorem HasInfinitePrivateSingletonCrossingEndpoints.exists_infiniteDeletion_threeBasis
     {A B₀ : Set ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -26322,15 +26154,6 @@ theorem HasInfinitePrivateSingletonCrossingEndpoints.exists_infiniteDeletion_thr
       exact hGpair hxG (by simp)
     exact (((htarget bL).2.2.1 G hGR) hGsingle).elim
 
-/-- A repaired zero-atomic reservoir contains, after retaining finitely many
-exceptional points, a nonempty inclusion-minimal recurrent no-two-repair
-prefix.  The nonemptiness is substantive.  If the empty prefix recurred,
-its bad targets would have a unique crossing endpoint.  An infinite endpoint
-range is the private-singleton branch and already gives the desired
-deletion; a finite range makes one endpoint recurrently singleton-destroying,
-contradicting the retained exceptional set.  Consequently the general
-minimal-prefix machinery can be restarted with the deletion reservoir itself
-consisting entirely of zero-atoms. -/
 theorem repairedZeroAtomReservoir_counterexample_forces_nonemptyMinimalRecurrentPrefix
     {A B : Set ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -26534,12 +26357,6 @@ theorem counterexample_forces_zeroAtomicMinimalRecurrentPrefix
       exact ⟨G, hGR, hGB.mono_right hCB⟩,
     hD, hrec, hminimal⟩
 
-/-- Infinitely many singleton marked cores already solve the deletion
-problem.  Target injectivity lets us discard the finitely many targets below
-the order-two threshold.  Thereafter the no-two-repair datum makes every
-pair support cross the zero-atom reservoir, core capture makes the unique
-crossing endpoint the marked point, and the singleton core itself destroys
-the target.  This is exactly the private-singleton endpoint configuration. -/
 theorem infinite_singletonCriticalMarkedCores_give_deletion
     {A C K : Set ℕ} {D : Finset ℕ}
     {target : ℕ → ℕ} {moving core : ℕ → Finset ℕ}
@@ -26872,13 +26689,6 @@ theorem minimalCrossingEndpointCertificates_huge_or_disjointRepairedZeroAtoms_on
         hbasis hzeroA hzeroB₀ hB₀A hB₁B₀
           hnormal hself hcounter
 
-/-- The cofinally huge branch in the preceding reduction cannot actually
-remain on the original side.  Its localized targets yield cofinally many
-endpoint/center pairs, hence an infinite complementary reservoir by the
-center-range/fixed-center theorem.  The strengthened complement bridge then
-either gives the desired deletion immediately or the same disjoint repaired
-zero-atomic reservoir as the former small branches; the counterexample
-hypothesis excludes the first outcome. -/
 theorem minimalCrossingEndpointCertificates_force_disjointRepairedZeroAtoms_on_subreservoir
     {A B₀ B₁ : Set ℕ} {F cell : ℕ → Finset ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -27038,12 +26848,7 @@ theorem movingRigidEndpoint_centerGap_large_or_exception
       (by simpa [gap] using hNgap)
 
 set_option maxHeartbeats 3000000 in
-/-- Amplified endpoint certificate on one repaired reservoir.  A single late
-finite target set still certifies every selector, and every choice of one
-crossing endpoint per target covers any prescribed number of whole blocks.
-This is the endpoint-specific form of strong deletion amplification: the
-order-three supports cannot hide the growth because singleton endpoint
-supports are available in the strengthened obstruction family. -/
+
 theorem amplifiedCrossingEndpointTripleCertificates_of_counterexample
     {A B₀ : Set ℕ} {F : ℕ → Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -28359,12 +28164,7 @@ theorem exists_atomPetal_supportIncidences_of_tripleCertificate
   exact ⟨b, hbB, q, r, hbq, hpr⟩
 
 set_option maxHeartbeats 5000000 in
-/-- Greedy avoidance for pair-support choices.  If every target has more than
-`2 * Q.card` pair supports and no individual support already contains an
-atom together with its petal, choose the supports successively.  The partners
-of the previously chosen union form a forbidden set of cardinality at most
-`2 * Q.card`; since each pair-support family is a matching, the next target
-has a support avoiding it.  The final union contains no atom-petal pair. -/
+
 theorem exists_pairSupportChoice_avoiding_atomPetal_of_large_noDiagonal
     {A B : Set ℕ} {p : ℕ → ℕ} {Q : Finset ℕ}
     (hpOut : ∀ b ∈ B, p b ∉ B)
@@ -28405,24 +28205,24 @@ theorem exists_pairSupportChoice_avoiding_atomPetal_of_large_noDiagonal
         exact hnoDiagonal r (Finset.mem_insert_of_mem hrS)
       obtain ⟨cS, hcS⟩ := ih hlargeS hnoDiagonalS
       let U : Finset ℕ := finiteSupportChoiceUnion cS
-      let HasOwner : ℕ → Prop := fun x => ∃ b ∈ B, p b = x
-      let owner : ℕ → ℕ := fun x =>
-        if hx : HasOwner x then Classical.choose hx else 0
-      have hownerSpec : ∀ x, HasOwner x →
-          owner x ∈ B ∧ p (owner x) = x := by
+      let HasMarkedElement : ℕ → Prop := fun x => ∃ b ∈ B, p b = x
+      let marked_element : ℕ → ℕ := fun x =>
+        if hx : HasMarkedElement x then Classical.choose hx else 0
+      have hownerSpec : ∀ x, HasMarkedElement x →
+          marked_element x ∈ B ∧ p (marked_element x) = x := by
         intro x hx
-        simp only [owner, dif_pos hx]
+        simp only [marked_element, dif_pos hx]
         exact Classical.choose_spec hx
       let partner : ℕ → ℕ := fun x =>
         if hxB : x ∈ B then p x
-        else if hxOwner : HasOwner x then owner x else 0
+        else if hxMarkedElement : HasMarkedElement x then marked_element x else 0
       have hpartnerB : ∀ b ∈ B, partner b = p b := by
         intro b hbB
         simp [partner, hbB]
       have hpartnerPetal : ∀ b ∈ B, partner (p b) = b := by
         intro b hbB
         have hpbOut := hpOut b hbB
-        have howned : HasOwner (p b) := ⟨b, hbB, rfl⟩
+        have howned : HasMarkedElement (p b) := ⟨b, hbB, rfl⟩
         simp only [partner, dif_neg hpbOut, dif_pos howned]
         have hspec := hownerSpec (p b) howned
         exact hpInj hspec.1 hbB hspec.2
@@ -28834,9 +28634,9 @@ theorem counterexample_forces_doublyAtomicSelfRepairedPetalReservoir
 
 /-- A bounded point-map can be thinned so that it avoids both the retained
 indices and the image of any injective marked-point map.  The auxiliary
-collision map pulls every marked point occurring in `h b` back to its unique
-owner, after which the ordinary bounded free-set theorem handles both kinds
-of collision simultaneously. -/
+conflict map pulls every marked point occurring in `h b` back to its unique
+marked element, after which the ordinary bounded free-set theorem handles both kinds
+of conflict simultaneously. -/
 theorem exists_infinite_freeSet_avoiding_injectiveImage
     {K : Set ℕ} (hK : K.Infinite)
     (u : ℕ → ℕ) (huInj : Set.InjOn u K)
@@ -28849,35 +28649,35 @@ theorem exists_infinite_freeSet_avoiding_injectiveImage
         Disjoint (h b : Set ℕ) L ∧
         ∀ d ∈ L, u d ∉ h b := by
   classical
-  let HasOwner : ℕ → Prop := fun x => ∃ d ∈ K, u d = x
-  let owner : ℕ → ℕ := fun x =>
-    if hx : HasOwner x then Classical.choose hx else 0
-  have hownerSpec : ∀ x, HasOwner x →
-      owner x ∈ K ∧ u (owner x) = x := by
+  let HasMarkedElement : ℕ → Prop := fun x => ∃ d ∈ K, u d = x
+  let marked_element : ℕ → ℕ := fun x =>
+    if hx : HasMarkedElement x then Classical.choose hx else 0
+  have hownerSpec : ∀ x, HasMarkedElement x →
+      marked_element x ∈ K ∧ u (marked_element x) = x := by
     intro x hx
-    simp only [owner, dif_pos hx]
+    simp only [marked_element, dif_pos hx]
     exact Classical.choose_spec hx
-  let collision : ℕ → Finset ℕ := fun b =>
-    ((h b).filter HasOwner).image owner
-  have hcollisionCard : ∀ b ∈ K, (collision b).card ≤ r := by
+  let conflict : ℕ → Finset ℕ := fun b =>
+    ((h b).filter HasMarkedElement).image marked_element
+  have hcollisionCard : ∀ b ∈ K, (conflict b).card ≤ r := by
     intro b hb
     calc
-      (collision b).card ≤ ((h b).filter HasOwner).card :=
+      (conflict b).card ≤ ((h b).filter HasMarkedElement).card :=
         Finset.card_image_le
       _ ≤ (h b).card := Finset.card_filter_le _ _
       _ ≤ r := hcard b hb
   have hcollisionMem : ∀ b, ∀ d ∈ K, u d ∈ h b →
-      d ∈ collision b := by
+      d ∈ conflict b := by
     intro b d hd hudH
-    have howned : HasOwner (u d) := ⟨d, hd, rfl⟩
+    have howned : HasMarkedElement (u d) := ⟨d, hd, rfl⟩
     apply Finset.mem_image.mpr
     refine ⟨u d, Finset.mem_filter.mpr ⟨hudH, howned⟩, ?_⟩
     have hspec := hownerSpec (u d) howned
     exact huInj hspec.1 hd hspec.2
-  have hbNotCollision : ∀ b ∈ K, b ∉ collision b := by
-    intro b hb hbCollision
+  have hbNotConflict : ∀ b ∈ K, b ∉ conflict b := by
+    intro b hb hbConflict
     obtain ⟨x, hxFilter, hownerb⟩ :=
-      Finset.mem_image.mp hbCollision
+      Finset.mem_image.mp hbConflict
     have hxH := (Finset.mem_filter.mp hxFilter).1
     have hxOwned := (Finset.mem_filter.mp hxFilter).2
     have hspec := hownerSpec x hxOwned
@@ -28885,21 +28685,21 @@ theorem exists_infinite_freeSet_avoiding_injectiveImage
       rw [← hownerb]
       exact hspec.2
     exact huNotH b hb (hubx ▸ hxH)
-  let avoidMap : ℕ → Finset ℕ := fun b => h b ∪ collision b
+  let avoidMap : ℕ → Finset ℕ := fun b => h b ∪ conflict b
   have hAvoidCard : ∀ b ∈ K, (avoidMap b).card ≤ 2 * r := by
     intro b hb
     calc
-      (avoidMap b).card ≤ (h b).card + (collision b).card := by
+      (avoidMap b).card ≤ (h b).card + (conflict b).card := by
         simpa [avoidMap] using
-          (Finset.card_union_le (h b) (collision b))
+          (Finset.card_union_le (h b) (conflict b))
       _ ≤ r + r := Nat.add_le_add (hcard b hb)
         (hcollisionCard b hb)
       _ = 2 * r := by omega
   have hbNotAvoid : ∀ b ∈ K, b ∉ avoidMap b := by
     intro b hb hbAvoid
-    rcases Finset.mem_union.mp hbAvoid with hbH | hbCollision
+    rcases Finset.mem_union.mp hbAvoid with hbH | hbConflict
     · exact hbNotH b hb hbH
-    · exact hbNotCollision b hb hbCollision
+    · exact hbNotConflict b hb hbConflict
   obtain ⟨L, hLK, hL, hAvoidFree⟩ :=
     exists_infinite_freeSet_of_bounded_pointMap
       hK avoidMap (2 * r) hAvoidCard hbNotAvoid
@@ -28965,12 +28765,6 @@ theorem exists_infinite_freeSet_avoiding_injectiveImages
         exact (havoid₀ b hbL₀).2 d (hLL₀ hd)
       · exact (havoidTail b hb).2 a
 
-/- Cross-block image avoidance does not require the support map to avoid the
-index set itself.  Erase the diagonal marked point, pull every remaining
-marked point back to its unique owner, and take a free set for that bounded
-owner map.  This is the index-agnostic form needed to extend an abstract
-`RepairedOptionSystem`, whose block indices need not themselves be elements
-of `A`. -/
 theorem exists_infinite_crossAvoiding_injectiveImage
     {K : Set ℕ} (hK : K.Infinite)
     (u : ℕ → ℕ) (huInj : Set.InjOn u K)
@@ -28980,36 +28774,36 @@ theorem exists_infinite_crossAvoiding_injectiveImage
       ∀ b ∈ L, ∀ d ∈ L, b ≠ d → u d ∉ h b := by
   classical
   let erased : ℕ → Finset ℕ := fun b => (h b).erase (u b)
-  let HasOwner : ℕ → Prop := fun x => ∃ d ∈ K, u d = x
-  let owner : ℕ → ℕ := fun x =>
-    if hx : HasOwner x then Classical.choose hx else 0
-  have hownerSpec : ∀ x, HasOwner x →
-      owner x ∈ K ∧ u (owner x) = x := by
+  let HasMarkedElement : ℕ → Prop := fun x => ∃ d ∈ K, u d = x
+  let marked_element : ℕ → ℕ := fun x =>
+    if hx : HasMarkedElement x then Classical.choose hx else 0
+  have hownerSpec : ∀ x, HasMarkedElement x →
+      marked_element x ∈ K ∧ u (marked_element x) = x := by
     intro x hx
-    simp only [owner, dif_pos hx]
+    simp only [marked_element, dif_pos hx]
     exact Classical.choose_spec hx
-  let collision : ℕ → Finset ℕ := fun b =>
-    ((erased b).filter HasOwner).image owner
-  have hcollisionCard : ∀ b ∈ K, (collision b).card ≤ r := by
+  let conflict : ℕ → Finset ℕ := fun b =>
+    ((erased b).filter HasMarkedElement).image marked_element
+  have hcollisionCard : ∀ b ∈ K, (conflict b).card ≤ r := by
     intro b hb
     calc
-      (collision b).card ≤ ((erased b).filter HasOwner).card :=
+      (conflict b).card ≤ ((erased b).filter HasMarkedElement).card :=
         Finset.card_image_le
       _ ≤ (erased b).card := Finset.card_filter_le _ _
       _ ≤ (h b).card := Finset.card_erase_le
       _ ≤ r := hcard b hb
   have hcollisionMem : ∀ b, ∀ d ∈ K,
-      u d ∈ erased b → d ∈ collision b := by
+      u d ∈ erased b → d ∈ conflict b := by
     intro b d hd hud
-    have howned : HasOwner (u d) := ⟨d, hd, rfl⟩
+    have howned : HasMarkedElement (u d) := ⟨d, hd, rfl⟩
     apply Finset.mem_image.mpr
     refine ⟨u d, Finset.mem_filter.mpr ⟨hud, howned⟩, ?_⟩
     have hspec := hownerSpec (u d) howned
     exact huInj hspec.1 hd hspec.2
-  have hbNotCollision : ∀ b ∈ K, b ∉ collision b := by
-    intro b hb hbCollision
+  have hbNotConflict : ∀ b ∈ K, b ∉ conflict b := by
+    intro b hb hbConflict
     obtain ⟨x, hxFilter, hownerb⟩ :=
-      Finset.mem_image.mp hbCollision
+      Finset.mem_image.mp hbConflict
     have hxErased := (Finset.mem_filter.mp hxFilter).1
     have hxOwned := (Finset.mem_filter.mp hxFilter).2
     have hspec := hownerSpec x hxOwned
@@ -29019,7 +28813,7 @@ theorem exists_infinite_crossAvoiding_injectiveImage
     exact (Finset.mem_erase.mp hxErased).1 hubx.symm
   obtain ⟨L, hLK, hL, hfree⟩ :=
     exists_infinite_freeSet_of_bounded_pointMap
-      hK collision r hcollisionCard hbNotCollision
+      hK conflict r hcollisionCard hbNotConflict
   refine ⟨L, hLK, hL, ?_⟩
   intro b hb d hd hbd hud
   have hune : u d ≠ u b := by
@@ -29353,7 +29147,7 @@ theorem cofinalSpatialCriticalBalancedAdditivePairsWithRepairs_exists_infiniteCa
 /-- The cofinal wide-with-repairs branch also produces an actual infinite
 candidate deletion.  At each index choose whichever member of the globally
 disjoint repair pair omits the oriented endpoint `x n`, then thin against
-all cross-index collisions. -/
+all cross-index conflicts. -/
 theorem cofinalSpatialCriticalWideSupportsWithRepairs_exists_infiniteCandidateDeletion
     {A C K : Set ℕ} {D : Finset ℕ}
     {cell : ℕ → Finset ℕ}
@@ -29436,12 +29230,6 @@ theorem cofinalSpatialCriticalWideSupportsWithRepairs_exists_infiniteCandidateDe
     hRSupport n (hJL hn), hRDisjointD n (hJL hn),
     havoid n hn⟩
 
-/-- Counterexample-level set construction obtained from the two repaired
-matching branches.  It produces one actual infinite `B ⊆ C ⊆ A` and an
-unbounded indexed family of order-three supports which survive deletion of
-`B`.  The desired complement is therefore concretely `A \ B`; what remains
-is to upgrade this cofinal family to the eventual order-two red/blue
-conditions required by `IsPairIndependentDeletionWithSelfBasis`. -/
 theorem minimalRecurrentNoTwoRepairPrefix_counterexample_exists_infiniteCandidateDeletion_with_unboundedSurvivingRepairs
     {A C : Set ℕ} {D₀ : Finset ℕ}
     (hCA : C ⊆ A)
@@ -29494,12 +29282,6 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_exists_infiniteCandidat
           exact ⟨n, hn, rfl⟩
         exact ⟨hbnB, hcritical, hqn, hRR, hRD, hRB⟩⟩
 
-/-- Feed the candidate deletion into the bounded-stratum splitting
-dichotomy.  In the non-atomic branch, remove zero and obtain an infinite
-`B ⊆ C ⊆ A` whose deleted points split in `A \ B`; because zero is
-retained, the complement is already an exact order-two basis along `A`.
-Thus only pair independence remains before applying the splittable deletion
-theorem.  The alternative is the explicit infinite zero-atom branch. -/
 theorem minimalRecurrentNoTwoRepairPrefix_counterexample_selfSplittingCandidate_or_zeroAtoms
     {A C : Set ℕ} {D₀ : Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -29729,12 +29511,6 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_zeroAtomicMarked
   exact ⟨hbnL, hcritical, hqn, hrepair, hrepairD,
     hrepairZ.mono_right hLZ⟩
 
-/-- Counterexample-level uniform form of the zero-atomic marked sunflower.
-All arithmetic and delta-system data survive the infinite thinning, and the
-minimal destroyers now have one fixed type.  In particular, the residual
-finite-certificate bridge has exactly the following three branches: cores
-of size at most three with a root of size at most two, two disjoint
-unique-hit repairs, or large cores with common-anchor order-three repairs. -/
 theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_uniformZeroAtomicMarkedMinimalDestroyerSunflower
     {A C : Set ℕ} {D₀ : Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -29835,13 +29611,6 @@ theorem minimalRecurrentNoTwoRepairPrefix_counterexample_forces_uniformZeroAtomi
     J', certificateTarget, atom, certificateRepair,
     hJ', hKimage, hatomInj.mono hJ'J, hcertificateJ, hsync⟩
 
-/-- Fully zero-atomic form of the uniform marked-sunflower obstruction.
-First restart the recurrent-prefix argument inside the repaired zero-atom
-reservoir supplied by the counterexample.  Applying the uniform sunflower
-theorem there ensures not only that the marked points are zero-atoms, but
-that every fixed-prefix, moving-trace, and minimal-core vertex is a
-zero-atom.  The original certificate targets and their surviving repairs
-remain indexed on the same infinite family. -/
 theorem counterexample_forces_uniformFullyZeroAtomicMarkedMinimalDestroyerSunflower
     {A : Set ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -31123,7 +30892,7 @@ theorem HasInfiniteCriticalCandidateDeletionWithLateSurvivingRepairs.to_candidat
       J, target, repair, hJ, hrepair⟩ := h
   exact ⟨B, hBK, hBA, hB, J, target, repair, hJ, hrepair⟩
 
-/-- Semantic frontier attached to one critical deletion.  Its order-three
+/-- Semantic boundary attached to one critical deletion.  Its order-three
 sumset has infinitely many represented and infinitely many unrepresented
 targets, and the two target sets are disjoint by definition. -/
 def HasInfiniteCriticalSurvivalDestructionSplit
@@ -33085,7 +32854,7 @@ theorem HasInfiniteCriticalExactBinaryRepairEdgeStream.unit_or_nestedSurvival_or
                 hLB hEtrace hatomL⟩⟩)
 
 /-- Information-preserving Ramsey extraction.  This is the form used for
-the arithmetic attack: the unit, nested-survival, and clique alternatives
+the arithmetic obstruction: the unit, nested-survival, and clique alternatives
 all retain the equations and inequalities of their originating crossing
 edges. -/
 theorem HasInfiniteCriticalArithmeticRepairEdgeStream.unit_or_nestedSurvival_or_conflictClique
@@ -33369,13 +33138,6 @@ theorem HasInfiniteCriticalDecreasingArithmeticRepairChain.has_fixedDestination_
   have heq := w.atom_anchor_eq_deleted_complement_step
   omega
 
-/-- The increasing chain cannot remain an essentially new obstruction.
-Fix its least chosen source.  The edge anchors then have infinite range.
-The lifted repair through the larger deleted endpoint omits its own anchor:
-the anchor lies outside B, and equality with either retained lifted label
-would contradict the strict source/destination order.  Bounded-support
-free-set thinning therefore turns the anchor image into a lateral deletion
-which preserves an infinite stream destroyed by B. -/
 theorem HasInfiniteCriticalIncreasingArithmeticRepairChain.to_lateralDeletionSwitch
     {A C B : Set ℕ} {D : Finset ℕ}
     (h : HasInfiniteCriticalIncreasingArithmeticRepairChain A C D B)
@@ -33522,12 +33284,6 @@ theorem HasInfiniteCriticalIncreasingArithmeticRepairChain.to_lateralDeletionSwi
   exact ⟨(w y hyY).target_destroyed,
     repair y, hrepairMem y (hJY₀ hyJ), hrepairX y hyJ⟩
 
-/-- The decreasing chain also yields a lateral deletion.  Fix its smaller
-destination.  If the step labels have infinite range, delete a free thinning
-of them; the canonical atom-anchor-zero repair omits every diagonal step.
-If the step range is finite, edges with complement equal to anchor form only
-a finite set, while the remaining complement range must be infinite.  A
-free thinning of those complements gives the same switch. -/
 theorem HasInfiniteCriticalDecreasingArithmeticRepairChain.to_lateralDeletionSwitch
     {A C B : Set ℕ} {D : Finset ℕ}
     (h : HasInfiniteCriticalDecreasingArithmeticRepairChain A C D B)
@@ -34712,12 +34468,6 @@ theorem HasInfiniteCriticalFixedTranslationGapStream.rigid_or_lateralDeletionSwi
       · exact Or.inr (Or.inl hlateral)
       · exact Or.inr (Or.inr hcandidate)
 
-/-- A fixed translation has a more direct dichotomy.  If infinitely many
-translated targets admit a support omitting their marked atom, bounded
-support thinning turns those supports into a common critical candidate
-deletion.  Otherwise the marked atom alone destroys every target on an
-infinite substream; zero-padding and direct repairs identify it as the
-unique crossing endpoint, giving the private-singleton configuration. -/
 theorem HasInfiniteCriticalFixedTranslationGapStream.privateSingleton_or_criticalCandidate
     {A C B : Set ℕ} {D : Finset ℕ}
     (h : HasInfiniteCriticalFixedTranslationGapStream A C D B)
@@ -37804,7 +37554,7 @@ theorem HasMigratedBinaryTwoRepairTraceCertificateFamily.toBinaryCertificateFami
       _hlocalized, _hQsafe, _htrace⟩ := hcertificates N
   exact ⟨Q, hQlate, hQmarked, hcert⟩
 
-/-- Arithmetic endgame package for a migrated certificate family.  At every
+/-- Arithmetic counterexample structure package for a migrated certificate family.  At every
 target height the protected infinite target stream is still present and a
 late target-localized certificate exhibits exactly one of the three finite
 obstructions isolated above: a wide support, a separated additive edge, or
@@ -37846,7 +37596,7 @@ def HasMigratedBinaryAdditiveClauseTrichotomyFamily
                 HasOpposedExternalUnitAdditiveImplicationEdges
                   A C K' D Q pairCell hcellCard data)
 
-/-- Spatial strengthening of the migrated arithmetic frontier.  The same
+/-- Spatial strengthening of the migrated arithmetic boundary.  The same
 protected marked stream and binary partition are retained, but the finite
 certificate is rebuilt on every tail of the partition.  Hence every
 endpoint occurring in the wide, separated, or opposed-unit alternative can
@@ -38115,13 +37865,6 @@ def HasSmallOrCommonAnchorSingletonPetalAffinePattern
           HasCommonAnchorOrderThreeRepairs
             A (core (atom n)) (target (atom n)))
 
-/-- Integrated finite-certificate endgame for a synchronized marked
-sunflower.  Target synchronization either already separates the two target
-ranges, or coincidence is converted by strong deletion into migrated
-binary certificates.  The sole surviving coincidence pattern has singleton
-moving core petals, the exact affine reflection identity, and only the small
-or common-anchor destroyer types; the two-disjoint-repair type always
-migrates. -/
 theorem counterexample_synchronizedCertificateFamily_forces_rangeMigration_or_finiteMigration_or_terminalAffinePattern
     {A C K I J : Set ℕ} {D R : Finset ℕ}
     (hcounter : ∀ X, X ⊆ A → X.Infinite →
@@ -38376,13 +38119,6 @@ theorem counterexample_synchronizedCertificateFamily_forces_rangeMigration_or_fi
       HasMigratedBinaryCertificateFamily.mono_index
         hmigrate hLI)
 
-/-- An injective moving point in a repair certificate has only two possible
-infinite behaviours.  If infinitely many corresponding targets have an
-alternate repair avoiding that point, the pairs formed by the marked atom
-and the moving certificate point have common survival, so strong deletion
-forces migrated finite certificates.  Otherwise, after deleting finitely
-many indices, the moving point by itself destroys every repair of its
-target.  This argument is independent of the local minimal-destroyer type. -/
 theorem counterexample_injectiveCertificatePoint_forces_migration_or_singletonDestroyers
     {A K I : Set ℕ}
     (hcounter : ∀ X, X ⊆ A → X.Infinite →
@@ -38656,13 +38392,6 @@ theorem infiniteAffineSingletonDestroyers_force_rigidRootDouble
   have hrootE : root ∈ E := hbEq ▸ hbE
   exact additiveSupportFamily_two_eq_pairSupport_of_mem hER hrootE
 
-/-- A bounded predecessor core cannot coexist with infinitely many affine
-singleton destroyers.  Fix more earlier affine points than twice the core
-bound, then choose one much later target.  Reflecting every earlier point
-through that singleton destroyer gives a distinct order-two support of the
-predecessor `root + other n`.  After discarding the earlier points already
-in the core, the destroyer condition forces too many distinct reflected
-points into the same bounded core. -/
 theorem not_infiniteAffineSingletonDestroyers_with_boundedPredecessorCores
     {A I : Set ℕ} (hbasis : IsExactTupleAsymptoticBasis A 2)
     (root : ℕ) (q other : ℕ → ℕ) (core : ℕ → Finset ℕ) (r : ℕ)
@@ -39181,7 +38910,7 @@ theorem counterexample_terminalAffinePattern_forces_migration_or_singletonDestro
     · exact Or.inl (fun n hn => hsmall n (hML hn))
     · exact Or.inr (fun n hn => hanchor n (hML hn))
 
-/-- Strengthened integrated certificate endgame.  The unsynchronized case
+/-- Strengthened integrated certificate counterexample structure.  The unsynchronized case
 still separates the two target ranges, and every successful binary choice
 still gives migrated finite certificates.  In the sole remaining affine
 case, however, the moving certificate point is now known to be a singleton
@@ -39329,7 +39058,7 @@ theorem counterexample_synchronizedCertificateFamily_forces_rangeMigration_or_fi
   · exact (not_smallOrCommonAnchorSingletonPetalAffineDestroyerPattern
       hbasis hterminal).elim
 
-/-- Repair-preserving global migration frontier.  In the finite-migration
+/-- Repair-preserving global migration boundary.  In the finite-migration
 branch, every late target-localized certificate now carries the two repairs
 from the original eventually-good prefix, with their disjointness on `C`
 retained even though the migrated binary partition may have external
@@ -40262,8 +39991,6 @@ theorem IsInfiniteCandidateDeletionWithLateSurvivingRepairs.strictExtensionWitne
     h.has_strictExtension
   exact ⟨⟨X, hXAB, hX, hcandidateX, hcandidateUnion⟩⟩
 
-/-- An omega-length increasing tower of exact candidates.  Every stage adds
-an infinite fresh layer disjoint from everything already deleted. -/
 def HasInfiniteStrictCandidateExtensionTower (A : Set ℕ) : Prop :=
   ∃ deletion layer : ℕ → Set ℕ,
     (∀ n,
@@ -40306,11 +40033,6 @@ theorem IsInfiniteCandidateDeletionWithLateSurvivingRepairs.exists_extensionTowe
       (state n).1 ∪ (witness (state n)).layer
     rw [hstateSucc]
 
-/-- Destruction by the union of an increasing sequence of deletions is
-already visible at one finite stage.  This is the finite-character bridge
-needed at the limit of a candidate-extension tower: there are only finitely
-many supports at a fixed target, so the finitely many hits appearing in the
-union have a common stage. -/
 theorem destroysAt_iUnion_of_monotone_iff_exists_stage
     {R : SupportFamily} {deletion : ℕ → Set ℕ} {q : ℕ}
     (hmono : Monotone deletion) :
@@ -40389,12 +40111,6 @@ theorem HasInfiniteStrictCandidateExtensionTower.exists_pairwiseDisjointInfinite
         exact Or.inr hxj
       exact (hlayer i hxi).2 hxDeletion
 
-/-- Strong deletion confronted with an omega candidate tower yields an
-explicit finite-stage staircase.  Arbitrarily late targets are already
-destroyed at some finite stage, while that same stage has a still later
-order-three target with a surviving support.  The missing limit argument can
-therefore work entirely with finite stages and need not reason directly
-about supports meeting an infinite union. -/
 theorem HasInfiniteStrictCandidateExtensionTower.exists_finiteStageStaircase
     {A : Set ℕ}
     (htower : HasInfiniteStrictCandidateExtensionTower A)
@@ -40448,30 +40164,22 @@ theorem HasInfiniteStrictCandidateExtensionTower.exists_finiteStageStaircase
     hNq, (Nat.le_of_lt hqn).trans hnTarget, hqStage,
     hrepairMem, hrepairDisjoint⟩
 
-/-- A repair stream from one finite tower stage which is eventually injured
-at explicitly recorded fresh layers.  Immediately before its injury the
-repair is still disjoint from the accumulated deletion. -/
-def HasInfiniteCandidateFirstInjuryTrace
+def HasInfiniteCandidateFirstObstructionTrace
     (A : Set ℕ) (deletion layer : ℕ → Set ℕ)
     (base : ℕ) : Prop :=
   ∃ I : Set ℕ, ∃ target : ℕ → ℕ,
     ∃ repair : ℕ → Finset ℕ,
-    ∃ injury point : ℕ → ℕ,
+    ∃ obstruction point : ℕ → ℕ,
       I.Infinite ∧
       ∀ n ∈ I,
         n ≤ target n ∧
         repair n ∈ additiveSupportFamily A 3 (target n) ∧
-        base ≤ injury n ∧
-        Disjoint (repair n : Set ℕ) (deletion (injury n)) ∧
+        base ≤ obstruction n ∧
+        Disjoint (repair n : Set ℕ) (deletion (obstruction n)) ∧
         point n ∈ repair n ∧
-        point n ∈ layer (injury n)
+        point n ∈ layer (obstruction n)
 
-/-- Exact limit dichotomy for the extension tower.  Either the union of all
-stages is itself an infinite candidate deletion, or every finite stage has
-an infinite repair stream with a genuine first-injury layer.  This is the
-precise place where the remaining proof must use the additive equations:
-compactness alone cannot discard the second alternative. -/
-theorem HasInfiniteStrictCandidateExtensionTower.limitCandidate_or_firstInjury
+theorem HasInfiniteStrictCandidateExtensionTower.limitCandidate_or_firstObstruction
     {A : Set ℕ}
     (htower : HasInfiniteStrictCandidateExtensionTower A) :
     ∃ deletion layer : ℕ → Set ℕ,
@@ -40484,7 +40192,7 @@ theorem HasInfiniteStrictCandidateExtensionTower.limitCandidate_or_firstInjury
       (IsInfiniteCandidateDeletionWithLateSurvivingRepairs
           A (⋃ n, deletion n) ∨
         ∀ base,
-          HasInfiniteCandidateFirstInjuryTrace
+          HasInfiniteCandidateFirstObstructionTrace
             A deletion layer base) := by
   classical
   obtain ⟨deletion, layer, hcandidate, hlayer, hlayerInfinite,
@@ -40526,7 +40234,7 @@ theorem HasInfiniteStrictCandidateExtensionTower.limitCandidate_or_firstInjury
       exact ⟨(hrepair n hn.1).1, (hrepair n hn.1).2.1, hn.2⟩
     let injured : Set ℕ := J \ survives
     have hinjured : injured.Infinite := hJ.diff hsurvivesFinite
-    have hfirstInjury : ∀ n ∈ injured, ∃ k x,
+    have hfirstObstruction : ∀ n ∈ injured, ∃ k x,
         base ≤ k ∧
         Disjoint (repair n : Set ℕ) (deletion k) ∧
         x ∈ repair n ∧ x ∈ layer k := by
@@ -40582,22 +40290,22 @@ theorem HasInfiniteStrictCandidateExtensionTower.limitCandidate_or_firstInjury
       · exact (Set.disjoint_left.mp hbefore hxRepair hxOld).elim
       · exact ⟨k, x, hbaseK, hbefore,
           Finset.mem_coe.mp hxRepair, hxLayer⟩
-    let injury : ℕ → ℕ := fun n =>
+    let obstruction : ℕ → ℕ := fun n =>
       if hn : n ∈ injured then
-        (hfirstInjury n hn).choose
+        (hfirstObstruction n hn).choose
       else 0
     let point : ℕ → ℕ := fun n =>
       if hn : n ∈ injured then
-        (hfirstInjury n hn).choose_spec.choose
+        (hfirstObstruction n hn).choose_spec.choose
       else 0
     have hinjury : ∀ n, ∀ hn : n ∈ injured,
-        base ≤ injury n ∧
-        Disjoint (repair n : Set ℕ) (deletion (injury n)) ∧
-        point n ∈ repair n ∧ point n ∈ layer (injury n) := by
+        base ≤ obstruction n ∧
+        Disjoint (repair n : Set ℕ) (deletion (obstruction n)) ∧
+        point n ∈ repair n ∧ point n ∈ layer (obstruction n) := by
       intro n hn
-      simpa only [injury, point, dif_pos hn] using
-        (hfirstInjury n hn).choose_spec.choose_spec
-    refine ⟨injured, target, repair, injury, point,
+      simpa only [obstruction, point, dif_pos hn] using
+        (hfirstObstruction n hn).choose_spec.choose_spec
+    refine ⟨injured, target, repair, obstruction, point,
       hinjured, ?_⟩
     intro n hn
     have hnJ : n ∈ J := hn.1
@@ -40605,88 +40313,82 @@ theorem HasInfiniteStrictCandidateExtensionTower.limitCandidate_or_firstInjury
       (hinjury n hn).1, (hinjury n hn).2.1,
       (hinjury n hn).2.2.1, (hinjury n hn).2.2.2⟩
 
-/-- The first-injury stages have the same basic infinite pigeonhole
+/-- The first-obstruction stages have the same basic infinite pigeonhole
 dichotomy as the earlier mixed clause labels: either one fixed fresh layer
-injures infinitely many repairs, or after thinning the injury stages are
+injures infinitely many repairs, or after thinning the obstruction stages are
 injective. -/
-theorem HasInfiniteCandidateFirstInjuryTrace.fixedLayer_or_injectiveStages
+theorem HasInfiniteCandidateFirstObstructionTrace.fixedLayer_or_injectiveStages
     {A : Set ℕ} {deletion layer : ℕ → Set ℕ} {base : ℕ}
-    (h : HasInfiniteCandidateFirstInjuryTrace
+    (h : HasInfiniteCandidateFirstObstructionTrace
       A deletion layer base) :
     ∃ I : Set ℕ, ∃ target : ℕ → ℕ,
       ∃ repair : ℕ → Finset ℕ,
-      ∃ injury point : ℕ → ℕ,
+      ∃ obstruction point : ℕ → ℕ,
         I.Infinite ∧
         (∀ n ∈ I,
           n ≤ target n ∧
           repair n ∈ additiveSupportFamily A 3 (target n) ∧
-          base ≤ injury n ∧
-          Disjoint (repair n : Set ℕ) (deletion (injury n)) ∧
+          base ≤ obstruction n ∧
+          Disjoint (repair n : Set ℕ) (deletion (obstruction n)) ∧
           point n ∈ repair n ∧
-          point n ∈ layer (injury n)) ∧
-        ((∃ k, (I ∩ injury ⁻¹' ({k} : Set ℕ)).Infinite) ∨
-          ∃ L, L ⊆ I ∧ L.Infinite ∧ Set.InjOn injury L) := by
+          point n ∈ layer (obstruction n)) ∧
+        ((∃ k, (I ∩ obstruction ⁻¹' ({k} : Set ℕ)).Infinite) ∨
+          ∃ L, L ⊆ I ∧ L.Infinite ∧ Set.InjOn obstruction L) := by
   classical
-  obtain ⟨I, target, repair, injury, point, hI, hdata⟩ := h
-  refine ⟨I, target, repair, injury, point, hI, hdata, ?_⟩
-  by_cases hrange : (injury '' I).Infinite
+  obtain ⟨I, target, repair, obstruction, point, hI, hdata⟩ := h
+  refine ⟨I, target, repair, obstruction, point, hI, hdata, ?_⟩
+  by_cases hrange : (obstruction '' I).Infinite
   · right
     obtain ⟨L, hLI, hinjuryBij⟩ :=
-      Set.exists_subset_bijOn I injury
+      Set.exists_subset_bijOn I obstruction
     have hL : L.Infinite := by
       intro hLFinite
       apply hrange
       rw [← hinjuryBij.image_eq]
-      exact hLFinite.image injury
+      exact hLFinite.image obstruction
     exact ⟨L, hLI, hL, hinjuryBij.injOn⟩
   · left
-    have hrangeFinite : (injury '' I).Finite :=
+    have hrangeFinite : (obstruction '' I).Finite :=
       Set.not_infinite.mp hrange
     by_contra hnoFiber
     push Not at hnoFiber
     apply hI
-    apply Set.Finite.of_finite_fibers injury hrangeFinite
+    apply Set.Finite.of_finite_fibers obstruction hrangeFinite
     intro k hkRange
     exact hnoFiber k
 
-/-- Arithmetic normalization of a first-injury trace.  The represented
-targets are made injective first.  The injury data then has exactly three
-Ramsey/pigeonhole shapes: distinct injury layers (which automatically give
-distinct hit points), one fixed layer with distinct hit points, or one fixed
-layer and one fixed hit point.  In the last case every distinct target has
-an explicit equation `anchor + u + v = target`. -/
-def HasInfiniteCandidateFirstInjuryArithmeticTrichotomy
+def HasInfiniteCandidateFirstObstructionArithmeticTrichotomy
     (A : Set ℕ) (deletion layer : ℕ → Set ℕ)
     (base : ℕ) : Prop :=
   ∃ I : Set ℕ, ∃ target : ℕ → ℕ,
     ∃ repair : ℕ → Finset ℕ,
-    ∃ injury point : ℕ → ℕ,
+    ∃ obstruction point : ℕ → ℕ,
       I.Infinite ∧ Set.InjOn target I ∧
       (∀ n ∈ I,
         n ≤ target n ∧
         repair n ∈ additiveSupportFamily A 3 (target n) ∧
-        base ≤ injury n ∧
-        Disjoint (repair n : Set ℕ) (deletion (injury n)) ∧
+        base ≤ obstruction n ∧
+        Disjoint (repair n : Set ℕ) (deletion (obstruction n)) ∧
         point n ∈ repair n ∧
-        point n ∈ layer (injury n)) ∧
-      ((Set.InjOn injury I ∧ Set.InjOn point I) ∨
-        (∃ k, (∀ n ∈ I, injury n = k) ∧
+        point n ∈ layer (obstruction n)) ∧
+      ((Set.InjOn obstruction I ∧ Set.InjOn point I) ∨
+        (∃ k, (∀ n ∈ I, obstruction n = k) ∧
           Set.InjOn point I) ∨
         ∃ k anchor,
-          (∀ n ∈ I, injury n = k ∧ point n = anchor) ∧
+          (∀ n ∈ I, obstruction n = k ∧ point n = anchor) ∧
           ∀ n ∈ I, ∃ u, u ∈ A ∧ ∃ v, v ∈ A ∧
             anchor + u + v = target n)
 
-theorem HasInfiniteCandidateFirstInjuryTrace.to_arithmeticTrichotomy
+theorem HasInfiniteCandidateFirstObstructionTrace.to_arithmeticTrichotomy
     {A : Set ℕ} {deletion layer : ℕ → Set ℕ} {base : ℕ}
-    (h : HasInfiniteCandidateFirstInjuryTrace
+    (h : HasInfiniteCandidateFirstObstructionTrace
       A deletion layer base)
     (hlayerDisjoint :
       Pairwise fun i j => Disjoint (layer i) (layer j)) :
-    HasInfiniteCandidateFirstInjuryArithmeticTrichotomy
+    HasInfiniteCandidateFirstObstructionArithmeticTrichotomy
       A deletion layer base := by
   classical
-  obtain ⟨I, target, repair, injury, point, hI, hdata⟩ := h
+  obtain ⟨I, target, repair, obstruction, point, hI, hdata⟩ := h
   have htargetImage : (target '' I).Infinite := by
     by_contra htargetFinite
     apply hI
@@ -40709,42 +40411,42 @@ theorem HasInfiniteCandidateFirstInjuryTrace.to_arithmeticTrichotomy
     exact hI₀Finite.image target
   have htargetInj₀ : Set.InjOn target I₀ :=
     htargetBij.injOn
-  by_cases hinjuryImage : (injury '' I₀).Infinite
+  by_cases hinjuryImage : (obstruction '' I₀).Infinite
   · obtain ⟨L, hLI₀, hinjuryBij⟩ :=
-      Set.exists_subset_bijOn I₀ injury
+      Set.exists_subset_bijOn I₀ obstruction
     have hL : L.Infinite := by
       intro hLFinite
       apply hinjuryImage
       rw [← hinjuryBij.image_eq]
-      exact hLFinite.image injury
+      exact hLFinite.image obstruction
     have hpointInj : Set.InjOn point L := by
       intro n hnL m hmL hpointEq
-      have hinjuryEq : injury n = injury m := by
+      have hinjuryEq : obstruction n = obstruction m := by
         by_contra hinjuryNe
         exact Set.disjoint_left.mp (hlayerDisjoint hinjuryNe)
           (hdata n (hI₀I (hLI₀ hnL))).2.2.2.2.2
           (hpointEq ▸
             (hdata m (hI₀I (hLI₀ hmL))).2.2.2.2.2)
       exact hinjuryBij.injOn hnL hmL hinjuryEq
-    refine ⟨L, target, repair, injury, point, hL,
+    refine ⟨L, target, repair, obstruction, point, hL,
       htargetInj₀.mono hLI₀, ?_, Or.inl
         ⟨hinjuryBij.injOn, hpointInj⟩⟩
     intro n hnL
     exact hdata n (hI₀I (hLI₀ hnL))
-  · have hinjuryFinite : (injury '' I₀).Finite :=
+  · have hinjuryFinite : (obstruction '' I₀).Finite :=
       Set.not_infinite.mp hinjuryImage
-    have hinfiniteInjuryFiber : ∃ k ∈ injury '' I₀,
-        (I₀ ∩ injury ⁻¹' ({k} : Set ℕ)).Infinite := by
+    have hinfiniteObstructionFiber : ∃ k ∈ obstruction '' I₀,
+        (I₀ ∩ obstruction ⁻¹' ({k} : Set ℕ)).Infinite := by
       by_contra hnoFiber
       push Not at hnoFiber
       apply hI₀
-      apply Set.Finite.of_finite_fibers injury hinjuryFinite
+      apply Set.Finite.of_finite_fibers obstruction hinjuryFinite
       intro k hkImage
       exact hnoFiber k hkImage
-    obtain ⟨k, _hkImage, hK⟩ := hinfiniteInjuryFiber
-    let K : Set ℕ := I₀ ∩ injury ⁻¹' ({k} : Set ℕ)
+    obtain ⟨k, _hkImage, hK⟩ := hinfiniteObstructionFiber
+    let K : Set ℕ := I₀ ∩ obstruction ⁻¹' ({k} : Set ℕ)
     have hKI₀ : K ⊆ I₀ := fun _ hn => hn.1
-    have hinjuryK : ∀ n ∈ K, injury n = k := by
+    have hinjuryK : ∀ n ∈ K, obstruction n = k := by
       intro n hn
       simpa [K] using hn.2
     by_cases hpointImage : (point '' K).Infinite
@@ -40755,7 +40457,7 @@ theorem HasInfiniteCandidateFirstInjuryTrace.to_arithmeticTrichotomy
         apply hpointImage
         rw [← hpointBij.image_eq]
         exact hLFinite.image point
-      refine ⟨L, target, repair, injury, point, hL,
+      refine ⟨L, target, repair, obstruction, point, hL,
         htargetInj₀.mono (hLK.trans hKI₀), ?_,
         Or.inr (Or.inl ⟨k, ?_, hpointBij.injOn⟩)⟩
       · intro n hnL
@@ -40779,7 +40481,7 @@ theorem HasInfiniteCandidateFirstInjuryTrace.to_arithmeticTrichotomy
       have hpointL : ∀ n ∈ L, point n = anchor := by
         intro n hn
         simpa [L] using hn.2
-      refine ⟨L, target, repair, injury, point, hL,
+      refine ⟨L, target, repair, obstruction, point, hL,
         htargetInj₀.mono (hLK.trans hKI₀), ?_,
         Or.inr (Or.inr ⟨k, anchor, ?_, ?_⟩)⟩
       · intro n hnL
@@ -40797,22 +40499,22 @@ theorem HasInfiniteCandidateFirstInjuryTrace.to_arithmeticTrichotomy
         rw [hpointL n hnL] at hsum
         exact hsum
 
-/-- In the stationary-anchor branch, subtracting the common injury point
+/-- In the stationary-anchor branch, subtracting the common obstruction point
 descends every recorded order-three repair to an order-two support which
-still avoids the deletion immediately before the injury.  Distinct original
+still avoids the deletion immediately before the obstruction.  Distinct original
 targets remain distinct after subtracting the fixed anchor. -/
-theorem fixedAnchorFirstInjury_descends_to_injectivePairSurvival
+theorem fixedAnchorFirstObstruction_descends_to_injectivePairSurvival
     {A I : Set ℕ} {deletion layer : ℕ → Set ℕ}
     {target : ℕ → ℕ} {repair : ℕ → Finset ℕ}
-    {injury point : ℕ → ℕ} {k anchor : ℕ}
+    {obstruction point : ℕ → ℕ} {k anchor : ℕ}
     (htargetInj : Set.InjOn target I)
     (hdata : ∀ n ∈ I,
       repair n ∈ additiveSupportFamily A 3 (target n) ∧
-      Disjoint (repair n : Set ℕ) (deletion (injury n)) ∧
+      Disjoint (repair n : Set ℕ) (deletion (obstruction n)) ∧
       point n ∈ repair n ∧
-      point n ∈ layer (injury n))
+      point n ∈ layer (obstruction n))
     (hfixed : ∀ n ∈ I,
-      injury n = k ∧ point n = anchor) :
+      obstruction n = k ∧ point n = anchor) :
     Set.InjOn (fun n => target n - anchor) I ∧
       ∀ n ∈ I,
         target n = anchor + (target n - anchor) ∧
@@ -40884,25 +40586,25 @@ theorem fixedAnchorFirstInjury_descends_to_injectivePairSurvival
 
 /-- Strengthened arithmetic trichotomy retaining the order-two descent in
 the stationary-anchor branch. -/
-def HasInfiniteCandidateFirstInjuryDescendedTrichotomy
+def HasInfiniteCandidateFirstObstructionDescendedTrichotomy
     (A : Set ℕ) (deletion layer : ℕ → Set ℕ)
     (base : ℕ) : Prop :=
   ∃ I : Set ℕ, ∃ target : ℕ → ℕ,
     ∃ repair : ℕ → Finset ℕ,
-    ∃ injury point : ℕ → ℕ,
+    ∃ obstruction point : ℕ → ℕ,
       I.Infinite ∧ Set.InjOn target I ∧
       (∀ n ∈ I,
         n ≤ target n ∧
         repair n ∈ additiveSupportFamily A 3 (target n) ∧
-        base ≤ injury n ∧
-        Disjoint (repair n : Set ℕ) (deletion (injury n)) ∧
+        base ≤ obstruction n ∧
+        Disjoint (repair n : Set ℕ) (deletion (obstruction n)) ∧
         point n ∈ repair n ∧
-        point n ∈ layer (injury n)) ∧
-      ((Set.InjOn injury I ∧ Set.InjOn point I) ∨
-        (∃ k, (∀ n ∈ I, injury n = k) ∧
+        point n ∈ layer (obstruction n)) ∧
+      ((Set.InjOn obstruction I ∧ Set.InjOn point I) ∨
+        (∃ k, (∀ n ∈ I, obstruction n = k) ∧
           Set.InjOn point I) ∨
         ∃ k anchor,
-          (∀ n ∈ I, injury n = k ∧ point n = anchor) ∧
+          (∀ n ∈ I, obstruction n = k ∧ point n = anchor) ∧
           (∀ n ∈ I, ∃ u, u ∈ A ∧ ∃ v, v ∈ A ∧
             anchor + u + v = target n) ∧
           Set.InjOn (fun n => target n - anchor) I ∧
@@ -40913,60 +40615,60 @@ def HasInfiniteCandidateFirstInjuryDescendedTrichotomy
               repair n = insert anchor E ∧
               Disjoint (E : Set ℕ) (deletion k))
 
-theorem HasInfiniteCandidateFirstInjuryTrace.to_descendedTrichotomy
+theorem HasInfiniteCandidateFirstObstructionTrace.to_descendedTrichotomy
     {A : Set ℕ} {deletion layer : ℕ → Set ℕ} {base : ℕ}
-    (h : HasInfiniteCandidateFirstInjuryTrace
+    (h : HasInfiniteCandidateFirstObstructionTrace
       A deletion layer base)
     (hlayerDisjoint :
       Pairwise fun i j => Disjoint (layer i) (layer j)) :
-    HasInfiniteCandidateFirstInjuryDescendedTrichotomy
+    HasInfiniteCandidateFirstObstructionDescendedTrichotomy
       A deletion layer base := by
-  obtain ⟨I, target, repair, injury, point, hI, htargetInj,
+  obtain ⟨I, target, repair, obstruction, point, hI, htargetInj,
       hdata, hmoving | hfixedPoint | hfixedAnchor⟩ :=
     h.to_arithmeticTrichotomy hlayerDisjoint
-  · exact ⟨I, target, repair, injury, point, hI,
+  · exact ⟨I, target, repair, obstruction, point, hI,
       htargetInj, hdata, Or.inl hmoving⟩
-  · exact ⟨I, target, repair, injury, point, hI,
+  · exact ⟨I, target, repair, obstruction, point, hI,
       htargetInj, hdata, Or.inr (Or.inl hfixedPoint)⟩
   · obtain ⟨k, anchor, hfixed, harithmetic⟩ := hfixedAnchor
     have hdescent :=
-      fixedAnchorFirstInjury_descends_to_injectivePairSurvival
+      fixedAnchorFirstObstruction_descends_to_injectivePairSurvival
         htargetInj
         (fun n hn => ⟨(hdata n hn).2.1,
           (hdata n hn).2.2.2.1,
           (hdata n hn).2.2.2.2.1,
           (hdata n hn).2.2.2.2.2⟩)
         hfixed
-    exact ⟨I, target, repair, injury, point, hI,
+    exact ⟨I, target, repair, obstruction, point, hI,
       htargetInj, hdata, Or.inr (Or.inr
         ⟨k, anchor, hfixed, harithmetic, hdescent.1,
           hdescent.2⟩)⟩
 
-/-- Final graph-theoretic normalization of the stationary first-injury
+/-- Final graph-theoretic normalization of the stationary first-obstruction
 branch.  Its descended pair supports are no longer left as arbitrary
 choices: an infinite thinning is explicitly either a matching or a
 common-anchor star, and every selected edge remains inside the original
 order-three repair. -/
-def HasInfiniteCandidateFirstInjuryPairClassifiedTrichotomy
+def HasInfiniteCandidateFirstObstructionPairClassifiedTrichotomy
     (A : Set ℕ) (deletion layer : ℕ → Set ℕ)
     (base : ℕ) : Prop :=
   ∃ I : Set ℕ, ∃ target : ℕ → ℕ,
     ∃ repair : ℕ → Finset ℕ,
-    ∃ injury point : ℕ → ℕ,
+    ∃ obstruction point : ℕ → ℕ,
       I.Infinite ∧ Set.InjOn target I ∧
       (∀ n ∈ I,
         n ≤ target n ∧
         repair n ∈ additiveSupportFamily A 3 (target n) ∧
-        base ≤ injury n ∧
-        Disjoint (repair n : Set ℕ) (deletion (injury n)) ∧
+        base ≤ obstruction n ∧
+        Disjoint (repair n : Set ℕ) (deletion (obstruction n)) ∧
         point n ∈ repair n ∧
-        point n ∈ layer (injury n)) ∧
-      ((Set.InjOn injury I ∧ Set.InjOn point I) ∨
-        (∃ k, (∀ n ∈ I, injury n = k) ∧
+        point n ∈ layer (obstruction n)) ∧
+      ((Set.InjOn obstruction I ∧ Set.InjOn point I) ∨
+        (∃ k, (∀ n ∈ I, obstruction n = k) ∧
           Set.InjOn point I) ∨
         ∃ k injuryAnchor,
           (∀ n ∈ I,
-            injury n = k ∧ point n = injuryAnchor) ∧
+            obstruction n = k ∧ point n = injuryAnchor) ∧
           (∀ n ∈ I, ∃ u, u ∈ A ∧ ∃ v, v ∈ A ∧
             injuryAnchor + u + v = target n) ∧
           Set.InjOn (fun n => target n - injuryAnchor) I ∧
@@ -40979,19 +40681,19 @@ def HasInfiniteCandidateFirstInjuryPairClassifiedTrichotomy
               A (deletion k) I
               (fun n => target n - injuryAnchor) repair injuryAnchor))
 
-/-- The descended first-injury trichotomy always admits the sharp
+/-- The descended first-obstruction trichotomy always admits the sharp
 matching-or-star refinement in its stationary-anchor branch. -/
-theorem HasInfiniteCandidateFirstInjuryDescendedTrichotomy.to_pairClassified
+theorem HasInfiniteCandidateFirstObstructionDescendedTrichotomy.to_pairClassified
     {A : Set ℕ} {deletion layer : ℕ → Set ℕ} {base : ℕ}
-    (h : HasInfiniteCandidateFirstInjuryDescendedTrichotomy
+    (h : HasInfiniteCandidateFirstObstructionDescendedTrichotomy
       A deletion layer base) :
-    HasInfiniteCandidateFirstInjuryPairClassifiedTrichotomy
+    HasInfiniteCandidateFirstObstructionPairClassifiedTrichotomy
       A deletion layer base := by
-  obtain ⟨I, target, repair, injury, point, hI, htargetInj,
+  obtain ⟨I, target, repair, obstruction, point, hI, htargetInj,
       hdata, hmoving | hfixedPoint | hfixedAnchor⟩ := h
-  · exact ⟨I, target, repair, injury, point, hI,
+  · exact ⟨I, target, repair, obstruction, point, hI,
       htargetInj, hdata, Or.inl hmoving⟩
-  · exact ⟨I, target, repair, injury, point, hI,
+  · exact ⟨I, target, repair, obstruction, point, hI,
       htargetInj, hdata, Or.inr (Or.inl hfixedPoint)⟩
   · obtain ⟨k, injuryAnchor, hfixed, harithmetic,
         hshiftedInj, hdescent⟩ := hfixedAnchor
@@ -41001,25 +40703,25 @@ theorem HasInfiniteCandidateFirstInjuryDescendedTrichotomy.to_pairClassified
           obtain ⟨_targetSplit, E, hER, hEsub, hrepairEq, hED⟩ :=
             hdescent n hn
           exact ⟨E, hER, hEsub, hrepairEq, hED⟩)
-    exact ⟨I, target, repair, injury, point, hI,
+    exact ⟨I, target, repair, obstruction, point, hI,
       htargetInj, hdata, Or.inr (Or.inr
         ⟨k, injuryAnchor, hfixed, harithmetic,
           hshiftedInj, (fun n hn => (hdescent n hn).1),
           hclassified⟩)⟩
 
-/-- Direct first-injury entry point for the matching-or-star
+/-- Direct first-obstruction entry point for the matching-or-star
 classification. -/
-theorem HasInfiniteCandidateFirstInjuryTrace.to_pairClassifiedTrichotomy
+theorem HasInfiniteCandidateFirstObstructionTrace.to_pairClassifiedTrichotomy
     {A : Set ℕ} {deletion layer : ℕ → Set ℕ} {base : ℕ}
-    (h : HasInfiniteCandidateFirstInjuryTrace
+    (h : HasInfiniteCandidateFirstObstructionTrace
       A deletion layer base)
     (hlayerDisjoint :
       Pairwise fun i j => Disjoint (layer i) (layer j)) :
-    HasInfiniteCandidateFirstInjuryPairClassifiedTrichotomy
+    HasInfiniteCandidateFirstObstructionPairClassifiedTrichotomy
       A deletion layer base :=
   (h.to_descendedTrichotomy hlayerDisjoint).to_pairClassified
 
-/-- The matching side of a fixed-anchor first-injury pattern can be split
+/-- The matching side of a fixed-anchor first-obstruction pattern can be split
 into two infinite halves.  One chosen summand from every edge in the first
 half forms a fresh infinite deletion; exact repair equality ensures that all
 repairs indexed by the second half survive the enlarged deletion. -/
@@ -41272,47 +40974,43 @@ theorem injectiveRepairPoints_give_candidateExtension
   · exact Set.disjoint_left.mp (hrepairD n hnI) hxRepair hxD
   · exact Set.disjoint_left.mp (hrepairX n hnOdd) hxRepair hxX
 
-/-- First-injury frontier after absorbing the stationary-point branch.
-Only the genuinely moving injury patterns remain as obstructions; a fixed
-injury point now comes with an explicit infinite fresh set whose addition to
-that stage is still an exact candidate deletion. -/
-def HasInfiniteCandidateFirstInjuryMovingOrPairGeneratedExtension
+def HasInfiniteCandidateFirstObstructionMovingOrPairGeneratedExtension
     (A : Set ℕ) (deletion layer : ℕ → Set ℕ)
     (base : ℕ) : Prop :=
   (∃ I : Set ℕ, ∃ target : ℕ → ℕ,
     ∃ repair : ℕ → Finset ℕ,
-    ∃ injury point : ℕ → ℕ,
+    ∃ obstruction point : ℕ → ℕ,
       I.Infinite ∧ Set.InjOn target I ∧
       (∀ n ∈ I,
         n ≤ target n ∧
         repair n ∈ additiveSupportFamily A 3 (target n) ∧
-        base ≤ injury n ∧
-        Disjoint (repair n : Set ℕ) (deletion (injury n)) ∧
+        base ≤ obstruction n ∧
+        Disjoint (repair n : Set ℕ) (deletion (obstruction n)) ∧
         point n ∈ repair n ∧
-        point n ∈ layer (injury n)) ∧
-      ((Set.InjOn injury I ∧ Set.InjOn point I) ∨
-        ∃ k, (∀ n ∈ I, injury n = k) ∧
+        point n ∈ layer (obstruction n)) ∧
+      ((Set.InjOn obstruction I ∧ Set.InjOn point I) ∨
+        ∃ k, (∀ n ∈ I, obstruction n = k) ∧
           Set.InjOn point I)) ∨
   ∃ k X,
     X ⊆ A \ deletion k ∧ X.Infinite ∧
     IsInfiniteCandidateDeletionWithLateSurvivingRepairs
       A (deletion k ∪ X)
 
-/-- Matching/star absorption of the fixed first-injury point. -/
-theorem HasInfiniteCandidateFirstInjuryPairClassifiedTrichotomy.to_movingOrPairGeneratedExtension
+/-- Matching/star absorption of the fixed first-obstruction point. -/
+theorem HasInfiniteCandidateFirstObstructionPairClassifiedTrichotomy.to_movingOrPairGeneratedExtension
     {A : Set ℕ} {deletion layer : ℕ → Set ℕ} {base : ℕ}
-    (h : HasInfiniteCandidateFirstInjuryPairClassifiedTrichotomy
+    (h : HasInfiniteCandidateFirstObstructionPairClassifiedTrichotomy
       A deletion layer base)
     (hcandidate : ∀ k,
       IsInfiniteCandidateDeletionWithLateSurvivingRepairs
         A (deletion k)) :
-    HasInfiniteCandidateFirstInjuryMovingOrPairGeneratedExtension
+    HasInfiniteCandidateFirstObstructionMovingOrPairGeneratedExtension
       A deletion layer base := by
-  obtain ⟨I, target, repair, injury, point, hI, htargetInj,
+  obtain ⟨I, target, repair, obstruction, point, hI, htargetInj,
       hdata, hmoving | hfixedPoint | hfixedAnchor⟩ := h
-  · exact Or.inl ⟨I, target, repair, injury, point,
+  · exact Or.inl ⟨I, target, repair, obstruction, point,
       hI, htargetInj, hdata, Or.inl hmoving⟩
-  · exact Or.inl ⟨I, target, repair, injury, point,
+  · exact Or.inl ⟨I, target, repair, obstruction, point,
       hI, htargetInj, hdata, Or.inr hfixedPoint⟩
   · obtain ⟨k, injuryAnchor, hfixed, _harithmetic,
         _hshiftedInj, _htargetSplit,
@@ -41339,7 +41037,7 @@ theorem HasInfiniteCandidateFirstInjuryPairClassifiedTrichotomy.to_movingOrPairG
           hrepairD
       exact Or.inr ⟨k, X, hX, hXInfinite, hextension⟩
 
-/-- Packaged limit frontier for the strict extension tower. -/
+/-- Packaged limit boundary for the strict extension tower. -/
 def HasInfiniteCandidateTowerLimitArithmeticDichotomy
     (A : Set ℕ) : Prop :=
   ∃ deletion layer : ℕ → Set ℕ,
@@ -41353,7 +41051,7 @@ def HasInfiniteCandidateTowerLimitArithmeticDichotomy
     (IsInfiniteCandidateDeletionWithLateSurvivingRepairs
         A (⋃ n, deletion n) ∨
       ∀ base,
-        HasInfiniteCandidateFirstInjuryDescendedTrichotomy
+        HasInfiniteCandidateFirstObstructionDescendedTrichotomy
           A deletion layer base)
 
 theorem HasInfiniteStrictCandidateExtensionTower.to_limitArithmeticDichotomy
@@ -41362,7 +41060,7 @@ theorem HasInfiniteStrictCandidateExtensionTower.to_limitArithmeticDichotomy
     HasInfiniteCandidateTowerLimitArithmeticDichotomy A := by
   obtain ⟨deletion, layer, hcandidate, hlayer, hlayerInfinite,
       hnext, hfinal⟩ :=
-    htower.limitCandidate_or_firstInjury
+    htower.limitCandidate_or_firstObstruction
   have hstep : ∀ n, deletion n ⊆ deletion (n + 1) := by
     intro n
     rw [hnext n]
@@ -41409,11 +41107,11 @@ def HasInfiniteCandidateTowerLimitPairClassifiedDichotomy
     (IsInfiniteCandidateDeletionWithLateSurvivingRepairs
         A (⋃ n, deletion n) ∨
       ∀ base,
-        HasInfiniteCandidateFirstInjuryPairClassifiedTrichotomy
+        HasInfiniteCandidateFirstObstructionPairClassifiedTrichotomy
           A deletion layer base)
 
-/-- The arithmetic tower frontier canonically upgrades to the pair-shape
-frontier. -/
+/-- The arithmetic tower boundary canonically upgrades to the pair-shape
+boundary. -/
 theorem HasInfiniteCandidateTowerLimitArithmeticDichotomy.to_pairClassified
     {A : Set ℕ}
     (h : HasInfiniteCandidateTowerLimitArithmeticDichotomy A) :
@@ -41434,7 +41132,7 @@ theorem HasInfiniteStrictCandidateExtensionTower.to_limitPairClassifiedDichotomy
     HasInfiniteCandidateTowerLimitPairClassifiedDichotomy A :=
   h.to_limitArithmeticDichotomy.to_pairClassified
 
-/-- Tower frontier after the matching and additive-star alternatives have
+/-- Tower boundary after the matching and additive-star alternatives have
 been consumed into explicit pair-generated candidate extensions. -/
 def HasInfiniteCandidateTowerLimitMovingOrPairGeneratedExtension
     (A : Set ℕ) : Prop :=
@@ -41449,10 +41147,9 @@ def HasInfiniteCandidateTowerLimitMovingOrPairGeneratedExtension
     (IsInfiniteCandidateDeletionWithLateSurvivingRepairs
         A (⋃ n, deletion n) ∨
       ∀ base,
-        HasInfiniteCandidateFirstInjuryMovingOrPairGeneratedExtension
+        HasInfiniteCandidateFirstObstructionMovingOrPairGeneratedExtension
           A deletion layer base)
 
-/-- Absorb both classified pair shapes at every base stage of the tower. -/
 theorem HasInfiniteCandidateTowerLimitPairClassifiedDichotomy.to_movingOrPairGeneratedExtension
     {A : Set ℕ}
     (h : HasInfiniteCandidateTowerLimitPairClassifiedDichotomy A) :
@@ -41538,9 +41235,6 @@ theorem counterexample_forces_candidateDeletionWithLateSurvivingRepairs
         |>.mono_reservoir hBA
   · exact hexternalCandidate.mono_reservoir Set.diff_subset
 
-/-- Global omega-tower endpoint: every counterexample forces an increasing
-sequence of exact candidate deletions with an infinite fresh disjoint layer
-at each successor stage. -/
 theorem counterexample_forces_infiniteStrictCandidateExtensionTower
     {A : Set ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -41556,11 +41250,6 @@ theorem counterexample_forces_infiniteStrictCandidateExtensionTower
     (show IsInfiniteCandidateDeletionWithLateSurvivingRepairs A B from
       ⟨hBA, hB, J, target, repair, hJ, hrepair⟩).exists_extensionTower
 
-/-- Counterexample-level endpoint of the fusion analysis.  All earlier
-mixed-clause, monotone-chain, wide-repair, and disjoint-stream alternatives
-now feed one omega tower.  At its limit either an exact candidate survives,
-or every stage exposes one of the three explicit additive first-injury
-patterns. -/
 theorem counterexample_forces_candidateTowerLimitArithmeticDichotomy
     {A : Set ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -41583,9 +41272,9 @@ theorem counterexample_forces_candidateTowerLimitPairClassifiedDichotomy
   (counterexample_forces_candidateTowerLimitArithmeticDichotomy
     hbasis hzeroA hcounter).to_pairClassified
 
-/-- Counterexample frontier after the fixed first-injury anchor has been
+/-- Counterexample boundary after the fixed first-obstruction anchor has been
 absorbed: it either reaches the limit candidate, retains a genuinely moving
-injury stream, or explicitly generates another strict candidate extension
+obstruction stream, or explicitly generates another strict candidate extension
 from the additive pair equations. -/
 theorem counterexample_forces_candidateTowerLimitMovingOrPairGeneratedExtension
     {A : Set ℕ}
@@ -42799,12 +42488,7 @@ def prepend
       · exact T.repair_cross i j hij a b
 
 set_option maxHeartbeats 5000000 in
-/- An abstract repaired-option system with a pointwise least option can be
-extended by one layer after passing to an infinite subsequence of blocks.
-The new option is chosen from the least option's self-avoiding repair.  Two
-bounded free-set thinnings make old repairs avoid the new option image and
-make the new repairs avoid every old and new option image off the diagonal.
-`prepend` then verifies the complete system invariant. -/
+
 theorem exists_prepend_of_pointwiseMinimum
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
@@ -43362,12 +43046,7 @@ theorem internalTarget_survives_atomPetalRepairPointSelector
   · exact htrivial q hqA hqSelected
 
 set_option maxHeartbeats 5000000 in
-/-- Greedily choose one order-two support at every finite target while never
-covering an entire cell of size at least three.  At a new target, forbid all
-cells touched by the old support union.  Their union has size at most
-`k * |U|`; a large matching of pair supports contains one support disjoint
-from that forbidden union.  Since a pair support has at most two vertices,
-it cannot cover a previously untouched three-point cell by itself. -/
+
 theorem exists_pairSupportChoice_avoiding_threePointCells_of_large
     {A : Set ℕ} {F cell : ℕ → Finset ℕ} {Q : Finset ℕ} {k : ℕ}
     (P : IsFiniteBlockPartition A F)
@@ -44021,14 +43700,7 @@ theorem exists_externalCoreCertificate
 end RepairedOptionSystem
 
 set_option maxHeartbeats 5000000 in
-/-- Pointwise bound from a target-localized order-two core certificate.  For
-one target `q`, use its private selector and choose, for every other target,
-a pair support avoiding that selector.  Their union has at most
-`2 * (Q.erase q).card` points and omits the selected point of every core.
-Varying a support of `q`, core coverage assigns it to a cell touched by that
-fixed union.  Two distinct supports cannot receive the same cell because
-both would contain its selected point, contradicting the matching property
-of pair supports. -/
+
 theorem minimalCorePairCertificate_forces_pointwise_boundedPairFamilies
     {A : Set ℕ} {F cell : ℕ → Finset ℕ} {Q : Finset ℕ}
     (P : IsFiniteBlockPartition A F)

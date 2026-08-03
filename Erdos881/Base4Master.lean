@@ -1,14 +1,3 @@
-/-
-# The base-4 master sieve: rich constructions
-
-The carry-free half of the classifier.  When a digit profile carries
-enough companion material, the four slots fill by layer surgery alone:
-no carries, no menus.  Together with the menu families of
-`Base4Sieve`/`Base4Layers`, every digit profile of a large number is
-covered; the dispatch and the official-predicate assembly follow in
-this file's second half.
--/
-
 import Erdos881.Base4Layers
 
 namespace Erdos881Base4
@@ -101,8 +90,6 @@ lemma layer1_ne_zero {n : ℕ} (hn : n ≠ 0) :
     omega
   · omega
 
-/-- **Rich order-2 world**: the second layer carries two digits, the
-first inherits them, and the pair of layers is a legal split. -/
 lemma rich_two_layers {n : ℕ}
     (hL3 : layer 3 n = 0) (h0 : layer 2 n ≠ 0)
     (hnp : ∀ j, layer 2 n ≠ 4 ^ j) :
@@ -128,7 +115,6 @@ lemma rich_two_layers {n : ℕ}
       not_pure_zero4, not_pure_zero4, ?_⟩
   omega
 
-/-- **Rich order-3 world**: the third layer carries two digits. -/
 lemma rich_three_layers {n : ℕ}
     (h0 : layer 3 n ≠ 0)
     (hnp : ∀ j, layer 3 n ≠ 4 ^ j) :
@@ -159,8 +145,6 @@ lemma rich_three_layers {n : ℕ}
       not_pure_zero4, ?_⟩
   omega
 
-/-- **Rich single-deuce surgery**: one deuce, at least two extra
-first-layer digits — move one across. -/
 lemma rich_deuce_surgery {n b : ℕ}
     (hL3 : layer 3 n = 0)
     (hL2 : layer 2 n = 4 ^ b)
@@ -223,8 +207,6 @@ lemma rich_deuce_surgery {n b : ℕ}
       not_pure_zero4, not_pure_zero4, ?_⟩
   omega
 
-/-- **Rich single-trey surgery, plentiful companions**: three extra
-first-layer digits feed all three trey slots. -/
 lemma rich_trey_surgery {n a p q : ℕ}
     (hL3 : layer 3 n = 4 ^ a)
     (hL2 : layer 2 n = 4 ^ a)
@@ -301,10 +283,6 @@ lemma rich_trey_surgery {n a p q : ℕ}
       not_pure_zero4, ?_⟩
   omega
 
-/-- **Rich trey with a busy second layer**: an extra second-layer
-digit funds the third slot, and a residual first-layer digit keeps
-the donor slot honest.  The profile with NO residual is exactly
-`3·4^a + 2·4^q` and is routed to the carry menus instead. -/
 lemma rich_trey_deuce {n a q : ℕ}
     (hL3 : layer 3 n = 4 ^ a)
     (hqa : q ≠ a)
@@ -391,8 +369,6 @@ lemma two_pow_le_of_digits {x a q : ℕ}
   have := pow_le_of_digit4 hsa
   omega
 
-/-- **The master sieve.**  Every `n ≥ 4^9` splits into four base-4
-parts, none a pure power. -/
 theorem base4_deletion_order_four (n : ℕ)
     (hn : 4 ^ 9 ≤ n) :
     ∃ x y z t, IsBase4 x ∧ IsBase4 y ∧ IsBase4 z ∧
@@ -767,8 +743,6 @@ lemma pure4Powers_infinite : Pure4Powers.Infinite := by
   intro k
   exact ⟨k, rfl⟩
 
-/-- **The deletion theorem**: removing every pure power from the
-base-4 set leaves an exact asymptotic basis of order 4. -/
 theorem base4_deletion_basis_four :
     IsExactTupleAsymptoticBasis
       (Base4Set \ Pure4Powers) 4 := by
@@ -784,15 +758,6 @@ theorem base4_deletion_basis_four :
     · exact ⟨ht, fun ⟨k, hk⟩ => hnt k hk⟩
   · simpa [Fin.sum_univ_four] using hs
 
-/-- **The full base-4 instance — the hard case's showcase.**
-
-`Base4Set` is a strongly minimal exact order-3 basis, is NOT an exact
-order-2 basis (so it inhabits the open hard case of the general-order
-campaign), and deleting the infinite set of pure powers leaves an
-exact asymptotic basis of order 4.  This is the conclusion pattern of
-Erdős 881 for k = 3, machine-verified end to end on a concrete
-strongly minimal basis — the base-4 twin of
-`erdos881_cantor_full_instance`. -/
 theorem erdos881_base4_full_instance :
     IsStronglyMinimalExactBasis Base4Set 3 ∧
       ¬ IsExactTupleAsymptoticBasis Base4Set 2 ∧

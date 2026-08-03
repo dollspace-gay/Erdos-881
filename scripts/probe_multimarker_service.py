@@ -1,21 +1,11 @@
 #!/usr/bin/env python3
-"""Multi-marker (log-budget) service demand (post-correction).
-
-Corrected demand: for geometric B = {b_1 < b_2 < ...} (b_{k+1} > 2 b_k),
-a failing team-target n (team {u, v}) needs BOTH translates n-u, n-v
-2-destroyed by B: every 2-rep of each translate passes through SOME
-marker <= translate.  Measure: over covering structures, how many
-targets n in a range have both translates B-confined, for the WORST
-geometric B we can pick (adversarially for the enemy: B chosen to
-dodge)?  Easier version measured here: for a FIXED geometric B, count
-targets with both translates confined; compare Cantor vs generic.
-"""
+"""Finite diagnostic for multimarker coverage."""
 import itertools, random
 
 def confined(t, A, Aset, Bset):
     reps = [(x, t - x) for x in A if x <= t - x and (t - x) in Aset]
     if not reps:
-        return False  # not covered -> not a legit enemy anyway
+        return False  # not covered -> not a legit candidate counterexample anyway
     return all((x in Bset) or (y in Bset) for x, y in reps)
 
 def run(name, A, T, u, v, rng):

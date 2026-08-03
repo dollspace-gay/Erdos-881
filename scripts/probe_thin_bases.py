@@ -1,29 +1,5 @@
 #!/usr/bin/env python3
-"""Thin-basis campaign (Erdős 881 lab, part 6).
-
-Context: a disputed 2026 claim asserts problem 881's answer is NO for
-k ≥ 2 via thin bases A(x) = O(x^{1/k}); independently, all small-guardian
-structures found by exhaustive search are sparse symmetric sets.  Thin
-bases are therefore the serious counterexample zone.  This campaign asks
-whether guardian protection behaves differently there.
-
-T1 CENSUS — canonical thin order-2 bases (Nathanson's even/odd binary
-   digit basis and its base-3 analog): for every target in range, compute
-   whether its order-3 support family is covered by one element
-   (singleton guardian) or by a genuine 2-element team, and where guarded
-   targets sit across dyadic scales.  A counterexample needs guarded
-   targets cofinally, with guards that every infinite deletion must hit.
-
-T2 MASS STACKING — for EVERY small-guardian structure found at M = 16
-   (rigidity forces symmetric closure below any second scale, so this
-   family is rigidity-complete): sweep all second-scale guardians over
-   the pure mirror closure and over closures extended by one symmetric
-   pair.  Any stack found here would be the first ever.
-
-T3 LAYER DELETIONS — in the even/odd basis, delete an entire dyadic
-   layer of one digit class (the natural adversarial infinite-deletion
-   prefix) and count destroyed targets at order ≤ 3.
-"""
+"""Finite diagnostic for thin bases."""
 
 from __future__ import annotations
 
@@ -40,7 +16,7 @@ from probe_small_guardians import is_private
 # ------------------------------------------------------------- helpers
 
 def gadic_basis(g: int, ndigits: int) -> list[int]:
-    """Numbers with base-g digits supported on even / odd positions."""
+    """Finite diagnostic for gadic basis."""
     evens = [i for i in range(ndigits) if i % 2 == 0]
     odds = [i for i in range(ndigits) if i % 2 == 1]
     out = set()
@@ -53,8 +29,7 @@ def gadic_basis(g: int, ndigits: int) -> list[int]:
 
 
 def guard_census(A, lo: int, hi: int):
-    """For each m in [lo, hi] with a 3-rep: classify guard structure.
-    Returns dict m -> ('single', a) | ('team', (u, v)) | ('free', None)."""
+    """Finite diagnostic for guard census."""
     A_sorted = sorted(A)
     Aset = set(A)
     out = {}

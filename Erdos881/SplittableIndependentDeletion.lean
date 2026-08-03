@@ -392,10 +392,6 @@ theorem IsRedBluePairSupportSelection.exists_late_externalCrossing
 
 /-! ## Exact obstruction to extending the reservation recursion -/
 
-/-- At a finite reservation stage, a fresh candidate `b` repairs all pair
-sums with the existing deletion prefix (and its own double) if each such
-target has a support using a vertex outside the enlarged prefix.  The finite
-set `P` consists of vertices already reserved blue. -/
 def HasFreshPairRepairExtension
     (A C : Set ℕ) (D P : Finset ℕ) (T : ℕ) : Prop :=
   ∃ b, b ∈ C ∧ b ∉ D ∧ b ∉ P ∧ T ≤ b ∧
@@ -470,9 +466,6 @@ theorem rigidPairSum_of_supports_subset_insert
     simpa [Fin.sum_univ_two] using hvsum
   omega
 
-/-- Therefore a failed recursive stage is eventually an honest rigid-star
-obstruction: every eligible large candidate has either a rigid double or a
-rigid pair with one of the finitely many old deletion points. -/
 theorem HasFiniteRigidStarObstruction.eventually_rigidPair
     {A C : Set ℕ} {D P : Finset ℕ} {T : ℕ}
     (h : HasFiniteRigidStarObstruction A C D P T) :

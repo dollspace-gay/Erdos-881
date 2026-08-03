@@ -53,7 +53,7 @@ clean supply with an atomic pinned tail.
 
 The relevant proved reductions are:
 
-- `safePrefix_excludes_fixedPinHorn` excludes a pin contained in the protected
+- `safePrefix_excludes_fixedPinCase` excludes a pin contained in the protected
   prefix `F`.
 - `PinnedAt.diagonal_or_privatePredecessorSupport` separates the diagonal case
   from a private lower-order support.
@@ -73,28 +73,28 @@ alternative requires a separate argument.
 `PrivateCoreStream.lean` analyzes the private-core alternative by thinning a
 uniformly bounded family of finite cores to a delta system.
 
-`cofinalMarkedPrivateCoreSupply_deletion_or_fixedCollision` gives two cases:
+`cofinalMarkedPrivateCoreSupply_deletion_or_fixedConflict` gives two cases:
 
 1. The moving petals are nonempty. Their union defines an infinite deletion
    avoided by a cofinal sequence of successor-order supports.
 2. Infinitely many cores are equal. Finite pigeonhole arguments then fix the
    old-prefix component `P`, a lower-order support `R`, and its residual target
-   `t`. This is `HasFixedMarkedPrivateCoreCollision`.
+   `t`. This is `HasFixedMarkedPrivateCoreConflict`.
 
-The fixed collision cannot be discarded without an additional argument. A
+The fixed conflict cannot be discarded without an additional argument. A
 diagnostic computation in the exact base-4 digit basis realizes the pattern
 with `P = {1}`, `R = {0,5}`, and `t = 5`. This example is recorded as a
 computational check rather than as a Lean theorem.
 
-`HasFixedMarkedPrivateCoreCollision.to_survivalDeletion` splits the injective
+`HasFixedMarkedPrivateCoreConflict.to_survivalDeletion` splits the injective
 marker set into two infinite subsets. Deleting one subset leaves a cofinal
 successor-order support stream on the other subset. Consequently:
 
-- `HasAtomicPinnedTail.privateCoreHorn_forces_survivalDeletion` sends both
+- `HasAtomicPinnedTail.privateCoreCase_forces_survivalDeletion` sends both
   private-core cases to the same survival-deletion endpoint.
 - Under the standing counterexample assumption,
-  `HasAtomicPinnedTail.privateCoreHorn_forces_bracketedCollision` converts that
-  endpoint to `HasBracketedPrivatePetalCounterexampleCollision`.
+  `HasAtomicPinnedTail.privateCoreCase_forces_bracketedConflict` converts that
+  endpoint to `HasBracketedPrivatePetalCounterexampleConflict`.
 
 This produces cofinally many surviving targets and intervening destroyed
 targets. Cofinal survival is weaker than eventual coverage, so this is not yet
@@ -102,7 +102,7 @@ an infinite deletion preserving the basis property.
 
 ## Selector and repair reduction
 
-The bracketed collision carries a finite block partition. The blocks can be
+The bracketed conflict carries a finite block partition. The blocks can be
 coarsened to any prescribed finite lower bound while preserving the stored
 supports. This permits use of the selector machinery in
 `GeneralOrderAttack.lean`.
@@ -125,7 +125,7 @@ does not define a decreasing maximum on a certificate.
 
 The target-local selector results in `GeneralOrderAttack.lean` correct the
 preceding target mismatch. The main wrapper is
-`HasBracketedPrivatePetalCounterexampleCollision.forces_unboundedLocalizedMigratingCertificates`.
+`HasBracketedPrivatePetalCounterexampleConflict.forces_unboundedLocalizedMigratingCertificates`.
 
 It fixes a quadratic coarsening of the original block partition. For every
 cardinality bound `C` and index bound `L`, a sufficiently late tail admits a

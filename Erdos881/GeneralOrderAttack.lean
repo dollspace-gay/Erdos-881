@@ -2,26 +2,6 @@ import Erdos881.InternalAnchorOrderTwo
 import Erdos881.GeneralOrder
 import Erdos881.CertificateAmplification
 
-/-!
-# General-order moving-transversal attack
-
-This module retains the cardinal information in the bounded
-successor-transversal branch and develops the first order-uniform incidence
-step.
-
-For order two, swapping an external anchor with a hit in a predecessor pair
-produces a large pair star.  The same swap works at every positive order:
-remove one occurrence of the hit from the predecessor tuple and insert the
-external anchor.  The resulting support has the same order and represents the
-common translated target.
-
-Consequently, a bounded order-`k+1` successor destroyer which is tested
-against sufficiently many external basis elements forces arbitrarily many
-order-`k` supports at one target.  No matching property is used here; the
-next step is to apply bounded-rank matching/sunflower descent to the large
-support family.
--/
-
 open scoped BigOperators
 
 namespace Erdos881
@@ -160,7 +140,7 @@ theorem IsStronglyMinimalExactBasis.exists_leastStrongOrder
     hminimal.descend_to_exactOrder hhLe hhBasis, hpredNot⟩
 
 /-- In the genuine hard case, the least exact order is at least three.
-Consequently it is enough to attack strongly minimal bases whose exact order
+Consequently it is enough to obstruction strongly minimal bases whose exact order
 is primitive: order `h` works but order `h-1` does not. -/
 theorem IsStronglyMinimalExactBasis.exists_primitiveHardOrder
     {A : Set ℕ} {k : ℕ}
@@ -198,16 +178,6 @@ theorem erdos881_general_of_primitiveHardCase
   refine ⟨B, hBA, hBinf, hsurvive.of_le ?_⟩
   omega
 
-/-- Cross-anchor descent.  Suppose `T` destroys every order-`k+1`
-representation of `q+a`.  Replacing the anchor `a` by a smaller external
-basis element `b` turns every order-`k` representation of `q+a-b` into an
-order-`k+1` representation of `q+a`.  Since `b ∉ T`, the hit lies in the
-predecessor support; and since `q < b`, that support is bounded strictly
-below `a`.  Hence `T.erase a` destroys the translated predecessor.
-
-This is the arithmetic interaction between distinct internal-anchor cells:
-an earlier anchor forces the later cell's erased core to destroy a new
-order-`k` target. -/
 theorem crossAnchor_erasedCore_destroys_predecessor
     {A : Set ℕ} {k q a b : ℕ} {T : Finset ℕ}
     (hdestroy : DestroysAt
@@ -296,14 +266,6 @@ theorem additiveSupport_swap_external_succ
     simpa [G, hsum] using hlift
   exact ⟨G, hGR, Finset.mem_insert_self b (tupleSupport w)⟩
 
-/-- Exact-target richness versus a lower-order gap.  If many basis elements
-`b ≤ n` all have an order-`k` predecessor support at `n-b`, adjoining `b`
-places every such `b` in the union of the order-`k+1` supports of `n`.
-Since each support has at most `k+1` vertices, either that exact support
-family is large or one of the predecessors is a genuine gap.
-
-This is the target-covering complement to the gap descent: every target with
-few exact supports lies in a translate of the lower-order gap set. -/
 theorem many_belowBasisElements_force_exactSupportGrowth_or_gap
     {A : Set ℕ} {k n r : ℕ} {B : Finset ℕ}
     (hBA : ∀ b ∈ B, b ∈ A)
@@ -364,15 +326,6 @@ theorem many_belowBasisElements_force_exactSupportGrowth_or_gap
         Nat.mul_le_mul_left (k + 1) hnone.1
   omega
 
-/-- A bounded successor destroyer hit by many usable external anchors forces
-growth of the predecessor support family at one common translated target.
-
-For every external `b`, choose a predecessor support of `n-b`; destruction
-chooses a hit `x ∈ T`, and `additiveSupport_swap_external_succ` turns it into
-an order-`k+1` support of `n-x` containing `b`.  A support contains at most
-`k+1` external anchors, so if every translated support family had at most
-`r` members, the number of anchors would be at most
-`|T| * ((k+1) * r)`. -/
 theorem large_externalAnchorSet_forces_supportGrowth_succ
     {A : Set ℕ} {k n r : ℕ} {T B : Finset ℕ}
     (hdestroy : DestroysAt
@@ -496,16 +449,6 @@ theorem large_externalAnchorSet_forces_supportGrowth_succ
     hdomainTarget.trans htargetBound
   omega
 
-/-- Distinguished-anchor form of the incidence lemma.  When the successor
-target is written as `n = q + a`, the hit selected by the incidence count
-has a useful exact split.  If the hit is the distinguished anchor `a`, the
-large predecessor family lies at the original target `q` itself.  Otherwise
-the hit belongs to the strictly smaller erased core `T.erase a`.
-
-This retains precisely the target label which was lost in the unlabelled
-rank descent: every failure to land back on `q` is localized to a point of
-the successor destroyer other than its anchor.  A further argument is still
-needed before that localization can be iterated as an actual core descent. -/
 theorem large_externalAnchorSet_forces_supportGrowth_anchorFork
     {A : Set ℕ} {k n q a r : ℕ} {T B : Finset ℕ}
     (hnqa : n = q + a)
@@ -624,13 +567,6 @@ theorem IsExactTupleAsymptoticBasis.large_belowTargetAnchorSet_forces_supportGro
     exact ⟨E, hER⟩
   · exact hlarge
 
-/-- At a fixed predecessor target `q`, its moving translate anchor cannot
-remain a singleton successor destroyer arbitrarily far out.
-
-If `{a}` destroyed `q+a`, test that destruction against more external basis
-elements than there are order-`k+1` supports of `q`.  The incidence lemma
-has only the hit `a` available, so it would inject all those tests back into
-distinct supports of the fixed target `q`, a cardinality contradiction. -/
 theorem IsExactTupleAsymptoticBasis.eventually_not_anchorSingletonDestroyer
     {A : Set ℕ} {k q : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1)) :
@@ -679,15 +615,6 @@ theorem IsExactTupleAsymptoticBasis.eventually_not_anchorSingletonDestroyer
   rw [htarget] at hxlarge
   exact (Nat.lt_irrefl r hxlarge)
 
-/-- Once singleton destruction by the moving anchor has been excluded, any
-protected successor destroyer contains a genuine binary repair cell at the
-same target.
-
-Minimize the destroyer.  The protected padded support forces the anchor to
-remain in the minimal core.  Since the singleton anchor is not itself a
-destroyer, the core has a second point.  Minimality supplies private supports
-at these two points, and they meet the resulting binary cell at opposite
-endpoints. -/
 theorem representedTranslate_destroyer_has_binaryRepairCell
     {A : Set ℕ} {k q a : ℕ} {T E : Finset ℕ}
     (haA : a ∈ A)
@@ -790,14 +717,6 @@ theorem representedTranslate_destroyer_has_binaryRepairCell
     Finset.mem_erase.mpr ⟨hxa, hDT hxD⟩, hxa,
     hHanchorR, hHcoreR, hanchorPair, hcorePair⟩
 
-/-- Retaining the uniform cardinal bound in a recurrent successor
-transversal forces arbitrarily large predecessor support stars at general
-order.  This is the order-uniform analogue of
-`recurrentLargePairStars_of_boundedFullTranslateDestroyers`.
-
-The next combinatorial step is rank descent: a sufficiently large bounded
-family either has a large matching, or a high-degree hit can be removed to
-produce a large support family one order lower. -/
 theorem recurrentLargeSupportStars_of_boundedFullTranslateDestroyers
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -913,16 +832,6 @@ theorem large_boundedHypergraph_matching_or_star
     exact Or.inr ⟨x, lt_of_lt_of_le hxfiber
       (Finset.card_le_card hsub)⟩
 
-/-- Indexed bounded-rank matching/star dichotomy.
-
-Unlike `large_boundedHypergraph_matching_or_star`, the cardinal hypothesis
-counts the indices rather than the distinct edge values.  This matters when
-different arithmetic targets happen to admit the same support finset.
-
-If the set of distinct edges has a large matching, return it.  Otherwise a
-small transversal hits every indexed edge.  Pigeonholing the indices over
-that transversal gives one vertex contained in many indexed edges, with no
-loss from repeated edge values. -/
 theorem large_indexed_boundedHypergraph_matching_or_star
     {ι α : Type*} [Fintype ι]
     [DecidableEq ι] [DecidableEq α]
@@ -1102,16 +1011,6 @@ private theorem additiveSupport_remove_hit_succ_indexedAux
     · exact ⟨i, hi⟩
     · exact ⟨i.succAbove j, by simpa [w, u] using hj⟩
 
-/-- Recursive varying-target root capture.
-
-For injectively labelled represented targets, enough indexed
-order-`h` supports force a large pairwise-disjoint residual family at some
-positive rank `j ≤ h`.  In every star step the common anchor is peeled from
-all indexed representations and added to one common offset.  The target
-labels remain injective after subtraction, so the recursion cannot terminate
-at rank zero: order-zero supports all represent target zero.
-
-This is the finite normalization needed by the translated-hole branch. -/
 theorem indexedAdditiveRepresentations_force_residualMatching
     {A : Set ℕ} :
     ∀ h r,
@@ -1497,17 +1396,6 @@ theorem foldr_insert_mem_additiveSupportFamily
         insert_mem_additiveSupportFamily_succ haA hlower
       simpa [Nat.add_comm, Nat.add_left_comm, Nat.add_assoc] using hlift
 
-/-- Finite-rank termination of repeated deletion injury.
-
-Starting from any exact order-`h` support, repeatedly remove an occurrence
-of a point lying in `S`.  Each removal lowers the additive order and target
-by that summand, while `additiveSupport_remove_hit_succ` reconstructs the
-old support exactly.  In at most `h` steps the remaining support is
-disjoint from `S`; rank zero cannot contain a further hit.
-
-The output records every removed summand, the exact residual target, and
-the exact reconstruction of the original support.  Repetitions are retained
-in the list even though supports themselves are finite sets. -/
 theorem additiveSupport_peel_hits_to_survivingCore
     {A S : Set ℕ} :
     ∀ h n (E : Finset ℕ),
@@ -1568,13 +1456,6 @@ theorem additiveSupport_peel_hits_to_survivingCore
         · simp only [List.foldr_cons]
           rw [hEE', hE'eq]
 
-/-- Strict form for a genuinely destroyed support.
-
-If `S` destroys the original support, the peeling list is nonempty, so the
-surviving core has strictly smaller additive rank.  This is the finite
-rank countdown needed for moving-stage composition: every real injury
-spends at least one summand and leaves an explicit lower-rank certificate
-which already survives the current deletion. -/
 theorem destroyed_additiveSupport_has_strictSurvivingCoreDecomposition
     {A S : Set ℕ} {h n : ℕ} {E : Finset ℕ}
     (hER : E ∈ additiveSupportFamily A h n)
@@ -1604,21 +1485,6 @@ theorem destroyed_additiveSupport_has_strictSurvivingCoreDecomposition
   exact ⟨hits, j, t, H, hhitsNonempty, hlength, hjh,
     hhits, hHR, hHS, htarget, hEeq⟩
 
-/-- Unrestricted normalization of an infinite moving-injury family.
-
-Peel every chosen damaged support all the way to its first surviving core.
-There are only finitely many possible residual ranks, so one strict rank
-`j < h` occurs on an infinite subfamily.  The exact target equation then
-has the form
-
-`target n = (removed deleted mass) + (surviving residual target)`.
-
-If the residual targets have infinite image, thin them to an injective,
-cofinal lower-rank stream.  Otherwise one residual target is fixed on an
-infinite fiber; injectivity of the original targets forces the removed
-deleted masses to be injective and cofinal.  These are the only two shapes
-of a migrating injury after the finite rank countdown has been performed,
-and every displayed core already avoids its stage's forbidden set. -/
 theorem infinite_destroyedSupports_normalize_cofinalCore_or_fixedCoreMovingMass
     {A I : Set ℕ} {h : ℕ}
     {target : ℕ → ℕ}
@@ -1807,20 +1673,6 @@ theorem infinite_destroyedSupports_normalize_cofinalCore_or_fixedCoreMovingMass
       hnormalized J hJI₀,
       Or.inr ⟨t, hresidualFixed, hmassInj, hmassCofinal⟩⟩
 
-/-- The fixed-surviving-core horn forces genuine destruction at the
-complementary order.
-
-When an infinite family has one fixed residual target `t`, there are only
-finitely many possible order-`j` core supports.  Thin to one fixed core
-`H`.  Original target injectivity then makes the removed masses injective
-and cofinal.  Since `H` survives each stage, any surviving
-order-`h-j` representation of a removed mass would concatenate with `H`
-and repair the original failed target.  Hence every removed mass is itself
-destroyed at the complementary order.
-
-If `j > 0`, this is a strict order descent.  The sole non-descending edge
-case is `j = 0`, where the damaged representation consists entirely of
-deleted summands. -/
 theorem fixedResidual_survivingCores_force_cofinalComplementDestroyers
     {A I : Set ℕ} {h j t : ℕ}
     {target : ℕ → ℕ}
@@ -1924,25 +1776,6 @@ theorem fixedResidual_survivingCores_force_cofinalComplementDestroyers
   · intro hjpos
     omega
 
-/-- Complete infinite-family rank fork for moving deletion stages.
-
-Choose one support at each injective failed target and peel all of its
-deleted summands.  The unrestricted normalization theorem leaves two
-possibilities:
-
-* cofinally many injective targets already have surviving cores at one
-  positive strict lower rank `0 < j < h`, so complementary destruction
-  also has strict lower order; or
-* one surviving core is fixed, the complementary deleted masses are
-  injective and cofinal, and those masses are themselves destroyed at
-  order `h-j`.
-
-Rank zero cannot occur in the first horn: every order-zero core has target
-zero, contradicting injectivity of the residual targets on an infinite
-set.  In the second horn positive surviving rank gives strict
-complementary-order descent, while rank zero is identified exactly as the
-pure-deletion configuration: fixed target zero, empty core, and the entire
-chosen representation inside the forbidden set. -/
 theorem infinite_additiveDestroyers_rankFork
     {A I : Set ℕ} {h : ℕ}
     {target : ℕ → ℕ}
@@ -2121,7 +1954,7 @@ theorem infinite_additiveDestroyers_rankFork
 /-- If every chosen damaged representation contains a point outside the
 forbidden set, the pure-deletion endpoint is impossible.
 
-Consequently both horns of the infinite destroyer normalization have a
+Consequently both cases of the infinite destroyer normalization have a
 positive surviving rank and a strictly smaller complementary destruction
 order.  This is the usable induction form of the rank fork. -/
 theorem infinite_noncontained_additiveDestroyers_rankFork
@@ -2197,14 +2030,6 @@ theorem infinite_noncontained_additiveDestroyers_rankFork
         hmassInj, hmassCofinal, hnormalized,
         hstrict.1, hstrict.2⟩
 
-/-- Gap-driven internal-anchor descent.  Suppose `T` destroys every
-order-`k+2` representation of `q+a`, and `b ∈ A \ T` lies below `q`.
-If `q-b` has no order-`k` representation, then `T.erase a` destroys every
-order-`k+1` representation of `q+a-b`.
-
-The key point is exact: a hit at `a` would allow that occurrence of `a` to
-be removed, producing the forbidden order-`k` representation of `q-b`.
-Thus every hit belongs to the strict erased core. -/
 theorem gapAnchor_erasedCore_destroys_predecessor
     {A : Set ℕ} {k q a b : ℕ} {T : Finset ℕ}
     (hdestroy : DestroysAt
@@ -2247,18 +2072,6 @@ theorem gapAnchor_erasedCore_destroys_predecessor
       (Finset.mem_erase.mpr
         ⟨hxa, Finset.mem_coe.mp hxT⟩)⟩
 
-/-- A represented gap translate forces a strict, nonempty core inside every
-protected successor destroyer.
-
-The protected support `E` of `q` first forces the moving anchor `a` to lie
-in `T`: otherwise successor descent would make `T` destroy `E`.  Erasing
-that anchor then gives a destroyer of `d+a` by the gap lemma.  Because
-`d+a` is represented, this erased core is nonempty, and its cardinality is
-exactly one smaller than that of `T`.
-
-Unlike the order-descended obstruction alone, this statement retains the
-original successor target `q+a`; that provenance is needed to control
-destroyer migration. -/
 theorem representedGap_successorDestroyer_has_strictCore
     {A : Set ℕ} {k q d b a : ℕ} {T E : Finset ℕ}
     (haA : a ∈ A) (hbA : b ∈ A)
@@ -2418,19 +2231,6 @@ theorem boundedFullTranslateDestroyers_lifted_over_gap
     hDerase, haT, hDnonempty, hDcardEq, hDcard,
     hdestroy', hdestroyD⟩
 
-/-- Minimalizing the strict gap core produces a private repair for every
-option of the anchored cell.
-
-The anchor option has the protected support `insert a E`.  Every point
-`x` of a minimal current-order core has a private support `G` of `d+a`.
-Such a `G` cannot contain `a`, since removing that occurrence would
-represent the forbidden lower-order target `d`.  Therefore `insert b G` is
-a successor support meeting the reduced anchored cell `insert a D₀`
-exactly at `x`.
-
-This is the local selector configuration needed after gap descent: choosing
-any one cell point leaves a successor support attached to every other
-option, while all arithmetic labels and the gap obstruction are retained. -/
 theorem representedGap_successorDestroyer_has_minimalPrivateCore
     {A : Set ℕ} {k q d b a : ℕ} {T E : Finset ℕ}
     (haA : a ∈ A) (hbA : b ∈ A)
@@ -2623,14 +2423,6 @@ theorem representedGap_successorDestroyer_has_binaryRepairCell
   exact ⟨x, insert a E, insert b G, hD₀erase hxD₀, hxa,
     hanchorR, hlift, hanchorPair, hcorePair⟩
 
-/-- The bounded moving branch over a represented primitive gap supplies
-arbitrarily late fresh binary repair cells.
-
-Both endpoints lie in `A`, the cell avoids any prescribed finite protected
-set, and its two opposite private supports represent the same successor
-target `q+a`.  In a recursive use, adding both supports to the next
-protected set makes every future cell avoid all earlier repairs; hence this
-is the exact one-step input for a lower-triangular binary repair sequence. -/
 theorem boundedFullTranslateDestroyers_recurrentBinaryRepairCells_over_gap
     {A : Set ℕ} {k q d b : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -3072,7 +2864,7 @@ theorem exists_lowerTriangularBinaryRepairSequence_of_freshWitnesses
 set.  Every cell in the resulting sequence avoids that set, while the usual
 forward repair protection is retained.
 
-This is the finite-service interface needed for a shared reservoir: first
+This is the finite-coverage interface needed for a shared reservoir: first
 choose finitely many repairs, put all their vertices into `F₀`, and then grow
 the infinite deletion blocks entirely outside `F₀`. -/
 theorem exists_lowerTriangularBinaryRepairSequence_avoiding_of_freshWitnesses
@@ -3237,19 +3029,6 @@ theorem exists_lowerTriangularBinaryRepairSequence_over_gap
     Nonempty (LowerTriangularBinaryRepairSequence A k q) :=
   exists_lowerTriangularBinaryRepairSequence hbasis hfull hqrep
 
-/-- Finite-label shared-reservoir fusion.
-
-Choose one binary service repair for every `q ∈ Q` and collect all service
-cells and anchor-private repairs into one finite set `V`.  A final guard cell
-is chosen outside `V`; its core is the selector value in the first block.
-An infinite lower-triangular tail is then started beyond the whole first
-block, and the selector chooses the core of every tail cell.
-
-Every service repair avoids this one selector.  Removing its translate anchor
-therefore gives an order-`k+1` support of the *original label* `q`, not merely
-of a moving translate.  Thus all labels in the finite set survive on one
-shared infinite reservoir, with no Ramsey thinning and no discarded target
-class. -/
 theorem finiteTargets_have_sharedBinaryRepairReservoir
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -3267,44 +3046,44 @@ theorem finiteTargets_have_sharedBinaryRepairReservoir
             Disjoint (E : Set ℕ) (selectedSet s) := by
   classical
   let q₀ : {q // q ∈ Q} := ⟨hQ.choose, hQ.choose_spec⟩
-  let service :
+  let coverage :
       ∀ q : {q // q ∈ Q},
         FreshBinaryRepairWitness A k q.1 ∅ 0 :=
     fun q => Classical.choice <|
       nonempty_freshBinaryRepairWitness
         hbasis (hfull q.1 q.2) (hrep q.1 q.2) ∅ (by simp) 0
   let serviceCell (q : {q // q ∈ Q}) : Finset ℕ :=
-    {(service q).anchor, (service q).core}
+    {(coverage q).anchor, (coverage q).core}
   let V : Finset ℕ :=
     Q.attach.biUnion fun q =>
-      serviceCell q ∪ (service q).leftRepair
+      serviceCell q ∪ (coverage q).leftRepair
   have hVA : (V : Set ℕ) ⊆ A := by
     intro y hyV
     obtain ⟨q, _hqAttach, hy⟩ := Finset.mem_biUnion.mp hyV
     rcases Finset.mem_union.mp hy with hyCell | hyRepair
     · rcases Finset.mem_insert.mp hyCell with hya | hyc
       · subst y
-        exact (service q).anchor_mem
-      · have hyc' : y = (service q).core := by simpa using hyc
+        exact (coverage q).anchor_mem
+      · have hyc' : y = (coverage q).core := by simpa using hyc
         subst y
-        exact (service q).core_mem
-    · exact (service q).left_subset y hyRepair
-  let guard : FreshBinaryRepairWitness A k q₀.1 V 0 :=
+        exact (coverage q).core_mem
+    · exact (coverage q).left_subset y hyRepair
+  let required_element : FreshBinaryRepairWitness A k q₀.1 V 0 :=
     Classical.choice <|
       nonempty_freshBinaryRepairWitness
         hbasis (hfull q₀.1 q₀.2) (hrep q₀.1 q₀.2) V hVA 0
   let block₀ : Finset ℕ :=
-    V ∪ ({guard.anchor, guard.core} : Finset ℕ)
+    V ∪ ({required_element.anchor, required_element.core} : Finset ℕ)
   have hblock₀A : (block₀ : Set ℕ) ⊆ A := by
     intro y hy
-    rcases Finset.mem_union.mp hy with hyV | hyGuard
+    rcases Finset.mem_union.mp hy with hyV | hyRequiredElement
     · exact hVA hyV
-    · rcases Finset.mem_insert.mp hyGuard with hya | hyc
+    · rcases Finset.mem_insert.mp hyRequiredElement with hya | hyc
       · subst y
-        exact guard.anchor_mem
-      · have hyc' : y = guard.core := by simpa using hyc
+        exact required_element.anchor_mem
+      · have hyc' : y = required_element.core := by simpa using hyc
         subst y
-        exact guard.core_mem
+        exact required_element.core_mem
   obtain ⟨S, hSblock₀⟩ :=
     exists_lowerTriangularBinaryRepairSequence_avoiding_of_freshWitnesses
       (A := A) (k := k) (q := q₀.1) block₀ hblock₀A
@@ -3318,7 +3097,7 @@ theorem finiteTargets_have_sharedBinaryRepairReservoir
     intro i
     cases i with
     | zero =>
-        exact ⟨guard.core, by simp [cell, block₀]⟩
+        exact ⟨required_element.core, by simp [cell, block₀]⟩
     | succ i =>
         exact ⟨S.core i, by simp [cell]⟩
   have hcellDisjoint :
@@ -3365,54 +3144,54 @@ theorem finiteTargets_have_sharedBinaryRepairReservoir
     intro y
     rfl
   let s : BlockSelector cell
-    | 0 => ⟨guard.core, by simp [cell, block₀]⟩
+    | 0 => ⟨required_element.core, by simp [cell, block₀]⟩
     | i + 1 => ⟨S.core i, by simp [cell]⟩
   refine ⟨K, cell, s, hKA, hKInfinite, P, ?_⟩
   intro q hqQ
   let q' : {u // u ∈ Q} := ⟨q, hqQ⟩
   have hanchorIn :
-      (service q').anchor ∈ (service q').leftRepair := by
+      (coverage q').anchor ∈ (coverage q').leftRepair := by
     have hinter :
-        (service q').anchor ∈
-          (service q').leftRepair ∩ serviceCell q' := by
-      rw [(service q').left_private]
+        (coverage q').anchor ∈
+          (coverage q').leftRepair ∩ serviceCell q' := by
+      rw [(coverage q').left_private]
       simp
     exact (Finset.mem_inter.mp hinter).1
   obtain ⟨E, hERaw, hrepairEq⟩ :=
     additiveSupport_remove_hit_succ
       (A := A) (k := k + 1)
-      (m := q + (service q').anchor)
-      (x := (service q').anchor)
-      (service q').left_mem hanchorIn
+      (m := q + (coverage q').anchor)
+      (x := (coverage q').anchor)
+      (coverage q').left_mem hanchorIn
   have hER :
       E ∈ additiveSupportFamily A (k + 1) q := by
     have htarget :
-        q + (service q').anchor - (service q').anchor = q := by
+        q + (coverage q').anchor - (coverage q').anchor = q := by
       omega
     simpa [htarget] using hERaw
   have hrepairV :
-      (service q').leftRepair ⊆ V := by
+      (coverage q').leftRepair ⊆ V := by
     intro y hy
     apply Finset.mem_biUnion.mpr
     exact ⟨q', by simp, Finset.mem_union_right _ hy⟩
   have hrepairBlock :
-      (service q').leftRepair ⊆ block₀ :=
+      (coverage q').leftRepair ⊆ block₀ :=
     hrepairV.trans Finset.subset_union_left
   have hrepairDisjoint :
-      Disjoint ((service q').leftRepair : Set ℕ)
+      Disjoint ((coverage q').leftRepair : Set ℕ)
         (selectedSet s) := by
     rw [Set.disjoint_left]
     intro y hyRepair hySelected
     obtain ⟨i, rfl⟩ := hySelected
     cases i with
     | zero =>
-        change guard.core ∈
-          (service q').leftRepair at hyRepair
-        exact Finset.disjoint_left.mp guard.cell_disjoint
+        change required_element.core ∈
+          (coverage q').leftRepair at hyRepair
+        exact Finset.disjoint_left.mp required_element.cell_disjoint
           (by simp) (hrepairV hyRepair)
     | succ i =>
         change S.core i ∈
-          (service q').leftRepair at hyRepair
+          (coverage q').leftRepair at hyRepair
         exact Finset.disjoint_left.mp (hSblock₀ i)
           (by simp) (hrepairBlock hyRepair)
   refine ⟨E, hER, ?_⟩
@@ -3423,18 +3202,6 @@ theorem finiteTargets_have_sharedBinaryRepairReservoir
   rw [hrepairEq]
   exact Finset.mem_insert_of_mem (Finset.mem_coe.mp hyE)
 
-/-- Concrete quantifier-order counterconfiguration.
-
-At additive order one on `ℕ`, strong infinite deletion holds.  Nevertheless,
-after *any particular* finite target set `Q` is revealed, one can build a
-`Q`-dependent finite-block partition and a selector preserving every target
-in `Q`: put all numbers through `sum Q + 1` in block zero, select its largest
-point, and make the remaining tail singleton blocks.
-
-Thus a construction whose partition is allowed to depend on the destruction
-certificate cannot by itself contradict strong deletion.  The successful
-finite-label reservoir theorem above must still be fused into one partition
-chosen before the certificate is returned. -/
 theorem strongDeletion_coexists_with_targetDependentFiniteSurvival_univ_one :
     StrongInfiniteDeletion
         (additiveSupportFamily (Set.univ : Set ℕ) 1) Set.univ ∧
@@ -3704,7 +3471,7 @@ theorem IsInclusionMinimalDestroyer.card_le_supportFamily
   simpa only [Fintype.card_coe] using
     Fintype.card_le_of_injective privateSupport hinjective
 
-/-- Exact local repair supplied by the lower-gap horn.
+/-- Exact local repair supplied by the lower-gap case.
 
 For an inclusion-minimal finite destroyer, erase any private hit `d` and
 delete a lower-gap point `b` instead.  The private repair support avoids the
@@ -3722,20 +3489,6 @@ theorem IsInclusionMinimalDestroyer.swap_hit_for_lowerGap_repairs
   exact hminimal.swap_hit_for_avoidedPoint_repairs hdD
     (lowerOrderGap_point_avoids_successorSupports hgap)
 
-/-- Block-aligned safe-swap versus coherent-difference growth.
-
-Let `D` be an inclusion-minimal order-`k+1` destroyer contained in one
-selector, and let `d` be its active value in block `i`.  Use every other
-point of that same block as an external test anchor.
-
-If one alternative is larger than `q`, or if `q-b` is an order-`k` gap,
-then `b` is absent from every support of `q` and swapping `d` for `b`
-repairs the target.  Otherwise every block alternative represents `q-b`.
-When the active block is large enough, the external-anchor incidence bound
-forces more than `r` order-`k` supports at `q-x` for some `x ∈ D`.
-
-Thus the gap witness is now genuinely block-aligned; failure of alignment
-has a quantitative matching-growth cost. -/
 theorem positiveOrder_minimalDestroyer_activeBlock_safeSwap_or_differenceGrowth
     {A : Set ℕ} {k q r : ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
@@ -3815,7 +3568,7 @@ theorem positiveOrder_minimalDestroyer_activeBlock_safeSwap_or_differenceGrowth
 /-- Protected-union form of the block-aligned fork.
 
 Only same-block alternatives outside `U` are used as test anchors.  Thus the
-safe horn already avoids every support stored in `U`; if there are too many
+safe case already avoids every support stored in `U`; if there are too many
 such alternatives for the destroyer-incidence budget, failure of a safe
 swap again forces coherent lower-order support growth. -/
 theorem positiveOrder_minimalDestroyer_activeBlock_safeSwap_avoiding_or_differenceGrowth
@@ -3983,15 +3736,6 @@ theorem positiveOrder_minimalDestroyer_activeBlock_safeSwap_avoiding_or_differen
             simpa [B, Nat.mul_assoc] using hlarge)
       exact ⟨x, hxD, hxq, hxlarge⟩
 
-/-- A finite same-block safe swap extends to a genuine selector repair.
-
-Take a support `E` surviving the swapped minimal destroyer.  Every block has
-more than `k+1` points while `E` has at most `k+1`, so every remaining block
-has a choice outside `E`.  Keep the still-active old choices, put `b` in the
-repaired block, and choose outside `E` everywhere else.
-
-The resulting full selector preserves `q`, and it records the repaired
-coordinate exactly. -/
 theorem blockAlignedSafeSwap_extends_to_selectorSurvival
     {A : Set ℕ} {k q : ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
@@ -4075,15 +3819,6 @@ theorem blockAlignedSafeSwap_extends_to_selectorSurvival
     rw [← hxOutside]
     exact hxE
 
-/-- A lower-order gap gives a genuine two-block selector repair even when
-the gap point is not in the damaged summand's block.
-
-Choose a support `E` witnessing the finite swap
-`D.erase d ∪ {b}`.  In the block containing `b`, select `b`.  Keep every
-old selected value in `D.erase d`; in all remaining blocks choose outside
-`E`.  In particular, unless `b` already lies in the block containing `d`,
-that damaged block is rerouted outside `E`.  Since `E` has at most `k+1`
-vertices, blocks of size greater than `k+1` suffice. -/
 theorem lowerGapRepair_extends_to_twoBlockSelectorSurvival
     {A : Set ℕ} {k q b d : ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
@@ -4168,14 +3903,6 @@ theorem lowerGapRepair_extends_to_twoBlockSelectorSurvival
     rw [← hxOutside]
     exact hxE
 
-/-- A lower-gap repair can be completed entirely inside a deletion
-reservoir even when the gap point itself lies outside that reservoir.
-
-Minimality supplies a support avoiding `D.erase d ∪ {b}`.  If every
-reservoir block is larger than an order-`k+1` support, choose one point
-outside that support in every block.  The resulting reservoir selector
-preserves `q`; no block containing `b`, and hence no assumption `b ∈ K`,
-is needed. -/
 theorem lowerGapRepair_extends_to_largeReservoirSelectorSurvival
     {A K : Set ℕ} {k q b d : ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
@@ -4224,15 +3951,7 @@ theorem lowerGapRepair_extends_to_largeReservoirSelectorSurvival
   exact (Finset.mem_sdiff.mp (houtsideSpec j)).2
     (hxOutside ▸ Finset.mem_coe.mp hxE)
 
-/-- Protected completion of an external lower-gap repair on a deletion
-reservoir.
-
-The repair point need not belong to the reservoir.  Starting from its
-private repair support `E`, retain every old selector choice unless it hits
-`E`, and reroute every contemporary hit outside `U ∪ E`.  Thus either a
-reservoir selector preserves both the protected union and the repaired
-target, or an unchanged old coordinate lies in `E`. -/
-theorem lowerGapRepairWitness_extends_protectedOnReservoir_or_oldCollision
+theorem lowerGapRepairWitness_extends_protectedOnReservoir_or_oldConflict
     {A : Set ℕ} {k q : ℕ}
     {F : ℕ → Finset ℕ}
     (s : BlockSelector F) {U J E : Finset ℕ}
@@ -4342,18 +4061,6 @@ theorem lowerGapRepairWitness_extends_protectedOnReservoir_or_oldCollision
         simp only [t, dif_neg hsjE]
       exact hsjE (htx.symm.trans hjx ▸ Finset.mem_coe.mp hxE)
 
-/-- Clear every old collision of one retained repair support, or expose a
-local acyclic certificate dependency.
-
-For old blocks hit by `E`, use the local support-choice subcover theorem.
-If every such block has a point outside both `E` and the stored
-larger-target supports, change all hit coordinates simultaneously.  Outside
-`J`, ordinary support-local capacity supplies the same choice.  The resulting
-selector avoids the protected union and preserves `q`.
-
-The only failure is concrete: one old hit block is covered by `E` together
-with supports belonging to a bounded subcollection of targets strictly
-larger than `q`. -/
 theorem lowerGapRepairWitness_extends_protected_or_localLargerDependency
     {A : Set ℕ} {k q : ℕ} {Q : Finset ℕ}
     {F : ℕ → Finset ℕ}
@@ -4535,9 +4242,9 @@ theorem lowerGapRepairWitness_extends_protected_or_localLargerDependency
     exact hsjE (htj.symm.trans hjx ▸ Finset.mem_coe.mp hxE)
 
 /-- An external lower-gap point gives the same protected
-completion-or-collision dichotomy on an arbitrary reservoir partition as
+completion-or-conflict dichotomy on an arbitrary reservoir partition as
 an internal repair point gives on a partition of all of `A`. -/
-theorem lowerGapRepair_extends_protectedOnReservoir_or_oldCollision
+theorem lowerGapRepair_extends_protectedOnReservoir_or_oldConflict
     {A K : Set ℕ} {k q b d : ℕ}
     {F : ℕ → Finset ℕ} (_P : IsFiniteBlockPartition K F)
     (s : BlockSelector F) {D U J : Finset ℕ}
@@ -4567,7 +4274,7 @@ theorem lowerGapRepair_extends_protectedOnReservoir_or_oldCollision
   obtain ⟨E, hER, hEswap⟩ :=
     not_destroysAt_iff.mp hrepair
   obtain hcompletion | ⟨j, hjJ, hsjE⟩ :=
-    lowerGapRepairWitness_extends_protectedOnReservoir_or_oldCollision
+    lowerGapRepairWitness_extends_protectedOnReservoir_or_oldConflict
       s hUselected hER hcontemporary
   · exact Or.inl hcompletion
   · right
@@ -4650,7 +4357,7 @@ theorem lowerGapRepair_manyPrivateHits_completeOnReservoir_or_oldGrowth
             (s j).1 ∈ E ∧ E ∩ D = {d.1} := by
       intro d
       obtain hcomplete | hcollision :=
-        lowerGapRepair_extends_protectedOnReservoir_or_oldCollision
+        lowerGapRepair_extends_protectedOnReservoir_or_oldConflict
           P s hminimal d.2 hgap hUselected hcontemporary
       · exact (hcompletion ⟨d, hcomplete⟩).elim
       · exact hcollision
@@ -4708,15 +4415,7 @@ theorem lowerGapRepair_manyPrivateHits_completeOnReservoir_or_oldGrowth
     exact (not_lt_of_ge
       (hdomainTarget.trans htargetBound)) hmany
 
-/-- Protected completion of a lower-gap repair, with finite old-block
-exceptions.
-
-The gap point `b` is selected in its actual block and is assumed outside the
-protected union `U`.  Every other selected coordinate which meets the repair
-support is rerouted outside `U ∪ E` when its block is contemporary.  An old
-hit outside the block already replaced by `b` is the only obstruction and is
-returned together with the unchanged repair support. -/
-theorem lowerGapRepairWitness_extends_protected_or_oldCollision
+theorem lowerGapRepairWitness_extends_protected_or_oldConflict
     {A : Set ℕ} {k q b : ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
     (s : BlockSelector F) {D U J E : Finset ℕ}
@@ -4860,13 +4559,13 @@ theorem lowerGapRepairWitness_extends_protected_or_oldCollision
       exact hsjE (hxs ▸ Finset.mem_coe.mp hxE)
 
 /-- A protected lower-gap repair either completes or retains a private old
-collision.
+conflict.
 
 Minimality supplies a support surviving `D.erase d ∪ {b}`.  If protected
 completion fails on an old block, that same support intersects the original
 destroyer exactly in `d`.  Thus failures obtained from distinct choices of
 `d` remain injectively distinguishable. -/
-theorem lowerGapRepair_extends_protected_or_oldCollision
+theorem lowerGapRepair_extends_protected_or_oldConflict
     {A : Set ℕ} {k q b d : ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
     (s : BlockSelector F) {D U J : Finset ℕ}
@@ -4895,7 +4594,7 @@ theorem lowerGapRepair_extends_protected_or_oldCollision
   obtain ⟨E, hER, hEswap⟩ :=
     not_destroysAt_iff.mp hrepair
   obtain hcompletion | ⟨j, hjJ, hsjE⟩ :=
-    lowerGapRepairWitness_extends_protected_or_oldCollision
+    lowerGapRepairWitness_extends_protected_or_oldConflict
       P s hbA hbU hUselected hER hEswap hcontemporary
   · exact Or.inl hcompletion
   · right
@@ -4935,8 +4634,8 @@ theorem lowerGapRepair_extends_protected_or_oldCollision
 required second-choice capacity.
 
 This is the empty-exception specialization of
-`lowerGapRepair_extends_protected_or_oldCollision`: with no old blocks, the
-collision horn is impossible.  It is the direct bridge from uniform
+`lowerGapRepair_extends_protected_or_oldConflict`: with no old blocks, the
+conflict case is impossible.  It is the direct bridge from uniform
 finite-prefix composition to a certificate-safe selector repair for
 bounded destroyers. -/
 theorem lowerGapRepair_extends_avoiding_protectedUnion
@@ -4958,7 +4657,7 @@ theorem lowerGapRepair_extends_avoiding_protectedUnion
         (additiveSupportFamily A (k + 1))
         (selectedSet t) q := by
   obtain hrepair | ⟨j, hjEmpty, _E, _hER, _hsjE, _hprivate⟩ :=
-    lowerGapRepair_extends_protected_or_oldCollision
+    lowerGapRepair_extends_protected_or_oldConflict
       P s (J := ∅) hminimal hdD hbA hbU hgap hUselected
         (by
           intro j _hj
@@ -5011,7 +4710,7 @@ theorem lowerGapRepair_manyPrivateHits_complete_or_oldGrowth
             (s j).1 ∈ E ∧ E ∩ D = {d.1} := by
       intro d
       obtain hcomplete | hcollision :=
-        lowerGapRepair_extends_protected_or_oldCollision
+        lowerGapRepair_extends_protected_or_oldConflict
           P s hminimal d.2 hbA hbU hgap hUselected
             hcontemporary
       · exact (hcompletion ⟨d, hcomplete⟩).elim
@@ -5069,14 +4768,6 @@ theorem lowerGapRepair_manyPrivateHits_complete_or_oldGrowth
         _ = J.card * r := by simp
     exact (not_lt_of_ge (hdomainTarget.trans htargetBound)) hmany
 
-/-- Supports at `q` which contain a fixed summand inject into the
-lower-order support family at the corresponding difference.
-
-Choose one tuple-level removal of `a` from every upper support containing
-`a`.  The removal is injective because the upper support is reconstructed
-as `insert a H`.  This is the counting fact needed to bound *all* possible
-collision witnesses at one old selector coordinate, rather than only the
-witnesses already returned by a particular repair attempt. -/
 theorem additiveSupportFamily_hitFilter_card_le_lowerDifference
     {A : Set ℕ} {k q a : ℕ} :
     ((additiveSupportFamily A (k + 1) q).filter
@@ -5114,15 +4805,6 @@ theorem additiveSupportFamily_hitFilter_card_le_lowerDifference
       Fintype.card_le_of_injective lower hlowerInjective
   simpa only [Hit] using hcard
 
-/-- A represented lower difference lifts back to the exact upper target with
-loss at most a factor of two in support cardinality.
-
-Split the order-`k` supports at `q-d` according to whether they already
-contain `d`.  On the containing half, insertion of `d` changes no support;
-on the avoiding half, insertion is injective (erase `d` recovers the
-source).  Both halves therefore inject into the order-`k+1` support family
-at the exact label `q`.  This is the cardinal bridge that prevents
-finite-prefix growth from drifting to an unrelated lower target. -/
 theorem lowerDifferenceSupportFamily_card_le_twice_exact
     {A : Set ℕ} {k q d : ℕ}
     (hdA : d ∈ A) (hdq : d ≤ q) :
@@ -5219,7 +4901,7 @@ theorem exists_point_avoiding_protected_and_boundedFamily
 If the lower-order difference family at `q-a` has at most `r` supports,
 then there are at most `r` upper supports at `q` containing `a`.  A block
 larger than the protected union plus `(k+1)r` therefore contains one point
-which avoids the protected set and every possible collision support
+which avoids the protected set and every possible conflict support
 containing `a`. -/
 theorem exists_blockChoice_avoiding_protected_and_allHitSupports
     {A : Set ℕ} {k q a r : ℕ} {V U : Finset ℕ}
@@ -5255,23 +4937,6 @@ theorem exists_blockChoice_avoiding_protected_and_allHitSupports
   intro E hER haE
   exact hyHit E (Finset.mem_filter.mpr ⟨hER, haE⟩)
 
-/-- Local dependency form of the old-coordinate attack.
-
-Fix an old selected coordinate `a` at the current target `q`, and store one
-protected order-`k+1` support for every target in `Q`.  If the lower
-difference family at `q-a` already has more than `r` members, we have genuine
-support growth.  Otherwise one of two things happens in a proposed old
-block `V`:
-
-* there is a universal second choice avoiding every protected support and
-  every possible collision support through `a`; or
-* a subcollection `P` of at most `V.card` protected targets, all strictly
-  larger than `q`, covers the whole block together with those collision
-  supports.
-
-The final cardinal inequality is independent of `Q.card`.  In particular, a
-large saturated old block forces many strictly larger local dependencies,
-rather than merely reporting that the global certificate is large. -/
 theorem oldCoordinate_growth_or_secondChoice_or_localLargerDependency
     {A : Set ℕ} {k q a r : ℕ} {Q V : Finset ℕ}
     (c :
@@ -5334,14 +4999,6 @@ theorem oldCoordinate_growth_or_secondChoice_or_localLargerDependency
       · simpa only [Hit] using hcover
       · simpa only [Nat.mul_add] using hcard'
 
-/-- Whole-block version of the local dependency attack.
-
-Instead of fixing one old coordinate, put the entire exact support family at
-`q` into the immediate collision family.  If that family has at most `r`
-members, a point outside its union is a completely safe replacement for
-*any* active hit of a minimal destroyer at `q`.  Thus an old block yields
-exact support growth, a protected safe second choice, or a locally bounded
-set of strictly larger certificate dependencies. -/
 theorem oldBlock_exactGrowth_or_safeSecondChoice_or_localLargerDependency
     {A : Set ℕ} {k q r : ℕ} {Q V : Finset ℕ}
     (c :
@@ -5389,13 +5046,6 @@ theorem oldBlock_exactGrowth_or_safeSecondChoice_or_localLargerDependency
       refine ⟨P, hPQ, hPcard, hPlarger, hcover, ?_⟩
       simpa only [Nat.mul_add] using hcard'
 
-/-- Block-aligned consequence for a minimal destroyer.
-
-Apply the whole-block dichotomy to the alternatives in the active block.
-The second horn is immediately converted into a verified safe swap.  The
-remaining obstruction is no longer the cardinality of the full certificate:
-it is an explicit bounded family of strictly larger targets whose chosen
-supports, together with the exact supports at `q`, cover this one block. -/
 theorem blockAligned_exactGrowth_or_protectedSafeSwap_or_localLargerDependency
     {A : Set ℕ} {k q r : ℕ} {Q : Finset ℕ}
     {F : ℕ → Finset ℕ} (s : BlockSelector F)
@@ -5558,14 +5208,6 @@ theorem blockAlignedSafeSwap_extends_avoiding_protectedUnion
       exact Finset.mem_coe.mp hxE
     exact (Finset.mem_sdiff.mp (houtsideSpec j)).2 hxW
 
-/-- Complete a fixed block-aligned repair when every colliding old
-coordinate has a second choice avoiding both the protected set and the
-repair support.
-
-Contemporary hit-coordinates obtain such a choice from their cardinal
-reserve.  Old hit-coordinates use the supplied second-choice hypothesis.
-All non-hit coordinates are kept unchanged.  This separates the genuine
-old-block issue from the rest of the infinite selector completion. -/
 theorem blockAlignedRepairWitness_extends_protected_of_oldSecondChoices
     {A C : Set ℕ} {k q : ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition C F)
@@ -5682,7 +5324,7 @@ chosen repair support.
 All unhit coordinates are left unchanged, so the former all-block capacity
 assumption was stronger than necessary.  This support-local form is the one
 compatible with scheduled unequal blocks: at most `k+1` block indices need
-fresh room during one repair. -/
+fresh case during one repair. -/
 theorem blockAlignedRepairWitness_extends_protected_of_hitBlockCapacity
     {A C : Set ℕ} {k q : ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition C F)
@@ -5714,7 +5356,7 @@ If the repair support hits no selected coordinate from `J`, capacity is
 needed only at its remaining hit coordinates and the repair completes.
 Otherwise the actual exceptional hit is returned.  This avoids imposing
 any size condition on blocks which the repair support never visits. -/
-theorem blockAlignedRepairWitness_extends_protected_or_hitBlockCollision
+theorem blockAlignedRepairWitness_extends_protected_or_hitBlockConflict
     {A : Set ℕ} {k q : ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
     (s : BlockSelector F) {D U J E : Finset ℕ} {i b : ℕ}
@@ -5745,15 +5387,7 @@ theorem blockAlignedRepairWitness_extends_protected_or_hitBlockCollision
       exact hhit ⟨j, hjJ, hsjE⟩
     exact hhitCapacity j hjJ hsjE
 
-/-- A fixed repair either completes or collides at a genuinely undersized
-old block.
-
-Assume every old coherent difference has at most `r` lower supports.  At an
-old block larger than `U.card + (k+1)r`, the universal second-choice lemma
-finds a point avoiding `U` and every possible upper collision support
-through that coordinate.  Therefore a failed completion can only occur at
-an old block below this explicit size threshold. -/
-theorem blockAlignedRepairWitness_extends_protected_or_smallOldCollision
+theorem blockAlignedRepairWitness_extends_protected_or_smallOldConflict
     {A : Set ℕ} {k q r : ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
     (s : BlockSelector F) {D U J E : Finset ℕ} {i b : ℕ}
@@ -5799,19 +5433,7 @@ theorem blockAlignedRepairWitness_extends_protected_or_smallOldCollision
     · intro j hjJ _hsjE
       exact hcontemporary j hjJ
 
-/-- Protected completion of one fixed repair witness with a finite old-block
-exception.
-
-Only contemporary blocks (`j ∉ J`) are assumed large enough to avoid the
-protected union.  If the supplied repair support meets an old selected
-coordinate, that collision is returned without discarding the support.
-Otherwise every old selected coordinate already avoids the repair support,
-and only contemporary hit-coordinates need to be rerouted; the full
-protected selector completion goes through.
-
-Retaining the actual support is essential for amplifying collisions from
-distinct active points of one minimal destroyer. -/
-theorem blockAlignedRepairWitness_extends_protected_or_oldCollision
+theorem blockAlignedRepairWitness_extends_protected_or_oldConflict
     {A C : Set ℕ} {k q : ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition C F)
     (s : BlockSelector F) {D U J E : Finset ℕ} {i b : ℕ}
@@ -6014,7 +5636,7 @@ theorem blockAlignedSafeSwap_extends_protected_or_oldDifference
   obtain ⟨E, hER, hEswap⟩ :=
     not_destroysAt_iff.mp hrepair
   obtain hcompletion | ⟨j, hjJ, hsjE⟩ :=
-    blockAlignedRepairWitness_extends_protected_or_oldCollision
+    blockAlignedRepairWitness_extends_protected_or_oldConflict
       P s hbBlock hbU hUselected hER hEswap
         (fun j _hji hjJ => hcontemporary j hjJ)
   · obtain ⟨t, _hti, _hkeep, htU, _hEavoid, htq⟩ :=
@@ -6091,14 +5713,14 @@ theorem blockAlignedSafeSwap_impossible_of_protectedCertificateSupports
     exact (huDestroy E hER)
       (Set.disjoint_of_subset_left hEU hUavoid)
 
-/-- A failed protected completion retains a private collision witness.
+/-- A failed protected completion retains a private conflict witness.
 
 Besides locating an old selected summand in the repair support, this version
 records that the support meets the minimal destroyer at exactly the active
-contemporary value.  Consequently collision witnesses obtained from
+contemporary value.  Consequently conflict witnesses obtained from
 different active destroyer points are distinct, even if they choose the same
 old block. -/
-theorem blockAlignedSafeSwap_certificate_forces_oldCollision
+theorem blockAlignedSafeSwap_certificate_forces_oldConflict
     {A C : Set ℕ} {k q : ℕ} {Q U J : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition C F)
     (s : BlockSelector F) {D : Finset ℕ} {i b : ℕ}
@@ -6129,7 +5751,7 @@ theorem blockAlignedSafeSwap_certificate_forces_oldCollision
   obtain ⟨t, _hti, _hkeep, hUavoid, _hEavoid,
       hqSurvives⟩ |
       ⟨j, hjJ, hsjE⟩ :=
-    blockAlignedRepairWitness_extends_protected_or_oldCollision
+    blockAlignedRepairWitness_extends_protected_or_oldConflict
       P s hbBlock hbU hUselected hER hEswap
         (fun j _hji hjJ => hcontemporary j hjJ)
   · obtain ⟨u, huQ, huDestroy⟩ := hcert t
@@ -6171,16 +5793,7 @@ theorem blockAlignedSafeSwap_certificate_forces_oldCollision
         exact Finset.mem_inter.mpr ⟨hactiveE, hactive⟩
     exact ⟨j, hjJ, E, hER, hsjE, hprivate⟩
 
-/-- Bounded old differences sharpen a certificate collision to an
-undersized old block.
-
-The collision support and its private-hit identity are retained exactly as
-in `blockAlignedSafeSwap_certificate_forces_oldCollision`.  The additional
-counting input says that every sufficiently large old block has a universal
-second choice avoiding the protected set and all of its possible collision
-supports.  Hence the certificate can force a collision only at a block
-whose capacity is at most `U.card + (k+1)r`. -/
-theorem blockAlignedSafeSwap_certificate_forces_smallOldCollision
+theorem blockAlignedSafeSwap_certificate_forces_smallOldConflict
     {A : Set ℕ} {k q r : ℕ} {Q U J : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
     (s : BlockSelector F) {D : Finset ℕ} {i b : ℕ}
@@ -6216,7 +5829,7 @@ theorem blockAlignedSafeSwap_certificate_forces_smallOldCollision
     not_destroysAt_iff.mp hrepair
   obtain ⟨t, hUavoid, hqSurvives⟩ |
       ⟨j, hjJ, hsjE, hjSmall⟩ :=
-    blockAlignedRepairWitness_extends_protected_or_smallOldCollision
+    blockAlignedRepairWitness_extends_protected_or_smallOldConflict
       P s hbBlock hbU hUselected hER hEswap
         holdBound hcontemporary
   · obtain ⟨u, huQ, huDestroy⟩ := hcert t
@@ -6262,7 +5875,7 @@ theorem blockAlignedSafeSwap_certificate_forces_smallOldCollision
 certificate cannot disappear: it must expose an old selected summand whose
 coherent lower-order difference is represented.
 
-The protected-completion horn would preserve every certificate target and
+The protected-completion case would preserve every certificate target and
 is therefore impossible. -/
 theorem blockAlignedSafeSwap_certificate_forces_oldDifference
     {A : Set ℕ} {k q : ℕ} {Q U J : Finset ℕ}
@@ -6481,14 +6094,6 @@ theorem exists_protectedSupportUnion_of_survivingLargerTargets
     (finiteSupportChoice_subset_union c u'
       (Finset.mem_coe.mp hx))
 
-/-- Store one surviving support for every *other* target of a
-target-localized certificate selector.
-
-This is stronger than the ordered version above: avoiding the returned union
-preserves all certificate targets except `q`.  It is the finite augmenting
-path interface for a lower-gap repair—if the repaired selector also
-preserves `q`, it contradicts the certificate outright rather than merely
-migrating its destroyed target. -/
 theorem exists_protectedSupportUnion_of_targetLocalizedSelector
     {A : Set ℕ} {k q : ℕ} {Q : Finset ℕ}
     {F : ℕ → Finset ℕ} (s : BlockSelector F)
@@ -6542,16 +6147,7 @@ theorem exists_protectedSupportUnion_of_targetLocalizedSelector
     (finiteSupportChoice_subset_union c u'
       (Finset.mem_coe.mp hx))
 
-/-- A lower-gap repair of a target-localized certificate either augments all
-the way to a selector preserving the whole certificate, or collides in an
-exceptional old block.
-
-The first alternative is impossible because `Q` is a selector certificate:
-the repair support preserves `q`, while avoidance of the all-other protected
-union preserves every `u ≠ q`.  Hence every private hit of the minimal
-destroyer supplies an actual old-block collision support, still carrying
-the identity `E ∩ D = {d}` needed for amplification. -/
-theorem targetLocalized_lowerGapRepair_forces_oldCollision
+theorem targetLocalized_lowerGapRepair_forces_oldConflict
     {A : Set ℕ} {k q b : ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
     (s : BlockSelector F) {D Q U J : Finset ℕ}
@@ -6574,7 +6170,7 @@ theorem targetLocalized_lowerGapRepair_forces_oldCollision
         (s j).1 ∈ E ∧ E ∩ D = {d} := by
   intro d hdD
   obtain ⟨t, htU, htq⟩ | hcollision :=
-    lowerGapRepair_extends_protected_or_oldCollision
+    lowerGapRepair_extends_protected_or_oldConflict
       P s hminimal hdD hbA hbU hgap hUselected hblocks
   · obtain ⟨u, huQ, huDestroy⟩ := hcert t
     by_cases huq : u = q
@@ -6585,18 +6181,6 @@ theorem targetLocalized_lowerGapRepair_forces_oldCollision
         (Set.disjoint_of_subset_left hEU htU)).elim
   · exact hcollision
 
-/-- Certificate-local primitive-gap composition with no loss of labels.
-
-Fix one target-localized certificate state at `q`, its actual
-inclusion-minimal destroyer `D`, and a primitive predecessor-gap anchor
-`b`.  The protected gap repair cannot clear the whole certificate, so
-`targetLocalized_lowerGapRepair_forces_oldCollision` returns a private
-collision support for every `d ∈ D`.
-
-This wrapper retains the arithmetic payload which is lost by an unlabelled
-matching normalization.  The collision support still represents the same
-target `q`, meets `D` exactly at `d`, and removing that very hit produces
-an explicit order-`k` support at the coherent difference `q-d`. -/
 theorem targetLocalized_primitiveGapRepair_retains_destroyerDifference
     {A : Set ℕ} {k q b : ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
@@ -6625,7 +6209,7 @@ theorem targetLocalized_primitiveGapRepair_retains_destroyerDifference
             E = insert d H := by
   intro d hdD
   obtain ⟨j, hjJ, E, hER, hsjE, hEprivate⟩ :=
-    targetLocalized_lowerGapRepair_forces_oldCollision
+    targetLocalized_lowerGapRepair_forces_oldConflict
       P s hcert hprotected hUselected hminimal hbA hbU hgap
         hblocks d hdD
   have hdE : d ∈ E := by
@@ -6761,16 +6345,6 @@ theorem finiteSelectorCertificate_impossible_of_strictRepairStep
         exact ih (top t) (by simpa only [hsn] using hts) t rfl
   exact himpossible (top s₀) s₀ rfl
 
-/-- Target localization eliminates the safe horn once the active block has
-room both for the incidence test and for all protected certificate supports.
-
-Choose one support surviving the localized selector for every target other
-than `q`, and let `U` be their union.  Test only same-block replacements
-outside `U`.  A safe replacement would preserve all targets in the
-certificate by
-`blockAlignedSafeSwap_impossible_of_protectedCertificateSupports`;
-therefore the incidence fork must produce coherent lower-order support
-growth (unless the support family at `q` already exceeds `m`). -/
 theorem positiveOrder_targetLocalizedCertificate_largeBlocks_forces_supportGrowth
     {A : Set ℕ} {k q r m : ℕ} {Q : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
@@ -6849,18 +6423,7 @@ theorem positiveOrder_targetLocalizedCertificate_largeBlocks_forces_supportGrowt
       exact (hrepair himpossible).elim
     · exact hgrowth
 
-/-- One active-coordinate old/contemporary split retaining the collision
-support.
-
-If the active private hit is already in an old block, return its private
-support.  Otherwise the contemporary block has enough alternatives for the
-protected incidence test.  Difference growth is then forced unless a safe
-swap exposes some (possibly different) old selected summand in a support
-whose unique destroyer hit is the active value.
-
-Unlike the uniform large-block theorem, only blocks outside the finite old
-index set `J` carry the large capacity hypothesis. -/
-theorem positiveOrder_targetLocalized_activeBlock_growth_or_oldCollision
+theorem positiveOrder_targetLocalized_activeBlock_growth_or_oldConflict
     {A : Set ℕ} {k q r : ℕ} {Q J : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
     (s : BlockSelector F) {D : Finset ℕ} {i : ℕ}
@@ -6921,7 +6484,7 @@ theorem positiveOrder_targetLocalized_activeBlock_growth_or_oldCollision
         intro j hjOld
         have hblock := hcontemporary j hjOld
         omega
-      exact blockAlignedSafeSwap_certificate_forces_oldCollision
+      exact blockAlignedSafeSwap_certificate_forces_oldConflict
         P s hcert hprotected hminimal.1 hactive hbBlock hbU
           hUselected hrepair hcompletion
     · exact Or.inl hgrowth
@@ -6931,7 +6494,7 @@ theorem positiveOrder_targetLocalized_activeBlock_growth_or_oldCollision
 This is the form used by the coherent infinite deletion: the blocks
 partition a reservoir `C ⊆ A`, while all additive supports are still taken
 in the original basis `A`. -/
-theorem positiveOrder_targetLocalized_activeBlock_growth_or_oldCollision_onReservoir
+theorem positiveOrder_targetLocalized_activeBlock_growth_or_oldConflict_onReservoir
     {A C : Set ℕ} {k q r : ℕ} {Q J : Finset ℕ}
     {F : ℕ → Finset ℕ} (hCA : C ⊆ A)
     (P : IsFiniteBlockPartition C F)
@@ -6993,20 +6556,12 @@ theorem positiveOrder_targetLocalized_activeBlock_growth_or_oldCollision_onReser
         intro j hjOld
         have hblock := hcontemporary j hjOld
         omega
-      exact blockAlignedSafeSwap_certificate_forces_oldCollision
+      exact blockAlignedSafeSwap_certificate_forces_oldConflict
         P s hcert hprotected hminimal.1 hactive hbBlock hbU
           hUselected hrepair hcompletion
     · exact Or.inl hgrowth
 
-/-- Contemporary active-coordinate fork with universal old second choices.
-
-Assume the lower support family at every old coherent difference has size at
-most `r`.  The active contemporary block supplies either direct
-difference-growth or a safe aligned swap.  In the safe branch, every old
-block larger than the protected budget plus `(k+1)r` has a universal second
-choice avoiding all collision supports.  Thus a certificate-forced private
-collision can occur only at an explicitly undersized old block. -/
-theorem positiveOrder_targetLocalized_contemporaryBlock_growth_or_smallOldCollision
+theorem positiveOrder_targetLocalized_contemporaryBlock_growth_or_smallOldConflict
     {A : Set ℕ} {k q r : ℕ} {Q J : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
     (s : BlockSelector F) {D : Finset ℕ} {i : ℕ}
@@ -7066,7 +6621,7 @@ theorem positiveOrder_targetLocalized_contemporaryBlock_growth_or_smallOldCollis
       have hblock := hcontemporary j hjOld
       omega
     obtain ⟨j, hjJ, E, hER, hsjE, hprivate, hjSmall⟩ :=
-      blockAlignedSafeSwap_certificate_forces_smallOldCollision
+      blockAlignedSafeSwap_certificate_forces_smallOldConflict
         P s hcert hprotected hminimal.1 hactive hbBlock hbU
           hUselected hrepair holdBound hcompletion
     refine ⟨j, hjJ, ?_, E, hER, hsjE, hprivate⟩
@@ -7074,8 +6629,8 @@ theorem positiveOrder_targetLocalized_contemporaryBlock_growth_or_smallOldCollis
       (Nat.add_le_add_right hUcard ((k + 1) * r))
   · exact Or.inl hgrowth
 
-/-- Difference-only projection of the retained-collision active-block fork.
-Removing the old collision point from its support gives the represented
+/-- Difference-only projection of the retained-conflict active-block fork.
+Removing the old conflict point from its support gives the represented
 coherent difference used by the earlier old/contemporary interface. -/
 theorem positiveOrder_targetLocalized_activeBlock_growth_or_oldDifference
     {A : Set ℕ} {k q r : ℕ} {Q J : Finset ℕ}
@@ -7100,7 +6655,7 @@ theorem positiveOrder_targetLocalized_activeBlock_growth_or_oldDifference
       ∃ j ∈ J, (s j).1 ≤ q ∧
         (additiveSupportFamily A k (q - (s j).1)).Nonempty := by
   obtain hgrowth | ⟨j, hjJ, E, hER, hsjE, _hprivate⟩ :=
-    positiveOrder_targetLocalized_activeBlock_growth_or_oldCollision
+    positiveOrder_targetLocalized_activeBlock_growth_or_oldConflict
       P s hk hcert hother hminimal hDselected hactive hcontemporary
   · exact Or.inl hgrowth
   · right
@@ -7111,19 +6666,6 @@ theorem positiveOrder_targetLocalized_activeBlock_growth_or_oldDifference
       additiveSupport_remove_hit_succ hER hsjE
     exact ⟨j, hjJ, hsjLe, H, hHR⟩
 
-/-- Repeated old collisions from many contemporary destroyer points amplify
-to genuine support growth.
-
-Run the protected active-block fork at every destroyer point whose block is
-outside `J`.  If none of those runs gives the direct incidence-growth horn,
-each point `d` supplies a support `E_d` at `q`, an old index `j_d ∈ J`, and
-the private-hit identity `E_d ∩ D = {d}`.  Removing the old selected summand
-from `E_d` gives a lower-order support at `q - s(j_d)`.
-
-The map `d ↦ (j_d, E_d \ {s(j_d)})` is injective: equality of both
-coordinates reconstructs equal upper supports, whose intersections with
-`D` recover `d`.  Thus more than `|J| * r` contemporary destroyer points
-force more than `r` distinct lower-order supports at one old difference. -/
 theorem positiveOrder_targetLocalized_manyContemporaryPoints_force_growth
     {A : Set ℕ} {k q r : ℕ} {Q J : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
@@ -7175,7 +6717,7 @@ theorem positiveOrder_targetLocalized_manyContemporaryPoints_force_growth
         rw [hselectedAt]
         exact hdParts.1
       obtain hdirect | ⟨j, hjJ, E, hER, hsjE, hprivate⟩ :=
-        positiveOrder_targetLocalized_activeBlock_growth_or_oldCollision
+        positiveOrder_targetLocalized_activeBlock_growth_or_oldConflict
           P s hk hcert hother hminimal hDselected hactive
             hcontemporary
       · exact (hgrowth hdirect).elim
@@ -7236,10 +6778,10 @@ theorem positiveOrder_targetLocalized_manyContemporaryPoints_force_growth
       hdomainTarget.trans htargetBound
     exact (not_lt_of_ge hCbound) (by simpa only [C] using hmany)
 
-/-- Reservoir-relative repeated-collision amplification.
+/-- Reservoir-relative repeated-conflict amplification.
 
 The selected destroyer lives in a block reservoir `C ⊆ A`; private
-collision supports and their lower-order remainders continue to live in
+conflict supports and their lower-order remainders continue to live in
 the full additive basis `A`. -/
 theorem positiveOrder_targetLocalized_manyContemporaryPoints_force_growth_onReservoir
     {A C : Set ℕ} {k q r : ℕ} {Q J : Finset ℕ}
@@ -7293,7 +6835,7 @@ theorem positiveOrder_targetLocalized_manyContemporaryPoints_force_growth_onRese
         rw [hselectedAt]
         exact hdParts.1
       obtain hdirect | ⟨j, hjJ, E, hER, hsjE, hprivate⟩ :=
-        positiveOrder_targetLocalized_activeBlock_growth_or_oldCollision_onReservoir
+        positiveOrder_targetLocalized_activeBlock_growth_or_oldConflict_onReservoir
           hCA P s hk hcert hother hminimal hDselected hactive
             hcontemporary
       · exact (hgrowth hdirect).elim
@@ -7355,18 +6897,6 @@ theorem positiveOrder_targetLocalized_manyContemporaryPoints_force_growth_onRese
     exact (not_lt_of_ge hCbound)
       (by simpa only [contemporaryPoints] using hmany)
 
-/-- Second-choice refinement of repeated old-collision amplification.
-
-Only old blocks too small for the universal second choice can receive a
-failed repair witness.  Let
-
-`Small = {j ∈ J | |F j| ≤ (k+1)|Q| + (k+1)r}`.
-
-If more than `|Small| * r` contemporary destroyer points collide, their
-private supports inject into the lower support families indexed by `Small`,
-so one such family has more than `r` members.  Compared with the preceding
-amplification theorem, every adequately large old block has disappeared
-from the pigeonhole denominator. -/
 theorem positiveOrder_targetLocalized_manyContemporaryPoints_force_growth_usingSecondChoices
     {A : Set ℕ} {k q r : ℕ} {Q J : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
@@ -7438,7 +6968,7 @@ theorem positiveOrder_targetLocalized_manyContemporaryPoints_force_growth_usingS
       exact hdParts.1
     obtain hdirect |
         ⟨j, hjJ, hjSmall, E, hER, hsjE, hprivate⟩ :=
-      positiveOrder_targetLocalized_contemporaryBlock_growth_or_smallOldCollision
+      positiveOrder_targetLocalized_contemporaryBlock_growth_or_smallOldConflict
         P s hk hcert hother hminimal hDselected hactive
           hdParts.2 holdBound hcontemporary
     · exact (hgrowth hdirect).elim
@@ -7500,15 +7030,6 @@ theorem positiveOrder_targetLocalized_manyContemporaryPoints_force_growth_usingS
   exact ((not_lt_of_ge hCbound) (by
     simpa only [C, Small] using hmany)).elim
 
-/-- Large-block form of the aligned fork.
-
-If every block has two more points than the incidence budget
-`|D| * k * r`, choose any active point of the minimal destroyer.  Its block
-automatically satisfies the local large-block hypothesis, so either a
-same-block swap repairs the target or a coherent difference has more than
-`r` lower-order supports.
-
-The representedness hypothesis only rules out the vacuous empty destroyer. -/
 theorem positiveOrder_minimalDestroyer_largeBlocks_safeSwap_or_differenceGrowth
     {A : Set ℕ} {k q r : ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
@@ -7557,14 +7078,6 @@ theorem positiveOrder_minimalDestroyer_largeBlocks_safeSwap_or_differenceGrowth
     exact ⟨i, b, hbBlock, hactive, hrepair⟩
   · exact Or.inr hgrowth
 
-/-- Uniform-budget version.  Block sizes are chosen from a proposed support
-bound `m`, before the minimal destroyer is known.  If the target already has
-more than `m` supports there is immediate growth.  Otherwise
-`card_le_supportFamily` bounds the unknown destroyer size by `m`, and the
-large-block aligned fork applies.
-
-This removes the last circular dependence of block size on the subsequently
-revealed minimal destroyer. -/
 theorem positiveOrder_minimalDestroyer_uniformLargeBlocks_trichotomy
     {A : Set ℕ} {k q r m : ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
@@ -7602,24 +7115,6 @@ theorem positiveOrder_minimalDestroyer_uniformLargeBlocks_trichotomy
       Nat.mul_le_mul_right (k * r) hDcard
     omega
 
-/-- Arbitrarily late global block-alignment trichotomy.
-
-Choose, before the strong-deletion certificate is revealed, an exact-cardinal
-block partition with
-
-`m * (k * r) + 2`
-
-points in every block.  Any selector destruction has a finite selected
-subdestroyer; minimize it.  The unknown minimal core cannot be larger than
-the target's support family.  Therefore:
-
-* the exact target already has more than `m` supports; or
-* a private deleted point has a verified safe replacement in its own block;
-  or
-* some coherent difference `q-x` has more than `r` order-`k` supports.
-
-This is the first certificate-level theorem in which the safe gap replacement
-and the damaged summand are forced into the same finite block. -/
 theorem IsStronglyMinimalExactBasis.arbitrarilyLate_blockAlignedRepair_or_supportGrowth
     {A : Set ℕ} {k : ℕ}
     (hminimal : IsStronglyMinimalExactBasis A (k + 1))
@@ -7682,20 +7177,6 @@ theorem IsStronglyMinimalExactBasis.arbitrarilyLate_blockAlignedRepair_or_suppor
   exact ⟨F, P, s, q, D₀, hFcard, hLq,
     hD₀minimal, hD₀selected, htri⟩
 
-/-- Global target-localized consequence of protected block alignment.
-
-Fix in advance a proposed certificate-cardinality bound `C` and make every
-block large enough for:
-
-* the destroyer-incidence budget;
-* one protected order-`k+1` support for each of at most `C` targets; and
-* completion of the repaired selector outside their union.
-
-After strong deletion returns a certificate, shrink it to a cardinal-minimal
-target-localized certificate `Q`.  If `Q.card > C`, certificate cardinality
-has genuinely grown.  Otherwise localization eliminates the safe-repair
-horn completely, leaving support growth at the largest target or at one of
-its coherent differences. -/
 theorem IsStronglyMinimalExactBasis.arbitrarilyLate_largeMinimalCertificate_or_supportGrowth
     {A : Set ℕ} {k : ℕ}
     (hminimal : IsStronglyMinimalExactBasis A (k + 1))
@@ -7790,24 +7271,6 @@ theorem IsStronglyMinimalExactBasis.arbitrarilyLate_largeMinimalCertificate_or_s
     · exact Or.inl hexact
     · exact Or.inr ⟨x, hxq, hxdifference⟩
 
-/-- Universal pre-certificate anchored partition.
-
-Thin an arbitrary certificate-aligned diagonal to the nested labels
-`range (j+1)`.  The corresponding row cells still form a countable,
-pairwise-disjoint family, and the bijective row locator places exactly one
-such cell in every completed partition block.
-
-After an arbitrary finite target set `Q` is revealed, let
-`M = sum Q + 1`.  In every block whose row index is at least `M`, choose the
-row anchor.  That anchor is at least `M`, while every vertex of every support
-at a target `q ∈ Q` is at most `q ≤ sum Q`.  Consequently the entire infinite
-tail of the selector is invisible to all targets in `Q`: any destruction of
-one of them is already caused by the finitely many selected points in rows
-below `M`.
-
-This constructs one partition before the certificate is known and removes
-the former global collision problem.  The remaining obstruction is now
-literally finite-prefix destruction. -/
 theorem HasDiagonalAnchoredAlignedTranslateCellRows.exists_universalPartition_localizingFiniteTargets
     {A : Set ℕ} {k : ℕ}
     (hdiag : HasDiagonalAnchoredAlignedTranslateCellRows A k) :
@@ -8058,18 +7521,6 @@ theorem HasDiagonalAnchoredAlignedTranslateCellRows.exists_universalPartition_lo
     exact ⟨x, hxE, Finset.mem_coe.mpr hxD⟩
   · omega
 
-/-- Compose the universal partition with strong deletion.
-
-The partition `F` is fixed once and for all, before the late threshold and
-before the finite certificate `Q`.  For every threshold, strong deletion
-returns a certificate, while the universal selector neutralizes the infinite
-tail.  Hence some certified target is destroyed by a genuinely finite prefix
-`D`.  Exact-basis representability then turns one point `d ∈ D` into a
-represented lower-order difference `q-d`.
-
-Thus the universal pre-certificate attack eliminates infinite cross-block
-collisions completely; its remaining mathematical obligation is the
-finite-prefix/difference composition. -/
 theorem HasDiagonalAnchoredAlignedTranslateCellRows.strongDeletion_forces_universalFinitePrefixDifferences
     {A : Set ℕ} {k : ℕ}
     (hdiag : HasDiagonalAnchoredAlignedTranslateCellRows A (k + 1))
@@ -8161,17 +7612,6 @@ theorem IsStronglyMinimalExactBasis.finiteTranslateGrowth_or_universalFinitePref
   · exact Or.inr
       (hdiag.strongDeletion_forces_universalFinitePrefixDifferences hminimal)
 
-/-- A lower-triangular family of bounded binary repairs has an infinite
-cross-disjoint subfamily.
-
-Earlier repairs are assumed to avoid later cells.  Ramsey-thin the symmetric
-cross-collision relation.  An infinite collision clique is impossible:
-for a sufficiently late member, its two bounded repairs would have to meet
-more pairwise-disjoint earlier cells than their union has vertices.  Hence
-the infinite homogeneous set is collision-free.
-
-This is the combinatorial mechanism which controls representations crossing
-between different gap blocks. -/
 theorem exists_infinite_crossDisjoint_binaryRepairs
     {cell Hleft Hright : ℕ → Finset ℕ} {r : ℕ}
     (hcell : Pairwise fun i j => Disjoint (cell i) (cell j))
@@ -8276,7 +7716,7 @@ theorem exists_infinite_crossDisjoint_binaryRepairs
     simp only [Collides, not_or, not_not] at hnone
     exact ⟨hnone.1, hnone.2.1⟩
 
-/-- Apply the bounded cross-collision lemma to an additive binary repair
+/-- Apply the bounded cross-conflict lemma to an additive binary repair
 sequence. -/
 theorem LowerTriangularBinaryRepairSequence.exists_infinite_crossDisjoint
     {A : Set ℕ} {k q : ℕ}
@@ -8504,18 +7944,6 @@ theorem LowerTriangularBinaryRepairSequence.exists_binaryCommonSurvivalPartition
         exact Finset.disjoint_left.mp hdisj
           (Finset.mem_coe.mp hyH) (by simpa only [cell] using (s j).2)
 
-/-- Group cross-disjoint binary repair cells into uniformly large blocks of
-increasing size.
-
-Block `i` contains `i+k+padding+2` binary cells.  In particular its
-cardinality is
-strictly greater than `k+2`, the maximum size of a protected successor
-support.  A selector chooses only one point
-from the whole block, so at most one subcell is touched.  The private repair
-in that subcell and cross-disjointness from every other subcell preserve
-every translated target indexed by the block.  In particular the common
-survival construction is compatible with block capacities tending to
-infinity. -/
 theorem LowerTriangularBinaryRepairSequence.exists_paddedGrowingBlockCommonSurvivalPartition
     {A : Set ℕ} {k q : ℕ}
     (S : LowerTriangularBinaryRepairSequence A k q)
@@ -8759,8 +8187,8 @@ theorem LowerTriangularBinaryRepairSequence.exists_growingBlockCommonSurvivalPar
   simpa only [Nat.add_zero] using
     S.exists_paddedGrowingBlockCommonSurvivalPartition 0
 
-/-- Gap-free common-survival payoff for the bounded moving branch at a
-represented predecessor target. -/
+/-- Bounded moving destroyers at a represented predecessor target yield a
+binary partition whose selectors preserve all indexed targets. -/
 theorem boundedFullTranslateDestroyers_commonSurvival
     {A : Set ℕ} {k q : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -8832,9 +8260,9 @@ theorem boundedFullTranslateDestroyers_paddedGrowingBlockCommonSurvival
     exists_lowerTriangularBinaryRepairSequence hbasis hfull hqrep
   exact S.exists_paddedGrowingBlockCommonSurvivalPartition padding
 
-/-- Full gap-branch payoff: bounded successor transversals over one
-represented primitive gap force an infinite binary deletion reservoir on
-which every selector preserves an unbounded family of successor targets. -/
+/-- Bounded successor transversals over a represented primitive gap yield an
+infinite binary deletion set on which every selector preserves unboundedly
+many successor targets. -/
 theorem boundedFullTranslateDestroyers_gapBranch_commonSurvival
     {A : Set ℕ} {k q d b : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -8935,15 +8363,6 @@ theorem boundedFullTranslateDestroyers_forces_growingBlockCertificateMigration
     (strongExactDeletion_of_counterexample hcounter)
     hKA P htargetInfinite (fun s i => hsurvival s i 0 (by omega))
 
-/-- Run the certificate-safe contemporary amplifier on the grouped binary
-reservoir.
-
-For every support demand and lateness threshold, a localized successor
-certificate has a minimal selected destroyer `D`.  Taking the old prefix to
-be the blocks below the exact incidence budget makes every later grouped
-block large enough.  Hence either a coherent predecessor difference already
-has more than the requested number of supports, or all but at most
-`|J| r` points of `D` lie in that finite old prefix. -/
 theorem boundedFullTranslateDestroyers_growingBlock_activeSplit
     {A : Set ℕ} {k q₀ : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -9133,20 +8552,6 @@ theorem boundedFullTranslateDestroyers_gapBranch_forces_certificateMigration
     (strongExactDeletion_of_counterexample hcounter)
     hKA P htarget hsurvive
 
-/-- A represented target immediately above a genuine lower-order gap
-transports the entire bounded recurrent successor obstruction down one
-order.
-
-Write `q = d + b`, where `b ∈ A`, `q` has an order-`k+1` support, but `d`
-has no order-`k` support.  Protect both `b` and one support of `q`.  Any
-successor destroyer over `q+a` which avoids that protection must contain
-its translate anchor `a`; otherwise ordinary successor descent would make
-it destroy the protected support of `q`.  The gap lemma then says that
-erasing `a` destroys the order-`k+1` target `d+a`.
-
-Consequently bounded full translate destroyers at order `k+2` over
-`q+A` yield bounded full translate destroyers at order `k+1` over the gap
-translate `d+A`. -/
 theorem boundedFullTranslateDestroyers_descend_over_gap
     {A : Set ℕ} {k q d b : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -9397,14 +8802,6 @@ theorem additiveSupportStar_descends_card_inside
     obtain ⟨E, _hEattach, rfl⟩ := Finset.mem_image.mp hH
     exact hlowerInside E y hyH
 
-/-- The additive rank-descent fork.  A sufficiently large order-`k+1`
-support family either already contains a large matching, or one common hit
-can be removed while retaining more than `s` distinct supports at order
-`k`.
-
-Iterating this fork cannot descend past order one, whose support family has
-cardinality at most one.  Thus sufficiently rapid support growth forces a
-large matching after adjoining only a bounded root of removed summands. -/
 theorem large_additiveSupportFamily_matching_or_lowerOrderGrowth
     {A : Set ℕ} {k m r s : ℕ}
     (hlarge : (((k + 1) * r) * s) <
@@ -9456,11 +8853,6 @@ theorem large_additiveSupportFamily_matching_or_lowerOrderGrowth
     exact lt_of_lt_of_le (hℋcard ▸ hxstar)
       (Finset.card_le_card hℋsub)
 
-/- A recursive support-count threshold for the rank descent.  At rank zero
-the threshold `2` is impossible because there is at most one support.  At a
-successor rank, the matching/star fork either produces the requested
-matching or leaves at least the previous threshold after removing one
-summand. -/
 def additiveSupportRankBound : ℕ → ℕ → ℕ
   | 0, _r => 2
   | k + 1, r =>
@@ -9536,8 +8928,8 @@ theorem additiveSupportRankBound_forces_matching_below
 
 Choose the two support budgets in
 `arbitrarilyLate_blockAlignedRepair_or_supportGrowth` to be the finite-rank
-matching thresholds.  Both growth horns then yield an arbitrarily large
-matching at a positive rank at most `k+1`.  The only remaining horn is one
+matching thresholds.  Both growth cases then yield an arbitrarily large
+matching at a positive rank at most `k+1`.  The only remaining case is one
 explicit same-block safe replacement of an active private hit. -/
 theorem IsStronglyMinimalExactBasis.arbitrarilyLate_blockAlignedRepair_or_matching
     {A : Set ℕ} {k : ℕ}
@@ -9591,7 +8983,7 @@ theorem IsStronglyMinimalExactBasis.arbitrarilyLate_blockAlignedRepair_or_matchi
 
 /-- Matching-normalized protected-certificate dichotomy.
 
-The safe-repair horn has disappeared.  For every proposed certificate bound
+The safe-repair case has disappeared.  For every proposed certificate bound
 `C` and matching size `r`, strong minimality yields either a
 cardinal-minimal target-localized certificate with more than `C` targets, or
 a genuine matching with more than `r` supports at some positive rank no
@@ -9710,16 +9102,6 @@ theorem recurrentLowerRankMatchings_of_boundedMovingOnFiniteTranslates
     (boundedFullTranslateDestroyersByAnchor_of_boundedMovingOnFiniteTranslates
       hbasis hQ hmoving)
 
-/-- Exhaustive relative attack dichotomy at every positive predecessor
-order.  On `Q + A`, either successor representations already have genuine
-matching growth outside one fixed finite core, or the bounded-transversal
-branch forces arbitrarily large matchings after descending to some positive
-rank at most the original order.
-
-This removes the former terminal "bounded internal anchors" description:
-that branch now has an unbounded matching output.  What remains is to retain
-the removed common summands as a bounded root and synchronize those roots
-with the strong-deletion certificate. -/
 theorem finiteCoreTranslateGrowth_or_recurrentLowerRankMatchings
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -9759,14 +9141,6 @@ def additiveRootedMatchingBound : ℕ → ℕ → ℕ
   | k + 1, r =>
       (((k + 1) * r) * additiveRootedMatchingBound k (r + 1)) + 1
 
-/-- A sufficiently large subfamily of order-`h` additive supports contains
-a large delta system with a root of cardinality strictly below `h`.
-
-The proof follows the actual additive rank descent, not an abstract
-sunflower theorem.  In a large star at `x`, remove one occurrence of `x`,
-recurse one order lower, and then reinsert `x` into the root.  At most one
-lower petal equals `{x}`, so asking for one extra lower petal preserves the
-requested cardinality after reinsertion. -/
 theorem additiveSupportSubfamily_has_large_rootedMatching
     {A : Set ℕ} :
     ∀ h r m (𝒢 : Finset (Finset ℕ)),
@@ -9999,14 +9373,6 @@ theorem additiveSupportSubfamily_has_large_rootedMatching
         rw [hMcard]
         exact hgoodcard
 
-/-- Rooted-matching normalization of the old-block dependency trichotomy.
-
-Choose the exact-support bound to be the finite rooted-matching threshold.
-If an old block is larger than the capacity of that support family plus
-`m` protected supports, then failure of both matching growth and a safe
-second choice forces more than `m` distinct strictly larger target
-dependencies.  This is the quantitative increasing-branch alternative
-needed for an eventual finite-certificate termination argument. -/
 theorem oldBlock_rootedMatching_or_safeSecondChoice_or_manyLargerDependencies
     {A : Set ℕ} {k q r m : ℕ} {Q V : Finset ℕ}
     (c :
@@ -10063,14 +9429,6 @@ theorem oldBlock_rootedMatching_or_safeSecondChoice_or_manyLargerDependencies
       exact (not_lt_of_ge (hcapacity.trans hmul)) hVlarge
     exact ⟨P, hPQ, hmP, hPcard, hPlarger, hcover⟩
 
-/-- Certificate-state instantiation of the increasing old-block branch.
-
-The protected support choice is now obtained directly from the targets
-strictly above `q` which survive the current selector.  On a sufficiently
-large active block, either exact rooted matching growth has already occurred,
-or the theorem returns a verified safe aligned swap, or more than `m`
-strictly larger certificate targets are genuinely needed to cover that
-block.  No bound on the total certificate cardinality occurs. -/
 theorem blockAligned_rootedMatching_or_safeSwap_or_manyLargerDependencies
     {A : Set ℕ} {k q r m : ℕ} {Q : Finset ℕ}
     {F : ℕ → Finset ℕ} (s : BlockSelector F)
@@ -10130,17 +9488,6 @@ theorem blockAligned_rootedMatching_or_safeSwap_or_manyLargerDependencies
     exact hminimal.swap_hit_for_avoidedPoint_repairs hactive hbAvoid
   · exact Or.inr ⟨c, hcDisjoint, Or.inr hdependency⟩
 
-/-- The top certificate target has no dependency branch.
-
-At a maximum member `q` of the certificate, the set of strictly larger
-protected targets is empty.  Taking `m = 0` in the local old-block theorem
-makes the increasing-dependency horn impossible.  Consequently a single
-large active block gives either exact rooted matching growth at `q` or a
-verified aligned repair.  Ordinary rank-sized room in the remaining blocks
-then completes that repair and forces strict certificate descent.
-
-Unlike the earlier protected-union descent theorem, the large active-block
-bound here is completely independent of `Q.card`. -/
 theorem blockAligned_at_certificateMax_rootedMatching_or_strictDescent
     {A : Set ℕ} {k q r : ℕ} {Q : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
@@ -10316,19 +9663,6 @@ theorem certificateUpperRank_strictly_grows_under_descent
     rw [← heq] at hqUpperU
     exact (Nat.lt_irrefl q) (Finset.mem_filter.mp hqUpperU).2
 
-/-- Strict descent with capacity measured only by the upper certificate
-rank.
-
-Let `Upper = {u ∈ Q | q < u}`.  Store one surviving support for these
-targets.  Taking `m = Upper.card` makes the local dependency horn
-impossible, since it would produce a subset of `Upper` with cardinality
-strictly larger than `Upper`.  A safe second choice avoids the stored union;
-rank-times-`Upper.card` room completes the selector and preserves every
-larger target.
-
-This replaces every occurrence of the full certificate bound by the actual
-descent depth above `q`.  At the top target this depth is zero, and it grows
-by at least one after each strict descent. -/
 theorem blockAligned_upperRankCapacity_rootedMatching_or_strictDescent
     {A : Set ℕ} {k q r : ℕ} {Q : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
@@ -10424,12 +9758,6 @@ theorem blockAligned_upperRankCapacity_rootedMatching_or_strictDescent
       Finset.card_le_card hSUpper
     exact (not_lt_of_ge hScard hSlarge).elim
 
-/-- Rank-explicit form of upper-rank descent.
-
-Every non-growth outcome consumes at least one unit of the finite
-certificate's upper-rank budget.  Thus this branch cannot recur without
-eventually reaching a stage at which the support-local capacity hypothesis
-fails or rooted matching growth occurs. -/
 theorem blockAligned_upperRankCapacity_rootedMatching_or_rankGrowthDescent
     {A : Set ℕ} {k q r : ℕ} {Q : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
@@ -10477,14 +9805,14 @@ theorem blockAligned_upperRankCapacity_rootedMatching_or_rankGrowthDescent
       huDestroy⟩
 
 /-- A retained safe swap under upper-target protection has only two
-outcomes: strict descent, or a private collision in an exceptional old
+outcomes: strict descent, or a private conflict in an exceptional old
 block.
 
-This is the collision-preserving version of upper-rank descent.  In the
-collision horn the actual support is retained and meets the minimal
+This is the conflict-preserving version of upper-rank descent.  In the
+conflict case the actual support is retained and meets the minimal
 destroyer exactly at the active point.  Hence failures arising from
 different active points can subsequently be counted injectively. -/
-theorem blockAlignedSafeSwap_upperCertificate_forces_descent_or_oldCollision
+theorem blockAlignedSafeSwap_upperCertificate_forces_descent_or_oldConflict
     {A : Set ℕ} {k q : ℕ} {Q U J : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
     (s : BlockSelector F) {D : Finset ℕ} {i b : ℕ}
@@ -10520,7 +9848,7 @@ theorem blockAlignedSafeSwap_upperCertificate_forces_descent_or_oldCollision
   obtain ⟨E, hER, hEswap⟩ :=
     not_destroysAt_iff.mp hrepair
   obtain ⟨t, hUavoid, hqSurvives⟩ | ⟨j, hjJ, hsjE⟩ :=
-    blockAlignedRepairWitness_extends_protected_or_hitBlockCollision
+    blockAlignedRepairWitness_extends_protected_or_hitBlockConflict
       P s hbBlock hbU hUselected hER hEswap
         (fun j hjJ hsjE =>
           hcontemporary j hjJ
@@ -10569,20 +9897,6 @@ theorem blockAlignedSafeSwap_upperCertificate_forces_descent_or_oldCollision
         exact Finset.mem_inter.mpr ⟨hactiveE, hactive⟩
     exact ⟨j, hjJ, E, hER, hsjE, hprivate⟩
 
-/-- Repeated deficient old-block collisions force genuine lower-order
-support growth.
-
-Let `J` contain the blocks too small for protected completion.  At every
-active destroyer point outside `J`, the local dependency theorem gives
-either a large rooted matching at `q` or a safe replacement; its larger
-dependency horn is impossible at the exact upper rank.  Applying the
-collision-preserving safe-swap theorem to that replacement gives strict
-certificate descent or a private support hitting a block in `J`.
-
-If neither growth nor descent occurs, these private supports inject the
-contemporary destroyer points into the disjoint union of the lower-order
-families indexed by `J`.  Thus more than `J.card * r` active points force
-more than `r` coherent representations at one old coordinate. -/
 theorem blockAligned_manyActivePoints_force_rootedMatching_or_rankGrowthDescent_or_oldGrowth
     {A : Set ℕ} {k q r : ℕ} {Q J : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
@@ -10709,7 +10023,7 @@ theorem blockAligned_manyActivePoints_force_rootedMatching_or_rankGrowthDescent_
           (Nat.add_le_add_right hUcard (k + 1))
           (hcompletion j hjJ hsjSupport)
       obtain hdesc | ⟨j, hjJ, E, hER, hsjE, hprivate⟩ :=
-        blockAlignedSafeSwap_upperCertificate_forces_descent_or_oldCollision
+        blockAlignedSafeSwap_upperCertificate_forces_descent_or_oldConflict
           P s hcert hprotected hminimal.1 hactive hbBlock hbU
             (by simpa only [U] using hcDisjoint) hrepair hcontemporary
       · obtain ⟨t, u, huQ, huq, huDestroy⟩ := hdesc
@@ -10773,15 +10087,6 @@ theorem blockAligned_manyActivePoints_force_rootedMatching_or_rankGrowthDescent_
   exact ((not_lt_of_ge hCbound) (by
     simpa only [C] using hmany)).elim
 
-/-- Matching-normalized repeated-collision amplification.
-
-Choose the collision threshold large enough both to dominate `r` and to
-trigger rooted-matching normalization one order lower.  The preceding
-theorem then has only three outputs: a rooted matching of size greater than
-`r` at the current order and target, strict finite-certificate descent, or a
-rooted matching of size greater than `r` at one coherent old difference.
-Thus repeated old-coordinate failures no longer terminate in an
-unnormalized support-count statement. -/
 theorem blockAligned_manyActivePoints_force_matchingGrowth_or_rankGrowthDescent
     {A : Set ℕ} {k q r : ℕ} {Q J : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
@@ -10871,12 +10176,6 @@ theorem IsInclusionMinimalDestroyer.subset_supportVertices
   rw [← hprivate] at hdSingleton
   exact (Finset.mem_inter.mp hdSingleton).1
 
-/-- The intrinsic exceptional set for one repair stage.
-
-Only indices of blocks met by supports at `q` are considered.  Such an
-index is deficient when it fails either the room needed to find a safe
-active replacement or the smaller room needed to complete a retained
-repair support. -/
 noncomputable def deficientRepairHitBlocks
     {A : Set ℕ} {F : ℕ → Finset ℕ}
     (P : IsFiniteBlockPartition A F) (s : BlockSelector F)
@@ -10896,16 +10195,6 @@ theorem deficientRepairHitBlocks_card_le_supportVertices
   exact (Finset.card_le_card (Finset.filter_subset _ _)).trans
     Finset.card_image_le
 
-/-- Intrinsic-deficient-block form of repeated collision amplification.
-
-The exceptional set is no longer supplied externally: it consists exactly
-of support-hit blocks which lack one of the two capacities used by the
-repair.  Outside this canonical finite set, both the active safe choice and
-the support-local selector completion are automatic.  If the minimal
-destroyer has more than the explicit pigeonhole budget of active points
-outside that set, the outcome is matching growth at the current order,
-strict upper-rank descent, or matching growth one order lower at a
-deficient old coordinate. -/
 theorem blockAligned_intrinsicDeficientBlocks_force_matchingGrowth_or_rankGrowthDescent
     {A : Set ℕ} {k q r : ℕ} {Q : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
@@ -11013,21 +10302,11 @@ theorem blockAligned_intrinsicDeficientBlocks_force_matchingGrowth_or_rankGrowth
   · simpa only [J, threshold, activeNeed, completionNeed] using hmany
 
 /-- Uniform concentration bound for the residual branch of the
-old-collision attack. -/
-def oldCollisionConcentrationBound (k r : ℕ) : ℕ :=
+old-conflict obstruction. -/
+def oldConflictConcentrationBound (k r : ℕ) : ℕ :=
   ((k + 1) * additiveRootedMatchingBound (k + 1) r + 1) *
     (max r (additiveRootedMatchingBound k r) + 1)
 
-/-- Complete local fork after collision amplification.
-
-No density assumption remains.  If the intrinsic deficient-block
-pigeonhole inequality holds, the preceding theorem gives matching growth or
-strict upper-rank descent.  If it fails, the old part of the destroyer has
-at most one point per deficient block and the outside part satisfies the
-pigeonhole bound.  In the absence of current-order matching growth, the
-number of deficient blocks is itself bounded by the support-vertex union.
-Consequently the entire minimal destroyer has the explicit uniform bound
-`oldCollisionConcentrationBound k r`. -/
 theorem blockAligned_matchingGrowth_or_rankGrowthDescent_or_boundedDestroyer
     {A : Set ℕ} {k q r : ℕ} {Q : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
@@ -11064,7 +10343,7 @@ theorem blockAligned_matchingGrowth_or_rankGrowthDescent_or_boundedDestroyer
         (∀ E ∈ M, (E \ R).Nonempty) ∧
         ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
           Disjoint (E \ R) (G \ R)) ∨
-      D.card ≤ oldCollisionConcentrationBound k r := by
+      D.card ≤ oldConflictConcentrationBound k r := by
   classical
   by_cases hgrowth :
       ∃ R : Finset ℕ, ∃ M : Finset (Finset ℕ),
@@ -11172,7 +10451,7 @@ theorem blockAligned_matchingGrowth_or_rankGrowthDescent_or_boundedDestroyer
           (k + 1) * additiveRootedMatchingBound (k + 1) r + 1 :=
       Nat.add_le_add_right hJcard 1
     exact hDbyJ.trans (by
-      simpa only [oldCollisionConcentrationBound, threshold] using
+      simpa only [oldConflictConcentrationBound, threshold] using
         Nat.mul_le_mul_right (threshold + 1) hfactor)
 
 /-- A surviving support disjoint from the locked deficient coordinates
@@ -11306,14 +10585,6 @@ theorem exists_maximalDestroyedCertificateTarget
     Finset.mem_filter.mpr ⟨huQ, huDestroy⟩
   exact (not_lt_of_ge (Finset.le_max' Bad u huBad)) hqu
 
-/-- Certificate-safe locked-prefix dichotomy.
-
-If the selected coordinates in the exceptional blocks do not already
-destroy `q`, the preceding support-local completion constructs a selector
-which preserves `q` and avoids all protected larger-target supports.  The
-certificate must then migrate strictly downward, and its upper-rank measure
-strictly increases.  Therefore failure of a full certificate-safe repair is
-exactly genuine destruction by the finite locked prefix. -/
 theorem lockedPrefix_destroys_or_rankGrowthCertificateDescent
     {A K : Set ℕ} {k q : ℕ} {Q U J : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
@@ -11370,14 +10641,6 @@ theorem lockedPrefix_destroys_or_rankGrowthCertificateDescent
     certificateUpperRank_strictly_grows_under_descent hqQ huqLt,
     huDestroy, huMax⟩
 
-/-- Intrinsic locked-prefix certificate dichotomy.
-
-Store one surviving support for every certificate target above `q` and let
-`J` consist exactly of support-hit blocks below the required completion
-capacity.  Outside `J`, the protected completion is automatic.  Hence
-either the selected values in `J` genuinely destroy `q`, or the certificate
-migrates strictly downward.  The destructive locked prefix has cardinality
-at most the support-vertex count at `q`. -/
 theorem blockAligned_intrinsicLockedPrefix_destruction_or_rankGrowthDescent
     {A K : Set ℕ} {k q : ℕ} {Q : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
@@ -11467,20 +10730,7 @@ theorem blockAligned_intrinsicLockedPrefix_destruction_or_rankGrowthDescent
             0 completionNeed)
   · exact Or.inr (by simpa only [Upper] using hdescent)
 
-/-- An external predecessor gap is certificate-safe on a deletion
-reservoir, except for one explicit private collision in the intrinsic
-locked prefix.
-
-Choose an inclusion-minimal destroyer inside the locked prefix and try the
-gap repair at one of its private hits.  If protected reservoir completion
-succeeds, the largest target destroyed by the repaired selector is strictly
-smaller than `q`, and the usual upper-rank measure strictly grows.  If it
-fails, the failure retains a support `E` meeting the minimal destroyer only
-at the active point `d`, together with an old locked coordinate in `E`.
-Removing that old coordinate gives a represented coherent order-`k`
-difference.  Moreover that coordinate is either `d` itself or lies in the
-unused part of the locked prefix. -/
-theorem lockedPrefix_lowerGap_forces_rankGrowthDescent_or_privateOldCollision
+theorem lockedPrefix_lowerGap_forces_rankGrowthDescent_or_privateOldConflict
     {A K : Set ℕ} {k q b : ℕ} {Q U J : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
     (s : BlockSelector F)
@@ -11540,7 +10790,7 @@ theorem lockedPrefix_lowerGap_forces_rankGrowthDescent_or_privateOldCollision
   obtain ⟨d, hdD⟩ := hDnonempty
   obtain ⟨t, htU, htq⟩ |
       ⟨j, hjJ, E, hER, hsjE, hprivate⟩ :=
-    lowerGapRepair_extends_protectedOnReservoir_or_oldCollision
+    lowerGapRepair_extends_protectedOnReservoir_or_oldConflict
       P s hminimal hdD hgap hUselected hcapacity
   · left
     obtain ⟨u, huQ, huDestroy, huMax⟩ :=
@@ -11707,15 +10957,6 @@ theorem eventually_exactRootedMatching_or_lowerGap_onInfiniteReservoir
   · exact Or.inl hrooted
   · exact Or.inr ⟨b, hBC hbB, hBn b hbB, hgap⟩
 
-/-- Uniform protected-set version of the rooted matching/lower-gap
-dichotomy.
-
-Choose a fixed basis pool whose cardinality exceeds the rooted-matching
-threshold by `w`.  After an arbitrary protected set `W` of cardinality at
-most `w` is revealed, deleting `W` from that fixed pool still leaves enough
-test anchors.  Consequently the lower-gap witness can be required to lie
-outside `W`, with a late threshold independent of the actual vertices of
-`W`. -/
 theorem IsExactTupleAsymptoticBasis.eventually_exactRootedMatching_or_lowerGap_avoiding
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1)) :
@@ -11773,17 +11014,6 @@ theorem IsExactTupleAsymptoticBasis.eventually_exactRootedMatching_or_lowerGap_a
         fun hbW => Finset.disjoint_left.mp hBW hbB hbW,
         hBn b hbB, hgap⟩
 
-/-- Every exact order-`k` basis has arbitrarily large rooted matchings at
-*every* sufficiently late successor-order target.
-
-The exact-target rooted/gap argument is run with a fixed finite pool
-`B ⊆ A`.  Its only alternative to a large order-`k+1` rooted matching at
-`n` is an order-`k` gap at `n-b` for some `b ∈ B`.  Since `B` is fixed, once
-`n` is beyond the order-`k` basis threshold plus `max B`, every such
-predecessor is represented.  Thus the gap horn vanishes uniformly.
-
-This is stronger than cofinal matching growth: the target label does not
-move and no exceptional late targets remain. -/
 theorem IsExactTupleAsymptoticBasis.eventually_successorExactRootedMatching
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k) :
@@ -11831,15 +11061,6 @@ theorem IsExactTupleAsymptoticBasis.eventually_successorExactRootedMatching
     rw [hgap] at hER
     simpa using hER
 
-/-- Rooted matching form of the distinguished-anchor fork.  With enough
-external tests, either the original predecessor target `q` already carries
-the requested large delta system, or a hit in the strict erased core carries
-one at its translated target.
-
-Unlike the earlier recurrent rooted-matching theorem, the first branch keeps
-the arithmetic label `q` exactly.  The second branch isolates the remaining
-obstruction inside `T.erase a`; it does not yet assert that this erased core
-destroys the translated target. -/
 theorem large_externalAnchorSet_forces_rootedMatching_anchorFork
     {A : Set ℕ} {k n q a r : ℕ} {T B : Finset ℕ}
     (hnqa : n = q + a)
@@ -12005,14 +11226,6 @@ theorem recurrentRootedPredecessorMatchings_of_boundedMovingOnFiniteTranslates
     (boundedFullTranslateDestroyersByAnchor_of_boundedMovingOnFiniteTranslates
       hbasis hQ hmoving)
 
-/-- Exact synchronization fork with a finite deletion prefix.  A genuine
-common root is either disjoint from the prefix, or one old prefix element is
-common to every support.  In the latter case removing that summand preserves
-the full cardinality while lowering the representation order by one.
-
-This is the mechanism needed to consume recurrent old-prefix root hits:
-they cannot stall the rooted matching construction without paying one unit
-of additive rank. -/
 theorem rootedMatching_disjointPrefix_or_descends
     {A : Set ℕ} {k m : ℕ}
     {R F : Finset ℕ} {M : Finset (Finset ℕ)}
@@ -12043,14 +11256,6 @@ theorem rootedMatching_disjointPrefix_or_descends
         (fun G hGM => hMroot G hGM hdR)
     exact ⟨d, hdR, hdF, hdA, hdm, ℋ, hℋsub, hℋcard⟩
 
-/-- A transversal of the nonempty outside-`F` parts of a rooted matching
-can hit only one petal per transversal point, unless it meets the common
-root.  Supports contained in `F` spend distinct points of `F \ R` instead.
-
-Consequently, while `T` is disjoint from the root, the whole rooted matching
-has cardinality at most `|F| + |T|`.  This is the finite counting step which
-prevents a bounded moving outside transversal from hiding indefinitely
-behind an old finite core. -/
 theorem card_rootedMatching_le_core_add_outsideTransversal_of_rootDisjoint
     {A : Set ℕ} {k m : ℕ}
     {F R T : Finset ℕ} {M : Finset (Finset ℕ)}
@@ -12134,12 +11339,6 @@ theorem card_rootedMatching_le_core_add_outsideTransversal_of_rootDisjoint
     exists_surviving_support hMmatching hhitPetal hlarge
   exact (hDhit E hEM) hED
 
-/-- **Finite moving-root capture.**  If a rooted matching is larger than an
-old finite core plus a transversal of all nonempty outside-core supports,
-then the transversal itself contains a common root point.
-
-This is stronger than capture by `F ∪ T`: the captured summand is genuinely
-new (`d ∈ T`), not an old point of `F`. -/
 theorem large_rootedMatching_outsideTransversal_captures_movingRoot
     {A : Set ℕ} {k m : ℕ}
     {F R T : Finset ℕ} {M : Finset (Finset ℕ)}
@@ -12210,20 +11409,6 @@ theorem large_rootedMatching_outsideTransversal_descends_through_movingRoot
       (fun G hGM => hMroot G hGM hdR)
   exact ⟨d, hdR, hdT, hdF, hdA, hdm, ℋ, hℋsub, hℋcard⟩
 
-/-- Failure of every finite protected core forces cofinally many genuinely
-moving root captures.
-
-For a fixed old core `F`, bounded-matching failure supplies a uniformly
-bounded outside transversal `T` at arbitrarily late successor targets.
-Ask the unconditional successor rooted-matching theorem for more than
-`|F| + bound + r` petals.  Finite moving-root capture then puts a *new*
-common summand `d` inside `T`, and exact support removal leaves more than
-`r` distinct order-`k` supports at the coherent difference `n - d`.
-
-The bound is chosen before either the requested multiplicity or the late
-threshold.  This is the scheduling form needed for an infinite fusion: each
-iteration may enlarge `F`, demand more lower-order representations, and move
-past all earlier coordinates. -/
 theorem IsExactTupleAsymptoticBasis.cofinal_movingRootCapture_of_failsFiniteCoreMatching
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -12354,17 +11539,6 @@ theorem destroyingSelector_meets_root_of_largeRootedMatching
       hDdestroy hMsub hrootD hMmatching
   omega
 
-/-- Finite certificate root barrier.
-
-Suppose every certificate target carries a rooted matching with more petals
-than support-active selector coordinates.  The preceding theorem says that
-every selector which destroys that target must choose one of its root points.
-Consequently every block selector meets the finite union of all roots.  A
-finite union can meet every selector only by containing one whole partition
-block.
-
-This converts certificate destruction into a rigid finite obstruction: the
-counterexample must cover an entire block by common summands. -/
 theorem finiteCertificate_roots_contain_partitionBlock
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
@@ -12421,19 +11595,6 @@ theorem finiteCertificate_roots_contain_partitionBlock
       ⟨q, hqQ, Finset.mem_coe.mp hxRoot⟩
   · exact hUselected
 
-/-- A full-block root barrier is already a cardinal-preserving
-lower-order representation barrier.
-
-Every point `x` of the covered block belongs to the common root at some
-certificate target `q`.  Removing `x` from every support in that target's
-rooted matching gives the same number of distinct order-`k` supports at the
-coherent difference `q-x`.  In particular, the strict comparison with the
-support-active block coordinates survives the descent unchanged.
-
-This is the direct arithmetic content of the root barrier: it does not merely
-say that a finite certificate has a special shape; it produces large
-lower-order representation families at differences owned by the covered
-block points. -/
 theorem fullBlockRootBarrier_descends_to_differenceFamilies
     {A : Set ℕ} {k j : ℕ} {Q : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition A F)
@@ -12481,17 +11642,6 @@ theorem fullBlockRootBarrier_descends_to_differenceFamilies
     hlowerSub, hlowerCard, ?_⟩
   simpa [hlowerCard] using (hmatching q hqQ).2.1
 
-/-- A large rooted predecessor matching forces the translate anchor to lie
-inside every smaller successor destroyer whose root is protected.
-
-If the anchor `a` were absent from `T`, successor-transversal descent would
-turn `T` into a destroyer of the predecessor target `q`.  Since `T` also
-misses the common root, its points must hit distinct petals, so the rooted
-matching has cardinality at most `T.card`.
-
-This is the direct cardinal obstruction behind the internal-anchor branch;
-unlike an informal lifting argument, it retains the exact quantifier
-dependence on the translate label `q`. -/
 theorem card_rootedMatching_le_successorDestroyer_of_anchorOutside
     {A : Set ℕ} {k q a : ℕ}
     {R T : Finset ℕ} {M : Finset (Finset ℕ)}
@@ -12544,14 +11694,6 @@ theorem anchor_mem_successorDestroyer_of_large_rootedMatching
       hdestroy haA haT hMsub hrootDisjoint hMmatching
   omega
 
-/-- If a rooted matching is larger than a finite deletion prefix which
-destroys its target, the root must meet that prefix.  Removing such a common
-summand preserves the entire matching at the coherent difference `m - d`
-and lowers the representation order by one.
-
-This is the rigorous finite-prefix/difference composition: either one petal
-repairs the target, or matching growth forces rank descent through a deleted
-summand. -/
 theorem large_destroyedRootedMatching_descends_through_prefix
     {A : Set ℕ} {k m : ℕ}
     {R D : Finset ℕ} {M : Finset (Finset ℕ)}
@@ -12580,21 +11722,6 @@ theorem large_destroyedRootedMatching_descends_through_prefix
     omega
   · exact hdescend
 
-/-- A same-target rooted horn yields both root capture and usable block
-material.
-
-Suppose `D` destroys `q` while `q` carries a rooted matching larger than
-`D`.  The root cannot avoid `D`: one captured root point `d ∈ R ∩ D`
-therefore exposes a cardinality-preserving predecessor family at the exact
-coherent difference `q-d`.
-
-At the same time, the union `V` of the pairwise-disjoint nonempty petals is
-a genuine finite deletion block.  It lies in `A`, is disjoint from the
-captured root, has at least one point per matching member, and deleting any
-single `y ∈ V` leaves another same-target support alive whenever the
-matching has at least two members.  Thus the rooted horn is converted into
-both arithmetic descent and selector-ready block capacity without changing
-the target label. -/
 theorem large_sameTargetRootedMatching_capturesDestroyer_and_generatesBlock
     {A : Set ℕ} {k q : ℕ}
     {R D : Finset ℕ} {M : Finset (Finset ℕ)}
@@ -12700,20 +11827,6 @@ theorem large_sameTargetRootedMatching_capturesDestroyer_and_generatesBlock
     hlowerSub, hlowerCard, V, rfl, hVnonempty,
     hVA, hRV, hMcardV, hsingletonSurvives⟩
 
-/-- Uniform finite-prefix composition at the *successor of an already exact
-basis order*, with no gap alternative.
-
-At every sufficiently late order-`k+1` target there is a rooted matching
-larger than the prescribed destroyer bound by
-`eventually_successorExactRootedMatching`.  A destroyer of size at most
-`r` cannot hit distinct petals while missing the root, so it contains a
-common root point `d`.  Removing `d` from the whole rooted matching gives
-more than `r` distinct order-`k` supports at the coherent difference
-`n-d`.
-
-Unlike `eventually_boundedDestroyer_forces_largeDifferenceFamily_or_lowerGap`,
-this theorem uses the lower-order basis hypothesis and therefore has no
-arithmetic escape horn. -/
 theorem IsExactTupleAsymptoticBasis.eventually_boundedSuccessorDestroyer_forces_largeDifferenceFamily
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k) :
@@ -12741,18 +11854,6 @@ theorem IsExactTupleAsymptoticBasis.eventually_boundedSuccessorDestroyer_forces_
   refine ⟨d, hdD, hdA, hdn, ℋ, hℋsub, ?_⟩
   simpa [hℋcard] using hMlarge
 
-/-- Eventual growth-or-gap form of finite-prefix/difference composition.
-
-For an exact order-`k+1` basis and a fixed finite deletion `D`, every
-sufficiently late target destroyed by `D` has one of two concrete defects:
-
-* a deleted common summand `d` exposes more than `|D|` lower-order supports
-  of the coherent difference `n-d`; or
-* a basis predecessor `n-b` is a genuine order-`k` gap.
-
-Thus a fixed finite prefix cannot indefinitely hide behind isolated
-represented differences: it must force matching growth at those differences
-or produce the lower-order gap needed for the other branch of the attack. -/
 theorem IsExactTupleAsymptoticBasis.finiteDestroyer_forces_largeDifferenceFamily_or_lowerGap
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1)) :
@@ -12852,15 +11953,6 @@ theorem IsExactTupleAsymptoticBasis.eventually_boundedDestroyer_forces_largeDiff
     simpa [hℋcard] using hlarge
   · exact Or.inr hgap
 
-/-- Eventual certificate-safe finite-prefix composition.
-
-If current-order rooted matching growth is absent, the intrinsic locked
-prefix has a target-independent cardinal bound.  Genuine destruction by
-that prefix feeds directly into uniform finite-prefix/difference
-composition, while non-destruction gives strict upper-rank certificate
-descent.  The only remaining arithmetic horn is now an actual lower-order
-gap point; every represented-difference horn is normalized to a rooted
-matching. -/
 theorem IsExactTupleAsymptoticBasis.eventually_lockedPrefix_matching_or_gap_or_rankGrowthDescent
     {A K : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -12985,17 +12077,7 @@ theorem IsExactTupleAsymptoticBasis.eventually_lockedPrefix_matching_or_gap_or_r
     · exact Or.inr (Or.inr (Or.inr hgap))
   · exact Or.inr (Or.inr (Or.inl hdescent))
 
-/-- Gap-consuming locked-prefix composition on a deletion reservoir.
-
-This strengthens
-`eventually_lockedPrefix_matching_or_gap_or_rankGrowthDescent` at the point
-needed by the growing-block attack.  A genuine predecessor gap is fed back
-into protected external-gap completion rather than returned as a terminal
-outcome.  Therefore every sufficiently late stage yields current-order
-matching growth, coherent predecessor matching growth, strict
-certificate-rank descent, or the explicit private old-coordinate collision
-which prevented the gap repair from completing. -/
-theorem IsExactTupleAsymptoticBasis.eventually_lockedPrefix_matching_or_rankGrowthDescent_or_gapCollision
+theorem IsExactTupleAsymptoticBasis.eventually_lockedPrefix_matching_or_rankGrowthDescent_or_gapConflict
     {A K : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
@@ -13179,7 +12261,7 @@ theorem IsExactTupleAsymptoticBasis.eventually_lockedPrefix_matching_or_rankGrow
         exact lt_of_le_of_lt
           (Nat.add_le_add_right hUcard (k + 1)) hjGood.2
       obtain hdescent | hcollision :=
-        lockedPrefix_lowerGap_forces_rankGrowthDescent_or_privateOldCollision
+        lockedPrefix_lowerGap_forces_rankGrowthDescent_or_privateOldConflict
           P s hqQ hcert hprotected
             (by simpa only [U] using hcDisjoint)
             ⟨G₀, hG₀R⟩
@@ -13193,9 +12275,9 @@ theorem IsExactTupleAsymptoticBasis.eventually_lockedPrefix_matching_or_rankGrow
               hcollision⟩))
   · exact Or.inr (Or.inr (Or.inl hdescent))
 
-/-- The terminal collision object left after a genuine predecessor gap has
+/-- The terminal conflict object left after a genuine predecessor gap has
 been fed back into protected reservoir completion. -/
-def HasPrivateLockedGapCollision
+def HasPrivateLockedGapConflict
     (A : Set ℕ) (k : ℕ) {K : Set ℕ} {F : ℕ → Finset ℕ}
     (P : IsFiniteBlockPartition K F) (Q : Finset ℕ)
     (q : ℕ) (s : BlockSelector F) : Prop :=
@@ -13223,20 +12305,11 @@ def HasPrivateLockedGapCollision
       (s j).1 ∈
         (J.image (fun i => (s i).1)).erase d \ D)
 
-/-- The finite upward dependency exposed when every collision of a retained
-gap-repair support cannot be cleared.
-
-One surviving support is stored for every certificate target strictly above
-`q`.  A concrete deficient block, after deleting its current selected
-coordinate, is covered by the repair support at `q` together with the stored
-supports of a bounded subcollection of strictly larger targets.  The last
-inequality records the rank-capacity constraint which will force that
-subcollection to be nonempty on the growing reservoir. -/
 def HasLocalLargerLockedGapDependency
     (A : Set ℕ) (k : ℕ) {K : Set ℕ} {F : ℕ → Finset ℕ}
     (P : IsFiniteBlockPartition K F) (Q : Finset ℕ)
     (q : ℕ) (s : BlockSelector F) : Prop :=
-  HasPrivateLockedGapCollision A k P Q q s ∧
+  HasPrivateLockedGapConflict A k P Q q s ∧
     let Upper := Q.filter fun u => q < u
     let completionNeed := (k + 1) * Upper.card + (k + 1)
     let J := deficientRepairHitBlocks P s
@@ -13256,15 +12329,7 @@ def HasLocalLargerLockedGapDependency
           ((F j).erase (s j).1).card ≤
             (k + 1) * (Q'.card + 1)
 
-/-- A private locked gap collision is not terminal.
-
-Clear every old hit of its retained repair support while keeping one
-surviving support for each larger certificate target.  Successful clearing
-preserves `q`, so maximality of the next destroyed target forces strict
-downward certificate migration.  Failure gives the finite upward local
-dependency above.  Thus the only remaining obstruction has a directed,
-acyclic target order. -/
-theorem privateLockedGapCollision_forces_rankGrowthDescent_or_localLargerDependency
+theorem privateLockedGapConflict_forces_rankGrowthDescent_or_localLargerDependency
     {A K : Set ℕ} {k q : ℕ} {Q : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
     (s : BlockSelector F)
@@ -13272,7 +12337,7 @@ theorem privateLockedGapCollision_forces_rankGrowthDescent_or_localLargerDepende
     (hcert : ∀ t : BlockSelector F, ∃ u ∈ Q,
       DestroysAt
         (additiveSupportFamily A (k + 1)) (selectedSet t) u)
-    (hcollision : HasPrivateLockedGapCollision A k P Q q s) :
+    (hcollision : HasPrivateLockedGapConflict A k P Q q s) :
     (∃ t : BlockSelector F, ∃ u ∈ Q, u < q ∧
         (Q.filter fun v => q < v).card <
           (Q.filter fun v => u < v).card ∧
@@ -13413,15 +12478,6 @@ theorem localLargerLockedGapDependency_has_strictSuccessor
   exact ⟨u, (Finset.mem_filter.mp huUpper).1,
     hQ'larger u huQ'⟩
 
-/-- Geometric core of a local larger-target dependency.
-
-On a block with more alternatives than one support can contain, choose an
-alternative `y` outside the current repair support `E`.  The dependency
-cover puts `y` in the stored support `G` of some strictly larger target
-`v`.  Conversely, the old selected point `x` cannot lie in `G`, because
-all stored supports survive the current selector.  Thus `E` and `G` have
-opposite private endpoints `x,y` in one block.  Removing those endpoints
-produces coherent predecessor supports at `q-x` and `v-y`. -/
 theorem localLargerLockedGapDependency_has_crossedSupportRectangle
     {A K : Set ℕ} {k q : ℕ} {Q : Finset ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
@@ -13453,7 +12509,7 @@ theorem localLargerLockedGapDependency_has_crossedSupportRectangle
   obtain ⟨hprivate, c, hcDisjoint, j, hjJ, E, hER, hsjE,
       Q', hQ'Upper, hQ'card, hQ'larger, hcover,
       hblockCard⟩ := hdependency
-  dsimp only [HasPrivateLockedGapCollision] at hprivate
+  dsimp only [HasPrivateLockedGapConflict] at hprivate
   obtain ⟨_hqDestroy, _hlarger, b, D, d, j₀, E₀, H₀,
       hbA, hbq, hgap, _hDsub, _hminimal, _hdD, _hj₀J,
       _hE₀R, _hsj₀E₀, _hprivate, _hH₀R, _hE₀reconstruct,
@@ -13524,16 +12580,7 @@ theorem not_localLargerLockedGapDependency_of_certificateMaximum
       P s hblocks hdependency
   exact (not_lt_of_ge (hmax u huQ)) hqu
 
-/-- Unrestricted finite-certificate termination after consuming the gap
-horn.
-
-Strong induction follows strict maximal-target descent exactly as in the
-earlier migration theorem.  Since external gaps are now repaired rather
-than returned, the induction can terminate only in current-order matching
-growth, coherent predecessor matching growth, or a private locked
-gap-collision rectangle.  No bound on `Q.card` or on all reservoir block
-sizes is assumed. -/
-theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_matching_or_gapCollision
+theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_matching_or_gapConflict
     {A K : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
@@ -13561,10 +12608,10 @@ theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_matching_or_gap
             ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
               Disjoint (E \ R) (G \ R)) ∨
         ∃ q ∈ Q, ∃ s : BlockSelector F,
-          HasPrivateLockedGapCollision A k P Q q s) := by
+          HasPrivateLockedGapConflict A k P Q q s) := by
   classical
   obtain ⟨N, hstep⟩ :=
-    hbasis.eventually_lockedPrefix_matching_or_rankGrowthDescent_or_gapCollision
+    hbasis.eventually_lockedPrefix_matching_or_rankGrowthDescent_or_gapConflict
       P r
   refine ⟨N, ?_⟩
   intro Q hQlate hcert
@@ -13587,7 +12634,7 @@ theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_matching_or_gap
           ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
             Disjoint (E \ R) (G \ R)) ∨
       ∃ q ∈ Q, ∃ s : BlockSelector F,
-        HasPrivateLockedGapCollision A k P Q q s)
+        HasPrivateLockedGapConflict A k P Q q s)
   have hterminate :
       ∀ q, q ∈ Q → ∀ s : BlockSelector F,
         DestroysAt
@@ -13609,7 +12656,7 @@ theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_matching_or_gap
           exact ih u huq huQ t huDestroy huLarger
         · exact Or.inr (Or.inr
             ⟨q, hqQ, s, by
-              change HasPrivateLockedGapCollision A k P Q q s
+              change HasPrivateLockedGapConflict A k P Q q s
               exact ⟨hqDestroy, hlarger, hcollision⟩⟩)
   let initial : BlockSelector F :=
     fun j => ⟨(P.nonempty j).choose, (P.nonempty j).choose_spec⟩
@@ -13617,14 +12664,6 @@ theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_matching_or_gap
     exists_maximalDestroyedCertificateTarget hcert initial
   exact hterminate q hqQ initial hqDestroy hqLarger
 
-/-- Unrestricted termination with the procedural collision eliminated.
-
-When the gap-consuming step exposes a private old collision, apply the
-simultaneous clearing theorem immediately.  A successful clearing is one
-more strict descent and is consumed by strong induction; failure is the
-finite local dependency on strictly larger certificate targets.  Hence this
-is the first unrestricted endpoint whose only nongrowth horn is structural,
-not an unfinished repair operation. -/
 theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_matching_or_localLargerDependency
     {A K : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -13656,7 +12695,7 @@ theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_matching_or_loc
           HasLocalLargerLockedGapDependency A k P Q q s) := by
   classical
   obtain ⟨N, hstep⟩ :=
-    hbasis.eventually_lockedPrefix_matching_or_rankGrowthDescent_or_gapCollision
+    hbasis.eventually_lockedPrefix_matching_or_rankGrowthDescent_or_gapConflict
       P r
   refine ⟨N, ?_⟩
   intro Q hQlate hcert
@@ -13700,10 +12739,10 @@ theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_matching_or_loc
               huDestroy, huLarger⟩ := hdescent
           exact ih u huq huQ t huDestroy huLarger
         · have hprivate :
-              HasPrivateLockedGapCollision A k P Q q s :=
+              HasPrivateLockedGapConflict A k P Q q s :=
             ⟨hqDestroy, hlarger, hcollision⟩
           obtain hdescent' | hdependency :=
-            privateLockedGapCollision_forces_rankGrowthDescent_or_localLargerDependency
+            privateLockedGapConflict_forces_rankGrowthDescent_or_localLargerDependency
               P s hqQ hcert hprivate
           · obtain ⟨t, u, huQ, huq, _hrank,
                 huDestroy, huLarger⟩ := hdescent'
@@ -13717,11 +12756,11 @@ theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_matching_or_loc
 
 /-- Exact-label normalization of unrestricted gap-consuming migration.
 
-The coherent predecessor matching horn lifts back to the same certificate
+The coherent predecessor matching case lifts back to the same certificate
 target with factor-two cardinal loss.  Consequently every sufficiently late
 finite reservoir certificate contains a requested exact-label rooted
-matching, unless it contains a private locked gap-collision rectangle. -/
-theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_exactRootedMatching_or_gapCollision
+matching, unless it contains a private locked gap-conflict rectangle. -/
+theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_exactRootedMatching_or_gapConflict
     {A K : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition K F)
@@ -13740,11 +12779,11 @@ theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_exactRootedMatc
           ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
             Disjoint (E \ R) (G \ R)) ∨
         ∃ q ∈ Q, ∃ s : BlockSelector F,
-          HasPrivateLockedGapCollision A k P Q q s := by
+          HasPrivateLockedGapConflict A k P Q q s := by
   let threshold := additiveRootedMatchingBound (k + 1) r
   let migrationNeed := max r (2 * threshold)
   obtain ⟨N, hN⟩ :=
-    hbasis.eventually_finiteCertificate_matching_or_gapCollision
+    hbasis.eventually_finiteCertificate_matching_or_gapConflict
       P migrationNeed
   refine ⟨N, ?_⟩
   intro Q hQlate hcert
@@ -13787,7 +12826,7 @@ theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_exactRootedMatc
 
 The predecessor matching is lifted with the same factor-two estimate as
 above; the only remaining alternative is now the acyclic local dependency,
-not a pending collision repair. -/
+not a pending conflict repair. -/
 theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_exactRootedMatching_or_localLargerDependency
     {A K : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -13850,17 +12889,7 @@ theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_exactRootedMatc
       hM'root, hM'nonempty, hM'matching⟩
   · exact Or.inr hdependency
 
-/-- Direct growing-reservoir endpoint of unrestricted gap-consuming
-migration.
-
-Under a hypothetical negative successor deletion, the grouped binary
-reservoir supplies arbitrarily late target-localized certificates.  The
-unrestricted termination theorem applies to those certificates with no
-cardinality bound.  Thus every matching demand and lateness threshold
-forces either an exact order-`k+2` rooted matching at an actual certificate
-target or one private locked gap-collision rectangle on the same reservoir.
-The former large-certificate escape is absent. -/
-theorem boundedFullTranslateDestroyers_growingCertificate_exactRootedMatching_or_gapCollision
+theorem boundedFullTranslateDestroyers_growingCertificate_exactRootedMatching_or_gapConflict
     {A : Set ℕ} {k q₀ : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
     (hfull :
@@ -13903,7 +12932,7 @@ theorem boundedFullTranslateDestroyers_growingCertificate_exactRootedMatching_or
               ∀ E ∈ M, ∀ G ∈ M, E ≠ G →
                 Disjoint (E \ R) (G \ R)) ∨
             ∃ u ∈ Q, ∃ s : BlockSelector cell,
-              HasPrivateLockedGapCollision A (k + 1) P Q u s) := by
+              HasPrivateLockedGapConflict A (k + 1) P Q u s) := by
   intro r L
   obtain ⟨K, cell, target, P, hKA, hKInfinite, hcellCard,
       htargetInfinite, hsurvival, hcertificates⟩ :=
@@ -13913,7 +12942,7 @@ theorem boundedFullTranslateDestroyers_growingCertificate_exactRootedMatching_or
       IsExactTupleAsymptoticBasis A (k + 2) := by
     simpa only [Nat.add_assoc] using hbasis.succ
   obtain ⟨N, hN⟩ :=
-    hbasisSucc.eventually_finiteCertificate_exactRootedMatching_or_gapCollision
+    hbasisSucc.eventually_finiteCertificate_exactRootedMatching_or_gapConflict
       P r
   obtain ⟨Q, hQnonempty, hQlate, hcert, hlocalized, hQsafe⟩ :=
     hcertificates (max L N)
@@ -13929,7 +12958,7 @@ theorem boundedFullTranslateDestroyers_growingCertificate_exactRootedMatching_or
     hlocalized, hQsafe, ?_⟩
   simpa only [Nat.add_assoc] using houtcome
 
-/-- Direct growing-reservoir endpoint after eliminating private collisions.
+/-- Direct growing-reservoir endpoint after eliminating private conflicts.
 
 For every matching demand, a hypothetical counterexample now forces either
 an exact rooted matching at a late certificate target or one finite local
@@ -14021,14 +13050,6 @@ theorem boundedFullTranslateDestroyers_growingCertificate_exactRootedMatching_or
           hdependency'
     exact ⟨u, huQ, s, hdependency', v, hvQ, huv⟩
 
-/-- One fixed growing reservoir supports the entire unrestricted attack.
-
-The grouped binary partition depends only on the original bounded-translate
-obstruction.  It is chosen before both the matching demand `r` and the
-lateness cutoff `L`.  Every later request is answered by a certificate on
-this same partition, with the same exact matching-or-upward-dependency
-endpoint.  This quantifier order permits a genuine cofinal analysis of the
-dependency block indices and their crossed endpoint pairs. -/
 theorem boundedFullTranslateDestroyers_fixedGrowingCertificate_exactRootedMatching_or_localLargerDependency
     {A : Set ℕ} {k q₀ : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -14115,17 +13136,6 @@ theorem boundedFullTranslateDestroyers_fixedGrowingCertificate_exactRootedMatchi
           hdependency'
     exact ⟨u, huQ, s, hdependency', v, hvQ, huv⟩
 
-/-- Cofinal geometric form of the fixed-reservoir endpoint.
-
-On the one growing block system chosen before every demand, either exact
-rooted matchings of a fixed requested size occur arbitrarily late, or the
-crossed gap rectangle itself occurs arbitrarily late.  In the second case
-the lower gap and both represented predecessor differences are retained,
-and the two crossed endpoints lie in one actual reservoir block.
-
-This removes the last run-by-run ambiguity from the obstruction: failure of
-cofinal matching growth forces recurrence of one concrete arithmetic
-geometry on a fixed partition. -/
 theorem boundedFullTranslateDestroyers_fixedGrowingCertificate_cofinalMatching_or_crossedRectangles
     {A : Set ℕ} {k q₀ : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -14359,18 +13369,6 @@ theorem cofinal_anchorAvoidingSupports_avoidingFinite_have_infiniteFreeDeletion
   exact Set.disjoint_of_subset_right
     (fun x hxB => hxB.1) (hfree b hbB.1)
 
-/-- One infinite deletion simultaneously services every exceptional
-predecessor gap.
-
-If `A` is an exact order-`h` basis, all order-`h` gaps lie below one fixed
-threshold.  For each sufficiently large `b ∈ A` and each such gap `d`,
-choose an order-`h+1` support of `d+b`.  That support cannot contain `b`:
-removing an occurrence of `b` would represent `d` at order `h`.
-
-The union of all repairs attached to one `b` has a uniform finite bound,
-because there are only finitely many gaps.  One application of the bounded
-point-map free-set theorem therefore produces a single infinite `B ⊆ A`
-which every one of these repairs avoids. -/
 theorem IsExactTupleAsymptoticBasis.exists_infiniteDeletion_servicing_all_gapTranslates
     {A : Set ℕ} {h : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h) :
@@ -14486,24 +13484,6 @@ theorem IsExactTupleAsymptoticBasis.exists_infiniteDeletion_servicing_all_gapTra
         (hsubsetFin (Finset.mem_coe.mp hx))
     exact Set.disjoint_of_subset_left hsubsetSet (hfree b hbB)
 
-/-- Every finite family of successor translates can be serviced on one
-infinite deletion.
-
-Fix finitely many difference labels `D`.  Let `r` be the sum of the
-cardinalities of their order-`h` support families.  At every sufficiently
-late target, exactness at order `h` gives a rooted order-`h+1` matching with
-more than `r` members.
-
-For `d ∈ D` and large `b ∈ A`, not every support of `d+b` can contain `b`.
-If it did, removing `b` from the large rooted matching would inject that
-matching into the finite order-`h` support family at `d`, whose cardinality
-is at most `r`.  Choose one anchor-avoiding support for every `d ∈ D`;
-their union has the uniform bound `(h+1)|D|`.  The bounded free-set theorem
-then fuses all these repairs into a single infinite deletion.
-
-This closes fixed/cofinal-difference composition outright: any obstruction
-which remains on a fixed finite set of difference labels is already
-simultaneously repairable. -/
 theorem IsExactTupleAsymptoticBasis.exists_infiniteDeletion_servicing_finiteSuccessorTranslates
     {A : Set ℕ} {h : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h)
@@ -14612,7 +13592,7 @@ theorem IsExactTupleAsymptoticBasis.exists_infiniteDeletion_servicing_finiteSucc
         (hsubsetFin (Finset.mem_coe.mp hx))
     exact Set.disjoint_of_subset_left hsubsetSet (hfree b hbB)
 
-/-- Fixed-difference specialization of the finite translate service
+/-- Fixed-difference specialization of the finite translate coverage
 theorem.  No gap hypothesis is required. -/
 theorem IsExactTupleAsymptoticBasis.exists_infiniteDeletion_servicing_fixedSuccessorTranslate
     {A : Set ℕ} {h d : ℕ}
@@ -14627,22 +13607,6 @@ theorem IsExactTupleAsymptoticBasis.exists_infiniteDeletion_servicing_fixedSucce
   exact ⟨B, hBA, hBInfinite,
     fun b hbB => hservice d (by simp) b hbB⟩
 
-/-- Prefix-safe fixed-translate repair versus old-coordinate growth.
-
-At `d+b`, supports containing the moving anchor `b` inject into the fixed
-finite order-`h` family at `d`.  Ask for a rooted successor matching larger
-than that fixed loss plus `|W|(r+1)`, and discard its `b`-containing
-members.
-
-If a remaining support avoids the old prefix `W`, it is the desired
-certificate-safe repair.  Otherwise `W` hits every remaining petal system.
-When the common root avoids `W`, distinct petals require distinct hits and
-one support survives by counting.  Hence some `w ∈ W` lies in the root;
-removing it preserves the whole remaining matching as more than `r`
-order-`h` supports at the coherent moving difference `d+b-w`.
-
-This is the direct finite-injury fork for the escaping-difference branch:
-old collisions either disappear or pay unbounded lower-rank growth. -/
 theorem IsExactTupleAsymptoticBasis.eventually_fixedSuccessorTranslate_prefixSafeRepair_or_oldGrowth
     {A : Set ℕ} {h d : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h)
@@ -14764,16 +13728,6 @@ theorem IsExactTupleAsymptoticBasis.eventually_fixedSuccessorTranslate_prefixSaf
         Finset.card_le_card hℋsub
       exact lt_of_lt_of_le (hℋcard ▸ hrM₀) hℋfamily
 
-/-- Cofinal finite-injury dichotomy for one fixed translate.
-
-Either prefix-safe anchor-avoiding repairs occur cofinally, in which case
-protected free-set fusion turns them into one infinite deletion disjoint
-from the old prefix, or one fixed old coordinate `w ∈ W` carries cofinally
-large order-`h` support families at `d+b-w`.
-
-The pigeonhole label is genuinely fixed while `b → ∞`; repeated collision
-with a finite old prefix therefore amplifies into coherent moving
-difference growth rather than another migration branch. -/
 theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_prefixSafeInfiniteDeletion_or_cofinalOldGrowth
     {A : Set ℕ} {h d : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h)
@@ -14830,11 +13784,11 @@ theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_prefixSafeInfiniteDe
     obtain ⟨b, hLb, hbA, hbGrowth⟩ := hwCofinal L
     exact ⟨b, Nat.le_of_lt hLb, hbA, hbGrowth⟩
 
-/-- Rooted-matching normalization of the finite-injury fixed-translate
+/-- Rooted-matching normalization of the finite-obstruction fixed-translate
 dichotomy.
 
 Choose the old-growth demand to be the rank-`h` rooted matching threshold.
-The collision horn then becomes a cofinal rooted matching one full order
+The conflict case then becomes a cofinal rooted matching one full order
 lower, at targets on the fixed affine line `d-w+A`.  Thus protected fusion
 fails only by paying a genuine rank drop with unbounded matching size. -/
 theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_prefixSafeInfiniteDeletion_or_cofinalLowerRootedMatching
@@ -14881,26 +13835,7 @@ theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_prefixSafeInfiniteDe
     exact ⟨t, R, M, hLt, hRcard, hMsub, hMcard,
       hMroot, hMnonempty, hMmatching⟩
 
-/-- Unbounded support growth on one affine translate admits a repair after
-only bounded injury to a finite protected prefix.
-
-Suppose the order-`j` support families at `d+b-c`, with `b ∈ A`, have
-unbounded cardinality cofinally in `b`.  Filter away the supports containing
-the moving anchor `b`; that star has a uniform bound, because after removing
-`b` its target is at most `d`.  If no remaining support avoids the finite
-prefix `W`, pigeonhole one fixed `w ∈ W` which occurs in an unbounded
-subfamily, remove `w`, and recurse at order `j-1` and affine offset `c+w`.
-
-The recursion cannot pass order zero, whose support family has cardinality
-at most one.  Reinserting every removed old summand reconstructs an
-order-`j` support at the original target.  Consequently at most `j` points
-of `W` are sacrificed, while the final repairs avoid both the moving anchor
-and every retained point of `W`.
-
-This is the terminating certificate-migration argument: each genuine old
-collision spends one unit of additive rank, rather than merely renaming the
-obstruction. -/
-theorem cofinal_affineSupportGrowth_has_boundedPrefixInjury
+theorem cofinal_affineSupportGrowth_has_boundedPrefixObstruction
     {A K : Set ℕ} :
     ∀ j d c (W : Finset ℕ),
       (∀ r L, ∃ b,
@@ -15164,14 +14099,6 @@ theorem cofinal_affineSupportGrowth_has_boundedPrefixInjury
                 (Finset.mem_coe.mpr
                   (Finset.mem_sdiff.mpr ⟨hxErase, hxNotS⟩))
 
-/-- Reservoir-relative protected fusion.
-
-The anchors may be required to lie in an arbitrary reservoir `K`, while the
-repair supports still come from the ambient basis `A`.  The bounded
-point-map free-set argument then returns its infinite free set inside `K`.
-This is the form needed for nested fusion: a later stage can thin the
-infinite tail produced by an earlier stage instead of restarting from all
-of `A`. -/
 theorem cofinal_anchorAvoidingSupports_avoidingFinite_onReservoir_have_infiniteFreeDeletion
     {A K : Set ℕ} {h d : ℕ} (W : Finset ℕ)
     (hcofinal : ∀ L, ∃ b E,
@@ -15237,13 +14164,13 @@ theorem cofinal_anchorAvoidingSupports_avoidingFinite_onReservoir_have_infiniteF
   exact Set.disjoint_of_subset_right
     (fun x hxB => hxB.1) (hfree b hbB.1)
 
-/-- Reservoir-relative exact-basis input to the terminating injury theorem.
+/-- Reservoir-relative exact-basis input to the terminating obstruction theorem.
 
 Every infinite `K ⊆ A` supplies arbitrarily large anchors on the fixed
 translate.  Exact successor matchings give the unbounded support growth,
 and the affine descent returns cofinal reconstructed repairs whose anchors
 remain in `K`. -/
-theorem IsExactTupleAsymptoticBasis.cofinal_fixedSuccessorTranslateRepair_onInfiniteReservoir_after_boundedPrefixInjury
+theorem IsExactTupleAsymptoticBasis.cofinal_fixedSuccessorTranslateRepair_onInfiniteReservoir_after_boundedPrefixObstruction
     {A K : Set ℕ} {h d : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h)
     (hKA : K ⊆ A) (hKInfinite : K.Infinite)
@@ -15259,7 +14186,7 @@ theorem IsExactTupleAsymptoticBasis.cofinal_fixedSuccessorTranslateRepair_onInfi
         b ∉ E ∧
         Disjoint (E : Set ℕ) ((W \ S : Finset ℕ) : Set ℕ) := by
   apply
-    cofinal_affineSupportGrowth_has_boundedPrefixInjury
+    cofinal_affineSupportGrowth_has_boundedPrefixObstruction
       (A := A) (K := K) (j := h + 1) (d := d) (c := 0) (W := W)
   intro r L
   obtain ⟨N, hN⟩ :=
@@ -15273,13 +14200,7 @@ theorem IsExactTupleAsymptoticBasis.cofinal_fixedSuccessorTranslateRepair_onInfi
   exact lt_of_lt_of_le hMcard
     (Finset.card_le_card hMsub)
 
-/-- Nested-tail form of the bounded-injury deletion theorem.
-
-The new infinite deletion tail is chosen inside an arbitrary supplied
-infinite reservoir `K ⊆ A`.  Hence finitely many repair stages can be
-composed by genuine thinning, while each stage loses at most `h+1` points
-from its finite old prefix. -/
-theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_boundedInjuryInsideInfiniteReservoir
+theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_boundedObstructionInsideInfiniteReservoir
     {A K : Set ℕ} {h d : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h)
     (hKA : K ⊆ A) (hKInfinite : K.Infinite)
@@ -15296,7 +14217,7 @@ theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_boundedInjuryInsideI
       ∀ b ∈ B, ∃ E ∈ additiveSupportFamily A (h + 1) (d + b),
         Disjoint (E : Set ℕ) D := by
   obtain ⟨S, hSW, hScard, _hSA, hcofinal⟩ :=
-    hbasis.cofinal_fixedSuccessorTranslateRepair_onInfiniteReservoir_after_boundedPrefixInjury
+    hbasis.cofinal_fixedSuccessorTranslateRepair_onInfiniteReservoir_after_boundedPrefixObstruction
       hKA hKInfinite W
   obtain ⟨B, hBK, hBInfinite, hBRetained, hrepair⟩ :=
     cofinal_anchorAvoidingSupports_avoidingFinite_onReservoir_have_infiniteFreeDeletion
@@ -15327,16 +14248,7 @@ theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_boundedInjuryInsideI
     · exact Set.disjoint_left.mp hERetained hxE hxRetained
     · exact Set.disjoint_left.mp hEB hxE hxB
 
-/-- Exact bases supply the cofinal affine growth needed by the terminating
-injury theorem at the successor order.
-
-For every demand, exactness gives a sufficiently late rooted
-order-`h+1` matching.  Choose its target on the fixed translate `d+A`; the
-matching is a subfamily, so the full support family has the required
-cardinality.  Applying
-`cofinal_affineSupportGrowth_has_boundedPrefixInjury` with zero affine
-offset leaves at most `h+1` wounded prefix points. -/
-theorem IsExactTupleAsymptoticBasis.cofinal_fixedSuccessorTranslateRepair_after_boundedPrefixInjury
+theorem IsExactTupleAsymptoticBasis.cofinal_fixedSuccessorTranslateRepair_after_boundedPrefixObstruction
     {A : Set ℕ} {h d : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h)
     (W : Finset ℕ) :
@@ -15351,7 +14263,7 @@ theorem IsExactTupleAsymptoticBasis.cofinal_fixedSuccessorTranslateRepair_after_
         b ∉ E ∧
         Disjoint (E : Set ℕ) ((W \ S : Finset ℕ) : Set ℕ) := by
   apply
-    cofinal_affineSupportGrowth_has_boundedPrefixInjury
+    cofinal_affineSupportGrowth_has_boundedPrefixObstruction
       (A := A) (K := A) (j := h + 1) (d := d) (c := 0) (W := W)
   intro r L
   obtain ⟨N, hN⟩ :=
@@ -15365,18 +14277,7 @@ theorem IsExactTupleAsymptoticBasis.cofinal_fixedSuccessorTranslateRepair_after_
   exact lt_of_lt_of_le hMcard
     (Finset.card_le_card hMsub)
 
-/-- Full fixed-translate repair after bounded prefix injury.
-
-Starting from any finite deletion prefix `W ⊆ A`, sacrifice at most `h+1`
-old points and fuse the cofinal reconstructed repairs by the bounded
-free-set theorem.  The resulting infinite set `B` is disjoint from every
-retained old point, and `D = (W \ S) ∪ B` is an infinite deletion subset of
-`A`.  Every new anchor `b ∈ B` has an order-`h+1` representation of `d+b`
-whose support avoids the entire combined deletion `D`.
-
-Unlike the earlier repair/growth dichotomy, this statement has no migration
-horn: the rank descent has terminated and returned an actual certificate. -/
-theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_boundedInjuryInfiniteDeletion
+theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_boundedObstructionInfiniteDeletion
     {A : Set ℕ} {h d : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h)
     (W : Finset ℕ) (hWA : ∀ x ∈ W, x ∈ A) :
@@ -15392,7 +14293,7 @@ theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_boundedInjuryInfinit
       ∀ b ∈ B, ∃ E ∈ additiveSupportFamily A (h + 1) (d + b),
         Disjoint (E : Set ℕ) D := by
   obtain ⟨S, hSW, hScard, _hSA, hcofinal⟩ :=
-    hbasis.cofinal_fixedSuccessorTranslateRepair_after_boundedPrefixInjury
+    hbasis.cofinal_fixedSuccessorTranslateRepair_after_boundedPrefixObstruction
       W
   obtain ⟨B, hBA, hBInfinite, hBRetained, hrepair⟩ :=
     cofinal_anchorAvoidingSupports_avoidingFinite_have_infiniteFreeDeletion
@@ -15423,19 +14324,7 @@ theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_boundedInjuryInfinit
     · exact Set.disjoint_left.mp hERetained hxE hxRetained
     · exact Set.disjoint_left.mp hEB hxE hxB
 
-/-- Certificate-safe bounded-injury extension.
-
-Let `C` contain every vertex used by the repair certificates fixed at
-earlier stages, and assume the current finite deletion prefix `W` already
-avoids `C`.  Apply the terminating affine repair theorem, then remove `C`
-from its infinite free tail.  The tail stays infinite, all newly constructed
-repairs remain valid after this thinning, and the combined deletion remains
-disjoint from `C`.
-
-Thus later stages can never invalidate an earlier certificate: the sole
-remaining cost of a new translate is the explicitly bounded wound
-`S ⊆ W`, with `|S| ≤ h+1`. -/
-theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_certificateSafeBoundedInjury
+theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_certificateSafeBoundedObstruction
     {A : Set ℕ} {h d : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h)
     (W C : Finset ℕ)
@@ -15455,7 +14344,7 @@ theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_certificateSafeBound
         Disjoint (E : Set ℕ) D := by
   obtain ⟨S, B₀, hSW, hScard, hB₀A, hB₀Infinite,
       hB₀Retained, hD₀A, _hD₀Infinite, hrepair₀⟩ :=
-    hbasis.fixedSuccessorTranslate_boundedInjuryInfiniteDeletion
+    hbasis.fixedSuccessorTranslate_boundedObstructionInfiniteDeletion
       W hWA
   let B : Set ℕ := B₀ \ (C : Set ℕ)
   have hBInfinite : B.Infinite :=
@@ -15495,20 +14384,6 @@ theorem IsExactTupleAsymptoticBasis.fixedSuccessorTranslate_certificateSafeBound
     exact hxD.elim Or.inl
       (fun hxB => Or.inr hxB.1)
 
-/-- Arithmetic normalization of a genuinely moving repair hit.
-
-On an infinite family of successor supports, choose an injectively moving
-hit `point n` from each support and remove it.  Exact support removal leaves
-an order-`j` support at the predecessor difference
-`target n - point n`, reconstructs the original support exactly, and
-preserves every avoidance certificate.
-
-There are then only two infinite behaviours.  Either one predecessor
-difference occurs on an infinite subfamily, giving a fixed affine translate
-with an infinite anchor reservoir, or the predecessor differences can be
-made injective and hence cofinal.  The latter horn is a genuine rank descent;
-the former is exactly the fixed-difference horn handled by the terminating
-affine repair theorem above. -/
 theorem infinite_injectiveHitSupport_normalizes_fixedDifference_or_cofinalLowerRank
     {A I : Set ℕ} {j : ℕ}
     {target point : ℕ → ℕ}
@@ -15631,17 +14506,6 @@ theorem infinite_injectiveHitSupport_normalizes_fixedDifference_or_cofinalLowerR
     · intro n hnJ
       simpa only [J, delta] using hnJ.2
 
-/-- Order-uniform infinite extension from injective bounded repair hits.
-
-For an arbitrary additive rank `h`, suppose every indexed repair avoids an
-old infinite deletion `D`, while an injective marked point for each index
-lies in `A \ D`.  Bounded cross-avoidance thins the indices so that no
-repair contains another index's marked point.  Splitting that thinning into
-two infinite halves lets us delete the marked points of one half and retain
-all repairs on the other.
-
-This is the general-rank extension move needed at a fixed injury layer; it
-does not use any order-three classification. -/
 theorem injective_boundedRepairPoints_give_infiniteDeletionExtension
     {A D I : Set ℕ} {h : ℕ}
     {target point : ℕ → ℕ}
@@ -15695,18 +14559,6 @@ theorem injective_boundedRepairPoints_give_infiniteDeletionExtension
     exact hcross n hnL d hdL hnd
       (Finset.mem_coe.mp hxRepair)
 
-/-- Bounded supports can be thinned to avoid every other member of a
-pairwise-disjoint block family.
-
-Associate each support vertex which lies in one of the blocks to its unique
-block owner.  A support of cardinality at most `r` therefore meets at most
-`r` blocks.  Applying the bounded free-set theorem to this owner map gives
-an infinite set of indices on which no support meets any other retained
-block.
-
-Unlike the earlier point-image thinning, this controls whole finite blocks.
-It is the cross-block engine needed to delete a co-singleton from every
-fresh destroyer rather than just one marked point. -/
 theorem exists_infinite_crossDisjoint_of_pairwiseDisjointBlocks
     {I : Set ℕ} (hI : I.Infinite)
     (block repair : ℕ → Finset ℕ) {r : ℕ}
@@ -15719,72 +14571,60 @@ theorem exists_infinite_crossDisjoint_of_pairwiseDisjointBlocks
       ∀ i ∈ L, ∀ j ∈ L, i ≠ j →
         Disjoint (repair i) (block j) := by
   classical
-  let HasOwner : ℕ → Prop := fun x =>
+  let HasMarkedElement : ℕ → Prop := fun x =>
     ∃ j ∈ I, x ∈ block j
-  let owner : ℕ → ℕ := fun x =>
-    if hx : HasOwner x then Classical.choose hx else 0
-  have hownerSpec : ∀ x, HasOwner x →
-      owner x ∈ I ∧ x ∈ block (owner x) := by
+  let marked_element : ℕ → ℕ := fun x =>
+    if hx : HasMarkedElement x then Classical.choose hx else 0
+  have hownerSpec : ∀ x, HasMarkedElement x →
+      marked_element x ∈ I ∧ x ∈ block (marked_element x) := by
     intro x hx
-    simp only [owner, dif_pos hx]
+    simp only [marked_element, dif_pos hx]
     exact Classical.choose_spec hx
   have hownerUnique :
-      ∀ x, HasOwner x → ∀ j ∈ I, x ∈ block j → owner x = j := by
+      ∀ x, HasMarkedElement x → ∀ j ∈ I, x ∈ block j → marked_element x = j := by
     intro x hx j hjI hxj
     have hspec := hownerSpec x hx
     by_contra hne
     exact Finset.disjoint_left.mp
-      (hblocks (owner x) hspec.1 j hjI hne)
+      (hblocks (marked_element x) hspec.1 j hjI hne)
       hspec.2 hxj
-  let collision : ℕ → Finset ℕ := fun i =>
-    (((repair i).filter HasOwner).image owner).erase i
-  have hcollisionCard : ∀ i ∈ I, (collision i).card ≤ r := by
+  let conflict : ℕ → Finset ℕ := fun i =>
+    (((repair i).filter HasMarkedElement).image marked_element).erase i
+  have hcollisionCard : ∀ i ∈ I, (conflict i).card ≤ r := by
     intro i hi
     calc
-      (collision i).card ≤
-          (((repair i).filter HasOwner).image owner).card :=
+      (conflict i).card ≤
+          (((repair i).filter HasMarkedElement).image marked_element).card :=
         Finset.card_erase_le
-      _ ≤ ((repair i).filter HasOwner).card :=
+      _ ≤ ((repair i).filter HasMarkedElement).card :=
         Finset.card_image_le
       _ ≤ (repair i).card :=
         Finset.card_filter_le _ _
       _ ≤ r := hrepairCard i hi
-  have hiNotCollision : ∀ i ∈ I, i ∉ collision i := by
+  have hiNotConflict : ∀ i ∈ I, i ∉ conflict i := by
     intro i _hi
-    simp [collision]
+    simp [conflict]
   obtain ⟨L, hLI, hL, hfree⟩ :=
     exists_infinite_freeSet_of_bounded_pointMap
-      hI collision r hcollisionCard hiNotCollision
+      hI conflict r hcollisionCard hiNotConflict
   refine ⟨L, hLI, hL, ?_⟩
   intro i hiL j hjL hij
   rw [Finset.disjoint_left]
   intro x hxRepair hxBlock
-  have hxOwner : HasOwner x :=
+  have hxMarkedElement : HasMarkedElement x :=
     ⟨j, hLI hjL, hxBlock⟩
-  have hownerEq : owner x = j :=
-    hownerUnique x hxOwner j (hLI hjL) hxBlock
+  have hownerEq : marked_element x = j :=
+    hownerUnique x hxMarkedElement j (hLI hjL) hxBlock
   have hjImage :
-      j ∈ ((repair i).filter HasOwner).image owner := by
+      j ∈ ((repair i).filter HasMarkedElement).image marked_element := by
     apply Finset.mem_image.mpr
-    exact ⟨x, Finset.mem_filter.mpr ⟨hxRepair, hxOwner⟩,
+    exact ⟨x, Finset.mem_filter.mpr ⟨hxRepair, hxMarkedElement⟩,
       hownerEq⟩
-  have hjCollision : j ∈ collision i := by
+  have hjConflict : j ∈ conflict i := by
     exact Finset.mem_erase.mpr ⟨Ne.symm hij, hjImage⟩
   exact Set.disjoint_left.mp (hfree i hiL)
-    (Finset.mem_coe.mpr hjCollision) hjL
+    (Finset.mem_coe.mpr hjConflict) hjL
 
-/-- Delete every point except one from each of infinitely many fresh
-minimal destroyers.
-
-At block `i`, minimality supplies a private support meeting `block i`
-exactly at `kept i`.  The preceding whole-block thinning makes that support
-avoid every other retained block.  Hence it avoids the union `X` of all
-co-singletons `block i \ {kept i}`.  Since every co-singleton is nonempty
-and the blocks are pairwise disjoint, `X` is infinite.
-
-Every indexed target survives this substantially larger deletion.  As in
-the one-point fusion, a finite certificate whose maximum is that target
-must therefore migrate strictly downward. -/
 theorem freshMinimalDestroyer_cosingletons_fuse_at_certificateMax
     {A I : Set ℕ} {h : ℕ}
     (block : ℕ → Finset ℕ) (target kept : ℕ → ℕ)
@@ -15914,24 +14754,6 @@ theorem freshMinimalDestroyer_cosingletons_fuse_at_certificateMax
       lt_of_le_of_ne (hmax u huQ) hune,
       huDestroy⟩
 
-/-- The exhaustive cardinality fork joining same-target root capture to
-co-singleton fusion.
-
-At every fresh stage, compare the cardinality of the rooted matching with
-the cardinality of its same-target minimal destroyer.
-
-* If `block i` is smaller on infinitely many stages, root capture applies
-  stage by stage.  It returns an actual deleted root point, the exact
-  predecessor difference, and a selector-ready petal block at the same
-  target.
-* Otherwise, after discarding finitely many stages, every destroyer is at
-  least as large as a matching with two petals.  Hence each destroyer has at
-  least two points.  Keep one point, delete the whole co-singleton, and use
-  whole-block cross-disjoint thinning to fuse these deletions.
-
-Thus matching growth and destroyer growth are no longer separate escape
-horns: whichever side wins the cardinality comparison produces usable
-block material while preserving the target label. -/
 theorem freshMinimalDestroyer_rootCapture_or_cosingletonFusion
     {A I : Set ℕ} {k : ℕ}
     (block : ℕ → Finset ℕ) (target : ℕ → ℕ)
@@ -16087,21 +14909,6 @@ theorem freshMinimalDestroyer_rootCapture_or_cosingletonFusion
     intro i hiL
     exact hlargeDestroyer i (hLJ hiL)
 
-/-- Fuse private supports from pairwise-fresh minimal-destroyer blocks.
-
-For every fresh block `block i`, mark two distinct block points.  The point
-`kept i` supplies a private support, while `deleted i` is the point placed
-in the eventual infinite deletion.  Pairwise disjointness of the blocks
-makes the deleted-point map injective.  Since every private support has
-cardinality at most `h`, bounded cross-avoidance thins the stages so that
-no retained private support meets any selected deleted point.
-
-The conclusion is already integrated with certificate maximality.  Every
-stage target survives the fused infinite deletion `X`; hence if a finite
-certificate bounded above by that target still detects a failure on `X`,
-its detected target is strictly smaller.  Thus the fusion produces an
-actual certificate descent, not merely an unrelated stream of surviving
-representations. -/
 theorem freshMinimalDestroyer_privateSupports_fuse_at_certificateMax
     {A I : Set ℕ} {h : ℕ}
     (block : ℕ → Finset ℕ) (target deleted kept : ℕ → ℕ)
@@ -16214,17 +15021,9 @@ theorem freshMinimalDestroyer_privateSupports_fuse_at_certificateMax
       lt_of_le_of_ne (hmax u huQ) hune,
       huDestroy⟩
 
-/-- A first-injury branch cannot remain at one fixed tower stage while its
-hit points move injectively.
-
-All marked points then lie in the one fresh layer above `deletion k`.
-Bounded cross-avoidance thins the marked points into two infinite halves:
-delete one half and retain the repairs indexed by the other.  This constructs
-an actual strict candidate extension of `deletion k`, so the fixed-stage
-moving-point horn is consumed rather than carried as a residual case. -/
-theorem fixedLayer_injectiveFirstInjury_gives_candidateExtension
+theorem fixedLayer_injectiveFirstObstruction_gives_candidateExtension
     {A I : Set ℕ} {deletion layer : ℕ → Set ℕ}
-    {target injury point : ℕ → ℕ}
+    {target obstruction point : ℕ → ℕ}
     {repair : ℕ → Finset ℕ} {k : ℕ}
     (hcandidate :
       IsInfiniteCandidateDeletionWithLateSurvivingRepairs
@@ -16232,12 +15031,12 @@ theorem fixedLayer_injectiveFirstInjury_gives_candidateExtension
     (hlayer : layer k ⊆ A \ deletion k)
     (hI : I.Infinite)
     (hpointInj : Set.InjOn point I)
-    (hfixed : ∀ n ∈ I, injury n = k)
+    (hfixed : ∀ n ∈ I, obstruction n = k)
     (hdata : ∀ n ∈ I,
       n ≤ target n ∧
       repair n ∈ additiveSupportFamily A 3 (target n) ∧
-      Disjoint (repair n : Set ℕ) (deletion (injury n)) ∧
-      point n ∈ layer (injury n)) :
+      Disjoint (repair n : Set ℕ) (deletion (obstruction n)) ∧
+      point n ∈ layer (obstruction n)) :
     ∃ X, X ⊆ A \ deletion k ∧ X.Infinite ∧
       IsInfiniteCandidateDeletionWithLateSurvivingRepairs
         A (deletion k ∪ X) := by
@@ -16261,16 +15060,9 @@ theorem fixedLayer_injectiveFirstInjury_gives_candidateExtension
         (hdata n (hJI hn)).2.1,
         hsurvive n hn⟩⟩
 
-/-- Consume the fixed-layer horn in the existing first-injury frontier.
-
-The pair-generated branch already supplies a strict candidate extension.
-If the frontier instead returns moving repair points at a fixed injury
-stage, `fixedLayer_injectiveFirstInjury_gives_candidateExtension` supplies
-the same conclusion.  Therefore a branch which still has no extension must
-have injective injury stages as well as injective hit points. -/
-theorem HasInfiniteCandidateFirstInjuryMovingOrPairGeneratedExtension.fixedLayer_absorbed
+theorem HasInfiniteCandidateFirstObstructionMovingOrPairGeneratedExtension.fixedLayer_absorbed
     {A : Set ℕ} {deletion layer : ℕ → Set ℕ} {base : ℕ}
-    (h : HasInfiniteCandidateFirstInjuryMovingOrPairGeneratedExtension
+    (h : HasInfiniteCandidateFirstObstructionMovingOrPairGeneratedExtension
       A deletion layer base)
     (hcandidate : ∀ k,
       IsInfiniteCandidateDeletionWithLateSurvivingRepairs
@@ -16278,31 +15070,31 @@ theorem HasInfiniteCandidateFirstInjuryMovingOrPairGeneratedExtension.fixedLayer
     (hlayer : ∀ k, layer k ⊆ A \ deletion k) :
     (∃ I : Set ℕ, ∃ target : ℕ → ℕ,
       ∃ repair : ℕ → Finset ℕ,
-      ∃ injury point : ℕ → ℕ,
+      ∃ obstruction point : ℕ → ℕ,
         I.Infinite ∧
         Set.InjOn target I ∧
         (∀ n ∈ I,
           n ≤ target n ∧
           repair n ∈ additiveSupportFamily A 3 (target n) ∧
-          base ≤ injury n ∧
-          Disjoint (repair n : Set ℕ) (deletion (injury n)) ∧
+          base ≤ obstruction n ∧
+          Disjoint (repair n : Set ℕ) (deletion (obstruction n)) ∧
           point n ∈ repair n ∧
-          point n ∈ layer (injury n)) ∧
-        Set.InjOn injury I ∧
+          point n ∈ layer (obstruction n)) ∧
+        Set.InjOn obstruction I ∧
         Set.InjOn point I) ∨
       ∃ k X,
         X ⊆ A \ deletion k ∧ X.Infinite ∧
         IsInfiniteCandidateDeletionWithLateSurvivingRepairs
           A (deletion k ∪ X) := by
   rcases h with
-      ⟨I, target, repair, injury, point, hI, htargetInj,
+      ⟨I, target, repair, obstruction, point, hI, htargetInj,
         hdata, hmoving | hfixedLayer⟩ |
       ⟨k, X, hX, hXInfinite, hextension⟩
-  · exact Or.inl ⟨I, target, repair, injury, point,
+  · exact Or.inl ⟨I, target, repair, obstruction, point,
       hI, htargetInj, hdata, hmoving.1, hmoving.2⟩
   · obtain ⟨k, hinjuryFixed, hpointInj⟩ := hfixedLayer
     obtain ⟨X, hX, hXInfinite, hextension⟩ :=
-      fixedLayer_injectiveFirstInjury_gives_candidateExtension
+      fixedLayer_injectiveFirstObstruction_gives_candidateExtension
         (hcandidate k) (hlayer k) hI hpointInj hinjuryFixed
         (by
           intro n hn
@@ -16312,18 +15104,6 @@ theorem HasInfiniteCandidateFirstInjuryMovingOrPairGeneratedExtension.fixedLayer
     exact Or.inr ⟨k, X, hX, hXInfinite, hextension⟩
   · exact Or.inr ⟨k, X, hX, hXInfinite, hextension⟩
 
-/-- A counterexample must escape every prescribed finite family of
-difference labels.
-
-First pre-service all translates `d+B`, `d ∈ D`, on one infinite deletion
-`B`.  Strong deletion then supplies cofinally late targets destroyed by
-that same `B`; none can lie in a serviced translate.  Exactness at order
-`h` independently puts an arbitrarily large exact-label rooted matching at
-each sufficiently late successor target.
-
-Hence fixed or finitely recurrent differences are not a terminal
-obstruction.  Any surviving counterexample branch must make the represented
-difference labels themselves escape every finite set. -/
 theorem exactBasis_counterexample_forces_cofinalFailedRootedMatchings_off_finiteTranslates
     {A : Set ℕ} {h : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h)
@@ -16408,17 +15188,6 @@ theorem exactBasis_counterexample_forces_cofinalFailedRootedMatchings_with_large
     exact Finset.mem_range.mpr (Nat.lt_of_not_ge hsmall)
   exact (hoff (n - b) hdMem b hbB) (by omega)
 
-/-- A single infinite deletion absorbs the entire lower-gap horn.
-
-The deletion `B` simultaneously services all exceptional order-`h` gap
-translates.  Run the rooted-matching/gap dichotomy with its finite anchor
-pool chosen inside this same `B`.  In the gap branch the target is
-`(n-b)+b`, so the prebuilt repair survives `B`; hence every sufficiently
-late target either already survives the deletion or has the requested
-exact-label rooted matching.
-
-Unlike the recurrent fixed-gap conclusion, neither the gap label nor the
-matching demand changes the deletion. -/
 theorem IsExactTupleAsymptoticBasis.exists_infiniteDeletion_exactRootedMatching_or_survival
     {A : Set ℕ} {h : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h) :
@@ -16457,15 +15226,6 @@ theorem IsExactTupleAsymptoticBasis.exists_infiniteDeletion_exactRootedMatching_
       Nat.sub_add_cancel hbn
     exact ⟨E, by simpa only [htarget] using hER, hEB⟩
 
-/-- If the desired successor deletion still fails, all gap migration has
-already been eliminated on one fixed infinite deletion.
-
-For every matching demand and every lateness threshold there is a failed
-target for that same deletion carrying an exact-label rooted matching of
-the demanded size.  Thus a hypothetical counterexample can no longer move
-between different predecessor gaps: its only remaining mechanism is a
-root of fewer than `h+1` deleted vertices recurring at cofinally late
-failure targets. -/
 theorem exactBasis_counterexample_forces_fixedDeletion_cofinalFailedRootedMatchings
     {A : Set ℕ} {h : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h)
@@ -16506,18 +15266,6 @@ theorem exactBasis_counterexample_forces_fixedDeletion_cofinalFailedRootedMatchi
   · exact ⟨n, hLn, hnDestroy, hmatching⟩
   · exact (hnDestroy E hER hEB).elim
 
-/-- Counterexample-level form of the pure-deletion split.
-
-For the fixed deletion supplied by the gap-repair construction, either
-infinitely many failed targets admit a chosen representation with at least
-one surviving point, or arbitrarily late failed targets carry arbitrarily
-large rooted matchings all of whose supports lie wholly in the deletion.
-
-The first horn is exactly the hypothesis that eliminates the rank-zero
-endpoint of `infinite_additiveDestroyers_rankFork`.  The second horn is the
-only remaining pure-absorption enemy: it does not merely say that one chosen
-support was deleted, but that every support at the selected failed target is
-made entirely of deleted points. -/
 theorem exactBasis_counterexample_forces_noncontainedFailedRepairs_or_pureDeletionRootedMatchings
     {A : Set ℕ} {h : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h)
@@ -16597,17 +15345,6 @@ theorem exactBasis_counterexample_forces_noncontainedFailedRepairs_or_pureDeleti
       apply hnNotI
       exact ⟨hnDestroy, E, hMsub hEM, x, hxE, hxB⟩
 
-/-- The recurrent lower gap in the fixed-reservoir obstruction is genuinely
-fixed.
-
-There are only finitely many order-`k+1` gaps because `A` is already an
-exact order-`k+1` basis.  Apply finite cofinal pigeonhole to the gap label
-`d = q - b` in the crossed rectangles above.  If cofinal rooted matching
-growth is absent, one fixed gap `d` recurs with targets `q = d + b` for
-cofinally large basis points `b`.
-
-Thus the nongrowth obstruction is a fixed missing predecessor translated
-along `A`, not an arbitrary moving family of gaps. -/
 theorem boundedFullTranslateDestroyers_fixedGrowingCertificate_cofinalMatching_or_fixedGapRectangles
     {A : Set ℕ} {k q₀ : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -16734,16 +15471,6 @@ theorem boundedFullTranslateDestroyers_fixedGrowingCertificate_cofinalMatching_o
       hfanCapacity, hxBlock, hyBlock, hbx, hbE, hER, hGR,
       hxE, hyG, hyE, hxG, hHR, hEeq, hTR, hGeq⟩
 
-/-- Infinite-deletion payoff of the fixed-gap rectangle branch.
-
-For every matching demand, either exact rooted matchings occur cofinally at
-order `k+2`, or one fixed order-`k+1` gap `d` has an infinite set of
-translation anchors `B ⊆ A` such that every damaged target `d+b`, `b ∈ B`,
-already has an order-`k+2` support wholly outside `B`.
-
-This completes the simultaneous repair of the entire recurrent fixed-gap
-slice.  Any remaining counterexample certificate must therefore migrate
-away from all targets in `d + B`. -/
 theorem boundedFullTranslateDestroyers_cofinalMatching_or_fixedGapInfiniteRepairDeletion
     {A : Set ℕ} {k q₀ : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -16920,18 +15647,6 @@ theorem IsExactTupleAsymptoticBasis.eventually_lockedPrefix_matching_or_freshGap
     · exact Or.inr (Or.inr (Or.inr hgap))
   · exact Or.inr (Or.inr (Or.inl hdescent))
 
-/-- Gap-free certificate-safe composition at the successor of an exact
-basis order.
-
-This is the direct successor-order specialization of
-`eventually_lockedPrefix_matching_or_gap_or_rankGrowthDescent`.  The
-intrinsic locked-prefix/descent analysis is unchanged, but genuine
-destruction by the bounded locked prefix is fed into
-`eventually_boundedSuccessorDestroyer_forces_largeDifferenceFamily`.
-Because order `k` is already an exact basis, the lower-gap horn is
-impossible.  The exhaustive outputs are therefore only current-order
-matching growth, coherent predecessor matching growth, or strict
-certificate descent. -/
 theorem IsExactTupleAsymptoticBasis.eventually_successorLockedPrefix_matching_or_rankGrowthDescent
     {A K : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -17053,17 +15768,6 @@ theorem IsExactTupleAsymptoticBasis.eventually_successorLockedPrefix_matching_or
       hMroot, hMnonempty, hMdisjoint⟩
   · exact Or.inr (Or.inr hdescent)
 
-/-- Successor-order certificate migration terminates with no gap branch.
-
-For a basis of order `k`, consider finite selector certificates for the
-desired successor support family of order `k+1`.  Starting at the largest
-currently destroyed target, the gap-free locked-prefix theorem gives
-current-order rooted matching growth, predecessor rooted matching growth,
-or a strictly smaller destroyed target while preserving all larger targets.
-Strong induction on that target eliminates the last alternative.
-
-Thus repeated certificate migration at the order relevant to Erdős 881 is
-not merely well founded: it must terminate in concrete matching growth. -/
 theorem IsExactTupleAsymptoticBasis.eventually_successorFiniteCertificate_matching
     {A K : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -17140,19 +15844,6 @@ theorem IsExactTupleAsymptoticBasis.eventually_successorFiniteCertificate_matchi
     exists_maximalDestroyedCertificateTarget hcert initial
   exact hterminate q hqQ initial hqDestroy hqLarger
 
-/-- Exact-label normalization of gap-free successor certificate migration.
-
-The terminating migration theorem can finish one rank lower at the coherent
-difference `q-d`.  This apparent loss is not genuine.  Inserting `d` lifts
-the whole lower support family back to the exact successor target `q`, with
-cardinality loss at most a factor of two.  Asking migration for more than
-twice the rooted-matching threshold therefore forces a large rooted matching
-at `q` itself.
-
-Unlike the earlier bounded-certificate normalization, neither the cardinality
-of `Q` nor the sizes of the partition blocks are bounded in advance.  Thus
-every sufficiently late finite successor certificate contains an exact-label
-large delta system. -/
 theorem IsExactTupleAsymptoticBasis.eventually_successorFiniteCertificate_exactRootedMatching
     {A K : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -17209,14 +15900,6 @@ theorem IsExactTupleAsymptoticBasis.eventually_successorFiniteCertificate_exactR
     exact ⟨q, hqQ, R', M', hR'card, hM'sub, hM'card,
       hM'root, hM'nonempty, hM'matching⟩
 
-/-- A hypothetical negative successor-deletion instance forces exact-label
-rooted matching growth inside arbitrarily late finite certificates.
-
-This is the direct counterexample form of the preceding theorem.  Strong
-successor deletion supplies the certificate, and gap-free migration plus the
-factor-two lift returns the matching at an actual member of that certificate.
-There is no bound on the certificate cardinality or on the partition blocks.
--/
 theorem successorCounterexample_forces_lateCertificate_exactRootedMatching
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -17252,15 +15935,6 @@ theorem successorCounterexample_forces_lateCertificate_exactRootedMatching
     exact (le_max_right L N).trans (hQlate q hqQ)
   exact ⟨Q, hLateL, hcert, hN Q hLateN hcert⟩
 
-/-- Localized certificate migration terminates.
-
-Start with the maximum certificate target destroyed by an arbitrary
-selector.  The localized descent horn above supplies a strictly smaller
-destroyed target and, crucially, certifies that every larger certificate
-target survives for the new selector.  Strong induction on the target
-therefore eliminates migration altogether: on every sufficiently late
-finite certificate there is current-order rooted matching growth, coherent
-lower-order rooted matching growth, or a genuine lower-order gap. -/
 theorem IsExactTupleAsymptoticBasis.eventually_finiteCertificate_matching_or_lowerGap
     {A K : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -17485,7 +16159,7 @@ theorem IsStronglyMinimalExactBasis.cofinal_rootedMatching_or_lowerGap
 
 For every finite protected set `W`, matching demand, and target threshold,
 the arithmetic escape point can be chosen in `A \ W`.  This is the
-finite-injury form of the global dichotomy: successive gap repairs need
+finite-obstruction form of the global dichotomy: successive gap repairs need
 never reuse a previously locked vertex. -/
 theorem IsStronglyMinimalExactBasis.cofinal_rootedMatching_or_freshLowerGap
     {A : Set ℕ} {k : ℕ}
@@ -17537,15 +16211,6 @@ theorem IsStronglyMinimalExactBasis.cofinal_rootedMatching_or_freshLowerGap
   · obtain ⟨q, hqQ, hgap⟩ := hgap
     exact Or.inr (Or.inr ⟨q, hLateL q hqQ, hgap⟩)
 
-/-- Certificate-safe finite-prefix composition for every bounded minimal
-destroyer when all blocks have second-choice capacity.
-
-Uniform protected avoidance gives either a large coherent difference family
-or a lower-gap point outside `U`.  In the gap branch, the empty-exception
-protected completion repairs any private hit of the minimal destroyer.
-Unlike the old-collision theorem below, no lower bound on `D.card` is
-required; the only extra hypothesis is the all-block capacity needed for
-the second choices. -/
 theorem IsExactTupleAsymptoticBasis.eventually_boundedMinimalDestroyer_protectedRepair_or_growth
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -17643,7 +16308,7 @@ theorem IsExactTupleAsymptoticBasis.eventually_boundedMinimalDestroyer_protected
     obtain ⟨d, hdD⟩ := hDnonempty
     obtain hrepair |
         ⟨j, hjEmpty, _E, _hER, _hsjE, _hprivate⟩ :=
-      lowerGapRepair_extends_protectedOnReservoir_or_oldCollision
+      lowerGapRepair_extends_protectedOnReservoir_or_oldConflict
         P s (J := ∅) hminimal hdD hbGap hUselected
           (by
             intro j _hj _hsjVertices
@@ -17651,14 +16316,6 @@ theorem IsExactTupleAsymptoticBasis.eventually_boundedMinimalDestroyer_protected
     · exact hrepair
     · simpa using hjEmpty
 
-/-- Bounded-destroyer strict certificate step.
-
-Store supports for the currently surviving larger certificate targets.  If
-all blocks have the uniform protected capacity, the preceding theorem gives
-either coherent support growth or a protected repair.  The latter forces
-the finite certificate to move to a strictly smaller target.  This closes
-the small-destroyer branch completely in the absence of capacity-deficient
-old blocks. -/
 theorem IsExactTupleAsymptoticBasis.eventually_boundedMinimalDestroyer_growth_or_strictCertificateDescent
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -17761,21 +16418,6 @@ theorem IsExactTupleAsymptoticBasis.eventually_boundedMinimalDestroyer_onReservo
         hcert hprotected htU htq
     exact ⟨t, u, huQ, huq, huDestroy⟩
 
-/-- Uniform bounded-certificate payoff of the strict-descent argument.
-
-Fix bounds `C` for the certificate cardinality and `B` for support growth
-before the certificate is known.  If every block has the corresponding
-protected capacity, then every sufficiently late finite selector
-certificate forces one of two genuine arithmetic growth outcomes:
-
-* more than `B` order-`k+1` supports at a certificate target; or
-* more than `B` order-`k` supports at a coherent difference `q-d`.
-
-Indeed, in the absence of both outcomes every minimal selected destroyer has
-cardinality at most `B`.  Protected finite-prefix composition then supplies
-the repair step at the largest currently destroyed target, and
-`finiteSelectorCertificate_impossible_of_strictRepairStep` rules out an
-infinite descent through the finite certificate. -/
 theorem IsExactTupleAsymptoticBasis.eventually_boundedCertificate_forces_supportGrowth
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -17877,7 +16519,7 @@ theorem IsExactTupleAsymptoticBasis.eventually_boundedCertificate_forces_support
     exact (huDestroy G hGR)
       (Set.disjoint_of_subset_left hGU htU)
 
-/-- Uniform bounded-certificate payoff on a padded deletion reservoir.
+/-- Uniform bounded-certificate theorem on a padded deletion set.
 
 The proof is the same finite strict-descent argument as for a partition of
 all of `A`.  Reservoir membership of a destroyer point is promoted to
@@ -17985,14 +16627,6 @@ theorem IsExactTupleAsymptoticBasis.eventually_boundedCertificate_onReservoir_fo
     exact (huDestroy G hGR)
       (Set.disjoint_of_subset_left hGU htU)
 
-/-- Padded binary migration closes every bounded-certificate branch.
-
-Fix certificate and support bounds `C,B` before constructing the deletion
-reservoir.  Extra binary subcells make every block large enough for the
-protected strict-descent argument.  Strong deletion then returns a late
-certificate `Q`: if `|Q| ≤ C`, finite descent forces genuine support growth
-at order `k+2` or at a coherent order-`k+1` difference.  Hence the only
-non-growth outcome is the concrete inequality `C < |Q|`. -/
 theorem boundedFullTranslateDestroyers_paddedCertificate_large_or_supportGrowth
     {A : Set ℕ} {k q₀ : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -18072,13 +16706,6 @@ theorem boundedFullTranslateDestroyers_paddedCertificate_large_or_supportGrowth
   · left
     omega
 
-/-- Exact-label matching normalization of padded binary migration.
-
-The coherent lower-difference growth horn lifts back to the same successor
-target with factor-two loss.  Thus, for every certificate bound and matching
-demand, the bounded-translate counterexample produces either a protected
-localized certificate larger than the bound, or a rooted matching of the
-requested size at an exact late order-`k+2` certificate target. -/
 theorem boundedFullTranslateDestroyers_paddedCertificate_large_or_exactRootedMatching
     {A : Set ℕ} {k q₀ : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -18238,11 +16865,11 @@ theorem IsExactTupleAsymptoticBasis.eventually_boundedCertificate_forces_exactRo
     exact ⟨q, hqQ, R, M, hRcard, hMsub, hMcard,
       hMroot, hMnonempty, hMmatching⟩
 
-/-- Matching-normalized bounded-certificate payoff.
+/-- Matching-normalized bounded-certificate theorem.
 
 Choose `B` above the finite-rank matching thresholds at ranks `k+1` and
 `k`.  The preceding strict-descent theorem then turns either arithmetic
-growth horn into a genuine matching of more than `r` supports at some
+growth case into a genuine matching of more than `r` supports at some
 positive rank at most `k+1`. -/
 theorem IsExactTupleAsymptoticBasis.eventually_boundedCertificate_forces_matching
     {A : Set ℕ} {k : ℕ}
@@ -18289,19 +16916,6 @@ theorem IsExactTupleAsymptoticBasis.eventually_boundedCertificate_forces_matchin
     exact ⟨h, hhpos, hhle.trans (Nat.le_succ k),
       m, M, hMsub, hMmatching, hMcard⟩
 
-/-- One fixed partition handles every matching threshold at a prescribed
-certificate bound.
-
-The block cardinality depends only on `C`, not on the later matching demand
-`r`.  After this partition is fixed, strong deletion supplies arbitrarily
-late finite certificates.  If such a certificate has cardinality at most
-`C`, the bounded-certificate strict-descent theorem gives a matching larger
-than the arbitrarily chosen `r`; otherwise the certificate itself has grown
-beyond `C`.
-
-This is the scheduled quantifier payoff of the second-choice argument: the
-partition is chosen once before `r`, the late threshold, and the certificate
-are revealed. -/
 theorem IsStronglyMinimalExactBasis.exists_fixedPartition_largeCertificate_or_arbitraryMatching
     {A : Set ℕ} {k : ℕ}
     (hminimal : IsStronglyMinimalExactBasis A (k + 1)) :
@@ -18359,14 +16973,6 @@ theorem IsStronglyMinimalExactBasis.exists_fixedPartition_largeCertificate_or_ar
   · left
     omega
 
-/-- Fixed-partition exact-label rooted-matching dichotomy.
-
-For a prescribed certificate bound `C`, one partition is chosen before the
-matching size and lateness demands.  Every later request returns either a
-certificate larger than `C`, or a rooted matching of the requested size in
-the original order-`k+1` support family at a certificate target `q ≥ L`.
-Thus the bounded-certificate branch now gives cofinal structure at the
-correct rank and exact labels. -/
 theorem IsStronglyMinimalExactBasis.exists_fixedPartition_largeCertificate_or_cofinalExactRootedMatching
     {A : Set ℕ} {k : ℕ}
     (hminimal : IsStronglyMinimalExactBasis A (k + 1)) :
@@ -18429,15 +17035,6 @@ theorem IsStronglyMinimalExactBasis.exists_fixedPartition_largeCertificate_or_co
   · left
     omega
 
-/-- Certificate-safe finite-prefix composition for a large minimal
-destroyer.
-
-The protected union has only a cardinal budget when the late threshold is
-chosen.  Uniform avoidance gives a lower-gap point outside that union.
-Trying this gap point at every private hit either completes a selector which
-preserves `q` and all protected targets, or amplifies the old collisions.
-Thus a destroyer larger than `|J| * r` cannot leave an unprotected repair
-horn. -/
 theorem IsExactTupleAsymptoticBasis.eventually_largeMinimalDestroyer_protectedRepair_or_growth
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -18675,19 +17272,6 @@ theorem IsExactTupleAsymptoticBasis.eventually_largeMinimalDestroyer_onReservoir
         hcert hprotected htU htq
     exact ⟨t, u, huQ, huq, huDestroy⟩
 
-/-- Uniform finite-prefix composition on a prescribed finite set of old
-blocks.
-
-The old selector prefix consists of the selected values in `J` and has
-cardinality at most `J.card`, independently of the later selector.  Hence
-the exact-basis threshold can be chosen before that selector, target, and
-minimal destroyer are known.
-
-If the whole destroyer lies in old blocks, this coherent old prefix destroys
-the target.  The finite-prefix theorem then gives either support growth at a
-difference by an old selected summand, or a lower-order gap.  The latter is
-converted here—not left as an unaligned finite swap—into the full two-block
-selector repair. -/
 theorem IsExactTupleAsymptoticBasis.eventually_oldBlockDestroyer_growth_or_twoBlockRepair
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -18749,18 +17333,6 @@ theorem IsExactTupleAsymptoticBasis.eventually_oldBlockDestroyer_growth_or_twoBl
         P s hminimal hdD hbA hbGap hblocks
     exact ⟨t, htSurvives⟩
 
-/-- Exhaustive old/contemporary split for a target-localized minimal
-destroyer.
-
-If the destroyer uses a contemporary block, activate one such coordinate.
-Protected block alignment then forces either matching growth at a coherent
-difference or exposes a represented difference at an old selected summand.
-
-If every point of the destroyer lies in an old block, the coherent old
-selector prefix destroys the target.  Uniform finite-prefix composition then
-forces matching growth at one of its differences or constructs a complete
-selector on which the target survives.  Thus the lower-gap horn is closed as
-a full selector repair, rather than remaining an unaligned finite swap. -/
 theorem IsExactTupleAsymptoticBasis.eventually_targetLocalized_destroyer_oldContemporarySplit
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -18833,20 +17405,6 @@ theorem IsExactTupleAsymptoticBasis.eventually_targetLocalized_destroyer_oldCont
           P s hk hcert hother hminimal hDselected hactive
             hcontemporary⟩
 
-/-- Collision-amplified old/contemporary composition.
-
-Fix a desired growth threshold `r`.  If more than `|J| * r` points of the
-minimal destroyer lie in contemporary blocks, the private-collision
-injection forces support growth either at a destroyer difference or at an
-old selected difference.
-
-Otherwise the whole destroyer is uniformly bounded: its old part has at
-most one selected point per index in `J`, and its contemporary part has at
-most `|J| * r` points.  Uniform finite-prefix composition may therefore be
-applied to the whole destroyer.  It again gives support growth, or a
-lower-order gap which extends to a complete selector preserving `q`.
-
-This removes the former one-off "represented old difference" escape. -/
 theorem IsExactTupleAsymptoticBasis.eventually_targetLocalized_destroyer_growth_or_twoBlockRepair
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -18967,10 +17525,10 @@ theorem IsExactTupleAsymptoticBasis.eventually_targetLocalized_destroyer_growth_
           P s hminimal hdD hbA hbGap hblocks
       exact ⟨t, htSurvives⟩
 
-/-- Matching-normalized collision-amplified composition.
+/-- Matching-normalized conflict-amplified composition.
 
 Choose the support threshold in the preceding theorem to be the finite-rank
-matching bound.  Either growth horn then contains a matching of more than
+matching bound.  Either growth case then contains a matching of more than
 `r` supports at some positive rank at most `k`; the only remaining outcome
 is the complete lower-gap selector repair. -/
 theorem IsExactTupleAsymptoticBasis.eventually_targetLocalized_destroyer_matching_or_twoBlockRepair
@@ -19027,15 +17585,6 @@ theorem IsExactTupleAsymptoticBasis.eventually_targetLocalized_destroyer_matchin
     exact ⟨h, hhpos, hhk, m, M, hMsub, hMmatching, hMcard⟩
   · exact Or.inr hrepair
 
-/-- Coarsen a finite-block partition into blocks with prescribed lower
-cardinalities while preserving the old even-indexed blocks as distinguished
-service cores.
-
-Every even block `F (2*j)` is reserved for the new block `G j`.  The odd
-blocks are reindexed by the countable sigma type
-`Σ j, Fin (K j)` and supplied as `K j` pairwise-disjoint fillers.  Thus no
-point of the partition is lost, the new blocks remain finite and disjoint,
-and any distinguished point in `F (2*j)` remains available in `G j`. -/
 theorem IsFiniteBlockPartition.exists_coarsening_preserving_evenBlocks_with_cardLower
     {A : Set ℕ} {F : ℕ → Finset ℕ}
     (P : IsFiniteBlockPartition A F)
@@ -19074,7 +17623,7 @@ theorem IsFiniteBlockPartition.exists_coarsening_preserving_evenBlocks_with_card
         (⟨j, a⟩ : Fiber) = ⟨j, b⟩ :=
       e.symm.injective hindex
     exact congrArg (fun p : Fiber => p.2.val) hpairs
-  have hrowOwners :
+  have hrowMarkedElements :
       ∀ {i j} {a : Fin (K i)} {b : Fin (K j)},
         fillerRow i a = fillerRow j b → i = j := by
     intro i j a b hab
@@ -19092,31 +17641,31 @@ theorem IsFiniteBlockPartition.exists_coarsening_preserving_evenBlocks_with_card
     intro i j hij
     rw [Finset.disjoint_left]
     intro x hxi hxj
-    rcases Finset.mem_union.mp hxi with hxiService | hxiFillers
-    · rcases Finset.mem_union.mp hxj with hxjService | hxjFillers
+    rcases Finset.mem_union.mp hxi with hxiCoverage | hxiFillers
+    · rcases Finset.mem_union.mp hxj with hxjCoverage | hxjFillers
       · exact Finset.disjoint_left.mp (P.disjoint (by omega))
-          hxiService hxjService
+          hxiCoverage hxjCoverage
       · obtain ⟨b, _hbUniv, hxb⟩ :=
           Finset.mem_biUnion.mp hxjFillers
         exact Finset.disjoint_left.mp
           (P.disjoint (by
             dsimp only [fillerRow]
             omega))
-          hxiService hxb
+          hxiCoverage hxb
     · obtain ⟨a, _haUniv, hxa⟩ :=
         Finset.mem_biUnion.mp hxiFillers
-      rcases Finset.mem_union.mp hxj with hxjService | hxjFillers
+      rcases Finset.mem_union.mp hxj with hxjCoverage | hxjFillers
       · exact Finset.disjoint_left.mp
           (P.disjoint (by
             dsimp only [fillerRow]
             omega))
-          hxa hxjService
+          hxa hxjCoverage
       · obtain ⟨b, _hbUniv, hxb⟩ :=
           Finset.mem_biUnion.mp hxjFillers
         have hrows :
             fillerRow i a ≠ fillerRow j b := by
           intro hrow
-          exact hij (hrowOwners hrow)
+          exact hij (hrowMarkedElements hrow)
         exact Finset.disjoint_left.mp (P.disjoint hrows)
           hxa hxb
   have hmem : ∀ x, x ∈ A ↔ ∃ j, x ∈ G j := by
@@ -19149,8 +17698,8 @@ theorem IsFiniteBlockPartition.exists_coarsening_preserving_evenBlocks_with_card
         refine ⟨a, Finset.mem_univ a, ?_⟩
         rwa [← hr]
     · rintro ⟨j, hxG⟩
-      rcases Finset.mem_union.mp hxG with hxService | hxFillers
-      · exact (P.mem_iff x).mpr ⟨2 * j, hxService⟩
+      rcases Finset.mem_union.mp hxG with hxCoverage | hxFillers
+      · exact (P.mem_iff x).mpr ⟨2 * j, hxCoverage⟩
       · obtain ⟨a, _haUniv, hxa⟩ :=
           Finset.mem_biUnion.mp hxFillers
         exact (P.mem_iff x).mpr ⟨fillerRow j a, hxa⟩
@@ -19192,15 +17741,6 @@ theorem IsFiniteBlockPartition.exists_coarsening_preserving_evenBlocks_with_card
     exact Finset.card_le_card hpicksSub
   exact ⟨G, ⟨hnonempty, hdisjoint, hmem⟩, hcore, hcard⟩
 
-/-- Partition an infinite set into consecutive finite intervals scheduled
-against an arbitrary threshold function.
-
-The `j`-th cut lies beyond every threshold of index at most `j+2`.  Blocks
-are the nonempty consecutive slices ending at those cuts.  Consequently, a
-target below cut `m` can involve only the first `m+1` block coordinates,
-while a target above cut `m-1` is already beyond the threshold for that many
-coordinates.  The following theorem records the partition and the two
-endpoint inequalities used by the root-barrier argument. -/
 theorem exists_scheduledIntervalBlockPartition
     {A : Set ℕ} (hA : A.Infinite) (threshold : ℕ → ℕ) :
     ∃ F : ℕ → Finset ℕ, ∃ _P : IsFiniteBlockPartition A F,
@@ -19371,19 +17911,6 @@ theorem exists_scheduledIntervalBlockPartition
   · intro j x hx
     exact ⟨hFlower j x hx, hFupper (j + 1) x hx⟩
 
-/-- Scheduled root-barrier normal form of a hypothetical successor
-counterexample.
-
-Choose the interval partition after the eventual rooted-matching thresholds
-are known.  At a target in the `m`-th interval only the first `m+1` selector
-coordinates can occur in a support, while the target is already late enough
-for a rooted matching with more than `m+1` petals.  Hence every destroying
-selector must select a root point.  Finite compactness then forces the union
-of the roots of one late certificate to contain an entire partition block.
-
-This removes the moving-prefix cardinal circularity completely: matching
-size is compared with the actual number of active coordinates, not with an
-unknown certificate bound. -/
 theorem successorCounterexample_forces_scheduledFullBlockRootBarrier_withDemand
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -19761,7 +18288,7 @@ theorem HasDiagonalAnchoredAlignedTranslateCellRows.exists_scheduledThinAnchored
 /-- Scheduled anchors with independently prescribed block capacities.
 
 First build the one-cell-per-row anchored partition and reindex it so row
-`j` is block `j`.  Then reserve the even rows as service cores and use all
+`j` is block `j`.  Then reserve the even rows as coverage cores and use all
 odd rows as filler blocks.  The `j`-th final block contains the anchor from
 old row `2*j`, retains its scheduled lower bound, and has at least `K j`
 points. -/
@@ -19811,21 +18338,6 @@ theorem HasDiagonalAnchoredAlignedTranslateCellRows.exists_scheduledLargeAnchore
     exact hanchorLower (2 * j)
   exact ⟨G, PG, anchor, hanchorG, hanchorScheduled, hcard⟩
 
-/-- Scheduled finite-prefix/difference composition with strong deletion.
-
-The anchor schedule is chosen from the uniform destroyer-cardinality
-thresholds.  A cardinal-minimal certificate is then localized at its largest
-target `q`.  Above the first `M` rows the localized selector is replaced by
-scheduled anchors larger than `q`; below them its choices are left unchanged.
-Because all other certificate targets are at most `q`, this splice cannot
-turn any target preserved by the localized selector into a destroyed one.
-The certificate therefore forces `q` itself to remain destroyed, now by
-exactly the first `M` choices.
-
-Minimality of the cutoff gives `q` beyond the uniform `M`-point threshold.
-Consequently the moving-prefix circularity is eliminated: cofinally often,
-either a coherent difference `q-d` has arbitrarily large lower-order support
-families, or `q` exposes a genuine lower-order gap translate. -/
 theorem HasDiagonalAnchoredAlignedTranslateCellRows.strongDeletion_forces_cofinalLargeDifferenceFamily_or_lowerGap
     {A : Set ℕ} {k : ℕ}
     (hdiag : HasDiagonalAnchoredAlignedTranslateCellRows A (k + 1))
@@ -20017,23 +18529,6 @@ theorem HasDiagonalAnchoredAlignedTranslateCellRows.strongDeletion_forces_cofina
       le_trans (le_max_left L (boundary (r + 1))) hqLower,
       Or.inr hgap⟩
 
-/-- Coherent scheduled-difference system.
-
-Unlike the target-localized formulation above, this theorem uses the
-scheduled anchors themselves as one fixed selector.  Its finite destroyers
-are therefore literal initial segments `damagePrefix M` of one coherent
-infinite sequence, independent of every later certificate.
-
-The schedule simultaneously guarantees:
-
-* `damagePrefix M` has exactly `M` points;
-* all selected anchors after row `M` exceed the destroyed target;
-* that target is beyond the uniform threshold for every `M`-point
-  destroyer.
-
-Hence arbitrarily long coherent prefixes force either more than `M`
-lower-order supports at a difference `q-d` with `d` in that very prefix, or
-an explicit lower-order gap translate. -/
 theorem HasDiagonalAnchoredAlignedTranslateCellRows.strongDeletion_forces_scheduledCoherentDifferenceSystem
     {A : Set ℕ} {k : ℕ}
     (hdiag : HasDiagonalAnchoredAlignedTranslateCellRows A (k + 1))
@@ -20278,25 +18773,12 @@ theorem IsStronglyMinimalExactBasis.finiteTranslateGrowth_or_cofinalDifferenceMa
       (hdiag.strongDeletion_forces_cofinalDifferenceMatching_or_lowerGap
         hminimal)
 
-/- Threshold for iterating the old-prefix/root descent.  At order `k+1`,
-first ask the rooted-matching theorem for enough supports either to satisfy
-the requested size `r` immediately or to retain the complete order-`k`
-threshold after one old common summand is removed. -/
 def additivePrefixAvoidingRootBound : ℕ → ℕ → ℕ
   | 0, _r => 2
   | k + 1, r =>
       additiveRootedMatchingBound (k + 1)
         (max r (additivePrefixAvoidingRootBound k r))
 
-/-- Iterated certificate-prefix synchronization.  From a sufficiently large
-order-`h` support family and an arbitrary finite prefix `F`, one obtains a
-large genuine rooted matching at some positive rank `j ≤ h` whose common
-root is disjoint from `F`.
-
-Whenever the current root meets `F`,
-`rootedMatching_disjointPrefix_or_descends` removes an old common summand
-and lowers the order.  Cardinality is unchanged, so the recursion must reach
-a disjoint root before order zero. -/
 theorem additiveSupportFamily_forces_prefixDisjointRootedMatching_below
     {A : Set ℕ} :
     ∀ h r m (F : Finset ℕ) (𝒢 : Finset (Finset ℕ)),
@@ -20377,18 +18859,6 @@ theorem common_mem_root_of_one_lt_rootedMatching
     (Finset.mem_sdiff.mpr ⟨hdM E hEM, hdR⟩)
     (Finset.mem_sdiff.mpr ⟨hdM G hGM, hdR⟩)
 
-/-- Prefix clearing with a distinguished fresh common root.
-
-Starting from a large support family whose every member contains `d`, where
-`d` is outside the old prefix `F`, repeatedly delta-systemize and remove any
-common root point lying in `F`.  Star descent preserves `d` because the
-removed point cannot equal it.  Every new delta system has at least two
-members, so the common-point lemma puts `d` back into its root.
-
-The output records the complete list of consumed old root points and the
-exact target equation.  Thus all additional old deleted points are paid for
-by strict rank descent, while the genuinely fresh moving root survives in a
-root disjoint from the whole prefix. -/
 theorem additiveSupportFamily_forces_prefixDisjointRootedMatching_below_preservingCommon
     {A : Set ℕ} :
     ∀ h r m (F : Finset ℕ) (𝒢 : Finset (Finset ℕ)) (d : ℕ),
@@ -20494,14 +18964,6 @@ theorem additiveSupportFamily_forces_prefixDisjointRootedMatching_below_preservi
         · simp only [List.sum_cons]
           omega
 
-/-- Prefix-avoiding rooted-matching descent with ambient-set memory.
-
-Starting from a large family all of whose support vertices lie in `B`,
-repeatedly remove common root points which collide with the old prefix
-`F`.  The order strictly drops at each collision, cardinality is preserved,
-and `additiveSupportStar_descends_card_inside` keeps every descended
-support inside `B`.  The process therefore terminates at a positive rank
-with a root disjoint from `F`, without losing the pure-deletion structure. -/
 theorem additiveSupportFamily_forces_prefixDisjointRootedMatching_below_inside
     {A B : Set ℕ} :
     ∀ h r m (F : Finset ℕ) (𝒢 : Finset (Finset ℕ)),
@@ -20599,14 +19061,6 @@ theorem additiveSupportFamily_forces_prefixDisjointRootedMatching_below_inside
         · simp only [List.sum_cons]
           omega
 
-/-- Final form of the rank attack on bounded successor transversals.  Against
-any prescribed finite deletion prefix, arbitrarily large matching structure
-appears at some positive predecessor rank with a genuine common root
-disjoint from that prefix.
-
-The only remaining loss is that the positive rank `j` and translated target
-may move.  Synchronizing those with the minimal strong order-`k` certificate
-is now the sole unresolved step in this route. -/
 theorem recurrentPrefixDisjointRootedMatchings_of_boundedFullTranslateDestroyers
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -20672,10 +19126,9 @@ theorem recurrentPrefixDisjointRootedMatchings_of_boundedMovingOnFiniteTranslate
     (boundedFullTranslateDestroyersByAnchor_of_boundedMovingOnFiniteTranslates
       hbasis hQ hmoving)
 
-/-- Strongest current exhaustive relative dichotomy.  The bad
-moving-transversal branch now returns arbitrarily large rooted matchings
-whose roots avoid every prescribed finite prefix; any repeated collision
-with the prefix has already been consumed by strict additive-rank descent. -/
+/-- Either one finite core has eventual outside matching growth, or
+arbitrarily large rooted matchings recur with roots outside every prescribed
+finite prefix. -/
 theorem finiteCoreTranslateGrowth_or_recurrentPrefixDisjointRootedMatchings
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -20748,19 +19201,6 @@ theorem additiveSupportFamily_card_le_lowerRankSupportCountBelow
         (fun _ _ => Nat.zero_le _) hjmem
     _ = additiveLowerRankSupportCountBelow A h L := rfl
 
-/-- Pure-deletion rooted matching absorption cannot hide in an old prefix or
-at bounded lower targets.
-
-If arbitrarily late destroyed order-`h` targets carry arbitrarily large
-rooted matchings wholly inside one deletion `B`, then after any prescribed
-finite prefix there are arbitrarily large rooted matchings, still wholly
-inside `B`, at a positive rank `j ≤ h`, with fresh root and arbitrarily
-large descended target.  Prefix collisions are paid for by rank descent;
-bounded target drift is excluded by asking for more supports than exist at
-all bounded targets and ranks.
-
-This turns the pure-absorption endpoint into cofinal fresh block material
-inside the same fixed deletion. -/
 theorem cofinal_pureDeletionRootedMatchings_force_cofinal_prefixDisjointPureRootedMatchings
     {A B : Set ℕ} {h : ℕ}
     (hpure : ∀ r L, ∃ n, L ≤ n ∧
@@ -20829,16 +19269,6 @@ theorem cofinal_pureDeletionRootedMatchings_force_cofinal_prefixDisjointPureRoot
     hMroot, hMnonempty, hMmatching, hMinside⟩
   exact lt_of_le_of_lt (le_max_left r count) hMlarge
 
-/-- Cofinal successor targets whose every support lies in `B` force `B` to
-contain the entire predecessor basis.
-
-Indeed, fix `c ∈ A` and take such a target `q` beyond the predecessor
-representation threshold plus `c`.  Represent `q - c` at order `h` and
-insert `c`.  The resulting order-`h+1` support at `q` contains `c`, so the
-assumed internality puts `c` in `B`.
-
-This elementary insertion observation rules out the pure-containment branch
-as soon as the deletion reservoir omits even one basis element. -/
 theorem cofinal_internalSuccessorSupports_force_ambientSubset
     {A B : Set ℕ} {h : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h)
@@ -20861,20 +19291,6 @@ theorem cofinal_internalSuccessorSupports_force_ambientSubset
     simpa only [hsum] using h
   exact hqInside (insert c E) hlift c (by simp)
 
-/-- A successor counterexample has a fixed-anchor, consecutive-order
-failure stream on a proper infinite deletion.
-
-Start with the gap-service deletion and remove one of its points `c`.
-Removing a singleton preserves infinitude and all stored repairs.  Strong
-successor deletion then gives arbitrarily late targets `q` destroyed by the
-proper deletion.  Since `c ∈ A` but `c` is not deleted, successor
-transversal descent shows that the very same deletion destroys the
-predecessor target `q - c`.  Taking `q` beyond `c` plus the order-`h`
-representation threshold makes these predecessor targets cofinal and
-represented.
-
-Thus the moving difference is eliminated at the source: the order-`h` and
-order-`h+1` failures are paired by one fixed external anchor `c`. -/
 theorem exactBasis_counterexample_forces_properDeletion_cofinalAlignedFailures
     {A : Set ℕ} {h : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h)
@@ -20955,17 +19371,6 @@ theorem exactBasis_counterexample_forces_properDeletion_cofinalAlignedFailures
   exact ⟨q, hLdiff, hcq, hpredDestroy, hqDestroy,
     insert c E, hlift, by simp, hcB⟩
 
-/-- Finite, prefix-fresh form of the fixed-anchor alignment.
-
-For every finite history `F`, delete its points from the proper reservoir
-`B` and apply strong successor deletion to the remaining infinite set.
-Compact the resulting failure to an inclusion-minimal finite destroyer `D`.
-The fixed omitted anchor `c` is outside `D`, so the same `D` also destroys
-the predecessor target `q - c`.
-
-This is the direct finite object on which the two consecutive orders can be
-compared: `D` is fresh, successor-minimal, and simultaneously a predecessor
-transversal at the fixed difference. -/
 theorem exactBasis_counterexample_forces_cofinalFreshAlignedMinimalDestroyers
     {A : Set ℕ} {h : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h)
@@ -21052,19 +19457,6 @@ theorem exactBasis_counterexample_forces_cofinalFreshAlignedMinimalDestroyers
   exact ⟨q, D, hLdiff, hcq, hDnonempty, hDB,
     hDF, hminimal, hpredDestroy⟩
 
-/-- Excess successor-destroyer points inject into anchor-avoiding successor
-supports.
-
-Let `D` be inclusion-minimal for the successor target `q`, and let `P ⊆ D`
-already destroy the predecessor target `q - c`.  For every
-`x ∈ D \ P`, take the private successor support meeting `D` only at `x`.
-That support cannot contain `c`: removing `c` would give a predecessor
-support, which `P` must hit, forcing its unique hit `x` back into `P`.
-
-Private supports at distinct excess points are distinct, so the excess
-cardinality is bounded by the number of genuinely new, `c`-avoiding
-successor supports.  This is the quantitative bridge from paired
-transversals to representation growth. -/
 theorem alignedMinimalDestroyer_excess_le_anchorAvoidingSupports
     {A : Set ℕ} {h q c : ℕ} {D P : Finset ℕ}
     (hminimal :
@@ -21137,16 +19529,6 @@ theorem alignedMinimalDestroyer_excess_le_anchorAvoidingSupports
   simpa only [Fintype.card_coe] using
     Fintype.card_le_of_injective privateSupport hinjective
 
-/-- Cardinal form of the fixed-anchor two-order bridge.
-
-Choose an inclusion-minimal predecessor destroyer `P ⊆ D`.  Its cardinality
-is at most the number of predecessor supports.  The preceding injection
-bounds `D \ P` by the anchor-avoiding successor supports.  Adding the two
-parts bounds the entire successor-minimal destroyer.
-
-Consequently an unbounded aligned destroyer cannot be a new third
-obstruction: it must pay for its size in one of two exact representation
-families, at `q - c` or at `q`. -/
 theorem alignedMinimalDestroyer_card_le_twoOrderSupportMass
     {A : Set ℕ} {h q c : ℕ} {D : Finset ℕ}
     (hminimal :
@@ -21175,14 +19557,6 @@ theorem alignedMinimalDestroyer_card_le_twoOrderSupportMass
     Finset.card_sdiff_of_subset hPD
   omega
 
-/-- The excess part of an aligned consecutive-order destroyer either stays
-below the rooted-matching threshold or produces a large rooted matching at
-the original successor target, entirely avoiding the descent anchor.
-
-The private-support injection is used before any rank descent.  Consequently
-the large-family horn retains both pieces of synchronization which are lost
-by a generic support-count argument: every support still represents `q`,
-and every support omits `c`. -/
 theorem alignedMinimalDestroyer_excess_bounded_or_anchorAvoidingRootedMatching
     {A : Set ℕ} {h q c r : ℕ} {D P : Finset ℕ}
     (hminimal :
@@ -21234,18 +19608,6 @@ theorem alignedMinimalDestroyer_excess_bounded_or_anchorAvoidingRootedMatching
     exact ⟨R, M, hRcard, hMsub, hMcard, hMroot,
       hMnonempty, hMmatching⟩
 
-/-- Complete same-target size fork for nested consecutive-order minimal
-destroyers.
-
-If the predecessor-minimal core `P` is large, its private supports give a
-large rooted predecessor family.  If its excess inside `D` is large, the
-preceding theorem gives a rooted successor family avoiding the anchor.
-Otherwise the two strict bounds add, so the whole successor destroyer is
-bounded before its vertices are known.
-
-In the zero-normalized use (`c = 0`) both matching horns retain the same
-target `q`; the successor horn additionally consists entirely of zero-free
-supports. -/
 theorem alignedMinimalDestroyer_bounded_or_predecessorRootedMatching_or_anchorAvoiding
     {A : Set ℕ} {h q c r : ℕ} {D P : Finset ℕ}
     (hminimal :
@@ -21307,18 +19669,6 @@ theorem alignedMinimalDestroyer_bounded_or_predecessorRootedMatching_or_anchorAv
     exact ⟨R, M, hRcard, hMsub, hMcard, hMroot,
       hMnonempty, hMmatching⟩
 
-/-- Arbitrary finite-anchor fan of aligned consecutive-order failures.
-
-Remove a prescribed finite set of anchors `C ⊆ A` from the gap-service
-reservoir.  After any additional finite history `F`, strong successor
-deletion supplies a fresh inclusion-minimal destroyer `D` at a late target
-`q`.  Every `a ∈ C` lies outside `D`, so successor descent through `a`
-shows that this single `D` destroys every predecessor target `q - a`.
-
-The threshold is chosen above the largest anchor, hence all of those
-predecessor targets are simultaneously late and represented.  This replaces
-the former moving-difference obstruction by one finite transversal serving
-an arbitrarily large fan of exact labels. -/
 theorem exactBasis_counterexample_forces_finiteAnchorFanMinimalDestroyers
     {A : Set ℕ} {h : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h)
@@ -21431,18 +19781,6 @@ theorem exactBasis_counterexample_forces_finiteAnchorFanMinimalDestroyers
         (hCA (Finset.mem_coe.mpr haC)) haD haq
   exact ⟨hLdiff, haq, ⟨G, hGR⟩, hpredDestroy⟩
 
-/-- A large finite anchor fan with a bounded common destroyer forces
-same-order support growth at one common translated target.
-
-For each anchor `a`, choose a support of `q - a` and one hit `p ∈ D`.
-Remove `p` and insert `a`; this gives an order-`h` support of the common
-target `q - p`.  Pigeonhole the anchors over `p ∈ D`.  For fixed `p`, one
-resulting support can receive at most `h` anchors, because it contains every
-anchor assigned to it and has cardinality at most `h`.
-
-Hence more than `|D| * h * r` anchors force more than `r` distinct supports
-at `q - p` for some `p ∈ D`.  This is the bounded-destroyer half of the
-anchor-fan amplifier. -/
 theorem large_finiteAnchorFan_forces_commonTarget_supportGrowth
     {A : Set ℕ} {h q r : ℕ} {C D : Finset ℕ}
     (hhpos : 0 < h)
@@ -21589,16 +19927,6 @@ theorem large_finiteAnchorFan_forces_commonTarget_supportGrowth
       A h (q - p) G hGfamily
   omega
 
-/-- The complete quantitative escape analysis for a large anchor fan.
-
-Fix one anchor `a ∈ C`.  If the common destroyer has more than `2r`
-points, the two-order support-mass bound forces more than `r` predecessor
-supports at `q - a` or more than `r` successor supports at `q` which avoid
-`a`.  If the destroyer has at most `2r` points, the anchor-fan amplifier
-forces more than `r` supports at one common translated target `q - p`.
-
-Thus a fan larger than `(2r) * (h*r)` cannot be absorbed while all three
-relevant representation families remain bounded by `r`. -/
 theorem large_finiteAnchorFan_forces_twoOrder_or_commonTarget_supportGrowth
     {A : Set ℕ} {h q r : ℕ} {C D : Finset ℕ}
     (hhpos : 0 < h)
@@ -21658,14 +19986,6 @@ def anchorFanMatchingBound (h r : ℕ) : ℕ :=
       (additiveSupportRankBound (h + 1) r)
   (2 * s) * (h * s)
 
-/-- A sufficiently large anchor fan cannot be destroyed without producing
-a genuine matching at some positive rank.
-
-Apply the three-way escape theorem at the larger of the order-`h` and
-order-`h+1` matching thresholds.  Predecessor growth and common-translate
-growth normalize below order `h`; anchor-avoiding successor growth
-normalizes below order `h+1`.  Thus the conclusion no longer depends on the
-unknown destroyer cardinality. -/
 theorem large_finiteAnchorFan_forces_matching_below
     {A : Set ℕ} {h q r : ℕ} {C D : Finset ℕ}
     (hhpos : 0 < h)
@@ -21730,19 +20050,6 @@ theorem large_finiteAnchorFan_forces_matching_below
     exact ⟨j, hjpos, hjh.trans (Nat.le_succ h),
       t, M, hMsub, hMmatching, hMcard⟩
 
-/-- An infinite external anchor reservoir turns strong deletion on a
-disjoint reservoir into fresh matching growth.
-
-Choose a finite anchor shield large enough for the requested matching,
-then force the destroyed successor target beyond every shield element and
-the predecessor representation threshold.  A finite minimal destroyer
-inside `B \ F` is disjoint from the shield and from the old history `F`.
-Successor descent aligns it with every anchored predecessor target, so the
-shield theorem produces the matching.
-
-The important quantifier is that `B` is fixed while `F`, the matching
-demand, and the target cutoff vary.  Thus matching growth and fresh
-successor injury coexist on one infinite deletion reservoir. -/
 theorem infiniteAnchorShield_strongDeletion_forces_cofinalFreshMatchings
     {A C B : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
@@ -21846,18 +20153,6 @@ theorem infiniteAnchorShield_strongDeletion_forces_cofinalFreshMatchings
   exact ⟨q, D, hLq, hDnonempty, hDB, hDF,
     hminimal, hmatching⟩
 
-/-- Counterexample-level fixed-reservoir form of the anchor-shield attack.
-
-Enumerate the infinite basis and split the enumeration into its even and
-odd subsequences.  These give disjoint infinite anchor and deletion
-reservoirs `C,B ⊆ A`.  Strong deletion on the fixed odd reservoir, combined
-with arbitrarily large finite shields from the even reservoir, produces
-after every finite history a new successor-minimal destroyer and an
-arbitrarily large matching at a positive rank.
-
-Unlike a bare cofinal-growth conclusion, the same `B` carries every fresh
-destroyer.  This is the quantifier shape needed for an infinite block
-construction. -/
 theorem exactBasis_counterexample_forces_fixedReservoir_freshMatchings
     {A : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
@@ -21941,18 +20236,6 @@ theorem exactBasis_counterexample_forces_fixedReservoir_freshMatchings
     hhpos hbasis hCA hCInfinite hBA hBInfinite hCB
       (strongExactDeletion_of_counterexample hcounter)
 
-/-- Repeated-anchor repair of a private minimal-destroyer support.
-
-For `x ∈ D`, minimality supplies an order-`H` support of `q` whose only
-destroyer *value* is `x`.  The value `x` may occur several times in the
-underlying tuple, so removing it once need not clear the destroyer.  Peel
-all hits on `D`; uniqueness shows that the entire hit list consists of
-copies of `x`.  Reinsert the same number of copies of an external anchor
-`a ∉ D`.
-
-The result has the original order `H`, is disjoint from `D`, and moves the
-target from `ℓ*x + t` to `ℓ*a + t`.  This is the multiplicity-safe
-replacement bridge missing from one-step support normalization. -/
 theorem minimalAdditiveDestroyer_has_repeatedAnchorRepair
     {A : Set ℕ} {H q x a : ℕ} {D : Finset ℕ}
     (hminimal :
@@ -22043,18 +20326,6 @@ theorem minimalAdditiveDestroyer_has_repeatedAnchorRepair
     hellpos, hlength, hqeq, hcoreR, hcoreD,
     hrepairR, hrepairD⟩
 
-/-- Prefix-cleared form of repeated-anchor repair.
-
-Let `W` contain the current minimal destroyer and any finite collection of
-old deletion blocks or protected coordinates.  Peel *every* occurrence of
-every value in `W` from a private support.  The hit list is nonempty because
-it contains the private destroyer value.  Replacing the whole list by
-copies of one anchor outside `W` restores the original order and produces a
-support disjoint from the current destroyer and the entire old prefix.
-
-The exact old hit sum is retained in `q = hits.sum + t`; no normalization
-or distinctness assumption is made.  This is the unrestricted
-finite-prefix/repeated-multiplicity composition bridge. -/
 theorem minimalAdditiveDestroyer_has_prefixClearedRepeatedAnchorRepair
     {A : Set ℕ} {H q x a : ℕ} {D W : Finset ℕ}
     (hminimal :
@@ -22136,17 +20407,6 @@ theorem minimalAdditiveDestroyer_has_prefixClearedRepeatedAnchorRepair
     hlength, hhitsW, htarget, hcoreR, hcoreW,
     hrepairR, hrepairW⟩
 
-/-- One prefix-cleared private support supplies repairs for every clean
-replacement tuple, with one common core.
-
-Unlike choosing a separate repair for each anchor, the private support is
-chosen and peeled only once.  Hence `hits`, `j`, `t`, and `core` are fixed
-before the replacements are introduced.  Any list `pads` of the same
-length, drawn from `C \ W`, gives an order-`H` support at
-`pads.sum + t`.  Its finite support is contained in
-`pads.toFinset ∪ core`, which is the property needed to protect the whole
-translated exact-sumset fan by reserving only `core` and keeping the later
-deletion disjoint from `C`. -/
 theorem minimalAdditiveDestroyer_has_prefixClearedUniversalAnchorFan
     {A C : Set ℕ} {H q x : ℕ} {D W : Finset ℕ}
     (hminimal :
@@ -22243,17 +20503,6 @@ theorem minimalAdditiveDestroyer_has_prefixClearedUniversalAnchorFan
     simpa [repaired, foldr_insert_eq_toFinset_union] using hyRepair
   exact ⟨repaired, hrepairR, hrepairW, hrepairSub⟩
 
-/-- Reservoir-cleared universal anchor fan.
-
-When the destroyer lies in one side `B` of a partition `A ⊆ C ∪ B`, peel
-the private support against the *whole* of `B`, rather than only against a
-finite history.  Every removed summand is then in `B`, while the residual
-core lies in `C`.  Consequently every equal-length replacement tuple from
-`C` gives a successor support avoiding all of `B`.
-
-This removes the moving finite prefix from the normalization obstruction:
-failure of a same-sum replacement is witnessed by the one fixed deletion
-reservoir `B`. -/
 theorem minimalAdditiveDestroyer_has_reservoirClearedUniversalAnchorFan
     {A C B : Set ℕ} {H q x : ℕ} {D : Finset ℕ}
     (hminimal :
@@ -22398,14 +20647,6 @@ theorem no_cleanTupleNormalization_forces_partitionDestroyer
     rw [List.sum_ofFn]
     exact hvsum
 
-/-- The reservoir-cleared fan turns the private successor obstruction into
-a non-moving lower-rank obstruction on the same fixed reservoir `B`.
-
-The original private support is split into its `B`-summands and a core in
-`C`.  If a tuple from `C` had the same length and sum as those `B`-summands,
-the universal fan would reconstruct the destroyed successor target while
-avoiding all of `B`, hence all of `D`.  Therefore no such normalization
-exists, and `B` itself destroys the exact hit sum at the peeled rank. -/
 theorem minimalAdditiveDestroyer_has_fixedReservoirLowerRankDescent
     {A C B : Set ℕ} {H q x : ℕ} {D : Finset ℕ}
     (hminimal :
@@ -22496,18 +20737,6 @@ theorem list_foldr_mem_additiveSupportFamily
   simpa using
     (foldr_insert_mem_additiveSupportFamily hxs hempty)
 
-/-- Complementary-core composition transfers a destroyer to the peeled
-hit target.
-
-Suppose `D` destroys the full target `q = n + t` at order
-`H = ℓ + j`, while a fixed order-`j` support of `t` avoids `D`.  Any
-order-`ℓ` support of `n` avoiding `D` could be adjoined to that core,
-producing an order-`H` support of `q` avoiding `D`.  Hence `D` already
-destroys `n` at order `ℓ`.
-
-This is the exact finite-prefix/difference composition needed below: the
-same fresh destroyer, not an enlarged reservoir, descends with the peeled
-sum. -/
 theorem complementarySurvivingCore_forces_hitTargetDestroyer
     {A : Set ℕ} {H q ℓ n j t : ℕ}
     {D core : Finset ℕ}
@@ -22567,17 +20796,6 @@ theorem complementarySurvivingCore_forces_hitTargetDestroyer
         (Finset.mem_coe.mpr hzCore) hzD
   exact hminimal.1 repaired hrepairQ hrepairD
 
-/-- A successor counterexample forces cofinal nonvacuous lower-rank
-destruction on one fixed deletion reservoir.
-
-Split `A` into the disjoint infinite reservoirs `C,B`.  For a cutoff `L`,
-ask for a fresh successor-minimal destroyer disjoint from
-`{0, ..., L}` and peel one of its private supports against all of `B`.
-The peeled hit list contains a destroyer point above `L`, hence its sum is
-above `L`.  The reservoir-cleared fan then shows that this represented hit
-sum is destroyed by the same fixed set `B`, with no moving finite prefix,
-while its residual core and every clean replacement lie entirely on the
-retained side. -/
 theorem exactBasis_counterexample_forces_cofinalFixedReservoirLowerRankDescent
     {A : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
@@ -22664,13 +20882,13 @@ theorem exactBasis_counterexample_forces_cofinalFixedReservoirLowerRankDescent
     hrepresented, hdestroy, htarget, hcoreR,
     hcoreC, hfan, hno⟩
 
-/-- Fixed-rank payoff of the reservoir-cleared descent.
+/-- Fixed-rank consequence of descent outside a fixed deletion set.
 
 Only the peeled length can vary, and it lies in the finite interval
 `1, ..., h+1`.  An infinite-fiber argument therefore fixes one positive
 rank `ℓ` at which the same reservoir `B` destroys genuinely represented
 targets cofinally.  Unlike the earlier moving-prefix conclusion, neither
-the deleted set nor an auxiliary finite injury set depends on the target. -/
+the deleted set nor an auxiliary finite obstruction set depends on the target. -/
 theorem exactBasis_counterexample_forces_fixedRankCofinalFixedReservoirDestruction
     {A : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
@@ -22746,20 +20964,6 @@ theorem exactBasis_counterexample_forces_fixedRankCofinalFixedReservoirDestructi
   rw [hiSlope] at hrepresented hdestroy
   exact ⟨(hits i).sum, hLn, hrepresented, hdestroy⟩
 
-/-- Fixed-reservoir stage with both cross-block repair and matching growth.
-
-Under the counterexample, fix the disjoint infinite anchor/deletion split
-`C,B`.  After an arbitrary finite history `F`, obtain a fresh nonempty
-minimal destroyer `D ⊆ B`.  Choose `a ∈ C` beyond both `F` and the requested
-target cutoff, and apply prefix-cleared repeated-anchor repair with
-`W = D ∪ F`.
-
-The resulting full successor-order support avoids every old deletion point
-and the entire new block `D`; its target is late because the nonempty hit
-list contributes at least one copy of the late anchor.  The same stage also
-retains the independently forced positive-rank matching.  Future stages may
-therefore put this repaired support into their forbidden prefix while still
-obtaining a new disjoint destroyer. -/
 theorem exactBasis_counterexample_forces_fixedReservoir_prefixClearedRepairs_and_matchings
     {A : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
@@ -22860,11 +21064,6 @@ theorem exactBasis_counterexample_forces_fixedReservoir_prefixClearedRepairs_and
     hcoreR, hcoreW, hrepairR, hqRepair, hLrepair, hrepairW,
     hmatching⟩
 
-/-- Compact supply interface extracted from the anchor-repair stage.
-
-This retains exactly the data needed for infinite recursion: beyond any
-cutoff and finite prefix, a fresh nonempty minimal destroyer block is paired
-with a later full-order support avoiding both that block and the prefix. -/
 theorem exactBasis_counterexample_forces_fixedReservoir_prefixClearedRepairSupply
     {A : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
@@ -22905,7 +21104,6 @@ theorem exactBasis_counterexample_forces_fixedReservoir_prefixClearedRepairSuppl
     hLq, hDnonempty, hDB, hDF, hminimal,
     hqRepair, hLrepair, hrepairR, hrepairW⟩
 
-/-- One recursive block-and-repair stage. -/
 structure FreshPrefixClearedRepairStep
     (A B : Set ℕ) (H : ℕ) (used : Finset ℕ) (last : ℕ) where
   failure : ℕ
@@ -22926,7 +21124,6 @@ structure FreshPrefixClearedRepairStep
     Disjoint (support : Set ℕ)
       ((block ∪ used : Finset ℕ) : Set ℕ)
 
-/-- Prefix-cleared repair supply provides every recursive stage. -/
 theorem freshPrefixClearedRepairStep_nonempty
     {A B : Set ℕ} {H : ℕ}
     (hsupply : ∀ F : Finset ℕ, ∀ L,
@@ -22992,8 +21189,6 @@ structure FreshUniversalAnchorFanStep
           ((block ∪ used : Finset ℕ) : Set ℕ) ∧
         repaired ⊆ pads.toFinset ∪ core
 
-/-- Fresh minimal destroyers and the universal-anchor repair lemma supply
-every common-core fan stage. -/
 theorem freshUniversalAnchorFanStep_nonempty
     {A C B : Set ℕ} {H : ℕ}
     (hCA : C ⊆ A)
@@ -23021,20 +21216,6 @@ theorem freshUniversalAnchorFanStep_nonempty
     hlength, hhitsW, hblockHit, htarget,
     hcoreR, hcoreW, hfan⟩⟩
 
-/-- A putative successor counterexample yields one coherent infinite
-deletion assembled from fresh minimal-destroyer blocks, together with a
-cofinal stream of full-order repairs which avoid the entire deletion.
-
-The recursion protects both every earlier block and every earlier repaired
-support.  Consequently a later block cannot damage an earlier repair, while
-the prefix-cleared repair at its own stage already avoids all earlier
-blocks.  This is the global cross-block conclusion missing from the local
-anchor repair: every displayed support is disjoint from the union `K` of
-all blocks, not merely from the block which created it.
-
-At the same time, `K` destroys every `failure i`.  The relation
-`target i < failure (i + 1)` and strict growth of `target` show that these
-destroyed targets are cofinal. -/
 theorem exactBasis_counterexample_forces_coherentInfinitePrefixClearedDeletion
     {A : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
@@ -23216,23 +21397,6 @@ theorem exactBasis_counterexample_forces_coherentInfinitePrefixClearedDeletion
       intro x hx
       exact ⟨i, Finset.mem_coe.mp hx⟩
 
-/-- Counterexample-level root-capture/co-singleton dichotomy.
-
-Apply the coherent prefix-cleared deletion construction to a hypothetical
-negative successor instance.  Its fresh minimal destroyers have strictly
-increasing, hence cofinal, failure targets.  Exactness one order lower gives
-a rooted successor matching with at least two members at every sufficiently
-late one of those *same* targets.
-
-The abstract cardinality fork can therefore be applied on a cofinal tail.
-Either infinitely many destroyers are smaller than their matchings, giving
-same-target root capture, exact predecessor differences, and petal blocks;
-or destroyers dominate on an infinite tail, and deleting every block except
-one private point produces an infinite `X ⊆ B` on which all indexed failure
-targets survive and every finite certificate maximum descends.
-
-This is a direct consequence of counterexamplehood: the matching system in
-the conclusion is constructed from `hbasis`, not assumed. -/
 theorem exactBasis_counterexample_forces_rootCapture_or_cosingletonFusion
     {A : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
@@ -23411,28 +21575,6 @@ theorem exactBasis_counterexample_forces_rootCapture_or_cosingletonFusion
       hdominates, hXeq, hXB, hXInfinite,
       hrepairData, hdescent⟩
 
-/-- Co-singleton fusion is not a terminal certificate-descent branch.
-
-Enumerate the fused co-singletons as one finite-block partition of `X`.
-Every indexed target survives the whole of `X`, hence survives every block
-selector.  Strong deletion therefore produces arbitrarily late
-cardinal-minimal certificates disjoint from that entire target stream.
-
-At every target of the escaped certificate, exactness one order lower
-supplies a same-target rooted matching larger than any prescribed `r`.
-Use the target-private selector and pass to an inclusion-minimal finite
-destroyer inside it.  There are now only two outcomes:
-
-* the matching is larger than the destroyer, so the root is captured and
-  gives a cardinality-preserving predecessor-difference family together
-  with a same-target petal block; or
-* the destroyer has more than `r` points.  Since it is contained in a block
-  selector, these points occupy more than `r` distinct co-singleton blocks.
-
-Thus the strict descent exposed by co-singleton fusion cannot merely be
-repeated on the old labels (the certificate avoids them); it regenerates
-unbounded cross-block destruction or a new exact root capture at genuinely
-new labels. -/
 theorem cosingletonFusion_forces_escapedCertificate_rootCapture_or_manyBlockDestroyer
     {A X L : Set ℕ} {k : ℕ}
     (block : ℕ → Finset ℕ)
@@ -23626,18 +21768,6 @@ theorem cosingletonFusion_forces_escapedCertificate_rootCapture_or_manyBlockDest
       Nat.le_of_not_gt hDM
     exact hrM.trans_le hMD
 
-/-- Growing-demand counterexample fork.
-
-The fixed two-petal fork is enough to produce a co-singleton, but it leaves
-open a spurious bounded-cardinality stall.  Reindex the coherent failure
-sequence so that its `i`-th target lies beyond the eventual matching
-threshold for demand `i+1`.  The same-target matching cardinalities then
-tend to infinity before the cardinality fork is applied.
-
-Consequently the root-capture branch has petal blocks of unbounded size,
-while the co-singleton branch has pairwise-disjoint minimal destroyers of
-unbounded size.  No uniform finite petal set and no bounded destroyer family
-can remain as a terminal outcome. -/
 theorem exactBasis_counterexample_forces_unboundedRootCapture_or_growingCosingletonFusion
     {A : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
@@ -23842,21 +21972,6 @@ theorem exactBasis_counterexample_forces_unboundedRootCapture_or_growingCosingle
       hblockGrowth, hXeq, hXB, hXInfinite,
       hrepairData, hdescent⟩
 
-/-- Unbounded singleton-safe petal blocks fuse to an actual infinite
-deletion.
-
-Enumerate the infinite stage set increasingly.  At enumerated stage `n`,
-the petal block has more than `n+1` points, so choose a point outside the
-finite set chosen earlier.  This gives an injective marked-point stream.
-For every marked point, singleton safety supplies a same-target repair
-avoiding it.  Bounded cross-avoidance then thins and splits the stream,
-deleting infinitely many marked points while retaining infinitely many
-repairs which avoid the entire deletion.
-
-The retained targets remain cofinal because the original target sequence
-and the stage enumeration are both strictly increasing.  Hence the
-unbounded root-capture horn produces a genuine infinite deletion object,
-not just unrelated finite petal blocks. -/
 theorem unbounded_singletonSafeBlocks_fuse_infiniteDeletion
     {A J : Set ℕ} {k : ℕ}
     (target : ℕ → ℕ)
@@ -24011,20 +22126,6 @@ theorem unbounded_singletonSafeBlocks_fuse_infiniteDeletion
     not_destroysAt_iff.mpr
       ⟨repair n, hrepairMem n, hrepairOnlyX⟩⟩
 
-/-- Counterexample-level elimination of the two old cardinality endpoints.
-
-Apply the growing-demand fork.  In the root-capture branch, the unbounded
-petal blocks fuse to one infinite deletion carrying cofinally many surviving
-same-target repairs.  In the co-singleton branch, enumerate the fused
-co-singletons and apply strong deletion to that partition; every late
-escaped certificate target then has either a new root capture or a minimal
-destroyer crossing more than any prescribed number of blocks.
-
-This theorem does not claim the final Erdős-881 contradiction: a cofinal
-surviving stream is weaker than eventual survival, and unbounded
-cross-block destroyers still require composition.  It does prove that
-neither root capture nor co-singleton fusion can remain a bounded or
-one-step terminal branch. -/
 theorem exactBasis_counterexample_forces_rootPetalDeletion_or_escapedCosingletonGrowth
     {A : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
@@ -24180,15 +22281,6 @@ theorem exactBasis_counterexample_forces_rootPetalDeletion_or_escapedCosingleton
     exact ⟨X, cell, P, oldTarget, hXB.trans hBA,
       hXInfinite, holdStrict, hsurvive, hescaped⟩
 
-/-- Abstract escaped-certificate engine for one coherent common-survival
-stream.
-
-This is the common core of the root-petal and co-singleton outputs.  Strong
-deletion supplies a late target-localized certificate outside the protected
-stream.  Exactness supplies an arbitrarily large same-target rooted matching
-at every certificate target.  A minimal finite destroyer inside its private
-selector is therefore either smaller than the matching, giving root capture,
-or larger than the caller's arbitrary demand. -/
 theorem commonSurvivalStream_forces_escapedCertificate_rootCapture_or_manyBlockDestroyer
     {A X : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -24309,20 +22401,6 @@ theorem commonSurvivalStream_forces_escapedCertificate_rootCapture_or_manyBlockD
   · right
     exact hrM.trans_le (Nat.le_of_not_gt hDM)
 
-/-- Both cardinality branches converge to one unconditional
-counterexample-level obstruction.
-
-The root branch first becomes an infinite deletion with a cofinal survival
-stream; the co-singleton branch already supplies such a partition.  After
-enumerating the surviving stages and, in the root case, partitioning the
-new deletion into finite blocks, the common escaped-certificate engine
-applies in either case.
-
-Accordingly a hypothetical successor counterexample now forces one fixed
-infinite deletion partition with a protected increasing target stream such
-that, at every scale, arbitrarily late new certificate labels exhibit
-either fresh same-target root capture or a minimal destroyer using more than
-that many selector blocks. -/
 theorem exactBasis_counterexample_forces_escapedCertificate_rootCapture_or_manyBlockDestroyer
     {A : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
@@ -24430,20 +22508,6 @@ theorem exactBasis_counterexample_forces_escapedCertificate_rootCapture_or_manyB
         hbasis (strongExactDeletion_of_counterexample hcounter)
           hXA P target htargetStrict hsurvive⟩
 
-/-- Certificate descent on the common-survival reservoir terminates.
-
-Choose the escaped certificate beyond the uniform threshold for the
-unrestricted locked-prefix composition theorem.  Starting with a largest
-destroyed certificate target, every repair migration moves to a strictly
-smaller target while preserving all larger targets.  Strong induction
-therefore consumes both the root-capture and the many-block destroyer
-endpoints.
-
-Only three normalized arithmetic outcomes remain: a large rooted matching
-at an escaped successor target, a large rooted matching at one coherent
-predecessor difference, or a genuine predecessor gap.  In particular,
-neither of the two cardinality branches survives as a terminal global
-obstruction. -/
 theorem commonSurvivalStream_forces_terminatedEscapedCertificate
     {A X : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -24510,16 +22574,6 @@ theorem commonSurvivalStream_forces_terminatedEscapedCertificate
   exact ⟨Q, hQnonempty, hQlateN, hcert, hQsafe,
     hdescent Q hQlateDescent hcert⟩
 
-/-- Counterexample-level elimination of the root/cosingleton cardinality
-fork.
-
-The preceding fork theorem supplies one of its two coherent
-common-survival reservoirs.  The terminating escaped-certificate theorem
-then applies to that same fixed reservoir.  Hence a hypothetical successor
-counterexample cannot end in root capture, co-singleton fusion, or an
-unbounded cross-block destroyer: every requested scale and lateness demand
-reaches the normalized matching/matching/gap trichotomy after a finite
-certificate descent. -/
 theorem exactBasis_counterexample_forces_terminatedEscapedCertificate
     {A : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
@@ -24573,22 +22627,6 @@ theorem exactBasis_counterexample_forces_terminatedEscapedCertificate
       hbasis (strongExactDeletion_of_counterexample hcounter)
         hXA P target htargetStrict hsurvive⟩
 
-/-- A counterexample forces a coherent infinite deletion with an infinite
-common-core anchor fan above every deleted failure.
-
-At stage `i`, one private support of the fresh minimal destroyer is peeled
-against the entire finite history.  Only its finite `core i` is added to the
-protected history.  Every clean replacement list from `C` of the same
-length then gives an order-`h+1` support at its sum plus `residual i`.
-Since all later deletion blocks lie in the reservoir `B`, disjoint from
-`C`, and avoid the protected core, all of these translated exact-sumset
-supports survive the final union `K`.
-
-Consequently the original hit sum has no equal-length clean normalization.
-Because `C,B` partition `A`, this is a genuine lower-rank destroyer:
-`B` together with the finite prefix destroys the hit sum.  A fixed positive
-rank occurs on infinitely many stages, and those destroyed lower-rank
-targets are cofinal. -/
 theorem exactBasis_counterexample_forces_coherentInfiniteUniversalAnchorFans
     {A : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
@@ -25125,20 +23163,6 @@ theorem exactBasis_counterexample_forces_coherentInfiniteUniversalAnchorFans
   · intro x
     rfl
 
-/-- A successor-deletion counterexample forces unbounded exact
-representation growth in one of three aligned locations.
-
-Given an old prefix `F`, a lateness threshold `L`, and a requested
-representation count `r`, choose more than `(2r) * (h*r)` anchors.  The
-finite-anchor construction supplies a fresh common successor-minimal
-destroyer.  The preceding quantitative escape analysis then forces growth
-either at one anchored predecessor target, among the anchor-avoiding
-successor supports, or at a common translate obtained from a destroyer
-coordinate.
-
-This rules out the entire bounded-complexity branch of the counterexample:
-no uniform bound can simultaneously control the destroyers and the exact
-support families created by their aligned repairs. -/
 theorem exactBasis_counterexample_forces_cofinalFresh_threeWaySupportGrowth
     {A : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
@@ -25203,23 +23227,7 @@ theorem exactBasis_counterexample_forces_cofinalFresh_threeWaySupportGrowth
     hDnonempty, hDB.trans hBA, hDF,
     hminimal, (hfan a haC).2.2.2, hgrowth⟩
 
-/-- Global counterexample endpoint after attacking both sides of the
-rank-zero split.
-
-One fixed infinite deletion `B` has the gap-translate repair property and
-then satisfies exactly one of two actionable alternatives:
-
-* infinitely many failed targets have a damaged representation containing a
-  survivor, so `infinite_noncontained_additiveDestroyers_rankFork` forces
-  positive-rank strict destruction descent; or
-* the pure-deletion horn supplies cofinal, arbitrarily large rooted
-  matchings at positive rank, still wholly inside `B`, with roots avoiding
-  every prescribed finite history.
-
-Thus the pure endpoint cannot remain a static collection of wholly deleted
-successor supports: it becomes fresh cofinal block material at positive
-rank. -/
-theorem exactBasis_counterexample_forces_noncontainedRankInjury_or_cofinalFreshPureMatchings
+theorem exactBasis_counterexample_forces_noncontainedRankObstruction_or_cofinalFreshPureMatchings
     {A : Set ℕ} {h : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h)
     (hcounter : ∀ B, B ⊆ A → B.Infinite →
@@ -25277,23 +23285,6 @@ theorem exactBasis_counterexample_forces_noncontainedRankInjury_or_cofinalFreshP
       cofinal_pureDeletionRootedMatchings_force_cofinal_prefixDisjointPureRootedMatchings
         hpure
 
-/-- A hypothetical negative successor deletion forces genuinely cofinal
-lower-order representation growth.
-
-Fix independently a lower-difference cutoff `Ltarget`, a certificate-target
-cutoff `Lcertificate`, and a cardinal demand `r`.  Schedule every successor
-rooted matching to be larger than both `r` and the total number of all
-order-`k` supports below `Ltarget`.  The finite certificate then covers one
-whole partition block by common roots.  Removing any point of that block
-preserves the matching cardinality.  The descended target cannot be below
-`Ltarget`, since the entire order-`k` support family there would be too
-small.
-
-Thus neither a moving contemporary block nor a repeated old-coordinate
-collision can trap the descent at bounded differences: under the
-counterexample, arbitrarily large order-`k` support families occur at
-arbitrarily late coherent differences `q-x`, with `q` itself arbitrarily
-late. -/
 theorem successorCounterexample_forces_cofinal_largeDifferenceFamily
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -25458,16 +23449,6 @@ theorem additiveSupport_lift_to_order_le
     rw [hcount, horder]
     exact hlift
 
-/-- Lift a rooted matching back to a higher order by repeating a point which
-is already in its common root.
-
-Because `d` belongs to every support, inserting it does not change any
-support finset.  The same family, root, and petals therefore survive
-verbatim at order `h`; only the target is translated by `(h-j) * d`.
-This is precisely why the fresh moving root is more useful than an arbitrary
-padding anchor: prefix clearing can lower the rank, and the captured root
-raises it again without introducing a new support vertex or damaging any
-cross-stage disjointness. -/
 theorem rootedMatching_lift_to_order_by_repeating_common
     {A : Set ℕ} {j h t d : ℕ}
     {R : Finset ℕ} {M : Finset (Finset ℕ)}
@@ -25599,14 +23580,6 @@ theorem lift_rootedMatching_to_strictHigherOrder
     hR'card, hR'F, hM'card, hM'sub,
     hM'root, hM'nonempty, hM'matching⟩
 
-/-- Normalize a sufficiently large rooted-matching source simultaneously in
-rank, root location, and target location.
-
-First consume every collision of the common root with `F` by strict rank
-descent.  A matching larger than the total number of supports of ranks at
-most `H` below `L` cannot end at a target below `L`.  Finally, if descent
-lowered the rank, one fresh repeated padding point lifts the matching back
-to order `H` without changing its petals or their avoidance of `F`. -/
 theorem largeSupportFamily_forces_cofinal_prefixDisjointRootedMatching
     {A : Set ℕ} {H h r L m : ℕ} {F : Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A H)
@@ -25670,20 +23643,6 @@ theorem largeSupportFamily_forces_cofinal_prefixDisjointRootedMatching
         (additiveLowerRankSupportCountBelow A H L))
       hMcard
 
-/-- The full normalized consequence of the scheduled root-barrier attack.
-
-Under a hypothetical negative successor deletion, every prescribed finite
-prefix can be avoided by an arbitrarily large rooted matching back at the
-original predecessor order `k`, and both the certificate target which
-generated it and the normalized matching target can be forced arbitrarily
-late.
-
-The proof first asks the full-block descent theorem for enough order-`k`
-supports to absorb every possible root collision with `F` and every
-bounded-target outcome.  The prefix synchronization theorem then consumes
-root collisions by strict rank descent, forces the resulting target past
-`Lmatching`, and pads back to exact order `k` without changing the petals.
--/
 theorem successorCounterexample_forces_cofinal_prefixDisjointPredecessorMatching
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -25715,11 +23674,6 @@ theorem successorCounterexample_forces_cofinal_prefixDisjointPredecessorMatching
   exact ⟨q, x, t, R, M, hqLate, hxA, hxq, htLate,
     hRcard, hRF, hMsub, hMlarge, hMroot, hMnonempty, hMmatching⟩
 
-/-- One stage of the coherent predecessor common-survival construction.
-
-The root avoids every previously used support vertex, and the matching has
-more than `|used|+2` petals.  After discarding the at most `|used|` supports
-which meet the past, at least two completely fresh petals remain. -/
 structure FreshPredecessorRootedMatchingStep
     (A : Set ℕ) (k : ℕ) (used : Finset ℕ) (last demand : ℕ) where
   target : ℕ
@@ -25735,8 +23689,6 @@ structure FreshPredecessorRootedMatchingStep
   petals_disjoint : ∀ E ∈ matching, ∀ D ∈ matching, E ≠ D →
     Disjoint (E \ root) (D \ root)
 
-/-- The cofinal prefix-disjoint matching theorem supplies every fresh stage
-needed by the common-survival recursion. -/
 theorem freshPredecessorRootedMatchingStep_nonempty
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -25753,8 +23705,6 @@ theorem freshPredecessorRootedMatchingStep_nonempty
   exact ⟨⟨t, R, M, by omega, hRcard, hRF, hMsub, hMlarge,
     hMroot, hMnonempty, hMmatching⟩⟩
 
-/-- A basis point chosen outside one finite set.  Packaging the witness as
-data lets the coherent recursion retain a new anchor at every stage. -/
 structure FreshBasisPoint (A : Set ℕ) (blocked : Finset ℕ) where
   point : ℕ
   point_mem : point ∈ A
@@ -25767,24 +23717,6 @@ theorem freshBasisPoint_nonempty
     hA.exists_notMem_finset blocked
   exact ⟨⟨a, haA, haFresh⟩⟩
 
-/-- A successor counterexample forces one coherent infinite predecessor
-common-survival reservoir.
-
-Recursively choose a rooted order-`k` matching beyond the preceding target,
-with its root disjoint from every support used earlier.  Discard the supports
-which still meet the past.  Pairwise-disjoint petals show that at most
-`|used|` supports are discarded, so more than two fresh supports remain.
-The union of their petals is the next deletion block.
-
-The blocks are pairwise disjoint.  For the target belonging to block `i`,
-every support in its fresh matching is disjoint from all other blocks, and
-one selected point in block `i` can meet at most one petal.  A second petal
-therefore survives.  Thus every block selector preserves every target in a
-strictly increasing, hence infinite, predecessor target stream.
-
-This is an actual infinite deletion object, not merely a sequence of local
-certificates; the only remaining migration is that strong deletion must
-place its late finite certificates outside this entire protected stream. -/
 theorem freshPredecessorRootedMatchingSteps_have_commonSurvivalPartition_avoiding
     {A : Set ℕ} {k : ℕ}
     (hA : A.Infinite)
@@ -26389,15 +24321,6 @@ theorem successorCounterexample_forces_cofinalRetainedAnchorGridSurvival
     exact hanchorSelected hxSelected
   · exact Set.disjoint_left.mp hEselected hxE hxSelected
 
-/-- The coherent reservoir can reserve one basis element and therefore
-protect a synchronized predecessor/successor target stream.
-
-Choose `a ∈ A` before the recursion and put it into the permanently used
-prefix.  No deletion block can contain `a`.  Every surviving order-`k`
-support of `target i` can consequently be padded by `a`; the padded support
-survives the same selector and represents `a + target i` at order `k+1`.
-Thus the normalization bridge is realized on one coherent cofinal stream,
-not separately at unrelated targets. -/
 theorem successorCounterexample_forces_cofinalAnchoredTwoRankSurvivalPartition
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -26468,17 +24391,6 @@ theorem additiveSuccessorDestroyer_descends_outsideSet
     exact (haS hxS).elim
   · exact ⟨x, hxE, hxS⟩
 
-/-- Zero normalization removes the pure successor-rank endpoint.
-
-Keep `0` on the retained side of the fixed reservoir split.  A fresh
-order-`h+1` destroyer avoiding `0` also destroys the same target at order
-`h`, because every order-`h` support can be padded by `0`.  Take an
-inclusion-minimal order-`h` subdestroyer and peel its private support against
-the whole deletion reservoir.  The resulting nonvacuous destroyed rank is
-therefore positive and at most `h`, never `h+1`.
-
-Freshness beyond `{0, ..., L}` makes the peeled hit sum exceed `L`, so this
-strict predecessor-rank descent is cofinal on one fixed infinite deletion. -/
 theorem zeroNormalized_counterexample_forces_cofinalFixedReservoirPredecessorRankDestruction
     {A : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
@@ -26757,21 +24669,6 @@ theorem zeroNormalized_counterexample_forces_fixedPredecessorRankCofinalDestruct
   exact ⟨target i, hLtarget, hrepresented, hdestroy,
     hrepresentedSucc, hdestroySucc⟩
 
-/-- Zero-normalized fresh nested destroyers have only one large-excess
-escape: a rooted matching at the same successor target whose every support
-omits zero.
-
-The reservoir `B` is fixed.  After an arbitrary finite history, strong
-deletion gives a fresh successor-minimal destroyer `D`.  Since `0` is kept
-in the complementary reservoir, `D` also destroys the same target one
-order lower; choose a minimal lower-order subdestroyer `D₀ ⊆ D`.  The
-aligned excess fork then bounds `D \ D₀`, or returns a synchronized
-zero-free rooted matching without changing the target.
-
-This is the quantitative form needed to attack the moving-prefix stall:
-the unbounded horn is now matching material at the damaged target itself,
-while the other horn has a bound fixed before the fresh destroyer is
-chosen. -/
 theorem zeroNormalized_counterexample_forces_freshNestedExcessFork
     {A : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
@@ -26900,14 +24797,6 @@ theorem zeroNormalized_counterexample_forces_freshNestedExcessFork
   exact ⟨q, D₀, D, hLq, hD₀D, hD₀nonempty,
     hDnonempty, hDB, hDF, hminimal, hminimalH, hexcess⟩
 
-/-- Counterexample-level complete size fork for the zero-normalized nested
-destroyers.
-
-At every fresh stage, either the entire successor destroyer has a uniform
-cardinality bound, the predecessor target carries a large rooted matching,
-or the same successor target carries a large zero-free rooted matching.
-There is no residual possibility in which the excess is bounded but the
-predecessor core grows without producing representation structure. -/
 theorem zeroNormalized_counterexample_forces_freshWholeDestroyerFork
     {A : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
@@ -26970,24 +24859,6 @@ theorem zeroNormalized_counterexample_forces_freshWholeDestroyerFork
   exact ⟨q, D₀, D, hLq, hD₀D, hD₀nonempty,
     hDnonempty, hDB, hDF, hminimal, hminimalH, hwhole⟩
 
-/-- Finite-prefix composition eliminates the bounded horn of the
-zero-normalized whole-destroyer fork.
-
-Fix the requested matching size and target cutoff.  The two direct growth
-horns already give rooted matchings at the fresh damaged target `q`.  In the
-remaining horn the whole successor destroyer has a bound known in advance,
-so choose `q` beyond the uniform bounded-destroyer threshold.  Exact
-order-`h` composition exposes a larger order-`h` support family at a
-coherent difference.  Complete rank descent then gives a genuine matching.
-
-The descent target is still cofinal: before starting, enlarge the matching
-demand past the total number of all support families of ranks at most `h`
-below the requested cutoff.  A descended matching that large cannot land
-below the cutoff.
-
-Thus the bounded finite-prefix branch is gone.  Every fresh normalized
-stage produces either same-target predecessor rooted growth, same-target
-zero-free successor rooted growth, or cofinal lower-rank matching growth. -/
 theorem zeroNormalized_counterexample_forces_cofinalThreeWayMatchingGrowth
     {A : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
@@ -27124,17 +24995,6 @@ theorem zeroNormalized_counterexample_forces_cofinalThreeWayMatchingGrowth
       lt_of_le_of_lt (le_max_left r count) hMcard,
       hMroot, hMnonempty, hMmatching⟩
 
-/-- A sufficiently large rooted matching at a late target normalizes to a
-genuine late matching at some positive rank.
-
-If the root is empty, its petals are already pairwise-disjoint supports.  If
-the root is nonempty, remove one common summand from every support.  The
-cardinality is preserved at order one lower, and the finite-rank support
-threshold forces a genuine matching after complete rank descent.
-
-The explicit `hsmall` hypothesis prevents that descent from hiding at a
-bounded target.  It is normally discharged by
-`additiveLowerRankSupportCountBelow`. -/
 theorem lateRootedMatching_normalizes_to_lateMatching
     {A : Set ℕ} {k q r L size : ℕ}
     {R : Finset ℕ} {M : Finset (Finset ℕ)}
@@ -27200,16 +25060,6 @@ theorem lateRootedMatching_normalizes_to_lateMatching
       t, N, hLt, hNsub, hNmatching,
       lt_of_le_of_lt hrSize hNlarge⟩
 
-/-- All three growth horns of the normalized counterexample collapse to one
-cofinal genuine matching, while retaining the same fresh nested destroyer
-stage.
-
-At predecessor order and successor order, apply
-`lateRootedMatching_normalizes_to_lateMatching`; the lower-rank horn is
-already a matching.  The demand is chosen above both possible rank-descent
-thresholds and above the total mass of every bounded target at every
-relevant rank.  Hence no root and no common-summand descent remains in the
-conclusion. -/
 theorem zeroNormalized_counterexample_forces_cofinalFreshMatchingGrowth
     {A : Set ℕ} {k : ℕ}
     (hzeroA : 0 ∈ A)
@@ -27317,14 +25167,6 @@ theorem zeroNormalized_counterexample_forces_cofinalFreshMatchingGrowth
             (le_max_left predDemand succDemand)))
         hMcard⟩
 
-/-- Infinite-anchor amplification of certificate descent.
-
-On one fixed infinite deletion partition, every requested finite number of
-retained anchors eventually lie below a late private successor defect.
-Descending through all of them gives that many distinct predecessor defects
-destroyed by the same selector.  None can be one of the protected
-predecessor targets, since that would put the original successor target on
-the universally surviving retained-anchor grid. -/
 theorem successorCounterexample_forces_arbitrarilyManyCoherentDescents
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -27493,19 +25335,6 @@ theorem successorCounterexample_forces_strictAnchoredCertificateDescent
       hqDestroy haA haSelected haq,
     by omega⟩
 
-/-- Certificate migration, lower-rank drift, root collisions, and bounded
-translated targets are all eliminated at once.
-
-For a hypothetical strongly minimal order-`k+1` basis, every finite prefix,
-matching demand, and target threshold has only two outcomes:
-
-* a rooted matching of the requested size back at order `k+1`, beyond the
-  target threshold, whose common root avoids the prefix; or
-* a late genuine order-`k` gap translate.
-
-Thus repeated old-coordinate collisions cannot remain a third branch: they
-either amplify into fresh cofinal matching growth or are bypassed by the
-second-choice/certificate descent construction above. -/
 theorem IsStronglyMinimalExactBasis.cofinal_prefixDisjointRootedMatching_or_lowerGap
     {A : Set ℕ} {k : ℕ}
     (hminimal : IsStronglyMinimalExactBasis A (k + 1)) :
@@ -27590,14 +25419,6 @@ theorem IsStronglyMinimalExactBasis.cofinal_prefixDisjointRootedMatching_or_fres
     exact (le_max_right _ _).trans (Nat.le_of_lt hMcard)
   · exact Or.inr hgap
 
-/-- Rank-synchronized output: the bounded successor-transversal branch
-produces arbitrarily large, arbitrarily late rooted matchings back at the
-*original predecessor order* `k+1`, with the common root disjoint from any
-prescribed finite prefix.
-
-Thus both losses introduced by rank descent are repaired: the lower target
-is cofinal, and a single fresh repeated padding element restores the original
-order without changing any petal. -/
 theorem cofinalOriginalOrderRootedMatchings_of_boundedFullTranslateDestroyers
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -27643,7 +25464,6 @@ theorem cofinalOriginalOrderRootedMatchings_of_boundedFullTranslateDestroyers
     rw [hMcardEq]
     exact hLcard
 
-/-- One stage of the coherent pure-deletion block construction. -/
 structure FreshPureLiftedMatchingStep
     (A B : Set ℕ) (h : ℕ)
     (used : Finset ℕ) (lastTarget lastFailure demand : ℕ) where
@@ -27679,7 +25499,6 @@ structure PureLiftedBlockState where
   lastTarget : ℕ
   lastFailure : ℕ
 
-/-- Cofinal fresh pure matchings supply every recursive stage. -/
 theorem freshPureLiftedMatchingStep_nonempty
     {A B : Set ℕ} {h : ℕ}
     (hsupply : ∀ F : Finset ℕ, ∀ r Ltarget Lcertificate,
@@ -27715,23 +25534,6 @@ theorem freshPureLiftedMatchingStep_nonempty
     hlength, hhits, htarget, by omega, hRcard, hRF, hMsub, by omega, hMroot,
     hMnonempty, hMmatching, hMinside⟩⟩
 
-/-- Assemble the pure-absorption horn into one coherent infinite deletion.
-
-Reserve one basis point `c`.  Recursively request a fresh rooted matching
-inside `B`, discard the at most `|used|` petals meeting the past, and make
-the union of the remaining petals the next deletion block.  The blocks are
-pairwise disjoint subsets of `B` and grow beyond every prescribed finite
-size.
-
-The descended positive rank may vary.  Repeating the reserved point `c`
-lifts every surviving support back to the original order `h`; because `c`
-never lies in a deletion block, the lift survives.  Scheduling each raw
-target beyond the preceding lifted target makes the resulting protected
-order-`h` target stream strictly increasing.
-
-Thus every selector of the completed block deletion preserves the same
-cofinal original-order stream, while the original fixed deletion `B`
-continues to destroy a strictly increasing stream of failure targets. -/
 theorem cofinalFreshPureMatchings_have_coherentLiftedBlockSurvival
     {A B : Set ℕ} {h c : ℕ}
     (hBA : B ⊆ A)
@@ -28297,8 +26099,8 @@ theorem cofinalFreshPureMatchings_have_coherentLiftedBlockSurvival
       exact hcSelected hxSelected
     · exact Set.disjoint_left.mp hEselected hxE hxSelected
 
-/-- Either one block selector avoids every injury list, or the accumulated
-injury lists cover an entire deletion block. -/
+/-- Either one block selector avoids every obstruction list, or the accumulated
+obstruction lists cover an entire deletion block. -/
 theorem blockSelector_avoids_all_listHits_or_block_covered
     {cell : ℕ → Finset ℕ} (hits : ℕ → List ℕ) :
     (∃ s : BlockSelector cell,
@@ -28339,9 +26141,9 @@ theorem blockSelector_avoids_all_listHits_or_block_covered
 
 /-- Apply the preceding selector split to coherent failure repairs.
 
-If no whole block is covered by old injury coordinates, one selector avoids
-all injuries simultaneously and therefore preserves every failure target.
-Otherwise repeated old-coordinate collisions have covered one complete
+If no whole block is covered by old obstruction coordinates, one selector avoids
+all obstructions simultaneously and therefore preserves every failure target.
+Otherwise repeated old-coordinate conflicts have covered one complete
 block—the precise finite-prefix obstruction needed for matching-growth
 amplification. -/
 theorem coherentFailureRepairs_commonSurvival_or_hitBlock
@@ -28362,18 +26164,6 @@ theorem coherentFailureRepairs_commonSurvival_or_hitBlock
     exact ⟨s, fun i => hrepair s i (hs i)⟩
   · exact Or.inr hcovered
 
-/-- Cofinal full-block injury is genuine lower-order growth.
-
-Suppose arbitrarily late deletion blocks are covered by the old-coordinate
-lists.  Pick one point `x` in such a block `j`.  Its covering occurrence is
-at a strictly later stage `i`, and reconstruction makes `x` a common
-summand of more than `i+2` order-`h` supports of `failure i`.  Removing it
-therefore leaves the same number of order-`h-1` supports at the coherent
-difference `failure i - x`.
-
-Choosing `j` beyond the total number of all lower-order supports below a
-prescribed cutoff forces both the family cardinality and its represented
-difference to be arbitrarily large. -/
 theorem cofinal_hitBlockCoverage_forces_cofinal_largeLowerDifferenceFamilies
     {A : Set ℕ} {h : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -28431,14 +26221,6 @@ theorem cofinal_hitBlockCoverage_forces_cofinal_largeLowerDifferenceFamilies
   exact ⟨j, i, x, lower, hji, hxCell, hxHit,
     htargetLower, hlowerSub, hrLower⟩
 
-/-- Cofinal unbounded support families at one bounded order force genuine
-matching growth at one fixed positive rank.
-
-At each scale request enough supports to survive the complete finite-rank
-matching descent and to exceed the total number of all bounded-target
-families.  The descended matching therefore remains beyond the prescribed
-target cutoff.  Only finitely many positive ranks can occur, so cofinal
-pigeonhole fixes one rank once and for all. -/
 theorem cofinalLargeSupportFamilies_force_fixedRankCofinalMatching
     {A : Set ℕ} {h : ℕ}
     (hgrowth : ∀ r L, ∃ t,
@@ -28522,13 +26304,13 @@ theorem cofinalLargeSupportFamilies_force_fixedRankCofinalMatching
       (Nat.le_of_lt hbLarge) |>.trans hbt
   · exact (le_max_left r L).trans_lt hbLarge |>.trans hbM
 
-/-- The forward-injury endpoint has only two infinite shapes.
+/-- The forward-obstruction endpoint has only two infinite shapes.
 
 Either infinitely many blocks retain a point which never occurs in any
-injury list, or all sufficiently late blocks are covered.  In the latter
+obstruction list, or all sufficiently late blocks are covered.  In the latter
 case the preceding theorem forces cofinal unbounded order-`h-1`
 representation families at exact differences. -/
-theorem forwardListInjuries_have_infiniteUncoveredBlocks_or_cofinalLowerGrowth
+theorem forwardListObstructions_have_infiniteUncoveredBlocks_or_cofinalLowerGrowth
     {A : Set ℕ} {h : ℕ}
     {cell : ℕ → Finset ℕ}
     {failure : ℕ → ℕ} {hits : ℕ → List ℕ}
@@ -28578,16 +26360,6 @@ theorem forwardListInjuries_have_infiniteUncoveredBlocks_or_cofinalLowerGrowth
       cofinal_hitBlockCoverage_forces_cofinal_largeLowerDifferenceFamilies
         hcellNonempty hhitsForward hhitGrowth hcovered
 
-/-- Infinitely many globally uncovered blocks already give a coherent
-infinite deletion.
-
-Choose one point from each uncovered block and extend those choices
-arbitrarily to a selector of the full partition.  The chosen subselector is
-infinite and avoids every injury list.  Raw supports surviving the full
-selector therefore survive the smaller deletion; reinserting the injury
-lists reconstructs surviving supports at every failure target.  Any second
-protected stream which survives the full selector also survives the same
-infinite deletion. -/
 theorem infiniteUncoveredBlocks_have_infiniteDeletion_preservingStreams
     {A K : Set ℕ} {h : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -28709,17 +26481,6 @@ theorem infiniteUncoveredBlocks_have_infiniteDeletion_preservingStreams
   exact ⟨S, s, hSK, hSSelected, hSInfinite, hSFresh,
     hraw, hfailure, htarget⟩
 
-/-- A globally fresh surviving deletion cannot be a terminal branch.
-
-Strong deletion produces arbitrarily late targets destroyed by that same
-infinite set.  After passing to an inclusion-minimal finite destroyer, every
-active coordinate is still globally absent from all previous injury lists.
-The protected failure and normalized streams exclude those targets, while
-eventual containment puts every support at the new targets back inside the
-original pure deletion reservoir.
-
-Thus the uncovered-block horn regenerates a genuinely new finite injury
-layer rather than stalling the construction. -/
 theorem infiniteFreshDeletion_forces_cofinalFreshMinimalDestroyers
     {A B S : Set ℕ} {h : ℕ}
     {failure target : ℕ → ℕ} {hits : ℕ → List ℕ}
@@ -28809,7 +26570,7 @@ theorem infiniteFreshDeletion_forces_cofinalFreshMinimalDestroyers
     hminimal, hD₀fresh, hqInside,
     hqNotFailure, hqNotTarget⟩
 
-/-- The regenerated fresh injury can be forced arbitrarily far out in the
+/-- The regenerated fresh obstruction can be forced arbitrarily far out in the
 block partition.
 
 Delete the finitely many values chosen by `s` in the first `T` blocks from
@@ -28895,19 +26656,6 @@ theorem infiniteFreshSelectorDeletion_forces_cofinalLateBlockMinimalDestroyers
       (hDtail (Finset.mem_coe.mpr hd))),
     hDfresh, hqInside, hqFailure, hqTarget⟩
 
-/-- A quadratic block tail closes the maximum-target layer of every finite
-certificate.
-
-For a requested matching size, start the tail beyond the fixed
-maximum-target active-block budget.  Strong deletion supplies a localized
-finite certificate on that tail.  Its largest target has no larger
-certificate dependencies, so one active coordinate of its minimal
-destroyer forces either a rooted matching of the requested size or strict
-descent to a smaller target of the same certificate.
-
-The tail threshold is independent of the unknown certificate cardinality;
-this is the first complete break of the moving-prefix circle at the top
-certificate rank. -/
 theorem quadraticBlockTail_certificateMax_forces_rootedMatching_or_strictDescent
     {A K : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -29060,8 +26808,7 @@ theorem quadraticBlockTail_certificateMax_forces_rootedMatching_or_strictDescent
         hactiveLarge hblocks
   exact ⟨Q, q, hQnonempty, hqQ, hQlateN, hcert, hendpoint⟩
 
-/-- Matching-normalized bounded-certificate payoff on a deletion
-reservoir. -/
+/-- Matching-normalized bounded-certificate theorem on a deletion set. -/
 theorem IsExactTupleAsymptoticBasis.eventually_boundedCertificate_onReservoir_forces_exactRootedMatching
     {A K : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A (k + 1))
@@ -29225,13 +26972,12 @@ theorem quadraticBlockTail_largeCertificate_or_exactRootedMatching
     exact ⟨Q, hQnonempty, hQlateL, hcert,
       Nat.lt_of_not_ge hQcard⟩
 
-/-- Counterexample-level payoff of the coherent pure block assembly.
+/-- Consequence of coherent pure blocks under the counterexample hypothesis.
 
 Either the fixed deletion has infinitely many noncontained damaged supports,
-which feeds strict rank descent, or the pure branch produces one infinite
-block deletion `K ⊆ B` and a strictly increasing successor-order stream
-which every selector preserves. -/
-theorem exactBasis_counterexample_forces_noncontainedRankInjury_or_coherentPureBlockSurvival
+or there is an infinite block deletion `K ⊆ B` and a strictly increasing
+sequence of successor-order targets preserved by every selector. -/
+theorem exactBasis_counterexample_forces_noncontainedRankObstruction_or_coherentPureBlockSurvival
     {A : Set ℕ} {h : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h)
     (hcounter : ∀ B, B ⊆ A → B.Infinite →
@@ -29357,7 +27103,7 @@ theorem exactBasis_counterexample_forces_noncontainedRankInjury_or_coherentPureB
             Disjoint (Q : Set ℕ) (Set.range target) := by
   obtain ⟨B, hBA, hBInfinite, hservice,
       hnoncontained | hpure⟩ :=
-    exactBasis_counterexample_forces_noncontainedRankInjury_or_cofinalFreshPureMatchings
+    exactBasis_counterexample_forces_noncontainedRankObstruction_or_cofinalFreshPureMatchings
       hbasis hcounter
   · left
     obtain ⟨I, hI, hIData⟩ := hnoncontained
@@ -29397,7 +27143,7 @@ theorem exactBasis_counterexample_forces_noncontainedRankInjury_or_coherentPureB
                 additiveSupportFamily A h (failure i - x) ∧
               r < lower.card := by
       simpa only [Nat.add_sub_cancel] using
-        (forwardListInjuries_have_infiniteUncoveredBlocks_or_cofinalLowerGrowth
+        (forwardListObstructions_have_infiniteUncoveredBlocks_or_cofinalLowerGrowth
           P.nonempty hhitsForward hhitGrowth)
     have hforwardMatchingEndpoint :
         (∃ S : Set ℕ, ∃ s : BlockSelector cell,
@@ -29533,18 +27279,6 @@ theorem exactBasis_counterexample_forces_noncontainedRankInjury_or_coherentPureB
       hinjuryEndpoint, hfailureDestroy,
       hcellLarge, hsurvival, hcertificates⟩
 
-/-- A large destroyed rooted matching spends a strictly smaller positive
-occurrence rank inside its common root.
-
-Choose one matching member whose petal avoids the finite destroyer.  Since
-the whole member is nevertheless destroyed, every occurrence peeled from it
-lies in the common root.  The nonempty petal survives in the residual core,
-so that core has positive order and the complementary hit list has order
-strictly below `H`.  Complementary-core composition then shows that the same
-finite set already destroys the represented sum of those root occurrences.
-
-This is occurrence-sensitive: repeated values in the hit list retain their
-full multiplicity even though the support is a `Finset`. -/
 theorem large_destroyedRootedMatching_forces_strictOccurrenceRankDescent
     {A : Set ℕ} {H q : ℕ}
     {D R : Finset ℕ} {M : Finset (Finset ℕ)}
@@ -29652,19 +27386,6 @@ theorem large_destroyedRootedMatching_forces_strictOccurrenceRankDescent
     hhitsStrict, hlength, hhitsRoot, htarget,
     hcoreR, hcoreD, hhitSupport, hhitDestroy⟩
 
-/-- A large destroyed rooted matching has an honest nontrivial-rank
-outcome or an exact marked private core.
-
-The occurrence descent above may stop after one hit.  That case is not
-reported as rank descent here.  Its unique hit `x` lies simultaneously in
-the destroyer and in the common root.  The surviving complementary core has
-order `H - 1`, represents `q - x`, and is disjoint from the whole destroyer;
-reinserting `x` gives a same-target support whose intersection with the
-destroyer is exactly `{x}`.
-
-Thus the automatic rank-one endpoint is converted into selector-ready
-repair data.  The other horn is genuinely nontrivial: its destroyed
-represented rank is strictly between one and `H`. -/
 theorem large_destroyedRootedMatching_forces_nontrivialRankDescent_or_markedPrivateCore
     {A : Set ℕ} {H q : ℕ}
     {D R : Finset ℕ} {M : Finset (Finset ℕ)}
@@ -29741,17 +27462,6 @@ theorem large_destroyedRootedMatching_forces_nontrivialRankDescent_or_markedPriv
       hxData.1, by omega, core, hcoreMem', hcoreD,
       hsupport, hprivate⟩
 
-/-- A marked private support completes to a protected selector repair.
-
-Assume the destroyer lies in one block selector and the private support
-`E` meets it exactly at `x`.  In the block selecting `x`, choose
-one replacement point outside both the protected prefix and that support.
-The private support then survives the finite swap.  Uniform block capacity
-feeds this witness into the existing protected completion theorem, producing
-a full selector which avoids the prefix and preserves the target.
-
-This is the promised operational form of the rank-one branch: it is a
-strict repair step, not a terminal descent label. -/
 theorem markedPrivateSupport_extends_avoiding_protectedUnion
     {A C : Set ℕ} {k q x : ℕ}
     {F : ℕ → Finset ℕ} (P : IsFiniteBlockPartition C F)
@@ -29870,14 +27580,6 @@ theorem markedPrivateCore_extends_avoiding_protectedUnion
     P s hDselected hxD hUselected
       hsupport hprivate hblocks
 
-/-- Capacity-free structural form of marked private-support completion.
-
-Only blocks whose selected coordinates lie in the private support need to
-move.  If each such block has a point outside `U ∪ E`, the usual protected
-completion succeeds.  Otherwise one actual support-hit block is completely
-covered by `U ∪ E`.  This retains the combinatorial witness hidden by the
-cardinality hypothesis in
-`markedPrivateSupport_extends_avoiding_protectedUnion`. -/
 theorem markedPrivateSupport_extends_avoiding_protectedUnion_or_coveredHitBlock
     {A C : Set ℕ} {k q x : ℕ}
     {F : ℕ → Finset ℕ}
@@ -30041,17 +27743,6 @@ theorem lowerGap_anchor_not_mem_minimalSuccessorDestroyer
   subst x
   exact hbE (Finset.mem_coe.mp hxE)
 
-/-- Direct current-order attack on an arbitrary infinite deletion reservoir.
-
-Apply strong minimality at the original order `h`, compact the resulting
-failure to a finite inclusion-minimal destroyer, and inspect that *same*
-target with the reservoir-relative rooted-matching/lower-gap fork.
-
-If the rooted matching is larger than the destroyer, the
-occurrence-sensitive lemma above produces a nonvacuous destroyed target at
-a strict positive rank below `h`.  Otherwise the destroyer itself is larger
-than the requested demand.  The sole remaining outcome is a genuine
-primitive order-`h - 1` gap anchored in the prescribed reservoir. -/
 theorem IsStronglyMinimalExactBasis.cofinal_strictOccurrenceRankDescent_or_largeDestroyer_or_lowerGap
     {A S : Set ℕ} {h : ℕ}
     (hminimal : IsStronglyMinimalExactBasis A h)
@@ -30144,20 +27835,6 @@ theorem IsStronglyMinimalExactBasis.cofinal_strictOccurrenceRankDescent_or_large
         hDminimalPred hgap,
       hbq, hgap⟩
 
-/-- Corrected current-order fork on an arbitrary infinite reservoir.
-
-This is the nonvacuous replacement for
-`cofinal_strictOccurrenceRankDescent_or_largeDestroyer_or_lowerGap`.
-When the same-target rooted matching beats the finite destroyer, its
-occurrence decomposition is split at rank one:
-
-* two or more hits give genuine represented destruction at
-  `1 < ℓ < h`;
-* one hit gives an exact marked private order-`h-1` core at `q-x`.
-
-The remaining alternatives are unchanged: the destroyer itself is larger
-than the requested demand, or the reservoir supplies a primitive
-order-`h-1` gap anchor. -/
 theorem IsStronglyMinimalExactBasis.cofinal_nontrivialRankDescent_or_markedPrivateCore_or_largeDestroyer_or_lowerGap
     {A S : Set ℕ} {h : ℕ}
     (hminimal : IsStronglyMinimalExactBasis A h)
@@ -30257,19 +27934,6 @@ theorem IsStronglyMinimalExactBasis.cofinal_nontrivialRankDescent_or_markedPriva
         hDminimalPred hgap,
       hbq, hgap⟩
 
-/-- Protected selector form of the corrected four-way current-order fork.
-
-The marked private-core horn is immediately consumed by
-`markedPrivateCore_extends_avoiding_protectedUnion`.  Consequently the
-selector-level alternatives are now exactly:
-
-* genuine nontrivial rank descent;
-* a full selector avoiding `U` on which the current target survives;
-* a destroyer larger than the requested demand, hence using that many
-  distinct selector blocks;
-* a primitive lower-gap anchor.
-
-No automatic rank-one conclusion remains. -/
 theorem IsStronglyMinimalExactBasis.cofinal_selectorNontrivialRankDescent_or_protectedRepair_or_manyBlocks_or_lowerGap
     {A K : Set ℕ} {h : ℕ} {cell : ℕ → Finset ℕ}
     (hminimal : IsStronglyMinimalExactBasis A h)
@@ -30336,11 +28000,11 @@ theorem IsStronglyMinimalExactBasis.cofinal_selectorNontrivialRankDescent_or_pro
   · exact ⟨q, D, hLq, hDnonempty, hDselected,
       hDminimal, Or.inr hgap⟩
 
-/-- Selector form of the current-order attack.
+/-- Selector form of the current-order obstruction.
 
 Every selector through a finite-block deletion is itself an infinite subset
 of that deletion and contains at most one point from each block.  Thus the
-large-destroyer horn below already means growth across distinct fused
+large-destroyer case below already means growth across distinct fused
 blocks, rather than concentration inside one old block. -/
 theorem IsStronglyMinimalExactBasis.cofinal_selectorRankDescent_or_manyBlocks_or_lowerGap
     {A K : Set ℕ} {h : ℕ} {cell : ℕ → Finset ℕ}
@@ -30462,19 +28126,7 @@ theorem lowerGapRepair_extends_to_twoBlockSelectorSurvival_onReservoir
     rw [← hxOutside]
     exact hxE
 
-/-- Switch at a fresh primitive-gap anchor and force a fresh later injury.
-
-The two-block selector switch repairs the old current-order target `q`.
-Remove an arbitrary protected finite prefix `U` together with the entire
-old minimal destroyer `D` from the repaired selector.  This leaves an
-infinite selector subreservoir.  Original order-`h` strong minimality then
-produces a strictly later minimal destroyer `D'`, disjoint from `U ∪ D`.
-The same-target rooted/gap fork classifies that fresh injury immediately.
-
-Thus repeated primitive-gap outcomes cannot recycle old destroyer values.
-Protecting the finite union of their blocks gives the block-coordinate
-version recorded immediately below. -/
-theorem IsStronglyMinimalExactBasis.lowerGapSelectorSwitch_forces_freshLaterAttack
+theorem IsStronglyMinimalExactBasis.lowerGapSelectorSwitch_forces_freshLaterObstruction
     {A K : Set ℕ} {h q b : ℕ}
     {cell : ℕ → Finset ℕ}
     (hminimal : IsStronglyMinimalExactBasis A h)
@@ -30565,15 +28217,6 @@ theorem IsStronglyMinimalExactBasis.lowerGapSelectorSwitch_forces_freshLaterAtta
     exact ⟨b', (hb'S).1, (hb'S).2, hb'D',
       hb'q', hgap'⟩
 
-/-- Block-coordinate specialization of the fresh gap switch.
-
-Let `Used` be any finite set of previously occupied block indices.  Protect
-the union of those blocks together with every block occupied by the current
-destroyer `D`, then run the fresh-later attack.  Every point of the returned
-minimal destroyer `D'` has a block index outside both finite index sets.
-
-This is the precise persistent cross-block conclusion: successive gap
-switches can be iterated while never returning to an earlier block. -/
 theorem IsStronglyMinimalExactBasis.lowerGapSelectorSwitch_forces_newBlockLaterDestroyer
     {A K : Set ℕ} {h q b : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -30612,7 +28255,7 @@ theorem IsStronglyMinimalExactBasis.lowerGapSelectorSwitch_forces_newBlockLaterD
   obtain ⟨t, q', D', htAnchor, htRepair, hqq',
       hD'nonempty, hD'selected, hD'fresh, hD'minimal,
       _hD'outcome⟩ :=
-    hminimal.lowerGapSelectorSwitch_forces_freshLaterAttack
+    hminimal.lowerGapSelectorSwitch_forces_freshLaterObstruction
       hhpos hKA P hblocks s hDnonempty hDminimal
         hbSelected hgap U 0
   refine ⟨t, q', D', htAnchor, htRepair, hqq',
@@ -30628,11 +28271,6 @@ theorem IsStronglyMinimalExactBasis.lowerGapSelectorSwitch_forces_newBlockLaterD
   exact Finset.disjoint_left.mp hD'fresh hxD'
     (Finset.mem_union_left D hxU)
 
-/-- One coherent stage of the persistent primitive-gap iteration.
-
-`usedBlocks` records every block occupied before the current stage.  The
-freshness field is therefore the invariant which turns the eventual union
-of the finite destroyers into a partial block selector. -/
 structure FreshGapDestroyerState
     (A K : Set ℕ) (h : ℕ) {cell : ℕ → Finset ℕ}
     (P : IsFiniteBlockPartition K cell) where
@@ -30655,19 +28293,6 @@ structure FreshGapDestroyerState
   destroyer_blocks_fresh :
     ∀ x ∈ destroyer, blockIndex P x ∉ usedBlocks
 
-/-- Infinite primitive-gap iteration, fused to one deletion.
-
-There are three genuine outcomes.  Either the current-order attack already
-descends to a positive smaller occurrence rank, or it has destroyers of
-unbounded cardinality across selector blocks, or primitive-gap switching
-can be iterated forever.
-
-In the last case every new destroyer occupies completely new block
-coordinates.  Their union is therefore an infinite partial selector and
-extends to one full selector `fusion`.  Any old successor-order support
-which survives every full selector also survives this entire infinite
-union.  Thus the conclusion is a single coherent infinite deletion, not a
-collection of unrelated finite gap certificates. -/
 theorem IsStronglyMinimalExactBasis.selectorRankDescent_or_manyBlocks_or_infiniteGapFusion
     {A K : Set ℕ} {h : ℕ} {cell : ℕ → Finset ℕ}
     (hminimal : IsStronglyMinimalExactBasis A h)
@@ -30819,7 +28444,7 @@ theorem IsStronglyMinimalExactBasis.selectorRankDescent_or_manyBlocks_or_infinit
     obtain ⟨t, q', D', _htAnchor, _htRepair, hqq',
         hD'nonempty, hD'selected, hD'fresh,
         hD'minimal, hD'outcome⟩ :=
-      hminimal.lowerGapSelectorSwitch_forces_freshLaterAttack
+      hminimal.lowerGapSelectorSwitch_forces_freshLaterObstruction
         hhpos hKA P hblocks st.selector
         st.destroyer_nonempty st.destroyer_minimal
         st.anchor_selected st.lower_gap U r
@@ -31105,19 +28730,6 @@ theorem cofinalDestroyedTargets_bracketed_by_strictSurvivalStream
     simpa only [heq] using hmDestroy
   exact ⟨n, m, hnL, hnLower, hmUpper, hmDestroy⟩
 
-/-- A destroyed successor target bracketed above a surviving target
-descends simultaneously through every anchor in the surviving support.
-
-The lower support `E` avoids the deletion `Y`.  Hence each `a ∈ E` is an
-available order-one core.  Composing that core with any hypothetical
-surviving order-`h` representation of `m - a` would repair the destroyed
-order-`h+1` target `m`.  Thus `Y` destroys all of the predecessor
-differences `m - a` at once.
-
-This is the direct arithmetic alignment of the two successor-target
-streams: every destroyed target in a gap of the surviving stream carries
-a whole coherent fan of current-order destroyed differences, indexed by
-one support at the lower endpoint. -/
 theorem bracketedDestroyedSuccessorTargets_force_predecessorDestroyerFans
     {A Y : Set ℕ} {h : ℕ}
     {oldTarget : ℕ → ℕ}
@@ -31185,20 +28797,6 @@ theorem bracketedDestroyedSuccessorTargets_force_predecessorDestroyerFans
     hsingleton hsingletonY
   simpa only [Nat.one_add, Nat.add_sub_of_le haM] using hmDestroy
 
-/-- Bracket cofinally represented current-order failures without losing
-their representation witness, then descend them through every point of the
-surviving lower-end support.
-
-This is the same arithmetic composition as the successor fan theorem, but
-the rank is now `k` on both the surviving stream and the failed target.
-The additional nonemptiness hypothesis on each selected failure is carried
-through the predecessor bracket.  Consequently every output stage contains
-one represented destroyed order-`k` target `q` and, for every
-`a ∈ E`, a coherent destroyed order-`k-1` difference `q-a`.
-
-This is the exact interface needed to align the represented predecessor
-stream coming from successor destruction with the new current-order
-survival stream on the residual deletion. -/
 theorem cofinalRepresentedDestroyedCurrentTargets_bracketed_by_strictSurvival_force_predecessorFans
     {A Y : Set ℕ} {k : ℕ}
     {survive : ℕ → ℕ}
@@ -31301,24 +28899,6 @@ theorem cofinalRepresentedDestroyedCurrentTargets_bracketed_by_strictSurvival_fo
   simpa only [hkRank, Nat.add_sub_of_le haQ]
     using hqDestroy
 
-/-- Align the two residual-deletion streams at one literal target.
-
-The input predecessor stream remembers that its represented destroyed
-order-`k` target is exactly `q = m - a`, where `m` is a destroyed
-successor-order target bracketed above a protected successor endpoint and
-`a` belongs to that endpoint support.  Schedule such a `q` beyond the next
-requested term of a strict current-order survival stream, then bracket
-that same `q` between consecutive current targets.
-
-The output retains both origins simultaneously:
-
-* the full successor bracket producing `q = m - a`;
-* the current-order bracket containing that exact `q`; and
-* the coherent order-`k-1` destroyed family `q - b` for every point `b`
-  of the current lower-end support.
-
-Nothing is replaced by an unrelated cofinal witness.  This is the
-finite-prefix/difference composition needed after current repair fusion. -/
 theorem successorPredecessorFailures_bracketed_by_currentSurvival_force_alignedLowerFans
     {A B : Set ℕ} {k : ℕ}
     {oldTarget currentTarget : ℕ → ℕ}
@@ -31489,20 +29069,6 @@ theorem successorPredecessorFailures_bracketed_by_currentSurvival_force_alignedL
   simpa only [hkRank, Nat.add_sub_of_le hbQ]
     using hqDestroy
 
-/-- A marked point in a clean support lowers a destroyed translate by one
-rank without changing its displacement.
-
-Suppose `H` represents `s` at order `k`, avoids `B`, and contains `z`.
-Removing one occurrence of `z` gives a support `G` at order `k-1` and
-target `s-z`, still avoiding `B`.  If `q = s+δ`, then
-
-`q-z = (s-z)+δ`.
-
-Hence any already known order-`k-1` destruction at `q-z` is not an
-unrelated primitive gap: it is the translate by the very same `δ` of the
-new clean lower-rank support.  Repeated occurrences of `z` cause no
-problem—the occurrence-sensitive removal theorem lowers the tuple order
-by exactly one while the finset inclusion `G ⊆ H` preserves avoidance. -/
 theorem cleanSupport_markedPoint_descends_destroyedTranslate_sameDisplacement
     {A B : Set ℕ} {k s q δ z : ℕ}
     {H : Finset ℕ}
@@ -31556,22 +29122,6 @@ theorem cleanSupport_markedPoint_descends_destroyedTranslate_sameDisplacement
     ⟨G, hGmem, hGH, hGB, hδpos,
       htranslated, hlowerDestroy⟩
 
-/-- Peel every occurrence of the sole deleted value in a private support.
-
-Suppose `H` represents `s` at order `k`, avoids the residual deletion `B`,
-and meets the larger deletion `Y` only at the marked value `z`.  Peeling
-`H` against all of `Y` removes a nonempty list of occurrences.  Privacy
-forces every entry of that list to equal `z`, including repetitions hidden
-by the finset support.
-
-The remaining support `G` is genuinely `Y`-clean and has strict lower
-rank `j < k`.  Because the removed copies of `z` also avoid `B`, they form
-a surviving additive prefix.  Destruction of
-
-`q = s + δ`
-
-therefore descends through that prefix to destruction of `t + δ` at order
-`j`.  The displacement `δ` is unchanged. -/
 theorem privateLandingSupport_peels_to_cleanCore_sameDisplacement
     {A B Y : Set ℕ} {k s q δ z : ℕ}
     {H : Finset ℕ}
@@ -31698,12 +29248,6 @@ theorem privateLandingSupport_peels_to_cleanCore_sameDisplacement
       hhitsEq, hGmem, hGH, hGY, hGB, hHeq,
       hsMarked, hqMarked, hδpos, hlowerDestroy⟩
 
-/-- One fully aligned private-core stage at a prescribed floor.
-
-This packages the data which survive the complete landing peel: the target
-still has its successor-predecessor origin `q = m - a`, its current-stream
-origin `q = currentTarget j + δ`, and a strict lower-rank clean core whose
-translate by that same `δ` is destroyed. -/
 def HasAlignedPrivateCoreStageAtTarget
     (A B Y : Set ℕ) (k r : ℕ)
     (oldTarget currentTarget landing : ℕ → ℕ)
@@ -31755,9 +29299,6 @@ def HasAlignedPrivateCoreStageAtTarget
       DestroysAt
         (additiveSupportFamily A r) B (t + δ)
 
-/-- An aligned private-core stage with its residual target existentially
-hidden.  The target-refined form above is used for the next
-growth-versus-concentration split. -/
 def HasAlignedPrivateCoreStageAt
     (A B Y : Set ℕ) (k r : ℕ)
     (oldTarget currentTarget landing : ℕ → ℕ)
@@ -31766,7 +29307,6 @@ def HasAlignedPrivateCoreStageAt
     HasAlignedPrivateCoreStageAtTarget
       A B Y k r oldTarget currentTarget landing t L
 
-/-- Lowering the requested floor preserves a target-refined stage. -/
 theorem HasAlignedPrivateCoreStageAtTarget.mono_floor
     {A B Y : Set ℕ} {k r t : ℕ}
     {oldTarget currentTarget landing : ℕ → ℕ}
@@ -31785,7 +29325,6 @@ theorem HasAlignedPrivateCoreStageAtTarget.mono_floor
       hLM.trans hnM, hLM.trans hjM, hLM.trans hqM,
       hrest⟩
 
-/-- Lowering the requested floor preserves an aligned private-core stage. -/
 theorem HasAlignedPrivateCoreStageAt.mono_floor
     {A B Y : Set ℕ} {k r : ℕ}
     {oldTarget currentTarget landing : ℕ → ℕ}
@@ -31803,12 +29342,6 @@ theorem HasAlignedPrivateCoreStageAt.mono_floor
       HasAlignedPrivateCoreStageAtTarget.mono_floor
         hLM htargetStage⟩
 
-/-- Finite-rank homogenization of the fully aligned stages.
-
-If every floor admits a stage at some strict lower rank, one fixed rank
-`r < k` occurs at all floors after cofinal thinning.  All arithmetic,
-private-support, and same-displacement data remain inside the stage
-predicate; only the finite rank label is pigeonholed. -/
 theorem cofinal_alignedPrivateCoreStages_fixRank
     {A B Y : Set ℕ} {k : ℕ}
     {oldTarget currentTarget landing : ℕ → ℕ}
@@ -31844,13 +29377,6 @@ theorem cofinal_alignedPrivateCoreStages_fixRank
     HasAlignedPrivateCoreStageAt.mono_floor
       (Nat.le_of_lt hLM) hrStage
 
-/-- A fixed-rank private-core stream has only two residual-target shapes.
-
-Either its clean residual target `t` can be required above every target
-floor while the aligned stage remains arbitrarily late, or one literal
-target `t` recurs at every stage floor.  The second conclusion is stronger
-than mere boundedness: finite cofinal pigeonhole fixes the arithmetic root
-target once and for all. -/
 theorem cofinal_alignedPrivateCoreStages_targetGrowth_or_fixed
     {A B Y : Set ℕ} {k r : ℕ}
     {oldTarget currentTarget landing : ℕ → ℕ}
@@ -31915,19 +29441,6 @@ theorem cofinal_alignedPrivateCoreStages_targetGrowth_or_fixed
       HasAlignedPrivateCoreStageAtTarget.mono_floor
         (Nat.le_of_lt hstageFloorL) htStage
 
-/-- Rank zero is a rigid diagonal, not an anonymous terminal gap.
-
-At residual rank zero the clean core represents only target zero and has
-empty support.  Every peeled occurrence equals the landing point and their
-number is exactly `k`; hence the private current support is the singleton
-`{landing j}` (with multiplicity hidden by the finset), while
-
-`currentTarget j = k * landing j`
-
-and the independently aligned destroyed target remains
-
-`q = m - a = k * landing j + δ`.
--/
 theorem HasAlignedPrivateCoreStageAtTarget.rankZero_forces_diagonal
     {A B Y : Set ℕ} {k t L : ℕ}
     {oldTarget currentTarget landing : ℕ → ℕ}
@@ -32045,15 +29558,6 @@ theorem additiveSupportFamily_exists_averageBoundedAnchor
   simpa only [Finset.sum_const, Finset.card_fin,
     nsmul_eq_mul, hvsum] using hsum
 
-/-- The aligned predecessor-destroyer fan contains cofinally large,
-represented current-order targets.
-
-Choose the least anchor in the surviving lower-endpoint support.  Its
-average bound gives `2 * a ≤ oldTarget n` as soon as `h > 0`.  Requesting
-a bracket with index at least twice the eventual-representation threshold
-then forces `m - a` beyond that threshold.  Consequently the successor
-failure descends not merely to a formal family but to a nonempty
-order-`h` support family, still destroyed by the same fused deletion. -/
 theorem bracketedDestroyedSuccessorTargets_force_cofinalRepresentedPredecessorDestroyers
     {A Y : Set ℕ} {h : ℕ}
     {oldTarget : ℕ → ℕ}
@@ -32115,19 +29619,6 @@ theorem bracketedDestroyedSuccessorTargets_force_cofinalRepresentedPredecessorDe
     haAverage, hLDifference, ⟨G, hGmem⟩,
     (hfan a haE).2⟩
 
-/-- A positive-order minimal destroyer with no represented strict
-lower-rank destruction is a singleton diagonal obstruction.
-
-For each `x ∈ D`, take a private support meeting `D` exactly at `x` and
-peel all of its `D`-summands.  If the surviving core had positive order,
-the complementary-core lemma would make the same `D` destroy the
-represented positive lower-rank sum of the peeled hits.  The no-descent
-hypothesis forbids this.  Hence all `h` occurrences in the private
-representation equal its unique hit `x`, so `q = h * x`.
-
-Applying this to two points of `D` and cancelling the positive factor `h`
-shows that the points coincide.  Thus `D = {x}`; moreover every order-`h`
-support at `q` contains `x`. -/
 theorem minimalAdditiveDestroyer_noStrictRankDescent_forces_singletonDiagonal
     {A : Set ℕ} {h q : ℕ} {D : Finset ℕ}
     (hhpos : 0 < h)
@@ -32278,18 +29769,6 @@ theorem minimalAdditiveDestroyer_noStrictRankDescent_forces_singletonDiagonal
     simpa using this
   exact hyx ▸ Finset.mem_coe.mp hyE
 
-/-- Nontrivial-rank terminal destroyers have exact private-core normal form.
-
-The rank-one descent of a nonempty destroyer is automatic, so excluding all
-positive lower ranks is too strong to describe a genuine terminal branch.
-Here only ranks `2,...,h-1` are excluded.
-
-For each `x ∈ D`, decompose a private support at its `D`-hits.  All hit
-occurrences equal `x`.  If every occurrence is hit, then `q = h*x`.
-Otherwise two or more hit occurrences would give a represented destroyed
-target at a forbidden nontrivial rank.  Hence there is exactly one hit
-occurrence, and the remaining private core has exact order `h-1`, is
-disjoint from all of `D`, and represents the coherent difference `q-x`. -/
 theorem minimalAdditiveDestroyer_noNontrivialRankDescent_forces_privateCoreNormalForm
     {A : Set ℕ} {h q : ℕ} {D : Finset ℕ}
     (hh : 1 < h)
@@ -32452,7 +29931,7 @@ theorem minimalAdditiveDestroyer_noNontrivialRankDescent_forces_privateCores_off
 Either the same destroyer genuinely descends to a represented rank at least
 two, or all but at most one of its coordinates carry coherent private
 order-`h-1` cores at the exact differences `q-x`.  Unlike the earlier
-positive-rank fork, the left horn cannot be discharged automatically at
+positive-rank fork, the left case cannot be discharged automatically at
 rank one. -/
 theorem minimalAdditiveDestroyer_nontrivialRankDescent_or_privateCores_off_oneDiagonal
     {A : Set ℕ} {h q : ℕ} {D : Finset ℕ}
@@ -32493,15 +29972,6 @@ theorem minimalAdditiveDestroyer_nontrivialRankDescent_or_privateCores_off_oneDi
     exact hdescent
       ⟨ℓ, n, hℓtwo, hℓh, hrepresented, hdestroy⟩
 
-/-- Finite-prefix amplifier for the private-core branch.
-
-Let `X ⊆ D` consist of non-diagonal destroyer points and let `U` be an old
-protected prefix disjoint from `D`.  If one private predecessor core avoids
-`U`, it is already a protected repair.  Otherwise choose one old hit from
-each core.  More than `U.card * r` points force one `u ∈ U` into more than
-`r` private supports.  Removing `u` from those supports gives distinct
-order-`h-1` supports at the common target `q-u`; their intersections with
-`D` remain the distinct singleton markers `{x}`. -/
 theorem privateCores_largeSet_forces_protectedRepair_or_lowerDifferenceGrowth
     {A : Set ℕ} {h q r : ℕ} {D U X : Finset ℕ}
     (hh : 1 < h)
@@ -32737,14 +30207,6 @@ theorem privateCores_largeSet_forces_protectedRepair_or_lowerDifferenceGrowth
       by simpa only [hmarkedCard] using hfiberLarge,
       hmarkedData, hmarkedFst, hmarkedSnd⟩
 
-/-- Large-destroyer form of the protected-prefix amplifier.
-
-If `D` has more than `U.card * r + 1` points, then after discarding the
-unique possible diagonal point there are still more than `U.card * r`
-private-core coordinates.  Consequently a large minimal destroyer forces
-one of three concrete outcomes: genuine rank descent `1 < ℓ < h`, a
-private predecessor core avoiding the whole old prefix, or more than `r`
-same-target predecessor supports at one coherent old difference `q-u`. -/
 theorem largeMinimalDestroyer_forces_nontrivialRankDescent_or_protectedRepair_or_lowerDifferenceGrowth
     {A : Set ℕ} {h q r : ℕ} {D U : Finset ℕ}
     (hh : 1 < h)
@@ -32839,7 +30301,7 @@ theorem largeMinimalDestroyer_forces_nontrivialRankDescent_or_protectedRepair_or
         hmarkedFst, hmarkedSnd⟩
 
 /-- Every nonempty selected minimal destroyer has a protected selector
-repair when the relevant blocks have uniform room.
+repair when the relevant blocks have uniform case.
 
 This is the direct private-support argument.  Choose any `x ∈ D`.
 Inclusion-minimality supplies a same-target support meeting `D` exactly at
@@ -32873,17 +30335,6 @@ theorem selectedMinimalDestroyer_extends_avoiding_protectedUnion
       P s hDselected hxD hUselected hER hprivate hblocks
   exact ⟨t, htU, htq⟩
 
-/-- On a block selector, the entire large-destroyer branch collapses.
-
-With demand zero the private-core amplifier needs only `1 < D.card`.
-Its direct horn is already a marked private support.  In the pigeonhole
-horn, every retained lower support comes with the reinserted same-target
-support `insert u H` and its singleton destroyer trace.  Either support can
-therefore be completed to a selector avoiding the protected prefix.
-
-Thus a non-singleton selected minimal destroyer forces genuine rank descent
-or an actual protected same-target repair; anonymous lower-family growth is
-not a third terminal outcome. -/
 theorem selectedLargeMinimalDestroyer_forces_nontrivialRankDescent_or_protectedRepair
     {A C : Set ℕ} {h q : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -33047,7 +30498,7 @@ theorem lowerGapRepair_extends_avoiding_protectedUnionOnReservoir
 /-- The corrected cofinal selector fork with the large branch eliminated.
 
 Ask the four-way fork for a destroyer larger than one point.  The preceding
-theorem converts exactly that horn into either genuine nontrivial rank
+theorem converts exactly that case into either genuine nontrivial rank
 descent or a protected same-target selector repair.  Hence only three
 honest outcomes remain: descent, repair, or a primitive predecessor gap. -/
 theorem IsStronglyMinimalExactBasis.cofinal_selectorNontrivialRankDescent_or_protectedRepair_or_lowerGap
@@ -33101,14 +30552,6 @@ theorem IsStronglyMinimalExactBasis.cofinal_selectorNontrivialRankDescent_or_pro
   · exact ⟨q, D, hLq, hDnonempty, hDselected,
       hDminimal, Or.inr hgap⟩
 
-/-- Cofinal selector attack with both cardinality horns consumed.
-
-The preceding three-way theorem has only one non-repair alternative besides
-rank descent: a primitive predecessor gap.  Choosing any hit of the
-nonempty minimal destroyer and applying the protected reservoir gap repair
-turns that horn into a same-target selector repair as well.  Therefore every
-late stage yields either genuine rank descent or an actual protected repair.
--/
 theorem IsStronglyMinimalExactBasis.cofinal_selectorNontrivialRankDescent_or_protectedRepair
     {A K : Set ℕ} {h : ℕ} {cell : ℕ → Finset ℕ}
     (hminimal : IsStronglyMinimalExactBasis A h)
@@ -33165,20 +30608,6 @@ theorem IsStronglyMinimalExactBasis.cofinal_selectorNontrivialRankDescent_or_pro
       hDminimal, Or.inr ⟨t, htU, by
         simpa only [hpredSucc] using htq⟩⟩
 
-/-- A target-localized certificate contains a target-labelled full-block
-cover.
-
-Fix one localized target `q`.  For every other certificate target choose a
-support which survives its localizing selector and let `U` be their union.
-Compact the destruction at `q`, choose a point of the resulting minimal
-destroyer, and take its private support `E`.
-
-The capacity-free private-support fork either repairs `q` while avoiding
-`U`, which would preserve every certificate target and contradict the
-certificate, or covers one whole block by `U ∪ E`.  The conclusion retains
-the individual support chosen for every target rather than only the
-cardinality of their union.  Thus every finite certificate has a literal
-target-labelled cover matrix on some partition block. -/
 theorem targetLocalizedAdditiveCertificate_forces_labeledFullBlockCover_atTarget
     {A K : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -33300,13 +30729,6 @@ theorem targetLocalizedAdditiveCertificate_forces_labeledFullBlockCover_atTarget
       hDselected, hDminimal, hxD, hER, hprivate,
       hsjE, by simpa only [U] using hjCover⟩
 
-/-- Prescribed-survivor form of the labelled full-block theorem.
-
-Here the support chosen for every other certificate target is supplied as
-input.  Thus a support found repeatedly in a fixed certificate column can
-be forced into every corresponding cover matrix.  Failure of the resulting
-private repair still contradicts the certificate, so the prescribed rows
-must cover a whole block together with the private row at `q`. -/
 theorem targetLocalizedAdditiveCertificate_prescribedSurvivors_force_labeledFullBlockCover
     {A K : Set ℕ} {k q : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -33507,18 +30929,6 @@ theorem targetLocalizedAdditiveCertificate_forces_labeledFullBlockCover
       P hrepresented hcert hlocalized hqQ
   exact ⟨q, hqQ, s, support, D, E, x, j, hdata⟩
 
-/-- A large localized target set creates growth down every fixed support
-column, unless one support survives many distinct localizing selectors.
-
-Fix `r ∈ Q`.  For every other target `q`, choose its localizing selector.
-Since that selector destroys only `q` inside `Q`, choose an order-`k+1`
-support of `r` which it misses.  Pigeonhole the resulting column by its
-support value.  Either there are many distinct supports at the *same*
-target `r`, or one fixed support of `r` is simultaneously witnessed to
-survive many different target localizers.
-
-This is the direct second-order payoff of universal localization: growing
-certificate cardinality can no longer remain anonymous. -/
 theorem targetLocalizedAdditiveFamily_fixedColumn_supportGrowth_or_repeatedCommonSurvival
     {A : Set ℕ} {k K R : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -33676,18 +31086,6 @@ theorem targetLocalizedAdditiveFamily_fixedColumn_rootedMatching_or_repeatedComm
       hMnonempty, hMmatching⟩
   · exact Or.inr hrepeated
 
-/-- Repeated covers carrying one fixed support must spread to blocks missed
-by that support or concentrate many covers on one block.
-
-The common support `E` can meet at most `E.card` blocks of a disjoint finite
-block partition.  First pigeonhole the cover indices by their covered block.
-If there are many distinct blocks, discard the at most `E.card` blocks met
-by `E` and retain many blocks completely disjoint from `E`.  Otherwise one
-block is repeated by many cover indices.
-
-This is the geometric fork needed after repeated fixed-column survival:
-either the common row becomes irrelevant on many covers, or many different
-private rows collide on one literal block. -/
 theorem repeatedCovers_commonSupport_manyDisjointBlocks_or_repeatedBlock
     {C : Set ℕ} {cell : ℕ → Finset ℕ}
     (P : IsFiniteBlockPartition C cell)
@@ -33744,18 +31142,6 @@ theorem repeatedCovers_commonSupport_manyDisjointBlocks_or_repeatedBlock
       P.blockIndex_eq_of_mem hxCell⟩
   · exact Or.inr hrepeated
 
-/-- A support surviving many localized failures can be prescribed as the
-same labelled column in all of their full-block covers.
-
-Fix `r ∈ Q` and an order-`k+1` support `E` of `r`.  Suppose that, for every
-row `p` in `T`, a localizing selector destroys `p`, preserves every other
-target in `Q`, and misses `E`.  Choose all survivor rows for that selector,
-but force the row labelled `r` to be exactly `E`.  The prescribed-survivor
-cover theorem then supplies a private row at `p` and a whole covered block.
-
-Thus repeated common survival is converted into a family of cover matrices
-with one literal common column.  This is the input needed by
-`repeatedCovers_commonSupport_manyDisjointBlocks_or_repeatedBlock`. -/
 theorem repeatedCommonSurvival_forces_prescribedFullBlockCovers
     {A C : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -33995,7 +31381,7 @@ def HasCommonColumnReducedCoverFork
           (T.filter fun p =>
             coveredBlock p = j).card)
 
-/-- The spread horn of `HasCommonColumnReducedCoverFork`, packaged for
+/-- The spread case of `HasCommonColumnReducedCoverFork`, packaged for
 subsequent compositions. -/
 def HasCommonColumnReducedCoverStream
     (A : Set ℕ) (k L : ℕ)
@@ -34025,18 +31411,6 @@ def HasCommonColumnReducedCoverStream
             cell j ⊆
               ((Q.erase p.1).attach.biUnion support \ E) ∪ F
 
-/-- Geometric payoff of a repeated common support.
-
-After prescribing the common support `E` in every row, choose the literal
-block covered by each row.  If the rows spread over many blocks, discard
-the at most `E.card` blocks met by `E`.  On every remaining block the common
-column can be deleted from the cover, leaving a genuine reduced cover by
-the other target rows and the private row.  Otherwise more than `K` rows
-cover the same literal block.
-
-This is a direct structural obstruction, rather than another certificate
-reformulation: a fixed repeated support now either disappears on many
-blocks or forces many distinct localized failures into one finite block. -/
 theorem repeatedCommonSurvival_forces_reducedCoverStream_or_repeatedBlock
     {A C : Set ℕ} {k K L : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -34137,17 +31511,6 @@ theorem repeatedCommonSurvival_forces_reducedCoverStream_or_repeatedBlock
       support, F, hrSupport, hFmem, hReducedCover⟩
   · exact Or.inr hconcentrated
 
-/-- A sufficiently large localized target family has only three possible
-geometries at any fixed target `r`.
-
-Either the exact support family at `r` already contains a large rooted
-matching, or a fixed support of `r` survives enough localizers to feed the
-common-column geometry above.  In the latter case it yields either more
-than `L` whole-block covers from which that support has been removed, or
-more than `K` localized failures covering one literal block.
-
-The threshold is uniform because every order-`k+1` support has cardinality
-at most `k+1`. -/
 theorem targetLocalizedAdditiveFamily_forces_rootedMatching_or_reducedCoverStream_or_repeatedBlock
     {A C : Set ℕ} {k K L demand : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -34218,17 +31581,6 @@ theorem targetLocalizedAdditiveFamily_forces_rootedMatching_or_reducedCoverStrea
           hsurvival hgeometric
     exact ⟨E, hER, T, hgeometric, hfork⟩
 
-/-- A repeated covered block yields a second, internal pigeonhole.
-
-Every prescribed cover row hitting the same block `j` carries a selected
-point of that block in its private support.  Pigeonhole these literal
-points.  Either the block itself has more than `S` points, or one point of
-the block belongs to the private supports of more than `M` distinct target
-rows.
-
-Consequently the repeated-block horn above is not terminal: it becomes
-either forced block growth or a common one-point root across many
-different target labels. -/
 theorem prescribedCommonColumn_repeatedBlock_forces_largeBlock_or_commonPrivateHit
     {A : Set ℕ} {k M S : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -34333,13 +31685,6 @@ theorem prescribedCommonColumn_repeatedBlock_forces_largeBlock_or_commonPrivateH
       (hhit p hpR).2
     exact ⟨F, hFmem, by simpa only [hpHit] using hhitF⟩
 
-/-- Full repair data carried by one anchored private row.
-
-Besides the current private support and destroyer, retain the actual block
-selector and one support avoiding it for every other certificate target.
-The distinguished `r`-support is still the prescribed common column `E`.
-These witnesses are what allow a later change of the anchor in its block to
-be checked against every target, rather than only against the current row. -/
 def HasAnchoredPrivateRowTrace
     (A : Set ℕ) (k : ℕ)
     (cell : ℕ → Finset ℕ)
@@ -34483,14 +31828,6 @@ theorem prescribedCommonColumn_repeatedBlock_has_anchoredLowerCores
     intro p hpR
     exact hentry p (by simpa only [R] using hpR)⟩
 
-/-- Removing an anchored point from a private support has only two possible
-marker behaviours.
-
-If the private marker remains in the lower core, the core still meets the
-destroyer in exactly that marker.  Otherwise the core is completely clear
-of the destroyer, and the removed anchor must itself have been the marker.
-This is the occurrence-sensitive split needed when the same lower core is
-carried by many different anchors. -/
 theorem privateSupport_remove_anchor_marker_survives_or_clears
     {a x : ℕ} {D F H : Finset ℕ}
     (hxD : x ∈ D)
@@ -34539,19 +31876,6 @@ theorem privateSupport_remove_anchor_marker_survives_or_clears
       exact Finset.mem_insert.mp hxF
     exact ⟨hdisjoint, hxaOr.resolve_right hxH |>.symm⟩
 
-/-- A cleared anchored row repairs the whole localized certificate.
-
-Let `U` be the union of the stored supports for every target other than the
-current row target.  The original selector avoids `U`.  Choose a second
-point in the anchor block outside both `U` and the current private support.
-Because the lower core avoids the destroyer, that private support survives
-the finite swap.  The block-aligned extension lemma then builds a selector
-which preserves the current target while still avoiding `U`, hence
-preserves every other certificate target as well.
-
-Thus, once every block has the standard
-`(k+1) * |Q| + (k+1)` reserve, a cleared-core row contradicts the
-certificate property outright. -/
 theorem anchoredPrivateRow_clearedCore_repairs_entireCertificate
     {A C : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -34651,9 +31975,9 @@ theorem anchoredPrivateRow_clearedCore_repairs_entireCertificate
         (Finset.card_union_le U F)
     have hjLarge := hblocks j
     omega
-  obtain ⟨b, hbRoom⟩ := hroom
+  obtain ⟨b, hbCase⟩ := hroom
   have hbParts :=
-    Finset.mem_sdiff.mp hbRoom
+    Finset.mem_sdiff.mp hbCase
   have hbCell : b ∈ cell j := hbParts.1
   have hbU : b ∉ U := by
     intro hb
@@ -34725,18 +32049,6 @@ theorem anchoredPrivateRow_clearedCore_repairs_entireCertificate
     refine ⟨surviving q', hsurvivingMem q', ?_⟩
     exact htU.mono_left hsupportU
 
-/-- Direct marked-point attack on one full private row.
-
-The private marker belongs to one definite block of the partition and the
-row selector chooses it there.  Protect all other certificate targets by
-the stored support union `U`.  Either that marker block has a second point
-outside `U` and the private support, in which case replacing the marker
-gives a verified finite-swap repair of the current target, or the entire
-literal marker block is covered by `U ∪ F`.
-
-Unlike an abstract capacity alternative, the second horn names the exact
-fixed block which must be repeatedly covered in the surviving-marker
-branch. -/
 theorem anchoredPrivateRow_markerSwap_or_markerBlockCovered
     {A C : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -34823,8 +32135,8 @@ theorem anchoredPrivateRow_markerSwap_or_markerBlockCovered
   by_cases hroom :
       (cell i \ (U ∪ F)).Nonempty
   · left
-    obtain ⟨b, hbRoom⟩ := hroom
-    have hbParts := Finset.mem_sdiff.mp hbRoom
+    obtain ⟨b, hbCase⟩ := hroom
+    have hbParts := Finset.mem_sdiff.mp hbCase
     have hbCell : b ∈ cell i := hbParts.1
     have hbU : b ∉ U := by
       intro hb
@@ -34877,17 +32189,6 @@ theorem anchoredPrivateRow_markerSwap_or_markerBlockCovered
       ⟨z, Finset.mem_sdiff.mpr
         ⟨hzCell, hzUnion⟩⟩
 
-/-- Swapping the private marker localizes every possible new failure to the
-columns whose stored support contains the replacement point.
-
-The current target is repaired by its private support `F`: it met `D` only
-at `x`, and the replacement `b` is outside `F`.  Every other target whose
-stored support omits `b` also survives the swapped finite deletion, since
-that support avoided the entire original selector and hence `D`.
-
-This is the strict certificate-descent mechanism behind the old-block
-incidence matrix: after the swap, only the `b`-hit columns can remain
-damaged. -/
 theorem anchoredPrivateRow_markerSwap_localizes_damagedTargets
     {A : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -34968,19 +32269,7 @@ theorem anchoredPrivateRow_markerSwap_localizes_damagedTargets
     exact hbSupport
       (hzb' ▸ Finset.mem_coe.mp hzSupport)
 
-/-- Full-selector form of the marked certificate descent.
-
-Split the stored off-diagonal columns according to whether their support
-contains the replacement point `b`.  Protect the union `U` of all non-hit
-supports while completing the finite marker swap to a block selector.
-
-There are then only two outcomes.  Either completion succeeds, and every
-target of `Q` destroyed by the new selector belongs to the strict
-subcertificate of `b`-hit columns (which has cardinality `< Q.card`);
-or the private repair support meets one of the designated old selected
-coordinates.  Thus the marker swap gives a genuine cardinal descent unless
-it exposes the old-block collision needed by the difference attack. -/
-theorem anchoredPrivateRow_markerSwap_extends_to_strictCertificate_or_oldCollision
+theorem anchoredPrivateRow_markerSwap_extends_to_strictCertificate_or_oldConflict
     {A C : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
     (P : IsFiniteBlockPartition C cell)
@@ -35087,8 +32376,8 @@ theorem anchoredPrivateRow_markerSwap_extends_to_strictCertificate_or_oldCollisi
         Finset.mem_singleton.mp hzb
       exact hbF
         (hzb' ▸ Finset.mem_coe.mp hzF)
-  obtain hcomplete | holdCollision :=
-    blockAlignedRepairWitness_extends_protected_or_oldCollision
+  obtain hcomplete | holdConflict :=
+    blockAlignedRepairWitness_extends_protected_or_oldConflict
       P s hbBlock' hbU hUselected hFmem hFswap
         hcontemporary
   · left
@@ -35128,25 +32417,9 @@ theorem anchoredPrivateRow_markerSwap_extends_to_strictCertificate_or_oldCollisi
       refine ⟨q', ?_, rfl⟩
       apply Finset.mem_filter.mpr
       exact ⟨Finset.mem_attach _ q', hbq⟩
-  · exact Or.inr holdCollision
+  · exact Or.inr holdConflict
 
-/-- One-block failure transfer extracted from a successful marker
-completion.
-
-Protect every point of every stored off-diagonal support except the proposed
-replacement `b`.  In the successful completion horn, put the old marker
-`x` back while leaving all other completed coordinates unchanged.  The
-resulting `before` selector still contains the whole minimal destroyer, so
-it destroys `p`, and it preserves every other target of `Q`.  Switching the
-single block from `x` to `b` gives `after`, which preserves `p`.  The
-certificate therefore forces some different target `q` to fail, and its
-stored support can meet `after` only at `b`.
-
-Removing the two exchanged points gives represented order-`k` differences
-at `p-x` and `q-b`.  Hence a diffuse old-block cover sharpens to either an
-old-coordinate collision or an exact one-block transfer carrying two
-coherent lower-order cores. -/
-theorem anchoredPrivateRow_markerSwap_forces_oneBlockFailureTransfer_or_oldCollision
+theorem anchoredPrivateRow_markerSwap_forces_oneBlockFailureTransfer_or_oldConflict
     {A C : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
     (P : IsFiniteBlockPartition C cell)
@@ -35268,8 +32541,8 @@ theorem anchoredPrivateRow_markerSwap_forces_oneBlockFailureTransfer_or_oldColli
         Finset.mem_singleton.mp hzb
       exact hbF
         (hzb' ▸ Finset.mem_coe.mp hzF)
-  obtain hcomplete | holdCollision :=
-    blockAlignedRepairWitness_extends_protected_or_oldCollision
+  obtain hcomplete | holdConflict :=
+    blockAlignedRepairWitness_extends_protected_or_oldConflict
       P s hbBlock' hbU hUselected hFmem hFswap
         hcontemporary
   · obtain ⟨after, hafterI, hkeepD,
@@ -35463,17 +32736,8 @@ theorem anchoredPrivateRow_markerSwap_forces_oneBlockFailureTransfer_or_oldColli
       hbSupport, hsurvivingBefore q',
       hFbeforeExact, hGafterExact,
       hHpMem, hFHp, hHqMem, hGHq⟩
-  · exact Or.inr holdCollision
+  · exact Or.inr holdConflict
 
-/-- An exact one-block failure pivot is an anchored certificate-escape
-edge in the existing finite-cycle framework.
-
-The `before` selector is private for the source target `p`; the `after`
-selector differs only in block `i` and destroys the destination `q`.
-The destination support survives `before` and contains the newly inserted
-point `b`.  Extensionality identifies `after` with the canonical
-one-block override, supplying all fields of
-`AnchoredCertificateEscapeTransitionData`. -/
 theorem oneBlockFailureTransfer_has_anchoredCertificateEscapeTransitionData
     {A : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -35725,16 +32989,6 @@ theorem anchoredCertificate_partialOutgoingTransitions_force_boundary_or_cycle
     exact ⟨next, hnextEdge, hnextNe,
       p, period, hperiodLower, hperiod⟩
 
-/-- Split a multiplicity-safe private marker into two clean summands.
-
-The retained core has order `h-1` at `q-x`.  If `x = a+b`, adjoining both
-`a` and `b` raises the order by exactly two, hence gives an order-`h+1`
-support at the original target `q`.  When the core, `a`, and `b` all avoid
-the deletion `Y`, this is an immediate successor-order repair.
-
-The core formulation is essential: unlike a bare finset support, it proves
-that the removed marker accounts for exactly one tuple occurrence, so the
-one-extra-summand calculation is multiplicity-safe. -/
 theorem markedPrivateCore_cleanSplit_repairs_successorTarget
     {A Y : Set ℕ} {h q x a b : ℕ}
     {core : Finset ℕ}
@@ -35799,7 +33053,7 @@ theorem markedPrivateCore_cleanSplit_repairs_successorTarget
 If `Y` really destroys the successor-order target, every two-summand
 decomposition of the private marker inside `A` has a dirty endpoint.  Thus
 the residual marker is pair-primitive relative to the clean set `A \ Y`;
-this is the structural alternative promised by the split-marker attack. -/
+this is the structural alternative promised by the split-marker obstruction. -/
 theorem successorDestruction_with_markedPrivateCore_forces_pairPrimitiveMarker
     {A Y : Set ℕ} {h q x : ℕ}
     {core : Finset ℕ}
@@ -35825,15 +33079,6 @@ theorem successorDestruction_with_markedPrivateCore_forces_pairPrimitiveMarker
         hclean.1 hclean.2)
       hdestroy
 
-/-- A target has a double-cell support when one support contains two
-distinct points of one literal partition cell.
-
-This is strictly stronger geometric data than a wide reservoir support.
-In the fixed-core branch, supports are automatically wide because they
-contain the old marker and the moving anchor in different blocks.  A
-double-cell support instead records the genuine collision created when two
-different replacements from the marker block reach the same destination
-column. -/
 def HasDoubleCellSupportAt
     (R : SupportFamily)
     (cell : ℕ → Finset ℕ) (i q : ℕ) : Prop :=
@@ -35875,14 +33120,6 @@ theorem twoMarkerFailureTransfers_force_distinctTargets_or_doubleCellSupport
       c, hcCell, hcSupport, hbc⟩
   · exact Or.inl htargets
 
-/-- Two successful replacements in one marker block give two distinct
-destination labels unless they create a wide support immediately.
-
-Both transfers use the same stored-support function of the source row.  If
-their destination subtypes are equal, the corresponding stored support is
-literally the same finset and contains both distinct replacement points.
-Since both points lie in partition blocks, that support has two distinct
-reservoir vertices. -/
 theorem twoMarkerFailureTransfers_force_distinctTargets_or_wideSupport
     {A C : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -35923,19 +33160,6 @@ theorem twoMarkerFailureTransfers_force_distinctTargets_or_wideSupport
       c', ⟨Finset.mem_coe.mpr hc'G, hcC⟩,
       hb'c'⟩
 
-/-- Hall amplification for two genuine anchored exits at every certificate
-target.
-
-If the two-point exit neighborhoods satisfy Hall, choose a system of
-distinct representatives.  On the finite certificate this choice is
-surjective, has no fixed points, and therefore contains a nontrivial
-anchored escape cycle.
-
-If Hall fails, count the two Boolean exit incidences from every source in a
-deficient set.  Some destination receives more than two incidences; side
-injectivity makes their source targets distinct.  Thus the alternative is
-not a vague boundary loss but at least three concrete incoming anchored
-edges at one target. -/
 theorem twoExitAnchoredTransitions_force_cycleCover_or_threeIncoming
     {R : SupportFamily}
     {Q : Finset ℕ}
@@ -36121,16 +33345,6 @@ def HasTwoAnchoredCertificateEscapeExitsAt
       HasAnchoredCertificateEscapeTransition
         R Q cell p.1 (exit side).1
 
-/-- Two exits at every non-root certificate target force an internal cycle.
-
-Let `r` be the one distinguished target omitted from the source family.
-For each `p ∈ Q.erase r`, its two exits are distinct, so they cannot both
-equal `r`.  Choose an exit which is not `r`.  This gives a fixed-point-free
-self-map of `Q.erase r`; finiteness then forces a nontrivial anchored escape
-cycle entirely among the non-root targets.
-
-This removes the co-singleton boundary loophole directly: two marker
-replacements cannot all escape into the one omitted certificate column. -/
 theorem twoAnchoredExits_off_singleRoot_force_cycleOn
     {R : SupportFamily}
     {Q : Finset ℕ} {r : ℕ}
@@ -36221,19 +33435,6 @@ theorem twoAnchoredExits_off_singleRoot_force_cycleOn
   exact ⟨next, hnextEdge, hnextNe,
     p, period, hperiodLower, hperiod⟩
 
-/-- More exits than omitted certificate targets force an internal cycle.
-
-Let `V ⊆ Q` be a family of source targets and let `B` index distinct
-anchored exits from every source.  If `|B| > |Q \ V|`, injectivity prevents
-all exits of any source from landing outside `V`.  Choosing one internal
-exit at each source gives a fixed-point-free self-map of `V`, and hence a
-nontrivial anchored escape cycle.
-
-This is the boundary-capacity form of the co-singleton argument.  It is
-designed for the fixed-marker-block branch: a large block can supply enough
-uniform replacements to beat all certificate labels omitted from the
-repeated-row family, without first proving that family is literally
-co-singleton. -/
 theorem anchoredExits_exceed_boundary_force_cycleOn
     {R : SupportFamily}
     {Q V B : Finset ℕ}
@@ -36550,18 +33751,7 @@ theorem twoExitOrWideAtEveryTarget_force_wide_or_cycleCover_or_threeIncoming
       exact ⟨y, T, hTlarge, fun p hpT =>
         (hTdata p hpT).choose_spec.2⟩
 
-/-- The nontrivial arithmetic content of the old-collision horn.
-
-Assume the exceptional prefix contains neither the marker block `i` nor the
-moving anchor block `j`.  A collision returned by the marker completion is
-then in a genuinely third block.  Since the private support is
-`insert a H`, block disjointness rules out the anchor value `a`; the old
-selected point must belong to the fixed lower core `H`.
-
-Peeling that second anchor from `H` produces an order-`k-1` support at the
-coherent two-anchor difference `(p-a)-y`, and the original private support
-has the explicit form `insert a (insert y K)`. -/
-theorem anchoredPrivateRow_distinctOldCollision_forces_twoAnchorLowerCore
+theorem anchoredPrivateRow_distinctOldConflict_forces_twoAnchorLowerCore
     {A C : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
     (P : IsFiniteBlockPartition C cell)
@@ -36742,15 +33932,15 @@ theorem anchoredPrivateRow_distinctOldCollision_forces_twoAnchorLowerCore
     hKmem, hHK, by rw [hFanchor, hHK],
     hlowerDestroy⟩
 
-/-- For `k > 2`, a genuinely third-block collision is already the forbidden
+/-- For `k > 2`, a genuinely third-block conflict is already the forbidden
 nontrivial rank descent.
 
 This is the contradiction-ready wrapper around
-`anchoredPrivateRow_distinctOldCollision_forces_twoAnchorLowerCore`: the
+`anchoredPrivateRow_distinctOldConflict_forces_twoAnchorLowerCore`: the
 peeled support witnesses that the descended target is represented, while
 the two-anchor complementary core shows that the same current destroyer
-kills it. -/
-theorem anchoredPrivateRow_distinctOldCollision_forces_nontrivialRankDescent
+contradicts it. -/
+theorem anchoredPrivateRow_distinctOldConflict_forces_nontrivialRankDescent
     {A C : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
     (P : IsFiniteBlockPartition C cell)
@@ -36785,7 +33975,7 @@ theorem anchoredPrivateRow_distinctOldCollision_forces_nontrivialRankDescent
   obtain ⟨ℓ, _hℓJ, K, _hℓi, _hℓj,
       _hselectedH, hKmem, _hHK, _hF,
       hlowerDestroy⟩ :=
-    anchoredPrivateRow_distinctOldCollision_forces_twoAnchorLowerCore
+    anchoredPrivateRow_distinctOldConflict_forces_twoAnchorLowerCore
       P hrQ E p (by omega) htrace hHmem hsi hij
         hiJ hjJ hcollision
   exact ⟨(p.1 - a) - (s ℓ).1,
@@ -36795,7 +33985,7 @@ theorem anchoredPrivateRow_distinctOldCollision_forces_nontrivialRankDescent
 /-- In a branch where nontrivial lower-rank destruction has already been
 excluded, no private repair support can collide with a genuinely third old
 block. -/
-theorem anchoredPrivateRow_noRankDescent_excludes_distinctOldCollision
+theorem anchoredPrivateRow_noRankDescent_excludes_distinctOldConflict
     {A C : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
     (P : IsFiniteBlockPartition C cell)
@@ -36828,20 +34018,11 @@ theorem anchoredPrivateRow_noRankDescent_excludes_distinctOldCollision
   intro hcollision
   obtain ⟨n, _hrankLower, _hrankUpper,
       hrepresented, hdestroy⟩ :=
-    anchoredPrivateRow_distinctOldCollision_forces_nontrivialRankDescent
+    anchoredPrivateRow_distinctOldConflict_forces_nontrivialRankDescent
       P hrQ E p hk htrace hHmem hsi hij
         hiJ hjJ hcollision
   exact (hnoDescent n hrepresented) hdestroy
 
-/-- In the genuine no-descent branch, an admissible marker replacement
-cannot escape through an old-coordinate collision.  It therefore produces
-an actual anchored certificate edge, while retaining both coherent
-order-`k` cores and the exact one-point traces on the source and destination
-supports.
-
-This is the concrete weld from a private row of the counterexample attack
-to the finite escape graph.  In particular, the graph edge no longer loses
-which replacement point created it or which lower difference it carries. -/
 theorem anchoredPrivateRow_noRankDescent_markerSwap_forces_coherentEscapeData
     {A C : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -36914,7 +34095,7 @@ theorem anchoredPrivateRow_noRankDescent_markerSwap_forces_coherentEscapeData
       _hprivate, _hFanchor, _hblockCover⟩ :=
     htraceFields
   obtain htransfer | hcollision :=
-    anchoredPrivateRow_markerSwap_forces_oneBlockFailureTransfer_or_oldCollision
+    anchoredPrivateRow_markerSwap_forces_oneBlockFailureTransfer_or_oldConflict
       P hrQ E p htrace hcert hU hsi hbBlock hbF
         hcontemporary
   · obtain ⟨before, after, q, Hp, Hq,
@@ -36955,23 +34136,10 @@ theorem anchoredPrivateRow_noRankDescent_markerSwap_forces_coherentEscapeData
       rw [hoverride]
       exact hGafterExact z hzSupport
   · exact False.elim
-      ((anchoredPrivateRow_noRankDescent_excludes_distinctOldCollision
+      ((anchoredPrivateRow_noRankDescent_excludes_distinctOldConflict
         P hrQ E p hk htrace hHmem hsi hij
           hiJ hjJ hnoDescent) hcollision)
 
-/-- No-descent collapses the whole contemporaneous marker-block branch.
-
-If a point `b` of the marker block lay outside both the union `U` of all
-stored off-diagonal supports and the private support `F`, then the coherent
-marker-swap theorem would produce an escape edge whose destination anchor
-support contains `b`.  That anchor support is one of the supports already
-used to define `U`, a contradiction.
-
-Consequently the literal marker block is covered by `U ∪ F`.  Since `U`
-contains at most one order-`k+1` support per certificate target and `F` is
-itself an order-`k+1` support, this also gives the quantitative bound
-`|cell i| ≤ (k+1)|Q| + (k+1)`.  Thus a no-descent marker cannot remain in a
-genuinely later, larger block. -/
 theorem anchoredPrivateRow_noRankDescent_forces_markerBlockCover_and_bound
     {A C : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -37219,19 +34387,6 @@ theorem anchoredPrivateRow_noRankDescent_largeFreshBlocks_force_oldMarker
       (Nat.not_lt_of_ge hiBound)
         (hfreshLarge i hiJ)
 
-/-- Uniformly large blocks force a genuine two-rank injury from one
-anchored private row.
-
-Assume every block is larger than the total capacity of one stored
-order-`k+1` support per certificate target plus the private support.  If
-the row destroyer caused no represented order-`k-1` injury, apply the
-marker-block cover theorem with an empty old-coordinate set.  It would
-bound the marker block by exactly that capacity, contradicting its strict
-lower bound.
-
-Thus in the uniformly-large-block regime the escape graph is not needed:
-one row already forces a nontrivial descent from current order `k+1` to
-order `k-1`. -/
 theorem anchoredPrivateRow_allBlocksAboveCertificateCapacity_forces_twoRankDescent
     {A C : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -37322,14 +34477,6 @@ theorem anchoredPrivateRow_allBlocksAboveCertificateCapacity_forces_twoRankDesce
   exact (Nat.not_lt_of_ge hmarkerBound)
     (hblocks i)
 
-/-- Two admissible points in the marker block turn an actual no-descent
-private row into the local Hall input.
-
-Each point separately gives a provenance-retaining escape edge by the
-previous theorem.  If both flips destroy the same target, that target's
-stored support contains both distinct reservoir points and is already
-wide.  Otherwise the two concrete edges form two distinct exits from the
-source certificate target. -/
 theorem anchoredPrivateRow_noRankDescent_twoMarkerSwaps_force_wideSupport_or_twoExitFork
     {A C : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -37435,20 +34582,6 @@ theorem anchoredPrivateRow_noRankDescent_twoMarkerSwaps_force_wideSupport_or_two
   · right
     simpa only [pQ] using htwo
 
-/-- A whole set of admissible marker replacements gives equally many
-distinct anchored exits, unless a double-cell support already occurs.
-
-The completion lemma only needs large blocks away from the marker block.
-Therefore, even when the marker block belongs to the old exceptional set
-`J`, we may run the completion with `J.erase i`: the marker block is
-excluded separately by `ℓ ≠ i`.  This removes the previously artificial
-obstruction that an "old" marker could not be pivoted.
-
-For each `b ∈ B`, no rank descent eliminates the genuine old-coordinate
-collision and produces a provenance-retaining escape edge.  If two
-replacement points had the same destination, the common stored support
-would contain both distinct points of the marker block.  Outside that
-genuinely stronger horn, the destination map is injective. -/
 theorem anchoredPrivateRow_noRankDescent_manyMarkerSwaps_force_doubleCellSupport_or_manyExits
     {A C : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -37590,19 +34723,6 @@ theorem anchoredPrivateRow_noRankDescent_manyMarkerSwaps_force_doubleCellSupport
     · intro b
       exact ⟨edge b, hnew b, hanchor b⟩
 
-/-- Double pigeonhole for anchored lower cores.
-
-Each row has a distinct current target `p` and a factorization
-`p = anchor p + difference p`, with an order-`k` core at that difference.
-First pigeonhole by `difference`:
-
-* many values give genuine lower-target growth;
-* on a large fixed-difference fiber, pigeonhole the lower cores.
-
-Many distinct cores at that one target normalize to a rooted matching.
-Otherwise one exact core repeats, and the anchors are automatically
-injective because the current targets are distinct and the difference is
-fixed. -/
 theorem anchoredLowerCores_force_differenceGrowth_or_lowerRootedMatching_or_fixedCoreAnchorStar
     {A : Set ℕ} {k anchorDemand differenceDemand matchingDemand : ℕ}
     {Q : Finset ℕ} {r : ℕ}
@@ -37771,17 +34891,6 @@ def HasAnchoredLowerCoreRows
           s surviving D F x ∧
       core p ∩ D ⊆ {x}
 
-/-- A large fixed-core anchor star has only two substantive behaviours.
-
-Choose the private destroyer and marker in every row.  Either many rows
-become completely clear after their distinct anchor is peeled; in those
-rows the anchor is the private marker and the same destroyer already
-destroys the order-one anchor target.  Or most markers survive inside the
-fixed order-`k` core.  Since that core has at most `k` points, one literal
-old coordinate is then the private marker for many distinct-anchor rows.
-
-This turns the fixed-core horn into the desired repair-versus-repeated-old-
-collision fork rather than leaving it as a static structural description. -/
 theorem fixedCoreAnchorStar_forces_clearedAnchors_or_repeatedSurvivingMarker
     {A : Set ℕ}
     {k clearDemand collisionDemand : ℕ}
@@ -38146,19 +35255,6 @@ theorem fixedCoreAnchorStar_forces_repeatedSurvivingMarker_of_certificate
   · exact ⟨selector, surviving, destroyer,
       support, marker, hcollision⟩
 
-/-- Repeated surviving markers align to one fixed old block.
-
-Discard the at most one row whose injective anchor equals the common marker
-`x`.  On every remaining row the marker block
-`i = blockIndex P x` differs from the moving anchor block `j`.  Apply the
-single-row marked-swap theorem in parallel.
-
-Either some row supplies a verified marker swap, or every remaining row
-covers the same literal old block by its protected support union `U p`
-together with the fixed lower core `H`.  The moving anchor disappears from
-the cover because it lies in the disjoint block `j`.  This is the
-block-aligned old-coordinate obstruction needed for the next matching
-amplification. -/
 theorem repeatedSurvivingMarker_forces_safeSwap_or_fixedOldBlockCovers
     {A C : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -38190,7 +35286,7 @@ theorem repeatedSurvivingMarker_forces_safeSwap_or_fixedOldBlockCovers
             (destroyer p) (support p) x ∧
         H ∩ destroyer p = {x}) :
     ∃ i, ∃ V : Finset {q // q ∈ Q.erase r},
-    ∃ guard :
+    ∃ required_element :
         {q // q ∈ Q.erase r} → Finset ℕ,
       x ∈ cell i ∧
       i ≠ j ∧
@@ -38200,24 +35296,24 @@ theorem repeatedSurvivingMarker_forces_safeSwap_or_fixedOldBlockCovers
         (V : Set {q // q ∈ Q.erase r}) ∧
       (∀ p ∈ V,
         (selector p i).1 = x ∧
-        guard p =
+        required_element p =
           (Q.erase p.1).attach.biUnion
             (surviving p) ∧
         Disjoint
-          (guard p : Set ℕ)
+          (required_element p : Set ℕ)
           (selectedSet (selector p)) ∧
-        (guard p).card ≤
+        (required_element p).card ≤
           (k + 1) * Q.card) ∧
       ((∃ p ∈ V,
           ∃ b ∈ (cell i).erase x,
-            b ∉ guard p ∧
+            b ∉ required_element p ∧
             b ∉ support p ∧
             ¬ DestroysAt
               (additiveSupportFamily A (k + 1))
               ((((destroyer p).erase x ∪ {b} :
                 Finset ℕ) : Set ℕ)) p.1) ∨
         ∀ p ∈ V,
-          cell i ⊆ guard p ∪ H) := by
+          cell i ⊆ required_element p ∪ H) := by
   classical
   let V : Finset {q // q ∈ Q.erase r} :=
     W.filter fun p => anchor p ≠ x
@@ -38300,17 +35396,17 @@ theorem repeatedSurvivingMarker_forces_safeSwap_or_fixedOldBlockCovers
           rw [hip]
           exact hpFork⟩⟩
     · exact ⟨∅, fun hp => (hpV hp).elim⟩
-  choose guard hprotected using hentryExists
+  choose required_element hprotected using hentryExists
   have hprotectedData :
       ∀ p ∈ V,
         (selector p i).1 = x ∧
-        guard p =
+        required_element p =
           (Q.erase p.1).attach.biUnion
             (surviving p) ∧
         Disjoint
-          (guard p : Set ℕ)
+          (required_element p : Set ℕ)
           (selectedSet (selector p)) ∧
-        (guard p).card ≤
+        (required_element p).card ≤
           (k + 1) * Q.card := by
     intro p hpV
     have hpData := hprotected p hpV
@@ -38333,7 +35429,7 @@ theorem repeatedSurvivingMarker_forces_safeSwap_or_fixedOldBlockCovers
     apply hp₀AnchorNe
     rw [← hp₀AtJ, ← hij]
     exact hp₀AtI
-  refine ⟨i, V, guard, hxCell, hiNej,
+  refine ⟨i, V, required_element, hxCell, hiNej,
     hVW, hWVcard, hanchorInj.mono (by
       intro p hp
       exact hVW hp),
@@ -38341,7 +35437,7 @@ theorem repeatedSurvivingMarker_forces_safeSwap_or_fixedOldBlockCovers
   by_cases hsafe :
       ∃ p ∈ V,
         ∃ b ∈ (cell i).erase x,
-          b ∉ guard p ∧
+          b ∉ required_element p ∧
           b ∉ support p ∧
           ¬ DestroysAt
             (additiveSupportFamily A (k + 1))
@@ -38380,21 +35476,8 @@ theorem repeatedSurvivingMarker_forces_safeSwap_or_fixedOldBlockCovers
               hzCell
               (hzAnchor ▸ hanchorCell))
         · exact Finset.mem_union_right
-            (guard p) hzH
+            (required_element p) hzH
 
-/-- The repeated fixed-core horn of the actual certificate forces a
-nontrivial two-rank descent.
-
-Ask the fixed-core split for more than one row carrying the same surviving
-marker.  Block alignment discards at most the row whose moving anchor
-equals that marker, so one genuine row remains with marker and anchor in
-different cells.  The certificate construction already makes every block
-larger than its full support capacity.  The one-row capacity theorem then
-forces that row's current-order minimal destroyer to destroy a represented
-order-`k-1` target.
-
-Thus, for `k > 2`, the repeated fixed-core branch is not terminal and does
-not require an infinite escape-cycle iteration. -/
 theorem fixedCoreAnchorStar_forces_twoRankDescent_of_certificate
     {A C : Set ℕ}
     {k clearDemand : ℕ}
@@ -38455,7 +35538,7 @@ theorem fixedCoreAnchorStar_forces_twoRankDescent_of_certificate
       (collisionDemand := 1)
       P hrows hUR hlarge' hHmem hUdata
         hanchorInj hcert hblocks
-  obtain ⟨i, V, guard, _hxCell, hij, hVW,
+  obtain ⟨i, V, required_element, _hxCell, hij, hVW,
       hWVcard, _hVanchor, hprotected,
       _hsafeOrCover⟩ :=
     repeatedSurvivingMarker_forces_safeSwap_or_fixedOldBlockCovers
@@ -38491,15 +35574,6 @@ theorem fixedCoreAnchorStar_forces_twoRankDescent_of_certificate
     hDnonempty, hDminimal,
     hrepresented, hdestroy⟩
 
-/-- A large repeated marker block supplies two uniform replacement points
-outside every private support in the fixed-core row family.
-
-The common core `H` has at most `k` points, whereas `cell i` has more than
-`k+1`.  Hence `cell i \ H` contains two distinct points `b,c`.  Both differ
-from the common marker `x ∈ H`.  Every row support is
-`insert (anchor p) H`; its anchor lies in the disjoint block `j`, so neither
-`b` nor `c` can equal the anchor.  Thus the same two marker replacements
-avoid every private support simultaneously. -/
 theorem repeatedFixedCoreRows_largeMarkerBlock_has_twoUniformReplacements
     {A C : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -38598,16 +35672,6 @@ theorem repeatedFixedCoreRows_largeMarkerBlock_has_twoUniformReplacements
         (hcAnchor ▸ hanchorCell)
     · exact hcParts.2 hcCore
 
-/-- The full complement of the fixed core inside the marker block is a
-uniform replacement reservoir for every repeated row.
-
-This is the cardinal version of
-`repeatedFixedCoreRows_largeMarkerBlock_has_twoUniformReplacements`.
-Writing `B = cell i \ H`, every point of `B` avoids every private support
-`insert (anchor p) H`: it is outside `H`, and block disjointness prevents
-it from being the moving anchor in block `j`.  Moreover
-`|cell i| ≤ |B| + k`, since the common order-`k` core has at most `k`
-points. -/
 theorem repeatedFixedCoreRows_has_uniformReplacementReservoir
     {A C : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -38695,22 +35759,6 @@ theorem repeatedFixedCoreRows_has_uniformReplacementReservoir
       (hbAnchor ▸ hanchorCell)
   · exact hbParts.2 hbCore
 
-/-- A repeated fixed-core family whose marker block beats its certificate
-boundary forces a double-cell support or an internal anchored cycle.
-
-Let `V` be the repeated row family and let its target labels be
-`labels = V.image Subtype.val`.  The uniform reservoir
-`B = cell i \ H` loses at most `k` points from the marker block.  Hence the
-displayed marker-block inequality gives `|Q \ labels| < |B|`.
-
-For every row and every `b ∈ B`, remove the marker block from the old
-exception list and apply the no-rank-descent pivot theorem.  The resulting
-destinations are injective unless a double-cell support occurs.  The
-boundary-capacity amplifier then forces a nontrivial escape cycle entirely
-among the repeated target labels.
-
-This is a direct closure of the old-marker branch: neither literal
-co-singleton equality nor a fresh-marker assumption is needed. -/
 theorem repeatedFixedCoreRows_noRankDescent_largeMarkerBoundary_force_doubleCellSupport_or_escapeCycle
     {A C : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -38726,7 +35774,7 @@ theorem repeatedFixedCoreRows_noRankDescent_largeMarkerBoundary_force_doubleCell
     {surviving :
       ∀ p : {q // q ∈ Q.erase r},
         {q // q ∈ Q.erase p.1} → Finset ℕ}
-    {destroyer support guard :
+    {destroyer support required_element :
       {q // q ∈ Q.erase r} → Finset ℕ}
     {x d : ℕ}
     (J : Finset ℕ)
@@ -38748,12 +35796,12 @@ theorem repeatedFixedCoreRows_noRankDescent_largeMarkerBoundary_force_doubleCell
             (destroyer p) (support p) x)
     (hguard :
       ∀ p ∈ V,
-        guard p =
+        required_element p =
           (Q.erase p.1).attach.biUnion
             (surviving p))
     (hguardCard :
       ∀ p ∈ V,
-        (guard p).card ≤
+        (required_element p).card ≤
           (k + 1) * Q.card)
     (hselects :
       ∀ p ∈ V, (selector p i).1 = x)
@@ -38815,7 +35863,7 @@ theorem repeatedFixedCoreRows_noRankDescent_largeMarkerBoundary_force_doubleCell
     exact hHmem
   have hcontemporary :
       ∀ ℓ, ℓ ≠ i → ℓ ∉ J →
-        (guard pRow).card + (k + 1) <
+        (required_element pRow).card + (k + 1) <
           (cell ℓ).card := by
     intro ℓ hℓi hℓJ
     exact lt_of_le_of_lt
@@ -38859,21 +35907,6 @@ theorem repeatedFixedCoreRows_noRankDescent_largeMarkerBoundary_force_doubleCell
         ⟨w⟩
       simpa only [destination', hpRowValue] using hedge
 
-/-- Amplify one point of a repeatedly covered old block through the
-row/target incidence matrix.
-
-Fix `b ∈ cell i \ H`.  In every cover row, `b` must lie in one of the
-stored supports for a target different from that row label.  Pigeonhole the
-chosen target column and then the exact chosen support:
-
-* many column labels give genuine label growth;
-* many distinct supports in one column normalize to a same-target rooted
-  matching;
-* one exact support repeats and survives the selectors of many different
-  rows.
-
-The last horn is the common-survival object needed to iterate certificate
-descent; the middle horn is immediate matching growth. -/
 theorem fixedOldBlockCovers_force_labelGrowth_or_rootedMatching_or_repeatedCommonSurvival
     {A : Set ℕ} {k labelDemand repeatDemand matchingDemand : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -38886,7 +35919,7 @@ theorem fixedOldBlockCovers_force_labelGrowth_or_rootedMatching_or_repeatedCommo
     {surviving :
       ∀ p : {q // q ∈ Q.erase r},
         {q // q ∈ Q.erase p.1} → Finset ℕ}
-    {destroyer support guard :
+    {destroyer support required_element :
       {q // q ∈ Q.erase r} → Finset ℕ}
     {anchor : {q // q ∈ Q.erase r} → ℕ}
     {x : ℕ}
@@ -38894,12 +35927,12 @@ theorem fixedOldBlockCovers_force_labelGrowth_or_rootedMatching_or_repeatedCommo
     (hbH : b ∉ H)
     (hguard :
       ∀ p ∈ V,
-        guard p =
+        required_element p =
           (Q.erase p.1).attach.biUnion
             (surviving p))
     (hcover :
       ∀ p ∈ V,
-        cell i ⊆ guard p ∪ H)
+        cell i ⊆ required_element p ∪ H)
     (hrows :
       ∀ p ∈ V,
         HasAnchoredPrivateRowTrace
@@ -38947,16 +35980,16 @@ theorem fixedOldBlockCovers_force_labelGrowth_or_rootedMatching_or_repeatedCommo
           b ∈ surviving p.1 q := by
     intro p
     have hbCovered :
-        b ∈ guard p.1 ∪ H :=
+        b ∈ required_element p.1 ∪ H :=
       hcover p.1 p.2 hbCell
-    have hbGuard : b ∈ guard p.1 := by
+    have hbRequiredElement : b ∈ required_element p.1 := by
       rcases Finset.mem_union.mp hbCovered with
-          hbGuard | hbCore
-      · exact hbGuard
+          hbRequiredElement | hbCore
+      · exact hbRequiredElement
       · exact False.elim (hbH hbCore)
-    rw [hguard p.1 p.2] at hbGuard
+    rw [hguard p.1 p.2] at hbRequiredElement
     obtain ⟨q, _hqAttach, hbSupport⟩ :=
-      Finset.mem_biUnion.mp hbGuard
+      Finset.mem_biUnion.mp hbRequiredElement
     exact ⟨q, hbSupport⟩
   choose column hcolumnHit using hcolumnExists
   let label : {p // p ∈ V} → ℕ :=
@@ -39124,15 +36157,6 @@ theorem fixedOldBlockCovers_force_labelGrowth_or_rootedMatching_or_repeatedCommo
       · rw [← hpChosen]
         exact hsurvivingDisjoint (column p)
 
-/-- A repeated exact support from the old-block incidence amplifier is not
-a terminal survival statement: it is a new prescribed common column.
-
-Reindex the repeated rows by their underlying target labels in `Q.erase q`.
-The full row trace already contains the localized selector, all
-other-target surviving supports, the private destroyer/support, and the
-literal block cover.  Replacing the former distinguished column by the
-repeated support `F` therefore regenerates prescribed cover rows of exactly
-the same cardinality, now rooted at target `q`. -/
 theorem repeatedCommonSurvivalRows_regenerate_prescribedCoverRows
     {A : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -39303,15 +36327,6 @@ theorem prescribedCommonColumn_repeatedBlock_forces_anchoredArithmeticFork
     exact ⟨hpData.2.1, hpData.2.2.1⟩
   · exact hlarge
 
-/-- In the uniformly-large certificate construction, the fixed-core horn
-of the anchored arithmetic fork forces a genuine two-rank descent.
-
-Choose the anchor-star demand as `clearDemand + k`.  Difference growth and
-the same-target lower rooted matching are retained unchanged.  In the
-fixed-core horn, its repeated anchor family is large enough to invoke
-`fixedCoreAnchorStar_forces_twoRankDescent_of_certificate`, replacing the
-former terminal concentration object by an explicit current-order minimal
-destroyer which also destroys a represented order-`k-1` target. -/
 theorem prescribedCommonColumn_repeatedBlock_forces_differenceGrowth_or_lowerRootedMatching_or_twoRankDescent
     {A C : Set ℕ}
     {k clearDemand differenceDemand matchingDemand : ℕ}
@@ -39404,8 +36419,8 @@ theorem prescribedCommonColumn_repeatedBlock_forces_differenceGrowth_or_lowerRoo
 /-- Refine the geometric common-column fork without a raw block-growth
 escape.
 
-In the spread horn retain the reduced cover stream.  In the concentrated
-horn, apply the anchored lower-core double pigeonhole to the repeated
+In the spread case retain the reduced cover stream.  In the concentrated
+case, apply the anchored lower-core double pigeonhole to the repeated
 literal block.  Thus concentration produces difference growth, a
 same-target lower rooted matching, or a fixed-core anchor star; mere
 largeness of the block is no longer an endpoint. -/
@@ -39459,7 +36474,7 @@ theorem commonColumnReducedCoverFork_forces_reducedStream_or_anchoredArithmeticF
     exact ⟨coveredBlock, j, hjImage, anchor, core,
       hrows, hcoreRows, harithmetic⟩
 
-/-- Packaged concentration horn of the refined common-column geometry. -/
+/-- Packaged concentration case of the refined common-column geometry. -/
 def HasCommonColumnAnchoredArithmeticConcentration
     (A : Set ℕ)
     (k anchorDemand differenceDemand matchingDemand : ℕ)
@@ -39482,7 +36497,7 @@ def HasCommonColumnAnchoredArithmeticConcentration
         Q r (T.filter fun p => coveredBlock p = j)
         anchor core
 
-/-- The concentration horn is pointed-fusion ready before its arithmetic
+/-- The concentration case is pointed-fusion ready before its arithmetic
 fork is opened.
 
 Membership of the repeated block in `T.image coveredBlock` supplies one
@@ -39515,7 +36530,7 @@ theorem HasCommonColumnAnchoredArithmeticConcentration.exists_point_outside_comm
   simpa only [hpBlock] using hpointCell
 
 /-- Large localized target families have no unstructured block-growth
-horn.
+case.
 
 The fixed-column argument first gives either an exact-target rooted
 matching at order `k+1`, or a repeated common support.  Its geometric
@@ -39681,7 +36696,7 @@ theorem commonPrivateHit_forces_distinctPredecessorTargetGrowth
       Finset.mem_image.mp htV
     exact ⟨p.1, p.2, rfl, lower p, hlowerMem p⟩
 
-/-- Resolve the repeated-block horn of the common-column geometry.
+/-- Resolve the repeated-block case of the common-column geometry.
 
 Use `M * S` as the requested repeated-block multiplicity.  A repeated
 block then has either more than `S` points, or a single selected point
@@ -39747,18 +36762,6 @@ theorem commonColumnReducedCoverFork_forces_reducedStream_or_largeBlock_or_prede
           (Finset.mem_erase.mp p.2).2
         exact ⟨p.1, hpQ, ht, htRepresented⟩
 
-/-- Four-way direct consequence of a sufficiently large localized target
-family at a fixed target `r`.
-
-The family forces:
-
-* a large exact-target rooted matching; or
-* many full-block covers after deleting one repeated support column; or
-* a genuinely large partition block; or
-* many distinct order-`k` predecessor targets.
-
-The last horn is the varying-target difference growth needed to reconnect
-the localized certificate attack to primitive order-`k` gaps. -/
 theorem targetLocalizedAdditiveFamily_forces_rootedMatching_or_reducedStream_or_blockGrowth_or_predecessorGrowth
     {A C : Set ℕ} {k M S L demand : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -39818,14 +36821,6 @@ theorem targetLocalizedAdditiveFamily_forces_rootedMatching_or_reducedStream_or_
       commonColumnReducedCoverFork_forces_reducedStream_or_largeBlock_or_predecessorGrowth
         hrQ E T hfork⟩
 
-/-- A bounded finite family covering `V` is either genuinely
-oversaturated or contains an almost-spanning matching.
-
-If total capacity exceeds `V.card` by more than `d`, this is the first
-horn.  Otherwise the greedy near-disjointness lemma loses at most `d`
-indices: all but `d` members of the family can be retained pairwise
-disjoint.  This is the exact matching-versus-oversaturation fork exposed by
-the labelled block cover. -/
 theorem coveredFinset_boundedFamily_forces_oversaturation_or_largeDisjointSubfamily
     {ι α : Type*} [DecidableEq ι] [DecidableEq α]
     (I : Finset ι) (f : ι → Finset α) (V : Finset α)
@@ -39863,16 +36858,6 @@ theorem coveredFinset_boundedFamily_forces_oversaturation_or_largeDisjointSubfam
       Nat.le_of_not_gt hover
     omega
 
-/-- Matching-versus-oversaturation form of the localized certificate
-obstruction.
-
-The preceding full-block theorem is repackaged as one support choice indexed
-by all certificate targets.  On the covered block, either the number of
-available support incidences exceeds the block by more than `d`, or supports
-for all but at most `d` certificate targets are pairwise disjoint.
-
-The first horn is explosive certificate growth.  The second is the matching
-structure needed by the root/difference machinery. -/
 theorem targetLocalizedAdditiveCertificate_forces_oversaturation_or_largeDisjointSupportSubfamily
     {A K : Set ℕ} {k d : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -39965,18 +36950,6 @@ theorem targetLocalizedAdditiveCertificate_forces_oversaturation_or_largeDisjoin
   · exact ⟨choice, hchoiceMem, j, hcoverChoice,
       Or.inr (by simpa using hmatching)⟩
 
-/-- A finite target-localized certificate must be too large for some block.
-
-For one localized target `q`, choose a surviving support for every other
-certificate target and put their union in `U`.  This union has cardinality
-at most `(k+1) * Q.card` and avoids the selector localizing `q`.  If every
-block had another `k+1` points of room, a private support of a minimal
-destroyer at `q` would extend to a selector avoiding `U` and preserving
-`q`.  The supports stored in `U` preserve all other targets, contradicting
-the certificate.
-
-This is the exact cardinal feedback left by the direct repair attack:
-certificate size must dominate the smallest available block. -/
 theorem targetLocalizedAdditiveCertificate_forces_blockCapacityFailure
     {A K : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -40105,15 +37078,6 @@ theorem targetLocalizedAdditiveCertificate_forces_blockCapacityFailure
         ⟨support p, hsupportMem p,
           hsupportT⟩) hrDestroy
 
-/-- Quadratic tails force localized certificates past every prescribed
-cardinality.
-
-Start beyond the capacity budget for `C` targets.  Strong deletion gives a
-late target-localized certificate on that tail.  If it had at most `C`
-targets, every tail block would exceed the bound in
-`targetLocalizedAdditiveCertificate_forces_blockCapacityFailure`, a
-contradiction.  Thus only the genuinely moving-cardinality regime remains.
--/
 theorem quadraticBlockTail_forces_largeTargetLocalizedCertificate
     {A K : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -40232,16 +37196,6 @@ theorem quadraticBlockTail_forces_largeTargetLocalizedCertificate
   exact ⟨Q, hQnonempty, hQlateL,
     hcert, hlocalized, hrepresented, hQsafe, hQlarge⟩
 
-/-- A quadratic-tail certificate can be bracketed against the same
-protected target stream.
-
-Start after both the prescribed protected index and the quadratic
-certificate capacity.  Universal survival of every protected target
-persists on this tail.  The cardinal-minimal certificate is disjoint from
-all such universally surviving targets, so every one of its late labels
-lies strictly between two consecutive protected targets.  The bracketing
-index remains inside the tail, while the certificate retains its
-target-private selector and its forced cardinal growth. -/
 theorem quadraticBlockTail_forces_largeBracketedTargetLocalizedCertificate
     {A K : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
@@ -40338,28 +37292,6 @@ theorem quadraticBlockTail_forces_largeBracketedTargetLocalizedCertificate
   · exact (le_max_left start L).trans hbaseI
   · exact (le_max_right start L).trans hbaseI
 
-/-- Quadratic cardinal feedback and protected-gap alignment can be imposed
-simultaneously.
-
-Choose the target-localized certificate on the quadratic tail whose first
-block lies beyond the complete finite arithmetic threshold.  The preceding
-bracketing theorem puts a chosen private target `q` strictly above
-`target i`, with `i` still in that tail.  Extend its private tail selector
-arbitrarily over the discarded prefix and invoke the protected moving-root
-matching at `target i`.  Restricting back to the tail preserves every
-moving petal.
-
-The conclusion therefore carries, in one configuration:
-
-* the target-private tail certificate and all represented certificate
-  labels;
-* the exact translation `q = target i + δ`;
-* the large rooted matching inside the original source block `cell i`,
-  disjoint from the same private tail selector; and
-* the complete target-localized arithmetic outcome at `q`.
-
-No old block can appear in the arithmetic outcome, because its partition is
-the prescribed quadratic tail from the outset. -/
 theorem quadraticBlockTail_forces_alignedTargetLocalizedArithmeticOutcome
     {A K : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
@@ -40566,18 +37498,6 @@ theorem quadraticBlockTail_forces_alignedTargetLocalizedArithmeticOutcome
   simpa only [HasTargetLocalizedArithmeticOutcome] using
     houtcome
 
-/-- Quadratic block tails force the fully refined localized arithmetic
-outcome at every prescribed scale.
-
-Ask the preceding certificate theorem for one more target than the complete
-fixed-column/concentration threshold.  After choosing any `r ∈ Q`, erasing
-`r` still leaves enough targets for
-`targetLocalizedAdditiveFamily_forces_rootedMatching_or_reducedStream_or_anchoredArithmeticConcentration`.
-
-Thus the actual strong-deletion certificate construction forces an
-exact-target rooted matching, a reduced common-column cover stream, or the
-anchored lower-core arithmetic trichotomy.  No unstructured block-size horn
-remains. -/
 theorem quadraticBlockTail_forces_targetLocalizedArithmeticOutcome
     {A K : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -40706,14 +37626,6 @@ theorem quadraticBlockTail_forces_targetLocalizedArithmeticOutcome
   simpa only [HasTargetLocalizedArithmeticOutcome] using
     houtcome
 
-/-- Matching-normalized form of the protected-prefix amplifier.
-
-The lower-difference growth horn is converted at its exact target `q-u`
-into a rooted matching of any prescribed size.  Unlike the earlier
-cardinality-only normalization, this version keeps the private marker of
-every lower support.  Distinct matching members therefore have disjoint
-traces on `D`; as soon as two petals are requested, their common root is
-forced to be disjoint from `D`. -/
 theorem largeMinimalDestroyer_forces_nontrivialRankDescent_or_protectedRepair_or_lowerDifferenceRootedMatching
     {A : Set ℕ} {h q demand : ℕ} {D U : Finset ℕ}
     (hh : 1 < h)
@@ -40840,21 +37752,6 @@ theorem largeMinimalDestroyer_forces_nontrivialRankDescent_or_protectedRepair_or
       hMlarge, hMroot, hMpetal, hMtrace,
       hMtraceDisjoint, hrootDisjoint, hMmatching⟩
 
-/-- In the bounded, no-rank-descent terminal fusion branch, the stream
-alignment forces a primitive gap at the exact descended target.
-
-Start with a destroyed successor target `m` bracketed by two old surviving
-targets and descend through a small anchor `a` in the lower support.  The
-preceding theorem makes `d = m - a` a late represented order-`h` target
-destroyed by `Y`.  Compact that failure to a minimal finite `D ⊆ Y`.
-
-At this same `d`, the reservoir rooted-matching/gap fork has only two
-outcomes.  A rooted matching is larger than the terminal bound on `D`, so
-the occurrence-sensitive decomposition would give a prohibited strict
-rank descent.  Therefore the other outcome holds: a selector anchor `b`
-with the primitive gap `R_{h-1}(d-b)=∅`.  This puts successor destruction,
-current destruction, and the primitive gap on one affine target instead of
-on merely cofinal unrelated streams. -/
 theorem terminalFusion_bracketedSuccessorDestruction_forces_alignedPrimitiveGaps
     {A K Y : Set ℕ} {h bound : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -40978,20 +37875,6 @@ theorem terminalFusion_bracketedSuccessorDestruction_forces_alignedPrimitiveGaps
       hDbound, hbSelector, hbNotD, hbD,
       hgapDifference⟩
 
-/-- The terminal aligned primitive-gap configuration is necessarily
-singleton-diagonal.
-
-The finite destroyer at `d = m - a` supplied by the preceding theorem lies
-inside the fused selector, so the terminal no-descent hypothesis applies
-to it.  Singleton-diagonal collapse therefore supplies one `x ∈ Y` with
-`d = h * x`; every order-`h` support of `d` contains `x`.  The primitive
-gap anchor `b` is different from this forced root.
-
-Thus arbitrarily late successor failures have the rigid affine form
-
-`m = a + h * x`,
-
-with `a` in a support avoiding `Y` and `x ∈ Y`. -/
 theorem terminalFusion_bracketedSuccessorDestruction_forces_alignedSingletonDiagonals
     {A K Y : Set ℕ} {h bound : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -41074,20 +37957,6 @@ theorem terminalFusion_bracketedSuccessorDestruction_forces_alignedSingletonDiag
     hxY, hdiagonal, hsingletonMinimal, hallSupports,
     hbSelector, hbx, hbD, hgap⟩
 
-/-- One destroyed successor target amplifies every represented clean
-predecessor anchor into a distinct singleton-diagonal root in the fused
-deletion.
-
-For `a ∈ C ⊆ A \ Y`, successor descent makes `Y` destroy `m-a`.  Compact
-that failure inside `Y`; the terminal no-descent property and the
-singleton-diagonal theorem force a unique root `xₐ ∈ Y` with
-
-`m = a + h * xₐ`.
-
-The resulting order-`h+1` support `{a, xₐ}` meets `Y` exactly at `xₐ`.
-Distinct clean anchors have distinct roots, and the corresponding supports
-are pairwise disjoint.  This is the affine matching amplification needed
-to turn one late successor failure into cardinality pressure. -/
 theorem noRankDescent_destroyedSuccessorTarget_forces_cleanAnchorDiagonalMatching
     {A Y : Set ℕ} {h m : ℕ}
     (hhpos : 0 < h)
@@ -41405,19 +38274,6 @@ theorem strictSurvivingAdditiveTargetStream_forces_cleanComplementInfinite
   have := htargetBound n
   omega
 
-/-- Cofinal successor destruction in a terminal fusion forces arbitrarily
-large same-target affine matchings.
-
-Choose any prescribed number of clean anchors from the infinite reservoir
-`A \ Y`.  Exactness of `A` at order `h` supplies a common threshold beyond
-which every predecessor `m-a` is represented.  Taking a destroyed
-successor target above that threshold plus the largest chosen anchor makes
-all those predecessors available simultaneously.  The finite affine
-amplification theorem then gives pairwise disjoint supports
-
-`{a, root a}`, with `m = a + h * root a`,
-
-whose anchors lie outside `Y` and whose distinct roots lie inside `Y`. -/
 theorem terminalFusion_cofinalSuccessorDestruction_forces_unboundedCleanAnchorDiagonalMatchings
     {A Y : Set ℕ} {h bound : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -41499,17 +38355,6 @@ theorem terminalFusion_cofinalSuccessorDestruction_forces_unboundedCleanAnchorDi
   exact ⟨m, C, root, by omega, hCclean, hmDestroy,
     hrootData, hrootInj, hmatching⟩
 
-/-- In the terminal fusion branch, cofinal successor destruction collapses
-the entire clean complement `A \ Y` into one residue class modulo `h`.
-
-Given two clean anchors `a,c`, take a destroyed successor target far enough
-that both predecessors are represented at order `h`.  Singleton-diagonal
-amplification gives
-
-`m - a = h * xₐ` and `m - c = h * x_c`.
-
-Thus both anchors are congruent to the common target modulo `h`, and hence
-to each other. -/
 theorem noRankDescent_cofinalSuccessorDestruction_forces_cleanResidueCollapse
     {A Y : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
@@ -41634,15 +38479,6 @@ theorem terminalFusion_cofinalSuccessorDestruction_forces_cleanResidueCollapse
   · exact hcleanInfinite
   · exact hsuccessorDestroy
 
-/-- The terminal fusion branch is impossible at every order `h > 1`.
-
-Residue collapse puts all clean basis points in one class `a mod h`, so
-every order-`h+1` tuple avoiding `Y` also has target congruent to `a`.
-Choose the late target `n = a + h*N + 1`, where `N` is an eventual
-order-`h` representation threshold.  It is not congruent to `a`, hence it
-is destroyed by `Y`.  But descending through the clean anchor `a` and
-applying terminal singleton-diagonal collapse forces
-`n - a = h*x`, which says that `n` *is* congruent to `a`: contradiction. -/
 theorem noRankDescent_cofinalSuccessorDestruction_impossible
     {A Y : Set ℕ} {h : ℕ}
     (hh : 1 < h)
@@ -41755,18 +38591,6 @@ theorem noRankDescent_cofinalSuccessorDestruction_impossible
       rw [(hrootData a haC).2.1]
     _ = a % h := by simp
 
-/-- Formal contrapositive of the residue-collapse obstruction.
-
-If `Y` and its clean complement inside `A` are both large enough to support
-cofinal successor failure and infinitely many clean anchors, then some
-finite inclusion-minimal order-`h` destroyer inside `Y` must already destroy
-a represented target at a strict positive rank below `h`.
-
-Audit warning: this conclusion allows `ℓ = 1`, which is automatic once a
-destroyer contains a basis point.  This theorem records exactly what the
-all-positive-ranks formulation proves; it is not by itself a nontrivial
-advance on the counterexample.  The nonvacuous replacement below uses
-`1 < ℓ`. -/
 theorem cofinalSuccessorDestruction_with_infiniteCleanComplement_forces_strictRankDescent
     {A Y : Set ℕ} {h : ℕ}
     (hh : 1 < h)
@@ -41809,7 +38633,7 @@ theorem cofinalSuccessorDestruction_with_infiniteCleanComplement_forces_strictRa
       hh hbasis hnoRankDescent hcleanInfinite
         hsuccessorDestroy
 
-/-- Audit-level consequence of opposing successor streams.
+/-- Opposing successor sequences force strict rank descent.
 
 The survival stream automatically makes the clean complement infinite; the
 counterexample supplies cofinal destruction by the same deletion.  As in
@@ -41888,21 +38712,6 @@ theorem terminalFusion_cofinalSuccessorDestruction_impossible
   · exact hcleanInfinite
   · exact hsuccessorDestroy
 
-/-- Bracketing a current-order destroyer below an old surviving successor
-target stream amplifies one primitive gap into a whole support of gap
-anchors.
-
-Choose an old successor support `E` at the lower endpoint of the bracket.
-It avoids the fused deletion and hence the current finite destroyer.  For
-each `a ∈ E`, the singleton support `{a}` is a complementary core for the
-current order-`h` target.  If the difference `target i - a` were represented
-at order `h-1`, complementary-core composition would give the prohibited
-strict rank descent.  Therefore every such difference is an order-`h-1`
-gap, and `a` is absent from every order-`h` support at the current target.
-
-This is the arithmetic payoff of stream bracketing: an entire surviving
-successor support becomes a coherent primitive-gap fan at a destroyed
-current target. -/
 theorem bracketedSurvivingSupports_force_primitiveGapFans
     {A Y : Set ℕ} {h : ℕ}
     {oldTarget target : ℕ → ℕ}
@@ -42006,21 +38815,7 @@ theorem bracketedSurvivingSupports_force_primitiveGapFans
   simpa only [hpred] using
     (lowerOrderGap_point_avoids_successorSupports hgap)
 
-/-- Primitive counterexample fork with a direct current-order attack in the
-co-singleton branch.
-
-Start from the growing same-target cardinality fork, not from the escaped
-successor-certificate loop.  The root-capture horn still fuses to an
-infinite deletion carrying a cofinal successor-order survival stream.  In
-the co-singleton horn, enumerate the fused blocks and immediately apply the
-original order-`h` strong minimality to every selector.
-
-Consequently every selector has arbitrarily late current-order minimal
-destroyers with one of three concrete outcomes: strict positive occurrence
-rank descent, unbounded growth across distinct blocks, or an anchored
-primitive order-`h - 1` gap.  The conclusion also retains the independent
-cofinal supply of primitive gaps supplied by `hnotLower`. -/
-theorem primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingletonAttack
+theorem primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingletonObstruction
     {A : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
     (hminimal : IsStronglyMinimalExactBasis A h)
@@ -42239,7 +39034,7 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingle
           additiveSupportFamily A (h - 1) d = ∅ :=
       not_exactTupleAsymptoticBasis_iff_cofinal_emptySupport.mp
         hnotLower
-    have hcurrentAttack :
+    have hcurrentObstruction :
         ∀ s : BlockSelector cell, ∀ r N,
           ∃ q, ∃ D : Finset ℕ,
             N ≤ q ∧
@@ -42261,22 +39056,14 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingle
         hhpos hKA P
     refine ⟨K, cell, P, oldTarget, hKA, hKInfinite,
       hcellLarge, holdTargetStrict, hsurvive, hcofinalPrimitiveGaps,
-      hcurrentAttack, ?_⟩
+      hcurrentObstruction, ?_⟩
     intro s q D b hDnonempty _hDselected hDminimal
       hbSelected _hbD hgap U r
     exact
-      hminimal.lowerGapSelectorSwitch_forces_freshLaterAttack
+      hminimal.lowerGapSelectorSwitch_forces_freshLaterObstruction
         hhpos hKA P hcellLarge s hDnonempty hDminimal
           hbSelected hgap U r
 
-/-- Counterexample-level form of the infinite primitive-gap fusion.
-
-The root-capture side is the already fused same-target deletion.  On the
-co-singleton side, the current-order attack and the selector-switch theorem
-are no longer merely retained as local interfaces: the preceding fusion
-theorem consumes them.  It yields strict rank descent, unbounded
-cross-block destroyers, or one infinite union of fresh destroyers against
-which the entire old successor-target stream survives. -/
 theorem primitiveCounterexample_forces_rootPetalDeletion_or_infiniteGapFusion
     {A : Set ℕ} {h : ℕ}
     (hhpos : 0 < h)
@@ -42471,13 +39258,13 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_infiniteGapFusion
                 (additiveSupportFamily A (h + 1))
                 Y (oldTarget n)) := by
   obtain hroot | hcosingleton :=
-    primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingletonAttack
+    primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingletonObstruction
       hhpos hminimal hnotLower hcounter
   · exact Or.inl hroot
   · right
     obtain ⟨K, cell, P, oldTarget, hKA, hKInfinite,
         hcellLarge, holdTargetStrict, hsurvive,
-        _hcofinalGaps, _hcurrentAttack, _hswitch⟩ :=
+        _hcofinalGaps, _hcurrentObstruction, _hswitch⟩ :=
       hcosingleton
     refine ⟨K, cell, P, oldTarget, hKA, hKInfinite,
       holdTargetStrict, ?_⟩
@@ -42635,15 +39422,6 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_infiniteGapFusion
         halignedPrimitiveGaps, hgapFans,
         holdNotDestroyed⟩
 
-/-- Counterexample-level fork after eliminating terminal fusion.
-
-At every order `h > 1`, the residue-collapse contradiction removes the
-infinite terminal-fusion horn from
-`primitiveCounterexample_forces_rootPetalDeletion_or_infiniteGapFusion`.
-Thus a primitive counterexample must already exhibit the root-petal
-deletion, a positive-rank descent, or minimal destroyers of unbounded
-cardinality across selector blocks.  The descent horn still permits the
-automatic rank-one case and is not claimed to be a contradiction. -/
 theorem primitiveCounterexample_forces_rootPetalDeletion_or_rankDescent_or_manyBlocks
     {A : Set ℕ} {h : ℕ}
     (hh : 1 < h)
@@ -42718,20 +39496,6 @@ theorem primitiveCounterexample_forces_rootPetalDeletion_or_rankDescent_or_manyB
             hterminalBoundAndNoDescent hcleanInfinite
             hsuccessorDestroy).elim
 
-/-- The root-petal horn also pays the formal positive-rank descent.
-
-Enumerate the infinite index set carried by the root-petal deletion.  Its
-repairs give a strict successor-target survival stream, hence infinitely
-many clean points outside the deletion.  The counterexample hypothesis
-simultaneously gives cofinal successor destruction by that same deletion.
-The fusion-free residue theorem therefore forces a positive current-order
-rank injury.  This still permits the automatic rank-one case.
-
-After this reduction the formal fork has only two remaining forms:
-positive-rank descent, or minimal selector destroyers of unbounded
-cardinality.  The nonvacuous fork is instead
-`minimalAdditiveDestroyer_nontrivialRankDescent_or_privateCores_off_oneDiagonal`.
--/
 theorem primitiveCounterexample_forces_rankDescent_or_manyBlocks
     {A : Set ℕ} {h : ℕ}
     (hh : 1 < h)
@@ -42809,23 +39573,6 @@ theorem primitiveCounterexample_forces_rankDescent_or_manyBlocks
     · right
       exact ⟨K, cell, P, hKA, hKInfinite, hmany⟩
 
-/-- Every primitive counterexample at order `h > 1` forces a formal
-positive occurrence-rank injury.
-
-This consumes both horns of
-`primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingletonAttack`
-before any later gap fusion is needed:
-
-* the root-petal horn already carries a strict successor survival stream;
-* the co-singleton horn carries such a stream for every block selector, so
-  choose one.
-
-In either case the selected infinite deletion has an infinite clean
-complement and cofinal successor failures.  Residue collapse then forces a
-finite minimal order-`h` destroyer which also destroys a represented target
-at some `0 < ℓ < h`.  Since `ℓ = 1` is allowed, this theorem is retained as
-an audit endpoint rather than advertised as progress on the open problem.
--/
 theorem primitiveCounterexample_forces_strictRankDescent
     {A : Set ℕ} {h : ℕ}
     (hh : 1 < h)
@@ -42847,7 +39594,7 @@ theorem primitiveCounterexample_forces_strictRankDescent
         (additiveSupportFamily A ℓ)
         (D : Set ℕ) n := by
   obtain hroot | hcosingleton :=
-    primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingletonAttack
+    primitiveCounterexample_forces_rootPetalDeletion_or_currentOrderCosingletonObstruction
       (by omega) hminimal hnotLower hcounter
   · obtain ⟨X, I, target, repair, hXA, hXInfinite,
         hIInfinite, htargetStrict, _htargetCofinal,
@@ -42878,7 +39625,7 @@ theorem primitiveCounterexample_forces_strictRankDescent
       hrepresented, hdestroy⟩
   · obtain ⟨K, cell, P, oldTarget, hKA, _hKInfinite,
         _hcellLarge, holdTargetStrict, hsurvive,
-        _hcofinalGaps, _hcurrentAttack, _hswitch⟩ :=
+        _hcofinalGaps, _hcurrentObstruction, _hswitch⟩ :=
       hcosingleton
     let s₀ : BlockSelector cell := fun i =>
       ⟨(P.nonempty i).choose, (P.nonempty i).choose_spec⟩
@@ -42905,7 +39652,7 @@ theorem primitiveCounterexample_forces_strictRankDescent
 contains a literal block of index strictly larger than `L`, and the common
 support avoids that whole block.
 
-This is the operational content of the previously terminal spread horn.
+This is the operational content of the previously terminal spread case.
 The row-cover data are not needed for the fusion itself: the common support
 and one fresh disjoint block already form a bounded repair/deletion pair. -/
 theorem HasCommonColumnReducedCoverStream.exists_disjointBlock_above
@@ -42937,14 +39684,6 @@ theorem HasCommonColumnReducedCoverStream.exists_disjointBlock_above
     omega
   exact ⟨j, hLj, (hJdata j hjJ).1⟩
 
-/-- One recursively usable pointed support/block pair.
-
-Both coordinates clear prescribed floors.  The represented target supplies
-the support to preserve, while the fresh block supplies a specified point
-to put into the eventual deletion.  Only disjointness from that point is
-needed: the infinite cross-avoidance thinning below removes every
-off-diagonal collision.  The reduced-stream horn supplies the stronger
-special case in which the support avoids the whole block. -/
 structure ReducedStreamFusionStep
     (A : Set ℕ) (h : ℕ) (cell : ℕ → Finset ℕ)
     (targetFloor blockFloor : ℕ) where
@@ -43097,19 +39836,6 @@ theorem cofinalReducedFusionSteps_fuse_infiniteDeletion
   exact ⟨support (index n), hsupportMem (index n),
     hsupportY (index n) (hindexL n)⟩
 
-/-- Cofinal reduced common-column streams fuse into one honest infinite
-deletion carrying a strict successor-order survival stream.
-
-At stage `i`, request a reduced stream beyond both the preceding target and
-the preceding literal block.  The spread horn supplies a common
-order-`h+1` support `support i` and a later whole block disjoint from it.
-Choose one point from that block.  Strict growth of the block indices makes
-the points injective, and bounded cross-avoidance thins them so that every
-retained support avoids every retained point, not only its own block.
-
-Enumerating the retained stages gives the required strict target stream.
-Thus the reduced-stream horn now constructs an infinite deletion rather
-than terminating as finite certificate geometry. -/
 theorem cofinalReducedCoverStreams_fuse_infiniteDeletion
     {A K : Set ℕ} {h : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -43160,17 +39886,6 @@ theorem cofinalReducedCoverStreams_fuse_infiniteDeletion
   exact cofinalReducedFusionSteps_fuse_infiniteDeletion
     hKA P hstepExists
 
-/-- Counterexample-level consumption of the reduced-stream horn.
-
-The preceding fusion gives one infinite deletion `Y` and a strict stream of
-order-`h+1` supports avoiding it.  A hypothetical successor counterexample
-forces cofinally many order-`h+1` targets destroyed by that same `Y`.
-Bracketing the destroyed stream between consecutive surviving targets then
-produces both the full predecessor-destroyer fan and cofinally represented
-order-`h` destroyers.
-
-This is the requested direct passage from the formerly unused finite spread
-horn to the current-order arithmetic attack. -/
 theorem cofinalReducedCoverStreams_force_bracketedPredecessorDestroyers
     {A K : Set ℕ} {h : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -43280,18 +39995,6 @@ theorem cofinalReducedCoverStreams_force_bracketedPredecessorDestroyers
     holdTargetStrict, holdSurvival,
     hsuccessorDestroy, hfans, hrepresented⟩
 
-/-- The nonvacuous form of the difference-growth horn.
-
-Merely retaining a large finite set of represented order-`k` targets would
-carry no information for an asymptotic basis.  This package therefore keeps
-the entire localized arithmetic source: every difference has the exact
-form
-
-`d = p - anchor p`
-
-for a distinct certificate-row label `p`; the anchor lies in the one
-repeated block, the lower core represents `d`, and the original private
-row trace is still available. -/
 def HasAlignedAnchoredDifferenceGrowth
     (A : Set ℕ) (k differenceDemand : ℕ)
     (cell : ℕ → Finset ℕ)
@@ -43443,14 +40146,6 @@ theorem anchoredArithmeticConcentration_forces_alignedGrowth_or_twoRankDescent_o
       push Not at hblocks
       exact hblocks
 
-/-- Resolve the fixed-core leaf of an anchored arithmetic concentration.
-
-Difference growth and the lower same-target rooted matching are returned
-unchanged.  A fixed core either invokes the existing two-rank descent
-theorem, or exhibits the precise block whose cardinality fails to dominate
-the newly discovered certificate.  Thus the fixed-core object itself is no
-longer a terminal horn; the only escape is the moving-cardinality
-obstruction. -/
 theorem anchoredArithmeticConcentration_forces_growth_or_twoRankDescent_or_capacityFailure
     {A C : Set ℕ}
     {k clearDemand differenceDemand matchingDemand : ℕ}
@@ -43654,21 +40349,6 @@ theorem quadraticSmallBlock_forces_linearThreshold_below_erase
     exact Finset.card_erase_add_one hrQ
   omega
 
-/-- Feed an actual small-block witness back into the same localized
-certificate.
-
-At diagonal scale `n`, write the fixed-column threshold as
-
-`a * (k + 1 + coverDemand)`.
-
-The prescribed tail base dominates `(k+1) * a`.  If block `i` is small
-relative to `Q`, its quadratic lower bound therefore makes
-`Q.erase r` large enough to rerun the finite fixed-column fork with cover
-demand `i + 1`, chosen only after `i` is known.
-
-The rerun has three direct outcomes: a large same-target rooted matching;
-a common support avoiding a literal block `j > i`; or more than the full
-anchored threshold many rows concentrated on one literal block. -/
 theorem diagonalCapacityFailure_forces_laterReducedBlock_or_growth
     {A K : Set ℕ} {k n : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -43856,27 +40536,6 @@ theorem diagonalCapacityFailure_forces_laterReducedBlock_or_growth
       exact ⟨E, hEmem, T, coveredBlock, j, hjImage,
         hrows, by simpa only [clusterDemand] using hjLarge⟩
 
-/-- Counterexample-level cardinality fork for the localized arithmetic
-attack.
-
-Run the fully refined localized certificate theorem on the diagonal
-sequence of demands.  If reduced streams occur cofinally, their varying
-quadratic tails still give cofinal support/fresh-block pairs in the one
-ambient partition.  The generic fusion theorem therefore makes one
-infinite deletion, and the existing bracketing theorem supplies cofinally
-represented predecessor destroyers.
-
-Otherwise there is a genuine cutoff: at every later scale no reduced
-stream exists.  Unfolding the actual localized outcome then forces
-unbounded successor rooted matchings, represented-difference growth,
-lower rooted matchings, or a genuine two-rank injury.  If the first pass
-instead exposes a block too small for the moving certificate, its
-quadratic lower bound makes the already chosen target certificate beat
-the new linear cover threshold.  Rerunning the finite fork then forces a
-support avoiding a strictly later block or a repeated-block cluster above
-the complete anchored threshold.  Thus neither fixed-core concentration
-nor moving capacity remains as a terminal endpoint.
--/
 theorem quadraticBlockTail_counterexample_fusesReducedStreams_or_forces_eventualResolvedArithmetic
     {A K : Set ℕ} {h : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -44139,22 +40798,6 @@ theorem quadraticBlockTail_counterexample_fusesReducedStreams_or_forces_eventual
 
 /-! ## Fresh moving-root fusion through an old prefix -/
 
-/-- Cofinal fixed-order fusion of the fresh moving-root branch.
-
-Assume finite-core matching fails.  At an arbitrarily late successor target,
-finite moving-root capture supplies a large rooted matching and a fresh
-common point `d ∉ F`.  The distinguished prefix-clearing theorem consumes
-every additional common root point lying in the old prefix `F`, recording
-them in `hits` and preserving `d` throughout the rank descent.  A cardinal
-demand larger than every bounded lower-rank support family forces the
-residual target `t` to be arbitrarily late.
-
-Finally repeat `d` to restore the original order `k+1`.  Since `d` is
-already common, this changes no support and no petal.  The result is a
-cofinal fixed-order rooted-matching supply whose root avoids the entire old
-prefix and still contains the genuinely fresh moving root.  This is the
-stagewise hypothesis required by the existing infinite block-fusion
-recursion. -/
 theorem IsExactTupleAsymptoticBasis.cofinal_fixedOrderPrefixClearedMovingRootFusion_of_failsFiniteCoreMatching
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -44241,15 +40884,6 @@ theorem IsExactTupleAsymptoticBasis.cofinal_fixedOrderPrefixClearedMovingRootFus
       hMnormalized, ?_, hMroot, hMnonempty, hMmatching⟩
   exact lt_of_le_of_lt (Nat.le_max_left r count) hMlarge
 
-/-- The prefix-cleared moving-root theorem supplies every stage of the
-fixed-order common-survival recursion, even when the finite `used` set
-contains vertices outside `A`.
-
-Only `used ∩ A` can meet an additive support.  Clear that finite core,
-request more than `|used| + demand` petals, and use the cofinal residual
-target bound to move beyond `last`.  The captured moving root is contained
-in the resulting root and hence in every support inserted into the
-recursion's protected history. -/
 theorem freshPredecessorRootedMatchingStep_nonempty_of_failsFiniteCoreMatching
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -44289,20 +40923,6 @@ theorem freshPredecessorRootedMatchingStep_nonempty_of_failsFiniteCoreMatching
     ⟨⟨normalized, R, M, by omega, hRcard, hRused,
       hMsub, hMlarge, hMroot, hMnonempty, hMmatching⟩⟩
 
-/-- **Infinite fusion of the fresh moving-root branch.**
-
-When finite-core matching fails, the captured roots can now be fused into
-one genuine infinite deletion partition.  At each stage all vertices of
-the prefix-cleared matching—including its fresh common root—enter the
-protected history.  The next root and petals avoid that history.  After
-discarding the at most `|used|` petals which meet the past, the union of the
-remaining petals is the next block.
-
-Consequently the blocks are pairwise disjoint subsets of `A`, their union
-is infinite, their normalized order-`k+1` targets are strictly increasing,
-and every block selector preserves every target in that stream.  Additional
-old deleted root points have already been consumed before a stage enters
-this recursion, so they cannot reappear as a cross-block injury. -/
 theorem IsExactTupleAsymptoticBasis.failsFiniteCoreMatching_has_coherentMovingRootFusion
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -44352,22 +40972,6 @@ theorem IsExactTupleAsymptoticBasis.failsFiniteCoreMatching_has_coherentMovingRo
   have hMpos : 0 < M.card := by omega
   obtain ⟨E, hEM⟩ := Finset.card_pos.mp hMpos
   exact ⟨E, hMsub hEM, hMselected E hEM⟩
-
-/-! ## Direct protected-representation fusion
-
-The preceding sections attack a hypothetical counterexample.  The
-following endpoint records the complementary positive architecture.
-
-Keep one finite set `F` permanently out of the deletion.  If every late
-successor target has arbitrarily large rooted matchings whose roots lie in
-`F`, then after any finite deletion prefix `D ⊆ A \ F` at most `|D|`
-petals can be hit.  Asking for `|D| + 2` members leaves two supports
-avoiding `D`; their traces on the deletion reservoir are disjoint because
-their only possible common points lie in the retained root.
-
-Thus the already verified sparse-deletion recursion applies directly.  No
-counterexample, finite certificate, or destruction fork occurs in this
-construction. -/
 
 /-- A finite retained set captures arbitrarily large rooted matchings at
 every sufficiently late successor-order target. -/
@@ -44434,16 +41038,6 @@ theorem OutsideMatchingTendsToInfinity.hasFiniteProtectedSuccessorRootedGrowth
       lt_of_le_of_lt (Nat.le_max_left demand 1) hMlarge,
       hMroot, hMnonempty, hMmatching⟩
 
-/-- Unconditional finite-root-capture fork for every exact order-`k` basis.
-
-Either one fixed finite core contains roots of arbitrarily large successor
-matchings at every late target, in which case the direct sparse deletion
-below solves the successor problem, or failure of every such outside core
-forces cofinally many fresh moving-root captures with cardinality-preserving
-order-`k` difference families.
-
-Thus the bounded-transversal branch no longer has an ambiguous `F ∪ T`
-capture: its root point is certified to lie in the moving part `T \ F`. -/
 theorem IsExactTupleAsymptoticBasis.finiteProtectedRootedGrowth_or_cofinalMovingRootCapture
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k) :
@@ -44581,18 +41175,6 @@ theorem IsExactTupleAsymptoticBasis.exists_infiniteDeletion_succBasis_of_finiteP
         hgrowth.to_finiteRetainedCoreTwoRepairs
         ⟨0, by simp⟩
 
-/-- Counterexample-level form of the completed moving-root fusion.
-
-If finite-core matching did not fail, outside matching growth at one finite
-core would give protected rooted growth and hence an infinite deletion
-preserving the full successor basis, contradicting `hcounter`.  Therefore a
-hypothetical counterexample lies in the moving-root branch, where the
-preceding theorem fuses the fresh roots after clearing every old-prefix
-collision.
-
-This promotes the local capture theorem to an actual counterexample-level
-infinite object: a block deletion with a strictly increasing common-survival
-stream at the full successor order. -/
 theorem exactBasis_counterexample_forces_coherentMovingRootFusion
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -44664,21 +41246,6 @@ theorem finiteTargetSet_not_cofinallyBracketed
     htargetStrict.id_le i
   omega
 
-/-- Late finite selector certificates migrate through cofinally many gaps of
-a strict common-survival stream.
-
-The terminating certificate theorem may be requested beyond an arbitrary
-protected-stream index `L`.  Every target in the resulting certificate is
-then bracketed by two *later* consecutive protected targets.  Disjointness
-from the protected range makes both bracket inequalities strict.  Hence a
-single finite target set cannot supply these cofinally bracketed
-certificates, by `finiteTargetSet_not_cofinallyBracketed`: the certificate
-labels must genuinely migrate.
-
-The conclusion retains the normalized matching/matching/gap alternative at
-each migrated certificate.  The fresh certificate still destroys every
-selector of the same fixed infinite partition and has already passed through
-the unrestricted finite-certificate descent. -/
 theorem commonSurvivalStream_forces_cofinallyBracketedTerminatedCertificates
     {A X : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -44754,20 +41321,6 @@ theorem commonSurvivalStream_forces_cofinallyBracketedTerminatedCertificates
   exact ⟨i, hLi, hiLower,
     lt_of_le_of_ne hiUpper hqNeUpper⟩
 
-/-- Counterexample-level form on the newly completed moving-root fusion.
-
-The same partition now carries both sides of the argument:
-
-* its growing blocks and strict target stream come from the fresh
-  moving-root fusion, after all old root collisions have been consumed;
-* every finite strong-deletion certificate is forced, at every requested
-  scale, into gaps with arbitrarily large indices and through the normalized
-  finite-certificate descent.
-
-Consequently no fixed finite target set can account for certificates in
-cofinally many gaps of the fused protected stream.  Any hypothetical
-counterexample must produce genuinely migrating certificates carrying the
-three arithmetic outcomes displayed below. -/
 theorem exactBasis_counterexample_forces_coherentMovingRootFusion_with_migratingCertificates
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -44838,19 +41391,6 @@ theorem exactBasis_counterexample_forces_coherentMovingRootFusion_with_migrating
 
 /-! ## Arithmetic shape of a migrating certificate gap -/
 
-/-- Translation-repair law for one aligned surviving/destroyed pair.
-
-Let an order-`h+1` support `E` survive at `t`, while the same deletion
-destroys `q = t + δ`.  For every summand `a ∈ E`, the translate `a + δ`
-cannot be another clean basis point.  Indeed, remove one occurrence of `a`
-from the representation of `t` and insert `a + δ`; this is an
-order-`h+1` representation of `q`.  Its lower core still avoids the
-deletion, so destruction of `q` forces `a + δ` into the deletion whenever
-that translate belongs to `A`.
-
-This is the direct arithmetic content of bracketing: the gap does not merely
-label two targets, but translates every point of a surviving support out of
-the clean part of the basis. -/
 theorem alignedSurvivalDestruction_forces_translationExit
     {A Y : Set ℕ} {h t q δ : ℕ} {E : Finset ℕ}
     (hE : E ∈ additiveSupportFamily A (h + 1) t)
@@ -44901,7 +41441,7 @@ Translation by `δ` is injective, and a block selector contains at most one
 point from each partition block.  Thus the composite
 `a ↦ blockIndex P (a + δ)` is injective on every set whose translates land
 in the selector.  This is the exact cross-block dispersion hidden in the
-landing horn. -/
+landing case. -/
 theorem selectedTranslation_has_injective_destinationBlocks
     {K : Set ℕ} {cell : ℕ → Finset ℕ}
     (P : IsFiniteBlockPartition K cell)
@@ -44917,19 +41457,6 @@ theorem selectedTranslation_has_injective_destinationBlocks
       (hlanding a ha) (hlanding b hb) hab
   exact Nat.add_right_cancel hshift
 
-/-- A target-localized certificate turns a whole translation landing fan
-into a common destination-block cover.
-
-For every other certificate target choose one support surviving the
-localized selector, and let `U` be their union.  It has size at most
-`(k+1) * |Q \ {q}|`.  For a landing `y = a+δ`, translating the support at
-`t` gives a support `F` at `q` whose only selected point is `y`.
-
-If the block containing `y` had a point `b` outside `U ∪ F`, change only
-that selector coordinate from `y` to `b`.  Then `F` preserves `q`, while
-the supports in `U` preserve every other target of `Q`, contradicting the
-certificate.  Hence every landing destination block is covered by the same
-`U` together with its own translated repair support. -/
 theorem targetLocalizedCertificate_translationLanding_forces_commonBlockCover
     {A K : Set ℕ} {k t q δ i : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -45175,14 +41702,6 @@ theorem translatedRepairBlockCover_forces_coSingletonCover
           (Finset.disjoint_left.mp (P.disjoint hji)
             hxCell hxCellI).elim
 
-/-- Cross-block co-singleton covers give a cardinal bound on the landing
-fan.
-
-Remove the possible landing in the source block `i`.  Every remaining
-destination block has a non-selected second point, and its co-singleton
-cover puts that point in `U`.  Choosing one such point per destination
-block is injective because the partition blocks are disjoint.  Hence all
-but at most one landing consume distinct points of the common cover `U`. -/
 theorem crossBlockCoSingletonLanding_card_le
     {K : Set ℕ} {cell : ℕ → Finset ℕ}
     (P : IsFiniteBlockPartition K cell)
@@ -45283,32 +41802,6 @@ theorem crossBlockCoSingletonLanding_card_le
   rw [hJcard] at hJle
   omega
 
-/-- Migrating certificates force cofinally large translation-exit fans.
-
-Use the entire rooted matching retained by the moving-root fusion, rather
-than selecting one surviving support.  At protected gap `i`, a block
-selector can meet at most one petal, so more than `i+1` pairwise-disjoint
-petals still avoid the deletion.  If `q` is the certificate target in that
-gap and `δ = q - target i`, the translation-repair law applies to every
-point in every surviving petal.
-
-The resulting set `V` is a large clean subset of the single block `cell i`.
-Its translate by the one common gap has only two destinations:
-
-* outside the original basis `A`; or
-* inside the selected deletion.
-
-Moreover the petal matching gives `M.card ≤ V.card`, so this is an
-arbitrarily large arithmetic obstruction, not a bounded support artifact.
-The certificate is then shrunk to a cardinal-minimal target-localized one.
-Cross-block injection and the selector switch above force every non-source
-landing block to be co-singleton-covered by one common union `U` of supports
-for the other certificate targets.  Hence
-`Vin.card ≤ U.card + 1 ≤ (k+1) * |Q.erase q| + 1`.
-
-Thus the landing horn has been consumed into explicit certificate-cardinality
-growth: at every late gap either translated holes are already large, or the
-minimal certificate grows linearly with the gap index. -/
 theorem exactBasis_counterexample_forces_cofinalTranslationExitFans
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -45646,31 +42139,6 @@ theorem exactBasis_counterexample_forces_cofinalTranslationExitFans
     hVinU, hVinCertificate, hVoutData,
     hholeOrLanding, hholeOrCertificateGrowth⟩
 
-/-- Forced certificate growth crosses every prescribed localized arithmetic
-threshold without losing the translation alignment that produced it.
-
-Fix a desired translated-hole cardinality and all five demands in
-`HasTargetLocalizedArithmeticOutcome`.  Let `C` be the exact product
-threshold required by
-`targetLocalizedAdditiveFamily_forces_rootedMatching_or_reducedStream_or_anchoredArithmeticConcentration`.
-Request a migrating gap whose index lies beyond both `2 * holeDemand` and
-`2 * ((k+1) * C + 1)`.
-
-The cross-block estimate from
-`exactBasis_counterexample_forces_cofinalTranslationExitFans` says that
-this gap has either:
-
-* more than `holeDemand` source-block points whose common `δ`-translate
-  leaves `A`; or
-* more than `C` other targets in the same cardinal-minimal localized
-  certificate.
-
-In the second case every certificate target is late enough to be
-represented at order `k+1`, so the existing arithmetic theorem applies at
-the *same* target `q`.  The conclusion deliberately retains the original
-source block `cell i`, rooted family `M`, and identity
-`q = target i + δ`: the arithmetic outcome has crossed the threshold
-without detaching from the migrating translation that forced its growth. -/
 theorem exactBasis_counterexample_forces_cofinalTranslationHoles_or_alignedArithmeticOutcome
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -45837,19 +42305,6 @@ theorem exactBasis_counterexample_forces_cofinalTranslationHoles_or_alignedArith
         P hqQ hrepresented hcert hlocalized
           (by simpa only [threshold] using hQlarge)
 
-/-- One prescribed-scale occurrence of the exact-target horn, with the
-source matching and its translation retained.
-
-There is a rooted matching of the requested size at `q`, together with the
-original block-localized rooted matching at `target i` and the exact affine
-identity
-
-`q = target i + δ`.
-
-This is precisely the first horn of
-`exactBasis_counterexample_forces_cofinalTranslationHoles_or_alignedArithmeticOutcome`;
-none of the source-block data is discarded merely because the second
-matching lives at `q`. -/
 def HasAlignedExactTargetRootedMatchingAt
     (A : Set ℕ) (k : ℕ)
     (cell : ℕ → Finset ℕ) (target : ℕ → ℕ)
@@ -45883,7 +42338,7 @@ def HasAlignedExactTargetRootedMatchingAt
       ∀ E ∈ exactMatching, ∀ G ∈ exactMatching, E ≠ G →
         Disjoint (E \ exactRoot) (G \ exactRoot)
 
-/-- Cofinal recurrence of the aligned exact-target horn at every requested
+/-- Cofinal recurrence of the aligned exact-target case at every requested
 source-block floor and matching scale. -/
 def HasCofinalAlignedExactTargetRootedMatchings
     (A : Set ℕ) (k : ℕ)
@@ -45892,8 +42347,6 @@ def HasCofinalAlignedExactTargetRootedMatchings
     HasAlignedExactTargetRootedMatchingAt
       A k cell target gapFloor demand
 
-/-- An aligned exact-target stage remains valid after lowering its requested
-block floor and matching demand. -/
 theorem HasAlignedExactTargetRootedMatchingAt.mono
     {A : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
@@ -45924,17 +42377,6 @@ theorem HasAlignedExactTargetRootedMatchingAt.mono
       lt_of_le_of_lt hdemand hexactLarge,
       hexactRoot, hexactPetal, hexactMatching⟩
 
-/-- Cofinal aligned exact-target growth supplies every prefix-cleared
-fixed-order stage needed by the infinite block-fusion recursion.
-
-For the current finite history `used`, request an exact-target matching
-larger than the complete prefix-clearing and bounded-target threshold.
-`largeSupportFamily_forces_cofinal_prefixDisjointRootedMatching` consumes
-all old root collisions, forces the normalized target beyond `last`, and
-pads back to order `k+1` without changing the petals.  The originating
-stage still comes from a source block `i` and translation `δ` satisfying
-`q = target i + δ`; the projection to `FreshPredecessorRootedMatchingStep`
-uses only the stronger normalized consequence. -/
 theorem HasCofinalAlignedExactTargetRootedMatchings.freshStepSupply
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -46008,20 +42450,6 @@ def HasFusedSuccessorPredecessorStreams
       DestroysAt
         (additiveSupportFamily A k) Y (m - a)
 
-/-- The cofinally recurring aligned exact-target horn is not a terminal
-counterexample branch.
-
-Normalize it through every finite history and run the existing rooted
-matching fusion.  Choosing one point from each resulting petal block gives
-one infinite deletion `Y` on which a strict stream of order-`k+1` targets
-survives.  The counterexample hypothesis forces cofinally many other
-order-`k+1` targets to be destroyed by that same `Y`.  Bracketing those
-failures between the surviving targets then produces cofinally represented
-order-`k` differences which are also destroyed by `Y`.
-
-Thus recurrent exact-target growth has been fed all the way through the
-same infinite-deletion and arithmetic-composition endpoint already used for
-the reduced-stream horn. -/
 theorem HasCofinalAlignedExactTargetRootedMatchings.fusesInfiniteDeletion
     {A : Set ℕ} {k : ℕ}
     (hkpos : 0 < k)
@@ -46073,7 +42501,7 @@ theorem HasCofinalAlignedExactTargetRootedMatchings.fusesInfiniteDeletion
   exact ⟨Y, oldTarget, hYA, hYInfinite, holdStrict,
     holdSurvival, hsuccessorDestroy, hrepresented⟩
 
-/-- Eventual remainder after the cofinally recurring exact-target horn has
+/-- Eventual remainder after the cofinally recurring exact-target case has
 been removed.
 
 At every sufficiently large diagonal scale the same source-block/translation
@@ -46119,20 +42547,6 @@ def HasEventuallyAlignedHolesOrNonmatchingArithmetic
               HasCommonColumnAnchoredArithmeticConcentration
                 A k n n n cell Q q hqQ E T)
 
-/-- Counterexample-level elimination of the recurrent exact-target branch.
-
-Run the aligned arithmetic theorem on the diagonal sequence of scales.
-If exact-target rooted matchings recur cofinally, their retained
-`q = target i + δ` stages satisfy
-`HasCofinalAlignedExactTargetRootedMatchings`; the preceding theorem fuses
-them into one infinite deletion with surviving and destroyed successor
-streams and represented destroyed predecessor differences.
-
-If they do not recur cofinally, there is a genuine cutoff.  Beyond it,
-unfolding the same localized arithmetic outcome leaves only translated-hole
-growth, reduced common-column streams, or anchored arithmetic concentration.
-Thus the exact-target horn has been consumed rather than left as a fourth
-open branch. -/
 theorem exactBasis_counterexample_forces_exactMatchingFusion_or_eventualAlignedRemainder
     {A : Set ℕ} {k : ℕ}
     (hkpos : 0 < k)
@@ -46236,7 +42650,7 @@ theorem HasCommonColumnReducedCoverStream.mono
   exact ⟨coveredBlock, hrows, J, hJimage,
     lt_of_le_of_lt hLL' hJlarge, hJdata⟩
 
-/-- One diagonal-scale occurrence of the reduced-stream horn, retaining
+/-- One diagonal-scale occurrence of the reduced-stream case, retaining
 the source index and the exact translation which produced its target. -/
 def HasAlignedReducedStreamAt
     (A : Set ℕ) (k : ℕ)
@@ -46293,16 +42707,6 @@ def HasEventuallyAlignedHolesOrAnchoredConcentration
             HasCommonColumnAnchoredArithmeticConcentration
               A k n n n cell Q q hqQ E T)
 
-/-- Consume the reduced-stream branch of the eventual aligned remainder.
-
-If reduced streams recur cofinally, their retained targets
-`q = target i + δ` and arbitrarily late literal blocks satisfy the existing
-reduced-stream fusion interface.  That theorem produces
-`HasFusedSuccessorPredecessorStreams`.
-
-Otherwise reduced streams have a genuine cutoff.  Past the maximum of the
-old and new cutoffs, every aligned stage is therefore either translated-hole
-growth or anchored arithmetic concentration. -/
 theorem HasEventuallyAlignedHolesOrNonmatchingArithmetic.resolveReducedStreams
     {A K : Set ℕ} {k : ℕ}
     (hkpos : 0 < k)
@@ -46398,14 +42802,6 @@ theorem HasEventuallyAlignedHolesOrNonmatchingArithmetic.resolveReducedStreams
             hstream⟩
       · exact Or.inr ⟨E, hEmem, T, hconcentration⟩
 
-/-- Counterexample-level fork after consuming both recurrent matching and
-recurrent reduced-stream geometry.
-
-The first branch is one honest infinite deletion carrying the fused
-surviving/destroyed successor streams and represented destroyed predecessor
-differences.  In the second branch every sufficiently late aligned stage,
-still with `q = target i + δ`, is now only translated-hole growth or anchored
-arithmetic concentration. -/
 theorem exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedHolesOrConcentration
     {A : Set ℕ} {k : ℕ}
     (hkpos : 0 < k)
@@ -46433,19 +42829,6 @@ theorem exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedHolesOrC
       hremainder.resolveReducedStreams
         hkpos hbasis hcounter hKA P htargetStrict⟩
 
-/-- Fully resolved form of the eventual aligned concentration remainder.
-
-Every sufficiently late stage retains its source block and translation, but
-its terminal alternative is now one of five explicit outcomes:
-
-* translated-hole growth;
-* aligned anchored order-`k` difference growth;
-* a large order-`k` rooted matching;
-* a represented two-rank injury at order `k-1`; or
-* a literal block whose size fails the certificate-capacity bound.
-
-In particular, anchored arithmetic concentration itself no longer appears
-in the conclusion. -/
 def HasEventuallyAlignedHolesOrResolvedArithmetic
     (A : Set ℕ) (k : ℕ)
     (cell : ℕ → Finset ℕ) (target : ℕ → ℕ) : Prop :=
@@ -46503,14 +42886,6 @@ def HasEventuallyAlignedHolesOrResolvedArithmetic
           (cell j).card ≤
             (k + 1) * Q.card + (k + 1))
 
-/-- Feed every eventual aligned concentration through the existing
-anchored-arithmetic resolver.
-
-At scale `n ≥ k`, choose `clearDemand = n-k`, so the resolver's anchor
-demand `(clearDemand + k)` is exactly the retained diagonal demand `n`.
-Difference and matching demands remain `n`.  The localized certificate,
-now retained explicitly by the preceding wrappers, resolves the fixed-core
-leaf into a two-rank injury unless a literal block violates capacity. -/
 theorem HasEventuallyAlignedHolesOrAnchoredConcentration.resolveConcentrations
     {A K : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
@@ -46568,7 +42943,7 @@ theorem HasEventuallyAlignedHolesOrAnchoredConcentration.resolveConcentrations
     · exact Or.inr (Or.inr (Or.inr (Or.inr hcapacity)))
 
 /-- Counterexample-level endpoint after resolving the anchored concentration
-horn as well as recurrent exact matchings and recurrent reduced streams. -/
+case as well as recurrent exact matchings and recurrent reduced streams. -/
 theorem exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedResolvedArithmetic
     {A : Set ℕ} {k : ℕ}
     (hk : 2 < k)
@@ -46595,12 +42970,6 @@ theorem exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedResolved
       htargetStrict, hcellLarge,
       Or.inr (hremainder.resolveConcentrations hk P)⟩
 
-/-- One aligned translated-hole stage.
-
-The holes themselves lie in the moving petals of a large rooted matching
-at `target i`, while their translates by the single positive displacement
-`δ` leave `A`.  Both the source-block floor and the hole cardinality are
-measured by the same `scale`; this is the form needed for cofinal fusion. -/
 def HasAlignedTranslationHoleAt
     (A : Set ℕ) (k : ℕ)
     (cell : ℕ → Finset ℕ) (target : ℕ → ℕ)
@@ -46628,8 +42997,6 @@ def HasAlignedTranslationHoleAt
     (∀ a ∈ translatedHoles, a + δ ∉ A) ∧
     scale < translatedHoles.card
 
-/-- Lowering the diagonal scale preserves an aligned translated-hole
-stage. -/
 theorem HasAlignedTranslationHoleAt.mono
     {A : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
@@ -46658,7 +43025,7 @@ theorem HasAlignedTranslationHoleAt.mono
       hholesSource, hholesData,
       lt_of_le_of_lt hscale hholesLarge⟩
 
-/-- Cofinal recurrence of the translated-hole horn. -/
+/-- Cofinal recurrence of the translated-hole case. -/
 def HasCofinalAlignedTranslationHoles
     (A : Set ℕ) (k : ℕ)
     (cell : ℕ → Finset ℕ) (target : ℕ → ℕ) : Prop :=
@@ -46666,15 +43033,6 @@ def HasCofinalAlignedTranslationHoles
     HasAlignedTranslationHoleAt
       A k cell target scale
 
-/-- Junk test for the translated-hole horn: a set with finite complement
-cannot satisfy it.
-
-At one stage all holes have the same translation `a ↦ a + δ`.  That map is
-injective and sends the entire hole set into the finite complement of `A`,
-so the hole cardinality is uniformly bounded by that complement.  Cofinal
-diagonal growth contradicts the bound.  In particular, intervals, tails,
-and other cofinite covering sets cannot satisfy the new hypothesis for a
-vacuous reason. -/
 theorem finiteComplement_forbids_cofinalAlignedTranslationHoles
     {A : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
@@ -46714,17 +43072,6 @@ theorem finiteComplement_forbids_cofinalAlignedTranslationHoles
     exact Finset.card_le_card hshiftSubset
   omega
 
-/-- A cofinal translated-hole supply gives every pointed support/block
-fusion step.
-
-Choose one hole `a` in the requested late source block.  Since `a` belongs
-to a moving petal, it is outside the common root.  The source matching has
-more than one member, and its petals are pairwise disjoint, so the
-one-point destroyer `{a}` cannot hit every member.  A surviving source
-support and the hole itself are therefore a valid pointed fusion step.
-The exact identity `q = target i + δ` and the fact `a + δ ∉ A` are retained
-in the source theorem even though the fusion interface needs only the
-resulting point/support pair. -/
 theorem HasCofinalAlignedTranslationHoles.pointedStepSupply
     {A : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
@@ -46792,15 +43139,6 @@ theorem HasCofinalAlignedTranslationHoles.pointedStepSupply
       hblockLower, hsourceSub hEM, hpointCell,
       by simpa using hEpoint⟩⟩
 
-/-- The cofinally recurring translated-hole horn fuses into the same honest
-infinite deletion endpoint as the exact-matching and reduced-stream horns.
-
-The pointed fusion recursion makes source-block indices and protected
-targets grow simultaneously.  Its bounded cross-avoidance thinning removes
-all collisions between different stages, while the two-petal argument
-removes the collision at each stage's own chosen hole.  Counterexample
-destruction and the predecessor bracketing theorem then supply the destroyed
-successor and represented-difference streams on that very deletion. -/
 theorem HasCofinalAlignedTranslationHoles.fusesInfiniteDeletion
     {A K : Set ℕ} {k : ℕ}
     (hkpos : 0 < k)
@@ -46832,15 +43170,15 @@ theorem HasCofinalAlignedTranslationHoles.fusesInfiniteDeletion
     ⟨Y, oldTarget, hYA, hYInfinite, holdStrict,
       holdSurvival, hsuccessorDestroy, hrepresented⟩
 
-/-- Eventual aligned remainder after the translated-hole horn has also been
+/-- Eventual aligned remainder after the translated-hole case has also been
 consumed.
 
 The same source block, translation, finite selector certificate, and
-source matching are retained.  Only four explicit arithmetic injuries
+source matching are retained.  Only four explicit arithmetic obstructions
 remain: aligned anchored order-`k` difference growth, order-`k` rooted matching
-growth, a represented order-`k-1` two-rank injury, or literal failure of
+growth, a represented order-`k-1` two-rank obstruction, or literal failure of
 the block-capacity threshold. -/
-def HasEventuallyAlignedResolvedArithmeticInjuries
+def HasEventuallyAlignedResolvedArithmeticObstructions
     (A : Set ℕ) (k : ℕ)
     (cell : ℕ → Finset ℕ) (target : ℕ → ℕ) : Prop :=
   ∃ N, ∀ n, N ≤ n →
@@ -46896,13 +43234,6 @@ def HasEventuallyAlignedResolvedArithmeticInjuries
           (cell j).card ≤
             (k + 1) * Q.card + (k + 1))
 
-/-- Resolve the translated-hole horn.
-
-If aligned hole stages recur cofinally, the preceding pointed fusion builds
-one infinite deletion and feeds it through the successor/predecessor
-bracketing endpoint.  Otherwise there is a genuine scale cutoff.  Beyond
-that cutoff the hole alternative in every retained resolved-arithmetic
-stage is impossible, leaving only the four explicit arithmetic injuries. -/
 theorem HasEventuallyAlignedHolesOrResolvedArithmetic.resolveTranslationHoles
     {A K : Set ℕ} {k : ℕ}
     (hkpos : 0 < k)
@@ -46917,7 +43248,7 @@ theorem HasEventuallyAlignedHolesOrResolvedArithmetic.resolveTranslationHoles
       HasEventuallyAlignedHolesOrResolvedArithmetic
         A k cell target) :
     HasFusedSuccessorPredecessorStreams A k ∨
-      HasEventuallyAlignedResolvedArithmeticInjuries
+      HasEventuallyAlignedResolvedArithmeticObstructions
         A k cell target := by
   classical
   obtain ⟨Nremainder, hstage⟩ := hremainder
@@ -46974,15 +43305,7 @@ theorem HasEventuallyAlignedHolesOrResolvedArithmetic.resolveTranslationHoles
           hholesData, hholesLarge⟩
     · exact hinjuries
 
-/-- Counterexample-level endpoint after all four horns in the aligned
-translation program have been consumed.
-
-Recurrent exact-target matchings, reduced streams, and translated holes all
-feed the same infinite-deletion/bracketing object.  Anchored concentration
-has been eliminated by the arithmetic threshold theorem.  Consequently a
-hypothetical counterexample now yields either that fused deletion or an
-eventual stream of the four explicit growth/descent/capacity injuries. -/
-theorem exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedArithmeticInjuries
+theorem exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedArithmeticObstructions
     {A : Set ℕ} {k : ℕ}
     (hk : 2 < k)
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -46996,7 +43319,7 @@ theorem exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedArithmet
       StrictMono target ∧
       (∀ i, (i + k + 3) ^ 2 < (cell i).card) ∧
       (HasFusedSuccessorPredecessorStreams A k ∨
-        HasEventuallyAlignedResolvedArithmeticInjuries
+        HasEventuallyAlignedResolvedArithmeticObstructions
           A k cell target) := by
   obtain ⟨K, cell, target, hKA, hKInfinite, P,
       htargetStrict, hcellLarge, hfused | hremainder⟩ :=
@@ -47104,19 +43427,6 @@ theorem cleanSupport_boundaryPoint_survives_after_restoring
           exact Finset.mem_insert_of_mem hxH))
       hxRestored.1
 
-/-- Direct large-point form of the aligned translation exit.
-
-If a clean order-`h` support represents `p ≥ h * floor` and its translate
-`p + δ` is destroyed, choose a support point `c ≥ floor`.  The translated
-point `c + δ` has only two possible locations:
-
-* it is literally absent from `A`; or
-* it belongs to `A`, in which case the translated-repair law forces it
-  into the deletion `Y`.
-
-Unlike a descent ending in an arbitrary lower-rank gap, both outcomes carry
-literal membership information and the large point remains in the original
-clean support. -/
 theorem cleanSupport_destroyedTranslate_forces_largeHole_or_boundaryLanding
     {A Y : Set ℕ} {h floor p δ : ℕ}
     {E : Finset ℕ}
@@ -47174,29 +43484,6 @@ theorem cleanSupport_destroyedTranslate_forces_largeHole_or_boundaryLanding
     exact
       ⟨c, hfloorC, hcE, hcA, hcY, hshiftA⟩
 
-/-- Cofinal current-order destruction cannot remain arithmetically
-unrelated to a strict successor-order survival stream.
-
-Take a late order-`k` target `q` destroyed by `Y` and bracket it above a
-surviving order-`k+1` target `oldTarget n`.  Remove an average-bounded
-summand `a` from the clean successor support.  This leaves a clean
-order-`k` support at
-
-`p = oldTarget n - a`,
-
-while `q = p + δ` for one positive translation.  Scheduling the bracket
-far enough out preserves any prescribed lower bound on a point of that
-clean support.
-
-The direct translation-exit lemma then has only two literal outcomes:
-
-* a cofinally large clean point `c` has `c + δ ∉ A`; or
-* `c + δ` is an actual point of `Y`, and restoring that one point repairs
-  the same destroyed current-order target `q`.
-
-Thus original-order strong minimality and successor-order survival are
-welded at one target and one translation.  No unrelated cofinal streams or
-lower-rank represented-target conclusion remains in the statement. -/
 theorem cofinalCurrentDestruction_against_successorSurvival_forces_largeHole_or_boundaryRepair
     {A Y : Set ℕ} {k : ℕ}
     {oldTarget : ℕ → ℕ}
@@ -47385,13 +43672,6 @@ def HasOnePointRepairAt
     DestroysAt R Y q ∧
     ¬ DestroysAt R (Y \ {z}) q
 
-/-- Junk audit for the cofinal one-point-repair interface.
-
-The interface by itself is deliberately not a contradiction: the singleton
-support family on the full vertex set has such a repair at every pair of
-floors.  Consequently later arguments use the interface only to perform
-the strict residual-deletion fusion, never as evidence that additive
-structure has already failed. -/
 theorem cofinalOnePointRepairStages_can_be_junk :
     ∀ pointFloor targetFloor,
       HasOnePointRepairAt
@@ -47414,19 +43694,6 @@ theorem cofinalOnePointRepairStages_can_be_junk :
     refine ⟨{q}, by simp, ?_⟩
     simp
 
-/-- Cofinal one-point repairs fuse into one strict residual deletion.
-
-At stage `i`, request both the failed target and its landing point above
-the previous reserved point.  Reserve a still larger point of `Y`.  The
-resulting alternation
-
-`previous reserve < failed target, landing < next reserve`
-
-makes both chosen streams injective.  The reserved points form an infinite
-set `B ⊆ Y`; all landing points lie in the infinite complement `Y \ B`.
-Since `B ⊆ Y \ {landing i}`, every selected target survives deletion by
-the one common set `B`, even though it was destroyed by the original
-`Y`. -/
 theorem cofinalOnePointRepairs_fuse_residualDeletion
     {R : SupportFamily} {Y : Set ℕ}
     (hYInfinite : Y.Infinite)
@@ -47646,14 +43913,6 @@ theorem cofinalOnePointRepairs_fuse_residualDeletion
       fun i => hfailedDestroy (floor i),
       htargetSurvival⟩
 
-/-- One current-order literal-hole stage, retaining the full protected
-successor block, its clean current-order sub-support, and the common
-translation.
-
-Unlike the rank-independent repair interface, this is intentionally rich:
-the unresolved hole branch must remember that `H ⊆ E`, that both supports
-avoid the same deletion, and that the missing point is exactly `c + δ`
-while the damaged target is exactly `q = p + δ`. -/
 def HasCurrentLargeTranslationHoleAt
     (A Y : Set ℕ) (k : ℕ)
     (oldTarget : ℕ → ℕ)
@@ -47680,19 +43939,7 @@ def HasCurrentLargeTranslationHoleAt
     c ∉ Y ∧
     c + δ ∉ A
 
-/-- Homogenize the current-order translation boundary.
-
-If rich literal-hole stages occur above every pair of floors, retain them.
-Otherwise fix one pair of floors at which no such hole exists.  Requesting
-the mixed theorem above the maxima of that pair and any new pair makes its
-literal-hole outcome impossible, so the same witness must be a one-point
-repair.  The landing `c + δ` is strictly above the requested point floor
-because `δ > 0`.
-
-The repair side is deliberately passed to the junk-audited generic
-interface: its mathematical content comes from the residual-deletion
-fusion, not from the bare existence of repair stages. -/
-theorem cofinalCurrentTranslationBoundaryAttack_forces_cofinalHoles_or_repairs
+theorem cofinalCurrentTranslationBoundaryObstruction_forces_cofinalHoles_or_repairs
     {A Y : Set ℕ} {k : ℕ}
     {oldTarget : ℕ → ℕ}
     (hmixed :
@@ -47775,14 +44022,10 @@ theorem cofinalCurrentTranslationBoundaryAttack_forces_cofinalHoles_or_repairs
           hcFloor
       omega
 
-/-- Consume the homogeneous repair branch immediately.
-
-The only unresolved alternative left by the mixed current-order attack is
-therefore a rich cofinal literal-hole family.  If that family is absent,
-the rank-independent diagonal theorem produces one infinite residual
-deletion with a strict stream of targets which were destroyed by `Y` but
-all survive the common smaller deletion. -/
-theorem cofinalCurrentTranslationBoundaryAttack_forces_holes_or_fusedRepairStream
+/-- A mixed current-order obstruction yields either cofinally many translated
+holes or one infinite residual deletion preserving a strict sequence of
+targets destroyed by `Y`. -/
+theorem cofinalCurrentTranslationBoundaryObstruction_forces_holes_or_fusedRepairStream
     {A Y : Set ℕ} {k : ℕ}
     {oldTarget : ℕ → ℕ}
     (hYInfinite : Y.Infinite)
@@ -47838,7 +44081,7 @@ theorem cofinalCurrentTranslationBoundaryAttack_forces_holes_or_fusedRepairStrea
           (additiveSupportFamily A k) B
           (target i) := by
   rcases
-      cofinalCurrentTranslationBoundaryAttack_forces_cofinalHoles_or_repairs
+      cofinalCurrentTranslationBoundaryObstruction_forces_cofinalHoles_or_repairs
         hmixed with hholes | hrepairs
   · exact Or.inl hholes
   · exact
@@ -47846,23 +44089,6 @@ theorem cofinalCurrentTranslationBoundaryAttack_forces_holes_or_fusedRepairStrea
         (cofinalOnePointRepairs_fuse_residualDeletion
           hYInfinite hrepairs)
 
-/-- Simultaneously descend a clean support and its destroyed translate.
-
-Suppose an order-`h` support at `p` avoids `Y`, while the represented target
-`p + δ` is destroyed by `Y`.  At each positive rank choose an
-average-bounded point `b` of the clean support, remove one occurrence of
-`b`, and descend the destroyer through the same clean anchor.
-
-There are only two possible terminal shapes:
-
-* at some strict lower positive rank, the clean predecessor at `u` remains
-  represented but its translate `u + δ` is a genuine gap; or
-* rank one is reached, where the clean support is a point `c ∉ Y` and the
-  represented destroyed translate forces `c + δ ∈ Y`.
-
-The invariant `rank * floor ≤ target` makes the resulting `u` or `c`
-at least `floor`.  Thus this finite descent preserves cofinality as well as
-the one common translation. -/
 theorem cleanSupport_destroyedTranslate_forces_lowerGap_or_boundaryLanding
     {A Y : Set ℕ} {h floor p δ : ℕ}
     {E : Finset ℕ}
@@ -48007,26 +44233,6 @@ theorem cleanSupport_destroyedTranslate_forces_lowerGap_or_boundaryLanding
                   ⟨c, hfloorC, hHE hcH, hcA, hcY,
                     hshiftA, hshiftY⟩
 
-/-- Cofinal residual-target growth crosses the arithmetic descent
-threshold without losing the block which produced the translation.
-
-The aligned private-core stream supplies, at one and the same stage,
-
-* an old successor block `oldTarget n < m < oldTarget (n + 1)`;
-* its predecessor `q = m - a`;
-* a current block containing that predecessor;
-* a clean rank-`r` support `K` of `t`; and
-* the exact displacement `δ` for which both
-  `q = hits.length * landing j + (t + δ)` and the residual translate
-  `t + δ` are destroyed.
-
-If the residual targets grow cofinally, request `t ≥ r * L`.  The existing
-finite arithmetic descent can then be run at floor `L`.  It gives one of
-three genuine exits, still with the original `δ`: the translate `t + δ`
-is already a rank-`r` gap, a strict lower positive rank has a translated
-gap beyond `L`, or an actual clean basis point beyond `L` is translated
-into `B`.  Thus the growing-target horn is converted into arithmetic
-injury rather than merely being renamed. -/
 theorem
     cofinal_alignedPrivateCoreStages_targetGrowth_forces_residualArithmeticExit
     {A B Y : Set ℕ} {k r : ℕ}
@@ -48142,24 +44348,6 @@ theorem
             ⟨c, hLc, hcK, hcA, hcB,
               hshiftA, hshiftB⟩)
 
-/-- A fixed residual target forces one fixed residual support and an exact
-moving-root normal form.
-
-For a literal target `t`, the family `additiveSupportFamily A r t` is
-finite.  Pigeonholing the residual support `K` through the cofinal aligned
-stages therefore fixes one clean `K` once and for all.  The peeled hit list
-is nonempty and every one of its entries is the current landing point, so
-the reconstructed support and both aligned targets simplify to
-
-`H = insert (landing j) K`,
-
-`currentTarget j = (k - r) * landing j + t`, and
-
-`q = (k - r) * landing j + (t + δ)`.
-
-All three targets still come from the same old successor block and use the
-same positive displacement `δ`.  This is the finite root capture needed
-for the moving-root attack; no residual support is allowed to migrate. -/
 theorem cofinal_alignedPrivateCoreStages_fixedTarget_fixSupport
     {A B Y : Set ℕ} {k r t : ℕ}
     {oldTarget currentTarget landing : ℕ → ℕ}
@@ -48426,21 +44614,6 @@ theorem cofinal_alignedPrivateCoreStages_fixedTarget_fixSupport
       (Nat.le_of_lt hLM).trans hqM,
       hrest⟩
 
-/-- The captured moving root produces either cofinal literal holes or a
-cofinal one-point repair stream.
-
-Once `K` and `t` are fixed, strict growth of `currentTarget` and
-
-`currentTarget j = (k-r) * landing j + t`
-
-force the moving root itself beyond any requested point floor.  The
-translation exit retained above can therefore be homogenized.  Either
-cofinally many translated roots are absent from `A`, with the full old
-source block and displacement still recorded, or every pair of floors
-admits a target repaired by restoring its translated root to `B`.
-
-This consumes the fixed-target horn arithmetically: it cannot remain a
-bare recurrent finite certificate. -/
 theorem
     cofinal_alignedPrivateCoreStages_fixedTarget_forces_rootHoles_or_repairs
     {A B Y : Set ℕ} {k r t : ℕ}
@@ -48806,7 +44979,7 @@ theorem HasCapturedFixedRootRepairAt.onePointRepair
 /-- Fixed-target root capture with no loss of source information.
 
 The earlier homogenization is repeated at the enriched interfaces above.
-The repair horn therefore retains the moving source root, its displacement,
+The repair case therefore retains the moving source root, its displacement,
 both target brackets, and the old successor block, rather than projecting
 immediately to an anonymous repaired point. -/
 theorem
@@ -48942,20 +45115,6 @@ theorem
           (le_max_left targetFloor targetFloor₀)
           hrepair
 
-/-- Fuse captured root repairs while retaining every arithmetic source.
-
-The usual reserve-point diagonal is run on the repaired points
-`landing j + δ`, but the selected stage also remembers its source root and
-both target brackets.  The recursion gives the strict interlacing
-
-`state i < root i < repaired i < kept i = state (i+1)`.
-
-Consequently the roots, repaired points, and damaged targets are all
-strict streams.  The kept points form one infinite `C ⊆ B`, every repaired
-point lies in `B \ C`, and every selected target survives deletion by
-`C`.  Unlike the rank-independent fusion, the final clause retains
-`q = m-a`, the fixed-root equations, and the original `δ` at every
-selected stage. -/
 theorem cofinalCapturedFixedRootRepairs_fuse_residualDeletion
     {A B Y : Set ℕ} {k r t : ℕ}
     {oldTarget currentTarget landing : ℕ → ℕ}
@@ -49304,10 +45463,10 @@ theorem cofinalCapturedFixedRootRepairs_fuse_residualDeletion
       hqDestroy (floor i),
       hrestoredSurvival (floor i)⟩
 
-/-- Packaged form of the concrete arithmetic injury forced by cofinal
+/-- Packaged form of the concrete arithmetic obstruction forced by cofinal
 residual-target growth.  The package retains the old and current source
 blocks and the common displacement. -/
-def HasCofinalResidualArithmeticInjury
+def HasCofinalResidualArithmeticObstruction
     (A B Y : Set ℕ) (k r : ℕ)
     (oldTarget currentTarget landing : ℕ → ℕ) : Prop :=
   ∀ L,
@@ -49506,24 +45665,8 @@ theorem cleanSupport_boundaryPoint_has_privateTranslatedSupport
       rfl, hFmem, by simp [F], hFprivate⟩
   simpa using hGmem
 
-/-- The enriched repair fusion contains a coherent private predecessor
-ladder one order lower.
-
-For every selected stage,
-
-`target i - repaired i = currentTarget j - root i`.
-
-The common-root equations sharpen this to
-
-`target i - repaired i = (k-r-1) * root i + t`.
-
-The predecessor has an explicit order-`k-1` support inside
-`insert (root i) K`, clean of `B`; reinserting the repaired point gives a
-private order-`k` support of the damaged target.  This is the direct
-difference composition needed to compare the fused stream with new
-destruction on `C`. -/
 theorem
-    HasFusedCapturedFixedRootRepairStream.forces_coherentPrivatePredecessorLadder
+    HasFusedCapturedFixedRootRepairStream.forces_coherentPrivatePredecessorSequence
     {A B Y : Set ℕ} {k r t : ℕ}
     {oldTarget currentTarget landing : ℕ → ℕ}
     {K : Finset ℕ}
@@ -49689,26 +45832,6 @@ theorem
       hGB, hFdef', hFtarget,
       hrepairedF', hFprivate'⟩
 
-/-- Strong minimality feeds new destruction through the captured
-predecessor ladder.
-
-The fused targets `target i` survive `C`, whereas strong minimality forces
-cofinal order-`k` destruction by `C`.  Bracket a newly destroyed target
-`u` between consecutive fused survivors.  Removing the clean repaired
-point from that destruction gives an order-`k-1` destroyed target
-
-`u - repaired i`.
-
-If `ε = u - target i`, the private predecessor ladder gives the exact
-alignment
-
-`u - repaired i =
-  (target i - repaired i) + ε`.
-
-The lower endpoint is represented by a clean support and has the affine
-form `(k-r-1) * root i + t`.  Thus the strict residual deletion creates a
-second translated lower-rank injury rather than restarting an unrelated
-counterexample stream. -/
 theorem
     HasFusedCapturedFixedRootRepairStream.forces_secondLevelAlignedLowerDestruction
     {A B Y : Set ℕ} {k r t : ℕ}
@@ -49771,7 +45894,7 @@ theorem
       htargetStrict, hrootStrict, hrepairedStrict,
       hrepairedRange, _htargetDestroyB,
       htargetSurviveC, hladder⟩ :=
-    hfused.forces_coherentPrivatePredecessorLadder
+    hfused.forces_coherentPrivatePredecessorSequence
       hrk
   have hCA : C ⊆ A :=
     hCB.trans hBA
@@ -49894,21 +46017,8 @@ theorem
       hlowerPositive, hlowerDestroy,
       hlowerAligned⟩
 
-/-- Away from the codimension-one terminal case, the second-level
-predecessors grow cofinally and force another arithmetic injury.
-
-If `r < k-1`, then the coefficient `k-r-1` of the strictly growing root is
-positive.  Hence
-
-`d_i = target i - repaired i =
-  (k-r-1) * root i + t`
-
-can be scheduled above `(k-1)*L`.  Apply simultaneous arithmetic descent
-to its clean order-`k-1` support and the newly destroyed translate
-`d_i+ε`.  The outcome is a same-rank gap, a strict lower positive-rank
-gap beyond `L`, or a translated clean point entering `C`. -/
 theorem
-    HasFusedCapturedFixedRootRepairStream.forces_secondLevelCofinalArithmeticInjury_of_lt_pred
+    HasFusedCapturedFixedRootRepairStream.forces_secondLevelCofinalArithmeticObstruction_of_lt_pred
     {A B Y : Set ℕ} {k r t : ℕ}
     {oldTarget currentTarget landing : ℕ → ℕ}
     {K : Finset ℕ}
@@ -50059,11 +46169,6 @@ theorem
             ⟨c, hLc, hcG, hcA, hcC,
               hshiftA, hshiftC⟩)
 
-/-- One terminal fixed-source translation stage.
-
-This is the codimension-one specialization `r = k-1`: removing the
-translated moving root leaves the literal fixed target `t`, and the next
-bracketed destruction descends to `t+ε` at order `k-1`. -/
 def HasTerminalFixedSourceTranslateStageAt
     (A B C Y : Set ℕ) (k t : ℕ)
     (currentTarget landing : ℕ → ℕ)
@@ -50095,17 +46200,6 @@ def HasTerminalFixedSourceTranslateStageAt
       (additiveSupportFamily A (k - 1))
       C (t + ε)
 
-/-- Arithmetic provenance of a marked point selected from a terminal
-fixed-source stage.
-
-Besides remembering that the point is one of the original repaired
-summands, this records the exact source block `landing j`, its positive
-translation `δ`, and the additive identity
-
-`target i = x + t`.
-
-The latter is the subtraction-free form needed to align every later fused
-upper target with the original target. -/
 def IsTerminalFixedSourceMarkedPoint
     (A B C Y : Set ℕ) (k t : ℕ)
     (landing target root repaired : ℕ → ℕ)
@@ -50124,7 +46218,6 @@ def IsTerminalFixedSourceMarkedPoint
     x ∈ sourceSupport ∧
     Disjoint (sourceSupport : Set ℕ) C
 
-/-- Lowering the requested stage floor preserves a terminal stage. -/
 theorem HasTerminalFixedSourceTranslateStageAt.mono_floor
     {A B C Y : Set ℕ} {k t ε : ℕ}
     {currentTarget landing : ℕ → ℕ}
@@ -50145,7 +46238,7 @@ theorem HasTerminalFixedSourceTranslateStageAt.mono_floor
     ⟨i, u, j, δ, G, F,
       hLM.trans hiM, hrest⟩
 
-/-- The codimension-one fixed-root horn has one literal lower source.
+/-- The codimension-one fixed-root case has one literal lower source.
 
 When `r=k-1`, the second-level affine predecessor coefficient vanishes:
 
@@ -50248,8 +46341,6 @@ theorem
       hGC, hFmem, hrepairedF, hFC,
       huNonempty, huDestroy, hfixedDestroy⟩
 
-/-- The terminal displacements either grow cofinally or one literal
-positive displacement recurs at every stage floor. -/
 theorem
     cofinal_terminalFixedSourceTranslateStages_epsilonGrowth_or_fixed
     {A B C Y : Set ℕ} {k t : ℕ}
@@ -50328,14 +46419,14 @@ theorem
         hstageM
 
 /-- Cofinal terminal displacement growth gives cofinal translated
-arithmetic injury even though the source `t` is fixed.
+arithmetic obstruction even though the source `t` is fixed.
 
 Run simultaneous descent from the one clean support `K` at floor zero.
 The source of a lower gap may remain bounded, but its translate is at least
 `ε`, so the actual gap or boundary landing still escapes every requested
 floor. -/
 theorem
-    terminalFixedSource_epsilonGrowth_forces_cofinalTranslatedArithmeticInjury
+    terminalFixedSource_epsilonGrowth_forces_cofinalTranslatedArithmeticObstruction
     {A B C Y : Set ℕ} {k t : ℕ}
     {currentTarget landing : ℕ → ℕ}
     {target root repaired : ℕ → ℕ}
@@ -50424,17 +46515,6 @@ theorem
               hLε.trans (Nat.le_add_left ε c),
               hshiftA, hshiftC⟩)
 
-/-- A fixed terminal displacement gives either a genuine finite-rank gap
-or one common restoration repairing all aligned upper targets.
-
-If `t+ε` is represented, finite descent from the fixed clean support `K`
-either finds a lower-rank translated gap or a point `c+ε ∈ C`.  In the
-boundary case restore that one point, forming
-`C' = C \ {c+ε}`.  A surviving order-`k-1` support of `t+ε` can be
-combined with every moving repaired point (which already lies outside
-`C`) to represent the corresponding upper target `u`.  Hence the entire
-cofinal aligned upper stream survives the one common infinite deletion
-`C'`. -/
 theorem
     terminalFixedSource_fixedEpsilon_forces_gap_or_commonUpperRepair
     {A B C Y : Set ℕ} {k t ε : ℕ}
@@ -50700,13 +46780,6 @@ theorem
       hpredecessor (request n),
       hmarkedS (request n)⟩
 
-/-- Extract a strict marked survival stream from cofinally bracketed
-supports.
-
-At request `L`, the supplied support lies at a target `u` in the gap after
-`base i` for some `i ≥ L`.  Recursively request the next witness beyond
-`i+1`.  The chosen indices and the bracketed targets are then both strict,
-while the exact marked predecessor `d` is retained at every stage. -/
 theorem cofinalBracketedMarkedSurvivals_extract_strictStream
     {A D : Set ℕ} {k d : ℕ}
     {base marked : ℕ → ℕ}
@@ -50799,15 +46872,6 @@ theorem cofinalBracketedMarkedSurvivals_extract_strictStream
       hsupportD (request n),
       hpredecessor (request n)⟩
 
-/-- A strict marked survival stream advances its fixed predecessor by a
-positive displacement.
-
-Strong minimality forces new order-`k` destruction between consecutive
-surviving targets.  Removing the marked clean summand from the destroyed
-target descends to order `k-1`, while removing it from the lower surviving
-support supplies a clean representation of the fixed predecessor `d`.
-The new lower target is exactly `d+η`, where `η` is the positive gap from
-the surviving target to the new destroyed target. -/
 theorem
     fixedPredecessorStrictSurvivalStream_forces_largerTranslatedLowerDestruction
     {A D : Set ℕ} {k d : ℕ}
@@ -51208,7 +47272,7 @@ theorem
         hindexStrict, hupperStrict,
         hstream, hadvance⟩
 
-/-- Recursive state for the terminal arithmetic-concentration attack.
+/-- Recursive state for the terminal arithmetic-concentration obstruction.
 
 The strict order-`k` survival stream has one fixed marked predecessor `d`.
 The deletion itself is part of the state, so a boundary repair can replace
@@ -51265,8 +47329,6 @@ theorem
           (hdata n).2.2.1,
           (hdata n).2.2.2.1⟩⟩
 
-/-- One positive predecessor-advance stage, retaining the clean source
-support and the destroyed translated target. -/
 def HasFixedPredecessorAdvanceStageAt
     (A D : Set ℕ) (k d : ℕ)
     (upper marked : ℕ → ℕ)
@@ -51293,7 +47355,6 @@ def HasFixedPredecessorAdvanceStageAt
       (additiveSupportFamily A (k - 1))
       D (d + η)
 
-/-- Lowering the requested floor preserves an advance stage. -/
 theorem HasFixedPredecessorAdvanceStageAt.mono_floor
     {A D : Set ℕ} {k d η : ℕ}
     {upper marked : ℕ → ℕ}
@@ -51309,11 +47370,11 @@ theorem HasFixedPredecessorAdvanceStageAt.mono_floor
   exact
     ⟨n, v, G, F, hLM.trans hnM, hrest⟩
 
-/-- Cofinal translated injury produced from one fixed predecessor state.
+/-- Cofinal translated obstruction produced from one fixed predecessor state.
 
 The source remains `d`, but the actual gap or boundary point escapes every
 floor because the displacement does. -/
-def HasCofinalFixedPredecessorArithmeticInjury
+def HasCofinalFixedPredecessorArithmeticObstruction
     (A D : Set ℕ) (k d : ℕ) : Prop :=
   ∀ L,
     ∃ η, ∃ G : Finset ℕ,
@@ -51438,19 +47499,6 @@ theorem
         (Nat.le_of_lt hstageFloorM)
         hstageM
 
-/-- One operational step of the recursive fixed-predecessor attack.
-
-There are only three outcomes:
-
-* cofinally growing displacements force cofinal translated arithmetic
-  injury;
-* a fixed displacement exposes a genuine same-rank or lower-rank gap; or
-* one translated boundary point is restored, leaving a smaller infinite
-  deletion which carries the same strict survival state at the strictly
-  larger predecessor `d+η`.
-
-The third horn is an actual recursive state transition, not a renamed
-repair branch. -/
 theorem HasFixedPredecessorSurvivalStateOnMarkedSet.step
     {A D S : Set ℕ} {k d : ℕ}
     (hk : 1 < k)
@@ -51458,7 +47506,7 @@ theorem HasFixedPredecessorSurvivalStateOnMarkedSet.step
     (hstate :
       HasFixedPredecessorSurvivalStateOnMarkedSet
         A D S k d) :
-    HasCofinalFixedPredecessorArithmeticInjury A D k d ∨
+    HasCofinalFixedPredecessorArithmeticObstruction A D k d ∨
       HasFixedPredecessorArithmeticGap A D k d ∨
       ∃ x, ∃ D' : Set ℕ, ∃ d',
         x ∈ D ∧
@@ -51503,7 +47551,7 @@ theorem HasFixedPredecessorSurvivalStateOnMarkedSet.step
     cofinal_fixedPredecessorAdvanceStages_displacementGrowth_or_fixed
       hstage
   · left
-    unfold HasCofinalFixedPredecessorArithmeticInjury
+    unfold HasCofinalFixedPredecessorArithmeticObstruction
     intro L
     obtain ⟨η, hLη, hηStage⟩ :=
       hgrowth L L
@@ -51731,7 +47779,7 @@ theorem HasFixedPredecessorSurvivalState.step
     (hminimal : IsStronglyMinimalExactBasis A k)
     (hstate :
       HasFixedPredecessorSurvivalState A D k d) :
-    HasCofinalFixedPredecessorArithmeticInjury A D k d ∨
+    HasCofinalFixedPredecessorArithmeticObstruction A D k d ∨
       HasFixedPredecessorArithmeticGap A D k d ∨
       ∃ x, ∃ D' : Set ℕ, ∃ d',
         x ∈ D ∧
@@ -51766,12 +47814,12 @@ theorem HasFixedPredecessorSurvivalState.step
 
 /-- Finite iteration of the operational state transition.
 
-After `N` non-injury steps, at most `N` points have been restored, the
+After `N` non-obstruction steps, at most `N` points have been restored, the
 remaining deletion is the original deletion minus that finite set, and
-the predecessor has increased by at least `N`.  If an arithmetic injury
+the predecessor has increased by at least `N`.  If an arithmetic obstruction
 or gap occurs earlier, its intermediate infinite state is returned
 instead. -/
-theorem HasFixedPredecessorSurvivalState.iterate_or_injury
+theorem HasFixedPredecessorSurvivalState.iterate_or_obstruction
     {A D : Set ℕ} {k d : ℕ}
     (hk : 1 < k)
     (hminimal : IsStronglyMinimalExactBasis A k)
@@ -51782,7 +47830,7 @@ theorem HasFixedPredecessorSurvivalState.iterate_or_injury
           D₀ ⊆ D ∧
           HasFixedPredecessorSurvivalState
             A D₀ k d₀ ∧
-          (HasCofinalFixedPredecessorArithmeticInjury
+          (HasCofinalFixedPredecessorArithmeticObstruction
               A D₀ k d₀ ∨
             HasFixedPredecessorArithmeticGap
               A D₀ k d₀)) ∨
@@ -51866,9 +47914,9 @@ theorem HasFixedPredecessorSurvivalState.iterate_or_injury
             ⟨R', D', d', hR'card, hR'D,
               hD'original, hdAdvance, hstate'⟩
 
-/-- Arithmetic injury at a prescribed floor from a sufficiently large
+/-- Arithmetic obstruction at a prescribed floor from a sufficiently large
 fixed predecessor. -/
-def HasFixedPredecessorArithmeticInjuryAtFloor
+def HasFixedPredecessorArithmeticObstructionAtFloor
     (A D : Set ℕ) (k d L : ℕ) : Prop :=
   ∃ η, ∃ G : Finset ℕ,
     (k - 1) * L ≤ d ∧
@@ -51898,16 +47946,16 @@ def HasFixedPredecessorArithmeticInjuryAtFloor
           c + η ∈ D))
 
 /-- Once a recursive state's predecessor crosses the arithmetic threshold,
-one more strong-minimality bracket forces injury at that requested floor. -/
+one more strong-minimality bracket forces obstruction at that requested floor. -/
 theorem
-    HasFixedPredecessorSurvivalState.largeSource_forces_arithmeticInjuryAtFloor
+    HasFixedPredecessorSurvivalState.largeSource_forces_arithmeticObstructionAtFloor
     {A D : Set ℕ} {k d L : ℕ}
     (hk : 1 < k)
     (hminimal : IsStronglyMinimalExactBasis A k)
     (hfloor : (k - 1) * L ≤ d)
     (hstate :
       HasFixedPredecessorSurvivalState A D k d) :
-    HasFixedPredecessorArithmeticInjuryAtFloor
+    HasFixedPredecessorArithmeticObstructionAtFloor
       A D k d L := by
   classical
   obtain ⟨hDA, hDInfinite, upper, marked, support,
@@ -51934,7 +47982,7 @@ theorem
       (upper := upper) (marked := marked)
       (by omega) hDA hDInfinite hminimal
         hupperStrict hsurvival 0
-  unfold HasFixedPredecessorArithmeticInjuryAtFloor
+  unfold HasFixedPredecessorArithmeticObstructionAtFloor
   refine
     ⟨η, G, hfloor, hηpos, hGmem, hGD,
       hshiftDestroy, ?_⟩
@@ -51971,12 +48019,12 @@ theorem
               hshiftA, hshiftD⟩)
 
 /-- Finite iteration always reaches the requested arithmetic scale unless
-an injury or genuine gap occurs earlier.
+an obstruction or genuine gap occurs earlier.
 
 Take `N=(k-1)*L`.  If all `N` recursive steps choose boundary repair, the
 predecessor has grown by at least `N` while only finitely many points were
 removed.  The final infinite state therefore satisfies the floor invariant
-and yields arithmetic injury at scale `L`. -/
+and yields arithmetic obstruction at scale `L`. -/
 theorem
     HasFixedPredecessorSurvivalState.iterate_to_arithmeticThreshold
     {A D : Set ℕ} {k d : ℕ}
@@ -51989,7 +48037,7 @@ theorem
           D₀ ⊆ D ∧
           HasFixedPredecessorSurvivalState
             A D₀ k d₀ ∧
-          (HasCofinalFixedPredecessorArithmeticInjury
+          (HasCofinalFixedPredecessorArithmeticObstruction
               A D₀ k d₀ ∨
             HasFixedPredecessorArithmeticGap
               A D₀ k d₀)) ∨
@@ -51999,13 +48047,13 @@ theorem
           D' = D \ (R : Set ℕ) ∧
           HasFixedPredecessorSurvivalState
             A D' k d' ∧
-          HasFixedPredecessorArithmeticInjuryAtFloor
+          HasFixedPredecessorArithmeticObstructionAtFloor
             A D' k d' L := by
   intro L
   obtain hinjury |
       ⟨R, D', d', hRcard, hRD, hD'eq,
         hdLarge, hstate'⟩ :=
-    hstate.iterate_or_injury hk hminimal
+    hstate.iterate_or_obstruction hk hminimal
       ((k - 1) * L)
   · exact Or.inl hinjury
   · right
@@ -52017,19 +48065,19 @@ theorem
     exact
       ⟨R, D', d', hRcard, hRD, hD'eq,
         hstate',
-        hstate'.largeSource_forces_arithmeticInjuryAtFloor
+        hstate'.largeSource_forces_arithmeticObstructionAtFloor
           hk hminimal hfloor⟩
 
 /-- Packaged all-threshold conclusion of finite predecessor-state
 iteration. -/
-def ReachesEveryFixedPredecessorArithmeticThresholdOrInjury
+def ReachesEveryFixedPredecessorArithmeticThresholdOrObstruction
     (A D : Set ℕ) (k d : ℕ) : Prop :=
   ∀ L,
     (∃ D₀ : Set ℕ, ∃ d₀,
         D₀ ⊆ D ∧
         HasFixedPredecessorSurvivalState
           A D₀ k d₀ ∧
-        (HasCofinalFixedPredecessorArithmeticInjury
+        (HasCofinalFixedPredecessorArithmeticObstruction
             A D₀ k d₀ ∨
           HasFixedPredecessorArithmeticGap
             A D₀ k d₀)) ∨
@@ -52039,22 +48087,22 @@ def ReachesEveryFixedPredecessorArithmeticThresholdOrInjury
         D' = D \ (R : Set ℕ) ∧
         HasFixedPredecessorSurvivalState
           A D' k d' ∧
-        HasFixedPredecessorArithmeticInjuryAtFloor
+        HasFixedPredecessorArithmeticObstructionAtFloor
           A D' k d' L
 
 /-- Every recursive state reaches all arithmetic thresholds by finite
 iteration. -/
 theorem
-    HasFixedPredecessorSurvivalState.reachesEveryArithmeticThresholdOrInjury
+    HasFixedPredecessorSurvivalState.reachesEveryArithmeticThresholdOrObstruction
     {A D : Set ℕ} {k d : ℕ}
     (hk : 1 < k)
     (hminimal : IsStronglyMinimalExactBasis A k)
     (hstate :
       HasFixedPredecessorSurvivalState A D k d) :
-    ReachesEveryFixedPredecessorArithmeticThresholdOrInjury
+    ReachesEveryFixedPredecessorArithmeticThresholdOrObstruction
       A D k d := by
   unfold
-    ReachesEveryFixedPredecessorArithmeticThresholdOrInjury
+    ReachesEveryFixedPredecessorArithmeticThresholdOrObstruction
   exact
     hstate.iterate_to_arithmeticThreshold
       hk hminimal
@@ -52062,7 +48110,7 @@ theorem
 /-- The fixed terminal displacement now reaches every arithmetic threshold
 unless it exposes a genuine gap immediately.
 
-In the boundary-repair horn, the strict common-upper stream is packaged as
+In the boundary-repair case, the strict common-upper stream is packaged as
 a recursive state at predecessor `t+ε` on
 `C' = C \ {c+ε}`.  The finite iteration theorem then applies for every
 requested floor. -/
@@ -52103,7 +48151,7 @@ theorem
           C' ⊆ C ∧
           HasFixedPredecessorSurvivalState
             A C' k (t + ε) ∧
-          ReachesEveryFixedPredecessorArithmeticThresholdOrInjury
+          ReachesEveryFixedPredecessorArithmeticThresholdOrObstruction
             A C' k (t + ε)) := by
   classical
   obtain hgap | hlower | hadvance :=
@@ -52143,24 +48191,8 @@ theorem
       ⟨c, C', hcK, hcA, hcC,
         hshiftA, hshiftC, hC'eq, hC'C,
         hstate,
-        hstate.reachesEveryArithmeticThresholdOrInjury
+        hstate.reachesEveryArithmeticThresholdOrObstruction
           hk hminimal⟩
-
-/-! ## Infinite free-set fusion of predecessor advances
-
-Finite source iteration leaves an apparent diagonal leak: the union of the
-successively restored singleton points could exhaust the original
-deletion.  That case is actually the useful one.  Before `xₙ` is restored,
-every support in the current state avoids the current deletion and hence
-avoids `xₙ`.  Attach one bounded order-`k` support to each `xₙ` and apply
-the bounded point-map free-set theorem.  It returns an infinite set of
-restored points which simultaneously avoids all of its attached supports.
-
-Thus either the nested deletions retain an obvious infinite reserve, or
-the restored points themselves contain a coherent infinite deletion.  The
-construction below packages the latter conclusion without requiring the
-nested intersection to be infinite.
--/
 
 /-- An infinite sequence of genuine singleton predecessor advances. -/
 structure FixedPredecessorAdvanceChain
@@ -52289,8 +48321,6 @@ structure FixedPredecessorAdvanceChoiceOnMarkedSet
   predecessor_lt :
     state.predecessor < successor.predecessor
 
-/-- An infinite advance chain together with marked provenance at every
-stage. -/
 def HasInfiniteFixedPredecessorAdvanceChainOnMarkedSet
     (A D S : Set ℕ) (k d : ℕ) : Prop :=
   ∃ chain : FixedPredecessorAdvanceChain A D k d,
@@ -52299,7 +48329,7 @@ def HasInfiniteFixedPredecessorAdvanceChainOnMarkedSet
         A (chain.deletion n) S k
           (chain.predecessor n)
 
-/-- If no descendant state has already reached arithmetic injury or a
+/-- If no descendant state has already reached arithmetic obstruction or a
 genuine gap, classical iteration produces an infinite singleton-advance
 chain. -/
 theorem
@@ -52312,7 +48342,7 @@ theorem
     (∃ D' : Set ℕ, ∃ d',
         D' ⊆ D ∧
         HasFixedPredecessorSurvivalState A D' k d' ∧
-        (HasCofinalFixedPredecessorArithmeticInjury
+        (HasCofinalFixedPredecessorArithmeticObstruction
             A D' k d' ∨
           HasFixedPredecessorArithmeticGap
             A D' k d')) ∨
@@ -52323,7 +48353,7 @@ theorem
       ∃ D' : Set ℕ, ∃ d',
         D' ⊆ D ∧
         HasFixedPredecessorSurvivalState A D' k d' ∧
-        (HasCofinalFixedPredecessorArithmeticInjury
+        (HasCofinalFixedPredecessorArithmeticObstruction
             A D' k d' ∨
           HasFixedPredecessorArithmeticGap
             A D' k d')
@@ -52433,7 +48463,7 @@ theorem
         D' ⊆ D ∧
         HasFixedPredecessorSurvivalStateOnMarkedSet
           A D' S k d' ∧
-        (HasCofinalFixedPredecessorArithmeticInjury
+        (HasCofinalFixedPredecessorArithmeticObstruction
             A D' k d' ∨
           HasFixedPredecessorArithmeticGap
             A D' k d')) ∨
@@ -52445,7 +48475,7 @@ theorem
         D' ⊆ D ∧
         HasFixedPredecessorSurvivalStateOnMarkedSet
           A D' S k d' ∧
-        (HasCofinalFixedPredecessorArithmeticInjury
+        (HasCofinalFixedPredecessorArithmeticObstruction
             A D' k d' ∨
           HasFixedPredecessorArithmeticGap
             A D' k d')
@@ -52653,21 +48683,6 @@ def HasCofinalMovingPredecessorSurvivalFusionAboveOnMarkedSet
         upper n - marked n = source n ∧
         marked n ∈ S
 
-/-- The terminal-source fusion with its original block and exact target
-translation fully restored.
-
-Each fused marked point comes from an original terminal stage `i`, whose
-root is the point `landing j` translated by `rootShift`.  The new
-translation
-
-`translation n = source n - t`
-
-is positive and satisfies the exact-target identity
-
-`upper n = target i + translation n`.
-
-Thus the infinite predecessor fusion is expressed in precisely the affine
-coordinates used by the target-localized matching machinery. -/
 def HasTerminalAlignedMovingPredecessorSurvivalFusion
     (A B C D Y : Set ℕ) (k t ε : ℕ)
     (landing target root repaired : ℕ → ℕ) : Prop :=
@@ -52720,7 +48735,7 @@ def HasTerminalAlignedPredecessorExitOrFusion
           (IsTerminalFixedSourceMarkedPoint
             A B C Y k t landing target root repaired)
           k d' ∧
-      (HasCofinalFixedPredecessorArithmeticInjury
+      (HasCofinalFixedPredecessorArithmeticObstruction
           A D' k d' ∨
         HasFixedPredecessorArithmeticGap
           A D' k d')) ∨
@@ -52803,18 +48818,6 @@ theorem
       hmarkedSourceSupport, hsourceSupportC,
       hupperAligned⟩
 
-/-- Infinitely many terminal source supports have one identical removed
-core.
-
-Every source support represents `marked n + t` and contains `marked n`.
-Removing that occurrence therefore leaves an order-`k-1` support of the
-single fixed target `t`.  There are only finitely many such support
-finsets, so one of them occurs on an infinite fiber.  Cleanliness of the
-source supports makes the fixed core clean as well.
-
-This is the arithmetic coherence hidden by the migrating marked points:
-after thinning, all untranslated predecessors literally lie over one
-fixed lower support. -/
 theorem terminalAlignedSourceSupports_fix_removedCore
     {A C : Set ℕ} {k t : ℕ}
     {sourceTarget marked : ℕ → ℕ}
@@ -53096,15 +49099,6 @@ theorem
           (hdata n).2.2.1,
           (hdata n).2.2.2.1⟩⟩
 
-/-- The restored points of an infinite advance chain contain a coherent
-infinite deletion.
-
-Choose one increasingly late support from each state.  Its cardinality is
-at most `k`, and it avoids the point restored at that stage.  The bounded
-point-map free-set theorem thins the restored points to an infinite `B`
-which avoids every selected support indexed by `B`.  Enumerating the
-corresponding stages increasingly makes both the upper targets and their
-predecessors strict. -/
 theorem FixedPredecessorAdvanceChain.fuses_restoredPoints_onMarkedSet
     {A D S : Set ℕ} {k d : ℕ}
     (chain : FixedPredecessorAdvanceChain A D k d)
@@ -53335,7 +49329,7 @@ theorem
     (∃ D' : Set ℕ, ∃ d',
         D' ⊆ D ∧
         HasFixedPredecessorSurvivalState A D' k d' ∧
-        (HasCofinalFixedPredecessorArithmeticInjury
+        (HasCofinalFixedPredecessorArithmeticObstruction
             A D' k d' ∨
           HasFixedPredecessorArithmeticGap
             A D' k d')) ∨
@@ -53361,7 +49355,7 @@ theorem
         D' ⊆ D ∧
         HasFixedPredecessorSurvivalStateOnMarkedSet
           A D' S k d' ∧
-        (HasCofinalFixedPredecessorArithmeticInjury
+        (HasCofinalFixedPredecessorArithmeticObstruction
             A D' k d' ∨
           HasFixedPredecessorArithmeticGap
             A D' k d')) ∨
@@ -53394,7 +49388,7 @@ theorem
         D' ⊆ D ∧
         HasFixedPredecessorSurvivalStateOnMarkedSet
           A D' S k d' ∧
-        (HasCofinalFixedPredecessorArithmeticInjury
+        (HasCofinalFixedPredecessorArithmeticObstruction
             A D' k d' ∨
           HasFixedPredecessorArithmeticGap
             A D' k d')) ∨
@@ -53411,31 +49405,21 @@ theorem
         (chain.fuses_restoredPoints_onMarkedSet
           hmarkedSurvival)
 
-/-- One fixed infinite deletion carrying arithmetic injury at every
+/-- One fixed infinite deletion carrying arithmetic obstruction at every
 requested scale, with the clean predecessor allowed to move along the fused
 strict stream. -/
-def HasCofinalMovingPredecessorArithmeticInjuryFusion
+def HasCofinalMovingPredecessorArithmeticObstructionFusion
     (A D : Set ℕ) (k : ℕ) : Prop :=
   ∃ B : Set ℕ,
     B ⊆ D ∧
     B ⊆ A ∧
     B.Infinite ∧
     ∀ L, ∃ d,
-      HasFixedPredecessorArithmeticInjuryAtFloor
+      HasFixedPredecessorArithmeticObstructionAtFloor
         A B k d L
 
-/-- A strict clean survival stream with strictly growing marked
-predecessors forces arithmetic injury at every scale on the same deletion.
-
-Bracket a destroyed order-`k` target between consecutive clean upper
-targets.  Removing the marked summand from the lower support gives a clean
-order-`k-1` representation of `source n`; descending the destroyed upper
-target through that same summand gives destruction of
-`source n + η`.  Since `source` is strict, choosing the bracket index past
-`(k-1)L` puts the clean predecessor itself beyond the localized arithmetic
-threshold. -/
 theorem
-    movingPredecessorStrictSurvivalStream_forces_arithmeticInjuryAtFloor
+    movingPredecessorStrictSurvivalStream_forces_arithmeticObstructionAtFloor
     {A B : Set ℕ} {k : ℕ}
     {source upper marked : ℕ → ℕ}
     {support : ℕ → Finset ℕ}
@@ -53453,7 +49437,7 @@ theorem
         Disjoint (support n : Set ℕ) B ∧
         upper n - marked n = source n) :
     ∀ L, ∃ n,
-      HasFixedPredecessorArithmeticInjuryAtFloor
+      HasFixedPredecessorArithmeticObstructionAtFloor
         A B k (source n) L := by
   classical
   obtain ⟨j, hj⟩ :=
@@ -53591,7 +49575,7 @@ theorem
     exact hlowerDestroyRaw
   refine ⟨n, ?_⟩
   unfold
-    HasFixedPredecessorArithmeticInjuryAtFloor
+    HasFixedPredecessorArithmeticObstructionAtFloor
   refine
     ⟨η, G, hfloor, hηpos, hGmem, hGB,
       hlowerDestroy, ?_⟩
@@ -53630,14 +49614,14 @@ theorem
 /-- The free-set fusion reaches every localized arithmetic threshold on
 its one fixed infinite deletion. -/
 theorem
-    HasCofinalMovingPredecessorSurvivalFusion.forces_arithmeticInjuryFusion
+    HasCofinalMovingPredecessorSurvivalFusion.forces_arithmeticObstructionFusion
     {A D : Set ℕ} {k : ℕ}
     (hk : 1 < k)
     (hminimal : IsStronglyMinimalExactBasis A k)
     (hfused :
       HasCofinalMovingPredecessorSurvivalFusion
         A D k) :
-    HasCofinalMovingPredecessorArithmeticInjuryFusion
+    HasCofinalMovingPredecessorArithmeticObstructionFusion
       A D k := by
   obtain ⟨B, hBD, hBA, hBInfinite,
       source, upper, marked, support,
@@ -53648,16 +49632,16 @@ theorem
     ⟨B, hBD, hBA, hBInfinite, ?_⟩
   intro L
   obtain ⟨n, hinjury⟩ :=
-    movingPredecessorStrictSurvivalStream_forces_arithmeticInjuryAtFloor
+    movingPredecessorStrictSurvivalStream_forces_arithmeticObstructionAtFloor
       hk hBA hBInfinite hminimal
         hsourceStrict hupperStrict hsurvival L
   exact ⟨source n, hinjury⟩
 
 /-- Infinite iteration has now been consumed: a recursive predecessor
 state either exits at a descendant fixed state, or produces one infinite
-deletion carrying arithmetic injury at every scale. -/
+deletion carrying arithmetic obstruction at every scale. -/
 theorem
-    HasFixedPredecessorSurvivalState.descendantExit_or_fusedArithmeticInjury
+    HasFixedPredecessorSurvivalState.descendantExit_or_fusedArithmeticObstruction
     {A D : Set ℕ} {k d : ℕ}
     (hk : 1 < k)
     (hminimal : IsStronglyMinimalExactBasis A k)
@@ -53666,11 +49650,11 @@ theorem
     (∃ D' : Set ℕ, ∃ d',
         D' ⊆ D ∧
         HasFixedPredecessorSurvivalState A D' k d' ∧
-        (HasCofinalFixedPredecessorArithmeticInjury
+        (HasCofinalFixedPredecessorArithmeticObstruction
             A D' k d' ∨
           HasFixedPredecessorArithmeticGap
             A D' k d')) ∨
-      HasCofinalMovingPredecessorArithmeticInjuryFusion
+      HasCofinalMovingPredecessorArithmeticObstructionFusion
         A D k := by
   obtain hexit | hfused :=
     hstate.descendantExit_or_movingFusion
@@ -53678,19 +49662,11 @@ theorem
   · exact Or.inl hexit
   · exact
       Or.inr
-        (hfused.forces_arithmeticInjuryFusion
+        (hfused.forces_arithmeticObstructionFusion
           hk hminimal)
 
-/-- The fixed terminal displacement is now attached to the completed
-infinite iteration/fusion engine.
-
-After the two immediate genuine-gap horns, restoring the first boundary
-point produces a recursive state on `C'`.  Infinite iteration of that state
-either reaches a fixed-state arithmetic exit on a descendant deletion, or
-fuses the restored points into one infinite deletion carrying arithmetic
-injury at every scale. -/
 theorem
-    terminalFixedSource_fixedEpsilon_forces_gap_or_fusedArithmeticInjury
+    terminalFixedSource_fixedEpsilon_forces_gap_or_fusedArithmeticObstruction
     {A B C Y : Set ℕ} {k t ε : ℕ}
     {currentTarget landing : ℕ → ℕ}
     {target root repaired : ℕ → ℕ}
@@ -53728,11 +49704,11 @@ theorem
                 D' ⊆ C' ∧
                 HasFixedPredecessorSurvivalState
                   A D' k d' ∧
-                (HasCofinalFixedPredecessorArithmeticInjury
+                (HasCofinalFixedPredecessorArithmeticObstruction
                     A D' k d' ∨
                   HasFixedPredecessorArithmeticGap
                     A D' k d')) ∨
-              HasCofinalMovingPredecessorArithmeticInjuryFusion
+              HasCofinalMovingPredecessorArithmeticObstructionFusion
                 A C' k))) := by
   obtain hgap | hlower | hstate :=
     terminalFixedSource_fixedEpsilon_forces_gap_or_allThresholdIteration
@@ -53754,28 +49730,9 @@ theorem
     exact
       ⟨c, C', hcK, hcA, hcC,
         hshiftA, hshiftC, hC'eq, hC'C,
-        hrecursive.descendantExit_or_fusedArithmeticInjury
+        hrecursive.descendantExit_or_fusedArithmeticObstruction
           hk hminimal⟩
 
-/-- The terminal fixed-source horn now retains its exact affine origin
-through the completed infinite iteration.
-
-In the boundary-repair branch, rebuild the common upper supports directly
-from the provenance-rich terminal stages.  The strict extraction records
-that every marked point is an original repaired point
-
-`repaired i = landing j + rootShift`
-
-with `target i = repaired i + t`.  Recursive predecessor transitions only
-take subsequences, so this marked provenance survives every finite repair.
-If the recursion fuses infinitely, the retained source floor turns it into
-the literal exact-target stream
-
-`upper n = target i + (source n - t)`.
-
-The translation is positive and strict.  Hence neither the source block
-nor the exact translation is lost before the target-localized arithmetic
-threshold is applied. -/
 theorem
     terminalFixedSource_fixedEpsilon_forces_gap_or_alignedIteration
     {A B C Y : Set ℕ} {k t ε : ℕ}
@@ -53967,24 +49924,6 @@ theorem
         Or.inr
           (hfused.toTerminalAligned hεpos)
 
-/-- The fused successor/predecessor object has an explicit cofinal
-arithmetic shape.
-
-For a requested floor `L`, take a bracket far enough out that the
-average-bounded first anchor leaves an order-`k` clean predecessor target
-at least `k * L`.  The fused theorem already says the corresponding
-translate is represented and destroyed at order `k`.  Applying the finite
-simultaneous descent above gives, with one positive displacement `δ`,
-either:
-
-* a cofinally large clean target whose `δ`-translate is a genuine gap at
-  some strict lower positive rank; or
-* a cofinally large clean basis point `c` whose translate `c + δ` is an
-  actual deleted basis point.
-
-This is strictly stronger than the bare surviving/destroyed stream: the
-missing gap is now localized either in rank or on the boundary of the
-deletion. -/
 theorem HasFusedSuccessorPredecessorStreams.forces_cofinalLowerGap_or_boundaryLanding
     {A : Set ℕ} {k : ℕ}
     (hkpos : 0 < k)
@@ -54078,19 +50017,6 @@ theorem HasFusedSuccessorPredecessorStreams.forces_cofinalLowerGap_or_boundaryLa
       ⟨δ, hδpos, Or.inr
         ⟨c, hLc, hcA, hcY, hshiftA, hshiftY⟩⟩
 
-/-- The fused stream has a cofinal literal translation boundary.
-
-For a requested floor `L`, choose a bracket whose index is at least
-`(k+1) * L`.  Strictness of the protected target stream puts the lower
-endpoint above the same threshold.  A support of that lower endpoint
-therefore contains an actual point `c ≥ L`.
-
-Writing the destroyed upper endpoint as `oldTarget n + δ`, direct
-translation exit says that `c + δ` is either absent from `A` or belongs to
-the fixed deletion `Y`.  The theorem retains the bracket, its clean
-support, its destroyed target, and the exact displacement.  In the landing
-case restoring the single point `c + δ` to `A \ Y` gives an explicit repair
-of that destroyed target. -/
 theorem HasFusedSuccessorPredecessorStreams.forces_cofinalLargeTranslationHole_or_boundaryLanding
     {A : Set ℕ} {k : ℕ}
     (hfused :
@@ -54178,7 +50104,6 @@ theorem HasFusedSuccessorPredecessorStreams.forces_cofinalLargeTranslationHole_o
           ⟨hshiftA, hshiftY,
             hrestoredSurvivalAtM⟩⟩
 
-/-- One large literal-hole stage extracted from a fused bracket. -/
 def HasFusedLargeTranslationHoleAt
     (A Y : Set ℕ) (k : ℕ)
     (oldTarget : ℕ → ℕ) (L : ℕ) : Prop :=
@@ -54200,7 +50125,6 @@ def HasFusedLargeTranslationHoleAt
     c ∉ Y ∧
     c + δ ∉ A
 
-/-- One large co-singleton repair stage extracted from a fused bracket. -/
 def HasFusedBoundaryRepairAt
     (A Y : Set ℕ) (k : ℕ)
     (oldTarget : ℕ → ℕ) (L : ℕ) : Prop :=
@@ -54226,7 +50150,6 @@ def HasFusedBoundaryRepairAt
       (additiveSupportFamily A (k + 1))
       (Y \ {c + δ}) m
 
-/-- Lowering the requested floor preserves a literal-hole stage. -/
 theorem HasFusedLargeTranslationHoleAt.mono
     {A Y : Set ℕ} {k : ℕ}
     {oldTarget : ℕ → ℕ} {L L' : ℕ}
@@ -54247,7 +50170,6 @@ theorem HasFusedLargeTranslationHoleAt.mono
       hEY, hmDestroy, hL.trans hcFloor,
       hcE, hcA, hcY, hhole⟩
 
-/-- Lowering the requested floor preserves a boundary-repair stage. -/
 theorem HasFusedBoundaryRepairAt.mono
     {A Y : Set ℕ} {k : ℕ}
     {oldTarget : ℕ → ℕ} {L L' : ℕ}
@@ -54270,16 +50192,6 @@ theorem HasFusedBoundaryRepairAt.mono
       hcE, hcA, hcY, hshiftA, hshiftY,
       hrestoredSurvival⟩
 
-/-- Failure of one boundary-repair floor forces a universal translation
-hole law above that floor.
-
-Take any later protected gap, any clean lower-endpoint support, and any
-support point `c ≥ L`.  If `c + δ` belonged to `A`, translation exit would
-put it in `Y`, while
-`cleanSupport_boundaryPoint_survives_after_restoring` would repair the
-destroyed upper endpoint after restoring that point.  Those data are
-exactly a forbidden `HasFusedBoundaryRepairAt` stage.  Therefore every such
-large support point has its translate outside `A`. -/
 theorem not_boundaryRepairAt_forces_all_largeSupportPoint_translates_missing
     {A Y : Set ℕ} {k : ℕ}
     {oldTarget : ℕ → ℕ} {L n m : ℕ}
@@ -54333,14 +50245,6 @@ theorem not_boundaryRepairAt_forces_all_largeSupportPoint_translates_missing
       hcFloor, hcE, hcA, hcY, hshiftA,
       hshiftY, hrestoredSurvival⟩
 
-/-- The literal translation boundary can be homogenized cofinally.
-
-If literal-hole stages are not cofinal, one floor `L₀` admits no such
-stage.  Asking the preceding mixed theorem above `max L L₀` eliminates its
-hole outcome and therefore supplies a boundary-repair stage above every
-requested `L`.  Thus the fused branch has only two genuine infinite
-continuations: cofinally large missing translates, or cofinally many
-explicit one-point restorations. -/
 theorem HasFusedSuccessorPredecessorStreams.forces_cofinalLargeTranslationHoles_or_cofinalBoundaryRepairs
     {A : Set ℕ} {k : ℕ}
     (hfused :
@@ -54396,14 +50300,6 @@ theorem HasFusedSuccessorPredecessorStreams.forces_cofinalLargeTranslationHoles_
           hcE, hcA, hcY, hshiftA, hshiftY,
           hrestoredSurvival⟩
 
-/-- Boundary-first homogeneous form of the fused translation fork.
-
-If boundary repairs are cofinal, return them because they admit the
-infinite strict-split fusion below.  Otherwise one floor `L₀` has no
-boundary-repair stage; monotonicity then excludes boundary repairs at every
-larger floor.  Applying the mixed theorem above `max L L₀` forces a literal
-hole, so the other branch is not merely cofinally hole-bearing but
-eventually *pure*: the one-point repair mechanism is genuinely absent. -/
 theorem HasFusedSuccessorPredecessorStreams.forces_cofinalBoundaryRepairs_or_eventuallyPureLargeTranslationHoles
     {A : Set ℕ} {k : ℕ}
     (hfused :
@@ -54466,20 +50362,6 @@ theorem HasFusedSuccessorPredecessorStreams.forces_cofinalBoundaryRepairs_or_eve
             hcE, hcA, hcY, hshiftA, hshiftY,
             hrestoredSurvival⟩
 
-/-- Cofinal one-point repairs can be fused without exhausting the original
-deletion.
-
-At stage `r`, take a boundary repair above `r + 1`, then reserve a still
-larger point of `Y`.  Iteration gives the strict alternation
-
-`repaired target < reserved point < next repaired target`.
-
-The reserved points form an infinite residual deletion `B`.  Every landing
-point lies in `Y \ B`, so the restored part is infinite as well.  Since
-`B ⊆ Y \ {landing}` at each stage, all selected upper targets survive
-deletion by the single common set `B`.  This is the first genuine infinite
-iteration of the co-singleton repair rather than a collection of unrelated
-one-point repairs. -/
 theorem cofinalBoundaryRepairs_fuse_residualDeletion
     {A Y : Set ℕ} {k : ℕ}
     {oldTarget : ℕ → ℕ}
@@ -54687,16 +50569,6 @@ theorem cofinalBoundaryRepairs_fuse_residualDeletion
     ⟨bracket (floor i), hlower (floor i),
       hupper (floor i)⟩
 
-/-- The boundary-repair horn reproduces the complete fused endpoint on a
-strict infinite split of its deletion.
-
-The preceding theorem supplies an infinite residual `B ⊆ Y`, an infinite
-restored part `Y \ B`, and a strict stream of repaired successor targets
-surviving `B`.  The counterexample hypothesis forces cofinal successor
-destruction on that same `B`; predecessor bracketing then reconstructs the
-represented destroyed order-`k` differences.  Thus the boundary horn is a
-self-replication mechanism, but now with a genuine descent of the deletion
-and a new interlaced survival stream. -/
 theorem cofinalBoundaryRepairs_regenerate_fusedStreams_on_strictSplit
     {A Y : Set ℕ} {k : ℕ}
     {oldTarget : ℕ → ℕ}
@@ -54770,20 +50642,6 @@ theorem cofinalBoundaryRepairs_regenerate_fusedStreams_on_strictSplit
       hrestoredInfinite, hnewStrict, hnewSurvival,
       hnewDestroy, hrepresented⟩
 
-/-- The fused branch now has a terminating arithmetic alternative.
-
-If one-point boundary repairs occur at every floor, they feed the strict
-split/self-replication theorem above.  Otherwise fix a floor `L₀` with no
-boundary repair.  For a requested `L`, choose a represented destroyed
-order-`k` predecessor far beyond `max L L₀`, remove its average-bounded
-anchor, and run simultaneous rank descent.
-
-The descent's boundary endpoint would still be a point of the original
-clean successor support.  Restoring its translate would therefore create
-the forbidden boundary-repair stage at `L₀`.  Hence only the other endpoint
-is possible: a clean support, contained in the original protected support,
-whose translate by the very same bracket displacement is a genuine gap at
-some strict positive rank below `k`. -/
 theorem HasFusedSuccessorPredecessorStreams.forces_cofinalBoundaryRepairs_or_cofinalContainedLowerTranslationGaps
     {A : Set ℕ} {k : ℕ}
     (hkpos : 0 < k)
@@ -54928,11 +50786,6 @@ theorem HasFusedSuccessorPredecessorStreams.forces_cofinalBoundaryRepairs_or_cof
           hcE, hcA, hcY, hshiftA, hshiftY,
           hrestoredSurvival⟩
 
-/-- One contained translated-gap stage at a prescribed strict lower rank.
-
-The gap support remains inside the clean support of the protected successor
-target, and the translation is exactly the displacement to the destroyed
-target in the same protected gap. -/
 def HasFusedContainedLowerTranslationGapAt
     (A Y : Set ℕ) (k : ℕ)
     (oldTarget : ℕ → ℕ) (ℓ L : ℕ) : Prop :=
@@ -54955,13 +50808,6 @@ def HasFusedContainedLowerTranslationGapAt
       Disjoint (G : Set ℕ) Y ∧
       additiveSupportFamily A ℓ (u + δ) = ∅
 
-/-- The strict lower rank in the contained-gap branch can be fixed
-cofinally.
-
-Choose one gap stage at each integer scale.  Its rank lies in the finite
-type `Fin k`; an infinite fiber therefore fixes one rank `ℓ`.  Taking a
-fiber index above the requested floor preserves every cofinal bound carried
-by that stage. -/
 theorem HasFusedSuccessorPredecessorStreams.forces_cofinalBoundaryRepairs_or_fixedRankCofinalContainedLowerTranslationGaps
     {A : Set ℕ} {k : ℕ}
     (hkpos : 0 < k)
@@ -55043,7 +50889,7 @@ theorem HasFusedSuccessorPredecessorStreams.forces_cofinalBoundaryRepairs_or_fix
     · simpa only [hrankEq] using hGmem
     · simpa only [hrankEq] using hgap
 
-/-- One unbounded rooted-matching injury at the original basis order.
+/-- One unbounded rooted-matching obstruction at the original basis order.
 
 Unlike a large set of merely represented targets, this records many
 supports of one common target with pairwise-disjoint moving petals. -/
@@ -55059,8 +50905,6 @@ def HasCurrentOrderRootedMatchingAt
       ∀ H ∈ M, ∀ G ∈ M, H ≠ G →
         Disjoint (H \ root) (G \ root)
 
-/-- Lowering the cardinal demand preserves a current-order rooted-matching
-stage. -/
 theorem HasCurrentOrderRootedMatchingAt.mono
     {A : Set ℕ} {k demand demand' : ℕ}
     (hstage :
@@ -55082,15 +50926,6 @@ def HasCofinalCurrentOrderRootedMatchings
   ∀ demand,
     HasCurrentOrderRootedMatchingAt A k demand
 
-/-- Unbounded rooted matchings at order `k` supply every fresh
-order-`k+1` fusion step.
-
-For the current finite history, request a raw matching beyond the complete
-prefix-clearing and bounded-target threshold.  Normalize it with
-`largeSupportFamily_forces_cofinal_prefixDisjointRootedMatching`, using
-the successor basis `hbasis.succ` as the target order.  Any rank lost while
-clearing the old root is padded back to `k+1`, so the resulting petals avoid
-the whole history and the represented target clears `last`. -/
 theorem HasCofinalCurrentOrderRootedMatchings.freshSuccessorStepSupply
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -55127,15 +50962,6 @@ theorem HasCofinalCurrentOrderRootedMatchings.freshSuccessorStepSupply
       hrootUsed, hMsub, hMlarge, hMroot,
       hMpetal, hMmatching⟩⟩
 
-/-- A recurrent current-order rooted-matching injury is consumed by the
-same infinite-deletion endpoint as the aligned successor matching.
-
-The preceding step supply constructs pairwise fresh petal blocks at order
-`k+1`.  Selecting one point from each block leaves a strict stream of
-successor targets represented off the resulting infinite deletion `Y`.
-Counterexample destruction supplies the opposing destroyed stream, and
-the existing bracketing theorem produces represented destroyed order-`k`
-predecessors on that same `Y`. -/
 theorem HasCofinalCurrentOrderRootedMatchings.fusesInfiniteDeletion
     {A : Set ℕ} {k : ℕ}
     (hkpos : 0 < k)
@@ -55196,11 +51022,11 @@ current-order rooted matchings have been removed.
 The original same-block/translation data are retained verbatim.  The
 additional cutoff says that no order-`k` rooted matching of diagonal size
 can occur at any later scale, so the matching member of the old four-way
-injury fork is formally impossible there. -/
+obstruction fork is formally impossible there. -/
 def HasEventuallyAlignedResolvedArithmeticWithoutCurrentMatching
     (A : Set ℕ) (k : ℕ)
     (cell : ℕ → Finset ℕ) (target : ℕ → ℕ) : Prop :=
-  HasEventuallyAlignedResolvedArithmeticInjuries
+  HasEventuallyAlignedResolvedArithmeticObstructions
       A k cell target ∧
     ∃ N, ∀ n, N ≤ n →
       ¬ HasCurrentOrderRootedMatchingAt A k n
@@ -55210,9 +51036,9 @@ arithmetic endpoint.
 
 If such stages recur cofinally, monotonicity turns them into unbounded
 current-order rooted matchings and the preceding theorem fuses them into
-one infinite deletion.  Otherwise one cutoff excludes that injury at every
+one infinite deletion.  Otherwise one cutoff excludes that obstruction at every
 later diagonal scale while retaining the full aligned remainder. -/
-theorem HasEventuallyAlignedResolvedArithmeticInjuries.resolveCurrentOrderRootedMatchings
+theorem HasEventuallyAlignedResolvedArithmeticObstructions.resolveCurrentOrderRootedMatchings
     {A : Set ℕ} {k : ℕ}
     (hkpos : 0 < k)
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -55220,7 +51046,7 @@ theorem HasEventuallyAlignedResolvedArithmeticInjuries.resolveCurrentOrderRooted
       ¬ IsExactTupleAsymptoticBasis (A \ B) (k + 1))
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
     (hremainder :
-      HasEventuallyAlignedResolvedArithmeticInjuries
+      HasEventuallyAlignedResolvedArithmeticObstructions
         A k cell target) :
     HasFusedSuccessorPredecessorStreams A k ∨
       HasEventuallyAlignedResolvedArithmeticWithoutCurrentMatching
@@ -55243,14 +51069,6 @@ theorem HasEventuallyAlignedResolvedArithmeticInjuries.resolveCurrentOrderRooted
     push Not at hcofinal
     exact ⟨hremainder, hcofinal⟩
 
-/-- Counterexample-level endpoint after the current-order matching injury
-has also been consumed.
-
-Every hypothetical hard-order counterexample now produces the fused
-successor/predecessor deletion directly, or an aligned arithmetic stream
-in which recurrent order-`k` rooted matching growth is excluded.  Thus the
-remaining aligned injuries are the coherent-difference, two-rank, and
-after-the-fact capacity-feedback mechanisms. -/
 theorem exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedArithmeticWithoutCurrentMatching
     {A : Set ℕ} {k : ℕ}
     (hk : 2 < k)
@@ -55269,7 +51087,7 @@ theorem exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedArithmet
           A k cell target := by
   obtain ⟨K, cell, target, hKA, hKInfinite, P,
       htargetStrict, hcellLarge, hfused | hremainder⟩ :=
-    exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedArithmeticInjuries
+    exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedArithmeticObstructions
       hk hbasis hcounter
   · exact Or.inl hfused
   · obtain hfused | hremainder' :=
@@ -55280,16 +51098,6 @@ theorem exactBasis_counterexample_forces_fusedStreams_or_eventualAlignedArithmet
         ⟨K, cell, target, hKA, hKInfinite, P,
           htargetStrict, hcellLarge, hremainder'⟩
 
-/-- Capacity-resolved form of one target-localized arithmetic outcome on a
-quadratic tail.
-
-The first five alternatives are the exact-target matching, reduced stream,
-aligned difference growth, current-order matching, and a pointed
-support/block witness.  The last two are the former output of rerunning a
-capacity witness:
-a support avoiding a strictly later tail block, or a repeated-block
-cluster above the full anchored threshold.  A bare small-block alternative
-does not occur. -/
 def HasCapacityResolvedTargetLocalizedArithmeticOutcome
     (A : Set ℕ) (k n : ℕ)
     (cell : ℕ → Finset ℕ)
@@ -55330,13 +51138,6 @@ def HasCapacityResolvedTargetLocalizedArithmeticOutcome
             (T.filter fun p =>
               coveredBlock p = j).card
 
-/-- One diagonal quadratic-tail stage with the protected source alignment
-retained after capacity resolution.
-
-The certificate, its private selector, the source rooted matching, and the
-identity `q = target i + δ` all live in one record.  The terminal arithmetic
-outcome is capacity-free in the precise sense of
-`HasCapacityResolvedTargetLocalizedArithmeticOutcome`. -/
 def HasQuadraticTailAlignedResolvedArithmeticAt
     (A K : Set ℕ) (k : ℕ)
     (cell : ℕ → Finset ℕ) (target : ℕ → ℕ)
@@ -55387,16 +51188,6 @@ def HasQuadraticTailAlignedResolvedArithmeticAt
     HasCapacityResolvedTargetLocalizedArithmeticOutcome
       A k n tailCell Q q hqQ
 
-/-- One exact translated survival/destruction pair extracted from a
-quadratic-tail aligned stage.
-
-The source support represents `target sourceIndex`, while the finite
-inclusion-minimal destroyer kills the strictly later target
-`destroyedTarget = target sourceIndex + displacement`.  The two finite
-sets are disjoint.  Every destroyer point lies in `K`, and its ambient
-block coordinate clears `scale`; this is the freshness datum needed to
-fuse pairs from successively later stages without losing the translation
-identity. -/
 structure AlignedTailSurvivalDestroyerPair
     (A K : Set ℕ) (k : ℕ)
     (cell : ℕ → Finset ℕ) (target : ℕ → ℕ)
@@ -55451,17 +51242,6 @@ structure AlignedTailSurvivalDestroyerPair
   destroyer_block_lower :
     ∀ x ∈ destroyer, scale ≤ blockIndex P x
 
-/-- Every protected quadratic-tail stage contains an exact finite pair.
-
-First compact the private selector destroyer of `q` to a finite destroyer
-and minimize it by inclusion.  Any member of the retained source matching
-then represents `target i` and avoids that destroyer, since it avoids the
-whole selector.  The selector lives on the diagonal tail, so every point
-of the finite destroyer occupies an ambient block of index at least `n`.
-
-Unlike the earlier pointed-fusion conversion, this extraction retains the
-destroyed target, its entire minimal destroyer, and
-`q = target i + δ` simultaneously. -/
 theorem HasQuadraticTailAlignedResolvedArithmeticAt.exists_alignedTailPair
     {A K : Set ℕ} {k n : ℕ}
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
@@ -55556,19 +51336,6 @@ theorem HasQuadraticTailAlignedResolvedArithmeticAt.exists_alignedTailPair
       hMmatching, hMD, hMcell, hDnonempty, hDK,
       hDminimal, hED, hDblock⟩⟩
 
-/-- The exact cardinal fork inside one aligned finite pair.
-
-Let `V` be the union of the disjoint petals of the large source matching.
-If `a ∈ V` and `a + δ ∈ A`, translating the source support containing
-`a` gives a representation of the destroyed target.  Since the old part
-of that support avoids `D`, destruction forces `a + δ ∈ D`.  Translation
-is injective, so at most `|D|` points of `V` can have their translate in
-`A`.  All remaining points are literal translated holes.
-
-The petal matching has more than `scale + 1` members and injects into `V`.
-Consequently either the literal-hole set or the minimal destroyer has
-cardinality greater than half the scale.  This is the direct cardinal
-pressure which was absent after passing to a one-point fusion endpoint. -/
 theorem AlignedTailSurvivalDestroyerPair.largeHoles_or_largeDestroyer
     {A K : Set ℕ} {k scale : ℕ}
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
@@ -55676,17 +51443,6 @@ theorem AlignedTailSurvivalDestroyerPair.largeHoles_or_largeDestroyer
     · right
       omega
 
-/-- Junk test for the aligned-pair cardinal fork.
-
-A finite complement uniformly bounds every literal translated-hole set:
-translation by the stage displacement injects those holes into `Aᶜ`.
-Therefore, once the requested scale is at least twice the complement
-cardinality, the hole side of `largeHoles_or_largeDestroyer` is impossible
-and the finite minimal destroyer must be larger than the complement.
-
-Thus the aligned-stream endpoint is not being treated as intrinsically
-contradictory for fat sets.  On such sets it necessarily enters the
-large-destroyer/co-singleton branch. -/
 theorem finiteComplement_alignedPair_forces_largeDestroyer
     {A K : Set ℕ} {k scale : ℕ}
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
@@ -55723,14 +51479,6 @@ theorem finiteComplement_alignedPair_forces_largeDestroyer
   · omega
   · omega
 
-/-- One infinite deletion carrying an exact translated stream of surviving
-and destroyed successor-order targets.
-
-At every index, `support n` witnesses survival of `sourceTarget n`, while
-the contained inclusion-minimal `destroyer n` witnesses destruction of
-`destroyedTarget n = sourceTarget n + displacement n`.  Both target
-streams are strictly increasing.  This retains substantially more
-arithmetic information than an unaligned survival/destruction stream. -/
 def HasAlignedTranslatedSurvivalDestructionStream
     (A : Set ℕ) (k : ℕ) : Prop :=
   ∃ deletion : Set ℕ,
@@ -55920,15 +51668,6 @@ structure AlignedDoubleSurvivalFusionStep
   upperSupport_point_disjoint :
     Disjoint upperSupport {point}
 
-/-- Cofinal affine-aligned two-support steps fuse into one infinite deletion
-which preserves both levels of the interlaced target stream.
-
-At each stage put the two protected supports into one bounded repair set.
-The marked deletion points lie in strictly later pairwise-disjoint ambient
-blocks, hence are injective.  Bounded cross-avoidance thins the stages so
-that each two-support repair misses every other marked point; the defining
-step already makes it miss its own point.  The retained affine identity is
-therefore not lost during fusion. -/
 theorem cofinalAlignedDoubleSurvivalFusionSteps_fuse_infiniteDeletion
     {A K : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
@@ -56187,14 +51926,6 @@ theorem cofinalAlignedDoubleSurvivalFusionSteps_fuse_infiniteDeletion
         hupperSupportMem (index n),
         hupperDeletion (index n) (hindexL n)⟩
 
-/-- A cofinal aligned exact-target rooted matching supplies an affine
-two-support fusion step at every late source block.
-
-Choose one exact support at `q`.  It has at most `k+1` values, whereas the
-source matching beyond block `i ≥ k+1` has more than `k+1` pairwise-disjoint
-nonempty petals.  Hence their petal union contains a point outside the
-chosen exact support.  Deleting that point preserves the exact support; a
-different source petal preserves `target i`. -/
 theorem HasCofinalAlignedExactTargetRootedMatchings.alignedDoubleSurvivalStepSupply
     {A : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
@@ -56313,14 +52044,6 @@ theorem HasCofinalAlignedExactTargetRootedMatchings.alignedDoubleSurvivalStepSup
       hsourceSub hlowerMatching, hupperMem, hpointCell,
       by simpa using hlowerPoint, hupperPoint⟩⟩
 
-/-- The exact-target horn itself already yields the doubled affine survival
-stream; no target renormalization is required.
-
-The preceding finite step keeps one representation of `q = target i + δ`
-and one representation of `target i` alive at the same marked deletion
-point.  The two-support fusion protects these pairs across all other stages
-and therefore retains the original aligned gap after passing to one
-infinite deletion. -/
 theorem HasCofinalAlignedExactTargetRootedMatchings.fusesInterlacedDoubleSurvival
     {A K : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
@@ -56335,16 +52058,6 @@ theorem HasCofinalAlignedExactTargetRootedMatchings.fusesInterlacedDoubleSurviva
     hKA P htargetStrict
       hgrowth.alignedDoubleSurvivalStepSupply
 
-/-- The aligned exact-target horn is in fact cofinal in every hypothetical
-successor counterexample.
-
-For a requested exact-matching size, first take the uniform threshold from
-`eventually_successorExactRootedMatching`.  Then request the aligned
-translation stage beyond both that threshold and the prescribed source
-block.  Its target `q` lies strictly above `target i`, hence above the
-uniform threshold, so `q` automatically carries the requested exact rooted
-matching.  Thus the exact-target outcome is not a genuine optional branch
-once the original order-`k` basis hypothesis is used globally. -/
 theorem exactBasis_counterexample_forces_cofinalAlignedExactTargetRootedMatchings
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -56403,13 +52116,6 @@ theorem exactBasis_counterexample_forces_cofinalAlignedExactTargetRootedMatching
       hexactSub, hexactLarge, hexactRoot,
       hexactPetal, hexactMatching⟩
 
-/-- Every hypothetical successor counterexample therefore carries one
-infinite deletion preserving both levels of a strictly interlaced affine
-target stream.
-
-This bypasses the exact/reduced/hole/concentration classification entirely:
-the global eventual exact-root theorem supplies the exact side at every
-scheduled aligned stage, and the two-support fusion preserves both sides. -/
 theorem exactBasis_counterexample_forces_interlacedDoubleSurvival
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -56424,13 +52130,6 @@ theorem exactBasis_counterexample_forces_interlacedDoubleSurvival
     hgrowth.fusesInterlacedDoubleSurvival
       hKA P htargetStrict
 
-/-- Junk test for the affine double-survival endpoint.
-
-The full set of naturals already has such a stream at `k = 0`: delete all
-even numbers and use the singleton supports at `4n+1` and `4n+3`.  Thus
-double survival is deliberately an operational counterexample consequence,
-not a proposition which should be treated as intrinsically contradictory
-for intervals or fat sets. -/
 theorem univ_has_interlacedDoubleSurvivalStream_orderZero :
     HasInterlacedDoubleSurvivalStream Set.univ 0 := by
   classical
@@ -56505,11 +52204,6 @@ theorem univ_has_interlacedDoubleSurvivalStream_orderZero :
       ⟨{upper n}, by simpa using hsingleton (upper n),
         hupperDeletion n⟩
 
-/-- Junk test for the cofinal literal-hole fan endpoint.
-
-At index `|Aᶜ|`, translation by the positive stage displacement injects
-more than `|Aᶜ|` holes into the finite complement, an immediate
-cardinality contradiction. -/
 theorem finiteComplement_forbids_cofinalLiteralTranslatedHoleFans
     {A : Set ℕ} {k : ℕ}
     (hcomplement : Aᶜ.Finite) :
@@ -56543,25 +52237,6 @@ theorem finiteComplement_forbids_cofinalLiteralTranslatedHoleFans
     exact Finset.card_le_card hshiftSubset
   exact (Nat.not_lt_of_ge hcard) (hholes n).2.2.1
 
-/-- Exact order-`k` representations of a cofinal literal-hole fan have only
-two finite arithmetic behaviours.
-
-Discard the bounded collection of translates below the eventual basis
-threshold.  The remaining hole translates have chosen order-`k` supports,
-indexed by the source holes themselves.  Applying the indexed bounded-rank
-matching/star dichotomy gives either:
-
-* more than `matchingDemand` pairwise-disjoint representation supports; or
-* one common basis element in more than `anchorDemand` distinct
-  representations.
-
-In the common-anchor branch, remove that occurrence.  Translation by the
-fixed stage displacement followed by subtraction of the common anchor is
-injective on the source holes, so no cardinality is lost: one obtains the
-same number of distinct represented order-`k-1` predecessor targets.
-
-The conclusion retains the original source target, positive displacement,
-rooted source matching, literal holes, and all chosen representations. -/
 theorem HasCofinalLiteralTranslatedHoleFans.forces_representationMatching_or_commonAnchorDescent
     {A : Set ℕ} {k : ℕ}
     (hkpos : 0 < k)
@@ -56770,19 +52445,6 @@ theorem HasCofinalLiteralTranslatedHoleFans.forces_representationMatching_or_com
   · intro a haHole
     exact (hholes n).2.2.2 a haHole
 
-/-- The translated-hole arithmetic recursion cannot descend forever.
-
-Request enough late represented holes for the full recursive threshold.
-The preceding one-step theorem supplies their exact order-`k`
-representations while retaining the source alignment.  Repeated common
-anchors are then peeled into one common offset by
-`indexedAdditiveRepresentations_force_residualMatching`.  Since the
-translated targets are injective, rank zero is impossible, and the output
-is an arbitrarily large pairwise-disjoint residual representation family at
-some positive rank `j ≤ k`.
-
-Thus the literal-hole branch has no permanent concentration horn: it forces
-matching growth after finitely many genuine order descents. -/
 theorem HasCofinalLiteralTranslatedHoleFans.forces_residualRepresentationMatching
     {A : Set ℕ} {k : ℕ}
     (hkpos : 0 < k)
@@ -56962,24 +52624,6 @@ def HasCofinalRepresentedPredecessorFailuresInGaps
     DestroysAt
       (additiveSupportFamily A k) X (m - a)
 
-/-- The doubled-survival branch re-enters the arithmetic attack without
-losing the aligned displacement.
-
-Merge the lower and upper surviving targets and bracket the cofinal
-successor-order failures forced by the counterexample.  Parity gives a
-genuine cardinal fork: failures occur cofinally either inside the aligned
-gaps
-
-`lower n < m < upper n = lower n + displacement n`,
-
-or inside the intervening cross-gaps
-
-`upper n < m < lower (n + 1)`.
-
-In either case the same infinite deletion destroys cofinally represented
-order-`k` predecessor differences.  The explicit displacement equation and
-both original survival streams remain in the conclusion, so this does not
-collapse the branch back to the older unaligned fused endpoint. -/
 theorem HasInterlacedDoubleSurvivalStream.forces_aligned_or_crossGap_failures
     {A : Set ℕ} {k : ℕ}
     (hkpos : 0 < k)
@@ -57151,10 +52795,10 @@ theorem HasInterlacedDoubleSurvivalStream.forces_aligned_or_crossGap_failures
       · dsimp only [request] at hdiffRequest
         omega
 
-/-- The recurrent exact-target horn feeds the retained affine pair directly
+/-- The recurrent exact-target case feeds the retained affine pair directly
 into the existing aligned/cross-gap arithmetic fork.
 
-This is stronger than first projecting the horn to an unlabelled survival
+This is stronger than first projecting the case to an unlabelled survival
 stream: both original target levels and `q = target i + δ` survive on the
 same infinite deletion before counterexample destruction is invoked. -/
 theorem HasCofinalAlignedExactTargetRootedMatchings.forces_aligned_or_crossGap_failures
@@ -57198,14 +52842,6 @@ theorem HasCofinalAlignedExactTargetRootedMatchings.forces_aligned_or_crossGap_f
       hKA P htargetStrict).forces_aligned_or_crossGap_failures
         hkpos hbasis hcounter
 
-/-- Universal counterexample-level affine failure fork.
-
-The unconditional double-survival theorem removes the earlier horn
-classification.  Counterexample destruction can now be bracketed directly
-against the interlaced stream, so every hypothetical counterexample yields
-cofinally many represented order-`k` failures either inside the aligned
-gaps or inside the intervening cross-gaps, on the very same infinite
-deletion. -/
 theorem exactBasis_counterexample_forces_aligned_or_crossGap_failures
     {A : Set ℕ} {k : ℕ}
     (hkpos : 0 < k)
@@ -57240,22 +52876,6 @@ theorem exactBasis_counterexample_forces_aligned_or_crossGap_failures
       hbasis hcounter).forces_aligned_or_crossGap_failures
         hkpos hbasis hcounter
 
-/-- The aligned translated stream has only two global cardinal outcomes.
-
-If non-singleton minimal destroyers occur infinitely often, erase one
-chosen point from each and apply whole-block co-singleton fusion.  The
-private repairs preserve the destroyed targets, while the old protected
-supports preserve the source targets because the new deletion is a subset
-of the old one.  This yields a doubled interlaced survival stream.
-
-Otherwise the pairwise-disjoint destroyers are eventually singletons.
-For every late source rooted matching, translation exit injects all
-basis-valued petal translates into that singleton.  Since the matching
-size grows with the stream index, the remaining literal holes form
-cofinally large fans.
-
-Thus the finite-destroyer cardinal fork is consumed into two operational
-infinite objects; there is no bounded third branch. -/
 theorem HasAlignedTranslatedSurvivalDestructionStream.holeFans_or_doubleSurvival
     {A : Set ℕ} {k : ℕ}
     (hstream :
@@ -57532,20 +53152,6 @@ theorem HasAlignedTranslatedSurvivalDestructionStream.holeFans_or_doubleSurvival
       intro a haHole
       exact (Finset.mem_filter.mp haHole).2
 
-/-- A cofinal supply of exact finite translated pairs fuses into one
-aligned infinite deletion.
-
-Request each new pair beyond both the previous source block and the
-largest block occupied by the previous finite destroyer.  Consequently
-the destroyers are pairwise disjoint and use successively fresh block
-coordinates.  Bounded whole-block cross-avoidance then thins the sequence
-so that every retained support avoids every other retained destroyer.
-Their union is infinite, preserves all retained source supports, and
-contains every retained minimal destroyer.
-
-The inequalities
-`q_i < target (sourceIndex_i + 1) ≤ target sourceIndex_(i+1) < q_(i+1)`
-make the destroyed targets strict as well as the source targets. -/
 theorem cofinalAlignedTailPairs_fuse_translatedStream
     {A K : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
@@ -57847,18 +53453,6 @@ theorem cofinalAlignedTailPairs_fuse_translatedStream
   · intro n
     exact hdestroyed (index n) (hindexL n)
 
-/-- Counterexample-level diagonal alignment with the capacity horn removed.
-
-Instantiate the quadratic moving-root fusion with the exact diagonal
-localized-arithmetic schedule.  Exact-target matching and reduced streams
-are retained as fusion-ready alternatives.  Anchored concentration is
-converted immediately to a pointed support/block witness by choosing the
-covered point of any one prescribed row; no arithmetic or capacity
-subdivision is needed.
-
-Thus every scale of a hypothetical hard-order counterexample has one
-protected-gap-aligned, target-private stage with no terminal old-block or
-small-block escape. -/
 theorem exactBasis_counterexample_forces_cofinalQuadraticTailAlignedResolvedArithmetic
     {A : Set ℕ} {k : ℕ}
     (hk : 2 < k)
@@ -57979,14 +53573,6 @@ theorem exactBasis_counterexample_forces_cofinalQuadraticTailAlignedResolvedArit
           ⟨E, hEmem, j, point,
             hpointCell, hpointDisjoint⟩))))
 
-/-- A hypothetical hard-order counterexample forces one infinite deletion
-with cofinally aligned translated survival/destruction pairs.
-
-This applies the pair extraction to every diagonal stage and then fuses
-the complete finite destroyers, rather than selecting one disposable point
-from each stage.  Hence the equation
-`destroyedTarget n = sourceTarget n + displacement n` survives all the
-way to the counterexample-level conclusion. -/
 theorem exactBasis_counterexample_forces_alignedTranslatedStream
     {A : Set ℕ} {k : ℕ}
     (hk : 2 < k)
@@ -58062,20 +53648,6 @@ theorem cofinalReducedFusionSteps_force_fusedSuccessorPredecessorStreams
     ⟨Y, oldTarget, hYA, hYInfinite, holdStrict,
       holdSurvival, hsuccessorDestroy, hrepresented⟩
 
-/-- Eventual quadratic-tail remainder after every fusion-ready recurrence
-has been removed.
-
-The complete protected-gap-aligned stage is retained.  Three explicit
-cutoffs exclude:
-
-* an aligned exact-target rooted matching of diagonal size;
-* a current-order rooted matching of diagonal size; and
-* an ambient pointed support/block fusion step clearing the diagonal.
-
-The reduced-stream and later-block alternatives of the capacity-resolved
-fork both imply the third predicate.  Hence, after the elementary
-conversion theorem below, only aligned difference growth, represented
-two-rank descent, and repeated-block concentration remain. -/
 def HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady
     (A K : Set ℕ) (k : ℕ)
     (cell : ℕ → Finset ℕ) (target : ℕ → ℕ) : Prop :=
@@ -58088,12 +53660,6 @@ def HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady
       ¬ Nonempty
           (ReducedStreamFusionStep A k cell n n)
 
-/-- The genuinely arithmetic residue of one quadratic-tail stage.
-
-Only the three branches which do not already supply a known infinite
-deletion engine are present: coherent anchored differences, represented
-two-rank destruction, and the repeated-block cluster produced by capacity
-feedback. -/
 def HasQuadraticTailArithmeticResidueAt
     (A : Set ℕ) (k n : ℕ)
     (cell : ℕ → Finset ℕ) : Prop :=
@@ -58193,13 +53759,10 @@ def HasQuadraticTailNormalizedArithmeticAt
         HasAlignedFixedCoreAnchorStar
           A k (n + 1 + k) tailCell Q q hqQ E T)
 
-/-- The repeated-block residue has no fourth behaviour.
-
-Its exact cardinal hypothesis is the threshold of
-`prescribedCommonColumn_repeatedBlock_forces_anchoredArithmeticFork`.
-Consequently it either joins the existing aligned-difference branch,
-already supplies the current-order rooted matching needed by the fusion
-engine, or becomes one coherent fixed-core anchor star. -/
+/-- At the threshold of
+`prescribedCommonColumn_repeatedBlock_forces_anchoredArithmeticFork`, the
+repeated-block case yields an aligned difference, a current-order rooted
+matching, or a coherent fixed-core anchor star. -/
 theorem HasQuadraticTailArithmeticResidueAt.normalizeRepeatedBlock
     {A : Set ℕ} {k n : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -58310,13 +53873,6 @@ theorem HasAlignedFixedCoreAnchorStar.exists_point_outside_support
   subst x
   exact hpointE hxE
 
-/-- Aligned difference growth already contains a pointed fusion step.
-
-Choose any retained difference row.  Its anchor is the row selector's
-chosen point in the repeated block.  But the distinguished support `E` is
-the prescribed surviving column of that same row and is disjoint from the
-whole selector.  Hence the anchor is outside `E`, giving a support/point
-pair without any further pigeonhole or difference composition. -/
 theorem HasAlignedAnchoredDifferenceGrowth.exists_point_outside_commonSupport
     {A : Set ℕ} {k differenceDemand : ℕ}
     {cell : ℕ → Finset ℕ}
@@ -58369,7 +53925,7 @@ theorem HasAlignedAnchoredDifferenceGrowth.exists_point_outside_commonSupport
   exact hanchorE hzE
 
 /-- The final arithmetic residue after both the repeated-cluster matching
-horn and its fixed-core leaf have been exposed to their existing fusion
+case and its fixed-core leaf have been exposed to their existing fusion
 interfaces. -/
 def HasQuadraticTailCoreArithmeticAt
     (A : Set ℕ) (k n : ℕ)
@@ -58393,10 +53949,6 @@ def HasQuadraticTailCoreArithmeticAt
         (additiveSupportFamily A (k - 1))
         (D : Set ℕ) d)
 
-/-- The sole residue after aligned differences are also sent to pointed
-fusion.  The surrounding certificate target is retained so that the
-protected-gap-aligned stage remains available to later arithmetic
-composition. -/
 def HasQuadraticTailTwoRankDescentAt
     (A : Set ℕ) (k n : ℕ) : Prop :=
   ∃ Q : Finset ℕ, ∃ q, ∃ hqQ : q ∈ Q,
@@ -58597,12 +54149,6 @@ theorem HasCapacityResolvedTargetLocalizedArithmeticOutcome.exact_or_current_or_
     refine ⟨E, hEmem, j, point, ?_, hpointDisjoint⟩
     simpa only [hpBlock] using hpointMem
 
-/-- Every capacity-resolved aligned stage either exposes one of the three
-fusion-ready predicates, or belongs to the genuine arithmetic residue.
-
-Both common-column streams and later-block supports are converted to an
-ambient `ReducedStreamFusionStep`.  The diagonal tail begins beyond `n`,
-so the converted block clears the required ambient block floor. -/
 theorem HasQuadraticTailAlignedResolvedArithmeticAt.fusionReady_or_arithmeticResidue
     {A K : Set ℕ} {k n : ℕ}
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
@@ -58722,11 +54268,6 @@ theorem HasQuadraticTailAlignedResolvedArithmeticAt.fusionReady_or_arithmeticRes
       ⟨Q, q, hqQ, hQlower, htargetFloor,
         Or.inr (Or.inr hrepeated)⟩
 
-/-- Every quadratic-tail aligned stage is already fusion-ready.
-
-This strengthens `fusionReady_or_arithmeticResidue`: the localized
-common-column row itself supplies the missing point, so neither coherent
-differences nor two-rank descent survives as a fourth alternative. -/
 theorem HasQuadraticTailAlignedResolvedArithmeticAt.fusionReady
     {A K : Set ℕ} {k n : ℕ}
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
@@ -58792,13 +54333,6 @@ theorem HasQuadraticTailAlignedResolvedArithmeticAt.fusionReady
         hEmem, by simpa only [tailCell] using hpointMem,
         hpointDisjoint⟩⟩
 
-/-- The eventual no-fusion-ready endpoint really contains only the three
-advertised arithmetic residues.
-
-This theorem is the formal branch audit: it invokes the conversion above
-at every late scale and contradicts each of the three stored negative
-predicates.  The original aligned stage is retained alongside the reduced
-arithmetic conclusion. -/
 theorem HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady.onlyArithmeticResidues
     {A K : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
@@ -58827,13 +54361,6 @@ theorem HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady.onlyArithm
   · exact (hnotFusion hfusion).elim
   · exact harithmetic
 
-/-- After the repeated-block cluster is expanded, the stored late
-current-order cutoff removes its rooted-matching horn.
-
-The complete aligned stage is still returned at the same index.  In
-particular its source block, private selector, and translation identity
-`q = target i + δ` remain available beside the normalized arithmetic
-object; this is not an unaligned extraction from another stage. -/
 theorem HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady.onlyNormalizedArithmetic
     {A K : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
@@ -58868,12 +54395,6 @@ theorem HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady.onlyNormal
   · exact hnormalized
   · exact (hnotCurrent hcurrent).elim
 
-/-- All repeated-block geometry is fusion-ready and hence disappears after
-the existing late pointed-fusion cutoff.
-
-Only two arithmetic mechanisms now remain at every sufficiently late
-aligned stage: coherent anchored difference growth, or an actual
-represented two-rank destroyer. -/
 theorem HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady.onlyCoreArithmetic
     {A K : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
@@ -58908,7 +54429,7 @@ theorem HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady.onlyCoreAr
   · exact hcore
   · exact (hnotFusion hfusion).elim
 
-/-- The aligned-difference horn also contradicts the same late pointed
+/-- The aligned-difference case also contradicts the same late pointed
 fusion cutoff.
 
 After this reduction the entire quadratic-tail arithmetic endpoint has one
@@ -58946,14 +54467,6 @@ theorem HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady.onlyTwoRan
   · exact hdescent
   · exact (hnotFusion hfusion).elim
 
-/-- Consume every cofinally recurring fusion-ready member of the
-capacity-resolved diagonal endpoint.
-
-The three recurrence tests are global, not a stage-by-stage classification:
-aligned exact-target matching, current-order matching, and ambient pointed
-fusion.  A cofinal positive answer invokes an existing infinite-deletion
-engine.  Three negative answers supply genuine simultaneous cutoffs while
-leaving the full source alignment at every later scale. -/
 theorem cofinalQuadraticTailAlignedResolvedArithmetic_resolveFusionReady
     {A K : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
@@ -59054,12 +54567,6 @@ theorem cofinalQuadraticTailAlignedResolvedArithmetic_resolveFusionReady
               obtain ⟨step⟩ := hstep
               exact (hNfusion n hnFusion).false step)⟩
 
-/-- The putative non-fusion remainder is empty.
-
-Run the existing recurrence resolver.  In its remainder branch, take one
-stage beyond all three cutoffs.  The direct row-local fusion theorem says
-that very stage is exact-matching, current-matching, or pointed-fusion
-ready, contradicting the corresponding cutoff. -/
 theorem cofinalQuadraticTailAlignedResolvedArithmetic_force_fusedStreams
     {A K : Set ℕ} {k : ℕ}
     {cell : ℕ → Finset ℕ} {target : ℕ → ℕ}
@@ -59089,13 +54596,6 @@ theorem cofinalQuadraticTailAlignedResolvedArithmetic_force_fusedStreams
     · exact (hnotCurrent hcurrent).elim
     · exact (hnotFusion hfusion).elim
 
-/-- Every hypothetical successor-order counterexample above order two
-already produces the fused successor/predecessor deletion.
-
-The quadratic certificate construction supplies an aligned stage at every
-scale.  The preceding theorem consumes all of those stages; the former
-arithmetic and two-rank remainder is empty because one prescribed row
-already yields the pointed fusion step. -/
 theorem exactBasis_counterexample_forces_fusedSuccessorPredecessorStreams
     {A : Set ℕ} {k : ℕ}
     (hk : 2 < k)
@@ -59142,15 +54642,6 @@ theorem exactBasis_counterexample_forces_fusedStreams_or_eventualQuadraticTailAr
       ⟨K, cell, target, hKA, hKInfinite, P,
         htargetStrict, hcellLarge, hremainder⟩
 
-/-- Counterexample-level endpoint after the repeated-block cluster has
-also been consumed.
-
-The former third arithmetic residue cannot persist: its fixed-core leaf
-contains an anchor outside the distinguished support and therefore gives
-the very pointed fusion step excluded by the global cutoff.  A hypothetical
-hard-order counterexample now yields the fused infinite deletion directly,
-or at every late protected-gap-aligned stage only coherent differences or
-a represented two-rank destroyer. -/
 theorem exactBasis_counterexample_forces_fusedStreams_or_eventualQuadraticTailCoreArithmetic
     {A : Set ℕ} {k : ℕ}
     (hk : 2 < k)
@@ -59182,14 +54673,6 @@ theorem exactBasis_counterexample_forces_fusedStreams_or_eventualQuadraticTailCo
         HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady.onlyCoreArithmetic
           P htargetStrict hremainder⟩
 
-/-- Counterexample-level endpoint after the aligned-difference residue has
-also been consumed.
-
-In the non-fused branch every sufficiently late protected-gap stage retains
-its original source block, target bracket, and translation identity, while
-its only arithmetic leaf is a certificate-linked two-rank destroyer.  Since
-all labels of that certificate lie above the diagonal scale, the same old
-destroyer cannot be recycled at every stage. -/
 theorem exactBasis_counterexample_forces_fusedStreams_or_eventualQuadraticTailTwoRankDescent
     {A : Set ℕ} {k : ℕ}
     (hk : 2 < k)
@@ -59221,28 +54704,7 @@ theorem exactBasis_counterexample_forces_fusedStreams_or_eventualQuadraticTailTw
         HasEventuallyQuadraticTailAlignedArithmeticWithoutFusionReady.onlyTwoRankDescent
           P htargetStrict hremainder⟩
 
-/-- Counterexample-level attack using the original strong minimality.
-
-The exact-basis pipeline already produces one infinite deletion `Y` with a
-strict successor-order survival stream, cofinal successor destruction, and
-represented destroyed predecessor differences.  For an actual instance of
-Problem 881, `Y` is also subject to strong minimality at the original order
-`k`.  Apply that current-order destruction stream to the preceding
-same-target translation theorem.
-
-The conclusion keeps both ranks on the same deletion.  At arbitrarily large
-point and target floors, a current-order failure `q` is bracketed above a
-clean successor endpoint.  Removing one average-bounded summand gives a
-clean current-order target `p` with `q = p + δ`, and then either:
-
-* a genuinely missing translated basis point `c + δ ∉ A`; or
-* an actual deleted point `c + δ ∈ Y` whose one-point restoration repairs
-  that same current-order target.
-
-This is the first counterexample-level capstone in the final fused route
-which uses the original order-`k` strong-minimality hypothesis rather than
-only exactness and successor counterexamplehood. -/
-theorem stronglyMinimal_counterexample_forces_cofinalCurrentTranslationBoundaryAttack
+theorem stronglyMinimal_counterexample_forces_cofinalCurrentTranslationBoundaryObstruction
     {A : Set ℕ} {k : ℕ}
     (hk : 2 < k)
     (hminimal : IsStronglyMinimalExactBasis A k)
@@ -59322,26 +54784,6 @@ theorem stronglyMinimal_counterexample_forces_cofinalCurrentTranslationBoundaryA
       holdSurvival, hcurrentDestroy, hsuccessorDestroy,
       hrepresented, hboundary⟩
 
-/-- The current-order repair horn is now fully fused at counterexample
-level.
-
-If rich translated holes are not cofinal, all sufficiently scheduled mixed
-stages are one-point repairs.  Their diagonal fusion gives a strict split
-`B ⊂ Y` with infinitely many restored landing points in `Y \ B`.  On this
-single `B`:
-
-* the selected current-order targets survive;
-* strong minimality forces cofinal current-order destruction;
-* the original protected successor stream still survives because
-  `B ⊆ Y`;
-* counterexamplehood forces cofinal successor-order destruction; and
-* successor bracketing again supplies represented destroyed current-order
-  predecessors.
-
-Thus the repair branch is no longer an escaping co-singleton loop.  It is
-one two-rank survival/destruction configuration on a strict residual
-deletion.  The only other branch retains cofinal literal holes with their
-source support and translation intact. -/
 theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_strictSplitTwoRankStreams
     {A : Set ℕ} {k : ℕ}
     (hk : 2 < k)
@@ -59499,7 +54941,7 @@ theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_strictSplit
   obtain ⟨Y, oldTarget, hYA, hYInfinite,
       holdStrict, holdSurvival, _hcurrentDestroyY,
       _hsuccessorDestroyY, _hrepresentedY, hmixed⟩ :=
-    stronglyMinimal_counterexample_forces_cofinalCurrentTranslationBoundaryAttack
+    stronglyMinimal_counterexample_forces_cofinalCurrentTranslationBoundaryObstruction
       hk hminimal hcounter
   refine
     ⟨Y, oldTarget, hYA, hYInfinite,
@@ -59510,7 +54952,7 @@ theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_strictSplit
         hlandingInjective, hlandingRange,
         hprivateLandingSupport,
         hcurrentDestroyedY, hcurrentSurvivalB⟩ :=
-    cofinalCurrentTranslationBoundaryAttack_forces_holes_or_fusedRepairStream
+    cofinalCurrentTranslationBoundaryObstruction_forces_holes_or_fusedRepairStream
       hYInfinite hmixed
   · exact Or.inl hholes
   · right
@@ -59682,15 +55124,6 @@ theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_strictSplit
         hHnonempty, hqNonempty, hqDestroy,
         hfan⟩
 
-/-- The clean-core rank no longer migrates.
-
-The preceding counterexample capstone supplies a strict lower rank at each
-late aligned stage.  Applying finite cofinal pigeonhole to that rank while
-keeping the complete stage predicate intact yields one fixed `r < k`
-cofinally.  Thus the hypothetical counterexample must choose between the
-literal translated-hole horn and a single lower-order arithmetic stream;
-it cannot evade composition by changing the residual rank from stage to
-stage. -/
 theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_fixedRankPrivateCoreStream
     {A : Set ℕ} {k : ℕ}
     (hk : 2 < k)
@@ -59782,20 +55215,8 @@ theorem stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_fixedRankPr
         hcurrentStrict, hlandingInjective,
         hlandingRange, hrk, hfixedRank⟩
 
-/-- Counterexample-level exhaustion of the residual-target fork.
-
-Starting from one arbitrary strongly minimal counterexample, the fixed-rank
-private-core stream is split by residual target.  The growing-target horn
-cannot have rank zero and is immediately converted into a cofinal
-arithmetic injury.  In the fixed-target horn, the residual support is
-fixed; captured translated roots then give either cofinal literal holes or
-an enriched repair fusion on one strict residual deletion.
-
-Thus no rank, target, support, source root, or source block remains hidden
-behind an existential migration.  The only outer alternative is the
-original cofinal current-order literal-hole stream. -/
 theorem
-    stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_residualArithmeticInjury_or_capturedRootExit
+    stronglyMinimal_counterexample_forces_cofinalCurrentHoles_or_residualArithmeticObstruction_or_capturedRootExit
     {A : Set ℕ} {k : ℕ}
     (hk : 2 < k)
     (hminimal : IsStronglyMinimalExactBasis A k)
@@ -59823,7 +55244,7 @@ theorem
           Function.Injective landing ∧
           (∀ i, landing i ∈ Y \ B) ∧
           r < k ∧
-          (HasCofinalResidualArithmeticInjury
+          (HasCofinalResidualArithmeticObstruction
               A B Y k r oldTarget currentTarget landing ∨
             ∃ t, ∃ K : Finset ℕ,
               K ∈ additiveSupportFamily A r t ∧
@@ -59871,7 +55292,7 @@ theorem
           (HasAlignedPrivateCoreStageAtTarget.rankZero_forces_diagonal
             hstage).1
         omega
-      unfold HasCofinalResidualArithmeticInjury
+      unfold HasCofinalResidualArithmeticObstruction
       exact
         cofinal_alignedPrivateCoreStages_targetGrowth_forces_residualArithmeticExit
           hrpos hgrowth
@@ -59892,16 +55313,7 @@ theorem
           cofinalCapturedFixedRootRepairs_fuse_residualDeletion
             hBInfinite hrootRepairs
 
-/-- One arithmetic-threshold injury carried by a terminal fusion without
-forgetting its fixed source core or its exact affine origin.
-
-The scalar `source` is simultaneously the predecessor of the fused upper
-support and the translate `t + translation` of the fixed core target.
-Thus unpacking the final `HasFixedPredecessorArithmeticInjuryAtFloor`
-witness gives a clean order-`k-1` support at `t + translation` and
-destruction at `t + translation + η`, while the original order-`k` source
-support is still literally `insert marked core`. -/
-def HasTerminalFixedCoreAlignedArithmeticInjuryAtFloor
+def HasTerminalFixedCoreAlignedArithmeticObstructionAtFloor
     (A B C D Y : Set ℕ) (k t ε L : ℕ)
     (landing target root repaired : ℕ → ℕ) : Prop :=
   ∃ Z : Set ℕ,
@@ -59938,24 +55350,11 @@ def HasTerminalFixedCoreAlignedArithmeticInjuryAtFloor
     Disjoint (translatedSupport : Set ℕ) Z ∧
     support = insert marked translatedSupport ∧
     upper = target i + translation ∧
-    HasFixedPredecessorArithmeticInjuryAtFloor
+    HasFixedPredecessorArithmeticObstructionAtFloor
       A Z k source L
 
-/-- Every localized arithmetic threshold is reached on the infinite
-fixed-core fiber itself.
-
-Enumerate the infinite set of stages on which the untranslated source
-support is `insert marked core`.  Source and upper targets remain strict
-after this restriction, so the moving-predecessor arithmetic theorem
-applies to the restricted stream.  Its chosen stage therefore retains the
-same terminal index, landing block, positive translation, and literal
-fixed core.
-
-This is the promised provenance-preserving threshold crossing: the
-arithmetic injury is no longer produced on an unrelated stage after the
-finite-fiber argument. -/
 theorem
-    HasTerminalFixedSourceCoreAlignedFusion.forcesFixedCoreAlignedArithmeticInjuryAtFloor
+    HasTerminalFixedSourceCoreAlignedFusion.forcesFixedCoreAlignedArithmeticObstructionAtFloor
     {A B C D Y : Set ℕ} {k t ε : ℕ}
     {landing target root repaired : ℕ → ℕ}
     (hk : 1 < k)
@@ -59965,7 +55364,7 @@ theorem
       HasTerminalFixedSourceCoreAlignedFusion
         A B C D Y k t ε landing target root repaired) :
     ∀ L,
-      HasTerminalFixedCoreAlignedArithmeticInjuryAtFloor
+      HasTerminalFixedCoreAlignedArithmeticObstructionAtFloor
         A B C D Y k t ε L
           landing target root repaired := by
   classical
@@ -60001,7 +55400,7 @@ theorem
         (hdata (index n)).2.2.2.2.2.2.1⟩
   intro L
   obtain ⟨n, hinjury⟩ :=
-    movingPredecessorStrictSurvivalStream_forces_arithmeticInjuryAtFloor
+    movingPredecessorStrictSurvivalStream_forces_arithmeticObstructionAtFloor
       (A := A) (B := Z) (k := k)
       (source := fun r => source (index r))
       (upper := fun r => upper (index r))
@@ -60083,7 +55482,7 @@ theorem
 /-- The exact terminal fusion itself reaches every arithmetic threshold
 with one fixed source core and all terminal coordinates retained. -/
 theorem
-    HasTerminalAlignedMovingPredecessorSurvivalFusion.forcesFixedCoreAlignedArithmeticInjuries
+    HasTerminalAlignedMovingPredecessorSurvivalFusion.forcesFixedCoreAlignedArithmeticObstructions
     {A B C D Y : Set ℕ} {k t ε : ℕ}
     {landing target root repaired : ℕ → ℕ}
     (hk : 1 < k)
@@ -60093,10 +55492,10 @@ theorem
       HasTerminalAlignedMovingPredecessorSurvivalFusion
         A B C D Y k t ε landing target root repaired) :
     ∀ L,
-      HasTerminalFixedCoreAlignedArithmeticInjuryAtFloor
+      HasTerminalFixedCoreAlignedArithmeticObstructionAtFloor
         A B C D Y k t ε L
           landing target root repaired :=
-  HasTerminalFixedSourceCoreAlignedFusion.forcesFixedCoreAlignedArithmeticInjuryAtFloor
+  HasTerminalFixedSourceCoreAlignedFusion.forcesFixedCoreAlignedArithmeticObstructionAtFloor
     hk hDC hminimal
     (hfused.fixesSourceCore (by omega))
 
@@ -60112,17 +55511,17 @@ def HasTerminalAlignedPredecessorExitOrFixedCoreArithmetic
           (IsTerminalFixedSourceMarkedPoint
             A B C Y k t landing target root repaired)
           k d' ∧
-      (HasCofinalFixedPredecessorArithmeticInjury
+      (HasCofinalFixedPredecessorArithmeticObstruction
           A D' k d' ∨
         HasFixedPredecessorArithmeticGap
           A D' k d')) ∨
     ∀ L,
-      HasTerminalFixedCoreAlignedArithmeticInjuryAtFloor
+      HasTerminalFixedCoreAlignedArithmeticObstructionAtFloor
         A B C D Y k t ε L
           landing target root repaired
 
-/-- Consume the infinite side of the terminal predecessor endpoint while
-leaving an earlier recursive arithmetic exit unchanged. -/
+/-- Resolve the infinite predecessor alternative while preserving any earlier
+arithmetic alternative. -/
 theorem
     HasTerminalAlignedPredecessorExitOrFusion.toExitOrFixedCoreArithmetic
     {A B C D Y : Set ℕ} {k t ε : ℕ}
@@ -60139,11 +55538,11 @@ theorem
   · exact Or.inl hexit
   · exact
       Or.inr
-        (hfused.forcesFixedCoreAlignedArithmeticInjuries
+        (hfused.forcesFixedCoreAlignedArithmeticObstructions
           hk hDC hminimal)
 
 /-- The terminal fixed-displacement theorem with the infinite branch
-promoted from an aligned survival fusion to fixed-core arithmetic injury
+promoted from an aligned survival fusion to fixed-core arithmetic obstruction
 at every scale.
 
 In the boundary-repair branch the descendant deletion is `C' ⊆ C`, so the
@@ -60212,15 +55611,6 @@ theorem
         hterminal.toExitOrFixedCoreArithmetic
           hk hC'C hminimal⟩
 
-/-- A fixed-core terminal fusion restricted to one infinite geometric
-class, with current-order strong minimality already applied at every
-localized threshold.
-
-`geometry upper nextOriginalTarget` distinguishes the two operational
-cases below.  On every retained stage the actual lower support obtained by
-removing the marked point from the fused support is recorded explicitly,
-so neither the affine translation nor the support decomposition can be
-lost when the geometric branch is consumed. -/
 def HasTerminalFixedCoreGeometricArithmeticFusion
     (A B C D Y : Set ℕ) (k t ε : ℕ)
     (landing target root repaired : ℕ → ℕ)
@@ -60276,28 +55666,9 @@ def HasTerminalFixedCoreGeometricArithmeticFusion
         support n =
           insert (marked n) translatedSupport) ∧
     ∀ L, ∃ n ∈ I,
-      HasFixedPredecessorArithmeticInjuryAtFloor
+      HasFixedPredecessorArithmeticObstructionAtFloor
         A Z k (source n) L
 
-/-- The fixed-core threshold stream has an exhaustive geometric split.
-
-On the infinite fixed-core set, partition stages according to whether the
-translated upper target still lies before the next target of its original
-source block.  One side is infinite.  Enumerating that side preserves the
-strict source and upper streams, so strong minimality produces arithmetic
-injury at every scale *inside the same geometric class*.
-
-The left branch is the block-aligned repair regime
-
-`upper n < target (origin n + 1)`.
-
-The right branch is literal boundary crossing
-
-`target (origin n + 1) ≤ upper n`.
-
-This is not a classification detached from the attack: both branches
-already carry the fixed core, the actual translated support, and localized
-destruction on one common infinite deletion. -/
 theorem
     HasTerminalFixedSourceCoreAlignedFusion.sameBlock_or_crossBlock_arithmeticFusion
     {A B C D Y : Set ℕ} {k t ε : ℕ}
@@ -60360,11 +55731,11 @@ theorem
           (hdata (index n)).2.2.2.2.2.2.1⟩
     have hinjury :
         ∀ L, ∃ n ∈ I,
-          HasFixedPredecessorArithmeticInjuryAtFloor
+          HasFixedPredecessorArithmeticObstructionAtFloor
             A Z k (source n) L := by
       intro L
       obtain ⟨r, hr⟩ :=
-        movingPredecessorStrictSurvivalStream_forces_arithmeticInjuryAtFloor
+        movingPredecessorStrictSurvivalStream_forces_arithmeticObstructionAtFloor
           (A := A) (B := Z) (k := k)
           (source := fun n => source (index n))
           (upper := fun n => upper (index n))
@@ -60501,20 +55872,6 @@ theorem
       Nat.lt_of_not_ge hnot
     exact hnNotLocal ⟨hnJ, hlt⟩
 
-/-- Consume the same-block side of the geometric arithmetic fork.
-
-The original source indices occurring on the infinite local set must have
-infinite image.  Otherwise all local upper targets would lie below one
-fixed next-block boundary, contradicting strict growth of the upper
-stream.  Enumerate that infinite image and choose one local stage above
-each enumerated source index.
-
-The exact affine identity and the local inequality then give
-
-`target i < upper < target (i+1) ≤ target i_next`.
-
-Hence the original and translated supports form an honest interlaced
-double-survival stream on the same infinite deletion. -/
 theorem
     HasTerminalFixedCoreGeometricArithmeticFusion.sameBlock_toInterlacedDoubleSurvival
     {A B C D Y : Set ℕ} {k t ε : ℕ}
@@ -60709,8 +56066,8 @@ theorem
             hsupportMem,
         hsupportZ⟩
 
-/-- Consume the cross-block side into cofinally large gap-dominating
-translations with simultaneous arithmetic injury.
+/-- The cross-block case yields cofinally large translations that dominate
+their source gaps and satisfy the arithmetic obstruction.
 
 Ask the existing threshold field at scale `t + L`.  Since `k-1` is
 positive, its source bound forces `L ≤ translation`.  Boundary crossing
@@ -60746,7 +56103,7 @@ theorem
         target (origin n + 1) -
             target (origin n) ≤
           translation n ∧
-        HasFixedPredecessorArithmeticInjuryAtFloor
+        HasFixedPredecessorArithmeticObstructionAtFloor
           A Z k (source n) (t + L) := by
   obtain ⟨Z, source, translation, upper, _marked,
       _support, origin, _landingIndex, _rootShift,
@@ -60802,7 +56159,7 @@ theorem
         (k - 1) * (t + L) ≤ source n := by
       have hcopy := hinjuryN
       unfold
-        HasFixedPredecessorArithmeticInjuryAtFloor at hcopy
+        HasFixedPredecessorArithmeticObstructionAtFloor at hcopy
       obtain ⟨_η, _G, hfloor, _hrest⟩ :=
         hcopy
       exact hfloor
@@ -60828,10 +56185,6 @@ theorem
       ⟨n, hnI, htranslationFloor,
         hgapDominated, hinjuryN⟩
 
-/-- Operational cross-block endpoint: one common infinite deletion carries
-cofinally large exact translations which dominate their source-block gaps,
-and each such stage simultaneously carries localized lower-order
-arithmetic injury. -/
 def HasCofinalGapDominatingTerminalCrossBlockArithmetic
     (A D : Set ℕ) (k t : ℕ)
     (target : ℕ → ℕ) : Prop :=
@@ -60855,7 +56208,7 @@ def HasCofinalGapDominatingTerminalCrossBlockArithmetic
       target (origin n + 1) -
           target (origin n) ≤
         translation n ∧
-      HasFixedPredecessorArithmeticInjuryAtFloor
+      HasFixedPredecessorArithmeticObstructionAtFloor
         A Z k (source n) (t + L)
 
 /-- Pack the raw cross-block consequence into its operational interface. -/
@@ -60881,7 +56234,7 @@ theorem
 
 The local branch has already become an interlaced double-survival stream;
 the crossing branch has already become cofinal gap-dominating arithmetic
-injury.  No unprocessed geometric predicate remains in the conclusion. -/
+obstruction.  No unprocessed geometric predicate remains in the conclusion. -/
 theorem
     HasTerminalFixedSourceCoreAlignedFusion.interlacedDouble_or_gapDominatingCrossBlockArithmetic
     {A B C D Y : Set ℕ} {k t ε : ℕ}
@@ -61178,24 +56531,6 @@ theorem
         ⟨n, m, hnL, hupperM, hmNext,
           hmDestroy, hEnonempty, hfan⟩
 
-/-- Current-order strong minimality attacks an interlaced double-survival
-stream in one of its two literal gap classes.
-
-Merge the lower and upper surviving targets.  The original order-`k`
-strong-minimality hypothesis supplies cofinally many destroyed order-`k`
-targets on the same deletion; the predecessor-fan theorem brackets them
-between consecutive merged targets and descends each one through every
-point of the surviving left support.  Parity then gives an exhaustive
-fork:
-
-* cofinally many fans occur in the affine same-block gaps
-  `lower n < m < upper n`; or
-* cofinally many fans occur in the intervening gaps
-  `upper n < m < lower (n+1)`.
-
-Unlike the successor-counterexample fork, this theorem needs no
-order-`k-1` basis assumption: it uses the original current-order strong
-minimality directly. -/
 theorem
     HasInterlacedDoubleSurvivalStream.forces_currentOrder_aligned_or_crossGap_predecessorFans
     {A : Set ℕ} {k : ℕ}
@@ -61397,14 +56732,14 @@ theorem
       · simpa only [hj, hmergedOdd] using hEmem
 
 /-- Lowering the requested arithmetic floor preserves a fixed-predecessor
-injury. -/
-theorem HasFixedPredecessorArithmeticInjuryAtFloor.mono_floor
+obstruction. -/
+theorem HasFixedPredecessorArithmeticObstructionAtFloor.mono_floor
     {A D : Set ℕ} {k d L L' : ℕ}
     (hL : L' ≤ L)
     (hinjury :
-      HasFixedPredecessorArithmeticInjuryAtFloor
+      HasFixedPredecessorArithmeticObstructionAtFloor
         A D k d L) :
-    HasFixedPredecessorArithmeticInjuryAtFloor
+    HasFixedPredecessorArithmeticObstructionAtFloor
       A D k d L' := by
   obtain ⟨η, G, hfloor, hηpos, hGmem,
       hGD, hshiftDestroy, hexit⟩ :=
@@ -61433,23 +56768,6 @@ theorem HasFixedPredecessorArithmeticInjuryAtFloor.mono_floor
       ⟨c, hL.trans hLc, hcG, hcA, hcD,
         hcShiftA, hcShiftD⟩
 
-/-- The same-block terminal branch now yields a literal fixed-core injury
-on one side of its represented translated endpoint.
-
-The selected source block, exact translation, fixed core, and translated
-lower-order support are all retained.  In the aligned branch the marked
-point is removed from the prescribed support `insert marked core`; hence
-the destroyed predecessor lies strictly between the two represented
-lower-order endpoints
-
-`t < m - marked < t + displacement`.
-
-In the intervening-gap branch the prescribed upper support
-`insert marked translatedSupport` instead puts the marked predecessor
-strictly above `t + displacement`.  Every selected stage also retains an
-arithmetic injury at its own growing floor.  Thus the current-order
-failure, lower-order injury, source block, exact translation, and
-localized threshold all remain synchronized. -/
 theorem
     HasTerminalFixedCoreGeometricArithmeticFusion.sameBlock_currentMinimality_forces_fixedCoreInterior_or_interveningFans
     {A B C D Y : Set ℕ} {k t ε : ℕ}
@@ -61498,7 +56816,7 @@ theorem
             (t + displacement n) ∧
         Disjoint
           (translatedSupport n : Set ℕ) Z ∧
-        HasFixedPredecessorArithmeticInjuryAtFloor
+        HasFixedPredecessorArithmeticObstructionAtFloor
           A Z k (t + displacement n) n ∧
         upperSupport n =
           insert (markedPoint n)
@@ -61543,12 +56861,12 @@ theorem
       ∀ originFloor L, ∃ s,
         s ∈ I ∧
         originFloor ≤ origin s ∧
-        HasFixedPredecessorArithmeticInjuryAtFloor
+        HasFixedPredecessorArithmeticObstructionAtFloor
           A Z k (source s) L := by
     intro originFloor L
     let request :=
       max L (t + target originFloor + 1)
-    obtain ⟨s, hsI, hsInjury⟩ :=
+    obtain ⟨s, hsI, hsObstruction⟩ :=
       hinjury request
     have hrequestL : L ≤ request :=
       le_max_left _ _
@@ -61590,7 +56908,7 @@ theorem
       obtain ⟨_η, _G, hfloor, _hηpos,
           _hGmem, _hGZ, _hshiftDestroy,
           _hexit⟩ :=
-        hsInjury
+        hsObstruction
       have hkFactor : 1 ≤ k - 1 := by
         omega
       have hrequestProduct :
@@ -61599,7 +56917,7 @@ theorem
       omega
     exact
       ⟨s, hsI, hsOrigin,
-        hsInjury.mono_floor hrequestL⟩
+        hsObstruction.mono_floor hrequestL⟩
   let stage : ℕ → ℕ :=
     fun n =>
       Nat.rec
@@ -61648,15 +56966,15 @@ theorem
           (origin (stage n) + 1)
           (n + 1))).2.1
     omega
-  have hstageInjury :
+  have hstageObstruction :
       ∀ n,
-        HasFixedPredecessorArithmeticInjuryAtFloor
+        HasFixedPredecessorArithmeticObstructionAtFloor
           A Z k (source (stage n)) n := by
     intro n
     cases n with
     | zero =>
         change
-          HasFixedPredecessorArithmeticInjuryAtFloor
+          HasFixedPredecessorArithmeticObstructionAtFloor
             A Z k
               (source
                 (Classical.choose
@@ -61666,7 +56984,7 @@ theorem
             (hstageAtFloor 0 0)).2.2
     | succ n =>
         change
-          HasFixedPredecessorArithmeticInjuryAtFloor
+          HasFixedPredecessorArithmeticObstructionAtFloor
             A Z k
               (source
                 (Classical.choose
@@ -61857,7 +57175,7 @@ theorem
             (t + displacement n) ∧
         Disjoint
           (translatedSupport n : Set ℕ) Z ∧
-        HasFixedPredecessorArithmeticInjuryAtFloor
+        HasFixedPredecessorArithmeticObstructionAtFloor
           A Z k (t + displacement n) n ∧
         upperSupport n =
           insert (markedPoint n)
@@ -61883,18 +57201,18 @@ theorem
         hsourceCore, hlocalN,
         _htranslatedSupport⟩ :=
       hselected (stage n) (hstageI n)
-    have hthresholdInjury :
-        HasFixedPredecessorArithmeticInjuryAtFloor
+    have hthresholdObstruction :
+        HasFixedPredecessorArithmeticObstructionAtFloor
           A Z k (t + displacement n) n := by
       dsimp only [displacement]
       rw [← hsourceEq]
-      exact hstageInjury n
+      exact hstageObstruction n
     refine
       ⟨htranslationPos, rfl, ?_, ?_, ?_,
         hmarkedA, ?_, (hlowerSupport n).1,
         (hlowerSupport n).2,
         htranslatedMem n, htranslatedZ n,
-        hthresholdInjury,
+        hthresholdObstruction,
         hupperSupportEq n, (hupperSupport n).1,
         (hupperSupport n).2⟩
     · dsimp only [lowerTarget, markedPoint]
@@ -61944,7 +57262,7 @@ theorem
           _hmarkedA, hlowerSupportEq,
           _hlowerSupportMem, _hlowerSupportZ,
           _htranslatedMem, _htranslatedZ,
-          _hthresholdInjury,
+          _hthresholdObstruction,
           _hupperSupportEq, _hupperSupportMem,
           _hupperSupportZ⟩ :=
         hstageData n
@@ -61974,7 +57292,7 @@ theorem
           _hmarkedA, _hlowerSupportEq,
           _hlowerSupportMem, _hlowerSupportZ,
           _htranslatedMem, _htranslatedZ,
-          _hthresholdInjury,
+          _hthresholdObstruction,
           hupperSupportEq, _hupperSupportMem,
           _hupperSupportZ⟩ :=
         hstageData n
@@ -62000,16 +57318,7 @@ theorem
       hinterlaced, hcoreMem, hcoreZ,
       hstageData, hfinalFork⟩
 
-/-- The operational local endpoint attack, stripped of construction-only
-support names.
-
-At every selected source block, both order-`k` endpoints survive by the
-literal supports `insert marked core` and
-`insert marked translatedSupport`.  The translated lower-order endpoint
-simultaneously carries arithmetic injury at a growing floor.  Current
-strong minimality then supplies cofinal destroyed predecessor targets
-strictly below or strictly above that exact translated endpoint. -/
-def HasCofinalFixedCoreThresholdStraddlingInjuries
+def HasCofinalFixedCoreThresholdStraddlingObstructions
     (A D : Set ℕ) (k t : ℕ)
     (target : ℕ → ℕ) : Prop :=
   ∃ Z : Set ℕ,
@@ -62052,7 +57361,7 @@ def HasCofinalFixedCoreThresholdStraddlingInjuries
         ((insert (markedPoint n)
             (translatedSupport n) :
             Finset ℕ) : Set ℕ) Z ∧
-      HasFixedPredecessorArithmeticInjuryAtFloor
+      HasFixedPredecessorArithmeticObstructionAtFloor
         A Z k (t + displacement n) n) ∧
     ((∀ L, ∃ n m,
       L ≤ n ∧
@@ -62081,7 +57390,7 @@ def HasCofinalFixedCoreThresholdStraddlingInjuries
 /-- Project the fully synchronized same-block theorem to its operational
 fixed-core threshold-straddling interface. -/
 theorem
-    HasTerminalFixedCoreGeometricArithmeticFusion.toCofinalFixedCoreThresholdStraddlingInjuries
+    HasTerminalFixedCoreGeometricArithmeticFusion.toCofinalFixedCoreThresholdStraddlingObstructions
     {A B C D Y : Set ℕ} {k t ε : ℕ}
     {landing target root repaired : ℕ → ℕ}
     (hk : 1 < k)
@@ -62091,7 +57400,7 @@ theorem
       HasTerminalFixedCoreGeometricArithmeticFusion
         A B C D Y k t ε landing target root repaired
           (fun upper nextTarget => upper < nextTarget)) :
-    HasCofinalFixedCoreThresholdStraddlingInjuries
+    HasCofinalFixedCoreThresholdStraddlingObstructions
       A D k t target := by
   obtain ⟨Z, lower, upper, displacement,
       markedPoint, originIndex, lowerSupport,
@@ -62114,14 +57423,14 @@ theorem
       hmarkedA, hlowerSupportEq,
       hlowerSupportMem, hlowerSupportZ,
       htranslatedMem, htranslatedZ,
-      hthresholdInjury, hupperSupportEq,
+      hthresholdObstruction, hupperSupportEq,
       hupperSupportMem, hupperSupportZ⟩ :=
     hdata n
   refine
     ⟨hdisplacementPos, hlowerTarget,
       hlowerMarked, hupperEq, hupperBlock,
       hmarkedA, ?_, ?_, htranslatedMem,
-      htranslatedZ, ?_, ?_, hthresholdInjury⟩
+      htranslatedZ, ?_, ?_, hthresholdObstruction⟩
   · rw [← hlowerSupportEq]
     exact hlowerSupportMem
   · rw [← hlowerSupportEq]
@@ -62131,21 +57440,13 @@ theorem
   · rw [← hupperSupportEq]
     exact hupperSupportZ
 
-/-- The synchronized endpoint attack descends one further rank without any
-normalization assumption.
-
-If the destroyed order-`k-1` predecessor lies below the represented
-translate, descend it through the fixed core at `t`.  If it lies above the
-translate, descend it through the translated support at
-`t + displacement`.  In either case every point of the prescribed
-surviving support gives a destroyed order-`k-2` difference. -/
 theorem
-    HasCofinalFixedCoreThresholdStraddlingInjuries.forces_cofinal_secondRankDescentFans
+    HasCofinalFixedCoreThresholdStraddlingObstructions.forces_cofinal_secondRankDescentFans
     {A D : Set ℕ} {k t : ℕ}
     {target : ℕ → ℕ}
     (hk : 2 < k)
     (hattack :
-      HasCofinalFixedCoreThresholdStraddlingInjuries
+      HasCofinalFixedCoreThresholdStraddlingObstructions
         A D k t target) :
     ∃ Z : Set ℕ,
     ∃ displacement markedPoint originIndex : ℕ → ℕ,
@@ -62168,7 +57469,7 @@ theorem
             (t + displacement n) ∧
         Disjoint
           (translatedSupport n : Set ℕ) Z ∧
-        HasFixedPredecessorArithmeticInjuryAtFloor
+        HasFixedPredecessorArithmeticObstructionAtFloor
           A Z k (t + displacement n) n) ∧
       ((∀ L, ∃ n m,
         L ≤ n ∧
@@ -62226,12 +57527,12 @@ theorem
           _hmarkedA, _hlowerSupportMem,
           _hlowerSupportZ, htranslatedMem,
           htranslatedZ, _hupperSupportMem,
-          _hupperSupportZ, hthresholdInjury⟩ :=
+          _hupperSupportZ, hthresholdObstruction⟩ :=
         hdata n
       exact
         ⟨hdisplacementPos, by omega, by omega,
           htranslatedMem, htranslatedZ,
-          hthresholdInjury⟩
+          hthresholdObstruction⟩
     · intro L
       obtain ⟨n, m, hnL, hnm, hmu,
           hmDestroy, hdiffLower, hdiffUpper,
@@ -62260,7 +57561,7 @@ theorem
           _hmarkedA, _hlowerSupportMem,
           _hlowerSupportZ, _htranslatedMem,
           _htranslatedZ, _hupperSupportMem,
-          _hupperSupportZ, _hthresholdInjury⟩ :=
+          _hupperSupportZ, _hthresholdObstruction⟩ :=
         hdata n
       exact
         ⟨n, m, hnL, by simpa only [hlowerTarget] using hnm,
@@ -62278,12 +57579,12 @@ theorem
           _hmarkedA, _hlowerSupportMem,
           _hlowerSupportZ, htranslatedMem,
           htranslatedZ, _hupperSupportMem,
-          _hupperSupportZ, hthresholdInjury⟩ :=
+          _hupperSupportZ, hthresholdObstruction⟩ :=
         hdata n
       exact
         ⟨hdisplacementPos, by omega, by omega,
           htranslatedMem, htranslatedZ,
-          hthresholdInjury⟩
+          hthresholdObstruction⟩
     · intro L
       obtain ⟨n, m, hnL, hnm, hmu,
           hmDestroy, hdiffLower,
@@ -62294,7 +57595,7 @@ theorem
           _hmarkedA, _hlowerSupportMem,
           _hlowerSupportZ, htranslatedMem,
           htranslatedZ, _hupperSupportMem,
-          _hupperSupportZ, _hthresholdInjury⟩ :=
+          _hupperSupportZ, _hthresholdObstruction⟩ :=
         hdata n
       have htranslatedLower :
           t + displacement n <
@@ -62327,7 +57628,7 @@ theorem
           _hnextLowerSupportZ, _hnextTranslatedMem,
           _hnextTranslatedZ, _hnextUpperSupportMem,
           _hnextUpperSupportZ,
-          _hnextThresholdInjury⟩ :=
+          _hnextThresholdObstruction⟩ :=
         hdata (n + 1)
       exact
         ⟨n, m, hnL, by omega,
@@ -62337,10 +57638,10 @@ theorem
 
 /-- The terminal fixed-core fusion has no residual geometric predicate.
 
-Its same-block side is already a synchronized threshold-straddling attack
+Its same-block side is already a synchronized threshold-straddling obstruction
 at one represented endpoint.  Its boundary-crossing side already has
 cofinally large exact translations dominating their source-block gaps,
-with simultaneous lower-order arithmetic injury. -/
+with simultaneous lower-order arithmetic obstruction. -/
 theorem
     HasTerminalFixedSourceCoreAlignedFusion.forces_thresholdStraddling_or_gapDominatingCrossBlock
     {A B C D Y : Set ℕ} {k t ε : ℕ}
@@ -62352,7 +57653,7 @@ theorem
     (hfused :
       HasTerminalFixedSourceCoreAlignedFusion
         A B C D Y k t ε landing target root repaired) :
-    HasCofinalFixedCoreThresholdStraddlingInjuries
+    HasCofinalFixedCoreThresholdStraddlingObstructions
         A D k t target ∨
       HasCofinalGapDominatingTerminalCrossBlockArithmetic
         A D k t target := by
@@ -62361,17 +57662,13 @@ theorem
       hk hDC hminimal
   · exact
       Or.inl
-        (hlocal.toCofinalFixedCoreThresholdStraddlingInjuries
+        (hlocal.toCofinalFixedCoreThresholdStraddlingObstructions
           hk hminimal htargetStrict)
   · exact
       Or.inr
         (hcross.toCofinalGapDominatingTerminalCrossBlockArithmetic
           hk htargetStrict)
 
-/-- The fixed-core second-rank horn: every selected stage's descent fan
-runs through one finite anchor core representing the untranslated
-endpoint `t`, so the order-`k-2` injuries already have a fixed anchor
-set. -/
 def HasCofinalFixedCoreSecondRankFans
     (A D : Set ℕ) (k t : ℕ)
     (target : ℕ → ℕ) : Prop :=
@@ -62390,7 +57687,7 @@ def HasCofinalFixedCoreSecondRankFans
       target (originIndex n) = markedPoint n + t ∧
       target (originIndex n) + displacement n <
         target (originIndex n + 1) ∧
-      HasFixedPredecessorArithmeticInjuryAtFloor
+      HasFixedPredecessorArithmeticObstructionAtFloor
         A Z k (t + displacement n) n) ∧
     ∀ L, ∃ n m,
       L ≤ n ∧
@@ -62408,11 +57705,7 @@ def HasCofinalFixedCoreSecondRankFans
           (additiveSupportFamily A (k - 2))
           Z ((m - markedPoint n) - a)
 
-/-- The recurring-anchor second-rank horn: one fixed anchor point of the
-translated endpoint supports recurs cofinally along the stream, and at
-every recurring stage the descent fan destroys the order-`k-2`
-difference at that same fixed anchor. -/
-def HasCofinalFixedAnchorSecondRankInjuryStream
+def HasCofinalFixedAnchorSecondRankObstructionStream
     (A D : Set ℕ) (k t : ℕ)
     (target : ℕ → ℕ) : Prop :=
   ∃ Z : Set ℕ, ∃ anchor : ℕ,
@@ -62433,7 +57726,7 @@ def HasCofinalFixedAnchorSecondRankInjuryStream
         additiveSupportFamily A (k - 1)
           (t + displacement n) ∧
       Disjoint (translatedSupport n : Set ℕ) Z ∧
-      HasFixedPredecessorArithmeticInjuryAtFloor
+      HasFixedPredecessorArithmeticObstructionAtFloor
         A Z k (t + displacement n) n) ∧
     ∀ L, ∃ n m,
       L ≤ n ∧
@@ -62456,7 +57749,7 @@ def HasCofinalFixedAnchorSecondRankInjuryStream
           (additiveSupportFamily A (k - 2))
           Z ((m - markedPoint n) - a)
 
-/-- The escaping-anchor second-rank horn: beyond every bound the selected
+/-- The escaping-anchor second-rank case: beyond every bound the selected
 stages' translated supports consist entirely of anchors above that
 bound, so the translated endpoints outgrow every fixed window while the
 descent fans keep firing. -/
@@ -62479,7 +57772,7 @@ def HasCofinalEscapingAnchorSecondRankFans
         additiveSupportFamily A (k - 1)
           (t + displacement n) ∧
       Disjoint (translatedSupport n : Set ℕ) Z ∧
-      HasFixedPredecessorArithmeticInjuryAtFloor
+      HasFixedPredecessorArithmeticObstructionAtFloor
         A Z k (t + displacement n) n) ∧
     ∀ X L, ∃ n m,
       L ≤ n ∧
@@ -62499,26 +57792,16 @@ def HasCofinalEscapingAnchorSecondRankFans
           (additiveSupportFamily A (k - 2))
           Z ((m - markedPoint n) - a)
 
-/-- **The anchor cardinality fork.**  The second-rank descent fans admit
-exactly three shapes.  On the fixed-core side the anchors are one finite
-set for every stage.  On the translated side the per-stage arithmetic
-injury already forces `(k-1) * n ≤ t + displacement n`, so the
-translated endpoints march to infinity and their supports cannot stay
-bounded as sets; the genuine dichotomy is pointwise.  Either some single
-anchor value recurs in the translated supports cofinally — the
-finite cofinal pigeonhole on one bounded window — or beyond every bound
-the selected supports consist entirely of large anchors and the
-endpoints outgrow every window. -/
 theorem
-    HasCofinalFixedCoreThresholdStraddlingInjuries.secondRank_anchor_cardinality_fork
+    HasCofinalFixedCoreThresholdStraddlingObstructions.secondRank_anchor_cardinality_fork
     {A D : Set ℕ} {k t : ℕ}
     {target : ℕ → ℕ}
     (hk : 2 < k)
     (hattack :
-      HasCofinalFixedCoreThresholdStraddlingInjuries
+      HasCofinalFixedCoreThresholdStraddlingObstructions
         A D k t target) :
     HasCofinalFixedCoreSecondRankFans A D k t target ∨
-      HasCofinalFixedAnchorSecondRankInjuryStream
+      HasCofinalFixedAnchorSecondRankObstructionStream
         A D k t target ∨
       HasCofinalEscapingAnchorSecondRankFans
         A D k t target := by
@@ -62683,7 +57966,7 @@ theorem
 
 /-- The terminal interface with the anchor fork resolved: every terminal
 fixed-source aligned fusion yields a fixed-core fan stream, a
-fixed-anchor injury stream, an escaping-anchor fan stream, or the
+fixed-anchor obstruction stream, an escaping-anchor fan stream, or the
 gap-dominating cross-block alternative. -/
 theorem
     HasTerminalFixedSourceCoreAlignedFusion.forces_secondRankAnchorFork_or_gapDominatingCrossBlock
@@ -62697,7 +57980,7 @@ theorem
       HasTerminalFixedSourceCoreAlignedFusion
         A B C D Y k t ε landing target root repaired) :
     HasCofinalFixedCoreSecondRankFans A D k t target ∨
-      HasCofinalFixedAnchorSecondRankInjuryStream
+      HasCofinalFixedAnchorSecondRankObstructionStream
         A D k t target ∨
       HasCofinalEscapingAnchorSecondRankFans
         A D k t target ∨
@@ -62714,15 +57997,6 @@ theorem
     · exact Or.inr (Or.inr (Or.inl h))
   · exact Or.inr (Or.inr (Or.inr hcross))
 
-/-- A rank-`j` descent stream: one infinite deletion `Z` inside `D`
-destroys cofinally many targets at order `j`, while every selected
-target strictly dominates a value carrying a surviving order-`j`
-support disjoint from `Z`.
-
-The surviving support is the descent fuel: each of its points is a
-basis element outside `Z`, so a surviving lower representation of the
-destroyed difference would splice with that point into a surviving
-representation of the target one order up. -/
 def HasRankDescentStream (A D : Set ℕ) (j : ℕ) : Prop :=
   ∃ Z : Set ℕ,
     Z ⊆ D ∧
@@ -62754,16 +58028,16 @@ def HasEscapingRankDescentStream
       Disjoint (S : Set ℕ) Z ∧
       DestroysAt (additiveSupportFamily A j) Z q
 
-/-- The threshold-straddling attack is a rank-`k` descent stream: both
-fork horns destroy current-order targets cofinally, and the retained
+/-- The threshold-straddling obstruction is a rank-`k` descent stream: both
+fork cases destroy current-order targets cofinally, and the retained
 literal endpoint supports `insert marked core` and
 `insert marked translatedSupport` survive strictly below them. -/
 theorem
-    HasCofinalFixedCoreThresholdStraddlingInjuries.toRankDescentStream
+    HasCofinalFixedCoreThresholdStraddlingObstructions.toRankDescentStream
     {A D : Set ℕ} {k t : ℕ}
     {target : ℕ → ℕ}
     (hattack :
-      HasCofinalFixedCoreThresholdStraddlingInjuries
+      HasCofinalFixedCoreThresholdStraddlingObstructions
         A D k t target) :
     HasRankDescentStream A D k := by
   obtain ⟨Z, lower, upper, displacement, markedPoint,
@@ -62799,12 +58073,6 @@ theorem
         by omega, hum, hupperSupportMem,
         hupperSupportZ, hmDestroy⟩
 
-/-- **One rung of the descent recursion.**  A rank-`j+1` descent stream
-either descends to a rank-`j` descent stream — the finite cofinal
-pigeonhole fixes one recurring anchor inside the surviving supports,
-the destroyed target descends through that anchor, and one occurrence
-of the anchor is removed from the surviving representation — or the
-stream's surviving supports escape every bound. -/
 theorem HasRankDescentStream.anchorFork_descend
     {A D : Set ℕ} {j : ℕ}
     (h : HasRankDescentStream A D (j + 1)) :
@@ -62907,10 +58175,6 @@ theorem HasRankDescentStream.anchorFork_descend
         hvq, hXv, ⟨a₀, ha₀⟩, hescape, hSmem, hSZ,
         hdest⟩
 
-/-- **The descent highway.**  Every rank-`j` descent stream with
-`j ≥ 2` either reaches rank 2 — the solved order-two engine's
-vocabulary — or records an escaping stream at some intermediate rank.
-Induction on the rung theorem. -/
 theorem HasRankDescentStream.descends_to_orderTwo_or_escape
     {A D : Set ℕ} {j : ℕ}
     (hj : 2 ≤ j)
@@ -62931,16 +58195,13 @@ theorem HasRankDescentStream.descends_to_orderTwo_or_escape
     · have h2eq : i + 1 = 2 := by omega
       exact Or.inl (h2eq ▸ h)
 
-/-- **The capstone of the descent.**  Every threshold-straddling attack
-descends to a rank-2 stream or leaves an escaping stream at some rank
-in `(2, k]`. -/
 theorem
-    HasCofinalFixedCoreThresholdStraddlingInjuries.forces_orderTwoDescent_or_rankEscape
+    HasCofinalFixedCoreThresholdStraddlingObstructions.forces_orderTwoDescent_or_rankEscape
     {A D : Set ℕ} {k t : ℕ}
     {target : ℕ → ℕ}
     (hk : 2 ≤ k)
     (hattack :
-      HasCofinalFixedCoreThresholdStraddlingInjuries
+      HasCofinalFixedCoreThresholdStraddlingObstructions
         A D k t target) :
     HasRankDescentStream A D 2 ∨
       ∃ j', 2 < j' ∧ j' ≤ k ∧
@@ -62948,13 +58209,7 @@ theorem
   hattack.toRankDescentStream.descends_to_orderTwo_or_escape
     hk
 
-/-- **The order-two fork.**  A rank-2 descent stream splits honestly:
-either cofinally many destroyed targets are order-two deserts — no
-exact pair representation exists at all, a forced sumset gap at pinned
-positions — or cofinally many destroyed targets genuinely carry pair
-supports, every one of which meets the deletion.  The second horn is
-the solved order-two engine's exact object. -/
-theorem HasRankDescentStream.orderTwo_desert_or_wounded
+theorem HasRankDescentStream.orderTwo_exclusion_interval_or_destroyed
     {A D : Set ℕ}
     (h : HasRankDescentStream A D 2) :
     (∃ Z : Set ℕ,
@@ -63007,17 +58262,8 @@ theorem HasRankDescentStream.orderTwo_desert_or_wounded
           le_trans (le_max_left L L₀) hLq,
           hvq, hSmem, hSZ, hE, hdest⟩
 
-/-- **The escape squeeze.**  In the escaping-anchor horn every selected
-stage carries two laws at one translated endpoint `d = t + Δₙ`: the
-escaping support represents `d` with every point above `X`, and the
-arithmetic injury destroys the translate `d + η`.  Descending the
-destroyed translate through the escaping support squeezes an entire
-destroyed order-`k-2` fan into the short window `[η, d + η - X)`
-hanging off the translate, while the linear floor `(k-1)·n ≤ d` and
-the escape bound `X < d` force the endpoint itself to outgrow every
-window.  The escape pays for its liberty with short-range injuries. -/
 theorem
-    HasCofinalEscapingAnchorSecondRankFans.forces_windowSqueezedTranslateFans
+    HasCofinalEscapingAnchorSecondRankFans.forces_windowBoundedTranslateFans
     {A D : Set ℕ} {k t : ℕ}
     {target : ℕ → ℕ}
     (hk : 2 < k)
@@ -63104,11 +58350,11 @@ theorem additiveSupportFamily_exists_dominant_point
         simp [Finset.sum_const, Finset.card_univ,
           smul_eq_mul]
 
-/-- A cofinal exact-pair desert stream, in the order-two engine's own
+/-- A cofinal exact-pair exclusion interval stream, in the order-two engine's own
 elementwise vocabulary: cofinally many targets admit NO exact pair
 decomposition from `A` at all, while a strictly smaller value splits
 into two basis elements outside the deletion. -/
-def HasCofinalPairDesertStream (A D : Set ℕ) : Prop :=
+def HasCofinalPairExclusionIntervalStream (A D : Set ℕ) : Prop :=
   ∃ Z : Set ℕ,
     Z ⊆ D ∧
     Z ⊆ A ∧
@@ -63123,11 +58369,11 @@ def HasCofinalPairDesertStream (A D : Set ℕ) : Prop :=
       s₁ + s₂ = v ∧
       ∀ x ∈ A, ∀ y ∈ A, x + y ≠ q
 
-/-- A cofinal wounded pair stream, in the order-two engine's own
+/-- A cofinal destroyed pair stream, in the order-two engine's own
 elementwise vocabulary: cofinally many pair-covered targets have every
-decomposition meeting the infinite deletion `Z` — `Z` in the hub role
+decomposition meeting the infinite deletion `Z` — `Z` in the support transversal role
 — while a strictly smaller value splits entirely outside `Z`. -/
-def HasCofinalWoundedPairStream (A D : Set ℕ) : Prop :=
+def HasCofinalDestroyedPairStream (A D : Set ℕ) : Prop :=
   ∃ Z : Set ℕ,
     Z ⊆ D ∧
     Z ⊆ A ∧
@@ -63146,18 +58392,13 @@ def HasCofinalWoundedPairStream (A D : Set ℕ) : Prop :=
       ∀ x ∈ A, ∀ y ∈ A, x + y = q →
         x ∈ Z ∨ y ∈ Z
 
-/-- **The engine interface.**  A rank-2 descent stream converts to the
-order-two engine's elementwise vocabulary: a cofinal exact-pair desert
-stream, or a cofinal wounded pair stream with the infinite deletion in
-the hub role.  Supports become explicit pair decompositions in both
-horns. -/
 theorem HasRankDescentStream.orderTwo_engine_interface
     {A D : Set ℕ}
     (h : HasRankDescentStream A D 2) :
-    HasCofinalPairDesertStream A D ∨
-      HasCofinalWoundedPairStream A D := by
+    HasCofinalPairExclusionIntervalStream A D ∨
+      HasCofinalDestroyedPairStream A D := by
   classical
-  rcases h.orderTwo_desert_or_wounded with
+  rcases h.orderTwo_exclusion_interval_or_destroyed with
     ⟨Z, hZD, hZA, hZInf, hstream⟩ |
     ⟨Z, hZD, hZA, hZInf, hstream⟩
   · left
@@ -63246,20 +58487,16 @@ theorem HasRankDescentStream.orderTwo_engine_interface
     · right
       rwa [hyx] at hzZ
 
-/-- **The engine interface at the summit.**  Every threshold-straddling
-attack lands in the order-two engine's elementwise vocabulary — a
-cofinal exact-pair desert stream or a cofinal wounded pair stream —
-or leaves an escaping stream at some rank in `(2, k]`. -/
 theorem
-    HasCofinalFixedCoreThresholdStraddlingInjuries.forces_engineInterface_or_rankEscape
+    HasCofinalFixedCoreThresholdStraddlingObstructions.forces_engineInterface_or_rankEscape
     {A D : Set ℕ} {k t : ℕ}
     {target : ℕ → ℕ}
     (hk : 2 ≤ k)
     (hattack :
-      HasCofinalFixedCoreThresholdStraddlingInjuries
+      HasCofinalFixedCoreThresholdStraddlingObstructions
         A D k t target) :
-    (HasCofinalPairDesertStream A D ∨
-      HasCofinalWoundedPairStream A D) ∨
+    (HasCofinalPairExclusionIntervalStream A D ∨
+      HasCofinalDestroyedPairStream A D) ∨
       ∃ j', 2 < j' ∧ j' ≤ k ∧
         HasEscapingRankDescentStream A D j' := by
   rcases
@@ -63268,16 +58505,8 @@ theorem
   · exact Or.inl h2.orderTwo_engine_interface
   · exact Or.inr hesc
 
-/-- **The quantified squeeze.**  Across the escaping stages the fans
-carry a dominant anchor: some support point `a` holds at least the
-average share `d ≤ (k-1)·a` of its racing endpoint, sits above every
-requested bound, and its fan value `d + η - a` is destroyed at order
-`k-2` while hanging at most a dominant-anchor's distance below the
-destroyed translate.  The endpoints race — `X < d` with the linear
-floor `(k-1)·n ≤ d` — while every stage's deep fan value stays a
-constant fraction short of them. -/
 theorem
-    HasCofinalEscapingAnchorSecondRankFans.forces_deepAnchorSqueeze
+    HasCofinalEscapingAnchorSecondRankFans.forces_deepAnchorBound
     {A D : Set ℕ} {k t : ℕ}
     {target : ℕ → ℕ}
     (hk : 2 < k)
@@ -63304,7 +58533,7 @@ theorem
           (additiveSupportFamily A (k - 2))
           Z (d + η - a) := by
   obtain ⟨Z, hZD, hZA, hZInf, hsq⟩ :=
-    hesc.forces_windowSqueezedTranslateFans hk
+    hesc.forces_windowBoundedTranslateFans hk
   refine ⟨Z, hZD, hZA, hZInf, ?_⟩
   intro X L
   obtain ⟨n, d, η, S, hnL, hfloor, hXd, hηpos,
@@ -63341,12 +58570,6 @@ theorem additiveSupportFamily_nonempty_of_tuple
   apply mem_additiveSupportFamily_iff.mpr
   exact ⟨_, fun i => hvA i, by simpa using hvsum, rfl⟩
 
-/-- **The minimality mine.**  Under strong minimality every infinite
-deletion suffers cofinal NONVACUOUS destruction: the destroyed targets
-genuinely carry order-`k` supports — the basis half supplies the
-representation, the deletion half wounds every one of them.  The choice
-of the deletion is free; this is the wound-field generator behind the
-transport plan. -/
 theorem
     IsStronglyMinimalExactBasis.universal_nonvacuous_destruction
     {A : Set ℕ} {k : ℕ}
@@ -63366,12 +58589,6 @@ theorem
       additiveSupportFamily_nonempty_of_tuple hvA hvsum,
       hdest⟩
 
-/-- **Lever (c) of the transport.**  Either the positive tail of `A` is
-sum-free — the exact hypothesis shape of the order-two closer — or
-cofinally many basis elements split as positive basis pair sums, a
-standing order-lowering repair supply.  The verified digit instances sit
-in the second horn, so the first horn cannot be forced; the fork itself
-is the honest lever. -/
 theorem eventually_sumFreeTail_or_cofinal_sumRich
     (A : Set ℕ) :
     (∃ T, ∀ a ∈ A, T ≤ a →
@@ -63393,11 +58610,6 @@ theorem eventually_sumFreeTail_or_cofinal_sumRich
             ⟨a, haA, hTa, u, huA, v, hvA, hu, hv,
               huv⟩⟩
 
-/-- **Lever (d) of the transport.**  Either every fixed
-positive-difference fiber of `A` is finite — the exact hypothesis shape
-of the order-two closer — or one fixed positive difference carries
-cofinal edges: a standing near-translation structure, the R1-room shape
-of the order-two campaign. -/
 theorem differenceFibers_allFinite_or_cofinalTranslationEdges
     (A : Set ℕ) :
     (∀ g, 0 < g → {x | x ∈ A ∧ x + g ∈ A}.Finite) ∨
@@ -63418,15 +58630,10 @@ theorem differenceFibers_allFinite_or_cofinalTranslationEdges
     obtain ⟨x, hxs, hLx⟩ := hginf.exists_gt L
     exact ⟨x, Nat.le_of_lt hLx, hxs.1, hxs.2⟩
 
-/-- **Side door one: deserts collide with the covering.**  With `0 ∈ A`
-a desert target is a forced NON-member of `A` — its own zero padding
-would be a pair — and every exact tuple representation of it, at any
-length, uses at least three positive parts.  Pair deserts push the
-ambient order-`k` covering into genuinely wide decompositions. -/
-theorem HasCofinalPairDesertStream.forces_nonMember_widePositive
+theorem HasCofinalPairExclusionIntervalStream.forces_nonMember_widePositive
     {A D : Set ℕ}
     (h0 : 0 ∈ A)
-    (hdesert : HasCofinalPairDesertStream A D) :
+    (hdesert : HasCofinalPairExclusionIntervalStream A D) :
     ∃ Z : Set ℕ,
       Z ⊆ D ∧ Z ⊆ A ∧ Z.Infinite ∧
       ∀ L, ∃ q v s₁ s₂,
@@ -63541,11 +58748,6 @@ theorem HasCofinalPairDesertStream.forces_nonMember_widePositive
         hcard
           (hcard3 ▸ Finset.card_le_card hsub)
 
-/-- **Side door two, translated horns feed back.**  The escaping-anchor
-horn re-enters the descent highway one rank down: its destroyed
-predecessors dominate the escaping endpoints, so they are cofinal, and
-the translated supports survive strictly below them.  The escape is not
-a terminal refuge. -/
 theorem
     HasCofinalEscapingAnchorSecondRankFans.toRankDescentStream
     {A D : Set ℕ} {k t : ℕ}
@@ -63569,15 +58771,15 @@ theorem
       translatedSupport n, by omega, hdl, hSmem,
       hSZ, hdd⟩
 
-/-- The fixed-anchor horn also feeds back one rank down: its destroyed
-predecessors dominate the linearly growing translated endpoints. -/
+/-- In the fixed-anchor case, destroyed predecessors define a rank descent
+sequence and dominate the linearly growing translated targets. -/
 theorem
-    HasCofinalFixedAnchorSecondRankInjuryStream.toRankDescentStream
+    HasCofinalFixedAnchorSecondRankObstructionStream.toRankDescentStream
     {A D : Set ℕ} {k t : ℕ}
     {target : ℕ → ℕ}
     (hk : 2 ≤ k)
     (hfixed :
-      HasCofinalFixedAnchorSecondRankInjuryStream
+      HasCofinalFixedAnchorSecondRankObstructionStream
         A D k t target) :
     HasRankDescentStream A D (k - 1) := by
   obtain ⟨Z, anchor, displacement, markedPoint,
@@ -63599,34 +58801,14 @@ theorem
       translatedSupport n, by omega, hdl, hSmem,
       hSZ, hdd⟩
 
-/-- **The three-anchor replay on the wounded stream.**
-
-The order-two closer routed three anchors through a moving guardian
-and a finite prefix.  The wounded pair stream has NO moving guardian —
-its hub is the infinite deletion `Z` itself — so the guardian route is
-gone and TWO anchors already force the fiber kill: if both anchor
-translates `q - r`, `q - r'` lie in `A`, the capture law drives both
-into `Z`, they differ by the fixed gap `r' - r`, and the finite-fiber
-lever bounds `q`.
-
-Under both good horns the replay therefore exports, at every anchor
-pair drawn from the survivors, a total placement law on the wounded
-stream: the target is evicted from the basis or absorbed into `Z`;
-at least one anchor translate is an `A`-desert; every surviving
-translate is captured into `Z`; and the covering pair itself loses a
-part to `Z`.  The k = 2 closer's contradiction needed global pair
-covering to FORCE the anchor translates into `A`; the hard case
-denies that covering, and this theorem converts the denial into
-cofinal forced deserts pinned at every survivor translate.  The
-degenerate alternative `0 ∈ Z` is split off globally. -/
 theorem
-    HasCofinalWoundedPairStream.threeAnchor_transport_export
+    HasCofinalDestroyedPairStream.threeAnchor_transport_export
     {A D : Set ℕ} {T : ℕ}
     (hsumfree : ∀ a ∈ A, T ≤ a →
       ∀ u ∈ A, ∀ v ∈ A, 0 < u → 0 < v → u + v ≠ a)
     (hfibers : ∀ g, 0 < g →
       {x | x ∈ A ∧ x + g ∈ A}.Finite)
-    (hw : HasCofinalWoundedPairStream A D) :
+    (hw : HasCofinalDestroyedPairStream A D) :
     ∃ Z : Set ℕ,
       Z ⊆ D ∧
       Z ⊆ A ∧

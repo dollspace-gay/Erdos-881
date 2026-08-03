@@ -1,19 +1,5 @@
 #!/usr/bin/env python3
-"""Junk tests for the moving private-core stream.
-
-The intended structural endpoint is deliberately local:
-
-* bounded cores thin to a delta system with fixed root ``R``;
-* if infinitely many petals ``core[i] - R`` are nonempty, half of a
-  cross-disjoint thinning forms an infinite deletion while the other half
-  retains a cofinal stream of reconstructed successor-order supports;
-* if the petals eventually vanish, the entire core (and, after finite
-  target pigeonholing, its residual target) is fixed.
-
-The tests below exercise both horns.  They also reject the tempting upgrade
-from a cofinal stream of surviving labels to eventual coverage of every
-integer: a sparse increasing stream still has gaps.
-"""
+"""Finite diagnostic for private core stream."""
 
 from itertools import combinations, product
 
@@ -36,7 +22,7 @@ def delta_root(cores):
 
 
 def base4_fixed_core_stream():
-    """Exact marked cones with a fixed private order-two core."""
+    """Finite diagnostic for base4 fixed core stream."""
     F = {1, 4, 16}
     cores = []
     rows = []
@@ -54,7 +40,7 @@ def base4_fixed_core_stream():
         private = [rep for rep in tuple_reps(A, 3, q)
                    if set(rep) & D == {b}]
         assert private == [(0, 5, b)]
-        # The cone apex is 0, so reinsertion reconstructs the original
+        # The fixed marked element is 0, so reinsertion reconstructs the original
         # successor-rank support without changing the target label.
         assert (0, 0, 5, b) in tuple_reps(A, 4, q)
         core = frozenset(x for x in private[0] if x != b)
@@ -69,9 +55,9 @@ def base4_fixed_core_stream():
     assert root == frozenset({0, 5})
     assert all(not (core - root) for core in cores)
     assert set(old_parts) == {frozenset({1})}
-    # Exactness does not eliminate this horn: the fixed digit basis realizes
-    # it.  Instead split the moving markers, delete one half, and lift the
-    # retained order-three supports by the fixed apex 0 ∈ R.  The support
+    # Exactness does not eliminate this case: the fixed digit basis realizes
+    # it. Instead split the moving markers, delete one half, and lift the
+    # retained order-three supports by the fixed apex 0 ∈ R. The support
     # finset stays {0,5,b}, while its tuple order rises from three to four.
     deleted_markers = {row[0] for row in rows[::2]}
     retained_rows = rows[1::2]
@@ -89,7 +75,7 @@ def base4_fixed_core_stream():
 
 
 def moving_petal_deletion_stream():
-    """Finite prefixes of the empty-root and nonempty-root moving horns."""
+    """Finite diagnostic for moving disjoint remainder deletion stream."""
     count = 20
 
     # Empty root: pairwise-disjoint order-two cores.
@@ -109,8 +95,8 @@ def moving_petal_deletion_stream():
     assert all(targets[i] < targets[i + 2]
                for i in range(1, count - 2, 2))
 
-    # Fixed root plus disjoint nonempty petals.  A fixed collision alone
-    # does not force termination; the moving petals still yield deletion.
+    # Fixed root with disjoint nonempty remainders. A fixed conflict alone
+    # does not force termination; the moving remainders still yield deletion.
     rooted_cores = [frozenset({0, 5, 20 + 10 * i})
                     for i in range(count)]
     rooted_markers = [5000 + 100 * i for i in range(count)]
@@ -129,12 +115,12 @@ def moving_petal_deletion_stream():
     assert all(not (rooted_supports[i] & rooted_deletion)
                for i in range(1, count, 2))
 
-    # These labels are cofinal in the infinite pattern but sparse.  Their
+    # These labels are cofinal in the infinite pattern but sparse. Their
     # survival alone cannot be advertised as eventual basis coverage.
     assert any(targets[i + 2] - targets[i] > 1
                for i in range(1, count - 2, 2))
 
-    # Fat/interval junk satisfies the same support/deletion endpoint.  This
+    # Fat/interval junk satisfies the same support/deletion endpoint. This
     # is a useful non-vacuity warning: arithmetic obstruction enters only in
     # the alternative fixed-core branch or in a later coverage argument.
     fat_A = set(range(max(rooted_apices) + 1))
@@ -142,7 +128,7 @@ def moving_petal_deletion_stream():
 
     # In contrast, the aligned terminal pattern retains a genuine
     # obstruction: one fixed old prefix P plus the moving marker must destroy
-    # every order-three support at marker+t.  No P inside this fat prefix does
+    # every order-three support at marker+t. No P inside this fat prefix does
     # that simultaneously at even these three sample markers.
     fat_prefix = set(range(6))
     fat_markers = [20, 30, 40]
@@ -166,18 +152,13 @@ def moving_petal_deletion_stream():
 
 
 def selector_fusion_boundary():
-    """Structural junk tests for the block-selector bridge.
-
-    These are deliberately arbitrary support hypergraphs, not advertised as
-    additive bases.  They test the set/partition implications used by the
-    bridge and reject two upgrades which require additional arithmetic.
-    """
+    """Finite diagnostic for selector fusion boundary."""
     k = 3
     raw_cells = [frozenset({10 * i, 10 * i + 1}) for i in range(12)]
     X = set().union(*raw_cells)
     assert all(len(cell) <= k - 1 for cell in raw_cells)
 
-    # Coarsen four small cells at a time.  The resulting cells have the room
+    # Coarsen four small cells at a time. The resulting cells have the case
     # required by the selector/fusion theorem and still partition exactly X.
     cells = [frozenset().union(*raw_cells[4 * i:4 * i + 4])
              for i in range(3)]
@@ -198,7 +179,7 @@ def selector_fusion_boundary():
                for support in stored_supports
                for selector in selectors)
 
-    # Destruction by all of X does not descend to a selector subset.  This is
+    # Destruction by all of X does not descend to a selector subset. This is
     # why the formal terminal-fusion proof must reapply the counterexample to
     # its new infinite fused deletion instead of reusing X-destruction.
     arbitrary_family = [frozenset({x}) for x in X]
@@ -206,7 +187,7 @@ def selector_fusion_boundary():
     assert destroys(arbitrary_family, X)
     assert not destroys(arbitrary_family, selector)
 
-    # The fusion theorem's positive-rank horn really can stop at rank one.
+    # The fusion theorem's positive-rank case really can stop at rank one.
     # Likewise, a large minimal transversal at one target says nothing by
     # itself about clean redundancy at every later target.
     chosen = next(iter(selector))
@@ -230,13 +211,7 @@ def selector_fusion_boundary():
 
 
 def certificate_synchronization_boundary():
-    """Junk tests for maximal-target certificate migration.
-
-    The finite descent is valid only when the repaired target is the current
-    maximal destroyed member of one fixed certificate and every larger member
-    remains protected.  A repair at an unrelated cofinal target does not move
-    that measure.
-    """
+    """Finite diagnostic for certificate synchronization boundary."""
     certificate = frozenset({10, 20, 30, 40})
     destroyed = set(certificate)
     maxima = []
@@ -244,7 +219,7 @@ def certificate_synchronization_boundary():
         q = max(destroyed)
         maxima.append(q)
         # Target-local protected repair: q becomes surviving and no larger
-        # certificate target is reintroduced.  Smaller targets may remain.
+        # certificate target is reintroduced. Smaller targets may remain.
         destroyed.remove(q)
         assert all(u < q for u in destroyed)
     assert maxima == [40, 30, 20, 10]
@@ -259,9 +234,9 @@ def certificate_synchronization_boundary():
     assert max(destroyed) == before
 
     # Padding blocks after a proposed bound C can force certificates larger
-    # than C for purely combinatorial reasons.  In this one-block hypergraph,
+    # than C for purely combinatorial reasons. In this one-block hypergraph,
     # selector x destroys only target q_x, so every certificate needs one
-    # target per block point.  Large-certificate growth alone is therefore not
+    # target per block point. Large-certificate growth alone is therefore not
     # a clean-supply conclusion.
     C = 5
     block = tuple(range(C + 3))

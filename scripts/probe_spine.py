@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""Compute the canonical spine of truncated worlds: shells ->
-Higman chain (greedy) -> lineage.  Does the machinery rediscover
-the known branch (Cantor pure powers)?"""
+"""Finite diagnostic for subsequence."""
 
 def cantor(Y):
     out = []
@@ -56,7 +54,7 @@ def higman_embeds(l1, l2):
     return i == len(l1)
 
 def spine(shells):
-    # greedy chain: keep shells that embed forward consecutively
+    # greedy chain: keep rank layers that embed forward consecutively
     chain = [0]
     for j in range(1, len(shells)):
         if higman_embeds(shells[chain[-1]], shells[j]):

@@ -1,18 +1,5 @@
 #!/usr/bin/env python3
-"""Probe: are popular differences themselves basis elements?
-
-The chain STALL -> WEALTH -> SYMMETRY -> TRANSLATION delivers a
-difference d realised many times in A.  To feed it back into the
-CONSTRUCTION via `deletion_criterion` we would split b = d + (b-d),
-which needs d itself in A.  The popular-difference law does not
-give that.  So: measure it.
-
-(a) global: the most-realised differences d, and whether d in A;
-(b) chain-produced: take the wealthiest targets M1 < M2, intersect
-    their symmetry sets, and report d = M2 - M1 and whether d in A.
-Also report whether d is at least a SUM of two basis elements
-(which would still serve the sum-free criterion's triple route).
-"""
+"""Finite diagnostic for popular diff."""
 
 import sys
 

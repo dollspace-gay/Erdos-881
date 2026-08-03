@@ -1,18 +1,5 @@
 #!/usr/bin/env python3
-"""Escape-shape probe on Erdős–Nathanson-style minimal bases.
-
-The final clique escape of `erdos881_grand_assembly''` needs an
-infinite team clique of vertices that are 2-necessary at their own
-scale (¬TwoRedundant at thresholds ≤ u).  The only known ℵ₀-minimal
-bases are the Erdős–Nathanson block constructions, where every
-element IS necessary for its block targets.  Question: do such bases
-carry the order-3 TEAM CLIQUE the escape requires?
-
-  E1  build an E–N-style block basis in a window; find its 2-necessary
-      elements and their witnesses.
-  E2  among necessary elements, enumerate order-3 TeamEdges
-      (pair-destroyed targets) and look for triangles / cliques.
-"""
+"""Finite diagnostic for en escape."""
 
 from __future__ import annotations
 
@@ -25,8 +12,7 @@ from probe_team_guardians import covered_until, team_targets
 
 
 def en_basis(K: int, T: int):
-    """Erdős–Nathanson flavored blocks: A = {0} ∪ ⋃_k [q_k, 3*q_k/2]
-    with q_{k+1} ≈ 2.7 q_k, patched to pair-cover [SLACK, T]."""
+    """Finite diagnostic for en basis."""
     A = set(range(0, SLACK + 2))
     q = SLACK + 2
     while q < T:
@@ -37,8 +23,7 @@ def en_basis(K: int, T: int):
 
 
 def two_necessary(A, lo, hi):
-    """Elements u with some n ∈ [max(u,lo), hi] whose every 2-rep
-    meets u."""
+    """Finite diagnostic for two necessary."""
     As = set(A)
     out = {}
     for u in A:
@@ -64,7 +49,7 @@ def main() -> None:
     print(f"E1: 2-necessary elements: {len(nec)} "
           f"(sample: {sorted(nec)[:10]})")
 
-    # E2: order-3 team edges among necessary elements
+    # E2: order-3 pair transversal edges among necessary elements
     necs = sorted(nec)
     edges = []
     for u, v in combinations(necs, 2):

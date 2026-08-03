@@ -1,25 +1,5 @@
 #!/usr/bin/env python3
-"""Team-interlock experiments (Erdős 881 lab, part 7).
-
-The problem is now: can a thin order-2 basis make its cross-scale team
-hypergraph so dense that no infinite subset dodges every team?  By
-infinite Ramsey this needs an infinite clique of mutual guardianship —
-so the finite questions are about guard-degree and clique structure.
-
-A  TEAM GRAPH of the digit bases: vertices = guards, edges = pairs that
-   jointly guard some target.  Expected from the census: an infinite
-   path (guard-degree ≤ 2-3).  This makes the "chain" claim rigorous.
-B  EDGE COST: for non-adjacent chain guards (a_i, a_j), how many
-   representations of the natural target a_i + a_j avoid the pair?
-   That is the number of deletions a builder would need to create the
-   edge {a_i, a_j}.  Cheap and flat in scale ⇒ interlocking plausible
-   (NO-side); growing with scale ⇒ edges get unaffordable (YES-side).
-C  RANDOM THIN COVERINGS: randomized greedy order-2 bases; census the
-   team structure of each.  If guard-degree stays tiny across random
-   thin bases, boundedness looks forced.
-D  CROSS-SCALE CLIQUE SEARCH: three guards at three separated scales
-   over a base block, exhaustive; any pairwise-guarding triple = alarm.
-"""
+"""Finite diagnostic for pair transversal interlock."""
 
 from __future__ import annotations
 

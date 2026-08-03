@@ -1,34 +1,7 @@
-/-
-# The private-target census, formalized
-
-The laboratory census held at 100% in every trimmed minimal world
-ever built: every element owns a target that only it can serve.
-This file proves the census in the official tuple vocabulary at
-EVERY order: in an exact order-`k` tuple basis, every ESSENTIAL
-element (one whose removal breaks the basis) owns cofinally many
-targets whose every `k`-representation uses it.  At order two the
-representation is pinned completely: the unique pair `{a, n - a}`.
-
-Trimmed lab worlds are exactly the elementwise-minimal case, so
-`private_census_of_elementwise_minimal` is the 100% census: the
-lab observation is a theorem, not a phenomenon.
-
-Shape filter: the conclusions force membership (`a` sits inside
-EVERY representation) and, at order two, force the full
-decomposition — no `x ∈ A + A` vacuity.  Non-vacuous: minimal
-asymptotic bases of order two exist classically, and every
-strongly minimal instance in this repository inhabits the
-hypotheses after trimming.
--/
-
 import Erdos881.AdditiveSupports
 
 namespace Erdos881
 
-/-- **The essential element's private stream, every order.**  If
-`A` is an exact order-`k` tuple basis and deleting `a` breaks
-that, then cofinally many targets are covered AND have every
-`k`-tuple representation pass through `a`. -/
 theorem essential_private_target_stream {A : Set ℕ}
     {k a : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -52,10 +25,6 @@ theorem essential_private_target_stream {A : Set ℕ}
   push Not at hcon
   exact hno v (fun i => ⟨hv i, hcon i⟩) hsum
 
-/-- **The pinned pair at order two.**  An essential element's
-private targets have a UNIQUE decomposition: the pair
-`{a, n - a}` — privateness buys uniqueness for free at order two,
-which is exactly what the laboratory census measured. -/
 theorem essential_unique_pair_tuple {A : Set ℕ} {a : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A 2)
     (hess : ¬ IsExactTupleAsymptoticBasis
@@ -102,10 +71,6 @@ theorem essential_unique_pair_tuple {A : Set ℕ} {a : ℕ}
   · exact Or.inl ⟨h, by omega⟩
   · exact Or.inr ⟨h, by omega⟩
 
-/-- **The 100% census.**  In an elementwise-minimal exact
-order-`k` tuple basis — a trimmed world — EVERY element owns
-cofinally many all-representations-marked targets.  The
-laboratory's universal private-pair census is a theorem. -/
 theorem private_census_of_elementwise_minimal
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)

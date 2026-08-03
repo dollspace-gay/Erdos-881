@@ -1,34 +1,5 @@
 #!/usr/bin/env python3
-"""Probe: the desert economy of the wounded transport export.
-
-`threeAnchor_transport_export` (GeneralOrderAttack.lean) pins every
-wounded pair stream, under the good horns (sum-free tail + finite
-difference fibers), between the fiber kill and the desert economy:
-the enemy escapes only if cofinally many wounded targets q hold pair
-deserts (q - r not in A) at their survivor translates, with captured
-translates confined to Z, while the order-k covering stays alive.
-
-Question: is that configuration AFFORDABLE?
-
-Part A builds adversarial order-3 covering sets that respect the good
-horns as far as possible (greedy: cover every n with at most three
-elements, prefer new elements that are not pair sums and that repeat
-no existing difference).  It reports the horn health: sum-free
-violations and the maximal difference-fiber size.
-
-Part B chooses adversarial deletions Z inside each world, extracts
-the wounded stream (pair-covered targets whose every pair meets Z),
-and measures the per-block economy: wounded counts, desert rates at
-survivor translates, capture counts, and the double-capture pair
-multiplicities that the finite-fiber lever bounds.
-
-Part C is the control: the base-4 digit world (bad horns) with the
-odd-element deletion, where the digit0=2 stream holds TOTAL deserts.
-
-Verdict rule: the fragment is AFFORDABLE if some good-horn world
-sustains a cofinal wounded stream with zero survivor-pair violations
-and an intact covering.
-"""
+"""Finite diagnostic for exclusion interval economy."""
 
 import random
 

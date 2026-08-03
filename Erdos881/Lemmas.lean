@@ -1,14 +1,5 @@
 import Mathlib
 
-/-!
-# Checks for lemmas arising in the investigation of Erdős Problem 881
-
-This file formalizes the combinatorial and logical cores of the main lemmas in
-the shared investigation.  It deliberately separates those cores from the
-number-theoretic definitions, so that Lean checks the actual implications
-without hiding assumptions in notation.
--/
-
 open scoped BigOperators
 
 namespace Erdos881
@@ -405,7 +396,6 @@ theorem not_adaptiveCoreMatchingTendsToInfinityOutsideAlong_iff
   push Not
   rfl
 
-/-- One stage of the adaptive sparse-deletion recursion. -/
 structure AdaptiveSparseDeletionStep
     (R : SupportFamily) (C S : Set ℕ)
     (D : Finset ℕ) (j last : ℕ) where
@@ -432,9 +422,6 @@ theorem adaptiveSparseDeletionStep_nonempty
   obtain ⟨b, hbC, hbF, hbLower⟩ := hC F (max T (last + 1))
   exact ⟨⟨F, T, b, hFD, hmatches, hbC, hbF, hbLower⟩⟩
 
-/-- Finite-menu adaptive growth.  At one deletion stage each member of a
-finite target family may use its own protected core and threshold.  All cores
-avoid the current deletion prefix. -/
 def FiniteMenuAdaptiveCoreMatchingTendsToInfinityOutsideAlong
     {ι : Type*} [Fintype ι]
     (R : SupportFamily) (S : ι → Set ℕ) : Prop :=
@@ -449,7 +436,6 @@ def FiniteMenuAdaptiveCoreMatchingTendsToInfinityOutsideAlong
               ∀ E ∈ M, ∀ E' ∈ M, E ≠ E' →
                 Disjoint (E \ core i) (E' \ core i)
 
-/-- One stage of the finite-menu adaptive sparse-deletion recursion. -/
 structure FiniteMenuAdaptiveSparseDeletionStep
     {ι : Type*} [Fintype ι]
     (R : SupportFamily) (C : Set ℕ) (S : ι → Set ℕ)
@@ -613,7 +599,6 @@ theorem extendableTwoRepairSparseDeletionStep_nonempty
     hextend (max threshold (last + 1))
   exact ⟨⟨threshold, b, hrepair, hbC, hbD, hbLower, hnext⟩⟩
 
-/-- One stage in the two-repair sparse-deletion recursion. -/
 structure TwoRepairSparseDeletionStep
     (R : SupportFamily) (C S : Set ℕ)
     (D : Finset ℕ) (last : ℕ) where
@@ -646,11 +631,6 @@ def HasEventuallySurvivingSupportAlong
   ∃ N, ∀ n ≥ N, n ∈ S →
     ∃ E ∈ R n, Disjoint (E : Set ℕ) B
 
-/- A countable family covers the tail uniformly against arbitrary individual
-thresholds if, after assigning a threshold to every member of the family,
-the portions above those thresholds still cover a tail.  This is exactly the
-uniformity needed to turn countably many relative eventual statements into
-one global eventual statement. -/
 def UniformThresholdCover (S : ℕ → Set ℕ) : Prop :=
   ∀ t : ℕ → ℕ, ∃ N, ∀ n, N ≤ n →
     ∃ i, t i ≤ n ∧ n ∈ S i
@@ -660,11 +640,6 @@ def HasFiniteCofiniteSubcover (S : ℕ → Set ℕ) : Prop :=
   ∃ I : Finset ℕ, ∃ N, ∀ n, N ≤ n →
     ∃ i ∈ I, n ∈ S i
 
-/- On the naturals, resistance to arbitrary coordinatewise thresholds is not
-an extra countable compactness principle: it is equivalent to a finite
-cofinite subcover.  In the reverse direction, if no finite subfamily covers a
-tail, recursively choose `b m` outside the first `m + 1` sets and put the
-threshold of set `i` above `b i`. -/
 theorem uniformThresholdCover_iff_finiteCofiniteSubcover
     {S : ℕ → Set ℕ} :
     UniformThresholdCover S ↔ HasFiniteCofiniteSubcover S := by
@@ -738,10 +713,6 @@ theorem hasEventuallySurvivingSupport_of_countableAlong_of_uniformThresholdCover
   obtain ⟨i, hti, hnS⟩ := hN n hn
   exact hthreshold i n hti hnS
 
-/- Relative matching growth is stable when the protected finite core is
-enlarged.  Starting with `j + |G|` outside-`F` disjoint supports, at most
-`|G|` can become empty after deleting `G`, since those lost supports consume
-distinct vertices of `G`. -/
 theorem matchingTendsToInfinityOutsideAlong_mono_core
     {R : SupportFamily} {F G : Finset ℕ} {S : Set ℕ}
     (hFG : F ⊆ G)
@@ -899,11 +870,6 @@ theorem sparseDeletion_of_matchingTendsToInfinityOutsideAlong
       hMdisj hhit (by simpa [hDcard] using hrM)
     exact ⟨E, hMR hEM, hEB⟩
 
-/-- Sparse deletion with cores chosen adaptively against the finite deletion
-prefix.  At stage `i`, first choose a core avoiding the preceding points;
-then put the new point outside that core and beyond its level-`i+1` matching
-threshold.  The core used for an interval consequently avoids every deletion
-point that can lie below a target in that interval. -/
 theorem sparseDeletion_of_adaptiveCoreMatchingTendsToInfinityOutsideAlong
     {C S : Set ℕ} {R : SupportFamily}
     (hbounded : SupportsBounded R)
@@ -1029,9 +995,6 @@ theorem sparseDeletion_of_adaptiveCoreMatchingTendsToInfinityOutsideAlong
       hMdisj hhit (by simpa [hDcard] using hrM)
     exact ⟨E, hMR hEM, hEB⟩
 
-/-- Finite-menu version of adaptive sparse deletion.  Each target class may
-use a different core at a stage; the next deletion point is selected outside
-the union of all of them. -/
 theorem sparseDeletion_of_finiteMenuAdaptiveCoreMatchingTendsToInfinityOutsideAlong
     {ι : Type*} [Fintype ι]
     {C : Set ℕ} {S : ι → Set ℕ} {R : SupportFamily}
@@ -1165,11 +1128,6 @@ theorem sparseDeletion_of_finiteMenuAdaptiveCoreMatchingTendsToInfinityOutsideAl
       hMdisj hhit (by simpa [hDcard] using hrM)
     exact ⟨E, hMR hEM, hEB⟩
 
-/-- Two disjoint repairs avoiding every finite prefix suffice for sparse
-deletion.  At a stage, choose the next deletion point beyond the repair
-threshold.  For a target before the following deletion point, all later
-points are too large, all earlier points are already avoided, and the newest
-point can meet at most one of the two disjoint repairs. -/
 theorem sparseDeletion_of_twoRepairsDisjointOnDeletionReservoirAlong
     {C S : Set ℕ} {R : SupportFamily}
     (hbounded : SupportsBounded R)
@@ -1289,11 +1247,6 @@ theorem sparseDeletion_of_twoRepairsDisjointOnDeletionReservoirAlong
       exact hfinish E' hE'R hE'old hbE'
     · exact hfinish E hER hEold hbE
 
-/-- Adaptive form of reservoir-relative sparse deletion.  It is unnecessary
-to have the two-repair condition after every finite prefix: one eventually
-good seed and arbitrarily late fresh good extensions suffice.  The chosen
-extensions form the deletion set, while the good-prefix invariant supplies
-the same two-repair protection at every stage. -/
 theorem sparseDeletion_of_extendableTwoRepairPrefixesAlong
     {C S : Set ℕ} {R : SupportFamily} {D₀ : Finset ℕ}
     (hbounded : SupportsBounded R)
@@ -1435,11 +1388,6 @@ theorem sparseDeletion_of_twoDisjointRepairsAvoidingFinitePrefixesAlong
   sparseDeletion_of_twoRepairsDisjointOnDeletionReservoirAlong
     hbounded hrepairs.onDeletionReservoir hC
 
-/- Countable fusion with one common protected core.  At stage `m` the new
-deleted vertex is placed beyond the matching thresholds for the first
-`m + 1` target sets, each at matching size `m + 1`.  Thus every fixed target
-set eventually sees exactly the same sparse-deletion argument as in the
-single-set theorem. -/
 theorem sparseDeletion_of_countable_matchingTendsToInfinityOutsideAlong
     {C : Set ℕ} {S : ℕ → Set ℕ} {R : SupportFamily} {F : Finset ℕ}
     (hbounded : SupportsBounded R)

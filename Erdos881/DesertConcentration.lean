@@ -1,47 +1,3 @@
-/-
-# Desert concentration and the wound bridge
-
-Direct-construction campaign, stage two.  The chain theorem
-(DirectConstruction.lean) reduced Erdős 881 to the clean-redundancy
-supply.  This file classifies how the supply could fail and funnels
-BOTH failure shapes into one census-shaped configuration.
-
-- A target is STRANDED by a finite obstruction `F` when no
-  representation avoids `F`.  Strandedness splits one element at a
-  time: `Stranded (insert f G) ⊆ Stranded G ∪ Pinned G f`
-  (`stranded_insert_split`) — either the smaller obstruction
-  already strands, or the target is PINNED to `f`: representations
-  avoiding `G` exist and every one uses `f`.
-- **Desert concentration** (`stranded_concentration`,
-  `desert_forces_pinned`): an unbounded stranded family over a
-  finite `F` concentrates, by induction over `F`, onto a SINGLE
-  element `f` pinned on an unbounded family — the empty-obstruction
-  horn dies against the basis property.
-- **The census bridge** (`pinned_unbounded_iff_deletion_fails`):
-  an unbounded pinned family at `f` is EXACTLY cofinal destruction
-  by the single deletion `{f}` — `PinnedAt` is the census's
-  essential-element certificate in codeleted worlds.
-- **The wound punches holes** (`pinned_forces_gap`): a target
-  pinned to `b` forbids every `k`-fold subtraction of codeleted
-  elements from landing anywhere in the world except on `b` — one
-  private target rigidifies an entire translate cone.  This is the
-  census machinery aimed at the wound horn.
-- **Supply-failure classification**
-  (`cleanSupply_failure_classification`): if the clean supply
-  fails over a basis, then some finite codeletion pins one FIXED
-  element on an unbounded family, or beyond some bound EVERY
-  element owns a pinned target above itself.  Contrapositively,
-  killing these two census configurations proves the supply and,
-  through the chain theorem, Erdős 881.
-
-Shape filter: pinned conclusions force membership (`f` inside
-every representation) and gap conclusions force non-membership —
-no `x ∈ A + A` vacuity.  Both configurations are inhabited (a
-digit world pins `k·b` targets to no one — supply holds there —
-while artificial atomic worlds realize the horns), so the
-classification is not vacuous.
--/
-
 import Erdos881.DirectConstruction
 
 namespace Erdos881
@@ -54,7 +10,7 @@ def StrandedAt (A : Set ℕ) (h : ℕ) (F : Finset ℕ)
     (∀ i, v i ∈ A ∧ v i ∉ F) ∧ ∑ i, v i = n
 
 /-- Representations avoiding `F` exist and every one uses `f`:
-`n` is pinned to `f` in the codeleted world. -/
+`n` is pinned to `f` in the codeleted model. -/
 def PinnedAt (A : Set ℕ) (h : ℕ) (F : Finset ℕ)
     (f n : ℕ) : Prop :=
   (∃ v : Fin h → ℕ,
@@ -100,10 +56,6 @@ theorem StrandedAt.descend {A : Set ℕ} {h : ℕ}
   · rw [Fin.sum_cons, hwsum]
     omega
 
-/-- **Desert concentration, raw form**: an unbounded stranded
-family over `F` yields an unbounded stranded family over `∅`, or
-one element of `F` pinned on an unbounded family over a smaller
-codeletion. -/
 theorem stranded_concentration (A : Set ℕ) (h : ℕ)
     (F : Finset ℕ)
     (hunb : ∀ M, ∃ n, M ≤ n ∧ StrandedAt A h F n) :
@@ -136,7 +88,7 @@ theorem stranded_concentration (A : Set ℕ) (h : ℕ)
           (hT n (le_trans (le_max_right _ _) hn))
       · exact ⟨n, le_trans (le_max_left _ _) hn, h1⟩
 
-/-- A basis has no unbounded empty-obstruction desert. -/
+/-- A basis has no unbounded empty-obstruction exclusion interval. -/
 theorem stranded_empty_bounded {A : Set ℕ} {h : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h) :
     ∃ T, ∀ n, T ≤ n → ¬ StrandedAt A h ∅ n := by
@@ -146,11 +98,7 @@ theorem stranded_empty_bounded {A : Set ℕ} {h : ℕ}
   exact hstr ⟨v, fun i =>
     ⟨hv i, Finset.notMem_empty _⟩, hsum⟩
 
-/-- **The desert-concentration lemma.**  Over an order-`h` basis,
-a finite obstruction stranding an unbounded family forces one of
-its elements to be pinned on an unbounded family in a codeleted
-world: every desert is a wound in disguise. -/
-theorem desert_forces_pinned {A : Set ℕ} {h : ℕ}
+theorem exclusion_interval_forces_pinned {A : Set ℕ} {h : ℕ}
     {F : Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h)
     (hunb : ∀ M, ∃ n, M ≤ n ∧ StrandedAt A h F n) :
@@ -162,9 +110,6 @@ theorem desert_forces_pinned {A : Set ℕ} {h : ℕ}
     exact absurd hstr (hT n hn)
   · exact h1
 
-/-- **The census bridge**: an unbounded pinned family at `f` is
-exactly cofinal destruction under the single deletion `{f}` from
-the codeleted world — `PinnedAt` certifies essential elements. -/
 theorem pinned_unbounded_iff_deletion_fails {A : Set ℕ}
     {h : ℕ} {F : Finset ℕ} {f : ℕ}
     (hbasis :
@@ -204,12 +149,6 @@ theorem pinned_unbounded_iff_deletion_fails {A : Set ℕ}
         (hw i).2 (Finset.mem_coe.mpr hmem)⟩,
         hwsum⟩, hglue⟩
 
-/-- **The wound punches holes.**  A target pinned to `b` forbids
-every `k`-fold subtraction of codeleted non-`b` elements from
-landing in the world anywhere except on `b`: the private target
-rigidifies its whole translate cone.  This is the census machinery
-aimed at the wound horn — each pinned target yields forced
-non-membership across an unbounded cone of positions. -/
 theorem pinned_forces_gap {A : Set ℕ} {k : ℕ}
     {F : Finset ℕ} {b n : ℕ}
     (hpin : PinnedAt A (k + 1) F b n)
@@ -249,12 +188,6 @@ theorem pinned_forces_gap {A : Set ℕ} {k : ℕ}
       exact (ha j).2.2
   exact hnotb i hi
 
-/-- **Supply-failure classification.**  Over an order-`h` basis,
-a failed clean-redundancy supply forces a census configuration:
-either some finite codeletion pins one FIXED element on an
-unbounded family, or beyond some bound EVERY basis element owns a
-pinned target above itself.  Contrapositively: kill these two
-configurations and the chain theorem delivers the deletion. -/
 theorem cleanSupply_failure_classification {A : Set ℕ}
     {h : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A h)
@@ -285,7 +218,7 @@ theorem cleanSupply_failure_classification {A : Set ℕ}
     exact ⟨(hv i).1, h2.2, h2.1⟩
   by_cases hdes : ∀ M, ∃ n, M ≤ n ∧
       StrandedAt A h F n
-  · exact Or.inl (desert_forces_pinned hbasis hdes)
+  · exact Or.inl (exclusion_interval_forces_pinned hbasis hdes)
   · push Not at hdes
     obtain ⟨T, hT⟩ := hdes
     right

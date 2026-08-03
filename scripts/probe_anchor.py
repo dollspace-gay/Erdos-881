@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""hanchor audit: for each g in a sample, does there exist c in A,
-c>0, c!=g, with w+w' = 2c, w,w' in A, w != c, w != g, w' != g?
-If anchors fail on reasonable worlds, all hanchor-conditioned
-theorems (shell arc, depth tax, stratification) silently exclude
-those worlds."""
+"""Finite diagnostic for anchor."""
 
 def cantor(Y):
     out = []

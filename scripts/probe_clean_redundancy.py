@@ -1,27 +1,5 @@
 #!/usr/bin/env python3
-"""Probe: run the direct construction for real.
-
-`exists_infiniteDeletion_of_cleanSupply` (DirectConstruction.lean)
-reduces the whole frontier to the clean-redundancy supply: after
-deleting any finite stack, some arbitrarily large element b keeps
-every target from b on coverable while avoiding the stack and b.
-
-This probe EXECUTES the chain in concrete worlds: repeatedly find
-the smallest element above the previous pick that is cleanly
-redundant over the accumulated stack (order k+1 coverage of
-[b, N] avoiding stack ∪ {b}), and record how the chain grows.
-
-Readings per world:
-  - chain length reached within the test window and its growth;
-  - the rejection rate: how many candidates fail clean redundancy
-    before one succeeds (0 = the supply is abundant);
-  - where failures happen (near b or global) — if failures cluster
-    just above b, the Lean supply lemma wants a relaxed form
-    (coverage from c(b) ≥ b with bounded offset).
-
-If chains run long with low rejection everywhere, the supply lemma
-is lab-true and the direct route is live.
-"""
+"""Finite diagnostic for clean redundancy."""
 
 import random
 
@@ -120,8 +98,7 @@ def digit_world():
 
 
 def clean_redundant(A, stack, b, order, horizon):
-    """Every n in [b, horizon] covered at `order` avoiding
-    stack ∪ {b}?  Returns (ok, first_failure)."""
+    """Finite diagnostic for clean redundant."""
     banned = set(stack) | {b}
     rest = [a for a in A if a not in banned]
     r = reach(rest, order, horizon)

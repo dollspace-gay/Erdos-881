@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""Numerical feasibility of the four verified constraint books:
-sqrt-growth, closed two-scale funding, spike census, oscillation.
-Scan profiles (alpha, W) at scale n; report the feasible region."""
+"""Finite diagnostic for profile region."""
 
 import math
 

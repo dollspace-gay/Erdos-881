@@ -1,15 +1,6 @@
 import Erdos881.FiniteBlocks
 import Erdos881.ChoiceUnion
 
-/-!
-# Bounded moving transversals
-
-This file states the moving-core obstruction and its descent from order
-`k + 1` to order `k` at the level of finite support hypergraphs.  It also
-records, in exact quantifier form, the additional statement still needed to
-obtain a removable block selector.
--/
-
 namespace Erdos881
 
 /-! ## Failure of finite-core matching -/
@@ -200,10 +191,6 @@ theorem matchingTendsToInfinityOutsideAlong_of_outsideMatchingAlong
   rw [hMcard, hDcard]
   exact hN n hn hnS
 
-/- Conversely, an explicit outside-core matching gives a matching of the
-outside support hypergraph by mapping every support to its nonempty outside
-part.  Pairwise disjoint nonempty outside parts are automatically distinct,
-so cardinality is preserved. -/
 theorem outsideMatchingTendsToInfinityAlong_of_matchingTendsToInfinityOutsideAlong
     {R : SupportFamily} {F : Finset ℕ} {S : Set ℕ}
     (hmatches : MatchingTendsToInfinityOutsideAlong R F S) :
@@ -472,13 +459,6 @@ theorem exists_bounded_extensionTransversal_of_no_twoDisjointRepairs
     exact Set.not_disjoint_iff.mpr
       ⟨x, Finset.mem_coe.mpr hxE, by simpa using hxD⟩
 
-/-- Protected form of the one-support extension argument.  Starting from a
-fixed prefix `D` at a target with no two disjoint `D`-avoiding supports, an
-arbitrary additional finite set `F` gives an exact alternative: either
-`D ∪ F` already destroys the target, or one support surviving `D ∪ F`
-can itself be used as a bounded extension `T`.  In the latter case `T` is
-disjoint from all previously protected vertices, while `D ∪ T` destroys
-the target. -/
 theorem destroysAt_union_or_exists_protectedBoundedExtension_of_no_twoDisjointRepairs
     {A : Set ℕ} {R : SupportFamily} {D F : Finset ℕ} {n r : ℕ}
     (hRA : SupportsIn R A)
@@ -1164,9 +1144,8 @@ theorem failsFiniteCoreMatchingAlong_iff_boundedMovingOutsideTransversalsAlong
       hRA hcard,
     failsFiniteCoreMatchingAlong_of_boundedMovingOutsideTransversalsAlong⟩
 
-/- Exhaustive relative matching dichotomy.  Unlike the unrestricted version,
-the bad branch is recurrent in `S`; the complementary branch gives matching
-growth along `S` outside one finite core. -/
+/- Either matching growth occurs along `S` outside one finite core, or bounded
+moving transversals recur along `S`. -/
 theorem exists_finiteCore_outsideMatchingAlong_or_boundedMovingAlong
     {A S : Set ℕ} {R : SupportFamily} {r : ℕ}
     (hRA : SupportsIn R A)

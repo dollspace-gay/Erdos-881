@@ -1,24 +1,3 @@
-/-
-# The base-4 carry repair (Erdős 881, k = 3 positive mechanism)
-
-`CantorCarryRepair` one order up.  Deleting the pure powers `{4^k}`
-from the base-4 digit-{0,1} set destroys the diagonal targets `3·4^k`
-at order 3 completely — the diagonal is rigid
-(`base4_triple_of_three_mul`), so its unique representation
-`(4^k, 4^k, 4^k)` dies with the deletion.  Order 4 repairs every
-destroyed scale through the base-4 carry `1+1+1+1 = 10₄`, which no
-order-3 sum of digit-{0,1} numbers can produce:
-
-* `4^k   = (84 + 84 + 68 + 20)·4^(k-4)`  (256 = 4⁴),
-* `2·4^k = (272 + 80 + 80 + 80)·4^(k-4)` (512),
-* `3·4^k = (341 + 337 + 85 + 5)·4^(k-4)` (768),
-
-with every part a base-4 digit-{0,1} number that is not a pure power.
-The 2026-08-02 laboratory verified the full deletion survives at
-order 4 with threshold 54; these menus are the creative core of that
-theorem, and the general-target sieve is the remaining assembly.
--/
-
 import Erdos881.Base4Instance
 
 namespace Erdos881Base4
@@ -169,9 +148,6 @@ lemma not_pure_85 : ¬∃ t, (85 : ℕ) = 4 ^ t :=
 lemma not_pure_5 : ¬∃ t, (5 : ℕ) = 4 ^ t :=
   not_pure_of_bounds (L := 1) (by norm_num) (by norm_num)
 
-/-- **The carry menu for `4^k`** (`k ≥ 4`):
-`84 + 84 + 68 + 20 = 256`, all parts digit-{0,1}, none a power.
-The four 1-bits in the `4¹` column carry: `1+1+1+1 = 10₄`. -/
 theorem base4_carry_repair (k : ℕ) (hk : 4 ≤ k) :
     ∃ w x y z, IsBase4 w ∧ IsBase4 x ∧ IsBase4 y ∧
       IsBase4 z ∧
@@ -202,8 +178,6 @@ theorem base4_carry_repair (k : ℕ) (hk : 4 ≤ k) :
     rw [h1, h3]
     ring
 
-/-- **The carry menu for `2·4^k`** (`k ≥ 4`):
-`272 + 80 + 80 + 80 = 512`, all parts digit-{0,1}, none a power. -/
 theorem base4_carry_repair_double (k : ℕ) (hk : 4 ≤ k) :
     ∃ w x y z, IsBase4 w ∧ IsBase4 x ∧ IsBase4 y ∧
       IsBase4 z ∧
@@ -237,8 +211,6 @@ theorem base4_carry_repair_double (k : ℕ) (hk : 4 ≤ k) :
     rw [h4]
     ring
 
-/-- **The carry menu for the diagonal casualties `3·4^k`** (`k ≥ 4`):
-`341 + 337 + 85 + 5 = 768`, all parts digit-{0,1}, none a power. -/
 theorem base4_carry_repair_triple (k : ℕ) (hk : 4 ≤ k) :
     ∃ w x y z, IsBase4 w ∧ IsBase4 x ∧ IsBase4 y ∧
       IsBase4 z ∧
@@ -272,12 +244,6 @@ theorem base4_carry_repair_triple (k : ℕ) (hk : 4 ≤ k) :
     rw [h4]
     ring
 
-/-- **The demonstrator.**  At every scale `k ≥ 4` the powers deletion
-kills the diagonal `3·4^k` at order 3 completely — every order-3
-representation uses a pure power — while order 4 repairs it with four
-digit-{0,1} parts, none a power.  The deletion that destroys order 3
-is invisible to order 4: the exact conclusion pattern of Erdős 881
-for `k = 3`, on the verified hard-case instance. -/
 theorem base4_demonstrator (k : ℕ) (hk : 4 ≤ k) :
     (∀ x y z, IsBase4 x → IsBase4 y → IsBase4 z →
       x + y + z = 3 * 4 ^ k → ∃ j, x = 4 ^ j) ∧

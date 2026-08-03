@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
-"""Probe: sumset completeness of wealthy streams.
-
-The corridor kill needs: W_T + (A minus D) contains a tail of N
-(W_T = targets with r2 > T).  Measure in candidate worlds:
-- coverage: fraction of [M, 2M) representable as w + a with
-  r2(w) > T, a in A, for growing T
-- server stats: how many wealthy servers per integer
-If coverage is 100% with margin, the completeness conjecture is
-lab-true and the formal target is real.
-"""
+"""Finite diagnostic for completeness."""
 
 import sys
 sys.path.insert(0, 'scripts')

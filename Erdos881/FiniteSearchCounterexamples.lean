@@ -1,14 +1,5 @@
 import Erdos881.GadicLaboratory
 
-/-!
-# Additive counterexamples discovered by finite search
-
-The search in `scripts/search_additive_repair_obstructions.py` found the
-support pattern `{0,1}`, `{0,2}` at target `2`.  Translating it by `L` and
-placing a cofinite tail above the target embeds the pattern at arbitrarily
-late targets of a genuine exact order-two basis.
--/
-
 namespace Erdos881
 
 /-- The shifted four-point gadget, followed by a tail strictly above its

@@ -1,39 +1,8 @@
 import Erdos881.HuggingSplice
 
-/-!
-# The total clique kill: single redundancy suffices
-
-The hugging splice still assumed *joint* redundancy of each pair.
-This file removes that: for `x` below the window `v - u`, the
-avoiding representation of `u + x` supplied by single redundancy of
-`u` dodges `v` automatically.  Consequently, for **any** destroyer of
-an edge at a 2-redundant guard:
-
-* `upper_desert_of_redundant` — between the channels (inside the
-  window) no element exists away from the two diagonals;
-* `level_lower_of_redundant` — the level `m - v` cannot lag far
-  behind the window `v - u`: three stacked covering windows would
-  starve in that desert (two diagonal values spoil at most two);
-* `redundant_edge_mirror` — the fork mirror at level `m - v` on the
-  full window, with truncation handling the out-of-range promise;
-* `surviving_deletion_of_redundant_edges` — **a 2-redundant guard
-  with partners carrying destroyers above every bound forces a
-  surviving deletion.  No hugging, clearance, or joint-redundancy
-  hypothesis remains.**
-
-With this, the only clique escape left is a clique of *ineligible*
-vertices: members `u` that are 2-necessary at some witness above
-every threshold `N₁ ≤ u` — the Grekos-type finiteness object
-(Open Link B1).
--/
-
 namespace Erdos881
 
-/-- **Upper desert, single redundancy.**  Inside the window
-(`u + x < v`) and above the `v`-channel (`m < v + x`), away from the
-two diagonals, no element can exist: redundancy of `u` alone pins the
-`u`-channel shut and the `v`-channel is out of range. -/
-theorem IsPairDestroyer.upper_desert_of_redundant
+theorem IsPairDestroyer.upper_exclusion_interval_of_redundant
     {A : Set ℕ} {N₀ N₁ u v m x : ℕ}
     (hcov : PairCovers A N₀)
     (hred : TwoRedundant A u N₁)
@@ -62,9 +31,6 @@ theorem IsPairDestroyer.upper_desert_of_redundant
   · omega
   · omega
 
-/-- **Levels cannot lag the window.**  If `m - v` were far below
-`v - u`, three stacked covering windows would land in the upper
-desert; the two diagonal values spoil at most two of them. -/
 theorem IsPairDestroyer.level_lower_of_redundant
     {A : Set ℕ} {N₀ N₁ u v m : ℕ}
     (hcov : PairCovers A N₀)
@@ -78,7 +44,7 @@ theorem IsPairDestroyer.level_lower_of_redundant
   have hkill : ∀ x ∈ A, m - v < x → u + x < v → x + N₀ ≤ m →
       x ≠ u → x ≠ m - 2 * u → x ≠ m - u - v → False := by
     intro x hxA hxl hxw hxm hxu hxd1 hxd2
-    exact hdes.upper_desert_of_redundant hcov hred huv hN₁ hxA hxu
+    exact hdes.upper_exclusion_interval_of_redundant hcov hred huv hN₁ hxA hxu
       hxm (by omega) hxw (by omega) (by omega) (by omega)
   have hwin : ∀ q, W ≤ q → q + u + N₀ < v →
       ∃ x ∈ A, 2 * x ≥ q ∧ x ≤ q := by
@@ -103,10 +69,6 @@ theorem IsPairDestroyer.level_lower_of_redundant
     exact hkill x₁ hx₁A (by omega) (by omega) (by omega) (by omega)
       e₁.1 e₁.2
 
-/-- **The fork mirror at a redundant edge.**  Every element inside
-the window reflects through the level `m - v` (truncation makes the
-out-of-range promise vacuous), with defects only at `u` and the two
-diagonals. -/
 theorem IsPairDestroyer.redundant_edge_mirror
     {A : Set ℕ} {N₀ N₁ u v m z : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -162,13 +124,6 @@ theorem IsPairDestroyer.redundant_edge_mirror'
   hdes.redundant_edge_mirror h0 hcov hred huv hvm hN₁ hz hzu
     (by omega) (by omega) hzw
 
-/-- **The total clique kill.**  A 2-redundant guard whose partners
-carry destroyers above every bound forces a surviving infinite
-deletion — no hugging, clearance, or joint-redundancy hypothesis.
-Levels are at least `~(v - u)/18` by `level_lower_of_redundant`, so
-they grow with partners; windows swallow all lower data by partner
-choice; the quad-defect engine runs with defects
-`u, v, m - 2u, m - u - v`. -/
 theorem surviving_deletion_of_redundant_edges
     {A : Set ℕ} {N₀ N₁ u c : ℕ}
     (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
@@ -351,26 +306,19 @@ theorem surviving_deletion_of_redundant_edges
       L j ≠ pm (b (κ k)) - u - pv (b (κ k))
     exact ⟨by omega, by omega, by omega, by omega⟩
 
-/-- **The grand assembly, final form.**  Under cofinal pair funnels
-and anchor abundance, a counterexample structure has exactly three
-escapes: a surviving deletion (contradiction with counterexamplehood),
-cofinal zero-guardianship, or an infinite team clique **all of whose
-positive, above-threshold vertices fail 2-redundancy at every
-eligible threshold** — the Grekos-type finiteness object of Open Link
-B1.  Every redundant vertex, whatever its edges look like, is dead. -/
-theorem erdos881_grand_assembly'' {A : Set ℕ} {N₀ : ℕ}
+theorem erdos881_combined_criterion'' {A : Set ℕ} {N₀ : ℕ}
     (hA : A.Infinite) (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hfunnel : HasCofinalPairFunnels A)
+    (hfunnel : HasCofinalPairTransversalFamilies A)
     (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
       w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g) :
     (∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
       ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
         x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n) ∨
     (∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m) ∨
-    (∃ L, L ⊆ A ∧ L.Infinite ∧ L.Pairwise (TeamEdge A) ∧
+    (∃ L, L ⊆ A ∧ L.Infinite ∧ L.Pairwise (PairTransversalEdge A) ∧
       ∀ u ∈ L, 0 < u → N₀ ≤ u → ∀ N₁, N₁ ≤ u →
         ¬ TwoRedundant A u N₁) := by
-  rcases infinite_teamClique_or_cofinal_privatePairs hA hfunnel with
+  rcases infinite_pairTransversalClique_or_cofinal_privatePairs hA hfunnel with
     ⟨L, hLA, hLinf, hLcl⟩ | ⟨L, hLA, hLinf, hstream⟩
   · by_cases hel : ∃ u ∈ L, 0 < u ∧ N₀ ≤ u ∧ ∃ N₁, N₁ ≤ u ∧
         TwoRedundant A u N₁
@@ -401,13 +349,6 @@ theorem erdos881_grand_assembly'' {A : Set ℕ} {N₀ : ℕ}
       · exact absurd hpriv
           (hN₂ v m (le_trans (le_max_right _ _) hm) hv0)
 
-/-- **The escape vertices are self-scale 2-guardians.**  A vertex
-failing 2-redundancy at its own scale has a witness `n ≥ u` whose
-every two-term representation passes through `u`; its corep `n - u`
-is an element and the entire two-support is `{u, n - u}`.  The final
-clique escape of `erdos881_grand_assembly''` is therefore an infinite
-clique of elements each two-guarding a target at or above its own
-scale — the Grekos-type configuration of Open Link B1. -/
 theorem escape_vertex_witness {A : Set ℕ} {N₀ u : ℕ}
     (hcov : PairCovers A N₀)
     (hu : ¬ TwoRedundant A u u) (huN : N₀ ≤ u) :
@@ -433,25 +374,19 @@ theorem escape_vertex_witness {A : Set ℕ} {N₀ u : ℕ}
     · exact Or.inl h
     · exact Or.inr (by omega)
 
-/-- **The final conditional theorem.**  Modulo the three remaining
-open interfaces — cofinal pair funnels (Link A), no infinite clique of
-self-scale 2-guardians (Link B1, the Grekos configuration), and no
-cofinal zero-guardianship — plus anchor abundance, every counterexample
-structure admits a surviving infinite deletion: the positive answer to
-Erdős 881 (k = 2). -/
 theorem erdos881_positive_conditional {A : Set ℕ} {N₀ : ℕ}
     (hA : A.Infinite) (h0 : 0 ∈ A) (hcov : PairCovers A N₀)
-    (hfunnel : HasCofinalPairFunnels A)
+    (hfunnel : HasCofinalPairTransversalFamilies A)
     (hanchor : ∀ g, ∃ c ∈ A, 0 < c ∧ c ≠ g ∧ ∃ w ∈ A, ∃ w' ∈ A,
       w + w' = 2 * c ∧ w ≠ c ∧ w ≠ g ∧ w' ≠ g)
     (hzero : ¬ ∀ N, ∃ m, N ≤ m ∧ IsPrivateTriple A 0 m)
-    (hB1 : ¬ ∃ L, L ⊆ A ∧ L.Infinite ∧ L.Pairwise (TeamEdge A) ∧
+    (hB1 : ¬ ∃ L, L ⊆ A ∧ L.Infinite ∧ L.Pairwise (PairTransversalEdge A) ∧
       ∀ u ∈ L, 0 < u → N₀ ≤ u → ∀ N₁, N₁ ≤ u →
         ¬ TwoRedundant A u N₁) :
     ∃ B ⊆ A, B.Infinite ∧ ∀ n, N₀ ≤ n →
       ∃ x ∈ A, ∃ y ∈ A, ∃ z ∈ A,
         x ∉ B ∧ y ∉ B ∧ z ∉ B ∧ x + y + z = n := by
-  rcases erdos881_grand_assembly'' hA h0 hcov hfunnel hanchor with
+  rcases erdos881_combined_criterion'' hA h0 hcov hfunnel hanchor with
     h | h | h
   · exact h
   · exact absurd h hzero

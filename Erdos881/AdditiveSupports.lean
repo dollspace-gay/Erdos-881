@@ -301,9 +301,6 @@ theorem IsEventuallySyndetic.exists_nearby_not_mem_finset
   exact ⟨b, (hB b hbB).1, hbT, (hB b hbB).2.1,
     (hB b hbB).2.2⟩
 
-/- A finite union of translates `Q + A` covers a tail exactly when `A` is
-eventually syndetic.  Thus a finite/cofinite translate cover is a genuine
-bounded-gap hypothesis, not a consequence of merely being an additive basis. -/
 theorem exists_finiteTargetTranslates_cofinite_iff_eventuallySyndetic
     {A : Set ℕ} :
     (∃ Q : Finset ℕ, ∃ N, ∀ n, N ≤ n →
@@ -408,11 +405,6 @@ theorem boundedMovingOnFiniteTranslates_iff_byAnchor
     exact ⟨n, T, q, a, hn, hqQ, haA, hnqa,
       hTA, hTF, hTcard, htrans⟩
 
-/- The row-building form of recurrence along `Q + A`.  It discards the
-uniform cardinality bound after retaining the features needed by the
-diagonal construction: an arbitrarily late translate anchor, a new nonempty
-finite core outside every protected finite set, and full successor
-destruction by that core alone. -/
 def HasFullTranslateDestroyersByAnchor
     (A : Set ℕ) (k : ℕ) (Q : Finset ℕ) : Prop :=
   ∀ F : Finset ℕ, (F : Set ℕ) ⊆ A → ∀ L,
@@ -436,9 +428,6 @@ def IsFullAlignedTranslateDestroyerFamily
       DestroysAt
         (additiveSupportFamily A (k + 1)) (T : Set ℕ) n
 
-/- Full translate recurrence constructs a row of any prescribed finite size,
-disjoint from an arbitrary protected finite set.  This is the finite engine
-used at every stage of the diagonal construction. -/
 theorem exists_fullAlignedTranslateDestroyerFamily_card_disjoint
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ}
     (hrecur : HasFullTranslateDestroyersByAnchor A k Q)
@@ -630,9 +619,6 @@ theorem IsAnchoredAlignedTranslateCellFamily.toFullFamily
   rw [hCeq]
   exact Finset.mem_coe.mpr (Finset.mem_insert_of_mem hxT)
 
-/- Override an arbitrary base selector on the dedicated cell blocks by the
-distinguished anchors.  The new selector is disjoint from every anchor-erased
-cell, and every newly introduced selected vertex is one of the anchors. -/
 theorem exists_blockSelector_overriding_dedicatedAnchors
     {A : Set ℕ} {F : ℕ → Finset ℕ} {𝒞 : Finset (Finset ℕ)}
     (P : IsFiniteBlockPartition A F)
@@ -696,11 +682,6 @@ theorem exists_blockSelector_overriding_dedicatedAnchors
     next _h =>
       exact Or.inl ⟨i, hi⟩
 
-/- For a target-localized minimal certificate, overriding each private
-selector by the large dedicated anchors preserves all the other targets.
-The certificate then forces the overridden selector to destroy its own target
-again.  All resulting target-indexed selectors are simultaneously disjoint
-from every anchor-erased dedicated cell. -/
 theorem exists_targetLocalized_anchorSelectors_of_minimalCertificate
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ} (hQ : Q.Nonempty)
     {F : ℕ → Finset ℕ} {𝒞 : Finset (Finset ℕ)}
@@ -807,9 +788,6 @@ theorem exists_targetLocalized_anchorSelectors_of_minimalCertificate
     simpa [r'] using hrq ▸ hrdestroy
   exact ⟨hdestroyq, hotherSurvives q, hselectorDisjoint q⟩
 
-/- If distinct anchored cells lie in distinct partition blocks, choose their
-distinguished anchors in those blocks and choose arbitrary elements elsewhere.
-The resulting global selector is disjoint from every anchor-erased cell. -/
 theorem exists_blockSelector_disjoint_anchoredCellErasures
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ} {L : ℕ}
     {𝒞 : Finset (Finset ℕ)}
@@ -936,13 +914,6 @@ def HasCertificateAlignedDestroyerRowPartition
           Function.Injective locate ∧
           ∀ c, c.2.1 ⊆ F (locate c)
 
-/- Enumerate every nonempty finite target set and recursively protect all
-vertices used by earlier rows.  The row dedicated to `Q` has
-`2 * k * |Q| + 1` cores and all of its translate anchors exceed `max Q`.
-
-This theorem is deliberately conditional on full recurrence for every
-nonempty `Q`: the relative-growth alternative is handled separately by the
-finite-translate dichotomy. -/
 theorem exists_diagonalFullAlignedTranslateDestroyerRows
     {A : Set ℕ} {k : ℕ}
     (hrecur : ∀ Q : Finset ℕ, Q.Nonempty →
@@ -1138,10 +1109,6 @@ theorem HasDiagonalAnchoredAlignedTranslateCellRows.toFullRows
   intro j
   exact ⟨(hrows j).1.toFullFamily, (hrows j).2⟩
 
-/- Generic partition completion for a countable family of finite rows.  It
-retains a bijective locator from every row cell to the block containing it:
-the construction has exactly one distinguished row cell in every completed
-block. -/
 theorem exists_finiteBlockPartition_for_disjointRows
     {A : Set ℕ} {rows : ℕ → Finset (Finset ℕ)}
     (hrowsNonempty : ∀ j, (rows j).Nonempty)
@@ -1252,10 +1219,6 @@ theorem HasDiagonalAnchoredAlignedTranslateCellRows.exists_rowPartition
   exact ⟨enumerate, henumerate, rows, hrows, hcross,
     F, P, locate, hlocate.1, hcell⟩
 
-/- Flatten the globally disjoint rows into a countable core sequence and use
-the existing partition-completion construction.  This is the literal bridge
-from the diagonal rows to a partition on which strong deletion can return a
-finite certificate. -/
 theorem HasDiagonalFullAlignedTranslateDestroyerRows.exists_rowPartition
     {A : Set ℕ} {k : ℕ}
     (hdiag : HasDiagonalFullAlignedTranslateDestroyerRows A k) :
@@ -1332,10 +1295,6 @@ theorem HasDiagonalFullAlignedTranslateDestroyerRows.exists_rowPartition
   rw [e.apply_symm_apply] at hc
   exact hc
 
-/- The finite package obtained after strong deletion chooses a certificate:
-the certificate target set `Q`, its dedicated oversized diagonal row, and an
-injective assignment of every core in that row to a distinct block of the
-same certified partition. -/
 def HasFiniteCertificateWithDedicatedLargeRow
     (A : Set ℕ) (k N : ℕ) : Prop :=
   ∃ Q : Finset ℕ, ∃ hQ : Q.Nonempty,
@@ -1369,10 +1328,6 @@ def HasFiniteCertificateWithDedicatedAnchoredRow
           Function.Injective locate ∧
           ∀ C, C.1 ⊆ F (locate C)
 
-/- The same package after shrinking the strong-deletion certificate to a
-cardinal-minimal subcertificate.  The additional localization clause says
-that each remaining target has a selector which destroys exactly that target
-among the certificate targets. -/
 def HasFiniteMinimalCertificateWithDedicatedAnchoredRow
     (A : Set ℕ) (k N : ℕ) : Prop :=
   ∃ Q : Finset ℕ, ∃ hQ : Q.Nonempty,
@@ -1476,10 +1431,6 @@ theorem HasCertificateAlignedAnchoredCellRowPartition.finiteCertificateWithDedic
   exact ⟨Q, hQ, hQN, F, P, hcert, rows j,
     hfamily, hcard, locateRow, hlocateRow, hrowCell⟩
 
-/- Strong deletion first supplies a finite certificate on the aligned row
-partition.  Shrinking it to a cardinal-minimal subcertificate preserves its
-late lower bound; the diagonal enumeration then supplies the dedicated row
-for the smaller, target-localized certificate itself. -/
 theorem HasCertificateAlignedAnchoredCellRowPartition.finiteMinimalCertificateWithDedicatedRow
     {A : Set ℕ} {k : ℕ}
     (hpartition : HasCertificateAlignedAnchoredCellRowPartition A k)
@@ -1543,10 +1494,6 @@ def HasSingletonTranslateMatchingGrowth
       (additiveSupportFamily A (k + 1)) F
       (finiteTargetTranslates A {q})
 
-/- Growth on a finite union `Q + A` is equivalent to growth on every one of
-its singleton translates, with possibly different initial cores.  For the
-reverse implication, union the finitely many cores and take the maximum of
-the finitely many matching thresholds. -/
 theorem finiteTargetTranslateGrowth_iff_singletonTranslateGrowth
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ} :
     (∃ F : Finset ℕ, (F : Set ℕ) ⊆ A ∧
@@ -1740,10 +1687,6 @@ theorem card_pairwiseDisjoint_additiveDestroyers_over_finiteTargets_le
     finiteSupportChoiceUnion_card_le
       (additiveSupportFamily_cardAtMost A h) c
 
-/- One additional (possibly infinite) destroyer can be counted together with
-a finite matching whenever it is disjoint from every member of that matching.
-Only one intersection point with its assigned support is used, so the same
-finite support-union injection applies. -/
 theorem card_pairwiseDisjoint_additiveDestroyers_with_disjoint_extra_le
     {A B : Set ℕ} {h : ℕ} {Q : Finset ℕ}
     {𝒟 : Finset (Finset ℕ)}
@@ -1821,10 +1764,6 @@ theorem card_pairwiseDisjoint_additiveDestroyers_with_disjoint_extra_le
     finiteSupportChoiceUnion_card_le
       (additiveSupportFamily_cardAtMost A h) c
 
-/- If every certified target has its own extra destroyer, and each ordinary
-destroyer is disjoint from the extra destroyer for its assigned target, count
-fiberwise over the target map.  Each target fiber plus its private extra uses
-at most `h` vertices of the chosen support for that target. -/
 theorem card_additiveDestroyers_with_targetwise_disjoint_extras_le
     {A : Set ℕ} {h : ℕ} {Q : Finset ℕ}
     {𝒟 : Finset (Finset ℕ)}
@@ -1944,11 +1883,6 @@ theorem card_additiveDestroyers_with_targetwise_disjoint_extras_subtype
     c hpair targetTotal htargetTotal hdestroyTotal extra hextra
       hdisjointTotal
 
-/- Every selector in one finite certificate destroys some target in the same
-finite set `Q`.  Therefore any pairwise-disjoint family of such selectors is
-bounded by the usual `k * |Q|` support-union count.  This is the exact
-quantitative payoff available from trying several disjoint certificate
-selectors. -/
 theorem card_pairwiseDisjoint_additiveCertificateSelectors_le
     {A : Set ℕ} {k r : ℕ} {Q : Finset ℕ} {F : ℕ → Finset ℕ}
     (c : FiniteSupportChoice (additiveSupportFamily A k) Q)
@@ -1995,10 +1929,6 @@ theorem card_pairwiseDisjoint_additiveCertificateSelectors_le
     finiteSupportChoiceUnion_card_le
       (additiveSupportFamily_cardAtMost A k) c
 
-/- The certificate-selector bound is sharp already at order one.  Partition
-`ℕ` into adjacent pairs.  Every selector chooses either `0` or `1` from block
-zero, so `{0,1}` is a certificate; the all-even and all-odd selectors are
-disjoint and attain `k * |Q| = 2`. -/
 private def sharpPairBlocks (i : ℕ) : Finset ℕ :=
   {2 * i, 2 * i + 1}
 
@@ -2145,11 +2075,6 @@ theorem exists_smallBlock_of_additiveSelectorCertificate
     c hcert selectors hpair
   omega
 
-/- Minimal target localization gives one anchor-overridden extra destroyer
-for every `q ∈ Q`.  Counting the predecessor-destroying erasures separately
-over their assigned targets improves the bad-erasure bound from
-`k * |Q| - 1` to `(k - 1) * |Q|`.  Hence at least `|Q| + 1` dedicated cells
-have non-destroying anchor erasures. -/
 theorem exists_many_nonDestroyingErasures_of_minimalCertificate
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ} (hQ : Q.Nonempty)
     {𝒞 : Finset (Finset ℕ)} {F : ℕ → Finset ℕ}
@@ -2419,11 +2344,6 @@ theorem exists_commonTarget_many_nonDestroyingErasures_of_minimalCertificate
   have htarget : target C = qsub := Subtype.ext htargetVal
   exact ⟨htarget, by simpa [htarget] using hnot C hCrepair⟩
 
-/- Quantitative payoff of putting anchors in their cells.  For the selector
-which chooses all row anchors, the certificate contributes one destroyer
-disjoint from every anchor-erased predecessor destroyer.  Therefore an
-oversized row of `k * |Q| + 1` cells has at least two erasures which fail to
-destroy their assigned predecessor targets. -/
 theorem exists_anchorData_two_nonDestroyingErasures_of_certificate
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ} {L : ℕ}
     {𝒞 : Finset (Finset ℕ)} {F : ℕ → Finset ℕ}
@@ -2949,10 +2869,6 @@ theorem IsExactTupleAsymptoticBasis.succ
     rw [hvsum]
     exact Nat.add_sub_of_le han
 
-/- Cofinitely many private witnesses at order `k + 1` imply strong infinite
-deletion at the preceding order.  If a deletion left an exact order-`k`
-basis, the preceding padding theorem would leave an exact order-`k + 1`
-basis, contradicting one of the arbitrarily late private witnesses. -/
 theorem strongInfiniteDeletion_predecessor_of_cofiniteSingletonDestruction
     {A : Set ℕ} {k : ℕ}
     (hsingle : HasCofiniteSingletonDestruction
@@ -3210,11 +3126,6 @@ theorem exists_recurrentBoundedPrefixExtension_of_not_twoDisjointRepairs
       (additiveSupportFamily_cardAtMost A (k + 1)) hno
   exact ⟨n, T, hn, hnS, hTA, hTD, hTcard, hdestroy⟩
 
-/- Protected recursive form of the two-repair obstruction.  The same fixed
-prefix `D` works after protecting any additional finite set `F`: arbitrarily
-late, either the accumulated set `D ∪ F` already destroys the target, or a
-single successor support `T`, disjoint from all of `D ∪ F`, extends `D` to
-a destroyer. -/
 theorem exists_recurrentProtectedExtensionDichotomy_of_not_twoDisjointRepairs
     {A S : Set ℕ} {k : ℕ}
     (hnot : ¬ HasTwoDisjointRepairsAvoidingFinitePrefixesAlong
@@ -3243,11 +3154,6 @@ theorem exists_recurrentProtectedExtensionDichotomy_of_not_twoDisjointRepairs
       (additiveSupportFamily_cardAtMost A (k + 1)) hno
   exact ⟨n, hn, hnS, hdichotomy⟩
 
-/- Iterated finite normal form of the same obstruction.  For every requested
-depth `r`, either `r` pairwise-disjoint successor supports have been built,
-each becoming a destroyer after adjoining the same prefix `D`, or the
-iteration stops at a smaller matching because `D` together with everything
-built so far already destroys a late successor target. -/
 theorem exists_recursiveExtensionFamily_or_accumulatedDestroyer_of_not_twoDisjointRepairs
     {A S : Set ℕ} {k : ℕ}
     (hnot : ¬ HasTwoDisjointRepairsAvoidingFinitePrefixesAlong
@@ -3269,10 +3175,6 @@ theorem exists_recursiveExtensionFamily_or_accumulatedDestroyer_of_not_twoDisjoi
     exists_protectedBoundedExtensionFamily_or_accumulatedDestroyer
       (additiveSupportFamily_supportsNonempty A (by omega)) hrecur
 
-/- Exact failure branch for the reservoir-relative criterion.  The fixed
-prefix lies inside the deletion reservoir, and every moving extension can
-also be chosen entirely inside that reservoir.  Vertices retained outside
-`C` never enter the moving transversal. -/
 theorem exists_recurrentBoundedReservoirExtension_of_not_twoRepairs
     {A C S : Set ℕ} {k : ℕ}
     (hnot : ¬ HasTwoRepairsDisjointOnDeletionReservoirAlong
@@ -3301,10 +3203,6 @@ theorem exists_recurrentBoundedReservoirExtension_of_not_twoRepairs
       (additiveSupportFamily_cardAtMost A (k + 1)) hno
   exact ⟨n, hn, hnS, hdichotomy⟩
 
-/- Exact negation of finite-core absorption, expressed as recurrent data.
-No matter which finite core `F₀` is retained, a new finite prefix appears in
-the remaining reservoir and gives the protected bounded-extension
-dichotomy arbitrarily late. -/
 theorem recurrentReservoirExtensions_of_noFiniteRetainedCoreTwoRepairs
     {A S : Set ℕ} {k : ℕ}
     (hnot : ¬ HasFiniteRetainedCoreTwoRepairsAlong A k S) :
@@ -3324,12 +3222,6 @@ theorem recurrentReservoirExtensions_of_noFiniteRetainedCoreTwoRepairs
   apply exists_recurrentBoundedReservoirExtension_of_not_twoRepairs
   exact (not_hasFiniteRetainedCoreTwoRepairsAlong_iff.mp hnot) F₀
 
-/- Failure after every finite retained core produces a genuinely fresh full
-successor destroyer.  Retain the arbitrary protected set `F₀`, take the
-recurrent obstruction in its complement, and invoke its inner dichotomy with
-no additional protected vertices.  The resulting `D` or `D ∪ T` is wholly
-outside `F₀`; eventual successor representability rules out an empty
-destroyer. -/
 theorem exists_freshFullDestroyerAlong_of_noFiniteRetainedCoreTwoRepairs
     {A S : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -3381,10 +3273,6 @@ theorem exists_freshFullDestroyerAlong_of_noFiniteRetainedCoreTwoRepairs
     exact ⟨n, C, le_trans (le_max_left N K) hn, hnS,
       hCnonempty, hCA, hCF₀, by simpa [C] using hDTdestroy⟩
 
-/- On a finite union of translates, the preceding fresh destroyer carries
-the explicit translate data required by the certificate-row construction.
-The target threshold is raised by `Q.max' hQ` so that the recovered anchor is
-at least the requested lower bound. -/
 theorem fullTranslateDestroyersByAnchor_of_noFiniteRetainedCoreTwoRepairs
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -3402,10 +3290,6 @@ theorem fullTranslateDestroyersByAnchor_of_noFiniteRetainedCoreTwoRepairs
   exact ⟨n, T, q, a, hLa, hqQ, haA, hnqa,
     hTA, hTF, hTnonempty, hdestroy⟩
 
-/- Finite/cofinite translate-cover bridge.  If `Q + A` contains a tail, then
-global failure of finite-core absorption restricts to that translate set and
-therefore produces the full aligned destroyers used by the certificate-row
-construction. -/
 theorem fullTranslateDestroyersByAnchor_of_cofiniteTranslates_globalNoFiniteCore
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -3419,10 +3303,6 @@ theorem fullTranslateDestroyersByAnchor_of_cofiniteTranslates_globalNoFiniteCore
   exact not_hasFiniteRetainedCoreTwoRepairsAlong_of_global_failure
     hnot hcofinite
 
-/- Exhaustive bounded-gap decision boundary.  Either finite-core absorption
-already gives the desired infinite successor-order deletion, or one can
-choose a cofinite translate cover whose labels are all beyond the order-`k`
-representation threshold and on which fresh full destroyers recur. -/
 theorem IsEventuallySyndetic.infiniteDeletion_or_lateCofiniteTranslateDestroyers
     {A : Set ℕ} {k : ℕ}
     (hsyndetic : IsEventuallySyndetic A)
@@ -3472,10 +3352,6 @@ theorem exists_infiniteDeletion_succBasisAlong_finiteTargetTranslates_of_growth
   exact ⟨B, hBA, hB, hBF,
     hasEventuallySurvivingSupportAlong_additive_iff.mp hsurvive⟩
 
-/- A common protected core is not required.  It is enough that, after every
-finite deletion prefix and at every requested matching level, a fresh core
-can be chosen disjoint from that prefix.  The adaptive sparse-deletion
-recursion in `Lemmas` then selects its next point outside the fresh core. -/
 theorem exists_infiniteDeletion_succBasisAlong_finiteTargetTranslates_of_adaptiveGrowth
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -3512,11 +3388,6 @@ theorem exists_infiniteDeletion_succBasis_of_adaptiveFiniteTranslateGrowth
       hbasis hgrowth
   exact ⟨B, hBA, hB, halong.of_eventually_mem hcofinite⟩
 
-/- Countable common-core fusion for finite translate target sets.  A single
-sparse infinite deletion simultaneously preserves successor representations
-eventually along every `Q i + A`.  The thresholds may depend on `i`; this is
-why an additional uniform-cover argument is required to obtain a global
-successor basis from an infinite family of non-cofinite translate sets. -/
 theorem exists_infiniteDeletion_succBasisAlong_countableFiniteTargetTranslates_of_commonGrowth
     {A : Set ℕ} {k : ℕ} {Q : ℕ → Finset ℕ} {F : Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -3541,9 +3412,6 @@ theorem exists_infiniteDeletion_succBasisAlong_countableFiniteTargetTranslates_o
   intro i
   exact hasEventuallySurvivingSupportAlong_additive_iff.mp (hsurvive i)
 
-/- For finite-translate target sets, the abstract uniform-threshold condition
-is exactly a finite/cofinite translate cover: finitely many of the `Q i` can
-be merged into one finite target set whose translates cover a tail. -/
 theorem uniformThresholdCover_finiteTargetTranslates_iff
     {A : Set ℕ} {Q : ℕ → Finset ℕ} :
     UniformThresholdCover (fun i => finiteTargetTranslates A (Q i)) ↔
@@ -3565,10 +3433,6 @@ theorem uniformThresholdCover_finiteTargetTranslates_iff
     obtain ⟨i, hiI, hqQi⟩ := Finset.mem_biUnion.mp hqUnion
     exact ⟨i, hiI, q, hqQi, a, haA, hnqa⟩
 
-/- Even when the countable family contains a translate `q + A` for every
-label `q`, resistance to arbitrary memberwise thresholds is exactly eventual
-syndeticity of `A`.  Thus enumerating more and more finite translate sets
-does not bypass the bounded-gap obstruction. -/
 theorem uniformThresholdCover_allFiniteTargetLabels_iff_eventuallySyndetic
     {A : Set ℕ} {Q : ℕ → Finset ℕ}
     (hlabels : ∀ q, ∃ i, q ∈ Q i) :
@@ -3606,10 +3470,6 @@ theorem uniformThresholdCover_allFiniteTargetLabels_iff_eventuallySyndetic
       exact Finset.mem_image.mpr ⟨qsub, by simp, rfl⟩
     · exact (Nat.sub_add_cancel han).symm
 
-/- A common finite core plus countable relative matching growth closes the
-global successor-basis argument exactly when the translate family has the
-uniform-threshold property (equivalently, by the theorem above, a finite
-cofinite subcover). -/
 theorem exists_infiniteDeletion_succBasis_of_countableFiniteTargetTranslates_of_commonGrowth_of_uniformCover
     {A : Set ℕ} {k : ℕ} {Q : ℕ → Finset ℕ} {F : Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -3637,10 +3497,6 @@ theorem exists_infiniteDeletion_succBasis_of_countableFiniteTargetTranslates_of_
   exact ⟨B, hBA, hB,
     hasEventuallySurvivingSupport_additive_iff.mp hsurvive⟩
 
-/- The common-core assumption can be dropped once uniform threshold coverage
-is available.  Uniformity first yields a finite cofinite subcover; the union
-of the finitely many corresponding cores is then a common finite core, since
-relative matching growth survives enlarging a finite core. -/
 theorem exists_infiniteDeletion_succBasis_of_pointwiseFiniteTranslateGrowth_of_uniformCover
     {A : Set ℕ} {k : ℕ} {Q : ℕ → Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -3713,10 +3569,6 @@ theorem exists_infiniteDeletion_succBasis_of_pointwiseFiniteTranslateGrowth_of_u
   exact ⟨B, hBA, hB,
     halong.of_eventually_mem ⟨N, hcofinite⟩⟩
 
-/- The relative-growth branch already closes the original successor-deletion
-goal when its finite translate set `Q + A` is cofinite.  The remaining growth
-case is exactly the possibility that matching growth is available only on a
-non-cofinite collection of translates. -/
 theorem exists_infiniteDeletion_succBasis_of_finiteTranslateGrowth
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ} {F : Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -3774,9 +3626,6 @@ theorem infiniteDeletion_succBasisAlong_or_recurrentBoundedMoving
         hbasis hgrowth⟩
   · exact Or.inr hmoving
 
-/- Relative moving recurrence on `Q + A` supplies the full destroyers needed
-for a diagonal row.  Additive supports eventually escape the protected core,
-so a transversal of the outside hypergraph becomes a full transversal. -/
 theorem fullTranslateDestroyersByAnchor_of_boundedMovingOnFiniteTranslates
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -3830,10 +3679,6 @@ theorem fullTranslateDestroyersByAnchor_of_boundedMovingOnFiniteTranslates
   exact ⟨n, T, q, a, hLa, hqQ, haA, hnqa,
     hTA, hTF, hTnonempty, hdestroy⟩
 
-/- Exhaustive certificate-aligned diagonal dichotomy.  If no nonempty
-finite `Q` has the relative matching-growth branch, the relative moving
-branch holds for every `Q`; the preceding construction then builds all rows
-simultaneously with global disjointness. -/
 theorem finiteTranslateMatchingGrowth_or_diagonalDestroyerRows
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k) :
@@ -3887,14 +3732,6 @@ def IsStronglyMinimalExactBasis (A : Set ℕ) (k : ℕ) : Prop :=
   IsExactTupleAsymptoticBasis A k ∧
     StrongInfiniteDeletion (additiveSupportFamily A k) A
 
-/-- The exact finite-booster counterexample criterion.  To obtain a negative
-instance of Problem 881 at order `k`, it suffices to construct an exact
-order-`k` basis for which all but finitely many elements have arbitrarily late
-private witnesses at order `k + 1`.
-
-The first conclusion is the problem's strong-deletion hypothesis at order
-`k`; the second says that no infinite deletion preserves the successor-order
-basis property. -/
 theorem finiteBoosterCounterexampleCriterion
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -4110,10 +3947,6 @@ theorem twoRepairs_anchorFree_of_predecessorDestroyed
     anchor_not_mem_successorSupport_of_predecessorDestroyed
       hdestroy hE'R hE'S⟩
 
-/- A fixed singleton translate has uniformly bounded full moving
-transversals if one cardinal bound works after protecting every finite core.
-This is stronger than the recurrent bad branch currently obtained from
-failure of relative matching, whose bound may depend on the protected core. -/
 def HasUniformlyBoundedFullTransversalsOnSingletonTranslate
     (A : Set ℕ) (k q : ℕ) : Prop :=
   ∃ m, ∀ F : Finset ℕ, (F : Set ℕ) ⊆ A → ∀ L,
@@ -4123,11 +3956,6 @@ def HasUniformlyBoundedFullTransversalsOnSingletonTranslate
       DestroysAt
         (additiveSupportFamily A (k + 1)) (T : Set ℕ) n
 
-/- Bounded gaps exclude the uniformly bounded internal-anchor obstruction.
-Protect one order-`k` support for every bounded predecessor shift.  A large
-anchor has more nearby predecessors in `A` than the transversal has vertices,
-so one nearby `b ∈ A \ T` descends the successor transversal to a protected
-support, a contradiction. -/
 theorem IsEventuallySyndetic.not_uniformlyBoundedFullTransversalsOnSingletonTranslate
     {A : Set ℕ} {k : ℕ}
     (hsyndetic : IsEventuallySyndetic A)
@@ -4288,10 +4116,6 @@ theorem IsEventuallySyndetic.not_adaptiveCoreMatchingObstructionAt_of_diff_basis
   exact ⟨n, T, a, haLower, haA', hnqa', hTA', hTG,
     hTcard, hdestroy⟩
 
-/- In the finite-deletion-stable case, the adaptive core condition is not an
-extra dichotomy hypothesis.  If it failed at a prefix `D` and level `j`, its
-exact negation would give the same matching-number bound `j` outside every
-core disjoint from `D`. -/
 theorem IsEventuallySyndetic.adaptiveCoreMatchingOnSingletonTranslate_of_finiteDeletionStable
     {A : Set ℕ} {k : ℕ}
     (hsyndetic : IsEventuallySyndetic A)
@@ -4342,9 +4166,6 @@ theorem IsEventuallySyndetic.exists_finiteDestroyer_of_not_adaptiveSingletonGrow
   exact not_exactTupleAsymptoticBasis_diff_finset_iff.mp
     (hsyndetic.not_diff_basis_of_adaptiveCoreMatchingObstructionAt D hbad)
 
-/- Finitely many singleton translates may use different adaptive cores at a
-stage.  The finite-menu sparse recursion avoids their union and preserves all
-of the translate classes simultaneously. -/
 theorem exists_infiniteDeletion_succBasisAlong_finiteTargetTranslates_of_finiteMenuAdaptiveGrowth
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -4394,10 +4215,6 @@ theorem exists_infiniteDeletion_succBasisAlong_finiteTargetTranslates_of_finiteM
   exact ⟨B, hBA, hB,
     hasEventuallySurvivingSupportAlong_additive_iff.mp hsurvive⟩
 
-/- A genuine positive subclass of Problem 881.  If bounded gaps hold and
-every finite deletion remains an order-`k` basis, then an infinite deletion
-can be chosen which remains a basis at order `k+1`.  No uniform-core or
-uniform-moving dichotomy is assumed. -/
 theorem exists_infiniteDeletion_succBasis_of_eventuallySyndetic_of_finiteDeletionStable
     {A : Set ℕ} {k : ℕ}
     (hsyndetic : IsEventuallySyndetic A)
@@ -4422,18 +4239,12 @@ theorem exists_infiniteDeletion_succBasis_of_eventuallySyndetic_of_finiteDeletio
       hbasis hgrowth
   exact ⟨B, hBA, hB, halong.of_eventually_mem ⟨N, hcover⟩⟩
 
-/- The precise remaining quantifier-strengthening for the bounded-gap route:
-on every singleton translate, either relative matching grows outside some
-finite core, or one cardinal bound works uniformly over all protected cores. -/
 def HasSingletonTranslateGrowthOrUniformMovingDichotomy
     (A : Set ℕ) (k : ℕ) : Prop :=
   ∀ q,
     HasSingletonTranslateMatchingGrowth A k q ∨
       HasUniformlyBoundedFullTransversalsOnSingletonTranslate A k q
 
-/- Under that uniform-core dichotomy, eventual syndeticity closes Problem
-881.  Uniform moving is excluded by the preceding shift argument, so every
-member of a finite cofinite translate cover has relative matching growth. -/
 theorem exists_infiniteDeletion_succBasis_of_eventuallySyndetic_of_singletonUniformDichotomy
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k)
@@ -4456,9 +4267,6 @@ theorem exists_infiniteDeletion_succBasis_of_eventuallySyndetic_of_singletonUnif
   exact exists_infiniteDeletion_succBasis_of_finiteCofiniteGrowthTranslateCover
     hbasis ⟨Q, hgrowth, N, hcover⟩
 
-/- The common-target version of the moving-transversal contradiction.  If a
-pairwise-disjoint family of successor destroyers can all be translated to one
-represented order-`k` target `q`, then the family has at most `k` members. -/
 theorem card_aligned_pairwiseDisjoint_successorDestroyers_le
     {A : Set ℕ} {k q : ℕ} {𝒯 : Finset (Finset ℕ)}
     (hq : (additiveSupportFamily A k q).Nonempty)
@@ -4520,10 +4328,6 @@ theorem IsExactTupleAsymptoticBasis.eventually_card_alignedSuccessorDestroyers_o
   exact additiveSuccessorTransversalsDescend A k
     T n hdestroy a haA (by simpa using haT) han
 
-/- The strengthened recurrent bad branch requested by the conditional
-argument: after every protected finite core and anchor threshold, it returns a
-new nonempty full successor destroyer, disjoint from both the old core and its
-translate anchor. -/
 def HasAnchorAvoidingFullTransversalsOnFiniteTranslates
     (A : Set ℕ) (k : ℕ) (Q : Finset ℕ) : Prop :=
   ∀ F : Finset ℕ, (F : Set ℕ) ⊆ A → ∀ L,
@@ -4603,8 +4407,8 @@ theorem exists_anchorAvoidingAlignedDestroyerFamily_card
       refine ⟨insert T 𝒯, hnewfamily, ?_⟩
       simp [hTnot, hcard]
 
-/- Conditional closure of the recurrent bad branch.  For a finite late target
-set `Q`, anchor-avoiding full translate recurrence is impossible. -/
+/- For a finite set of sufficiently large targets, anchor-avoiding full
+translate recurrence is impossible. -/
 theorem IsExactTupleAsymptoticBasis.eventually_not_anchorAvoidingFullTransversalsOnFiniteTranslates
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k) :
@@ -4655,9 +4459,6 @@ theorem additiveAnchorContaining_predecessorDestroyer_or_survivingSupport
       exact Finset.mem_coe.mpr <|
         Finset.mem_erase.mpr ⟨hxa, Finset.mem_coe.mp hxT⟩
 
-/- Cell form of the same boundedness argument: if erasing a point larger than
-the target does not destroy that target, the surviving support avoids the
-entire original cell, because no support vertex can equal the large point. -/
 theorem additiveErasedLargePoint_survivingSupport
     {A : Set ℕ} {k q a : ℕ} {C : Finset ℕ}
     (hqa : q < a)
@@ -4697,10 +4498,6 @@ def HasLateCertificateWithTwoDedicatedRepairBlocks
               ∃ G ∈ additiveSupportFamily A k qD.1,
                 Disjoint (G : Set ℕ) (D : Set ℕ)
 
-/- The complete consequence presently obtainable from the anchored diagonal
-and strong deletion: the returned late certificate has two distinct
-dedicated row blocks, each carrying a support of its assigned target which
-avoids the entire anchored cell in that block. -/
 theorem IsStronglyMinimalExactBasis.exists_certificate_two_dedicatedRepairBlocks_of_anchoredDiagonal
     {A : Set ℕ} {k : ℕ}
     (hminimal : IsStronglyMinimalExactBasis A k)
@@ -4763,10 +4560,6 @@ theorem IsStronglyMinimalExactBasis.finiteTranslateGrowth_or_twoDedicatedRepairB
       hminimal.exists_certificate_two_dedicatedRepairBlocks_of_anchoredDiagonal
         hdiag
 
-/- Full additive successor destruction at `n = q + a` has an exact anchor
-dichotomy.  If the anchor is absent, the original transversal descends.  If
-the anchor is present and `q < a`, then either erasing it still destroys `q`,
-or an order-`k` support of `q` survives the entire transversal. -/
 theorem additiveFullTranslateTransversal_anchorDichotomy
     {A : Set ℕ} {k q a n : ℕ} {T : Finset ℕ}
     (hdestroy : DestroysAt
@@ -4792,9 +4585,6 @@ theorem additiveFullTranslateTransversal_anchorDichotomy
     exact additiveSuccessorTransversalsDescend A k
       T n hdestroy a haA (by simpa using haT) han
 
-/- A repair cell necessarily lies in the internal-anchor branch.  If its
-anchor were absent from the moving core, successor descent would say that the
-anchor erasure destroys the predecessor, contradicting the repair property. -/
 theorem anchor_mem_core_of_nonDestroying_cellErasure
     {A : Set ℕ} {k q a n : ℕ} {C T : Finset ℕ}
     (hCeq : C = insert a T)
@@ -4812,11 +4602,6 @@ theorem anchor_mem_core_of_nonDestroying_cellErasure
     simpa [hCeq, houtside.1] using houtside.2
   · exact hins.1
 
-/- The exact outcome of combining a minimal strong-deletion certificate with
-an oversized dedicated row: more than `k` pairwise-disjoint cells share one
-predecessor target and have surviving predecessor supports.  Crucially, every
-one of their translate anchors is forced to lie inside its moving successor
-destroyer. -/
 def HasLateCertificateWithManyCommonTargetInternalAnchorCells
     (A : Set ℕ) (k : ℕ) : Prop :=
   ∃ N, ∃ Q : Finset ℕ, ∃ hQ : Q.Nonempty,
@@ -4898,12 +4683,6 @@ theorem IsStronglyMinimalExactBasis.finiteTranslateGrowth_or_manyCommonTarget_in
       hminimal.exists_manyCommonTarget_internalAnchorCells_of_anchoredDiagonal
         hdiag
 
-/- An oversized certificate-aligned row cannot consist entirely of
-predecessor destroyers.  After choosing one order-`k` support for each late
-target in `Q`, the usual `k * |Q|` injection bounds all cores for which either
-the anchor is absent or erasing the anchor still destroys the predecessor.
-Thus one core has an internal large anchor, its erasure is not a predecessor
-destroyer, and an order-`k` support survives the whole core. -/
 theorem IsExactTupleAsymptoticBasis.exists_anchorContainingRepairCase_of_largeRow
     {A : Set ℕ} {k : ℕ}
     (hbasis : IsExactTupleAsymptoticBasis A k) :
@@ -5048,12 +4827,6 @@ theorem exists_supportChoice_repairingBlock_of_anchorContainingCases
   exact block_difference_supportChoiceUnion_nonempty_of_coreDisjoint
     c hcore hT (fun q => hsupportDisjoint q)
 
-/- The apparently stronger simultaneous repair problem has a simple additive
-solution when every core has an anchor for every certified target.  Use the
-anchor belonging to the largest target in `Q`: it is larger than every target
-in `Q`, whereas every vertex of a support of `q` is at most `q`.  Consequently
-that anchor is omitted by the union of *any* chosen supports, simultaneously
-for all cores. -/
 theorem exists_supportChoice_repairingAllBlocks_of_anchorContainingCases
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ}
     {F T : ℕ → Finset ℕ}
@@ -5107,10 +4880,6 @@ theorem block_vertices_le_max_of_subset_supportChoiceUnion
       (c q).1 (c q).2 x hxE).trans
       (Finset.le_max' Q q.1 q.2)
 
-/- Hence a finite selector certificate can only be witnessed, for any fixed
-support choice, by a block wholly contained in the initial interval ending at
-`max Q`.  This is the precise finite-exception localization left after the
-large-anchor repair. -/
 theorem exists_boundedBlock_of_additiveSelectorCertificate
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ}
     (hQ : Q.Nonempty)
@@ -5159,11 +4928,6 @@ theorem exists_boundedBlock_outside_lateAnchoredRow_of_certificate
     exact hcell C haC
   exact (not_lt_of_ge (hi a haF)) (lt_of_lt_of_le hLate haLower)
 
-/- The support-union witness supplied by a certificate cannot lie on its
-dedicated anchored row.  Every support selected for a target in `Q` is
-bounded by `max Q`, whereas every dedicated cell contains an anchor strictly
-above `max Q`.  Thus localization onto the dedicated row is not merely
-unproved in this formulation; it is excluded by additive boundedness. -/
 theorem exists_boundedBlock_outside_dedicatedAnchoredRow_of_certificate
     {A : Set ℕ} {k : ℕ} {Q : Finset ℕ}
     (hQ : Q.Nonempty)
@@ -5241,10 +5005,6 @@ theorem EscapingTransversalSequence.eventually_card_commonPredecessorIndices_le
   change (I.image S.T).card ≤ k at hle
   rwa [Finset.card_image_iff.mpr hT_injective.injOn] at hle
 
-/- This is the exact finite-certificate bridge needed by the common-target
-strategy.  It is deliberately stated separately: the selector certificate
-and the fact that the blocks contain the moving cores do not syntactically
-provide the arithmetic equations `S.n i - a = q`. -/
 def AdditiveFiniteCertificateCommonPredecessorBridge
     (A : Set ℕ) (k : ℕ) : Prop :=
   ∀ (S : EscapingTransversalSequence
@@ -5264,11 +5024,6 @@ def AdditiveFiniteCertificateCommonPredecessorBridge
           a ∈ A ∧ a ∉ S.T i ∧
           a ≤ S.n i ∧ S.n i - a = q
 
-/- The bridge above is false as stated, already at order one.  The following
-explicit sequence uses adjacent exponentially growing blocks.  Its
-successor transversals are the upper halves of those blocks; every external
-anchor therefore has a predecessor in that same upper half.  Since the upper
-halves are pairwise disjoint, a predecessor can belong to only one cloud. -/
 private def bridgeCounterB : ℕ → ℕ
   | 0 => 0
   | i + 1 => 2 * bridgeCounterB i + 2
@@ -5407,11 +5162,6 @@ private theorem destroysAt_additiveOrderOne_of_mem
   apply Set.not_disjoint_iff.mpr
   exact ⟨q, mem_tupleSupport_iff.mpr ⟨0, hv0⟩, hqB⟩
 
-/- For the partition generated from the explicit sequence, block zero itself
-is an order-one selector certificate: every selector chooses some `q` in
-that block, and `{q}` is the unique order-one support of `q`.  The bridge
-would make one `q` occur in two predecessor clouds, contradicting their
-uniqueness. -/
 theorem not_additiveFiniteCertificateCommonPredecessorBridge_univ_one :
     ¬ AdditiveFiniteCertificateCommonPredecessorBridge
       (Set.univ : Set ℕ) 1 := by

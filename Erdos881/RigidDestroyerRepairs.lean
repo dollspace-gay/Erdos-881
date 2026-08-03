@@ -1,14 +1,5 @@
 import Erdos881.SplittableIndependentDeletion
 
-/-!
-# Repair tails in the rigid branch
-
-The outside part of a unique-hit support for an order-three destroyer has at
-most two vertices.  This file isolates the exact structure of a pairwise
-intersecting family of such tails: it is a star, apart from the three-edge
-triangle.
--/
-
 namespace Erdos881
 
 private theorem finset_eq_pair_of_card_le_two
@@ -555,10 +546,6 @@ def IsPairwiseNonrigidSet (A K : Set ℕ) : Prop :=
 def HasNoRigidDoubles (A K : Set ℕ) : Prop :=
   ∀ x ∈ K, ¬ IsRigidPairSum A x x
 
-/-- On an infinite nonrigid set, every finite reservation stage extends.
-Choosing the new point above twice the sum of the old deletion prefix turns
-any support trapped in `D ∪ {b}` into a genuinely rigid pair, contradicting
-the hypotheses. -/
 theorem hasFreshPairRepairExtension_of_pairwiseNonrigid
     {A K : Set ℕ}
     (hK : K.Infinite)
@@ -599,7 +586,6 @@ theorem hasFreshPairRepairExtension_of_pairwiseNonrigid
   · exact hnonrigid b hbK d (hDK hdD)
       (fun hbd => hbD (hbd ▸ hdD)) hrigid
 
-/-- Data selected at one stage of the reserved-pair recursion. -/
 structure ReservedPairRecursionStep
     (A K : Set ℕ) (D P : Finset ℕ) (last : ℕ) where
   point : ℕ
