@@ -1,6 +1,6 @@
 {
   "next_display_id": 2,
-  "next_comment_id": 4,
+  "next_comment_id": 5,
   "display_id_map": {
     "f22110a3-60b8-4aea-ab77-acd2ec6dee56": 1
   },
@@ -19,7 +19,7 @@
       "priority": "medium",
       "created_by": "slA5",
       "created_at": "2026-09-02T03:07:38.832077049Z",
-      "updated_at": "2026-09-02T07:54:09.461250954Z",
+      "updated_at": "2026-09-02T10:01:48.707521024Z",
       "labels": [
         "research"
       ],
@@ -42,6 +42,15 @@
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABADo2vw0MVr4eCrR1yAaS7A0rLyIYaT0qsC6Q742T2V0tl0bv/G8orWN5M1dyaGrydPpBt6fdARfi+7ATpXr1+Aw=="
         },
+        "1fe4247c-cac8-48ea-acdc-89065fbd2e1e": {
+          "display_id": 4,
+          "author": "slA5",
+          "content": "Final: encoder now has gap-lemma pruning, constant propagation, cube-and-conquer with deadlines. Valid k=2 controls (T=2g) UNSAT instantly for block-0-pinned two-block instances; k=3 SAT. k=3 maxpin g=60: >=51, g=80: >=61. Three-block (12,36,120) unknown after 15 min. Docs: docs/pinned-block-search.md.",
+          "created_at": "2026-09-02T10:01:48.702633550Z",
+          "kind": "note",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAQpyVnpKHNhTdgUjAVcBH6IF/eFXBCFfn3gPyzZeMmcZaxvrIQwokja0JjgEtISLdYrGAEq//H99Lt1JdqmOQAA=="
+        },
         "68201f2e-bd10-43ad-9095-5e2c45da24e4": {
           "display_id": 3,
           "author": "slA5",
@@ -56,8 +65,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-02T07:54:09.461250954Z",
+    "timestamp": "2026-09-02T10:01:48.707521024Z",
     "agent_id": "slA5",
-    "agent_seq": 6
+    "agent_seq": 7
   }
 }
