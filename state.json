@@ -14,13 +14,16 @@
       "priority": "medium",
       "created_by": "slA5",
       "created_at": "2026-09-02T03:07:38.832077049Z",
-      "updated_at": "2026-09-02T03:07:38.832077049Z"
+      "updated_at": "2026-09-02T03:07:42.781101188Z",
+      "labels": [
+        "research"
+      ]
     }
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-02T03:07:38.832077049Z",
+    "timestamp": "2026-09-02T03:07:42.781101188Z",
     "agent_id": "slA5",
-    "agent_seq": 1
+    "agent_seq": 2
   }
 }
