@@ -1,13 +1,26 @@
 {
-  "next_display_id": 1,
+  "next_display_id": 2,
   "next_comment_id": 1,
-  "display_id_map": {},
+  "display_id_map": {
+    "f22110a3-60b8-4aea-ab77-acd2ec6dee56": 1
+  },
   "locks": {},
-  "issues": {},
+  "issues": {
+    "f22110a3-60b8-4aea-ab77-acd2ec6dee56": {
+      "uuid": "f22110a3-60b8-4aea-ab77-acd2ec6dee56",
+      "display_id": 1,
+      "title": "Add finite pinned-element search probe for order-4 essentiality (Track A)",
+      "status": "open",
+      "priority": "medium",
+      "created_by": "slA5",
+      "created_at": "2026-09-02T03:07:38.832077049Z",
+      "updated_at": "2026-09-02T03:07:38.832077049Z"
+    }
+  },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "1970-01-01T00:00:00Z",
-    "agent_id": "hub-v3-genesis",
-    "agent_seq": 0
+    "timestamp": "2026-09-02T03:07:38.832077049Z",
+    "agent_id": "slA5",
+    "agent_seq": 1
   }
 }
