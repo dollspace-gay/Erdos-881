@@ -1,6 +1,6 @@
 {
   "next_display_id": 2,
-  "next_comment_id": 1,
+  "next_comment_id": 2,
   "display_id_map": {
     "f22110a3-60b8-4aea-ab77-acd2ec6dee56": 1
   },
@@ -19,16 +19,27 @@
       "priority": "medium",
       "created_by": "slA5",
       "created_at": "2026-09-02T03:07:38.832077049Z",
-      "updated_at": "2026-09-02T03:07:42.781101188Z",
+      "updated_at": "2026-09-02T04:12:24.048503897Z",
       "labels": [
         "research"
-      ]
+      ],
+      "comments": {
+        "0ea93f94-d715-4192-9505-a88f44bbe224": {
+          "display_id": 1,
+          "author": "slA5",
+          "content": "[action] Wrote scripts/probe_pinned_search.py (bitset pin profiles, exhaustive, block search) and scripts/probe_pinned_sat.py (CaDiCaL encoding). Findings: single-block all-elements-<=g/2-pinned is SAT at k=3 for g up to 100 and UNSAT at k=2 for all g; joint 2-block (12,45) SAT at k=3, (16,60) UNSAT; sweeps and 3-block joint running.",
+          "created_at": "2026-09-02T04:12:24.045373584Z",
+          "kind": "note",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA1jHF7ZON8BEE2lDkps8mFOAFRIal/4CqTjJ3wl8Vdnzlhg2hTLZNkIN3CGpmWvSJFXnrL7Crxi6OLwFobRtBAw=="
+        }
+      }
     }
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-02T03:07:46.180287517Z",
+    "timestamp": "2026-09-02T04:12:24.048503897Z",
     "agent_id": "slA5",
-    "agent_seq": 3
+    "agent_seq": 4
   }
 }
