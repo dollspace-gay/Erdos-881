@@ -1,6 +1,6 @@
 {
   "next_display_id": 3,
-  "next_comment_id": 7,
+  "next_comment_id": 8,
   "display_id_map": {
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
     "f22110a3-60b8-4aea-ab77-acd2ec6dee56": 1
@@ -15,7 +15,7 @@
       "priority": "medium",
       "created_by": "slA5",
       "created_at": "2026-09-02T11:35:34.282164865Z",
-      "updated_at": "2026-09-02T14:41:31.795871076Z",
+      "updated_at": "2026-09-02T14:41:39.617244740Z",
       "labels": [
         "research"
       ],
@@ -28,6 +28,15 @@
           "kind": "note",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABACQPHDK0LFleBzJZELTBy/3V3gW4lu3FqIHWAtphTcaqoOcgThecLlnW6nwk1xbFojTKisU0PIVSFttW4FyhoAQ=="
+        },
+        "b903f1b3-1d77-4fb7-963c-1816d5b23c9e": {
+          "display_id": 7,
+          "author": "slA5",
+          "content": "Cardinality/ablation/rescue experiments done; forced-gap artifact identified and documented; gap-free chain depth 5 is the open computational question. Uncommitted: scripts/probe_pinned_search.py, scripts/probe_pinned_sat.py, docs/pinned-block-search.md, docs/README.md, docs/solution-status.md.",
+          "created_at": "2026-09-02T14:41:39.614447693Z",
+          "kind": "handoff",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAvLOZzhmR0Ra7uQ/M5xqT+lO9/hABVbhijIEBbxzh9dpgCvRFDfiR5qasaI8dsPWBHiZU061BVVSRDPW1pa1xAQ=="
         }
       }
     },
@@ -94,8 +103,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-02T14:41:35.982430870Z",
+    "timestamp": "2026-09-02T14:41:39.617244740Z",
     "agent_id": "slA5",
-    "agent_seq": 14
+    "agent_seq": 15
   }
 }
