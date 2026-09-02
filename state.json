@@ -5,12 +5,7 @@
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
     "f22110a3-60b8-4aea-ab77-acd2ec6dee56": 1
   },
-  "locks": {
-    "2": {
-      "agent_id": "slA5",
-      "claimed_at": "2026-09-02T11:35:40.708012164Z"
-    }
-  },
+  "locks": {},
   "issues": {
     "1b00f123-0028-46b3-a6b3-13b9155998f2": {
       "uuid": "1b00f123-0028-46b3-a6b3-13b9155998f2",
@@ -99,8 +94,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-02T14:41:31.795871076Z",
+    "timestamp": "2026-09-02T14:41:35.982430870Z",
     "agent_id": "slA5",
-    "agent_seq": 13
+    "agent_seq": 14
   }
 }
