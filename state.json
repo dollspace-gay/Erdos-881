@@ -1,6 +1,6 @@
 {
   "next_display_id": 2,
-  "next_comment_id": 5,
+  "next_comment_id": 6,
   "display_id_map": {
     "f22110a3-60b8-4aea-ab77-acd2ec6dee56": 1
   },
@@ -14,7 +14,7 @@
       "priority": "medium",
       "created_by": "slA5",
       "created_at": "2026-09-02T03:07:38.832077049Z",
-      "updated_at": "2026-09-02T10:01:48.707521024Z",
+      "updated_at": "2026-09-02T10:01:55.248987555Z",
       "labels": [
         "research"
       ],
@@ -54,14 +54,23 @@
           "kind": "note",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAurbS2vj9d+7ketQpJyzLzZKx7QVjNL90Y9y9bBDue8jNJHVLU941tGRJBb4mQO3ywAA+gQK5ZHA3dMlol8GRCA=="
+        },
+        "ae7d5697-0230-4605-aa52-84b494287144": {
+          "display_id": 5,
+          "author": "slA5",
+          "content": "Track A finite search delivered: scripts/probe_pinned_search.py, scripts/probe_pinned_sat.py, docs/pinned-block-search.md. Dichotomy k=2 vs k=3 on single blocks; cross-block UNSAT at k=3 for all finished multi-block instances. Open: whether some three-block geometry is SAT; (12,36,120) unresolved. Files uncommitted.",
+          "created_at": "2026-09-02T10:01:55.246117980Z",
+          "kind": "handoff",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAZtmcXNkMFIULxsWslkE4NEi6Ub30SNQsnI4CoLNtfT0Xf5j/GAHqCcYMn+ZPrqfu+64eXnsIgL6kdbc5vjXeDw=="
         }
       }
     }
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-02T10:01:52.048451868Z",
+    "timestamp": "2026-09-02T10:01:55.248987555Z",
     "agent_id": "slA5",
-    "agent_seq": 8
+    "agent_seq": 9
   }
 }
