@@ -1,6 +1,6 @@
 {
   "next_display_id": 2,
-  "next_comment_id": 3,
+  "next_comment_id": 4,
   "display_id_map": {
     "f22110a3-60b8-4aea-ab77-acd2ec6dee56": 1
   },
@@ -19,7 +19,7 @@
       "priority": "medium",
       "created_by": "slA5",
       "created_at": "2026-09-02T03:07:38.832077049Z",
-      "updated_at": "2026-09-02T04:12:27.239234739Z",
+      "updated_at": "2026-09-02T07:54:09.461250954Z",
       "labels": [
         "research"
       ],
@@ -41,14 +41,23 @@
           "kind": "note",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABADo2vw0MVr4eCrR1yAaS7A0rLyIYaT0qsC6Q742T2V0tl0bv/G8orWN5M1dyaGrydPpBt6fdARfi+7ATpXr1+Aw=="
+        },
+        "68201f2e-bd10-43ad-9095-5e2c45da24e4": {
+          "display_id": 3,
+          "author": "slA5",
+          "content": "Results: single blocks at k=3 pin all elements (max pin ratio 0.83-1.0 up to g=50); k=2 saturates at {3,7,8,10}. Joint two blocks both fully pinned: UNSAT at k=3 for (12,36),(12,48),(18,54). Three blocks with first two pinned anywhere: UNSAT for (12,45,150) and (10,37,150); (12,36,120) pending. Documented in docs/pinned-block-search.md.",
+          "created_at": "2026-09-02T07:54:09.457224569Z",
+          "kind": "note",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAurbS2vj9d+7ketQpJyzLzZKx7QVjNL90Y9y9bBDue8jNJHVLU941tGRJBb4mQO3ywAA+gQK5ZHA3dMlol8GRCA=="
         }
       }
     }
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-02T04:12:27.239234739Z",
+    "timestamp": "2026-09-02T07:54:09.461250954Z",
     "agent_id": "slA5",
-    "agent_seq": 5
+    "agent_seq": 6
   }
 }
