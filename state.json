@@ -1,6 +1,6 @@
 {
   "next_display_id": 8,
-  "next_comment_id": 22,
+  "next_comment_id": 23,
   "display_id_map": {
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
     "23f72684-8efa-470b-a980-f46cb316e862": 3,
@@ -91,7 +91,7 @@
       "priority": "medium",
       "created_by": "slA5",
       "created_at": "2026-09-03T20:12:03.749354020Z",
-      "updated_at": "2026-09-03T20:14:33.406567780Z",
+      "updated_at": "2026-09-03T20:17:59.799409680Z",
       "labels": [
         "research"
       ],
@@ -113,6 +113,15 @@
           "kind": "note",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAXwpyd7KPtLoBvrTiWHKbekkCbd5pyN4iQwsUzDCghPzW/ByRtQpFsfEE+sp1Mj8ri44+iTQaSz2YXdeywH8xDw=="
+        },
+        "a0fe80bd-9d24-4b9e-b31a-306478bbb08c": {
+          "display_id": 22,
+          "author": "slA5",
+          "content": "Bounded-gap instance proved and committed: IsPinnedAt.not_of_boundedGaps, hasLocalCleanSupply_of_boundedGaps (build 8323, axioms clean). General reflective-tail theorem remains open.",
+          "created_at": "2026-09-03T20:17:59.796068784Z",
+          "kind": "note",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAcdM4fMdgDP7/QQFNrIAFIfoj9pOZqctkVDxHPZ3uNdJIPiJ3M2IALOpmy08S4Ecs4AGaHC83qmJUtpzdj44zCg=="
         }
       }
     },
@@ -314,8 +323,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-03T20:16:41.532355344Z",
+    "timestamp": "2026-09-03T20:17:59.799409680Z",
     "agent_id": "slA5",
-    "agent_seq": 52
+    "agent_seq": 53
   }
 }
