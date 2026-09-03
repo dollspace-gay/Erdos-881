@@ -1,6 +1,6 @@
 {
   "next_display_id": 8,
-  "next_comment_id": 21,
+  "next_comment_id": 22,
   "display_id_map": {
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
     "23f72684-8efa-470b-a980-f46cb316e862": 3,
@@ -86,11 +86,20 @@
       "priority": "medium",
       "created_by": "slA5",
       "created_at": "2026-09-03T20:12:03.749354020Z",
-      "updated_at": "2026-09-03T20:14:26.183264514Z",
+      "updated_at": "2026-09-03T20:14:33.406567780Z",
       "labels": [
         "research"
       ],
       "comments": {
+        "08128497-1b23-4e81-a1be-c463560439ca": {
+          "display_id": 21,
+          "author": "slA5",
+          "content": "Integration into the direct construction complete: Erdős 881 now follows from absence of relative reflective tails at safe prefixes (single hypothesis). The hypothesis is the open theorem; no proof.",
+          "created_at": "2026-09-03T20:14:33.403165921Z",
+          "kind": "handoff",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAC8bSetp0sJ88SGniufDgdHnOTUmUDnGFGkPOZ9tdZdYdiOFWadroWUWyeKBks2iIDDH8S1EcP2CWqikriUtJAw=="
+        },
         "645fda7b-a969-4b97-ba0c-b1ef39a943b8": {
           "display_id": 20,
           "author": "slA5",
@@ -300,8 +309,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-03T20:14:29.770788034Z",
+    "timestamp": "2026-09-03T20:14:33.406567780Z",
     "agent_id": "slA5",
-    "agent_seq": 50
+    "agent_seq": 51
   }
 }
