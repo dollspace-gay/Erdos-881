@@ -1,9 +1,10 @@
 {
-  "next_display_id": 7,
+  "next_display_id": 8,
   "next_comment_id": 20,
   "display_id_map": {
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
     "23f72684-8efa-470b-a980-f46cb316e862": 3,
+    "3d337c85-b756-46d9-aa89-344c1f322fcd": 7,
     "4d488d9c-c4ae-48c9-ab63-a640698d9f16": 6,
     "9dfd0bd6-1754-4562-9e7a-9164cead7a1f": 5,
     "e940d6b5-45c8-4806-977b-61fb98b436b4": 4,
@@ -76,6 +77,16 @@
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAKTW0ZpDagsUQjSN3cJA7coGqxDK0nujYZUFh/W5gAy8Y6oLNP8x+JRA0DOajPsgzjwkqx/Q5B87WznqV1cDhDA=="
         }
       }
+    },
+    "3d337c85-b756-46d9-aa89-344c1f322fcd": {
+      "uuid": "3d337c85-b756-46d9-aa89-344c1f322fcd",
+      "display_id": 7,
+      "title": "Safe-prefix clean supply and reflective-tail reduction into the direct construction",
+      "status": "open",
+      "priority": "medium",
+      "created_by": "slA5",
+      "created_at": "2026-09-03T20:12:03.749354020Z",
+      "updated_at": "2026-09-03T20:12:03.749354020Z"
     },
     "4d488d9c-c4ae-48c9-ab63-a640698d9f16": {
       "uuid": "4d488d9c-c4ae-48c9-ab63-a640698d9f16",
@@ -275,8 +286,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-03T20:10:38.279358788Z",
+    "timestamp": "2026-09-03T20:12:03.749354020Z",
     "agent_id": "slA5",
-    "agent_seq": 45
+    "agent_seq": 46
   }
 }
