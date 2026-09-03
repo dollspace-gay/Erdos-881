@@ -1,6 +1,6 @@
 {
   "next_display_id": 6,
-  "next_comment_id": 16,
+  "next_comment_id": 17,
   "display_id_map": {
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
     "23f72684-8efa-470b-a980-f46cb316e862": 3,
@@ -89,7 +89,7 @@
       "priority": "medium",
       "created_by": "slA5",
       "created_at": "2026-09-03T19:19:59.328694796Z",
-      "updated_at": "2026-09-03T19:22:06.726615614Z",
+      "updated_at": "2026-09-03T20:02:26.539286350Z",
       "labels": [
         "research"
       ],
@@ -102,6 +102,15 @@
           "kind": "note",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAYQNMkcpC4juDvOWf7QnVYp41T7S9zZT8Pr4FeSFuIpabEIit5DCuU12xpj4hy0FpjOfQozqe2e/hVxsUP7R/CA=="
+        },
+        "e21624d5-f256-4674-afc0-7e1b7806ca96": {
+          "display_id": 16,
+          "author": "slA5",
+          "content": "Larger difference-pair test (blocks 50/60 with 4M-conflict budgets) produced no verdict in 42 min and was stopped; the small-scale result (at most 2 pairs at difference 1, 1 at differences 2-3, blocks up to 36) stands as the evidence.",
+          "created_at": "2026-09-03T20:02:26.535802900Z",
+          "kind": "note",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAMwWprboKSdyLSyj0KROUq/MnHrd7bz7JlKgDvTGUuF9WGYPnYuOpmqM1XRjL7qkRCwaYBbv16pUnZTE9aJK5Cw=="
         }
       }
     },
@@ -228,8 +237,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-03T19:22:06.726615614Z",
+    "timestamp": "2026-09-03T20:02:26.539286350Z",
     "agent_id": "slA5",
-    "agent_seq": 36
+    "agent_seq": 37
   }
 }
