@@ -1,6 +1,6 @@
 {
   "next_display_id": 7,
-  "next_comment_id": 18,
+  "next_comment_id": 19,
   "display_id_map": {
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
     "23f72684-8efa-470b-a980-f46cb316e862": 3,
@@ -90,10 +90,21 @@
       "priority": "medium",
       "created_by": "slA5",
       "created_at": "2026-09-03T20:04:26.291787755Z",
-      "updated_at": "2026-09-03T20:04:30.180656391Z",
+      "updated_at": "2026-09-03T20:10:31.141898534Z",
       "labels": [
         "research"
-      ]
+      ],
+      "comments": {
+        "f1af36be-32cb-45dd-b649-8307f8c50ccc": {
+          "display_id": 18,
+          "author": "slA5",
+          "content": "Window candidate refuted exhaustively (M<=22, residue tricks). HasReflectiveTail and hasLocalCleanSupply_of_not_reflectiveTail committed (94853bc): the target theorem is now a Lean statement whose negation yields local clean supply at the root. Build 8322 jobs, axioms clean.",
+          "created_at": "2026-09-03T20:10:31.138658775Z",
+          "kind": "note",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAP+lBqOc7XKOY9CbOUYoqSUj9Zv0U2LgMrGPuK/vR7nrijaWvhgOqmi9OWnhxTHfm2hhAzX381+eY20TtbGfVBQ=="
+        }
+      }
     },
     "9dfd0bd6-1754-4562-9e7a-9164cead7a1f": {
       "uuid": "9dfd0bd6-1754-4562-9e7a-9164cead7a1f",
@@ -260,8 +271,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-03T20:04:33.874698328Z",
+    "timestamp": "2026-09-03T20:10:31.141898534Z",
     "agent_id": "slA5",
-    "agent_seq": 42
+    "agent_seq": 43
   }
 }
