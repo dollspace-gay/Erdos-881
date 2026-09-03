@@ -1,6 +1,6 @@
 {
   "next_display_id": 4,
-  "next_comment_id": 8,
+  "next_comment_id": 9,
   "display_id_map": {
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
     "23f72684-8efa-470b-a980-f46cb316e862": 3,
@@ -54,10 +54,21 @@
       "priority": "medium",
       "created_by": "slA5",
       "created_at": "2026-09-03T18:22:00.232338113Z",
-      "updated_at": "2026-09-03T18:22:04.495139516Z",
+      "updated_at": "2026-09-03T18:22:22.822716972Z",
       "labels": [
         "research"
-      ]
+      ],
+      "comments": {
+        "f117a21d-250d-4bc9-bcd7-1f0bdca8c115": {
+          "display_id": 8,
+          "author": "slA5",
+          "content": "Result: A=S+M*A built from fully pinned blocks S (7 cases, X up to 60000) keeps only the base block pinned; no lifted element is ever pinned. Carry argument: M in 4S whenever 3S covers [0,M). Density crossover: log-size spines cannot be 3-bases past ~10^4, so gap-free SAT chain depth is inconclusive for the infinite problem. Documented in docs/pinned-block-search.md; scripts/probe_pinned_search.py, scripts/probe_pinned_sat.py, docs uncommitted.",
+          "created_at": "2026-09-03T18:22:22.818564574Z",
+          "kind": "note",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAKTW0ZpDagsUQjSN3cJA7coGqxDK0nujYZUFh/W5gAy8Y6oLNP8x+JRA0DOajPsgzjwkqx/Q5B87WznqV1cDhDA=="
+        }
+      }
     },
     "f22110a3-60b8-4aea-ab77-acd2ec6dee56": {
       "uuid": "f22110a3-60b8-4aea-ab77-acd2ec6dee56",
@@ -122,8 +133,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-03T18:22:07.755711321Z",
+    "timestamp": "2026-09-03T18:22:22.822716972Z",
     "agent_id": "slA5",
-    "agent_seq": 18
+    "agent_seq": 19
   }
 }
