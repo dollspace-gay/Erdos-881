@@ -86,7 +86,10 @@
       "priority": "medium",
       "created_by": "slA5",
       "created_at": "2026-09-03T20:12:03.749354020Z",
-      "updated_at": "2026-09-03T20:12:03.749354020Z"
+      "updated_at": "2026-09-03T20:12:07.240060168Z",
+      "labels": [
+        "research"
+      ]
     },
     "4d488d9c-c4ae-48c9-ab63-a640698d9f16": {
       "uuid": "4d488d9c-c4ae-48c9-ab63-a640698d9f16",
@@ -286,8 +289,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-03T20:12:03.749354020Z",
+    "timestamp": "2026-09-03T20:12:07.240060168Z",
     "agent_id": "slA5",
-    "agent_seq": 46
+    "agent_seq": 47
   }
 }
