@@ -1,6 +1,6 @@
 {
   "next_display_id": 5,
-  "next_comment_id": 13,
+  "next_comment_id": 14,
   "display_id_map": {
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
     "23f72684-8efa-470b-a980-f46cb316e862": 3,
@@ -88,11 +88,20 @@
       "priority": "medium",
       "created_by": "slA5",
       "created_at": "2026-09-03T18:25:16.745360345Z",
-      "updated_at": "2026-09-03T18:43:15.943501428Z",
+      "updated_at": "2026-09-03T19:14:28.041802588Z",
       "labels": [
         "research"
       ],
       "comments": {
+        "65b1f93c-13f5-44e9-a2af-c55ef6258a63": {
+          "display_id": 13,
+          "author": "slA5",
+          "content": "Pair test: at most 2 fixed-difference pairs (delta=1, threshold elements) and 1 for delta=2,3 among pinned elements in fully pinned blocks up to 36/80. Recorded in docs. Goal cycle complete.",
+          "created_at": "2026-09-03T19:14:28.038495457Z",
+          "kind": "note",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAlp2RUKwrDZh7Qm0BTH5+/TXBw4P/xjv/PLQenIAej1JW28xm8LFcqsMc5eSLASsVsIdj22wAkAG13nSzPROdCg=="
+        },
         "8108f9a9-259e-4389-90dc-82675605764d": {
           "display_id": 10,
           "author": "slA5",
@@ -185,8 +194,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-03T19:14:14.634426898Z",
+    "timestamp": "2026-09-03T19:14:28.041802588Z",
     "agent_id": "slA5",
-    "agent_seq": 29
+    "agent_seq": 30
   }
 }
