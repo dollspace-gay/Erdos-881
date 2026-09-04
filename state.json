@@ -1,6 +1,6 @@
 {
   "next_display_id": 19,
-  "next_comment_id": 82,
+  "next_comment_id": 83,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -884,7 +884,18 @@
       "parent_uuid": "3c3c109f-4993-42bc-83f1-85f9660903c8",
       "created_by": "slA5",
       "created_at": "2026-09-04T22:30:29.166973832Z",
-      "updated_at": "2026-09-04T22:30:29.166973832Z"
+      "updated_at": "2026-09-04T22:30:50.995940651Z",
+      "comments": {
+        "91314a6c-ccd0-4b80-a6db-67283bbd7ad3": {
+          "display_id": 82,
+          "author": "slA5",
+          "content": "Package the actual frozen-prefix experiments and the verified two-anchor short-diagonal certificate as a reusable probe. Require exact membership and nonmembership below the cutoff, nonvacuous requested old elements, unchanged coverage threshold, targets above the cutoff, and independent bitset verification of every SAT model. Report a certificate separately from bounded UNSAT and UNKNOWN. Test all four certified helpers, absence of certificates for the earlier helpers, a small real SAT extension, tampered models, and UNKNOWN propagation.",
+          "created_at": "2026-09-04T22:30:50.991866770Z",
+          "kind": "plan",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA3YjOReD+/HXsQ9UlIWMcBnoazJj2YeLHfOK9qnHXjm0mG/B+Po2RD68ktQUEGYDGg3EQa4WP78fn5RpJw+8KDg=="
+        }
+      }
     },
     "f22110a3-60b8-4aea-ab77-acd2ec6dee56": {
       "uuid": "f22110a3-60b8-4aea-ab77-acd2ec6dee56",
@@ -1037,8 +1048,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T22:30:46.366200100Z",
+    "timestamp": "2026-09-04T22:30:50.995940651Z",
     "agent_id": "slA5",
-    "agent_seq": 150
+    "agent_seq": 151
   }
 }
