@@ -1,6 +1,6 @@
 {
   "next_display_id": 9,
-  "next_comment_id": 29,
+  "next_comment_id": 30,
   "display_id_map": {
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
     "23f72684-8efa-470b-a980-f46cb316e862": 3,
@@ -92,7 +92,7 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T19:23:01.041319892Z",
-      "updated_at": "2026-09-04T19:30:33.133912941Z",
+      "updated_at": "2026-09-04T19:36:40.216126677Z",
       "labels": [
         "research"
       ],
@@ -114,6 +114,15 @@
           "kind": "plan",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAFiwyorr07O0WipM0RjdiaWREVecHXh58sjLym3lAqQA8rTT4wNwn/chG7us9z5a8ykmib/vFtWshd9qhmVLlCQ=="
+        },
+        "bab9e75d-e990-4578-bce2-33215b942231": {
+          "display_id": 29,
+          "author": "slA5",
+          "content": "Decision: the new counterexample requires retaining finite repair elements. Next test a direct compensation construction: replace each deleted summand b by b-d, then absorb the total loss j*d (0<=j<=k) in one retained anchor from a,a+d,...,a+k*d. This gives an order-uniform positive criterion and may generalize the existing order-two periodic theorem. It operates on every target and does not rely on arbitrary safe prefixes.",
+          "created_at": "2026-09-04T19:36:40.211588307Z",
+          "kind": "decision",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAZEvQ43K4k/orddA/EwdwiD51RYJQVbSvSAt0hd1XDG349H05AwP4rXosxcKvlNF9Ub9Q+spj4JNRpcQj2MJYBg=="
         }
       }
     },
@@ -393,8 +402,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T19:30:33.133912941Z",
+    "timestamp": "2026-09-04T19:36:40.216126677Z",
     "agent_id": "slA5",
-    "agent_seq": 65
+    "agent_seq": 66
   }
 }
