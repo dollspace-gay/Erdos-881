@@ -1,6 +1,6 @@
 {
   "next_display_id": 18,
-  "next_comment_id": 80,
+  "next_comment_id": 81,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -290,7 +290,7 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T22:18:06.670189818Z",
-      "updated_at": "2026-09-04T22:21:28.258600040Z",
+      "updated_at": "2026-09-04T22:22:59.519370489Z",
       "labels": [
         "research"
       ],
@@ -303,6 +303,15 @@
           "kind": "observation",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAMwiggIxX9R41Hrflf9IX87LsI4LMhK0db5PcqyPI3al+fSJvPUWCn6w0pZeVEhDJY/qpAkfrcK0/2h2mPx/GDw=="
+        },
+        "dbb7a06e-8d2a-4dbf-ade0-a7f395c756d5": {
+          "display_id": 80,
+          "author": "slA5",
+          "content": "Use a two-anchor short-diagonal certificate. At a successor pin, an order-k representation of n-a cannot use j copies of b with 1<=j<k if j*b+a can be repaired in j+1 retained terms; zero copies are also impossible. It must use exactly k copies, forcing n=k*b+a. Two distinct retained anchors with these repairs force incompatible equalities. Refactor the existing joint-repair proof only to expose its target-local lemma, preserving the old basis theorem. Then certify the concrete frozen-prefix helpers and independently test exact-prefix extensions.",
+          "created_at": "2026-09-04T22:22:59.516050123Z",
+          "kind": "decision",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABApmTK3X6danjx6YGmbKH6oN6BzjWrE+EfRkQPLcmjAgN9/E31ZamnBvTqIlPRHjb5Pp50grbLEOvRbbRFgFwWDQ=="
         },
         "dc9fcd6a-f51b-4224-9be4-0e2b4ef02250": {
           "display_id": 78,
@@ -1003,8 +1012,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T22:21:28.258600040Z",
+    "timestamp": "2026-09-04T22:22:59.519370489Z",
     "agent_id": "slA5",
-    "agent_seq": 146
+    "agent_seq": 147
   }
 }
