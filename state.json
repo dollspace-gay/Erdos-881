@@ -1,11 +1,12 @@
 {
-  "next_display_id": 17,
+  "next_display_id": 18,
   "next_comment_id": 78,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
     "23f72684-8efa-470b-a980-f46cb316e862": 3,
     "3322a99e-35b8-4e61-88ab-0c97ac88eada": 8,
+    "3c3c109f-4993-42bc-83f1-85f9660903c8": 17,
     "3d337c85-b756-46d9-aa89-344c1f322fcd": 7,
     "45dfc611-58fb-4c5b-83f5-061981b83977": 10,
     "4d488d9c-c4ae-48c9-ab63-a640698d9f16": 6,
@@ -276,6 +277,16 @@
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA8/DikjzjflJ88FnSCMRhMMhGMklwugLWfPxp2LKPf7iNW0fcTMrSMRxdjcC12Grqwl9SxOxOjq0eaZ4vBS/7BQ=="
         }
       }
+    },
+    "3c3c109f-4993-42bc-83f1-85f9660903c8": {
+      "uuid": "3c3c109f-4993-42bc-83f1-85f9660903c8",
+      "display_id": 17,
+      "title": "Test coherent far-pin extensions of fixed basis prefixes",
+      "status": "open",
+      "priority": "high",
+      "created_by": "slA5",
+      "created_at": "2026-09-04T22:18:06.670189818Z",
+      "updated_at": "2026-09-04T22:18:06.670189818Z"
     },
     "3d337c85-b756-46d9-aa89-344c1f322fcd": {
       "uuid": "3d337c85-b756-46d9-aa89-344c1f322fcd",
@@ -965,8 +976,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T22:16:10.509076329Z",
+    "timestamp": "2026-09-04T22:18:06.670189818Z",
     "agent_id": "slA5",
-    "agent_seq": 141
+    "agent_seq": 142
   }
 }
