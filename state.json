@@ -1,11 +1,12 @@
 {
-  "next_display_id": 10,
+  "next_display_id": 11,
   "next_comment_id": 31,
   "display_id_map": {
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
     "23f72684-8efa-470b-a980-f46cb316e862": 3,
     "3322a99e-35b8-4e61-88ab-0c97ac88eada": 8,
     "3d337c85-b756-46d9-aa89-344c1f322fcd": 7,
+    "45dfc611-58fb-4c5b-83f5-061981b83977": 10,
     "4d488d9c-c4ae-48c9-ab63-a640698d9f16": 6,
     "9dfd0bd6-1754-4562-9e7a-9164cead7a1f": 5,
     "e526e750-baba-47dc-b9d2-83268594df7c": 9,
@@ -213,6 +214,17 @@
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA0LoHBeVSXSlnWcAZQJyEYiwhpIYWaJHZ2hXY4P38ikUkUf5/qk6+iZT5E4gRFEbxu+ZB0dkqA4g57iCVBkBtDg=="
         }
       }
+    },
+    "45dfc611-58fb-4c5b-83f5-061981b83977": {
+      "uuid": "45dfc611-58fb-4c5b-83f5-061981b83977",
+      "display_id": 10,
+      "title": "Prove successor-order infinite deletion for bounded-gap bases at every order",
+      "status": "open",
+      "priority": "high",
+      "parent_uuid": "3322a99e-35b8-4e61-88ab-0c97ac88eada",
+      "created_by": "slA5",
+      "created_at": "2026-09-04T19:46:59.173562399Z",
+      "updated_at": "2026-09-04T19:46:59.173562399Z"
     },
     "4d488d9c-c4ae-48c9-ab63-a640698d9f16": {
       "uuid": "4d488d9c-c4ae-48c9-ab63-a640698d9f16",
@@ -426,8 +438,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T19:46:35.144653861Z",
+    "timestamp": "2026-09-04T19:46:59.173562399Z",
     "agent_id": "slA5",
-    "agent_seq": 69
+    "agent_seq": 70
   }
 }
