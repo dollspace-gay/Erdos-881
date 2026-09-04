@@ -1,6 +1,6 @@
 {
   "next_display_id": 19,
-  "next_comment_id": 87,
+  "next_comment_id": 88,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -295,7 +295,7 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T22:18:06.670189818Z",
-      "updated_at": "2026-09-04T22:39:10.399293696Z",
+      "updated_at": "2026-09-04T22:42:30.403668698Z",
       "labels": [
         "research"
       ],
@@ -308,6 +308,15 @@
           "kind": "observation",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAMwiggIxX9R41Hrflf9IX87LsI4LMhK0db5PcqyPI3al+fSJvPUWCn6w0pZeVEhDJY/qpAkfrcK0/2h2mPx/GDw=="
+        },
+        "79ea4464-95f8-4b2c-9edb-477e9ab37afd": {
+          "display_id": 87,
+          "author": "slA5",
+          "content": "Additional checked evidence: the actual scale192 model pinning32@113 has a short-diagonal certificate for40 at anchors1,57, excluding its pins from60. The actual model pinning40@192 certifies32 at anchors9,22, excluding its pins from25. Thus THESE returned individual SAT models cannot be extended to add the other required new pin. This does not prove every single-pin model behaves that way. Added a regression checking both full models and the certificate-based rejection of further pin extension. Next useful test: require pin32 while forbidding a two-anchor short-diagonal certificate for40 (or vice versa), to distinguish a forced arithmetic tradeoff from model choice. Eight certificate/extension test groups now pass.",
+          "created_at": "2026-09-04T22:42:30.399237303Z",
+          "kind": "observation",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA1rqR7ooaiRXVLuiAxWHnbI803GCMTidZ80c1VwWpG4q4+J7PRK7FiRGWA3UsRJUOCbne8JZK+xgGX265ZhTwAw=="
         },
         "82eb9493-93be-4b11-9cb0-f1467be66ed2": {
           "display_id": 86,
@@ -1084,8 +1093,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T22:39:10.399293696Z",
+    "timestamp": "2026-09-04T22:42:30.403668698Z",
     "agent_id": "slA5",
-    "agent_seq": 155
+    "agent_seq": 156
   }
 }
