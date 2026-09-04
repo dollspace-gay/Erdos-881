@@ -1,6 +1,6 @@
 {
   "next_display_id": 18,
-  "next_comment_id": 79,
+  "next_comment_id": 80,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -290,11 +290,20 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T22:18:06.670189818Z",
-      "updated_at": "2026-09-04T22:19:27.544646689Z",
+      "updated_at": "2026-09-04T22:21:28.258600040Z",
       "labels": [
         "research"
       ],
       "comments": {
+        "00b24120-0eab-4317-a885-602b312c5fd3": {
+          "display_id": 79,
+          "author": "slA5",
+          "content": "The recorded depth-four prefix [0,2,3,6,13,20,25,49,50,51,73] already contains full diagonal repair certificates for helpers49,50,51 (anchors2,0,0 respectively). Helper73 has short j=1,2 certificates for BOTH anchors2 and3: 73+2=25+50, 146+2=49+49+50; 73+3=25+51, 146+3=49+49+51. A far successor pin would force an order3 representation with three copies of73, hence simultaneously target221 and222. This should prove all four helpers permanently unpinnable in any order3 extension covering from3, correcting the claim that this chosen helper cluster might always be pinned later. Formal proof and exact-prefix testing follow.",
+          "created_at": "2026-09-04T22:21:28.254903049Z",
+          "kind": "observation",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAMwiggIxX9R41Hrflf9IX87LsI4LMhK0db5PcqyPI3al+fSJvPUWCn6w0pZeVEhDJY/qpAkfrcK0/2h2mPx/GDw=="
+        },
         "dc9fcd6a-f51b-4224-9be4-0e2b4ef02250": {
           "display_id": 78,
           "author": "slA5",
@@ -994,8 +1003,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T22:19:27.544646689Z",
+    "timestamp": "2026-09-04T22:21:28.258600040Z",
     "agent_id": "slA5",
-    "agent_seq": 145
+    "agent_seq": 146
   }
 }
