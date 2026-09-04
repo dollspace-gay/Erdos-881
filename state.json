@@ -1,6 +1,6 @@
 {
   "next_display_id": 11,
-  "next_comment_id": 31,
+  "next_comment_id": 32,
   "display_id_map": {
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
     "23f72684-8efa-470b-a980-f46cb316e862": 3,
@@ -313,10 +313,21 @@
       "parent_uuid": "3322a99e-35b8-4e61-88ab-0c97ac88eada",
       "created_by": "slA5",
       "created_at": "2026-09-04T19:46:31.511187632Z",
-      "updated_at": "2026-09-04T19:46:35.144653861Z",
+      "updated_at": "2026-09-04T19:47:20.819401721Z",
       "labels": [
         "research"
-      ]
+      ],
+      "comments": {
+        "0adf9838-3aa8-4cf1-a2d1-c67e4b9a102b": {
+          "display_id": 31,
+          "author": "slA5",
+          "content": "Result: SafePrefixCounterexample.lean proves the exact universal no-relative-reflective-tail hypothesis false for A={0,3} union (1 mod 4), strongly minimal order 3 and not order 2. The bad prefix {3} is itself a clean first selection. ResidueCoreDeletion.lean proves deleting 1 mod 12 from A succeeds at order 4 from target 24. All 18 declarations audited, standard axioms only. Integrated in root imports; documentation corrected. Files remain uncommitted.",
+          "created_at": "2026-09-04T19:47:20.815358558Z",
+          "kind": "result",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAcO9eMdqbFVWCdylauyFXwpO7pYpcSJD0h/yF/nV26ie0vfGMI71FaGo+KurGPH23gQFVHgq8DA/Y1XNEhpXZBA=="
+        }
+      }
     },
     "e940d6b5-45c8-4806-977b-61fb98b436b4": {
       "uuid": "e940d6b5-45c8-4806-977b-61fb98b436b4",
@@ -441,8 +452,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T19:47:03.409043510Z",
+    "timestamp": "2026-09-04T19:47:20.819401721Z",
     "agent_id": "slA5",
-    "agent_seq": 71
+    "agent_seq": 72
   }
 }
