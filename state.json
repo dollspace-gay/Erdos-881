@@ -1,6 +1,6 @@
 {
   "next_display_id": 13,
-  "next_comment_id": 45,
+  "next_comment_id": 46,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -35,8 +35,17 @@
       "parent_uuid": "3322a99e-35b8-4e61-88ab-0c97ac88eada",
       "created_by": "slA5",
       "created_at": "2026-09-04T20:19:21.511666697Z",
-      "updated_at": "2026-09-04T20:27:00.627577027Z",
+      "updated_at": "2026-09-04T20:36:59.165225106Z",
       "comments": {
+        "5cef7e2f-6854-458e-a4c1-00c0826de068": {
+          "display_id": 45,
+          "author": "slA5",
+          "content": "Verified new mechanism: AnchorWalkCompensation.lean proves tuple repair by advancing a retained anchor only on deleted coordinates; signed transitions are allowed. AnchorWalkPatterns.lean embeds all cube repairs, excludes walks under finite fixed-difference recurrence, and proves a two-anchor cycle from infinitely many centered 3-term progressions at one fixed positive difference. This suffices at every order. SquareRepairObstruction.lean formally refutes both unrestricted cube-or-shadow and walk-or-shadow dichotomies using squares at order5, with no strong-minimality claim. GeneralOrderFrontier includes the stronger no-walk/no-shadow reduction. Full build8335 passed; current new modules warning-free. Continuing with the actual remaining arithmetic, before final axiom audit/docs.",
+          "created_at": "2026-09-04T20:36:59.161130129Z",
+          "kind": "result",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAHWvx1cCFtOOKDdBTu6pvFFUucq3G/+arzFn92AbyPo3hpoi9q4svsmdscv9j27mf7hMqiNjA9yjH2ruM4a+RAg=="
+        },
         "c47ab8b4-3343-4477-abbf-7e5dcfdf5f05": {
           "display_id": 43,
           "author": "slA5",
@@ -606,8 +615,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T20:27:00.627577027Z",
+    "timestamp": "2026-09-04T20:36:59.165225106Z",
     "agent_id": "slA5",
-    "agent_seq": 93
+    "agent_seq": 94
   }
 }
