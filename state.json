@@ -1,5 +1,5 @@
 {
-  "next_display_id": 22,
+  "next_display_id": 23,
   "next_comment_id": 105,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
@@ -22,7 +22,8 @@
     "e940d6b5-45c8-4806-977b-61fb98b436b4": 4,
     "eb8ac346-e59f-410e-8a2c-19a07db394d7": 18,
     "f22110a3-60b8-4aea-ab77-acd2ec6dee56": 1,
-    "f4fc95b7-1053-4108-b93d-553fee846330": 11
+    "f4fc95b7-1053-4108-b93d-553fee846330": 11,
+    "fb906ae5-3616-4d3d-8318-b293b68c800e": 22
   },
   "locks": {
     "8": {
@@ -1285,12 +1286,22 @@
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAvQIG9ylZ6IFVOaD9QyE8HAo9l3276HxxLGX+d4bL7Gri3B9/tdjpjoeyQq3xoVjxMttGU7cimEP6as9zQ0ViAg=="
         }
       }
+    },
+    "fb906ae5-3616-4d3d-8318-b293b68c800e": {
+      "uuid": "fb906ae5-3616-4d3d-8318-b293b68c800e",
+      "display_id": 22,
+      "title": "Test pin-forced predecessor partitions and coherent pair-unique extensions",
+      "status": "open",
+      "priority": "high",
+      "created_by": "slA5",
+      "created_at": "2026-09-04T23:36:22.320786983Z",
+      "updated_at": "2026-09-04T23:36:22.320786983Z"
     }
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T23:35:23.941811379Z",
+    "timestamp": "2026-09-04T23:36:22.320786983Z",
     "agent_id": "slA5",
-    "agent_seq": 189
+    "agent_seq": 190
   }
 }
