@@ -1,6 +1,6 @@
 {
   "next_display_id": 13,
-  "next_comment_id": 48,
+  "next_comment_id": 49,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -35,7 +35,7 @@
       "parent_uuid": "3322a99e-35b8-4e61-88ab-0c97ac88eada",
       "created_by": "slA5",
       "created_at": "2026-09-04T20:19:21.511666697Z",
-      "updated_at": "2026-09-04T20:40:44.692459997Z",
+      "updated_at": "2026-09-04T20:44:47.104625631Z",
       "comments": {
         "5cef7e2f-6854-458e-a4c1-00c0826de068": {
           "display_id": 45,
@@ -81,6 +81,15 @@
           "kind": "decision",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAfJpHP8TIjG7AHmXUqZ6R6s7j4s7c3V5dsrSqJAxHK2JhpXqVI2NnDYmI529C4Ymvcwtahb1vQiENn5FKsB4KBQ=="
+        },
+        "e3b45ff9-4642-43ba-b34b-0fd386502b9e": {
+          "display_id": 48,
+          "author": "slA5",
+          "content": "Fixed-deadline SAT tests: N=3, pin-start12; SAT at (T,C)=(64,2),(96,2),(96,3),(128,3), with only1-2 required pins in each witness; (128,4) SAT is vacuous (no chosen eligible b<=32). All witnesses independently bitset-checked. New analytic obstruction for C=2: for p<b<q in A with p+N<=b, a pin n<=2b forces p+b<=n<q+N. In any doubling interval [X,2X], this forbids three such points once b-p>=N, hence at most N+1 points for positive N. Uniform close pins would force logarithmic counting growth, contradicting finite-order basis coverage. Formalizing this quantitative exclusion; no claim about C>2.",
+          "created_at": "2026-09-04T20:44:47.099736679Z",
+          "kind": "observation",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA7+Pvn82EtCFmItin80ou0g4WWvG3Lr/QKhHNEg/MsCBXiD/1BAOco/wDu8hSrFxjUJQMkuEEvu+Uhf7OEPZQAA=="
         }
       }
     },
@@ -633,8 +642,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T20:40:44.692459997Z",
+    "timestamp": "2026-09-04T20:44:47.104625631Z",
     "agent_id": "slA5",
-    "agent_seq": 96
+    "agent_seq": 97
   }
 }
