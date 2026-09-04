@@ -1,5 +1,5 @@
 {
-  "next_display_id": 15,
+  "next_display_id": 16,
   "next_comment_id": 64,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
@@ -9,6 +9,7 @@
     "3d337c85-b756-46d9-aa89-344c1f322fcd": 7,
     "45dfc611-58fb-4c5b-83f5-061981b83977": 10,
     "4d488d9c-c4ae-48c9-ab63-a640698d9f16": 6,
+    "5ddbf060-5d5a-4494-95ff-62224bae671f": 15,
     "93e23094-7281-4a29-b494-aea4582daaa7": 14,
     "9dfd0bd6-1754-4562-9e7a-9164cead7a1f": 5,
     "c0d574af-ecc9-4cd1-a26e-378ebf41d1b1": 13,
@@ -411,6 +412,17 @@
         }
       }
     },
+    "5ddbf060-5d5a-4494-95ff-62224bae671f": {
+      "uuid": "5ddbf060-5d5a-4494-95ff-62224bae671f",
+      "display_id": 15,
+      "title": "Add exact collective pin witnesses for failure of local joint repair",
+      "status": "open",
+      "priority": "medium",
+      "parent_uuid": "93e23094-7281-4a29-b494-aea4582daaa7",
+      "created_by": "slA5",
+      "created_at": "2026-09-04T21:37:38.738480225Z",
+      "updated_at": "2026-09-04T21:37:38.738480225Z"
+    },
     "93e23094-7281-4a29-b494-aea4582daaa7": {
       "uuid": "93e23094-7281-4a29-b494-aea4582daaa7",
       "display_id": 14,
@@ -809,8 +821,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T21:37:35.028475152Z",
+    "timestamp": "2026-09-04T21:37:38.738480225Z",
     "agent_id": "slA5",
-    "agent_seq": 120
+    "agent_seq": 121
   }
 }
