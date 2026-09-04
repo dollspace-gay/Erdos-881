@@ -1,6 +1,6 @@
 {
   "next_display_id": 21,
-  "next_comment_id": 97,
+  "next_comment_id": 98,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -893,10 +893,21 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T23:07:22.460239005Z",
-      "updated_at": "2026-09-04T23:07:25.809317909Z",
+      "updated_at": "2026-09-04T23:08:39.995634169Z",
       "labels": [
         "research"
-      ]
+      ],
+      "comments": {
+        "17657f05-61ef-4b9b-8042-253884872338": {
+          "display_id": 97,
+          "author": "slA5",
+          "content": "Plan: investigate successor-order repairs that consume a deleted coordinate together with one or more retained partner coordinates. Read existing general-order and splitting machinery to avoid duplicating a conditional wrapper. The central bottleneck is compatibility across infinitely many possible partners: a finite-arity free-set theorem on deleted coordinates alone cannot control an unbounded family of partner-dependent supports. Seek a concrete arithmetic criterion or falsifiable obstruction that genuinely addresses that bottleneck; do not infer availability for every basis.",
+          "created_at": "2026-09-04T23:08:39.992651602Z",
+          "kind": "plan",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAk/n+rPVNun4fp8fDVWWgCpRTxFNy1oBuTtODeZQ6rOfW1JM46HMiwqPMNknjxzspdr6XHUrbwYGbjfO5SJfGDQ=="
+        }
+      }
     },
     "e526e750-baba-47dc-b9d2-83268594df7c": {
       "uuid": "e526e750-baba-47dc-b9d2-83268594df7c",
@@ -1201,8 +1212,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T23:07:28.937263435Z",
+    "timestamp": "2026-09-04T23:08:39.995634169Z",
     "agent_id": "slA5",
-    "agent_seq": 175
+    "agent_seq": 176
   }
 }
