@@ -1,6 +1,6 @@
 {
   "next_display_id": 23,
-  "next_comment_id": 105,
+  "next_comment_id": 106,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1a9af280-0625-44f1-8225-c983e22ae8aa": 21,
@@ -1299,16 +1299,27 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T23:36:22.320786983Z",
-      "updated_at": "2026-09-04T23:36:25.449703491Z",
+      "updated_at": "2026-09-04T23:37:02.557435516Z",
       "labels": [
         "research"
-      ]
+      ],
+      "comments": {
+        "41ffb735-104f-43f4-8ad8-2c03add35228": {
+          "display_id": 105,
+          "author": "slA5",
+          "content": "Plan: investigate the pin-forced near-partition of usable anchors into predecessor representations. For pair-unique A, the order-three support family is a matching. First test exact frozen pair-unique prefixes for coverage-only extension, separating a prefix dead end from a general impossibility. Then seek a quantitative compatibility constraint on two such predecessor partitions or a verified extension construction. Do not treat bounded SAT failure as an infinite theorem, and do not reuse the false claim that a robust predecessor removes its deleted extra anchor.",
+          "created_at": "2026-09-04T23:37:02.554337137Z",
+          "kind": "plan",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAuh9P5ZqBk6AQvIHIRdtfdc6RuNl35VyIrdgN1P/eZH9V1ZJpRHMdeU/7eVgSQc7LgJuq1YC+WFL4MGOzINBYAw=="
+        }
+      }
     }
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T23:36:29.139281782Z",
+    "timestamp": "2026-09-04T23:37:02.557435516Z",
     "agent_id": "slA5",
-    "agent_seq": 192
+    "agent_seq": 193
   }
 }
