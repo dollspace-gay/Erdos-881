@@ -1,6 +1,6 @@
 {
   "next_display_id": 23,
-  "next_comment_id": 108,
+  "next_comment_id": 109,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1a9af280-0625-44f1-8225-c983e22ae8aa": 21,
@@ -1299,7 +1299,7 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T23:36:22.320786983Z",
-      "updated_at": "2026-09-04T23:49:26.466909640Z",
+      "updated_at": "2026-09-04T23:53:40.390597738Z",
       "labels": [
         "research"
       ],
@@ -1330,14 +1330,23 @@
           "kind": "plan",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAuh9P5ZqBk6AQvIHIRdtfdc6RuNl35VyIrdgN1P/eZH9V1ZJpRHMdeU/7eVgSQc7LgJuq1YC+WFL4MGOzINBYAw=="
+        },
+        "6132353a-a421-45d6-a4c9-75eaec46c4e9": {
+          "display_id": 108,
+          "author": "slA5",
+          "content": "Formalize the general usable-anchor inclusion in the predecessor shadow, its equality after erasing b when b >= N, and unique support ownership under pair uniqueness. Separately certify that the exact P85 prefix cannot satisfy pair uniqueness and order-three coverage at both 88 and 104. The computational backbone forcing P85 from pin24@85 remains SAT evidence, not a Lean theorem.",
+          "created_at": "2026-09-04T23:53:40.386656167Z",
+          "kind": "plan",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAKIk8+WJGA8upABW3XcMOfQJKPzzi6gAqKnQOAgtI7ZcCHFMvVtJUCWDI1/bYnT4O21KLVEdSURuccVKMU6/3Aw=="
         }
       }
     }
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T23:49:26.466909640Z",
+    "timestamp": "2026-09-04T23:53:40.390597738Z",
     "agent_id": "slA5",
-    "agent_seq": 195
+    "agent_seq": 196
   }
 }
