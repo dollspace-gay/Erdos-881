@@ -1,6 +1,6 @@
 {
   "next_display_id": 20,
-  "next_comment_id": 93,
+  "next_comment_id": 94,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -577,7 +577,7 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T22:44:49.243463220Z",
-      "updated_at": "2026-09-04T22:57:29.875469070Z",
+      "updated_at": "2026-09-04T23:00:15.411837118Z",
       "labels": [
         "research"
       ],
@@ -599,6 +599,15 @@
           "kind": "plan",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA6s88OsJjAj0i1EBEOyGbnJsLibDcHphKO+/QK8+R3KS8VdH/3LuzHMSRJaWeDRjit9+GvAnoPxSsIx74UlNhAA=="
+        },
+        "b9c65e97-6bbf-4ac3-98aa-7c06dbdf250f": {
+          "display_id": 93,
+          "author": "slA5",
+          "content": "The certified-free scale384 prefix extends coherently: scale768 was UNSAT, but scale1152 SAT in2.69s pins40@1148 while preserving every yes/no through384 and thus pin32@382. Full model {0,1,2,6,9,22,32,40,56,60,76,85,89,109,159,176,209,234,238,243,309,344,346,418,423,466,509,526,677,759,842,859,959,992,1020,1046,1067,1099,1151,1152}. This refutes permanent incompatibility of the two helpers for prefix48. It does not produce an infinite extension. Preserve exact model in regression tests and document scale-dependent UNSAT versus permanent certificate exclusion.",
+          "created_at": "2026-09-04T23:00:15.408203723Z",
+          "kind": "observation",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAo5jvctBAz8GSXlz5oCIOoP6DURg9BoontlFsNgsu58vF4xO0QI6yxx/Hv6h+SyHCh7WniuF2k/ol9hqWn+ggAg=="
         },
         "d9369a0e-b963-44ce-86c5-35f25eed59d9": {
           "display_id": 92,
@@ -1154,8 +1163,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T22:57:29.875469070Z",
+    "timestamp": "2026-09-04T23:00:15.411837118Z",
     "agent_id": "slA5",
-    "agent_seq": 165
+    "agent_seq": 166
   }
 }
