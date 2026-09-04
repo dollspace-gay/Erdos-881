@@ -1,5 +1,5 @@
 {
-  "next_display_id": 16,
+  "next_display_id": 17,
   "next_comment_id": 72,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
@@ -10,6 +10,7 @@
     "45dfc611-58fb-4c5b-83f5-061981b83977": 10,
     "4d488d9c-c4ae-48c9-ab63-a640698d9f16": 6,
     "5ddbf060-5d5a-4494-95ff-62224bae671f": 15,
+    "90a262df-e1be-4625-a887-01f36b3e41b3": 16,
     "93e23094-7281-4a29-b494-aea4582daaa7": 14,
     "9dfd0bd6-1754-4562-9e7a-9164cead7a1f": 5,
     "c0d574af-ecc9-4cd1-a26e-378ebf41d1b1": 13,
@@ -488,6 +489,16 @@
         }
       }
     },
+    "90a262df-e1be-4625-a887-01f36b3e41b3": {
+      "uuid": "90a262df-e1be-4625-a887-01f36b3e41b3",
+      "display_id": 16,
+      "title": "Investigate arithmetic content beyond lower-order collective pins",
+      "status": "open",
+      "priority": "high",
+      "created_by": "slA5",
+      "created_at": "2026-09-04T21:57:16.897103851Z",
+      "updated_at": "2026-09-04T21:57:16.897103851Z"
+    },
     "93e23094-7281-4a29-b494-aea4582daaa7": {
       "uuid": "93e23094-7281-4a29-b494-aea4582daaa7",
       "display_id": 14,
@@ -895,8 +906,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T21:56:15.959769029Z",
+    "timestamp": "2026-09-04T21:57:16.897103851Z",
     "agent_id": "slA5",
-    "agent_seq": 131
+    "agent_seq": 132
   }
 }
