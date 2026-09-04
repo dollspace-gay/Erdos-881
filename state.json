@@ -1,6 +1,6 @@
 {
   "next_display_id": 19,
-  "next_comment_id": 83,
+  "next_comment_id": 84,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -884,8 +884,17 @@
       "parent_uuid": "3c3c109f-4993-42bc-83f1-85f9660903c8",
       "created_by": "slA5",
       "created_at": "2026-09-04T22:30:29.166973832Z",
-      "updated_at": "2026-09-04T22:30:50.995940651Z",
+      "updated_at": "2026-09-04T22:34:00.367828781Z",
       "comments": {
+        "78c67d21-a094-47ec-ac2c-60f2699c85f5": {
+          "display_id": 83,
+          "author": "slA5",
+          "content": "The reusable probe checks for two-anchor certificates before SAT, but only rejects a requested pin extension when the certificate threshold is at or below that request's minimum target. Otherwise it runs the existing sound encoder with a fully frozen prefix and verifies the model independently. Certified impossibility, bounded UNSAT, and UNKNOWN remain separate statuses. The certificates are individual: their repairs can use other helpers, so no safe simultaneous deletion is inferred.",
+          "created_at": "2026-09-04T22:34:00.364230682Z",
+          "kind": "decision",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAh+0Cr0oNltngSK1BrShKklV4IIBUD+vPu1m/8b2o76yXwxanTHB4zodYugvKufUMjY1be4Mp8viAN8Lj+9HQDg=="
+        },
         "91314a6c-ccd0-4b80-a6db-67283bbd7ad3": {
           "display_id": 82,
           "author": "slA5",
@@ -1048,8 +1057,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T22:30:50.995940651Z",
+    "timestamp": "2026-09-04T22:34:00.367828781Z",
     "agent_id": "slA5",
-    "agent_seq": 151
+    "agent_seq": 152
   }
 }
