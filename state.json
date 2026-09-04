@@ -1,6 +1,6 @@
 {
   "next_display_id": 20,
-  "next_comment_id": 94,
+  "next_comment_id": 95,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -577,11 +577,20 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T22:44:49.243463220Z",
-      "updated_at": "2026-09-04T23:00:15.411837118Z",
+      "updated_at": "2026-09-04T23:04:17.340119788Z",
       "labels": [
         "research"
       ],
       "comments": {
+        "1b9ff69c-25ab-4399-93c6-8cf6eca15395": {
+          "display_id": 94,
+          "author": "slA5",
+          "content": "[action] Negative-certificate CNF and 2688 arithmetic comparisons verified; coherent frozen-prefix chain pins32@382 then40@1148 through1152. New helpers32 all have permanent two-anchor certificates with thresholds<=min(b,88). No new Lean files; root8353 passed; 25 Python tests pass. Audit running in terminal session16284; docs and tests preserve exact nested models.",
+          "created_at": "2026-09-04T23:04:17.336761238Z",
+          "kind": "note",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAmduVicnKOc7XGu/FSwD+vyB4ShWAQOot4Pz+0CnUTQq6gWkKe51zOi/m6vJ/bN1Kf13dQAzJ/5mUtdfc1ywyCw=="
+        },
         "65a1a3f2-3ef4-4921-8ff1-31f24a2df7cd": {
           "display_id": 91,
           "author": "slA5",
@@ -1163,8 +1172,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T23:00:15.411837118Z",
+    "timestamp": "2026-09-04T23:04:17.340119788Z",
     "agent_id": "slA5",
-    "agent_seq": 166
+    "agent_seq": 167
   }
 }
