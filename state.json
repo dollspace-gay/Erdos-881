@@ -159,12 +159,13 @@
       "uuid": "1a9af280-0625-44f1-8225-c983e22ae8aa",
       "display_id": 21,
       "title": "Fix pin reflection checks outside the predecessor coverage range",
-      "status": "open",
+      "status": "closed",
       "priority": "medium",
       "parent_uuid": "cd7b5e87-258d-472c-8a34-5bb59e484738",
       "created_by": "slA5",
       "created_at": "2026-09-04T23:18:04.536613861Z",
-      "updated_at": "2026-09-04T23:19:51.425167963Z",
+      "updated_at": "2026-09-04T23:19:54.599892134Z",
+      "closed_at": "2026-09-04T23:19:54.599191373Z",
       "labels": [
         "bug"
       ],
@@ -1260,8 +1261,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T23:19:51.425167963Z",
+    "timestamp": "2026-09-04T23:19:54.599892134Z",
     "agent_id": "slA5",
-    "agent_seq": 182
+    "agent_seq": 183
   }
 }
