@@ -1,6 +1,6 @@
 {
   "next_display_id": 22,
-  "next_comment_id": 101,
+  "next_comment_id": 102,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1a9af280-0625-44f1-8225-c983e22ae8aa": 21,
@@ -929,7 +929,7 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T23:07:22.460239005Z",
-      "updated_at": "2026-09-04T23:17:06.480484622Z",
+      "updated_at": "2026-09-04T23:22:25.877152240Z",
       "labels": [
         "research"
       ],
@@ -942,6 +942,15 @@
           "kind": "plan",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAk/n+rPVNun4fp8fDVWWgCpRTxFNy1oBuTtODeZQ6rOfW1JM46HMiwqPMNknjxzspdr6XHUrbwYGbjfO5SJfGDQ=="
+        },
+        "66d985ed-ce74-474d-9197-eb8e4582afd6": {
+          "display_id": 101,
+          "author": "slA5",
+          "content": "Decision: formalize the pair-unique obstruction and its positive structural content rather than assert partner compatibility. Pair uniqueness forbids every singleton-plus-anchor repair, but also forces distinct three-term representation supports at one target to be disjoint: sharing one coordinate leaves equal two-term sums. This gives a bounded shadow for any triple target destroyed by a finite set. It is a conditional arithmetic statement, not a claim that an infinite pair-unique order-three basis exists or that the full problem is reduced to such bases. Finite verified pair-unique covers now reach192 with threshold24; larger instances were UNKNOWN at10000 conflicts.",
+          "created_at": "2026-09-04T23:22:25.873960221Z",
+          "kind": "decision",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAX0+mzbU3ywrytvdaeigkG6Z5xSLWMGC3V/QUxrvZUumB2kXArIYGaab8JzqvHOFVYR9mo8ESCaFJXsGkuwULAA=="
         },
         "96306246-3e99-4536-afa1-7cd1d454f6d4": {
           "display_id": 98,
@@ -1257,8 +1266,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T23:19:58.367459900Z",
+    "timestamp": "2026-09-04T23:22:25.877152240Z",
     "agent_id": "slA5",
-    "agent_seq": 184
+    "agent_seq": 185
   }
 }
