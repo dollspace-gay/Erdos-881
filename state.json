@@ -1,6 +1,6 @@
 {
   "next_display_id": 12,
-  "next_comment_id": 36,
+  "next_comment_id": 37,
   "display_id_map": {
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
     "23f72684-8efa-470b-a980-f46cb316e862": 3,
@@ -492,11 +492,20 @@
       "parent_uuid": "3322a99e-35b8-4e61-88ab-0c97ac88eada",
       "created_by": "slA5",
       "created_at": "2026-09-04T19:50:09.962406378Z",
-      "updated_at": "2026-09-04T19:50:41.671005740Z",
+      "updated_at": "2026-09-04T20:02:26.505108532Z",
       "labels": [
         "research"
       ],
       "comments": {
+        "f15ac010-6f00-45cb-b025-7463899d3774": {
+          "display_id": 36,
+          "author": "slA5",
+          "content": "Cube compensation and its translated-finite-sums application now build warning-free, including a uniform alternate deletion proof for DigitSet k. Exploring complementary anchor counting: one deleted b can spoil only anchors s whose residual target n-b has an order-k representation containing s. Sparse deletion succeeds if the maximum size of such representation shadows is little-o of the available anchor count. This is an independent sufficient condition, not yet a dichotomy covering every basis.",
+          "created_at": "2026-09-04T20:02:26.499487617Z",
+          "kind": "observation",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAbdjob1NyB/claQI+espTWLkKRHLD6YB4nOvrxe2vL0xPwlwTwGNhb+LYOVzmGMj+lJQg07t9IjxiCum6YPmtBQ=="
+        },
         "f2997225-e0ca-4f10-8ed6-01911b03f826": {
           "display_id": 35,
           "author": "slA5",
@@ -511,8 +520,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T19:50:41.671005740Z",
+    "timestamp": "2026-09-04T20:02:26.505108532Z",
     "agent_id": "slA5",
-    "agent_seq": 81
+    "agent_seq": 82
   }
 }
