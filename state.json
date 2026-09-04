@@ -1,6 +1,6 @@
 {
   "next_display_id": 15,
-  "next_comment_id": 61,
+  "next_comment_id": 62,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -419,10 +419,21 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T21:26:49.628128460Z",
-      "updated_at": "2026-09-04T21:26:53.648432358Z",
+      "updated_at": "2026-09-04T21:27:25.938820471Z",
       "labels": [
         "research"
-      ]
+      ],
+      "comments": {
+        "e307c03c-9718-4c65-974d-fe90ff36e5fe": {
+          "display_id": 61,
+          "author": "slA5",
+          "content": "Prove a bounded finite-arity free-set theorem, then apply it to simultaneous additive repairs with all multiplicity patterns retained. Reuse InfiniteRamsey.infinite_ramsey_tuples. Simplify the homogeneous-hit contradiction by counting (r+1)-subsets against at most M choices per r-subset, rather than separate early/middle/late cases. Connect the result to SubtupleRepair, not just a standalone combinatorial statement. No universal local splittability assertion without proof; preserve the exact general-order goal.",
+          "created_at": "2026-09-04T21:27:25.934188954Z",
+          "kind": "plan",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA5ZTLryv7bkY830hLEEEx2ZmoiDGk9MsRIf/g9tvlDQZzYaG1ZsWpyLcpwVhnhM2C+NbWhyyK+4v3eOFllT0wAQ=="
+        }
+      }
     },
     "9dfd0bd6-1754-4562-9e7a-9164cead7a1f": {
       "uuid": "9dfd0bd6-1754-4562-9e7a-9164cead7a1f",
@@ -780,8 +791,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T21:26:57.188348961Z",
+    "timestamp": "2026-09-04T21:27:25.938820471Z",
     "agent_id": "slA5",
-    "agent_seq": 117
+    "agent_seq": 118
   }
 }
