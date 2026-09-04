@@ -1,8 +1,9 @@
 {
-  "next_display_id": 21,
+  "next_display_id": 22,
   "next_comment_id": 99,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
+    "1a9af280-0625-44f1-8225-c983e22ae8aa": 21,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
     "23f72684-8efa-470b-a980-f46cb316e862": 3,
     "3322a99e-35b8-4e61-88ab-0c97ac88eada": 8,
@@ -149,6 +150,17 @@
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA7+Pvn82EtCFmItin80ou0g4WWvG3Lr/QKhHNEg/MsCBXiD/1BAOco/wDu8hSrFxjUJQMkuEEvu+Uhf7OEPZQAA=="
         }
       }
+    },
+    "1a9af280-0625-44f1-8225-c983e22ae8aa": {
+      "uuid": "1a9af280-0625-44f1-8225-c983e22ae8aa",
+      "display_id": 21,
+      "title": "Fix pin reflection checks outside the predecessor coverage range",
+      "status": "open",
+      "priority": "medium",
+      "parent_uuid": "cd7b5e87-258d-472c-8a34-5bb59e484738",
+      "created_by": "slA5",
+      "created_at": "2026-09-04T23:18:04.536613861Z",
+      "updated_at": "2026-09-04T23:18:04.536613861Z"
     },
     "1b00f123-0028-46b3-a6b3-13b9155998f2": {
       "uuid": "1b00f123-0028-46b3-a6b3-13b9155998f2",
@@ -1221,8 +1233,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T23:17:06.480484622Z",
+    "timestamp": "2026-09-04T23:18:04.536613861Z",
     "agent_id": "slA5",
-    "agent_seq": 177
+    "agent_seq": 178
   }
 }
