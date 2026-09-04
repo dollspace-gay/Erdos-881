@@ -1,6 +1,6 @@
 {
   "next_display_id": 20,
-  "next_comment_id": 91,
+  "next_comment_id": 92,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -577,11 +577,20 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T22:44:49.243463220Z",
-      "updated_at": "2026-09-04T22:46:44.679144344Z",
+      "updated_at": "2026-09-04T22:51:29.238582840Z",
       "labels": [
         "research"
       ],
       "comments": {
+        "65a1a3f2-3ef4-4921-8ff1-31f24a2df7cd": {
+          "display_id": 91,
+          "author": "slA5",
+          "content": "Exhaustive negative-certificate CNF check passed1344 fixed sets/order/protected combinations. At192, pin32 with NO TWO-anchor certificate for40 is SAT: [0,1,2,6,9,22,32,40,57,75,77,121,142,153,162], pin32@113. Reverse pin40/no-two-for32 is UNSAT at192. The new SAT model nevertheless gives40 one short anchor1: 41=9+32 and81=0+6+75, so the checked all-copies theorem confines any pin >=4 to121, already below192; indeed121 is itself retained. Absence of a TWO-anchor certificate alone does not keep future pinning viable. Next strengthen the finite probe to permit ZERO short-repair anchors for the other helper, and independently check this stronger absence.",
+          "created_at": "2026-09-04T22:51:29.234763863Z",
+          "kind": "observation",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA1dbYFYdmyftlO3B+dKZlwNfg0Jdv3K7JHQlpHYKpTiNnPVpTaZx3cfDaWmGtcysDjOQdEc2u4wct77432HQfAg=="
+        },
         "ad301219-adcc-4bac-980a-2fc97a5758ec": {
           "display_id": 90,
           "author": "slA5",
@@ -1136,8 +1145,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T22:46:44.679144344Z",
+    "timestamp": "2026-09-04T22:51:29.238582840Z",
     "agent_id": "slA5",
-    "agent_seq": 163
+    "agent_seq": 164
   }
 }
