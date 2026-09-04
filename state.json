@@ -1,6 +1,6 @@
 {
   "next_display_id": 18,
-  "next_comment_id": 81,
+  "next_comment_id": 82,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -290,7 +290,7 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T22:18:06.670189818Z",
-      "updated_at": "2026-09-04T22:22:59.519370489Z",
+      "updated_at": "2026-09-04T22:29:00.064421974Z",
       "labels": [
         "research"
       ],
@@ -321,6 +321,15 @@
           "kind": "plan",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAskHjqHhdSjoBIRcdrqDyUAAm1bpdPnQOuLS5UOf5FKKjlb8Do8ASQgRf/qg4h0MYwzhkN0Igu+DhirlseIsHAA=="
+        },
+        "e126749c-ab22-4226-b39e-ef06a7938a25": {
+          "display_id": 81,
+          "author": "slA5",
+          "content": "Exact freeze of prefix [0,1,2,6,9,22,32,40] through48: requiring BOTH old helpers32,40 to acquire new pins gives UNSAT at final scales96,144,192 (192 resolved with100000 conflicts). Each helper individually is SAT at192: pin32 at113, or pin40 at192, with independently checked prefix equality, coverage, and pins. At384 the simultaneous request is UNKNOWN after100000 conflicts/32.25s. This is not a proof of permanent incompatibility. Separately, the four unpinnable helpers in prefix96 are only a FINITE exceptional set, so their certificates do not by themselves exclude every counterexample extending that prefix.",
+          "created_at": "2026-09-04T22:29:00.060545946Z",
+          "kind": "observation",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAwGEsSkWAPgD3rLEiMkT2JY9gFhQhd/oVDDASh0K0/fLup0pXKbUpsOgehscsnLrQ0IRn6tH3sCq9XuHMHKIfDg=="
         }
       }
     },
@@ -1012,8 +1021,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T22:22:59.519370489Z",
+    "timestamp": "2026-09-04T22:29:00.064421974Z",
     "agent_id": "slA5",
-    "agent_seq": 147
+    "agent_seq": 148
   }
 }
