@@ -1,6 +1,6 @@
 {
   "next_display_id": 16,
-  "next_comment_id": 66,
+  "next_comment_id": 67,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -425,7 +425,7 @@
       "parent_uuid": "93e23094-7281-4a29-b494-aea4582daaa7",
       "created_by": "slA5",
       "created_at": "2026-09-04T21:37:38.738480225Z",
-      "updated_at": "2026-09-04T21:45:30.044974187Z",
+      "updated_at": "2026-09-04T21:46:31.607409283Z",
       "comments": {
         "128d6f44-1ec8-46c9-83c2-931810aac907": {
           "display_id": 65,
@@ -435,6 +435,15 @@
           "kind": "decision",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA5XmZGjRq5na45wJ5LBF9xMfdct6VOsuGBRx0+UFR0neep89psreqv7T390HzpZacA8eg0nUBs3pb5Bb9aCvYBA=="
+        },
+        "662c7aca-7995-4687-ba53-44221902b562": {
+          "display_id": 66,
+          "author": "slA5",
+          "content": "[action] Session17 issue14 parent / active15: built local-to-global repair at every order plus cofinal finite collective pins (full build8347 passed). New FiniteSetRamsey, BoundedArityFreeSet, LocalRepairSupports, RepairChoiceMap, LocalSubtupleRepair, JointRepairObstruction. General frontier now erdos881_of_primitive_no_local_joint_repair. Implementing stronger uniform pattern in UniformJointPins: finite mask T subset Fin k plus index assignment p; every bad tuple embeds in k-point superset; finite-family Ramsey should force same represented collective pin pattern on every k-point subset of one infinite pool. Added finite-family Ramsey and infinite_pool_extend_finset helpers. Build session42679 is running; uniform theorem not yet verified. Expanded audit not run yet; script currently expects24 modules/120 authored (must add UniformJointPins and update count after successful compile). Docs still old; do not finalize without root build and audit.",
+          "created_at": "2026-09-04T21:46:31.598136867Z",
+          "kind": "note",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAseeWLT9B5Hg0vwwiejrlyR0jNHZ1xv5cevJi20VUQRN6v9uSDe1jz8gusasTZzz1TsiXkfaeK1i/ldZdtIhVAA=="
         },
         "92c35625-c666-4576-9656-31e8c2c74eee": {
           "display_id": 64,
@@ -845,8 +854,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T21:45:30.044974187Z",
+    "timestamp": "2026-09-04T21:46:31.607409283Z",
     "agent_id": "slA5",
-    "agent_seq": 124
+    "agent_seq": 125
   }
 }
