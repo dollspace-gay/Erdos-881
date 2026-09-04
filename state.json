@@ -1,6 +1,6 @@
 {
   "next_display_id": 19,
-  "next_comment_id": 84,
+  "next_comment_id": 85,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -884,8 +884,17 @@
       "parent_uuid": "3c3c109f-4993-42bc-83f1-85f9660903c8",
       "created_by": "slA5",
       "created_at": "2026-09-04T22:30:29.166973832Z",
-      "updated_at": "2026-09-04T22:34:00.367828781Z",
+      "updated_at": "2026-09-04T22:37:17.979594642Z",
       "comments": {
+        "780dfbca-0558-484e-afd0-8f02364299b0": {
+          "display_id": 84,
+          "author": "slA5",
+          "content": "[action] Session19 parent17 active18: formal two-anchor short-diagonal certificate and concrete prefix96 helper impossibility verified. SubtupleRepair exposes target-local lemma, existing basis theorem preserved. DiagonalPinCertificates and FrozenPrefixCertificates warning-free; full root build8353 passed. New3 Python files certificate finder/coherent frozen-prefix probe/tests;7 new tests plus3 close-pin and4 square regressions pass. Exact prefix48 individual pins32@113 and40@192 SAT separately, simultaneous both UNSAT through192; scale384 UNKNOWN after100000 conflicts/32.25s. Prefix96 all4helpers forever unpinnable under k3 coverN3, but finite exceptions still possible and no joint-deletion safety inferred. Audit session27347 live; script30modules/141authored. Docs updated except verification counts pending. All uncommitted, no web/subagents.",
+          "created_at": "2026-09-04T22:37:17.975897450Z",
+          "kind": "note",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAwMD8RsGxvkF5UpE2ZzamdES4/MSN8YcclSHp81Qt/6oHnlTgFPQ/5o6w4G3T89xRtEgHSF2oXjXtMPQOyE/PDQ=="
+        },
         "78c67d21-a094-47ec-ac2c-60f2699c85f5": {
           "display_id": 83,
           "author": "slA5",
@@ -1057,8 +1066,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T22:34:00.367828781Z",
+    "timestamp": "2026-09-04T22:37:17.979594642Z",
     "agent_id": "slA5",
-    "agent_seq": 152
+    "agent_seq": 153
   }
 }
