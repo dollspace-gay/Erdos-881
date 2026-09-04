@@ -1,6 +1,6 @@
 {
   "next_display_id": 9,
-  "next_comment_id": 30,
+  "next_comment_id": 31,
   "display_id_map": {
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
     "23f72684-8efa-470b-a980-f46cb316e862": 3,
@@ -92,7 +92,7 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T19:23:01.041319892Z",
-      "updated_at": "2026-09-04T19:36:40.216126677Z",
+      "updated_at": "2026-09-04T19:44:00.637712370Z",
       "labels": [
         "research"
       ],
@@ -114,6 +114,15 @@
           "kind": "plan",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAFiwyorr07O0WipM0RjdiaWREVecHXh58sjLym3lAqQA8rTT4wNwn/chG7us9z5a8ykmib/vFtWshd9qhmVLlCQ=="
+        },
+        "b98192ac-b7c8-4e7d-aef7-0a4641eb2551": {
+          "display_id": 30,
+          "author": "slA5",
+          "content": "Proved in Lean: successorBasis_of_shiftCompensation; every exact order-k basis containing an infinite arithmetic progression has a successor-order infinite deletion; a finite (k+1)-term anchor progression plus infinitely many pairs at its difference also suffices. Hales-Jewett and infinite pigeonhole now verify that every bounded-gap set supplies this anchor/pair configuration. Thus bounded-gap bases satisfy the full successor deletion conclusion at every order, without finite-deletion stability or strong minimality. Adding the eventual-syndetic wrapper and integrating the reduced remaining case.",
+          "created_at": "2026-09-04T19:44:00.633668728Z",
+          "kind": "observation",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA3HhimxFAaoJ8J7H86Fdh7WQIz2uDFvf2am+oGG6NoqCaPNXqIM7c5idFWjQCOE6uvvtDiSbg/riAjdG67EjtCQ=="
         },
         "bab9e75d-e990-4578-bce2-33215b942231": {
           "display_id": 29,
@@ -402,8 +411,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T19:36:40.216126677Z",
+    "timestamp": "2026-09-04T19:44:00.637712370Z",
     "agent_id": "slA5",
-    "agent_seq": 66
+    "agent_seq": 67
   }
 }
