@@ -1,6 +1,6 @@
 {
   "next_display_id": 18,
-  "next_comment_id": 78,
+  "next_comment_id": 79,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -290,10 +290,21 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T22:18:06.670189818Z",
-      "updated_at": "2026-09-04T22:18:10.510844154Z",
+      "updated_at": "2026-09-04T22:19:27.544646689Z",
       "labels": [
         "research"
-      ]
+      ],
+      "comments": {
+        "dc9fcd6a-f51b-4224-9be4-0e2b4ef02250": {
+          "display_id": 78,
+          "author": "slA5",
+          "content": "Test exact-prefix extensions, not independent final-scale witnesses or intermediate level labels. Preserve all membership and nonmembership decisions below the frozen cutoff and independently verify coverage plus every new pin target above it. Before expensive SAT, inspect finite anchored diagonal repairs j*b+a (j<k), which may certify that old helpers cannot acquire sufficiently far successor pins. Determine whether the hoped-for extension principle is true, false, or still unsupported.",
+          "created_at": "2026-09-04T22:19:27.540406599Z",
+          "kind": "plan",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAskHjqHhdSjoBIRcdrqDyUAAm1bpdPnQOuLS5UOf5FKKjlb8Do8ASQgRf/qg4h0MYwzhkN0Igu+DhirlseIsHAA=="
+        }
+      }
     },
     "3d337c85-b756-46d9-aa89-344c1f322fcd": {
       "uuid": "3d337c85-b756-46d9-aa89-344c1f322fcd",
@@ -983,8 +994,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T22:18:15.187198899Z",
+    "timestamp": "2026-09-04T22:19:27.544646689Z",
     "agent_id": "slA5",
-    "agent_seq": 144
+    "agent_seq": 145
   }
 }
