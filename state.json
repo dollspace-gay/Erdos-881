@@ -1,6 +1,6 @@
 {
   "next_display_id": 15,
-  "next_comment_id": 62,
+  "next_comment_id": 63,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -419,11 +419,20 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T21:26:49.628128460Z",
-      "updated_at": "2026-09-04T21:27:25.938820471Z",
+      "updated_at": "2026-09-04T21:31:09.640331294Z",
       "labels": [
         "research"
       ],
       "comments": {
+        "13280625-5909-4002-bc47-0ba95c6bf4d4": {
+          "display_id": 62,
+          "author": "slA5",
+          "content": "Use a single Boolean hit coloring and a binomial incidence count. This proves arbitrary finite-arity free sets without enumerating hit positions. For additive application, index finite repair choices by (selected positions T subset Fin k, value assignment Fin k -> S), restricting the image on T to equal S. This handles repeated deleted values while keeping the number of choices uniformly bounded by 2^k * (k+1)^k, with at most k+1 output values per repair. Local avoidance is only of the actual input support; common infinite avoidance will come from free-set thinning.",
+          "created_at": "2026-09-04T21:31:09.624930186Z",
+          "kind": "decision",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAWQOX3DGduSG+uyJ3LpC4Lak46jgNxeLaU8OfXQxnFHCVJLipI1GBfDvEUgbozcmzHmImMRB/GgcXIKsahHqhCw=="
+        },
         "e307c03c-9718-4c65-974d-fe90ff36e5fe": {
           "display_id": 61,
           "author": "slA5",
@@ -791,8 +800,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T21:27:25.938820471Z",
+    "timestamp": "2026-09-04T21:31:09.640331294Z",
     "agent_id": "slA5",
-    "agent_seq": 118
+    "agent_seq": 119
   }
 }
