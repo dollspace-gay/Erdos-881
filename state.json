@@ -1,7 +1,8 @@
 {
-  "next_display_id": 12,
+  "next_display_id": 13,
   "next_comment_id": 43,
   "display_id_map": {
+    "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
     "23f72684-8efa-470b-a980-f46cb316e862": 3,
     "3322a99e-35b8-4e61-88ab-0c97ac88eada": 8,
@@ -21,6 +22,17 @@
     }
   },
   "issues": {
+    "02da1186-f736-4ed4-81be-b5a3e314876d": {
+      "uuid": "02da1186-f736-4ed4-81be-b5a3e314876d",
+      "display_id": 12,
+      "title": "Test sparse repair obstructions and derive an order-uniform replacement principle",
+      "status": "open",
+      "priority": "high",
+      "parent_uuid": "3322a99e-35b8-4e61-88ab-0c97ac88eada",
+      "created_by": "slA5",
+      "created_at": "2026-09-04T20:19:21.511666697Z",
+      "updated_at": "2026-09-04T20:19:21.511666697Z"
+    },
     "1b00f123-0028-46b3-a6b3-13b9155998f2": {
       "uuid": "1b00f123-0028-46b3-a6b3-13b9155998f2",
       "display_id": 2,
@@ -570,8 +582,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T20:18:06.176408759Z",
+    "timestamp": "2026-09-04T20:19:21.511666697Z",
     "agent_id": "slA5",
-    "agent_seq": 89
+    "agent_seq": 90
   }
 }
