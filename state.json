@@ -1,6 +1,6 @@
 {
   "next_display_id": 20,
-  "next_comment_id": 90,
+  "next_comment_id": 91,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -577,10 +577,21 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T22:44:49.243463220Z",
-      "updated_at": "2026-09-04T22:44:52.550775198Z",
+      "updated_at": "2026-09-04T22:46:44.679144344Z",
       "labels": [
         "research"
-      ]
+      ],
+      "comments": {
+        "ad301219-adcc-4bac-980a-2fc97a5758ec": {
+          "display_id": 90,
+          "author": "slA5",
+          "content": "Distinguish forced arithmetic tradeoff from SAT model choice. Extend the sound encoder with a constraint that a protected old element has at most one short-diagonal repair anchor among all selected elements through the final scale. Sumset implications must be real-representation -> auxiliary and extend to (k-1)*protected+scale, not merely scale. Exhaustively compare the new CNF against direct arithmetic on tiny fixed sets before trusting results. Then pin32 while excluding a two-anchor certificate for40, and test the reverse, preserving every old yes/no membership, N=3, and genuinely new pin targets. SAT would refute forced certificate creation at that finite horizon; UNSAT remains a bounded result.",
+          "created_at": "2026-09-04T22:46:44.675046129Z",
+          "kind": "plan",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA6s88OsJjAj0i1EBEOyGbnJsLibDcHphKO+/QK8+R3KS8VdH/3LuzHMSRJaWeDRjit9+GvAnoPxSsIx74UlNhAA=="
+        }
+      }
     },
     "90a262df-e1be-4625-a887-01f36b3e41b3": {
       "uuid": "90a262df-e1be-4625-a887-01f36b3e41b3",
@@ -1125,8 +1136,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T22:44:55.663732566Z",
+    "timestamp": "2026-09-04T22:46:44.679144344Z",
     "agent_id": "slA5",
-    "agent_seq": 162
+    "agent_seq": 163
   }
 }
