@@ -1,6 +1,6 @@
 {
   "next_display_id": 16,
-  "next_comment_id": 70,
+  "next_comment_id": 71,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -425,7 +425,7 @@
       "parent_uuid": "93e23094-7281-4a29-b494-aea4582daaa7",
       "created_by": "slA5",
       "created_at": "2026-09-04T21:37:38.738480225Z",
-      "updated_at": "2026-09-04T21:53:43.599683400Z",
+      "updated_at": "2026-09-04T21:55:36.337383514Z",
       "comments": {
         "128d6f44-1ec8-46c9-83c2-931810aac907": {
           "display_id": 65,
@@ -471,6 +471,15 @@
           "kind": "note",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAQKGZlAJksfc3vrwYTGqkISmjrZtZkB7fXpd9VM0fhEM8/ovoDvMu0sFQzDEgKpH1bdaVPhZUgIMsWakFhJ7gAQ=="
+        },
+        "c78a3fed-dc6e-4587-8942-511599bddce4": {
+          "display_id": 70,
+          "author": "slA5",
+          "content": "Proved cofinal finite collective-pin witnesses and counterexample_uniform_collective_pin_pattern: for each fixed anchor a in A and every infinite K subset A, a counterexample has an infinite L subset K and one mask/index assignment that gives a represented collective destroyer on every k-element subset of L. Includes repeated selected values, unused positions, and pin orders j+1 with j<=k. This is genuine infinite coherence for the local-repair route, not for older selector certificates. Root build8348 passed; expanded axiom audit passed401 declarations across25 modules, covering124 authored theorems with only propext/Classical.choice/Quot.sound.",
+          "created_at": "2026-09-04T21:55:36.334002132Z",
+          "kind": "result",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAQ73xEzpGGg8oNnoFz+Jz4kL7qopmujZbQHIUdZOj07X0sJiosZ1lS61+Tv0vztS7HerDAp1fCt/KsJRYrCsaAw=="
         }
       }
     },
@@ -881,8 +890,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T21:55:10.209462862Z",
+    "timestamp": "2026-09-04T21:55:36.337383514Z",
     "agent_id": "slA5",
-    "agent_seq": 128
+    "agent_seq": 129
   }
 }
