@@ -1,6 +1,6 @@
 {
   "next_display_id": 13,
-  "next_comment_id": 47,
+  "next_comment_id": 48,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -35,7 +35,7 @@
       "parent_uuid": "3322a99e-35b8-4e61-88ab-0c97ac88eada",
       "created_by": "slA5",
       "created_at": "2026-09-04T20:19:21.511666697Z",
-      "updated_at": "2026-09-04T20:39:34.366774502Z",
+      "updated_at": "2026-09-04T20:40:44.692459997Z",
       "comments": {
         "5cef7e2f-6854-458e-a4c1-00c0826de068": {
           "display_id": 45,
@@ -45,6 +45,15 @@
           "kind": "result",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAHWvx1cCFtOOKDdBTu6pvFFUucq3G/+arzFn92AbyPo3hpoi9q4svsmdscv9j27mf7hMqiNjA9yjH2ruM4a+RAg=="
+        },
+        "9006f4a5-e177-427b-bc41-94165ba9d5fd": {
+          "display_id": 47,
+          "author": "slA5",
+          "content": "The gap-free joint SAT calls with T_j=g_j are single final-prefix tests: intermediate level names add no earlier pin deadlines. Their SAT witnesses do not supply coherent pin witnesses for a compactness construction. A stronger test fixes a target bound f(b)=C*b, independent of final scale, and requires every chosen b between a fixed pin-start M and T/C to have a pin by that bound. Uniform satisfiability at all scales could then support a genuine finite-branching compactness argument; finite tests alone remain only evidence. Running bounded tests without forced gaps or edits to the existing encoder.",
+          "created_at": "2026-09-04T20:40:44.687850581Z",
+          "kind": "observation",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAPMo0b4vAjM3Cx1sDysFRE5PRwUdLmlhSVZuhbY/TWUK1P7p2je0/9Ba16bIefC8MVY2Um0Afi4mih7WfM7cSCA=="
         },
         "c47ab8b4-3343-4477-abbf-7e5dcfdf5f05": {
           "display_id": 43,
@@ -624,8 +633,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T20:39:34.366774502Z",
+    "timestamp": "2026-09-04T20:40:44.692459997Z",
     "agent_id": "slA5",
-    "agent_seq": 95
+    "agent_seq": 96
   }
 }
