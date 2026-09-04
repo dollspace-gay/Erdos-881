@@ -1,6 +1,6 @@
 {
   "next_display_id": 20,
-  "next_comment_id": 92,
+  "next_comment_id": 93,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -577,7 +577,7 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T22:44:49.243463220Z",
-      "updated_at": "2026-09-04T22:51:29.238582840Z",
+      "updated_at": "2026-09-04T22:57:29.875469070Z",
       "labels": [
         "research"
       ],
@@ -599,6 +599,15 @@
           "kind": "plan",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA6s88OsJjAj0i1EBEOyGbnJsLibDcHphKO+/QK8+R3KS8VdH/3LuzHMSRJaWeDRjit9+GvAnoPxSsIx74UlNhAA=="
+        },
+        "d9369a0e-b963-44ce-86c5-35f25eed59d9": {
+          "display_id": 92,
+          "author": "slA5",
+          "content": "Generalized negative-certificate CNF to bound all short-repair anchors by zero or one. Exhaustively checked both bounds against exact finite arithmetic for 2688 fixed-set/order/element cases; all 13 certificate tests pass. With prefix48 frozen, pin32/no-short-anchor40 and reverse are UNSAT at192. At384 pin32/no-short-anchor40 is SAT: {0,1,2,6,9,22,32,40,56,60,76,85,89,109,159,176,209,234,238,243,309,344,346}, pin32@382, no short anchors for40. Reverse at384 UNKNOWN at100000 conflicts. Thus forced competing short certificates are not universal across finite scales. Next freeze this entire384 prefix and seek a later pin40.",
+          "created_at": "2026-09-04T22:57:29.872486755Z",
+          "kind": "observation",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA+CY3EwR33g2Um3fKt0UodT4stHjHrpuJN/RGINtgUJkV6gYG1T4/uhCgHwr75Zwfaic6jffW4w4ujrD3K6cuDg=="
         }
       }
     },
@@ -1145,8 +1154,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T22:51:29.238582840Z",
+    "timestamp": "2026-09-04T22:57:29.875469070Z",
     "agent_id": "slA5",
-    "agent_seq": 164
+    "agent_seq": 165
   }
 }
