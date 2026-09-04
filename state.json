@@ -1,6 +1,6 @@
 {
   "next_display_id": 17,
-  "next_comment_id": 73,
+  "next_comment_id": 74,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -501,7 +501,7 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T21:57:16.897103851Z",
-      "updated_at": "2026-09-04T21:57:54.978263304Z",
+      "updated_at": "2026-09-04T22:05:36.266635993Z",
       "labels": [
         "research"
       ],
@@ -514,6 +514,15 @@
           "kind": "plan",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAGlees0wqsai1gKPSE5PrlmeV75k7gm4f8MpJqFt7zqqY9UBEGgAwUeQh4dXQKtepQmV6JO9jXQZkuOJWhMJ8Aw=="
+        },
+        "a335abce-0cde-447e-a926-7fe2ea9f8d0f": {
+          "display_id": 73,
+          "author": "slA5",
+          "content": "The existing gap argument actually bounds the entire set of close-pinned elements, not only a tail assumed wholly pinned: in each [X,2X], any close pin must lie within N of the minimum A-element or equal the maximum. Prove this logarithmic counting bound, then compare with the polynomial basis lower count to show close pins have zero relative density inside every finite-order basis. This gives a large, quantitatively controlled candidate reservoir for the unsolved far-pin case; it does not extend the factor2 deadline or solve the remaining general case.",
+          "created_at": "2026-09-04T22:05:36.263248297Z",
+          "kind": "decision",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAl0c5Pg5KnF/hZYZVnswyAuLO3lGYjp8EYbM0S8OKawU+vh4AVKyMYAr1LUWr0aImqIIfMol2XkUtWHn2XvVKDQ=="
         }
       }
     },
@@ -924,8 +933,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T21:57:54.978263304Z",
+    "timestamp": "2026-09-04T22:05:36.266635993Z",
     "agent_id": "slA5",
-    "agent_seq": 135
+    "agent_seq": 136
   }
 }
