@@ -1,5 +1,5 @@
 {
-  "next_display_id": 11,
+  "next_display_id": 12,
   "next_comment_id": 35,
   "display_id_map": {
     "1b00f123-0028-46b3-a6b3-13b9155998f2": 2,
@@ -11,7 +11,8 @@
     "9dfd0bd6-1754-4562-9e7a-9164cead7a1f": 5,
     "e526e750-baba-47dc-b9d2-83268594df7c": 9,
     "e940d6b5-45c8-4806-977b-61fb98b436b4": 4,
-    "f22110a3-60b8-4aea-ab77-acd2ec6dee56": 1
+    "f22110a3-60b8-4aea-ab77-acd2ec6dee56": 1,
+    "f4fc95b7-1053-4108-b93d-553fee846330": 11
   },
   "locks": {
     "8": {
@@ -477,12 +478,23 @@
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAZtmcXNkMFIULxsWslkE4NEi6Ub30SNQsnI4CoLNtfT0Xf5j/GAHqCcYMn+ZPrqfu+64eXnsIgL6kdbc5vjXeDw=="
         }
       }
+    },
+    "f4fc95b7-1053-4108-b93d-553fee846330": {
+      "uuid": "f4fc95b7-1053-4108-b93d-553fee846330",
+      "display_id": 11,
+      "title": "Extend compensation to recurrent additive cubes in sparse bases",
+      "status": "open",
+      "priority": "high",
+      "parent_uuid": "3322a99e-35b8-4e61-88ab-0c97ac88eada",
+      "created_by": "slA5",
+      "created_at": "2026-09-04T19:50:09.962406378Z",
+      "updated_at": "2026-09-04T19:50:09.962406378Z"
     }
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T19:50:03.590844290Z",
+    "timestamp": "2026-09-04T19:50:09.962406378Z",
     "agent_id": "slA5",
-    "agent_seq": 77
+    "agent_seq": 78
   }
 }
