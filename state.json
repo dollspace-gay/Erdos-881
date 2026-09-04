@@ -1,5 +1,5 @@
 {
-  "next_display_id": 19,
+  "next_display_id": 20,
   "next_comment_id": 90,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
@@ -11,6 +11,7 @@
     "45dfc611-58fb-4c5b-83f5-061981b83977": 10,
     "4d488d9c-c4ae-48c9-ab63-a640698d9f16": 6,
     "5ddbf060-5d5a-4494-95ff-62224bae671f": 15,
+    "8cc73acd-28c2-4f7c-82a4-878ecc67905a": 19,
     "90a262df-e1be-4625-a887-01f36b3e41b3": 16,
     "93e23094-7281-4a29-b494-aea4582daaa7": 14,
     "9dfd0bd6-1754-4562-9e7a-9164cead7a1f": 5,
@@ -564,6 +565,16 @@
         }
       }
     },
+    "8cc73acd-28c2-4f7c-82a4-878ecc67905a": {
+      "uuid": "8cc73acd-28c2-4f7c-82a4-878ecc67905a",
+      "display_id": 19,
+      "title": "Test whether far pins force competing repair certificates",
+      "status": "open",
+      "priority": "high",
+      "created_by": "slA5",
+      "created_at": "2026-09-04T22:44:49.243463220Z",
+      "updated_at": "2026-09-04T22:44:49.243463220Z"
+    },
     "90a262df-e1be-4625-a887-01f36b3e41b3": {
       "uuid": "90a262df-e1be-4625-a887-01f36b3e41b3",
       "display_id": 16,
@@ -1107,8 +1118,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T22:43:39.537184154Z",
+    "timestamp": "2026-09-04T22:44:49.243463220Z",
     "agent_id": "slA5",
-    "agent_seq": 159
+    "agent_seq": 160
   }
 }
