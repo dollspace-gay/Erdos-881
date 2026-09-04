@@ -33,6 +33,10 @@
     "14": {
       "agent_id": "slA5",
       "claimed_at": "2026-09-04T21:26:57.188348961Z"
+    },
+    "22": {
+      "agent_id": "slA5",
+      "claimed_at": "2026-09-04T23:36:29.139281782Z"
     }
   },
   "issues": {
@@ -1303,8 +1307,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T23:36:25.449703491Z",
+    "timestamp": "2026-09-04T23:36:29.139281782Z",
     "agent_id": "slA5",
-    "agent_seq": 191
+    "agent_seq": 192
   }
 }
