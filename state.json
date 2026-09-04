@@ -1,6 +1,6 @@
 {
   "next_display_id": 22,
-  "next_comment_id": 100,
+  "next_comment_id": 101,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1a9af280-0625-44f1-8225-c983e22ae8aa": 21,
@@ -164,11 +164,20 @@
       "parent_uuid": "cd7b5e87-258d-472c-8a34-5bb59e484738",
       "created_by": "slA5",
       "created_at": "2026-09-04T23:18:04.536613861Z",
-      "updated_at": "2026-09-04T23:19:30.903306589Z",
+      "updated_at": "2026-09-04T23:19:51.425167963Z",
       "labels": [
         "bug"
       ],
       "comments": {
+        "5a46f687-b7fc-400d-bf93-1036a1ae28ba": {
+          "display_id": 100,
+          "author": "slA5",
+          "content": "Result: corrected the reflection domain to s+N<=n, verifies raw pin membership and represented/unrepresented sumsets directly, and applies gap/reflection only at actually covered predecessors on incomplete profiles. The exact below-threshold counterexample and partial profiles now pass. Exhaustive comparison checked3072 profiles and6740 individual pin instances at orders1,2,3. All30 current Python tests pass; py_compile and diffcheck pass. The Lean PinLemmas theorem was already correct and unchanged. Corrected the search documentation domain as well.",
+          "created_at": "2026-09-04T23:19:51.421931695Z",
+          "kind": "result",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAZA7eI/3E5BspL8UPKV5EYNnmqCtKKgJc9cixw/jBbYmbri0jIuG5FCNiKXonJzLpYALPYIKvGwhIyTd4da8jDw=="
+        },
         "782aebbe-e1ca-4d3b-8424-1db19a622e3f": {
           "display_id": 99,
           "author": "slA5",
@@ -1251,8 +1260,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-04T23:19:30.903306589Z",
+    "timestamp": "2026-09-04T23:19:51.425167963Z",
     "agent_id": "slA5",
-    "agent_seq": 181
+    "agent_seq": 182
   }
 }
