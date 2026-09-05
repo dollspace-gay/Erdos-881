@@ -1,6 +1,6 @@
 {
   "next_display_id": 29,
-  "next_comment_id": 145,
+  "next_comment_id": 146,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1a9af280-0625-44f1-8225-c983e22ae8aa": 21,
@@ -921,11 +921,20 @@
       "parent_uuid": "ce298f1f-8f9c-4918-8b26-0230299a4ebb",
       "created_by": "slA5",
       "created_at": "2026-09-05T02:16:04.489178182Z",
-      "updated_at": "2026-09-05T02:43:20.267508656Z",
+      "updated_at": "2026-09-05T02:49:42.228084199Z",
       "labels": [
         "research"
       ],
       "comments": {
+        "2d03a914-0c0b-4c7a-88ad-1ab961a835f8": {
+          "display_id": 145,
+          "author": "slA5",
+          "content": "Observation: the unrestricted-choice encoder refuted the proposed bound. Parameters k=3,N=4,t=48,U=12,r=4 yielded A_prefix={0,2,5,6,9,11,28,37,60}, covering4..60 with exact pins5@53,6@54,9@57,11@59. All direct bitset checks passed. This changes the next action: preserve this as a regression, then prove an explicit strong-minimal order-three extension of any finite covered prefix. Proposed extension for cutoffM>=1: m=M+3,q=m^2, retainF; add low interval[M+1,M+m], high digits{jm:j<m}, and tail{n>M:n modq=1}. Coremax=m(m-1)<=q-4. Corepair top+(M+1)=q-2. Every sufficiently large tail b is pinned at b+q-2 at order3: two tails would require core residueq-3>coremax; three tails have wrong residue; one tail leaves exactoffsetq-2. Digit arithmetic should give coverage of alln>M. This is not an infinite pinning counterexample: the extension is bounded-gap and has successful order4 deletion.",
+          "created_at": "2026-09-05T02:49:42.224792370Z",
+          "kind": "observation",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAm9Q1MwJsnhXTNd7xWXF61hk2tqbw0+RhE2j31syy9TUsdpNmXqZUF2zLW7FFNF8jY7iWyOwk5CllzsgSIofeDw=="
+        },
         "bfeab39c-6a44-45c2-a414-047e051fcbae": {
           "display_id": 143,
           "author": "slA5",
@@ -1773,8 +1782,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T02:43:20.267508656Z",
+    "timestamp": "2026-09-05T02:49:42.228084199Z",
     "agent_id": "slA5",
-    "agent_seq": 262
+    "agent_seq": 263
   }
 }
