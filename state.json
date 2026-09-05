@@ -1295,11 +1295,12 @@
       "uuid": "fb906ae5-3616-4d3d-8318-b293b68c800e",
       "display_id": 22,
       "title": "Test pin-forced predecessor partitions and coherent pair-unique extensions",
-      "status": "open",
+      "status": "closed",
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T23:36:22.320786983Z",
-      "updated_at": "2026-09-05T00:08:28.402577284Z",
+      "updated_at": "2026-09-05T00:08:31.704145604Z",
+      "closed_at": "2026-09-05T00:08:31.703452127Z",
       "labels": [
         "research"
       ],
@@ -1399,8 +1400,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T00:08:28.402577284Z",
+    "timestamp": "2026-09-05T00:08:31.704145604Z",
     "agent_id": "slA5",
-    "agent_seq": 202
+    "agent_seq": 203
   }
 }
