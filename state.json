@@ -1,5 +1,5 @@
 {
-  "next_display_id": 27,
+  "next_display_id": 28,
   "next_comment_id": 134,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
@@ -9,6 +9,7 @@
     "3322a99e-35b8-4e61-88ab-0c97ac88eada": 8,
     "3c3c109f-4993-42bc-83f1-85f9660903c8": 17,
     "3d337c85-b756-46d9-aa89-344c1f322fcd": 7,
+    "3dd140a3-dd3f-4859-b1b2-e7dabfed164b": 27,
     "45dfc611-58fb-4c5b-83f5-061981b83977": 10,
     "4d488d9c-c4ae-48c9-ab63-a640698d9f16": 6,
     "5ddbf060-5d5a-4494-95ff-62224bae671f": 15,
@@ -477,6 +478,17 @@
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA0LoHBeVSXSlnWcAZQJyEYiwhpIYWaJHZ2hXY4P38ikUkUf5/qk6+iZT5E4gRFEbxu+ZB0dkqA4g57iCVBkBtDg=="
         }
       }
+    },
+    "3dd140a3-dd3f-4859-b1b2-e7dabfed164b": {
+      "uuid": "3dd140a3-dd3f-4859-b1b2-e7dabfed164b",
+      "display_id": 27,
+      "title": "Exclude unbounded single-residue tails from finite-order bases",
+      "status": "open",
+      "priority": "high",
+      "parent_uuid": "b3b91c39-e215-4f52-ae74-3ad0fcbff577",
+      "created_by": "slA5",
+      "created_at": "2026-09-05T01:41:11.891150955Z",
+      "updated_at": "2026-09-05T01:41:11.891150955Z"
     },
     "45dfc611-58fb-4c5b-83f5-061981b83977": {
       "uuid": "45dfc611-58fb-4c5b-83f5-061981b83977",
@@ -1635,8 +1647,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T01:36:25.180198914Z",
+    "timestamp": "2026-09-05T01:41:11.891150955Z",
     "agent_id": "slA5",
-    "agent_seq": 241
+    "agent_seq": 242
   }
 }
