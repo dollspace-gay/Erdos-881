@@ -1,5 +1,5 @@
 {
-  "next_display_id": 25,
+  "next_display_id": 26,
   "next_comment_id": 124,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
@@ -25,7 +25,8 @@
     "eb8ac346-e59f-410e-8a2c-19a07db394d7": 18,
     "f22110a3-60b8-4aea-ab77-acd2ec6dee56": 1,
     "f4fc95b7-1053-4108-b93d-553fee846330": 11,
-    "fb906ae5-3616-4d3d-8318-b293b68c800e": 22
+    "fb906ae5-3616-4d3d-8318-b293b68c800e": 22,
+    "fd532b49-652f-4121-b37b-7e69b9c9c60d": 25
   },
   "locks": {
     "8": {
@@ -1509,12 +1510,23 @@
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABApifiW5Mb0T8NWRkXIIuCYI0XzqiBPn1PNPeWe8gtTQ2MIEhhIaQUv3XYnMWS6xYNnJRz23rFAYbH9nOjjo+0Bw=="
         }
       }
+    },
+    "fd532b49-652f-4121-b37b-7e69b9c9c60d": {
+      "uuid": "fd532b49-652f-4121-b37b-7e69b9c9c60d",
+      "display_id": 25,
+      "title": "Add a parametric grid-core family with mandatory retained anchors",
+      "status": "open",
+      "priority": "high",
+      "parent_uuid": "b3b91c39-e215-4f52-ae74-3ad0fcbff577",
+      "created_by": "slA5",
+      "created_at": "2026-09-05T01:00:01.658085923Z",
+      "updated_at": "2026-09-05T01:00:01.658085923Z"
     }
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T00:58:16.479935082Z",
+    "timestamp": "2026-09-05T01:00:01.658085923Z",
     "agent_id": "slA5",
-    "agent_seq": 220
+    "agent_seq": 221
   }
 }
