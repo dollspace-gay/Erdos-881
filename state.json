@@ -1,6 +1,6 @@
 {
   "next_display_id": 24,
-  "next_comment_id": 117,
+  "next_comment_id": 118,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1a9af280-0625-44f1-8225-c983e22ae8aa": 21,
@@ -1000,7 +1000,7 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-05T00:10:14.494337177Z",
-      "updated_at": "2026-09-05T00:31:33.290322521Z",
+      "updated_at": "2026-09-05T00:36:27.972699412Z",
       "labels": [
         "research"
       ],
@@ -1013,6 +1013,15 @@
           "kind": "plan",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAp11mA6CBB26x8zjXA/7/GbZPpLmMFWJ6Sqt4O9PAmKp6JFhO/z7Xmgh0qb8obJKbgrccqD7du1eV6QesjObgDQ=="
+        },
+        "ca0c2e85-5a98-461f-9949-9861702dd58c": {
+          "display_id": 117,
+          "author": "slA5",
+          "content": "The global successor Freiman rigidity proof has been written for arbitrary additive commutative codomain groups. A tempting bridge is already false without further hypotheses: strong minimality atorderh need not supply a non-affine h-sum-preserving label. Existing A={0,3} union(1mod4) is strongly minimal atorder3 and has rigid three-sum labels: 3=1+1+1 fixesf3, and4(j+1)+1=(4j+1)+3+1 fixes every residue-class value. Verify this boundary rather than inferring the full deletion theorem from affine rigidity.",
+          "created_at": "2026-09-05T00:36:27.968987248Z",
+          "kind": "observation",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAfoWLEyMtKsoMgSbkcz7EkjWlyaXtAcJ9bWj/P9j5bo9+U8bV+RPylzAcruMAEXgzBR5AlnFEcwThs+6djxodDA=="
         },
         "e2092160-7879-4fc7-b6fb-e20a46424d55": {
           "display_id": 116,
@@ -1434,8 +1443,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T00:31:33.290322521Z",
+    "timestamp": "2026-09-05T00:36:27.972699412Z",
     "agent_id": "slA5",
-    "agent_seq": 209
+    "agent_seq": 210
   }
 }
