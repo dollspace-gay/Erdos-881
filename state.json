@@ -1,6 +1,6 @@
 {
   "next_display_id": 28,
-  "next_comment_id": 137,
+  "next_comment_id": 138,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1a9af280-0625-44f1-8225-c983e22ae8aa": 21,
@@ -492,11 +492,20 @@
       "parent_uuid": "b3b91c39-e215-4f52-ae74-3ad0fcbff577",
       "created_by": "slA5",
       "created_at": "2026-09-05T01:41:11.891150955Z",
-      "updated_at": "2026-09-05T01:51:29.270520311Z",
+      "updated_at": "2026-09-05T01:53:54.044299556Z",
       "labels": [
         "research"
       ],
       "comments": {
+        "43466b43-6a2f-4e55-a718-436715587fec": {
+          "display_id": 137,
+          "author": "slA5",
+          "content": "A further consequence is available from the same bound: eventual tail moduli are closed under lcm (use one common late basis element to synchronize the residues), so the bounded family has an attained maximal modulus and every other eventual tail modulus divides it. Formalizing this within the same module. This isolates the entire eventual one-residue obstruction into a single A-dependent modulus; it does not claim fixed-order stability under finite deletion.",
+          "created_at": "2026-09-05T01:53:54.040643876Z",
+          "kind": "decision",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABACkRqaD+TcOv7yGKS9yU/O6jANQWYMrSnEhtBWVDOqiu+6jgYCFc7P5MLMYcyCM7EVkRVql4QUdrNLqJm99zSAg=="
+        },
         "b7605e16-057d-4689-8dba-7375278fa01c": {
           "display_id": 136,
           "author": "slA5",
@@ -1683,8 +1692,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T01:51:29.270520311Z",
+    "timestamp": "2026-09-05T01:53:54.044299556Z",
     "agent_id": "slA5",
-    "agent_seq": 247
+    "agent_seq": 248
   }
 }
