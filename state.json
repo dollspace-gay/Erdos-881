@@ -1,6 +1,6 @@
 {
   "next_display_id": 25,
-  "next_comment_id": 123,
+  "next_comment_id": 124,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1a9af280-0625-44f1-8225-c983e22ae8aa": 21,
@@ -854,11 +854,20 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-05T00:47:54.914073911Z",
-      "updated_at": "2026-09-05T00:49:55.115408346Z",
+      "updated_at": "2026-09-05T00:58:16.479935082Z",
       "labels": [
         "research"
       ],
       "comments": {
+        "67d6028e-5a9b-4404-a805-72d623097734": {
+          "display_id": 123,
+          "author": "slA5",
+          "content": "Found a parametric obstruction to any uniform protected-anchor budget, even with fixed order3 and coverage threshold1. Letm>=4,q=m^2,C={0,..,m-1} union{jm:0<=j<m}, A=C union{n:n modq=1}. A is a strongly minimal3basis. For everya in[2,m-2], A minus{a} is a strongly minimal4basis: original3coverage uses radix-m digits of(n-1)modq; survivor4coverage splits missing digit a as1+(a-1). Forb in the residue tail sufficientlylarge, b is4pinned afterdeletinga at b+(q-m+a+1). Two residue-tail entries would force a missing pair residue a+(m-1)m; exactlyone tail entry has a unique finite-anchor offset. Therefore every successful infinite4-deletion mustretainallm-3suchanchors. This is a familyofinfinitebases, notan881counterexample; lettingm grow givesdifferentbases anddoesnotyieldoneinfinite mandatorycore.",
+          "created_at": "2026-09-05T00:58:16.476650352Z",
+          "kind": "observation",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAlCrk1QwL9orB8z/uzfl7rpcKDrnJgcqYbaHOK9PT2pLslYhBAPgr5GxoXda3zGVbNwigNYGN3bcY4aTkSocVAg=="
+        },
         "9758fb4c-6cb2-48c5-84aa-a83a992b0ed3": {
           "display_id": 122,
           "author": "slA5",
@@ -1504,8 +1513,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T00:49:55.115408346Z",
+    "timestamp": "2026-09-05T00:58:16.479935082Z",
     "agent_id": "slA5",
-    "agent_seq": 219
+    "agent_seq": 220
   }
 }
