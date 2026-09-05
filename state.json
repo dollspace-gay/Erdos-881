@@ -1,6 +1,6 @@
 {
   "next_display_id": 32,
-  "next_comment_id": 158,
+  "next_comment_id": 159,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "0e826bc6-763d-46cc-90a1-dd3b273a8fa1": 31,
@@ -169,11 +169,20 @@
       "priority": "medium",
       "created_by": "slA5",
       "created_at": "2026-09-05T03:17:47.501998009Z",
-      "updated_at": "2026-09-05T03:18:18.804295824Z",
+      "updated_at": "2026-09-05T03:19:39.513749324Z",
       "labels": [
         "research"
       ],
       "comments": {
+        "0a96a4d4-5b1e-49f1-82b3-26d9df335c0f": {
+          "display_id": 158,
+          "author": "slA5",
+          "content": "Current source confirms: local-to-global self-avoiding repair compatibility is proved; availability remains missing in the primitive hard case. FinitePrefixExtension preserves finite zero-containing order-three covered prefixes and pins inside successful-deletion strongly minimal extensions. Fused streams explicitly retain cofinally late holes; rank-two streams do not supply order-two coverage. Root build and all 74 Python tests pass; source unchanged.",
+          "created_at": "2026-09-05T03:19:39.510564867Z",
+          "kind": "observation",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAndvE96Gnkux2V4vyvol1JLErdx2vgtuA6K0iqfwOAU3SJTUMZSmX+qAuWyfi/jOFlSeVNUq4WhsA56z2NWExCQ=="
+        },
         "d9df2fd5-9254-43b2-9f77-1b8ca51de379": {
           "display_id": 157,
           "author": "slA5",
@@ -1943,8 +1952,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T03:18:18.804295824Z",
+    "timestamp": "2026-09-05T03:19:39.513749324Z",
     "agent_id": "slA5",
-    "agent_seq": 292
+    "agent_seq": 293
   }
 }
