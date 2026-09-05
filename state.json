@@ -1,6 +1,6 @@
 {
   "next_display_id": 28,
-  "next_comment_id": 138,
+  "next_comment_id": 139,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1a9af280-0625-44f1-8225-c983e22ae8aa": 21,
@@ -909,11 +909,20 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-05T00:47:54.914073911Z",
-      "updated_at": "2026-09-05T01:36:25.180198914Z",
+      "updated_at": "2026-09-05T01:58:08.780483273Z",
       "labels": [
         "research"
       ],
       "comments": {
+        "1ba3c3f0-5aad-4a40-bfdd-e793d60ca35f": {
+          "display_id": 138,
+          "author": "slA5",
+          "content": "The one-residue accumulation obstruction is now proved, including an attained maximal tail modulus dividing every other one. A stronger next question is uniform modular thickness of tail k-fold sumsets: for an order-k basis A, does there exist C such that for every modulus q>0 and cutoffN, q<=C*|k(A>=N) modq|? Candidate proof: if ratios q/|k-tail residues| are unbounded, padding by one late a0 injects each lower-arity residue set into the k-arity one. The same density induction should then work with a finite residue set Gamma and recurrence c_j(x)<=|F|c_(j-1)(x)+|Gamma|*(floor(x/q)+1), forcing kA densityzero. This is NOT yet formalized; test the multi-residue recurrence and exact padding injection first. It would constrain growing residue patterns, not automatically construct a successor deletion or classify mandatory anchors.",
+          "created_at": "2026-09-05T01:58:08.777238584Z",
+          "kind": "observation",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAc6cBt75wh78MDQzv04w2Yhg6nAH70GUjSNpXCkWa/1ZjfX8jZiFT4aMjkeWuBKJdcogQIZ2WZELUDzR0G+eMCg=="
+        },
         "646a350e-a5a3-4126-8941-5f3c01e2ffdd": {
           "display_id": 130,
           "author": "slA5",
@@ -1692,8 +1701,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T01:53:54.044299556Z",
+    "timestamp": "2026-09-05T01:58:08.780483273Z",
     "agent_id": "slA5",
-    "agent_seq": 248
+    "agent_seq": 249
   }
 }
