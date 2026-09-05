@@ -1,6 +1,6 @@
 {
   "next_display_id": 24,
-  "next_comment_id": 118,
+  "next_comment_id": 119,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1a9af280-0625-44f1-8225-c983e22ae8aa": 21,
@@ -1000,11 +1000,20 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-05T00:10:14.494337177Z",
-      "updated_at": "2026-09-05T00:36:27.972699412Z",
+      "updated_at": "2026-09-05T00:39:55.379829365Z",
       "labels": [
         "research"
       ],
       "comments": {
+        "5fc4a972-5dcf-4a4e-a3f5-c3a63fc936b8": {
+          "display_id": 118,
+          "author": "slA5",
+          "content": "Checked global theorem CoversFrom.affine_of_preserves_successor_tupleSums: for everyk and additive commutative groupG, a(k+1)-sum-preserving label on A with0inA andorderkcoverage is affine f(a)=f(0)+a smul c. The normalized version and eventual-shift lemma are also checked. StrongMinimalFreimanBoundary formally verifies that the existing strongly minimal3basis {0,3} union(1mod4) already has only linear normalized3-sum labels. Exact rational finite-rank checks additionally find nullity1 atboth3and4 for the stored pair-unique24@85 and17@38 finite models. Thus additive-label rigidity alone does not exclude pins or supply the missing deletion argument. All48 Python test groups pass; root rebuild and axiom audit remain to finalize.",
+          "created_at": "2026-09-05T00:39:55.376601120Z",
+          "kind": "result",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAq8t8alE5Vp2xwGa8wyZ3f0uL6uP5qW1FsWy4UvQ7rPK0Ubf4p4MpOAL6q9fGY13XtrghHZktpKZvVg3lV2FOCQ=="
+        },
         "85bd4c12-61e9-4203-86d7-747750448b8c": {
           "display_id": 115,
           "author": "slA5",
@@ -1443,8 +1452,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T00:36:27.972699412Z",
+    "timestamp": "2026-09-05T00:39:55.379829365Z",
     "agent_id": "slA5",
-    "agent_seq": 210
+    "agent_seq": 211
   }
 }
