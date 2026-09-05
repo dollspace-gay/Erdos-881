@@ -1,6 +1,6 @@
 {
   "next_display_id": 25,
-  "next_comment_id": 122,
+  "next_comment_id": 123,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1a9af280-0625-44f1-8225-c983e22ae8aa": 21,
@@ -854,10 +854,21 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-05T00:47:54.914073911Z",
-      "updated_at": "2026-09-05T00:47:58.980265830Z",
+      "updated_at": "2026-09-05T00:49:55.115408346Z",
       "labels": [
         "research"
-      ]
+      ],
+      "comments": {
+        "9758fb4c-6cb2-48c5-84aa-a83a992b0ed3": {
+          "display_id": 122,
+          "author": "slA5",
+          "content": "Test whether some finite protected anchor set can make clean extension available at every safe prefix disjoint from it. The known {3} bad prefix shows protection is necessary in at least one example; it does not establish sufficiency. Investigate whether infinitely many disjoint bad prefixes contradict the original strong minimality or finite-order coverage. Do not conflate ordinary essential subsets with fixed-order obstructions, and do not reintroduce the false universal safe-clean-supply hypothesis.",
+          "created_at": "2026-09-05T00:49:55.111963833Z",
+          "kind": "plan",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAXteZQLNS2rno4StASeQK8UDgZeNhwO8jlnkMSwcskt309uA7KmydMs+waNGLUB8wDGReClLgUdwV28lzKNXyCQ=="
+        }
+      }
     },
     "c0d574af-ecc9-4cd1-a26e-378ebf41d1b1": {
       "uuid": "c0d574af-ecc9-4cd1-a26e-378ebf41d1b1",
@@ -1493,8 +1504,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T00:48:02.405303310Z",
+    "timestamp": "2026-09-05T00:49:55.115408346Z",
     "agent_id": "slA5",
-    "agent_seq": 218
+    "agent_seq": 219
   }
 }
