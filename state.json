@@ -1,6 +1,6 @@
 {
   "next_display_id": 23,
-  "next_comment_id": 112,
+  "next_comment_id": 113,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1a9af280-0625-44f1-8225-c983e22ae8aa": 21,
@@ -1299,7 +1299,7 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T23:36:22.320786983Z",
-      "updated_at": "2026-09-05T00:03:49.572814573Z",
+      "updated_at": "2026-09-05T00:06:33.720103714Z",
       "labels": [
         "research"
       ],
@@ -1340,6 +1340,15 @@
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAjxXMbXIp80h9O/PE0C/Ome/zlZjMFqHX96zhm2JhW9ZuNftneTj6NpbkU/uQ2u/VF8uoJE9E0EgbCcA80Lz6BA=="
         },
+        "4ceedeb1-b7e7-4c58-a2ab-249ebdddde1f": {
+          "display_id": 112,
+          "author": "slA5",
+          "content": "Further checked result: HasUniquePairSums.double_overlap_unique. For any distinct triple targets t,u, at most one pair of their representation supports can intersect in >=2 elements. Proof removes two distinct common coordinates, uses unique nonzero differences from pair uniqueness, then the same-target matching. Repetitions are allowed throughout. This does not rule out many single-coordinate intersections or establish acyclicity. New exhaustive regression test covers every pair-unique subset of0..8. All43 Python groups pass; final root rebuild and axiom audit are being refreshed.",
+          "created_at": "2026-09-05T00:06:33.716632790Z",
+          "kind": "result",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABADgdCjh5PNRvvvhy5mPv9Z6D7oa0e2qbQPmfEKFnaZ89BBaCsT+jnyADA0IyedWAfS93llDedmZR9fKs8/SnmBA=="
+        },
         "55e0931c-a6c5-4081-b4b5-b31131ccb8c6": {
           "display_id": 109,
           "author": "slA5",
@@ -1372,8 +1381,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T00:03:49.572814573Z",
+    "timestamp": "2026-09-05T00:06:33.720103714Z",
     "agent_id": "slA5",
-    "agent_seq": 199
+    "agent_seq": 200
   }
 }
