@@ -1,6 +1,6 @@
 {
   "next_display_id": 27,
-  "next_comment_id": 127,
+  "next_comment_id": 128,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1a9af280-0625-44f1-8225-c983e22ae8aa": 21,
@@ -1550,7 +1550,7 @@
       "parent_uuid": "b3b91c39-e215-4f52-ae74-3ad0fcbff577",
       "created_by": "slA5",
       "created_at": "2026-09-05T01:00:01.658085923Z",
-      "updated_at": "2026-09-05T01:14:01.112097241Z",
+      "updated_at": "2026-09-05T01:25:31.246118929Z",
       "labels": [
         "research"
       ],
@@ -1572,14 +1572,23 @@
           "kind": "plan",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA+RD8/efuEkf8Dd4QMDlQ6eS8n5p1USRHN2CIkvTS2Sckt2R2nNnzYq76MQH+NafdanuprkNHDFv/z7tLVuQ6BQ=="
+        },
+        "86a0f3d7-0ada-45c3-95a9-3bf1478202af": {
+          "display_id": 127,
+          "author": "slA5",
+          "content": "The grid arithmetic and both tail-pin theorems now compile without warnings. New finite controls pass seven test groups: coverage through8m^2 for m4..30;81 original3-pins;1134 successor4-pins after anchor deletion; exact private pair residues; the excluded last-digit boundary; and a successful sparse-deletion control retaining the core. The infinite strong-minimality/mandatory-anchor wrapper is under compilation. This family obstructs a uniform protected-core budget, not a basis-dependent finite protected core.",
+          "created_at": "2026-09-05T01:25:31.242154542Z",
+          "kind": "observation",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAGvyi669+0q3LF9EpFZCafxg/R5CEYqr4l9pdZUw1+GTmaaQ5V9RVMCl5pglBXkBG+sAb61JkJ+rQVCqr6J18Bg=="
         }
       }
     }
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T01:14:01.112097241Z",
+    "timestamp": "2026-09-05T01:25:31.246118929Z",
     "agent_id": "slA5",
-    "agent_seq": 228
+    "agent_seq": 229
   }
 }
