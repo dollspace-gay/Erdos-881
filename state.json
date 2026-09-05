@@ -1,6 +1,6 @@
 {
   "next_display_id": 23,
-  "next_comment_id": 111,
+  "next_comment_id": 112,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1a9af280-0625-44f1-8225-c983e22ae8aa": 21,
@@ -1299,7 +1299,7 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-04T23:36:22.320786983Z",
-      "updated_at": "2026-09-05T00:02:33.352904493Z",
+      "updated_at": "2026-09-05T00:03:49.572814573Z",
       "labels": [
         "research"
       ],
@@ -1330,6 +1330,15 @@
           "kind": "plan",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAuh9P5ZqBk6AQvIHIRdtfdc6RuNl35VyIrdgN1P/eZH9V1ZJpRHMdeU/7eVgSQc7LgJuq1YC+WFL4MGOzINBYAw=="
+        },
+        "4a5da26c-bc1c-405b-bb8a-5695637a4014": {
+          "display_id": 111,
+          "author": "slA5",
+          "content": "Additional two-partition compatibility target: in a pair-unique set, at distinct triple targets there is at most one pair of representation supports with intersection size at least two. Removing the two shared elements leaves the same nonzero difference at every such overlap; pair uniqueness forces identical remaining elements, and the within-target matching forces the support pair to coincide. This does not yet contradict coherent sparse pinning.",
+          "created_at": "2026-09-05T00:03:49.569631935Z",
+          "kind": "plan",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAjxXMbXIp80h9O/PE0C/Ome/zlZjMFqHX96zhm2JhW9ZuNftneTj6NpbkU/uQ2u/VF8uoJE9E0EgbCcA80Lz6BA=="
         },
         "55e0931c-a6c5-4081-b4b5-b31131ccb8c6": {
           "display_id": 109,
@@ -1363,8 +1372,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T00:02:33.352904493Z",
+    "timestamp": "2026-09-05T00:03:49.572814573Z",
     "agent_id": "slA5",
-    "agent_seq": 198
+    "agent_seq": 199
   }
 }
