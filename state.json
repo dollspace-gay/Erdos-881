@@ -884,12 +884,13 @@
       "uuid": "958461cc-1f17-4ffd-83f2-9435370f93d6",
       "display_id": 29,
       "title": "Add strongly minimal order-three extensions preserving finite prefixes",
-      "status": "open",
+      "status": "closed",
       "priority": "high",
       "parent_uuid": "a8eadd0d-0d71-43fb-98be-b24ce94def4d",
       "created_by": "slA5",
       "created_at": "2026-09-05T02:50:19.793531707Z",
-      "updated_at": "2026-09-05T03:08:48.356260435Z",
+      "updated_at": "2026-09-05T03:08:51.973375161Z",
+      "closed_at": "2026-09-05T03:08:51.972635540Z",
       "labels": [
         "research"
       ],
@@ -1878,8 +1879,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T03:08:48.356260435Z",
+    "timestamp": "2026-09-05T03:08:51.973375161Z",
     "agent_id": "slA5",
-    "agent_seq": 275
+    "agent_seq": 276
   }
 }
