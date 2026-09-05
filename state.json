@@ -1,6 +1,6 @@
 {
   "next_display_id": 31,
-  "next_comment_id": 153,
+  "next_comment_id": 154,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1a9af280-0625-44f1-8225-c983e22ae8aa": 21,
@@ -967,7 +967,7 @@
       "parent_uuid": "ce298f1f-8f9c-4918-8b26-0230299a4ebb",
       "created_by": "slA5",
       "created_at": "2026-09-05T02:16:04.489178182Z",
-      "updated_at": "2026-09-05T02:49:42.228084199Z",
+      "updated_at": "2026-09-05T03:09:19.717281193Z",
       "labels": [
         "research"
       ],
@@ -989,6 +989,15 @@
           "kind": "plan",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAlAJ0rvdjggLpL2Xo0/DkO7Qw1bfsHncGrN7LlL86+m2KCqOo7hx0Nzzt3+PxEMCqghdph9+X7GelF95X/HmaAw=="
+        },
+        "ed2e7b51-5a45-4d6d-bf51-30a4b888e0af": {
+          "display_id": 153,
+          "author": "slA5",
+          "content": "Result: unrestricted pin-cohort search refuted the proposed order3 common-predecessor bound with F={0,2,5,6,9,11,28,37,60}, t48 and four pins5@53,6@54,9@57,11@59. Unlike the preceding fixed-cohort UNSAT experiments, this encoder freely chooses which elements carry flags. The counterexample is now a Lean theorem inside an infinite strongly minimal least-order3 basis. A new generic extension theorem preserves any finite zero-containing3-cover, its threshold, and every finite pin, while giving strongminimality3 plus a successful infinite4-deletion. Subissues29/30 delivered the formal construction, computable finite-sumset specification, and verified infinite counterexample. New Python suites have13groups; all74tests pass. Root8369 and46-module axiom audit749 pass;28new authoredtheorems. Decision: do not replace the refuted three-pin bound with an unsupported larger bound; five-pin searches at(8,80,24)/(12,96,28) areUNKNOWN at20000conflicts. The finite-prefix shell is periodic and therefore supplies anchor-walk repair; it cannot be iterated unchanged as a construction of the remaining hard case.",
+          "created_at": "2026-09-05T03:09:19.713728164Z",
+          "kind": "result",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAf2MAfcGmzoIVjWWfnYVyxMt3Sagq4K354HnWpq2npZxXnIQAitk50AderyBBO9lJD8B3Q8YdvYs6+Bc02oQeAQ=="
         },
         "f73376d5-d12a-41f0-92d8-3da0bc6f4935": {
           "display_id": 144,
@@ -1881,8 +1890,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T03:09:05.947354703Z",
+    "timestamp": "2026-09-05T03:09:19.717281193Z",
     "agent_id": "slA5",
-    "agent_seq": 280
+    "agent_seq": 281
   }
 }
