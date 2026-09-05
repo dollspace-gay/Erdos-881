@@ -1,5 +1,5 @@
 {
-  "next_display_id": 32,
+  "next_display_id": 33,
   "next_comment_id": 161,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
@@ -13,6 +13,7 @@
     "3dd140a3-dd3f-4859-b1b2-e7dabfed164b": 27,
     "45dfc611-58fb-4c5b-83f5-061981b83977": 10,
     "4d488d9c-c4ae-48c9-ab63-a640698d9f16": 6,
+    "56ca3ab6-7b69-4d74-9f8f-5a5cfed7b10e": 32,
     "5ddbf060-5d5a-4494-95ff-62224bae671f": 15,
     "8cc73acd-28c2-4f7c-82a4-878ecc67905a": 19,
     "90a262df-e1be-4625-a887-01f36b3e41b3": 16,
@@ -658,6 +659,17 @@
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAP+lBqOc7XKOY9CbOUYoqSUj9Zv0U2LgMrGPuK/vR7nrijaWvhgOqmi9OWnhxTHfm2hhAzX381+eY20TtbGfVBQ=="
         }
       }
+    },
+    "56ca3ab6-7b69-4d74-9f8f-5a5cfed7b10e": {
+      "uuid": "56ca3ab6-7b69-4d74-9f8f-5a5cfed7b10e",
+      "display_id": 32,
+      "title": "Test scale-bounded successor pin tails beyond factor two",
+      "status": "open",
+      "priority": "high",
+      "parent_uuid": "ce298f1f-8f9c-4918-8b26-0230299a4ebb",
+      "created_by": "slA5",
+      "created_at": "2026-09-05T03:48:55.922046029Z",
+      "updated_at": "2026-09-05T03:48:55.922046029Z"
     },
     "5ddbf060-5d5a-4494-95ff-62224bae671f": {
       "uuid": "5ddbf060-5d5a-4494-95ff-62224bae671f",
@@ -1971,8 +1983,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T03:29:04.384966793Z",
+    "timestamp": "2026-09-05T03:48:55.922046029Z",
     "agent_id": "slA5",
-    "agent_seq": 298
+    "agent_seq": 299
   }
 }
