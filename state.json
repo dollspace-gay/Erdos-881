@@ -1,6 +1,6 @@
 {
   "next_display_id": 28,
-  "next_comment_id": 136,
+  "next_comment_id": 137,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1a9af280-0625-44f1-8225-c983e22ae8aa": 21,
@@ -492,11 +492,20 @@
       "parent_uuid": "b3b91c39-e215-4f52-ae74-3ad0fcbff577",
       "created_by": "slA5",
       "created_at": "2026-09-05T01:41:11.891150955Z",
-      "updated_at": "2026-09-05T01:47:37.249725669Z",
+      "updated_at": "2026-09-05T01:51:29.270520311Z",
       "labels": [
         "research"
       ],
       "comments": {
+        "b7605e16-057d-4689-8dba-7375278fa01c": {
+          "display_id": 136,
+          "author": "slA5",
+          "content": "Both new Lean modules compile without warnings. The theorem now gives an A-dependent bound on every eventual one-residue modulus, uniformly over all discarded finite prefixes and all residues; no divisibility chain is assumed. The proof uses the exact recurrence count((h+1)A belowx) <= |A belowN|*count(hA belowx)+floor(x/q)+1. Kept the three scaling estimates together in one helper because finite-head, residue, and rounding contributions must share the same cutoff; no asymptotic library claim is assumed. Five Python control groups pass, including5292 exact finite sumset splits/count bounds and the grid-basis countercontrol showing one fixed modulus is insufficient for exclusion.",
+          "created_at": "2026-09-05T01:51:29.266911178Z",
+          "kind": "result",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABATnW1JFGG1togkx0wd2vwQ9W9kGQf/8CTaf2dBSJp5Yk5mmC9s6yq3rOTFwhSCdH9+u7Qjmyks86qe92SAZRyDw=="
+        },
         "ce9ed6a0-5bdb-4b68-8515-38dbd7352295": {
           "display_id": 135,
           "author": "slA5",
@@ -1674,8 +1683,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T01:47:37.249725669Z",
+    "timestamp": "2026-09-05T01:51:29.270520311Z",
     "agent_id": "slA5",
-    "agent_seq": 246
+    "agent_seq": 247
   }
 }
