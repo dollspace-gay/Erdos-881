@@ -1,6 +1,6 @@
 {
   "next_display_id": 24,
-  "next_comment_id": 116,
+  "next_comment_id": 117,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1a9af280-0625-44f1-8225-c983e22ae8aa": 21,
@@ -1000,7 +1000,7 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-05T00:10:14.494337177Z",
-      "updated_at": "2026-09-05T00:11:27.564331224Z",
+      "updated_at": "2026-09-05T00:31:33.290322521Z",
       "labels": [
         "research"
       ],
@@ -1013,6 +1013,15 @@
           "kind": "plan",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAp11mA6CBB26x8zjXA/7/GbZPpLmMFWJ6Sqt4O9PAmKp6JFhO/z7Xmgh0qb8obJKbgrccqD7du1eV6QesjObgDQ=="
+        },
+        "e2092160-7879-4fc7-b6fb-e20a46424d55": {
+          "display_id": 116,
+          "author": "slA5",
+          "content": "Formalize an order-uniform global arithmetic constraint: if0inA and A covers atorderk, every normalized map f:A->an additive commutative group preserving equal(k+1)-tuple sums must satisfy f(a)=a smul c for one fixedc. Define the potential g(n) by the label sum of a chosen covered k-representation. Successor relations give g(n+a)=g(n)+f(a). Iterating along covered representations gives eventual additivity, and comparing shifts N andN+1 forces constant consecutive differences. This excludes independent Freiman coordinates for a hypothetical construction. It does not itself imply the desired infinite deletion; no claim of such an implication will be added.",
+          "created_at": "2026-09-05T00:31:33.287097283Z",
+          "kind": "decision",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAv7w7WiUak05qo5iuDFrxWv0f3Z2m+pl1F8tTuCPEj42kB/jcvcMQynp61CKT1xmvquAuScRxiyI5Q5gEOJwxBw=="
         }
       }
     },
@@ -1425,8 +1434,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T00:11:27.564331224Z",
+    "timestamp": "2026-09-05T00:31:33.290322521Z",
     "agent_id": "slA5",
-    "agent_seq": 208
+    "agent_seq": 209
   }
 }
