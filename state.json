@@ -487,12 +487,13 @@
       "uuid": "3dd140a3-dd3f-4859-b1b2-e7dabfed164b",
       "display_id": 27,
       "title": "Exclude unbounded single-residue tails from finite-order bases",
-      "status": "open",
+      "status": "closed",
       "priority": "high",
       "parent_uuid": "b3b91c39-e215-4f52-ae74-3ad0fcbff577",
       "created_by": "slA5",
       "created_at": "2026-09-05T01:41:11.891150955Z",
-      "updated_at": "2026-09-05T02:01:01.190586135Z",
+      "updated_at": "2026-09-05T02:01:04.468040498Z",
+      "closed_at": "2026-09-05T02:01:04.467316151Z",
       "labels": [
         "research"
       ],
@@ -1719,8 +1720,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T02:01:01.190586135Z",
+    "timestamp": "2026-09-05T02:01:04.468040498Z",
     "agent_id": "slA5",
-    "agent_seq": 251
+    "agent_seq": 252
   }
 }
