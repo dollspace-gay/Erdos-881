@@ -1,5 +1,5 @@
 {
-  "next_display_id": 26,
+  "next_display_id": 27,
   "next_comment_id": 124,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
@@ -17,6 +17,7 @@
     "93e23094-7281-4a29-b494-aea4582daaa7": 14,
     "9dfd0bd6-1754-4562-9e7a-9164cead7a1f": 5,
     "b3b91c39-e215-4f52-ae74-3ad0fcbff577": 24,
+    "b6cb8ebd-c808-481e-ac0c-b75b953a5e9a": 26,
     "c0d574af-ecc9-4cd1-a26e-378ebf41d1b1": 13,
     "cd7b5e87-258d-472c-8a34-5bb59e484738": 20,
     "ce298f1f-8f9c-4918-8b26-0230299a4ebb": 23,
@@ -884,6 +885,17 @@
         }
       }
     },
+    "b6cb8ebd-c808-481e-ac0c-b75b953a5e9a": {
+      "uuid": "b6cb8ebd-c808-481e-ac0c-b75b953a5e9a",
+      "display_id": 26,
+      "title": "Verify the mandatory-anchor family and record its limits",
+      "status": "open",
+      "priority": "medium",
+      "parent_uuid": "b3b91c39-e215-4f52-ae74-3ad0fcbff577",
+      "created_by": "slA5",
+      "created_at": "2026-09-05T01:00:13.043895876Z",
+      "updated_at": "2026-09-05T01:00:13.043895876Z"
+    },
     "c0d574af-ecc9-4cd1-a26e-378ebf41d1b1": {
       "uuid": "c0d574af-ecc9-4cd1-a26e-378ebf41d1b1",
       "display_id": 13,
@@ -1532,8 +1544,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T01:00:08.934901068Z",
+    "timestamp": "2026-09-05T01:00:13.043895876Z",
     "agent_id": "slA5",
-    "agent_seq": 223
+    "agent_seq": 224
   }
 }
