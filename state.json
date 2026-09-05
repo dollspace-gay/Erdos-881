@@ -1,5 +1,5 @@
 {
-  "next_display_id": 24,
+  "next_display_id": 25,
   "next_comment_id": 122,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
@@ -16,6 +16,7 @@
     "90a262df-e1be-4625-a887-01f36b3e41b3": 16,
     "93e23094-7281-4a29-b494-aea4582daaa7": 14,
     "9dfd0bd6-1754-4562-9e7a-9164cead7a1f": 5,
+    "b3b91c39-e215-4f52-ae74-3ad0fcbff577": 24,
     "c0d574af-ecc9-4cd1-a26e-378ebf41d1b1": 13,
     "cd7b5e87-258d-472c-8a34-5bb59e484738": 20,
     "ce298f1f-8f9c-4918-8b26-0230299a4ebb": 23,
@@ -841,6 +842,16 @@
         }
       }
     },
+    "b3b91c39-e215-4f52-ae74-3ad0fcbff577": {
+      "uuid": "b3b91c39-e215-4f52-ae74-3ad0fcbff577",
+      "display_id": 24,
+      "title": "Test finite protected cores for safe deletion construction",
+      "status": "open",
+      "priority": "high",
+      "created_by": "slA5",
+      "created_at": "2026-09-05T00:47:54.914073911Z",
+      "updated_at": "2026-09-05T00:47:54.914073911Z"
+    },
     "c0d574af-ecc9-4cd1-a26e-378ebf41d1b1": {
       "uuid": "c0d574af-ecc9-4cd1-a26e-378ebf41d1b1",
       "display_id": 13,
@@ -1475,8 +1486,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T00:44:49.620803895Z",
+    "timestamp": "2026-09-05T00:47:54.914073911Z",
     "agent_id": "slA5",
-    "agent_seq": 215
+    "agent_seq": 216
   }
 }
