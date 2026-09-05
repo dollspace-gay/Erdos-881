@@ -1,6 +1,6 @@
 {
   "next_display_id": 31,
-  "next_comment_id": 148,
+  "next_comment_id": 149,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1a9af280-0625-44f1-8225-c983e22ae8aa": 21,
@@ -1364,7 +1364,7 @@
       "parent_uuid": "a8eadd0d-0d71-43fb-98be-b24ce94def4d",
       "created_by": "slA5",
       "created_at": "2026-09-05T02:58:01.729665325Z",
-      "updated_at": "2026-09-05T02:58:51.328408520Z",
+      "updated_at": "2026-09-05T03:01:11.964361341Z",
       "labels": [
         "research"
       ],
@@ -1377,6 +1377,15 @@
           "kind": "plan",
           "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
           "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAxBqtwwlWyFPc79r3vmItEYxSkxZ6Aj9eV6AL7Xb3Yqsr4SYUv1OF/EoKZMEfOWRCuidP65Yf1Y9bnmuq1pr+Cg=="
+        },
+        "e569318a-02c4-4bfe-b34b-fd9632bcbca3": {
+          "display_id": 148,
+          "author": "slA5",
+          "content": "Decision: the two explicit finite-sumset certificates need maxRecDepth10000 locally because ordinary kernel reduction of the nested finite-set computation exceeded Lean's default recursion depth. The option applies only to these concrete decide proofs; no axiom, oracle, or native_decide is introduced. The generic extension and all its arithmetic already compile warning-free.",
+          "created_at": "2026-09-05T03:01:11.961116092Z",
+          "kind": "decision",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAwflQPlkv6eOejmILCdMYe1o/RRxq5ULpsz0s7x/0opeJXb6UBh9S08XXCO6m1wTeTgcSKDByHU3JSYsm6NQLBg=="
         }
       }
     },
@@ -1842,8 +1851,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T02:58:51.328408520Z",
+    "timestamp": "2026-09-05T03:01:11.964361341Z",
     "agent_id": "slA5",
-    "agent_seq": 271
+    "agent_seq": 272
   }
 }
