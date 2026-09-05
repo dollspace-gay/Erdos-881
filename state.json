@@ -1,6 +1,6 @@
 {
   "next_display_id": 33,
-  "next_comment_id": 161,
+  "next_comment_id": 162,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "0e826bc6-763d-46cc-90a1-dd3b273a8fa1": 31,
@@ -673,10 +673,21 @@
       "parent_uuid": "ce298f1f-8f9c-4918-8b26-0230299a4ebb",
       "created_by": "slA5",
       "created_at": "2026-09-05T03:48:55.922046029Z",
-      "updated_at": "2026-09-05T03:48:59.261775708Z",
+      "updated_at": "2026-09-05T03:49:31.314551021Z",
       "labels": [
         "research"
-      ]
+      ],
+      "comments": {
+        "6ffb3894-3e3d-4026-bb1e-c1296d5db7a8": {
+          "display_id": 161,
+          "author": "slA5",
+          "content": "Plan: test whether the no-eventual-close-pin result can extend from n<=2b to n<=C*b for fixed C>2. This is an unproved infinite statement; finite SAT controls can only test candidate local arguments. Existing probe_bounded_pins preserves multiplicities, checks witnesses independently, and reports vacuity. No new encoding or Lean source edits yet.",
+          "created_at": "2026-09-05T03:49:31.311154315Z",
+          "kind": "plan",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABACiFochFPVPjksQXymIbVYzmUTZdrWKsppCmCjjZUoBof/urj96TmB2JKw6HlWUcvZO0XIu0yKCdpfwInmc/XDA=="
+        }
+      }
     },
     "5ddbf060-5d5a-4494-95ff-62224bae671f": {
       "uuid": "5ddbf060-5d5a-4494-95ff-62224bae671f",
@@ -1990,8 +2001,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T03:49:02.542690071Z",
+    "timestamp": "2026-09-05T03:49:31.314551021Z",
     "agent_id": "slA5",
-    "agent_seq": 301
+    "agent_seq": 302
   }
 }
