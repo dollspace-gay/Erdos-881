@@ -1,6 +1,6 @@
 {
   "next_display_id": 27,
-  "next_comment_id": 130,
+  "next_comment_id": 131,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1a9af280-0625-44f1-8225-c983e22ae8aa": 21,
@@ -864,11 +864,20 @@
       "priority": "high",
       "created_by": "slA5",
       "created_at": "2026-09-05T00:47:54.914073911Z",
-      "updated_at": "2026-09-05T00:58:16.479935082Z",
+      "updated_at": "2026-09-05T01:34:06.892710357Z",
       "labels": [
         "research"
       ],
       "comments": {
+        "646a350e-a5a3-4126-8941-5f3c01e2ffdd": {
+          "display_id": 130,
+          "author": "slA5",
+          "content": "The parametric family is now proved, not merely a finite observation: arbitrary mandatory-anchor cardinality at fixed least order3 and threshold1, with a successful infinite4-deletion included. It refutes a uniform budget but leaves the A-dependent protected-core question open. A simple obstruction prevents naively stacking the one-residue tail construction through unbounded moduli: if A is eventually in one residue class for arbitrarily large q, inductively every finite-fold sumset hA has upper density zero. For each q write A=F union T with F finite and T in one class; hA is contained in F+(h-1)A union one residue class modq. The induction makes the finite union of translates density zero, leaving upper density at most1/q. Base0A={0}. This density argument is not yet formalized and should be checked before pursuing such nested-period constructions; it does not address arbitrary nonperiodic mandatory anchors.",
+          "created_at": "2026-09-05T01:34:06.889426348Z",
+          "kind": "observation",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABA/lpxJErpTfeGtys6hMTPieIe6/0YJp2Xnu0Nn6bGJtPPZwz9uiFBm5psjmqbOhdC6CkBnWfixYFQDfRDfcN6AQ=="
+        },
         "67d6028e-5a9b-4404-a805-72d623097734": {
           "display_id": 123,
           "author": "slA5",
@@ -1609,8 +1618,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T01:30:48.495545813Z",
+    "timestamp": "2026-09-05T01:34:06.892710357Z",
     "agent_id": "slA5",
-    "agent_seq": 232
+    "agent_seq": 233
   }
 }
