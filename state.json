@@ -1,6 +1,6 @@
 {
   "next_display_id": 28,
-  "next_comment_id": 135,
+  "next_comment_id": 136,
   "display_id_map": {
     "02da1186-f736-4ed4-81be-b5a3e314876d": 12,
     "1a9af280-0625-44f1-8225-c983e22ae8aa": 21,
@@ -492,11 +492,20 @@
       "parent_uuid": "b3b91c39-e215-4f52-ae74-3ad0fcbff577",
       "created_by": "slA5",
       "created_at": "2026-09-05T01:41:11.891150955Z",
-      "updated_at": "2026-09-05T01:41:34.390197532Z",
+      "updated_at": "2026-09-05T01:47:37.249725669Z",
       "labels": [
         "research"
       ],
       "comments": {
+        "ce9ed6a0-5bdb-4b68-8515-38dbd7352295": {
+          "display_id": 135,
+          "author": "slA5",
+          "content": "[action] Session25 issue27 active. Proving the obstruction to unbounded eventual one-residue moduli. Added ResidueSumsetCounting.lean (integer zero-upper-density predicate, exact sumset split/count, residue count, exclusion of eventual coverage) and TailResidueObstruction.lean (density induction and bounded-moduli consequence). First module build pending/recently polled; second direct compile launched. No root/audit/docs integration yet; authoritative integrated counts remain8362/655/215/39/55. Full goal active; not claiming a finite protected core.",
+          "created_at": "2026-09-05T01:47:37.245908244Z",
+          "kind": "note",
+          "signed_by": "SHA256:vSGU2luw4uROpA05YEgSZsL0w9hKXryXjxdDWvCcmJM",
+          "signature": "U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUTS0dMLYCeyVs6Rbonl0CdichTlwV6pfVQFnzhkLJ/cAAAARY3Jvc3NsaW5rLWNvbW1lbnQAAAAAAAAABnNoYTUxMgAAAFMAAAALc3NoLWVkMjU1MTkAAABAUoxcMdxVAFBl50o/YrNHd4JMYJVxkwWAdykIZBLXCtFRuuitMHI+woinlDQ3ZDASNVJvdXh0PxyDRM6FKYf8BQ=="
+        },
         "f4ae43ba-25fc-4c05-b7c0-5f64294eef17": {
           "display_id": 134,
           "author": "slA5",
@@ -1665,8 +1674,8 @@
   },
   "next_milestone_id": 1,
   "watermark": {
-    "timestamp": "2026-09-05T01:41:34.390197532Z",
+    "timestamp": "2026-09-05T01:47:37.249725669Z",
     "agent_id": "slA5",
-    "agent_seq": 245
+    "agent_seq": 246
   }
 }
